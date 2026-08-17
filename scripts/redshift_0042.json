@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "video_id": "redshift_0042",
+    "title": "Квантовый чип, который обогнал время",
+    "topic": "Квантовый чип Google и проверка вычислений",
+    "category": "ai",
+    "language": "ru",
+    "target_duration_sec": 50,
+    "allow_memes": true,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-08-19"
+  },
+  "sources": [
+    {
+      "title": "Quantum error correction below the surface code threshold",
+      "domain": "nature.com",
+      "url": "https://www.nature.com/articles/s41586-024-08449-y",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "snippet": "Логический кубит впервые живёт дольше, чем составляющие его физические кубиты.",
+      "highlight_line": "below the surface code threshold"
+    },
+    {
+      "title": "Willow processor announcement",
+      "domain": "blog.google",
+      "url": "https://blog.google/technology/research/google-willow-quantum-chip/",
+      "show_on_screen": false,
+      "screen_template": "search"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Эта задача заняла бы у обычного суперкомпьютера больше времени, чем существует вселенная. Чип решил её за пять минут.",
+      "emphasis_word": "вселенная",
+      "avatar": "off",
+      "visual_intent": "Холодный кадр квантового процессора в криостате, крупно",
+      "broll_queries": ["quantum processor macro shot", "cryostat golden chandelier laboratory"],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "5 МИНУТ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "mode_hint": "C"
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Это квантовый процессор. Внутри — сто пять кубитов, охлаждённых почти до абсолютного нуля.",
+      "emphasis_word": "кубитов",
+      "avatar": "on",
+      "visual_intent": "Ведущий представляет тему, за головой — крупное слово",
+      "broll_queries": ["quantum computer laboratory wide"],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A"
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Результат опубликован в журнале Nature. Впервые логический кубит прожил дольше, чем каждый физический кубит внутри него.",
+      "emphasis_word": "Nature",
+      "avatar": "auto",
+      "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
+      "broll_queries": ["scientific paper on screen", "researcher reading article laptop"],
+      "overlay": {
+        "type": "highlight",
+        "content": "below the surface code threshold",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "source_ref": "nature.com",
+      "mode_hint": "B"
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Раньше добавление кубитов только множило ошибки. Здесь всё наоборот: чем больше кубитов в связке, тем чище считает система. Ошибка падает вдвое на каждом шаге.",
+      "emphasis_word": "наоборот",
+      "avatar": "auto",
+      "visual_intent": "График падения ошибки, абстрактная визуализация данных",
+      "broll_queries": ["data visualization error rate chart", "abstract blue data particles", "server room blue light"],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "В ДВА РАЗА",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "data_beep",
+      "mode_hint": "C"
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "И вот главное. Проверить этот ответ классическим компьютером мы пока не можем. Мы верим результату, потому что верим в физику, а не потому что пересчитали.",
+      "emphasis_word": "верим",
+      "avatar": "on",
+      "visual_intent": "Ведущий крупно, поворотный момент, акцентное слово",
+      "broll_queries": ["thoughtful scientist portrait dark"],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Проверить нечем",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "sfx": "sub_drop",
+      "answers_hook": true,
+      "mode_hint": "A"
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Доверил бы ты такому ответу свои деньги? Напиши в комментариях.",
+      "emphasis_word": "доверил",
+      "avatar": "auto",
+      "visual_intent": "Финальный кадр, кнопка подписки",
+      "broll_queries": ["abstract red gradient background"],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "mode_hint": "A"
+    }
+  ],
+  "cta": {
+    "text": "Доверил бы ты такому ответу свои деньги?",
+    "type": "question"
+  }
+}

@@ -1,0 +1,193 @@
+# REDSHIFT — главный конфиг пайплайна.
+# Эталон — Приложение A ТЗ v2.0; здесь он расширен полями, без которых
+# пайплайн не собирается (провайдеры, пути, рендер, ретраи).
+# Ни один секрет здесь не хранится: только имена переменных окружения.
+
+project:
+  name: redshift
+  language: ru
+  fps: 30
+  resolution: [1080, 1920]
+
+# --- Режим работы внешних сервисов -------------------------------------------
+# live  — всегда реальные API (нет ключа → ошибка)
+# mock  — всегда детерминированные заглушки (CI, разработка, тесты)
+# auto  — live при наличии ключа в окружении, иначе mock (с warning в лог)
+providers:
+  mode: auto
+  request_timeout_sec: 60
+  retries: 3               # §10.5.3: 3 попытки
+  backoff_base_sec: 2.0    # экспоненциальный бэкофф 2/4/8
+
+heygen:
+  avatar_id: "54172d7a5b2946ed8a592dee955fb0c7"   # Avatar 5 (§7.4, зафиксирован в v2.0)
+  model_version: "avatar5"                         # §7.4: вынесено в конфиг, не хардкод
+  background: "transparent_if_available"
+  output: "1080x1920"
+  max_seconds_per_video: 42
+  api_key_env: HEYGEN_API_KEY
+  api_base: "https://api.heygen.com"
+  poll_interval_sec: 10
+  poll_timeout_sec: 900
+
+elevenlabs:
+  voice_id_env: ELEVENLABS_VOICE_ID    # клон голоса заказчика
+  voice_id: ""                          # можно задать явно; пусто → берётся из env
+  model: "eleven_v3"
+  fallback_model: "eleven_multilingual_v2"   # R-4
+  length_buffer_pct: 22                      # §4.2.4: запас +18…25%
+  api_key_env: ELEVENLABS_API_KEY
+  api_base: "https://api.elevenlabs.io"
+  sample_rate: 48000
+  # SFX-генерация (только пока библиотека не заполнена до лимита §14.1)
+  sfx_model: "eleven_text_to_sound_v2"
+
+vision:
+  primary: "gemini"
+  arbiter: "grok"
+  arbiter_max_calls: 8        # §7.3 шаг 3
+  accept_threshold: 0.70
+  reject_threshold: 0.45
+  frame_disagreement_threshold: 0.30
+  gemini_api_key_env: GEMINI_API_KEY
+  gemini_model: "gemini-2.5-flash"
+  gemini_api_base: "https://generativelanguage.googleapis.com"
+  grok_api_key_env: XAI_API_KEY
+  grok_model: "grok-4-fast"
+  grok_api_base: "https://api.x.ai"
+
+magnific:
+  max_downloads_per_video: 50     # §7.2.4 — лимит подписки
+  prefer_free_models: true
+  paid_model_share_limit: 0.07
+  api_key_env: MAGNIFIC_API_KEY
+  api_base: "https://api.magnific.ai"
+
+stock:
+  pexels_api_key_env: PEXELS_API_KEY
+  pixabay_api_key_env: PIXABAY_API_KEY
+  nasa_api_key_env: NASA_API_KEY
+  max_candidates_per_query: 8      # §7.2.3: 5–10 кандидатов на запрос
+  queries_per_slot: 4              # §7.2.2: 3–5 запросов разной абстракции
+  target_pool_size: [30, 60]       # §7.2.3: итоговый пул на ролик
+  max_download_height: 1080        # §3.6.1: строго до 1080p, выше не брать
+  dedup_hamming_max: 8             # §7.2.5: порог 8/64
+  video_probe_frames: [0.10, 0.50, 0.90]
+
+libraries:
+  sfx:     { max_items: 20,  frozen_when_full: true }
+  music:   { max_items: 5,   frozen_when_full: true }
+  memes:   { max_items: 100, frozen_when_full: true, per_run_intake: 18 }
+  footage: { max_items: null, freeze: false, eviction: lru }
+
+storage:
+  # Кэш футажей живёт вне репозитория (§14.5, K-12).
+  # backend: local | s3
+  backend: local
+  local_root: ".redshift_cache/footage"
+  max_bytes: 21474836480          # 20 GiB, дальше — LRU-вытеснение
+  s3:
+    bucket_env: REDSHIFT_S3_BUCKET
+    endpoint_env: REDSHIFT_S3_ENDPOINT
+    access_key_env: REDSHIFT_S3_ACCESS_KEY
+    secret_key_env: REDSHIFT_S3_SECRET_KEY
+    prefix: "footage/"
+
+features:
+  avatar_matting: true      # §7.7 киллсвитч
+  background_vfx: true      # зависит от avatar_matting
+  ab_versions: true
+  auto_topic_search: false
+  vision_qc: true           # §11.2 смысловой QC по финальному ролику
+
+limits:
+  duration_sec: [35, 70]
+  avatar_share: [0.35, 0.60]
+  max_event_gap_sec: 2.5
+  max_shot_sec: 5
+  max_shot_sec_with_events: 7
+  min_shot_sec: 1.5                 # §3.6.2
+  memes_per_video: [0, 2]
+  bg_vfx_per_video: 2
+  bg_vfx_sec: [2.0, 5.0]
+  ai_footage_share_max: 0.40
+  fullscreen_text_per_video: [2, 4] # §5.2
+  highlight_per_video: [1, 3]       # §5.5
+  split_share_max: 0.25             # §3.5 режим B ≤25%
+  footage_block_share_max: 0.40     # §3.5 режим C ≤40% одним блоком
+  first_avatar_appearance_sec: 6.0
+  first_event_sec: 0.8
+  hook_sec: 3.0
+  cta_tail_sec: 2.0
+  end_silence_ms: 300
+  cut_share_min: 0.70               # §4.3: Cut ≥70% склеек
+  dynamic_transition_min_gap_sec: 6.0
+  sfx_min_gap_sec: 2.0              # §4.4: плотность SFX ≤ 1 / 2 сек
+  quote_max_words: 15
+  pillarbox_per_video: 2            # §3.6.5
+  gradient_per_video: 1             # §3.3.5
+  template_overlap_with_prev_max: 0.20  # QC-6/17
+  ab_min_template_diff: 3           # §15.12.2
+
+speech:
+  pause_threshold_ms: 150           # §4.2.2 паузы >150 мс режем
+  pause_target_ms: [80, 120]
+  breath_max_ms: 400
+  silence_floor_db: -42.0
+  min_word_ms: 250                  # §5.1 длительность слова 250–450 мс
+  max_word_ms: 450
+
+audio:
+  voice_lufs: -14
+  music_lufs: [-34, -30]
+  ducking_db: -7
+  true_peak_max: -1
+  sfx_peak_dbfs: [-16, -12]
+  sample_rate: 48000
+  channels: 2
+
+render:
+  engine: ffmpeg           # ffmpeg | remotion
+  crf: 19                  # §3.1: CRF 18–20
+  preset: "medium"
+  video_codec: "libx264"
+  profile: "high"
+  pix_fmt: "yuv420p"
+  audio_codec: "aac"
+  audio_bitrate: "224k"
+  color_primaries: "bt709"
+  faststart: true
+  ab_versions: ["A", "B"]
+  thumbnail_time_sec: 1.0
+
+news:
+  # §7.5 — квоты бюджетируются и кэшируются
+  quotas: { currents: 250, apitube: 100, gdelt: 100 }
+  freshness_hours: 48
+  dedup_title_fuzzy: 0.85
+  keywords: [ai, space, quantum, biotech, "climate tech", neuro, longevity]
+
+budget:
+  max_cost_per_video_usd: 6.00
+  hard_stop_on_exceed: true
+  # Прайс для расчёта сметы до прогона (USD). Правится по фактическим тарифам.
+  price:
+    elevenlabs_per_1k_chars: 0.30
+    heygen_per_second: 0.05
+    gemini_per_image: 0.0004
+    grok_per_image: 0.0060
+    magnific_per_image: 0.08
+    magnific_per_video_sec: 0.20
+
+paths:
+  work_dir: "work"
+  output_dir: "output"
+  templates_dir: "templates"
+  assets_dir: "assets"
+  cache_dir: "cache"
+  logs_subdir: "logs"
+
+logging:
+  level: INFO
+  json: true
+  redact_env_secrets: true    # §7.6: ни один ключ не попадает в логи/артефакты

@@ -1,0 +1,106 @@
+# Стоки, лицензии и приоритеты (§7.2, §10.4).
+# `license_check: per_item` означает, что лицензия проверяется у каждого объекта
+# отдельно и не может быть принята «по умолчанию для источника».
+
+sources:
+  nasa:
+    kind: api
+    enabled: true
+    license: "public-domain"          # §10.4: в основном PD
+    license_check: per_item           # часть материалов NASA — чужие, проверяем
+    attribution_required: false
+    notes: "Логотипы NASA нельзя использовать как знак поддержки/одобрения."
+    api_base: "https://images-api.nasa.gov"
+    media: [video, photo]
+
+  esa:
+    kind: api
+    enabled: true
+    license: "ESA-CC-BY-SA-3.0-IGO"
+    license_check: per_item
+    attribution_required: true
+    api_base: "https://www.esa.int"
+    media: [video, photo]
+
+  pexels:
+    kind: api
+    enabled: true
+    license: "Pexels License"
+    license_check: source_default
+    attribution_required: false
+    restrictions:
+      - "нельзя порочащий контекст с узнаваемыми людьми"
+      - "нельзя перепродавать как сток"
+    api_base: "https://api.pexels.com"
+    media: [video, photo]
+
+  pixabay:
+    kind: api
+    enabled: true
+    license: "Pixabay Content License"
+    license_check: source_default
+    attribution_required: false
+    restrictions:
+      - "нельзя перепродавать как сток"
+    api_base: "https://pixabay.com/api"
+    media: [video, photo]
+
+  mixkit:
+    kind: catalog
+    enabled: true
+    license: "Mixkit Free License"
+    license_check: source_default
+    attribution_required: false
+    restrictions:
+      - "бесплатно для коммерции, нельзя распространять как сток"
+    media: [video]
+
+  internet_archive:
+    kind: api
+    enabled: true
+    license: "varies"
+    license_check: per_item           # §10.4, R-10 — попозиционно, обязательно
+    attribution_required: true
+    api_base: "https://archive.org"
+    media: [video, photo]
+
+  magnific:
+    kind: generation
+    enabled: true
+    license: "generated-owned"
+    license_check: source_default
+    attribution_required: false
+    media: [video, photo]
+
+  footage_net:
+    kind: aggregator
+    enabled: false                    # §10.4: платный агрегатор, в free-tier пул не включать
+    license: "commercial-paid"
+    license_check: per_item
+    media: [video]
+
+# Приоритеты источников по типу запроса (§7.2)
+routing:
+  space:      [nasa, esa, internet_archive, magnific]
+  astro:      [nasa, esa, internet_archive, magnific]
+  lab:        [pexels, pixabay, magnific]
+  biotech:    [pexels, pixabay, magnific]
+  medicine:   [pexels, pixabay, magnific]
+  city:       [pexels, mixkit, pixabay]
+  people:     [pexels, mixkit, pixabay]
+  reportage:  [pexels, mixkit, pixabay]
+  servers:    [pexels, magnific]
+  interface:  [pexels, magnific]
+  archive:    [internet_archive]
+  history:    [internet_archive]
+  dataviz:    [magnific, pexels]
+  logo:       [magnific]
+  default:    [pexels, pixabay, magnific]
+
+# Запрещённые типы материала (§10.4)
+forbidden:
+  - "фрагменты фильмов"
+  - "фрагменты ТВ-эфира"
+  - "фрагменты интервью третьих лиц"
+  - "материалы с водяными знаками"
+  - "материалы с чужим брендингом на весь кадр"

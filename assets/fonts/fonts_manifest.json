@@ -1,0 +1,62 @@
+{
+  "_comment": "Гарнитуры брендбука (§3.4). Все три проверены скиллом redshift-fonts: полный кириллический набор + OFL (коммерческое использование и встраивание разрешены). Резервные гарнитуры подключаются только после такой же проверки — падать с FONT_MISSING_CYRILLIC, а не рендерить «квадратики».",
+  "version": 1,
+  "fonts": [
+    {
+      "id": "oswald-bold",
+      "role": "display",
+      "family": "Oswald",
+      "subfamily": "Bold",
+      "file": "Oswald-Bold.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://scripts.sil.org/OFL",
+      "source": "Google Fonts",
+      "cyrillic": true,
+      "fs_type": 0,
+      "verified": true
+    },
+    {
+      "id": "nunito-extrabold",
+      "role": "subtitle",
+      "family": "Nunito ExtraBold",
+      "subfamily": "Regular",
+      "file": "Nunito-ExtraBold.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://scripts.sil.org/OFL",
+      "source": "Google Fonts",
+      "cyrillic": true,
+      "fs_type": 0,
+      "verified": true
+    },
+    {
+      "id": "jetbrains-mono-bold",
+      "role": "mono",
+      "family": "JetBrains Mono",
+      "subfamily": "Bold",
+      "file": "JetBrainsMono-Bold.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://scripts.sil.org/OFL",
+      "source": "Google Fonts",
+      "cyrillic": true,
+      "fs_type": 0,
+      "verified": true
+    }
+  ],
+  "rejected": [
+    {
+      "family": "Bebas Neue",
+      "reason": "нет кириллицы (66 отсутствующих кодовых точек из требуемого набора)",
+      "code": "FONT_MISSING_CYRILLIC"
+    },
+    {
+      "family": "Anton",
+      "reason": "нет кириллицы",
+      "code": "FONT_MISSING_CYRILLIC"
+    }
+  ],
+  "fallback_chain": {
+    "display": ["Oswald-Bold.ttf", "Golos-Text-Black.ttf", "Unbounded-ExtraBold.ttf"],
+    "subtitle": ["Nunito-ExtraBold.ttf", "Manrope-ExtraBold.ttf", "Rubik-Bold.ttf"],
+    "mono": ["JetBrainsMono-Bold.ttf"]
+  }
+}

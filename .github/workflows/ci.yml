@@ -1,0 +1,52 @@
+name: ci
+
+# Тесты и сухой прогон пайплайна в mock-режиме: без единого внешнего вызова,
+# без ключей, полностью детерминированно.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Установить ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Установить зависимости
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Шрифты
+        run: python -m src.cli fonts-check
+
+      - name: Тесты
+        run: python -m pytest tests/ -q --maxfail=1
+
+      - name: Сквозной прогон в mock-режиме
+        run: |
+          python -m src.cli --set providers.mode=mock --pretty-logs \
+            run --script scripts/redshift_0042.json
+
+      - name: Проверить, что ролики собрались и прошли QC
+        run: python tools/check_run_artifacts.py output/redshift_0042
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mock-run-output
+          path: |
+            output/**/*.mp4
+            output/**/*.json
+            output/**/*.srt
+          retention-days: 7
