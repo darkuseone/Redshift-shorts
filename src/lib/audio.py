@@ -255,6 +255,23 @@ def measure_loudness_file(path: str | Path) -> LoudnessStats:
     )
 
 
+def measure_loudness_buffer(data: np.ndarray, sr: int = SAMPLE_RATE) -> LoudnessStats:
+    """Измерение буфера через ffmpeg: на порядок быстрее numpy-реализации.
+
+    Numpy-версия остаётся эталоном для тестов, но в пайплайне на 50-секундной
+    дорожке она стоит секунды, а ebur128 из ffmpeg — доли секунды.
+    """
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        save_wav(tmp_path, data, sr)
+        return measure_loudness_file(tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 def db_to_gain(db: float) -> float:
     return 10.0 ** (db / 20.0)
 
