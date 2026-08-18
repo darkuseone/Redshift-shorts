@@ -44,6 +44,26 @@ class Ctx:
     def size(self) -> tuple[int, int]:
         return (self.width, self.height)
 
+    @property
+    def center_x(self) -> int:
+        """Оптический центр кадра.
+
+        Рабочая зона (§3.2) ужата справа под колонку лайк/коммент/шер, поэтому
+        её середина лежит левее центра кадра. Всё, что по замыслу стоит «ровно
+        по центру» — субтитры, полноэкранный текст, CTA, слово за головой, —
+        центрируется отсюда, иначе кадр читается как заваленный влево.
+        """
+        return self.width // 2
+
+    @property
+    def centered_width(self) -> int:
+        """Ширина блока, симметричного относительно центра кадра.
+
+        Зеркалим левое поле рабочей зоны: правое поле шире только из-за
+        интерфейса YouTube, и растягивать по нему симметричный блок нельзя.
+        """
+        return self.width - 2 * self.safe.x_min
+
     def color(self, name: str, alpha: float = 1.0) -> RGBA:
         return parse_color(self.brandbook["colors"][name], alpha)
 
@@ -52,6 +72,27 @@ class Ctx:
 
     def new(self) -> Image.Image:
         return new_layer(self.size)
+
+
+# --- регистр ------------------------------------------------------------------
+
+def apply_case(text: str, mode: str) -> str:
+    """Привести слово к единому регистру.
+
+    ``lower`` — режим по умолчанию для субтитров: заглавная в начале фразы
+    делает первую букву визуально крупнее остальных, и на быстрой смене слов
+    кадр «прыгает». Аббревиатуры (слово целиком заглавными: ОТО, НАСА, ИИ)
+    не трогаем — внутри них все буквы и так одного размера, а «ото» вместо
+    «ОТО» уже меняет смысл.
+    """
+    if mode == "upper":
+        return text.upper()
+    if mode != "lower":
+        return text
+    letters = [ch for ch in text if ch.isalpha()]
+    if len(letters) > 1 and all(ch.isupper() for ch in letters):
+        return text
+    return text.lower()
 
 
 # --- перенос текста -----------------------------------------------------------
@@ -104,8 +145,9 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     display = (word or "").strip().strip(",.!?;:—–")
     if not display:
         return layer
+    display = apply_case(display, spec.get("case", "lower"))
 
-    max_width = min(int(spec["max_block_width_px"]), ctx.safe.width)
+    max_width = min(int(spec["max_block_width_px"]), ctx.centered_width)
     size, lines = fit_block(ctx, display, "subtitle", max_width=max_width,
                             max_size=int(spec["size_px"][1]),
                             min_size=int(spec["size_px"][0]) - 24, max_lines=1)
@@ -119,7 +161,7 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     stroke = int(spec["stroke_px"][0])
 
     y = baseline_y if baseline_y is not None else int(spec["baseline_y_default"])
-    x = ctx.safe.center_x
+    x = ctx.center_x
 
     pop = clamp01(progress)
     scale = 0.92 + 0.08 * ctx.ease("ease_out_back", pop)
@@ -145,7 +187,14 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     if abs(scale - 1.0) > 1e-3:
         tile = tile.resize((max(1, int(tile_w * scale)), max(1, int(tile_h * scale))),
                            Image.Resampling.LANCZOS)
-    layer.alpha_composite(tile, (int(x - tile.width / 2), int(y - tile.height / 2)))
+
+    # По горизонтали центруем по фактическим чернилам: у глифов разные боковые
+    # свесы, и центровка по ширине строки уводит слово на несколько пикселей.
+    # По вертикали — строго по метрикам шрифта: центровка по чернилам заставила
+    # бы слова с выносными («у», «р») прыгать вверх-вниз на каждой смене.
+    ink = tile.getbbox()
+    ink_cx = (ink[0] + ink[2]) / 2 if ink else tile.width / 2
+    layer.alpha_composite(tile, (round(x - ink_cx), round(y - tile.height / 2)))
     return layer
 
 
@@ -196,7 +245,7 @@ def fullscreen_text(ctx: Ctx, content: str, *, progress: float, style: str = "im
             _draw_line_with_accent(ctx, text_layer, line, accent_word.upper(), font,
                                    y, base_color, eased)
         else:
-            draw_text(text_layer, (ctx.safe.center_x, y), line, font,
+            draw_text(text_layer, (ctx.center_x, y), line, font,
                       fill=with_alpha(base_color, eased), anchor="mm")
 
     if style.endswith("impact-02"):
@@ -204,8 +253,8 @@ def fullscreen_text(ctx: Ctx, content: str, *, progress: float, style: str = "im
         width_px = int(measure(lines[-1], font)[0] * clamp01(progress * 2.5))
         draw = ImageDraw.Draw(text_layer)
         draw.rounded_rectangle(
-            (ctx.safe.center_x - width_px // 2, underline_y,
-             ctx.safe.center_x + width_px // 2, underline_y + max(6, size // 22)),
+            (ctx.center_x - width_px // 2, underline_y,
+             ctx.center_x + width_px // 2, underline_y + max(6, size // 22)),
             radius=6, fill=ctx.color("accent"))
 
     if abs(scale - 1.0) > 1e-3:
@@ -225,7 +274,7 @@ def _draw_line_with_accent(ctx: Ctx, layer: Image.Image, line: str, accent: str,
     widths = [measure(p, font)[0] for p in parts]
     space = measure(" ", font)[0]
     total = sum(widths) + space * (len(parts) - 1)
-    x = ctx.safe.center_x - total // 2
+    x = ctx.center_x - total // 2
     for part, width in zip(parts, widths):
         color = ctx.color("accent") if part == accent else base
         draw_text(layer, (x, y), part, font, fill=with_alpha(color, alpha), anchor="lm")
@@ -259,7 +308,7 @@ def plaque(ctx: Ctx, text: str, *, progress: float, out_progress: float = 0.0,
     y_center = {"bottom": ctx.safe.y_max - box_h // 2 - 60,
                 "top": ctx.safe.y_min + box_h // 2 + 40,
                 "middle": (ctx.safe.y_min + ctx.safe.y_max) // 2}[position]
-    x_center = ctx.safe.center_x
+    x_center = ctx.center_x
 
     # Вход с overshoot, выход — в ту же сторону, без затухания.
     if out_progress > 0:
@@ -318,7 +367,7 @@ def highlight(ctx: Ctx, box: tuple[float, float, float, float], *, progress: flo
         # нижнюю границу всего объекта (например, карточки источника).
         below_y = (label_below_y if label_below_y is not None else box[3]) + 52
         y = below_y if below_y < ctx.safe.y_max - 40 else box[1] - 48
-        draw_text(layer, (ctx.safe.center_x, y), label, font,
+        draw_text(layer, (ctx.center_x, y), label, font,
                   fill=ctx.color("bg_pure"), stroke_width=5,
                   stroke_fill=ctx.color("accent_deep"), anchor="mm")
     return layer
@@ -426,7 +475,7 @@ def subscribe_button(ctx: Ctx, *, progress: float, text: str = "ПОДПИСАТ
     pulse = 1.0 + 0.035 * math.sin(progress * math.pi * 2 * pulse_hz)
     enter = ctx.ease("ease_out_back", clamp01(progress * 4))
 
-    x_center = ctx.safe.center_x
+    x_center = ctx.center_x
     y_center = ctx.safe.y_max - box_h // 2 - 40
     w, h = box_w * pulse * enter, box_h * pulse * enter
     box = (x_center - w / 2, y_center - h / 2, x_center + w / 2, y_center + h / 2)
@@ -460,7 +509,7 @@ def text_behind_head(ctx: Ctx, text: str, *, progress: float,
     alpha = clamp01(progress * 3)
     y = int(ctx.height * 0.34)
     for line in lines:
-        draw_text(layer, (ctx.safe.center_x, y), line, font,
+        draw_text(layer, (ctx.center_x, y), line, font,
                   fill=with_alpha(ctx.color(color_name), alpha * 0.55), anchor="mm")
         y += int(size * 0.98)
     return layer

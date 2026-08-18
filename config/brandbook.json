@@ -72,6 +72,7 @@
 
   "subtitles": {
     "granularity": "word",
+    "case": "lower",
     "position": "center",
     "baseline_y": [940, 1010],
     "baseline_y_default": 975,

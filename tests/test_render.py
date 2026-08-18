@@ -103,8 +103,36 @@ def test_subtitle_is_centered_and_in_safe_zone(render_ctx):
     bbox = layer.getbbox()
     assert bbox is not None
     center_x = (bbox[0] + bbox[2]) / 2
-    assert abs(center_x - render_ctx.safe.center_x) < 12       # §5.1: по центру
+    # §5.1 «по центру» — это центр кадра, а не центр рабочей зоны: правое поле
+    # ужато под колонку лайк/коммент/шер и уводит середину зоны на 80 px влево.
+    assert abs(center_x - render_ctx.width / 2) <= 1
     assert render_ctx.safe.y_min <= bbox[1] and bbox[3] <= render_ctx.safe.y_max
+
+
+def test_subtitle_centering_does_not_depend_on_glyph_bearings(render_ctx):
+    # Разные боковые свесы не должны смещать слово: центруем по чернилам.
+    for word in ("тьма", "уже", "力", "ага", "www"):
+        bbox = subtitle(render_ctx, word, progress=1.0).getbbox()
+        if bbox is None:
+            continue
+        assert abs((bbox[0] + bbox[2]) / 2 - render_ctx.width / 2) <= 1, word
+
+
+def test_subtitle_has_no_leading_capital(render_ctx):
+    from src.lib.render.layers import apply_case
+
+    assert apply_case("Твой", "lower") == "твой"
+    assert apply_case("НАМЕРЕННО", "lower") == "НАМЕРЕННО"   # аббревиатуры целы
+    assert apply_case("ОТО", "lower") == "ОТО"
+    assert apply_case("105", "lower") == "105"
+    assert apply_case("Я", "lower") == "я"                   # одна буква — не аббревиатура
+
+
+def test_subtitle_lowercase_changes_pixels(render_ctx):
+    # Регистр действительно доезжает до кадра, а не только до хелпера.
+    capital = subtitle(render_ctx, "Твой", progress=1.0)
+    lower = subtitle(render_ctx, "твой", progress=1.0)
+    assert list(capital.getdata()) == list(lower.getdata())
 
 
 def test_subtitle_baseline_is_in_center_band(render_ctx):
