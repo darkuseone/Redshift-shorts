@@ -1,0 +1,20 @@
+{
+  "id": "transitions/glitch-short",
+  "name": "glitch-short",
+  "category": "transitions",
+  "title": "Короткий глитч",
+  "duration_range": [
+    0.16,
+    0.26
+  ],
+  "params": {
+    "bars": 7
+  },
+  "tags": [
+    "dynamic",
+    "glitch"
+  ],
+  "renderer": "glitch",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "browser-ui/notepad-typing",
+  "name": "notepad-typing",
+  "category": "browser-ui",
+  "title": "Печать в блокноте",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "template": "notepad",
+    "typing": true
+  },
+  "tags": [
+    "ui",
+    "typing"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

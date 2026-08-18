@@ -1,0 +1,20 @@
+{
+  "id": "frames-cards/chart-card",
+  "name": "chart-card",
+  "category": "frames-cards",
+  "title": "Карточка с графиком",
+  "duration_range": [
+    1.5,
+    4.0
+  ],
+  "params": {
+    "template": "notepad",
+    "chart": true
+  },
+  "tags": [
+    "data"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

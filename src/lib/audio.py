@@ -89,6 +89,28 @@ def to_canonical_wav(src: str | Path, dst: str | Path, *, sr: int = SAMPLE_RATE,
     return dst
 
 
+def load_audio_any(path: str | Path, sr: int = SAMPLE_RATE) -> tuple[np.ndarray, int]:
+    """Загрузить аудио любого формата.
+
+    Капнутые библиотеки хранятся в git (§14.5), поэтому музыкальные подложки
+    лежат в сжатом виде: 5 минутных WAV — это 67 МБ в репозитории, а на уровне
+    −32 LUFS под речью разница между WAV и AAC неразличима. SFX остаются WAV,
+    как требует §14.1.
+    """
+    path = Path(path)
+    if path.suffix.lower() == ".wav":
+        return load_wav(path)
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        to_canonical_wav(path, tmp_path, sr=sr, channels=2)
+        return load_wav(tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 def duration_sec(data: np.ndarray, sr: int = SAMPLE_RATE) -> float:
     return float(len(data)) / float(sr)
 

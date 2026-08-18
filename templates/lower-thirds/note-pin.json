@@ -1,0 +1,20 @@
+{
+  "id": "lower-thirds/note-pin",
+  "name": "note-pin",
+  "category": "lower-thirds",
+  "title": "Короткая ремарка",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "position": "middle",
+    "direction": "right"
+  },
+  "tags": [
+    "note"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

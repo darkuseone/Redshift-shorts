@@ -1,0 +1,22 @@
+{
+  "id": "avatar-entry/split-slide-up",
+  "name": "split-slide-up",
+  "category": "avatar-entry",
+  "title": "Половина кадра уезжает вверх",
+  "duration_range": [
+    0.24,
+    0.4
+  ],
+  "params": {
+    "axis": "y",
+    "direction": -1
+  },
+  "tags": [
+    "avatar",
+    "entry",
+    "split"
+  ],
+  "renderer": "paper_slide",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

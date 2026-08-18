@@ -1,0 +1,20 @@
+{
+  "id": "transitions/white-flash",
+  "name": "white-flash",
+  "category": "transitions",
+  "title": "Вспышка в белое",
+  "duration_range": [
+    0.14,
+    0.24
+  ],
+  "params": {
+    "peak": 0.85
+  },
+  "tags": [
+    "dynamic",
+    "flash"
+  ],
+  "renderer": "white_flash",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

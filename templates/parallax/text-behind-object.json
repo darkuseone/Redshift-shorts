@@ -1,0 +1,21 @@
+{
+  "id": "parallax/text-behind-object",
+  "name": "text-behind-object",
+  "category": "parallax",
+  "title": "Текст за объектом переднего плана",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "layers": 2,
+    "shift_pct": 0.04
+  },
+  "tags": [
+    "parallax",
+    "text"
+  ],
+  "renderer": "parallax",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

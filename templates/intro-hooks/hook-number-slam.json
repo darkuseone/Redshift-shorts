@@ -1,0 +1,21 @@
+{
+  "id": "intro-hooks/hook-number-slam",
+  "name": "hook-number-slam",
+  "category": "intro-hooks",
+  "title": "Цифра-удар с ударным SFX",
+  "duration_range": [
+    0.8,
+    1.6
+  ],
+  "params": {
+    "scale_from": 1.35,
+    "sfx": "hit_impact"
+  },
+  "tags": [
+    "hook",
+    "number"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

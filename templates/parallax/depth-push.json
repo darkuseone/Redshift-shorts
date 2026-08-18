@@ -1,0 +1,21 @@
+{
+  "id": "parallax/depth-push",
+  "name": "depth-push",
+  "category": "parallax",
+  "title": "Наезд с разной скоростью слоёв",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "layers": 2,
+    "shift_pct": 0.05
+  },
+  "tags": [
+    "parallax",
+    "push"
+  ],
+  "renderer": "parallax",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

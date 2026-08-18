@@ -1,0 +1,20 @@
+{
+  "id": "data-viz/timeline-dots",
+  "name": "timeline-dots",
+  "category": "data-viz",
+  "title": "Точки на таймлайне",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "dots": 5
+  },
+  "tags": [
+    "data",
+    "timeline"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

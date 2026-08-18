@@ -1,0 +1,18 @@
+{
+  "id": "transitions/cut",
+  "name": "cut",
+  "category": "transitions",
+  "title": "Прямая склейка — база ≥70 %",
+  "duration_range": [
+    0.0,
+    0.0
+  ],
+  "params": {},
+  "tags": [
+    "cut",
+    "base"
+  ],
+  "renderer": "cut",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

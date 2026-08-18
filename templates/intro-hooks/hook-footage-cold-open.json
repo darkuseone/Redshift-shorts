@@ -1,0 +1,20 @@
+{
+  "id": "intro-hooks/hook-footage-cold-open",
+  "name": "hook-footage-cold-open",
+  "category": "intro-hooks",
+  "title": "Холодный вход футажом без текста",
+  "duration_range": [
+    1.0,
+    3.0
+  ],
+  "params": {
+    "kenburns": "zoom-in-center"
+  },
+  "tags": [
+    "hook",
+    "footage"
+  ],
+  "renderer": "footage",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

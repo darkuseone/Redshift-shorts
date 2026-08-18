@@ -1,0 +1,21 @@
+{
+  "id": "browser-ui/chat-ai-typing",
+  "name": "chat-ai-typing",
+  "category": "browser-ui",
+  "title": "Запрос в нейросеть с курсором",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "template": "chat_ai",
+    "typing": true
+  },
+  "tags": [
+    "ui",
+    "ai"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

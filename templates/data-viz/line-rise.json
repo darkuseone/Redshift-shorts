@@ -1,0 +1,20 @@
+{
+  "id": "data-viz/line-rise",
+  "name": "line-rise",
+  "category": "data-viz",
+  "title": "Линия идёт вверх",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "points": 8
+  },
+  "tags": [
+    "data",
+    "line"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

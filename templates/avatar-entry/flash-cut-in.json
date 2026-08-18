@@ -1,0 +1,21 @@
+{
+  "id": "avatar-entry/flash-cut-in",
+  "name": "flash-cut-in",
+  "category": "avatar-entry",
+  "title": "Вход через вспышку",
+  "duration_range": [
+    0.14,
+    0.24
+  ],
+  "params": {
+    "peak": 0.7
+  },
+  "tags": [
+    "avatar",
+    "entry",
+    "flash"
+  ],
+  "renderer": "white_flash",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

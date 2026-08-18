@@ -1,0 +1,20 @@
+{
+  "id": "intro-hooks/hook-countdown-3",
+  "name": "hook-countdown-3",
+  "category": "intro-hooks",
+  "title": "Отсчёт 3-2-1",
+  "duration_range": [
+    1.2,
+    2.0
+  ],
+  "params": {
+    "steps": 3
+  },
+  "tags": [
+    "hook",
+    "number"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "transitions/paper-slide",
+  "name": "paper-slide",
+  "category": "transitions",
+  "title": "Сдвиг «листом»",
+  "duration_range": [
+    0.2,
+    0.3
+  ],
+  "params": {
+    "direction": 1
+  },
+  "tags": [
+    "dynamic",
+    "slide"
+  ],
+  "renderer": "paper_slide",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

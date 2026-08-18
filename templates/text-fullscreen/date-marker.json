@@ -1,0 +1,20 @@
+{
+  "id": "text-fullscreen/date-marker",
+  "name": "date-marker",
+  "category": "text-fullscreen",
+  "title": "Дата крупно",
+  "duration_range": [
+    0.8,
+    1.4
+  ],
+  "params": {
+    "mono": true
+  },
+  "tags": [
+    "date",
+    "mono"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

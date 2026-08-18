@@ -1,0 +1,21 @@
+{
+  "id": "text-fullscreen/stack-3lines",
+  "name": "stack-3lines",
+  "category": "text-fullscreen",
+  "title": "Три строки лесенкой",
+  "duration_range": [
+    1.2,
+    2.0
+  ],
+  "params": {
+    "max_lines": 3,
+    "align": "left"
+  },
+  "tags": [
+    "text",
+    "stack"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

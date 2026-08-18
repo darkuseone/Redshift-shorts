@@ -1,0 +1,19 @@
+{
+  "id": "text-fullscreen/vs-compare",
+  "name": "vs-compare",
+  "category": "text-fullscreen",
+  "title": "Два значения через VS",
+  "duration_range": [
+    1.2,
+    2.0
+  ],
+  "params": {
+    "split": true
+  },
+  "tags": [
+    "compare"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

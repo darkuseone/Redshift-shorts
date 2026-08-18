@@ -1,0 +1,20 @@
+{
+  "id": "avatar-entry/circle-mask-grow",
+  "name": "circle-mask-grow",
+  "category": "avatar-entry",
+  "title": "Круг раскрывается",
+  "duration_range": [
+    0.24,
+    0.4
+  ],
+  "params": {
+    "shape": "circle"
+  },
+  "tags": [
+    "avatar",
+    "entry"
+  ],
+  "renderer": "mask_wipe",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

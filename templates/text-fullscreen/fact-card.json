@@ -1,0 +1,20 @@
+{
+  "id": "text-fullscreen/fact-card",
+  "name": "fact-card",
+  "category": "text-fullscreen",
+  "title": "Карточка факта",
+  "duration_range": [
+    1.2,
+    2.0
+  ],
+  "params": {
+    "card": true
+  },
+  "tags": [
+    "fact",
+    "card"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

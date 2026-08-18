@@ -1,0 +1,21 @@
+{
+  "id": "transitions/whip-pan-r",
+  "name": "whip-pan-r",
+  "category": "transitions",
+  "title": "Резкий пан вправо",
+  "duration_range": [
+    0.16,
+    0.28
+  ],
+  "params": {
+    "direction": 1,
+    "blur": 24
+  },
+  "tags": [
+    "dynamic",
+    "pan"
+  ],
+  "renderer": "whip_pan",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

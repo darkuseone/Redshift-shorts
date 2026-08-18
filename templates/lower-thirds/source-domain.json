@@ -1,0 +1,21 @@
+{
+  "id": "lower-thirds/source-domain",
+  "name": "source-domain",
+  "category": "lower-thirds",
+  "title": "Домен источника",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "position": "bottom",
+    "direction": "left",
+    "icon": "link"
+  },
+  "tags": [
+    "source"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

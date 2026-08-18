@@ -1,0 +1,22 @@
+{
+  "id": "intro-hooks/hook-typing-search",
+  "name": "hook-typing-search",
+  "category": "intro-hooks",
+  "title": "Печать запроса в поисковой строке",
+  "duration_range": [
+    1.4,
+    3.0
+  ],
+  "params": {
+    "cps": 18,
+    "template": "search"
+  },
+  "tags": [
+    "hook",
+    "ui",
+    "typing"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

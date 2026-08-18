@@ -1,0 +1,20 @@
+{
+  "id": "outro-cta/subscribe-pulse",
+  "name": "subscribe-pulse",
+  "category": "outro-cta",
+  "title": "Пульсирующая кнопка подписки",
+  "duration_range": [
+    1.5,
+    2.5
+  ],
+  "params": {
+    "pulse_hz": 1.6
+  },
+  "tags": [
+    "cta",
+    "subscribe"
+  ],
+  "renderer": "cta_button",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

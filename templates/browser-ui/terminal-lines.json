@@ -1,0 +1,21 @@
+{
+  "id": "browser-ui/terminal-lines",
+  "name": "terminal-lines",
+  "category": "browser-ui",
+  "title": "Строки терминала",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "template": "notepad",
+    "mono": true
+  },
+  "tags": [
+    "ui",
+    "code"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "transitions/mask-wipe-circle",
+  "name": "mask-wipe-circle",
+  "category": "transitions",
+  "title": "Круговая маска",
+  "duration_range": [
+    0.2,
+    0.32
+  ],
+  "params": {
+    "shape": "circle"
+  },
+  "tags": [
+    "dynamic",
+    "mask"
+  ],
+  "renderer": "mask_wipe",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

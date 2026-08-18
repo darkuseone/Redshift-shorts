@@ -1,0 +1,20 @@
+{
+  "id": "transitions/mask-wipe-diagonal",
+  "name": "mask-wipe-diagonal",
+  "category": "transitions",
+  "title": "Диагональная маска",
+  "duration_range": [
+    0.2,
+    0.32
+  ],
+  "params": {
+    "shape": "diagonal"
+  },
+  "tags": [
+    "dynamic",
+    "mask"
+  ],
+  "renderer": "mask_wipe",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

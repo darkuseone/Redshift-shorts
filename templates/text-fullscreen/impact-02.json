@@ -1,0 +1,20 @@
+{
+  "id": "text-fullscreen/impact-02",
+  "name": "impact-02",
+  "category": "text-fullscreen",
+  "title": "Слово с подчёркиванием accent",
+  "duration_range": [
+    0.8,
+    2.0
+  ],
+  "params": {
+    "underline": true
+  },
+  "tags": [
+    "word",
+    "impact"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

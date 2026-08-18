@@ -1,0 +1,20 @@
+{
+  "id": "transitions/zoom-punch-out",
+  "name": "zoom-punch-out",
+  "category": "transitions",
+  "title": "Удар зумом наружу",
+  "duration_range": [
+    0.16,
+    0.26
+  ],
+  "params": {
+    "from_scale": 0.72
+  },
+  "tags": [
+    "dynamic",
+    "zoom"
+  ],
+  "renderer": "zoom_punch",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

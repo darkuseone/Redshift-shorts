@@ -1,0 +1,18 @@
+{
+  "id": "transitions/light-sweep",
+  "name": "light-sweep",
+  "category": "transitions",
+  "title": "Световой блик поперёк кадра",
+  "duration_range": [
+    0.24,
+    0.36
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "light"
+  ],
+  "renderer": "light_sweep",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

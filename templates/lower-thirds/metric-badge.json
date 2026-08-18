@@ -1,0 +1,21 @@
+{
+  "id": "lower-thirds/metric-badge",
+  "name": "metric-badge",
+  "category": "lower-thirds",
+  "title": "Значение метрики",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "position": "top",
+    "direction": "up",
+    "mono": true
+  },
+  "tags": [
+    "metric"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

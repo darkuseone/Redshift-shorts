@@ -1,0 +1,20 @@
+{
+  "id": "text-fullscreen/word-swap",
+  "name": "word-swap",
+  "category": "text-fullscreen",
+  "title": "Слова сменяются на месте",
+  "duration_range": [
+    1.0,
+    2.0
+  ],
+  "params": {
+    "swap_ms": 260
+  },
+  "tags": [
+    "text",
+    "swap"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

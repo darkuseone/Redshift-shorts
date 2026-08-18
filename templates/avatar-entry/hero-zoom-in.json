@@ -1,0 +1,20 @@
+{
+  "id": "avatar-entry/hero-zoom-in",
+  "name": "hero-zoom-in",
+  "category": "avatar-entry",
+  "title": "Вход зумом на аватар",
+  "duration_range": [
+    0.2,
+    0.4
+  ],
+  "params": {
+    "from_scale": 1.18
+  },
+  "tags": [
+    "avatar",
+    "entry"
+  ],
+  "renderer": "zoom_punch",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "intro-hooks/hook-blackout-word",
+  "name": "hook-blackout-word",
+  "category": "intro-hooks",
+  "title": "Одно слово на чёрном",
+  "duration_range": [
+    0.6,
+    1.4
+  ],
+  "params": {
+    "invert": true
+  },
+  "tags": [
+    "hook",
+    "text",
+    "dark"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

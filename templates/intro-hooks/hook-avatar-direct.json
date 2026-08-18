@@ -1,0 +1,20 @@
+{
+  "id": "intro-hooks/hook-avatar-direct",
+  "name": "hook-avatar-direct",
+  "category": "intro-hooks",
+  "title": "Аватар говорит в камеру сразу",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "entry": "hero-zoom-in"
+  },
+  "tags": [
+    "hook",
+    "avatar"
+  ],
+  "renderer": "avatar",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

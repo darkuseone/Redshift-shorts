@@ -1,0 +1,21 @@
+{
+  "id": "text-fullscreen/quote-frame",
+  "name": "quote-frame",
+  "category": "text-fullscreen",
+  "title": "Цитата в рамке",
+  "duration_range": [
+    1.2,
+    2.0
+  ],
+  "params": {
+    "quotes": true,
+    "max_words": 15
+  },
+  "tags": [
+    "quote",
+    "text"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}
