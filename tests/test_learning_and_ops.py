@@ -175,6 +175,42 @@ def test_step_fingerprint_changes_with_config(tmp_path, cfg):
     assert step.fingerprint(ctx) != before
 
 
+def test_step_fingerprint_follows_declared_config_files(tmp_path, cfg, monkeypatch):
+    """§7.1: вход шага — это и файлы репозитория, которые он читает.
+
+    Записанный выбор A/B меняет `editing_preferences.json`; без этого правила
+    P11 возвращался из кэша и накопленное предпочтение не применялось.
+    """
+    repo = tmp_path / "repo"
+    (repo / "config").mkdir(parents=True)
+    prefs = repo / "config" / "editing_preferences.json"
+    prefs.write_text('{"defaults": {}}', encoding="utf-8")
+    monkeypatch.setattr(type(cfg), "repo_root", property(lambda self: repo))
+
+    step = Step("P11", "a", lambda ctx: {}, outputs=(),
+                config_inputs=("config/editing_preferences.json",))
+    ctx = _ctx(tmp_path, cfg)
+    before = step.fingerprint(ctx)
+    prefs.write_text('{"defaults": {"kenburns@hook": "kenburns/pan-up"}}', encoding="utf-8")
+    assert step.fingerprint(ctx) != before
+
+
+def test_step_without_config_inputs_ignores_repo_files(tmp_path, cfg, monkeypatch):
+    """Шаг не объявил файл — файл на него и не влияет: правка словаря
+    произношений не должна обнулять кэш аватара, это лишние кредиты HeyGen."""
+    repo = tmp_path / "repo2"
+    (repo / "config").mkdir(parents=True)
+    other = repo / "config" / "pronunciation.json"
+    other.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(type(cfg), "repo_root", property(lambda self: repo))
+
+    step = Step("P6", "a", lambda ctx: {}, outputs=())
+    ctx = _ctx(tmp_path, cfg)
+    before = step.fingerprint(ctx)
+    other.write_text('{"ИИ": "и-и"}', encoding="utf-8")
+    assert step.fingerprint(ctx) == before
+
+
 # --- обслуживание (§14.4, R-11) -----------------------------------------------
 
 def test_maintenance_dry_run_changes_nothing(cfg):

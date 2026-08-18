@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 from .errors import RedshiftError
-from .lib.cache import StepCache, code_fingerprint, hash_obj
+from .lib.cache import StepCache, code_fingerprint, hash_files, hash_obj
 from .lib.config import Config
 from .lib.costs import CostLedger
 from .lib.jsonio import read_json, read_json_or, write_json
@@ -91,6 +91,10 @@ class Step:
     fn: StepFn
     inputs: tuple[str, ...] = ()
     outputs: tuple[str, ...] = ()
+    # Файлы репозитория, которые шаг читает помимо артефактов прогона:
+    # брендбук, словарь произношений, накопленные предпочтения монтажа.
+    # Не объявишь — шаг вернётся из кэша с результатом по старому файлу.
+    config_inputs: tuple[str, ...] = ()
     version: str = "1"
     optional: bool = False          # шаг может быть пропущен по фиче-флагу
     cacheable: bool = True
@@ -106,6 +110,9 @@ class Step:
                     payload[name] = read_json_or(path, None)
                 else:
                     payload[name] = path.stat().st_size
+        if self.config_inputs:
+            payload["_files"] = hash_files(
+                str(ctx.cfg.repo_root / name) for name in self.config_inputs)
         payload["_cfg"] = {
             "limits": ctx.cfg.get("limits", {}),
             "audio": ctx.cfg.get("audio", {}),

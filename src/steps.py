@@ -32,7 +32,8 @@ def build_pipeline() -> Pipeline:
         Step("P0", "Валидация сценария и конфига", p0,
              inputs=(), outputs=("validated_script.json",)),
         Step("P1", "Планирование хронометража и режимов кадра", p1,
-             inputs=("validated_script.json",), outputs=("draft_plan.json",)),
+             inputs=("validated_script.json",), outputs=("draft_plan.json",),
+             config_inputs=("config/pronunciation.json",)),
         Step("P2", "TTS: сырая озвучка с запасом длины", p2,
              inputs=("draft_plan.json",), outputs=("voice_raw.wav", "tts_meta.json")),
         Step("P3", "Оптимизация речи: паузы, вдохи, нормализация", p3,
@@ -42,11 +43,13 @@ def build_pipeline() -> Pipeline:
              inputs=("voice_final.wav", "speech_map.json"),
              outputs=("words.json", "subtitles.srt")),
         Step("P5", "Пересчёт плана: аватар, футаж, текст", p5,
-             inputs=("draft_plan.json", "words.json"), outputs=("cut_plan.json",)),
+             inputs=("draft_plan.json", "words.json"), outputs=("cut_plan.json",),
+             config_inputs=("config/brandbook.json",)),
         Step("P6", "Генерация аватара посегментно", p6,
              inputs=("cut_plan.json", "voice_final.wav"), outputs=("avatar_meta.json",)),
         Step("P7", "Поиск B-roll", p7,
-             inputs=("cut_plan.json",), outputs=("candidates.json",)),
+             inputs=("cut_plan.json",), outputs=("candidates.json",),
+             config_inputs=("config/stock_sources.yaml",)),
         Step("P8", "Трёхступенчатая оценка футажей", p8,
              inputs=("candidates.json",), outputs=("accepted_assets.json",)),
         Step("P9", "Генерация недостающих материалов", p9,
@@ -57,10 +60,14 @@ def build_pipeline() -> Pipeline:
         Step("P11", "Сборка edit-планов A и B", p11,
              inputs=("cut_plan.json", "accepted_assets.json", "generated_assets.json",
                      "avatar_meta.json", "sfx_map.json", "words.json"),
-             outputs=("edit_plan_A.json", "edit_plan_B.json")),
+             outputs=("edit_plan_A.json", "edit_plan_B.json"),
+             # templates/manifest.json сюда не входит: его пишет сам P11
+             # (состояние ротации), и шаг стал бы вечно несвежим.
+             config_inputs=("config/brandbook.json", "config/editing_preferences.json")),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "edit_plan_B.json", "mix.wav"),
-             outputs=("build_report.json",)),
+             outputs=("build_report.json",),
+             config_inputs=("config/brandbook.json",)),
     ])
 
 
