@@ -12,7 +12,7 @@ from PIL import Image
 from src.errors import BudgetExceeded, FontMissingCyrillic
 from src.lib import audio as A
 from src.lib import phash
-from src.lib.cache import StepCache, hash_obj
+from src.lib.cache import StepCache, code_fingerprint, hash_obj
 from src.lib.costs import CostLedger
 from src.lib.fonts import pick_font, read_font, validate_font
 from src.lib.storage import LocalStorage, evict_lru
@@ -237,6 +237,38 @@ def test_step_cache_disabled(tmp_path):
     cache = StepCache(tmp_path, enabled=False)
     cache.record("P1", "x", outputs=[])
     assert not cache.is_fresh("P1", "x", [])
+
+
+def test_code_fingerprint_follows_source_changes(tmp_path):
+    """Правка кода шага обязана инвалидировать кэш, иначе шаг вернёт старый результат."""
+    import sys
+    import types
+
+    mod_file = tmp_path / "probe.py"
+    mod_file.write_text("VALUE = 1\n", encoding="utf-8")
+    module = types.ModuleType("src._probe_module")
+    module.__file__ = str(mod_file)
+    sys.modules["src._probe_module"] = module
+    try:
+        code_fingerprint.cache_clear()
+        before = code_fingerprint("src._probe_module")
+        mod_file.write_text("VALUE = 2\n", encoding="utf-8")
+        code_fingerprint.cache_clear()
+        assert code_fingerprint("src._probe_module") != before
+    finally:
+        sys.modules.pop("src._probe_module", None)
+        code_fingerprint.cache_clear()
+
+
+def test_code_fingerprint_is_scoped_to_step_dependencies():
+    """Отпечаток берёт только то, что шаг реально импортирует: правка P5 не
+    должна обнулять кэш P6 — в live-режиме это лишние кредиты HeyGen."""
+    from src.lib.cache import _reachable_source_files
+    import importlib
+
+    p5 = _reachable_source_files(importlib.import_module("src.p5_replan.replanner"))
+    assert any(f.endswith("p5_replan/replanner.py") for f in p5)
+    assert not any("p6_avatar" in f for f in p5)
 
 
 # --- бюджет (§7.6, redshift-cost-guard) --------------------------------------

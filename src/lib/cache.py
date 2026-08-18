@@ -10,7 +10,10 @@ from __future__ import annotations
 
 import hashlib
 import os
+import sys
+from functools import lru_cache
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Iterable
 
 from .jsonio import read_json_or, stable_json, write_json
@@ -44,6 +47,50 @@ def hash_files(paths: Iterable[str | Path]) -> str:
         except OSError:
             h.update(b"<missing>")
     return h.hexdigest()[:32]
+
+
+def _reachable_source_files(root: ModuleType, *, depth: int = 5) -> list[str]:
+    """Файлы проекта, от которых зависит шаг: его модуль и всё, что он тянет.
+
+    Обход идёт по модулям пакета ``src`` — по значениям в пространстве имён
+    модуля: это ловит и ``import ..lib.audio as A``, и ``from ..lib.audio
+    import duck`` (у функции есть ``__module__``). Чужие пакеты (numpy, PIL)
+    не трогаем: их версия и так фиксируется requirements.
+    """
+    seen: dict[str, str] = {}
+    frontier: list[tuple[ModuleType, int]] = [(root, 0)]
+    while frontier:
+        module, level = frontier.pop()
+        name = getattr(module, "__name__", "")
+        path = getattr(module, "__file__", None)
+        if not path or not (name == "src" or name.startswith("src.")) or name in seen:
+            continue
+        seen[name] = path
+        if level >= depth:
+            continue
+        for value in vars(module).values():
+            if isinstance(value, ModuleType):
+                frontier.append((value, level + 1))
+                continue
+            owner = sys.modules.get(getattr(value, "__module__", "") or "")
+            if owner is not None:
+                frontier.append((owner, level + 1))
+    return sorted(seen.values())
+
+
+@lru_cache(maxsize=None)
+def code_fingerprint(module_name: str) -> str:
+    """Хеш кода шага (§7.1).
+
+    Без него кэш врёт после правки кода: вход тот же, отпечаток тот же — и шаг
+    возвращает результат старой, уже исправленной логики. Это не теория:
+    исправление доли аватара в P5 один раз «не сработало» именно так, и
+    диагностика ушла в сам алгоритм вместо кэша.
+    """
+    module = sys.modules.get(module_name)
+    if module is None:
+        return "unknown"
+    return hash_files(_reachable_source_files(module))
 
 
 class StepCache:

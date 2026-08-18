@@ -103,9 +103,18 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
         # --- аватар: источник — клип сегмента, смещённый на позицию слота ----
         if slot["kind"] in AVATAR_KINDS:
             segment = _segment_for_slot(slot, segments)
-            if segment is None or not Path(segment.get("file", "")).exists():
-                ctx.warn(f"нет аватар-клипа для слота {slot['index']}", slot=slot["index"])
-                continue
+            segment_file = Path(str((segment or {}).get("file", "")).strip() or "/nonexistent")
+            if segment is None or not segment_file.is_file():
+                # Ролик без аватара — это брак, а не «мало материала»: QC-2 и QC-11
+                # всё равно завалят его через четыре минуты рендера. Падаем здесь,
+                # где ещё видно, какого именно клипа не хватает.
+                raise RedshiftError(
+                    f"нет клипа аватара для слота {slot['index']} "
+                    f"({slot['start']:.2f}–{slot['end']:.2f} сек, блок {slot['block_id']}): "
+                    f"перезапустите с --from P6",
+                    code="AVATAR_CLIP_MISSING", slot=slot["index"],
+                    block_id=slot["block_id"],
+                    expected_file=str(segment_file) if segment else None)
             offset = max(0.0, float(slot["start"]) - float(segment["start"]))
             duration = round(float(slot["duration"]), 3)
             avatar_src = Path(segment["file"])

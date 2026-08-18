@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
 from .errors import RedshiftError
-from .lib.cache import StepCache, hash_obj
+from .lib.cache import StepCache, code_fingerprint, hash_obj
 from .lib.config import Config
 from .lib.costs import CostLedger
 from .lib.jsonio import read_json, read_json_or, write_json
@@ -96,8 +96,9 @@ class Step:
     cacheable: bool = True
 
     def fingerprint(self, ctx: RunContext) -> str:
-        """Хеш входа: версия шага + входные артефакты + релевантный конфиг."""
-        payload: dict[str, Any] = {"step": self.name, "version": self.version}
+        """Хеш входа: версия шага + код шага + входные артефакты + конфиг."""
+        payload: dict[str, Any] = {"step": self.name, "version": self.version,
+                                   "code": code_fingerprint(self.fn.__module__)}
         for name in self.inputs:
             path = ctx.work_dir / name
             if path.exists():

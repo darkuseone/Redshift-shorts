@@ -12,7 +12,8 @@ from src.lib.query import build_queries, classify_intent
 from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
-    Slot, _avatar_runs, _needs_interstitial, _split_span, close_gaps, compute_stats,
+    Slot, _avatar_runs, _avatar_share, _insert_avatar_interstitials, _needs_interstitial,
+    _raise_avatar_share, _split_span, close_gaps, compute_stats,
 )
 from src.p7_broll_search.search import _stage1_reject
 from src.p8_broll_judge.judge import _needs_arbitration
@@ -61,6 +62,27 @@ def test_interstitial_required_between_full_frame_of_one_block():
     assert _needs_interstitial(a, b)
 
 
+def test_interstitial_taken_from_head_when_previous_appearance_is_short():
+    """Вырез из хвоста короткого появления оставил бы огрызок < 3 сек (§3.5):
+    в этом случае перебивка забирается из головы следующего сегмента."""
+    slots = [_slot(0, 0.0, 3.2, kind="avatar", block="b1", mode="A"),
+             _slot(1, 3.2, 9.0, kind="avatar", block="b2", mode="A")]
+    out = _insert_avatar_interstitials(slots, min_shot=1.5, appearance_min=3.0, notes=[])
+    kinds = [s.kind for s in out]
+    assert kinds == ["avatar", "footage", "avatar"]
+    assert out[0].duration == pytest.approx(3.2)      # первое появление не тронуто
+    assert out[2].duration >= 3.0                     # второе тоже в коридоре
+
+
+def test_interstitial_taken_from_tail_when_there_is_room():
+    """Обычный случай: перебивка прячет «прыжок» головы, вырезаясь из хвоста."""
+    slots = [_slot(0, 0.0, 8.0, kind="avatar", block="b1", mode="A"),
+             _slot(1, 8.0, 14.0, kind="avatar", block="b2", mode="A")]
+    out = _insert_avatar_interstitials(slots, min_shot=1.5, appearance_min=3.0, notes=[])
+    assert [s.kind for s in out] == ["avatar", "footage", "avatar"]
+    assert out[1].end == pytest.approx(8.0)           # вырез именно из первого
+
+
 def test_close_gaps_makes_strict_partition():
     slots = [_slot(0, 0.5, 2.0), _slot(1, 2.4, 5.0), _slot(2, 5.0, 7.5)]
     slots = close_gaps(slots, 8.0)
@@ -85,6 +107,54 @@ def test_compute_stats_counts_appearance_not_slots():
     stats = compute_stats(slots, 10.0)
     assert stats["avatar_appearances"] == 1
     assert stats["avatar_appearance_durations"] == [6.0]
+
+
+def test_avatar_share_is_raised_into_corridor():
+    """§3.5/QC-2: недобор доли аватара исправляется в P5, а не всплывает в QC."""
+    slots = [_slot(0, 0, 4, kind="avatar", block="b1", mode="A"),
+             _slot(1, 4, 8, block="b2"), _slot(2, 8, 12, block="b3"),
+             _slot(3, 12, 16, block="b4"), _slot(4, 16, 20, block="b5")]
+    blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 6)]
+    assert _avatar_share(slots, 20.0) == pytest.approx(0.20)
+
+    assert _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
+    assert 0.35 <= _avatar_share(slots, 20.0) <= 0.60
+
+
+def test_avatar_share_correction_keeps_appearance_above_minimum():
+    """Добор не имеет права родить появление короче 3 сек (§3.5): лечить QC-2
+    ценой QC-3 бессмысленно — ролик всё равно не выйдет."""
+    slots = [_slot(0, 0, 5, kind="avatar", block="b1", mode="A"),
+             _slot(1, 5, 12, block="b2"),
+             _slot(2, 12, 14, block="b3"),        # 2 сек — сам по себе мал
+             _slot(3, 14, 16, block="b3"),        # сосед, которым можно дотянуть
+             _slot(4, 16, 20, block="b4")]
+    blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 5)]
+    assert _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
+    assert _avatar_share(slots, 20.0) >= 0.35
+    runs = _avatar_runs(slots)
+    for run in runs:
+        assert 3.0 <= slots[run[-1]].end - slots[run[0]].start <= 12.0
+
+
+def test_avatar_share_correction_respects_avatar_off():
+    """Блок с ``avatar: off`` — указание сценария, его добор не трогает."""
+    slots = [_slot(0, 0, 4, kind="avatar", block="b1", mode="A"),
+             _slot(1, 4, 20, block="b2")]
+    blocks = [{"id": "b1", "role": "develop"},
+              {"id": "b2", "role": "develop", "avatar_directive": "off"}]
+    assert not _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
+    assert slots[1].kind == "footage"
+
+
+def test_avatar_share_correction_does_not_overshoot_corridor():
+    """Перебор через верхнюю границу — тот же выход из коридора §3.5."""
+    slots = [_slot(0, 0, 6, kind="avatar", block="b1", mode="A"),
+             _slot(1, 6, 20, block="b2")]
+    blocks = [{"id": "b1", "role": "develop"}, {"id": "b2", "role": "develop"}]
+    # Единственный кандидат (14 сек) поднял бы долю до 100 % — брать его нельзя.
+    assert not _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
+    assert _avatar_share(slots, 20.0) == pytest.approx(0.30)
 
 
 def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):

@@ -269,11 +269,37 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                     ))
 
     slots = close_gaps(slots, duration)
-    slots = close_gaps(_insert_avatar_interstitials(slots, min_shot, notes), duration)
-    slots = close_gaps(_limit_appearance_length(
-        slots, float(brand["avatar"]["appearance_sec"][1]), min_shot, notes), duration)
-    slots = close_gaps(
-        _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes), duration)
+
+    share_range = limits.get("avatar_share", [0.35, 0.60])
+    share_lo, share_hi = float(share_range[0]), float(share_range[1])
+    appearance_min = float(brand["avatar"]["appearance_sec"][0])
+    appearance_max = float(brand["avatar"]["appearance_sec"][1])
+
+    # Структурные проходы и добор доли аватара сходятся итеративно, а не в один
+    # проход: перебивки (§7.4.3) и дробление длинных появлений (§3.5) вырезают
+    # секунды **из** аватара, поэтому добор до 35 %, сделанный раньше них,
+    # снова уезжает вниз, а добор после них ломает те же правила. Считаем по
+    # тому же таймлайну, что уйдёт в рендер, и повторяем до сходимости.
+    for _ in range(4):
+        slots = close_gaps(
+            _insert_avatar_interstitials(slots, min_shot, appearance_min, notes), duration)
+        slots = close_gaps(
+            _limit_appearance_length(slots, appearance_min, appearance_max, min_shot, notes),
+            duration)
+        slots = close_gaps(
+            _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes), duration)
+        if _avatar_share(slots, duration) >= share_lo:
+            break
+        if not _raise_avatar_share(slots, draft["blocks"], duration, share_lo, share_hi,
+                                   appearance_min, appearance_max, notes):
+            break
+        slots = close_gaps(slots, duration)
+
+    final_share = _avatar_share(slots, duration)
+    if final_share < share_lo:
+        notes.append(f"доля аватара {final_share:.1%} осталась ниже {share_lo:.0%}: "
+                     f"добирать нечем — свободных футажных слотов в блоках без "
+                     f"директивы avatar: off не осталось")
     _assign_queries(slots, draft)
     _add_internal_events(slots, max_gap, float(limits.get("first_event_sec", 0.8)), notes)
     _assign_transitions(slots, cfg, notes)
@@ -284,12 +310,141 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
     return {"slots": slots, "notes": notes, "duration": duration}
 
 
+
+def _avatar_share(slots: list[Slot], duration: float) -> float:
+    """Доля хронометража, где аватар в кадре (полный кадр или сплит)."""
+    return sum(s.duration for s in slots if s.kind in AVATAR_KINDS) / max(duration, 1e-6)
+
+
+def _raise_avatar_share(slots: list[Slot], blocks: list[dict[str, Any]], duration: float,
+                        share_lo: float, share_hi: float,
+                        appearance_min: float, appearance_max: float,
+                        notes: list[str]) -> bool:
+    """Добрать долю аватара до нижней границы 35 % (§3.5). Вернуть, менялось ли.
+
+    P1 распределяет режимы кадра по **оценке** длительности блоков, а реальная
+    речь ложится иначе: после нарезки слотов, окон полноэкранного текста и
+    перебивок доля уезжает ниже порога. Это жёсткое правило (§10.2.2), поэтому
+    здесь оно исправляется, а не отмечается предупреждением — предупреждение
+    всё равно превратится в провал QC-2 через четыре минуты рендера.
+
+    Добор обязан остаться внутри остальных правил §3.5, иначе он лечит QC-2 и
+    ломает соседнее правило:
+
+    * блоки с ``avatar: off`` не трогаем — это указание сценария;
+    * перебивки не забираем: они и существуют затем, чтобы разорвать аватара;
+    * не перескакиваем верхнюю границу коридора доли (60 %);
+    * появление обязано уложиться в 3–12 сек. Считать его «слипшимся» с соседним
+      аватар-слотом можно только там, где §7.4.3 не потребует перебивку, — то
+      есть внутри одного блока и только между двумя сплитами. Короткий слот
+      поэтому не годится сам по себе: он добирается соседним футажом того же
+      блока, и они сливаются в **один** слот, а не в два подряд.
+    """
+    allowed = {b["id"] for b in blocks if b.get("avatar_directive") != "off"}
+    if not allowed:
+        return False
+
+    def block_of(block_id: str) -> dict[str, Any]:
+        return next((b for b in blocks if b["id"] == block_id), {})
+
+    def target_kind(block_id: str) -> str:
+        return "split" if block_of(block_id).get("role") == "evidence" else "avatar"
+
+    def is_candidate(i: int) -> bool:
+        s = slots[i]
+        return (s.kind == "footage" and s.block_id in allowed
+                and "перебивка" not in s.reason)
+
+    def appearance_span(group: list[int]) -> float:
+        """Длина появления, если слоты group сольются в один аватарный слот."""
+        block_id = slots[group[0]].block_id
+        kind = target_kind(block_id)
+        start, end = slots[group[0]].start, slots[group[-1]].end
+        left, right = group[0] - 1, group[-1] + 1
+        if (left >= 0 and slots[left].kind == "split" and kind == "split"
+                and slots[left].block_id == block_id and abs(slots[left].end - start) < 1e-6):
+            start = slots[left].start
+        if (right < len(slots) and slots[right].kind == "split" and kind == "split"
+                and slots[right].block_id == block_id
+                and abs(slots[right].start - end) < 1e-6):
+            end = slots[right].end
+        return end - start
+
+    def grow(group: list[int]) -> bool:
+        """Дотянуть группу соседним футажом того же блока (минимум появления)."""
+        block_id = slots[group[0]].block_id
+        options = [j for j in (group[0] - 1, group[-1] + 1)
+                   if 0 <= j < len(slots) and is_candidate(j)
+                   and slots[j].block_id == block_id]
+        if not options:
+            return False
+        pick = min(options, key=lambda j: slots[j].duration)
+        group.append(pick)
+        group.sort()
+        return True
+
+    changed = False
+    guard = 0
+    while _avatar_share(slots, duration) < share_lo and guard < 12:
+        guard += 1
+        share = _avatar_share(slots, duration)
+        deficit = (share_lo - share) * duration
+        headroom = (share_hi - share) * duration
+        def footage_run_after(i: int) -> float:
+            """Самый длинный непрерывный футаж, если слот i станет аватарным."""
+            longest = run = 0.0
+            for j, s in enumerate(slots):
+                if j == i or s.kind in AVATAR_KINDS:
+                    run = 0.0
+                    continue
+                run += s.duration
+                longest = max(longest, run)
+            return longest
+
+        # Сначала кандидаты, которые сразу дают появление нужной длины; затем те,
+        # что заодно разрывают самый длинный кусок футажа (§3.5: не больше 40 %
+        # хронометража подряд); внутри группы — ближайшие по длительности к
+        # недобору, чтобы не проскочить коридор.
+        ranked = sorted((i for i in range(len(slots)) if is_candidate(i)),
+                        key=lambda i: (
+                            not appearance_min <= appearance_span([i]) <= appearance_max,
+                                       round(footage_run_after(i), 1),
+                                       abs(slots[i].duration - deficit)))
+        applied = False
+        for i in ranked:
+            group = [i]
+            while appearance_span(group) < appearance_min and grow(group):
+                pass
+            span = appearance_span(group)
+            if not appearance_min <= span <= appearance_max:
+                continue
+            if sum(slots[j].duration for j in group) > headroom:
+                continue
+
+            head = slots[group[0]]
+            head.end = slots[group[-1]].end
+            head.kind = target_kind(head.block_id)
+            head.mode = "B" if head.kind == "split" else "A"
+            head.needs_asset = head.kind == "split"
+            head.asset_role = "evidence" if head.kind == "split" else ""
+            head.reason = f"добор доли аватара до {share_lo:.0%} по факту таймингов (§3.5)"
+            for j in reversed(group[1:]):
+                del slots[j]
+            notes.append(f"слот {head.start:.2f}–{head.end:.2f} сек отдан аватару: "
+                         f"доля была ниже {share_lo:.0%}")
+            applied = changed = True
+            break
+        if not applied:
+            break
+
+    return changed
+
+
 def _needs_interstitial(prev: Slot, nxt: Slot) -> bool:
     """Нужна ли перебивка между двумя соседними аватар-слотами.
 
     Правило §7.4.3 защищает от «прыжка» головы на стыке **двух разных
-    генераций** HeyGen. Внутри одного блока аватар — это одно непрерывное видео,
-    и стыка там нет:
+    генераций** HeyGen, а §4.1 — от кадра, который не меняется:
 
     * разные блоки → разные генерации → перебивка обязательна;
     * внутри блока два сплита подряд → перебивка не нужна: меняется верхняя
@@ -304,19 +459,39 @@ def _needs_interstitial(prev: Slot, nxt: Slot) -> bool:
     return not (prev.kind == "split" and nxt.kind == "split")
 
 
-def _insert_avatar_interstitials(slots: list[Slot], min_shot: float,
+def _trailing_appearance(out: list[Slot]) -> float:
+    """Длина появления аватара, которое заканчивается последним слотом ``out``."""
+    if not out or out[-1].kind not in AVATAR_KINDS:
+        return 0.0
+    end = out[-1].end
+    start = out[-1].start
+    for prev in reversed(out[:-1]):
+        if prev.kind not in AVATAR_KINDS or abs(prev.end - start) > 1e-6:
+            break
+        start = prev.start
+    return end - start
+
+
+def _insert_avatar_interstitials(slots: list[Slot], min_shot: float, appearance_min: float,
                                  notes: list[str]) -> list[Slot]:
     """§7.4.3: два аватар-сегмента подряд без перебивки запрещены (R-3).
 
-    Перебивка вырезается из **хвоста первого** сегмента: так стык закрывается
-    футажом и «прыжок» головы на склейке не виден.
+    Перебивку стараемся вырезать из **хвоста первого** сегмента: так стык
+    закрывается футажом и «прыжок» головы на склейке не виден. Но вырезать
+    вслепую нельзя — если появление и без того короткое, вырез оставит от него
+    огрызок короче трёх секунд (§3.5). Тогда перебивка забирается из **головы
+    второго** сегмента: стык закрыт так же, а укорачивается уже то появление,
+    которое только начинается.
     """
     out: list[Slot] = []
     for slot in slots:
         if out and _needs_interstitial(out[-1], slot):
             prev = out[-1]
             cut = min(1.4, max(0.9, prev.duration * 0.35))
-            if prev.duration - cut >= min_shot * 0.8:
+            fits_tail = (prev.duration - cut >= min_shot * 0.8
+                         and _trailing_appearance(out) - cut >= appearance_min)
+            fits_head = slot.duration - cut >= max(min_shot * 0.8, appearance_min)
+            if fits_tail:
                 inter_start = prev.end - cut
                 prev.end = inter_start
                 out.append(Slot(
@@ -329,8 +504,22 @@ def _insert_avatar_interstitials(slots: list[Slot], min_shot: float,
                 notes.append(
                     f"вставлена перебивка {inter_start:.2f}–{slot.start:.2f} сек "
                     f"между аватар-сегментами блоков {prev.block_id}/{slot.block_id}")
+            elif fits_head:
+                inter_end = slot.start + cut
+                out.append(Slot(
+                    index=0, start=slot.start, end=inter_end, kind="footage",
+                    block_id=slot.block_id, role=slot.role, mode="C",
+                    visual_intent=slot.visual_intent, queries=list(slot.queries),
+                    needs_asset=True, asset_role="broll",
+                    reason="перебивка между аватар-сегментами (§7.4.3, R-3)",
+                ))
+                slot.start = inter_end
+                notes.append(
+                    f"вставлена перебивка {out[-1].start:.2f}–{inter_end:.2f} сек "
+                    f"перед аватар-сегментом блока {slot.block_id}: у предыдущего "
+                    f"появления не было запаса до {appearance_min:.0f} сек")
             else:
-                # Короткий сегмент дробить нечем — сливаем его со следующим.
+                # Дробить нечем с обеих сторон — сливаем сегменты.
                 slot.start = prev.start
                 slot.block_id = prev.block_id if prev.duration > slot.duration else slot.block_id
                 out.pop()
@@ -352,8 +541,8 @@ def _avatar_runs(slots: list[Slot]) -> list[list[int]]:
     return runs
 
 
-def _limit_appearance_length(slots: list[Slot], max_appearance: float, min_shot: float,
-                             notes: list[str]) -> list[Slot]:
+def _limit_appearance_length(slots: list[Slot], min_appearance: float, max_appearance: float,
+                             min_shot: float, notes: list[str]) -> list[Slot]:
     """§3.5: одно появление аватара — 3–12 сек.
 
     Слишком длинный непрерывный участок разбивается перебивкой у ближайшей к
@@ -374,12 +563,27 @@ def _limit_appearance_length(slots: list[Slot], max_appearance: float, min_shot:
             break
         run_start = slots[target[0]].start
         run_end = slots[target[-1]].end
-        middle = (run_start + run_end) / 2
-        boundary_idx = min(target[1:], key=lambda i: abs(slots[i].start - middle))
-        prev = slots[boundary_idx - 1]
-        cut = min(1.4, max(0.9, prev.duration * 0.4))
-        if prev.duration - cut < min_shot * 0.8:
+
+        def halves(i: int) -> tuple[float, float, float]:
+            """Куски появления слева и справа от перебивки на границе i."""
+            prev = slots[i - 1]
+            cut = min(1.4, max(0.9, prev.duration * 0.4))
+            return cut, prev.end - cut - run_start, run_end - slots[i].start
+
+        # Обе половины обязаны остаться внутри коридора 3–12 сек (§3.5): развалить
+        # длинное появление на «12 + огрызок» — то же нарушение, вид сбоку.
+        usable = [i for i in target[1:]
+                  if min(halves(i)[1:]) >= min_appearance
+                  and slots[i - 1].duration - halves(i)[0] >= min_shot * 0.8]
+        if not usable:
+            notes.append(
+                f"появление {run_start:.2f}–{run_end:.2f} сек длиннее {max_appearance} сек, "
+                f"но перебивку некуда поставить: любая половина выходит короче "
+                f"{min_appearance:.0f} сек")
             break
+        boundary_idx = max(usable, key=lambda i: min(halves(i)[1:]))
+        prev = slots[boundary_idx - 1]
+        cut = halves(boundary_idx)[0]
         inter_start = prev.end - cut
         inter_end = prev.end
         prev.end = inter_start
