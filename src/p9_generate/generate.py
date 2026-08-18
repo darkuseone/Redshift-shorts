@@ -26,6 +26,24 @@ from ..lib.query import build_queries
 
 _log = get_logger("p9")
 
+# Сколько раз пробовать пересобрать материал, если он вышел дублем.
+GENERATION_ATTEMPTS = 3
+VARIATIONS = (
+    "different colour temperature and camera angle",
+    "different composition, subject off-centre",
+    "different texture and depth of field",
+)
+
+
+def _find_duplicate(hashes: list[str], pool: list[tuple[str, list[str]]],
+                    threshold: int) -> str | None:
+    from ..lib.phash import video_is_duplicate
+
+    for item_id, known in pool:
+        if video_is_duplicate(hashes, known, threshold):
+            return item_id
+    return None
+
 
 def _prompt_for_slot(slot: dict[str, Any], plan: dict[str, Any]) -> str:
     """Промпт из смысла блока — тот же принцип, что и у поисковых запросов."""
@@ -60,6 +78,14 @@ def run_step(ctx) -> dict[str, Any]:
 
     provider = build_generation_provider(cfg, ctx.costs)
     index = FootageIndex.load(cfg)
+    dedup_threshold = int(cfg.get("stock.dedup_hamming_max", 8))
+
+    # Сравниваем и с принятым материалом, и с уже сгенерированным в этом прогоне.
+    seen_hashes: list[tuple[str, list[str]]] = [
+        (entry.get("asset_id", key), entry.get("phashes") or [])
+        for key, entry in accepted_doc.get("accepted", {}).items()
+        if entry.get("phashes")
+    ]
 
     generated: dict[str, Any] = {}
     skipped: list[dict[str, Any]] = []
@@ -79,20 +105,49 @@ def run_step(ctx) -> dict[str, Any]:
             })
             continue
 
-        prompt = _prompt_for_slot(slot, plan)
+        base_prompt = _prompt_for_slot(slot, plan)
         # Платные модели — редкое исключение (§7.7), считаем их долю честно.
         use_free = prefer_free or (paid_used + 1) / max(len(unfilled), 1) > paid_share_limit
         out = ctx.wpath("broll", "generated", f"slot_{slot_index:02d}.mp4")
-        asset = provider.generate(prompt, out, kind="video",
-                                  duration_sec=max(slot_duration + 0.6, 2.0),
-                                  prefer_free=use_free)
+
+        # Абстрактный сгенерированный B-roll легко получается похожим сам на
+        # себя. QC-5 запрещает визуальные дубли в ролике, поэтому проверяем
+        # результат тем же pHash и при совпадении пересобираем с другим
+        # акцентом в промпте, а не отдаём дубль в монтаж.
+        asset = None
+        hashes: list[str] = []
+        info = None
+        rejected_attempts: list[str] = []
+        for attempt in range(GENERATION_ATTEMPTS):
+            prompt = base_prompt if attempt == 0 else f"{base_prompt}. Variation {attempt}: {VARIATIONS[attempt % len(VARIATIONS)]}"
+            candidate = provider.generate(prompt, out, kind="video",
+                                          duration_sec=max(slot_duration + 0.6, 2.0),
+                                          prefer_free=use_free)
+            candidate_info = probe(candidate.path)
+            candidate_frames = extract_frames(
+                candidate.path, ctx.wpath("broll", "frames", candidate.id, ".keep").parent,
+                cfg.get("stock.video_probe_frames", [0.1, 0.5, 0.9]))
+            candidate_hashes = [phash_image(f) for f in candidate_frames]
+
+            duplicate = _find_duplicate(candidate_hashes, seen_hashes, dedup_threshold)
+            if duplicate is None:
+                asset, info, hashes = candidate, candidate_info, candidate_hashes
+                frames = candidate_frames
+                break
+            rejected_attempts.append(f"похож на {duplicate}")
+
+        if asset is None:
+            skipped.append({
+                "slot": slot_index,
+                "reason": (f"сгенерированный материал каждый раз получался дублем "
+                           f"({'; '.join(rejected_attempts)}) — слот оставлен пустым, "
+                           f"чтобы не нарушить QC-5"),
+            })
+            continue
+
         if asset.paid_model:
             paid_used += 1
-
-        info = probe(asset.path)
-        frames = extract_frames(asset.path, ctx.wpath("broll", "frames", asset.id, ".keep").parent,
-                                cfg.get("stock.video_probe_frames", [0.1, 0.5, 0.9]))
-        hashes = [phash_image(f) for f in frames]
+        seen_hashes.append((asset.id, hashes))
 
         entry = {
             **asset.to_dict(),

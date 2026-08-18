@@ -66,15 +66,19 @@ class MockGeneration(GenerationProvider):
                  duration_sec: float = 4.0, prefer_free: bool = True) -> GeneratedAsset:
         seed = int(hashlib.sha256(prompt.encode()).hexdigest()[:8], 16)
         width, height = self.cfg.resolution
-        accent = str(self.cfg.color("accent")).lstrip("#")
-        deep = str(self.cfg.color("accent_deep")).lstrip("#")
-        ink = str(self.cfg.color("ink")).lstrip("#")
-        c0, c1 = (accent, deep) if seed % 2 else (deep, ink)
+        palette = [str(self.cfg.color(name)).lstrip("#")
+                   for name in ("accent", "accent_deep", "ink", "accent_soft", "muted")]
+        c0 = palette[seed % len(palette)]
+        c1 = palette[(seed // 7 + 2) % len(palette)]
+        # Разные промпты обязаны давать визуально разный кадр: одинаковый
+        # градиент — это готовый дубль, который завалит QC-5.
+        gradient_type = ("radial", "linear", "spiral", "conical")[seed % 4]
 
         dst.parent.mkdir(parents=True, exist_ok=True)
         source = (f"gradients=s={width}x{height}:c0=0x{c0}:c1=0x{c1}"
-                  f":x0={seed % width}:y0={seed % height}:speed=0.015"
-                  f":d={duration_sec:.2f}:type=radial")
+                  f":x0={seed % max(width, 1)}:y0={(seed // 3) % max(height, 1)}"
+                  f":speed={0.008 + (seed % 9) / 500.0:.4f}"
+                  f":d={duration_sec:.2f}:type={gradient_type}")
         if kind == "photo":
             run(["-y", "-f", "lavfi", "-i", source, "-frames:v", "1", str(dst)],
                 what="mock generation photo")

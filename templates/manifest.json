@@ -256,7 +256,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -610,7 +611,8 @@
       ],
       "renderer": "source_card",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -868,7 +870,8 @@
       ],
       "renderer": "whip_pan",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -937,7 +940,8 @@
       ],
       "renderer": "zoom_punch",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -1002,7 +1006,8 @@
       ],
       "renderer": "light_sweep",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -1024,7 +1029,8 @@
       ],
       "renderer": "glitch",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -1138,7 +1144,8 @@
       ],
       "renderer": "paper_slide",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -1160,7 +1167,8 @@
       ],
       "renderer": "mask_wipe",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },
@@ -1231,7 +1239,8 @@
       ],
       "renderer": "zoom_punch",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
       "added": "2026-08-18"
     },

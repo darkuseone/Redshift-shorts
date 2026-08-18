@@ -530,6 +530,62 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     }
 
 
+
+def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
+                         catalog: TemplateCatalog, required: int, ctx) -> int:
+    """§15.12.2 — довести различие версий до требуемого **конструктивно**.
+
+    Полагаться на то, что разные сиды сами дадут три различия, нельзя: пул
+    шаблонов категории конечен, а предпочтения тянут версию A к устоявшимся
+    вариантам. Когда различий не хватает, версия B получает другие шаблоны там,
+    где это ничего не ломает: Ken Burns, переходы и оформление полноэкранного
+    текста взаимозаменяемы внутри своей категории.
+    """
+    a_plan, b_plan = plans[variants[0]], plans[variants[1]]
+    diff = diff_count(a_plan["templates_used"], b_plan["templates_used"])
+    if diff >= required:
+        return diff
+
+    a_templates = set(a_plan["templates_used"])
+    swapped = 0
+    for shot in b_plan["shots"]:
+        if diff + swapped >= required:
+            break
+        for field, category in (("kenburns", "kenburns"), ("transition", "transitions")):
+            current = shot.get(field)
+            if not current or not current.get("template"):
+                continue
+            if current["template"] not in a_templates:
+                continue          # здесь версии уже расходятся
+            alternatives = [t for t in catalog.by_category(category)
+                            if t.id not in a_templates
+                            and t.id not in b_plan["templates_used"]
+                            and t.fits(float(shot["duration"]) if category == "kenburns" else 0.24)]
+            if not alternatives:
+                continue
+            replacement = alternatives[0]
+            old_id = current["template"]
+            if field == "kenburns":
+                shot["kenburns"] = {"template": replacement.id, **replacement.params}
+            else:
+                shot["transition"] = {
+                    "template": replacement.id, "renderer": replacement.renderer,
+                    "duration": current.get("duration", 0.24),
+                    "params": {**replacement.params, "seed": shot["index"]},
+                }
+            b_plan["templates_used"] = [
+                replacement.id if t == old_id else t for t in b_plan["templates_used"]]
+            swapped += 1
+            break
+
+    diff = diff_count(a_plan["templates_used"], b_plan["templates_used"])
+    if swapped:
+        ctx.warn(f"версии сошлись по шаблонам: {swapped} решений версии B заменены "
+                 f"альтернативами, различий стало {diff} (§15.12.2)",
+                 swapped=swapped, diff=diff)
+    return diff
+
+
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
     words_doc = ctx.read("words.json")
@@ -572,16 +628,18 @@ def run_step(ctx) -> dict[str, Any]:
     # §15.12.2 — версии обязаны различаться минимум на 3 шаблонных позиции.
     ab_diff = None
     if len(variants) >= 2:
-        a_templates = plans[variants[0]]["templates_used"]
-        b_templates = plans[variants[1]]["templates_used"]
-        ab_diff = diff_count(a_templates, b_templates)
         required = int(ctx.cfg.get("limits.ab_min_template_diff", 3))
+        ab_diff = _force_ab_difference(plans, variants, catalog, required, ctx)
         if ab_diff < required:
             raise RedshiftError(
                 f"версии {variants[0]} и {variants[1]} различаются лишь {ab_diff} "
-                f"шаблонными решениями, требуется {required} (§15.12.2)",
+                f"шаблонными решениями, требуется {required}; альтернатив в каталоге "
+                f"не нашлось (§15.12.2)",
                 code="AB_TOO_SIMILAR", diff=ab_diff, required=required,
-                a=a_templates, b=b_templates)
+                a=plans[variants[0]]["templates_used"],
+                b=plans[variants[1]]["templates_used"])
+        for variant in variants:
+            ctx.write(f"edit_plan_{variant}.json", plans[variant])
 
     catalog.mark_used(
         {t for variant in plans.values() for t in variant["templates_used"]},

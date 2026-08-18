@@ -263,11 +263,18 @@ class FootageIndex:
         return record
 
     def search(self, tags: Iterable[str], *, limit: int = 10,
-               exclude_videos: Sequence[str] = (), min_score: float = 0.0) -> list[AssetRecord]:
+               exclude_videos: Sequence[str] = (), min_score: float = 0.0,
+               allow_recent: bool = False) -> list[AssetRecord]:
         """§7.2.1 — локальная база всегда просматривается раньше внешних стоков.
 
-        Материал, использованный в последних 5 роликах, отодвигается в хвост, но
-        не выбрасывается: он всё ещё лучше, чем пустой слот (§14.4).
+        §14.4: материал из последних 5 роликов **не переиспользуется при наличии
+        альтернативы**. Альтернатива есть всегда, пока доступны внешние стоки,
+        поэтому по умолчанию такой материал исключается жёстко. Мягкий штраф
+        вместо исключения приводил к тому, что второй ролик набирался из первого
+        и валил QC-6 (пересечение с последними 5 роликами ≤20 %).
+
+        ``allow_recent=True`` включается только при замороженном кэше
+        (``libraries.footage.freeze``), когда внешних источников действительно нет.
         """
         wanted = {t.lower() for t in tags if t}
         recent = set(exclude_videos)
@@ -275,13 +282,14 @@ class FootageIndex:
         for item in self.items:
             if item.score < min_score:
                 continue
+            used_recently = bool(set(item.used_in) & recent)
+            if used_recently and not allow_recent:
+                continue
             item_tags = {t.lower() for t in item.tags}
             overlap = len(wanted & item_tags)
             if wanted and not overlap:
                 continue
-            score = overlap * 1.0 + item.score
-            if set(item.used_in) & recent:
-                score -= 5.0                     # штраф за недавнее использование
+            score = overlap * 1.0 + item.score - (5.0 if used_recently else 0.0)
             scored.append((score, item))
         scored.sort(key=lambda pair: pair[0], reverse=True)
         return [item for _s, item in scored[:limit]]

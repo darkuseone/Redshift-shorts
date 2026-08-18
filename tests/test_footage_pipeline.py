@@ -9,6 +9,7 @@ import pytest
 from src.errors import LibraryFrozen
 from src.lib.manifest import AssetLibrary, AssetRecord, FootageIndex
 from src.lib.query import build_queries, classify_intent
+from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
     Slot, _avatar_runs, _needs_interstitial, _split_span, close_gaps, compute_stats,
@@ -281,3 +282,97 @@ def test_footage_index_penalizes_recent_videos(tmp_path):
                           score=0.7))
     ordered = [r.id for r in index.search(["lab"], exclude_videos=["v1"])]
     assert ordered[0] == "fresh"
+
+
+# --- регрессии, найденные прогоном трёх роликов подряд ------------------------
+
+def test_index_excludes_material_from_recent_videos(tmp_path):
+    """§14.4: материал из последних 5 роликов не переиспользуется при наличии
+    альтернативы. Мягкий штраф вместо исключения приводил к тому, что второй
+    ролик набирался из первого и валил QC-6 (пересечение ≤20 %)."""
+    index = FootageIndex(tmp_path / "footage_index.json")
+    index.add(AssetRecord(id="used", type="video", source="pexels", tags=["lab"],
+                          score=0.95, used_in=["v1"], file="pexels/used.mp4"))
+    index.add(AssetRecord(id="fresh", type="video", source="pexels", tags=["lab"],
+                          score=0.6, file="pexels/fresh.mp4"))
+
+    found = [r.id for r in index.search(["lab"], exclude_videos=["v1"])]
+    assert found == ["fresh"], "материал из недавнего ролика обязан быть исключён"
+
+
+def test_index_allows_recent_when_cache_frozen(tmp_path):
+    """При замороженном кэше внешних источников нет — альтернативы тоже нет."""
+    index = FootageIndex(tmp_path / "footage_index.json")
+    index.add(AssetRecord(id="used", type="video", source="pexels", tags=["lab"],
+                          score=0.95, used_in=["v1"], file="pexels/used.mp4"))
+    found = [r.id for r in index.search(["lab"], exclude_videos=["v1"], allow_recent=True)]
+    assert found == ["used"]
+
+
+def test_ab_difference_is_forced_when_variants_converge(cfg):
+    """§15.12.2 — различие версий обеспечивается конструктивно, а не удачей сида."""
+    from src.p11_assemble.assemble import _force_ab_difference
+
+    catalog = TemplateCatalog.load(cfg)
+    shared = ["kenburns/pan-left", "kenburns/pan-right", "transitions/glitch-short"]
+    plans = {
+        "A": {"templates_used": list(shared), "shots": []},
+        "B": {
+            "templates_used": list(shared),
+            "shots": [
+                {"index": 0, "duration": 3.0,
+                 "kenburns": {"template": "kenburns/pan-left"}, "transition": None},
+                {"index": 1, "duration": 3.0,
+                 "kenburns": {"template": "kenburns/pan-right"}, "transition": None},
+                {"index": 2, "duration": 3.0, "kenburns": None,
+                 "transition": {"template": "transitions/glitch-short", "duration": 0.24}},
+            ],
+        },
+    }
+
+    class _Ctx:
+        def warn(self, *a, **k):
+            pass
+
+    diff = _force_ab_difference(plans, ["A", "B"], catalog, 3, _Ctx())
+    assert diff >= 3
+    assert plans["B"]["templates_used"] != shared
+    # Замены остались внутри своих категорий: Ken Burns не превратился в переход.
+    for shot in plans["B"]["shots"]:
+        if shot.get("kenburns"):
+            assert shot["kenburns"]["template"].startswith("kenburns/")
+        if shot.get("transition"):
+            assert shot["transition"]["template"].startswith("transitions/")
+
+
+def test_generated_clips_are_visually_distinct(cfg, tmp_path):
+    """QC-5 запрещает дубли в ролике, а абстрактный сгенерированный B-roll
+    легко получается похожим сам на себя: разные промпты обязаны давать
+    визуально разный кадр."""
+    from src.lib.ffmpeg import extract_frames
+    from src.lib.phash import hamming, phash_image
+    from src.lib.providers.generation import build_generation_provider
+
+    provider = build_generation_provider(cfg, None)
+    prompts = ["quantum processor macro. Role: hook",
+               "abstract data particles. Role: develop",
+               "white dwarf star. Role: twist"]
+    hashes = []
+    for i, prompt in enumerate(prompts):
+        asset = provider.generate(prompt, tmp_path / f"g{i}.mp4", kind="video",
+                                  duration_sec=2.0)
+        frame = extract_frames(asset.path, tmp_path / f"f{i}", [0.5])
+        hashes.append(phash_image(frame[0]))
+
+    for i in range(len(hashes)):
+        for j in range(i + 1, len(hashes)):
+            distance = hamming(hashes[i], hashes[j])
+            assert distance > 8, f"промпты {i} и {j} дали дубль (hamming={distance})"
+
+
+def test_p9_dedup_helper_finds_duplicate():
+    from src.p9_generate.generate import _find_duplicate
+
+    pool = [("existing", ["0" * 16, "0" * 16, "0" * 16])]
+    assert _find_duplicate(["0" * 16, "0" * 16, "0" * 16], pool, 8) == "existing"
+    assert _find_duplicate(["f" * 16, "f" * 16, "f" * 16], pool, 8) is None

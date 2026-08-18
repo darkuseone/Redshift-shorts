@@ -109,7 +109,8 @@ def run_step(ctx) -> dict[str, Any]:
         slot_candidates: list[dict[str, Any]] = []
 
         # --- 1. локальная база (§7.2.1) --------------------------------------
-        local = index.search(_tags_for(queries), limit=3, exclude_videos=recent_videos)
+        local = index.search(_tags_for(queries), limit=3, exclude_videos=recent_videos,
+                             allow_recent=frozen)
         for record in local:
             # Индекс живёт в git, а файлы — во внешнем storage (§14.5). На свежем
             # клоне записи есть, а payload'а нет: предлагать такой материал нельзя,
@@ -117,6 +118,17 @@ def run_step(ctx) -> dict[str, Any]:
             if not record.file or not ctx.storage.exists(record.file):
                 missing_in_storage.append(record.id)
                 continue
+            # Кандидат из базы обязан проходить тот же дедуп, что и скачанный:
+            # без этого один и тот же кадр попадал в разные слоты и валил QC-5.
+            record_hashes = record.phashes or ([record.phash] if record.phash else [])
+            if record_hashes:
+                dup = _find_dup(record_hashes, seen_hashes, dedup_threshold)
+                if dup:
+                    stage1_rejected.append({"id": record.id, "source": record.source,
+                                            "reason": f"дубль {dup} (материал из базы)",
+                                            "query": queries[0]})
+                    continue
+                seen_hashes.append((record.id, record_hashes))
             slot_candidates.append({
                 "slot_index": slot["index"], "origin": "local_cache",
                 "asset_id": record.id, "source": record.source,
