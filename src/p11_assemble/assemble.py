@@ -113,8 +113,14 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
             if slot["kind"] == "split":
                 # §3.5 режим B: сверху доказательный материал, снизу аватар.
                 asset = assets.get(slot["index"])
-                top_src = Path(asset.get("local_file") or "") if asset else Path()
-                if not top_src.exists():
+                top_path = str((asset or {}).get("local_file") or "").strip()
+                top_src = Path(top_path) if top_path else None
+                if top_src is None or not top_src.is_file():
+                    key = (asset or {}).get("storage_key")
+                    if key and ctx.storage.exists(key):
+                        top_src = ctx.wpath("broll", "raw", Path(key).name)
+                        ctx.storage.get(key, top_src)
+                if top_src is None or not top_src.is_file():
                     ctx.warn(f"для сплита {slot['index']} нет верхней половины",
                              slot=slot["index"])
                     continue
@@ -159,15 +165,21 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
         asset = assets.get(slot["index"])
         if asset is None:
             continue
-        src = Path(asset.get("local_file") or "")
-        if not src.exists():
+        # Материал из локальной базы приходит без local_file — только с ключом
+        # storage. Пустую строку в Path() класть нельзя: Path("") — это Path("."),
+        # он существует, и дальше ffmpeg получает на вход каталог.
+        local_file = str(asset.get("local_file") or "").strip()
+        src = Path(local_file) if local_file else None
+        if src is None or not src.is_file():
             key = asset.get("storage_key")
             if key and ctx.storage.exists(key):
                 src = ctx.wpath("broll", "raw", Path(key).name)
                 ctx.storage.get(key, src)
             else:
-                ctx.warn(f"нет файла для слота {slot['index']} ({asset.get('asset_id')})",
-                         slot=slot["index"])
+                ctx.warn(f"нет файла для слота {slot['index']} ({asset.get('asset_id')}): "
+                         f"ни local_file, ни ключа в storage",
+                         slot=slot["index"], asset=asset.get("asset_id"),
+                         origin=asset.get("origin"))
                 continue
 
         info = probe(src)

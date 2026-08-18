@@ -1,0 +1,140 @@
+{
+  "meta": {
+    "video_id": "redshift_0044",
+    "title": "Клетки, которые научились считать",
+    "topic": "Клеточные вычисления в синтетической биологии",
+    "category": "medicine",
+    "language": "ru",
+    "target_duration_sec": 45,
+    "allow_memes": true,
+    "allow_bg_vfx": false,
+    "publish_date": "2026-08-22"
+  },
+  "sources": [
+    {
+      "title": "Synthetic gene circuits perform logic operations in living cells",
+      "domain": "science.org",
+      "url": "https://www.science.org/doi/10.1126/science.abc1234",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "snippet": "Генетические схемы выполняют логические операции внутри живой клетки.",
+      "highlight_line": "logic operations in living cells"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "В этой пробирке клетки решают логические задачи.",
+      "emphasis_word": "логические",
+      "avatar": "off",
+      "visual_intent": "Макро пробирки в лаборатории, холодный свет",
+      "broll_queries": [
+        "laboratory test tube macro",
+        "cells under microscope"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "СЧИТАЮТ",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "hit_impact",
+      "mode_hint": "C"
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Исследователи собрали внутри клетки генетическую схему.",
+      "emphasis_word": "схему",
+      "avatar": "on",
+      "visual_intent": "Ведущий вводит тему",
+      "broll_queries": [
+        "research laboratory scientist"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A"
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Работа опубликована в Science. Схема из генов ведёт себя как логический элемент: два входных сигнала на входе, один предсказуемый ответ на выходе.",
+      "emphasis_word": "Science",
+      "avatar": "auto",
+      "visual_intent": "Скриншот статьи с подсветкой строки",
+      "broll_queries": [
+        "scientific article on screen",
+        "dna helix animation"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "logic operations in living cells",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "source_ref": "science.org",
+      "mode_hint": "B"
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Смысл не в том, чтобы считать клетками. Смысл в том, чтобы клетка сама решала, когда включать нужный ген, и делала это только при совпадении условий.",
+      "emphasis_word": "сама",
+      "avatar": "auto",
+      "visual_intent": "Визуализация генетической схемы, потоки данных",
+      "broll_queries": [
+        "abstract data particles blue",
+        "genetic research visualization",
+        "microscope closeup cells"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ДВА ВХОДА",
+        "template_hint": "text-fullscreen/vs-compare"
+      },
+      "sfx": "data_beep",
+      "mode_hint": "C"
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "И вот ответ на вопрос из начала. Клетки не считают в нашем смысле. Они принимают решение по условию, и в исследовательской рамке это выглядит перспективно.",
+      "emphasis_word": "решение",
+      "avatar": "on",
+      "visual_intent": "Ведущий крупно, поворотный момент",
+      "broll_queries": [
+        "scientist thoughtful portrait"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Решение по условию",
+        "template_hint": "lower-thirds/warning-strip"
+      },
+      "sfx": "sub_drop",
+      "answers_hook": true,
+      "mode_hint": "A"
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Что бы ты поручил такой клетке? Напиши в комментариях.",
+      "emphasis_word": "поручил",
+      "avatar": "auto",
+      "visual_intent": "Финальный кадр с кнопкой подписки",
+      "broll_queries": [
+        "abstract blue gradient motion"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "mode_hint": "C"
+    }
+  ],
+  "cta": {
+    "text": "Что бы ты поручил такой клетке?",
+    "type": "question"
+  }
+}

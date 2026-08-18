@@ -213,3 +213,51 @@ def test_vision_qc_is_not_blocking(repo_root):
         vision = qc.get("vision")
         if vision and vision.get("enabled"):
             assert vision["blocking"] is False
+
+
+# --- устойчивость к отсутствующим файлам (регрессия) --------------------------
+
+def test_empty_path_is_not_treated_as_existing(tmp_path):
+    """Path("") — это Path("."), и он существует.
+
+    Из-за этого материал из локальной базы (у него нет local_file, только ключ
+    storage) уходил в ffmpeg как каталог. Ошибка проявлялась только со второго
+    ролика, когда в индексе уже что-то есть, — и уронила и CI, и второй прогон.
+    """
+    assert Path("").exists() is True          # источник ошибки
+    assert Path("").is_file() is False        # проверка, которая её ловит
+    assert Path(str("").strip() or "x").is_file() is False
+
+
+def test_p7_skips_index_entries_without_files(tmp_path, cfg):
+    """Индекс живёт в git, файлы — во внешнем storage: на свежем клоне их нет."""
+    from src.lib.manifest import AssetRecord, FootageIndex
+    from src.lib.storage import LocalStorage
+
+    index = FootageIndex(tmp_path / "footage_index.json")
+    index.add(AssetRecord(id="ghost", type="video", source="pexels", tags=["lab"],
+                          score=0.9, file="pexels/ghost.mp4"))
+    storage = LocalStorage(tmp_path / "store")
+    assert not storage.exists("pexels/ghost.mp4")
+    # Материал найден по тегам, но payload'а нет — предлагать его нельзя.
+    found = index.search(["lab"])
+    assert [r.id for r in found] == ["ghost"]
+    assert not any(storage.exists(r.file) for r in found)
+
+
+def test_maintenance_removes_orphan_index_entries(cfg, tmp_path, monkeypatch):
+    """Записи без файлов вычищаются обслуживанием, а не копятся вечно."""
+    from src.lib.manifest import AssetRecord, FootageIndex
+
+    index_path = tmp_path / "cache" / "footage_index.json"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index = FootageIndex(index_path)
+    index.add(AssetRecord(id="ghost", type="video", source="pexels",
+                          file="pexels/ghost.mp4"))
+    index.save()
+
+    monkeypatch.setattr(cfg, "path", lambda dotted, default=None: (
+        tmp_path / "cache" if "cache" in dotted else tmp_path / "store"))
+    cfg.set("storage.local_root", str(tmp_path / "store"))
+    report = run_maintenance(cfg, dry_run=False)
+    assert "ghost" in report["orphans_removed"]

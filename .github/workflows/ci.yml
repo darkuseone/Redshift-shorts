@@ -50,3 +50,22 @@ jobs:
             output/**/*.json
             output/**/*.srt
           retention-days: 7
+
+  remotion-typecheck:
+    # Альтернативный движок рендера. Проверяем типы: расхождение с форматом
+    # edit-плана должно ломать сборку, а не всплывать при рендере.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: render/remotion/package.json
+      - name: Установить зависимости
+        working-directory: render/remotion
+        run: npm install --no-audit --no-fund
+      - name: Проверка типов
+        working-directory: render/remotion
+        run: npx tsc --noEmit

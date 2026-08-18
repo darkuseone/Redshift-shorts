@@ -23,7 +23,9 @@
       "score": 0.0,
       "duration_sec": 0.55,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -47,7 +49,9 @@
       "score": 0.0,
       "duration_sec": 0.55,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -71,7 +75,8 @@
       "score": 0.0,
       "duration_sec": 0.5,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0044"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -94,8 +99,10 @@
       "vision_summary": "тяжёлый акцент на повороте",
       "score": 0.0,
       "duration_sec": 1.1,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "sub_drop.wav",
       "role": "sub_drop"
@@ -245,7 +252,9 @@
       "score": 0.0,
       "duration_sec": 0.7,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -332,8 +341,10 @@
       "vision_summary": "данные, график, цифры",
       "score": 0.0,
       "duration_sec": 0.24,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0044"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "data_beep.wav",
       "role": "data_beep"
@@ -439,7 +450,9 @@
       "score": 0.0,
       "duration_sec": 0.85,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",

@@ -76,13 +76,41 @@ export interface EditPlan {
   cta_window: [number, number];
 }
 
+export interface SubtitleSpec {
+  color: string;
+  stroke_color: string;
+  stroke_px: [number, number];
+  size_px_default: number;
+  max_block_width_px: number;
+  pill_radius_px: number;
+  pill_padding_px: [number, number];
+  baseline_y_default: number;
+}
+
+export interface FullscreenTextSpec {
+  size_px: [number, number];
+  words_max: number;
+}
+
+export interface PlaqueSpec {
+  radius_px_default: number;
+  bg_alpha: number;
+  border_px: number;
+  border_alpha: number;
+}
+
+export interface HighlightSpec {
+  dim_opacity_default: number;
+  cutout_radius_px: number;
+}
+
 export interface Brandbook {
   colors: Record<string, string>;
   safe_zones: { work_area: { x_min: number; x_max: number; y_min: number; y_max: number } };
-  subtitles: Record<string, any>;
-  fullscreen_text: Record<string, any>;
-  plaque: Record<string, any>;
-  highlight: Record<string, any>;
-  cta: Record<string, any>;
+  subtitles: SubtitleSpec;
+  fullscreen_text: FullscreenTextSpec;
+  plaque: PlaqueSpec;
+  highlight: HighlightSpec;
+  cta: { button_pulse_hz: number; tail_sec: number };
   easing: Record<string, [number, number, number, number]>;
 }

@@ -4,8 +4,8 @@
   "private": true,
   "description": "Альтернативный движок рендера REDSHIFT на Remotion. Читает тот же edit_plan_*.json, что и встроенный ffmpeg-композитор.",
   "scripts": {
-    "preview": "remotion studio src/index.ts",
-    "render": "remotion render src/index.ts Redshift out/video.mp4",
+    "preview": "remotion studio src/index.tsx",
+    "render": "remotion render src/index.tsx Redshift out/video.mp4",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

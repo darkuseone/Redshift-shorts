@@ -26,8 +26,8 @@ CPU-раннере GitHub Actions по умолчанию (§10.5.1). Прежд
 ```bash
 npm install
 npm run typecheck
-npx remotion studio src/index.ts                       # предпросмотр
-npx remotion render src/index.ts Redshift out/A.mp4 \
+npx remotion studio src/index.tsx                       # предпросмотр
+npx remotion render src/index.tsx Redshift out/A.mp4 \
   --props=../../output/redshift_0042/edit_plan_A.json
 ```
 

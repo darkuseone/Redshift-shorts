@@ -22,8 +22,10 @@
       "vision_summary": "космос, медленный дрейф",
       "score": 0.0,
       "duration_sec": 60.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "cosmic_calm.m4a",
       "mood": "cosmic_calm"
@@ -90,8 +92,10 @@
       "vision_summary": "тёплое открытие",
       "score": 0.0,
       "duration_sec": 60.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0044"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "discovery_warm.m4a",
       "mood": "discovery_warm"

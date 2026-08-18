@@ -97,6 +97,7 @@ def run_step(ctx) -> dict[str, Any]:
     candidates_out: list[dict[str, Any]] = []
     seen_hashes: list[tuple[str, list[str]]] = []
     from_cache = 0
+    missing_in_storage: list[str] = []
 
     frames_dir = ctx.wpath("broll", "frames", ".keep").parent
 
@@ -110,6 +111,12 @@ def run_step(ctx) -> dict[str, Any]:
         # --- 1. локальная база (§7.2.1) --------------------------------------
         local = index.search(_tags_for(queries), limit=3, exclude_videos=recent_videos)
         for record in local:
+            # Индекс живёт в git, а файлы — во внешнем storage (§14.5). На свежем
+            # клоне записи есть, а payload'а нет: предлагать такой материал нельзя,
+            # иначе слот «закроется» пустотой и сборка упадёт на подготовке плана.
+            if not record.file or not ctx.storage.exists(record.file):
+                missing_in_storage.append(record.id)
+                continue
             slot_candidates.append({
                 "slot_index": slot["index"], "origin": "local_cache",
                 "asset_id": record.id, "source": record.source,
@@ -237,6 +244,7 @@ def run_step(ctx) -> dict[str, Any]:
         "downloads": downloads,
         "download_limit": max_downloads,
         "from_local_cache": from_cache,
+        "index_entries_without_files": sorted(set(missing_in_storage)),
         "cache_share": round(from_cache / max(len(candidates_out), 1), 4),
         "stage1_rejected": stage1_rejected,
         "stage1_reject_share": round(
@@ -245,6 +253,10 @@ def run_step(ctx) -> dict[str, Any]:
     }
     ctx.write("candidates.json", doc)
 
+    if missing_in_storage:
+        ctx.warn(f"{len(set(missing_in_storage))} записей индекса без файлов в storage — "
+                 f"пропущены; вычистить: python -m src.cli maintenance",
+                 count=len(set(missing_in_storage)))
     if len(candidates_out) < pool_min:
         ctx.warn(f"пул кандидатов {len(candidates_out)} меньше рекомендованных {pool_min} (§7.2.3)",
                  pool=len(candidates_out))

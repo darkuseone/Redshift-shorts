@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-08-18",
-  "count": 14,
+  "count": 18,
   "items": [
     {
       "id": "pexels_406de0a0_01",
@@ -10,7 +10,7 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/406de0a0/1",
-      "phash": "0ef1718e04d17bac",
+      "phash": "052f7a2fe8c3820f",
       "tags": [
         "quantum",
         "computer",
@@ -18,7 +18,7 @@
         "wide"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «quantum computer laboratory wide»",
-      "score": 0.5774,
+      "score": 0.5715,
       "duration_sec": 3.2,
       "used_in": [
         "redshift_0042"
@@ -26,9 +26,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "0ef1718e04d17bac",
-        "00cc26c364cb2ffe",
-        "002a7e51113f6f4f"
+        "052f7a2fe8c3820f",
+        "022a7fd783c9803f",
+        "d56e3f04325e3319"
       ],
       "width": 606,
       "height": 1080,
@@ -45,14 +45,14 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/4d688c8a/5",
-      "phash": "2a7ad067f205527a",
+      "phash": "00d557d84bc87da5",
       "tags": [
         "quantum",
         "chip",
         "macro"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
-      "score": 0.5801,
+      "score": 0.5796,
       "duration_sec": 4.6,
       "used_in": [
         "redshift_0042"
@@ -60,9 +60,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "2a7ad067f205527a",
-        "207fd5803b9d3c62",
-        "d72a80d562c16b3f"
+        "00d557d84bc87da5",
+        "002a552a543d7d7f",
+        "002a553f7b587f50"
       ],
       "width": 606,
       "height": 1080,
@@ -79,14 +79,14 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/03223e44/4",
-      "phash": "d42bad926ea9964a",
+      "phash": "d42bad926ca9b64a",
       "tags": [
         "scientific",
         "paper",
         "screen"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «scientific paper on screen»",
-      "score": 0.5823,
+      "score": 0.5862,
       "duration_sec": 4.0,
       "used_in": [
         "redshift_0042"
@@ -94,9 +94,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "d42bad926ea9964a",
-        "e03fc4613ec3783c",
-        "f02e3fc3c1c01e1f"
+        "d42bad926ca9b64a",
+        "f03ec3b03cc3c63c",
+        "20918fc7f1f01c1f"
       ],
       "width": 606,
       "height": 1080,
@@ -108,33 +108,33 @@
       }
     },
     {
-      "id": "pexels_03223e44_02",
+      "id": "pexels_03223e44_06",
       "type": "video",
       "source": "pexels",
       "license": "mock-synthetic",
-      "url_origin": "mock://pexels/03223e44/2",
-      "phash": "c13a3696d94966b6",
+      "url_origin": "mock://pexels/03223e44/6",
+      "phash": "d4326fa9b3965449",
       "tags": [
         "scientific",
         "paper",
         "screen"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «scientific paper on screen»",
-      "score": 0.5892,
-      "duration_sec": 2.5,
+      "score": 0.588,
+      "duration_sec": 2.7,
       "used_in": [
         "redshift_0042"
       ],
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "c13a3696d94966b6",
-        "cc3ab3cc60b29c6d",
-        "c13e9cc7913833c7"
+        "d4326fa9b3965449",
+        "d42ba9966da99649",
+        "e13ec0313cc7387e"
       ],
       "width": 606,
       "height": 1080,
-      "file": "pexels/pexels_03223e44_02.mp4",
+      "file": "pexels/pexels_03223e44_06.mp4",
       "mock": true,
       "extra": {
         "attribution": "synthetic (mock provider)",
@@ -147,14 +147,14 @@
       "source": "pixabay",
       "license": "mock-synthetic",
       "url_origin": "mock://pixabay/4bbf9b82/5",
-      "phash": "c54c6c6567666666",
+      "phash": "d5356a6a2aaaa4b5",
       "tags": [
         "quantum",
         "chip",
         "macro"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
-      "score": 0.5769,
+      "score": 0.5771,
       "duration_sec": 5.7,
       "used_in": [
         "redshift_0042"
@@ -162,9 +162,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "c54c6c6567666666",
-        "c926d926996e964b",
-        "f52c0f0f0f0f07f0"
+        "d5356a6a2aaaa4b5",
+        "f00fc03ec3c13ee3",
+        "c40e3c3133b39797"
       ],
       "width": 606,
       "height": 1080,
@@ -189,7 +189,7 @@
         "light"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «server room blue light»",
-      "score": 0.5875,
+      "score": 0.6012,
       "duration_sec": 4.4,
       "used_in": [
         "redshift_0042"
@@ -198,7 +198,7 @@
       "added": "2026-08-18",
       "phashes": [
         "15356a5aa6ad6952",
-        "ff00fc9703fe8105",
+        "d210bfc3a0ff07e0",
         "d5356a4aaaa4b555"
       ],
       "width": 606,
@@ -216,7 +216,7 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/e6a781bd/0",
-      "phash": "d5496c4e6c4c6d56",
+      "phash": "d5b326b356924a93",
       "tags": [
         "abstract",
         "blue",
@@ -224,7 +224,7 @@
         "particles"
       ],
       "vision_summary": "светлый, спокойный кадр по запросу «abstract blue data particles»",
-      "score": 0.6072,
+      "score": 0.6083,
       "duration_sec": 5.0,
       "used_in": [
         "redshift_0042"
@@ -232,9 +232,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "d5496c4e6c4c6d56",
-        "2ad57f80d53f8083",
-        "002a3f7b6a4b7872"
+        "d5b326b356924a93",
+        "00d57f80d4ca749f",
+        "002a7f7b587d7061"
       ],
       "width": 606,
       "height": 1080,
@@ -251,7 +251,7 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/e6a781bd/7",
-      "phash": "00d57f3f954ae00e",
+      "phash": "287fd5803f6ac095",
       "tags": [
         "abstract",
         "blue",
@@ -259,17 +259,18 @@
         "particles"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «abstract blue data particles»",
-      "score": 0.6365,
+      "score": 0.6363,
       "duration_sec": 4.9,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
-      "last_used": null,
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "phashes": [
-        "00d57f3f954ae00e",
-        "d56b371f0a092c5e",
-        "19ca61d466d566d1"
+        "287fd5803f6ac095",
+        "dfd5a02a5fd5802a",
+        "d72a88d57f2a80d5"
       ],
       "width": 606,
       "height": 1080,
@@ -295,7 +296,7 @@
         "chart"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «data visualization error rate chart»",
-      "score": 0.5261,
+      "score": 0.5233,
       "duration_sec": 2.7,
       "used_in": [
         "redshift_0042"
@@ -305,7 +306,7 @@
       "phashes": [
         "15356e495a565635",
         "156aa55b952a55aa",
-        "2a80fb20df6502fd"
+        "ea00ff00fe3500ff"
       ],
       "width": 606,
       "height": 1080,
@@ -351,33 +352,33 @@
       }
     },
     {
-      "id": "pexels_08146cb3_00",
+      "id": "pexels_08146cb3_03",
       "type": "video",
       "source": "pexels",
       "license": "mock-synthetic",
-      "url_origin": "mock://pexels/08146cb3/0",
-      "phash": "ece5a3cda82b8998",
+      "url_origin": "mock://pexels/08146cb3/3",
+      "phash": "dd802a6a953fe01f",
       "tags": [
         "dramatic",
         "dark",
         "abstract"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «dramatic dark abstract»",
-      "score": 0.5963,
-      "duration_sec": 2.8,
+      "score": 0.6123,
+      "duration_sec": 3.7,
       "used_in": [
         "redshift_0042"
       ],
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "ece5a3cda82b8998",
-        "2a85f591c49dc4f1",
-        "0079697b0bb72b64"
+        "dd802a6a953fe01f",
+        "02d57d2ad17f2a81",
+        "00d17f9f4aa058af"
       ],
       "width": 606,
       "height": 1080,
-      "file": "pexels/pexels_08146cb3_00.mp4",
+      "file": "pexels/pexels_08146cb3_03.mp4",
       "mock": true,
       "extra": {
         "attribution": "synthetic (mock provider)",
@@ -390,14 +391,14 @@
       "source": "pixabay",
       "license": "mock-synthetic",
       "url_origin": "mock://pixabay/35040db6/7",
-      "phash": "02dd2b88752ad47b",
+      "phash": "f5d5803fe24a1af0",
       "tags": [
         "stock",
         "market",
         "data"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «stock market data»",
-      "score": 0.6024,
+      "score": 0.6092,
       "duration_sec": 5.5,
       "used_in": [
         "redshift_0042"
@@ -405,9 +406,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "02dd2b88752ad47b",
-        "d5564a4949495f4f",
-        "022a2f7f6f60424f"
+        "f5d5803fe24a1af0",
+        "d52a82d56a3f174a",
+        "37654f7a486a407a"
       ],
       "width": 606,
       "height": 1080,
@@ -424,7 +425,7 @@
       "source": "magnific",
       "license": "generated-owned",
       "url_origin": "",
-      "phash": "d5d068d02e4f1f0f",
+      "phash": "f0f0f0f0e08f0f0f",
       "tags": [
         "generated",
         "hook",
@@ -434,14 +435,15 @@
       "score": 1.0,
       "duration_sec": 2.0,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0043"
       ],
-      "last_used": null,
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "phashes": [
-        "d5d068d02e4f1f0f",
-        "c5c44ec62b4fbe30",
-        "10911b917b16e76e"
+        "f0f0f0f0e08f0f0f",
+        "c6cececec6c6c680",
+        "139b9b9b93939380"
       ],
       "width": 1080,
       "height": 1920,
@@ -455,7 +457,7 @@
       "source": "magnific",
       "license": "generated-owned",
       "url_origin": "",
-      "phash": "c03f3fc0c13ec9c9",
+      "phash": "c03f3fc3d64825e1",
       "tags": [
         "generated",
         "hook",
@@ -470,13 +472,143 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "c03f3fc0c13ec9c9",
-        "c03f3fc0c03f3ac9",
-        "e01f1fc0e0333fcc"
+        "c03f3fc3d64825e1",
+        "c03d3fc2d248dae5",
+        "c0293fd0d26adfc1"
       ],
       "width": 1080,
       "height": 1920,
       "file": "generated/gen_mock_67133705.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "nasa_aa7dce7d_05",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/aa7dce7d/5",
+      "phash": "22d57f81c03f95e0",
+      "tags": [
+        "dark",
+        "space",
+        "portrait",
+        "dramatic"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «dark space portrait dramatic»",
+      "score": 0.6354,
+      "duration_sec": 4.8,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "22d57f81c03f95e0",
+        "082a7f77d585802f",
+        "d5b16ada34c53cc1"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_aa7dce7d_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_d81256b5_01",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/d81256b5/1",
+      "phash": "d57f007e0b70493b",
+      "tags": [
+        "exoplanet",
+        "space"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «exoplanet space»",
+      "score": 0.6352,
+      "duration_sec": 5.1,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "d57f007e0b70493b",
+        "2a3a111efc2f3d41",
+        "d78402850e9f3f9b"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_d81256b5_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "gen_mock_43d53ec9",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "156a6b94639cc4b9",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Белый карлик в глубоком космосе, холодный свет. white dwarf star space. Role: hook. Style: cinematic, vertical 9:16 composition, shallow depth of field, muted p",
+      "score": 1.0,
+      "duration_sec": 2.37,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "156a6b94639cc4b9",
+        "176885976c836c9d",
+        "c03fc3c43bc433d3"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_43d53ec9.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_e8628c26",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "1867679a65659a61",
+      "tags": [
+        "generated",
+        "setup",
+        "abstract"
+      ],
+      "vision_summary": "Ведущий объясняет, за головой крупное слово. observatory telescope night. Role: setup. Style: cinematic, vertical 9:16 composition, shallow depth of field, mute",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "1867679a65659a61",
+        "cd3232cf3232cf34",
+        "c63939c4393bc43b"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_e8628c26.mp4",
       "ai_generated": true,
       "mock": true
     }
