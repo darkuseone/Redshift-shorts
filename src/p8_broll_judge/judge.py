@@ -68,6 +68,20 @@ def run_step(ctx) -> dict[str, Any]:
         role = slot.get("role", "")
         intent = slot.get("visual_intent", "") or slot.get("reason", "")
 
+        # Мем из собственной базы vision не судит: он отобран вручную (§14.3),
+        # кадров для оценки у него нет, а «смысловое соответствие» у мема —
+        # это ирония реплики, а не совпадение с visual_intent.
+        library_memes = [c for c in by_slot[slot_index] if c.get("origin") == "meme_library"]
+        if library_memes:
+            entry = {**library_memes[0], "score": 1.0,
+                     "decision": "accept_library",
+                     "verdict": {"score": 1.0, "judge": "library",
+                                 "reason": "карточка из курированной базы мемов (§14.3)",
+                                 "summary": "", "frames": 0}}
+            accepted[slot_index] = entry
+            judged.append(entry)
+            continue
+
         scored: list[tuple[float, dict[str, Any]]] = []
         for candidate in by_slot[slot_index]:
             # Материал из локальной базы уже оценивался — платить второй раз
@@ -124,7 +138,13 @@ def run_step(ctx) -> dict[str, Any]:
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0
+    memes_used: list[str] = []
     for entry in accepted.values():
+        if entry.get("origin") == "meme_library":
+            # Мемы живут в своей библиотеке с лимитом 100 (§14.3), в индексе
+            # футажей им делать нечего.
+            memes_used.append(entry["asset_id"])
+            continue
         if entry.get("origin") == "local_cache":
             index.mark_used(entry["asset_id"], doc["video_id"])
             continue
@@ -154,8 +174,16 @@ def run_step(ctx) -> dict[str, Any]:
         added_to_index += 1
     index.save()
 
+    if memes_used:
+        from ..lib.manifest import open_library
+
+        library = open_library(cfg, "memes")
+        for meme_id in memes_used:
+            library.mark_used(meme_id, doc["video_id"])
+        library.save()
+
     asset_slots = [s["index"] for s in plan["slots"]
-                   if s["needs_asset"] and s["asset_role"] in ("broll", "evidence")]
+                   if s["needs_asset"] and s["asset_role"] in ("broll", "evidence", "meme")]
     unfilled = [i for i in asset_slots if i not in accepted]
 
     result = {

@@ -95,6 +95,15 @@ def run_step(ctx) -> dict[str, Any]:
         slot = slots_by_index.get(slot_index)
         if slot is None:
             continue
+        if slot.get("asset_role") == "meme":
+            # §14.3: мем не генерируется. Пустой мем-слот — это сигнал наполнить
+            # библиотеку, а не повод синтезировать «что-то смешное».
+            skipped.append({
+                "slot": slot_index,
+                "reason": "мем не генерируется (§14.3): наполните библиотеку — "
+                          "python -m src.cli fill-libraries --kind memes",
+            })
+            continue
         slot_duration = float(slot["duration"])
         if slot_duration > ai_budget_sec:
             skipped.append({

@@ -26,7 +26,7 @@ import yaml
 
 from ..lib.ffmpeg import extract_frames, probe
 from ..lib.logging import get_logger
-from ..lib.manifest import FootageIndex
+from ..lib.manifest import FootageIndex, open_library
 from ..lib.phash import phash_image
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import build_queries, classify_intent
@@ -248,9 +248,18 @@ def run_step(ctx) -> dict[str, Any]:
                      slot=slot["index"], queries=queries)
         candidates_out.extend(slot_candidates)
 
+    # --- мемы (§5.8, §14.3) --------------------------------------------------
+    # Мем не ищут на стоке и не генерируют: он берётся из собственной
+    # курированной базы. Слот планирует P5, а закрыть его должен именно этот
+    # шаг — иначе кадр уходит в рендер пустым, как это и случилось на первом
+    # ролике, где сработал иронический маркер.
+    meme_candidates = _pick_memes(ctx, plan, recent_videos)
+    candidates_out.extend(meme_candidates)
+
     doc = {
         "video_id": plan["video_id"],
-        "slots_needing_asset": len(slots),
+        "slots_needing_asset": len(slots) + len(meme_candidates),
+        "meme_slots_filled": len(meme_candidates),
         "pool_size": len(candidates_out),
         "pool_target": [pool_min, pool_max],
         "downloads": downloads,
@@ -277,6 +286,58 @@ def run_step(ctx) -> dict[str, Any]:
         "from_cache": from_cache, "stage1_rejected": len(stage1_rejected),
     })
     return {"pool": len(candidates_out), "downloads": downloads, "from_cache": from_cache}
+
+
+def _pick_memes(ctx, plan: dict[str, Any], recent_videos: list[str]) -> list[dict[str, Any]]:
+    """Закрыть мем-слоты карточками из библиотеки (§5.8, §14.3).
+
+    Эмоция берётся из причины вставки: P5 ставит мем там, где нашёл
+    иронический маркер, и «ирония» — это и есть тег в базе. Один и тот же мем
+    в ролике не повторяется, а использованный в последних роликах берётся лишь
+    когда другого нет: §14.3 требует, чтобы мемы не примелькались.
+    """
+    meme_slots = [s for s in plan["slots"] if s.get("needs_asset") and s.get("asset_role") == "meme"]
+    if not meme_slots:
+        return []
+
+    library = open_library(ctx.cfg, "memes")
+    if not library.items:
+        ctx.warn(f"{len(meme_slots)} мем-слотов не закрыты: библиотека мемов пуста "
+                 f"(§14.3, наполнить: python -m src.cli fill-libraries --kind memes)",
+                 slots=[s["index"] for s in meme_slots])
+        return []
+
+    out: list[dict[str, Any]] = []
+    used: set[str] = set()
+    for slot in meme_slots:
+        emotion = str(slot.get("meme_emotion") or "").strip()
+        wanted = [emotion] if emotion else []
+        ranked = library.find_by_tags(wanted, exclude_recent=recent_videos, cooldown=5)
+        # Ни по тегу, ни по «свежести» — берём наименее использованный: пустой
+        # кадр хуже повтора.
+        pool = ranked or sorted(library.items, key=lambda i: (len(i.used_in), i.id))
+        record = next((i for i in pool if i.id not in used), pool[0] if pool else None)
+        if record is None:
+            continue
+        used.add(record.id)
+        path = library.dir / record.file
+        if not path.is_file():
+            ctx.warn(f"мем {record.id} есть в манифесте, но файла нет: {path}",
+                     slot=slot["index"], asset_id=record.id)
+            continue
+        out.append({
+            "slot_index": slot["index"], "origin": "meme_library",
+            "asset_id": record.id, "source": record.source, "kind": "image",
+            "query": emotion or "meme", "license": record.license,
+            "license_confirmed": True,
+            "attribution": "собственная база REDSHIFT (§14.3)",
+            "author": "REDSHIFT", "page_url": "",
+            "width": 0, "height": 0, "duration_sec": record.duration_sec,
+            "fps": 0.0, "local_file": str(path), "storage_key": "",
+            "tags": record.tags, "phashes": [record.phash] if record.phash else [],
+            "mock": bool(record.mock),
+        })
+    return out
 
 
 def _tags_for(queries: Iterable[str]) -> list[str]:

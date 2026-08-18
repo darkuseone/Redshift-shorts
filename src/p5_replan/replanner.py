@@ -31,11 +31,17 @@ AVATAR_KINDS = ("avatar", "split")
 ASSET_KINDS = ("footage", "split")     # слоты, которым нужен внешний материал
 
 # Маркеры иронии для мем-вставки (§5.8: только при явном ироническом маркере)
-IRONY_MARKERS = (
-    "конечно", "разумеется", "ну да", "как всегда", "внезапно", "сюрприз",
-    "что могло пойти не так", "спойлер", "ирония", "казалось бы", "ага",
-    "всего лишь", "просто", "естественно", "неожиданно",
-)
+# Иронический маркер не только включает мем (§5.8), но и говорит, какой именно:
+# карточки в базе разложены по эмоциям (§14.3), и «внезапно» просит удивления,
+# а «всего лишь» — разочарования.
+IRONY_MARKERS: dict[str, str] = {
+    "конечно": "сарказм", "разумеется": "сарказм", "естественно": "сарказм",
+    "ну да": "сарказм", "как всегда": "сарказм", "ага": "сарказм",
+    "внезапно": "удивление", "неожиданно": "удивление", "сюрприз": "удивление",
+    "что могло пойти не так": "ирония", "спойлер": "ирония",
+    "казалось бы": "ирония", "ирония": "ирония",
+    "всего лишь": "разочарование", "просто": "разочарование",
+}
 
 
 @dataclass
@@ -55,6 +61,7 @@ class Slot:
     needs_asset: bool = False
     asset_role: str = ""            # broll | evidence | meme | generated
     template_hint: str = ""
+    meme_emotion: str = ""          # эмоция мема (§14.3): по ней он и берётся из базы
     reason: str = ""
 
     @property
@@ -70,7 +77,7 @@ class Slot:
             "content": self.content, "transition_in": self.transition_in,
             "events": self.events, "needs_asset": self.needs_asset,
             "asset_role": self.asset_role, "template_hint": self.template_hint,
-            "reason": self.reason,
+            "meme_emotion": self.meme_emotion, "reason": self.reason,
         }
 
 
@@ -137,9 +144,13 @@ def _find_word(words: list[dict[str, Any]], predicate) -> dict[str, Any] | None:
     return None
 
 
-def _has_irony(text: str) -> bool:
+def _irony_emotion(text: str) -> str:
+    """Эмоция мема по найденному маркеру, либо пустая строка, если маркера нет."""
     lowered = text.lower()
-    return any(marker in lowered for marker in IRONY_MARKERS)
+    for marker, emotion in IRONY_MARKERS.items():
+        if marker in lowered:
+            return emotion
+    return ""
 
 
 def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[str, Any]:
@@ -189,13 +200,16 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                                  overlay.get("content", ""), overlay.get("template_hint", "")))
                 fullscreen_used += 1
 
-        if (block.get("meme_allowed") and _has_irony(block.get("text", ""))
+        meme_emotion = _irony_emotion(block.get("text", ""))
+        if (block.get("meme_allowed") and meme_emotion
                 and draft["planned_counts"].get("memes", 0) > 0):
             meme_dur = float(meme_range[0]) + 0.4
             meme_start = max(b_start, b_end - meme_dur - 0.2)
             if meme_start > b_start + min_shot:
-                reserved.append((meme_start, meme_start + meme_dur, "meme", "", ""))
-                notes.append(f"мем в блоке {block['id']}: найден иронический маркер (§5.8)")
+                # Эмоция едет в hint: по ней P7 и достанет карточку из базы (§14.3).
+                reserved.append((meme_start, meme_start + meme_dur, "meme", "", meme_emotion))
+                notes.append(f"мем в блоке {block['id']}: найден иронический маркер, "
+                             f"эмоция «{meme_emotion}» (§5.8)")
 
         reserved.sort(key=lambda r: r[0])
 
@@ -220,7 +234,9 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                 slots.append(Slot(
                     index=0, start=p_start, end=p_end, kind=kind,
                     block_id=block["id"], role=block["role"], mode=mode,
-                    content=content, template_hint=hint,
+                    content=content,
+                    template_hint="" if kind == "meme" else hint,
+                    meme_emotion=hint if kind == "meme" else "",
                     visual_intent=block.get("visual_intent", ""),
                     needs_asset=(kind == "meme"),
                     asset_role="meme" if kind == "meme" else "",
@@ -273,6 +289,7 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
     share_range = limits.get("avatar_share", [0.35, 0.60])
     share_lo, share_hi = float(share_range[0]), float(share_range[1])
     footage_share_max = float(limits.get("footage_block_share_max", 0.40))
+    appearances_max = int(brand["avatar"].get("appearances", [2, 5])[1])
     appearance_min = float(brand["avatar"]["appearance_sec"][0])
     appearance_max = float(brand["avatar"]["appearance_sec"][1])
 
@@ -296,7 +313,7 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                                     appearance_min, appearance_max, notes)
         fixed = _break_long_footage_run(slots, draft["blocks"], duration, footage_share_max,
                                         share_hi, appearance_min, appearance_max,
-                                        notes) or fixed
+                                        appearances_max, notes) or fixed
         if not fixed:
             break
         slots = close_gaps(slots, duration)
@@ -403,6 +420,10 @@ class _AvatarConversion:
             return None
         return group
 
+    def extends_existing(self, group: list[int]) -> bool:
+        """Прирастает ли группа к уже существующему появлению, не создавая нового."""
+        return self.span(group) > sum(self.slots[j].duration for j in group) + 1e-6
+
     def apply(self, group: list[int], reason: str, notes: list[str]) -> None:
         """Слить группу в один аватарный слот.
 
@@ -445,7 +466,7 @@ def _longest_footage_run(slots: list[Slot]) -> tuple[float, int, int]:
 def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], duration: float,
                             max_share: float, share_hi: float,
                             appearance_min: float, appearance_max: float,
-                            notes: list[str]) -> bool:
+                            appearances_max: int, notes: list[str]) -> bool:
     """§3.5: непрерывный футаж не длиннее 40 % хронометража. Вернуть, менялось ли.
 
     Правило про разнообразие: если картинка полминуты идёт без ведущего, ролик
@@ -453,6 +474,11 @@ def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], dur
     один футажный слот внутри куска отдаётся аватару. Берём слот ближе к
     середине: он делит кусок на две примерно равные половины, а не отрезает
     хвост, оставляя почти тот же кусок.
+
+    Но чинить одно правило §3.5, ломая соседнее, нельзя: новое появление
+    аватара может вывести их число за 2–5. В отличие от доли аватара (QC-2)
+    непрерывный футаж — не блокирующая проверка, поэтому при конфликте
+    уступает именно он, а в план уходит запись, почему кусок остался длинным.
     """
     conv = _AvatarConversion(slots, blocks, duration, share_hi, appearance_min, appearance_max)
     changed = False
@@ -465,9 +491,13 @@ def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], dur
         middle = (slots[first].start + slots[last].end) / 2
         inside = [i for i in range(first, last + 1) if conv.is_candidate(i)]
         applied = False
+        blocked_by_count = False
         for i in sorted(inside, key=lambda i: abs((slots[i].start + slots[i].end) / 2 - middle)):
             group = conv.plan(i)
             if group is None:
+                continue
+            if len(_avatar_runs(slots)) >= appearances_max and not conv.extends_existing(group):
+                blocked_by_count = True
                 continue
             conv.apply(group, f"разрыв непрерывного футажа длиннее {max_share:.0%} (§3.5)", notes)
             applied = changed = True
@@ -475,8 +505,11 @@ def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], dur
         if not applied:
             notes.append(
                 f"непрерывный футаж {length:.2f} сек длиннее {max_share:.0%} хронометража, "
-                f"но разорвать нечем: подходящих футажных слотов в блоках без "
-                f"директивы avatar: off не нашлось")
+                + (f"но разрыв дал бы {appearances_max + 1}-е появление аватара при лимите "
+                   f"{appearances_max} (§3.5): правило про число появлений строже"
+                   if blocked_by_count else
+                   "но разорвать нечем: подходящих футажных слотов в блоках без "
+                   "директивы avatar: off не нашлось"))
             break
     return changed
 

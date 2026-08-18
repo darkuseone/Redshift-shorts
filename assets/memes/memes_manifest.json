@@ -104,8 +104,10 @@
       "vision_summary": "карточка-реакция «сарказм» (заглушка)",
       "score": 0.0,
       "duration_sec": 1.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "meme_004_сарказм.png",
       "emotion": "сарказм",
@@ -209,8 +211,10 @@
       "vision_summary": "карточка-реакция «сарказм» (заглушка)",
       "score": 0.0,
       "duration_sec": 1.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "meme_009_сарказм.png",
       "emotion": "сарказм",

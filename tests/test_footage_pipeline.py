@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -14,7 +15,7 @@ from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
     Slot, _avatar_runs, _avatar_share, _break_long_footage_run,
     _insert_avatar_interstitials, _longest_footage_run, _needs_interstitial,
-    _raise_avatar_share, _split_span, close_gaps, compute_stats,
+    _irony_emotion, _raise_avatar_share, _split_span, close_gaps, compute_stats,
 )
 from src.p7_broll_search.search import _stage1_reject
 from src.p8_broll_judge.judge import _needs_arbitration
@@ -147,9 +148,34 @@ def test_long_footage_run_is_broken_by_avatar():
     blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 6)]
     assert _longest_footage_run(slots)[0] == pytest.approx(16.0)
 
-    assert _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, [])
+    assert _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, 5, [])
     assert _longest_footage_run(slots)[0] <= 0.40 * 20.0 + 1e-3
     assert _avatar_share(slots, 20.0) <= 0.60
+
+
+def test_long_footage_run_yields_to_appearance_count_limit():
+    """§3.5 против §3.5: новое появление вывело бы их число за 2–5.
+
+    Непрерывный футаж — не блокирующая проверка, число появлений строже,
+    поэтому кусок остаётся длинным, а причина уходит в план.
+    """
+    slots = [_slot(0, 0, 3, kind="avatar", block="b1", mode="A"),
+             _slot(1, 3, 6, block="b2"),
+             _slot(2, 6, 9, kind="avatar", block="b3", mode="A"),
+             _slot(3, 9, 12, block="b4"),
+             _slot(4, 12, 15, kind="avatar", block="b5", mode="A"),
+             _slot(5, 15, 18, block="b6"),
+             _slot(6, 18, 21, kind="avatar", block="b7", mode="A"),
+             _slot(7, 21, 24, block="b8"),
+             _slot(8, 24, 27, kind="avatar", block="b9", mode="A"),
+             _slot(9, 27, 32, block="b10"), _slot(10, 32, 37, block="b11"),
+             _slot(11, 37, 43, block="b12"), _slot(12, 43, 50, block="b13")]
+    blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 14)]
+    notes: list[str] = []
+    assert len(_avatar_runs(slots)) == 5
+    assert not _break_long_footage_run(slots, blocks, 50.0, 0.40, 0.60, 3.0, 12.0, 5, notes)
+    assert len(_avatar_runs(slots)) == 5
+    assert notes and "число появлений" in notes[0]
 
 
 def test_long_footage_run_untouched_when_avatar_is_off():
@@ -159,7 +185,7 @@ def test_long_footage_run_untouched_when_avatar_is_off():
     blocks = [{"id": "b1", "role": "develop"},
               {"id": "b2", "role": "develop", "avatar_directive": "off"}]
     notes: list[str] = []
-    assert not _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, notes)
+    assert not _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, 5, notes)
     assert notes and "разорвать нечем" in notes[0]
 
 
@@ -198,6 +224,64 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
     assert stats["split_share"] <= 0.25 + 1e-3
     assert stats["longest_footage_block_share"] <= 0.40 + 1e-3
     assert stats["cut_share"] >= 0.70
+
+
+# --- мемы (§5.8, §14.3) -------------------------------------------------------
+
+@pytest.mark.parametrize("text,expected", [
+    ("Конечно, ровно тогда, когда телефон лежит на кровати.", "сарказм"),
+    ("И внезапно всё заработало.", "удивление"),
+    ("Спойлер: не заработало.", "ирония"),
+    ("Всего лишь десять минут экономии.", "разочарование"),
+    ("Ровный технический текст без подвоха.", ""),
+])
+def test_irony_marker_picks_meme_emotion(text, expected):
+    """Маркер §5.8 не только включает мем, но и говорит, какой именно (§14.3)."""
+    assert _irony_emotion(text) == expected
+
+
+def test_meme_slot_is_filled_from_library(cfg, tmp_path):
+    """Мем-слот закрывается карточкой из базы: ни сток, ни генерация его не закроют."""
+    from src.lib.manifest import open_library
+    from src.p7_broll_search.search import _pick_memes
+
+    library = open_library(cfg, "memes")
+    if not library.items:
+        pytest.skip("библиотека мемов пуста: python -m src.cli fill-libraries --kind memes")
+
+    class _Ctx:
+        def __init__(self):
+            self.cfg = cfg
+            self.warnings = []
+
+        def warn(self, message, **kw):
+            self.warnings.append(message)
+
+    plan = {"slots": [{"index": 3, "needs_asset": True, "asset_role": "meme",
+                       "meme_emotion": "ирония"}]}
+    picked = _pick_memes(_Ctx(), plan, [])
+    assert len(picked) == 1
+    assert picked[0]["origin"] == "meme_library"
+    assert picked[0]["license_confirmed"] is True
+    assert Path(picked[0]["local_file"]).is_file()
+
+
+def test_meme_shot_of_sample_run_has_a_file(repo_root):
+    """По реальному прогону: мем-кадр обязан нести файл, а не пустоту.
+
+    Ровно этого не хватало: слот планировался, а закрывать его было некому, и
+    кадр уходил в рендер с ``file: null``.
+    """
+    path = repo_root / "output" / "redshift_0045" / "edit_plan_A.json"
+    if not path.exists():
+        pytest.skip("нет прогона: python -m src.cli run --script scripts/redshift_0045.json")
+    plan = json.loads(path.read_text(encoding="utf-8"))
+    memes = [s for s in plan["shots"] if s.get("kind") == "meme"]
+    if not memes:
+        pytest.skip("в этом прогоне мем не сработал")
+    for shot in memes:
+        assert shot.get("file"), f"мем-кадр {shot['index']} без файла"
+        assert Path(shot["file"]).is_file()
 
 
 # --- совместимость с установленным ffmpeg -------------------------------------
