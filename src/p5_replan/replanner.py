@@ -272,6 +272,7 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
 
     share_range = limits.get("avatar_share", [0.35, 0.60])
     share_lo, share_hi = float(share_range[0]), float(share_range[1])
+    footage_share_max = float(limits.get("footage_block_share_max", 0.40))
     appearance_min = float(brand["avatar"]["appearance_sec"][0])
     appearance_max = float(brand["avatar"]["appearance_sec"][1])
 
@@ -288,10 +289,15 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
             duration)
         slots = close_gaps(
             _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes), duration)
-        if _avatar_share(slots, duration) >= share_lo:
-            break
-        if not _raise_avatar_share(slots, draft["blocks"], duration, share_lo, share_hi,
-                                   appearance_min, appearance_max, notes):
+        # Оба правила §3.5 чинятся одним действием — «отдать аватару футажный
+        # слот», и оба должны попасть в ту же сходимость: разрыв футажа может
+        # поднять долю, а добор доли — разорвать футаж.
+        fixed = _raise_avatar_share(slots, draft["blocks"], duration, share_lo, share_hi,
+                                    appearance_min, appearance_max, notes)
+        fixed = _break_long_footage_run(slots, draft["blocks"], duration, footage_share_max,
+                                        share_hi, appearance_min, appearance_max,
+                                        notes) or fixed
+        if not fixed:
             break
         slots = close_gaps(slots, duration)
 

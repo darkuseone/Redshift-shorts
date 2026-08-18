@@ -12,7 +12,9 @@ AI-футажа по фактам, а не по намерениям.
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -22,10 +24,31 @@ from ..logging import get_logger
 from ..retry import call_with_retry
 from .base import Provider, ProviderMode, resolve_mode
 
-# Типы градиента фильтра ffmpeg ``gradients``. Список закрытый: ffmpeg молча не
-# умеет ничего сверх него и падает уже в рендере — ``conical`` из документации
-# другой версии стоил провала P9 на четвёртом ролике.
+# Типы градиента фильтра ffmpeg ``gradients`` в порядке предпочтения. Набор
+# зависит от сборки: в imageio-ffmpeg 7.0 их пять, в ubuntu-сборке CI — четыре,
+# а ``conical`` из документации другой версии не существует нигде и стоил
+# провала P9 на четвёртом ролике. Поэтому список — только пожелание, а
+# фактический набор берётся у самого ffmpeg.
 GRADIENT_TYPES = ("linear", "radial", "circular", "spiral", "square")
+
+
+@lru_cache(maxsize=1)
+def supported_gradient_types() -> tuple[str, ...]:
+    """Типы градиента, которые понимает установленная сборка ffmpeg."""
+    import subprocess
+
+    from ..ffmpeg import ffmpeg_bin
+
+    try:
+        out = subprocess.run([ffmpeg_bin(), "-hide_banner", "-h", "filter=gradients"],
+                             capture_output=True, text=True, timeout=30).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ("linear",)
+    found = tuple(name for name in GRADIENT_TYPES
+                  if re.search(rf"^\s+{name}\s+\d+\s", out, re.MULTILINE))
+    # ``linear`` — значение по умолчанию самого фильтра: если разобрать справку
+    # не удалось, лучше один рабочий тип, чем падение в середине прогона.
+    return found or ("linear",)
 
 _log = get_logger("generation")
 
@@ -77,7 +100,8 @@ class MockGeneration(GenerationProvider):
         c1 = palette[(seed // 7 + 2) % len(palette)]
         # Разные промпты обязаны давать визуально разный кадр: одинаковый
         # градиент — это готовый дубль, который завалит QC-5.
-        gradient_type = GRADIENT_TYPES[seed % len(GRADIENT_TYPES)]
+        types = supported_gradient_types()
+        gradient_type = types[seed % len(types)]
 
         dst.parent.mkdir(parents=True, exist_ok=True)
         source = (f"gradients=s={width}x{height}:c0=0x{c0}:c1=0x{c1}"

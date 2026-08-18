@@ -12,7 +12,8 @@ from src.lib.query import build_queries, classify_intent
 from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
-    Slot, _avatar_runs, _avatar_share, _insert_avatar_interstitials, _needs_interstitial,
+    Slot, _avatar_runs, _avatar_share, _break_long_footage_run,
+    _insert_avatar_interstitials, _longest_footage_run, _needs_interstitial,
     _raise_avatar_share, _split_span, close_gaps, compute_stats,
 )
 from src.p7_broll_search.search import _stage1_reject
@@ -137,6 +138,31 @@ def test_avatar_share_correction_keeps_appearance_above_minimum():
         assert 3.0 <= slots[run[-1]].end - slots[run[0]].start <= 12.0
 
 
+def test_long_footage_run_is_broken_by_avatar():
+    """§3.5: непрерывный футаж не длиннее 40 % хронометража — это чинится, а не
+    отмечается предупреждением."""
+    slots = [_slot(0, 0, 4, kind="avatar", block="b1", mode="A"),
+             _slot(1, 4, 8, block="b2"), _slot(2, 8, 12, block="b3"),
+             _slot(3, 12, 16, block="b4"), _slot(4, 16, 20, block="b5")]
+    blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 6)]
+    assert _longest_footage_run(slots)[0] == pytest.approx(16.0)
+
+    assert _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, [])
+    assert _longest_footage_run(slots)[0] <= 0.40 * 20.0 + 1e-3
+    assert _avatar_share(slots, 20.0) <= 0.60
+
+
+def test_long_footage_run_untouched_when_avatar_is_off():
+    """Разрывать нечем: сценарий запретил аватар во всех футажных блоках."""
+    slots = [_slot(0, 0, 4, kind="avatar", block="b1", mode="A"),
+             _slot(1, 4, 20, block="b2")]
+    blocks = [{"id": "b1", "role": "develop"},
+              {"id": "b2", "role": "develop", "avatar_directive": "off"}]
+    notes: list[str] = []
+    assert not _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, notes)
+    assert notes and "разорвать нечем" in notes[0]
+
+
 def test_avatar_share_correction_respects_avatar_off():
     """Блок с ``avatar: off`` — указание сценария, его добор не трогает."""
     slots = [_slot(0, 0, 4, kind="avatar", block="b1", mode="A"),
@@ -176,22 +202,28 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
 
 # --- совместимость с установленным ffmpeg -------------------------------------
 
-def test_gradient_types_are_supported_by_ffmpeg():
-    """Каждый тип градиента обязан существовать в установленной сборке ffmpeg.
+def test_detected_gradient_types_actually_render(tmp_path):
+    """Каждый тип, который выберет мок-генератор, обязан отрисоваться здесь и сейчас.
 
-    Мок-генератор перебирает типы по хешу промпта, поэтому неподдерживаемый
-    тип всплывает не сразу, а на том ролике, где хеш до него дошёл: `conical`
-    уронил P9 только на четвёртом прогоне.
+    Набор типов у фильтра ``gradients`` зависит от сборки ffmpeg: в
+    imageio-ffmpeg их пять, в ubuntu-сборке CI — четыре. Проверять список по
+    справке мало — проверяем тем же способом, каким его использует P9.
     """
     import subprocess
 
     from src.lib.ffmpeg import ffmpeg_bin
-    from src.lib.providers.generation import GRADIENT_TYPES
+    from src.lib.providers.generation import supported_gradient_types
 
-    out = subprocess.run([ffmpeg_bin(), "-hide_banner", "-h", "filter=gradients"],
-                         capture_output=True, text=True).stdout
-    for name in GRADIENT_TYPES:
-        assert f" {name} " in out, f"ffmpeg не знает тип градиента {name}"
+    types = supported_gradient_types()
+    assert types, "не определён ни один тип градиента"
+    for name in types:
+        dst = tmp_path / f"{name}.png"
+        proc = subprocess.run(
+            [ffmpeg_bin(), "-y", "-v", "error", "-f", "lavfi",
+             "-i", f"gradients=s=64x64:c0=0x111214:c1=0x8E2F2A:d=1:type={name}",
+             "-frames:v", "1", str(dst)], capture_output=True, text=True, timeout=60)
+        assert proc.returncode == 0, f"{name}: {proc.stderr.strip()}"
+        assert dst.exists()
 
 
 # --- запросы (§7.2) -----------------------------------------------------------
