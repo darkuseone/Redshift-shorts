@@ -1,0 +1,21 @@
+{
+  "name": "redshift-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Альтернативный движок рендера REDSHIFT на Remotion. Читает тот же edit_plan_*.json, что и встроенный ffmpeg-композитор.",
+  "scripts": {
+    "preview": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Redshift out/video.mp4",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "remotion": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "typescript": "^5.5.0"
+  }
+}

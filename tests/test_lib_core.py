@@ -155,13 +155,49 @@ def test_phash_identical_images_match():
     assert phash.hamming(phash.phash_image(a), phash.phash_image(b)) == 0
 
 
-def test_phash_detects_rescaled_duplicate():
-    base = Image.new("RGB", (400, 400))
-    for x in range(400):
-        for y in range(0, 400, 40):
-            base.putpixel((x, y), (255, 0, 0))
-    small = base.resize((160, 160))
-    assert phash.is_duplicate(phash.phash_image(base), phash.phash_image(small))
+def _photo_like(size: int = 640) -> Image.Image:
+    """Кадр с плавными градиентами и пятнами — как реальный футаж.
+
+    Мелкие периодические узоры (тонкие полосы) для такой проверки не годятся:
+    они принципиально неустойчивы к ресемплингу, и тест на них ловит версию
+    Pillow, а не работу pHash.
+    """
+    from PIL import ImageDraw
+
+    img = Image.new("RGB", (size, size))
+    draw = ImageDraw.Draw(img)
+    for i in range(size):
+        draw.line([(0, i), (size, i)],
+                  fill=(30 + i // 5, 60 + i // 8, max(0, 120 - i // 9)))
+    draw.ellipse((size * 0.19, size * 0.23, size * 0.66, size * 0.73), fill=(220, 140, 90))
+    draw.ellipse((size * 0.59, size * 0.09, size * 0.88, size * 0.38), fill=(40, 40, 60))
+    return img
+
+
+@pytest.mark.parametrize("target", [320, 256, 160, 96])
+def test_phash_survives_rescaling(target):
+    """§7.2.5 — дедуп обязан узнавать тот же кадр в другом разрешении."""
+    img = _photo_like()
+    assert phash.is_duplicate(phash.phash_image(img),
+                              phash.phash_image(img.resize((target, target))))
+
+
+def test_phash_survives_jpeg_compression():
+    import io
+
+    img = _photo_like()
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=55)
+    assert phash.is_duplicate(phash.phash_image(img), phash.phash_image(Image.open(buf)))
+
+
+def test_phash_survives_brightness_change():
+    """DC-коэффициент исключён из хеша, поэтому экспозиция на него не влияет."""
+    from PIL import ImageEnhance
+
+    img = _photo_like()
+    brighter = ImageEnhance.Brightness(img).enhance(1.2)
+    assert phash.hamming(phash.phash_image(img), phash.phash_image(brighter)) <= 2
 
 
 def test_phash_distinguishes_different_images():

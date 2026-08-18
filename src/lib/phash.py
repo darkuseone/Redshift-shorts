@@ -36,16 +36,21 @@ def _to_gray(image: Image.Image, size: tuple[int, int]) -> np.ndarray:
 
 
 def phash_image(image: Image.Image | str | Path) -> str:
+    """Классический pHash: DCT 32×32, низкочастотный блок 8×8, порог — медиана.
+
+    DC-коэффициент из сравнения исключается: он несёт общую яркость кадра и
+    ломает устойчивость хеша к изменению экспозиции и к ресемплингу. Вместо
+    него старший бит берётся у коэффициента (0,1) — самой низкой ненулевой
+    частоты, устойчивой к масштабированию.
+    """
     if not isinstance(image, Image.Image):
         image = Image.open(image)
     gray = _to_gray(image, (32, 32))
     dct = _DCT32 @ gray @ _DCT32.T
-    block = dct[:8, :8].copy()
-    dc = block[0, 0]
-    block[0, 0] = 0.0
-    median = np.median(block)
-    bits = (block > median).flatten()
-    bits[0] = dc > np.median(dct)  # старший бит хранит общий уровень яркости
+    block = dct[:8, :8].astype(np.float64).flatten()
+    median = np.median(block[1:])          # медиана без DC
+    bits = block > median
+    bits[0] = block[1] > median            # позиция DC отдана первой АЧ-компоненте
     return _bits_to_hex(bits)
 
 

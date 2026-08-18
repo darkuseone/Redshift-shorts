@@ -377,8 +377,12 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   assets: dict[int, dict[str, Any]], prepared: dict[int, dict[str, Any]],
                   catalog: TemplateCatalog, avatar_meta: dict[str, Any],
                   sfx_map: dict[str, Any], *, variant: str,
-                  recent_videos: list[str]) -> dict[str, Any]:
+                  recent_videos: list[str], preferences: dict[str, Any] | None = None,
+                  asset_rotation: int = 0) -> dict[str, Any]:
     seed = _variant_seed(plan["video_id"], variant)
+    # Накопленные предпочтения влияют на версию A: она несёт «текущий дефолт»,
+    # а B остаётся альтернативой, иначе обучение схлопнет обе версии в одну.
+    prefs = (preferences or {}) if variant == "A" else {}
     used_templates: list[str] = []
     slots = plan["slots"]
     shots: list[dict[str, Any]] = []
@@ -396,9 +400,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         }
 
         if slot["kind"] == "fullscreen_text":
+            preferred = prefs.get(f"fullscreen_text@{slot['role']}")
             template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
                                     recent_videos=recent_videos, exclude=used_templates,
-                                    prefer=[slot.get("template_hint", "")] + fullscreen_styles,
+                                    prefer=([preferred] if preferred else [])
+                                    + [slot.get("template_hint", "")] + fullscreen_styles,
                                     seed=seed)
             used_templates.append(template.id)
             entry.update({
@@ -422,16 +428,20 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         kb_template: Template | None = None
         if slot["kind"] in ("footage", "meme"):
+            preferred = prefs.get(f"kenburns@{slot['role']}")
             kb_template = catalog.pick("kenburns", duration=float(slot["duration"]),
                                        recent_videos=recent_videos, exclude=used_templates,
+                                       prefer=[preferred] if preferred else [],
                                        seed=seed + slot["index"])
             used_templates.append(kb_template.id)
 
         transition_entry: dict[str, Any] | None = None
         if slot.get("transition_in") == "dynamic":
             category = "avatar-entry" if slot["kind"] in AVATAR_KINDS else "transitions"
+            preferred = prefs.get(f"transition@{slot['role']}")
             tr = catalog.pick(category, duration=0.24, recent_videos=recent_videos,
                               exclude=used_templates + ["transitions/cut"],
+                              prefer=[preferred] if preferred else [],
                               tags={"dynamic", "entry"}, seed=seed + slot["index"] * 3)
             used_templates.append(tr.id)
             transition_entry = {
@@ -501,6 +511,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         },
         "avatar": avatar_meta.get("segments", []),
         "templates_used": used_templates,
+        "asset_rotation": asset_rotation,
+        "preferences_applied": sorted(prefs) if prefs else [],
         "cta_window": plan.get("cta_window"),
         "stats": plan.get("stats", {}),
     }
@@ -525,6 +537,7 @@ def run_step(ctx) -> dict[str, Any]:
 
     recent_videos = _recent_video_ids(ctx, limit=3)
     pillarbox_limit = int(ctx.cfg.get("limits.pillarbox_per_video", 2))
+    preferences = _load_preferences(ctx)
     matte_reports, behind_layers, vfx_clips, matte_summary = _prepare_matting(
         ctx, plan, avatar_meta)
 
@@ -539,7 +552,8 @@ def run_step(ctx) -> dict[str, Any]:
                                   vfx_clips=vfx_clips if variant == "A" else {})
         plans[variant] = build_variant(
             ctx, plan, words_doc, assets, prepared, catalog, avatar_meta, sfx_map,
-            variant=variant, recent_videos=recent_videos)
+            variant=variant, recent_videos=recent_videos,
+            preferences=preferences, asset_rotation=offset)
         plans[variant]["matting"] = matte_summary
         ctx.write(f"edit_plan_{variant}.json", plans[variant])
 
@@ -575,6 +589,17 @@ def run_step(ctx) -> dict[str, Any]:
                         "degraded": matte_summary.get("degraded"),
                         "text_behind_head": len(matte_summary["text_behind_head"]),
                         "vfx": len(matte_summary["vfx"])}}
+
+
+def _load_preferences(ctx) -> dict[str, Any]:
+    """Накопленные предпочтения монтажа (§4.5): «в ситуации X выбран вариант Y»."""
+    from ..lib.jsonio import read_json_or
+
+    prefs = read_json_or(ctx.cfg.repo_root / "config" / "editing_preferences.json", {})
+    defaults = prefs.get("defaults", {}) or {}
+    # Берём только ситуации вида "<решение>@<роль>": остальные ключи —
+    # общие настройки, а не выбор конкретного шаблона.
+    return {k: v for k, v in defaults.items() if "@" in str(k) and isinstance(v, str)}
 
 
 def _recent_video_ids(ctx, *, limit: int = 3) -> list[str]:

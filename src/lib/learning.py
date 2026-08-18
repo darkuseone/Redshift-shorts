@@ -36,9 +36,15 @@ def _differences(plan_a: dict[str, Any], plan_b: dict[str, Any]) -> list[dict[st
         if a.get("template") != b.get("template") and a.get("kind") == "fullscreen_text":
             out.append({"situation": f"fullscreen_text@{a['role']}",
                         "A": a.get("template"), "B": b.get("template")})
-        if a.get("asset_id") != b.get("asset_id"):
-            out.append({"situation": f"asset_order@{a['block_id']}",
-                        "A": a.get("asset_id"), "B": b.get("asset_id")})
+
+
+    # Порядок вставок внутри блока — это одно решение на весь ролик, а не
+    # различие по каждому слоту: конкретные id материалов в следующем ролике
+    # не повторятся, и запоминать их бессмысленно.
+    if plan_a.get("asset_rotation") != plan_b.get("asset_rotation"):
+        out.append({"situation": "asset_order",
+                    "A": f"rotation:{plan_a.get('asset_rotation', 0)}",
+                    "B": f"rotation:{plan_b.get('asset_rotation', 0)}"})
 
     overlays_a = {(o["type"], round(float(o["start"]), 1)): o.get("template")
                   for o in plan_a.get("overlays", [])}

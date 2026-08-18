@@ -22,6 +22,7 @@ from ..lib.render.compositor import Compositor
 from ..lib.render.layers import Ctx
 from .overlays import build_overlay_renderer
 from .qc import run_qc
+from .vision_qc import run_vision_qc
 
 _log = get_logger("p12")
 
@@ -185,6 +186,10 @@ def run_step(ctx) -> dict[str, Any]:
             results[variant] = {"file": None, "rejected_file": str(rejected),
                                 "qc_passed": False}
             continue
+
+        # §11.2 — смысловой QC по готовому файлу. Не блокирует выдачу: он даёт
+        # материал для правки правил, а решение о браке принимает §11.1.
+        qc["vision"] = run_vision_qc(ctx, video_path=out_file, plan=plan)
 
         thumb = ctx.opath("thumbnail.jpg") if variant == variants[0] else \
             ctx.opath(f"thumbnail_{variant}.jpg")

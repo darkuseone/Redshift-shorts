@@ -10,7 +10,7 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/406de0a0/1",
-      "phash": "d57f2a3f95954a40",
+      "phash": "0ef1718e04d17bac",
       "tags": [
         "quantum",
         "computer",
@@ -18,7 +18,7 @@
         "wide"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «quantum computer laboratory wide»",
-      "score": 0.5875,
+      "score": 0.5774,
       "duration_sec": 3.2,
       "used_in": [
         "redshift_0042"
@@ -26,9 +26,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "d57f2a3f95954a40",
-        "d5b5699b669a2698",
-        "ee9111ee9d11ee83"
+        "0ef1718e04d17bac",
+        "00cc26c364cb2ffe",
+        "002a7e51113f6f4f"
       ],
       "width": 606,
       "height": 1080,
@@ -45,14 +45,14 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/4d688c8a/5",
-      "phash": "827fc095b5e10fe2",
+      "phash": "2a7ad067f205527a",
       "tags": [
         "quantum",
         "chip",
         "macro"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
-      "score": 0.5896,
+      "score": 0.5801,
       "duration_sec": 4.6,
       "used_in": [
         "redshift_0042"
@@ -60,9 +60,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "827fc095b5e10fe2",
-        "d52eaad1772e88d0",
-        "ff3f9f4aa4508603"
+        "2a7ad067f205527a",
+        "207fd5803b9d3c62",
+        "d72a80d562c16b3f"
       ],
       "width": 606,
       "height": 1080,
@@ -79,14 +79,14 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/03223e44/4",
-      "phash": "d42bad926ca9b64a",
+      "phash": "d42bad926ea9964a",
       "tags": [
         "scientific",
         "paper",
         "screen"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «scientific paper on screen»",
-      "score": 0.5861,
+      "score": 0.5823,
       "duration_sec": 4.0,
       "used_in": [
         "redshift_0042"
@@ -94,9 +94,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "d42bad926ca9b64a",
-        "e01fca611ec9713e",
-        "a0918fc7f1f03c0f"
+        "d42bad926ea9964a",
+        "e03fc4613ec3783c",
+        "f02e3fc3c1c01e1f"
       ],
       "width": 606,
       "height": 1080,
@@ -108,54 +108,19 @@
       }
     },
     {
-      "id": "pexels_c54f1866_02",
+      "id": "pexels_03223e44_02",
       "type": "video",
       "source": "pexels",
       "license": "mock-synthetic",
-      "url_origin": "mock://pexels/c54f1866/2",
-      "phash": "88086c7dfe2a7a72",
+      "url_origin": "mock://pexels/03223e44/2",
+      "phash": "c13a3696d94966b6",
       "tags": [
-        "researcher",
-        "reading",
-        "article",
-        "laptop"
+        "scientific",
+        "paper",
+        "screen"
       ],
-      "vision_summary": "средний по свету, спокойный кадр по запросу «researcher reading article laptop»",
-      "score": 0.5923,
-      "duration_sec": 3.5,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-08-18",
-      "phashes": [
-        "88086c7dfe2a7a72",
-        "dd806ad70db56ac1",
-        "800a3f6b4f1f7467"
-      ],
-      "width": 606,
-      "height": 1080,
-      "file": "pexels/pexels_c54f1866_02.mp4",
-      "mock": true,
-      "extra": {
-        "attribution": "synthetic (mock provider)",
-        "author": "REDSHIFT mock"
-      }
-    },
-    {
-      "id": "pixabay_4bbf9b82_03",
-      "type": "video",
-      "source": "pixabay",
-      "license": "mock-synthetic",
-      "url_origin": "mock://pixabay/4bbf9b82/3",
-      "phash": "f82a1f97c0e02c3f",
-      "tags": [
-        "quantum",
-        "chip",
-        "macro"
-      ],
-      "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
-      "score": 0.5782,
+      "vision_summary": "средний по свету, спокойный кадр по запросу «scientific paper on screen»",
+      "score": 0.5892,
       "duration_sec": 2.5,
       "used_in": [
         "redshift_0042"
@@ -163,13 +128,47 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "f82a1f97c0e02c3f",
-        "d5766aabb4b4505a",
-        "d9268c5ba4996bb4"
+        "c13a3696d94966b6",
+        "cc3ab3cc60b29c6d",
+        "c13e9cc7913833c7"
       ],
       "width": 606,
       "height": 1080,
-      "file": "pixabay/pixabay_4bbf9b82_03.mp4",
+      "file": "pexels/pexels_03223e44_02.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pixabay_4bbf9b82_05",
+      "type": "video",
+      "source": "pixabay",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pixabay/4bbf9b82/5",
+      "phash": "c54c6c6567666666",
+      "tags": [
+        "quantum",
+        "chip",
+        "macro"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
+      "score": 0.5769,
+      "duration_sec": 5.7,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "c54c6c6567666666",
+        "c926d926996e964b",
+        "f52c0f0f0f0f07f0"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pixabay/pixabay_4bbf9b82_05.mp4",
       "mock": true,
       "extra": {
         "attribution": "synthetic (mock provider)",
@@ -182,7 +181,7 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/92e9723e/6",
-      "phash": "95356a5ab6ad6952",
+      "phash": "15356a5aa6ad6952",
       "tags": [
         "server",
         "room",
@@ -190,7 +189,7 @@
         "light"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «server room blue light»",
-      "score": 0.5877,
+      "score": 0.5875,
       "duration_sec": 4.4,
       "used_in": [
         "redshift_0042"
@@ -198,13 +197,48 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "95356a5ab6ad6952",
-        "ff0afc1f01fe0901",
-        "d5356a4aaab4b555"
+        "15356a5aa6ad6952",
+        "ff00fc9703fe8105",
+        "d5356a4aaaa4b555"
       ],
       "width": 606,
       "height": 1080,
       "file": "pexels/pexels_92e9723e_06.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_e6a781bd_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/e6a781bd/0",
+      "phash": "d5496c4e6c4c6d56",
+      "tags": [
+        "abstract",
+        "blue",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "светлый, спокойный кадр по запросу «abstract blue data particles»",
+      "score": 0.6072,
+      "duration_sec": 5.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "d5496c4e6c4c6d56",
+        "2ad57f80d53f8083",
+        "002a3f7b6a4b7872"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_e6a781bd_00.mp4",
       "mock": true,
       "extra": {
         "attribution": "synthetic (mock provider)",
@@ -217,7 +251,7 @@
       "source": "pexels",
       "license": "mock-synthetic",
       "url_origin": "mock://pexels/e6a781bd/7",
-      "phash": "84d26bc5f8c16ad3",
+      "phash": "00d57f3f954ae00e",
       "tags": [
         "abstract",
         "blue",
@@ -225,7 +259,7 @@
         "particles"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «abstract blue data particles»",
-      "score": 0.633,
+      "score": 0.6365,
       "duration_sec": 4.9,
       "used_in": [
         "redshift_0042"
@@ -233,9 +267,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "84d26bc5f8c16ad3",
-        "d5853e903d923d99",
-        "803b6a51674d6b6e"
+        "00d57f3f954ae00e",
+        "d56b371f0a092c5e",
+        "19ca61d466d566d1"
       ],
       "width": 606,
       "height": 1080,
@@ -247,20 +281,21 @@
       }
     },
     {
-      "id": "pexels_92e9723e_03",
+      "id": "pexels_af13b5c2_00",
       "type": "video",
       "source": "pexels",
       "license": "mock-synthetic",
-      "url_origin": "mock://pexels/92e9723e/3",
-      "phash": "d5ad4ad46d926d92",
+      "url_origin": "mock://pexels/af13b5c2/0",
+      "phash": "15356e495a565635",
       "tags": [
-        "server",
-        "room",
-        "blue",
-        "light"
+        "data",
+        "visualization",
+        "error",
+        "rate",
+        "chart"
       ],
-      "vision_summary": "средний по свету, спокойный кадр по запросу «server room blue light»",
-      "score": 0.6169,
+      "vision_summary": "средний по свету, спокойный кадр по запросу «data visualization error rate chart»",
+      "score": 0.5261,
       "duration_sec": 2.7,
       "used_in": [
         "redshift_0042"
@@ -268,13 +303,13 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "d5ad4ad46d926d92",
-        "dd802ad5827fd52a",
-        "80ed3f8d709d07b8"
+        "15356e495a565635",
+        "156aa55b952a55aa",
+        "2a80fb20df6502fd"
       ],
       "width": 606,
       "height": 1080,
-      "file": "pexels/pexels_92e9723e_03.mp4",
+      "file": "pexels/pexels_af13b5c2_00.mp4",
       "mock": true,
       "extra": {
         "attribution": "synthetic (mock provider)",
@@ -282,69 +317,33 @@
       }
     },
     {
-      "id": "pexels_e6a781bd_06",
+      "id": "pexels_4d688c8a_04",
       "type": "video",
       "source": "pexels",
       "license": "mock-synthetic",
-      "url_origin": "mock://pexels/e6a781bd/6",
-      "phash": "869e9e9e96969686",
+      "url_origin": "mock://pexels/4d688c8a/4",
+      "phash": "04e9061329f0eeef",
       "tags": [
-        "abstract",
-        "blue",
-        "data",
-        "particles"
+        "quantum",
+        "chip",
+        "macro"
       ],
-      "vision_summary": "тёмный, спокойный кадр по запросу «abstract blue data particles»",
-      "score": 0.4569,
-      "duration_sec": 3.9,
+      "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
+      "score": 0.6093,
+      "duration_sec": 5.5,
       "used_in": [
         "redshift_0042"
       ],
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "869e9e9e96969686",
-        "c6cec6c6c6c6c6c6",
-        "c2c7c7c6c6c6c6c6"
-      ],
-      "width": 1080,
-      "height": 1080,
-      "file": "pexels/pexels_e6a781bd_06.mp4",
-      "mock": true,
-      "extra": {
-        "attribution": "synthetic (mock provider)",
-        "author": "REDSHIFT mock"
-      }
-    },
-    {
-      "id": "pexels_e6a781bd_02",
-      "type": "video",
-      "source": "pexels",
-      "license": "mock-synthetic",
-      "url_origin": "mock://pexels/e6a781bd/2",
-      "phash": "84e986170bb0f4ef",
-      "tags": [
-        "abstract",
-        "blue",
-        "data",
-        "particles"
-      ],
-      "vision_summary": "средний по свету, спокойный кадр по запросу «abstract blue data particles»",
-      "score": 0.6162,
-      "duration_sec": 4.4,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-08-18",
-      "phashes": [
-        "84e986170bb0f4ef",
-        "a608ec3349dc23df",
-        "a47978d64c86c6cb"
+        "04e9061329f0eeef",
+        "26698c9e693313ce",
+        "266d87326d93398c"
       ],
       "width": 1080,
       "height": 606,
-      "file": "pexels/pexels_e6a781bd_02.mp4",
+      "file": "pexels/pexels_4d688c8a_04.mp4",
       "mock": true,
       "extra": {
         "attribution": "synthetic (mock provider)",
@@ -352,33 +351,33 @@
       }
     },
     {
-      "id": "pexels_08146cb3_03",
+      "id": "pexels_08146cb3_00",
       "type": "video",
       "source": "pexels",
       "license": "mock-synthetic",
-      "url_origin": "mock://pexels/08146cb3/3",
-      "phash": "d5913ef225ee34c1",
+      "url_origin": "mock://pexels/08146cb3/0",
+      "phash": "ece5a3cda82b8998",
       "tags": [
         "dramatic",
         "dark",
         "abstract"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «dramatic dark abstract»",
-      "score": 0.6041,
-      "duration_sec": 3.7,
+      "score": 0.5963,
+      "duration_sec": 2.8,
       "used_in": [
         "redshift_0042"
       ],
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "d5913ef225ee34c1",
-        "df802a7fc427913c",
-        "82d57f2a841fd16a"
+        "ece5a3cda82b8998",
+        "2a85f591c49dc4f1",
+        "0079697b0bb72b64"
       ],
       "width": 606,
       "height": 1080,
-      "file": "pexels/pexels_08146cb3_03.mp4",
+      "file": "pexels/pexels_08146cb3_00.mp4",
       "mock": true,
       "extra": {
         "attribution": "synthetic (mock provider)",
@@ -391,14 +390,14 @@
       "source": "pixabay",
       "license": "mock-synthetic",
       "url_origin": "mock://pixabay/35040db6/7",
-      "phash": "827fd5802a7fd585",
+      "phash": "02dd2b88752ad47b",
       "tags": [
         "stock",
         "market",
         "data"
       ],
       "vision_summary": "средний по свету, спокойный кадр по запросу «stock market data»",
-      "score": 0.6132,
+      "score": 0.6024,
       "duration_sec": 5.5,
       "used_in": [
         "redshift_0042"
@@ -406,9 +405,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "827fd5802a7fd585",
-        "a885c0e0f0f8fcfe",
-        "d5d1953fe00f5a52"
+        "02dd2b88752ad47b",
+        "d5564a4949495f4f",
+        "022a2f7f6f60424f"
       ],
       "width": 606,
       "height": 1080,
@@ -425,7 +424,7 @@
       "source": "magnific",
       "license": "generated-owned",
       "url_origin": "",
-      "phash": "d0d0d4242f5f1737",
+      "phash": "d5d068d02e4f1f0f",
       "tags": [
         "generated",
         "hook",
@@ -440,9 +439,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "d0d0d4242f5f1737",
-        "c4c4c42e4ec6b63f",
-        "9191917b1b81e37b"
+        "d5d068d02e4f1f0f",
+        "c5c44ec62b4fbe30",
+        "10911b917b16e76e"
       ],
       "width": 1080,
       "height": 1920,
@@ -456,7 +455,7 @@
       "source": "magnific",
       "license": "generated-owned",
       "url_origin": "",
-      "phash": "c33c3cc3c33cc3c3",
+      "phash": "c03f3fc0c13ec9c9",
       "tags": [
         "generated",
         "hook",
@@ -471,9 +470,9 @@
       "last_used": null,
       "added": "2026-08-18",
       "phashes": [
-        "c33c3cc3c33cc3c3",
-        "e11e1ee1e11e1ee1",
-        "e11e1ee1e11e1ee1"
+        "c03f3fc0c13ec9c9",
+        "c03f3fc0c03f3ac9",
+        "e01f1fc0e0333fcc"
       ],
       "width": 1080,
       "height": 1920,
