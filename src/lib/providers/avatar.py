@@ -295,8 +295,107 @@ class HeyGenAvatar(AvatarProvider):
         )
 
 
-def build_avatar_provider(cfg, costs) -> AvatarProvider:
+def build_avatar_provider(cfg, costs, *, video_id: str = "") -> AvatarProvider:
+    """Источник аватара: API, готовые клипы или заглушка.
+
+    ``heygen.source`` разводит три случая. ``api`` — обычный live-путь по
+    ключу. ``prepared`` — двухфазный конвейер: клипы приходят снаружи, потому
+    что ключа HeyGen у прогона нет, а MCP-коннектор живёт в чате. ``auto`` —
+    выбрать самому: ключ есть → API, ключа нет, но клипы лежат → prepared,
+    иначе заглушка.
+    """
+    source = str(cfg.get("heygen.source", "auto")).lower()
+    clips_dir = _prepared_dir(cfg, video_id)
+
+    if source == "prepared":
+        return PreparedAvatar(cfg, costs, clips_dir)
+
     key = cfg.secret_for("heygen.api_key_env", purpose="HeyGen")
-    if resolve_mode(cfg, api_key=key, service="heygen") is ProviderMode.LIVE:
+    if source in ("api", "auto") and \
+            resolve_mode(cfg, api_key=key, service="heygen") is ProviderMode.LIVE:
         return HeyGenAvatar(cfg, costs, key or "")
+
+    if source == "auto" and clips_dir.is_dir() and any(clips_dir.glob("seg_*")):
+        _log.info("аватар берётся из готовых клипов", extra={"dir": str(clips_dir)})
+        return PreparedAvatar(cfg, costs, clips_dir)
+
     return MockAvatar(cfg, costs)
+
+
+def _prepared_dir(cfg, video_id: str) -> Path:
+    base = cfg.path("heygen.prepared_dir", "assets/avatar_clips")
+    return base / video_id if video_id else base
+
+
+# --- готовые клипы (двухфазный конвейер) --------------------------------------
+
+class PreparedAvatar(AvatarProvider):
+    """Аватар берётся из заранее подготовленных клипов, а не из API.
+
+    Ключа HeyGen в прогоне нет, а цифровой двойник нужен. Разрыв закрывается
+    двумя фазами: Actions доходит до P6 и останавливается, выложив нарезанные
+    куски речи; клипы генерируются снаружи (MCP-коннектор HeyGen в чате) и
+    кладутся в репозиторий; прогон возобновляется с P6 и находит их готовыми.
+
+    Провайдер намеренно не умеет «выкрутиться»: без клипа он останавливает
+    прогон и говорит, для какого куска речи чего не хватает. Тихая подмена
+    заглушкой означала бы ролик без ведущего (§10.5.4).
+    """
+
+    name = "heygen"
+
+    def __init__(self, cfg, costs, clips_dir: Path) -> None:
+        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="heygen")
+        self.clips_dir = clips_dir
+        self.missing: list[dict[str, Any]] = []
+
+    def _find(self, index: int) -> Path | None:
+        # .mov несёт альфу, .webm — тоже; .mp4 берём как крайний случай:
+        # без альфы фон аватара придётся оставить как есть.
+        for suffix in (".mov", ".webm", ".mp4"):
+            candidate = self.clips_dir / f"seg_{index:02d}{suffix}"
+            if candidate.exists() and candidate.stat().st_size > 0:
+                return candidate
+        return None
+
+    def generate(self, *, audio_path: Path, out_path: Path, duration_sec: float,
+                 index: int) -> AvatarSegment:
+        clip = self._find(index)
+        if clip is None:
+            self.missing.append({
+                "index": index,
+                "audio": str(audio_path),
+                "duration_sec": round(duration_sec, 3),
+                "expected": str(self.clips_dir / f"seg_{index:02d}.mov"),
+            })
+            raise ProviderError(
+                f"нет готового клипа аватара для сегмента {index}",
+                code="AVATAR_CLIP_NOT_PREPARED",
+                hint=f"положите файл в {self.clips_dir}/seg_{index:02d}.mov "
+                     f"(липсинк по {audio_path.name}, {duration_sec:.2f} сек)")
+
+        info = probe(clip)
+        # Расхождение длительности сдвинуло бы липсинк: клип обязан совпасть с
+        # куском речи, под который он сгенерирован.
+        drift = abs(info.duration_sec - duration_sec)
+        if drift > 0.20:
+            raise ProviderError(
+                f"клип аватара {clip.name} длиннее/короче своего куска речи на "
+                f"{drift:.2f} сек — липсинк уедет",
+                code="AVATAR_CLIP_DURATION_MISMATCH",
+                hint=f"ожидается {duration_sec:.2f} сек, в файле {info.duration_sec:.2f}")
+
+        dst = out_path.with_suffix(clip.suffix)
+        if dst.resolve() != clip.resolve():
+            dst.write_bytes(clip.read_bytes())
+
+        has_alpha = clip.suffix.lower() in (".mov", ".webm")
+        face_top, face_bottom = self.cfg.brand("avatar.face_band_y", [350, 750])
+        return AvatarSegment(
+            index=index, start=0.0, end=duration_sec, block_id="",
+            path=dst,
+            face_bbox=(int(info.width * 0.30), int(face_top),
+                       int(info.width * 0.70), int(face_bottom)),
+            has_alpha=has_alpha, provider_mode="prepared",
+            meta={"source_clip": str(clip), "lipsync_source": "prepared"},
+        )

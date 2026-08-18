@@ -1,0 +1,116 @@
+"""Двухфазный конвейер аватара: Actions ↔ MCP.
+
+Ключа HeyGen у прогона нет — цифровой двойник приходит снаружи. Проверяется
+главное свойство схемы: без клипа прогон **останавливается** и говорит, чего
+не хватает, а не подставляет заглушку. Молчаливая подмена дала бы ролик без
+ведущего, и заметить это можно было бы только глазами (§10.5.4).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from src.errors import ProviderError
+from src.lib import audio as A
+from src.lib.config import load_config
+from src.lib.costs import CostLedger
+from src.lib.providers.avatar import (
+    MockAvatar, PreparedAvatar, build_avatar_provider,
+)
+
+
+@pytest.fixture
+def cfg():
+    return load_config()
+
+
+@pytest.fixture
+def costs(cfg):
+    return CostLedger(video_id="test")
+
+
+@pytest.fixture
+def speech(tmp_path):
+    """Кусок речи на 2 секунды — то, подо что генерируется клип."""
+    path = tmp_path / "seg_00.wav"
+    sr = 48000
+    tone = (0.2 * np.sin(np.linspace(0, 220 * 2 * np.pi, sr * 2))).astype(np.float32)
+    A.save_wav(path, tone, sr)
+    return path
+
+
+def _clip(path: Path, seconds: float, cfg) -> Path:
+    """Настоящий клип нужной длины: провайдер сверяет длительность."""
+    source = path.parent / "_source.wav"
+    sr = 48000
+    A.save_wav(source, np.zeros(int(sr * seconds), dtype=np.float32), sr)
+    MockAvatar(cfg, CostLedger(video_id="test")).generate(
+        audio_path=source, out_path=path, duration_sec=seconds, index=0)
+    return path
+
+
+def test_missing_clip_stops_the_run(cfg, costs, speech, tmp_path):
+    provider = PreparedAvatar(cfg, costs, tmp_path / "clips")
+    with pytest.raises(ProviderError) as exc:
+        provider.generate(audio_path=speech, out_path=tmp_path / "out.mp4",
+                          duration_sec=2.0, index=0)
+    assert exc.value.code == "AVATAR_CLIP_NOT_PREPARED"
+    # Заявка копится, чтобы забрать все клипы за один заход, а не по одному.
+    assert provider.missing[0]["index"] == 0
+    assert provider.missing[0]["duration_sec"] == 2.0
+
+
+def test_prepared_clip_is_taken_as_is(cfg, costs, speech, tmp_path):
+    clips = tmp_path / "clips"
+    clips.mkdir()
+    _clip(clips / "seg_00.mov", 2.0, cfg)
+
+    provider = PreparedAvatar(cfg, costs, clips)
+    seg = provider.generate(audio_path=speech, out_path=tmp_path / "out.mp4",
+                            duration_sec=2.0, index=0)
+    assert seg.provider_mode == "prepared"
+    assert seg.has_alpha is True                 # .mov несёт альфу
+    assert seg.path.exists()
+
+
+def test_clip_of_wrong_length_is_rejected(cfg, costs, speech, tmp_path):
+    """Расхождение длительности — это уехавший липсинк, а не мелочь."""
+    clips = tmp_path / "clips"
+    clips.mkdir()
+    _clip(clips / "seg_00.mov", 3.0, cfg)
+
+    provider = PreparedAvatar(cfg, costs, clips)
+    with pytest.raises(ProviderError) as exc:
+        provider.generate(audio_path=speech, out_path=tmp_path / "out.mp4",
+                          duration_sec=2.0, index=0)
+    assert exc.value.code == "AVATAR_CLIP_DURATION_MISMATCH"
+
+
+def test_source_prepared_never_falls_back_to_mock(cfg, costs, tmp_path, monkeypatch):
+    monkeypatch.setenv("HEYGEN_API_KEY", "")
+    cfg.set("heygen.source", "prepared")
+    cfg.set("heygen.prepared_dir", str(tmp_path))
+    provider = build_avatar_provider(cfg, costs, video_id="redshift_0001")
+    assert isinstance(provider, PreparedAvatar)
+
+
+def test_auto_picks_prepared_when_clips_exist(cfg, costs, tmp_path, monkeypatch):
+    monkeypatch.delenv("HEYGEN_API_KEY", raising=False)
+    clips = tmp_path / "redshift_0001"
+    clips.mkdir(parents=True)
+    (clips / "seg_00.mov").write_bytes(b"x")
+    cfg.set("heygen.source", "auto")
+    cfg.set("heygen.prepared_dir", str(tmp_path))
+    provider = build_avatar_provider(cfg, costs, video_id="redshift_0001")
+    assert isinstance(provider, PreparedAvatar)
+
+
+def test_auto_falls_back_to_mock_without_key_and_clips(cfg, costs, tmp_path, monkeypatch):
+    monkeypatch.delenv("HEYGEN_API_KEY", raising=False)
+    cfg.set("heygen.source", "auto")
+    cfg.set("heygen.prepared_dir", str(tmp_path / "нет"))
+    provider = build_avatar_provider(cfg, costs, video_id="redshift_0001")
+    assert isinstance(provider, MockAvatar)

@@ -22,6 +22,7 @@ import numpy as np
 
 from ..lib import audio as A
 from ..lib.logging import get_logger
+from ..errors import ProviderError, RedshiftError
 from ..lib.providers.avatar import build_avatar_provider
 
 _log = get_logger("p6")
@@ -80,7 +81,8 @@ def run_step(ctx) -> dict[str, Any]:
 
     segments = [snap_to_phrase(s, words_doc["words"]) for s in merge_segments(plan["slots"])]
     max_seg = float(cfg.get("heygen.max_seconds_per_video", 42))
-    provider = build_avatar_provider(cfg, ctx.costs)
+    provider = build_avatar_provider(cfg, ctx.costs,
+                                     video_id=str(plan["video_id"]))
 
     total_avatar_sec = sum(s["end"] - s["start"] for s in segments)
     if total_avatar_sec > max_seg:
@@ -89,6 +91,7 @@ def run_step(ctx) -> dict[str, Any]:
 
     out_dir = ctx.wpath("avatar", ".keep").parent
     produced: list[dict[str, Any]] = []
+    _pending: list[dict[str, Any]] = []
     for index, segment in enumerate(segments):
         start, end = segment["start"], segment["end"]
         i0, i1 = int(round(start * sr)), int(round(end * sr))
@@ -99,8 +102,24 @@ def run_step(ctx) -> dict[str, Any]:
         A.save_wav(seg_audio, chunk, sr)
 
         seg_path = out_dir / f"seg_{index:02d}.mp4"
-        result = provider.generate(audio_path=seg_audio, out_path=seg_path,
-                                   duration_sec=end - start, index=index)
+        try:
+            result = provider.generate(audio_path=seg_audio, out_path=seg_path,
+                                       duration_sec=end - start, index=index)
+        except ProviderError as exc:
+            if getattr(exc, "code", "") != "AVATAR_CLIP_NOT_PREPARED":
+                raise
+            # Двухфазный конвейер: нарезка речи уже сделана и лежит на диске.
+            # Дописываем заявку до конца — иначе за клипами пришлось бы ходить
+            # по одному, по прогону на сегмент.
+            _pending.append({
+                "index": index,
+                "audio": str(seg_audio),
+                "duration_sec": round(end - start, 3),
+                "block_id": segment["block_id"],
+                "text": segment.get("text", ""),
+                "expected_clip": f"seg_{index:02d}.mov",
+            })
+            continue
         seg_path = result.path
         entry = result.to_dict()
         entry.update({
@@ -111,6 +130,32 @@ def run_step(ctx) -> dict[str, Any]:
             "text": segment.get("text", ""), "audio": str(seg_audio),
         })
         produced.append(entry)
+
+    if _pending:
+        # Фаза 1 двухфазного конвейера закончилась: речь нарезана, клипов нет.
+        # Заявка пишется целиком — по ней аватар генерируется снаружи одним
+        # заходом, а не по сегменту за прогон.
+        request = {
+            "video_id": plan["video_id"],
+            "avatar_id": cfg.get("heygen.avatar_id"),
+            "model_version": cfg.get("heygen.model_version"),
+            "clips_dir": str(cfg.path("heygen.prepared_dir", "assets/avatar_clips")
+                             / str(plan["video_id"])),
+            "background": cfg.get("heygen.background"),
+            "resolution": list(cfg.resolution),
+            "segments": _pending,
+            "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы "
+                       "в clips_dir под именами expected_clip и возобновить "
+                       "прогон с шага P6.",
+        }
+        ctx.write("avatar_request.json", request)
+        raise RedshiftError(
+            f"нужны клипы аватара: {len(_pending)} шт. Заявка — "
+            f"work/{plan['video_id']}/avatar_request.json",
+            code="AVATAR_CLIPS_NOT_PREPARED",
+            hint=f"положите клипы в {request['clips_dir']} и запустите прогон "
+                 f"с --from P6",
+        )
 
     # §7.4.3 — проверка по факту: сегменты не должны стыковаться вплотную.
     adjacent: list[dict[str, Any]] = []

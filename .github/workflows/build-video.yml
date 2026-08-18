@@ -143,6 +143,20 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
+      # Фаза 1 двухфазного конвейера: ключа HeyGen у прогона нет, поэтому P6
+      # останавливается и оставляет заявку с нарезанными кусками речи. По ним
+      # аватар генерируется снаружи через MCP-коннектор и возвращается в репо.
+      - name: Выложить заявку на аватар
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: avatar-request
+          path: |
+            work/*/avatar_request.json
+            work/*/avatar/seg_*.wav
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Итог в Summary
         if: always()
         run: |

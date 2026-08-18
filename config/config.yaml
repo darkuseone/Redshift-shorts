@@ -22,6 +22,12 @@ providers:
 heygen:
   avatar_id: "54172d7a5b2946ed8a592dee955fb0c7"   # Avatar 5 (§7.4, зафиксирован в v2.0)
   model_version: "avatar5"                         # §7.4: вынесено в конфиг, не хардкод
+  # Источник клипов: api — по ключу, prepared — готовые файлы из репозитория,
+  # auto — ключ есть → api, нет ключа но есть клипы → prepared, иначе заглушка.
+  # Ключа HeyGen в секретах нет: аватар приходит из MCP-коннектора в чате,
+  # поэтому рабочий режим здесь — prepared через auto.
+  source: auto
+  prepared_dir: assets/avatar_clips
   background: "transparent_if_available"
   output: "1080x1920"
   max_seconds_per_video: 42
