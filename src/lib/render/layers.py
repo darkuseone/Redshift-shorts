@@ -18,6 +18,8 @@ from .canvas import (
     FontBook, RGBA, SafeZones, clamp01, cut_hole, dim_layer, draw_text, ease, measure,
     mix, new_layer, parse_color, rounded_rect, with_alpha,
 )
+# Правило регистра общее для обоих движков рендера — см. text_rules.
+from .text_rules import apply_case, subtitle_word
 
 _log = get_logger("layers")
 
@@ -74,27 +76,6 @@ class Ctx:
         return new_layer(self.size)
 
 
-# --- регистр ------------------------------------------------------------------
-
-def apply_case(text: str, mode: str) -> str:
-    """Привести слово к единому регистру.
-
-    ``lower`` — режим по умолчанию для субтитров: заглавная в начале фразы
-    делает первую букву визуально крупнее остальных, и на быстрой смене слов
-    кадр «прыгает». Аббревиатуры (слово целиком заглавными: ОТО, НАСА, ИИ)
-    не трогаем — внутри них все буквы и так одного размера, а «ото» вместо
-    «ОТО» уже меняет смысл.
-    """
-    if mode == "upper":
-        return text.upper()
-    if mode != "lower":
-        return text
-    letters = [ch for ch in text if ch.isalpha()]
-    if len(letters) > 1 and all(ch.isupper() for ch in letters):
-        return text
-    return text.lower()
-
-
 # --- перенос текста -----------------------------------------------------------
 
 def wrap_to_lines(ctx: Ctx, text: str, role: str, *, max_width: int, size: int,
@@ -142,10 +123,9 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     """Одно слово по центру кадра. Pop-in 90–120 мс, scale 0.92→1.0, без вращений."""
     spec = ctx.brandbook["subtitles"]
     layer = ctx.new()
-    display = (word or "").strip().strip(",.!?;:—–")
+    display = subtitle_word(word, spec.get("case", "lower"))
     if not display:
         return layer
-    display = apply_case(display, spec.get("case", "lower"))
 
     max_width = min(int(spec["max_block_width_px"]), ctx.centered_width)
     size, lines = fit_block(ctx, display, "subtitle", max_width=max_width,

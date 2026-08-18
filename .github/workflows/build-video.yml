@@ -36,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
+      # Версия движка рендера пиньнится: обновление меняет и ключ кэша Chrome.
+      HYPERFRAMES_VERSION: "0.8.2"
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
@@ -63,6 +65,29 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version | head -1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Движок рендера: HTML-композиция собирается headless Chrome, кадры
+      # исходных видео извлекает ffmpeg. Ключи HeyGen тут не нужны — CLI
+      # открытый и рендерит локально.
+      - name: Установить HyperFrames
+        run: |
+          npm install -g hyperframes@${{ env.HYPERFRAMES_VERSION }}
+          hyperframes --version
+
+      - name: Кэш headless Chrome
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hyperframes/chrome
+          key: hyperframes-chrome-${{ env.HYPERFRAMES_VERSION }}
+
+      - name: Подготовить Chrome и проверить окружение
+        run: |
+          hyperframes browser ensure
+          hyperframes doctor || true
 
       - name: Установить зависимости
         run: |

@@ -19,6 +19,7 @@ from ..lib.ffmpeg import make_thumbnail, probe
 from ..lib.jsonio import read_json_or, write_json
 from ..lib.logging import get_logger
 from ..lib.render.compositor import Compositor
+from ..lib.render.hyperframes import HyperFramesCompositor
 from ..lib.render.layers import Ctx
 from .overlays import build_overlay_renderer
 from .qc import run_qc
@@ -160,14 +161,24 @@ def run_step(ctx) -> dict[str, Any]:
     qc_reports: dict[str, Any] = {}
     variants = list(ctx.variants)
 
+    engine = str(cfg.get("render.engine", "hyperframes"))
+
     for variant in variants:
         plan = ctx.read(f"edit_plan_{variant}.json")
         out_file = ctx.opath(f"{plan['video_id']}_{variant}.mp4")
-        overlay_renderer = build_overlay_renderer(
-            render_ctx, plan, avatar_face_bbox=face_bboxes)
-        compositor = Compositor(render_ctx, cfg, overlay_renderer=overlay_renderer)
+        if engine == "hyperframes":
+            compositor = HyperFramesCompositor(
+                render_ctx, cfg, work_dir=ctx.work_dir,
+                blocks=script.get("blocks", []))
+        else:
+            overlay_renderer = build_overlay_renderer(
+                render_ctx, plan, avatar_face_bbox=face_bboxes)
+            compositor = Compositor(render_ctx, cfg,
+                                    overlay_renderer=overlay_renderer)
 
-        _log.info("рендер стартовал", extra={"variant": variant, "file": out_file.name})
+        _log.info("рендер стартовал", extra={"variant": variant,
+                                             "file": out_file.name,
+                                             "engine": engine})
         stats = compositor.render(plan, out_file, ctx.work_dir / "mix.wav")
         info = probe(out_file)
 

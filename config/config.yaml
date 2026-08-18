@@ -147,7 +147,11 @@ audio:
   channels: 2
 
 render:
-  engine: ffmpeg           # ffmpeg | remotion
+  # hyperframes — основной движок: кадр описывается разметкой и собирается
+  # headless Chrome. ffmpeg остаётся на нарезке, обрезке и сведении звука,
+  # remotion — вспомогательный движок с той же схемой edit-плана.
+  engine: hyperframes      # hyperframes | ffmpeg | remotion
+  hyperframes_quality: high
   crf: 19                  # §3.1: CRF 18–20
   preset: "medium"
   video_codec: "libx264"

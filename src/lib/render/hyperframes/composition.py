@@ -1,0 +1,364 @@
+"""edit-план → HTML-композиция HyperFrames.
+
+Контракт движка (skill ``hyperframes-core``) задаёт несколько правил, каждое из
+которых ломает рендер молча, поэтому они вынесены сюда явно:
+
+* корень несёт ``data-start="0"``, размеры и ``data-duration``;
+* визуальные клипы с ``class="clip"`` — **прямые дети** корня, обёртка вокруг
+  клипа отменяет его тайминг, и элемент висит весь ролик;
+* ``data-track-index`` управляет пересечением во времени, а не слоями: два
+  клипа на одном треке не имеют права перекрываться, а порядок наложения
+  задаётся CSS ``z-index``;
+* каждый ``id`` уникален по всей странице — у ``<video>``/``<img>`` дубль id
+  приводит к пустому кадру, потому что продюсер инжектит кадры по
+  ``getElementById``;
+* ровно один ``gsap.timeline({paused:true})`` в ``window.__timelines``;
+* заливка кадра — на full-bleed ребёнке, а не на корне.
+
+Раскладка треков. Шоты чередуются между двумя треками: соседние шоты стыкуются
+встык, а окно видимости клипа включает оба конца, поэтому на одном треке они
+пересеклись бы ровно в точке стыка. Чередование заодно оставляет место
+переходам с наложением.
+"""
+
+from __future__ import annotations
+
+import html
+from typing import Any
+
+from ..text_rules import subtitle_word
+
+TRACK_STAGE = 0
+TRACK_SHOT_EVEN = 1
+TRACK_SHOT_ODD = 2
+TRACK_AVATAR = 3
+TRACK_BEHIND_HEAD = 4
+TRACK_OVERLAY = 5      # и следующие, если плашки пересекаются во времени
+TRACK_SUBTITLE = 12
+TRACK_AUDIO = 20
+
+COMPOSITION_ID = "redshift"
+
+
+def _esc(text: Any) -> str:
+    return html.escape(str(text or ""), quote=True)
+
+
+def _num(value: float) -> str:
+    """Секунды в атрибут: три знака хватает для кадра на 30 fps."""
+    return f"{float(value):.3f}".rstrip("0").rstrip(".") or "0"
+
+
+def _lay_out_tracks(items: list[dict[str, Any]], first_track: int) -> list[int]:
+    """Разложить пересекающиеся во времени элементы по свободным трекам."""
+    ends: list[float] = []
+    tracks: list[int] = []
+    for item in items:
+        start, end = float(item["start"]), float(item["end"])
+        for track, busy_until in enumerate(ends):
+            if start >= busy_until:
+                ends[track] = end
+                tracks.append(first_track + track)
+                break
+        else:
+            ends.append(end)
+            tracks.append(first_track + len(ends) - 1)
+    return tracks
+
+
+class CompositionBuilder:
+    """Собирает index.html по edit-плану.
+
+    ``assets`` — соответствие исходного пути имени файла внутри проекта:
+    HyperFrames резолвит медиа относительно каталога проекта, а пути из
+    ``work/`` за его пределами.
+    """
+
+    def __init__(self, plan: dict[str, Any], brandbook: dict[str, Any],
+                 assets: dict[str, str]) -> None:
+        self.plan = plan
+        self.brandbook = brandbook
+        self.assets = assets
+        self.width, self.height = plan["resolution"]
+        self.duration = float(plan["duration_sec"])
+        self.fps = int(plan["fps"])
+        self.tweens: list[str] = []
+        self.stats = {"shots": 0, "overlay_draws": 0, "subtitle_words": 0,
+                      "avatar_clips": 0}
+
+    # --- вспомогательное ------------------------------------------------
+    def _asset(self, path: str | None) -> str | None:
+        if not path:
+            return None
+        return self.assets.get(str(path))
+
+    def _ease(self, name: str) -> str:
+        """Кривая брендбука → запись, понятная GSAP."""
+        curve = self.brandbook.get("easing", {}).get(name)
+        if not curve:
+            return "power2.out"
+        return f"cubic-bezier({curve[0]},{curve[1]},{curve[2]},{curve[3]})"
+
+    # --- шоты -----------------------------------------------------------
+    def _shot_nodes(self) -> list[str]:
+        nodes: list[str] = []
+        avatar_slots = {idx for seg in self.plan.get("avatar", [])
+                        for idx in seg.get("slot_indices", [])}
+
+        for shot in self.plan["shots"]:
+            index = int(shot["index"])
+            track = TRACK_SHOT_EVEN if index % 2 == 0 else TRACK_SHOT_ODD
+            start, duration = float(shot["start"]), float(shot["duration"])
+            kind = shot.get("kind")
+            node_id = f"shot-{index:02d}"
+            timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
+                      f'data-track-index="{track}"')
+
+            if kind == "fullscreen_text":
+                nodes.append(self._fullscreen_text_node(node_id, shot, timing))
+            elif kind == "avatar" or index in avatar_slots:
+                # Режим A: фон собирается в браузере, а не берётся сплющенным
+                # кадром — в этом и смысл переезда на HyperFrames.
+                nodes.append(
+                    f'<div id="{node_id}" class="clip shot-bg" {timing}>'
+                    f'<div class="vfx"></div></div>')
+            elif kind == "meme":
+                src = self._asset(shot.get("file"))
+                if src:
+                    nodes.append(self._media_node(node_id, src, timing, css="meme"))
+            else:
+                src = self._asset(shot.get("file"))
+                if src:
+                    nodes.append(self._media_node(node_id, src, timing, css="shot",
+                                                  media_start=shot.get("avatar_offset_sec")))
+                    self._add_kenburns(node_id, shot, start, duration)
+            self.stats["shots"] += 1
+        return nodes
+
+    def _media_node(self, node_id: str, src: str, timing: str, *, css: str,
+                    media_start: float | None = None) -> str:
+        # Видео обязано быть muted+playsinline: звук ролика идёт отдельной
+        # дорожкой микса, иначе он сложится дважды.
+        offset = ""
+        if media_start:
+            offset = f' data-media-start="{_num(media_start)}"'
+        return (f'<video id="{node_id}" class="{css}" src="{_esc(src)}" '
+                f'{timing}{offset} muted playsinline></video>')
+
+    def _fullscreen_text_node(self, node_id: str, shot: dict[str, Any],
+                              timing: str) -> str:
+        content = str(shot.get("content") or "").strip()
+        accent = str(shot.get("accent_word") or "").strip()
+        invert = " invert" if shot.get("invert") else ""
+        markup = _esc(content)
+        if accent and accent.upper() in content.upper():
+            # §3.3.2: красным выделяется одно слово, не строка.
+            idx = content.upper().index(accent.upper())
+            markup = (_esc(content[:idx])
+                      + f'<span class="accent">{_esc(content[idx:idx + len(accent)])}</span>'
+                      + _esc(content[idx + len(accent):]))
+        return (f'<div id="{node_id}" class="clip fullscreen-text{invert}" {timing}>'
+                f'<span id="{node_id}-inner">{markup}</span></div>')
+
+    def _add_kenburns(self, node_id: str, shot: dict[str, Any],
+                      start: float, duration: float) -> None:
+        kb = shot.get("kenburns")
+        if not kb:
+            return
+        from_scale = float(kb.get("from_scale", 1.0))
+        to_scale = float(kb.get("to_scale", 1.06))
+        # fromTo, а не CSS-transform + tween: контракт запрещает задавать
+        # стартовое значение в CSS, когда его же тянет GSAP.
+        self.tweens.append(
+            f'tl.fromTo("#{node_id}",{{scale:{from_scale}}},'
+            f'{{scale:{to_scale},duration:{_num(duration)},ease:"none"}},{_num(start)});')
+
+    # --- аватар ---------------------------------------------------------
+    def _avatar_nodes(self) -> list[str]:
+        nodes: list[str] = []
+        for seg in self.plan.get("avatar", []):
+            src = self._asset(seg.get("file"))
+            if not src:
+                continue
+            index = int(seg["index"])
+            node_id = f"avatar-{index:02d}"
+            nodes.append(
+                f'<video id="{node_id}" class="avatar" src="{_esc(src)}" '
+                f'data-start="{_num(seg["start"])}" '
+                f'data-duration="{_num(seg["duration"])}" '
+                f'data-track-index="{TRACK_AVATAR}" muted playsinline></video>')
+            self.stats["avatar_clips"] += 1
+        return nodes
+
+    def _behind_head_nodes(self) -> list[str]:
+        """Слово за головой (§5.3) — под аватаром, поверх фона."""
+        nodes: list[str] = []
+        by_block = {b["id"]: b for b in self.plan.get("_blocks", [])}
+        for shot in self.plan["shots"]:
+            if not shot.get("text_behind_head"):
+                continue
+            block = by_block.get(shot.get("block_id"), {})
+            word = str(block.get("emphasis_word") or "").strip()
+            if not word:
+                continue
+            index = int(shot["index"])
+            nodes.append(
+                f'<div id="behind-{index:02d}" class="clip behind-head" '
+                f'data-start="{_num(shot["start"])}" '
+                f'data-duration="{_num(shot["duration"])}" '
+                f'data-track-index="{TRACK_BEHIND_HEAD}">{_esc(word)}</div>')
+        return nodes
+
+    # --- оверлеи --------------------------------------------------------
+    def _overlay_nodes(self) -> list[str]:
+        overlays = list(self.plan.get("overlays", []))
+        tracks = _lay_out_tracks(overlays, TRACK_OVERLAY)
+        nodes: list[str] = []
+        for i, (ovl, track) in enumerate(zip(overlays, tracks)):
+            start = float(ovl["start"])
+            duration = float(ovl["end"]) - start
+            node_id = f"ovl-{i:02d}"
+            timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
+                      f'data-track-index="{track}"')
+            body = self._overlay_body(node_id, ovl)
+            if not body:
+                continue
+            nodes.append(body.replace("__TIMING__", timing))
+            self.stats["overlay_draws"] += 1
+            self._add_overlay_entrance(node_id, ovl, start)
+        return nodes
+
+    def _overlay_body(self, node_id: str, ovl: dict[str, Any]) -> str | None:
+        kind = ovl.get("type")
+        params = ovl.get("params") or {}
+        if kind == "source_card":
+            domain = _esc(params.get("domain"))
+            title = _esc(params.get("title"))
+            snippet = _esc(params.get("snippet"))
+            return (f'<div id="{node_id}" class="clip overlay source-card" __TIMING__>'
+                    f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
+                    f'<span class="dot"></span><span class="domain">{domain}</span></div>'
+                    f'<div class="title">{title}</div>'
+                    f'<div class="snippet">{snippet}</div></div>')
+        if kind == "plaque":
+            content = _esc(params.get("content") or ovl.get("content"))
+            kicker = params.get("kicker") or params.get("domain")
+            extra = f'<span class="kicker">{_esc(kicker)}</span>' if kicker else ""
+            return (f'<div id="{node_id}" class="clip overlay plaque" __TIMING__>'
+                    f'{content}{extra}</div>')
+        if kind == "cta":
+            text = _esc(params.get("content") or ovl.get("content") or "Подпишись")
+            return (f'<div id="{node_id}" class="clip overlay cta" __TIMING__>'
+                    f'<span id="{node_id}-pill" class="pill">{text}</span></div>')
+        # highlight рисуется поверх карточки источника её же стилем — отдельный
+        # слой не нужен, подсветку несёт .hl внутри карточки.
+        return None
+
+    def _add_overlay_entrance(self, node_id: str, ovl: dict[str, Any],
+                              start: float) -> None:
+        kind = ovl.get("type")
+        if kind == "cta":
+            # §5.7: пульс кнопки. repeat конечный — бесконечный запрещён
+            # контрактом детерминизма.
+            hz = float(self.brandbook["cta"].get("button_pulse_hz", 1.6))
+            period = 1.0 / hz
+            duration = float(ovl["end"]) - start
+            repeats = max(0, int(duration / period) - 1)
+            self.tweens.append(
+                f'tl.fromTo("#{node_id}-pill",{{scale:0.6}},'
+                f'{{scale:1,duration:0.32,ease:"back.out(1.7)"}},{_num(start)});')
+            self.tweens.append(
+                f'tl.to("#{node_id}-pill",{{scale:1.035,duration:{period / 2:.3f},'
+                f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(start + 0.32)});')
+            return
+        enter = float(self.brandbook["plaque"]["enter_ms"][0]) / 1000.0
+        self.tweens.append(
+            f'tl.fromTo("#{node_id}",{{y:36,autoAlpha:0}},'
+            f'{{y:0,autoAlpha:1,duration:{enter:.3f},ease:"power3.out"}},{_num(start)});')
+
+    # --- субтитры -------------------------------------------------------
+    def _subtitle_nodes(self) -> list[str]:
+        spec = self.brandbook["subtitles"]
+        pop_ms = float(spec["pop_in_ms"][0]) / 1000.0
+        scale_from = float(spec["pop_scale_from"])
+        baseline = self.plan.get("subtitle_style", {}).get(
+            "baseline_y", spec["baseline_y_default"])
+
+        case_mode = spec.get("case", "lower")
+        nodes: list[str] = []
+        for i, word in enumerate(self.plan.get("subtitles", [])):
+            display = subtitle_word(str(word.get("display") or ""), case_mode)
+            if not display:
+                continue
+            start = float(word["start"])
+            duration = max(0.05, float(word["end"]) - start)
+            node_id = f"w-{i:04d}"
+            css = "clip word emphasis" if word.get("emphasis") else "clip word"
+            style = f' style="top:{int(baseline)}px"'
+            nodes.append(
+                f'<div id="{node_id}" class="{css}"{style} '
+                f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
+                f'data-track-index="{TRACK_SUBTITLE}">'
+                f'<span id="{node_id}-t">{_esc(display)}</span></div>')
+            # Pop-in анимируется на внутреннем span: сам клип отдан движку,
+            # его видимостью управляет фреймворк.
+            self.tweens.append(
+                f'tl.fromTo("#{node_id}-t",{{scale:{scale_from}}},'
+                f'{{scale:1,duration:{pop_ms:.3f},ease:"back.out(1.7)"}},{_num(start)});')
+            self.stats["subtitle_words"] += 1
+        return nodes
+
+    # --- звук -----------------------------------------------------------
+    def _audio_node(self, mix_name: str) -> str:
+        return (f'<audio id="mix" src="{_esc(mix_name)}" data-start="0" '
+                f'data-duration="{_num(self.duration)}" '
+                f'data-track-index="{TRACK_AUDIO}" data-volume="1"></audio>')
+
+    # --- сборка ---------------------------------------------------------
+    def build(self, mix_name: str) -> str:
+        body: list[str] = [
+            f'<div id="stage-bg" class="clip stage-bg" data-start="0" '
+            f'data-duration="{_num(self.duration)}" '
+            f'data-track-index="{TRACK_STAGE}"></div>'
+        ]
+        body += self._shot_nodes()
+        body += self._behind_head_nodes()
+        body += self._avatar_nodes()
+        body += self._overlay_nodes()
+        body += self._subtitle_nodes()
+        body.append(self._audio_node(mix_name))
+
+        indented = "\n      ".join(body)
+        tweens = "\n      ".join(self.tweens)
+        title = f'{self.plan["video_id"]} {self.plan["variant"]}'
+
+        return f"""<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width={self.width}, height={self.height}" />
+    <title>{_esc(title)}</title>
+    <script src="vendor/gsap.min.js"></script>
+    <link rel="stylesheet" href="brand.css" />
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="{COMPOSITION_ID}"
+      data-start="0"
+      data-duration="{_num(self.duration)}"
+      data-width="{self.width}"
+      data-height="{self.height}"
+      data-fps="{self.fps}"
+    >
+      {indented}
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {{}};
+      const tl = gsap.timeline({{ paused: true }});
+      {tweens}
+      window.__timelines["{COMPOSITION_ID}"] = tl;
+    </script>
+  </body>
+</html>
+"""
