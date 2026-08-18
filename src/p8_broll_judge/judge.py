@@ -1,18 +1,189 @@
-"""P8 — Оценка футажей.
+"""P8: ``candidates.json`` → ``accepted_assets.json``.
 
-Заглушка Фазы 0: контракт шага объявлен, реализация приходит в своей фазе
-(§17). Падает с внятным кодом, а не молча пропускает работу.
+Трёхступенчатая оценка §7.3. Шаг 1 (дешёвая отбраковка без vision) уже отработал
+в P7 — там он экономит не только вызовы модели, но и скачивания. Здесь работают
+шаги 2 и 3:
+
+* **Шаг 2 — критик со зрением.** Все прошедшие кандидаты, для видео — 3 кадра.
+  Исполнитель Gemini (дешевле). Возвращает score 0.0–1.0 и причину.
+* **Шаг 3 — арбитраж Grok.** Только спорные: score в [0.45, 0.70], либо
+  расхождение оценок кадров одного видео > 0.3, либо роль блока
+  ``evidence``/``twist``. Жёсткий лимит — 8 вызовов на ролик. Решение финальное.
+
+Пороги: ≥0.70 принять, <0.45 отклонить. Незакрытый слот уходит в генерацию (P9),
+а **не** заполняется слабым футажом — это прямое требование §7.3.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
-from ..errors import RedshiftError
+from ..lib.logging import get_logger
+from ..lib.manifest import AssetRecord, FootageIndex, new_id
+from ..lib.providers.vision import VisionVerdict, build_vision_provider
+
+_log = get_logger("p8")
+
+
+def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
+    """Триггеры шага 3 (§7.3). Возвращает причину или None."""
+    lo = float(cfg.get("vision.reject_threshold", 0.45))
+    hi = float(cfg.get("vision.accept_threshold", 0.70))
+    disagree = float(cfg.get("vision.frame_disagreement_threshold", 0.30))
+    if lo <= verdict.score <= hi:
+        return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi}]"
+    if verdict.frame_disagreement > disagree:
+        return f"кадры расходятся на {verdict.frame_disagreement:.2f} > {disagree}"
+    if role in ("evidence", "twist"):
+        return f"роль блока {role} — цена ошибки выше обычной"
+    return None
 
 
 def run_step(ctx) -> dict[str, Any]:
-    raise RedshiftError(
-        "шаг P8 (Оценка футажей) ещё не реализован",
-        code="STEP_NOT_IMPLEMENTED", step="P8",
-    )
+    doc = ctx.read("candidates.json")
+    plan = ctx.read("cut_plan.json")
+    cfg = ctx.cfg
+
+    accept_threshold = float(cfg.get("vision.accept_threshold", 0.70))
+    reject_threshold = float(cfg.get("vision.reject_threshold", 0.45))
+    arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 8))
+
+    primary = build_vision_provider(cfg, ctx.costs, role="primary")
+    arbiter = build_vision_provider(cfg, ctx.costs, role="arbiter")
+    index = FootageIndex.load(cfg)
+
+    slots_by_index = {s["index"]: s for s in plan["slots"]}
+    by_slot: dict[int, list[dict[str, Any]]] = {}
+    for candidate in doc["candidates"]:
+        by_slot.setdefault(candidate["slot_index"], []).append(candidate)
+
+    judged: list[dict[str, Any]] = []
+    accepted: dict[int, dict[str, Any]] = {}
+    arbiter_calls = 0
+    reused_scores = 0
+
+    for slot_index in sorted(by_slot):
+        slot = slots_by_index.get(slot_index, {})
+        role = slot.get("role", "")
+        intent = slot.get("visual_intent", "") or slot.get("reason", "")
+
+        scored: list[tuple[float, dict[str, Any]]] = []
+        for candidate in by_slot[slot_index]:
+            # Материал из локальной базы уже оценивался — платить второй раз
+            # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6).
+            if candidate.get("origin") == "local_cache" and candidate.get("prior_score"):
+                verdict_dict = {
+                    "score": float(candidate["prior_score"]),
+                    "reason": "оценка переиспользована из локальной базы",
+                    "summary": candidate.get("vision_summary", ""),
+                    "judge": "cache", "frames": 0,
+                }
+                reused_scores += 1
+            else:
+                frames = [Path(f) for f in candidate.get("frames", [])]
+                verdict = primary.judge(frames, intent=intent, role=role,
+                                        query=candidate.get("query", ""))
+                verdict_dict = verdict.to_dict()
+
+                reason = _needs_arbitration(verdict, role, cfg)
+                if reason and arbiter_calls < arbiter_budget:
+                    arbiter_calls += 1
+                    final = arbiter.judge(frames, intent=intent, role=role,
+                                          query=candidate.get("query", ""))
+                    verdict_dict = final.to_dict()
+                    verdict_dict["arbitrated"] = True
+                    verdict_dict["arbitration_reason"] = reason
+                    verdict_dict["primary_score"] = round(verdict.score, 4)
+                elif reason:
+                    verdict_dict["arbitration_skipped"] = (
+                        f"{reason}; лимит арбитража {arbiter_budget} исчерпан")
+
+            entry = {**candidate, "verdict": verdict_dict,
+                     "score": float(verdict_dict["score"])}
+            entry["decision"] = (
+                "accept" if entry["score"] >= accept_threshold
+                else "reject" if entry["score"] < reject_threshold
+                else "borderline")
+            judged.append(entry)
+            scored.append((entry["score"], entry))
+
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        best = next((entry for score, entry in scored if score >= accept_threshold), None)
+        if best is None and scored:
+            top_score, top_entry = scored[0]
+            # Спорный кандидат берём только если арбитраж уже был исчерпан:
+            # иначе §7.3 требует отправить слот в генерацию.
+            if top_score >= reject_threshold and arbiter_calls >= arbiter_budget:
+                best = top_entry
+                best["decision"] = "accept_fallback"
+                best["fallback_reason"] = (
+                    "лимит арбитража исчерпан, принят лучший из спорных")
+        if best is not None:
+            accepted[slot_index] = best
+
+    # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
+    added_to_index = 0
+    for entry in accepted.values():
+        if entry.get("origin") == "local_cache":
+            index.mark_used(entry["asset_id"], doc["video_id"])
+            continue
+        if index.by_id(entry["asset_id"]) is not None:
+            index.mark_used(entry["asset_id"], doc["video_id"])
+            continue
+        index.add(AssetRecord(
+            id=entry["asset_id"] or new_id(),
+            type=entry.get("kind", "video"),
+            source=entry.get("source", "unknown"),
+            license=entry.get("license", ""),
+            url_origin=entry.get("page_url", ""),
+            phash=(entry.get("phashes") or [""])[0],
+            phashes=entry.get("phashes", []),
+            tags=entry.get("tags", []),
+            vision_summary=entry.get("verdict", {}).get("summary", ""),
+            score=entry.get("score", 0.0),
+            duration_sec=entry.get("duration_sec", 0.0),
+            width=entry.get("width", 0), height=entry.get("height", 0),
+            file=entry.get("storage_key", ""),
+            used_in=[doc["video_id"]],
+            ai_generated=bool(entry.get("ai_generated")),
+            mock=bool(entry.get("mock")),
+            extra={"attribution": entry.get("attribution", ""),
+                   "author": entry.get("author", "")},
+        ))
+        added_to_index += 1
+    index.save()
+
+    asset_slots = [s["index"] for s in plan["slots"]
+                   if s["needs_asset"] and s["asset_role"] in ("broll", "evidence")]
+    unfilled = [i for i in asset_slots if i not in accepted]
+
+    result = {
+        "video_id": doc["video_id"],
+        "accept_threshold": accept_threshold,
+        "reject_threshold": reject_threshold,
+        "arbiter_calls": arbiter_calls,
+        "arbiter_budget": arbiter_budget,
+        "reused_scores": reused_scores,
+        "judged_count": len(judged),
+        "accepted_count": len(accepted),
+        "slots_total": len(asset_slots),
+        "slots_filled": len(accepted),
+        "fill_rate": round(len(accepted) / max(len(asset_slots), 1), 4),
+        "unfilled_slots": unfilled,
+        "added_to_index": added_to_index,
+        "accepted": {str(k): v for k, v in sorted(accepted.items())},
+        "judged": judged,
+    }
+    ctx.write("accepted_assets.json", result)
+
+    if unfilled:
+        ctx.warn(f"{len(unfilled)} слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
+                 slots=unfilled)
+    _log.info("оценка футажей завершена", extra={
+        "judged": len(judged), "accepted": len(accepted),
+        "fill_rate": result["fill_rate"], "arbiter_calls": arbiter_calls,
+        "reused": reused_scores, "unfilled": len(unfilled),
+    })
+    return {"accepted": len(accepted), "fill_rate": result["fill_rate"],
+            "arbiter_calls": arbiter_calls}

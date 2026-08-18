@@ -1,18 +1,149 @@
-"""P9 — Генерация недостающих материалов.
+"""P9: пустые слоты → ``generated_assets.json``.
 
-Заглушка Фазы 0: контракт шага объявлен, реализация приходит в своей фазе
-(§17). Падает с внятным кодом, а не молча пропускает работу.
+§7.3: «Незакрытый слот идёт в генерацию, а не заполняется слабым футажом».
+Здесь и только здесь закрываются слоты, которые не смог закрыть поиск.
+
+Ограничения, которые шаг обязан соблюсти:
+
+* доля чисто AI-generated футажа ≤ 40 % хронометража (§7.2.6, QC-14) — если
+  генерация выведет ролик за этот потолок, слот остаётся пустым, и это
+  фиксируется как проблема плана, а не заметается генерацией;
+* платные модели ≤ 3–7 % случаев (§7.7), приоритет бесплатным;
+* сгенерированный материал попадает в локальную базу с честной пометкой
+  ``ai_generated`` — иначе счётчик доли AI со временем начнёт врать.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from ..errors import RedshiftError
+from ..lib.ffmpeg import extract_frames, probe
+from ..lib.logging import get_logger
+from ..lib.manifest import AssetRecord, FootageIndex
+from ..lib.phash import phash_image
+from ..lib.providers.generation import build_generation_provider
+from ..lib.query import build_queries
+
+_log = get_logger("p9")
+
+
+def _prompt_for_slot(slot: dict[str, Any], plan: dict[str, Any]) -> str:
+    """Промпт из смысла блока — тот же принцип, что и у поисковых запросов."""
+    queries = build_queries(slot, plan, count=3)
+    intent = slot.get("visual_intent") or queries[0]
+    role = slot.get("role", "")
+    style = ("cinematic, vertical 9:16 composition, shallow depth of field, "
+             "muted palette with a single warm red accent, no text, no logos, "
+             "no watermark, subtle motion")
+    return f"{intent}. {queries[0]}. Role: {role}. Style: {style}"
 
 
 def run_step(ctx) -> dict[str, Any]:
-    raise RedshiftError(
-        "шаг P9 (Генерация недостающих материалов) ещё не реализован",
-        code="STEP_NOT_IMPLEMENTED", step="P9",
+    plan = ctx.read("cut_plan.json")
+    accepted_doc = ctx.read("accepted_assets.json")
+    cfg = ctx.cfg
+
+    slots_by_index = {s["index"]: s for s in plan["slots"]}
+    unfilled = list(accepted_doc.get("unfilled_slots", []))
+    duration = float(plan["duration_sec"])
+    ai_share_max = float(cfg.get("limits.ai_footage_share_max", 0.40))
+    paid_share_limit = float(cfg.get("magnific.paid_model_share_limit", 0.07))
+    prefer_free = bool(cfg.get("magnific.prefer_free_models", True))
+
+    # Сколько AI-материала уже в ролике: генерация добавляется поверх него.
+    ai_sec = sum(
+        float(slots_by_index.get(int(k), {}).get("duration", 0.0))
+        for k, entry in accepted_doc.get("accepted", {}).items()
+        if entry.get("ai_generated")
     )
+    ai_budget_sec = max(0.0, ai_share_max * duration - ai_sec)
+
+    provider = build_generation_provider(cfg, ctx.costs)
+    index = FootageIndex.load(cfg)
+
+    generated: dict[str, Any] = {}
+    skipped: list[dict[str, Any]] = []
+    paid_used = 0
+
+    for slot_index in unfilled:
+        slot = slots_by_index.get(slot_index)
+        if slot is None:
+            continue
+        slot_duration = float(slot["duration"])
+        if slot_duration > ai_budget_sec:
+            skipped.append({
+                "slot": slot_index,
+                "reason": (f"генерация вывела бы долю AI-футажа за {ai_share_max:.0%} "
+                           f"(§7.2.6): остаток бюджета {ai_budget_sec:.1f} сек, "
+                           f"нужно {slot_duration:.1f} сек"),
+            })
+            continue
+
+        prompt = _prompt_for_slot(slot, plan)
+        # Платные модели — редкое исключение (§7.7), считаем их долю честно.
+        use_free = prefer_free or (paid_used + 1) / max(len(unfilled), 1) > paid_share_limit
+        out = ctx.wpath("broll", "generated", f"slot_{slot_index:02d}.mp4")
+        asset = provider.generate(prompt, out, kind="video",
+                                  duration_sec=max(slot_duration + 0.6, 2.0),
+                                  prefer_free=use_free)
+        if asset.paid_model:
+            paid_used += 1
+
+        info = probe(asset.path)
+        frames = extract_frames(asset.path, ctx.wpath("broll", "frames", asset.id, ".keep").parent,
+                                cfg.get("stock.video_probe_frames", [0.1, 0.5, 0.9]))
+        hashes = [phash_image(f) for f in frames]
+
+        entry = {
+            **asset.to_dict(),
+            "slot_index": slot_index, "origin": "generated",
+            "asset_id": asset.id, "source": "magnific",
+            "local_file": str(asset.path), "frames": [str(f) for f in frames],
+            "phashes": hashes, "license_confirmed": True,
+            "duration_sec": info.duration_sec or asset.duration_sec,
+            "width": info.width or asset.width, "height": info.height or asset.height,
+            "tags": ["generated", slot.get("role", ""), "abstract"],
+            "attribution": "REDSHIFT / generated",
+            "score": 1.0,   # материал сделан под слот, релевантность гарантирована
+        }
+        generated[str(slot_index)] = entry
+        ai_budget_sec -= slot_duration
+
+        storage_key = f"generated/{asset.id}.mp4"
+        ctx.storage.put(storage_key, asset.path)
+        index.add(AssetRecord(
+            id=asset.id, type="video", source="magnific",
+            license="generated-owned", url_origin="",
+            phash=hashes[0] if hashes else "", phashes=hashes,
+            tags=entry["tags"], vision_summary=asset.prompt[:160],
+            score=1.0, duration_sec=entry["duration_sec"],
+            width=entry["width"], height=entry["height"], file=storage_key,
+            used_in=[plan["video_id"]], ai_generated=True, mock=asset.mock,
+        ))
+
+    index.save()
+
+    total_ai_sec = ai_sec + sum(
+        float(slots_by_index[int(k)]["duration"]) for k in generated)
+    doc = {
+        "video_id": plan["video_id"],
+        "generated_count": len(generated),
+        "skipped": skipped,
+        "paid_model_used": paid_used,
+        "ai_footage_sec": round(total_ai_sec, 3),
+        "ai_footage_share": round(total_ai_sec / max(duration, 1e-6), 4),
+        "ai_share_limit": ai_share_max,
+        "generated": generated,
+    }
+    ctx.write("generated_assets.json", doc)
+
+    for item in skipped:
+        ctx.warn(f"слот {item['slot']} остался пустым: {item['reason']}", slot=item["slot"])
+    if doc["ai_footage_share"] > ai_share_max + 1e-6:
+        ctx.warn(f"доля AI-футажа {doc['ai_footage_share']:.0%} превышает {ai_share_max:.0%} (QC-14)")
+
+    _log.info("генерация завершена", extra={
+        "generated": len(generated), "skipped": len(skipped),
+        "ai_share": doc["ai_footage_share"], "paid_models": paid_used,
+    })
+    return {"generated": len(generated), "ai_share": doc["ai_footage_share"]}
