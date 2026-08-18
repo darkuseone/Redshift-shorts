@@ -20,8 +20,10 @@
       "vision_summary": "карточка-реакция «ирония» (заглушка)",
       "score": 0.0,
       "duration_sec": 1.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "meme_000_ирония.png",
       "emotion": "ирония",
