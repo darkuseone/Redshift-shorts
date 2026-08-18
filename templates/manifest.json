@@ -713,7 +713,8 @@
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0043"
+        "redshift_0043",
+        "redshift_0044"
       ],
       "added": "2026-08-18"
     },
@@ -829,7 +830,9 @@
         "code"
       ],
       "renderer": "source_card",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0044"
+      ],
       "added": "2026-08-18"
     },
     {
@@ -918,7 +921,8 @@
       "renderer": "whip_pan",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0043"
+        "redshift_0043",
+        "redshift_0044"
       ],
       "added": "2026-08-18"
     },
