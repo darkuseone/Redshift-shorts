@@ -100,8 +100,20 @@ class CompositionBuilder:
         return f"cubic-bezier({curve[0]},{curve[1]},{curve[2]},{curve[3]})"
 
     # --- шоты -----------------------------------------------------------
+    def _alpha_slots(self) -> set[int]:
+        """Слоты, где аватар лёг альфой и под ним нужен собственный фон.
+
+        Фото-аватар HeyGen возвращает кадр с вшитым фоном и без альфы. Тогда
+        собирать под ним градиент бессмысленно: он всё равно перекрыт. Слои
+        имеют смысл только там, где альфа реально есть.
+        """
+        return {idx for seg in self.plan.get("avatar", [])
+                if seg.get("has_alpha")
+                for idx in seg.get("slot_indices", [])}
+
     def _shot_nodes(self) -> list[str]:
         nodes: list[str] = []
+        alpha_slots = self._alpha_slots()
         avatar_slots = {idx for seg in self.plan.get("avatar", [])
                         for idx in seg.get("slot_indices", [])}
 
@@ -116,12 +128,16 @@ class CompositionBuilder:
 
             if kind == "fullscreen_text":
                 nodes.append(self._fullscreen_text_node(node_id, shot, timing))
-            elif kind == "avatar" or index in avatar_slots:
-                # Режим A: фон собирается в браузере, а не берётся сплющенным
-                # кадром — в этом и смысл переезда на HyperFrames.
+            elif index in alpha_slots:
+                # Режим A с альфой: фон собирается в браузере, а не берётся
+                # сплющенным кадром — в этом и смысл переезда на HyperFrames.
                 nodes.append(
                     f'<div id="{node_id}" class="clip shot-bg" {timing}>'
                     f'<div class="vfx"></div></div>')
+            elif kind == "avatar" or index in avatar_slots:
+                # Аватар без альфы приходит со своим фоном и занимает кадр
+                # целиком: подкладывать под него нечего.
+                continue
             elif kind == "meme":
                 src = self._asset(shot.get("file"))
                 if src:
@@ -191,11 +207,17 @@ class CompositionBuilder:
         return nodes
 
     def _behind_head_nodes(self) -> list[str]:
-        """Слово за головой (§5.3) — под аватаром, поверх фона."""
+        """Слово за головой (§5.3) — под аватаром, поверх фона.
+
+        Рисуется только там, где у аватара есть альфа. Иначе слово окажется за
+        непрозрачным видео: рендер потратит на него кадры, а в ролике его не
+        будет — брендбук и требует для §5.3 матовую маску.
+        """
         nodes: list[str] = []
+        alpha_slots = self._alpha_slots()
         by_block = {b["id"]: b for b in self.plan.get("_blocks", [])}
         for shot in self.plan["shots"]:
-            if not shot.get("text_behind_head"):
+            if not shot.get("text_behind_head") or int(shot["index"]) not in alpha_slots:
                 continue
             block = by_block.get(shot.get("block_id"), {})
             word = str(block.get("emphasis_word") or "").strip()

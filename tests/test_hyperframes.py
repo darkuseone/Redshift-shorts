@@ -256,3 +256,25 @@ def test_source_card_clears_the_subtitle_band(brandbook):
     height = int(brandbook["canvas"]["height"])
     card_bottom_y = height - bottom
     assert card_bottom_y <= subs["baseline_y_default"] - subs["size_px"][1] // 2
+
+
+# --- аватар без альфы ---------------------------------------------------------
+
+def test_opaque_avatar_gets_no_background_layer(plan, assets, brandbook):
+    """Фото-аватар HeyGen приходит со вшитым фоном: подкладывать нечего."""
+    plan["avatar"][0]["has_alpha"] = False
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert 'id="shot-02"' not in out          # фон под аватаром не рисуем
+    assert 'class="vfx"' not in out
+    assert 'id="avatar-00" class="avatar"' in out
+
+
+def test_word_behind_head_needs_alpha(plan, assets, brandbook):
+    """Без альфы слово оказалось бы за непрозрачным видео — его не видно."""
+    plan["avatar"][0]["has_alpha"] = False
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "behind-head" not in out
+
+    plan["avatar"][0]["has_alpha"] = True
+    with_alpha = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "behind-head" in with_alpha
