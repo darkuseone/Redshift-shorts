@@ -1,0 +1,388 @@
+{
+  "_comment": "Библиотека memes. Лимит 100 (§14). По достижении лимита пополнение блокируется.",
+  "kind": "memes",
+  "max_items": 100,
+  "count": 18,
+  "frozen": false,
+  "updated": "2026-08-18",
+  "items": [
+    {
+      "id": "meme_000_ирония",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ирония",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «ирония» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_000_ирония.png",
+      "emotion": "ирония",
+      "mock": true
+    },
+    {
+      "id": "meme_001_абсурд",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "абсурд",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «абсурд» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_001_абсурд.png",
+      "emotion": "абсурд",
+      "mock": true
+    },
+    {
+      "id": "meme_002_разочарование",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "разочарование",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «разочарование» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_002_разочарование.png",
+      "emotion": "разочарование",
+      "mock": true
+    },
+    {
+      "id": "meme_003_удивление",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "удивление",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «удивление» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_003_удивление.png",
+      "emotion": "удивление",
+      "mock": true
+    },
+    {
+      "id": "meme_004_сарказм",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "сарказм",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «сарказм» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_004_сарказм.png",
+      "emotion": "сарказм",
+      "mock": true
+    },
+    {
+      "id": "meme_005_ирония",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ирония",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «ирония» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_005_ирония.png",
+      "emotion": "ирония",
+      "mock": true
+    },
+    {
+      "id": "meme_006_абсурд",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "абсурд",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «абсурд» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_006_абсурд.png",
+      "emotion": "абсурд",
+      "mock": true
+    },
+    {
+      "id": "meme_007_разочарование",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "разочарование",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «разочарование» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_007_разочарование.png",
+      "emotion": "разочарование",
+      "mock": true
+    },
+    {
+      "id": "meme_008_удивление",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "удивление",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «удивление» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_008_удивление.png",
+      "emotion": "удивление",
+      "mock": true
+    },
+    {
+      "id": "meme_009_сарказм",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "сарказм",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «сарказм» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_009_сарказм.png",
+      "emotion": "сарказм",
+      "mock": true
+    },
+    {
+      "id": "meme_010_ирония",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ирония",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «ирония» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_010_ирония.png",
+      "emotion": "ирония",
+      "mock": true
+    },
+    {
+      "id": "meme_011_абсурд",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "абсурд",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «абсурд» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_011_абсурд.png",
+      "emotion": "абсурд",
+      "mock": true
+    },
+    {
+      "id": "meme_012_разочарование",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "разочарование",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «разочарование» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_012_разочарование.png",
+      "emotion": "разочарование",
+      "mock": true
+    },
+    {
+      "id": "meme_013_удивление",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "удивление",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «удивление» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_013_удивление.png",
+      "emotion": "удивление",
+      "mock": true
+    },
+    {
+      "id": "meme_014_сарказм",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "сарказм",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «сарказм» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_014_сарказм.png",
+      "emotion": "сарказм",
+      "mock": true
+    },
+    {
+      "id": "meme_015_ирония",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ирония",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «ирония» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_015_ирония.png",
+      "emotion": "ирония",
+      "mock": true
+    },
+    {
+      "id": "meme_016_абсурд",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "абсурд",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «абсурд» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_016_абсурд.png",
+      "emotion": "абсурд",
+      "mock": true
+    },
+    {
+      "id": "meme_017_разочарование",
+      "type": "meme",
+      "source": "placeholder",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "разочарование",
+        "placeholder"
+      ],
+      "vision_summary": "карточка-реакция «разочарование» (заглушка)",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "meme_017_разочарование.png",
+      "emotion": "разочарование",
+      "mock": true
+    }
+  ]
+}

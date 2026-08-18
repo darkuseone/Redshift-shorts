@@ -174,6 +174,26 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
     assert stats["cut_share"] >= 0.70
 
 
+# --- совместимость с установленным ffmpeg -------------------------------------
+
+def test_gradient_types_are_supported_by_ffmpeg():
+    """Каждый тип градиента обязан существовать в установленной сборке ffmpeg.
+
+    Мок-генератор перебирает типы по хешу промпта, поэтому неподдерживаемый
+    тип всплывает не сразу, а на том ролике, где хеш до него дошёл: `conical`
+    уронил P9 только на четвёртом прогоне.
+    """
+    import subprocess
+
+    from src.lib.ffmpeg import ffmpeg_bin
+    from src.lib.providers.generation import GRADIENT_TYPES
+
+    out = subprocess.run([ffmpeg_bin(), "-hide_banner", "-h", "filter=gradients"],
+                         capture_output=True, text=True).stdout
+    for name in GRADIENT_TYPES:
+        assert f" {name} " in out, f"ffmpeg не знает тип градиента {name}"
+
+
 # --- запросы (§7.2) -----------------------------------------------------------
 
 def test_queries_are_english_and_varied():

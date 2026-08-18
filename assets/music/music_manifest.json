@@ -47,7 +47,8 @@
       "score": 0.0,
       "duration_sec": 60.0,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0045"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",

@@ -22,6 +22,11 @@ from ..logging import get_logger
 from ..retry import call_with_retry
 from .base import Provider, ProviderMode, resolve_mode
 
+# Типы градиента фильтра ffmpeg ``gradients``. Список закрытый: ffmpeg молча не
+# умеет ничего сверх него и падает уже в рендере — ``conical`` из документации
+# другой версии стоил провала P9 на четвёртом ролике.
+GRADIENT_TYPES = ("linear", "radial", "circular", "spiral", "square")
+
 _log = get_logger("generation")
 
 
@@ -72,7 +77,7 @@ class MockGeneration(GenerationProvider):
         c1 = palette[(seed // 7 + 2) % len(palette)]
         # Разные промпты обязаны давать визуально разный кадр: одинаковый
         # градиент — это готовый дубль, который завалит QC-5.
-        gradient_type = ("radial", "linear", "spiral", "conical")[seed % 4]
+        gradient_type = GRADIENT_TYPES[seed % len(GRADIENT_TYPES)]
 
         dst.parent.mkdir(parents=True, exist_ok=True)
         source = (f"gradients=s={width}x{height}:c0=0x{c0}:c1=0x{c1}"

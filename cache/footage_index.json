@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-08-18",
-  "count": 99,
+  "count": 112,
   "items": [
     {
       "id": "pexels_406de0a0_01",
@@ -3343,6 +3343,442 @@
       "width": 1080,
       "height": 1920,
       "file": "generated/gen_mock_c92b1751.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "pexels_aa9cf9ea_03",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/aa9cf9ea/3",
+      "phash": "00d555d457d65ae8",
+      "tags": [
+        "scientist",
+        "working"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «scientist working»",
+      "score": 0.5673,
+      "duration_sec": 5.1,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "00d555d457d65ae8",
+        "d581838107af2f9f",
+        "00087e277bd879d9"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_aa9cf9ea_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_f6695859_03",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/f6695859/3",
+      "phash": "00d15fc8e98578bb",
+      "tags": [
+        "researcher",
+        "laboratory"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «researcher laboratory»",
+      "score": 0.5886,
+      "duration_sec": 4.2,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "00d15fc8e98578bb",
+        "d57e0f600a2b2f59",
+        "002b0e3ad3d8fe2d"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_f6695859_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_fbfe64eb_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/fbfe64eb/0",
+      "phash": "f7d5802a7ed78181",
+      "tags": [
+        "microscope",
+        "image",
+        "material",
+        "surface"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «microscope image of material surface»",
+      "score": 0.5638,
+      "duration_sec": 5.2,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "f7d5802a7ed78181",
+        "3294ce834d8bcb93",
+        "027fd5802b7dd42a"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_fbfe64eb_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pixabay_2dd64d3d_01",
+      "type": "video",
+      "source": "pixabay",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pixabay/2dd64d3d/1",
+      "phash": "2a6ec007ed5ac45d",
+      "tags": [
+        "researcher",
+        "laboratory"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «researcher laboratory»",
+      "score": 0.5855,
+      "duration_sec": 3.9,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "2a6ec007ed5ac45d",
+        "fd2a82d56ac360b5",
+        "fdc095ad18b091f3"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pixabay/pixabay_2dd64d3d_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pixabay_6429d038_01",
+      "type": "video",
+      "source": "pixabay",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pixabay/6429d038/1",
+      "phash": "ff3e85729f318011",
+      "tags": [
+        "scientist",
+        "working"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «scientist working»",
+      "score": 0.5736,
+      "duration_sec": 3.9,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "ff3e85729f318011",
+        "fdd5803f42b5e00d",
+        "0080d57f3e683f95"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pixabay/pixabay_6429d038_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_69767b40_05",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/69767b40/5",
+      "phash": "2ac1553eaac5553a",
+      "tags": [
+        "circuit",
+        "board",
+        "red",
+        "light"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «circuit board red light»",
+      "score": 0.674,
+      "duration_sec": 5.4,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "2ac1553eaac5553a",
+        "d162b15a2f5dac1c",
+        "2a3a7dc115b4e20f"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_69767b40_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_69767b40_04",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/69767b40/4",
+      "phash": "d4766aabb4b4505a",
+      "tags": [
+        "circuit",
+        "board",
+        "red",
+        "light"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «circuit board red light»",
+      "score": 0.6241,
+      "duration_sec": 5.2,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "d4766aabb4b4505a",
+        "da4aa2f2ff1f0380",
+        "cc33c56cb3cc6392"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_69767b40_04.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_69767b40_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/69767b40/0",
+      "phash": "dd7e0a6c3a623c0d",
+      "tags": [
+        "circuit",
+        "board",
+        "red",
+        "light"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «circuit board red light»",
+      "score": 0.6429,
+      "duration_sec": 4.5,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "dd7e0a6c3a623c0d",
+        "d580028157af3f9f",
+        "00d57dfe552a7c20"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_69767b40_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_7532df45_01",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/7532df45/1",
+      "phash": "00d15fc06ecbf887",
+      "tags": [
+        "abstract",
+        "macro",
+        "texture",
+        "slow",
+        "motion"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «abstract macro texture slow motion»",
+      "score": 0.5882,
+      "duration_sec": 5.7,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "00d15fc06ecbf887",
+        "002a552f5a357b37",
+        "fd37021e07e07aaa"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_7532df45_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_57853845_05",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/57853845/5",
+      "phash": "e8179fcce073191c",
+      "tags": [
+        "minimal",
+        "red",
+        "abstract",
+        "background"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «minimal red abstract background»",
+      "score": 0.6378,
+      "duration_sec": 4.1,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "e8179fcce073191c",
+        "c42e39b39fcc4c62",
+        "d33b25a4931a6a6d"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_57853845_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "gen_mock_ac7030eb",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "ca7aa55aa55a4aa5",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Макро разъёма зарядки, холодный свет, крупно. smartphone charging port macro. Role: hook. Style: cinematic, vertical 9:16 composition, shallow depth of field, m",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "ca7aa55aa55a4aa5",
+        "ec6c93649b649b64",
+        "3938c638c738c739"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_ac7030eb.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_deae30ec",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "d6c6292929d6c629",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Макро разъёма зарядки, холодный свет, крупно. battery cell close up laboratory. Role: hook. Style: cinematic, vertical 9:16 composition, shallow depth of field,",
+      "score": 1.0,
+      "duration_sec": 2.83,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "d6c6292929d6c629",
+        "d6c6292929d6c629",
+        "d6c6292929d6c629"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_deae30ec.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_94ba0055",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "007f6b1d350e1a67",
+      "tags": [
+        "generated",
+        "setup",
+        "abstract"
+      ],
+      "vision_summary": "Ведущий представляет тему, за головой — крупное слово. lithium ion battery cells production line. Role: setup. Style: cinematic, vertical 9:16 composition, shal",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "007f6b1d350e1a67",
+        "057a6897348b31d7",
+        "007f6b9761c97096"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_94ba0055.mp4",
       "ai_generated": true,
       "mock": true
     }

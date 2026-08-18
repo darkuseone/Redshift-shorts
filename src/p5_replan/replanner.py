@@ -316,6 +316,165 @@ def _avatar_share(slots: list[Slot], duration: float) -> float:
     return sum(s.duration for s in slots if s.kind in AVATAR_KINDS) / max(duration, 1e-6)
 
 
+class _AvatarConversion:
+    """Механика перевода футажного слота в аватар (§3.5).
+
+    Общая для двух правил: добора доли аватара до 35 % и разрыва слишком
+    длинного непрерывного футажа. Оба сводятся к одному действию — «отдать
+    аватару подходящий футажный слот», и оба обязаны при этом не сломать
+    остальные правила §3.5.
+    """
+
+    def __init__(self, slots: list[Slot], blocks: list[dict[str, Any]], duration: float,
+                 share_hi: float, appearance_min: float, appearance_max: float) -> None:
+        self.slots = slots
+        self.blocks = blocks
+        self.duration = duration
+        self.share_hi = share_hi
+        self.appearance_min = appearance_min
+        self.appearance_max = appearance_max
+        # Блоки с ``avatar: off`` — указание сценария, их не трогаем.
+        self.allowed = {b["id"] for b in blocks if b.get("avatar_directive") != "off"}
+
+    def _block(self, block_id: str) -> dict[str, Any]:
+        return next((b for b in self.blocks if b["id"] == block_id), {})
+
+    def _target_kind(self, block_id: str) -> str:
+        return "split" if self._block(block_id).get("role") == "evidence" else "avatar"
+
+    def is_candidate(self, i: int) -> bool:
+        """Перебивки не забираем: они и существуют затем, чтобы разорвать аватара."""
+        s = self.slots[i]
+        return (s.kind == "footage" and s.block_id in self.allowed
+                and "перебивка" not in s.reason)
+
+    def candidates(self) -> list[int]:
+        return [i for i in range(len(self.slots)) if self.is_candidate(i)]
+
+    def span(self, group: list[int]) -> float:
+        """Длина появления, если слоты group сольются в один аватарный слот.
+
+        Слипание засчитывается только там, где §7.4.3 не потребует перебивку:
+        внутри одного блока и только между двумя сплитами. Иначе аватар соседа
+        отделён перебивкой и в это появление не входит.
+        """
+        slots = self.slots
+        block_id = slots[group[0]].block_id
+        kind = self._target_kind(block_id)
+        start, end = slots[group[0]].start, slots[group[-1]].end
+        left, right = group[0] - 1, group[-1] + 1
+        if (left >= 0 and slots[left].kind == "split" and kind == "split"
+                and slots[left].block_id == block_id
+                and abs(slots[left].end - start) < 1e-6):
+            start = slots[left].start
+        if (right < len(slots) and slots[right].kind == "split" and kind == "split"
+                and slots[right].block_id == block_id
+                and abs(slots[right].start - end) < 1e-6):
+            end = slots[right].end
+        return end - start
+
+    def _grow(self, group: list[int]) -> bool:
+        """Дотянуть группу соседним футажом того же блока до минимума появления."""
+        block_id = self.slots[group[0]].block_id
+        options = [j for j in (group[0] - 1, group[-1] + 1)
+                   if 0 <= j < len(self.slots) and self.is_candidate(j)
+                   and self.slots[j].block_id == block_id]
+        if not options:
+            return False
+        group.append(min(options, key=lambda j: self.slots[j].duration))
+        group.sort()
+        return True
+
+    def plan(self, i: int) -> list[int] | None:
+        """Группа слотов вокруг i, дающая допустимое появление, либо None."""
+        headroom = (self.share_hi - _avatar_share(self.slots, self.duration)) * self.duration
+        group = [i]
+        while self.span(group) < self.appearance_min and self._grow(group):
+            pass
+        if not self.appearance_min <= self.span(group) <= self.appearance_max:
+            return None
+        if sum(self.slots[j].duration for j in group) > headroom:
+            return None
+        return group
+
+    def apply(self, group: list[int], reason: str, notes: list[str]) -> None:
+        """Слить группу в один аватарный слот.
+
+        Именно слить, а не пометить каждый: два полнокадровых аватар-слота
+        подряд §7.4.3 разорвёт перебивкой, и появление снова развалится.
+        """
+        head = self.slots[group[0]]
+        head.end = self.slots[group[-1]].end
+        head.kind = self._target_kind(head.block_id)
+        head.mode = "B" if head.kind == "split" else "A"
+        head.needs_asset = head.kind == "split"
+        head.asset_role = "evidence" if head.kind == "split" else ""
+        head.reason = reason
+        for j in reversed(group[1:]):
+            del self.slots[j]
+        notes.append(f"слот {head.start:.2f}–{head.end:.2f} сек отдан аватару: {reason}")
+
+
+def _longest_footage_run(slots: list[Slot]) -> tuple[float, int, int]:
+    """Самый длинный непрерывный кусок без аватара: (длина, первый, последний).
+
+    Совпадает с метрикой ``longest_footage_block_share`` из ``compute_stats``:
+    полноэкранный текст и мем тоже «не аватар» и рвут не картинку, а только
+    источник кадра.
+    """
+    best = (0.0, -1, -1)
+    start_idx: int | None = None
+    for i, slot in enumerate(slots):
+        if slot.kind in ("footage", "fullscreen_text", "meme"):
+            if start_idx is None:
+                start_idx = i
+            length = slot.end - slots[start_idx].start
+            if length > best[0]:
+                best = (length, start_idx, i)
+        else:
+            start_idx = None
+    return best
+
+
+def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], duration: float,
+                            max_share: float, share_hi: float,
+                            appearance_min: float, appearance_max: float,
+                            notes: list[str]) -> bool:
+    """§3.5: непрерывный футаж не длиннее 40 % хронометража. Вернуть, менялось ли.
+
+    Правило про разнообразие: если картинка полминуты идёт без ведущего, ролик
+    перестаёт быть авторским. Лечится тем же действием, что и недобор доли, —
+    один футажный слот внутри куска отдаётся аватару. Берём слот ближе к
+    середине: он делит кусок на две примерно равные половины, а не отрезает
+    хвост, оставляя почти тот же кусок.
+    """
+    conv = _AvatarConversion(slots, blocks, duration, share_hi, appearance_min, appearance_max)
+    changed = False
+    guard = 0
+    while guard < 8:
+        guard += 1
+        length, first, last = _longest_footage_run(slots)
+        if first < 0 or length <= max_share * duration + 1e-3:
+            break
+        middle = (slots[first].start + slots[last].end) / 2
+        inside = [i for i in range(first, last + 1) if conv.is_candidate(i)]
+        applied = False
+        for i in sorted(inside, key=lambda i: abs((slots[i].start + slots[i].end) / 2 - middle)):
+            group = conv.plan(i)
+            if group is None:
+                continue
+            conv.apply(group, f"разрыв непрерывного футажа длиннее {max_share:.0%} (§3.5)", notes)
+            applied = changed = True
+            break
+        if not applied:
+            notes.append(
+                f"непрерывный футаж {length:.2f} сек длиннее {max_share:.0%} хронометража, "
+                f"но разорвать нечем: подходящих футажных слотов в блоках без "
+                f"директивы avatar: off не нашлось")
+            break
+    return changed
+
+
 def _raise_avatar_share(slots: list[Slot], blocks: list[dict[str, Any]], duration: float,
                         share_lo: float, share_hi: float,
                         appearance_min: float, appearance_max: float,
@@ -327,69 +486,17 @@ def _raise_avatar_share(slots: list[Slot], blocks: list[dict[str, Any]], duratio
     перебивок доля уезжает ниже порога. Это жёсткое правило (§10.2.2), поэтому
     здесь оно исправляется, а не отмечается предупреждением — предупреждение
     всё равно превратится в провал QC-2 через четыре минуты рендера.
-
-    Добор обязан остаться внутри остальных правил §3.5, иначе он лечит QC-2 и
-    ломает соседнее правило:
-
-    * блоки с ``avatar: off`` не трогаем — это указание сценария;
-    * перебивки не забираем: они и существуют затем, чтобы разорвать аватара;
-    * не перескакиваем верхнюю границу коридора доли (60 %);
-    * появление обязано уложиться в 3–12 сек. Считать его «слипшимся» с соседним
-      аватар-слотом можно только там, где §7.4.3 не потребует перебивку, — то
-      есть внутри одного блока и только между двумя сплитами. Короткий слот
-      поэтому не годится сам по себе: он добирается соседним футажом того же
-      блока, и они сливаются в **один** слот, а не в два подряд.
     """
-    allowed = {b["id"] for b in blocks if b.get("avatar_directive") != "off"}
-    if not allowed:
+    conv = _AvatarConversion(slots, blocks, duration, share_hi, appearance_min, appearance_max)
+    if not conv.allowed:
         return False
-
-    def block_of(block_id: str) -> dict[str, Any]:
-        return next((b for b in blocks if b["id"] == block_id), {})
-
-    def target_kind(block_id: str) -> str:
-        return "split" if block_of(block_id).get("role") == "evidence" else "avatar"
-
-    def is_candidate(i: int) -> bool:
-        s = slots[i]
-        return (s.kind == "footage" and s.block_id in allowed
-                and "перебивка" not in s.reason)
-
-    def appearance_span(group: list[int]) -> float:
-        """Длина появления, если слоты group сольются в один аватарный слот."""
-        block_id = slots[group[0]].block_id
-        kind = target_kind(block_id)
-        start, end = slots[group[0]].start, slots[group[-1]].end
-        left, right = group[0] - 1, group[-1] + 1
-        if (left >= 0 and slots[left].kind == "split" and kind == "split"
-                and slots[left].block_id == block_id and abs(slots[left].end - start) < 1e-6):
-            start = slots[left].start
-        if (right < len(slots) and slots[right].kind == "split" and kind == "split"
-                and slots[right].block_id == block_id
-                and abs(slots[right].start - end) < 1e-6):
-            end = slots[right].end
-        return end - start
-
-    def grow(group: list[int]) -> bool:
-        """Дотянуть группу соседним футажом того же блока (минимум появления)."""
-        block_id = slots[group[0]].block_id
-        options = [j for j in (group[0] - 1, group[-1] + 1)
-                   if 0 <= j < len(slots) and is_candidate(j)
-                   and slots[j].block_id == block_id]
-        if not options:
-            return False
-        pick = min(options, key=lambda j: slots[j].duration)
-        group.append(pick)
-        group.sort()
-        return True
 
     changed = False
     guard = 0
     while _avatar_share(slots, duration) < share_lo and guard < 12:
         guard += 1
-        share = _avatar_share(slots, duration)
-        deficit = (share_lo - share) * duration
-        headroom = (share_hi - share) * duration
+        deficit = (share_lo - _avatar_share(slots, duration)) * duration
+
         def footage_run_after(i: int) -> float:
             """Самый длинный непрерывный футаж, если слот i станет аватарным."""
             longest = run = 0.0
@@ -402,36 +509,20 @@ def _raise_avatar_share(slots: list[Slot], blocks: list[dict[str, Any]], duratio
             return longest
 
         # Сначала кандидаты, которые сразу дают появление нужной длины; затем те,
-        # что заодно разрывают самый длинный кусок футажа (§3.5: не больше 40 %
-        # хронометража подряд); внутри группы — ближайшие по длительности к
-        # недобору, чтобы не проскочить коридор.
-        ranked = sorted((i for i in range(len(slots)) if is_candidate(i)),
+        # что заодно разрывают самый длинный кусок футажа (§3.5); внутри группы —
+        # ближайшие по длительности к недобору, чтобы не проскочить коридор.
+        ranked = sorted(conv.candidates(),
                         key=lambda i: (
-                            not appearance_min <= appearance_span([i]) <= appearance_max,
-                                       round(footage_run_after(i), 1),
-                                       abs(slots[i].duration - deficit)))
+                            not appearance_min <= conv.span([i]) <= appearance_max,
+                            round(footage_run_after(i), 1),
+                            abs(slots[i].duration - deficit)))
         applied = False
         for i in ranked:
-            group = [i]
-            while appearance_span(group) < appearance_min and grow(group):
-                pass
-            span = appearance_span(group)
-            if not appearance_min <= span <= appearance_max:
+            group = conv.plan(i)
+            if group is None:
                 continue
-            if sum(slots[j].duration for j in group) > headroom:
-                continue
-
-            head = slots[group[0]]
-            head.end = slots[group[-1]].end
-            head.kind = target_kind(head.block_id)
-            head.mode = "B" if head.kind == "split" else "A"
-            head.needs_asset = head.kind == "split"
-            head.asset_role = "evidence" if head.kind == "split" else ""
-            head.reason = f"добор доли аватара до {share_lo:.0%} по факту таймингов (§3.5)"
-            for j in reversed(group[1:]):
-                del slots[j]
-            notes.append(f"слот {head.start:.2f}–{head.end:.2f} сек отдан аватару: "
-                         f"доля была ниже {share_lo:.0%}")
+            conv.apply(group, f"добор доли аватара до {share_lo:.0%} по факту таймингов (§3.5)",
+                       notes)
             applied = changed = True
             break
         if not applied:

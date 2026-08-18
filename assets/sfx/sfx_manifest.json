@@ -25,7 +25,8 @@
       "used_in": [
         "redshift_0042",
         "redshift_0043",
-        "redshift_0044"
+        "redshift_0044",
+        "redshift_0045"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -51,7 +52,8 @@
       "used_in": [
         "redshift_0042",
         "redshift_0043",
-        "redshift_0044"
+        "redshift_0044",
+        "redshift_0045"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -76,7 +78,8 @@
       "duration_sec": 0.5,
       "used_in": [
         "redshift_0042",
-        "redshift_0044"
+        "redshift_0044",
+        "redshift_0045"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -123,8 +126,10 @@
       "vision_summary": "нарастание перед раскрытием",
       "score": 0.0,
       "duration_sec": 1.6,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "riser.wav",
       "role": "riser"
@@ -254,7 +259,8 @@
       "used_in": [
         "redshift_0042",
         "redshift_0043",
-        "redshift_0044"
+        "redshift_0044",
+        "redshift_0045"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
@@ -428,8 +434,10 @@
       "vision_summary": "мем-вставка",
       "score": 0.0,
       "duration_sec": 0.65,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": "2026-08-18",
       "added": "2026-08-18",
       "file": "meme_stinger.wav",
       "role": "meme_stinger"
@@ -452,7 +460,8 @@
       "used_in": [
         "redshift_0042",
         "redshift_0043",
-        "redshift_0044"
+        "redshift_0044",
+        "redshift_0045"
       ],
       "last_used": "2026-08-18",
       "added": "2026-08-18",
