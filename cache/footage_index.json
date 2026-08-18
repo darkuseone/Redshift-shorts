@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-08-18",
-  "count": 76,
+  "count": 99,
   "items": [
     {
       "id": "pexels_406de0a0_01",
@@ -2576,6 +2576,773 @@
       "width": 1080,
       "height": 1920,
       "file": "generated/gen_mock_ad7b066d.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "pexels_426a2c27_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/426a2c27/0",
+      "phash": "0889db86d5b3d4e8",
+      "tags": [
+        "cryostat",
+        "laboratory"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «cryostat laboratory»",
+      "score": 0.6012,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "0889db86d5b3d4e8",
+        "2a7ef57af460c042",
+        "ff2aea0a8929e30d"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_426a2c27_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_c54f1866_05",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/c54f1866/5",
+      "phash": "d37b2595924a6935",
+      "tags": [
+        "researcher",
+        "reading",
+        "article",
+        "laptop"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «researcher reading article laptop»",
+      "score": 0.5754,
+      "duration_sec": 4.9,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "d37b2595924a6935",
+        "e09fcee11b8ce231",
+        "c93b2684995b6e6c"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_c54f1866_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_4d688c8a_03",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/4d688c8a/3",
+      "phash": "c119596b6b6c6c6c",
+      "tags": [
+        "quantum",
+        "chip",
+        "macro"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
+      "score": 0.5807,
+      "duration_sec": 3.2,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "c119596b6b6c6c6c",
+        "045ab52a552fda35",
+        "208e619ee11fe31d"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_4d688c8a_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_03223e44_02",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/03223e44/2",
+      "phash": "c13a3696d94966b6",
+      "tags": [
+        "scientific",
+        "paper",
+        "screen"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «scientific paper on screen»",
+      "score": 0.5875,
+      "duration_sec": 2.5,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "c13a3696d94966b6",
+        "cd33928d67569964",
+        "e0179ee1731b8cc6"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_03223e44_02.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pixabay_eb44e323_04",
+      "type": "video",
+      "source": "pixabay",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pixabay/eb44e323/4",
+      "phash": "001f797023676677",
+      "tags": [
+        "researcher",
+        "reading",
+        "article",
+        "laptop"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «researcher reading article laptop»",
+      "score": 0.5987,
+      "duration_sec": 3.2,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "001f797023676677",
+        "f575228080d57d7b",
+        "d54a2d652c646e75"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pixabay/pixabay_eb44e323_04.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_e6a781bd_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/e6a781bd/0",
+      "phash": "2a95c8e0f0ecd6e2",
+      "tags": [
+        "abstract",
+        "blue",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «abstract blue data particles»",
+      "score": 0.5978,
+      "duration_sec": 5.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "2a95c8e0f0ecd6e2",
+        "227dd5802a7fd027",
+        "ffc09bd69c909590"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_e6a781bd_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_92e9723e_03",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/92e9723e/3",
+      "phash": "00c17ee2649772bb",
+      "tags": [
+        "server",
+        "room",
+        "blue",
+        "light"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «server room blue light»",
+      "score": 0.6029,
+      "duration_sec": 2.7,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "00c17ee2649772bb",
+        "002f5f3775396238",
+        "171968e667e3a1a4"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_92e9723e_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_4d688c8a_04",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/4d688c8a/4",
+      "phash": "04e9061329f0eeef",
+      "tags": [
+        "quantum",
+        "chip",
+        "macro"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «quantum chip macro»",
+      "score": 0.6093,
+      "duration_sec": 5.5,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "04e9061329f0eeef",
+        "26698c9e693313ce",
+        "266d87326d93398c"
+      ],
+      "width": 1080,
+      "height": 606,
+      "file": "pexels/pexels_4d688c8a_04.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_e6a781bd_02",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/e6a781bd/2",
+      "phash": "04e986170bb0f4ef",
+      "tags": [
+        "abstract",
+        "blue",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «abstract blue data particles»",
+      "score": 0.6162,
+      "duration_sec": 4.4,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "04e986170bb0f4ef",
+        "2608ec3349dc23df",
+        "247978d64c86c6cb"
+      ],
+      "width": 1080,
+      "height": 606,
+      "file": "pexels/pexels_e6a781bd_02.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_8f9a279c_07",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/8f9a279c/7",
+      "phash": "d412636da9b3b616",
+      "tags": [
+        "thoughtful",
+        "scientist",
+        "portrait",
+        "dark"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «thoughtful scientist portrait dark»",
+      "score": 0.6381,
+      "duration_sec": 4.1,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "d412636da9b3b616",
+        "cc33cc6c934c739c",
+        "358a0bc1e1f87c1e"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_8f9a279c_07.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pixabay_35040db6_03",
+      "type": "video",
+      "source": "pixabay",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pixabay/35040db6/3",
+      "phash": "2a6ac81ff419fe10",
+      "tags": [
+        "stock",
+        "market",
+        "data"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «stock market data»",
+      "score": 0.6193,
+      "duration_sec": 5.4,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "2a6ac81ff419fe10",
+        "227cdd812a7ed581",
+        "ff3f9d4aa04c8701"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pixabay/pixabay_35040db6_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "gen_mock_fe72f7f0",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "e83715d82de6360b",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Холодный кадр квантового процессора в криостате, крупно. quantum processor macro shot. Role: hook. Style: cinematic, vertical 9:16 composition, shallow depth of",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "e83715d82de6360b",
+        "ed1212cd81e433f7",
+        "ed1012c9cd66c4fb"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_fe72f7f0.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_67133705",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "c6c6c6c6c6c6c6c6",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Холодный кадр квантового процессора в криостате, крупно. cryostat golden chandelier laboratory. Role: hook. Style: cinematic, vertical 9:16 composition, shallow",
+      "score": 1.0,
+      "duration_sec": 2.03,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "c6c6c6c6c6c6c6c6",
+        "c6c6c6c6c6c6c6c6",
+        "c6c6c6c6c6c6c6c6"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_67133705.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_ee8b4155",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "00d57f2ac06a3f95",
+      "tags": [
+        "generated",
+        "develop",
+        "abstract"
+      ],
+      "vision_summary": "График падения ошибки, абстрактная визуализация данных. abstract blue data particles. Role: develop. Style: cinematic, vertical 9:16 composition, shallow depth ",
+      "score": 1.0,
+      "duration_sec": 3.27,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "00d57f2ac06a3f95",
+        "00c070dc6fdb669b",
+        "023f7262676c60ed"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_ee8b4155.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "pexels_8d4a50ea_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/8d4a50ea/0",
+      "phash": "d47269a996564ba9",
+      "tags": [
+        "planet",
+        "surface"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «planet surface»",
+      "score": 0.6322,
+      "duration_sec": 5.9,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "d47269a996564ba9",
+        "3095c7700ec7f13c",
+        "d23a65ad93924a6d"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_8d4a50ea_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_adb6ae27_05",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/adb6ae27/5",
+      "phash": "c932a6d963a4996b",
+      "tags": [
+        "planet",
+        "surface"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «planet surface»",
+      "score": 0.6135,
+      "duration_sec": 4.7,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "c932a6d963a4996b",
+        "c42e3991cf4e6c33",
+        "c33e8cc738ccc731"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_adb6ae27_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "internet_archive_d6027b01_02",
+      "type": "video",
+      "source": "internet_archive",
+      "license": "mock-synthetic",
+      "url_origin": "mock://internet_archive/d6027b01/2",
+      "phash": "c43ab3c74c63b698",
+      "tags": [
+        "abstract",
+        "orbit",
+        "visualization"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «abstract orbit visualization»",
+      "score": 0.5935,
+      "duration_sec": 4.1,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "c43ab3c74c63b698",
+        "c63a998e2673cccc",
+        "c42eb1c74c6cb393"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "internet_archive/internet_archive_d6027b01_02.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_adb6ae27_07",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/adb6ae27/7",
+      "phash": "c11b7b6b672626a4",
+      "tags": [
+        "planet",
+        "surface"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «planet surface»",
+      "score": 0.6324,
+      "duration_sec": 2.5,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "c11b7b6b672626a4",
+        "15274e53b4a9aa6a",
+        "146ad6a95a55ab16"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_adb6ae27_07.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "internet_archive_d6027b01_00",
+      "type": "video",
+      "source": "internet_archive",
+      "license": "mock-synthetic",
+      "url_origin": "mock://internet_archive/d6027b01/0",
+      "phash": "007fd5853f98e44a",
+      "tags": [
+        "abstract",
+        "orbit",
+        "visualization"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «abstract orbit visualization»",
+      "score": 0.6115,
+      "duration_sec": 2.6,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "007fd5853f98e44a",
+        "ff3f95408e47904a",
+        "f5d5803e6a37b0e0"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "internet_archive/internet_archive_d6027b01_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_d81256b5_03",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/d81256b5/3",
+      "phash": "00c462bd46a3e9f7",
+      "tags": [
+        "exoplanet",
+        "space"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «exoplanet space»",
+      "score": 0.6279,
+      "duration_sec": 3.5,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "00c462bd46a3e9f7",
+        "023f684c574df943",
+        "fb7a0085db7a2705"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_d81256b5_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_d81256b5_07",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/d81256b5/7",
+      "phash": "156a5aa46956adaa",
+      "tags": [
+        "exoplanet",
+        "space"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «exoplanet space»",
+      "score": 0.6217,
+      "duration_sec": 5.0,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "156a5aa46956adaa",
+        "f0283f1f97c3c0e1",
+        "209ee137d8631cc7"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_d81256b5_07.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "gen_mock_43d53ec9",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "3b45c63d4047d5aa",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Белый карлик в глубоком космосе, холодный свет. white dwarf star space. Role: hook. Style: cinematic, vertical 9:16 composition, shallow depth of field, muted p",
+      "score": 1.0,
+      "duration_sec": 2.37,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "3b45c63d4047d5aa",
+        "d52a847d3a6b84dc",
+        "d72a817f28789ec1"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_43d53ec9.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_c92b1751",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "e03e33cb1a19cec9",
+      "tags": [
+        "generated",
+        "evidence",
+        "abstract"
+      ],
+      "vision_summary": "Карточка научной статьи, подсветка ключевой строки. scientific paper screen. Role: evidence. Style: cinematic, vertical 9:16 composition, shallow depth of field",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0043"
+      ],
+      "last_used": null,
+      "added": "2026-08-18",
+      "phashes": [
+        "e03e33cb1a19cec9",
+        "e0c91fc61bc61bc6",
+        "efc09fd69c919881"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_c92b1751.mp4",
       "ai_generated": true,
       "mock": true
     }
