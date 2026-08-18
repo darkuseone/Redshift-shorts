@@ -43,18 +43,21 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  primary: "gemini"
+  # Gemini выведен из рабочего набора: ключа под него нет и не планируется.
+  # Обе ступени §7.3 ведёт Grok по ключу XAI. Ветка gemini в коде осталась
+  # рабочей — включается сменой значения здесь.
+  primary: "grok"
   arbiter: "grok"
   arbiter_max_calls: 8        # §7.3 шаг 3
   accept_threshold: 0.70
   reject_threshold: 0.45
   frame_disagreement_threshold: 0.30
-  gemini_api_key_env: GEMINI_API_KEY
-  gemini_model: "gemini-2.5-flash"
-  gemini_api_base: "https://generativelanguage.googleapis.com"
   grok_api_key_env: XAI_API_KEY
   grok_model: "grok-4-fast"
   grok_api_base: "https://api.x.ai"
+  gemini_api_key_env: GEMINI_API_KEY
+  gemini_model: "gemini-2.5-flash"
+  gemini_api_base: "https://generativelanguage.googleapis.com"
 
 magnific:
   max_downloads_per_video: 50     # §7.2.4 — лимит подписки
@@ -62,11 +65,20 @@ magnific:
   paid_model_share_limit: 0.07
   api_key_env: MAGNIFIC_API_KEY
   api_base: "https://api.magnific.ai"
+  # Слаги моделей. Бесплатных в каталоге нет — «free» здесь значит «самая
+  # дешёвая и быстрая», см. config/magnific_models.json, снятый через MCP.
+  catalog_file: config/magnific_models.json
+  models:
+    free_image:  "imagen-nano-banana-2-lite"
+    paid_image:  "seedream-5-pro"
+    free_video:  "bytedance-seedance-mini-2.0"
+    paid_video:  "bytedance-seedance-pro-2.0"
 
 stock:
   pexels_api_key_env: PEXELS_API_KEY
   pixabay_api_key_env: PIXABAY_API_KEY
-  nasa_api_key_env: NASA_API_KEY
+  # NASA images-api и Internet Archive отдают материал анонимно — ключа нет
+  # и не требуется, проверено запросом к images-api.nasa.gov.
   max_candidates_per_query: 8      # §7.2.3: 5–10 кандидатов на запрос
   queries_per_slot: 4              # §7.2.2: 3–5 запросов разной абстракции
   target_pool_size: [30, 60]       # §7.2.3: итоговый пул на ролик

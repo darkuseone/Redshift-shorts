@@ -325,13 +325,23 @@ def _verdict_from_json(text: str, *, judge: str, frames: int) -> VisionVerdict:
 
 
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
-    if role == "arbiter":
-        key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok Vision (арбитраж)")
-        if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
-            return GrokVision(cfg, costs, key or "")
-        return MockVision(cfg, costs, judge_name="grok")
+    """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
 
-    key = cfg.secret_for("vision.gemini_api_key_env", purpose="Gemini Vision")
-    if resolve_mode(cfg, api_key=key, service="gemini") is ProviderMode.LIVE:
-        return GeminiVision(cfg, costs, key or "")
-    return MockVision(cfg, costs, judge_name="gemini")
+    Имя судьи берётся из конфига, а не зашито в роль: Gemini исключён из
+    рабочего набора (§7.3), первичную оценку ведёт Grok по ключу XAI. Ветка
+    Gemini оставлена рабочей — она включается одной строкой конфига, если ключ
+    когда-нибудь появится.
+    """
+    judge = str(cfg.get(f"vision.{role}", "grok" if role == "primary" else "grok"))
+    purpose = "Grok Vision (арбитраж)" if role == "arbiter" else "Grok Vision"
+
+    if judge == "gemini":
+        key = cfg.secret_for("vision.gemini_api_key_env", purpose="Gemini Vision")
+        if resolve_mode(cfg, api_key=key, service="gemini") is ProviderMode.LIVE:
+            return GeminiVision(cfg, costs, key or "")
+        return MockVision(cfg, costs, judge_name="gemini")
+
+    key = cfg.secret_for("vision.grok_api_key_env", purpose=purpose)
+    if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
+        return GrokVision(cfg, costs, key or "")
+    return MockVision(cfg, costs, judge_name="grok")

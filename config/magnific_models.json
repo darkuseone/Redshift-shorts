@@ -1,0 +1,61 @@
+{
+  "_comment": "Снимок каталога Magnific, снятый через MCP-коннектор в чате и положенный в репозиторий: у прогона в GitHub Actions нет доступа к MCP, а знать, какие слаги существуют и что они умеют, ему нужно. Обновлять командой из README при смене подписки или каталога.",
+  "snapshot_date": "2026-08-18",
+  "source": "MCP magnific: images_models_list, video_models_list, account_balance",
+
+  "_free_models": "Бесплатных моделей в каталоге нет. Единственный слаг без requiresPremium — auto, но он лишь маршрутизатор и всё равно списывает кредиты. Поэтому «бесплатно» здесь означает «самая дешёвая и быстрая модель», а расход держится в рамках magnific.max_downloads_per_video и budget.",
+
+  "account": {
+    "plan": "Premium+",
+    "unlimited_mode": true,
+    "unlimited_applies_to_api": false,
+    "credits_available": 17080,
+    "credits_total": 45000,
+    "_note": "Безлимит на аккаунте не распространяется на вызовы через API/MCP — генерации списывают кредиты."
+  },
+
+  "image": {
+    "cheap": {
+      "slug": "imagen-nano-banana-2-lite",
+      "why": "агент-рекомендация: дешёвая и быстрая, под черновики и высокий поток",
+      "gen_time_sec": 11,
+      "supports_9_16": true
+    },
+    "quality": {
+      "slug": "seedream-5-pro",
+      "why": "sota rank 1, общая модель по умолчанию",
+      "gen_time_sec": 45,
+      "supports_9_16": true
+    },
+    "typography": {
+      "slug": "gpt-2",
+      "why": "sota для читаемого текста, инфографики и схем — под кадры с надписями",
+      "gen_time_sec": 75,
+      "supports_9_16": true
+    }
+  },
+
+  "video": {
+    "cheap": {
+      "slug": "bytedance-seedance-mini-2.0",
+      "why": "лучшее качество/цена на 4–15 сек, вертикаль 9:16, 480p/720p",
+      "gen_time_sec": 300,
+      "max_resolution": "720p",
+      "supports_9_16": true
+    },
+    "quality": {
+      "slug": "bytedance-seedance-pro-2.0",
+      "why": "sota rank 1, вертикаль 9:16, до 1080p и выше",
+      "gen_time_sec": 300,
+      "max_resolution": "1080p",
+      "supports_9_16": true
+    }
+  },
+
+  "constraints": {
+    "_comment": "§3.6.1: материал берём строго до 1080p, выше не запрашиваем.",
+    "max_height": 1080,
+    "aspect_ratio": "9:16",
+    "duration_range_sec": [4, 15]
+  }
+}

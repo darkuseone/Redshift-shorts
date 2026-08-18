@@ -41,12 +41,12 @@ jobs:
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      # Vision обеих ступеней §7.3 — Grok по этому ключу. NASA и Internet
+      # Archive работают анонимно, Gemini из рабочего набора выведен.
       XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
       MAGNIFIC_API_KEY: ${{ secrets.MAGNIFIC_API_KEY }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-      NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
       REDSHIFT_S3_BUCKET: ${{ secrets.REDSHIFT_S3_BUCKET }}
       REDSHIFT_S3_ENDPOINT: ${{ secrets.REDSHIFT_S3_ENDPOINT }}
       REDSHIFT_S3_ACCESS_KEY: ${{ secrets.REDSHIFT_S3_ACCESS_KEY }}
