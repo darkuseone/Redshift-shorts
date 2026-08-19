@@ -48,6 +48,21 @@ def _suffix(url: str) -> str:
     return ext if ext in (".mp4", ".mov", ".webm") else ".mp4"
 
 
+def _clips_dir(request: dict) -> Path:
+    """Куда класть клипы на этой машине.
+
+    В заявке ``clips_dir`` записан абсолютным путём того раннера, который её
+    выложил (`/home/runner/work/...`). На машине, где идёт фаза 2, такого пути
+    нет и быть не может, поэтому он годится только как подсказка: берём из него
+    хвост `<prepared_dir>/<video_id>` и раскрываем от корня репозитория.
+    """
+    recorded = Path(request["clips_dir"])
+    if recorded.is_dir():
+        return recorded
+    repo_root = Path(__file__).resolve().parent.parent
+    return repo_root / "assets" / "avatar_clips" / str(request["video_id"])
+
+
 def main(argv: list[str]) -> int:
     if len(argv) < 3:
         print("использование: fetch_avatar_clips.py <avatar_request.json> <urls.json>",
@@ -66,7 +81,8 @@ def main(argv: list[str]) -> int:
     else:
         urls = {int(key): value for key, value in raw.items()}
 
-    clips_dir = Path(request["clips_dir"])
+    clips_dir = _clips_dir(request)
+    print(f"клипы кладутся в {clips_dir}\n")
     problems: list[str] = []
 
     for segment in segments:
