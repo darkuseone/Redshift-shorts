@@ -27,7 +27,10 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
-from .templates import TemplateCtx, render_hero, render_motion, render_transition
+from .templates import (
+    TemplateCtx, enter_and_drift, entrance_tweens, render_hero, render_motion,
+    render_transition,
+)
 
 TRACK_STAGE = 0
 TRACK_SHOT_EVEN = 1
@@ -155,6 +158,12 @@ class CompositionBuilder:
 
             if kind == "fullscreen_text":
                 nodes.append(self._fullscreen_text_node(node_id, shot, timing))
+                # Раньше полноэкранный текст просто включался: клип открывался,
+                # и надпись стояла. На фоне пословных субтитров, которые всё
+                # время движутся, это читалось как подвисший кадр.
+                self.tweens.extend(enter_and_drift(
+                    f"#{node_id}-inner", start + tr_sec,
+                    max(0.2, duration - tr_sec), name="zoom-in"))
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
@@ -276,11 +285,18 @@ class CompositionBuilder:
             if not word:
                 continue
             index = int(shot["index"])
+            node_id = f"behind-{index:02d}"
             nodes.append(
-                f'<div id="behind-{index:02d}" class="clip behind-head" '
+                f'<div id="{node_id}" class="clip behind-head" '
                 f'data-start="{_num(shot["start"])}" '
                 f'data-duration="{_num(shot["duration"])}" '
                 f'data-track-index="{TRACK_BEHIND_HEAD}">{_esc(word)}</div>')
+            # Слово за головой держится весь кадр, и без движения оно
+            # превращается в надпись на обоях. Медленный наезд даёт ту самую
+            # глубину: ведущий стоит, фон еле едет.
+            self.tweens.extend(enter_and_drift(
+                node_id and f"#{node_id}", float(shot["start"]),
+                float(shot["duration"]), name="zoom-in"))
         return nodes
 
     # --- приёмы вокруг ведущего -----------------------------------------
@@ -386,10 +402,11 @@ class CompositionBuilder:
                 f'tl.to("#{node_id}-pill",{{scale:1.035,duration:{period / 2:.3f},'
                 f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(start + 0.32)});')
             return
-        enter = float(self.brandbook["plaque"]["enter_ms"][0]) / 1000.0
-        self.tweens.append(
-            f'tl.fromTo("#{node_id}",{{y:36,autoAlpha:0}},'
-            f'{{y:0,autoAlpha:1,duration:{enter:.3f},ease:"power3.out"}},{_num(start)});')
+        # Плашка всплывает и приближается, а не выезжает плоско: подъём без
+        # масштаба читается как «панель подали снизу», с масштабом — как
+        # «карточку поднесли». Дрейф на удержании не нужен: карточка стоит
+        # рядом с движущимся словом субтитра и без него.
+        self.tweens.extend(entrance_tweens(f"#{node_id}", start, name="rise"))
 
     # --- субтитры -------------------------------------------------------
     def _subtitle_nodes(self) -> list[str]:

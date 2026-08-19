@@ -386,8 +386,11 @@ def test_hero_starts_after_the_transition(plan, assets, brandbook):
                                       "params": {"from_scale": 1.18}}
     out = CompositionBuilder(_with_hero(plan, "hero-split"), brandbook,
                              assets).build("assets/mix.wav")
-    entrance = next(l for l in out.splitlines() if "scale:1.18" in l)
-    device = next(l for l in out.splitlines() if "scale:1.14" in l)
+    # Обе цели — сам аватар: вход кадра и приём сплита тянут его x и scale.
+    # Искать по величине масштаба нельзя, 1.14 встречается и в словаре входов.
+    avatar = [l for l in out.splitlines() if '"#avatar-00"' in l and "scale" in l]
+    entrance = next(l for l in avatar if "scale:1.18" in l)
+    device = next(l for l in avatar if "scale:1.14" in l)
     start = float(entrance.rstrip(");").rsplit(",", 1)[1])
     assert float(device.rstrip(");").rsplit(",", 1)[1]) >= start + 0.32 - 1e-6
 

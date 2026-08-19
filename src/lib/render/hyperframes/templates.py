@@ -47,6 +47,119 @@ def _num(value: float) -> str:
     return f"{float(value):.3f}".rstrip("0").rstrip(".") or "0"
 
 
+# --- словарь появления --------------------------------------------------------
+#
+# Ничего в кадре не «включается» — всё **приближается**. Это единственное
+# правило, из которого выведены числа ниже, и оно взято с референсов: элемент
+# приходит из чуть большего или чуть меньшего масштаба и садится на место.
+#
+# Почему числа именно такие:
+#
+# * **Масштаб малый — 0.86…1.14.** Крупный наезд читается как зум видеоряда и
+#   спорит с Ken Burns; малый читается как «предмет подали ближе».
+# * **Кривая затухающая — ``power3.out`` и ``expo.out``.** Движение начинается
+#   быстро и долго успокаивается. Равномерная кривая выглядит машинной,
+#   ускоряющаяся — как срыв.
+# * **Прозрачность едет тем же твином, что и масштаб.** Отдельная кривая для
+#   неё выиграла бы доли кадра и заняла второе окно на том же элементе — риск
+#   наложения твинов не стоит того.
+# * **Стаггер плотный — 40…70 мс.** Строки должны читаться очередью, а не
+#   списком, который выкладывают по одной.
+#
+# Прозрачность **нельзя** тянуть на самом клипе: видимостью клипа распоряжается
+# движок, и твин на ней застревает при перемотке (``gsap_exit_missing_hard_kill``).
+# Трансформы на клипе разрешены — на них держится Ken Burns. Поэтому у
+# ``entrance_tweens`` есть переключатель ``fade``: на клипе он выключен, и вход
+# остаётся чистым приближением.
+
+ENTRANCES: dict[str, dict[str, float | str]] = {
+    # Приближение: элемент приходит «издалека» и садится. База для всего.
+    "zoom-in": {"scale": 1.14, "y": 0, "duration": 0.55, "ease": "power3.out"},
+    # Подача вперёд: элемент выходит из глубины. Для круглых рамок и плашек —
+    # там приближение из большего масштаба обрезало бы края.
+    "zoom-out": {"scale": 0.86, "y": 0, "duration": 0.50, "ease": "back.out(1.4)"},
+    # Всплытие: подъём со смещением. Для строк текста и подписей.
+    "rise": {"scale": 1.05, "y": 64, "duration": 0.52, "ease": "power3.out"},
+    # Оседание: короткий приход сверху. Для заголовков над головой.
+    "settle": {"scale": 1.04, "y": -46, "duration": 0.48, "ease": "expo.out"},
+}
+
+# Дрейф на удержании: пока элемент висит, он еле заметно едет. Без этого кадр
+# после входа замирает, и монтаж рассыпается на статичные карточки. Величина
+# намеренно ниже порога осознанного замечания — работает боковым зрением.
+DRIFT_SCALE = 1.035
+DRIFT_MIN_SEC = 1.2
+
+
+def entrance_tweens(target: str, start: float, *, name: str = "zoom-in",
+                    fade: bool = True, delay: float = 0.0,
+                    scale_to: float = 1.0) -> list[str]:
+    """Твины появления элемента.
+
+    ``fade=False`` для клипов: прозрачность у них за движком.
+    ``scale_to`` — конечный масштаб, если элемент обязан остаться увеличенным.
+    """
+    spec = ENTRANCES.get(name) or ENTRANCES["zoom-in"]
+    at = start + delay
+    duration = float(spec["duration"])
+    scale_from, shift = float(spec["scale"]), float(spec["y"])
+
+    # Без проявления вход обязан **расти**, а не уменьшаться. Проверено кадром:
+    # панель, приходящая из 1.14 без прозрачности, читается не как появление, а
+    # как «она уже была здесь и отъезжает» — первый кадр застаёт её крупной и
+    # непрозрачной. Из меньшего масштаба тот же путь читается как «появилась и
+    # встала на место». С проявлением работают оба направления, и там мы
+    # оставляем то, что задал словарь.
+    if not fade and scale_from > 1.0:
+        scale_from = round(2.0 - scale_from, 3)
+
+    from_state = [f"scale:{scale_from}"]
+    to_state = [f"scale:{scale_to}"]
+    if shift:
+        from_state.append(f"y:{shift:g}")
+        to_state.append("y:0")
+    if fade:
+        from_state.append("opacity:0")
+        to_state.append("opacity:1")
+
+    return [f'tl.fromTo("{target}",{{{",".join(from_state)}}},'
+            f'{{{",".join(to_state)},duration:{_num(duration)},'
+            f'ease:"{spec["ease"]}"}},{_num(at)});']
+
+
+def drift_tween(target: str, start: float, duration: float, *,
+                to_scale: float = DRIFT_SCALE, from_scale: float = 1.0) -> list[str]:
+    """Медленный дрейф на удержании — кадр не замирает после входа.
+
+    Пустой список, если удержание короче ``DRIFT_MIN_SEC``: на секунде дрейф
+    незаметен, а твин занимает то же свойство, что и вход, и движок считает
+    наложение ошибкой.
+    """
+    if duration < DRIFT_MIN_SEC:
+        return []
+    return [f'tl.fromTo("{target}",{{scale:{from_scale}}},'
+            f'{{scale:{to_scale},duration:{_num(duration)},ease:"none"}},'
+            f'{_num(start)});']
+
+
+def enter_and_drift(target: str, start: float, duration: float, *,
+                    name: str = "zoom-in", fade: bool = True,
+                    delay: float = 0.0) -> list[str]:
+    """Вход, а следом дрейф до конца окна.
+
+    Дрейф начинается там, где кончается вход: оба тянут ``scale`` одного
+    элемента, а наложение двух твинов на одном свойстве движок считает ошибкой —
+    порядок перезаписи в GSAP зависит от очерёдности и может смениться между
+    рендерами.
+    """
+    spec = ENTRANCES.get(name) or ENTRANCES["zoom-in"]
+    enter_sec = float(spec["duration"]) + delay
+    tweens = entrance_tweens(target, start, name=name, fade=fade, delay=delay)
+    tweens += drift_tween(target, start + enter_sec,
+                          max(0.0, duration - enter_sec))
+    return tweens
+
+
 # --- переходы (§4.3) ----------------------------------------------------------
 #
 # Переход относится к началу шота: он показывает, как кадр входит. Поэтому все
@@ -568,8 +681,8 @@ def hero_burst(ctx: "TemplateCtx") -> Piece:
         spans.append(f'<span style="--a:{angle:.1f}deg;--len:{length}px"></span>')
         tweens.append(
             f'tl.fromTo("#{node_id} span:nth-child({i + 1})",{{scaleY:0}},'
-            f'{{scaleY:1,duration:0.42,ease:"back.out(1.4)"}},'
-            f'{_num(ctx.start + 0.03 * i)});')
+            f'{{scaleY:1,duration:0.46,ease:"expo.out"}},'
+            f'{_num(ctx.start + 0.035 * i)});')
 
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip hero-burst" '
@@ -594,19 +707,18 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
     top = int(ctx.params.get("top", 190))
 
     kicker_html = (f'<span class="hh-kicker">{_esc(kicker)}</span>' if kicker else "")
-    tweens = [
-        f'tl.fromTo("#{node_id} .hh-word",{{y:54,opacity:0}},'
-        f'{{y:0,opacity:1,duration:0.42,ease:"power3.out"}},{_num(ctx.start)});',
+    # Слово оседает сверху и потом еле заметно едет: после входа кадр не имеет
+    # права замереть.
+    tweens = enter_and_drift(f"#{node_id} .hh-word", ctx.start, ctx.duration,
+                             name="settle")
+    tweens.append(
         f'tl.fromTo("#{node_id} .hh-rule",{{scaleX:0}},'
-        f'{{scaleX:1,duration:0.38,ease:"power3.out"}},{_num(ctx.start + 0.22)});',
-    ]
+        f'{{scaleX:1,duration:0.38,ease:"expo.out"}},{_num(ctx.start + 0.26)});')
     if kicker:
         # Твин по несобранной разметке — молчаливый no-op, и он же прячет
         # опечатку в селекторе: анимируем только то, что нарисовали.
-        tweens.insert(1,
-                      f'tl.fromTo("#{node_id} .hh-kicker",{{opacity:0}},'
-                      f'{{opacity:1,duration:0.28,ease:"power2.out"}},'
-                      f'{_num(ctx.start + 0.08)});')
+        tweens += entrance_tweens(f"#{node_id} .hh-kicker", ctx.start,
+                                  name="rise", delay=0.10)
 
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip hero-headline" style="top:{top}px" '
@@ -635,23 +747,27 @@ def hero_split(ctx: "TemplateCtx") -> Piece:
     zoom = float(ctx.params.get("subject_zoom", 1.14))
     # Клип аватара живёт дольше приёма, поэтому сдвиг обязан отыграть назад:
     # иначе ведущий останется прижатым к левому краю до конца сегмента.
-    back = max(ctx.start + 0.44, ctx.start + ctx.duration - 0.34)
+    enter = 0.52
+    back = max(ctx.start + enter, ctx.start + ctx.duration - 0.34)
     tweens = [
-        # Едет обёртка, а не сам клип: видимостью клипа распоряжается движок, и
-        # твин прямо на нём оставляет застрявшее состояние при перемотке.
+        # Едет обёртка, а не сам клип: прозрачность клипа за движком, и твин на
+        # ней оставляет застрявшее состояние при перемотке.
         f'tl.fromTo("#{node_id}-in",{{x:620}},'
-        f'{{x:0,duration:0.44,ease:"power3.out"}},{_num(ctx.start)});',
+        f'{{x:0,duration:{_num(enter)},ease:"expo.out"}},{_num(ctx.start)});',
+        # Ведущий одновременно уходит влево и приближается: сдвиг без укрупнения
+        # читается как «его подвинули», а вместе — как смена плана.
         f'tl.fromTo("#{ctx.target}",{{x:0,scale:1}},'
-        f'{{x:{shift},scale:{zoom},duration:0.44,ease:"power3.out"}},'
+        f'{{x:{shift},scale:{zoom},duration:{_num(enter)},ease:"expo.out"}},'
         f'{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",'
-        f'{{x:0,scale:1,duration:0.30,ease:"power2.inOut"}},{_num(back)});',
+        f'{{x:0,scale:1,duration:0.34,ease:"power2.inOut"}},{_num(back)});',
     ]
     for i in range(len(word)):
-        tweens.append(
-            f'tl.fromTo("#{node_id} .hs-word span:nth-child({i + 1})",'
-            f'{{opacity:0,y:-26}},{{opacity:1,y:0,duration:0.24,ease:"power2.out"}},'
-            f'{_num(ctx.start + 0.2 + 0.05 * i)});')
+        # Буквы очередью, шаг плотный: выложенные по одной, они читаются
+        # медленнее, чем слово произносится.
+        tweens += entrance_tweens(
+            f"#{node_id} .hs-word span:nth-child({i + 1})", ctx.start,
+            name="settle", delay=0.22 + 0.045 * i)
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip hero-split" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
@@ -704,10 +820,8 @@ def hero_knockout(ctx: "TemplateCtx") -> Piece:
                f'</mask></defs>'
                f'<rect width="1080" height="1920" mask="url(#{node_id}-m)" '
                f'fill="var(--color-{fill})"/></svg></div>'],
-        tweens=[
-            f'tl.fromTo("#{node_id} svg",{{scale:1.12,opacity:0}},'
-            f'{{scale:1,opacity:1,duration:0.36,ease:"power3.out"}},{_num(ctx.start)});'
-        ])
+        tweens=enter_and_drift(f"#{node_id} svg", ctx.start, ctx.duration,
+                               name="zoom-in"))
 
 
 # Панель-задник. Габариты фиксированные: приём читается как «экран на стене»,
@@ -728,10 +842,11 @@ def hero_plate(ctx: "TemplateCtx") -> Piece:
 
     Видео здесь — сам клип, а не вложенный элемент: ``<video>`` внутри
     элемента с ``data-start`` движок под управление не берёт, и в рендере кадр
-    застывает первым фреймом (lint: ``video_nested_in_timed_element``). Из-за
-    этого у приёма нет твина входа: видимостью клипа распоряжается движок, а
-    тянуть его самого контракт запрещает. Картинка появляется срезом — ровно
-    как на референсе.
+    застывает первым фреймом (lint: ``video_nested_in_timed_element``).
+
+    Вход у приёма всё же есть, и это приближение: на клипе запрещена только
+    прозрачность, трансформы разрешены — на них держится Ken Burns. Проверено
+    линтом: ``scale`` на медиа-клипе проходит без ошибок.
 
     Сторона смещения берётся из индекса шота, а не случайно: рендер сэмплирует
     кадры не по порядку, и ``Math.random`` дал бы разные кадры одного шота.
@@ -749,7 +864,9 @@ def hero_plate(ctx: "TemplateCtx") -> Piece:
                f'style="left:{left}px;top:{top}px;'
                f'width:{PLATE_W}px;height:{PLATE_H}px" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
-               f'data-track-index="{ctx.track}" muted playsinline></video>'])
+               f'data-track-index="{ctx.track}" muted playsinline></video>'],
+        tweens=enter_and_drift(f"#{node_id}", ctx.start, ctx.duration,
+                               name="zoom-in", fade=False))
 
 
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {

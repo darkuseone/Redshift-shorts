@@ -14,8 +14,9 @@ from pathlib import Path
 import pytest
 
 from src.lib.render.hyperframes.templates import (
-    DATAVIZ, HERO, MOTION, TRANSITIONS, Piece, TemplateCtx, hero_css,
-    render_dataviz, render_hero, render_motion, render_transition, transition_css,
+    DATAVIZ, DRIFT_SCALE, ENTRANCES, HERO, MOTION, TRANSITIONS, Piece, TemplateCtx,
+    enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_hero,
+    render_motion, render_transition, transition_css,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -312,18 +313,27 @@ def test_hero_clip_has_a_paintable_box(name):
 
 
 @pytest.mark.parametrize("name", sorted(HERO))
-def test_hero_does_not_tween_its_own_clip(name):
-    """Видимость клипа — за движком; твин прямо на нём застревает при перемотке.
+def test_hero_never_tweens_opacity_of_its_own_clip(name):
+    """Видимостью клипа распоряжается движок — прозрачность на нём застревает.
 
-    Селектор потомка (``#hs-03 .hs-word``) разрешён: он целится внутрь клипа,
-    а не в него самого.
+    Трансформы на клипе, наоборот, разрешены: на них держится Ken Burns, и
+    линт пропускает их без замечаний — проверено на реальной композиции. Раньше
+    здесь стоял запрет на любой твин по клипу, и из-за него панель за спиной
+    появлялась срезом вместо приближения.
+
+    Селектор потомка (``#hs-03 .hs-word``) разрешён всегда: он целится внутрь
+    клипа, а не в него самого.
     """
     piece = render_hero(name, _hero_ctx(name))
     clip_ids = _clip_ids(piece.nodes)
     assert clip_ids, f"{name} не собрал ни одного клипа"
     for tween in piece.tweens:
         selector = re.search(r'"(#[^"]+)"', tween).group(1).strip()
-        assert selector.lstrip("#") not in clip_ids, f"{name} тянет сам клип: {tween}"
+        if selector.lstrip("#") not in clip_ids:
+            continue
+        for forbidden in ("opacity", "autoAlpha", "visibility"):
+            assert forbidden not in tween, \
+                f"{name} тянет {forbidden} на самом клипе: {tween}"
 
 
 @pytest.mark.parametrize("name", ["hero-headline", "hero-split", "hero-knockout"])
@@ -375,9 +385,17 @@ def test_hero_plate_media_is_the_clip_itself():
     assert "data-start=" in node and "data-duration=" in node
 
 
-def test_hero_plate_never_tweens_because_the_clip_is_media():
-    """Твин на клипе застревает при перемотке, а другого узла у панели нет."""
-    assert render_hero("hero-plate", _hero_ctx("hero-plate")).tweens == []
+def test_hero_plate_enters_by_approaching():
+    """«Резко помещают» — не про этот монтаж: панель обязана приближаться.
+
+    Другого узла, кроме самого медиа-клипа, у панели нет, поэтому вход идёт
+    трансформой без прозрачности.
+    """
+    piece = render_hero("hero-plate", _hero_ctx("hero-plate"))
+    assert piece.tweens, "панель появляется срезом"
+    enter = piece.tweens[0]
+    assert "opacity" not in enter, enter
+    assert "{scale:0.86}" in enter, f"панель обязана расти, а не отъезжать: {enter}"
 
 
 def test_hero_headline_without_a_kicker_tweens_only_what_it_drew():
@@ -400,3 +418,75 @@ def test_hero_knockout_fill_is_a_brandbook_token():
                        _hero_ctx("hero-knockout",
                                  params={"fill": "accent_deep"})).nodes[0]
     assert "var(--color-accent-deep)" in node
+
+
+# --- словарь появления --------------------------------------------------------
+
+def test_every_hero_device_enters_by_moving():
+    """Референс: «должно выглядеть как увеличение либо приближение».
+
+    Приём, который просто проявляется прозрачностью, этому не отвечает: у входа
+    обязана быть трансформа.
+    """
+    for name in sorted(HERO):
+        piece = render_hero(name, _hero_ctx(name))
+        assert piece.tweens, f"{name} появляется срезом"
+        moving = [t for t in piece.tweens
+                  if any(prop in t for prop in ("scale:", "y:", "x:", "scaleY:"))]
+        assert moving, f"{name} только проявляется, но не движется"
+
+
+@pytest.mark.parametrize("name", sorted(ENTRANCES))
+def test_entrance_decelerates(name):
+    """Кривая затухающая: равномерная выглядит машинной, ускоряющаяся — срывом."""
+    assert str(ENTRANCES[name]["ease"]).split("(")[0].endswith(".out")
+
+
+@pytest.mark.parametrize("name", sorted(ENTRANCES))
+def test_entrance_scale_stays_subtle(name):
+    """Крупный наезд читается как зум видеоряда и спорит с Ken Burns."""
+    assert 0.8 <= float(ENTRANCES[name]["scale"]) <= 1.2
+
+
+def test_entrance_on_a_clip_carries_no_opacity():
+    tween = entrance_tweens("#hp-03", 1.0, fade=False)[0]
+    assert "opacity" not in tween
+    assert "scale:" in tween
+
+
+def test_entrance_without_a_fade_grows_instead_of_shrinking():
+    """Проверено кадром: приход из 1.14 без проявления читается как отъезд.
+
+    Первый кадр застаёт элемент крупным и непрозрачным — будто он тут и был.
+    Из меньшего масштаба тот же путь читается как появление.
+    """
+    import re
+    for name in sorted(ENTRANCES):
+        tween = entrance_tweens("#clip", 0.0, name=name, fade=False)[0]
+        scale_from = float(re.search(r"\{scale:([\d.]+)", tween).group(1))
+        assert scale_from <= 1.0, f"{name}: вход без проявления уменьшается"
+
+
+def test_entrance_with_a_fade_keeps_the_dictionary_value():
+    import re
+    tween = entrance_tweens("#inner", 0.0, name="zoom-in", fade=True)[0]
+    assert float(re.search(r"\{scale:([\d.]+)", tween).group(1)) == 1.14
+
+
+def test_drift_never_overlaps_the_entrance():
+    """Вход и дрейф тянут ``scale`` одного элемента — наложение движок карает."""
+    tweens = enter_and_drift("#hp-03", 5.0, 4.0, name="zoom-in", fade=False)
+    assert len(tweens) == 2
+    starts = [float(t.rstrip(");").rsplit(",", 1)[1]) for t in tweens]
+    enter_end = starts[0] + float(ENTRANCES["zoom-in"]["duration"])
+    assert starts[1] >= enter_end - 1e-6
+
+
+def test_short_hold_gets_no_drift():
+    """На секунде дрейф незаметен, а окно на ``scale`` занимает."""
+    assert len(enter_and_drift("#x", 0.0, 0.6, fade=False)) == 1
+
+
+def test_drift_is_imperceptible():
+    """Дрейф работает боковым зрением: заметный превращается в отдельный жест."""
+    assert 1.0 < DRIFT_SCALE <= 1.06
