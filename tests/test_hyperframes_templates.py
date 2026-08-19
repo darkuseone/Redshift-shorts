@@ -544,3 +544,17 @@ def test_headline_size_is_measured_too():
     size = int(re.search(r"font-size:(\d+)px", long_word).group(1))
     from src.lib.render.hyperframes.templates import text_width
     assert text_width("НЕПРЕДСКАЗУЕМОСТЬ", size) <= 980 + 1e-6
+
+
+def test_bubble_leaves_no_residual_scale_on_the_shared_avatar():
+    """Клип аватара общий и может покрывать несколько слотов.
+
+    Дрейф оставил бы на нём остаточный масштаб после конца приёма — ту же
+    утечку, ради которой у сплита стоит обратный твин.
+    """
+    piece = render_hero("hero-bubble-card",
+                        _hero_ctx("hero-bubble-card", duration=6.0))
+    avatar = [t for t in piece.tweens if '"#avatar-01"' in t]
+    assert len(avatar) == 1, f"на аватаре больше одного твина: {avatar}"
+    to_state = re.search(r"\},\{([^}]*)\}", avatar[0]).group(1)
+    assert "scale:1.0," in to_state + ",", f"приём оставляет масштаб: {to_state}"
