@@ -385,6 +385,16 @@ class PreparedAvatar(AvatarProvider):
                 code="AVATAR_CLIP_DURATION_MISMATCH",
                 hint=f"ожидается {duration_sec:.2f} сек, в файле {info.duration_sec:.2f}")
 
+        # Клип с однотонным фоном превращается в альфу здесь, а не руками:
+        # HeyGen прозрачности не отдаёт, и просить её бессмысленно — приходит
+        # непрозрачный кадр. Просим у него ключевой цвет и убираем его сами.
+        chroma = str(self.cfg.get("heygen.prepared_chroma", "") or "")
+        if chroma and clip.suffix.lower() == ".mp4":
+            from ..render.chroma import key_out
+
+            keyed = out_path.with_name(f"{out_path.stem}_alpha.mov")
+            clip = key_out(clip, keyed, color=chroma)
+
         dst = out_path.with_suffix(clip.suffix)
         if dst.resolve() != clip.resolve():
             dst.write_bytes(clip.read_bytes())

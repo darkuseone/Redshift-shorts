@@ -114,3 +114,55 @@ def test_auto_falls_back_to_mock_without_key_and_clips(cfg, costs, tmp_path, mon
     cfg.set("heygen.prepared_dir", str(tmp_path / "нет"))
     provider = build_avatar_provider(cfg, costs, video_id="redshift_0001")
     assert isinstance(provider, MockAvatar)
+
+
+def test_green_clip_is_keyed_into_alpha(cfg, costs, speech, tmp_path):
+    """HeyGen прозрачности не даёт — альфу делаем сами из ключевого цвета."""
+    import subprocess
+    from PIL import Image
+    from src.lib.ffmpeg import ffmpeg_bin
+
+    clips = tmp_path / "clips"
+    clips.mkdir()
+    frame = Image.new("RGB", (216, 384), (11, 177, 64))
+    for x in range(80, 140):
+        for y in range(120, 300):
+            frame.putpixel((x, y), (18, 18, 22))
+    png = clips / "src.png"
+    frame.save(png)
+    subprocess.run([ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
+                    "-loop", "1", "-i", str(png), "-t", "2.0", "-r", "10",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    str(clips / "seg_00.mp4")], check=True, capture_output=True)
+    png.unlink()
+
+    cfg.set("heygen.prepared_chroma", "#00B140")
+    seg = PreparedAvatar(cfg, costs, clips).generate(
+        audio_path=speech, out_path=tmp_path / "out.mp4",
+        duration_sec=2.0, index=0)
+
+    assert seg.has_alpha is True
+    assert seg.path.suffix == ".mov"
+
+
+def test_without_chroma_setting_mp4_stays_opaque(cfg, costs, speech, tmp_path):
+    """Ключевание — осознанная настройка, а не догадка по расширению."""
+    import subprocess
+    from src.lib.ffmpeg import ffmpeg_bin
+
+    clips = tmp_path / "clips"
+    clips.mkdir()
+    from PIL import Image
+    png = clips / "src.png"
+    Image.new("RGB", (216, 384), (11, 177, 64)).save(png)
+    subprocess.run([ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
+                    "-loop", "1", "-i", str(png), "-t", "2.0", "-r", "10",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    str(clips / "seg_00.mp4")], check=True, capture_output=True)
+    png.unlink()
+
+    cfg.set("heygen.prepared_chroma", "")
+    seg = PreparedAvatar(cfg, costs, clips).generate(
+        audio_path=speech, out_path=tmp_path / "out.mp4",
+        duration_sec=2.0, index=0)
+    assert seg.has_alpha is False

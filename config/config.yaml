@@ -28,6 +28,10 @@ heygen:
   # поэтому рабочий режим здесь — prepared через auto.
   source: auto
   prepared_dir: assets/avatar_clips
+  # Цвет фона, который заказывается у HeyGen для готовых клипов. Прозрачность
+  # он не отдаёт (проверено: webm приходит непрозрачным), поэтому просим
+  # однотонный фон и снимаем его своим ffmpeg. Пусто — ключевание выключено.
+  prepared_chroma: "#00B140"
   background: "transparent_if_available"
   output: "1080x1920"
   max_seconds_per_video: 42
