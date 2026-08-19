@@ -22,7 +22,7 @@ from typing import Any
 import numpy as np
 
 from ...errors import ProviderError
-from ..audio import SAMPLE_RATE, save_wav
+from ..audio import SAMPLE_RATE, resample, save_wav
 from ..logging import get_logger
 from ..retry import call_with_retry
 from ..schema import count_syllables
@@ -181,6 +181,20 @@ class MockTTS(TTSProvider):
 
 # --- live --------------------------------------------------------------------
 
+# PCM ElevenLabs отдаёт только на этих частотах — проверено ответом сервиса.
+# Конвейер живёт на 48 кГц (audio.sample_rate), поэтому берём ближайшую снизу
+# доступную и передискретизируем у себя.
+ELEVENLABS_PCM_RATES = (8000, 16000, 22050, 24000, 44100)
+
+
+def _nearest_supported_rate(sr: int) -> int:
+    """Ближайшая частота, которую сервис действительно умеет отдавать."""
+    if sr in ELEVENLABS_PCM_RATES:
+        return sr
+    below = [r for r in ELEVENLABS_PCM_RATES if r <= sr]
+    return max(below) if below else min(ELEVENLABS_PCM_RATES)
+
+
 class ElevenLabsTTS(TTSProvider):
     name = "elevenlabs"
 
@@ -205,11 +219,17 @@ class ElevenLabsTTS(TTSProvider):
 
         base = str(self.cfg.get("elevenlabs.api_base", "https://api.elevenlabs.io"))
         sr = int(self.cfg.get("elevenlabs.sample_rate", SAMPLE_RATE))
+        # Просить у сервиса частоту, которой у него нет, нельзя: конвейер живёт
+        # на 48 кГц, а PCM ElevenLabs отдаёт только на перечисленных частотах.
+        # На pcm_48000 ответ приходил не сырым PCM, и разбор падал невнятным
+        # «buffer size must be a multiple of element size» — поймано на живом
+        # прогоне. Берём ближайшую доступную и приводим к канону сами.
+        api_sr = _nearest_supported_rate(sr)
         url = f"{base}/v1/text-to-speech/{self.voice_id}/with-timestamps"
         payload = {
             "text": text,
             "model_id": model,
-            "output_format": f"pcm_{sr}",
+            "output_format": f"pcm_{api_sr}",
             "voice_settings": {"stability": 0.45, "similarity_boost": 0.8, "speed": speed},
         }
         headers = {"xi-api-key": self.api_key, "Content-Type": "application/json"}
@@ -226,7 +246,18 @@ class ElevenLabsTTS(TTSProvider):
         raw = base64.b64decode(data.get("audio_base64", ""))
         if not raw:
             raise ProviderError("ElevenLabs вернул пустое аудио", model=model)
+        # Тело ответа разбирается как PCM 16 бит, и это предположение обязано
+        # проверяться: нечётная длина означает, что пришло что угодно, только
+        # не s16le. Без проверки numpy роняет прогон сообщением про размер
+        # буфера, по которому причину не найти.
+        if len(raw) % 2:
+            raise ProviderError(
+                "ElevenLabs вернул не PCM 16 бит",
+                model=model, requested_format=f"pcm_{api_sr}", bytes=len(raw),
+                head=raw[:16].hex())
         pcm = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
+        if api_sr != sr:
+            pcm = resample(pcm, api_sr, sr)
         save_wav(out_path, pcm, sr)
 
         words = _words_from_alignment(

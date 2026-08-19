@@ -369,3 +369,85 @@ def test_top_up_survives_a_text_of_only_function_words():
              for i, w in enumerate("и а но то же ли бы не ни как".split())]
     assert top_up_emphasis(words, [6, 8]) == 0
     assert not any(w.emphasis for w in words)
+
+
+# --- формат ответа ElevenLabs -------------------------------------------------
+
+def test_pcm_rate_is_one_the_service_actually_offers():
+    """Конвейер живёт на 48 кГц, а PCM ElevenLabs на этой частоте не отдаёт.
+
+    Поймано живым прогоном: запрос pcm_48000 возвращал не сырой PCM, и разбор
+    падал невнятным «buffer size must be a multiple of element size».
+    """
+    from src.lib.providers.tts import ELEVENLABS_PCM_RATES, _nearest_supported_rate
+
+    assert 48000 not in ELEVENLABS_PCM_RATES
+    assert _nearest_supported_rate(48000) == 44100
+    for sr in (8000, 16000, 22050, 24000, 44100):
+        assert _nearest_supported_rate(sr) == sr
+    # Ниже самой малой частоты выбирается она же, а не пустота.
+    assert _nearest_supported_rate(4000) == 8000
+
+
+def test_non_pcm_body_names_what_came_back(tmp_path, monkeypatch):
+    """Без проверки numpy роняет прогон сообщением, по которому не найти причину."""
+    import base64
+
+    from src.errors import ProviderError
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    cfg = load_config()
+    provider = ElevenLabsTTS(cfg, CostLedger(video_id="t"), "key", "voice")
+
+    class _Resp:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            # Нечётная длина — это что угодно, только не s16le.
+            return {"audio_base64": base64.b64encode(b"\x00\x01\x02").decode(),
+                    "alignment": {}}
+
+    monkeypatch.setattr("requests.post", lambda *a, **k: _Resp())
+    with pytest.raises(ProviderError) as exc:
+        provider._request("текст", tmp_path / "out.wav",
+                          model="eleven_v3", speed=1.0)
+    assert "не PCM" in exc.value.message
+    assert exc.value.details.get("bytes") == 3
+
+
+def test_pcm_is_resampled_to_the_pipeline_rate(tmp_path, monkeypatch):
+    """Сервис отдаёт 44100, конвейер работает на 48000 — приводим сами."""
+    import base64
+
+    import numpy as np
+
+    from src.lib.audio import load_wav
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    cfg = load_config()
+    cfg.set("elevenlabs.sample_rate", 48000)
+    provider = ElevenLabsTTS(cfg, CostLedger(video_id="t"), "key", "voice")
+
+    one_second_at_44100 = (np.zeros(44100, dtype="<i2")).tobytes()
+
+    class _Resp:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"audio_base64": base64.b64encode(one_second_at_44100).decode(),
+                    "alignment": {}}
+
+    monkeypatch.setattr("requests.post", lambda *a, **k: _Resp())
+    out = tmp_path / "out.wav"
+    result = provider._request("текст", out, model="eleven_v3", speed=1.0)
+
+    data, sr = load_wav(out)
+    assert sr == 48000
+    assert len(data) == 48000                      # секунда осталась секундой
+    assert abs(result.duration_sec - 1.0) < 1e-3
