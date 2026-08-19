@@ -28,8 +28,8 @@ from typing import Any
 
 from ..text_rules import subtitle_word
 from .templates import (
-    TemplateCtx, enter_and_drift, entrance_tweens, render_hero, render_motion,
-    render_transition,
+    TemplateCtx, enter_and_drift, entrance_tweens, fit_size, render_hero,
+    render_motion, render_transition, text_width,
 )
 
 TRACK_STAGE = 0
@@ -211,8 +211,19 @@ class CompositionBuilder:
             markup = (_esc(content[:idx])
                       + f'<span class="accent">{_esc(content[idx:idx + len(accent)])}</span>'
                       + _esc(content[idx + len(accent):]))
+        # Кегль подбирается под самое длинное слово, а не берётся потолком из
+        # брендбука. С фиксированными 420 px «ПЕРЕЖИВЁШЬ» занимало 2400 px и
+        # уезжало за оба края кадра — видно было «ЕЖИВЁ». Поймано кадром
+        # готового MP4, а не разметкой: QC меряет safe zones по оверлеям, а
+        # полноэкранный текст оверлеем не является.
+        fs = self.brandbook["fullscreen_text"]
+        safe_x = int(self.brandbook["safe_zones"]["work_area"]["x_min"])
+        available = self.width - 2 * safe_x
+        longest = max(content.upper().split(), key=len, default="")
+        size = fit_size(longest, available, int(fs["size_px"][1]))
         return (f'<div id="{node_id}" class="clip fullscreen-text{invert}" {timing}>'
-                f'<span id="{node_id}-inner">{markup}</span></div>')
+                f'<span id="{node_id}-inner" style="font-size:{size}px">'
+                f'{markup}</span></div>')
 
     def _add_kenburns(self, node_id: str, shot: dict[str, Any],
                       start: float, duration: float) -> None:

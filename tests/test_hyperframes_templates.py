@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-81 шаблон каталога — это 19 рендереров с параметрами. Проверяется то, что
+92 шаблона каталога — это 30 рендереров с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -531,3 +531,16 @@ def test_knockout_sits_on_the_face_not_the_torso():
     # Без данных о лице остаётся середина кадра.
     mid = render_hero("hero-knockout", _hero_ctx("hero-knockout")).nodes[0]
     assert 700 < int(re.search(r'y="(\d+)"', mid).group(1)) < 1200
+
+
+def test_headline_size_is_measured_too():
+    """Заголовок идёт строкой через кадр — при фиксированном кегле обрежется."""
+    import re
+
+    long_word = render_hero("hero-headline",
+                            _hero_ctx("hero-headline",
+                                      params={"word": "НЕПРЕДСКАЗУЕМОСТЬ",
+                                              "size": 232})).nodes[0]
+    size = int(re.search(r"font-size:(\d+)px", long_word).group(1))
+    from src.lib.render.hyperframes.templates import text_width
+    assert text_width("НЕПРЕДСКАЗУЕМОСТЬ", size) <= 980 + 1e-6

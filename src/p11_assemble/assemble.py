@@ -757,7 +757,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])
-        if any(w_start <= start < w_end for w_start, w_end in fs_windows):
+        # Отбрасываем по пересечению, а не по началу: слово, начавшееся до
+        # склейки и дожившее до неё, оставалось висеть поверх полноэкранного
+        # текста. Видно на кадре готового MP4 — «ты» поверх «ПЕРЕЖИВЁШЬ».
+        if any(start < w_end and end > w_start for w_start, w_end in fs_windows):
             continue
         subtitles.append({
             "display": word["display"], "start": start, "end": end,

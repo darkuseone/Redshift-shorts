@@ -208,11 +208,16 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
     # над головой, панель сбоку, выбивка. Тег ``alpha`` помечает приёмы, для
     # которых аватар обязан прийти с прозрачным фоном: они рисуются ПОД ним, и
     # без альфы зритель их не увидит.
-    "hero-devices": (10, [
+    "hero-devices": (11, [
         ("plate-behind-back", "Кадр появляется за спиной ведущего", [1.4, 4.0],
          {"top": 300}, ["hero", "avatar", "alpha", "footage"], "hero-plate"),
         ("headline-over-head", "Заголовок вырастает над головой", [1.2, 3.4],
          {"top": 190}, ["hero", "avatar", "alpha", "text"], "hero-headline"),
+        # Тот же рендерер, но крупнее и ниже: голова перекрывает нижнюю часть
+        # слова, и оно читается как надпись позади ведущего, а не над ним.
+        ("headline-behind-head", "Крупный заголовок из-за головы", [1.2, 3.4],
+         {"top": 300, "size": 232}, ["hero", "avatar", "alpha", "text"],
+         "hero-headline"),
         ("burst-behind-head", "Лучи расходятся из-за головы", [1.0, 3.0],
          {"rays": 9, "spread_deg": 150, "center_y": 560},
          ["hero", "avatar", "alpha"], "hero-burst"),

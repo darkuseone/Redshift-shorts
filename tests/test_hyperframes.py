@@ -418,3 +418,31 @@ def test_hero_devices_do_not_share_a_track_with_the_shots(plan, assets, brandboo
     node = next(l for l in out.splitlines() if 'class="clip hero-headline"' in l)
     track = int(re.search(r'data-track-index="(\d+)"', node).group(1))
     assert track >= 13
+
+
+def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):
+    """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
+
+    Поймано кадром готового MP4, а не разметкой: QC-7 меряет safe zones по
+    оверлеям, а полноэкранный текст оверлеем не является и через проверку
+    проходил.
+    """
+    from src.lib.render.hyperframes.templates import text_width
+
+    safe_x = int(brandbook["safe_zones"]["work_area"]["x_min"])
+    available = 1080 - 2 * safe_x
+    for word in ("ПЕРЕЖИВЁШЬ", "НЕПРЕДСКАЗУЕМОСТЬ", "ХУЖЕ", "ДА"):
+        plan["shots"][1]["content"] = word
+        out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+        node = next(l for l in out.splitlines() if "fullscreen-text" in l)
+        size = int(re.search(r"font-size:(\d+)px", node).group(1))
+        assert text_width(word, size) <= available + 1e-6, f"{word} при кегле {size}"
+
+
+def test_short_fullscreen_word_keeps_the_brandbook_ceiling(plan, assets, brandbook):
+    """Подгонка не должна мельчить то, что и так влезает."""
+    plan["shots"][1]["content"] = "ДА"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    node = next(l for l in out.splitlines() if "fullscreen-text" in l)
+    ceiling = int(brandbook["fullscreen_text"]["size_px"][1])
+    assert int(re.search(r"font-size:(\d+)px", node).group(1)) == ceiling

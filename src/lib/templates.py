@@ -6,7 +6,7 @@
    при наличии альтернативы.
 2. Наборы шаблонов версий A и B одного ролика отличаются минимум на 3 позиции.
 3. ``manifest.json`` фиксирует использование; редко используемые получают
-   приоритет — иначе каталог из 81 шаблона выродится в 5 любимых, а QC-17
+   приоритет — иначе каталог из 92 шаблонов выродится в 5 любимых, а QC-17
    («повтор набора шаблонов с предыдущим роликом») начнёт стабильно падать.
 """
 
@@ -136,12 +136,20 @@ class TemplateCatalog:
                 template.last_used_in.append(video_id)
 
     def save(self) -> Path:
-        by_id = {t.id: t for t in self.templates}
-        for entry in self.data.get("templates", []):
-            template = by_id.get(entry["id"])
-            if template is not None:
-                entry["last_used_in"] = template.last_used_in[-20:]
-        return write_json(self.path, self.data)
+        """Записать историю использования, не трогая состав каталога.
+
+        Каталог перечитывается с диска перед записью: прогон длится минуты, и
+        шаблон, добавленный за это время генератором, иначе пропадал бы —
+        объект в памяти помнит состав на момент старта. Ловилось на живом
+        прогоне: новый приём исчез из манифеста после P11.
+        """
+        on_disk = read_json(self.path) if self.path.exists() else self.data
+        used = {t.id: t.last_used_in[-20:] for t in self.templates}
+        for entry in on_disk.get("templates", []):
+            if entry["id"] in used:
+                entry["last_used_in"] = used[entry["id"]]
+        self.data = on_disk
+        return write_json(self.path, on_disk)
 
 
 def diff_count(set_a: Iterable[str], set_b: Iterable[str]) -> int:

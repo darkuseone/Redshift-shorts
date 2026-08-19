@@ -263,9 +263,9 @@ def test_catalog_matches_spec_counts(cfg):
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 10, "lower-thirds": 8, "frames-cards": 6,
         "browser-ui": 6, "transitions": 12, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 10,
+        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 11,
     }
-    assert len(catalog.all()) == 91
+    assert len(catalog.all()) == 92
 
 
 def test_catalog_rotation_avoids_recent(cfg):
@@ -419,3 +419,50 @@ def test_knockout_size_is_measured_not_guessed():
         assert text_width(word, size) <= 960 + 1e-6, word
     # Короткое слово не ужимается ниже потолка.
     assert fit_size("ДА", 960, 300) == 300
+
+
+def test_catalog_save_keeps_templates_added_during_a_run(cfg, tmp_path):
+    """Прогон длится минуты; шаблон, добавленный за это время, пропадал.
+
+    Объект каталога помнит состав на момент старта, и запись «как в памяти»
+    затирала новичка. Поймано на живом прогоне: приём исчез из манифеста
+    после P11.
+    """
+    import json
+
+    from src.lib.templates import TemplateCatalog
+
+    path = tmp_path / "manifest.json"
+    base = {"templates": [{"id": "cat/one", "name": "one", "category": "cat",
+                           "title": "", "duration_range": [1.0, 2.0], "params": {},
+                           "tags": [], "renderer": "r", "last_used_in": []}]}
+    path.write_text(json.dumps(base), encoding="utf-8")
+    catalog = TemplateCatalog(path, json.loads(path.read_text()))
+    catalog.mark_used(["cat/one"], "v1")
+
+    # Пока каталог жил в памяти, генератор дописал в манифест второй шаблон.
+    grown = json.loads(path.read_text())
+    grown["templates"].append({**base["templates"][0], "id": "cat/two", "name": "two"})
+    path.write_text(json.dumps(grown), encoding="utf-8")
+
+    catalog.save()
+    saved = json.loads(path.read_text())
+    assert {t["id"] for t in saved["templates"]} == {"cat/one", "cat/two"}
+    assert saved["templates"][0]["last_used_in"] == ["v1"]
+
+
+def test_subtitle_straddling_a_cut_is_dropped():
+    """Слово, начавшееся до склейки и дожившее до неё, висело поверх текста.
+
+    Отбор по началу слова его пропускал: начало вне окна, хвост внутри.
+    """
+    windows = [(2.212, 3.412)]
+
+    def kept(start, end):
+        return not any(start < w_end and end > w_start for w_start, w_end in windows)
+
+    assert kept(1.60, 2.10)          # целиком до окна
+    assert not kept(2.05, 2.30)      # хвост заезжает в окно
+    assert not kept(2.50, 2.90)      # целиком внутри
+    assert not kept(3.30, 3.70)      # начало внутри
+    assert kept(3.45, 3.90)          # целиком после

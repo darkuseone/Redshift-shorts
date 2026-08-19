@@ -13,8 +13,8 @@
     "parallax": 4,
     "data-viz": 6,
     "outro-cta": 5,
-    "hero-devices": 10,
-    "_total": 91
+    "hero-devices": 11,
+    "_total": 92
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1994,6 +1994,31 @@
       ],
       "params": {
         "top": 190
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "text"
+      ],
+      "renderer": "hero-headline",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/headline-behind-head",
+      "name": "headline-behind-head",
+      "category": "hero-devices",
+      "title": "Крупный заголовок из-за головы",
+      "duration_range": [
+        1.2,
+        3.4
+      ],
+      "params": {
+        "top": 300,
+        "size": 232
       },
       "tags": [
         "hero",

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-81 шаблон каталога — это не 81 реализация, а 19 рендереров с параметрами.
+92 шаблона каталога — это не 92 реализации, а 30 рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -762,6 +762,9 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = f"hh-{ctx.index:02d}"
     top = int(ctx.params.get("top", 190))
+    # Кегль подбирается измерением: заголовок идёт в одну строку через весь
+    # кадр, и длинное слово при фиксированном кегле обрезалось бы краем.
+    size = fit_size(word, 1080 - 2 * 50, int(ctx.params.get("size", 168)))
 
     kicker_html = (f'<span class="hh-kicker">{_esc(kicker)}</span>' if kicker else "")
     # Слово оседает сверху и потом еле заметно едет: после входа кадр не имеет
@@ -781,7 +784,7 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip hero-headline" style="top:{top}px" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
                f'data-track-index="{ctx.track}">{kicker_html}'
-               f'<span class="hh-word">{_esc(word)}</span>'
+               f'<span class="hh-word" style="font-size:{size}px">{_esc(word)}</span>'
                f'<span class="hh-rule"></span></div>'],
         tweens=tweens)
 
