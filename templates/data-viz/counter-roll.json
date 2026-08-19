@@ -1,0 +1,20 @@
+{
+  "id": "data-viz/counter-roll",
+  "name": "counter-roll",
+  "category": "data-viz",
+  "title": "Цифра прокручивается",
+  "duration_range": [
+    1.0,
+    2.5
+  ],
+  "params": {
+    "digits": 6
+  },
+  "tags": [
+    "data",
+    "number"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

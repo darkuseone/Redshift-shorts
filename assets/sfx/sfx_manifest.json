@@ -1,0 +1,478 @@
+{
+  "_comment": "Библиотека sfx. Лимит 20 (§14). По достижении лимита пополнение блокируется.",
+  "kind": "sfx",
+  "max_items": 20,
+  "count": 20,
+  "frozen": true,
+  "updated": "2026-08-19",
+  "items": [
+    {
+      "id": "sfx_whoosh_in",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "whoosh_in",
+        "вход",
+        "аватара,",
+        "влёт"
+      ],
+      "vision_summary": "вход аватара, влёт элемента",
+      "score": 0.0,
+      "duration_sec": 0.55,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-19",
+      "added": "2026-08-18",
+      "file": "whoosh_in.wav",
+      "role": "whoosh_in"
+    },
+    {
+      "id": "sfx_whoosh_out",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "whoosh_out",
+        "выход",
+        "аватара,",
+        "уход"
+      ],
+      "vision_summary": "выход аватара, уход элемента",
+      "score": 0.0,
+      "duration_sec": 0.55,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-19",
+      "added": "2026-08-18",
+      "file": "whoosh_out.wav",
+      "role": "whoosh_out"
+    },
+    {
+      "id": "sfx_hit_impact",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "hit_impact",
+        "акцент",
+        "на",
+        "цифре/факте"
+      ],
+      "vision_summary": "акцент на цифре/факте",
+      "score": 0.0,
+      "duration_sec": 0.5,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0044",
+        "redshift_0045"
+      ],
+      "last_used": "2026-08-18",
+      "added": "2026-08-18",
+      "file": "hit_impact.wav",
+      "role": "hit_impact"
+    },
+    {
+      "id": "sfx_sub_drop",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "sub_drop",
+        "тяжёлый",
+        "акцент",
+        "на"
+      ],
+      "vision_summary": "тяжёлый акцент на повороте",
+      "score": 0.0,
+      "duration_sec": 1.1,
+      "used_in": [
+        "redshift_0043",
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-19",
+      "added": "2026-08-18",
+      "file": "sub_drop.wav",
+      "role": "sub_drop"
+    },
+    {
+      "id": "sfx_riser",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "riser",
+        "нарастание",
+        "перед",
+        "раскрытием"
+      ],
+      "vision_summary": "нарастание перед раскрытием",
+      "score": 0.0,
+      "duration_sec": 1.6,
+      "used_in": [
+        "redshift_0045"
+      ],
+      "last_used": "2026-08-18",
+      "added": "2026-08-18",
+      "file": "riser.wav",
+      "role": "riser"
+    },
+    {
+      "id": "sfx_pop",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "pop",
+        "появление",
+        "плашки"
+      ],
+      "vision_summary": "появление плашки",
+      "score": 0.0,
+      "duration_sec": 0.14,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "pop.wav",
+      "role": "pop"
+    },
+    {
+      "id": "sfx_ui_click",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ui_click",
+        "клик",
+        "в",
+        "интерфейсе"
+      ],
+      "vision_summary": "клик в интерфейсе",
+      "score": 0.0,
+      "duration_sec": 0.07,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "ui_click.wav",
+      "role": "ui_click"
+    },
+    {
+      "id": "sfx_type_key",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "type_key",
+        "печать",
+        "текста"
+      ],
+      "vision_summary": "печать текста",
+      "score": 0.0,
+      "duration_sec": 0.05,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "type_key.wav",
+      "role": "type_key"
+    },
+    {
+      "id": "sfx_swipe",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "swipe",
+        "смена",
+        "кадра,",
+        "свайп"
+      ],
+      "vision_summary": "смена кадра, свайп",
+      "score": 0.0,
+      "duration_sec": 0.28,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "swipe.wav",
+      "role": "swipe"
+    },
+    {
+      "id": "sfx_glitch",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "glitch",
+        "глитч-переход"
+      ],
+      "vision_summary": "глитч-переход",
+      "score": 0.0,
+      "duration_sec": 0.32,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "glitch.wav",
+      "role": "glitch"
+    },
+    {
+      "id": "sfx_reveal",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "reveal",
+        "появление",
+        "full-screen",
+        "text"
+      ],
+      "vision_summary": "появление full-screen text",
+      "score": 0.0,
+      "duration_sec": 0.7,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-19",
+      "added": "2026-08-18",
+      "file": "reveal.wav",
+      "role": "reveal"
+    },
+    {
+      "id": "sfx_chime",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "chime",
+        "позитивный",
+        "акцент"
+      ],
+      "vision_summary": "позитивный акцент",
+      "score": 0.0,
+      "duration_sec": 1.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "chime.wav",
+      "role": "chime"
+    },
+    {
+      "id": "sfx_notification",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "notification",
+        "уведомление,",
+        "входящее",
+        "сообщение"
+      ],
+      "vision_summary": "уведомление, входящее сообщение",
+      "score": 0.0,
+      "duration_sec": 0.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "notification.wav",
+      "role": "notification"
+    },
+    {
+      "id": "sfx_camera_shutter",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "camera_shutter",
+        "скриншот,",
+        "фиксация"
+      ],
+      "vision_summary": "скриншот, фиксация",
+      "score": 0.0,
+      "duration_sec": 0.22,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "camera_shutter.wav",
+      "role": "camera_shutter"
+    },
+    {
+      "id": "sfx_data_beep",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "data_beep",
+        "данные,",
+        "график,",
+        "цифры"
+      ],
+      "vision_summary": "данные, график, цифры",
+      "score": 0.0,
+      "duration_sec": 0.24,
+      "used_in": [
+        "redshift_0044"
+      ],
+      "last_used": "2026-08-18",
+      "added": "2026-08-18",
+      "file": "data_beep.wav",
+      "role": "data_beep"
+    },
+    {
+      "id": "sfx_tick",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "tick",
+        "отсчёт,",
+        "мелкий",
+        "акцент"
+      ],
+      "vision_summary": "отсчёт, мелкий акцент",
+      "score": 0.0,
+      "duration_sec": 0.06,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "tick.wav",
+      "role": "tick"
+    },
+    {
+      "id": "sfx_boom",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "boom",
+        "финальный",
+        "удар"
+      ],
+      "vision_summary": "финальный удар",
+      "score": 0.0,
+      "duration_sec": 1.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "boom.wav",
+      "role": "boom"
+    },
+    {
+      "id": "sfx_error_buzz",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "error_buzz",
+        "отрицание,",
+        "«не",
+        "работает»"
+      ],
+      "vision_summary": "отрицание, «не работает»",
+      "score": 0.0,
+      "duration_sec": 0.42,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-08-18",
+      "file": "error_buzz.wav",
+      "role": "error_buzz"
+    },
+    {
+      "id": "sfx_meme_stinger",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "meme_stinger",
+        "мем-вставка"
+      ],
+      "vision_summary": "мем-вставка",
+      "score": 0.0,
+      "duration_sec": 0.65,
+      "used_in": [
+        "redshift_0045",
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-19",
+      "added": "2026-08-18",
+      "file": "meme_stinger.wav",
+      "role": "meme_stinger"
+    },
+    {
+      "id": "sfx_subscribe_ping",
+      "type": "sfx",
+      "source": "synth",
+      "license": "generated-owned (REDSHIFT)",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "subscribe_ping",
+        "кнопка",
+        "подписки"
+      ],
+      "vision_summary": "кнопка подписки",
+      "score": 0.0,
+      "duration_sec": 0.85,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-19",
+      "added": "2026-08-18",
+      "file": "subscribe_ping.wav",
+      "role": "subscribe_ping"
+    }
+  ]
+}

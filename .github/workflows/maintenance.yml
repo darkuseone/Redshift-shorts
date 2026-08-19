@@ -1,0 +1,53 @@
+name: maintenance
+
+# LRU-очистка кэша футажей и отчёты (§14.4, R-11, §10.5.2).
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"      # понедельник, 03:17 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Только отчёт, ничего не удалять"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      REDSHIFT_S3_BUCKET: ${{ secrets.REDSHIFT_S3_BUCKET }}
+      REDSHIFT_S3_ENDPOINT: ${{ secrets.REDSHIFT_S3_ENDPOINT }}
+      REDSHIFT_S3_ACCESS_KEY: ${{ secrets.REDSHIFT_S3_ACCESS_KEY }}
+      REDSHIFT_S3_SECRET_KEY: ${{ secrets.REDSHIFT_S3_SECRET_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Обслуживание кэша и библиотек
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.dry_run }}" != "false" ]; then ARGS="--dry-run"; fi
+          python -m src.cli maintenance $ARGS | tee maintenance_report.json
+
+      - name: Коммит обновлённого индекса
+        if: github.event.inputs.dry_run == 'false'
+        run: |
+          git config user.name  "redshift-bot"
+          git config user.email "redshift-bot@users.noreply.github.com"
+          git add cache/footage_index.json assets/*/*_manifest.json templates/manifest.json || true
+          git diff --cached --quiet || git commit -m "chore(maintenance): LRU-очистка кэша и обновление индексов"
+          git push || echo "нечего пушить"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maintenance-report
+          path: maintenance_report.json

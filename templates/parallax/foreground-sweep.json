@@ -1,0 +1,21 @@
+{
+  "id": "parallax/foreground-sweep",
+  "name": "foreground-sweep",
+  "category": "parallax",
+  "title": "Передний план проходит по кадру",
+  "duration_range": [
+    1.0,
+    2.5
+  ],
+  "params": {
+    "layers": 2,
+    "shift_pct": 0.05
+  },
+  "tags": [
+    "parallax",
+    "sweep"
+  ],
+  "renderer": "parallax",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

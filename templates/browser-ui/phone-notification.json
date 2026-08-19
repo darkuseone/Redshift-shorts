@@ -1,0 +1,23 @@
+{
+  "id": "browser-ui/phone-notification",
+  "name": "phone-notification",
+  "category": "browser-ui",
+  "title": "Уведомление на телефоне",
+  "duration_range": [
+    1.2,
+    2.5
+  ],
+  "params": {
+    "template": "notepad",
+    "compact": true
+  },
+  "tags": [
+    "ui",
+    "notification"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [
+    "redshift_0043"
+  ],
+  "added": "2026-08-18"
+}

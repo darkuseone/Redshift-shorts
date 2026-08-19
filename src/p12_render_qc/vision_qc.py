@@ -1,0 +1,100 @@
+"""Смысловой QC §11.2 — vision по **финальному** ролику.
+
+Автоматические проверки §11.1 меряют цифры: длительности, уровни, доли. Они не
+видят того, что видит зритель, поэтому §11.2 задаёт три вопроса уже готовому
+файлу:
+
+1. Соответствует ли картинка произносимому? (несоответствий ≤ 10 %)
+2. Есть ли нечитаемый текст — контраст, пёстрый фон?
+3. Есть ли артефакты: битые маски, обрезанные головы, растяжение, чужие
+   водяные знаки?
+
+Проверка неблокирующая: она даёт материал для правки правил и для обучения
+(§11.3), а не отменяет выдачу ролика. Блокирует только §11.1.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+from ..lib.ffmpeg import extract_frames
+from ..lib.logging import get_logger
+from ..lib.providers.vision import build_vision_provider
+
+_log = get_logger("vision_qc")
+
+MISMATCH_LIMIT = 0.10          # §11.2.1
+SAMPLES = 6
+
+
+def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2) -> str:
+    """Что произносится вокруг момента t — эталон для сверки с картинкой."""
+    words = [w["display"] for w in plan.get("subtitles", [])
+             if abs(float(w["start"]) - t) <= window]
+    return " ".join(words)
+
+
+def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any]) -> dict[str, Any]:
+    cfg = ctx.cfg
+    if not bool(cfg.get("features.vision_qc", True)):
+        return {"enabled": False, "reason": "features.vision_qc выключен"}
+
+    duration = float(plan["duration_sec"])
+    provider = build_vision_provider(cfg, ctx.costs, role="primary")
+    positions = [(i + 0.5) / SAMPLES for i in range(SAMPLES)]
+    frames = extract_frames(video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
+                            positions, width=540)
+
+    samples: list[dict[str, Any]] = []
+    for position, frame in zip(positions, frames):
+        t = duration * position
+        shot = next((s for s in plan["shots"]
+                     if float(s["start"]) <= t < float(s["end"])), {})
+        spoken = _spoken_at(plan, t)
+        intent = shot.get("reason") or shot.get("kind", "")
+        verdict = provider.judge([frame], intent=f"{intent}. Речь в этот момент: {spoken}",
+                                 role=shot.get("role", ""), query=spoken or intent)
+        samples.append({
+            "t": round(t, 2),
+            "shot_index": shot.get("index"),
+            "kind": shot.get("kind"),
+            "spoken": spoken,
+            "score": round(verdict.score, 3),
+            "summary": verdict.summary,
+            "has_text": verdict.has_text,
+            "watermark": verdict.watermark,
+            "reason": verdict.reason,
+            "judge": verdict.judge,
+        })
+
+    mismatches = [s for s in samples if s["score"] < 0.45]
+    watermarks = [s for s in samples if s["watermark"]]
+    mismatch_share = len(mismatches) / max(len(samples), 1)
+
+    report = {
+        "enabled": True,
+        "variant": plan.get("variant"),
+        "samples": samples,
+        "sample_count": len(samples),
+        "mismatch_share": round(mismatch_share, 3),
+        "mismatch_limit": MISMATCH_LIMIT,
+        "picture_matches_speech": mismatch_share <= MISMATCH_LIMIT,
+        "watermarks_found": len(watermarks),
+        "blocking": False,
+        "notes": [],
+    }
+    if not report["picture_matches_speech"]:
+        report["notes"].append(
+            f"картинка расходится с речью на {mismatch_share:.0%} проб "
+            f"(предел {MISMATCH_LIMIT:.0%}, §11.2.1)")
+    if watermarks:
+        report["notes"].append(f"подозрение на водяные знаки в {len(watermarks)} пробах")
+
+    for note in report["notes"]:
+        ctx.warn(f"смысловой QC: {note}", variant=plan.get("variant"))
+    _log.info("смысловой QC завершён", extra={
+        "variant": plan.get("variant"), "samples": len(samples),
+        "mismatch_share": report["mismatch_share"],
+    })
+    return report

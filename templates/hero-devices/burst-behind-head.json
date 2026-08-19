@@ -1,0 +1,25 @@
+{
+  "id": "hero-devices/burst-behind-head",
+  "name": "burst-behind-head",
+  "category": "hero-devices",
+  "title": "Лучи расходятся из-за головы",
+  "duration_range": [
+    1.0,
+    3.0
+  ],
+  "params": {
+    "rays": 9,
+    "spread_deg": 150,
+    "center_y": 560
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "alpha"
+  ],
+  "renderer": "hero-burst",
+  "last_used_in": [
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

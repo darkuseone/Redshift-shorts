@@ -1,0 +1,22 @@
+{
+  "id": "lower-thirds/warning-strip",
+  "name": "warning-strip",
+  "category": "lower-thirds",
+  "title": "Предупреждающая полоса",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "position": "top",
+    "accent": true
+  },
+  "tags": [
+    "warning"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [
+    "redshift_0044"
+  ],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "hero-devices/split-panel-right",
+  "name": "split-panel-right",
+  "category": "hero-devices",
+  "title": "Кадр делится: ведущий слева, слово справа",
+  "duration_range": [
+    1.4,
+    4.0
+  ],
+  "params": {
+    "subject_shift": -210,
+    "subject_zoom": 1.14
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "split",
+    "text"
+  ],
+  "renderer": "hero-split",
+  "last_used_in": [
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

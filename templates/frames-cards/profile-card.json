@@ -1,0 +1,23 @@
+{
+  "id": "frames-cards/profile-card",
+  "name": "profile-card",
+  "category": "frames-cards",
+  "title": "Карточка персоны",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "template": "notepad"
+  },
+  "tags": [
+    "person"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0044",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

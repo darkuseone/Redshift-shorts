@@ -1,0 +1,32 @@
+# Источники новостей для режима «найди тему сам» (§7.5, features.auto_topic_search).
+# Только официальные RSS/API. Квоты бюджетируются и кэшируются.
+
+quotas:
+  currents: { per_day: 250, api_key_env: CURRENTS_API_KEY, api_base: "https://api.currentsapi.services" }
+  apitube:  { per_day: 100, api_key_env: APITUBE_API_KEY,  api_base: "https://api.apitube.io" }
+  gdelt:    { per_day: 100, api_key_env: null,             api_base: "https://api.gdeltproject.org" }
+
+# RSS — приоритетный источник (квот нет, R-7)
+rss:
+  - { name: "NASA Breaking News",   url: "https://www.nasa.gov/rss/dyn/breaking_news.rss", topics: [space] }
+  - { name: "ESA Top News",         url: "https://www.esa.int/rssfeed/Our_Activities/Space_News", topics: [space] }
+  - { name: "arXiv cs.AI",          url: "http://export.arxiv.org/rss/cs.AI", topics: [ai] }
+  - { name: "arXiv quant-ph",       url: "http://export.arxiv.org/rss/quant-ph", topics: [quantum] }
+  - { name: "Nature News",          url: "https://www.nature.com/nature.rss", topics: [science, biotech] }
+  - { name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/", topics: [ai, tech] }
+  - { name: "Science Daily Top",    url: "https://www.sciencedaily.com/rss/top/science.xml", topics: [science] }
+
+filter:
+  keywords: [ai, "artificial intelligence", space, quantum, biotech, "climate tech", neuro, longevity]
+  freshness_hours: 48
+  dedup:
+    by_url: true
+    title_fuzzy_threshold: 0.85
+
+rules:
+  # §7.5 — из статьи берутся факты, не текст
+  quote_max_words: 15
+  scraping:
+    allow_paywalled_bulk: false
+    respect_robots_txt: true
+    max_requests_per_domain_per_run: 5

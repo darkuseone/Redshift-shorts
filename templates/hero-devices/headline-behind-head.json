@@ -1,0 +1,23 @@
+{
+  "id": "hero-devices/headline-behind-head",
+  "name": "headline-behind-head",
+  "category": "hero-devices",
+  "title": "Крупный заголовок из-за головы",
+  "duration_range": [
+    1.2,
+    3.4
+  ],
+  "params": {
+    "top": 300,
+    "size": 232
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "alpha",
+    "text"
+  ],
+  "renderer": "hero-headline",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

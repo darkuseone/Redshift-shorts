@@ -1,0 +1,20 @@
+{
+  "id": "outro-cta/question-card",
+  "name": "question-card",
+  "category": "outro-cta",
+  "title": "Вопрос в карточке",
+  "duration_range": [
+    1.5,
+    2.5
+  ],
+  "params": {
+    "card": true
+  },
+  "tags": [
+    "cta",
+    "question"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

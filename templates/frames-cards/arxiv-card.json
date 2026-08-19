@@ -1,0 +1,24 @@
+{
+  "id": "frames-cards/arxiv-card",
+  "name": "arxiv-card",
+  "category": "frames-cards",
+  "title": "Карточка arXiv",
+  "duration_range": [
+    1.5,
+    4.0
+  ],
+  "params": {
+    "template": "arxiv_card"
+  },
+  "tags": [
+    "source",
+    "science"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0045"
+  ],
+  "added": "2026-08-18"
+}

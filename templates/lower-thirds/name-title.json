@@ -1,0 +1,20 @@
+{
+  "id": "lower-thirds/name-title",
+  "name": "name-title",
+  "category": "lower-thirds",
+  "title": "Имя и должность",
+  "duration_range": [
+    1.5,
+    4.0
+  ],
+  "params": {
+    "position": "bottom",
+    "direction": "left"
+  },
+  "tags": [
+    "person"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

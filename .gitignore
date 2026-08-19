@@ -1,0 +1,39 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Node / Remotion ---
+node_modules/
+render/remotion/out/
+render/remotion/.remotion/
+
+# --- Runtime output ---
+# Сборки роликов не хранятся в репозитории (§14.5) — только в artifacts/storage.
+/output/**
+!/output/.gitkeep
+
+# Рабочие каталоги прогонов (промежуточные JSON, wav, mp4 шагов пайплайна)
+/work/
+/.redshift_cache/
+
+# Кэш футажей: в репозитории живёт только индекс (§14.5, K-12)
+/cache/**
+!/cache/.gitkeep
+!/cache/footage_index.json
+
+# Локальные секреты
+.env
+.env.*
+!.env.example
+config/secrets.local.yaml
+
+# --- OS ---
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+{
+  "id": "transitions/blur-dip",
+  "name": "blur-dip",
+  "category": "transitions",
+  "title": "Провал в размытие",
+  "duration_range": [
+    0.18,
+    0.28
+  ],
+  "params": {
+    "max_blur": 18
+  },
+  "tags": [
+    "dynamic",
+    "blur"
+  ],
+  "renderer": "blur_dip",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

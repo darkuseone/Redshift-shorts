@@ -1,0 +1,15 @@
+{
+  "_comment": "Накопленные предпочтения монтажа (§4.5, §7.8). Пополняется командой `redshift learn --video-id X --choice A|B`. Формат записи: «в ситуации X выбран вариант Y».",
+  "version": 1,
+  "updated_at": null,
+  "runs": [],
+  "situation_weights": {},
+  "defaults": {
+    "hook_mode": "C",
+    "twist_mode": "A",
+    "evidence_mode": "B",
+    "fullscreen_text_count": 3,
+    "meme_enabled": true,
+    "dynamic_transition_bias": 0.5
+  }
+}

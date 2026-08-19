@@ -1,0 +1,25 @@
+{
+  "id": "transitions/glitch-short",
+  "name": "glitch-short",
+  "category": "transitions",
+  "title": "Короткий глитч",
+  "duration_range": [
+    0.16,
+    0.26
+  ],
+  "params": {
+    "bars": 7
+  },
+  "tags": [
+    "dynamic",
+    "glitch"
+  ],
+  "renderer": "glitch",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "outro-cta/next-teaser",
+  "name": "next-teaser",
+  "category": "outro-cta",
+  "title": "Тизер следующего ролика",
+  "duration_range": [
+    1.5,
+    2.5
+  ],
+  "params": {
+    "teaser": true
+  },
+  "tags": [
+    "cta",
+    "teaser"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "parallax/two-layer-drift",
+  "name": "two-layer-drift",
+  "category": "parallax",
+  "title": "Два слоя расходятся",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "layers": 2,
+    "shift_pct": 0.03
+  },
+  "tags": [
+    "parallax"
+  ],
+  "renderer": "parallax",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

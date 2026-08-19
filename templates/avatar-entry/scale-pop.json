@@ -1,0 +1,26 @@
+{
+  "id": "avatar-entry/scale-pop",
+  "name": "scale-pop",
+  "category": "avatar-entry",
+  "title": "Пружинистое появление",
+  "duration_range": [
+    0.2,
+    0.34
+  ],
+  "params": {
+    "overshoot": 0.08
+  },
+  "tags": [
+    "avatar",
+    "entry"
+  ],
+  "renderer": "zoom_punch",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0044",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

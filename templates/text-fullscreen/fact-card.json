@@ -1,0 +1,26 @@
+{
+  "id": "text-fullscreen/fact-card",
+  "name": "fact-card",
+  "category": "text-fullscreen",
+  "title": "Карточка факта",
+  "duration_range": [
+    1.2,
+    2.0
+  ],
+  "params": {
+    "card": true
+  },
+  "tags": [
+    "fact",
+    "card"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0044",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

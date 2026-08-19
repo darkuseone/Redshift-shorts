@@ -1,0 +1,22 @@
+{
+  "id": "intro-hooks/hook-question-flash",
+  "name": "hook-question-flash",
+  "category": "intro-hooks",
+  "title": "Вопрос вспышкой на однотонном фоне",
+  "duration_range": [
+    0.8,
+    2.0
+  ],
+  "params": {
+    "flash_ms": 120,
+    "bg": "bg_pure"
+  },
+  "tags": [
+    "hook",
+    "text",
+    "flash"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

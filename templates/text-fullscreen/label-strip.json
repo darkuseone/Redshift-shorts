@@ -1,0 +1,19 @@
+{
+  "id": "text-fullscreen/label-strip",
+  "name": "label-strip",
+  "category": "text-fullscreen",
+  "title": "Полоса-ярлык поперёк кадра",
+  "duration_range": [
+    0.8,
+    1.6
+  ],
+  "params": {
+    "strip_height": 220
+  },
+  "tags": [
+    "label"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

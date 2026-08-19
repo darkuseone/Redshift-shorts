@@ -1,0 +1,20 @@
+{
+  "id": "lower-thirds/timestamp-marker",
+  "name": "timestamp-marker",
+  "category": "lower-thirds",
+  "title": "Отметка времени",
+  "duration_range": [
+    1.5,
+    2.5
+  ],
+  "params": {
+    "position": "top",
+    "mono": true
+  },
+  "tags": [
+    "time"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

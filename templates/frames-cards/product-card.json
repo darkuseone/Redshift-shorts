@@ -1,0 +1,23 @@
+{
+  "id": "frames-cards/product-card",
+  "name": "product-card",
+  "category": "frames-cards",
+  "title": "Карточка продукта",
+  "duration_range": [
+    1.5,
+    3.5
+  ],
+  "params": {
+    "template": "browser"
+  },
+  "tags": [
+    "product"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0044",
+    "redshift_0043"
+  ],
+  "added": "2026-08-18"
+}

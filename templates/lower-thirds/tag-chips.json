@@ -1,0 +1,20 @@
+{
+  "id": "lower-thirds/tag-chips",
+  "name": "tag-chips",
+  "category": "lower-thirds",
+  "title": "Ряд тегов",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "position": "bottom",
+    "chips": true
+  },
+  "tags": [
+    "tags"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

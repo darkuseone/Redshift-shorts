@@ -1,0 +1,24 @@
+{
+  "id": "frames-cards/article-card",
+  "name": "article-card",
+  "category": "frames-cards",
+  "title": "Карточка статьи",
+  "duration_range": [
+    1.5,
+    4.0
+  ],
+  "params": {
+    "template": "browser"
+  },
+  "tags": [
+    "source",
+    "article"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0044",
+    "redshift_0045"
+  ],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "hero-devices/plate-behind-back",
+  "name": "plate-behind-back",
+  "category": "hero-devices",
+  "title": "Кадр появляется за спиной ведущего",
+  "duration_range": [
+    1.4,
+    4.0
+  ],
+  "params": {
+    "top": 300
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "alpha",
+    "footage"
+  ],
+  "renderer": "hero-plate",
+  "last_used_in": [
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

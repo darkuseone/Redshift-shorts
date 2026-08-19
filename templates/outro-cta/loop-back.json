@@ -1,0 +1,20 @@
+{
+  "id": "outro-cta/loop-back",
+  "name": "loop-back",
+  "category": "outro-cta",
+  "title": "Замыкание на первый кадр",
+  "duration_range": [
+    1.0,
+    2.0
+  ],
+  "params": {
+    "loop": true
+  },
+  "tags": [
+    "cta",
+    "loop"
+  ],
+  "renderer": "footage",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

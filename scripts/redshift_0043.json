@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "video_id": "redshift_0043",
+    "title": "Планета, которой не должно быть",
+    "topic": "Экзопланета вокруг мёртвой звезды",
+    "category": "space",
+    "language": "ru",
+    "target_duration_sec": 44,
+    "allow_memes": true,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-08-20"
+  },
+  "sources": [
+    {
+      "title": "A giant planet candidate transiting a white dwarf",
+      "domain": "nature.com",
+      "url": "https://www.nature.com/articles/s41586-020-2713-y",
+      "show_on_screen": true,
+      "screen_template": "arxiv_card",
+      "snippet": "Планета размером с Юпитер обращается вокруг остатка мёртвой звезды.",
+      "highlight_line": "transiting a white dwarf"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Эта планета пережила смерть своей звезды.",
+      "emphasis_word": "смерть",
+      "avatar": "off",
+      "visual_intent": "Белый карлик в глубоком космосе, холодный свет",
+      "broll_queries": [
+        "white dwarf star space",
+        "deep space stars nebula"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ПЕРЕЖИЛА",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "sub_drop",
+      "meme_allowed": false,
+      "mode_hint": "C"
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Белый карлик — это то, что остаётся от звезды вроде Солнца.",
+      "emphasis_word": "остаётся",
+      "avatar": "on",
+      "visual_intent": "Ведущий объясняет, за головой крупное слово",
+      "broll_queries": [
+        "observatory telescope night"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A"
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Наблюдение опубликовано в Nature. Планета размером с Юпитер обходит мёртвую звезду за полтора дня, и она вчетверо больше самого карлика.",
+      "emphasis_word": "Nature",
+      "avatar": "auto",
+      "visual_intent": "Карточка научной статьи, подсветка ключевой строки",
+      "broll_queries": [
+        "scientific paper screen",
+        "astronomer working data"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "transiting a white dwarf",
+        "template_hint": "frames-cards/arxiv-card"
+      },
+      "sfx": "ui_click",
+      "source_ref": "nature.com",
+      "mode_hint": "B"
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Когда звезда умирала, она раздувалась и должна была сжечь всё поблизости. Планета либо пришла позже, либо уцелела там, где уцелеть невозможно.",
+      "emphasis_word": "невозможно",
+      "avatar": "auto",
+      "visual_intent": "Абстрактная визуализация умирающей звезды и орбит",
+      "broll_queries": [
+        "red giant star expanding",
+        "abstract orbit visualization",
+        "cosmic dust cloud"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ПОЛТОРА ДНЯ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "data_beep",
+      "mode_hint": "C"
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "Вот ответ. Она пришла позже. Планету притянуло уже к остывшему ядру, и теперь она греется об труп собственной звезды.",
+      "emphasis_word": "позже",
+      "avatar": "on",
+      "visual_intent": "Ведущий крупно, поворотный момент",
+      "broll_queries": [
+        "dark space portrait dramatic"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Пришла после смерти",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "sfx": "boom",
+      "answers_hook": true,
+      "mode_hint": "A"
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Сколько таких планет мы ещё не нашли? Напиши свою догадку.",
+      "emphasis_word": "догадку",
+      "avatar": "auto",
+      "visual_intent": "Финальный кадр, кнопка подписки",
+      "broll_queries": [
+        "starfield slow motion"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "mode_hint": "C"
+    }
+  ],
+  "cta": {
+    "text": "Сколько таких планет мы ещё не нашли?",
+    "type": "question"
+  }
+}

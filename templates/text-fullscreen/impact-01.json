@@ -1,0 +1,30 @@
+{
+  "id": "text-fullscreen/impact-01",
+  "name": "impact-01",
+  "category": "text-fullscreen",
+  "title": "Гигантская цифра",
+  "duration_range": [
+    0.8,
+    2.0
+  ],
+  "params": {
+    "size_px": [
+      260,
+      420
+    ],
+    "uppercase": true
+  },
+  "tags": [
+    "number",
+    "impact"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0044",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "avatar-entry/slide-from-bottom",
+  "name": "slide-from-bottom",
+  "category": "avatar-entry",
+  "title": "Выезд снизу",
+  "duration_range": [
+    0.22,
+    0.36
+  ],
+  "params": {
+    "axis": "y",
+    "direction": 1
+  },
+  "tags": [
+    "avatar",
+    "entry"
+  ],
+  "renderer": "paper_slide",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0044",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

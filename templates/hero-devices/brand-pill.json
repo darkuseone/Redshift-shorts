@@ -1,0 +1,21 @@
+{
+  "id": "hero-devices/brand-pill",
+  "name": "brand-pill",
+  "category": "hero-devices",
+  "title": "Пилюля с логотипом бренда у плеча",
+  "duration_range": [
+    1.0,
+    3.0
+  ],
+  "params": {
+    "top": 1180
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "brand"
+  ],
+  "renderer": "hero-brand-pill",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

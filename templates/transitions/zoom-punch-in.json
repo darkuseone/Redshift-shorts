@@ -1,0 +1,25 @@
+{
+  "id": "transitions/zoom-punch-in",
+  "name": "zoom-punch-in",
+  "category": "transitions",
+  "title": "Удар зумом внутрь",
+  "duration_range": [
+    0.16,
+    0.26
+  ],
+  "params": {
+    "from_scale": 1.35
+  },
+  "tags": [
+    "dynamic",
+    "zoom"
+  ],
+  "renderer": "zoom_punch",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

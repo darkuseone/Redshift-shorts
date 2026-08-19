@@ -1,0 +1,21 @@
+{
+  "id": "text-fullscreen/bigtext-mask-footage",
+  "name": "bigtext-mask-footage",
+  "category": "text-fullscreen",
+  "title": "Текст-маска с футажом внутри",
+  "duration_range": [
+    1.0,
+    2.0
+  ],
+  "params": {
+    "mask": true
+  },
+  "tags": [
+    "text",
+    "footage",
+    "mask"
+  ],
+  "renderer": "fullscreen_text",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

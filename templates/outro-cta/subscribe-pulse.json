@@ -1,0 +1,26 @@
+{
+  "id": "outro-cta/subscribe-pulse",
+  "name": "subscribe-pulse",
+  "category": "outro-cta",
+  "title": "Пульсирующая кнопка подписки",
+  "duration_range": [
+    1.5,
+    2.5
+  ],
+  "params": {
+    "pulse_hz": 1.6
+  },
+  "tags": [
+    "cta",
+    "subscribe"
+  ],
+  "renderer": "cta_button",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0044",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

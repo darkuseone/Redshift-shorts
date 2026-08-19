@@ -1,0 +1,27 @@
+{
+  "id": "lower-thirds/source-domain",
+  "name": "source-domain",
+  "category": "lower-thirds",
+  "title": "Домен источника",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "position": "bottom",
+    "direction": "left",
+    "icon": "link"
+  },
+  "tags": [
+    "source"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0044",
+    "redshift_0045",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

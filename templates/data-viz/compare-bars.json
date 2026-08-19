@@ -1,0 +1,20 @@
+{
+  "id": "data-viz/compare-bars",
+  "name": "compare-bars",
+  "category": "data-viz",
+  "title": "Сравнение двух столбиков",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "bars": 2
+  },
+  "tags": [
+    "data",
+    "compare"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

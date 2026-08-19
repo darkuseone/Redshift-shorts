@@ -1,0 +1,24 @@
+{
+  "id": "frames-cards/patent-card",
+  "name": "patent-card",
+  "category": "frames-cards",
+  "title": "Карточка патента",
+  "duration_range": [
+    1.5,
+    4.0
+  ],
+  "params": {
+    "template": "patent_card"
+  },
+  "tags": [
+    "source",
+    "patent"
+  ],
+  "renderer": "source_card",
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

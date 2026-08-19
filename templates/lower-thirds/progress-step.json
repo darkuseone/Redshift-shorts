@@ -1,0 +1,20 @@
+{
+  "id": "lower-thirds/progress-step",
+  "name": "progress-step",
+  "category": "lower-thirds",
+  "title": "Шаг N из M",
+  "duration_range": [
+    1.5,
+    3.0
+  ],
+  "params": {
+    "position": "top",
+    "mono": true
+  },
+  "tags": [
+    "progress"
+  ],
+  "renderer": "plaque",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}
