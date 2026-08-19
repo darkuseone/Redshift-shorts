@@ -143,6 +143,11 @@ class CompositionBuilder:
                       f'data-track-index="{track}"')
             # Цель перехода: для аватар-слотов — сам аватар, иначе — шот.
             target = avatar_nodes.get(index, node_id)
+            # Переход и Ken Burns тянут одни и те же свойства одного элемента.
+            # Наложение запрещено контрактом: порядок перезаписи в GSAP зависит
+            # от очерёдности и может переключиться между рендерами. Поэтому
+            # медленный проезд начинается там, где кончается вход.
+            tr_sec = self._transition_duration(shot)
 
             if kind == "fullscreen_text":
                 nodes.append(self._fullscreen_text_node(node_id, shot, timing))
@@ -165,7 +170,8 @@ class CompositionBuilder:
                 if src:
                     nodes.append(self._media_node(node_id, src, timing, css="shot",
                                                   media_start=shot.get("avatar_offset_sec")))
-                    self._add_kenburns(node_id, shot, start, duration)
+                    self._add_kenburns(node_id, shot, start + tr_sec,
+                                       max(0.1, duration - tr_sec))
             nodes += self._add_transition(target, shot, start)
             self.stats["shots"] += 1
         return nodes
@@ -206,6 +212,14 @@ class CompositionBuilder:
             index=int(shot["index"]), start=start, duration=duration,
             target=node_id, track=TRACK_SHOT_EVEN, params=dict(kb)))
         self.tweens.extend(piece.tweens)
+
+    @staticmethod
+    def _transition_duration(shot: dict[str, Any]) -> float:
+        """Сколько длится вход кадра. Прямая склейка не занимает времени."""
+        spec = shot.get("transition") or {}
+        if str(spec.get("renderer") or "cut") == "cut":
+            return 0.0
+        return float(spec.get("duration") or 0.32)
 
     def _add_transition(self, node_id: str, shot: dict[str, Any],
                         start: float) -> list[str]:

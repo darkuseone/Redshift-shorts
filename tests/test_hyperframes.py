@@ -309,3 +309,35 @@ def test_every_tween_target_exists_in_the_markup(plan, assets, brandbook):
     for tween in [l for l in out.splitlines() if l.strip().startswith("tl.")]:
         selector = re.search(r'"#([^" ]+)', tween).group(1)
         assert selector in ids, f"твин целится в несуществующий {selector}: {tween}"
+
+
+def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
+    """Вход и медленный проезд не имеют права тянуть одно свойство разом.
+
+    Порядок перезаписи в GSAP зависит от очерёдности твинов и может
+    переключиться между рендерами — lint движка ловит это как
+    overlapping_gsap_tweens.
+    """
+    plan["shots"][0]["transition"] = {"renderer": "zoom_punch", "duration": 0.26,
+                                      "params": {"from_scale": 1.35}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+    scale_tweens = [l for l in out.splitlines()
+                    if '"#shot-00"' in l and "scale" in l]
+    assert len(scale_tweens) == 2
+
+    windows = []
+    for tween in scale_tweens:
+        at = float(tween.rstrip(");").rsplit(",", 1)[1])
+        dur = float(re.search(r"duration:([\d.]+)", tween).group(1))
+        windows.append((at, at + dur))
+    windows.sort()
+    assert windows[0][1] <= windows[1][0] + 1e-6, f"твины пересекаются: {windows}"
+
+
+def test_cut_leaves_kenburns_at_the_shot_start(plan, assets, brandbook):
+    """Прямая склейка не занимает времени — проезд начинается сразу."""
+    plan["shots"][0]["transition"] = {"renderer": "cut", "duration": 0.3}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    tween = next(l for l in out.splitlines() if 'fromTo("#shot-00"' in l)
+    assert tween.rstrip(");").endswith(",0")
