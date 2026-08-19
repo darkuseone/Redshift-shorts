@@ -1,55 +1,71 @@
 {
-  "_comment": "Снимок каталога Magnific, снятый через MCP-коннектор в чате и положенный в репозиторий: у прогона в GitHub Actions нет доступа к MCP, а знать, какие слаги существуют и что они умеют, ему нужно. Обновлять командой из README при смене подписки или каталога.",
+  "_comment": "Снимок каталога и цен Magnific, снятый через MCP-коннектор и положенный в репозиторий: у прогона в GitHub Actions доступа к MCP нет. Обновляется командой `python -m src.cli magnific-catalog --check` (сверяет цены) — см. README.",
   "snapshot_date": "2026-08-18",
-  "source": "MCP magnific: images_models_list, video_models_list, account_balance",
+  "source": "MCP magnific: images_models_list, video_models_list, simulate_cost, account_balance",
 
-  "_free_models": "Бесплатных моделей в каталоге нет. Единственный слаг без requiresPremium — auto, но он лишь маршрутизатор и всё равно списывает кредиты. Поэтому «бесплатно» здесь означает «самая дешёвая и быстрая модель», а расход держится в рамках magnific.max_downloads_per_video и budget.",
+  "_billing": "Подписка Premium+ даёт безлимит в веб-приложении, но на вызовы через API безлимит не распространяется — коннектор сообщает это прямо (unlimitedAppliesHere: false). Каждая генерация из пайплайна списывает кредиты. Поэтому «дешёвая модель» здесь не фигура речи: разброс цен между моделями — до 100 раз.",
 
   "account": {
     "plan": "Premium+",
     "unlimited_mode": true,
     "unlimited_applies_to_api": false,
     "credits_available": 17080,
-    "credits_total": 45000,
-    "_note": "Безлимит на аккаунте не распространяется на вызовы через API/MCP — генерации списывают кредиты."
+    "credits_total": 45000
   },
+
+  "_stock_is_free": "Каталог Freepik (stock_search/stock_download) кредитов не стоит: операции скачивания нет в списке платных (simulate_cost). Это делает сток основным источником футажа, а генерацию — закрытием дыр (§7.2).",
 
   "image": {
     "cheap": {
-      "slug": "imagen-nano-banana-2-lite",
-      "why": "агент-рекомендация: дешёвая и быстрая, под черновики и высокий поток",
-      "gen_time_sec": 11,
+      "slug": "fast",
+      "name": "Classic Fast",
+      "credits": 1,
+      "why": "дешевле всех в каталоге, 2 сек на кадр; рабочая лошадка для потока",
+      "supports_9_16": true
+    },
+    "balanced": {
+      "slug": "z-image",
+      "credits": 5,
+      "why": "в 12 раз дешевле nano-banana-2-lite при сопоставимой скорости (6 сек)",
       "supports_9_16": true
     },
     "quality": {
       "slug": "seedream-5-pro",
-      "why": "sota rank 1, общая модель по умолчанию",
-      "gen_time_sec": 45,
-      "supports_9_16": true
-    },
-    "typography": {
-      "slug": "gpt-2",
-      "why": "sota для читаемого текста, инфографики и схем — под кадры с надписями",
-      "gen_time_sec": 75,
+      "credits": 100,
+      "why": "sota rank 1; берём только когда кадр несёт смысловую нагрузку",
       "supports_9_16": true
     }
   },
 
   "video": {
     "cheap": {
-      "slug": "bytedance-seedance-mini-2.0",
-      "why": "лучшее качество/цена на 4–15 сек, вертикаль 9:16, 480p/720p",
-      "gen_time_sec": 300,
-      "max_resolution": "720p",
-      "supports_9_16": true
+      "slug": "kling-25",
+      "credits_per_5s": 140,
+      "why": "в 5 раз дешевле seedance-mini при том же 720p/9:16",
+      "max_resolution": "1080p",
+      "supports_9_16": true,
+      "note": "720p требует стартового кадра — под наш случай подходит 1080p"
     },
     "quality": {
       "slug": "bytedance-seedance-pro-2.0",
-      "why": "sota rank 1, вертикаль 9:16, до 1080p и выше",
-      "gen_time_sec": 300,
+      "credits_per_5s": null,
+      "why": "sota rank 1, вертикаль 9:16, богатый контроль камеры",
       "max_resolution": "1080p",
-      "supports_9_16": true
+      "supports_9_16": true,
+      "note": "цена не снималась: модель включается только по явному требованию сценария"
+    },
+    "_rejected": {
+      "bytedance-seedance-mini-2.0": "700 кредитов за 5 сек — в пять раз дороже kling-25 без выигрыша в нашем сценарии"
     }
+  },
+
+  "prices_checked": {
+    "fast": 1,
+    "z-image": 5,
+    "imagen-nano-banana-2-lite": 60,
+    "seedream-5-pro": 100,
+    "kling-25 (5s, 720p)": 140,
+    "bytedance-seedance-mini-2.0 (5s, 720p)": 700
   },
 
   "constraints": {

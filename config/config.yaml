@@ -71,16 +71,21 @@ magnific:
   paid_model_share_limit: 0.07
   api_key_env: MAGNIFIC_API_KEY
   api_base: "https://api.magnific.ai"
-  # Слаги моделей. Бесплатных в каталоге нет — «free» здесь значит «самая
-  # дешёвая и быстрая», см. config/magnific_models.json, снятый через MCP.
+  # Слаги моделей и реальные цены — config/magnific_models.json, снят через
+  # MCP. Безлимит подписки на API не распространяется, поэтому «free» здесь
+  # значит «дешёвая»: разброс цен между моделями доходит до ста раз
+  # (Classic Fast — 1 кредит, seedance-mini — 700 за пять секунд).
   catalog_file: config/magnific_models.json
   models:
-    free_image:  "imagen-nano-banana-2-lite"
-    paid_image:  "seedream-5-pro"
-    free_video:  "bytedance-seedance-mini-2.0"
+    free_image:  "fast"              # 1 кредит
+    paid_image:  "seedream-5-pro"    # 100 кредитов, только под смысловой кадр
+    free_video:  "kling-25"          # 140 кредитов за 5 сек
     paid_video:  "bytedance-seedance-pro-2.0"
 
 stock:
+  # Freepik доступен по подписке Magnific и тем же ключом. Скачивание из
+  # каталога кредитов не стоит, поэтому он первый в очереди источников.
+  freepik_api_key_env: MAGNIFIC_API_KEY
   pexels_api_key_env: PEXELS_API_KEY
   pixabay_api_key_env: PIXABAY_API_KEY
   # NASA images-api и Internet Archive отдают материал анонимно — ключа нет

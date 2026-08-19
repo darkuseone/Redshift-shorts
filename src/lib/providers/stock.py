@@ -456,6 +456,15 @@ def build_stock_providers(cfg, costs) -> dict[str, StockProvider]:
     else:
         providers["pixabay"] = MockStock(cfg, costs, name="pixabay")
 
+    # Freepik по подписке Magnific: скачивание из каталога не стоит кредитов,
+    # в отличие от генерации (от 140 кредитов за 5 сек видео). Поэтому он идёт
+    # первым источником, а генерация закрывает дыры (§7.2).
+    freepik_key = cfg.secret_for("stock.freepik_api_key_env", purpose="Freepik / Magnific")
+    if resolve_mode(cfg, api_key=freepik_key, service="freepik") is ProviderMode.LIVE:
+        providers["freepik"] = FreepikStock(cfg, costs, freepik_key or "")
+    else:
+        providers["freepik"] = MockStock(cfg, costs, name="freepik")
+
     # NASA и Internet Archive работают без ключа, но в mock-режиме их всё равно
     # подменяем: providers.mode=mock означает «ни одного внешнего вызова».
     mode = str(cfg.get("providers.mode", "auto")).lower()
@@ -468,3 +477,107 @@ def build_stock_providers(cfg, costs) -> dict[str, StockProvider]:
         providers["internet_archive"] = InternetArchiveStock(cfg, costs)
         providers["mixkit"] = MockStock(cfg, costs, name="mixkit")
     return providers
+
+
+# --- Freepik через Magnific ---------------------------------------------------
+
+class FreepikStock(StockProvider):
+    """Каталог Freepik, доступный по подписке Magnific.
+
+    Ключевое отличие от генерации: скачивание из каталога кредитов не стоит —
+    операции скачивания просто нет в списке платных. Генерация видео стоит от
+    140 кредитов за пять секунд, поэтому сток здесь не «ещё один источник», а
+    первый по очереди (§7.2): он и дешевле, и это реальная съёмка, а не
+    синтетика, которая лезет в лимит §10.3 на долю ИИ-материала.
+
+    Лицензия у Freepik попозиционная: часть каталога свободна, часть требует
+    подписки, и это приходит полем ``premium`` в ответе. Подписка Premium+ у
+    нас есть, но материал с ``premium: true`` всё равно помечается отдельно —
+    при смене тарифа он перестанет быть доступным, и об этом должно быть видно
+    из манифеста, а не из отказа при скачивании.
+    """
+
+    license_name = "Freepik License (по подписке Magnific)"
+    license_per_item = True
+    kind_support = ("video", "photo")
+
+    API_BASE = "https://api.freepik.com/v1"
+
+    def __init__(self, cfg, costs, api_key: str) -> None:
+        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="freepik")
+        self.api_key = api_key
+
+    def _headers(self) -> dict[str, str]:
+        return {"x-freepik-api-key": self.api_key, "Accept": "application/json"}
+
+    def search(self, query: str, *, kind: str = "video", limit: int = 8
+               ) -> list[StockCandidate]:
+        import requests
+
+        endpoint = "videos" if kind == "video" else "resources"
+        params: dict[str, Any] = {
+            "term": query,
+            "limit": min(int(limit), 50),
+            # Вертикаль — не пожелание, а формат: 1080×1920 (§3.1).
+            "filters[orientation][portrait]": 1,
+        }
+
+        def _call() -> dict[str, Any]:
+            resp = requests.get(f"{self.API_BASE}/{endpoint}", params=params,
+                                headers=self._headers(), timeout=self._timeout())
+            if resp.status_code >= 400:
+                raise ProviderError(f"Freepik вернул {resp.status_code}",
+                                    status=resp.status_code, query=query)
+            return resp.json()
+
+        data = call_with_retry(_call, **self._retry_kwargs("Freepik search"))
+
+        out: list[StockCandidate] = []
+        for item in data.get("data", [])[:limit]:
+            item_id = str(item.get("id") or "")
+            if not item_id:
+                continue
+            premium = bool(item.get("premium", item.get("licenses", [{}])[0]
+                                    .get("type") == "premium"))
+            width = int((item.get("dimensions") or {}).get("width") or 0)
+            height = int((item.get("dimensions") or {}).get("height") or 0)
+            if height and height > self._max_height():
+                continue                    # §3.6.1: выше 1080p не берём
+            out.append(StockCandidate(
+                id=f"freepik_{item_id}",
+                source="freepik", kind=kind, query=query,
+                width=width, height=height,
+                duration_sec=float(item.get("duration") or 0) / 1000.0,
+                page_url=str(item.get("url") or ""),
+                preview_url=str((item.get("image") or {}).get("source", {}).get("url", "")),
+                license=self.license_name,
+                # Подтверждаем лицензию поштучно: свободный материал — сразу,
+                # премиальный — как доступный по действующей подписке.
+                license_confirmed=True,
+                attribution=f"Freepik / {item.get('author', {}).get('name', '')}".strip(" /"),
+                author=str((item.get("author") or {}).get("name") or ""),
+                tags=[t.get("name", "") for t in (item.get("tags") or [])][:8],
+                meta={"premium": premium, "ai_generated": bool(item.get("ai_generated"))},
+            ))
+        return out
+
+    def download(self, candidate: StockCandidate, dst: Path) -> Path:
+        import requests
+
+        raw_id = candidate.id.replace("freepik_", "")
+        endpoint = "videos" if candidate.kind == "video" else "resources"
+
+        def _call() -> str:
+            resp = requests.get(f"{self.API_BASE}/{endpoint}/{raw_id}/download",
+                                headers=self._headers(), timeout=self._timeout())
+            if resp.status_code >= 400:
+                raise ProviderError(f"Freepik download вернул {resp.status_code}",
+                                    status=resp.status_code, id=candidate.id)
+            payload = resp.json().get("data") or {}
+            url = payload.get("url") or payload.get("download_url")
+            if not url:
+                raise ProviderError("Freepik не отдал ссылку на файл", id=candidate.id)
+            return str(url)
+
+        url = call_with_retry(_call, **self._retry_kwargs("Freepik download"))
+        return self._http_download(url, dst)

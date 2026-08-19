@@ -22,6 +22,20 @@ sources:
     api_base: "https://www.esa.int"
     media: [video, photo]
 
+  freepik:
+    kind: api
+    enabled: true
+    license: "Freepik License"
+    license_check: per_item           # часть каталога свободна, часть по подписке
+    attribution_required: false
+    notes: >
+      Доступен по подписке Magnific тем же ключом. Скачивание из каталога не
+      стоит кредитов — в отличие от генерации (от 140 кредитов за 5 сек видео),
+      поэтому идёт первым в очереди. Материал с premium: true доступен, пока
+      действует подписка; это помечается в манифесте.
+    api_base: "https://api.freepik.com/v1"
+    media: [video, photo]
+
   pexels:
     kind: api
     enabled: true
@@ -80,22 +94,25 @@ sources:
     media: [video]
 
 # Приоритеты источников по типу запроса (§7.2)
+# magnific в конце каждой строки — это генерация, и она платная: 140 кредитов
+# за 5 секунд видео против нуля за скачивание из каталога. Freepik стоит рядом
+# с бесплатными стоками, потому что он тоже каталог, а не генератор.
 routing:
-  space:      [nasa, esa, internet_archive, magnific]
-  astro:      [nasa, esa, internet_archive, magnific]
-  lab:        [pexels, pixabay, magnific]
-  biotech:    [pexels, pixabay, magnific]
-  medicine:   [pexels, pixabay, magnific]
-  city:       [pexels, mixkit, pixabay]
-  people:     [pexels, mixkit, pixabay]
-  reportage:  [pexels, mixkit, pixabay]
-  servers:    [pexels, magnific]
-  interface:  [pexels, magnific]
+  space:      [nasa, esa, internet_archive, freepik, magnific]
+  astro:      [nasa, esa, internet_archive, freepik, magnific]
+  lab:        [freepik, pexels, pixabay, magnific]
+  biotech:    [freepik, pexels, pixabay, magnific]
+  medicine:   [freepik, pexels, pixabay, magnific]
+  city:       [pexels, freepik, mixkit, pixabay]
+  people:     [pexels, freepik, mixkit, pixabay]
+  reportage:  [pexels, freepik, mixkit, pixabay]
+  servers:    [freepik, pexels, magnific]
+  interface:  [freepik, pexels, magnific]
   archive:    [internet_archive]
   history:    [internet_archive]
-  dataviz:    [magnific, pexels]
-  logo:       [magnific]
-  default:    [pexels, pixabay, magnific]
+  dataviz:    [freepik, magnific, pexels]
+  logo:       [freepik, magnific]
+  default:    [freepik, pexels, pixabay, magnific]
 
 # Запрещённые типы материала (§10.4)
 forbidden:
