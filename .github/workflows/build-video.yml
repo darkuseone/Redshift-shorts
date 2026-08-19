@@ -60,11 +60,20 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Установить ffmpeg
+      # ffmpeg на ubuntu-latest уже стоит. Ставить его заново значит без нужды
+      # зависеть от зеркал apt: прогон №3 завис на `apt-get update` на двадцать
+      # минут и был снят вручную. Ставим только если действительно нет, и с
+      # потолком по времени, чтобы зависание падало, а не съедало прогон.
+      - name: Проверить ffmpeg
+        timeout-minutes: 5
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          if ! command -v ffmpeg >/dev/null; then
+            echo "ffmpeg в образе нет — ставим из apt"
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
           ffmpeg -version | head -1
+          ffprobe -version | head -1
 
       - uses: actions/setup-node@v4
         with:
