@@ -389,7 +389,7 @@ def test_pcm_rate_is_one_the_service_actually_offers():
     assert _nearest_supported_rate(4000) == 8000
 
 
-def test_non_pcm_body_names_what_came_back(tmp_path, monkeypatch):
+def test_unknown_body_names_what_came_back(tmp_path, monkeypatch):
     """Без проверки numpy роняет прогон сообщением, по которому не найти причину."""
     import base64
 
@@ -406,7 +406,7 @@ def test_non_pcm_body_names_what_came_back(tmp_path, monkeypatch):
 
         @staticmethod
         def json():
-            # Нечётная длина — это что угодно, только не s16le.
+            # Нечётная длина и без узнаваемого заголовка — это не аудио.
             return {"audio_base64": base64.b64encode(b"\x00\x01\x02").decode(),
                     "alignment": {}}
 
@@ -416,6 +416,55 @@ def test_non_pcm_body_names_what_came_back(tmp_path, monkeypatch):
                           model="eleven_v3", speed=1.0)
     assert "не PCM" in exc.value.message
     assert exc.value.details.get("bytes") == 3
+
+
+def test_mp3_body_is_decoded_instead_of_crashing(tmp_path, monkeypatch):
+    """pcm_* есть не на всех тарифах, и сервис молча отдаёт mp3.
+
+    Поймано живым прогоном: тело начиналось с ID3, а код разбирал его как
+    s16le. Формат определяется по байтам, а не по тому, что мы попросили.
+    """
+    import base64
+    import subprocess
+
+    import numpy as np
+
+    from src.lib.audio import load_wav, save_wav
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.ffmpeg import ffmpeg_bin
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    # Настоящий mp3 на секунду — чтобы проверялся разбор, а не заглушка.
+    src = tmp_path / "tone.wav"
+    sr = 44100
+    save_wav(src, (0.2 * np.sin(np.linspace(0, 220 * 2 * np.pi, sr))).astype(np.float32), sr)
+    mp3 = tmp_path / "tone.mp3"
+    subprocess.run([ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
+                    "-i", str(src), "-codec:a", "libmp3lame", "-b:a", "128k",
+                    str(mp3)], check=True, capture_output=True)
+    body = mp3.read_bytes()
+    assert body[:3] == b"ID3" or body[0] == 0xFF
+
+    cfg = load_config()
+    cfg.set("elevenlabs.sample_rate", 48000)
+    provider = ElevenLabsTTS(cfg, CostLedger(video_id="t"), "key", "voice")
+
+    class _Resp:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"audio_base64": base64.b64encode(body).decode(), "alignment": {}}
+
+    monkeypatch.setattr("requests.post", lambda *a, **k: _Resp())
+    out = tmp_path / "out.wav"
+    result = provider._request("текст", out, model="eleven_v3", speed=1.0)
+
+    data, out_sr = load_wav(out)
+    assert out_sr == 48000
+    assert abs(result.duration_sec - 1.0) < 0.1
+    assert float(np.abs(data).max()) > 0.01, "получилась тишина"
 
 
 def test_pcm_is_resampled_to_the_pipeline_rate(tmp_path, monkeypatch):

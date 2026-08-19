@@ -15,6 +15,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import re
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,7 @@ from typing import Any
 import numpy as np
 
 from ...errors import ProviderError
-from ..audio import SAMPLE_RATE, resample, save_wav
+from ..audio import SAMPLE_RATE, load_audio_any, resample, save_wav
 from ..logging import get_logger
 from ..retry import call_with_retry
 from ..schema import count_syllables
@@ -181,6 +182,45 @@ class MockTTS(TTSProvider):
 
 # --- live --------------------------------------------------------------------
 
+def _decode_tts_audio(raw: bytes, *, api_sr: int, target_sr: int,
+                      model: str) -> np.ndarray:
+    """Тело ответа TTS → моно float32 на частоте конвейера.
+
+    Формат определяется по самим байтам, а не по тому, что мы попросили.
+    ``pcm_*`` доступен не на всех тарифах, и на младших ElevenLabs **молча
+    отдаёт mp3** вместо запрошенного PCM: поймано живым прогоном, тело
+    начиналось с ``ID3``, а код разбирал его как s16le и падал.
+
+    Контейнерные форматы отдаются ffmpeg — он и распакует, и приведёт к нужной
+    частоте. Сырой PCM заголовка не имеет, распознать его нечем, поэтому он
+    остаётся случаем по умолчанию.
+    """
+    container = None
+    if raw[:3] == b"ID3" or (len(raw) > 1 and raw[0] == 0xFF and raw[1] & 0xE0 == 0xE0):
+        container = ".mp3"
+    elif raw[:4] == b"RIFF":
+        container = ".wav"
+    elif raw[:4] == b"OggS":
+        container = ".ogg"
+
+    if container:
+        _log.info("сервис отдал контейнер вместо сырого PCM",
+                  extra={"format": container, "model": model, "bytes": len(raw)})
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / f"tts{container}"
+            path.write_bytes(raw)
+            data, _ = load_audio_any(path, sr=target_sr)
+        return np.asarray(data, dtype=np.float32)
+
+    if len(raw) % 2:
+        raise ProviderError(
+            "ElevenLabs вернул не PCM 16 бит и не известный контейнер",
+            model=model, requested_format=f"pcm_{api_sr}", bytes=len(raw),
+            head=raw[:16].hex())
+    pcm = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
+    return resample(pcm, api_sr, target_sr) if api_sr != target_sr else pcm
+
+
 # PCM ElevenLabs отдаёт только на этих частотах — проверено ответом сервиса.
 # Конвейер живёт на 48 кГц (audio.sample_rate), поэтому берём ближайшую снизу
 # доступную и передискретизируем у себя.
@@ -246,18 +286,7 @@ class ElevenLabsTTS(TTSProvider):
         raw = base64.b64decode(data.get("audio_base64", ""))
         if not raw:
             raise ProviderError("ElevenLabs вернул пустое аудио", model=model)
-        # Тело ответа разбирается как PCM 16 бит, и это предположение обязано
-        # проверяться: нечётная длина означает, что пришло что угодно, только
-        # не s16le. Без проверки numpy роняет прогон сообщением про размер
-        # буфера, по которому причину не найти.
-        if len(raw) % 2:
-            raise ProviderError(
-                "ElevenLabs вернул не PCM 16 бит",
-                model=model, requested_format=f"pcm_{api_sr}", bytes=len(raw),
-                head=raw[:16].hex())
-        pcm = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
-        if api_sr != sr:
-            pcm = resample(pcm, api_sr, sr)
+        pcm = _decode_tts_audio(raw, api_sr=api_sr, target_sr=sr, model=model)
         save_wav(out_path, pcm, sr)
 
         words = _words_from_alignment(
