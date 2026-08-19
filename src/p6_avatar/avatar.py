@@ -106,7 +106,13 @@ def run_step(ctx) -> dict[str, Any]:
             result = provider.generate(audio_path=seg_audio, out_path=seg_path,
                                        duration_sec=end - start, index=index)
         except ProviderError as exc:
-            if getattr(exc, "code", "") != "AVATAR_CLIP_NOT_PREPARED":
+            code = getattr(exc, "code", "")
+            # Клипа нет и клип не той длины — с точки зрения заявки одно и то
+            # же: и тот и другой надо сгенерировать заново. Раньше расхождение
+            # длительности роняло шаг на первом же сегменте, и заявка не
+            # дописывалась: за остальными кусками речи приходилось идти вторым
+            # прогоном, удалив клипы руками.
+            if code not in ("AVATAR_CLIP_NOT_PREPARED", "AVATAR_CLIP_DURATION_MISMATCH"):
                 raise
             # Двухфазный конвейер: нарезка речи уже сделана и лежит на диске.
             # Дописываем заявку до конца — иначе за клипами пришлось бы ходить
@@ -118,6 +124,8 @@ def run_step(ctx) -> dict[str, Any]:
                 "block_id": segment["block_id"],
                 "text": segment.get("text", ""),
                 "expected_clip": f"seg_{index:02d}.mov",
+                **({"reason": "длительность не совпала", "problem": str(exc)}
+                   if code == "AVATAR_CLIP_DURATION_MISMATCH" else {}),
             })
             continue
         seg_path = result.path
