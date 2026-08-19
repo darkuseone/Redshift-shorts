@@ -1,0 +1,23 @@
+{
+  "id": "hero-devices/phone-mock",
+  "name": "phone-mock",
+  "category": "hero-devices",
+  "title": "Экран приложения поверх расфокуса",
+  "duration_range": [
+    1.8,
+    4.5
+  ],
+  "params": {},
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "lines",
+    "ui"
+  ],
+  "renderer": "hero-phone-mock",
+  "last_used_in": [
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

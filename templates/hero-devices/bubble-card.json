@@ -1,0 +1,24 @@
+{
+  "id": "hero-devices/bubble-card",
+  "name": "bubble-card",
+  "category": "hero-devices",
+  "title": "Ведущий в круге, реплика карточкой под ним",
+  "duration_range": [
+    1.6,
+    4.5
+  ],
+  "params": {
+    "accent_last": true
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "lines"
+  ],
+  "renderer": "hero-bubble-card",
+  "last_used_in": [
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}

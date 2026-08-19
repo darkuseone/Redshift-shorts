@@ -18,7 +18,10 @@ P11 и кладёт в edit-план.
 from __future__ import annotations
 
 import html
+import json
 from dataclasses import dataclass, field
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Callable
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
@@ -45,6 +48,49 @@ def _esc(text: Any) -> str:
 
 def _num(value: float) -> str:
     return f"{float(value):.3f}".rstrip("0").rstrip(".") or "0"
+
+
+# Ширина строки нужна, чтобы кегль подбирался под кадр, а не под догадку. Здесь
+# стояла оценка «0.52 кегля на знак», и «ЕДИНСТВЕННЫЙ» из-за неё вылезал за
+# кадр: у Oswald Bold прописная кириллица занимает 0.546…0.604 кегля, то есть
+# оценка врала на 12 %. Меряем настоящей гарнитурой.
+#
+# Запасное значение — верх измеренного диапазона: без ассетов лучше ужать
+# лишнего, чем обрезать слово.
+_FALLBACK_EM_PER_CHAR = 0.62
+
+
+@lru_cache(maxsize=4)
+def _display_font(size: int):
+    """Гарнитура заголовков из проверенного набора (§3.4). None — если её нет."""
+    try:
+        from PIL import ImageFont
+
+        manifest = json.loads(
+            (Path("assets/fonts") / "fonts_manifest.json").read_text(encoding="utf-8"))
+        entry = next(f for f in manifest["fonts"] if f.get("role") == "display")
+        return ImageFont.truetype(str(Path("assets/fonts") / entry["file"]), size)
+    except Exception:                                        # noqa: BLE001
+        return None
+
+
+def text_width(text: str, size: int) -> float:
+    """Ширина строки в пикселях при данном кегле."""
+    font = _display_font(100)
+    if font is None:
+        return len(text) * size * _FALLBACK_EM_PER_CHAR
+    box = font.getbbox(text)
+    return (box[2] - box[0]) * size / 100.0
+
+
+def fit_size(text: str, available_px: float, max_size: int) -> int:
+    """Наибольший кегль, при котором строка укладывается в ширину."""
+    if not text:
+        return max_size
+    at_max = text_width(text, max_size)
+    if at_max <= available_px:
+        return max_size
+    return max(24, int(max_size * available_px / at_max))
 
 
 # --- словарь появления --------------------------------------------------------
@@ -373,6 +419,17 @@ class TemplateCtx:
     target: str                    # id элемента, к которому применяется движение
     track: int
     params: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def track_alt(self) -> int:
+        """Второй трек — приёму, который собирает больше одного клипа.
+
+        Два клипа одного приёма живут в одном окне, а движок запрещает
+        пересечение клипов на общем треке (``overlapping_clips_same_track``).
+        Шаг в два, а не в один: соседние шоты уже разведены по чётности, и
+        ``track + 1`` попал бы в полосу соседа.
+        """
+        return self.track + 2
 
 
 def render_transition(name: str, ctx: TemplateCtx) -> Piece:
@@ -795,15 +852,20 @@ def hero_knockout(ctx: "TemplateCtx") -> Piece:
     # фона, на нём читается контрастнее.
     fill = str(ctx.params.get("fill", "ink")).replace("_", "-")
     lines = word.split()
-    # Кегль ужимается под самую длинную строку. Заглавная кириллица Oswald
-    # занимает примерно 0.52 кегля на знак; без этого длинное слово вылезает
-    # за кадр и обрезается — проверено на «ЕДИНСТВЕННАЯ».
+    # Кегль ужимается под самую длинную строку, измеренную настоящей
+    # гарнитурой: оценка «столько-то кегля на знак» врёт на десяток процентов,
+    # и слово обрезается краем кадра — проверено на «ЕДИНСТВЕННЫЙ».
     margin = int(ctx.params.get("margin", 60))
-    longest = max((len(l) for l in lines), default=1)
-    fits = int((1080 - 2 * margin) / max(1, longest * 0.52))
-    size = min(int(ctx.params.get("size", 300)), fits)
+    longest = max(lines, key=len, default="")
+    size = fit_size(longest, 1080 - 2 * margin, int(ctx.params.get("size", 300)))
     step = int(size * 0.92)
-    top = (1920 - step * len(lines)) // 2 + int(size * 0.34)
+    # Блок садится на лицо, а не в середину кадра. Буквы здесь — дырки, и видно
+    # сквозь них то, что за ними: на уровне торса это тёмная одежда, которая от
+    # тёмной заливки не отличается, и слово пропадало серединой. Лицо —
+    # единственная область кадра, гарантированно светлее заливки.
+    centre = int(ctx.params.get("face_cy", 960))
+    centre = max(320, min(1500, centre))
+    top = centre - (step * len(lines)) // 2 + int(size * 0.34)
 
     text_nodes = "".join(
         f'<text x="540" y="{top + step * i}" text-anchor="middle">{_esc(line)}</text>'
@@ -869,12 +931,199 @@ def hero_plate(ctx: "TemplateCtx") -> Piece:
                                name="zoom-in", fade=False))
 
 
+def hero_text_column(ctx: "TemplateCtx") -> Piece:
+    """Строки колонкой слева, ведущий справа.
+
+    Референс: реплика разложена на короткие строки, они встают очередью снизу
+    вверх, а одна-две подсвечены акцентом. Колонка занимает левую половину и
+    поднимается от нижней трети — там, где у ведущего плечо, а не лицо.
+
+    Акцент задаётся индексами строк, а не разметкой в тексте: строки приходят
+    из плана, и звёздочки в них пришлось бы экранировать и парсить в двух
+    местах.
+    """
+    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
+    if not lines:
+        return Piece()
+    accents = {int(i) for i in (ctx.params.get("accent_lines") or [])}
+    node_id = f"tc-{ctx.index:02d}"
+    # Колонка садится ниже лица — на уровень плеча и торса. На 560 она резала
+    # голову пополам: аватар HeyGen стоит по центру кадра, а не справа, как на
+    # референсе, и левая колонка неизбежно пересекает лицо выше плеч.
+    top = int(ctx.params.get("top", 700))
+
+    spans, tweens = [], []
+    for i, line in enumerate(lines[:5]):
+        css = "tc-line accent" if i in accents else "tc-line"
+        spans.append(f'<span class="{css}">{_esc(line)}</span>')
+        tweens += entrance_tweens(f"#{node_id} .tc-line:nth-child({i + 1})",
+                                  ctx.start, name="rise", delay=0.07 * i)
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-text-column" '
+               f'style="top:{top}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{"".join(spans)}</div>'],
+        tweens=tweens)
+
+
+def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
+    """Круглая рамка с ведущим и карточка под ней.
+
+    Референс: ведущего резко помещают в круг, под ним белая карточка с
+    репликой. «Резко» здесь именно то, чего быть не должно — рамка выходит из
+    глубины, карточка следом. Оба ``zoom-out``: приход из большего масштаба
+    обрезал бы круг краями кадра.
+
+    Круг рисуется рамкой поверх аватара, а не маской на нём: маска на клипе
+    аватара сломала бы его же переход, а рамка — самостоятельный слой.
+    """
+    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
+    if not lines:
+        return Piece()
+    node_id = f"bc-{ctx.index:02d}"
+    accent_last = bool(ctx.params.get("accent_last", True))
+    # Круг ставится по реальному лицу: у сегмента аватара есть face_bbox, и
+    # догадка «четверть высоты кадра» промахивалась мимо головы на сотню
+    # пикселей. Без bbox остаётся прежняя оценка.
+    ring = int(ctx.params.get("ring", 420))
+    face_x = int(ctx.params.get("face_cx", 540))
+    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + ring // 2))
+
+    body = "".join(
+        f'<span class="bc-line{" accent" if accent_last and i == len(lines) - 1 else ""}">'
+        f'{_esc(line)}</span>'
+        for i, line in enumerate(lines[:4]))
+
+    tweens = entrance_tweens(f"#{node_id} .bc-ring", ctx.start, name="zoom-out")
+    tweens += entrance_tweens(f"#{node_id} .bc-card", ctx.start,
+                              name="zoom-out", delay=0.09)
+    ring_style = (f"left:{face_x - ring // 2}px;top:{face_y - ring // 2}px;"
+                  f"width:{ring}px;height:{ring}px")
+    card_top = face_y + ring // 2 + 40
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-bubble-card" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<span class="bc-ring" style="{ring_style}"></span>'
+               f'<span class="bc-card" style="top:{card_top}px">{body}</span></div>'],
+        tweens=tweens)
+
+
+def hero_brand_pill(ctx: "TemplateCtx") -> Piece:
+    """Пилюля с логотипом бренда сбоку от ведущего.
+
+    Референс: чёрная скруглённая плашка с иконкой и названием компании
+    появляется у плеча. Иконка берётся из библиотеки брендов (§14) — путь
+    приходит параметром, потому что искать её здесь нечем.
+
+    Пилюля выходит из глубины и слегка отъезжает: сторона считается от индекса
+    шота, а не случайно.
+    """
+    label = str(ctx.params.get("label") or "").strip()
+    if not label:
+        return Piece()
+    node_id = f"bp-{ctx.index:02d}"
+    icon = str(ctx.params.get("icon") or "")
+    side = "right" if ctx.index % 2 else "left"
+    top = int(ctx.params.get("top", 1180))
+
+    icon_html = (f'<img class="bp-icon" src="{_esc(icon)}" alt="" />' if icon else "")
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-brand-pill {side}" '
+               f'style="top:{top}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<span class="bp-inner">{icon_html}'
+               f'<span class="bp-label">{_esc(label)}</span></span></div>'],
+        tweens=entrance_tweens(f"#{node_id} .bp-inner", ctx.start, name="zoom-out"))
+
+
+def hero_card_stack(ctx: "TemplateCtx") -> Piece:
+    """Карточка с заголовком и картинкой сверху, ведущий снизу.
+
+    Референс: кадр поделён по горизонтали — сверху белая плашка с крупным
+    заголовком и иллюстрацией, снизу говорящий. Отличие от сплита: там панель
+    сбоку и ведущий сдвигается, здесь он остаётся на месте, а сверху ложится
+    отдельный слой.
+
+    Картинка — самостоятельный клип: ``<video>`` внутри элемента с
+    ``data-start`` движок не проигрывает, кадр застывает первым фреймом.
+    """
+    title = str(ctx.params.get("title") or "").strip()
+    if not title:
+        return Piece()
+    node_id = f"cs-{ctx.index:02d}"
+    src = str(ctx.params.get("src") or "")
+    height = int(ctx.params.get("height", 860))
+
+    nodes = [f'<div id="{node_id}" class="clip hero-card-stack" '
+             f'style="height:{height}px" '
+             f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+             f'data-track-index="{ctx.track}">'
+             f'<span class="cs-title">{_esc(title)}</span></div>']
+    tweens = entrance_tweens(f"#{node_id} .cs-title", ctx.start, name="settle")
+
+    if src:
+        # Картинка живёт внутри карточки: высота считается от её нижнего края,
+        # а не от полной высоты приёма — иначе кадр торчит из-под скругления.
+        media_top = 120 + int(height * 0.34)
+        media_height = max(120, height - media_top - 56)
+        nodes.append(
+            f'<video id="{node_id}-m" class="clip cs-media" src="{_esc(src)}" '
+            f'style="top:{media_top}px;height:{media_height}px" '
+            f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+            f'data-track-index="{ctx.track_alt}" muted playsinline></video>')
+        tweens += enter_and_drift(f"#{node_id}-m", ctx.start, ctx.duration,
+                                  name="zoom-in", fade=False)
+    return Piece(nodes=nodes, tweens=tweens)
+
+
+def hero_phone_mock(ctx: "TemplateCtx") -> Piece:
+    """Экран телефона поверх размытого кадра.
+
+    Референс: интерфейс приложения висит в центре, фон уходит в расфокус.
+    Строки набираются очередью — это и есть «переписка», а не скриншот.
+
+    Размытие статическое: ``filter`` вне разрешённого списка движка, и его
+    анимация ломает перемотку. Расфокус даёт полупрозрачная подложка.
+    """
+    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
+    if not lines:
+        return Piece()
+    node_id = f"pm-{ctx.index:02d}"
+    app = str(ctx.params.get("app") or "")
+
+    rows, tweens = [], []
+    for i, line in enumerate(lines[:4]):
+        side = "out" if i % 2 else "in"
+        rows.append(f'<span class="pm-row {side}">{_esc(line)}</span>')
+        tweens += entrance_tweens(f"#{node_id} .pm-row:nth-child({i + 1})",
+                                  ctx.start, name="rise", delay=0.16 + 0.13 * i)
+
+    head = f'<span class="pm-app">{_esc(app)}</span>' if app else ""
+    tweens = entrance_tweens(f"#{node_id} .pm-body", ctx.start,
+                             name="zoom-out") + tweens
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-phone-mock" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<span class="pm-body">{head}'
+               f'<span class="pm-rows">{"".join(rows)}</span></span></div>'],
+        tweens=tweens)
+
+
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-burst": hero_burst,
     "hero-headline": hero_headline,
     "hero-plate": hero_plate,
     "hero-split": hero_split,
     "hero-knockout": hero_knockout,
+    "hero-text-column": hero_text_column,
+    "hero-bubble-card": hero_bubble_card,
+    "hero-brand-pill": hero_brand_pill,
+    "hero-card-stack": hero_card_stack,
+    "hero-phone-mock": hero_phone_mock,
 }
 
 
@@ -890,6 +1139,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
     (сплит, выбивка) — это задаётся z-index, а не порядком в разметке.
     """
     height = int(brandbook["canvas"]["height"])
+    width = int(brandbook["canvas"]["width"])
     # Колонка лайк/коммент/шер съедает правое поле кадра (§3.2). Панель сплита
     # доходит до края — так и на референсе, — но буквы внутри неё обязаны
     # остаться левее: под иконками их не прочитать.
@@ -940,6 +1190,81 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "align-items:center;font-family:var(--font-display);font-size:172px;"
         "line-height:0.86;text-transform:uppercase;color:var(--color-ink)}"
         ".hero-split .hs-word span{display:block}"
+        # --- строки колонкой слева ---
+        # Колонка занимает левую половину: правая половина под ведущим, а
+        # правое поле кадра съедает колонка лайк/коммент/шер.
+        f".hero-text-column{{position:absolute;left:var(--safe-x-min);"
+        f"width:{int(width * 0.42)}px;z-index:{Z_AVATAR + 1};"
+        "display:flex;flex-direction:column;align-items:flex-start;gap:18px;"
+        "pointer-events:none}"
+        ".hero-text-column .tc-line{display:block;font-family:var(--font-display);"
+        "text-transform:uppercase;font-size:66px;line-height:0.98;"
+        "color:var(--color-bg-pure);will-change:transform;"
+        "text-shadow:0 4px 22px rgba(0,0,0,0.55),0 2px 5px rgba(0,0,0,0.45)}"
+        # Золото референсов переведено в акцент бренда: выцветший красный.
+        ".hero-text-column .tc-line.accent{color:var(--color-accent-soft)}"
+        # --- круглая рамка и карточка ---
+        f".hero-bubble-card{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
+        "pointer-events:none}"
+        # Кольцо обводит лицо, не закрывая его: заливки нет, только рамка.
+        ".hero-bubble-card .bc-ring{position:absolute;border-radius:50%;"
+        "border:10px solid var(--color-bg-pure);display:block;"
+        "box-shadow:0 22px 60px rgba(0,0,0,0.32);will-change:transform}"
+        ".hero-bubble-card .bc-card{position:absolute;left:var(--safe-x-min);"
+        "right:var(--safe-x-min);display:flex;flex-direction:column;"
+        "gap:10px;padding:56px 46px 44px;border-radius:44px;"
+        "background:var(--color-bg-pure);color:var(--color-ink);"
+        "box-shadow:0 26px 70px rgba(0,0,0,0.28);text-align:center;"
+        "will-change:transform}"
+        ".hero-bubble-card .bc-line{display:block;font-family:var(--font-subtitle);"
+        "font-weight:700;font-size:62px;line-height:1.16}"
+        ".hero-bubble-card .bc-line.accent{font-weight:800;"
+        "color:var(--color-accent)}"
+        # --- пилюля бренда ---
+        f".hero-brand-pill{{position:absolute;z-index:{Z_AVATAR + 1};"
+        "pointer-events:none}"
+        ".hero-brand-pill.left{left:var(--safe-x-min)}"
+        ".hero-brand-pill.right{right:calc(var(--frame-w) - var(--safe-x-max))}"
+        ".hero-brand-pill .bp-inner{display:inline-flex;align-items:center;"
+        "gap:20px;padding:20px 38px;border-radius:999px;"
+        "background:var(--color-ink);color:var(--color-bg-pure);"
+        "box-shadow:0 16px 44px rgba(0,0,0,0.34);will-change:transform}"
+        ".hero-brand-pill .bp-icon{display:block;width:64px;height:64px;"
+        "object-fit:contain}"
+        ".hero-brand-pill .bp-label{font-family:var(--font-subtitle);"
+        "font-weight:800;font-size:52px;line-height:1}"
+        # --- карточка сверху, ведущий снизу ---
+        f".hero-card-stack{{position:absolute;left:0;right:0;top:0;"
+        f"z-index:{Z_AVATAR + 1};border-radius:0 0 44px 44px;overflow:hidden;"
+        "background:var(--color-bg-pure);display:flex;justify-content:center;"
+        "padding:110px 60px 0;pointer-events:none}"
+        ".hero-card-stack .cs-title{display:block;text-align:center;"
+        "font-family:var(--font-display);text-transform:uppercase;"
+        "font-size:104px;line-height:0.96;color:var(--color-ink);"
+        "will-change:transform}"
+        f".cs-media{{position:absolute;left:60px;width:{width - 120}px;"
+        f"z-index:{Z_AVATAR + 2};object-fit:cover;border-radius:28px;"
+        "display:block}"
+        # --- экран телефона ---
+        f".hero-phone-mock{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
+        "display:flex;align-items:center;justify-content:center;"
+        # Расфокус фона — полупрозрачная подложка, а не filter: blur вне
+        # разрешённого списка движка, и его анимация ломает перемотку.
+        "background:rgba(10,10,12,0.42);pointer-events:none}"
+        f".hero-phone-mock .pm-body{{width:{int(width * 0.72)}px;"
+        f"max-height:{int(height * 0.62)}px;display:flex;flex-direction:column;"
+        "gap:24px;padding:44px 34px;border-radius:56px;"
+        "background:var(--color-bg-pure);color:var(--color-ink);"
+        "box-shadow:0 34px 90px rgba(0,0,0,0.45);will-change:transform}"
+        ".hero-phone-mock .pm-app{display:block;font-family:var(--font-mono);"
+        "font-size:30px;color:var(--color-muted);text-align:center}"
+        ".hero-phone-mock .pm-rows{display:flex;flex-direction:column;gap:20px}"
+        ".hero-phone-mock .pm-row{display:block;max-width:82%;padding:26px 32px;"
+        "border-radius:34px;font-family:var(--font-subtitle);font-weight:700;"
+        "font-size:44px;line-height:1.2;will-change:transform}"
+        ".hero-phone-mock .pm-row.in{align-self:flex-start;background:#F0EEEB}"
+        ".hero-phone-mock .pm-row.out{align-self:flex-end;"
+        "background:var(--color-accent-soft);color:var(--color-bg-pure)}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"

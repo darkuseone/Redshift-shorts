@@ -27,6 +27,7 @@ from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
     prepare_split_shot,
 )
+from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
 _log = get_logger("p11")
@@ -56,6 +57,24 @@ def _alpha_slots(avatar_meta: dict[str, Any]) -> set[int]:
             for idx in seg.get("slot_indices", [])}
 
 
+def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
+    """Слот шота → центр лица в кадре.
+
+    Круглая рамка обязана сесть на голову, а не туда, где она в среднем бывает:
+    догадка «четверть высоты кадра» промахивалась на сотню пикселей. P6 уже
+    измерил лицо для сдвига субтитров — берём оттуда же.
+    """
+    out: dict[int, tuple[int, int]] = {}
+    for seg in avatar_meta.get("segments", []):
+        box = seg.get("face_bbox")
+        if not box or len(box) != 4:
+            continue
+        centre = ((int(box[0]) + int(box[2])) // 2, (int(box[1]) + int(box[3])) // 2)
+        for slot in seg.get("slot_indices", []):
+            out[int(slot)] = centre
+    return out
+
+
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]]) -> dict[str, Any] | None:
     """Кадр для панели за спиной — ближайший футаж того же блока.
@@ -77,43 +96,144 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
     return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0)}
 
 
+# Что приёму нужно на входе. Без этого он рисует пустоту поверх ведущего, и
+# отсеивать его надо **до** выбора: ``TemplateCatalog.pick`` при пустом наборе
+# кандидатов возвращается ко всей категории, и неподходящий приём всё равно
+# попал бы в кадр. Список ведётся здесь, а не тегами в каталоге: тег описывает,
+# на что приём похож, а это — чем его кормить.
+_HERO_NEEDS: dict[str, tuple[str, ...]] = {
+    "hero-burst": (),
+    "hero-plate": ("plate",),
+    "hero-headline": ("word",),
+    "hero-split": ("word",),
+    "hero-knockout": ("word",),
+    "hero-text-column": ("lines",),
+    "hero-bubble-card": ("lines",),
+    "hero-brand-pill": ("brand",),
+    "hero-card-stack": ("title", "plate"),
+    "hero-phone-mock": ("lines",),
+}
+
+
+def _wrap_lines(text: str, *, width: int = 13, limit: int = 4) -> list[str]:
+    """Реплику блока — в короткие строки для колонки и карточки.
+
+    Перенос по словам и с потолком по длине: колонка занимает 46 % ширины
+    кадра, и на кегле 66 в неё входит около 13 знаков. Проверено кадром — при
+    20 знаках каждая строка ломалась пополам, и колонка превращалась в кашу.
+    Перенос посреди слова читается как брак вёрстки, поэтому только по словам.
+    """
+    words, lines, current = text.split(), [], ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if len(candidate) > width and current:
+            lines.append(current)
+            current = word
+            if len(lines) == limit:
+                break
+        else:
+            current = candidate
+    if current and len(lines) < limit:
+        lines.append(current)
+    return lines
+
+
+def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
+                  face: tuple[int, int] | None = None) -> dict[str, Any]:
+    """Собрать всё, чем можно накормить приёмы, из одного блока сценария."""
+    text = str(block.get("text") or "").strip()
+    word = str(block.get("emphasis_word") or "").strip()
+    lines = _wrap_lines(text)
+    accent = [i for i, line in enumerate(lines)
+              if word and word.lower() in line.lower()]
+
+    brand = None
+    if icons is not None:
+        for candidate in sorted({w.strip(".,!?;:»«\"'()")
+                                 for w in text.split() if len(w) > 2},
+                                key=lambda w: (-len(w), w)):
+            found = icons.find(candidate)
+            if found:
+                brand = {"label": candidate, "icon": found[0].path}
+                break
+
+    return {
+        "word": word,
+        "lines": lines,
+        "accent_lines": accent,
+        # Заголовок карточки — начало реплики, а не акцентное слово: одно слово
+        # крупно уже занято выбивкой и заголовком над головой.
+        "title": " ".join(text.split()[:3]).strip(".,!?;:").upper(),
+        "brand": brand,
+        "face": face,
+    }
+
+
 def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
-                 word: str, has_alpha: bool, plate_src: dict[str, Any] | None,
+                 content: dict[str, Any], has_alpha: bool,
+                 plate_src: dict[str, Any] | None,
                  recent_videos: list[str], exclude: list[str],
                  seed: int) -> dict[str, Any] | None:
     """Выбрать приём вокруг ведущего под конкретный кадр.
 
     Приём отбрасывается, если кадр не может его показать: без альфы всё, что
-    рисуется под аватаром, окажется за непрозрачным видео, текстовым приёмам
-    нужно слово из сценария, а панели за спиной — кадр. Отбор идёт
-    исключениями, а не фильтром tags: ``pick`` при пустом наборе кандидатов
-    возвращается ко всей категории, и неподходящий приём всё равно попал бы в
-    кадр.
+    рисуется под аватаром, окажется за непрозрачным видео, а остальным нужен
+    материал из ``_HERO_NEEDS``.
     """
+    available = dict(content)
+    available["plate"] = plate_src
+
     blocked = list(exclude)
     for template in catalog.by_category("hero-devices"):
-        tags = set(template.tags)
-        if ("alpha" in tags and not has_alpha) \
-                or ("text" in tags and not word) \
-                or (template.renderer == "hero-plate" and not plate_src):
+        if "alpha" in set(template.tags) and not has_alpha:
+            blocked.append(template.id)
+            continue
+        needs = _HERO_NEEDS.get(template.renderer, ())
+        if any(not available.get(key) for key in needs):
             blocked.append(template.id)
 
-    pool = [t for t in catalog.by_category("hero-devices") if t.id not in blocked]
-    if not pool:
+    if not [t for t in catalog.by_category("hero-devices") if t.id not in blocked]:
         return None
 
     template = catalog.pick("hero-devices", duration=float(slot["duration"]),
                             recent_videos=recent_videos, exclude=blocked,
                             seed=seed + int(slot["index"]) * 7)
-    params = {**template.params, "word": word.upper()}
-    if template.renderer == "hero-headline":
-        params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
+    renderer = template.renderer
+    params: dict[str, Any] = {**template.params}
 
-    entry: dict[str, Any] = {"template": template.id, "renderer": template.renderer,
-                             "params": params, "file": None, "duration": None}
-    if template.renderer == "hero-plate" and plate_src:
-        # Задник длится ровно столько, сколько есть материала: кадр короче
-        # аватар-плана, и растянутая панель досидела бы кадр пустой.
+    if "word" in _HERO_NEEDS.get(renderer, ()):
+        params["word"] = str(content["word"]).upper()
+    if renderer == "hero-headline":
+        params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
+    if "lines" in _HERO_NEEDS.get(renderer, ()):
+        upper = renderer == "hero-text-column"
+        params["lines"] = [l.upper() if upper else l for l in content["lines"]]
+        params["accent_lines"] = content["accent_lines"]
+    if content.get("face"):
+        # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
+        # за ними светлее заливки.
+        if renderer == "hero-bubble-card":
+            params["face_cx"], params["face_cy"] = content["face"]
+        if renderer == "hero-knockout":
+            params["face_cy"] = content["face"][1]
+    if renderer == "hero-brand-pill":
+        params.update(content["brand"])
+    if renderer == "hero-card-stack":
+        params["title"] = content["title"]
+    if renderer == "hero-phone-mock":
+        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+
+    entry: dict[str, Any] = {
+        "template": template.id, "renderer": renderer, "params": params,
+        "file": None, "duration": None,
+        # Приём, который выкладывает реплику строками, сам и есть субтитр этого
+        # кадра. Пословное слово поверх той же фразы — дубль, и оно вдобавок
+        # ложится прямо на карточку: проверено кадром.
+        "carries_line": "lines" in _HERO_NEEDS.get(renderer, ()),
+    }
+    if plate_src and renderer in ("hero-plate", "hero-card-stack"):
+        # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
+        # и растянутая панель досидела бы кадр пустой.
         entry["file"] = plate_src["file"]
         entry["duration"] = round(min(float(slot["duration"]),
                                       plate_src["duration_sec"]), 3)
@@ -499,7 +619,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # бы. С какого начинать, решает сид варианта, поэтому A и B получают приёмы
     # на разных кадрах, а не один и тот же ролик с другими подписями.
     alpha_slots = _alpha_slots(avatar_meta)
+    face_centres = _face_centres(avatar_meta)
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
+    # Библиотека иконок §14: пилюля бренда берёт логотип оттуда. Её отсутствие
+    # не должно валить сборку — приём просто не выпадет.
+    try:
+        brand_icons = load_brand_icons(ctx.cfg)
+    except Exception:                                    # noqa: BLE001
+        brand_icons = None
     hero_offset = seed % 2
     hero_eligible = 0
 
@@ -582,7 +709,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 block = blocks_by_id.get(slot["block_id"], {})
                 hero_entry = _hero_device(
                     catalog, slot=slot,
-                    word=str(block.get("emphasis_word") or "").strip(),
+                    content=_hero_content(block, slot, brand_icons,
+                                          face_centres.get(int(slot["index"]))),
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared),
                     recent_videos=recent_videos, exclude=used_templates,
@@ -624,6 +752,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # Субтитры: весь ролик, кроме кадров с полноэкранным текстом (§5.1).
     fs_windows = [(float(s["start"]), float(s["end"])) for s in slots
                   if s["kind"] == "fullscreen_text"]
+    fs_windows += [(float(s["start"]), float(s["end"])) for s in shots
+                   if (s.get("hero") or {}).get("carries_line")]
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])

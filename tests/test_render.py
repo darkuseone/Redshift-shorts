@@ -263,9 +263,9 @@ def test_catalog_matches_spec_counts(cfg):
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 10, "lower-thirds": 8, "frames-cards": 6,
         "browser-ui": 6, "transitions": 12, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 5,
+        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 10,
     }
-    assert len(catalog.all()) == 86
+    assert len(catalog.all()) == 91
 
 
 def test_catalog_rotation_avoids_recent(cfg):
@@ -310,40 +310,112 @@ def test_hero_kicker_is_never_a_pipeline_role():
         assert not any("a" <= ch.lower() <= "z" for ch in kicker), kicker
 
 
+def _content(**over):
+    from src.p11_assemble.assemble import _hero_content
+
+    block = {"text": "Горизонт событий это не стена а точка невозврата",
+             "emphasis_word": "горизонт"}
+    content = _hero_content(block, {"role": "evidence"}, None)
+    content.update(over)
+    return content
+
+
 def test_hero_device_requires_what_it_draws(cfg):
     """Приём без своего материала рисует пустоту поверх ведущего.
 
     Отбор идёт исключениями, а не фильтром tags: ``pick`` при пустом наборе
     кандидатов возвращается ко всей категории.
     """
-    from src.p11_assemble.assemble import _hero_device
+    from src.p11_assemble.assemble import _HERO_NEEDS, _hero_device
 
     catalog = TemplateCatalog.load(cfg)
     slot = {"index": 4, "duration": 3.0, "role": "evidence"}
 
-    nothing = _hero_device(catalog, slot=slot, word="", has_alpha=False,
-                           plate_src=None, recent_videos=[], exclude=[], seed=1)
-    assert nothing is None
+    empty = {"word": "", "lines": [], "accent_lines": [], "title": "", "brand": None}
+    assert _hero_device(catalog, slot=slot, content=empty, has_alpha=False,
+                        plate_src=None, recent_videos=[], exclude=[], seed=1) is None
 
-    text_only = _hero_device(catalog, slot=slot, word="ГОРИЗОНТ", has_alpha=False,
-                             plate_src=None, recent_videos=[], exclude=[], seed=1)
-    assert text_only is not None
-    template = catalog.by_id(text_only["template"])
-    assert "alpha" not in template.tags
-    assert text_only["renderer"] != "hero-plate"
+    # Кадра и логотипа нет — остаются только те приёмы, что живут на тексте.
+    for seed in range(20):
+        entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=False,
+                             plate_src=None, recent_videos=[], exclude=[], seed=seed)
+        assert entry is not None
+        template = catalog.by_id(entry["template"])
+        assert "alpha" not in template.tags, entry["template"]
+        assert not ({"plate", "brand"} & set(_HERO_NEEDS[entry["renderer"]])), \
+            f"{entry['renderer']} выпал без материала"
+
+
+def test_every_hero_renderer_declares_what_it_needs(cfg):
+    """Новый приём без записи в _HERO_NEEDS выпадет на пустом кадре."""
+    from src.lib.render.hyperframes.templates import HERO
+    from src.p11_assemble.assemble import _HERO_NEEDS
+
+    catalog = TemplateCatalog.load(cfg)
+    for template in catalog.by_category("hero-devices"):
+        assert template.renderer in HERO, template.id
+        assert template.renderer in _HERO_NEEDS, template.id
+
+
+def test_hero_content_wraps_lines_and_marks_the_accent():
+    """Строка длиннее ~20 знаков не влезает в половину кадра на кегле 76."""
+    content = _content()
+    assert content["lines"], "реплика не разложена на строки"
+    assert all(len(line) <= 17 for line in content["lines"]), content["lines"]
+    assert content["accent_lines"] == [0], content["accent_lines"]
+    assert content["title"] == "ГОРИЗОНТ СОБЫТИЙ ЭТО"
+
+
+def test_line_carrying_devices_suppress_the_subtitle(cfg):
+    """Пословный субтитр поверх той же фразы — дубль, и он ложится на карточку."""
+    from src.p11_assemble.assemble import _HERO_NEEDS, _hero_device
+
+    catalog = TemplateCatalog.load(cfg)
+    slot = {"index": 4, "duration": 3.0, "role": "evidence"}
+    seen = set()
+    for seed in range(40):
+        entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=False,
+                             plate_src=None, recent_videos=[], exclude=[], seed=seed)
+        seen.add(entry["renderer"])
+        expected = "lines" in _HERO_NEEDS[entry["renderer"]]
+        assert entry["carries_line"] is expected, entry["renderer"]
+    assert any("lines" in _HERO_NEEDS[r] for r in seen), "приёмы со строками не выпали"
 
 
 def test_hero_plate_duration_never_exceeds_its_material(cfg):
+    """Кадр-задник короче аватар-плана: растянутая панель досидит его пустой."""
     from src.p11_assemble.assemble import _hero_device
 
     catalog = TemplateCatalog.load(cfg)
     slot = {"index": 4, "duration": 6.0, "role": "evidence"}
     plate = {"file": "/w/shots/a.mp4", "duration_sec": 1.4}
-    for seed in range(12):
-        entry = _hero_device(catalog, slot=slot, word="ГОРИЗОНТ", has_alpha=True,
-                             plate_src=plate, recent_videos=[], exclude=[], seed=seed)
-        if entry["renderer"] == "hero-plate":
-            assert entry["duration"] == 1.4
-            assert entry["file"] == "/w/shots/a.mp4"
-            return
-    pytest.skip("панель не выпала ни на одном сиде — ротация решает сама")
+    keep = [t.id for t in catalog.by_category("hero-devices")
+            if t.renderer != "hero-plate"]
+
+    entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=True,
+                         plate_src=plate, recent_videos=[], exclude=keep, seed=0)
+    assert entry["renderer"] == "hero-plate"
+    assert entry["duration"] == 1.4
+    assert entry["file"] == "/w/shots/a.mp4"
+
+
+
+def test_bubble_ring_sits_on_the_measured_face():
+    """Круглая рамка ставится по face_bbox, а не по средней высоте головы."""
+    from src.p11_assemble.assemble import _face_centres
+
+    meta = {"segments": [{"index": 0, "face_bbox": [340, 350, 740, 750],
+                          "slot_indices": [3, 5]}]}
+    assert _face_centres(meta) == {3: (540, 550), 5: (540, 550)}
+    assert _face_centres({"segments": [{"index": 0, "slot_indices": [1]}]}) == {}
+
+
+def test_knockout_size_is_measured_not_guessed():
+    """Оценка «0.52 кегля на знак» врала на 12 % — слово резалось краем кадра."""
+    from src.lib.render.hyperframes.templates import fit_size, text_width
+
+    for word in ("ЕДИНСТВЕННЫЙ", "ШИРОЧАЙШЕЕ", "ГОРИЗОНТ"):
+        size = fit_size(word, 960, 300)
+        assert text_width(word, size) <= 960 + 1e-6, word
+    # Короткое слово не ужимается ниже потолка.
+    assert fit_size("ДА", 960, 300) == 300

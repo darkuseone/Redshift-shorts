@@ -13,8 +13,8 @@
     "parallax": 4,
     "data-viz": 6,
     "outro-cta": 5,
-    "hero-devices": 5,
-    "_total": 86
+    "hero-devices": 10,
+    "_total": 91
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2076,6 +2076,122 @@
         "text"
       ],
       "renderer": "hero-knockout",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/text-column-left",
+      "name": "text-column-left",
+      "category": "hero-devices",
+      "title": "Строки колонкой слева от ведущего",
+      "duration_range": [
+        1.6,
+        4.5
+      ],
+      "params": {
+        "top": 700
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines"
+      ],
+      "renderer": "hero-text-column",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/bubble-card",
+      "name": "bubble-card",
+      "category": "hero-devices",
+      "title": "Ведущий в круге, реплика карточкой под ним",
+      "duration_range": [
+        1.6,
+        4.5
+      ],
+      "params": {
+        "accent_last": true
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines"
+      ],
+      "renderer": "hero-bubble-card",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/brand-pill",
+      "name": "brand-pill",
+      "category": "hero-devices",
+      "title": "Пилюля с логотипом бренда у плеча",
+      "duration_range": [
+        1.0,
+        3.0
+      ],
+      "params": {
+        "top": 1180
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "brand"
+      ],
+      "renderer": "hero-brand-pill",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/card-stack-top",
+      "name": "card-stack-top",
+      "category": "hero-devices",
+      "title": "Карточка с заголовком сверху, ведущий снизу",
+      "duration_range": [
+        1.6,
+        4.5
+      ],
+      "params": {
+        "height": 860
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "footage"
+      ],
+      "renderer": "hero-card-stack",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/phone-mock",
+      "name": "phone-mock",
+      "category": "hero-devices",
+      "title": "Экран приложения поверх расфокуса",
+      "duration_range": [
+        1.8,
+        4.5
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "ui"
+      ],
+      "renderer": "hero-phone-mock",
       "last_used_in": [
         "redshift_0046"
       ],

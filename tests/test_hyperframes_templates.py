@@ -239,6 +239,14 @@ HERO_PARAMS = {
     "hero-plate": {"src": "assets/m000_shot.mp4"},
     "hero-split": {"word": "ВНИМАНИЕ"},
     "hero-knockout": {"word": "ЕДИНСТВЕННАЯ"},
+    "hero-text-column": {"lines": ["И ГОРИЗОНТ", "КОТОРЫЙ РАНЬШЕ",
+                                   "КАЗАЛСЯ СТЕНОЙ"],
+                         "accent_lines": [0]},
+    "hero-bubble-card": {"lines": ["ни один прибор", "не увидит границу"]},
+    "hero-brand-pill": {"label": "Google", "icon": "assets/icons/google.png"},
+    "hero-card-stack": {"title": "СВЕТИЛ ВНУТРЬ", "src": "assets/m000_shot.mp4"},
+    "hero-phone-mock": {"lines": ["что там внутри", "никто не знает"],
+                        "app": "ChatGPT"},
 }
 
 
@@ -296,7 +304,9 @@ def test_hero_clip_has_a_paintable_box(name):
     piece = render_hero(name, _hero_ctx(name))
     css = hero_css(load_config().brandbook)
     node = piece.nodes[0]
-    css_class = re.search(r'class="clip ([\w-]+)"', node).group(1)
+    # У клипа может быть и второй класс-модификатор (``clip hero-brand-pill
+    # left``) — берём первый после clip, именно он несёт геометрию.
+    css_class = re.search(r'class="clip ([\w-]+)', node).group(1)
     inline = re.search(r'style="([^"]*)"', node)
     box = (inline.group(1) if inline else "") + ";" + _css_rule(css, f".{css_class}")
 
@@ -490,3 +500,34 @@ def test_short_hold_gets_no_drift():
 def test_drift_is_imperceptible():
     """Дрейф работает боковым зрением: заметный превращается в отдельный жест."""
     assert 1.0 < DRIFT_SCALE <= 1.06
+
+
+@pytest.mark.parametrize("name", sorted(HERO))
+def test_hero_clips_of_one_device_never_share_a_track(name):
+    """Пересечение клипов на общем треке движок считает ошибкой.
+
+    Карточка с картинкой собирает два клипа в одном окне, и на общем треке
+    линт валит сборку с ``overlapping_clips_same_track`` — поймано на реальной
+    композиции, не в теории.
+    """
+    piece = render_hero(name, _hero_ctx(name))
+    tracks = [re.search(r'data-track-index="(\d+)"', node).group(1)
+              for node in piece.nodes if "data-track-index" in node]
+    assert len(tracks) == len(set(tracks)), f"{name}: клипы делят трек {tracks}"
+
+
+def test_knockout_sits_on_the_face_not_the_torso():
+    """Буквы выбивки — дырки: на уровне торса сквозь них видна тёмная одежда,
+    неотличимая от тёмной заливки, и слово пропадает серединой."""
+    import re
+
+    high = render_hero("hero-knockout",
+                       _hero_ctx("hero-knockout", params={"face_cy": 550})).nodes[0]
+    low = render_hero("hero-knockout",
+                      _hero_ctx("hero-knockout", params={"face_cy": 1200})).nodes[0]
+    y_high = int(re.search(r'y="(\d+)"', high).group(1))
+    y_low = int(re.search(r'y="(\d+)"', low).group(1))
+    assert y_high < y_low, "выбивка не следует за лицом"
+    # Без данных о лице остаётся середина кадра.
+    mid = render_hero("hero-knockout", _hero_ctx("hero-knockout")).nodes[0]
+    assert 700 < int(re.search(r'y="(\d+)"', mid).group(1)) < 1200

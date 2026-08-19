@@ -1,0 +1,24 @@
+{
+  "id": "hero-devices/text-column-left",
+  "name": "text-column-left",
+  "category": "hero-devices",
+  "title": "Строки колонкой слева от ведущего",
+  "duration_range": [
+    1.6,
+    4.5
+  ],
+  "params": {
+    "top": 700
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "lines"
+  ],
+  "renderer": "hero-text-column",
+  "last_used_in": [
+    "redshift_0046"
+  ],
+  "added": "2026-08-18"
+}
