@@ -123,6 +123,34 @@ def test_live_run_without_a_key_waits_for_clips_instead_of_mocking(
     assert isinstance(provider, PreparedAvatar)
 
 
+def test_live_mode_without_a_key_still_goes_two_phase(cfg, costs, tmp_path, monkeypatch):
+    """Живой прогон без ключа HeyGen обязан дойти до заявки на клипы.
+
+    Это не гипотетический случай, а рабочий режим проекта: ключа в секретах нет,
+    аватар приходит из MCP-коннектора. Реальный прогон падал здесь на
+    MISSING_CREDENTIALS, потому что режим сервиса спрашивали раньше, чем
+    успевала сработать двухфазная ветка, — и она оказывалась недостижимой ровно
+    в том прогоне, ради которого написана.
+    """
+    monkeypatch.delenv("HEYGEN_API_KEY", raising=False)
+    cfg.set("providers.mode", "live")
+    cfg.set("heygen.source", "auto")
+    cfg.set("heygen.prepared_dir", str(tmp_path))
+    provider = build_avatar_provider(cfg, costs, video_id="redshift_0046")
+    assert isinstance(provider, PreparedAvatar)
+
+
+def test_source_api_without_a_key_is_a_configuration_error(cfg, costs, monkeypatch):
+    """``api`` заказан явно — значит ключ обязан быть, и молчать об этом нельзя."""
+    from src.errors import MissingCredentials
+
+    monkeypatch.delenv("HEYGEN_API_KEY", raising=False)
+    cfg.set("providers.mode", "live")
+    cfg.set("heygen.source", "api")
+    with pytest.raises(MissingCredentials):
+        build_avatar_provider(cfg, costs, video_id="redshift_0046")
+
+
 def test_mock_mode_overrides_any_avatar_source(cfg, costs, tmp_path, monkeypatch):
     """Mock — это «никаких внешних зависимостей», клипов в нём никто не готовит."""
     monkeypatch.delenv("HEYGEN_API_KEY", raising=False)

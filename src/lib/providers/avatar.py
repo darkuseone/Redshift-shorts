@@ -316,19 +316,29 @@ def build_avatar_provider(cfg, costs, *, video_id: str = "") -> AvatarProvider:
         return PreparedAvatar(cfg, costs, clips_dir)
 
     key = cfg.secret_for("heygen.api_key_env", purpose="HeyGen")
-    if source in ("api", "auto") and \
-            resolve_mode(cfg, api_key=key, service="heygen") is ProviderMode.LIVE:
-        return HeyGenAvatar(cfg, costs, key or "")
 
     if source == "auto":
+        if key:
+            return HeyGenAvatar(cfg, costs, key)
         # Ключа нет — идём в двухфазный конвейер, а не в заглушку. Молчаливый
         # мок-аватар в живом прогоне — худший из возможных исходов: ролик
         # соберётся, пройдёт QC и уедет к зрителю с болванкой вместо ведущего.
         # PreparedAvatar на отсутствие клипов падает с понятным кодом и
         # выкладывает avatar_request.json, по которому их и достают.
+        #
+        # Спрашивать здесь resolve_mode нельзя: при providers.mode=live он
+        # падает на отсутствии ключа, и ветка ниже становится недостижимой —
+        # ровно в том прогоне, ради которого она и написана. Для ``auto``
+        # отсутствие ключа HeyGen не сбой настройки, а штатный режим проекта.
         _log.info("ключа HeyGen нет — аватар ожидается готовыми клипами",
                   extra={"dir": str(clips_dir)})
         return PreparedAvatar(cfg, costs, clips_dir)
+
+    # ``api`` заказан явно: тут отсутствие ключа — именно ошибка настройки, и
+    # resolve_mode обязан сказать об этом вслух.
+    if source == "api" and \
+            resolve_mode(cfg, api_key=key, service="heygen") is ProviderMode.LIVE:
+        return HeyGenAvatar(cfg, costs, key or "")
 
     return MockAvatar(cfg, costs)
 
