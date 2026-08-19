@@ -386,3 +386,17 @@ def test_hero_headline_without_a_kicker_tweens_only_what_it_drew():
                                                    params={"kicker": ""}))
     assert "hh-kicker" not in " ".join(piece.nodes + piece.tweens)
     assert any("hh-word" in t for t in piece.tweens)
+
+
+def test_hero_knockout_does_not_flood_the_frame_with_accent():
+    """§3.3.1 держит акцент в 10–12 % площади, а приём закрывает кадр целиком."""
+    node = render_hero("hero-knockout", _hero_ctx("hero-knockout")).nodes[0]
+    assert "var(--color-ink)" in node
+    assert "accent" not in node
+
+
+def test_hero_knockout_fill_is_a_brandbook_token():
+    node = render_hero("hero-knockout",
+                       _hero_ctx("hero-knockout",
+                                 params={"fill": "accent_deep"})).nodes[0]
+    assert "var(--color-accent-deep)" in node

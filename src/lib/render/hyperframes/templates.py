@@ -673,6 +673,11 @@ def hero_knockout(ctx: "TemplateCtx") -> Piece:
     if not word:
         return Piece()
     node_id = f"hk-{ctx.index:02d}"
+    # Заливка по умолчанию тёмная, а не акцентная: §3.3.1 держит акцент в
+    # 10–12 % площади кадра, а этот приём закрывает весь кадр целиком. Чёрный —
+    # такой же цвет бренда, и ведущий, проступающий сквозь буквы со светлого
+    # фона, на нём читается контрастнее.
+    fill = str(ctx.params.get("fill", "ink")).replace("_", "-")
     lines = word.split()
     # Кегль ужимается под самую длинную строку. Заглавная кириллица Oswald
     # занимает примерно 0.52 кегля на знак; без этого длинное слово вылезает
@@ -698,7 +703,7 @@ def hero_knockout(ctx: "TemplateCtx") -> Piece:
                f'<g class="hk-text" font-size="{size}">{text_nodes}</g>'
                f'</mask></defs>'
                f'<rect width="1080" height="1920" mask="url(#{node_id}-m)" '
-               f'class="hk-fill"/></svg></div>'],
+               f'fill="var(--color-{fill})"/></svg></div>'],
         tweens=[
             f'tl.fromTo("#{node_id} svg",{{scale:1.12,opacity:0}},'
             f'{{scale:1,opacity:1,duration:0.36,ease:"power3.out"}},{_num(ctx.start)});'
@@ -822,7 +827,6 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"
         ".hero-knockout svg{width:100%;height:100%;display:block}"
-        ".hero-knockout .hk-fill{fill:var(--color-accent-soft)}"
         # Чёрный в маске = дырка: сквозь буквы виден ведущий.
         ".hero-knockout .hk-text{fill:#000;font-family:var(--font-display);"
         "font-weight:700;letter-spacing:-0.01em}"
