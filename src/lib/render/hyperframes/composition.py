@@ -27,6 +27,7 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
+from .templates import TemplateCtx, render_motion, render_transition
 
 TRACK_STAGE = 0
 TRACK_SHOT_EVEN = 1
@@ -34,6 +35,7 @@ TRACK_SHOT_ODD = 2
 TRACK_AVATAR = 3
 TRACK_BEHIND_HEAD = 4
 TRACK_OVERLAY = 5      # и следующие, если плашки пересекаются во времени
+TRACK_TRANSITION = 11
 TRACK_SUBTITLE = 12
 TRACK_AUDIO = 20
 
@@ -148,6 +150,7 @@ class CompositionBuilder:
                     nodes.append(self._media_node(node_id, src, timing, css="shot",
                                                   media_start=shot.get("avatar_offset_sec")))
                     self._add_kenburns(node_id, shot, start, duration)
+            nodes += self._add_transition(node_id, shot, start)
             self.stats["shots"] += 1
         return nodes
 
@@ -181,13 +184,28 @@ class CompositionBuilder:
         kb = shot.get("kenburns")
         if not kb:
             return
-        from_scale = float(kb.get("from_scale", 1.0))
-        to_scale = float(kb.get("to_scale", 1.06))
         # fromTo, а не CSS-transform + tween: контракт запрещает задавать
         # стартовое значение в CSS, когда его же тянет GSAP.
-        self.tweens.append(
-            f'tl.fromTo("#{node_id}",{{scale:{from_scale}}},'
-            f'{{scale:{to_scale},duration:{_num(duration)},ease:"none"}},{_num(start)});')
+        piece = render_motion("kenburns", TemplateCtx(
+            index=int(shot["index"]), start=start, duration=duration,
+            target=node_id, track=TRACK_SHOT_EVEN, params=dict(kb)))
+        self.tweens.extend(piece.tweens)
+
+    def _add_transition(self, node_id: str, shot: dict[str, Any],
+                        start: float) -> list[str]:
+        """Переход относится к началу шота: он показывает, как кадр входит."""
+        spec = shot.get("transition") or {}
+        renderer = str(spec.get("renderer") or "cut")
+        if renderer == "cut":
+            return []
+        duration = float(spec.get("duration") or 0.32)
+        piece = render_transition(renderer, TemplateCtx(
+            index=int(shot["index"]), start=start, duration=duration,
+            target=node_id, track=TRACK_TRANSITION,
+            params=dict(spec.get("params") or {})))
+        self.tweens.extend(piece.tweens)
+        self.stats["transitions"] = self.stats.get("transitions", 0) + 1
+        return piece.nodes
 
     # --- аватар ---------------------------------------------------------
     def _avatar_nodes(self) -> list[str]:

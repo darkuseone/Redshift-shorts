@@ -14,6 +14,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .templates import dataviz_css, split_css, transition_css
+
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
 # отвечает за пересечения во времени, а не за то, что лежит поверх чего.
 Z_STAGE = 0        # заливка кадра
@@ -212,6 +214,12 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:radial-gradient(70% 45% at 50% 78%,"
         "var(--color-accent-soft) 0%,transparent 70%);opacity:0.5}"
     )
+
+    # Слои переходов (§4.3, §15) — отдельный модуль: их 9 рендереров,
+    # и геометрия у них считается от кадра, а не от рабочей зоны.
+    parts.append(transition_css(brandbook))
+    parts.append(dataviz_css(brandbook))
+    parts.append(split_css(brandbook))
 
     return "\n".join(parts) + "\n"
 

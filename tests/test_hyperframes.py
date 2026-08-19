@@ -152,8 +152,11 @@ def test_avatar_uses_alpha_source_not_flattened_shot(markup):
 # --- анимация -----------------------------------------------------------------
 
 def test_kenburns_uses_fromto_not_css_transform(markup):
-    """CSS-transform плюс твин той же свойства запрещены контрактом."""
-    assert 'tl.fromTo("#shot-00",{scale:1.0},{scale:1.08' in markup
+    """CSS-transform плюс твин того же свойства запрещены контрактом."""
+    tween = next(l for l in markup.splitlines()
+                 if 'fromTo("#shot-00"' in l)
+    assert "scale:1.0" in tween and "scale:1.08" in tween
+    assert 'ease:"none"' in tween          # Ken Burns идёт равномерно
 
 
 def test_cta_pulse_is_finite(markup):
