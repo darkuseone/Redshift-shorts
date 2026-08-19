@@ -446,3 +446,50 @@ def test_short_fullscreen_word_keeps_the_brandbook_ceiling(plan, assets, brandbo
     node = next(l for l in out.splitlines() if "fullscreen-text" in l)
     ceiling = int(brandbook["fullscreen_text"]["size_px"][1])
     assert int(re.search(r"font-size:(\d+)px", node).group(1)) == ceiling
+
+
+def test_hero_media_paths_are_rewritten_to_the_project(plan, assets, brandbook):
+    """HyperFrames резолвит медиа от каталога проекта.
+
+    Незаменённый абсолютный путь — не ошибка сборки, а пустой прямоугольник в
+    кадре, который заметен только на рендере.
+    """
+    assets["/w/icons/google.png"] = "assets/m009_google.png"
+    plan["shots"][2]["hero"] = {
+        "template": "hero-devices/brand-pill", "renderer": "hero-brand-pill",
+        "params": {"label": "Google", "icon": "/w/icons/google.png"},
+        "file": None, "duration": None, "carries_line": False,
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "/w/icons/google.png" not in out
+    assert "assets/m009_google.png" in out
+
+
+def test_hero_media_path_outside_the_project_is_dropped(plan, assets, brandbook):
+    """Лучше приём без картинки, чем ссылка в никуда."""
+    plan["shots"][2]["hero"] = {
+        "template": "hero-devices/brand-pill", "renderer": "hero-brand-pill",
+        "params": {"label": "Google", "icon": "/нет/такого.png"},
+        "file": None, "duration": None, "carries_line": False,
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "/нет/такого.png" not in out
+    assert "hero-brand-pill" in out, "приём обязан остаться, потеряв только иконку"
+
+
+def test_bubble_cuts_the_circle_with_a_mask_not_a_radius(plan, assets, brandbook):
+    """Продюсер рисует кадры видео в коробку, игнорируя border-radius.
+
+    Проверено зумом: второе видео со скруглением давало квадрат. Круг режется
+    SVG-маской, и сквозь дырку виден сам аватар — второе видео не нужно.
+    """
+    plan["shots"][2]["hero"] = {
+        "template": "hero-devices/bubble-card", "renderer": "hero-bubble-card",
+        "params": {"lines": ["ни одна компания"], "face_cx": 540, "face_cy": 550},
+        "file": None, "duration": None, "carries_line": True,
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "<mask" in out and "<circle" in out
+    assert out.count('class="clip hero-bubble-card"') == 1
+    # Ведущий приближается внутри дырки — иначе это заслонка, а не смена плана.
+    assert any('"#avatar-00"' in l and "scale" in l for l in out.splitlines())

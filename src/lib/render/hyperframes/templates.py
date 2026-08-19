@@ -128,6 +128,10 @@ ENTRANCES: dict[str, dict[str, float | str]] = {
     "rise": {"scale": 1.05, "y": 64, "duration": 0.52, "ease": "power3.out"},
     # Оседание: короткий приход сверху. Для заголовков над головой.
     "settle": {"scale": 1.04, "y": -46, "duration": 0.48, "ease": "expo.out"},
+    # Единственное исключение из «ничего не включается»: полнокадровая
+    # заслонка. Она не предмет, который приносят, а смена света — двигать её
+    # нечем, любой масштаб обнажит края кадра.
+    "dim": {"scale": 1.0, "y": 0, "duration": 0.42, "ease": "power2.out"},
 }
 
 # Дрейф на удержании: пока элемент висит, он еле заметно едет. Без этого кадр
@@ -420,16 +424,19 @@ class TemplateCtx:
     track: int
     params: dict[str, Any] = field(default_factory=dict)
 
+    def alt_track(self, n: int = 1) -> int:
+        """Дополнительный трек приёму, который собирает больше одного клипа.
+
+        Клипы одного приёма живут в одном окне, а движок запрещает пересечение
+        клипов на общем треке (``overlapping_clips_same_track``). Шаг в два, а
+        не в один: соседние шоты уже разведены по чётности, и ``track + 1``
+        попал бы в полосу соседа.
+        """
+        return self.track + 2 * n
+
     @property
     def track_alt(self) -> int:
-        """Второй трек — приёму, который собирает больше одного клипа.
-
-        Два клипа одного приёма живут в одном окне, а движок запрещает
-        пересечение клипов на общем треке (``overlapping_clips_same_track``).
-        Шаг в два, а не в один: соседние шоты уже разведены по чётности, и
-        ``track + 1`` попал бы в полосу соседа.
-        """
-        return self.track + 2
+        return self.alt_track(1)
 
 
 def render_transition(name: str, ctx: TemplateCtx) -> Piece:
@@ -971,15 +978,19 @@ def hero_text_column(ctx: "TemplateCtx") -> Piece:
 
 
 def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
-    """Круглая рамка с ведущим и карточка под ней.
+    """Ведущий в круге, реплика карточкой под ним.
 
-    Референс: ведущего резко помещают в круг, под ним белая карточка с
-    репликой. «Резко» здесь именно то, чего быть не должно — рамка выходит из
-    глубины, карточка следом. Оба ``zoom-out``: приход из большего масштаба
-    обрезал бы круг краями кадра.
+    Референс: человека **обрезают в кружок** на тёмном поле, под ним белая
+    карточка с фразой. Кольцо поверх кадра этого не даёт — тело остаётся видно
+    вокруг, и приём читается как рамка, а не как смена плана.
 
-    Круг рисуется рамкой поверх аватара, а не маской на нём: маска на клипе
-    аватара сломала бы его же переход, а рамка — самостоятельный слой.
+    Круг вырезается SVG-маской в тёмном поле, и сквозь дырку виден сам аватар.
+    Второе видео с ``border-radius:50%`` не годится: продюсер рисует кадры в
+    коробку элемента, **игнорируя скругление и рамку** — проверено зумом,
+    получался квадрат. Маской вырезает надёжно, тем же приёмом, что и выбивка.
+
+    «Резко помещают в круг» — ровно то, чего быть не должно: поле проявляется,
+    а сам ведущий в это время приближается, и переход читается сменой плана.
     """
     lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
     if not lines:
@@ -989,28 +1000,49 @@ def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
     # Круг ставится по реальному лицу: у сегмента аватара есть face_bbox, и
     # догадка «четверть высоты кадра» промахивалась мимо головы на сотню
     # пикселей. Без bbox остаётся прежняя оценка.
-    ring = int(ctx.params.get("ring", 420))
+    ring = int(ctx.params.get("ring", 460))
     face_x = int(ctx.params.get("face_cx", 540))
     face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + ring // 2))
+    radius = ring // 2
 
     body = "".join(
         f'<span class="bc-line{" accent" if accent_last and i == len(lines) - 1 else ""}">'
         f'{_esc(line)}</span>'
         for i, line in enumerate(lines[:4]))
+    card_top = face_y + radius + 46
 
-    tweens = entrance_tweens(f"#{node_id} .bc-ring", ctx.start, name="zoom-out")
-    tweens += entrance_tweens(f"#{node_id} .bc-card", ctx.start,
-                              name="zoom-out", delay=0.09)
-    ring_style = (f"left:{face_x - ring // 2}px;top:{face_y - ring // 2}px;"
-                  f"width:{ring}px;height:{ring}px")
-    card_top = face_y + ring // 2 + 40
+    svg = (f'<svg class="bc-field" viewBox="0 0 1080 1920" preserveAspectRatio="none">'
+           f'<defs>'
+           f'<radialGradient id="{node_id}-g" cx="50%" cy="30%" r="80%">'
+           f'<stop offset="0%" stop-color="#2A2320"/>'
+           f'<stop offset="58%" stop-color="#141416"/>'
+           f'<stop offset="100%" stop-color="#08090B"/>'
+           f'</radialGradient>'
+           f'<mask id="{node_id}-m">'
+           f'<rect width="1080" height="1920" fill="white"/>'
+           f'<circle cx="{face_x}" cy="{face_y}" r="{radius}" fill="black"/>'
+           f'</mask>'
+           f'</defs>'
+           f'<rect width="1080" height="1920" mask="url(#{node_id}-m)" '
+           f'fill="url(#{node_id}-g)"/>'
+           f'<circle cx="{face_x}" cy="{face_y}" r="{radius + 5}" fill="none" '
+           f'stroke="#FFFFFF" stroke-width="10"/>'
+           f'</svg>')
+
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip hero-bubble-card" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
-               f'data-track-index="{ctx.track}">'
-               f'<span class="bc-ring" style="{ring_style}"></span>'
+               f'data-track-index="{ctx.track}">{svg}'
                f'<span class="bc-card" style="top:{card_top}px">{body}</span></div>'],
-        tweens=tweens)
+        tweens=(
+            entrance_tweens(f"#{node_id} .bc-field", ctx.start, name="dim")
+            + entrance_tweens(f"#{node_id} .bc-card", ctx.start,
+                              name="zoom-out", delay=0.10)
+            # Ведущий приближается внутри дырки: без этого «помещение в круг»
+            # выглядит как включённая заслонка, а не как смена плана.
+            + enter_and_drift(f"#{ctx.target}", ctx.start, ctx.duration,
+                              name="zoom-in", fade=False)
+        ))
 
 
 def hero_brand_pill(ctx: "TemplateCtx") -> Piece:
@@ -1210,9 +1242,10 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         f".hero-bubble-card{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
         "pointer-events:none}"
         # Кольцо обводит лицо, не закрывая его: заливки нет, только рамка.
-        ".hero-bubble-card .bc-ring{position:absolute;border-radius:50%;"
-        "border:10px solid var(--color-bg-pure);display:block;"
-        "box-shadow:0 22px 60px rgba(0,0,0,0.32);will-change:transform}"
+        # Тёмное поле с круглой дыркой: ведущий остаётся виден только в круге.
+        # Градиент, а не filter — размытие вне разрешённого списка движка.
+        ".hero-bubble-card .bc-field{position:absolute;inset:0;display:block;"
+        "width:100%;height:100%;will-change:transform}"
         ".hero-bubble-card .bc-card{position:absolute;left:var(--safe-x-min);"
         "right:var(--safe-x-min);display:flex;flex-direction:column;"
         "gap:10px;padding:56px 46px 44px;border-radius:44px;"

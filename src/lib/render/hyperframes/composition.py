@@ -339,6 +339,15 @@ class CompositionBuilder:
             src = self._asset(hero.get("file"))
             if src:
                 params["src"] = src
+            # Пути к медиа в плане абсолютные, а HyperFrames резолвит их от
+            # каталога проекта. Незаменённый путь — не ошибка сборки, а пустой
+            # прямоугольник в кадре.
+            for key in ("icon",):
+                mapped = self._asset(params.get(key))
+                if mapped:
+                    params[key] = mapped
+                elif params.get(key):
+                    params.pop(key)
             piece = render_hero(str(hero.get("renderer") or ""), TemplateCtx(
                 index=index, start=start, duration=duration,
                 target=avatar_nodes.get(index, f"shot-{index:02d}"),
