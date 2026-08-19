@@ -1,0 +1,22 @@
+{
+  "id": "hero-devices/knockout-negative",
+  "name": "knockout-negative",
+  "category": "hero-devices",
+  "title": "Негатив: слово прорезано в заливке",
+  "duration_range": [
+    1.2,
+    3.0
+  ],
+  "params": {
+    "size": 300,
+    "margin": 60
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "text"
+  ],
+  "renderer": "hero-knockout",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-08-18",
-  "count": 182,
+  "updated": "2026-08-19",
+  "count": 195,
   "items": [
     {
       "id": "pexels_406de0a0_01",
@@ -6124,6 +6124,446 @@
         "1c636394954acc77",
         "1d626295956e3273",
         "017e6a9561e15a7a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_9c3ba419.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "nasa_a03243eb_02",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/a03243eb/2",
+      "phash": "f40f07e0e01f1ff0",
+      "tags": [
+        "starfield",
+        "timelapse"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «starfield timelapse»",
+      "score": 0.6261,
+      "duration_sec": 4.2,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "f40f07e0e01f1ff0",
+        "c02e3cb191cece6e",
+        "d4336ba99656492b"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_a03243eb_02.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_a03243eb_03",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/a03243eb/3",
+      "phash": "d5356a4aa2b5455b",
+      "tags": [
+        "starfield",
+        "timelapse"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «starfield timelapse»",
+      "score": 0.6119,
+      "duration_sec": 5.0,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "d5356a4aa2b5455b",
+        "ff00bcff0000ff34",
+        "156e5ab46952a4ab"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_a03243eb_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "internet_archive_f0fa7068_07",
+      "type": "video",
+      "source": "internet_archive",
+      "license": "mock-synthetic",
+      "url_origin": "mock://internet_archive/f0fa7068/7",
+      "phash": "044b552b5e3d325d",
+      "tags": [
+        "observatory",
+        "radio",
+        "telescope",
+        "night"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «observatory radio telescope night»",
+      "score": 0.5828,
+      "duration_sec": 4.2,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "044b552b5e3d325d",
+        "ff22b5d492198d0d",
+        "0153ad2a552ad72f"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "internet_archive/internet_archive_f0fa7068_07.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_59a88734_03",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/59a88734/3",
+      "phash": "00ef3fc0709f6691",
+      "tags": [
+        "starfield",
+        "timelapse"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «starfield timelapse»",
+      "score": 0.648,
+      "duration_sec": 4.6,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "00ef3fc0709f6691",
+        "d57f7a2a3a351510",
+        "0ad52a807d2ad57b"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_59a88734_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_25c9e5b3_07",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/25c9e5b3/7",
+      "phash": "d59537e80fec09c2",
+      "tags": [
+        "rocket",
+        "engine",
+        "burn",
+        "dark",
+        "background"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «rocket engine burn dark background»",
+      "score": 0.6198,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "d59537e80fec09c2",
+        "00c062bd5ab97cb7",
+        "08287fd7822a6aee"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_25c9e5b3_07.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "internet_archive_6d4f45a7_01",
+      "type": "video",
+      "source": "internet_archive",
+      "license": "mock-synthetic",
+      "url_origin": "mock://internet_archive/6d4f45a7/1",
+      "phash": "002b7f5575424f47",
+      "tags": [
+        "warped",
+        "light",
+        "abstract",
+        "macro"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «warped light abstract macro»",
+      "score": 0.6067,
+      "duration_sec": 5.2,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "002b7f5575424f47",
+        "fd802a7bc476813d",
+        "d57f2a81dd8285c5"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "internet_archive/internet_archive_6d4f45a7_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "internet_archive_70b88f4f_06",
+      "type": "video",
+      "source": "internet_archive",
+      "license": "mock-synthetic",
+      "url_origin": "mock://internet_archive/70b88f4f/6",
+      "phash": "2a7fd5802f6ac095",
+      "tags": [
+        "rocket",
+        "engine",
+        "burn",
+        "dark",
+        "background"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «rocket engine burn dark background»",
+      "score": 0.6401,
+      "duration_sec": 4.4,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "2a7fd5802f6ac095",
+        "f5d5822a7fd5802a",
+        "f72a80d57f2a81c5"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "internet_archive/internet_archive_70b88f4f_06.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_aafb7584_01",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/aafb7584/1",
+      "phash": "00cd30c987cd7e3e",
+      "tags": [
+        "rocket",
+        "engine",
+        "burn",
+        "dark",
+        "background"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «rocket engine burn dark background»",
+      "score": 0.6278,
+      "duration_sec": 3.6,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "00cd30c987cd7e3e",
+        "d56f2e1d2d25303c",
+        "22d57f20c79ec02b"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_aafb7584_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_aafb7584_05",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/aafb7584/5",
+      "phash": "d573386e386a1a63",
+      "tags": [
+        "rocket",
+        "engine",
+        "burn",
+        "dark",
+        "background"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «rocket engine burn dark background»",
+      "score": 0.6391,
+      "duration_sec": 3.7,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "d573386e386a1a63",
+        "00c06fc476c372fb",
+        "d56a3f0f25313c16"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_aafb7584_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "nasa_cbe925e6_01",
+      "type": "video",
+      "source": "nasa",
+      "license": "mock-synthetic",
+      "url_origin": "mock://nasa/cbe925e6/1",
+      "phash": "2a6aca1bf301f346",
+      "tags": [
+        "dramatic",
+        "dark",
+        "abstract"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «dramatic dark abstract»",
+      "score": 0.639,
+      "duration_sec": 5.4,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "2a6aca1bf301f346",
+        "f72a80d46a3f174a",
+        "fdc495b4a42a86bc"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "nasa/nasa_cbe925e6_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "gen_mock_1890e28e",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "e24ab5b55a5ab506",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Тёмный кадр, диск раскалённого газа, медленное приближение. black hole accretion disk simulation. Role: hook. Style: cinematic, vertical 9:16 composition, shall",
+      "score": 1.0,
+      "duration_sec": 2.8,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "e24ab5b55a5ab506",
+        "ee69960f69926169",
+        "e333cc7233cc3332"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_1890e28e.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_d67b6313",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "3ee4a6a484949d9b",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Тёмный кадр, диск раскалённого газа, медленное приближение. deep space dark nebula slow motion. Role: hook. Style: cinematic, vertical 9:16 composition, shallow",
+      "score": 1.0,
+      "duration_sec": 2.133,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "3ee4a6a484949d9b",
+        "2aca9ab2b4a5a5a5",
+        "ead0a4a9aad655c5"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_d67b6313.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_9c3ba419",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "1669699696696996",
+      "tags": [
+        "generated",
+        "setup",
+        "abstract"
+      ],
+      "vision_summary": "Ведущий крупно, за головой — слово ГОРИЗОНТ. gravitational lensing visualization space. Role: setup. Style: cinematic, vertical 9:16 composition, shallow depth ",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": null,
+      "added": "2026-08-19",
+      "phashes": [
+        "1669699696696996",
+        "126d6d92926d9792",
+        "1b64649b64649b9b"
       ],
       "width": 1080,
       "height": 1920,

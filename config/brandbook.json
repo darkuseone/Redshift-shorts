@@ -1,7 +1,6 @@
 {
   "_comment": "REDSHIFT brandbook. Единственный источник правды по цвету, типографике, safe zones и анимационным константам (§3, §5). Любой рендер сверяется с ним — см. skill redshift-brandbook.",
   "version": "2.0",
-
   "canvas": {
     "width": 1080,
     "height": 1920,
@@ -9,7 +8,6 @@
     "color_space": "bt709",
     "full_range": false
   },
-
   "colors": {
     "bg_light": "#F7F5F3",
     "bg_pure": "#FFFFFF",
@@ -20,35 +18,46 @@
     "muted": "#7A7D82",
     "overlay_dim": "rgba(10,10,12,0.78)"
   },
-
   "color_rules": {
     "accent_max_frame_share": 0.12,
     "accent_highlights_single_word": true,
     "max_colors_in_frame": 3,
     "gradients_per_video_max": 1,
-    "gradient_allowed": ["accent", "accent_soft"],
+    "gradient_allowed": [
+      "accent",
+      "accent_soft"
+    ],
     "inverse_only_for_fullscreen_numbers": true
   },
-
   "safe_zones": {
     "bottom_px": 400,
     "right_px": 250,
     "top_px": 150,
-    "work_area": { "x_min": 90, "x_max": 830, "y_min": 150, "y_max": 1520 }
+    "work_area": {
+      "x_min": 90,
+      "x_max": 830,
+      "y_min": 150,
+      "y_max": 1520
+    }
   },
-
   "typography": {
     "roles": {
       "display": {
         "primary": "Oswald Bold",
-        "fallbacks": ["Golos Text Black", "Unbounded ExtraBold"],
+        "fallbacks": [
+          "Golos Text Black",
+          "Unbounded ExtraBold"
+        ],
         "letter_spacing": -0.01,
         "line_height": 0.94,
         "uppercase": true
       },
       "subtitle": {
         "primary": "Nunito ExtraBold",
-        "fallbacks": ["Manrope ExtraBold", "Rubik Bold"],
+        "fallbacks": [
+          "Manrope ExtraBold",
+          "Rubik Bold"
+        ],
         "letter_spacing": 0.0,
         "line_height": 1.05,
         "uppercase": false
@@ -62,138 +71,291 @@
       }
     },
     "required_unicode_ranges": [
-      [1040, 1103],
-      [1025, 1025],
-      [1105, 1105]
+      [
+        1040,
+        1103
+      ],
+      [
+        1025,
+        1025
+      ],
+      [
+        1105,
+        1105
+      ]
     ],
     "required_sample_text": "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789",
-    "allowed_licenses": ["OFL-1.1", "Apache-2.0", "MIT", "UFL-1.0"]
+    "allowed_licenses": [
+      "OFL-1.1",
+      "Apache-2.0",
+      "MIT",
+      "UFL-1.0"
+    ]
   },
-
   "subtitles": {
     "granularity": "word",
     "case": "lower",
     "position": "center",
-    "baseline_y": [940, 1010],
+    "baseline_y": [
+      940,
+      1010
+    ],
     "baseline_y_default": 975,
     "baseline_y_avatar_shift": 1050,
     "face_bbox_shift_trigger_y": 800,
     "font_role": "subtitle",
-    "size_px": [88, 104],
+    "size_px": [
+      88,
+      104
+    ],
     "size_px_default": 96,
     "max_block_width_px": 900,
     "color": "#FFFFFF",
-    "readability_mode": "stroke",
-    "stroke_px": [6, 8],
+    "readability_mode": "shadow",
+    "stroke_px": [
+      6,
+      8
+    ],
     "stroke_color": "accent_deep",
     "pill_radius_px": 24,
-    "pill_padding_px": [34, 22],
+    "pill_padding_px": [
+      34,
+      22
+    ],
     "pill_color": "overlay_dim",
-    "word_duration_ms": [250, 450],
-    "pop_in_ms": [90, 120],
+    "word_duration_ms": [
+      250,
+      450
+    ],
+    "pop_in_ms": [
+      90,
+      120
+    ],
     "pop_scale_from": 0.92,
-    "accent_word_ratio": [6, 8]
+    "accent_word_ratio": [
+      6,
+      8
+    ],
+    "shadow": {
+      "blur_px": 20,
+      "offset_y_px": 4,
+      "alpha": 0.5
+    },
+    "accent_color": "accent_soft"
   },
-
   "fullscreen_text": {
     "font_role": "display",
-    "size_px": [200, 420],
+    "size_px": [
+      200,
+      420
+    ],
     "words_max": 4,
-    "bg_options": ["bg_pure", "ink"],
-    "duration_sec": [0.8, 2.0],
-    "per_video": [2, 4],
-    "enter_ms": [180, 250],
+    "bg_options": [
+      "bg_pure",
+      "ink"
+    ],
+    "duration_sec": [
+      0.8,
+      2.0
+    ],
+    "per_video": [
+      2,
+      4
+    ],
+    "enter_ms": [
+      180,
+      250
+    ],
     "scale_from": 1.0,
     "scale_to": 1.06,
     "requires_sfx": true
   },
-
   "text_behind_head": {
     "font_role": "display",
-    "size_px": [140, 260],
-    "colors": ["ink", "accent_soft"],
+    "size_px": [
+      140,
+      260
+    ],
+    "colors": [
+      "ink",
+      "accent_soft"
+    ],
     "requires_matte": true,
     "fallback_margin_pct": 0.15
   },
-
   "plaque": {
-    "radius_px": [20, 28],
+    "radius_px": [
+      20,
+      28
+    ],
     "radius_px_default": 24,
     "bg": "bg_light",
     "bg_alpha": 0.92,
     "border_px": 2,
     "border_color": "accent",
-    "border_alpha": 0.40,
-    "shadow": { "blur_px": 28, "offset_y_px": 8, "alpha": 0.18 },
-    "enter_ms": [200, 280],
-    "exit_ms": [160, 200],
-    "overshoot_pct": [0.06, 0.08],
-    "on_screen_sec": [1.5, 4.0],
+    "border_alpha": 0.4,
+    "shadow": {
+      "blur_px": 28,
+      "offset_y_px": 8,
+      "alpha": 0.18
+    },
+    "enter_ms": [
+      200,
+      280
+    ],
+    "exit_ms": [
+      160,
+      200
+    ],
+    "overshoot_pct": [
+      0.06,
+      0.08
+    ],
+    "on_screen_sec": [
+      1.5,
+      4.0
+    ],
     "max_simultaneous": 2
   },
-
   "highlight": {
-    "dim_opacity": [0.70, 0.85],
+    "dim_opacity": [
+      0.7,
+      0.85
+    ],
     "dim_opacity_default": 0.78,
     "enter_ms": 200,
-    "hold_sec": [0.6, 1.2],
-    "per_video": [1, 3],
+    "hold_sec": [
+      0.6,
+      1.2
+    ],
+    "per_video": [
+      1,
+      3
+    ],
     "cutout_radius_px": 16,
     "cutout_padding_px": 18
   },
-
   "ken_burns": {
     "scale_from": 1.0,
-    "scale_to": [1.08, 1.15],
-    "duration_sec": [2.5, 5.0],
+    "scale_to": [
+      1.08,
+      1.15
+    ],
+    "duration_sec": [
+      2.5,
+      5.0
+    ],
     "easing": "ease_out_cubic"
   },
-
   "parallax": {
-    "layer_shift_pct": [0.02, 0.05],
-    "per_video": [1, 3]
+    "layer_shift_pct": [
+      0.02,
+      0.05
+    ],
+    "per_video": [
+      1,
+      3
+    ]
   },
-
   "avatar": {
-    "share_of_runtime": [0.35, 0.60],
-    "appearances": [2, 5],
-    "appearance_sec": [3.0, 12.0],
+    "share_of_runtime": [
+      0.35,
+      0.6
+    ],
+    "appearances": [
+      2,
+      5
+    ],
+    "appearance_sec": [
+      3.0,
+      12.0
+    ],
     "first_appearance_before_sec": 6.0,
-    "face_band_y": [350, 750],
+    "face_band_y": [
+      350,
+      750
+    ],
     "modes": {
-      "A": { "name": "full_frame_hero", "duration_sec": [3.0, 8.0] },
-      "B": { "name": "split_50_50", "duration_sec": [3.0, 6.0], "share_max": 0.25 },
-      "C": { "name": "footage_only", "duration_sec": [2.0, 12.0], "block_share_max": 0.40 }
+      "A": {
+        "name": "full_frame_hero",
+        "duration_sec": [
+          3.0,
+          8.0
+        ]
+      },
+      "B": {
+        "name": "split_50_50",
+        "duration_sec": [
+          3.0,
+          6.0
+        ],
+        "share_max": 0.25
+      },
+      "C": {
+        "name": "footage_only",
+        "duration_sec": [
+          2.0,
+          12.0
+        ],
+        "block_share_max": 0.4
+      }
     }
   },
-
   "transitions": {
-    "cut_share_min": 0.70,
+    "cut_share_min": 0.7,
     "dynamic_min_gap_sec": 6.0,
     "crossfade_allowed": false,
     "white_fade_only_at_end": true,
     "dynamic_requires_sfx": true,
-    "dynamic_duration_ms": [160, 320]
+    "dynamic_duration_ms": [
+      160,
+      320
+    ]
   },
-
   "cta": {
     "tail_sec": 2.0,
     "button_pulse_hz": 1.6,
     "sfx": "subscribe_ping"
   },
-
   "memes": {
-    "per_video": [0, 2],
-    "duration_sec": [0.5, 1.5],
-    "forbidden_categories": ["medicine"],
+    "per_video": [
+      0,
+      2
+    ],
+    "duration_sec": [
+      0.5,
+      1.5
+    ],
+    "forbidden_categories": [
+      "medicine"
+    ],
     "original_audio": false,
     "cooldown_videos": 10
   },
-
   "easing": {
-    "ease_out_cubic": [0.215, 0.61, 0.355, 1.0],
-    "ease_out_back": [0.34, 1.56, 0.64, 1.0],
-    "ease_in_out": [0.42, 0.0, 0.58, 1.0],
-    "linear": [0.0, 0.0, 1.0, 1.0]
+    "ease_out_cubic": [
+      0.215,
+      0.61,
+      0.355,
+      1.0
+    ],
+    "ease_out_back": [
+      0.34,
+      1.56,
+      0.64,
+      1.0
+    ],
+    "ease_in_out": [
+      0.42,
+      0.0,
+      0.58,
+      1.0
+    ],
+    "linear": [
+      0.0,
+      0.0,
+      1.0,
+      1.0
+    ]
   }
 }

@@ -203,6 +203,25 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("logo-stamp", "Штамп логотипа", [1.0, 2.0], {"stamp": True},
          ["cta", "brand"], "fullscreen_text"),
     ]),
+    # Приёмы вокруг ведущего. Категория заведена по референсам заказчика:
+    # ведущий за столом, а кадр вокруг него живёт — картинка за спиной, текст
+    # над головой, панель сбоку, выбивка. Тег ``alpha`` помечает приёмы, для
+    # которых аватар обязан прийти с прозрачным фоном: они рисуются ПОД ним, и
+    # без альфы зритель их не увидит.
+    "hero-devices": (5, [
+        ("plate-behind-back", "Кадр появляется за спиной ведущего", [1.4, 4.0],
+         {"top": 300}, ["hero", "avatar", "alpha", "footage"], "hero-plate"),
+        ("headline-over-head", "Заголовок вырастает над головой", [1.2, 3.4],
+         {"top": 190}, ["hero", "avatar", "alpha", "text"], "hero-headline"),
+        ("burst-behind-head", "Лучи расходятся из-за головы", [1.0, 3.0],
+         {"rays": 9, "spread_deg": 150, "center_y": 560},
+         ["hero", "avatar", "alpha"], "hero-burst"),
+        ("split-panel-right", "Кадр делится: ведущий слева, слово справа", [1.4, 4.0],
+         {"subject_shift": -210, "subject_zoom": 1.14},
+         ["hero", "avatar", "split", "text"], "hero-split"),
+        ("knockout-negative", "Негатив: слово прорезано в заливке", [1.2, 3.0],
+         {"size": 300, "margin": 60}, ["hero", "avatar", "text"], "hero-knockout"),
+    ]),
 }
 
 
@@ -221,6 +240,15 @@ def main() -> int:
         "templates": [],
     }
 
+    # last_used_in копится прогонами P11 и в генераторе не описан. Перезаписать
+    # манифест «с нуля» значит обнулить ротацию §15.12 и заставить каталог
+    # заново сойтись на первых попавшихся шаблонах.
+    history: dict[str, list[str]] = {}
+    existing = TEMPLATES / "manifest.json"
+    if existing.exists():
+        for entry in json.loads(existing.read_text(encoding="utf-8"))["templates"]:
+            history[entry["id"]] = entry.get("last_used_in", [])
+
     total = 0
     for category, (expected, items) in CATALOG.items():
         assert len(items) == expected, f"{category}: {len(items)} != {expected} из §15"
@@ -235,7 +263,7 @@ def main() -> int:
                 "params": params,
                 "tags": tags,
                 "renderer": renderer,
-                "last_used_in": [],
+                "last_used_in": history.get(f"{category}/{tid}", []),
                 "added": "2026-08-18",
             }
             manifest["templates"].append(entry)

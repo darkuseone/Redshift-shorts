@@ -341,3 +341,77 @@ def test_cut_leaves_kenburns_at_the_shot_start(plan, assets, brandbook):
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     tween = next(l for l in out.splitlines() if 'fromTo("#shot-00"' in l)
     assert tween.rstrip(");").endswith(",0")
+
+
+# --- приёмы вокруг ведущего ---------------------------------------------------
+
+def _with_hero(plan, renderer, **params):
+    plan["shots"][2]["hero"] = {
+        "template": f"hero-devices/{renderer}", "renderer": renderer,
+        "params": {"word": "РАЗМЕР", **params}, "file": None, "duration": None,
+    }
+    return plan
+
+
+@pytest.mark.parametrize("renderer", ["hero-burst", "hero-headline",
+                                      "hero-split", "hero-knockout"])
+def test_hero_device_reaches_the_markup(plan, assets, brandbook, renderer):
+    out = CompositionBuilder(_with_hero(plan, renderer), brandbook,
+                             assets).build("assets/mix.wav")
+    assert f'class="clip {renderer}"' in out, renderer
+
+
+def test_hero_tween_targets_exist_in_the_markup(plan, assets, brandbook):
+    """Твин по несуществующему id молча ничего не делает.
+
+    Сплит тянет самого ведущего, и его узел зовётся ``avatar-NN``, а не
+    ``shot-NN``: на непрозрачном аватаре второго попросту нет.
+    """
+    out = CompositionBuilder(_with_hero(plan, "hero-split"), brandbook,
+                             assets).build("assets/mix.wav")
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for tween in [l for l in out.splitlines() if l.strip().startswith("tl.")]:
+        selector = re.search(r'"#([^" ]+)', tween).group(1)
+        assert selector in ids, f"твин целится в несуществующий {selector}: {tween}"
+    assert '"#avatar-00"' in out
+
+
+def test_hero_starts_after_the_transition(plan, assets, brandbook):
+    """Вход кадра и приём тянут ``x``/``scale`` одного ведущего.
+
+    Наложение двух твинов на одном элементе движок считает ошибкой: порядок
+    перезаписи в GSAP зависит от очерёдности и может смениться между рендерами.
+    """
+    plan["shots"][2]["transition"] = {"renderer": "zoom_punch", "duration": 0.32,
+                                      "params": {"from_scale": 1.18}}
+    out = CompositionBuilder(_with_hero(plan, "hero-split"), brandbook,
+                             assets).build("assets/mix.wav")
+    entrance = next(l for l in out.splitlines() if "scale:1.18" in l)
+    device = next(l for l in out.splitlines() if "scale:1.14" in l)
+    start = float(entrance.rstrip(");").rsplit(",", 1)[1])
+    assert float(device.rstrip(");").rsplit(",", 1)[1]) >= start + 0.32 - 1e-6
+
+
+def test_hero_plate_duration_is_capped_by_its_material(plan, assets, brandbook):
+    """Кадр-задник короче аватар-плана: растянутая панель досидит его пустой."""
+    plan["shots"][2]["hero"] = {
+        "template": "hero-devices/plate-behind-back", "renderer": "hero-plate",
+        "params": {}, "file": "/w/shots/a.mp4", "duration": 1.4,
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    node = next(l for l in out.splitlines() if 'class="clip hero-plate"' in l)
+    assert 'data-duration="1.4"' in node, node
+
+
+def test_hero_without_a_device_adds_nothing(plan, assets, brandbook):
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "hero-" not in out
+
+
+def test_hero_devices_do_not_share_a_track_with_the_shots(plan, assets, brandbook):
+    """Приём и шот на одном треке пересеклись бы на стыке кадров."""
+    out = CompositionBuilder(_with_hero(plan, "hero-headline"), brandbook,
+                             assets).build("assets/mix.wav")
+    node = next(l for l in out.splitlines() if 'class="clip hero-headline"' in l)
+    track = int(re.search(r'data-track-index="(\d+)"', node).group(1))
+    assert track >= 13

@@ -134,11 +134,13 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     font = ctx.fonts.font("subtitle", size)
     text = lines[0]
 
-    color = ctx.color("accent") if emphasis else parse_color(spec["color"])
-    # Обводка §5.1 рассчитана на белое слово. Акцентное слово красное, и
-    # тёмно-красная обводка по нему не читается — ему нужен светлый контур.
+    # Цвет — единственное, что в потоке субтитров несёт смысл: белое слово идёт
+    # фоном речи, светло-красное отмечает то, на что стоит опереться. Обводка
+    # красила бы контуром каждое слово, и выделять смысловое стало бы нечем.
+    color = (ctx.color(spec.get("accent_color", "accent_soft")) if emphasis
+             else parse_color(spec["color"]))
     stroke_color = ctx.color("bg_pure") if emphasis else ctx.color(spec["stroke_color"])
-    stroke = int(spec["stroke_px"][0])
+    stroke = int(spec["stroke_px"][0]) if mode == "stroke" else 0
 
     y = baseline_y if baseline_y is not None else int(spec["baseline_y_default"])
     x = ctx.center_x
@@ -148,7 +150,13 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     alpha = clamp01(pop * 2.2)
 
     tw, th = measure(text, font)
-    pad_x, pad_y = spec["pill_padding_px"] if mode == "pill" else (stroke + 8, stroke + 8)
+    if mode == "pill":
+        pad_x, pad_y = spec["pill_padding_px"]
+    elif mode == "shadow":
+        halo_pad = int(spec.get("shadow", {}).get("blur_px", 20))
+        pad_x, pad_y = halo_pad, halo_pad + int(spec.get("shadow", {}).get("offset_y_px", 4))
+    else:
+        pad_x, pad_y = stroke + 8, stroke + 8
     tile_w, tile_h = int(tw + pad_x * 2 + 16), int(th + pad_y * 2 + 16)
     tile = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
     cx, cy = tile_w // 2, tile_h // 2
@@ -158,6 +166,19 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
                             cx + tw / 2 + pad_x, cy + th / 2 + pad_y),
                      radius=int(spec["pill_radius_px"]),
                      fill=with_alpha(parse_color(ctx.brandbook["colors"]["overlay_dim"]), alpha))
+        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha), anchor="mm")
+    elif mode == "shadow":
+        # Тень рисуется отдельным слоем и размывается: обводка держит контраст
+        # жёстким контуром, тень — мягким ореолом, и слово остаётся читаемым на
+        # светлом футаже, не превращаясь в наклейку.
+        shadow_spec = spec.get("shadow", {})
+        blur = float(shadow_spec.get("blur_px", 20)) / 2.0
+        offset = int(shadow_spec.get("offset_y_px", 4))
+        halo = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
+        draw_text(halo, (cx, cy + offset), text, font,
+                  fill=(0, 0, 0, int(255 * float(shadow_spec.get("alpha", 0.5)) * alpha)),
+                  anchor="mm")
+        tile.alpha_composite(halo.filter(ImageFilter.GaussianBlur(blur)))
         draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha), anchor="mm")
     else:
         draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha),

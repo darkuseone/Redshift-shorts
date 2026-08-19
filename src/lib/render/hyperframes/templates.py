@@ -24,6 +24,10 @@ from typing import Any, Callable
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
 # вспышкой нельзя, оно и так короткое.
 Z_TRANSITION = 35
+# Приёмы вокруг ведущего: одни уходят ему за спину, другие ложатся поверх.
+# Значения совпадают с brand_css — там же общая карта слоёв кадра.
+Z_BEHIND_HEAD = 15
+Z_AVATAR = 20
 
 
 @dataclass
@@ -513,4 +517,313 @@ def split_css(brandbook: dict[str, Any]) -> str:
         f"height:{height - seam}px;overflow:hidden;z-index:10}}"
         ".split-top > video,.split-bottom > video{width:100%;height:100%;"
         "object-fit:cover;display:block}"
+    )
+
+
+# --- приёмы вокруг ведущего (§5.3) --------------------------------------------
+#
+# Пять способов положить текст и графику относительно человека в кадре. Все
+# держатся на одном правиле: **ведущий остаётся читаемым**. Текст и картинка
+# либо уходят за него, либо делят с ним кадр, либо пропускают его сквозь
+# себя — но не закрывают лицо.
+
+# Геометрия лучей. Длины гуляют в [RAY_LEN_MIN, RAY_LEN_MIN + RAY_LEN_SPAN),
+# чтобы веер не выглядел циркулем; RAY_CAP_PAD — запас снизу под закруглённый
+# торец, который при повороте опускается ниже точки вращения.
+RAY_LEN_MIN = 300
+RAY_LEN_SPAN = 90
+RAY_CAP_PAD = 40
+
+
+def hero_burst(ctx: "TemplateCtx") -> Piece:
+    """Лучи за головой.
+
+    Веер полос расходится из точки за головой ведущего и раскрывается
+    поворотом. Лучи рисуются в собственном слое ниже аватара, поэтому голова
+    остаётся поверх, как на референсе.
+
+    Углы считаются от индекса шота, а не случайно: рендер сэмплирует кадры
+    не по порядку.
+
+    Габариты контейнера считаются здесь, а не в CSS, и это не украшение:
+    продюсер HyperFrames **пропускает .clip с нулевой площадью вместе с его
+    содержимым**. Веер, подвешенный к точке ``width:0;height:0``, в кадр не
+    попадал — в браузере он рисовался, в рендере исчезал. Проверено кадром:
+    тот же веер в коробке 1080×600 отрисовался целиком.
+    """
+    rays = int(ctx.params.get("rays", 9))
+    spread = float(ctx.params.get("spread_deg", 150))
+    node_id = f"hb-{ctx.index:02d}"
+    center_y = int(ctx.params.get("center_y", 560))
+
+    lengths = [RAY_LEN_MIN + ((i * 53 + ctx.index * 17) % RAY_LEN_SPAN)
+               for i in range(rays)]
+    reach = max(lengths) if lengths else RAY_LEN_MIN
+    box_h = reach + RAY_CAP_PAD
+    box_top = center_y - reach
+
+    spans, tweens = [], []
+    for i, length in enumerate(lengths):
+        angle = -spread / 2 + spread * i / max(1, rays - 1)
+        spans.append(f'<span style="--a:{angle:.1f}deg;--len:{length}px"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id} span:nth-child({i + 1})",{{scaleY:0}},'
+            f'{{scaleY:1,duration:0.42,ease:"back.out(1.4)"}},'
+            f'{_num(ctx.start + 0.03 * i)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-burst" '
+               f'style="top:{box_top}px;height:{box_h}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{"".join(spans)}</div>'],
+        tweens=tweens)
+
+
+def hero_headline(ctx: "TemplateCtx") -> Piece:
+    """Заголовок над головой: мелкий кикер, крупное слово, подчёркивание.
+
+    Подчёркивание растёт по ``scaleX`` от левого края — так его видно как
+    жест, а не как статичную линию. Слово выходит снизу и садится на место:
+    вход из-за головы читается как «мысль всплыла».
+    """
+    kicker = str(ctx.params.get("kicker") or "")
+    word = str(ctx.params.get("word") or "")
+    if not word:
+        return Piece()
+    node_id = f"hh-{ctx.index:02d}"
+    top = int(ctx.params.get("top", 190))
+
+    kicker_html = (f'<span class="hh-kicker">{_esc(kicker)}</span>' if kicker else "")
+    tweens = [
+        f'tl.fromTo("#{node_id} .hh-word",{{y:54,opacity:0}},'
+        f'{{y:0,opacity:1,duration:0.42,ease:"power3.out"}},{_num(ctx.start)});',
+        f'tl.fromTo("#{node_id} .hh-rule",{{scaleX:0}},'
+        f'{{scaleX:1,duration:0.38,ease:"power3.out"}},{_num(ctx.start + 0.22)});',
+    ]
+    if kicker:
+        # Твин по несобранной разметке — молчаливый no-op, и он же прячет
+        # опечатку в селекторе: анимируем только то, что нарисовали.
+        tweens.insert(1,
+                      f'tl.fromTo("#{node_id} .hh-kicker",{{opacity:0}},'
+                      f'{{opacity:1,duration:0.28,ease:"power2.out"}},'
+                      f'{_num(ctx.start + 0.08)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-headline" style="top:{top}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{kicker_html}'
+               f'<span class="hh-word">{_esc(word)}</span>'
+               f'<span class="hh-rule"></span></div>'],
+        tweens=tweens)
+
+
+def hero_split(ctx: "TemplateCtx") -> Piece:
+    """Кадр делится: ведущий слева, гигантское слово столбцом справа.
+
+    Слово набирается по буквам сверху вниз — на вертикали это читается лучше,
+    чем целиком, и даёт ритм. Панель въезжает справа, ведущий не двигается:
+    двигать обоих значит потерять лицо из фокуса.
+    """
+    word = str(ctx.params.get("word") or "")
+    if not word:
+        return Piece()
+    node_id = f"hs-{ctx.index:02d}"
+    letters = "".join(f"<span>{_esc(ch)}</span>" for ch in word)
+    # Ведущий уходит влево и укрупняется: панель занимает почти половину
+    # кадра, и по центру от него осталась бы одна щека.
+    shift = int(ctx.params.get("subject_shift", -210))
+    zoom = float(ctx.params.get("subject_zoom", 1.14))
+    # Клип аватара живёт дольше приёма, поэтому сдвиг обязан отыграть назад:
+    # иначе ведущий останется прижатым к левому краю до конца сегмента.
+    back = max(ctx.start + 0.44, ctx.start + ctx.duration - 0.34)
+    tweens = [
+        # Едет обёртка, а не сам клип: видимостью клипа распоряжается движок, и
+        # твин прямо на нём оставляет застрявшее состояние при перемотке.
+        f'tl.fromTo("#{node_id}-in",{{x:620}},'
+        f'{{x:0,duration:0.44,ease:"power3.out"}},{_num(ctx.start)});',
+        f'tl.fromTo("#{ctx.target}",{{x:0,scale:1}},'
+        f'{{x:{shift},scale:{zoom},duration:0.44,ease:"power3.out"}},'
+        f'{_num(ctx.start)});',
+        f'tl.to("#{ctx.target}",'
+        f'{{x:0,scale:1,duration:0.30,ease:"power2.inOut"}},{_num(back)});',
+    ]
+    for i in range(len(word)):
+        tweens.append(
+            f'tl.fromTo("#{node_id} .hs-word span:nth-child({i + 1})",'
+            f'{{opacity:0,y:-26}},{{opacity:1,y:0,duration:0.24,ease:"power2.out"}},'
+            f'{_num(ctx.start + 0.2 + 0.05 * i)});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-split" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<div id="{node_id}-in" class="hs-in">'
+               f'<span class="hs-word">{letters}</span></div></div>'],
+        tweens=tweens)
+
+
+def hero_knockout(ctx: "TemplateCtx") -> Piece:
+    """Выбивка: заливка на весь кадр, буквы прозрачны, в них виден ведущий.
+
+    Буквы вырезаются SVG-маской, а не ``mix-blend-mode``: маска даёт тот же
+    результат детерминированно и не зависит от того, в каком порядке продюсер
+    складывает слои. Панель наезжает масштабом — тянется ``scale``, из
+    разрешённого списка, а не ``clip-path``.
+    """
+    word = str(ctx.params.get("word") or "")
+    if not word:
+        return Piece()
+    node_id = f"hk-{ctx.index:02d}"
+    lines = word.split()
+    # Кегль ужимается под самую длинную строку. Заглавная кириллица Oswald
+    # занимает примерно 0.52 кегля на знак; без этого длинное слово вылезает
+    # за кадр и обрезается — проверено на «ЕДИНСТВЕННАЯ».
+    margin = int(ctx.params.get("margin", 60))
+    longest = max((len(l) for l in lines), default=1)
+    fits = int((1080 - 2 * margin) / max(1, longest * 0.52))
+    size = min(int(ctx.params.get("size", 300)), fits)
+    step = int(size * 0.92)
+    top = (1920 - step * len(lines)) // 2 + int(size * 0.34)
+
+    text_nodes = "".join(
+        f'<text x="540" y="{top + step * i}" text-anchor="middle">{_esc(line)}</text>'
+        for i, line in enumerate(lines))
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-knockout" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<svg viewBox="0 0 1080 1920" preserveAspectRatio="none">'
+               f'<defs><mask id="{node_id}-m">'
+               f'<rect width="1080" height="1920" fill="white"/>'
+               f'<g class="hk-text" font-size="{size}">{text_nodes}</g>'
+               f'</mask></defs>'
+               f'<rect width="1080" height="1920" mask="url(#{node_id}-m)" '
+               f'class="hk-fill"/></svg></div>'],
+        tweens=[
+            f'tl.fromTo("#{node_id} svg",{{scale:1.12,opacity:0}},'
+            f'{{scale:1,opacity:1,duration:0.36,ease:"power3.out"}},{_num(ctx.start)});'
+        ])
+
+
+# Панель-задник. Габариты фиксированные: приём читается как «экран на стене»,
+# и плавающий размер превратил бы его в случайный прямоугольник. Смещение
+# крупное и одним краем уходит за кадр: панель ровно по центру ставит лицо в
+# середину картинки, и приём читается как фон, а не как кадр за плечом.
+PLATE_W, PLATE_H, PLATE_TOP = 660, 560, 280
+PLATE_OFFSET = 185
+
+
+def hero_plate(ctx: "TemplateCtx") -> Piece:
+    """Картинка за спиной ведущего.
+
+    Главный приём референса: человек сидит за столом, а позади него появляется
+    кадр — как экран на стене. Панель лежит под аватаром (``Z_BEHIND_HEAD``),
+    поэтому голова и плечи всегда поверх неё, и картинка читается задником, а не
+    перекрытием.
+
+    Видео здесь — сам клип, а не вложенный элемент: ``<video>`` внутри
+    элемента с ``data-start`` движок под управление не берёт, и в рендере кадр
+    застывает первым фреймом (lint: ``video_nested_in_timed_element``). Из-за
+    этого у приёма нет твина входа: видимостью клипа распоряжается движок, а
+    тянуть его самого контракт запрещает. Картинка появляется срезом — ровно
+    как на референсе.
+
+    Сторона смещения берётся из индекса шота, а не случайно: рендер сэмплирует
+    кадры не по порядку, и ``Math.random`` дал бы разные кадры одного шота.
+    """
+    src = str(ctx.params.get("src") or "")
+    if not src:
+        return Piece()
+    node_id = f"hp-{ctx.index:02d}"
+    side = 1 if ctx.index % 2 else -1
+    left = (1080 - PLATE_W) // 2 + side * PLATE_OFFSET
+    top = int(ctx.params.get("top", PLATE_TOP))
+
+    return Piece(
+        nodes=[f'<video id="{node_id}" class="clip hero-plate" src="{_esc(src)}" '
+               f'style="left:{left}px;top:{top}px;'
+               f'width:{PLATE_W}px;height:{PLATE_H}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}" muted playsinline></video>'])
+
+
+HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
+    "hero-burst": hero_burst,
+    "hero-headline": hero_headline,
+    "hero-plate": hero_plate,
+    "hero-split": hero_split,
+    "hero-knockout": hero_knockout,
+}
+
+
+def render_hero(name: str, ctx: "TemplateCtx") -> Piece:
+    fn = HERO.get(name.rsplit("/", 1)[-1])
+    return fn(ctx) if fn else Piece()
+
+
+def hero_css(brandbook: dict[str, Any]) -> str:
+    """Стили приёмов вокруг ведущего.
+
+    Слои сидят между фоном и аватаром (лучи, заголовок) либо поверх него
+    (сплит, выбивка) — это задаётся z-index, а не порядком в разметке.
+    """
+    height = int(brandbook["canvas"]["height"])
+    # Колонка лайк/коммент/шер съедает правое поле кадра (§3.2). Панель сплита
+    # доходит до края — так и на референсе, — но буквы внутри неё обязаны
+    # остаться левее: под иконками их не прочитать.
+    ui_column = int(brandbook["canvas"]["width"]) - int(
+        brandbook["safe_zones"]["work_area"]["x_max"])
+    return (
+        # --- лучи за головой ---
+        # Коробка полноразмерная, а высоту и верх ставит шаблон: у .clip с
+        # нулевой площадью продюсер не рисует ни саму рамку, ни детей.
+        ".hero-burst{position:absolute;left:0;width:var(--frame-w);"
+        f"z-index:{Z_BEHIND_HEAD};pointer-events:none}}"
+        # Стартовый scaleY задаёт GSAP через fromTo. Тот же transform в CSS
+        # конфликтует с твином, и лучи остаются свёрнутыми: проверено кадром.
+        # rotate — отдельное свойство, оно с transform не спорит.
+        f".hero-burst span{{position:absolute;left:calc(50% - 26px);"
+        f"bottom:{RAY_CAP_PAD}px;display:block;"
+        "width:52px;height:var(--len);border-radius:26px;"
+        "background:var(--color-accent-soft);transform-origin:50% 100%;"
+        "rotate:var(--a)}"
+        # --- картинка за спиной ---
+        # Габариты ставит шаблон; рамка живёт на самом видео, потому что видео
+        # здесь и есть клип: вложенное медиа движок не проигрывает.
+        f".hero-plate{{position:absolute;display:block;z-index:{Z_BEHIND_HEAD};"
+        "object-fit:cover;border-radius:36px;"
+        "border:10px solid var(--color-bg-pure);background:var(--color-bg-pure);"
+        "box-shadow:0 26px 70px rgba(0,0,0,0.28);pointer-events:none}"
+        # --- заголовок над головой ---
+        ".hero-headline{position:absolute;left:0;right:0;text-align:center;"
+        f"z-index:{Z_BEHIND_HEAD};pointer-events:none}}"
+        ".hero-headline .hh-kicker{display:block;font-family:var(--font-subtitle);"
+        "font-weight:800;font-size:34px;letter-spacing:0.22em;"
+        "text-transform:uppercase;color:var(--color-ink);opacity:0.75}"
+        ".hero-headline .hh-word{display:block;font-family:var(--font-display);"
+        "font-size:168px;line-height:0.94;text-transform:uppercase;"
+        "color:var(--color-accent);margin-top:10px}"
+        ".hero-headline .hh-rule{display:block;width:420px;height:9px;"
+        "margin:18px auto 0;border-radius:6px;background:var(--color-accent);"
+        "transform-origin:left center}"
+        # --- сплит с панелью ---
+        ".hero-split{position:absolute;right:0;top:0;width:46%;"
+        f"height:{height}px;z-index:{Z_AVATAR + 1};"
+        "overflow:hidden;pointer-events:none}"
+        ".hero-split .hs-in{position:absolute;inset:0;"
+        "background:var(--color-accent-soft);display:flex;align-items:center;"
+        f"justify-content:center;padding-right:{ui_column}px;"
+        "will-change:transform}"
+        ".hero-split .hs-word{display:flex;flex-direction:column;"
+        "align-items:center;font-family:var(--font-display);font-size:172px;"
+        "line-height:0.86;text-transform:uppercase;color:var(--color-ink)}"
+        ".hero-split .hs-word span{display:block}"
+        # --- выбивка ---
+        ".hero-knockout{position:absolute;inset:0;"
+        f"z-index:{Z_AVATAR + 1};pointer-events:none}}"
+        ".hero-knockout svg{width:100%;height:100%;display:block}"
+        ".hero-knockout .hk-fill{fill:var(--color-accent-soft)}"
+        # Чёрный в маске = дырка: сквозь буквы виден ведущий.
+        ".hero-knockout .hk-text{fill:#000;font-family:var(--font-display);"
+        "font-weight:700;letter-spacing:-0.01em}"
     )

@@ -14,7 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .templates import dataviz_css, split_css, transition_css
+from .templates import dataviz_css, hero_css, split_css, transition_css
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
 # отвечает за пересечения во времени, а не за то, что лежит поверх чего.
@@ -116,7 +116,16 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # --- субтитры (§5.1) ------------------------------------------------
     # Центр — оптический центр кадра, а не середина рабочей зоны: правое поле
     # ужато под колонку лайк/коммент/шер и увело бы слово влево.
-    stroke = int(subs["stroke_px"][0])
+    #
+    # Читаемость держится мягкой тенью, а не обводкой. Обводка обводит каждое
+    # слово красным контуром, и цвет перестаёт что-либо значить: выделять
+    # смысловое слово нечем. Здесь белое слово идёт потоком, а важное — светлым
+    # красным, и это единственное место в кадре, где цвет несёт смысл.
+    halo = subs.get("shadow", {})
+    blur = int(halo.get("blur_px", 20))
+    offset = int(halo.get("offset_y_px", 4))
+    alpha = float(halo.get("alpha", 0.5))
+    accent_var = str(subs.get("accent_color", "accent_soft")).replace("_", "-")
     parts.append(
         f".word{{position:absolute;left:0;right:0;top:{int(subs['baseline_y_default'])}px;"
         f"z-index:{Z_SUBTITLE};text-align:center;transform:translateY(-50%);"
@@ -124,11 +133,10 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"font-size:{int(subs['size_px_default'])}px;"
         f"line-height:{typo['subtitle']['line_height']};"
         f"color:{subs['color']};"
-        f"-webkit-text-stroke:{stroke}px var(--color-accent-deep);"
-        "paint-order:stroke fill}"
+        f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
+        f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px rgba(0,0,0,{alpha * 0.8:.2f})}}"
         ".word > span{display:inline-block;will-change:transform}"
-        ".word.emphasis{color:var(--color-accent);"
-        "-webkit-text-stroke-color:var(--color-bg-pure)}"
+        f".word.emphasis{{color:var(--color-{accent_var})}}"
     )
 
     # --- полноэкранный текст (§5.2) ------------------------------------
@@ -220,6 +228,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     parts.append(transition_css(brandbook))
     parts.append(dataviz_css(brandbook))
     parts.append(split_css(brandbook))
+    parts.append(hero_css(brandbook))
 
     return "\n".join(parts) + "\n"
 

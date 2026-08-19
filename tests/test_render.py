@@ -263,9 +263,9 @@ def test_catalog_matches_spec_counts(cfg):
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 10, "lower-thirds": 8, "frames-cards": 6,
         "browser-ui": 6, "transitions": 12, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 6, "outro-cta": 5,
+        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 5,
     }
-    assert len(catalog.all()) == 81
+    assert len(catalog.all()) == 86
 
 
 def test_catalog_rotation_avoids_recent(cfg):
@@ -295,3 +295,55 @@ def test_diff_and_overlap_helpers():
     assert diff_count(["a", "b", "c"], ["x", "y", "z"]) == 3
     assert overlap_share(["a", "b"], ["a", "b"]) == 1.0
     assert overlap_share(["a"], ["b"]) == 0.0
+
+
+# --- приёмы вокруг ведущего (§5.3, референсы) ---------------------------------
+
+def test_hero_kicker_is_never_a_pipeline_role():
+    """Роль блока служебная и латиницей: «EVIDENCE» в кадре — отладочный вывод."""
+    from src.lib.schema import BLOCK_ROLES
+    from src.p11_assemble.assemble import _HERO_KICKERS
+
+    assert set(BLOCK_ROLES) <= set(_HERO_KICKERS), "роль без русской подписи"
+    for role, kicker in _HERO_KICKERS.items():
+        assert kicker.upper() != role.upper()
+        assert not any("a" <= ch.lower() <= "z" for ch in kicker), kicker
+
+
+def test_hero_device_requires_what_it_draws(cfg):
+    """Приём без своего материала рисует пустоту поверх ведущего.
+
+    Отбор идёт исключениями, а не фильтром tags: ``pick`` при пустом наборе
+    кандидатов возвращается ко всей категории.
+    """
+    from src.p11_assemble.assemble import _hero_device
+
+    catalog = TemplateCatalog.load(cfg)
+    slot = {"index": 4, "duration": 3.0, "role": "evidence"}
+
+    nothing = _hero_device(catalog, slot=slot, word="", has_alpha=False,
+                           plate_src=None, recent_videos=[], exclude=[], seed=1)
+    assert nothing is None
+
+    text_only = _hero_device(catalog, slot=slot, word="ГОРИЗОНТ", has_alpha=False,
+                             plate_src=None, recent_videos=[], exclude=[], seed=1)
+    assert text_only is not None
+    template = catalog.by_id(text_only["template"])
+    assert "alpha" not in template.tags
+    assert text_only["renderer"] != "hero-plate"
+
+
+def test_hero_plate_duration_never_exceeds_its_material(cfg):
+    from src.p11_assemble.assemble import _hero_device
+
+    catalog = TemplateCatalog.load(cfg)
+    slot = {"index": 4, "duration": 6.0, "role": "evidence"}
+    plate = {"file": "/w/shots/a.mp4", "duration_sec": 1.4}
+    for seed in range(12):
+        entry = _hero_device(catalog, slot=slot, word="ГОРИЗОНТ", has_alpha=True,
+                             plate_src=plate, recent_videos=[], exclude=[], seed=seed)
+        if entry["renderer"] == "hero-plate":
+            assert entry["duration"] == 1.4
+            assert entry["file"] == "/w/shots/a.mp4"
+            return
+    pytest.skip("панель не выпала ни на одном сиде — ротация решает сама")

@@ -14,8 +14,8 @@ from pathlib import Path
 import pytest
 
 from src.lib.render.hyperframes.templates import (
-    DATAVIZ, MOTION, TRANSITIONS, Piece, TemplateCtx, render_dataviz,
-    render_motion, render_transition, transition_css,
+    DATAVIZ, HERO, MOTION, TRANSITIONS, Piece, TemplateCtx, hero_css,
+    render_dataviz, render_hero, render_motion, render_transition, transition_css,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -144,8 +144,7 @@ def test_every_renderer_of_the_catalog_is_implemented():
     # оверлей, без параметров каталога.
     built_in = {"fullscreen_text", "source_card", "plaque", "footage", "avatar",
                 "cta_button"}
-    from src.lib.render.hyperframes.templates import DATAVIZ
-    implemented = set(TRANSITIONS) | set(MOTION) | built_in | {"dataviz"}
+    implemented = set(TRANSITIONS) | set(MOTION) | set(HERO) | built_in | {"dataviz"}
     missing = renderers - implemented
     assert not missing, f"рендереры каталога без реализации: {sorted(missing)}"
 
@@ -226,3 +225,164 @@ def test_no_tween_targets_a_clip_element(name, ctx):
         target = re.search(r'"(#[^"]+)"', tween).group(1)
         for clip_id in clip_ids:
             assert target != f"#{clip_id}", f"{name} тянет сам клип: {tween}"
+
+
+# --- приёмы вокруг ведущего ---------------------------------------------------
+#
+# Референсы заказчика: ведущий за столом, а кадр вокруг него живёт. Проверяется
+# то, что уже ломалось в реальном рендере, а не то, что легко проверить.
+
+HERO_PARAMS = {
+    "hero-burst": {},
+    "hero-headline": {"word": "ГОРИЗОНТ", "kicker": "ОДНА ТЕОРИЯ"},
+    "hero-plate": {"src": "assets/m000_shot.mp4"},
+    "hero-split": {"word": "ВНИМАНИЕ"},
+    "hero-knockout": {"word": "ЕДИНСТВЕННАЯ"},
+}
+
+
+def _clip_ids(nodes: list[str]) -> list[str]:
+    """Идентификаторы клипов разметки — клипом может быть и <video>, и <div>."""
+    return re.findall(r'<\w+ id="([^"]+)"[^>]*class="clip', " ".join(nodes))
+
+
+def _css_rule(css: str, selector: str) -> str:
+    match = re.search(re.escape(selector) + r"\{([^}]*)\}", css)
+    return match.group(1) if match else ""
+
+
+def _css_rules_under(css: str, selector: str) -> list[tuple[str, str]]:
+    """Правила для потомков селектора: ``.hero-burst span``, ``.hero-plate .hp-in``."""
+    pattern = re.escape(selector) + r"(?:\s|>)+([^{,]+)\{([^}]*)\}"
+    return [(m.group(1).strip(), m.group(2)) for m in re.finditer(pattern, css)]
+
+
+def _hero_ctx(name, **over):
+    params = {**HERO_PARAMS[name], **over.pop("params", {})}
+    base = dict(index=3, start=4.5, duration=2.0, target="avatar-01",
+                track=13, params=params)
+    base.update(over)
+    return TemplateCtx(**base)
+
+
+@pytest.mark.parametrize("name", sorted(HERO))
+def test_hero_animates_only_allowed_properties(name):
+    piece = render_hero(name, _hero_ctx(name))
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra, f"{name} тянет запрещённые свойства: {extra}"
+
+
+@pytest.mark.parametrize("name", sorted(HERO))
+def test_hero_is_deterministic(name):
+    """Рендер сэмплирует кадры не по порядку — случайности быть не может."""
+    first = render_hero(name, _hero_ctx(name))
+    second = render_hero(name, _hero_ctx(name))
+    assert first == second
+    assert "Math.random" not in " ".join(first.tweens + first.nodes)
+
+
+@pytest.mark.parametrize("name", sorted(HERO))
+def test_hero_clip_has_a_paintable_box(name):
+    """Клип нулевой площади продюсер выбрасывает вместе с содержимым.
+
+    Так пропали лучи hero-burst: в браузере веер рисовался, а из рендера
+    исчезал целиком — проверено кадром, тот же веер в коробке 1080×600
+    отрисовался. Клип, у которого все дети выведены из потока, обязан задать
+    габариты сам: содержимое их ему не даст.
+    """
+    from src.lib.config import load_config
+
+    piece = render_hero(name, _hero_ctx(name))
+    css = hero_css(load_config().brandbook)
+    node = piece.nodes[0]
+    css_class = re.search(r'class="clip ([\w-]+)"', node).group(1)
+    inline = re.search(r'style="([^"]*)"', node)
+    box = (inline.group(1) if inline else "") + ";" + _css_rule(css, f".{css_class}")
+
+    # Габариты обязан задать сам клип, если высоту ему дать некому: детей нет
+    # вовсе (медиа-клип) либо все они выведены из потока.
+    rules = _css_rules_under(css, f".{css_class}")
+    if rules and not all("position:absolute" in body for _, body in rules):
+        return      # высоту даёт содержимое — коробку задавать нечем и незачем
+
+    for side, spans in (("width", ("width:", "inset:")),
+                        ("height", ("height:", "inset:"))):
+        assert any(m in box for m in spans), f"{name}: не задан {side}: {box}"
+        assert f"{side}:0;" not in box + ";", f"{name}: нулевой {side}: {box}"
+
+
+@pytest.mark.parametrize("name", sorted(HERO))
+def test_hero_does_not_tween_its_own_clip(name):
+    """Видимость клипа — за движком; твин прямо на нём застревает при перемотке.
+
+    Селектор потомка (``#hs-03 .hs-word``) разрешён: он целится внутрь клипа,
+    а не в него самого.
+    """
+    piece = render_hero(name, _hero_ctx(name))
+    clip_ids = _clip_ids(piece.nodes)
+    assert clip_ids, f"{name} не собрал ни одного клипа"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1).strip()
+        assert selector.lstrip("#") not in clip_ids, f"{name} тянет сам клип: {tween}"
+
+
+@pytest.mark.parametrize("name", ["hero-headline", "hero-split", "hero-knockout"])
+def test_hero_without_text_draws_nothing(name):
+    """Приём без слова — пустая плашка поверх ведущего, а не приём."""
+    assert render_hero(name, _hero_ctx(name, params={"word": ""})) == Piece()
+
+
+def test_hero_plate_without_media_draws_nothing():
+    assert render_hero("hero-plate", _hero_ctx("hero-plate", params={"src": ""})) == Piece()
+
+
+def test_hero_burst_box_covers_the_longest_ray():
+    """Коробка обязана накрыть веер: на неё смотрит продюсер, а не на лучи."""
+    piece = render_hero("hero-burst", _hero_ctx("hero-burst"))
+    node = piece.nodes[0]
+    reach = max(int(n) for n in re.findall(r"--len:(\d+)px", node))
+    height = int(re.search(r"height:(\d+)px", node).group(1))
+    assert height >= reach
+
+
+def test_hero_split_returns_the_subject_to_the_centre():
+    """Клип аватара живёт дольше приёма: несброшенный сдвиг утечёт в кадры."""
+    piece = render_hero("hero-split", _hero_ctx("hero-split"))
+    back = [t for t in piece.tweens if '"#avatar-01"' in t and "tl.to(" in t]
+    assert back, "ведущий остаётся сдвинутым до конца сегмента"
+    assert "x:0" in back[0] and "scale:1," in back[0]
+
+
+def test_hero_knockout_shrinks_the_font_to_fit_the_frame():
+    """«ЕДИНСТВЕННАЯ» кеглем 300 не влезает — проверено кадром."""
+    piece = render_hero("hero-knockout", _hero_ctx("hero-knockout"))
+    size = int(re.search(r'font-size="(\d+)"', piece.nodes[0]).group(1))
+    assert size < 300
+    assert size * 0.52 * len("ЕДИНСТВЕННАЯ") <= 1080 - 2 * 60
+
+
+def test_hero_plate_media_is_the_clip_itself():
+    """Вложенное в тайминг видео движок не проигрывает — кадр застывает.
+
+    Ровно это и поймал lint: ``video_nested_in_timed_element``. Панель за
+    спиной обязана быть самим клипом, а не ``<video>`` внутри ``<div>``.
+    """
+    piece = render_hero("hero-plate", _hero_ctx("hero-plate"))
+    node = piece.nodes[0]
+    assert node.startswith("<video "), node[:60]
+    assert 'class="clip hero-plate"' in node
+    assert node.count("<video") == 1
+    assert "data-start=" in node and "data-duration=" in node
+
+
+def test_hero_plate_never_tweens_because_the_clip_is_media():
+    """Твин на клипе застревает при перемотке, а другого узла у панели нет."""
+    assert render_hero("hero-plate", _hero_ctx("hero-plate")).tweens == []
+
+
+def test_hero_headline_without_a_kicker_tweens_only_what_it_drew():
+    """Твин по несобранной разметке молчит — и прячет опечатку в селекторе."""
+    piece = render_hero("hero-headline", _hero_ctx("hero-headline",
+                                                   params={"kicker": ""}))
+    assert "hh-kicker" not in " ".join(piece.nodes + piece.tweens)
+    assert any("hh-word" in t for t in piece.tweens)

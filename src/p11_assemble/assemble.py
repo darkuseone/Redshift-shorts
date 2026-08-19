@@ -34,6 +34,92 @@ _log = get_logger("p11")
 AVATAR_KINDS = ("avatar", "split")
 
 
+# --- приёмы вокруг ведущего (§5.3, референсы заказчика) ------------------------
+
+# Надпись над крупным словом заголовка. Роль блока сюда подставлять нельзя: она
+# служебная и латиницей — «EVIDENCE» посреди русского ролика читается как
+# отладочный вывод. Роль без подписи остаётся без кикера, и приём собирается
+# из одного слова.
+_HERO_KICKERS = {
+    "hook": "ВОПРОС",
+    "setup": "С ЧЕГО НАЧАЛОСЬ",
+    "evidence": "ЧТО ИЗВЕСТНО",
+    "develop": "ЧТО ДАЛЬШЕ",
+    "twist": "НО ЕСТЬ НЮАНС",
+    "cta": "ОСТАЁТСЯ ВОПРОС",
+}
+
+def _alpha_slots(avatar_meta: dict[str, Any]) -> set[int]:
+    """Слоты, где аватар лёг с прозрачным фоном."""
+    return {int(idx) for seg in avatar_meta.get("segments", [])
+            if seg.get("has_alpha")
+            for idx in seg.get("slot_indices", [])}
+
+
+def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
+                  prepared: dict[int, dict[str, Any]]) -> dict[str, Any] | None:
+    """Кадр для панели за спиной — ближайший футаж того же блока.
+
+    Панель показывает картинку по теме блока, а не произвольный кадр: это тот
+    же материал, который блок и без того выносит на весь экран, просто
+    появившийся за спиной раньше. Своего материала у приёма нет — заводить под
+    него отдельную закупку значит удорожать ролик ради одного слоя.
+    """
+    index = int(slot["index"])
+    same_block = [s for s in slots
+                  if s["block_id"] == slot["block_id"]
+                  and s["kind"] in ("footage", "meme")
+                  and int(s["index"]) in prepared]
+    if not same_block:
+        return None
+    nearest = min(same_block, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
+    prep = prepared[int(nearest["index"])]
+    return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0)}
+
+
+def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
+                 word: str, has_alpha: bool, plate_src: dict[str, Any] | None,
+                 recent_videos: list[str], exclude: list[str],
+                 seed: int) -> dict[str, Any] | None:
+    """Выбрать приём вокруг ведущего под конкретный кадр.
+
+    Приём отбрасывается, если кадр не может его показать: без альфы всё, что
+    рисуется под аватаром, окажется за непрозрачным видео, текстовым приёмам
+    нужно слово из сценария, а панели за спиной — кадр. Отбор идёт
+    исключениями, а не фильтром tags: ``pick`` при пустом наборе кандидатов
+    возвращается ко всей категории, и неподходящий приём всё равно попал бы в
+    кадр.
+    """
+    blocked = list(exclude)
+    for template in catalog.by_category("hero-devices"):
+        tags = set(template.tags)
+        if ("alpha" in tags and not has_alpha) \
+                or ("text" in tags and not word) \
+                or (template.renderer == "hero-plate" and not plate_src):
+            blocked.append(template.id)
+
+    pool = [t for t in catalog.by_category("hero-devices") if t.id not in blocked]
+    if not pool:
+        return None
+
+    template = catalog.pick("hero-devices", duration=float(slot["duration"]),
+                            recent_videos=recent_videos, exclude=blocked,
+                            seed=seed + int(slot["index"]) * 7)
+    params = {**template.params, "word": word.upper()}
+    if template.renderer == "hero-headline":
+        params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
+
+    entry: dict[str, Any] = {"template": template.id, "renderer": template.renderer,
+                             "params": params, "file": None, "duration": None}
+    if template.renderer == "hero-plate" and plate_src:
+        # Задник длится ровно столько, сколько есть материала: кадр короче
+        # аватар-плана, и растянутая панель досидела бы кадр пустой.
+        entry["file"] = plate_src["file"]
+        entry["duration"] = round(min(float(slot["duration"]),
+                                      plate_src["duration_sec"]), 3)
+    return entry
+
+
 def _variant_seed(video_id: str, variant: str) -> int:
     return int(hashlib.sha256(f"{video_id}|{variant}".encode()).hexdigest()[:8], 16)
 
@@ -408,6 +494,15 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     slots = plan["slots"]
     shots: list[dict[str, Any]] = []
 
+    # Приёмы вокруг ведущего ставятся через один подходящий аватар-кадр: на
+    # каждом они превратились бы в заставку, а реже одного на два — потерялись
+    # бы. С какого начинать, решает сид варианта, поэтому A и B получают приёмы
+    # на разных кадрах, а не один и тот же ролик с другими подписями.
+    alpha_slots = _alpha_slots(avatar_meta)
+    blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
+    hero_offset = seed % 2
+    hero_eligible = 0
+
     fullscreen_styles = (["text-fullscreen/impact-01", "text-fullscreen/impact-02"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
@@ -476,6 +571,25 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         asset = asset or {}
         is_avatar = slot["kind"] in AVATAR_KINDS
+
+        hero_entry: dict[str, Any] | None = None
+        # Только чистый аватар-кадр. Сплит уже сам монтажный приём: кадр в нём
+        # поделён пополам, и панель сбоку или картинка за спиной спорят с этим
+        # делением, а не поддерживают его.
+        if slot["kind"] == "avatar":
+            hero_eligible += 1
+            if (hero_eligible + hero_offset) % 2 == 0:
+                block = blocks_by_id.get(slot["block_id"], {})
+                hero_entry = _hero_device(
+                    catalog, slot=slot,
+                    word=str(block.get("emphasis_word") or "").strip(),
+                    has_alpha=int(slot["index"]) in alpha_slots,
+                    plate_src=_plate_source(slot, slots, prepared),
+                    recent_videos=recent_videos, exclude=used_templates,
+                    seed=seed)
+                if hero_entry:
+                    used_templates.append(hero_entry["template"])
+
         entry.update({
             "file": prep["dst"],
             "asset_id": asset.get("asset_id") or (f"avatar_seg_{prep.get('avatar_segment')}"
@@ -488,13 +602,19 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "avatar_offset_sec": prep.get("avatar_offset_sec"),
             "matte": prep.get("matte"),
             "background": prep.get("background"),
-            "text_behind_head": bool(prep.get("text_behind_head")),
+            # Приём на кадре отменяет слово за головой (§5.3): панель за спиной
+            # перекрывает его, оставляя торчать одну букву, лучи ложатся
+            # поверх, заголовок добавляет к нему третий текст, а сплит и
+            # выбивка уводят ведущего с места, к которому слово привязано.
+            # Слово остаётся на аватар-кадрах без приёма — их всегда половина.
+            "text_behind_head": bool(prep.get("text_behind_head")) and not hero_entry,
             "ai_generated": bool(asset.get("ai_generated")),
             "mock": bool(asset.get("mock")),
             "fit": prep.get("fit"), "focus": [prep.get("focus_x"), prep.get("focus_y")],
             "kenburns": ({"template": kb_template.id, **kb_template.params}
                          if kb_template else None),
             "transition": transition_entry,
+            "hero": hero_entry,
         })
         shots.append(entry)
 

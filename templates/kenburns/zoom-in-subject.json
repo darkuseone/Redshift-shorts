@@ -19,6 +19,12 @@
     "zoom"
   ],
   "renderer": "kenburns",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0042",
+    "redshift_0043",
+    "redshift_0044",
+    "redshift_0045",
+    "redshift_0046"
+  ],
   "added": "2026-08-18"
 }

@@ -1,0 +1,22 @@
+{
+  "id": "hero-devices/headline-over-head",
+  "name": "headline-over-head",
+  "category": "hero-devices",
+  "title": "Заголовок вырастает над головой",
+  "duration_range": [
+    1.2,
+    3.4
+  ],
+  "params": {
+    "top": 190
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "alpha",
+    "text"
+  ],
+  "renderer": "hero-headline",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

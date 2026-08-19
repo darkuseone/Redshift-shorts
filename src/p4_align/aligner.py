@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -54,6 +54,86 @@ class AlignedWord:
             "block_id": self.block_id, "role": self.role,
             "emphasis": self.emphasis, "spoken": self.spoken, "source": self.source,
         }
+
+
+# Служебные части речи в акцент не годятся: подсвеченный предлог читается как
+# сбой рендера, а не как смысловое ударение.
+_FUNCTION_WORDS = frozenset("""
+и а но да или либо то же ли бы не ни как что чтобы если когда пока хотя
+в во на за под над при про для из от до по с со к ку у о об обо без через
+это этот эта эти тот та те там тут здесь так вот уже ещё еще только даже
+был была было были быть есть будет будут может можно нужно надо
+он она оно они его её ее их им ими себя свой своя свои мы вы ты я
+""".split())
+
+# Длина отсекает служебную мелочь, которую не покрыл список: акцент на слове из
+# трёх букв не читается как ударение даже когда слово знаменательное.
+_ACCENT_MIN_LETTERS = 5
+
+
+def top_up_emphasis(words: list[AlignedWord], ratio: Sequence[float]) -> int:
+    """Довести плотность акцентов до §5.1 и вернуть, сколько добрано.
+
+    Сценарий ставит ``emphasis_word`` по одному на блок, и на пятидесяти
+    секундах это даёт четыре цветных слова на сотню — один на тридцать. Правило
+    брендбука другое: одно на 6–8 слов. Цвет в потоке субтитров и есть
+    единственный смысловой акцент, и такой редкий он просто не прочитывается.
+
+    ``accent_word_ratio`` читается буквально: следующий акцент ищется в полосе
+    от ``lo`` до ``hi`` слов после предыдущего, а внутри полосы берётся самое
+    длинное знаменательное слово — оно почти всегда и есть смысловое. Отсчёт
+    ведётся от последнего акцента, поэтому авторский сдвигает сетку, а не
+    ломает её. Случайности нет: рендер сэмплирует кадры не по порядку, и один и
+    тот же ролик обязан собраться одинаково.
+    """
+    if not words:
+        return 0
+    lo = max(2, int(round(float(ratio[0]))))
+    hi = max(lo, int(round(float(ratio[1]))))
+
+    def weight(word: AlignedWord) -> int:
+        """Вес слова как кандидата в акценты; 0 — не годится."""
+        letters = [ch for ch in word.display if ch.isalpha()]
+        if len(letters) < _ACCENT_MIN_LETTERS:
+            return 0
+        if "".join(letters).lower() in _FUNCTION_WORDS:
+            return 0
+        return len(letters)
+
+    added = 0
+    last = -lo
+    while True:
+        # Авторский акцент внутри полосы отменяет добор: он и есть акцент этой
+        # полосы, а два подряд читаются как заливка, а не как ударение.
+        author = next((i for i in range(max(0, last + 1), min(last + hi + 1, len(words)))
+                       if words[i].emphasis), None)
+        if author is not None:
+            last = author
+            continue
+
+        band = range(last + lo, min(last + hi + 1, len(words)))
+        # При равном весе побеждает более раннее слово — ключ по -j.
+        best = max(band, key=lambda j: (weight(words[j]), -j), default=None)
+        if best is None:
+            break
+        if not weight(words[best]):
+            # В полосе одни служебные слова: берём ближайшее годное за ней.
+            beyond = next((j for j in range(min(last + hi + 1, len(words)), len(words))
+                           if weight(words[j])), None)
+            if beyond is None:
+                break
+            best = beyond
+        # Авторский акцент чуть дальше по тексту делает добор лишним: два
+        # цветных слова в трёх словах друг от друга читаются как заливка.
+        crowding = next((j for j in range(best + 1, min(best + lo, len(words)))
+                         if words[j].emphasis), None)
+        if crowding is not None:
+            last = crowding
+            continue
+        words[best].emphasis = True
+        added += 1
+        last = best
+    return added
 
 
 def voiced_regions(audio: np.ndarray, sr: int, *, floor_db: float = -42.0,
@@ -228,6 +308,9 @@ def run_step(ctx) -> dict[str, Any]:
         if word.end <= word.start:
             word.end = word.start + 0.08
 
+    accents_added = top_up_emphasis(
+        result, ctx.cfg.brand("subtitles.accent_word_ratio", [6, 8]))
+
     durations = [w.end - w.start for w in result]
     stats = {
         "count": len(result),
@@ -236,6 +319,8 @@ def run_step(ctx) -> dict[str, Any]:
         "max_ms": round(float(np.max(durations)) * 1000, 1) if durations else 0.0,
         "below_min_count": short_words,
         "emphasis_count": sum(1 for w in result if w.emphasis),
+        "emphasis_from_script": sum(1 for w in result if w.emphasis) - accents_added,
+        "emphasis_added": accents_added,
         "inexact_blocks": inexact_blocks,
         "sources": sorted({w.source for w in result}),
     }

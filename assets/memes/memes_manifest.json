@@ -4,7 +4,7 @@
   "max_items": 100,
   "count": 18,
   "frozen": false,
-  "updated": "2026-08-18",
+  "updated": "2026-08-19",
   "items": [
     {
       "id": "meme_000_ирония",
@@ -129,8 +129,10 @@
       "vision_summary": "карточка-реакция «ирония» (заглушка)",
       "score": 0.0,
       "duration_sec": 1.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0046"
+      ],
+      "last_used": "2026-08-19",
       "added": "2026-08-18",
       "file": "meme_005_ирония.png",
       "emotion": "ирония",

@@ -277,3 +277,95 @@ def test_srt_format():
     srt = build_srt(words)
     assert "00:00:01,500 --> 00:00:01,900" in srt
     assert "Привет" in srt
+
+
+# --- плотность акцентов (§5.1) ------------------------------------------------
+
+_SAMPLE = (
+    "можно ли выжить внутри чёрной дыры горизонт событий это не стена а точка "
+    "невозврата приливные силы растянут тело в спагетти но у сверхмассивной "
+    "дыры градиент слабее и пересечение проходит незаметно дальше сингулярность "
+    "ждёт всех одинаково и уйти от неё нельзя потому что она лежит в будущем "
+    "а не в стороне"
+).split()
+
+
+def _sample_words(author_accents=()):
+    from src.p4_align.aligner import AlignedWord
+
+    accents = set(author_accents)
+    return [AlignedWord(index=i, display=w, start=i * 0.35, end=i * 0.35 + 0.3,
+                        block_id="b1", role="body", emphasis=w in accents,
+                        spoken=[w], source="provider")
+            for i, w in enumerate(_SAMPLE)]
+
+
+@pytest.mark.parametrize("author", [(), ("спагетти",),
+                                    ("спагетти", "горизонт", "сингулярность")])
+def test_accent_density_matches_the_brandbook(author):
+    """Один акцент на 6–8 слов.
+
+    Сценарий даёт по одному ``emphasis_word`` на блок — четыре цветных слова на
+    сотню. Цвет в потоке субтитров и есть единственный смысловой акцент, и в
+    такой концентрации он не читается.
+    """
+    from src.p4_align.aligner import top_up_emphasis
+
+    words = _sample_words(author)
+    top_up_emphasis(words, [6, 8])
+    accents = [w for w in words if w.emphasis]
+    assert accents
+    assert 6 <= len(words) / len(accents) <= 8.4
+
+
+def test_accents_are_not_adjacent():
+    """Два цветных слова подряд — заливка, а не ударение."""
+    from src.p4_align.aligner import top_up_emphasis
+
+    words = _sample_words(("спагетти",))
+    top_up_emphasis(words, [6, 8])
+    hits = [w.index for w in words if w.emphasis]
+    assert min(b - a for a, b in zip(hits, hits[1:])) >= 6
+
+
+def test_author_accents_are_never_dropped():
+    """Слово, выбранное сценарием, остаётся акцентом при любом доборе."""
+    from src.p4_align.aligner import top_up_emphasis
+
+    words = _sample_words(("спагетти", "сингулярность"))
+    top_up_emphasis(words, [6, 8])
+    kept = {w.display for w in words if w.emphasis}
+    assert {"спагетти", "сингулярность"} <= kept
+
+
+def test_function_words_never_become_accents():
+    """Подсвеченный предлог читается как сбой рендера."""
+    from src.p4_align.aligner import top_up_emphasis
+
+    words = _sample_words()
+    top_up_emphasis(words, [6, 8])
+    picked = {w.display for w in words if w.emphasis}
+    assert not picked & {"и", "а", "но", "это", "не", "от", "в", "на"}
+    assert all(len(w) >= 5 for w in picked)
+
+
+def test_top_up_is_deterministic():
+    """Рендер сэмплирует кадры не по порядку: два прогона обязаны совпасть."""
+    from src.p4_align.aligner import top_up_emphasis
+
+    first, second = _sample_words(("спагетти",)), _sample_words(("спагетти",))
+    top_up_emphasis(first, [6, 8])
+    top_up_emphasis(second, [6, 8])
+    assert [w.emphasis for w in first] == [w.emphasis for w in second]
+
+
+def test_top_up_survives_a_text_of_only_function_words():
+    """Короткая служебная фраза не должна ни падать, ни красить предлоги."""
+    from src.p4_align.aligner import AlignedWord, top_up_emphasis
+
+    words = [AlignedWord(index=i, display=w, start=i * 0.3, end=i * 0.3 + 0.25,
+                         block_id="b", role="body", emphasis=False,
+                         spoken=[w], source="provider")
+             for i, w in enumerate("и а но то же ли бы не ни как".split())]
+    assert top_up_emphasis(words, [6, 8]) == 0
+    assert not any(w.emphasis for w in words)

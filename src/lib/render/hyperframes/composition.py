@@ -27,7 +27,7 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
-from .templates import TemplateCtx, render_motion, render_transition
+from .templates import TemplateCtx, render_hero, render_motion, render_transition
 
 TRACK_STAGE = 0
 TRACK_SHOT_EVEN = 1
@@ -37,6 +37,10 @@ TRACK_BEHIND_HEAD = 4
 TRACK_OVERLAY = 5      # и следующие, если плашки пересекаются во времени
 TRACK_TRANSITION = 11
 TRACK_SUBTITLE = 12
+# Приёмы вокруг ведущего чередуют треки по той же причине, что и шоты: соседние
+# кадры стыкуются встык, а окно видимости клипа включает оба конца.
+TRACK_HERO_EVEN = 13
+TRACK_HERO_ODD = 14
 TRACK_AUDIO = 20
 
 COMPOSITION_ID = "redshift"
@@ -279,6 +283,47 @@ class CompositionBuilder:
                 f'data-track-index="{TRACK_BEHIND_HEAD}">{_esc(word)}</div>')
         return nodes
 
+    # --- приёмы вокруг ведущего -----------------------------------------
+    def _hero_nodes(self) -> list[str]:
+        """Приёмы из референсов: картинка за спиной, заголовок над головой,
+        лучи, сплит с панелью, выбивка.
+
+        Приём начинается там, где кончается вход кадра. Сплит тянет ``x`` и
+        ``scale`` самого аватара — те же свойства, что и переход входа, — и
+        наложение двух твинов на одном элементе движок считает ошибкой: порядок
+        перезаписи в GSAP зависит от очерёдности и может смениться между
+        рендерами.
+        """
+        nodes: list[str] = []
+        avatar_nodes = self._avatar_node_by_slot()
+        for shot in self.plan.get("shots", []):
+            hero = shot.get("hero")
+            if not hero:
+                continue
+            index = int(shot["index"])
+            tr_sec = self._transition_duration(shot)
+            start = float(shot["start"]) + tr_sec
+            duration = max(0.4, float(shot["duration"]) - tr_sec)
+            if hero.get("duration"):
+                # Приём со своим материалом живёт по его длине, а не по длине
+                # кадра: иначе панель досидит кадр пустой.
+                duration = max(0.4, min(duration, float(hero["duration"])))
+            params = dict(hero.get("params") or {})
+            src = self._asset(hero.get("file"))
+            if src:
+                params["src"] = src
+            piece = render_hero(str(hero.get("renderer") or ""), TemplateCtx(
+                index=index, start=start, duration=duration,
+                target=avatar_nodes.get(index, f"shot-{index:02d}"),
+                track=TRACK_HERO_EVEN if index % 2 == 0 else TRACK_HERO_ODD,
+                params=params))
+            if not piece.nodes:
+                continue
+            nodes += piece.nodes
+            self.tweens.extend(piece.tweens)
+            self.stats["hero_devices"] = self.stats.get("hero_devices", 0) + 1
+        return nodes
+
     # --- оверлеи --------------------------------------------------------
     def _overlay_nodes(self) -> list[str]:
         overlays = list(self.plan.get("overlays", []))
@@ -394,6 +439,7 @@ class CompositionBuilder:
         body += self._shot_nodes()
         body += self._behind_head_nodes()
         body += self._avatar_nodes()
+        body += self._hero_nodes()
         body += self._overlay_nodes()
         body += self._subtitle_nodes()
         body.append(self._audio_node(mix_name))
