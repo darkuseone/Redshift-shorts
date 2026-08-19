@@ -108,9 +108,26 @@ def test_auto_picks_prepared_when_clips_exist(cfg, costs, tmp_path, monkeypatch)
     assert isinstance(provider, PreparedAvatar)
 
 
-def test_auto_falls_back_to_mock_without_key_and_clips(cfg, costs, tmp_path, monkeypatch):
+def test_live_run_without_a_key_waits_for_clips_instead_of_mocking(
+        cfg, costs, tmp_path, monkeypatch):
+    """Молчаливый мок-аватар в живом прогоне — худший из возможных исходов.
+
+    Ролик собрался бы, прошёл QC и уехал к зрителю с болванкой вместо
+    ведущего. Без ключа прогон обязан уйти в двухфазный конвейер: клипы
+    приходят снаружи, а их отсутствие падает с понятным кодом.
+    """
     monkeypatch.delenv("HEYGEN_API_KEY", raising=False)
     cfg.set("heygen.source", "auto")
+    cfg.set("heygen.prepared_dir", str(tmp_path / "нет"))
+    provider = build_avatar_provider(cfg, costs, video_id="redshift_0001")
+    assert isinstance(provider, PreparedAvatar)
+
+
+def test_mock_mode_overrides_any_avatar_source(cfg, costs, tmp_path, monkeypatch):
+    """Mock — это «никаких внешних зависимостей», клипов в нём никто не готовит."""
+    monkeypatch.delenv("HEYGEN_API_KEY", raising=False)
+    cfg.set("providers.mode", "mock")
+    cfg.set("heygen.source", "prepared")
     cfg.set("heygen.prepared_dir", str(tmp_path / "нет"))
     provider = build_avatar_provider(cfg, costs, video_id="redshift_0001")
     assert isinstance(provider, MockAvatar)

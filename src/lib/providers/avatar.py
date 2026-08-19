@@ -307,6 +307,11 @@ def build_avatar_provider(cfg, costs, *, video_id: str = "") -> AvatarProvider:
     source = str(cfg.get("heygen.source", "auto")).lower()
     clips_dir = _prepared_dir(cfg, video_id)
 
+    # Mock-режим отменяет любой источник: он означает «никаких внешних
+    # зависимостей», и требовать заранее подготовленные клипы в нём бессмысленно.
+    if str(cfg.get("providers.mode", "auto")).lower() == "mock":
+        return MockAvatar(cfg, costs)
+
     if source == "prepared":
         return PreparedAvatar(cfg, costs, clips_dir)
 
@@ -315,8 +320,14 @@ def build_avatar_provider(cfg, costs, *, video_id: str = "") -> AvatarProvider:
             resolve_mode(cfg, api_key=key, service="heygen") is ProviderMode.LIVE:
         return HeyGenAvatar(cfg, costs, key or "")
 
-    if source == "auto" and clips_dir.is_dir() and any(clips_dir.glob("seg_*")):
-        _log.info("аватар берётся из готовых клипов", extra={"dir": str(clips_dir)})
+    if source == "auto":
+        # Ключа нет — идём в двухфазный конвейер, а не в заглушку. Молчаливый
+        # мок-аватар в живом прогоне — худший из возможных исходов: ролик
+        # соберётся, пройдёт QC и уедет к зрителю с болванкой вместо ведущего.
+        # PreparedAvatar на отсутствие клипов падает с понятным кодом и
+        # выкладывает avatar_request.json, по которому их и достают.
+        _log.info("ключа HeyGen нет — аватар ожидается готовыми клипами",
+                  extra={"dir": str(clips_dir)})
         return PreparedAvatar(cfg, costs, clips_dir)
 
     return MockAvatar(cfg, costs)
