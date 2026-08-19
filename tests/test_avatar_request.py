@@ -93,3 +93,46 @@ def test_clip_of_wrong_length_joins_the_request_instead_of_aborting(ctx):
     assert "длительность" in segments[0].get("reason", ""), \
         "не сказано, почему клип негоден"
     assert "reason" not in segments[1], "у отсутствующего клипа причины быть не должно"
+
+
+# --- Freepik ------------------------------------------------------------------
+
+class _Resp:
+    status_code = 200
+
+    def __init__(self, payload):
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+
+def test_freepik_reads_catalogue_durations(monkeypatch, tmp_path):
+    """«00:00:05» — это пять секунд, а не повод потерять источник.
+
+    Каталог отдаёт длительность строкой «ЧЧ:ММ:СС». float() на ней бросал
+    ValueError, ошибка одного поля уносила весь поиск, и Freepik — первый по
+    очереди источник — не дал за живой прогон ни одного кандидата ни по одному
+    из запросов. Двенадцать слотов из-за этого ушли в генерацию.
+    """
+    import requests
+    from src.lib.providers.stock import FreepikStock
+
+    payload = {"data": [
+        # Вертикаль 1080×1920 — это ровно тот формат, ради которого всё и
+        # делается, и отбраковываться он не должен.
+        {"id": "1", "duration": "00:00:05", "dimensions": {"width": 1080, "height": 1920}},
+        # 4K по короткой стороне — мимо §3.6.1, но выдачу ронять не должен.
+        {"id": "2", "duration": "00:00:10", "dimensions": {"width": 2160, "height": 3840}},
+        {"id": "3", "duration": "00:01:30", "dimensions": {"width": 1080, "height": 1920}},
+    ]}
+    monkeypatch.setattr(requests, "get", lambda *a, **k: _Resp(payload))
+
+    cfg = load_config()
+    provider = FreepikStock(cfg, CostLedger(video_id="t"), "ключ")
+    found = provider.search("чёрная дыра", kind="video", limit=8)
+
+    assert [c.duration_sec for c in found] == [5.0, 90.0], "длительности разобраны неверно"
+    assert [c.id for c in found] == ["freepik_1", "freepik_3"], \
+        "4K должен быть пропущен, а вертикаль 1080×1920 — оставлена"
+    assert all(c.orientation == "portrait" for c in found)
