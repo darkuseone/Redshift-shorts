@@ -132,7 +132,7 @@ jobs:
         run: python -m src.cli validate --script "${{ github.event.inputs.script }}"
 
       - name: Восстановить кэш прогонов
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             work
@@ -148,6 +148,25 @@ jobs:
             run --script "${{ github.event.inputs.script }}" \
             ${{ github.event.inputs.from_step != '' && format('--from {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      # Кэш сохраняется явно и обязательно на любом исходе. Единый actions/cache
+      # свой post-шаг на упавшей задаче не выполняет — а фаза 1 двухфазного
+      # конвейера заканчивается падением всегда: P6 останавливает прогон, потому
+      # что клипов ведущего ещё нет. Из-за этого work/ вместе с voice_final.wav
+      # умирал с раннером, и возобновление с P6 падало на MISSING_STEP_INPUT,
+      # не найдя ничего от фазы 1. Шов между фазами не закрывался никогда.
+      #
+      # Переозвучить вместо этого нельзя: TTS недетерминирован, длительности
+      # кусков речи уедут, и клипы, сгенерированные под прежнюю речь, будут
+      # отбракованы как уехавший липсинк. Речь фазы 1 обязана дожить до фазы 3.
+      - name: Сохранить кэш прогонов
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            work
+            .redshift_cache
+          key: redshift-work-${{ hashFiles(github.event.inputs.script) }}-${{ github.run_id }}
 
       - name: Обновлённые библиотеки и индексы в коммит
         if: success()
