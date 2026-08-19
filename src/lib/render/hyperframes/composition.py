@@ -113,11 +113,25 @@ class CompositionBuilder:
                 if seg.get("has_alpha")
                 for idx in seg.get("slot_indices", [])}
 
+    def _avatar_node_by_slot(self) -> dict[int, str]:
+        """Слот шота → id клипа аватара, который его занимает.
+
+        Переход в режиме A обязан двигать самого ведущего, а не подложку: она
+        либо перекрыта им, либо вовсе не рисуется. Без этой карты твин целился
+        бы в ``#shot-NN``, которого для непрозрачного аватара просто нет, и
+        переход пропадал бы молча.
+        """
+        out: dict[int, str] = {}
+        for seg in self.plan.get("avatar", []):
+            node_id = f"avatar-{int(seg['index']):02d}"
+            for slot in seg.get("slot_indices", []):
+                out[int(slot)] = node_id
+        return out
+
     def _shot_nodes(self) -> list[str]:
         nodes: list[str] = []
         alpha_slots = self._alpha_slots()
-        avatar_slots = {idx for seg in self.plan.get("avatar", [])
-                        for idx in seg.get("slot_indices", [])}
+        avatar_nodes = self._avatar_node_by_slot()
 
         for shot in self.plan["shots"]:
             index = int(shot["index"])
@@ -127,6 +141,8 @@ class CompositionBuilder:
             node_id = f"shot-{index:02d}"
             timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
                       f'data-track-index="{track}"')
+            # Цель перехода: для аватар-слотов — сам аватар, иначе — шот.
+            target = avatar_nodes.get(index, node_id)
 
             if kind == "fullscreen_text":
                 nodes.append(self._fullscreen_text_node(node_id, shot, timing))
@@ -136,10 +152,10 @@ class CompositionBuilder:
                 nodes.append(
                     f'<div id="{node_id}" class="clip shot-bg" {timing}>'
                     f'<div class="vfx"></div></div>')
-            elif kind == "avatar" or index in avatar_slots:
+            elif index in avatar_nodes or kind == "avatar":
                 # Аватар без альфы приходит со своим фоном и занимает кадр
-                # целиком: подкладывать под него нечего.
-                continue
+                # целиком: подкладывать под него нечего. Но переход ему нужен.
+                pass
             elif kind == "meme":
                 src = self._asset(shot.get("file"))
                 if src:
@@ -150,7 +166,7 @@ class CompositionBuilder:
                     nodes.append(self._media_node(node_id, src, timing, css="shot",
                                                   media_start=shot.get("avatar_offset_sec")))
                     self._add_kenburns(node_id, shot, start, duration)
-            nodes += self._add_transition(node_id, shot, start)
+            nodes += self._add_transition(target, shot, start)
             self.stats["shots"] += 1
         return nodes
 

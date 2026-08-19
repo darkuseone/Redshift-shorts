@@ -281,3 +281,31 @@ def test_word_behind_head_needs_alpha(plan, assets, brandbook):
     plan["avatar"][0]["has_alpha"] = True
     with_alpha = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "behind-head" in with_alpha
+
+
+def test_transition_on_avatar_shot_targets_the_avatar(plan, assets, brandbook):
+    """Переход обязан двигать ведущего, а не подложку под ним.
+
+    Раньше твин целился в #shot-NN, а для непрозрачного аватара такого узла
+    нет вовсе — переход пропадал молча.
+    """
+    plan["shots"][2]["transition"] = {"renderer": "zoom_punch", "duration": 0.32,
+                                      "params": {"from_scale": 1.18}}
+    for alpha in (True, False):
+        plan["avatar"][0]["has_alpha"] = alpha
+        out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+        tween = next(l for l in out.splitlines() if "scale:1.18" in l)
+        assert '"#avatar-00"' in tween, f"has_alpha={alpha}: {tween}"
+
+
+def test_every_tween_target_exists_in_the_markup(plan, assets, brandbook):
+    """Твин по несуществующему id ничего не делает и не жалуется."""
+    plan["shots"][0]["transition"] = {"renderer": "white_flash", "duration": 0.3,
+                                      "params": {}}
+    plan["shots"][2]["transition"] = {"renderer": "paper_slide", "duration": 0.3,
+                                      "params": {"axis": "y", "direction": -1}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for tween in [l for l in out.splitlines() if l.strip().startswith("tl.")]:
+        selector = re.search(r'"#([^" ]+)', tween).group(1)
+        assert selector in ids, f"твин целится в несуществующий {selector}: {tween}"
