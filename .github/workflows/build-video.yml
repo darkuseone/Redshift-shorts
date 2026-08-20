@@ -131,6 +131,31 @@ jobs:
       - name: Валидация сценария
         run: python -m src.cli validate --script "${{ github.event.inputs.script }}"
 
+      # Голос и клипы ведущего рождаются парой: клипы липсинка сгенерированы под
+      # конкретную озвучку, и разойтись им нельзя. Клипы лежат в git, а голос
+      # до сих пор жил только в кэше Actions — и когда кэш терялся, пара
+      # распадалась: переозвучка сдвигала границы фраз, и P6 отбраковывал все
+      # клипы разом. Так это и случилось дважды.
+      #
+      # Поэтому голос — такой же входной артефакт репозитория, как и клипы.
+      # Здесь он раскладывается в work/, и прогон с --from P4 воспроизводит
+      # P4-P6 детерминированно, ничего не завися от кэша.
+      - name: Засеять work/ готовым голосом
+        run: |
+          set -euo pipefail
+          seed="assets/voice/$(python -c "
+          import json,sys
+          print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['video_id'])
+          ")"
+          if [ -d "$seed" ]; then
+            target="work/$(basename "$seed")"
+            mkdir -p "$target"
+            cp -v "$seed"/* "$target"/
+            echo "голос взят из репозитория: $seed"
+          else
+            echo "готового голоса нет — P2 озвучит заново"
+          fi
+
       - name: Восстановить кэш прогонов
         uses: actions/cache/restore@v4
         with:
@@ -204,6 +229,10 @@ jobs:
           path: |
             work/*/avatar_request.json
             work/*/avatar/seg_*.wav
+            work/*/voice_final.wav
+            work/*/speech_map.json
+            work/*/draft_plan.json
+            work/*/validated_script.json
           retention-days: 14
           if-no-files-found: ignore
 
