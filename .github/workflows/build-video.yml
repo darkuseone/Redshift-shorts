@@ -143,17 +143,14 @@ jobs:
       - name: Засеять work/ готовым голосом
         run: |
           set -euo pipefail
-          seed="assets/voice/$(python -c "
-          import json,sys
-          print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['video_id'])
-          ")"
+          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          seed="assets/voice/$video_id"
           if [ -d "$seed" ]; then
-            target="work/$(basename "$seed")"
-            mkdir -p "$target"
-            cp -v "$seed"/* "$target"/
+            mkdir -p "work/$video_id"
+            cp -v "$seed"/voice_final.wav "$seed"/*.json "work/$video_id"/
             echo "голос взят из репозитория: $seed"
           else
-            echo "готового голоса нет — P2 озвучит заново"
+            echo "готового голоса для $video_id нет — P2 озвучит заново"
           fi
 
       - name: Восстановить кэш прогонов
