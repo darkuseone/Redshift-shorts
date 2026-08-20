@@ -223,18 +223,36 @@ def measure_lufs_array(data: np.ndarray, sr: int = SAMPLE_RATE) -> float:
     return float(-0.691 + 10.0 * math.log10(powers[keep].mean() + EPS))
 
 
+def _oversample_bandlimited(channel: np.ndarray, factor: int) -> np.ndarray:
+    """Полосно-ограниченное восстановление сигнала между отсчётами.
+
+    Линейная интерполяция для этого не годится: хорда между соседними отсчётами
+    всегда проходит ниже настоящей огибающей, и оценка пика выходит заниженной.
+    Классический пример — синус на четверти частоты дискретизации со сдвигом
+    фазы: отсчёты стоят на ±0.707, а сигнал между ними доходит до 1.0.
+
+    Ценой этой ошибки был проваленный QC-8: лимитер по своей оценке считал, что
+    уложился ровно в −1 dBTP, а ffmpeg loudnorm мерил −0.77 и ролик не выдавался.
+    Дополнение спектра нулями — то самое восстановление фильтром, которого
+    требует BS.1770.
+    """
+    n = channel.shape[0]
+    spec = np.fft.rfft(channel)
+    padded = np.zeros(n * factor // 2 + 1, dtype=np.complex128)
+    padded[:spec.shape[0]] = spec
+    return np.fft.irfft(padded, n * factor) * factor
+
+
 def true_peak_dbtp(data: np.ndarray, oversample: int = 4) -> float:
-    """Оценка True Peak: 4-кратная передискретизация, как требует BS.1770."""
+    """Оценка True Peak: передискретизация с фильтром, как требует BS.1770."""
     arr = np.asarray(data, dtype=np.float64)
     if arr.ndim == 1:
         arr = arr[:, None]
     if arr.shape[0] < 2:
         return -math.inf
     peak = 0.0
-    x_old = np.arange(arr.shape[0], dtype=np.float64)
-    x_new = np.linspace(0.0, arr.shape[0] - 1, arr.shape[0] * oversample)
     for ch in range(arr.shape[1]):
-        up = np.interp(x_new, x_old, arr[:, ch])
+        up = _oversample_bandlimited(arr[:, ch], oversample)
         peak = max(peak, float(np.max(np.abs(up))))
     return 20.0 * math.log10(peak + EPS)
 
@@ -316,14 +334,23 @@ def normalize_to_lufs(data: np.ndarray, target_lufs: float, sr: int = SAMPLE_RAT
     return apply_gain_db(data, delta), delta
 
 
-def limit_true_peak(data: np.ndarray, max_dbtp: float = -1.0) -> np.ndarray:
-    """Мягкий лимитер: сначала гейн, затем tanh-клип на границе (§4.4, QC-8)."""
+def limit_true_peak(data: np.ndarray, max_dbtp: float = -1.0,
+                    headroom_db: float = 0.3) -> np.ndarray:
+    """Мягкий лимитер: сначала гейн, затем tanh-клип на границе (§4.4, QC-8).
+
+    Целимся не в сам потолок, а чуть ниже. Судит QC не нашей оценкой, а
+    измерением ffmpeg по отрендеренному файлу, и упереться ровно в границу
+    значит отдать исход на волю расхождения двух измерений — а оно всегда
+    найдётся: разные фильтры восстановления, разная длина окна, перекодировка.
+    Три десятых децибела запаса стоят дешевле невыданного ролика.
+    """
     arr = np.asarray(data, dtype=np.float32)
+    target = max_dbtp - max(0.0, headroom_db)
     tp = true_peak_dbtp(arr)
-    if tp <= max_dbtp or not math.isfinite(tp):
+    if tp <= target or not math.isfinite(tp):
         return arr
-    arr = apply_gain_db(arr, max_dbtp - tp)
-    ceiling = db_to_gain(max_dbtp)
+    arr = apply_gain_db(arr, target - tp)
+    ceiling = db_to_gain(target)
     over = np.abs(arr) > ceiling
     if over.any():
         arr = np.where(over, np.sign(arr) * ceiling * np.tanh(np.abs(arr) / ceiling), arr)
