@@ -75,6 +75,17 @@ vision:
   gemini_model: "gemini-2.5-flash"
   gemini_api_base: "https://generativelanguage.googleapis.com"
 
+generation:
+  # Кто закрывает пустые слоты §7.3. Magnific выведен из генерации: его HTTP
+  # эндпоинт отвечает 404, а MCP-путь живёт в чате, а не в Actions, и списывает
+  # кредиты — в прогоне его не вызвать. Сток Magnific при этом остаётся первым
+  # источником поиска, он бесплатен и это настоящая съёмка.
+  source: grok
+  grok_image_model: "grok-2-image-1212"
+  # Видео Grok не генерирует и не должен: кадр оживляется наездом (§H7 — всё
+  # приближается), тем же приёмом Ken Burns, что и фотослоты стока.
+  ken_burns_zoom: 1.12
+
 magnific:
   max_downloads_per_video: 50     # §7.2.4 — лимит подписки
   prefer_free_models: true

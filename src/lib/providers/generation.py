@@ -211,7 +211,118 @@ def _first_url(data: Any) -> str:
     return ""
 
 
+class GrokImageGeneration(GenerationProvider):
+    """Кадр рисует Grok, движение делает ffmpeg.
+
+    Видео у Grok не заказывается вовсе, и это осознанно: слот §7.3 закрывается
+    статичным кадром с медленным наездом — тем же приёмом Ken Burns, которым
+    оживляются фотослоты стока. Синтетическое видео здесь не нужно, а кадр
+    выходит дешевле и предсказуемее.
+
+    Magnific-генерация из этого пути выведена: её HTTP-эндпоинт отдаёт 404, а
+    MCP-путь считает кредиты и в живом прогоне Actions недоступен.
+    """
+
+    def __init__(self, cfg, costs, api_key: str) -> None:
+        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="grok_image")
+        self.api_key = api_key
+
+    def _image_bytes(self, prompt: str, model: str) -> bytes:
+        import base64
+
+        import requests
+
+        base = str(self.cfg.get("vision.grok_api_base", "https://api.x.ai"))
+
+        def _call() -> bytes:
+            resp = requests.post(
+                f"{base}/v1/images/generations",
+                json={"model": model, "prompt": prompt, "n": 1,
+                      "response_format": "b64_json"},
+                headers={"Authorization": f"Bearer {self.api_key}",
+                         "Content-Type": "application/json"},
+                timeout=self._timeout())
+            if resp.status_code >= 400:
+                raise ProviderError(f"Grok image вернул {resp.status_code}",
+                                    status=resp.status_code, body=resp.text[:300],
+                                    model=model)
+            payload = resp.json()
+            items = payload.get("data") or []
+            if not items:
+                raise ProviderError("Grok image не вернул кадр", keys=list(payload)[:10])
+            encoded = items[0].get("b64_json")
+            if encoded:
+                return base64.b64decode(encoded)
+            url = _first_url(items[0])
+            if not url:
+                raise ProviderError("Grok image: ни b64_json, ни ссылки",
+                                    keys=list(items[0])[:10])
+            got = requests.get(url, timeout=self._timeout())
+            if got.status_code >= 400:
+                raise ProviderError("не удалось скачать кадр Grok",
+                                    status=got.status_code)
+            return got.content
+
+        return call_with_retry(_call, **self._retry_kwargs("Grok image"))
+
+    def generate(self, prompt: str, dst: Path, *, kind: str = "video",
+                 duration_sec: float = 4.0, prefer_free: bool = True) -> GeneratedAsset:
+        model = str(self.cfg.get("generation.grok_image_model", "grok-2-image-1212"))
+        width, height = self.cfg.resolution
+        dst.parent.mkdir(parents=True, exist_ok=True)
+
+        still = dst.with_suffix(".src.png")
+        still.write_bytes(self._image_bytes(prompt, model))
+
+        if kind == "photo":
+            dst = dst.with_suffix(".png")
+            dst.write_bytes(still.read_bytes())
+            still.unlink(missing_ok=True)
+        else:
+            # Наезд, а не статика: §H7 требует, чтобы всё приближалось. Кадр
+            # приходит в своей пропорции, поэтому сначала он покрывает вертикаль
+            # с запасом, и только потом внутри неё едет масштаб.
+            fps = self.cfg.fps
+            frames = max(2, int(round(duration_sec * fps)))
+            zoom = float(self.cfg.get("generation.ken_burns_zoom", 1.12))
+            cover = (f"scale={width * 2}:{height * 2}:force_original_aspect_ratio=increase,"
+                     f"crop={width * 2}:{height * 2}")
+            motion = (f"zoompan=z='1+({zoom - 1:.4f})*on/{frames}':d={frames}"
+                      f":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+                      f":s={width}x{height}:fps={fps}")
+            run(["-y", "-loop", "1", "-i", str(still), "-t", f"{duration_sec:.2f}",
+                 "-vf", f"{cover},{motion},format=yuv420p",
+                 "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                 "-r", str(fps), str(dst)], what="Ken Burns по кадру Grok")
+            still.unlink(missing_ok=True)
+
+        self.charge("generate", 1, "image",
+                    float(self.cfg.get("budget.price.grok_per_image", 0.02)),
+                    model=model)
+        return GeneratedAsset(
+            id=f"gen_{hashlib.sha256(prompt.encode()).hexdigest()[:12]}",
+            path=dst, kind=kind, prompt=prompt, model=model,
+            duration_sec=duration_sec if kind == "video" else 0.0,
+            width=width, height=height, paid_model=False,
+            meta={"still_from": "grok", "motion": "ken_burns"},
+        )
+
+
 def build_generation_provider(cfg, costs) -> GenerationProvider:
+    """Кто закрывает пустые слоты.
+
+    Magnific отсюда выведен: HTTP-эндпоинт генерации отвечает 404, а путь через
+    MCP-коннектор живёт в чате, а не в Actions, и считает кредиты — в прогоне
+    его не вызвать. Остаётся Grok: он рисует кадр, движение добавляет ffmpeg.
+    """
+    source = str(cfg.get("generation.source", "grok")).lower()
+
+    if source == "grok":
+        key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok (генерация кадров)")
+        if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
+            return GrokImageGeneration(cfg, costs, key or "")
+        return MockGeneration(cfg, costs)
+
     key = cfg.secret_for("magnific.api_key_env", purpose="Magnific")
     if resolve_mode(cfg, api_key=key, service="magnific") is ProviderMode.LIVE:
         return MagnificGeneration(cfg, costs, key or "")
