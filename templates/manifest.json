@@ -13,8 +13,8 @@
     "parallax": 4,
     "data-viz": 6,
     "outro-cta": 5,
-    "hero-devices": 14,
-    "_total": 95
+    "hero-devices": 16,
+    "_total": 97
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2281,6 +2281,47 @@
         "behind"
       ],
       "renderer": "hero-title-behind",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/exhibit-card",
+      "name": "exhibit-card",
+      "category": "hero-devices",
+      "title": "Экспонат в раме с музейной подписью",
+      "duration_range": [
+        2.4,
+        5.5
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "footage",
+        "source"
+      ],
+      "renderer": "hero-exhibit",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/statement-slam",
+      "name": "statement-slam",
+      "category": "hero-devices",
+      "title": "Плашка с фразой забирает кадр и уходит",
+      "duration_range": [
+        1.4,
+        2.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "slam"
+      ],
+      "renderer": "hero-slam",
       "last_used_in": [],
       "added": "2026-08-18"
     }

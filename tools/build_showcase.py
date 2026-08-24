@@ -68,6 +68,10 @@ NOTES = {
                    "и есть приём.",
     "title-behind-head": "Тема ролика двумя строками за головой, вторая "
                          "строка — акцентом.",
+    "exhibit-card": "Материал в раме, под ним музейная подпись: имя, "
+                    "уточнение и источник. Ведущий отъезжает вниз.",
+    "statement-slam": "Фраза забирает кадр плашкой и уходит, вырастая на "
+                      "зрителя. Секунда-две, не дольше.",
 }
 
 # Силуэт ведущего: голова и плечи там же, где они в настоящем кадре (медиум,
@@ -165,12 +169,15 @@ def _devices(cfg) -> list[dict]:
     for i, template in enumerate(items):
         block = blocks[i % len(blocks)]
         role = ROLES[i % len(ROLES)]
-        content = _hero_content(block, {"role": role}, None, (540, 700),
-                                title=title)
+        slot = {"role": role, "queries": block.get("broll_queries") or []}
+        content = _hero_content(block, slot, None, (540, 700), title=title)
+        # Кредит приходит с материалом: на витрине материал условный, поэтому
+        # и подпись условная — но строка та же, что встанет в кадр.
+        content["credit"] = "NASA · public domain"
         # Иконок брендов в репозитории пока нет — на витрине нейтральная метка.
         content["brand"] = {"label": "БРЕНД", "icon": ""}
         params = hero_params(template["renderer"], template.get("params", {}),
-                             content, {"role": role})
+                             content, slot)
         if "plate" in _HERO_NEEDS.get(template["renderer"], ()):
             params["src"] = plate_uri
         duration = float(template["duration_range"][1])
@@ -469,7 +476,9 @@ IDS.forEach(function (id, i) {{
 function setAll(fn) {{ IDS.forEach(function (id) {{ fn(TL[id]); }}); }}
 
 if (still) {{
-  setAll(function (tl) {{ tl.progress(1).pause(); }});
+  // Кадр приёма, а не его последний кадр: у приёмов с уходом на конце
+  // остаётся пустая сцена, и витрина показывала бы пустоту.
+  setAll(function (tl) {{ tl.progress(0.55).pause(); }});
   document.getElementById('play').textContent = 'Играть';
   document.getElementById('play').setAttribute('aria-pressed', 'false');
 }} else {{

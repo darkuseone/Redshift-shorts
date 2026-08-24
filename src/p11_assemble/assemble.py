@@ -77,7 +77,8 @@ def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
 
 
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
-                  prepared: dict[int, dict[str, Any]]) -> dict[str, Any] | None:
+                  prepared: dict[int, dict[str, Any]],
+                  assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
     """Кадр для панели за спиной — ближайший футаж того же блока.
 
     Панель показывает картинку по теме блока, а не произвольный кадр: это тот
@@ -94,7 +95,13 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
         return None
     nearest = min(same_block, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
     prep = prepared[int(nearest["index"])]
-    return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0)}
+    # Кредит материала едет вместе с ним: приём «экспонат» ставит источник на
+    # экран (§1, правило 8), и брать его надо у того кадра, чью картинку он и
+    # показывает, а не у слота приёма.
+    asset = (assets or {}).get(int(nearest["index"])) or {}
+    credit = str(asset.get("attribution") or asset.get("source") or "").strip()
+    return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0),
+            "credit": credit}
 
 
 # Что приёму нужно на входе. Без этого он рисует пустоту поверх ведущего, и
@@ -116,6 +123,8 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-script-stack": ("lines",),
     "hero-chat-typing": ("ask",),
     "hero-title-behind": ("head", "tail"),
+    "hero-exhibit": ("plate", "title"),
+    "hero-slam": ("punch",),
 }
 
 
@@ -148,6 +157,34 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
     if index >= len(parts):
         return ""
     return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
+
+
+def _punch(block: dict[str, Any]) -> list[str]:
+    """Фраза для плашки-удара: две короткие строки, акцент — во второй.
+
+    Если автор сценария сам написал полноэкранную строку для этого блока —
+    берём её: она короткая по определению. Иначе режем окно, кончающееся
+    акцентным словом, и не длиннее клаузы: плашка живёт полторы секунды и
+    закрывает кадр целиком, за это время читаются две строки, а не фраза.
+    """
+    overlay = block.get("overlay") or {}
+    if overlay.get("type") == "fullscreen_text" and str(overlay.get("content") or "").strip():
+        return _wrap_lines(str(overlay["content"]).strip(), width=13, limit=2)
+
+    text = str(block.get("text") or "").strip()
+    word = str(block.get("emphasis_word") or "").strip()
+    # Клауза — то, что между запятыми, тире и двоеточиями: окно, перешагнувшее
+    # такую границу, начинается с середины чужой мысли.
+    clauses = [c.strip(" —–-") for c in re.split(r"[,;:—–]|(?<=[.!?])\s+", text) if c.strip()]
+    chosen = next((c for c in clauses if word and word.lower() in c.lower()),
+                  clauses[0] if clauses else "")
+    words = [w for w in chosen.split() if w]
+    if not words:
+        return []
+    end = next((i + 1 for i, w in enumerate(words) if word and word.lower() in w.lower()),
+               len(words))
+    window = words[max(0, end - 4):end]
+    return _wrap_lines(" ".join(window).strip(".,!?;:"), width=13, limit=2)
 
 
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
@@ -199,6 +236,14 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         "answer": _sentence(text, 1, limit=6),
         "head": head,
         "tail": tail,
+        # Фраза для плашки-удара: одна фраза реплики, разбитая на две короткие
+        # строки. Длиннее — и плашка перестаёт читаться за секунду, ради
+        # которой она и появляется.
+        "punch": _punch(block),
+        # Подпись под экспонатом: первая фраза реплики целиком. Поисковый
+        # запрос сюда не годится — он английский и написан для стока, а не
+        # для зрителя.
+        "caption": _sentence(text, 0, limit=8),
         "brand": brand,
         "face": face,
     }
@@ -230,8 +275,15 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
             params["face_cy"] = content["face"][1]
     if renderer == "hero-brand-pill":
         params.update(content["brand"])
-    if renderer == "hero-card-stack":
+    if renderer in ("hero-card-stack", "hero-exhibit"):
         params["title"] = content["title"]
+    if renderer == "hero-exhibit":
+        # Музейная подпись короткая: крупно — акцентное слово реплики, под ним
+        # фраза целиком, ещё ниже — источник материала (§1, правило 8).
+        params["title"] = str(content.get("word") or content["title"])
+        params["detail"] = content.get("caption", "")
+        if content.get("credit"):
+            params["credit"] = content["credit"]
     if renderer == "hero-phone-mock":
         params["app"] = str(slot.get("screen_template") or "ChatGPT")
     # Текстовые нужды приёма переносятся один в один: имя ключа в
@@ -262,6 +314,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     """
     available = dict(content)
     available["plate"] = plate_src
+    if plate_src and plate_src.get("credit"):
+        content = {**content, "credit": plate_src["credit"]}
 
     blocked = list(exclude)
     for template in catalog.by_category("hero-devices"):
@@ -287,14 +341,19 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # Приём, который выкладывает реплику строками, сам и есть субтитр этого
         # кадра. Пословное слово поверх той же фразы — дубль, и оно вдобавок
         # ложится прямо на карточку: проверено кадром.
-        "carries_line": "lines" in _HERO_NEEDS.get(renderer, ()),
+        "carries_line": bool({"lines", "punch"} & set(_HERO_NEEDS.get(renderer, ()))),
     }
-    if plate_src and renderer in ("hero-plate", "hero-card-stack"):
+    if plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-exhibit"):
         # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
         # и растянутая панель досидела бы кадр пустой.
         entry["file"] = plate_src["file"]
         entry["duration"] = round(min(float(slot["duration"]),
                                       plate_src["duration_sec"]), 3)
+    if renderer == "hero-slam":
+        # Плашка закрывает ведущего целиком и потому живёт секунду-две, а не
+        # весь кадр: дольше — и это уже не удар, а пауза в ролике.
+        entry["duration"] = round(min(float(slot["duration"]),
+                                      float(template.duration_range[1])), 3)
     return entry
 
 
@@ -771,7 +830,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                                           face_centres.get(int(slot["index"])),
                                           title=str(plan.get("title") or "")),
                     has_alpha=int(slot["index"]) in alpha_slots,
-                    plate_src=_plate_source(slot, slots, prepared),
+                    plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
                     seed=seed)
                 if hero_entry:
@@ -811,8 +870,16 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # Субтитры: весь ролик, кроме кадров с полноэкранным текстом (§5.1).
     fs_windows = [(float(s["start"]), float(s["end"])) for s in slots
                   if s["kind"] == "fullscreen_text"]
-    fs_windows += [(float(s["start"]), float(s["end"])) for s in shots
-                   if (s.get("hero") or {}).get("carries_line")]
+    for shot in shots:
+        hero = shot.get("hero") or {}
+        if not hero.get("carries_line"):
+            continue
+        # Приём со своей длиной глушит субтитр только на своём окне: плашка на
+        # 1.8 сек внутри четырёхсекундного кадра забрала бы все четыре.
+        end = float(shot["end"])
+        if hero.get("duration"):
+            end = min(end, float(shot["start"]) + float(hero["duration"]))
+        fs_windows.append((float(shot["start"]), end))
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])

@@ -252,6 +252,9 @@ HERO_PARAMS = {
                          "answer": "тело растянет в нить",
                          "app": "ChatGPT"},
     "hero-title-behind": {"head": "Наполеон", "tail": "проиграл машине"},
+    "hero-exhibit": {"title": "Наполеон Бонапарт", "detail": "партия с турком, 1809",
+                     "credit": "NASA · public domain", "src": "assets/m000_shot.mp4"},
+    "hero-slam": {"punch": ["Ты сам", "не разгадал"]},
 }
 
 

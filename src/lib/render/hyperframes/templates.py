@@ -1306,6 +1306,136 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Экспонат: габариты подписаны здесь, потому что по ним же считается, куда
+# отъезжает ведущий. Разъехавшись, они спрячут ему голову за карточку.
+EX_PLATE_H = 1040
+EX_PIC = (150, 150, 780, 620)      # left, top, width, height
+EX_SHIFT_Y, EX_SHIFT_SCALE = 580, 0.78
+
+
+def hero_exhibit(ctx: "TemplateCtx") -> Piece:
+    """Экспонат: материал в раме и музейная подпись под ним.
+
+    Референс: картина стоит карточкой на светлом поле, под ней три строки —
+    имя крупно, уточнение мельче, кредит совсем мелко. Кредит тут не
+    украшение: §1 требует источник на экране, и это лучшее для него место —
+    он не спорит ни с субтитром, ни с кадром.
+
+    Ведущий не прячется за карточку, а отъезжает вниз и уменьшается: карточка
+    занимает верхние 54 % кадра, и без сдвига она закрыла бы ему голову.
+    """
+    name = str(ctx.params.get("title") or "").strip()
+    src = str(ctx.params.get("src") or "")
+    if not name or not src:
+        return Piece()
+    node_id = f"ex-{ctx.index:02d}"
+    detail = str(ctx.params.get("detail") or "")
+    credit = str(ctx.params.get("credit") or "")
+    left, top, pic_w, pic_h = EX_PIC
+    size = fit_size(name.upper(), pic_w, int(ctx.params.get("size", 88)))
+
+    label = (f'<span class="ex-name" style="font-size:{size}px">{_esc(name.upper())}</span>')
+    if detail:
+        label += f'<span class="ex-detail">{_esc(detail)}</span>'
+    if credit:
+        label += f'<span class="ex-credit">{_esc(credit)}</span>'
+
+    # Рамка рисуется отдельным прямоугольником под материалом: тень и скругление
+    # на самом видео продюсер при сборке кадра не рисует (проверено кадром), а
+    # на обычном блоке — рисует.
+    frame = (f'<span class="ex-frame" style="left:{left - 14}px;top:{top - 14}px;'
+             f'width:{pic_w + 28}px;height:{pic_h + 28}px"></span>')
+
+    enter, leave = 0.46, 0.34
+    back = max(ctx.start + enter, ctx.start + ctx.duration - leave)
+    hold = max(0.3, back - ctx.start - enter)
+    tweens = [
+        # Карточка приезжает сверху: прозрачность клипу запрещена, поэтому вход
+        # — движение, а не проявление.
+        f'tl.fromTo("#{node_id}",{{y:-72}},'
+        f'{{y:0,duration:{_num(enter)},ease:"expo.out"}},{_num(ctx.start)});',
+        # Уходит она туда же, откуда пришла, и ровно тогда, когда ведущий
+        # возвращается: иначе последние доли секунды его голова стоит за
+        # карточкой.
+        f'tl.to("#{node_id}",{{y:-{EX_PLATE_H + 80},duration:{_num(leave)},'
+        f'ease:"power2.in"}},{_num(back)});',
+        f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
+        f'{{y:{EX_SHIFT_Y},scale:{EX_SHIFT_SCALE},duration:{_num(enter)},'
+        f'ease:"expo.out"}},{_num(ctx.start)});',
+        f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:{_num(leave)},'
+        f'ease:"power2.inOut"}},{_num(back)});',
+        # Материал в раме медленно наезжает — карточка не имеет права замереть.
+        # Наезд кончается там, где начинается уход: два твина на одном клипе
+        # пересекаться не должны.
+        f'tl.fromTo("#{node_id}-m",{{scale:1.0}},'
+        f'{{scale:1.05,duration:{_num(hold)},ease:"none"}},'
+        f'{_num(ctx.start + enter)});',
+        f'tl.to("#{node_id}-m",{{y:-{EX_PLATE_H + 80},duration:{_num(leave)},'
+        f'ease:"power2.in"}},{_num(back)});',
+    ]
+    tweens += entrance_tweens(f"#{node_id} .ex-name", ctx.start, name="rise", delay=0.22)
+    if detail:
+        tweens += entrance_tweens(f"#{node_id} .ex-detail", ctx.start, name="rise",
+                                  delay=0.32)
+    if credit:
+        tweens += entrance_tweens(f"#{node_id} .ex-credit", ctx.start, name="dim",
+                                  delay=0.44)
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-exhibit" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{frame}{label}</div>',
+               f'<video id="{node_id}-m" class="clip ex-media" src="{_esc(src)}" '
+               f'style="left:{left}px;top:{top}px;width:{pic_w}px;height:{pic_h}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track_alt}" muted playsinline></video>'],
+        tweens=tweens)
+
+
+def hero_slam(ctx: "TemplateCtx") -> Piece:
+    """Удар цветом: кадр забирает плашка с фразой и уходит, вырастая.
+
+    Референс: на реплике кадр целиком закрывается плоской заливкой, на ней в
+    две строки стоит сама фраза, и через секунду плашка уезжает на зрителя,
+    вырастая за края. Цвет референса — жёлтый; у нас заливка чёрная: §3.3.1
+    держит акцент в 10–12 % площади кадра, а этот приём закрывает кадр
+    целиком. Красным остаётся вторая строка — то самое одно слово смысла.
+    """
+    lines = [str(l).strip() for l in (ctx.params.get("punch") or []) if str(l).strip()]
+    lines = lines[:2]
+    if not lines:
+        return Piece()
+    node_id = f"sl-{ctx.index:02d}"
+    size = fit_size(widest(lines).upper(), 1080 - 2 * 80,
+                    int(ctx.params.get("size", 186)))
+
+    rows = "".join(
+        f'<span class="sl-line{" accent" if i and len(lines) > 1 else ""}">'
+        f'{_esc(line.upper())}</span>' for i, line in enumerate(lines))
+
+    # Наезд и уход тянут один и тот же scale: контракт запрещает наложение, но
+    # не последовательность — второй твин начинается там, где кончился первый.
+    exit_sec = 0.42
+    enter = 0.30
+    leave = max(ctx.start + enter, ctx.start + ctx.duration - exit_sec)
+    tweens = [
+        f'tl.fromTo("#{node_id}",{{scale:1.08}},'
+        f'{{scale:1,duration:{_num(enter)},ease:"expo.out"}},{_num(ctx.start)});',
+        f'tl.to("#{node_id}",{{scale:1.9,duration:{_num(exit_sec)},ease:"power2.in"}},'
+        f'{_num(leave)});',
+    ]
+    for i in range(len(lines)):
+        tweens += entrance_tweens(f"#{node_id} .sl-line:nth-child({i + 1})",
+                                  ctx.start, name="settle", delay=0.08 + 0.10 * i)
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-slam" '
+               f'style="font-size:{size}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{rows}</div>'],
+        tweens=tweens)
+
+
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-burst": hero_burst,
     "hero-headline": hero_headline,
@@ -1320,6 +1450,8 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-script-stack": hero_script_stack,
     "hero-chat-typing": hero_chat_typing,
     "hero-title-behind": hero_title_behind,
+    "hero-exhibit": hero_exhibit,
+    "hero-slam": hero_slam,
 }
 
 
@@ -1518,6 +1650,40 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-title-behind .tb-head{color:var(--color-ink)}"
         ".hero-title-behind .tb-tail{color:var(--color-accent)}"
         ".hero-title-behind .tb-head,.hero-title-behind .tb-tail{text-shadow:0 4px 20px rgba(247,245,243,0.9)}"
+        # --- экспонат ---
+        # Карточка стоит на светлом поле поверх фона, но под субтитрами: имя
+        # экспоната и слово субтитра — разные слои смысла и спорить не должны.
+        f".hero-exhibit{{position:absolute;left:0;top:0;width:var(--frame-w);"
+        f"height:{EX_PLATE_H}px;z-index:{Z_AVATAR + 1};"
+        "background:var(--color-bg-pure);display:flex;flex-direction:column;"
+        "align-items:center;justify-content:flex-end;"
+        "padding:0 90px 46px;text-align:center;pointer-events:none}"
+        # Паспарту: тень и скругление живут на обычном блоке, потому что на
+        # самом видео продюсер их при сборке кадра не рисует.
+        ".hero-exhibit .ex-frame{position:absolute;display:block;"
+        "background:var(--color-bg-pure);border-radius:22px;"
+        "box-shadow:0 30px 72px rgba(10,10,12,0.30)}"
+        ".hero-exhibit .ex-name{display:block;font-family:var(--font-display);"
+        "text-transform:uppercase;line-height:0.94;letter-spacing:-0.01em;"
+        "color:var(--color-ink)}"
+        ".hero-exhibit .ex-detail{display:block;margin-top:14px;"
+        "font-family:var(--font-subtitle);font-weight:700;font-size:38px;"
+        "color:#4A4D52}"
+        ".hero-exhibit .ex-credit{display:block;margin-top:14px;"
+        "font-family:var(--font-mono);font-size:24px;letter-spacing:0.10em;"
+        "text-transform:uppercase;color:var(--color-muted)}"
+        f".ex-media{{position:absolute;display:block;z-index:{Z_AVATAR + 2};"
+        "object-fit:cover;pointer-events:none}"
+        # --- удар цветом ---
+        # Заливка чёрная, а не акцентная: §3.3.1 держит красный в 10–12 %
+        # площади, а приём закрывает кадр целиком.
+        f".hero-slam{{position:absolute;inset:0;z-index:{Z_AVATAR + 3};"
+        "background:var(--color-ink);display:flex;flex-direction:column;"
+        "align-items:center;justify-content:center;gap:6px;"
+        "font-family:var(--font-display);text-transform:uppercase;"
+        "line-height:0.92;letter-spacing:-0.01em;pointer-events:none}"
+        ".hero-slam .sl-line{display:block;color:var(--color-bg-pure)}"
+        ".hero-slam .sl-line.accent{color:var(--color-accent-soft)}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"
