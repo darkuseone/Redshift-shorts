@@ -15,8 +15,8 @@ import pytest
 
 from src.lib.render.hyperframes.templates import (
     DATAVIZ, DRIFT_SCALE, ENTRANCES, HERO, MOTION, TRANSITIONS, Piece, TemplateCtx,
-    enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_hero,
-    render_motion, render_transition, transition_css,
+    SS_STROKE, enter_and_drift, entrance_tweens, hero_css, render_dataviz,
+    render_hero, render_motion, render_transition, text_width, transition_css,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -277,6 +277,43 @@ def _hero_ctx(name, **over):
                 track=13, params=params)
     base.update(over)
     return TemplateCtx(**base)
+
+
+def test_script_stack_fits_the_widest_line_not_the_longest():
+    """Кегль подбирается по ширине строки, а не по числу знаков.
+
+    «ГАЗ ИЛИ ПАДАЛ» и «МОЛЧА? НАПИШИ» — по 13 знаков, но вторая шире на 11 %:
+    подбор по длине обрезал её краем кадра. Обводка тоже входит в бюджет — она
+    рисуется наружу от глифа.
+    """
+    lines = ["Ты бы жал на", "газ или падал", "молча? Напиши"]
+    piece = render_hero("hero-script-stack",
+                        _hero_ctx("hero-script-stack", params={"lines": lines}))
+    size = int(re.search(r"font-size:(\d+)px", piece.nodes[0]).group(1))
+    for line in lines:
+        drawn = text_width(line.upper(), size) + 2 * SS_STROKE
+        assert drawn <= 1080 - 2 * 90 + 1e-6, (line, drawn)
+
+
+def test_every_css_variable_is_defined():
+    """Опечатка в имени переменной не падает — она красит текст в чёрное.
+
+    Брендбук отдаёт цвета как ``--color-ink``; ``var(--ink)`` браузер считает
+    невалидным и берёт унаследованное значение. Так три приёма разом потеряли
+    и обводку, и акцент, и цвет пузыря — молча, в живом ролике. Здесь список
+    имён проверяется целиком, а не по одному приёму.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    root = re.search(r":root\{(.*?)\}", css, re.S)
+    assert root, "в таблице стилей нет блока :root с переменными брендбука"
+    defined = {m.group(1) for m in re.finditer(r"(--[\w-]+)\s*:", root.group(1))}
+    used = {m.group(1) for m in re.finditer(r"var\((--[\w-]+)", css)}
+    # Эти две ставит сам шаблон в атрибуте style каждого луча.
+    inline = {"--a", "--len"}
+    assert not (used - defined - inline), sorted(used - defined - inline)
 
 
 def test_every_hero_gets_its_content_from_the_pipeline():

@@ -22,7 +22,7 @@ import json
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
 # вспышкой нельзя, оно и так короткое.
@@ -59,6 +59,9 @@ def _num(value: float) -> str:
 # лишнего, чем обрезать слово.
 _FALLBACK_EM_PER_CHAR = 0.62
 
+# Толщина обводки строк «реплики от руки»: одно число на CSS и на подбор кегля.
+SS_STROKE = 14
+
 
 @lru_cache(maxsize=4)
 def _display_font(size: int):
@@ -81,6 +84,17 @@ def text_width(text: str, size: int) -> float:
         return len(text) * size * _FALLBACK_EM_PER_CHAR
     box = font.getbbox(text)
     return (box[2] - box[0]) * size / 100.0
+
+
+def widest(lines: Iterable[str]) -> str:
+    """Самая широкая строка, а не самая длинная.
+
+    «МОЛЧА? НАПИШИ» и «ГАЗ ИЛИ ПАДАЛ» — по 13 знаков, но первая шире второй на
+    11 %: ширина знака в Oswald гуляет вдвое. Подбор кегля по длиннейшей строке
+    поэтому обрезал самую широкую краем кадра — проверено кадром.
+    """
+    return max(lines, key=lambda line: text_width(str(line).upper(), 100),
+               default="")
 
 
 def fit_size(text: str, available_px: float, max_size: int) -> int:
@@ -866,7 +880,7 @@ def hero_knockout(ctx: "TemplateCtx") -> Piece:
     # гарнитурой: оценка «столько-то кегля на знак» врёт на десяток процентов,
     # и слово обрезается краем кадра — проверено на «ЕДИНСТВЕННЫЙ».
     margin = int(ctx.params.get("margin", 60))
-    longest = max(lines, key=len, default="")
+    longest = widest(lines)
     size = fit_size(longest, 1080 - 2 * margin, int(ctx.params.get("size", 300)))
     step = int(size * 0.92)
     # Блок садится на лицо, а не в середину кадра. Буквы здесь — дырки, и видно
@@ -1177,8 +1191,10 @@ def hero_script_stack(ctx: "TemplateCtx") -> Piece:
     # на референсе, нельзя: справа висит колонка лайков и комментариев, и под
     # ней букв не прочитать.
     safe = 2 * 90
-    longest = max(lines[:3], key=len)
-    size = fit_size(longest.upper(), 1080 - safe, int(ctx.params.get("size", 132)))
+    # Обводка рисуется наружу от глифа и добавляет по её ширине с каждой
+    # стороны строки — в бюджет кегля она обязана входить.
+    size = fit_size(widest(lines[:3]).upper(), 1080 - safe - 2 * SS_STROKE,
+                    int(ctx.params.get("size", 132)))
 
     rows, tweens = [], []
     for i, line in enumerate(lines[:3]):
@@ -1267,9 +1283,11 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     if not head or not tail:
         return Piece()
     node_id = f"tb-{ctx.index:02d}"
-    top = int(ctx.params.get("top", 120))
+    # Голова обязана перекрывать низ второй строки — иначе это плашка над
+    # головой, а не тема за спиной: центр головы в кадре ≈ 590 px.
+    top = int(ctx.params.get("top", 300))
     safe = 2 * 90
-    size = fit_size(max(head, tail, key=len).upper(), 1080 - safe,
+    size = fit_size(widest((head, tail)).upper(), 1080 - safe,
                     int(ctx.params.get("size", 150)))
 
     tweens = enter_and_drift(f"#{node_id} .tb-head", ctx.start, ctx.duration,
@@ -1377,10 +1395,12 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "pointer-events:none}"
         ".hero-text-column .tc-line{display:block;font-family:var(--font-display);"
         "text-transform:uppercase;font-size:66px;line-height:0.98;"
-        "color:var(--color-bg-pure);will-change:transform;"
-        "text-shadow:0 4px 22px rgba(0,0,0,0.55),0 2px 5px rgba(0,0,0,0.45)}"
+        "color:var(--color-ink);will-change:transform;"
+        # Под аватаром с альфой фон светлый (§7.7, .vfx), поэтому строки
+        # тёмные, а ореол — светлый: белым по светлому читалась каша.
+        "text-shadow:0 4px 20px rgba(247,245,243,0.9),0 2px 6px rgba(247,245,243,0.9)}"
         # Золото референсов переведено в акцент бренда: выцветший красный.
-        ".hero-text-column .tc-line.accent{color:var(--color-accent-soft)}"
+        ".hero-text-column .tc-line.accent{color:var(--color-accent)}"
         # --- круглая рамка и карточка ---
         f".hero-bubble-card{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
         "pointer-events:none}"
@@ -1456,23 +1476,23 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         # ширину кадра, и вторая половина фразы должна остаться на своей строке.
         "white-space:nowrap;"
         "font-weight:700;font-style:italic;letter-spacing:.01em;line-height:1.02;"
-        "color:var(--ink);-webkit-text-stroke:14px var(--bg-pure);"
+        f"color:var(--color-ink);-webkit-text-stroke:{SS_STROKE}px var(--color-bg-pure);"
         "paint-order:stroke fill;text-transform:uppercase}"
         # --- переписка с печатью ---
         f".hero-chat-typing{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
         "display:flex;align-items:center;justify-content:center;"
         "pointer-events:none}"
         f".hero-chat-typing .ct-body{{width:{int(width * 0.70)}px;"
-        "background:var(--bg-pure);border-radius:44px;padding:38px 34px 44px;"
+        "background:var(--color-bg-pure);border-radius:44px;padding:38px 34px 44px;"
         "box-shadow:0 40px 90px rgba(10,10,12,.34);display:flex;"
         "flex-direction:column;gap:22px}"
         ".hero-chat-typing .ct-app{display:block;font-family:var(--font-mono);"
         "font-size:30px;letter-spacing:.16em;text-transform:uppercase;"
-        "color:var(--muted)}"
+        "color:var(--color-muted)}"
         # Запрос стоит справа, как отправленный: так читается направление.
         ".hero-chat-typing .ct-ask{align-self:flex-end;max-width:84%;"
         "padding:24px 30px;border-radius:30px 30px 8px 30px;"
-        "background:var(--ink);color:var(--bg-pure);"
+        "background:var(--color-ink);color:var(--color-bg-pure);"
         "font-family:var(--font-subtitle);font-size:40px;line-height:1.24;"
         "display:flex;flex-wrap:wrap;gap:.32em;justify-content:flex-end}"
         ".hero-chat-typing .ct-w{display:inline-block}"
@@ -1483,7 +1503,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "background:rgba(17,18,20,.14)}"
         ".hero-chat-typing .ct-answer{align-self:flex-start;max-width:84%;"
         "padding:24px 30px;border-radius:30px 30px 30px 8px;background:#F0EEEB;"
-        "color:var(--ink);font-family:var(--font-subtitle);font-size:40px;"
+        "color:var(--color-ink);font-family:var(--font-subtitle);font-size:40px;"
         "line-height:1.24}"
         # --- двухстрочный заголовок за головой ---
         # Слой уходит за аватара: голова обязана перекрывать низ второй строки,
@@ -1495,8 +1515,9 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "white-space:nowrap;"
         "font-family:var(--font-display);font-weight:700;line-height:.98;"
         "letter-spacing:-.01em;text-transform:uppercase}"
-        ".hero-title-behind .tb-head{color:var(--bg-pure)}"
-        ".hero-title-behind .tb-tail{color:var(--accent-soft)}"
+        ".hero-title-behind .tb-head{color:var(--color-ink)}"
+        ".hero-title-behind .tb-tail{color:var(--color-accent)}"
+        ".hero-title-behind .tb-head,.hero-title-behind .tb-tail{text-shadow:0 4px 20px rgba(247,245,243,0.9)}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"

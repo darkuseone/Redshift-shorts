@@ -37,3 +37,6 @@ config/secrets.local.yaml
 # --- OS ---
 .DS_Store
 Thumbs.db
+
+# Витрина приёмов собирается из исходников — в репозиторий не кладём.
+build/
