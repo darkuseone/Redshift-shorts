@@ -305,7 +305,8 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
             _limit_appearance_length(slots, appearance_min, appearance_max, min_shot, notes),
             duration)
         slots = close_gaps(
-            _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes), duration)
+            _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes,
+                                 appearance_min=appearance_min, words=all_words), duration)
         # Оба правила §3.5 чинятся одним действием — «отдать аватару футажный
         # слот», и оба должны попасть в ту же сходимость: разрыв футажа может
         # поднять долю, а добор доли — разорвать футаж.
@@ -729,11 +730,89 @@ def _limit_appearance_length(slots: list[Slot], min_appearance: float, max_appea
     return slots
 
 
+def _cut_away_from_avatar(slot: Slot, max_shot_ev: float, appearance_min: float,
+                          words: list[dict[str, Any]], notes: list[str]) -> list[Slot]:
+    """Разорвать перебивкой аватар-слот, который висит дольше §3.6.2.
+
+    Появление 3–12 сек законно (§3.5), но одним планом столько висеть нельзя:
+    режем не «на два аватара подряд» — это запрещено (QC-18) — а вырезаем из
+    середины окно под футаж. Голос под ним продолжает звучать: аватар уходит с
+    экрана, речь не прерывается.
+    """
+    pieces = 2
+    while slot.duration / pieces > max_shot_ev:
+        pieces += 1
+    # Перебивка короче 0.9 сек читается как брак склейки, а не как приём.
+    room = (slot.duration - pieces * appearance_min) / (pieces - 1)
+    cut = min(min(1.4, max(0.9, slot.duration * 0.15)), room)
+    if cut < 0.9 - 1e-9:
+        notes.append(
+            f"аватар-слот {slot.start:.2f}–{slot.end:.2f} сек висит дольше {max_shot_ev} сек, "
+            f"но перебивка не помещается: куски выходят короче {appearance_min:.0f} сек")
+        return [slot]
+    piece = (slot.duration - cut * (pieces - 1)) / pieces
+
+    bounds = [slot.start]
+    for i in range(pieces - 1):
+        gap_start = bounds[-1] + piece
+        bounds += [gap_start, gap_start + cut]
+    bounds.append(slot.end)
+    snapped = _snap_avatar_bounds(bounds, words, max_shot_ev, appearance_min)
+
+    out: list[Slot] = []
+    for i in range(0, len(snapped) - 1, 2):
+        out.append(Slot(**{**slot.__dict__,
+                           "start": snapped[i], "end": snapped[i + 1], "events": [],
+                           "transition_in": "cut" if i else slot.transition_in}))
+        if i + 2 < len(snapped):
+            out.append(Slot(
+                index=0, start=snapped[i + 1], end=snapped[i + 2], kind="footage",
+                block_id=slot.block_id, role=slot.role, mode="C",
+                visual_intent=slot.visual_intent, queries=list(slot.queries),
+                needs_asset=True, asset_role="broll", transition_in="cut",
+                reason="перебивка внутри длинного аватар-плана (§3.6.2, QC-4)",
+            ))
+    notes.append(f"аватар-план {slot.start:.2f}–{slot.end:.2f} сек разорван "
+                 f"{pieces - 1} перебивкой (лимит {max_shot_ev} сек)")
+    return out
+
+
+def _snap_avatar_bounds(bounds: list[float], words: list[dict[str, Any]],
+                        max_shot_ev: float, appearance_min: float) -> list[float]:
+    """Прижать края перебивки к границам слов — иначе клип аватара режется по слогу.
+
+    P6 берёт в сегмент каждое слово, задевающее его окно (``snap_to_phrase``):
+    рез посреди слова отдал бы это слово обоим клипам сразу. Если прижатие
+    ломает сами лимиты — оставляем расчётные моменты.
+    """
+    if not words:
+        return bounds
+    out = [bounds[0]] + [_snap_to_word(t, words) for t in bounds[1:-1]] + [bounds[-1]]
+    for a, b in zip(out, out[1:]):
+        if b - a < 0.4:
+            return bounds
+    for i in range(0, len(out) - 1, 2):
+        if not (appearance_min - 1e-6 <= out[i + 1] - out[i] <= max_shot_ev + 1e-6):
+            return bounds
+    return out
+
+
 def _enforce_shot_limits(slots: list[Slot], max_shot: float, max_shot_ev: float,
-                         min_shot: float, notes: list[str]) -> list[Slot]:
-    """Ни один футажный слот не висит дольше допустимого (§3.6.2, QC-4)."""
+                         min_shot: float, notes: list[str], *,
+                         appearance_min: float = 3.0,
+                         words: list[dict[str, Any]] | None = None) -> list[Slot]:
+    """Ни один слот не висит дольше допустимого (§3.6.2, QC-4).
+
+    Футаж режется на планы: материал тот же, склейка новая. С аватаром так
+    нельзя — два аватар-плана подряд это тот же непрерывный кадр (QC-18),
+    поэтому длинный аватар разрывается перебивкой.
+    """
     out: list[Slot] = []
     for slot in slots:
+        if slot.kind == "avatar" and slot.duration > max_shot_ev + 1e-3:
+            out.extend(_cut_away_from_avatar(slot, max_shot_ev, appearance_min,
+                                             words or [], notes))
+            continue
         if slot.kind not in ("footage", "split") or slot.duration <= max_shot:
             out.append(slot)
             continue

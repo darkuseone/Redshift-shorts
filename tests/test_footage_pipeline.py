@@ -14,8 +14,9 @@ from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
     Slot, _avatar_runs, _avatar_share, _break_long_footage_run,
-    _insert_avatar_interstitials, _longest_footage_run, _needs_interstitial,
-    _irony_emotion, _raise_avatar_share, _split_span, close_gaps, compute_stats,
+    _enforce_shot_limits, _insert_avatar_interstitials, _longest_footage_run,
+    _needs_interstitial, _irony_emotion, _raise_avatar_share, _split_span,
+    close_gaps, compute_stats,
 )
 from src.p7_broll_search.search import _stage1_reject
 from src.p8_broll_judge.judge import _needs_arbitration
@@ -83,6 +84,36 @@ def test_interstitial_taken_from_tail_when_there_is_room():
     out = _insert_avatar_interstitials(slots, min_shot=1.5, appearance_min=3.0, notes=[])
     assert [s.kind for s in out] == ["avatar", "footage", "avatar"]
     assert out[1].end == pytest.approx(8.0)           # вырез именно из первого
+
+
+def test_long_avatar_shot_is_broken_by_cutaway():
+    """QC-4 меряет любой план, а не только футажный: аватар 8.8 сек висит.
+
+    Резать его на два аватар-плана подряд нельзя (QC-18) — вырезаем перебивку.
+    """
+    slots = [_slot(0, 0.0, 8.8, kind="avatar", block="b1", mode="A")]
+    out = _enforce_shot_limits(slots, 5.0, 7.0, 1.5, [], appearance_min=3.0)
+    assert [s.kind for s in out] == ["avatar", "footage", "avatar"]
+    assert all(s.duration <= 7.0 + 1e-6 for s in out if s.kind == "avatar")
+    assert all(s.duration >= 3.0 - 1e-6 for s in out if s.kind == "avatar")
+    assert out[0].start == pytest.approx(0.0) and out[-1].end == pytest.approx(8.8)
+    assert out[1].needs_asset and out[1].asset_role == "broll"
+
+
+def test_avatar_cutaway_lands_on_word_boundaries():
+    """Рез посреди слова отдал бы слово обоим клипам сразу (P6 snap_to_phrase)."""
+    words = [{"start": round(i * 0.4, 2), "end": round(i * 0.4 + 0.35, 2)}
+             for i in range(23)]
+    out = _enforce_shot_limits([_slot(0, 0.0, 9.2, kind="avatar", block="b1", mode="A")],
+                               5.0, 7.0, 1.5, [], appearance_min=3.0, words=words)
+    bounds = {round(w["start"], 2) for w in words} | {round(w["end"], 2) for w in words}
+    assert round(out[0].end, 2) in bounds
+    assert round(out[1].end, 2) in bounds
+
+
+def test_avatar_shot_within_limit_untouched():
+    slots = [_slot(0, 0.0, 6.5, kind="avatar", block="b1", mode="A")]
+    assert _enforce_shot_limits(slots, 5.0, 7.0, 1.5, []) == slots
 
 
 def test_close_gaps_makes_strict_partition():
@@ -214,11 +245,16 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
     path = repo_root / "work" / "redshift_0042" / "cut_plan.json"
     if not path.exists():
         pytest.skip("нет прогона: запустите python -m src.cli run --script scripts/redshift_0042.json")
-    stats = json.loads(path.read_text(encoding="utf-8"))["stats"]
+    plan = json.loads(path.read_text(encoding="utf-8"))
+    stats = plan["stats"]
     assert 0.35 <= stats["avatar_share"] <= 0.60
     assert 2 <= stats["avatar_appearances"] <= 5
     assert all(3.0 <= d <= 12.0 for d in stats["avatar_appearance_durations"])
-    assert stats["max_shot_sec"] <= 5.0 + 1e-6
+    # QC-4 меряет не самый длинный слот вообще, а каждый по своему потолку:
+    # 5 сек без внутренних событий, 7 — с ними.
+    for slot in plan["slots"]:
+        allowed = 7.0 if len(slot.get("events") or []) > 1 else 5.0
+        assert slot["duration"] <= allowed + 1e-3, slot
     assert stats["max_event_gap_sec"] <= 2.5 + 1e-3
     assert stats["first_event_sec"] <= 0.8
     assert stats["split_share"] <= 0.25 + 1e-3
