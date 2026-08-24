@@ -987,6 +987,9 @@ def run_step(ctx) -> dict[str, Any]:
     cta_tail = float(limits.get("cta_tail_sec", 2.0))
     plan_doc = {
         "video_id": draft["video_id"],
+        # Тема ролика едет дальше по конвейеру: приём «заголовок за головой»
+        # ставит за ведущим именно её, а не обрывок текущей реплики.
+        "title": draft.get("title", ""),
         "fps": ctx.cfg.fps,
         "duration_sec": round(duration, 3),
         "target_duration_sec": draft["target_duration_sec"],

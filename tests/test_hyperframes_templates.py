@@ -279,6 +279,31 @@ def _hero_ctx(name, **over):
     return TemplateCtx(**base)
 
 
+def test_every_hero_gets_its_content_from_the_pipeline():
+    """Приём, выбранный конвейером, обязан получить и содержимое.
+
+    Пропуск в отображении не падает и не пишет в лог: рендерер возвращает
+    пустой ``Piece``, и приёма в кадре просто нет. Проверяется именно связка
+    «что конвейер кладёт в params» ↔ «что рендерер оттуда читает».
+    """
+    from src.p11_assemble.assemble import _HERO_NEEDS, _hero_content, hero_params
+
+    block = {"id": "b1", "emphasis_word": "переживёшь",
+             "text": "Падение в чёрную дыру ты переживёшь. Это и есть худшая часть."}
+    content = _hero_content(block, {"role": "hook"}, None, (540, 700),
+                            title="Можно ли выжить внутри чёрной дыры")
+    content["brand"] = {"label": "Google", "icon": "assets/icons/google.png"}
+
+    for name in sorted(HERO):
+        params = hero_params(name, {}, content, {"role": "hook"})
+        if "plate" in _HERO_NEEDS.get(name, ()):
+            # Материал приходит не из текста блока, а из соседнего кадра.
+            params["src"] = "assets/m000_shot.mp4"
+        ctx = TemplateCtx(index=3, start=4.5, duration=3.0, target="avatar-01",
+                          track=13, params=params)
+        assert render_hero(name, ctx).nodes, f"{name} остался без содержимого"
+
+
 @pytest.mark.parametrize("name", sorted(HERO))
 def test_hero_animates_only_allowed_properties(name):
     piece = render_hero(name, _hero_ctx(name))

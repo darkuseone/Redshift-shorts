@@ -14,6 +14,7 @@ Edit-план — самодостаточный документ: §9.1 тре�
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from typing import Any
 
@@ -141,8 +142,17 @@ def _wrap_lines(text: str, *, width: int = 13, limit: int = 4) -> list[str]:
     return lines
 
 
+def _sentence(text: str, index: int, *, limit: int) -> str:
+    """Фраза по счёту, ужатая до ``limit`` слов."""
+    parts = [p.strip() for p in re.split(r"(?<=[.!?…])\s+", text) if p.strip()]
+    if index >= len(parts):
+        return ""
+    return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
+
+
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
-                  face: tuple[int, int] | None = None) -> dict[str, Any]:
+                  face: tuple[int, int] | None = None,
+                  title: str = "") -> dict[str, Any]:
     """Собрать всё, чем можно накормить приёмы, из одного блока сценария."""
     text = str(block.get("text") or "").strip()
     word = str(block.get("emphasis_word") or "").strip()
@@ -164,14 +174,16 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     # — то, что с ним происходит, и она же берёт акцент. Делим по акцентному
     # слову, если оно есть: на нём и держится смысл фразы.
     words = [w for w in text.split() if w]
+    # За головой стоит тема ролика, а не обрывок текущей реплики: приём держит
+    # весь блок, и фраза из середины предложения читалась бы как оговорка.
+    # Обе строки идут через весь кадр без переноса, поэтому делим пополам по
+    # словам, а не по акценту: кегль подбирается под длинную из двух.
     head = tail = ""
-    if len(words) >= 3:
-        pivot = next((i for i, w in enumerate(words)
-                      if word and word.lower() in w.lower()), 0)
-        # Акцент в самом начале ничего не делит — тогда режем по трети фразы.
-        cut = pivot if 0 < pivot < len(words) else max(1, len(words) // 3)
-        head = " ".join(words[:cut]).strip(".,!?;:")
-        tail = " ".join(words[cut:cut + 3]).strip(".,!?;:")
+    title_words = [w for w in str(title or "").split() if w]
+    if len(title_words) >= 2:
+        cut = (len(title_words) + 1) // 2
+        head = " ".join(title_words[:cut]).strip(".,!?;:")
+        tail = " ".join(title_words[cut:]).strip(".,!?;:")
 
     return {
         "word": word,
@@ -180,15 +192,61 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # Заголовок карточки — начало реплики, а не акцентное слово: одно слово
         # крупно уже занято выбивкой и заголовком над головой.
         "title": " ".join(text.split()[:3]).strip(".,!?;:").upper(),
-        # Запрос в переписке — сама реплика: приём показывает, что спрашивают,
-        # а не пересказ.
-        "ask": " ".join(words[:8]).strip(".,!?;:"),
-        "answer": " ".join(words[8:14]).strip(".,!?;:") if len(words) > 8 else "",
+        # Запрос в переписке — первая фраза реплики целиком, ответ — следующая.
+        # Резать по счёту слов нельзя: обрывок «Это и» на месте вопроса
+        # читается как сбой набора, а не как реплика.
+        "ask": _sentence(text, 0, limit=8),
+        "answer": _sentence(text, 1, limit=6),
         "head": head,
         "tail": tail,
         "brand": brand,
         "face": face,
     }
+
+
+def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
+                slot: dict[str, Any]) -> dict[str, Any]:
+    """Наполнить пресет приёма содержимым блока.
+
+    Отдельной функцией, а не куском выбора: тем же отображением пользуется
+    витрина приёмов (``tools/build_showcase.py``), и разъехавшись, она начала
+    бы показывать не то, что собирает конвейер.
+    """
+    params: dict[str, Any] = {**base}
+    if "word" in _HERO_NEEDS.get(renderer, ()):
+        params["word"] = str(content["word"]).upper()
+    if renderer == "hero-headline":
+        params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
+    if "lines" in _HERO_NEEDS.get(renderer, ()):
+        upper = renderer == "hero-text-column"
+        params["lines"] = [l.upper() if upper else l for l in content["lines"]]
+        params["accent_lines"] = content["accent_lines"]
+    if content.get("face"):
+        # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
+        # за ними светлее заливки.
+        if renderer == "hero-bubble-card":
+            params["face_cx"], params["face_cy"] = content["face"]
+        if renderer == "hero-knockout":
+            params["face_cy"] = content["face"][1]
+    if renderer == "hero-brand-pill":
+        params.update(content["brand"])
+    if renderer == "hero-card-stack":
+        params["title"] = content["title"]
+    if renderer == "hero-phone-mock":
+        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    # Текстовые нужды приёма переносятся один в один: имя ключа в
+    # ``_HERO_NEEDS`` и есть имя параметра рендерера. Правила выше — про те
+    # ключи, где содержимое ещё нужно причесать (регистр, лицо, иконка).
+    _SHAPED = ("word", "lines", "plate", "brand", "title")
+    for key in _HERO_NEEDS.get(renderer, ()):
+        if key not in _SHAPED and content.get(key):
+            params[key] = content[key]
+    if renderer == "hero-chat-typing":
+        # Ответ приёму не обязателен: без него он показывает ожидание, и это
+        # рабочий кадр. Но если реплика длинная — ответ есть, и он читается.
+        params["answer"] = content.get("answer", "")
+        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    return params
 
 
 def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
@@ -221,29 +279,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                             recent_videos=recent_videos, exclude=blocked,
                             seed=seed + int(slot["index"]) * 7)
     renderer = template.renderer
-    params: dict[str, Any] = {**template.params}
-
-    if "word" in _HERO_NEEDS.get(renderer, ()):
-        params["word"] = str(content["word"]).upper()
-    if renderer == "hero-headline":
-        params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
-    if "lines" in _HERO_NEEDS.get(renderer, ()):
-        upper = renderer == "hero-text-column"
-        params["lines"] = [l.upper() if upper else l for l in content["lines"]]
-        params["accent_lines"] = content["accent_lines"]
-    if content.get("face"):
-        # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
-        # за ними светлее заливки.
-        if renderer == "hero-bubble-card":
-            params["face_cx"], params["face_cy"] = content["face"]
-        if renderer == "hero-knockout":
-            params["face_cy"] = content["face"][1]
-    if renderer == "hero-brand-pill":
-        params.update(content["brand"])
-    if renderer == "hero-card-stack":
-        params["title"] = content["title"]
-    if renderer == "hero-phone-mock":
-        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    params = hero_params(renderer, template.params, content, slot)
 
     entry: dict[str, Any] = {
         "template": template.id, "renderer": renderer, "params": params,
@@ -732,7 +768,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 hero_entry = _hero_device(
                     catalog, slot=slot,
                     content=_hero_content(block, slot, brand_icons,
-                                          face_centres.get(int(slot["index"]))),
+                                          face_centres.get(int(slot["index"])),
+                                          title=str(plan.get("title") or "")),
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared),
                     recent_videos=recent_videos, exclude=used_templates,
