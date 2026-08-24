@@ -51,6 +51,10 @@ elevenlabs:
   voice_id: ""                          # можно задать явно; пусто → берётся из env
   model: "eleven_v3"
   fallback_model: "eleven_multilingual_v2"   # R-4
+  # Темп речи ведущего относительно базового. 1.1 — на десятую быстрее: так
+  # просил заказчик. Вместе со скоростью на ту же долю сдвигается плановая
+  # длительность, иначе коррекция длины вернула бы прежний темп.
+  pace: 1.1
   length_buffer_pct: 22                      # §4.2.4: запас +18…25%
   api_key_env: ELEVENLABS_API_KEY
   api_base: "https://api.elevenlabs.io"

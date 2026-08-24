@@ -1154,6 +1154,140 @@ def hero_phone_mock(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def hero_script_stack(ctx: "TemplateCtx") -> Piece:
+    """Реплика выкладывается строками поверх кадра, каждая — своим наездом.
+
+    Референс: фраза разбита на две-три короткие строки, они встают одна под
+    другой по ходу речи и остаются висеть. Каждая строка обведена толстым
+    контуром — на любом футаже она читается, не завися от того, что под ней.
+
+    Гарнитура референса рукописная, у нас её нет и завести её нельзя: шрифт
+    проходит проверку на кириллицу и лицензию (§14). Поэтому берётся приём, а
+    не начертание — обводка, наклон и выкладка строками, — на своём дисплейном
+    шрифте. Небольшой наклон строк в разные стороны и держит «подпись от руки».
+    """
+    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
+    if not lines:
+        return Piece()
+    node_id = f"ss-{ctx.index:02d}"
+    top = int(ctx.params.get("top", 150))
+    # Строки идут через весь кадр, поэтому кегль подбирается по самой длинной:
+    # фиксированный обрезал бы её краем.
+    # Поле — по левой границе рабочей области (§3.2). Уходить в самый край, как
+    # на референсе, нельзя: справа висит колонка лайков и комментариев, и под
+    # ней букв не прочитать.
+    safe = 2 * 90
+    longest = max(lines[:3], key=len)
+    size = fit_size(longest.upper(), 1080 - safe, int(ctx.params.get("size", 132)))
+
+    rows, tweens = [], []
+    for i, line in enumerate(lines[:3]):
+        tilt = (-1.6, 1.2, -0.9)[i % 3]
+        rows.append(f'<span class="ss-line" style="font-size:{size}px;'
+                    f'rotate:{tilt}deg">{_esc(line.upper())}</span>')
+        # Строка приходит вслед за речью, а не всей пачкой: задержка растёт.
+        tweens += enter_and_drift(f"#{node_id} .ss-line:nth-child({i + 1})",
+                                  ctx.start, ctx.duration,
+                                  name="zoom-in", delay=0.10 + 0.30 * i)
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-script-stack" '
+               f'style="top:{top}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{"".join(rows)}</div>'],
+        tweens=tweens)
+
+
+def hero_chat_typing(ctx: "TemplateCtx") -> Piece:
+    """Переписка: реплика набирается словами, ответ приходит скелетоном.
+
+    Референс: запрос печатается в поле, отправляется, и на месте ответа сперва
+    пульсируют серые плашки, а уже потом встаёт текст. Приём держится на этой
+    паузе — она и читается как «машина думает».
+
+    Печать посимвольно тут не годится: перемотка обязана давать тот же кадр,
+    что и проигрывание, а посимвольная анимация текста этого не гарантирует.
+    Слово за словом даёт ту же скорость чтения и остаётся перемотке по зубам.
+    """
+    ask = [w for w in str(ctx.params.get("ask") or "").split() if w]
+    if not ask:
+        return Piece()
+    node_id = f"ct-{ctx.index:02d}"
+    answer = str(ctx.params.get("answer") or "")
+    app = str(ctx.params.get("app") or "")
+
+    words, tweens = [], []
+    for i, word in enumerate(ask[:8]):
+        words.append(f'<span class="ct-w">{_esc(word)}</span>')
+        tweens += entrance_tweens(f"#{node_id} .ct-w:nth-child({i + 1})",
+                                  ctx.start, name="rise", delay=0.14 + 0.09 * i)
+
+    typed_for = 0.14 + 0.09 * min(len(ask), 8)
+    # Скелетон живёт ровно между отправкой и ответом; он не «мигает», а
+    # выкладывается полосами — перемотка отдаёт то же самое.
+    bars = "".join(f'<span class="ct-bar" style="width:{w}%"></span>'
+                   for w in (92, 78, 54))
+    for i in range(3):
+        tweens += entrance_tweens(f"#{node_id} .ct-bar:nth-child({i + 1})",
+                                  ctx.start, name="dim",
+                                  delay=typed_for + 0.10 + 0.12 * i)
+
+    answer_html = ""
+    if answer:
+        answer_html = f'<span class="ct-answer">{_esc(answer)}</span>'
+        tweens += entrance_tweens(f"#{node_id} .ct-answer", ctx.start,
+                                  name="zoom-in", delay=typed_for + 0.62)
+
+    head = f'<span class="ct-app">{_esc(app)}</span>' if app else ""
+    tweens = entrance_tweens(f"#{node_id} .ct-body", ctx.start,
+                             name="zoom-out") + tweens
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-chat-typing" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<span class="ct-body">{head}'
+               f'<span class="ct-ask">{"".join(words)}</span>'
+               f'<span class="ct-skeleton">{bars}</span>'
+               f'{answer_html}</span></div>'],
+        tweens=tweens)
+
+
+def hero_title_behind(ctx: "TemplateCtx") -> Piece:
+    """Двухстрочный заголовок за головой: вторая строка — акцентом.
+
+    Референс: тема ролика стоит крупно за ведущим и держится весь блок, пока
+    внизу идут субтитры. Голова перекрывает низ второй строки — именно это
+    даёт глубину и отличает приём от плашки поверх кадра.
+
+    Вторая строка берёт акцентный цвет. В референсе он золотой, в каталог это
+    не переносится: палитра своя (§3.3), акцент — приглушённый красный.
+    """
+    head = str(ctx.params.get("head") or "")
+    tail = str(ctx.params.get("tail") or "")
+    if not head or not tail:
+        return Piece()
+    node_id = f"tb-{ctx.index:02d}"
+    top = int(ctx.params.get("top", 120))
+    safe = 2 * 90
+    size = fit_size(max(head, tail, key=len).upper(), 1080 - safe,
+                    int(ctx.params.get("size", 150)))
+
+    tweens = enter_and_drift(f"#{node_id} .tb-head", ctx.start, ctx.duration,
+                             name="zoom-in")
+    tweens += entrance_tweens(f"#{node_id} .tb-tail", ctx.start,
+                              name="zoom-in", delay=0.16)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-title-behind" '
+               f'style="top:{top}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<span class="tb-head" style="font-size:{size}px">'
+               f'{_esc(head.upper())}</span>'
+               f'<span class="tb-tail" style="font-size:{size}px">'
+               f'{_esc(tail.upper())}</span></div>'],
+        tweens=tweens)
+
+
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-burst": hero_burst,
     "hero-headline": hero_headline,
@@ -1165,6 +1299,9 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-brand-pill": hero_brand_pill,
     "hero-card-stack": hero_card_stack,
     "hero-phone-mock": hero_phone_mock,
+    "hero-script-stack": hero_script_stack,
+    "hero-chat-typing": hero_chat_typing,
+    "hero-title-behind": hero_title_behind,
 }
 
 
@@ -1307,6 +1444,59 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-phone-mock .pm-row.in{align-self:flex-start;background:#F0EEEB}"
         ".hero-phone-mock .pm-row.out{align-self:flex-end;"
         "background:var(--color-accent-soft);color:var(--color-bg-pure)}"
+        # --- наборный заголовок строками (референс: подпись от руки) ---
+        # Обводка через -webkit-text-stroke съедает внутренности буквы: контур
+        # рисуется поверх заливки. paint-order кладёт его под неё, и буква
+        # остаётся читаемой при толстом штрихе.
+        f".hero-script-stack{{position:absolute;left:0;width:var(--frame-w);"
+        f"display:flex;flex-direction:column;align-items:center;gap:10px;"
+        f"z-index:{Z_AVATAR + 1};pointer-events:none}}"
+        ".hero-script-stack .ss-line{display:block;font-family:var(--font-display);"
+        # Перенос строки ломает выкладку: кегль уже подобран измерением под
+        # ширину кадра, и вторая половина фразы должна остаться на своей строке.
+        "white-space:nowrap;"
+        "font-weight:700;font-style:italic;letter-spacing:.01em;line-height:1.02;"
+        "color:var(--ink);-webkit-text-stroke:14px var(--bg-pure);"
+        "paint-order:stroke fill;text-transform:uppercase}"
+        # --- переписка с печатью ---
+        f".hero-chat-typing{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
+        "display:flex;align-items:center;justify-content:center;"
+        "pointer-events:none}"
+        f".hero-chat-typing .ct-body{{width:{int(width * 0.70)}px;"
+        "background:var(--bg-pure);border-radius:44px;padding:38px 34px 44px;"
+        "box-shadow:0 40px 90px rgba(10,10,12,.34);display:flex;"
+        "flex-direction:column;gap:22px}"
+        ".hero-chat-typing .ct-app{display:block;font-family:var(--font-mono);"
+        "font-size:30px;letter-spacing:.16em;text-transform:uppercase;"
+        "color:var(--muted)}"
+        # Запрос стоит справа, как отправленный: так читается направление.
+        ".hero-chat-typing .ct-ask{align-self:flex-end;max-width:84%;"
+        "padding:24px 30px;border-radius:30px 30px 8px 30px;"
+        "background:var(--ink);color:var(--bg-pure);"
+        "font-family:var(--font-subtitle);font-size:40px;line-height:1.24;"
+        "display:flex;flex-wrap:wrap;gap:.32em;justify-content:flex-end}"
+        ".hero-chat-typing .ct-w{display:inline-block}"
+        ".hero-chat-typing .ct-skeleton{align-self:flex-start;width:84%;"
+        "display:flex;flex-direction:column;gap:16px;padding:26px 30px;"
+        "border-radius:30px 30px 30px 8px;background:#F0EEEB}"
+        ".hero-chat-typing .ct-bar{display:block;height:22px;border-radius:11px;"
+        "background:rgba(17,18,20,.14)}"
+        ".hero-chat-typing .ct-answer{align-self:flex-start;max-width:84%;"
+        "padding:24px 30px;border-radius:30px 30px 30px 8px;background:#F0EEEB;"
+        "color:var(--ink);font-family:var(--font-subtitle);font-size:40px;"
+        "line-height:1.24}"
+        # --- двухстрочный заголовок за головой ---
+        # Слой уходит за аватара: голова обязана перекрывать низ второй строки,
+        # иначе это обычная плашка поверх кадра, а не глубина.
+        f".hero-title-behind{{position:absolute;left:0;width:var(--frame-w);"
+        f"display:flex;flex-direction:column;align-items:center;gap:2px;"
+        f"z-index:{Z_BEHIND_HEAD};pointer-events:none}}"
+        ".hero-title-behind .tb-head,.hero-title-behind .tb-tail{display:block;"
+        "white-space:nowrap;"
+        "font-family:var(--font-display);font-weight:700;line-height:.98;"
+        "letter-spacing:-.01em;text-transform:uppercase}"
+        ".hero-title-behind .tb-head{color:var(--bg-pure)}"
+        ".hero-title-behind .tb-tail{color:var(--accent-soft)}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"

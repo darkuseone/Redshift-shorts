@@ -112,6 +112,9 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-brand-pill": ("brand",),
     "hero-card-stack": ("title", "plate"),
     "hero-phone-mock": ("lines",),
+    "hero-script-stack": ("lines",),
+    "hero-chat-typing": ("ask",),
+    "hero-title-behind": ("head", "tail"),
 }
 
 
@@ -157,6 +160,19 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
                 brand = {"label": candidate, "icon": found[0].path}
                 break
 
+    # Двухстрочная тема за головой: первая строка — подлежащее реплики, вторая
+    # — то, что с ним происходит, и она же берёт акцент. Делим по акцентному
+    # слову, если оно есть: на нём и держится смысл фразы.
+    words = [w for w in text.split() if w]
+    head = tail = ""
+    if len(words) >= 3:
+        pivot = next((i for i, w in enumerate(words)
+                      if word and word.lower() in w.lower()), 0)
+        # Акцент в самом начале ничего не делит — тогда режем по трети фразы.
+        cut = pivot if 0 < pivot < len(words) else max(1, len(words) // 3)
+        head = " ".join(words[:cut]).strip(".,!?;:")
+        tail = " ".join(words[cut:cut + 3]).strip(".,!?;:")
+
     return {
         "word": word,
         "lines": lines,
@@ -164,6 +180,12 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # Заголовок карточки — начало реплики, а не акцентное слово: одно слово
         # крупно уже занято выбивкой и заголовком над головой.
         "title": " ".join(text.split()[:3]).strip(".,!?;:").upper(),
+        # Запрос в переписке — сама реплика: приём показывает, что спрашивают,
+        # а не пересказ.
+        "ask": " ".join(words[:8]).strip(".,!?;:"),
+        "answer": " ".join(words[8:14]).strip(".,!?;:") if len(words) > 8 else "",
+        "head": head,
+        "tail": tail,
         "brand": brand,
         "face": face,
     }

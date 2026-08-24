@@ -1,0 +1,21 @@
+{
+  "id": "hero-devices/script-stack",
+  "name": "script-stack",
+  "category": "hero-devices",
+  "title": "Реплика строками с толстой обводкой",
+  "duration_range": [
+    1.6,
+    4.2
+  ],
+  "params": {},
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "lines",
+    "stroke"
+  ],
+  "renderer": "hero-script-stack",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

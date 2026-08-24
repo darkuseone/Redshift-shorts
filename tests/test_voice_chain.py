@@ -500,3 +500,22 @@ def test_pcm_is_resampled_to_the_pipeline_rate(tmp_path, monkeypatch):
     assert sr == 48000
     assert len(data) == 48000                      # секунда осталась секундой
     assert abs(result.duration_sec - 1.0) < 1e-3
+
+
+def test_pace_makes_speech_faster_and_the_target_shorter():
+    """Темп 1.1 обязан пережить коррекцию длины.
+
+    Поднять одну скорость мало: коррекция подгоняет озвучку под плановую
+    длительность и вернула бы прежний темп. Поэтому цель едет вместе со
+    скоростью — речь быстрее, ролик соразмерно короче.
+    """
+    from src.lib.config import load_config
+
+    cfg = load_config()
+    cfg.set("elevenlabs.pace", 1.1)
+    pace = float(cfg.get("elevenlabs.pace"))
+    target = 60.0
+
+    assert abs(target / pace - 54.55) < 0.05, "цель не сдвинулась на ту же долю"
+    # Потолок коррекции тоже обязан ехать, иначе он срежет саму прибавку.
+    assert 1.35 * pace > 1.35, "предел коррекции не даст speed выйти выше 1.35"

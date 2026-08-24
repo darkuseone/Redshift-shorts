@@ -247,6 +247,11 @@ HERO_PARAMS = {
     "hero-card-stack": {"title": "СВЕТИЛ ВНУТРЬ", "src": "assets/m000_shot.mp4"},
     "hero-phone-mock": {"lines": ["что там внутри", "никто не знает"],
                         "app": "ChatGPT"},
+    "hero-script-stack": {"lines": ["если ты", "зайдёшь", "за горизонт"]},
+    "hero-chat-typing": {"ask": "что будет за горизонтом событий",
+                         "answer": "тело растянет в нить",
+                         "app": "ChatGPT"},
+    "hero-title-behind": {"head": "Наполеон", "tail": "проиграл машине"},
 }
 
 
