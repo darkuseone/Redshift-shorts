@@ -22,6 +22,11 @@ QC-отчёта здесь тоже нет: проба судится глаза
 тайминги слов, и разойдясь, субтитр уедет. Вместо `--text` можно отдать блок
 сценария целиком (`--block block.json`) — тогда приёмам достанутся и
 `source_ref`, и `overlay`, и акцентное слово.
+
+Приём называется рендерером (`hero-paper`) или id шаблона
+(`hero-devices/headline-behind-head`), когда у одного рендерера несколько
+пресетов. Приёмам с материалом нужен `--plate` — кадр футажа: в конвейере он
+приходит из соседнего шота, которого в пробе нет.
 """
 
 from __future__ import annotations
@@ -73,7 +78,7 @@ def _cuts(duration: float, devices: list[str]) -> list[tuple[float, float, str |
 
 
 def build(clip: Path, block: dict, title: str, devices: list[str],
-          out_path: Path, work: Path) -> dict:
+          out_path: Path, work: Path, plate: Path | None = None) -> dict:
     cfg = load_config()
     info = probe(clip)
     duration = round(info.duration_sec, 3)
@@ -94,29 +99,40 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
               for w, (a, b) in zip(tokens, spans)]
 
     manifest = json.loads((ROOT / "templates" / "manifest.json").read_text("utf-8"))
-    by_renderer = {t["renderer"]: t for t in manifest["templates"]}
+    # Приём называется либо рендерером, либо id шаблона: у одного рендерера
+    # бывает несколько пресетов («заголовок над головой» и «из-за головы» —
+    # один `hero-headline` с разным кеглем и высотой), и проверять надо
+    # именно тот, который встанет в кадр.
+    catalog = {t["renderer"]: t for t in manifest["templates"]}
+    catalog.update({t["id"]: t for t in manifest["templates"]})
 
     shots = []
-    for index, (start, end, renderer) in enumerate(_cuts(duration, devices)):
+    for index, (start, end, name) in enumerate(_cuts(duration, devices)):
         slot = {"index": index, "start": start, "end": end, "duration": end - start,
                 "role": block.get("role", "hook"), "block_id": block["id"],
                 "kind": "avatar"}
         hero = None
-        if renderer:
-            template = by_renderer.get(renderer)
+        if name:
+            template = catalog.get(name)
             if template is None:
-                raise SystemExit(f"нет шаблона с рендерером {renderer}")
+                raise SystemExit(f"нет приёма {name}: ни рендерера, ни шаблона")
+            renderer = template["renderer"]
             content = _hero_content(block, slot, None, (540, 700), title=title,
                                     words=[w for w in spoken
                                            if w["end"] > start and w["start"] < end])
+            # Материал приходит не из текста блока, а из соседнего кадра. В
+            # пробе соседнего кадра нет, поэтому его отдают ключом --plate.
+            if plate is not None:
+                content["plate"] = {"src": str(plate), "credit": "проба"}
             missing = [k for k in _HERO_NEEDS.get(renderer, ()) if not content.get(k)]
             if missing:
                 raise SystemExit(
                     f"приёму {renderer} нечем наполниться: нет {', '.join(missing)}")
             hero = {
                 "template": template["id"], "renderer": renderer,
-                "params": hero_params(renderer, template.get("params", {}),
-                                      content, slot),
+                "params": {**hero_params(renderer, template.get("params", {}),
+                                         content, slot),
+                           **({"src": str(plate)} if plate is not None else {})},
                 "file": None, "duration": None,
                 "carries_line": bool({"lines", "punch", "entries"}
                                      & set(_HERO_NEEDS.get(renderer, ()))),
@@ -192,6 +208,8 @@ def main() -> int:
     parser.add_argument("--emphasis", default="", help="акцентное слово реплики")
     parser.add_argument("--devices", default=",".join(DEFAULT_DEVICES),
                         help="рендереры приёмов через запятую, по одному на шот")
+    parser.add_argument("--plate", type=Path,
+                        help="кадр-материал для приёмов, которым нужен футаж")
     parser.add_argument("--work", type=Path, default=Path("work") / "test_clip")
     args = parser.parse_args()
 
@@ -210,7 +228,7 @@ def main() -> int:
     args.work.mkdir(parents=True, exist_ok=True)
     build(args.clip, block, args.title,
           [d.strip() for d in args.devices.split(",") if d.strip()],
-          args.out, args.work)
+          args.out, args.work, args.plate)
     return 0
 
 
