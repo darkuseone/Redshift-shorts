@@ -24,7 +24,8 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from ...errors import ProviderError
 from ..audio import load_wav, rms_envelope, save_wav
-from ..ffmpeg import ffmpeg_bin, has_alpha as ff_has_alpha, probe
+from ..ffmpeg import (ffmpeg_bin, has_alpha as ff_has_alpha,
+                      head_box as ff_head_box, probe)
 from ..logging import get_logger
 from ..retry import call_with_retry
 from .base import Provider, ProviderMode, resolve_mode
@@ -285,12 +286,16 @@ class HeyGenAvatar(AvatarProvider):
                     duration_sec * float(self.cfg.get("budget.price.heygen_per_second", 0.05)),
                     video_id=video_id)
         info = probe(out_path)
-        face_top, face_bottom = self.cfg.brand("avatar.face_band_y", [350, 750])
+        at = min(0.5, max(0.0, duration_sec / 2))
+        # Альфа и здесь измеряется, а не выводится из расширения: живой ответ
+        # HeyGen приходил и с прозрачностью, и без неё под одним именем.
+        alpha = ff_has_alpha(out_path, at_sec=at)
         return AvatarSegment(
             index=index, start=0.0, end=info.duration_sec or duration_sec, block_id="",
             path=Path(out_path),
-            face_bbox=(int(width * 0.28), int(face_top), int(width * 0.72), int(face_bottom)),
-            has_alpha=out_path.suffix.lower() in (".webm", ".mov"),
+            face_bbox=measured_face_bbox(self.cfg, Path(out_path), info,
+                                         at=at, alpha=alpha),
+            has_alpha=alpha,
             provider_mode="live", meta={"video_id": video_id},
         )
 
@@ -350,6 +355,24 @@ def _prepared_dir(cfg, video_id: str) -> Path:
 
 # --- готовые клипы (двухфазный конвейер) --------------------------------------
 
+def measured_face_bbox(cfg, clip: Path, info, *, at: float,
+                       alpha: bool) -> tuple[int, int, int, int]:
+    """Коробка головы: измеренная по альфе, иначе — полоса из брендбука.
+
+    Полоса ``avatar.face_band_y`` — догадка «голова обычно вот тут», и на
+    новом аватаре она разъехалась с кадром: 475 px ширины против настоящих
+    354, центр мимо на 39 px. Приёмы, которые ставятся относительно головы,
+    вставали по догадке. Там, где альфа есть, догадка не нужна вовсе.
+    """
+    if alpha:
+        measured = ff_head_box(clip, at_sec=at)
+        if measured:
+            return measured
+    face_top, face_bottom = cfg.brand("avatar.face_band_y", [350, 750])
+    return (int(info.width * 0.30), int(face_top),
+            int(info.width * 0.70), int(face_bottom))
+
+
 class PreparedAvatar(AvatarProvider):
     """Аватар берётся из заранее подготовленных клипов, а не из API.
 
@@ -378,6 +401,10 @@ class PreparedAvatar(AvatarProvider):
             if candidate.exists() and candidate.stat().st_size > 0:
                 return candidate
         return None
+
+    def _face_bbox(self, clip: Path, info, *, at: float,
+                   alpha: bool) -> tuple[int, int, int, int]:
+        return measured_face_bbox(self.cfg, clip, info, at=at, alpha=alpha)
 
     def generate(self, *, audio_path: Path, out_path: Path, duration_sec: float,
                  index: int) -> AvatarSegment:
@@ -423,13 +450,12 @@ class PreparedAvatar(AvatarProvider):
         # Альфа измеряется, а не выводится из расширения. Прошлый аватар
         # прислал .webm без прозрачности, провайдер поверил имени файла, и
         # приёмы за головой ушли за непрозрачный план — в кадре их не было.
-        has_alpha = ff_has_alpha(clip, at_sec=min(0.5, max(0.0, duration_sec / 2)))
-        face_top, face_bottom = self.cfg.brand("avatar.face_band_y", [350, 750])
+        at = min(0.5, max(0.0, duration_sec / 2))
+        has_alpha = ff_has_alpha(clip, at_sec=at)
         return AvatarSegment(
             index=index, start=0.0, end=duration_sec, block_id="",
             path=dst,
-            face_bbox=(int(info.width * 0.30), int(face_top),
-                       int(info.width * 0.70), int(face_bottom)),
+            face_bbox=self._face_bbox(clip, info, at=at, alpha=has_alpha),
             has_alpha=has_alpha, provider_mode="prepared",
             meta={"source_clip": str(clip), "lipsync_source": "prepared"},
         )

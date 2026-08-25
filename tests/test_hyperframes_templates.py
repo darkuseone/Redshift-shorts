@@ -332,6 +332,34 @@ def test_split_column_fits_the_panel_on_any_word():
             assert rows == list(word) and size == 172, (word, rows, size)
 
 
+def test_behind_head_devices_sit_on_the_measured_crown():
+    """Строка за головой садится по макушке, а не по числу из пресета.
+
+    Голова обязана перекрывать только низ последней строки. На новом аватаре
+    константа пресета пришлась слову ровно поперёк: «НЕЧЕМ» читалось как
+    «НЕ⋯ЕМ» — голова закрыла середину. Проверяется само правило: где бы ни
+    оказалась макушка, перекрытие остаётся долей высоты знака.
+    """
+    from src.lib.render.hyperframes.templates import BEHIND_HEAD_BITE
+
+    for head_top in (300, 372, 520):
+        params = {"word": "НЕЧЕМ", "kicker": "ВОПРОС", "head_top": head_top}
+        node = render_hero("hero-headline",
+                           _hero_ctx("hero-headline", params=params)).nodes[0]
+        top = int(re.search(r'class="clip hero-headline" style="top:(\d+)px', node).group(1))
+        size = int(re.search(r"font-size:(\d+)px", node).group(1))
+        cap = size * 0.72
+        # Низ прописных — вот сколько от них съедает голова.
+        bite = (top + cap) - head_top
+        assert abs(bite - cap * BEHIND_HEAD_BITE) <= 1.5, (head_top, top, bite)
+
+    # Без измерения остаётся число пресета: догадка хуже, но лучше пустоты.
+    plain = render_hero("hero-headline",
+                        _hero_ctx("hero-headline",
+                                  params={"word": "НЕЧЕМ", "top": 190})).nodes[0]
+    assert 'style="top:190px' in plain
+
+
 def test_log_marks_the_accent_word_and_never_shows_a_bare_dash():
     """Список копится чёрным, и одно слово в нём горит — акцентное.
 

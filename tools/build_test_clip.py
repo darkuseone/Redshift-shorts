@@ -41,7 +41,8 @@ sys.path.insert(0, str(ROOT))
 
 from src.lib.audio import load_wav                                     # noqa: E402
 from src.lib.config import load_config                                 # noqa: E402
-from src.lib.ffmpeg import alpha_opacity, has_alpha, probe, run   # noqa: E402
+from src.lib.ffmpeg import (alpha_opacity, has_alpha, head_box,   # noqa: E402
+                            probe, run)
 from src.lib.render.hyperframes import runner                          # noqa: E402
 from src.lib.render.hyperframes.project import HyperFramesProject      # noqa: E402
 from src.p4_align.aligner import align_by_energy, is_spoken_word       # noqa: E402
@@ -84,9 +85,12 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
     duration = round(info.duration_sec, 3)
     opacity = alpha_opacity(clip)
     alpha = has_alpha(clip)
+    # Голова меряется по альфе — от неё считаются приёмы, стоящие за ней.
+    head = head_box(clip, at_sec=min(0.5, duration / 2)) if alpha else None
     print(f"клип: {duration} c, "
           f"альфа: {'есть' if alpha else 'нет'}"
-          f"{'' if opacity is None else f' (непрозрачных {opacity:.0%})'}")
+          f"{'' if opacity is None else f' (непрозрачных {opacity:.0%})'}"
+          f"{'' if head is None else f', голова {head}'}")
 
     voice = _voice_track(clip, work / "voice.wav")
     audio, sr = load_wav(voice)
@@ -117,9 +121,12 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
             if template is None:
                 raise SystemExit(f"нет приёма {name}: ни рендерера, ни шаблона")
             renderer = template["renderer"]
-            content = _hero_content(block, slot, None, (540, 700), title=title,
+            face = (((head[0] + head[2]) // 2, (head[1] + head[3]) // 2)
+                    if head else (540, 700))
+            content = _hero_content(block, slot, None, face, title=title,
                                     words=[w for w in spoken
-                                           if w["end"] > start and w["start"] < end])
+                                           if w["end"] > start and w["start"] < end],
+                                    head_box=head)
             # Материал приходит не из текста блока, а из соседнего кадра. В
             # пробе соседнего кадра нет, поэтому его отдают ключом --plate.
             if plate is not None:
@@ -175,7 +182,7 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
         "avatar": [{
             "index": 0, "start": 0.0, "end": duration, "duration": duration,
             "block_id": block["id"], "file": str(clip),
-            "face_bbox": [340, 350, 740, 750], "has_alpha": alpha,
+            "face_bbox": list(head or [340, 350, 740, 750]), "has_alpha": alpha,
             "provider_mode": "prepared", "mode": "A", "kind": "avatar",
             "slot_indices": [s["index"] for s in shots], "text": block["text"],
         }],

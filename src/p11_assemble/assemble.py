@@ -58,6 +58,22 @@ def _alpha_slots(avatar_meta: dict[str, Any]) -> set[int]:
             for idx in seg.get("slot_indices", [])}
 
 
+def _head_boxes(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int, int, int]]:
+    """Слот шота → коробка головы в кадре.
+
+    Приёмам, которые стоят **за** головой, нужен не центр, а макушка: от неё
+    считается, насколько голова перекроет низ строки.
+    """
+    out: dict[int, tuple[int, int, int, int]] = {}
+    for seg in avatar_meta.get("segments", []):
+        box = seg.get("face_bbox")
+        if not box or len(box) != 4:
+            continue
+        for slot in seg.get("slot_indices", []):
+            out[int(slot)] = (int(box[0]), int(box[1]), int(box[2]), int(box[3]))
+    return out
+
+
 def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
     """Слот шота → центр лица в кадре.
 
@@ -321,7 +337,8 @@ def _quote(block: dict[str, Any]) -> str:
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
                   face: tuple[int, int] | None = None,
                   title: str = "",
-                  words: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+                  words: list[dict[str, Any]] | None = None,
+                  head_box: tuple[int, int, int, int] | None = None) -> dict[str, Any]:
     """Собрать всё, чем можно накормить приёмы, из одного блока сценария."""
     text = str(block.get("text") or "").strip()
     word = str(block.get("emphasis_word") or "").strip()
@@ -385,6 +402,10 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         "figures": _figures(text),
         "brand": brand,
         "face": face,
+        # Не ``head``: так уже зовётся первая строка темы за головой, и коробка
+        # затёрла бы её — приём получил бы вместо текста кортеж координат.
+        # Проверено тестом, а не рассуждением.
+        "head_box": head_box,
         # Страница первоисточника: домен из ссылки блока и та строка, которую
         # сценарий взял из статьи. Без ссылки приём не показывается вовсе —
         # страница без домена не источник, а просто белый лист.
@@ -410,6 +431,9 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
         upper = renderer == "hero-text-column"
         params["lines"] = [l.upper() if upper else l for l in content["lines"]]
         params["accent_lines"] = content["accent_lines"]
+    if content.get("head_box") and renderer in ("hero-headline", "hero-title-behind"):
+        # Приём стоит за головой, и от макушки зависит, где начнётся строка.
+        params["head_top"] = int(content["head_box"][1])
     if content.get("face"):
         # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
         # за ними светлее заливки.
@@ -886,6 +910,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # на разных кадрах, а не один и тот же ролик с другими подписями.
     alpha_slots = _alpha_slots(avatar_meta)
     face_centres = _face_centres(avatar_meta)
+    head_boxes = _head_boxes(avatar_meta)
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
     # Библиотека иконок §14: пилюля бренда берёт логотип оттуда. Её отсутствие
     # не должно валить сборку — приём просто не выпадет.
@@ -981,7 +1006,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         title=str(plan.get("title") or ""),
                         words=[w for w in words_doc["words"]
                                if float(w["end"]) > float(slot["start"])
-                               and float(w["start"]) < float(slot["end"])]),
+                               and float(w["start"]) < float(slot["end"])],
+                        head_box=head_boxes.get(int(slot["index"]))),
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,

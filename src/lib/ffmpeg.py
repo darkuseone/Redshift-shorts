@@ -288,6 +288,78 @@ def has_alpha(src: str | Path, *, at_sec: float = 0.5,
     return opacity is not None and opacity < max_opacity
 
 
+def head_box(src: str | Path, *, at_sec: float = 0.5,
+             width: int = 180) -> tuple[int, int, int, int] | None:
+    """Голова ведущего, измеренная по альфа-каналу. ``None`` — если альфы нет.
+
+    Раньше положение головы бралось константой из брендбука (полоса
+    ``avatar.face_band_y``), и приёмы ставились относительно догадки. На новом
+    аватаре догадка разъехалась с кадром: слово «за головой» пришлось ей ровно
+    поперёк, и «НЕЧЕМ» читалось как «НЕ⋯ЕМ». Догадка тут вообще лишняя — с
+    рабочей альфой силуэт известен точно.
+
+    Как читается силуэт. Профиль ширины непрозрачных строк у портрета всегда
+    один и тот же: макушка (узко) → череп (плато) → шея (провал) → плечи
+    (резкий скачок вширь). Плечи ищутся по наибольшему приросту ширины в
+    верхней половине силуэта, подбородок — по самому узкому месту между
+    черепом и плечами. Возвращается коробка головы ``(x0, y0, x1, y1)`` в
+    координатах кадра.
+    """
+    try:
+        import io
+
+        import numpy as np
+        from PIL import Image
+    except Exception:                                        # noqa: BLE001
+        return None
+
+    src = Path(src)
+    decoder = ["-c:v", "libvpx-vp9"] if src.suffix.lower() == ".webm" else []
+    args = [ffmpeg_bin(), "-v", "error", "-ss", f"{max(0.0, at_sec):.3f}",
+            *decoder, "-i", str(src), "-frames:v", "1",
+            "-vf", f"alphaextract,scale={width}:-1", "-f", "image2pipe",
+            "-vcodec", "png", "-"]
+    proc = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          timeout=120)
+    if proc.returncode != 0 or not proc.stdout:
+        return None
+
+    info = probe(src)
+    mask = np.asarray(Image.open(io.BytesIO(proc.stdout)).convert("L")) > 16
+    rows = mask.sum(axis=1)
+    filled = np.where(rows > 0)[0]
+    if filled.size < 8:
+        return None
+    top, bottom = int(filled[0]), int(filled[-1])
+
+    # Сглаживание обязательно: без него «наибольший прирост» ловит одиночную
+    # строку с волосами, а не плечи.
+    window = max(3, mask.shape[0] // 60)
+    smooth = np.convolve(rows.astype(float), np.ones(window) / window, mode="same")
+    half = smooth[top:top + max(4, (bottom - top) // 2)]
+    if half.size < 4:
+        return None
+    shoulders = top + int(np.argmax(np.diff(half))) + 1
+
+    skull = slice(top, max(top + 2, shoulders))
+    if smooth[skull].size < 2:
+        return None
+    # Подбородок — самое узкое место между черепом и плечами. Ищется во второй
+    # половине этого промежутка: в первой самое узкое место — макушка.
+    neck_from = top + (shoulders - top) // 2
+    neck = neck_from + int(np.argmin(smooth[neck_from:shoulders])) \
+        if shoulders > neck_from + 1 else shoulders
+
+    band = mask[top:max(top + 2, neck)]
+    cols = np.where(band.any(axis=0))[0]
+    if cols.size < 2:
+        return None
+
+    scale = (info.width or width) / float(mask.shape[1])
+    return (int(cols[0] * scale), int(top * scale),
+            int(cols[-1] * scale), int(neck * scale))
+
+
 def has_encoder(name: str) -> bool:
     proc = subprocess.run([ffmpeg_bin(), "-hide_banner", "-encoders"],
                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=60)

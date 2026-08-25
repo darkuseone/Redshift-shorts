@@ -840,6 +840,34 @@ def hero_burst(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Какую долю высоты строки голове позволено съесть. Больше — и слово теряет
+# середину: у «НЕЧЕМ» голова закрыла ровно «ЧЕ», и оно читалось как «НЕ⋯ЕМ».
+BEHIND_HEAD_BITE = 0.22
+
+
+def behind_head_top(params: dict, size: int, *, rows: int = 1,
+                    fallback: int) -> int:
+    """Верх блока, стоящего за головой, от измеренной макушки.
+
+    Раньше высота была константой пресета, а голова — там, где придётся.
+    На новом аватаре она пришлась слову ровно поперёк. Теперь блок садится
+    так, чтобы голова перекрывала только низ последней строки — то самое
+    перекрытие, которое и даёт глубину, — а буквы оставались читаемы.
+
+    Без измерения (нет альфы) остаётся прежнее число пресета: догадка хуже
+    измерения, но лучше, чем ничего.
+    """
+    head_top = params.get("head_top")
+    if not head_top:
+        return fallback
+    # Прописные без выносных занимают примерно 0.72 кегля; ниже базовой линии
+    # у них пусто, и перекрывать надо именно нарисованное.
+    cap = size * 0.72
+    line = size * float(params.get("line_height", 0.94))
+    bottom = float(head_top) + cap * BEHIND_HEAD_BITE
+    return max(60, int(bottom - cap - line * (rows - 1)))
+
+
 def hero_headline(ctx: "TemplateCtx") -> Piece:
     """Заголовок над головой: мелкий кикер, крупное слово, подчёркивание.
 
@@ -852,10 +880,10 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
     if not word:
         return Piece()
     node_id = f"hh-{ctx.index:02d}"
-    top = int(ctx.params.get("top", 190))
     # Кегль подбирается измерением: заголовок идёт в одну строку через весь
     # кадр, и длинное слово при фиксированном кегле обрезалось бы краем.
     size = fit_size(word, 1080 - 2 * 50, int(ctx.params.get("size", 168)))
+    top = behind_head_top(ctx.params, size, fallback=int(ctx.params.get("top", 190)))
 
     kicker_html = (f'<span class="hh-kicker">{_esc(kicker)}</span>' if kicker else "")
     # Слово оседает сверху и потом еле заметно едет: после входа кадр не имеет
@@ -1396,12 +1424,13 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     if not head or not tail:
         return Piece()
     node_id = f"tb-{ctx.index:02d}"
-    # Голова обязана перекрывать низ второй строки — иначе это плашка над
-    # головой, а не тема за спиной: центр головы в кадре ≈ 590 px.
-    top = int(ctx.params.get("top", 300))
     safe = 2 * 90
     size = fit_size(widest((head, tail)).upper(), 1080 - safe,
                     int(ctx.params.get("size", 150)))
+    # Две строки: перекрывать голова обязана низ второй, поэтому от макушки
+    # отсчитывается блок целиком.
+    top = behind_head_top(ctx.params, size, rows=2,
+                          fallback=int(ctx.params.get("top", 300)))
 
     tweens = enter_and_drift(f"#{node_id} .tb-head", ctx.start, ctx.duration,
                              name="zoom-in")
