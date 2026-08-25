@@ -15,7 +15,7 @@ import pytest
 from PIL import Image
 
 from src.errors import RenderError
-from src.lib.ffmpeg import ffmpeg_bin
+from src.lib.ffmpeg import alpha_opacity, ffmpeg_bin, has_alpha
 from src.lib.render.chroma import CHROMA_GREEN, _hex_to_ffmpeg, key_out
 
 
@@ -77,3 +77,36 @@ def test_missing_source_fails_loudly(tmp_path):
     with pytest.raises(RenderError) as exc:
         key_out(tmp_path / "нет.mp4", tmp_path / "out.mov")
     assert exc.value.code == "CHROMA_KEY_FAILED"
+
+
+def test_alpha_is_measured_and_not_guessed_from_the_extension(green_clip, tmp_path):
+    """Прозрачность определяется по кадру, а не по имени файла.
+
+    Дефект был ровно такой: провайдер считал альфой всё, что называется .mov
+    или .webm. HeyGen прислал .webm без прозрачности, приёмы за головой ушли
+    за непрозрачный план, и в кадре их не было — молча.
+    """
+    # Непрозрачный h264: альфа-плоскости в потоке нет вовсе.
+    assert alpha_opacity(green_clip) is None
+    assert not has_alpha(green_clip)
+
+    # Тот же кадр после ключевания: альфа есть и она работает.
+    keyed = key_out(green_clip, tmp_path / "keyed.mov")
+    opacity = alpha_opacity(keyed)
+    assert opacity is not None and 0.05 < opacity < 0.95, opacity
+    assert has_alpha(keyed)
+
+
+def test_alpha_filled_with_ones_does_not_count_as_alpha(tmp_path):
+    """Формально существующий, но целиком непрозрачный канал — не альфа.
+
+    Такой файл и приходил от прошлого аватара: контейнер с альфой, залитой
+    единицами. Верить самому факту наличия канала нельзя.
+    """
+    opaque = tmp_path / "opaque.mov"
+    subprocess.run([ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
+                    "-f", "lavfi", "-i", "color=c=0xE04040@1.0:s=320x480:d=0.5:r=10",
+                    "-vf", "format=rgba", "-c:v", "png", str(opaque)],
+                   check=True, capture_output=True)
+    assert alpha_opacity(opaque) == pytest.approx(1.0, abs=1e-3)
+    assert not has_alpha(opaque)

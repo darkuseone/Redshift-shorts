@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from ...errors import ProviderError
 from ..audio import load_wav, rms_envelope, save_wav
-from ..ffmpeg import ffmpeg_bin, probe
+from ..ffmpeg import ffmpeg_bin, has_alpha as ff_has_alpha, probe
 from ..logging import get_logger
 from ..retry import call_with_retry
 from .base import Provider, ProviderMode, resolve_mode
@@ -420,7 +420,10 @@ class PreparedAvatar(AvatarProvider):
         if dst.resolve() != clip.resolve():
             dst.write_bytes(clip.read_bytes())
 
-        has_alpha = clip.suffix.lower() in (".mov", ".webm")
+        # Альфа измеряется, а не выводится из расширения. Прошлый аватар
+        # прислал .webm без прозрачности, провайдер поверил имени файла, и
+        # приёмы за головой ушли за непрозрачный план — в кадре их не было.
+        has_alpha = ff_has_alpha(clip, at_sec=min(0.5, max(0.0, duration_sec / 2)))
         face_top, face_bottom = self.cfg.brand("avatar.face_band_y", [350, 750])
         return AvatarSegment(
             index=index, start=0.0, end=duration_sec, block_id="",

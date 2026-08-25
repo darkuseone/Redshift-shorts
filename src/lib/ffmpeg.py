@@ -230,6 +230,64 @@ def make_thumbnail(src: str | Path, out: str | Path, *, time_sec: float = 1.0,
     return out
 
 
+def alpha_opacity(src: str | Path, *, at_sec: float = 0.5) -> float | None:
+    """Доля непрозрачных пикселей кадра. ``None`` — альфы в файле нет.
+
+    Расширение о прозрачности не говорит **ничего**: HeyGen отдавал ``.webm``
+    и с рабочей альфой, и без неё, и назывались они одинаково. Один такой файл
+    ушёл в сборку как прозрачный, и приёмы за головой встали за непрозрачным
+    планом — в кадре их просто не было. Поэтому канал измеряется.
+
+    VP9 держит альфу отдельным блоком контейнера, и штатный декодер ffmpeg
+    отдаёт по нему ``yuv420p`` — альфы будто нет. Достаёт её только
+    ``libvpx-vp9``, поэтому для webm декодер называется явно.
+    """
+    src = Path(src)
+    decoder = ["-c:v", "libvpx-vp9"] if src.suffix.lower() == ".webm" else []
+
+    def _grab(seek: float) -> bytes:
+        args = [ffmpeg_bin(), "-v", "error", "-ss", f"{max(0.0, seek):.3f}",
+                *decoder, "-i", str(src), "-frames:v", "1",
+                "-vf", "alphaextract,scale=160:-1", "-f", "image2pipe",
+                "-vcodec", "png", "-"]
+        proc = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              timeout=120)
+        # «Requested planes not available» — в потоке нет альфа-плоскости.
+        return proc.stdout if proc.returncode == 0 else b""
+
+    raw = _grab(at_sec)
+    if not raw and at_sec > 0:
+        # Перемотка за конец короткого клипа кадра не даёт, и «кадра нет»
+        # прочиталось бы как «альфы нет». Второй заход — с начала.
+        raw = _grab(0.0)
+    if not raw:
+        return None
+    try:
+        import io
+
+        from PIL import Image
+
+        plane = Image.open(io.BytesIO(raw)).convert("L")
+    except Exception:                                        # noqa: BLE001
+        return None
+    data = list(plane.getdata())
+    if not data:
+        return None
+    return sum(data) / (255.0 * len(data))
+
+
+def has_alpha(src: str | Path, *, at_sec: float = 0.5,
+              max_opacity: float = 0.985) -> bool:
+    """Есть ли в клипе **работающая** прозрачность.
+
+    Непрозрачный кадр иногда приходит с формально существующей альфой,
+    залитой единицами. Такой канал бесполезен, и считать его альфой — то же
+    самое, что верить расширению.
+    """
+    opacity = alpha_opacity(src, at_sec=at_sec)
+    return opacity is not None and opacity < max_opacity
+
+
 def has_encoder(name: str) -> bool:
     proc = subprocess.run([ffmpeg_bin(), "-hide_banner", "-encoders"],
                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=60)

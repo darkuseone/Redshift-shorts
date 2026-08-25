@@ -43,6 +43,26 @@ def _stack(role: dict[str, Any], css_family: str) -> str:
     return f"'{css_family}', {tail}"
 
 
+def _text_rim(radius: int, color: str, *, rays: int = 12) -> str:
+    """Обводка текста кольцом теней.
+
+    ``-webkit-text-stroke`` рисует обводку **по центру** контура глифа и на
+    таком радиусе съедает просветы букв; ``paint-order`` это чинит, но за его
+    поддержку в продюсере поручиться нечем. Кольцо теней даёт тот же контур
+    гарантированно. Двенадцать лучей, а не восемь: на восьми между лучами
+    остаётся заметный зазор.
+    """
+    import math
+
+    steps = []
+    for i in range(rays):
+        angle = 2.0 * math.pi * i / rays
+        dx = round(math.cos(angle) * radius, 1)
+        dy = round(math.sin(angle) * radius, 1)
+        steps.append(f"{dx}px {dy}px 0 {color}")
+    return ",".join(steps)
+
+
 def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     """Собрать таблицу стилей композиции.
 
@@ -126,6 +146,17 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     offset = int(halo.get("offset_y_px", 4))
     alpha = float(halo.get("alpha", 0.5))
     accent_var = str(subs.get("accent_color", "accent_soft")).replace("_", "-")
+    stroke_color = colors.get(str(subs.get("stroke_color", "ink")), "#111214")
+    # Тень под словом — всегда: она сажает слово на кадр. Обводка — по режиму
+    # брендбука, и она не украшение. Пока аватар приходил непрозрачным, слово
+    # ложилось на тёмный кадр и белого с тенью хватало. С рабочей альфой фон
+    # под ведущим светлый (.vfx), и белое слово на нём пропадает — на карточке
+    # приёма исчезало совсем. Обводка держит слово на обоих грунтах.
+    shadow = (f"0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
+              f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px "
+              f"rgba(0,0,0,{alpha * 0.8:.2f})")
+    if str(subs.get("readability_mode", "shadow")) == "stroke":
+        shadow = f"{_text_rim(int(subs['stroke_px'][0]), stroke_color)},{shadow}"
     parts.append(
         f".word{{position:absolute;left:0;right:0;top:{int(subs['baseline_y_default'])}px;"
         f"z-index:{Z_SUBTITLE};text-align:center;transform:translateY(-50%);"
@@ -133,8 +164,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"font-size:{int(subs['size_px_default'])}px;"
         f"line-height:{typo['subtitle']['line_height']};"
         f"color:{subs['color']};"
-        f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
-        f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px rgba(0,0,0,{alpha * 0.8:.2f})}}"
+        f"text-shadow:{shadow}}}"
         ".word > span{display:inline-block;will-change:transform}"
         f".word.emphasis{{color:var(--color-{accent_var})}}"
     )

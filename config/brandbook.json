@@ -111,7 +111,7 @@
     "size_px_default": 96,
     "max_block_width_px": 900,
     "color": "#FFFFFF",
-    "readability_mode": "shadow",
+    "readability_mode": "stroke",
     "stroke_px": [
       6,
       8
