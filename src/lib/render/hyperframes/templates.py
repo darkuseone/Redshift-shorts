@@ -19,10 +19,13 @@ from __future__ import annotations
 
 import html
 import json
+import math
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Iterable
+
+from ...glyphs import glyph_svg
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
 # вспышкой нельзя, оно и так короткое.
@@ -788,53 +791,124 @@ def split_css(brandbook: dict[str, Any]) -> str:
 # либо уходят за него, либо делят с ним кадр, либо пропускают его сквозь
 # себя — но не закрывают лицо.
 
-# Геометрия лучей. Длины гуляют в [RAY_LEN_MIN, RAY_LEN_MIN + RAY_LEN_SPAN),
-# чтобы веер не выглядел циркулем; RAY_CAP_PAD — запас снизу под закруглённый
-# торец, который при повороте опускается ниже точки вращения.
-RAY_LEN_MIN = 300
-RAY_LEN_SPAN = 90
-RAY_CAP_PAD = 40
+# Иконки за головой: сколько живёт каждая и как часто они сменяются.
+# «Быстро появляться и исчезать» — это доли секунды: 0.22 на вход, столько же
+# на удержание, 0.18 на уход. Дольше — и это уже не вспышка, а список.
+ICON_IN, ICON_HOLD, ICON_OUT = 0.22, 0.22, 0.18
+ICON_STEP = 0.16                   # шаг между соседними по дуге
+ICON_LIFE = ICON_IN + ICON_HOLD + ICON_OUT
+ICON_SIZE = 158
+ICON_GAP = 116                     # от края головы до знака
+ICON_STEP_DEG = 46                 # шаг между соседями по дуге
+
+# Рабочая зона кадра по горизонтали (§3.2): левее и правее знак не читается.
+SAFE_X = (90, 830)
 
 
-def hero_burst(ctx: "TemplateCtx") -> Piece:
-    """Лучи за головой.
+def hero_icons(ctx: "TemplateCtx") -> Piece:
+    """Знаки за головой: то, о чём речь, вспыхивает и гаснет.
 
-    Веер полос расходится из точки за головой ведущего и раскрывается
-    поворотом. Лучи рисуются в собственном слое ниже аватара, поэтому голова
-    остаётся поверх, как на референсе.
+    Раньше здесь расходился веер лучей. В кадре он читался короной — шапкой
+    над головой, — и не значил ничего: луч не сообщает зрителю ни слова.
+    Знак сообщает. Иконки те, что реплика заслужила по своему тексту
+    (:mod:`src.lib.glyphs`), а логотип из библиотеки идёт первым, когда бренд
+    в реплике назван: он конкретнее рисованного знака.
 
-    Углы считаются от индекса шота, а не случайно: рендер сэмплирует кадры
-    не по порядку.
+    Знаки стоят по дуге вокруг головы и вспыхивают очередью. Пока в шоте есть
+    место, очередь идёт по кругу заново — так приём и «сменяется», а не
+    выкладывается списком. Повтор начинается строго после ухода той же
+    иконки: два твина на одном свойстве одного элемента пересекаться не имеют
+    права, порядок перезаписи в GSAP от этого зависит.
 
-    Габариты контейнера считаются здесь, а не в CSS, и это не украшение:
-    продюсер HyperFrames **пропускает .clip с нулевой площадью вместе с его
-    содержимым**. Веер, подвешенный к точке ``width:0;height:0``, в кадр не
-    попадал — в браузере он рисовался, в рендере исчезал. Проверено кадром:
-    тот же веер в коробке 1080×600 отрисовался целиком.
+    Слой ниже аватара, поэтому голова остаётся поверх — как на референсе. И
+    коробка полноразмерная: у ``.clip`` с нулевой площадью продюсер не рисует
+    ни рамку, ни детей.
     """
-    rays = int(ctx.params.get("rays", 9))
-    spread = float(ctx.params.get("spread_deg", 150))
-    node_id = f"hb-{ctx.index:02d}"
-    center_y = int(ctx.params.get("center_y", 560))
+    icons = [i for i in (ctx.params.get("icons") or []) if i]
+    if not icons:
+        return Piece()
+    node_id = f"hi-{ctx.index:02d}"
 
-    lengths = [RAY_LEN_MIN + ((i * 53 + ctx.index * 17) % RAY_LEN_SPAN)
-               for i in range(rays)]
-    reach = max(lengths) if lengths else RAY_LEN_MIN
-    box_h = reach + RAY_CAP_PAD
-    box_top = center_y - reach
+    cx = int(ctx.params.get("face_cx", 540))
+    cy = int(ctx.params.get("face_cy", 560))
+    half = int(ctx.params.get("head_half", 200))
+    radius = half + ICON_GAP
+    size = int(ctx.params.get("size", ICON_SIZE))
 
+    # Дуга несимметрична, и это не небрежность. Голова стоит правее середины
+    # кадра, а правое поле съедает колонка лайк/коммент/шер (§3.2): знак,
+    # заехавший под неё, не прочитать. Поэтому влево и вправо отмеряется
+    # столько, сколько там на самом деле есть места.
+    limit = math.radians(float(ctx.params.get("spread_deg", 170)) / 2)
+    reach = max(1.0, radius)
+    right = min(limit, math.asin(max(-1.0, min(1.0,
+                (SAFE_X[1] - size / 2 - cx) / reach))))
+    left = min(limit, math.asin(max(-1.0, min(1.0,
+               (cx - size / 2 - SAFE_X[0]) / reach))))
+
+    # Знаки идут ровным шагом и группой посередине доступной дуги, а не
+    # растягиваются по её краям. Двум знакам, разведённым по концам дуги,
+    # нечего сказать друг другу — это не очередь, а две случайные точки.
     spans, tweens = [], []
-    for i, length in enumerate(lengths):
-        angle = -spread / 2 + spread * i / max(1, rays - 1)
-        spans.append(f'<span style="--a:{angle:.1f}deg;--len:{length}px"></span>')
-        tweens.append(
-            f'tl.fromTo("#{node_id} span:nth-child({i + 1})",{{scaleY:0}},'
-            f'{{scaleY:1,duration:0.46,ease:"expo.out"}},'
-            f'{_num(ctx.start + 0.035 * i)});')
+    count = len(icons)
+    step = min(math.radians(ICON_STEP_DEG),
+               (left + right) / max(1, count - 1)) if count > 1 else 0.0
+    # Группа стоит над макушкой и съезжает вбок только тогда, когда иначе не
+    # помещается. Ставить её в середину **доступной** дуги нельзя: справа её
+    # режет колонка интерфейса, середина уезжает влево, и знаки повисают
+    # сбоку от головы вместо того, чтобы быть над ней.
+    half = step * (count - 1) / 2
+    middle = 0.0
+    if half * 2 <= left + right:
+        middle = max(-left + half, min(right - half, 0.0))
+    else:
+        middle = (right - left) / 2
+    for i, icon in enumerate(icons):
+        # Угол от вертикали вверх: ноль — прямо над макушкой.
+        angle = middle + (i - (count - 1) / 2) * step
+        angle = max(-left, min(right, angle))
+        x = cx + radius * math.sin(angle)
+        y = cy - radius * math.cos(angle)
+        body = (f'<img src="{_esc(str(icon["file"]))}" alt="">'
+                if icon.get("file") else glyph_svg(str(icon.get("glyph") or ""),
+                                                   size=size))
+        if not body:
+            continue
+        spans.append(
+            f'<span class="hi-mark" style="left:{int(x - size / 2)}px;'
+            f'top:{int(y - size / 2)}px;width:{size}px;height:{size}px">'
+            f'{body}</span>')
+
+    cycle = max(count * ICON_STEP, ICON_LIFE + 0.06)
+    for i in range(len(spans)):
+        at = i * ICON_STEP
+        while at + ICON_LIFE <= ctx.duration:
+            target = f"#{node_id} .hi-mark:nth-child({i + 1})"
+            tweens.append(
+                f'tl.fromTo("{target}",{{scale:0.62,opacity:0}},'
+                f'{{scale:1,opacity:1,duration:{_num(ICON_IN)},'
+                f'ease:"back.out(1.8)"}},{_num(ctx.start + at)});')
+            gone = at + ICON_IN + ICON_HOLD
+            tweens.append(
+                f'tl.to("{target}",{{scale:0.86,opacity:0,'
+                f'duration:{_num(ICON_OUT)},ease:"power2.in"}},'
+                f'{_num(ctx.start + gone)});')
+            # Жёсткое добивание в конце ухода. Без него перемотка, попавшая
+            # после угасания, оставляет знак в состоянии «уже виден»: линтер
+            # движка ловит это как `gsap_exit_missing_hard_kill`, и он прав —
+            # кадр по seek обязан совпасть с кадром по проигрыванию.
+            tweens.append(
+                f'tl.set("{target}",{{opacity:0}},'
+                f'{_num(ctx.start + gone + ICON_OUT)});')
+            at += cycle
+
+    if not tweens:
+        # Шот короче одной вспышки: показывать нечего, и лучше честно ничего,
+        # чем застывший знак.
+        return Piece()
 
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip hero-burst" '
-               f'style="top:{box_top}px;height:{box_h}px" '
+        nodes=[f'<div id="{node_id}" class="clip hero-icons" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
                f'data-track-index="{ctx.track}">{"".join(spans)}</div>'],
         tweens=tweens)
@@ -1944,7 +2018,7 @@ def hero_paper(ctx: "TemplateCtx") -> Piece:
 
 
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
-    "hero-burst": hero_burst,
+    "hero-icons": hero_icons,
     "hero-headline": hero_headline,
     "hero-plate": hero_plate,
     "hero-split": hero_split,
@@ -1987,19 +2061,18 @@ def hero_css(brandbook: dict[str, Any]) -> str:
     ui_column = int(brandbook["canvas"]["width"]) - int(
         brandbook["safe_zones"]["work_area"]["x_max"])
     return (
-        # --- лучи за головой ---
-        # Коробка полноразмерная, а высоту и верх ставит шаблон: у .clip с
-        # нулевой площадью продюсер не рисует ни саму рамку, ни детей.
-        ".hero-burst{position:absolute;left:0;width:var(--frame-w);"
-        f"z-index:{Z_BEHIND_HEAD};pointer-events:none}}"
-        # Стартовый scaleY задаёт GSAP через fromTo. Тот же transform в CSS
-        # конфликтует с твином, и лучи остаются свёрнутыми: проверено кадром.
-        # rotate — отдельное свойство, оно с transform не спорит.
-        f".hero-burst span{{position:absolute;left:calc(50% - 26px);"
-        f"bottom:{RAY_CAP_PAD}px;display:block;"
-        "width:52px;height:var(--len);border-radius:26px;"
-        "background:var(--color-accent-soft);transform-origin:50% 100%;"
-        "rotate:var(--a)}"
+        # --- знаки за головой ---
+        # Коробка полноразмерная: у .clip с нулевой площадью продюсер не рисует
+        # ни саму рамку, ни детей.
+        ".hero-icons{position:absolute;inset:0;width:var(--frame-w);"
+        f"height:var(--frame-h);z-index:{Z_BEHIND_HEAD};pointer-events:none;"
+        "color:var(--color-ink)}"
+        # Место знака ставит шаблон, вход и уход — GSAP. Начальную прозрачность
+        # задаёт fromTo: тот же transform в CSS спорил бы с твином.
+        ".hero-icons .hi-mark{position:absolute;display:flex;"
+        "align-items:center;justify-content:center;will-change:transform}"
+        ".hero-icons .hi-mark svg,.hero-icons .hi-mark img{"
+        "width:100%;height:100%;display:block;object-fit:contain}"
         # --- картинка за спиной ---
         # Габариты ставит шаблон; рамка живёт на самом видео, потому что видео
         # здесь и есть клип: вложенное медиа движок не проигрывает.

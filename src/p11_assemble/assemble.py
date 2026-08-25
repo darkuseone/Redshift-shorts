@@ -29,6 +29,7 @@ from ..lib.render.shots import (
     prepare_split_shot,
 )
 from ..lib.brand_icons import load_library as load_brand_icons
+from ..lib.glyphs import match_glyphs
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
 _log = get_logger("p11")
@@ -126,7 +127,7 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
 # попал бы в кадр. Список ведётся здесь, а не тегами в каталоге: тег описывает,
 # на что приём похож, а это — чем его кормить.
 _HERO_NEEDS: dict[str, tuple[str, ...]] = {
-    "hero-burst": (),
+    "hero-icons": ("icons",),
     "hero-plate": ("plate",),
     "hero-headline": ("word",),
     "hero-split": ("word",),
@@ -373,6 +374,15 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         head = " ".join(title_words[:cut]).strip(".,!?;:")
         tail = " ".join(title_words[cut:]).strip(".,!?;:")
 
+    # Знаки за головой: сначала логотип, если бренд в реплике назван — он
+    # конкретнее рисованного знака, — потом знаки по тексту. Реплика, в
+    # которой не названо ничего предметного, знаков не получает, и приём в
+    # таком кадре не показывается: иконки ни о чём — шум, а не монтаж.
+    icons: list[dict[str, Any]] = []
+    if brand and brand.get("icon"):
+        icons.append({"file": brand["icon"], "label": brand.get("label", "")})
+    icons += [{"glyph": name} for name in match_glyphs(text, limit=5)]
+
     return {
         "word": word,
         "lines": lines,
@@ -401,6 +411,11 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # Числа реплики: приём ставит их одно за другим на одном месте.
         "figures": _figures(text),
         "brand": brand,
+        # Меньше двух — не очередь, а одиночная мигалка, и приём на этом не
+        # держится. Отсечка стоит здесь, а не в рендерере: конвейер выбирает
+        # приём по наличию содержимого, и пустой Piece дал бы кадр без приёма
+        # молча — так уже было с двумя шаблонами.
+        "icons": icons[:5] if len(icons) >= 2 else [],
         "face": face,
         # Не ``head``: так уже зовётся первая строка темы за головой, и коробка
         # затёрла бы её — приём получил бы вместо текста кортеж координат.
@@ -434,6 +449,13 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
     if content.get("head_box") and renderer in ("hero-headline", "hero-title-behind"):
         # Приём стоит за головой, и от макушки зависит, где начнётся строка.
         params["head_top"] = int(content["head_box"][1])
+    if renderer == "hero-icons" and content.get("head_box"):
+        # Дуга строится вокруг настоящей головы: её центр и полуразмер.
+        box = content["head_box"]
+        params["face_cx"] = (int(box[0]) + int(box[2])) // 2
+        params["face_cy"] = (int(box[1]) + int(box[3])) // 2
+        params["head_half"] = max(int(box[2]) - int(box[0]),
+                                  int(box[3]) - int(box[1])) // 2
     if content.get("face"):
         # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
         # за ними светлее заливки.

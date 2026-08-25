@@ -1,0 +1,22 @@
+{
+  "id": "hero-devices/icons-behind-head",
+  "name": "icons-behind-head",
+  "category": "hero-devices",
+  "title": "Знаки о предмете речи вспыхивают за головой",
+  "duration_range": [
+    1.4,
+    3.4
+  ],
+  "params": {
+    "spread_deg": 170
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "alpha",
+    "icons"
+  ],
+  "renderer": "hero-icons",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

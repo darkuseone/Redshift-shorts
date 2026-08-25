@@ -345,15 +345,23 @@ def test_cut_leaves_kenburns_at_the_shot_start(plan, assets, brandbook):
 
 # --- приёмы вокруг ведущего ---------------------------------------------------
 
+# Чем приём наполняется, зависит от приёма: слово, знаки, строки. Пустой
+# рендерер молча отдаёт пустой Piece, и проверка разметки прошла бы вхолостую.
+_HERO_FILL = {
+    "hero-icons": {"icons": [{"glyph": "chip"}, {"glyph": "clock"}]},
+}
+
+
 def _with_hero(plan, renderer, **params):
     plan["shots"][2]["hero"] = {
         "template": f"hero-devices/{renderer}", "renderer": renderer,
-        "params": {"word": "РАЗМЕР", **params}, "file": None, "duration": None,
+        "params": {"word": "РАЗМЕР", **_HERO_FILL.get(renderer, {}), **params},
+        "file": None, "duration": None,
     }
     return plan
 
 
-@pytest.mark.parametrize("renderer", ["hero-burst", "hero-headline",
+@pytest.mark.parametrize("renderer", ["hero-icons", "hero-headline",
                                       "hero-split", "hero-knockout"])
 def test_hero_device_reaches_the_markup(plan, assets, brandbook, renderer):
     out = CompositionBuilder(_with_hero(plan, renderer), brandbook,

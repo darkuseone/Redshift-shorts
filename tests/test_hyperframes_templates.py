@@ -234,7 +234,9 @@ def test_no_tween_targets_a_clip_element(name, ctx):
 # то, что уже ломалось в реальном рендере, а не то, что легко проверить.
 
 HERO_PARAMS = {
-    "hero-burst": {},
+    "hero-icons": {"icons": [{"glyph": "chip"}, {"glyph": "atom"},
+                             {"glyph": "clock"}],
+                   "face_cx": 579, "face_cy": 579, "head_half": 207},
     "hero-headline": {"word": "ГОРИЗОНТ", "kicker": "ОДНА ТЕОРИЯ"},
     "hero-plate": {"src": "assets/m000_shot.mp4"},
     "hero-split": {"word": "ВНИМАНИЕ"},
@@ -282,7 +284,7 @@ def _css_rule(css: str, selector: str) -> str:
 
 
 def _css_rules_under(css: str, selector: str) -> list[tuple[str, str]]:
-    """Правила для потомков селектора: ``.hero-burst span``, ``.hero-plate .hp-in``."""
+    """Правила для потомков селектора: ``.hero-icons .hi-mark``, ``.hero-plate .hp-in``."""
     pattern = re.escape(selector) + r"(?:\s|>)+([^{,]+)\{([^}]*)\}"
     return [(m.group(1).strip(), m.group(2)) for m in re.finditer(pattern, css)]
 
@@ -479,8 +481,11 @@ def test_every_hero_gets_its_content_from_the_pipeline():
     block = {"id": "b1", "emphasis_word": "переживёшь",
              # В тексте есть число: приёму со сменой значений больше нечем
              # наполниться, и без него проверка его бы не задела.
+             # Число — приёму со сменой значений, «минут» и «эксперимент» —
+             # знакам за головой: одного знака им мало, это очередь.
              "text": "Падение в чёрную дыру ты переживёшь. Это и есть "
-                     "худшая часть: 12 минут собственного времени.",
+                     "худшая часть: 12 минут собственного времени, "
+                     "и ни один эксперимент этого не проверит.",
              # Ссылка на источник и помеченная цитата: без них страница
              # первоисточника не собирается, и это её правило, а не пропуск.
              "source_ref": "arxiv.org",
@@ -588,13 +593,38 @@ def test_hero_plate_without_media_draws_nothing():
     assert render_hero("hero-plate", _hero_ctx("hero-plate", params={"src": ""})) == Piece()
 
 
-def test_hero_burst_box_covers_the_longest_ray():
-    """Коробка обязана накрыть веер: на неё смотрит продюсер, а не на лучи."""
-    piece = render_hero("hero-burst", _hero_ctx("hero-burst"))
+def test_icons_stay_inside_the_work_area_and_flash_in_turn():
+    """Знаки не заезжают под колонку интерфейса и вспыхивают очередью.
+
+    Дуга несимметрична намеренно: голова стоит правее середины кадра, а правое
+    поле съедает колонка лайк/коммент/шер (§3.2). Знак, заехавший под неё, в
+    ролике не читается — проверяется именно это, а не красота дуги.
+    """
+    from src.lib.render.hyperframes.templates import ICON_SIZE, SAFE_X
+
+    piece = render_hero("hero-icons", _hero_ctx("hero-icons"))
     node = piece.nodes[0]
-    reach = max(int(n) for n in re.findall(r"--len:(\d+)px", node))
-    height = int(re.search(r"height:(\d+)px", node).group(1))
-    assert height >= reach
+    places = [(int(x), int(y)) for x, y in
+              re.findall(r"left:(-?\d+)px;top:(-?\d+)px", node)]
+    assert len(places) == 3
+    for x, _ in places:
+        assert SAFE_X[0] <= x and x + ICON_SIZE <= SAFE_X[1], (x, places)
+
+    # Каждый знак приходит и уходит, и приходит он не одновременно с соседом.
+    ins = sorted(float(m) for m in re.findall(
+        r'\.hi-mark:nth-child\(\d+\)".*?back\.out\(1\.8\)"\},([\d.]+)\)',
+        " ".join(piece.tweens)))
+    assert len(set(ins)) > 1, ins
+    assert any("opacity:0" in t and "tl.to(" in t for t in piece.tweens)
+
+
+def test_short_shot_gets_no_frozen_icon():
+    """Шот короче одной вспышки не получает знака вовсе.
+
+    Иначе знак замер бы в кадре с недоигранным входом: это не приём, а брак.
+    """
+    piece = render_hero("hero-icons", _hero_ctx("hero-icons", duration=0.3))
+    assert not piece.nodes and not piece.tweens
 
 
 def test_hero_split_returns_the_subject_to_the_centre():
