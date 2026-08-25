@@ -255,6 +255,10 @@ HERO_PARAMS = {
     "hero-exhibit": {"title": "Наполеон Бонапарт", "detail": "партия с турком, 1809",
                      "credit": "NASA · public domain", "src": "assets/m000_shot.mp4"},
     "hero-slam": {"punch": ["Ты сам", "не разгадал"]},
+    "hero-log": {"entries": [{"text": "не по правилам,", "at": 0.0},
+                             {"text": "турок вернул фигуру", "at": 0.9},
+                             {"text": "сходил ещё раз,", "at": 1.8}]},
+    "hero-oversize": {"word": "за фокус"},
 }
 
 
@@ -330,8 +334,13 @@ def test_every_hero_gets_its_content_from_the_pipeline():
 
     block = {"id": "b1", "emphasis_word": "переживёшь",
              "text": "Падение в чёрную дыру ты переживёшь. Это и есть худшая часть."}
-    content = _hero_content(block, {"role": "hook"}, None, (540, 700),
-                            title="Можно ли выжить внутри чёрной дыры")
+    # Тайминги слов конвейер отдаёт всегда: на них держится «список копится».
+    spoken = [{"display": w, "start": 0.4 * i, "end": 0.4 * i + 0.35,
+               "block_id": "b1"}
+              for i, w in enumerate(block["text"].split())]
+    content = _hero_content(block, {"role": "hook", "start": 0.0, "end": 6.0}, None,
+                            (540, 700), title="Можно ли выжить внутри чёрной дыры",
+                            words=spoken)
     content["brand"] = {"label": "Google", "icon": "assets/icons/google.png"}
 
     for name in sorted(HERO):

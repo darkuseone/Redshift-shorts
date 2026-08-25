@@ -72,6 +72,10 @@ NOTES = {
                     "уточнение и источник. Ведущий отъезжает вниз.",
     "statement-slam": "Фраза забирает кадр плашкой и уходит, вырастая на "
                       "зрителя. Секунда-две, не дольше.",
+    "phrase-log": "Куски реплики копятся слева по ходу речи — каждый приходит "
+                  "на своём слове и остаётся.",
+    "oversize-word": "Слово набрано крупнее кадра: края обрезаны, буквы "
+                     "медленно едут.",
 }
 
 # Силуэт ведущего: голова и плечи там же, где они в настоящем кадре (медиум,
@@ -170,7 +174,14 @@ def _devices(cfg) -> list[dict]:
         block = blocks[i % len(blocks)]
         role = ROLES[i % len(ROLES)]
         slot = {"role": role, "queries": block.get("broll_queries") or []}
-        content = _hero_content(block, slot, None, (540, 700), title=title)
+        # Тайминги слов на витрине условные, но такие же по форме, как в
+        # прогоне: без них «список копится» нечем наполнить.
+        spoken = [{"display": w, "start": 0.42 * n, "end": 0.42 * n + 0.36,
+                   "block_id": block["id"]}
+                  for n, w in enumerate(str(block.get("text") or "").split())]
+        slot["start"], slot["end"] = 0.0, 12.0
+        content = _hero_content(block, slot, None, (540, 700), title=title,
+                                words=spoken)
         # Кредит приходит с материалом: на витрине материал условный, поэтому
         # и подпись условная — но строка та же, что встанет в кадр.
         content["credit"] = "NASA · public domain"

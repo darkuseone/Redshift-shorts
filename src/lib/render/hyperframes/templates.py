@@ -1436,6 +1436,75 @@ def hero_slam(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def hero_log(ctx: "TemplateCtx") -> Piece:
+    """Список фраз копится слева по ходу речи и остаётся висеть.
+
+    Референс: реплика выкладывается не строкой, а кусками — каждый приходит
+    ровно тогда, когда его произносят, и предыдущие не исчезают. К концу блока
+    на экране стоит вся мысль целиком, и её можно дочитать глазами.
+
+    Куски приходят по своим отметкам, а не через равные паузы: приём и держится
+    на совпадении с речью, ровный шаг читается как бегущая строка.
+    """
+    entries = [e for e in (ctx.params.get("entries") or [])
+               if str((e or {}).get("text") or "").strip()]
+    if not entries:
+        return Piece()
+    node_id = f"lg-{ctx.index:02d}"
+    top = int(ctx.params.get("top", 150))
+    size = int(ctx.params.get("size", 56))
+
+    rows, tweens = [], []
+    for i, entry in enumerate(entries[:5]):
+        rows.append(f'<span class="lg-row">{_esc(str(entry["text"]).upper())}</span>')
+        at = max(0.0, min(float(entry.get("at", 0.0)), max(0.0, ctx.duration - 0.35)))
+        tweens += entrance_tweens(f"#{node_id} .lg-row:nth-child({i + 1})",
+                                  ctx.start, name="rise", delay=at)
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-log" '
+               f'style="top:{top}px;font-size:{size}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{"".join(rows)}</div>'],
+        tweens=tweens)
+
+
+def hero_oversize(ctx: "TemplateCtx") -> Piece:
+    """Слово крупнее кадра: края обрезаны, буквы медленно едут.
+
+    Референс: слово набрано так, что не помещается по ширине, и кадр показывает
+    его серединой. Читается всё равно — потому что оно одно и его же в этот
+    момент произносят, — а обрезанные края и дают ощущение масштаба.
+
+    Кегль считается от того, при котором слово **влезло** бы, и умножается:
+    так вылет одинаков и у короткого слова, и у длинного, а не зависит от того,
+    сколько в нём знаков.
+    """
+    word = str(ctx.params.get("word") or "").strip()
+    if not word:
+        return Piece()
+    node_id = f"ov-{ctx.index:02d}"
+    over = float(ctx.params.get("overflow", 1.3))
+    size = int(fit_size(word.upper(), 1080 - 2 * 90, 460) * over)
+
+    # Слово едет вбок и чуть приближается: остановившись, оно превращается в
+    # заставку, а кадр §4.1 обязан жить.
+    tweens = [
+        f'tl.fromTo("#{node_id} .ov-word",{{scale:1.1,x:36}},'
+        f'{{scale:1,x:0,duration:0.52,ease:"expo.out"}},{_num(ctx.start)});',
+        f'tl.fromTo("#{node_id} .ov-word",{{x:0,scale:1}},'
+        f'{{x:-46,scale:1.04,duration:{_num(max(0.6, ctx.duration - 0.52))},'
+        f'ease:"none"}},{_num(ctx.start + 0.52)});',
+    ]
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-oversize" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               f'<span class="ov-word" style="font-size:{size}px">'
+               f'{_esc(word.upper())}</span></div>'],
+        tweens=tweens)
+
+
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-burst": hero_burst,
     "hero-headline": hero_headline,
@@ -1452,6 +1521,8 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-title-behind": hero_title_behind,
     "hero-exhibit": hero_exhibit,
     "hero-slam": hero_slam,
+    "hero-log": hero_log,
+    "hero-oversize": hero_oversize,
 }
 
 
@@ -1684,6 +1755,27 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "line-height:0.92;letter-spacing:-0.01em;pointer-events:none}"
         ".hero-slam .sl-line{display:block;color:var(--color-bg-pure)}"
         ".hero-slam .sl-line.accent{color:var(--color-accent-soft)}"
+        # --- список копится слева ---
+        # Колонка занимает левые две трети: правое поле кадра съедает колонка
+        # лайк/коммент/шер (§3.2), и под ней куски не прочитать.
+        f".hero-log{{position:absolute;left:var(--safe-x-min);"
+        f"width:{int(width * 0.56)}px;z-index:{Z_AVATAR + 1};"
+        "display:flex;flex-direction:column;align-items:flex-start;gap:30px;"
+        "font-family:var(--font-display);text-transform:uppercase;"
+        "line-height:1.02;letter-spacing:-0.005em;pointer-events:none}"
+        # Тёмная строка со светлым ореолом: под аватаром с альфой фон светлый.
+        ".hero-log .lg-row{display:block;color:var(--color-ink);"
+        "will-change:transform;"
+        "text-shadow:0 4px 20px rgba(247,245,243,0.9),"
+        "0 2px 6px rgba(247,245,243,0.9)}"
+        # --- слово крупнее кадра ---
+        f".hero-oversize{{position:absolute;inset:0;z-index:{Z_AVATAR + 3};"
+        "background:var(--color-ink);display:flex;align-items:center;"
+        "justify-content:center;overflow:visible;pointer-events:none}"
+        ".hero-oversize .ov-word{display:block;white-space:nowrap;"
+        "font-family:var(--font-display);text-transform:uppercase;"
+        "line-height:0.9;letter-spacing:-0.02em;color:var(--color-bg-pure);"
+        "will-change:transform}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"

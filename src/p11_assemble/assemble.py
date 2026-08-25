@@ -125,6 +125,8 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-title-behind": ("head", "tail"),
     "hero-exhibit": ("plate", "title"),
     "hero-slam": ("punch",),
+    "hero-log": ("entries",),
+    "hero-oversize": ("word",),
 }
 
 
@@ -187,9 +189,33 @@ def _punch(block: dict[str, Any]) -> list[str]:
     return _wrap_lines(" ".join(window).strip(".,!?;:"), width=13, limit=2)
 
 
+def _log_entries(words: list[dict[str, Any]], start: float) -> list[dict[str, Any]]:
+    """Куски реплики с отметкой, когда каждый произносится.
+
+    Приём «список копится» держится на совпадении с речью: кусок обязан
+    появиться на своём слове, а не через ровный интервал. Границы — знаки
+    препинания, потолок в четыре слова — чтобы кусок читался за раз.
+    """
+    chunk: list[str] = []
+    out: list[dict[str, Any]] = []
+    at = 0.0
+    for word in words:
+        if not chunk:
+            at = max(0.0, float(word["start"]) - start)
+        chunk.append(str(word["display"]))
+        closed = str(word["display"]).rstrip().endswith((",", ".", "!", "?", ":", ";", "—"))
+        if closed or len(chunk) >= 4:
+            out.append({"text": " ".join(chunk), "at": round(at, 3)})
+            chunk = []
+    if chunk:
+        out.append({"text": " ".join(chunk), "at": round(at, 3)})
+    return out[:5]
+
+
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
                   face: tuple[int, int] | None = None,
-                  title: str = "") -> dict[str, Any]:
+                  title: str = "",
+                  words: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Собрать всё, чем можно накормить приёмы, из одного блока сценария."""
     text = str(block.get("text") or "").strip()
     word = str(block.get("emphasis_word") or "").strip()
@@ -210,7 +236,9 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     # Двухстрочная тема за головой: первая строка — подлежащее реплики, вторая
     # — то, что с ним происходит, и она же берёт акцент. Делим по акцентному
     # слову, если оно есть: на нём и держится смысл фразы.
-    words = [w for w in text.split() if w]
+    # Не ``words``: так зовётся параметр с таймингами кадра, и локальный
+    # список слов текста затенял бы его — список копился бы по буквам.
+    text_words = [w for w in text.split() if w]
     # За головой стоит тема ролика, а не обрывок текущей реплики: приём держит
     # весь блок, и фраза из середины предложения читалась бы как оговорка.
     # Обе строки идут через весь кадр без переноса, поэтому делим пополам по
@@ -244,6 +272,9 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # запрос сюда не годится — он английский и написан для стока, а не
         # для зрителя.
         "caption": _sentence(text, 0, limit=8),
+        # Куски для накопительного списка — по словам этого кадра, а не по
+        # тексту блока: список идёт за речью, а кадр покрывает её часть.
+        "entries": _log_entries(words or [], float(slot.get("start") or 0.0)),
         "brand": brand,
         "face": face,
     }
@@ -341,7 +372,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # Приём, который выкладывает реплику строками, сам и есть субтитр этого
         # кадра. Пословное слово поверх той же фразы — дубль, и оно вдобавок
         # ложится прямо на карточку: проверено кадром.
-        "carries_line": bool({"lines", "punch"} & set(_HERO_NEEDS.get(renderer, ()))),
+        "carries_line": bool({"lines", "punch", "entries"}
+                             & set(_HERO_NEEDS.get(renderer, ()))),
     }
     if plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-exhibit"):
         # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
@@ -826,9 +858,13 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 block = blocks_by_id.get(slot["block_id"], {})
                 hero_entry = _hero_device(
                     catalog, slot=slot,
-                    content=_hero_content(block, slot, brand_icons,
-                                          face_centres.get(int(slot["index"])),
-                                          title=str(plan.get("title") or "")),
+                    content=_hero_content(
+                        block, slot, brand_icons,
+                        face_centres.get(int(slot["index"])),
+                        title=str(plan.get("title") or ""),
+                        words=[w for w in words_doc["words"]
+                               if float(w["end"]) > float(slot["start"])
+                               and float(w["start"]) < float(slot["end"])]),
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
