@@ -62,6 +62,10 @@ _FALLBACK_EM_PER_CHAR = 0.62
 # Толщина обводки строк «реплики от руки»: одно число на CSS и на подбор кегля.
 SS_STROKE = 14
 
+# Цвета для твина «серое темнеет до чёрного»: GSAP тянет цвет по
+# значению, а не по переменной CSS — var() он в цвет не разворачивает.
+_INK, _MUTED_INK = "#111214", "#9A9CA1"
+
 
 @lru_cache(maxsize=4)
 def _display_font(size: int):
@@ -1505,6 +1509,114 @@ def hero_oversize(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def hero_figure(ctx: "TemplateCtx") -> Piece:
+    """Число крупно, под ним подпись; значения сменяют друг друга.
+
+    Референс: на месте одной цифры по очереди встают три — большая сумма,
+    меньшая и ноль, — и каждая держится ровно столько, чтобы её прочитали.
+    Приём и есть сравнение: значения обязаны стоять на одном месте, иначе
+    глазу нечего сопоставлять.
+
+    Последнее значение берёт акцент: к нему всё и вело.
+    """
+    figures = [f for f in (ctx.params.get("figures") or [])
+               if str((f or {}).get("value") or "").strip()][:3]
+    if not figures:
+        return Piece()
+    node_id = f"fg-{ctx.index:02d}"
+    # Число живёт в верхней трети: ниже оно садится ведущему на голову.
+    top = int(ctx.params.get("top", 170))
+    widest_value = widest([f["value"] for f in figures])
+    size = fit_size(widest_value, 1080 - 2 * 90, int(ctx.params.get("size", 300)))
+
+    step = ctx.duration / len(figures)
+    # Ведущий отъезжает вниз и уменьшается: число живёт в верхней трети, и без
+    # сдвига подпись под ним ложится ему на голову — тёмным по тёмному.
+    shift_y, shift_scale = 300, 0.88
+    back = max(ctx.start + 0.5, ctx.start + ctx.duration - 0.34)
+    rows = []
+    tweens = [
+        f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
+        f'{{y:{shift_y},scale:{shift_scale},duration:0.5,ease:"expo.out"}},'
+        f'{_num(ctx.start)});',
+        f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:0.34,ease:"power2.inOut"}},'
+        f'{_num(back)});',
+    ]
+    for i, figure in enumerate(figures):
+        last = i == len(figures) - 1
+        note = str(figure.get("note") or "")
+        rows.append(
+            f'<span class="fg-item{" accent" if last else ""}">'
+            f'<span class="fg-value" style="font-size:{size}px">'
+            f'{_esc(str(figure["value"]))}</span>'
+            + (f'<span class="fg-note">{_esc(note)}</span>' if note else "")
+            + "</span>")
+        at = ctx.start + step * i
+        tweens += entrance_tweens(f"#{node_id} .fg-item:nth-child({i + 1})",
+                                  at, name="settle")
+        if not last:
+            # Значение уходит ровно тогда, когда приходит следующее: они стоят
+            # на одном месте, и наложение читалось бы как грязь.
+            tweens.append(
+                f'tl.to("#{node_id} .fg-item:nth-child({i + 1})",'
+                f'{{opacity:0,scale:0.94,duration:0.22,ease:"power2.in"}},'
+                f'{_num(at + step - 0.22)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-figure" '
+               f'style="top:{top}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{"".join(rows)}</div>'],
+        tweens=tweens)
+
+
+def hero_verdict(ctx: "TemplateCtx") -> Piece:
+    """Белая плашка с приговором: вторая строка приходит серой и темнеет.
+
+    Референс: кадр закрывает светлая карточка, на ней две строки, и вторая
+    сначала стоит серой, а потом наливается чёрным — как будто мысль
+    договаривается. Цвет здесь и есть событие, поэтому он тянется твином, а
+    не подставляется готовым.
+
+    Пара к «удару плашкой»: там чёрное поле и уход на зрителя, здесь светлое
+    и договаривание на месте. Один и тот же кадр они закрывают по-разному.
+    """
+    lines = [str(l).strip() for l in (ctx.params.get("punch") or []) if str(l).strip()]
+    lines = lines[:2]
+    if not lines:
+        return Piece()
+    node_id = f"vd-{ctx.index:02d}"
+    size = fit_size(widest(lines).upper(), 1080 - 2 * 90,
+                    int(ctx.params.get("size", 172)))
+
+    rows = "".join(
+        f'<span class="vd-line{" late" if i else ""}">{_esc(line.upper())}</span>'
+        for i, line in enumerate(lines))
+
+    tweens = [
+        f'tl.fromTo("#{node_id}",{{scale:1.04}},'
+        f'{{scale:1,duration:0.36,ease:"expo.out"}},{_num(ctx.start)});',
+    ]
+    tweens += entrance_tweens(f"#{node_id} .vd-line:nth-child(1)", ctx.start,
+                              name="settle", delay=0.08)
+    if len(lines) > 1:
+        tweens += entrance_tweens(f"#{node_id} .vd-line.late", ctx.start,
+                                  name="settle", delay=0.24)
+        # Договаривание: серый наливается чернотой. Цвет из разрешённого
+        # списка и на перемотке считается так же, как на проигрывании.
+        tweens.append(
+            f'tl.fromTo("#{node_id} .vd-line.late",'
+            f'{{color:"{_MUTED_INK}"}},{{color:"{_INK}",duration:0.5,'
+            f'ease:"power2.out"}},{_num(ctx.start + 0.62)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-verdict" '
+               f'style="font-size:{size}px" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{rows}</div>'],
+        tweens=tweens)
+
+
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-burst": hero_burst,
     "hero-headline": hero_headline,
@@ -1523,6 +1635,8 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-slam": hero_slam,
     "hero-log": hero_log,
     "hero-oversize": hero_oversize,
+    "hero-figure": hero_figure,
+    "hero-verdict": hero_verdict,
 }
 
 
@@ -1776,6 +1890,30 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-display);text-transform:uppercase;"
         "line-height:0.9;letter-spacing:-0.02em;color:var(--color-bg-pure);"
         "will-change:transform}"
+        # --- число со сменой значений ---
+        # Значения лежат друг на друге: сравнение работает, только когда они
+        # стоят на одном месте. Поэтому сетка, а не поток.
+        f".hero-figure{{position:absolute;left:0;width:var(--frame-w);"
+        f"z-index:{Z_AVATAR + 1};display:grid;justify-items:center;"
+        "pointer-events:none}"
+        ".hero-figure .fg-item{grid-area:1/1;display:flex;"
+        "flex-direction:column;align-items:center;gap:14px;"
+        "will-change:transform}"
+        ".hero-figure .fg-value{display:block;font-family:var(--font-display);"
+        "line-height:0.94;letter-spacing:-0.02em;color:var(--color-ink);"
+        "font-variant-numeric:tabular-nums;"
+        "text-shadow:0 4px 20px rgba(247,245,243,0.9)}"
+        ".hero-figure .fg-item.accent .fg-value{color:var(--color-accent)}"
+        ".hero-figure .fg-note{display:block;font-family:var(--font-subtitle);"
+        "font-weight:800;font-size:36px;color:#4A4D52;"
+        "text-shadow:0 2px 14px rgba(247,245,243,0.9)}"
+        # --- приговор на светлой плашке ---
+        f".hero-verdict{{position:absolute;inset:0;z-index:{Z_AVATAR + 3};"
+        "background:var(--color-bg-pure);display:flex;flex-direction:column;"
+        "align-items:center;justify-content:center;gap:8px;"
+        "font-family:var(--font-display);text-transform:uppercase;"
+        "line-height:0.92;letter-spacing:-0.01em;pointer-events:none}"
+        ".hero-verdict .vd-line{display:block;color:var(--color-ink)}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"

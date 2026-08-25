@@ -259,6 +259,10 @@ HERO_PARAMS = {
                              {"text": "турок вернул фигуру", "at": 0.9},
                              {"text": "сходил ещё раз,", "at": 1.8}]},
     "hero-oversize": {"word": "за фокус"},
+    "hero-figure": {"figures": [{"value": "$902 626 748", "note": "получает Google"},
+                                {"value": "$18 530 611", "note": "получает Google"},
+                                {"value": "$0", "note": "получает Google"}]},
+    "hero-verdict": {"punch": ["Себе", "ноль"]},
 }
 
 
@@ -333,7 +337,10 @@ def test_every_hero_gets_its_content_from_the_pipeline():
     from src.p11_assemble.assemble import _HERO_NEEDS, _hero_content, hero_params
 
     block = {"id": "b1", "emphasis_word": "переживёшь",
-             "text": "Падение в чёрную дыру ты переживёшь. Это и есть худшая часть."}
+             # В тексте есть число: приёму со сменой значений больше нечем
+             # наполниться, и без него проверка его бы не задела.
+             "text": "Падение в чёрную дыру ты переживёшь. Это и есть "
+                     "худшая часть: 12 минут собственного времени."}
     # Тайминги слов конвейер отдаёт всегда: на них держится «список копится».
     spoken = [{"display": w, "start": 0.4 * i, "end": 0.4 * i + 0.35,
                "block_id": "b1"}

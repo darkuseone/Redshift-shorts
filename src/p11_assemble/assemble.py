@@ -127,6 +127,8 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-slam": ("punch",),
     "hero-log": ("entries",),
     "hero-oversize": ("word",),
+    "hero-figure": ("figures",),
+    "hero-verdict": ("punch",),
 }
 
 
@@ -187,6 +189,47 @@ def _punch(block: dict[str, Any]) -> list[str]:
                len(words))
     window = words[max(0, end - 4):end]
     return _wrap_lines(" ".join(window).strip(".,!?;:"), width=13, limit=2)
+
+
+# Служебные слова в конце подписи читаются как обрыв: «кубитов почти».
+_FILLER = {"и", "а", "но", "то", "уже", "ещё", "еще", "это", "как", "же",
+           "в", "на", "за", "по", "из", "с", "к", "у", "о", "от", "до",
+           "почти", "просто", "всего", "лишь", "даже", "тоже", "опять"}
+
+
+def _trim_filler(words: list[str]) -> str:
+    tail = list(words)
+    while tail and tail[-1].lower() in _FILLER:
+        tail.pop()
+    return " ".join(tail)
+
+
+_NUMBER = re.compile(
+    r"(?:[$₽]\s?)?\d+(?:[ \u00a0]\d{3})*(?:[.,]\d+)?\s*"
+    r"(?:%|₽|\$|тыс\.?|млн|млрд)?")
+
+
+def _figures(text: str) -> list[dict[str, Any]]:
+    """Числа реплики с короткой подписью под каждым.
+
+    Приём сравнивает значения, поэтому подпись у них общая по смыслу: берём
+    слова, идущие следом за числом. Если число замыкает фразу — берём то, что
+    стоит перед ним: «получает Google» и «84 года» одинаково подписаны словом
+    рядом, а не пересказом всей реплики.
+    """
+    words = text.split()
+    out: list[dict[str, Any]] = []
+    for i, word in enumerate(words):
+        match = _NUMBER.fullmatch(word.strip(".,!?;:()»«"))
+        if not match or not any(ch.isdigit() for ch in word):
+            continue
+        after = [w.strip(".,!?;:") for w in words[i + 1:i + 3]]
+        before = [w.strip(".,!?;:") for w in words[max(0, i - 2):i]]
+        note = _trim_filler(after) or _trim_filler(before)
+        out.append({"value": match.group(0).strip(), "note": note})
+        if len(out) >= 3:
+            break
+    return out
 
 
 def _log_entries(words: list[dict[str, Any]], start: float) -> list[dict[str, Any]]:
@@ -275,6 +318,8 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # Куски для накопительного списка — по словам этого кадра, а не по
         # тексту блока: список идёт за речью, а кадр покрывает её часть.
         "entries": _log_entries(words or [], float(slot.get("start") or 0.0)),
+        # Числа реплики: приём ставит их одно за другим на одном месте.
+        "figures": _figures(text),
         "brand": brand,
         "face": face,
     }

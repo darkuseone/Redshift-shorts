@@ -34,7 +34,8 @@ from src.p11_assemble.assemble import (                                 # noqa: 
 
 # Демо-содержимое — реальный сценарий, а не рыба: приём судят по тому, как в
 # нём лежит живая фраза, а «Lorem ipsum» не ломается ни в одном кегле.
-DEMO_SCRIPT = ROOT / "scripts" / "redshift_0046.json"
+DEMO_SCRIPTS = [ROOT / "scripts" / "redshift_0046.json",
+                ROOT / "scripts" / "redshift_0042.json"]
 
 # Роль блока меняет кикер над заголовком, поэтому у карточек она разная.
 ROLES = ["hook", "develop", "turn", "payoff"]
@@ -76,6 +77,10 @@ NOTES = {
                   "на своём слове и остаётся.",
     "oversize-word": "Слово набрано крупнее кадра: края обрезаны, буквы "
                      "медленно едут.",
+    "figure-swap": "Числа реплики встают одно за другим на одном месте, "
+                   "последнее — акцентом.",
+    "verdict-card": "Светлая плашка с приговором: вторая строка приходит "
+                    "серой и наливается чёрным.",
 }
 
 # Силуэт ведущего: голова и плечи там же, где они в настоящем кадре (медиум,
@@ -159,34 +164,54 @@ def _composition_css(cfg) -> str:
     return _fonts_css() + css
 
 
+def _content_for(block: dict, title: str, role: str) -> dict:
+    """Содержимое блока для приёма — теми же функциями, что и в конвейере."""
+    slot = {"role": role, "queries": block.get("broll_queries") or [],
+            "start": 0.0, "end": 12.0}
+    # Тайминги слов на витрине условные, но такие же по форме, как в прогоне:
+    # без них «список копится» нечем наполнить.
+    spoken = [{"display": w, "start": 0.42 * n, "end": 0.42 * n + 0.36,
+               "block_id": block["id"]}
+              for n, w in enumerate(str(block.get("text") or "").split())]
+    content = _hero_content(block, slot, None, (540, 700), title=title,
+                            words=spoken)
+    # Кредит приходит с материалом: на витрине материал условный, но строка
+    # та же, что встанет в кадр. Иконок брендов в репозитории пока нет.
+    content["credit"] = "NASA · public domain"
+    content["brand"] = {"label": "БРЕНД", "icon": ""}
+    return content
+
+
 def _devices(cfg) -> list[dict]:
     manifest = json.loads((ROOT / "templates" / "manifest.json").read_text("utf-8"))
     items = [t for t in manifest["templates"]
              if t["id"].startswith("hero-devices/")]
-    script = json.loads(DEMO_SCRIPT.read_text("utf-8"))
-    blocks = script["blocks"]
-    title = script["meta"]["title"]
+    demos = [json.loads(path.read_text("utf-8")) for path in DEMO_SCRIPTS]
+    pool = [(block, script["meta"]["title"])
+            for script in demos for block in script["blocks"]]
 
     plate_uri = PLATE_URI
 
     out = []
     for i, template in enumerate(items):
-        block = blocks[i % len(blocks)]
         role = ROLES[i % len(ROLES)]
-        slot = {"role": role, "queries": block.get("broll_queries") or []}
-        # Тайминги слов на витрине условные, но такие же по форме, как в
-        # прогоне: без них «список копится» нечем наполнить.
-        spoken = [{"display": w, "start": 0.42 * n, "end": 0.42 * n + 0.36,
-                   "block_id": block["id"]}
-                  for n, w in enumerate(str(block.get("text") or "").split())]
-        slot["start"], slot["end"] = 0.0, 12.0
-        content = _hero_content(block, slot, None, (540, 700), title=title,
-                                words=spoken)
-        # Кредит приходит с материалом: на витрине материал условный, поэтому
-        # и подпись условная — но строка та же, что встанет в кадр.
-        content["credit"] = "NASA · public domain"
-        # Иконок брендов в репозитории пока нет — на витрине нейтральная метка.
-        content["brand"] = {"label": "БРЕНД", "icon": ""}
+        # Блок берётся не по кругу, а тот, которым приём вообще можно накормить:
+        # конвейер выбирает приём ровно так же — по совпадению с потребностями
+        # (`_HERO_NEEDS`). Прокрутка по кругу поставила бы «смену чисел» на
+        # реплику без единой цифры, и витрина показала бы пустой кадр.
+        needs = _HERO_NEEDS.get(template["renderer"], ())
+        best = None
+        for offset in range(len(pool)):
+            block, title = pool[(i + offset) % len(pool)]
+            content = _content_for(block, title, role)
+            score = sum(1 for key in needs if key != "plate" and content.get(key))
+            if best is None or score > best[0]:
+                best = (score, block, title, content)
+            if score == len([k for k in needs if k != "plate"]):
+                break
+        _, block, title, content = best
+        slot = {"role": role, "queries": block.get("broll_queries") or [],
+                "start": 0.0, "end": 12.0}
         params = hero_params(template["renderer"], template.get("params", {}),
                              content, slot)
         if "plate" in _HERO_NEEDS.get(template["renderer"], ()):

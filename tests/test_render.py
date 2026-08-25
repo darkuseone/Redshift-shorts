@@ -263,9 +263,9 @@ def test_catalog_matches_spec_counts(cfg):
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 10, "lower-thirds": 8, "frames-cards": 6,
         "browser-ui": 6, "transitions": 12, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 18,
+        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 20,
     }
-    assert len(catalog.all()) == 99
+    assert len(catalog.all()) == 101
 
 
 def test_catalog_rotation_avoids_recent(cfg):
@@ -377,7 +377,10 @@ def test_line_carrying_devices_suppress_the_subtitle(cfg):
         entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=False,
                              plate_src=None, recent_videos=[], exclude=[], seed=seed)
         seen.add(entry["renderer"])
-        expected = "lines" in _HERO_NEEDS[entry["renderer"]]
+        # Приём сам выкладывает реплику, если ему дают её строками,
+        # фразой-ударом или кусками по таймингам речи.
+        expected = bool({"lines", "punch", "entries"}
+                        & set(_HERO_NEEDS[entry["renderer"]]))
         assert entry["carries_line"] is expected, entry["renderer"]
     assert any("lines" in _HERO_NEEDS[r] for r in seen), "приёмы со строками не выпали"
 
