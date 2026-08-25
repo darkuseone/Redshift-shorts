@@ -154,6 +154,26 @@ def fit_block(text: str, available_px: float, max_size: int, rows: int, *,
     return lines, size
 
 
+def mark_word(text: str, accent: str, cls: str) -> str:
+    """Разметить акцентное слово внутри строки. Экранирование — здесь же.
+
+    Сравнение идёт по основе, а не по форме: автор помечает слово в начальной
+    форме («обучение»), а в реплике оно стоит в падеже («обучению»). Сравнение
+    целиком промахивалось бы почти всегда — у русского слова меняется хвост.
+    Короткая основа не годится: «не» подсветило бы пол-реплики.
+    """
+    stem = str(accent or "").strip(" .,!?;:»«\"'()").lower()[:5]
+    words = str(text).split()
+    if len(stem) < 4:
+        return _esc(" ".join(words))
+    out = []
+    for word in words:
+        bare = word.strip(".,!?;:»«\"'()").lower()
+        out.append(f'<b class="{cls}">{_esc(word)}</b>' if bare.startswith(stem)
+                   else _esc(word))
+    return " ".join(out)
+
+
 # --- словарь появления --------------------------------------------------------
 #
 # Ничего в кадре не «включается» — всё **приближается**. Это единственное
@@ -189,6 +209,9 @@ ENTRANCES: dict[str, dict[str, float | str]] = {
     "rise": {"scale": 1.05, "y": 64, "duration": 0.52, "ease": "power3.out"},
     # Оседание: короткий приход сверху. Для заголовков над головой.
     "settle": {"scale": 1.04, "y": -46, "duration": 0.48, "ease": "expo.out"},
+    # Слово в набираемой строке: подача почти на месте. Те же 64 px, что у
+    # «всплытия», на десятке слов подряд читаются как прыжки, а не как набор.
+    "type": {"scale": 1.06, "y": 16, "duration": 0.34, "ease": "power3.out"},
     # Единственное исключение из «ничего не включается»: полнокадровая
     # заслонка. Она не предмет, который приносят, а смена света — двигать её
     # нечем, любой масштаб обнажит края кадра.
@@ -1070,6 +1093,33 @@ def hero_text_column(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def bubble_field(node_id: str, face_x: int, face_y: int, radius: int, *,
+                 cls: str) -> str:
+    """Тёмное поле с круглой дыркой на лице и кольцом по её краю.
+
+    Дырка вырезается SVG-маской: второе видео со ``border-radius:50%`` не
+    годится — продюсер рисует кадры в коробку элемента, игнорируя скругление,
+    и вместо круга получался квадрат (проверено зумом).
+    """
+    return (f'<svg class="{cls}" viewBox="0 0 1080 1920" preserveAspectRatio="none">'
+            f'<defs>'
+            f'<radialGradient id="{node_id}-g" cx="50%" cy="30%" r="80%">'
+            f'<stop offset="0%" stop-color="#2A2320"/>'
+            f'<stop offset="58%" stop-color="#141416"/>'
+            f'<stop offset="100%" stop-color="#08090B"/>'
+            f'</radialGradient>'
+            f'<mask id="{node_id}-m">'
+            f'<rect width="1080" height="1920" fill="white"/>'
+            f'<circle cx="{face_x}" cy="{face_y}" r="{radius}" fill="black"/>'
+            f'</mask>'
+            f'</defs>'
+            f'<rect width="1080" height="1920" mask="url(#{node_id}-m)" '
+            f'fill="url(#{node_id}-g)"/>'
+            f'<circle cx="{face_x}" cy="{face_y}" r="{radius + 5}" fill="none" '
+            f'stroke="#FFFFFF" stroke-width="10"/>'
+            f'</svg>')
+
+
 def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
     """Ведущий в круге, реплика карточкой под ним.
 
@@ -1104,23 +1154,7 @@ def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
         for i, line in enumerate(lines[:4]))
     card_top = face_y + radius + 46
 
-    svg = (f'<svg class="bc-field" viewBox="0 0 1080 1920" preserveAspectRatio="none">'
-           f'<defs>'
-           f'<radialGradient id="{node_id}-g" cx="50%" cy="30%" r="80%">'
-           f'<stop offset="0%" stop-color="#2A2320"/>'
-           f'<stop offset="58%" stop-color="#141416"/>'
-           f'<stop offset="100%" stop-color="#08090B"/>'
-           f'</radialGradient>'
-           f'<mask id="{node_id}-m">'
-           f'<rect width="1080" height="1920" fill="white"/>'
-           f'<circle cx="{face_x}" cy="{face_y}" r="{radius}" fill="black"/>'
-           f'</mask>'
-           f'</defs>'
-           f'<rect width="1080" height="1920" mask="url(#{node_id}-m)" '
-           f'fill="url(#{node_id}-g)"/>'
-           f'<circle cx="{face_x}" cy="{face_y}" r="{radius + 5}" fill="none" '
-           f'stroke="#FFFFFF" stroke-width="10"/>'
-           f'</svg>')
+    svg = bubble_field(node_id, face_x, face_y, radius, cls="bc-field")
 
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip hero-bubble-card" '
@@ -1533,9 +1567,13 @@ def hero_log(ctx: "TemplateCtx") -> Piece:
     top = int(ctx.params.get("top", 150))
     size = int(ctx.params.get("size", 56))
 
+    # Акцентное слово реплики подсвечивается внутри куска — так на референсе:
+    # список набирается чёрным, и одно слово в нём горит.
+    accent = str(ctx.params.get("accent") or "")
     rows, tweens = [], []
     for i, entry in enumerate(entries[:5]):
-        rows.append(f'<span class="lg-row">{_esc(str(entry["text"]).upper())}</span>')
+        text = mark_word(str(entry["text"]).upper(), accent.upper(), "lg-hit")
+        rows.append(f'<span class="lg-row">{text}</span>')
         at = max(0.0, min(float(entry.get("at", 0.0)), max(0.0, ctx.duration - 0.35)))
         tweens += entrance_tweens(f"#{node_id} .lg-row:nth-child({i + 1})",
                                   ctx.start, name="rise", delay=at)
@@ -1692,6 +1730,74 @@ def hero_verdict(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Карточка набираемой реплики: поле карточки и её отступ от круга.
+BT_CARD_W, BT_PAD, BT_GAP = 900, 46, 40
+
+
+def hero_bubble_typed(ctx: "TemplateCtx") -> Piece:
+    """Ведущий в круге, реплика набирается в карточке по ходу речи.
+
+    Референс: тот же круг с ведущим и белая карточка под ним, но текст в ней
+    не стоит целиком — он **прибывает**, кусок за куском, ровно на своих
+    словах, и последний приходит выделенным. Разница с обычной карточкой не в
+    вёрстке, а во времени: та показывает готовую мысль, эта показывает, как
+    мысль набирается.
+
+    Набор идёт кусками, а не буквами: посимвольная печать не переживает
+    перемотку — кадр по seek обязан совпасть с кадром по проигрыванию.
+
+    Карточка держит размер с самого начала: куски занимают своё место сразу и
+    только проявляются, иначе текст на каждом слове перевёрстывался бы, и
+    карточка дёргалась бы под ним.
+    """
+    entries = [e for e in (ctx.params.get("entries") or [])
+               if str((e or {}).get("text") or "").strip()]
+    if not entries:
+        return Piece()
+    node_id = f"bt-{ctx.index:02d}"
+    ring = int(ctx.params.get("ring", 460))
+    face_x = int(ctx.params.get("face_cx", 540))
+    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + ring // 2))
+    radius = ring // 2
+
+    chunks = [str(e["text"]).strip() for e in entries[:6]]
+    # Кегль подбирается по всей реплике сразу: она набирается в одну карточку,
+    # и последний кусок обязан влезть в неё так же, как первый.
+    lines, size = fit_block(" ".join(chunks), BT_CARD_W - 2 * BT_PAD,
+                            int(ctx.params.get("size", 56)), 4, role="subtitle")
+    body = "".join(
+        f'<span class="bt-chunk{" last" if i == len(chunks) - 1 else ""}">'
+        f'{_esc(text)}</span>'
+        for i, text in enumerate(chunks))
+
+    card_top = face_y + radius + BT_GAP
+    height = 2 * BT_PAD + int(len(lines) * size * 1.28)
+
+    tweens = (entrance_tweens(f"#{node_id} .bt-field", ctx.start, name="dim")
+              + entrance_tweens(f"#{node_id} .bt-card", ctx.start,
+                                name="zoom-out", delay=0.10)
+              # Ведущий приближается внутри дырки — иначе круг читается как
+              # включённая заслонка, а не как смена плана. Только вход, без
+              # дрейфа: клип аватара общий, остаточный масштаб утёк бы дальше.
+              + entrance_tweens(f"#{ctx.target}", ctx.start, name="zoom-in",
+                                fade=False))
+    for i, entry in enumerate(entries[:6]):
+        at = max(0.0, min(float(entry.get("at", 0.0)), max(0.0, ctx.duration - 0.3)))
+        tweens += entrance_tweens(f"#{node_id} .bt-chunk:nth-child({i + 1})",
+                                  ctx.start, name="type", delay=at)
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-bubble-typed" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">'
+               + bubble_field(node_id, face_x, face_y, radius, cls="bt-field")
+               + f'<span class="bt-card" style="top:{card_top}px;'
+               f'left:{(1080 - BT_CARD_W) // 2}px;width:{BT_CARD_W}px;'
+               f'min-height:{height}px;padding:{BT_PAD}px;'
+               f'font-size:{size}px">{body}</span></div>'],
+        tweens=tweens)
+
+
 # Страница первоисточника: поле самой страницы и то, куда уезжает ведущий.
 PP_PAGE = (70, 170, 940, 1000)         # left, top, width, height
 PP_SHIFT_Y, PP_SHIFT_SCALE = 560, 0.80
@@ -1822,6 +1928,7 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-figure": hero_figure,
     "hero-verdict": hero_verdict,
     "hero-paper": hero_paper,
+    "hero-bubble-typed": hero_bubble_typed,
 }
 
 
@@ -1923,6 +2030,26 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "font-weight:700;font-size:62px;line-height:1.16}"
         ".hero-bubble-card .bc-line.accent{font-weight:800;"
         "color:var(--color-accent)}"
+        # --- круг и набираемая карточка ---
+        f".hero-bubble-typed{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
+        "pointer-events:none}"
+        ".hero-bubble-typed .bt-field{position:absolute;inset:0;display:block;"
+        "width:100%;height:100%;will-change:transform}"
+        # Карточка по центру кадра: реплика в ней читается как реплика, а не
+        # как подпись у края.
+        # Центрируется позицией, а не translateX: вход тянет transform
+        # целиком, и центровка из CSS была бы стёрта первым же твином.
+        ".hero-bubble-typed .bt-card{position:absolute;display:block;"
+        "border-radius:40px;"
+        "background:var(--color-bg-pure);color:var(--color-ink);"
+        "box-shadow:0 26px 70px rgba(0,0,0,0.30);text-align:center;"
+        "font-family:var(--font-subtitle);font-weight:700;line-height:1.28;"
+        "will-change:transform}"
+        # Куски встают в строку и держат место с самого начала: место занято,
+        # видимость приходит твином.
+        ".hero-bubble-typed .bt-chunk{display:inline-block}"
+        ".hero-bubble-typed .bt-chunk::after{content:\" \"}"
+        ".hero-bubble-typed .bt-chunk.last{color:var(--color-accent)}"
         # --- пилюля бренда ---
         f".hero-brand-pill{{position:absolute;z-index:{Z_AVATAR + 1};"
         "pointer-events:none}"
@@ -2065,6 +2192,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-display);text-transform:uppercase;"
         "line-height:1.02;letter-spacing:-0.005em;pointer-events:none}"
         # Тёмная строка со светлым ореолом: под аватаром с альфой фон светлый.
+        ".hero-log .lg-hit{color:var(--color-accent)}"
         ".hero-log .lg-row{display:block;color:var(--color-ink);"
         "will-change:transform;"
         "text-shadow:0 4px 20px rgba(247,245,243,0.9),"

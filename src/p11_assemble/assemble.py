@@ -130,6 +130,7 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-figure": ("figures",),
     "hero-verdict": ("punch",),
     "hero-paper": ("source", "quote"),
+    "hero-bubble-typed": ("entries",),
 }
 
 
@@ -260,7 +261,28 @@ def _log_entries(words: list[dict[str, Any]], start: float) -> list[dict[str, An
             chunk = []
     if chunk:
         out.append({"text": " ".join(chunk), "at": round(at, 3)})
-    return out[:5]
+    # Кусок из одной пунктуации — «—» отдельной строкой — читается как сбой
+    # вёрстки. Тире закрывает кусок так же, как запятая, и когда оно стоит
+    # отдельным словом, кусок из него одного и получается. Такой кусок
+    # прирастает к предыдущему, а первым — просто выбрасывается.
+    merged: list[dict[str, Any]] = []
+    for entry in out:
+        if any(ch.isalnum() for ch in entry["text"]):
+            merged.append(entry)
+        elif merged:
+            merged[-1]["text"] = f'{merged[-1]["text"]} {entry["text"]}'
+    out = merged[:5]
+    # Последний кусок обрывается там, где кончился кадр, — и часто это предлог:
+    # «ошибка падает вдвое на». В списке это читается как брак, а в набираемой
+    # карточке последний кусок ещё и выделен акцентом. Служебный хвост
+    # срезается; если от куска ничего не осталось, он выбрасывается целиком.
+    if out:
+        tail = _trim_filler(out[-1]["text"].split())
+        if tail:
+            out[-1]["text"] = tail
+        elif len(out) > 1:
+            out.pop()
+    return out
 
 
 _URL_HOST = re.compile(r"https?://([^/\s]+)")
@@ -391,7 +413,7 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
     if content.get("face"):
         # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
         # за ними светлее заливки.
-        if renderer == "hero-bubble-card":
+        if renderer in ("hero-bubble-card", "hero-bubble-typed"):
             params["face_cx"], params["face_cy"] = content["face"]
         if renderer == "hero-knockout":
             params["face_cy"] = content["face"][1]
@@ -406,6 +428,10 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
         params["detail"] = content.get("caption", "")
         if content.get("credit"):
             params["credit"] = content["credit"]
+    if renderer == "hero-log":
+        # Список набирается чёрным, и одно слово в нём горит — акцентное слово
+        # реплики. Приёму нужен сам текст акцента, а не номера строк.
+        params["accent"] = content["word"]
     if renderer == "hero-phone-mock":
         params["app"] = str(slot.get("screen_template") or "ChatGPT")
     # Текстовые нужды приёма переносятся один в один: имя ключа в

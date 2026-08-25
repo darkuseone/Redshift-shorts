@@ -263,6 +263,9 @@ HERO_PARAMS = {
                                 {"value": "$18 530 611", "note": "получает Google"},
                                 {"value": "$0", "note": "получает Google"}]},
     "hero-verdict": {"punch": ["Себе", "ноль"]},
+    "hero-bubble-typed": {"entries": [{"text": "ни одна компания", "at": 0.0},
+                                      {"text": "не платит гуглу", "at": 0.9},
+                                      {"text": "ни рубля", "at": 1.8}]},
     "hero-paper": {"source": "arxiv.org",
                    "quote": "maximizing survival time below the event horizon"},
 }
@@ -327,6 +330,54 @@ def test_split_column_fits_the_panel_on_any_word():
         # Короткое слово получает и лучшую раскладку, и полный кегль.
         if len(word) <= 6:
             assert rows == list(word) and size == 172, (word, rows, size)
+
+
+def test_log_marks_the_accent_word_and_never_shows_a_bare_dash():
+    """Список копится чёрным, и одно слово в нём горит — акцентное.
+
+    Заодно проверяется, чем список не имеет права быть: куском из одной
+    пунктуации («—» отдельной строкой) и оборванным на предлоге хвостом.
+    Тире закрывает кусок так же, как запятая, поэтому отдельным словом оно
+    давало кусок из себя одного.
+    """
+    from src.p11_assemble.assemble import _hero_content, hero_params
+
+    block = {"id": "b5", "emphasis_word": "выбрать",
+             "text": "Выжить внутри нельзя. Можно только выбрать, "
+                     "сколько ты продержишься, — и лучшая стратегия на"}
+    spoken = [{"display": w, "start": 0.4 * i, "end": 0.4 * i + 0.35,
+               "block_id": "b5"}
+              for i, w in enumerate(block["text"].split())]
+    slot = {"role": "turn", "start": 0.0, "end": 8.0}
+    content = _hero_content(block, slot, None, words=spoken)
+    entries = content["entries"]
+    assert all(any(ch.isalnum() for ch in e["text"]) for e in entries), entries
+    assert not entries[-1]["text"].endswith(" на"), entries[-1]
+
+    params = hero_params("hero-log", {}, content, slot)
+    node = render_hero("hero-log", _hero_ctx("hero-log", params=params)).nodes[0]
+    assert '<b class="lg-hit">ВЫБРАТЬ,</b>' in node, node
+
+
+def test_typed_card_is_centred_by_position_and_accents_its_last_chunk():
+    """Карточка набирается кусками, последний приходит акцентом.
+
+    Центровка — позицией, а не ``translateX``: вход тянет ``transform``
+    целиком, и первый же твин стёр бы сдвиг на половину ширины — карточка
+    уехала бы вправо на весь ролик.
+    """
+    from src.lib.render.hyperframes.templates import BT_CARD_W
+
+    piece = render_hero("hero-bubble-typed", _hero_ctx("hero-bubble-typed"))
+    node = piece.nodes[0]
+    assert node.count('class="bt-chunk') == 3
+    assert 'class="bt-chunk last"' in node
+    assert f'left:{(1080 - BT_CARD_W) // 2}px' in node
+    # Каждый кусок приходит на своей отметке, а не через ровный шаг.
+    starts = sorted(float(m) for m in re.findall(
+        r'\.bt-chunk:nth-child\(\d+\)"[^;]*?,([\d.]+)\);', " ".join(piece.tweens)))
+    assert len(starts) == 3 and len(set(starts)) == 3, starts
+    assert starts == sorted(starts) and starts[-1] > starts[0], starts
 
 
 def test_source_page_shows_only_what_the_script_really_cites():
