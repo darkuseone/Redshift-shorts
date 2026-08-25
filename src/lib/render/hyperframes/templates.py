@@ -1799,11 +1799,15 @@ def hero_bubble_typed(ctx: "TemplateCtx") -> Piece:
 
 
 # Страница первоисточника: поле самой страницы и то, куда уезжает ведущий.
-# Низ страницы держится **выше строки субтитра** (её базовая линия — 975):
-# в первом же собранном ролике слово легло ровно на нижний край страницы, и
-# читались оба текста разом. Ведущий поэтому и уезжает меньше.
-PP_PAGE = (70, 140, 940, 760)          # left, top, width, height
-PP_SHIFT_Y, PP_SHIFT_SCALE = 300, 0.88
+#
+# Два условия, и оба проверены кадром. Низ страницы держится **выше строки
+# субтитра** (базовая линия 975): в первом собранном ролике слово легло ровно
+# на нижний край страницы, и читались оба текста разом. А ведущий уезжает
+# **ниже** той же строки: когда я укоротил страницу и заодно уменьшил сдвиг,
+# субтитр лёг ему поперёк глаз — это хуже первого. Между низом страницы и
+# головой остаётся полоса, и субтитр живёт в ней.
+PP_PAGE = (70, 140, 940, 700)          # left, top, width, height
+PP_SHIFT_Y, PP_SHIFT_SCALE = 560, 0.80
 
 # Полосы «текста» страницы над цитатой и под ней — доля ширины колонки.
 PP_BARS_ABOVE = (0.96, 0.88, 1.0, 0.72)
@@ -2252,7 +2256,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-mono);font-size:30px;color:var(--color-muted);"
         "white-space:nowrap;overflow:hidden}"
         ".hero-paper .pp-doc{display:flex;flex-direction:column;"
-        "align-items:flex-start;gap:26px;flex:1;justify-content:center}"
+        "align-items:flex-start;gap:20px;flex:1;justify-content:center}"
         ".hero-paper .pp-kicker{font-family:var(--font-mono);font-size:26px;"
         "letter-spacing:0.18em;color:var(--color-muted)}"
         # Полосы вместо текста статьи: сочинённый абзац под настоящим доменом
