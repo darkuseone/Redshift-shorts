@@ -263,6 +263,8 @@ HERO_PARAMS = {
                                 {"value": "$18 530 611", "note": "получает Google"},
                                 {"value": "$0", "note": "получает Google"}]},
     "hero-verdict": {"punch": ["Себе", "ноль"]},
+    "hero-paper": {"source": "arxiv.org",
+                   "quote": "maximizing survival time below the event horizon"},
 }
 
 
@@ -306,6 +308,65 @@ def test_script_stack_fits_the_widest_line_not_the_longest():
         assert drawn <= 1080 - 2 * 90 + 1e-6, (line, drawn)
 
 
+def test_split_column_fits_the_panel_on_any_word():
+    """Столбец сплита обязан уложиться в панель и по ширине, и по высоте.
+
+    По одной букве в строке «ЕДИНСТВЕННЫЙ» уходил кеглем за нижний край
+    панели. Раскладка теперь выбирается измерением, и проверять надо оба
+    поля: короткое слово не должно потерять крупный кегль, длинное — вылезти.
+    """
+    from src.lib.render.hyperframes.templates import (
+        SPLIT_BOX, split_rows, widest)
+
+    box_w, box_h = SPLIT_BOX
+    for word in ("НЕТ", "НИЧЕГО", "ВНИМАНИЕ", "ЕДИНСТВЕННЫЙ", "НЕВОЗВРАТА"):
+        rows, size = split_rows(word)
+        assert "".join(rows) == word, (word, rows)
+        assert text_width(widest(rows), size) <= box_w + 1e-6, (word, rows, size)
+        assert len(rows) * size * 0.86 <= box_h + 1e-6, (word, rows, size)
+        # Короткое слово получает и лучшую раскладку, и полный кегль.
+        if len(word) <= 6:
+            assert rows == list(word) and size == 172, (word, rows, size)
+
+
+def test_source_page_shows_only_what_the_script_really_cites():
+    """Страница первоисточника не досочиняет ни домена, ни текста статьи.
+
+    Домен берётся из ссылки блока как есть; цитата — из ``overlay.highlight``.
+    Без ссылки приёма нет вовсе: страница без домена — не источник.
+    """
+    from src.p11_assemble.assemble import _hero_content, hero_params
+
+    block = {"id": "b3", "emphasis_word": "порог",
+             "text": "Ошибки упали ниже порога коррекции.",
+             "source_ref": "https://www.nature.com/articles/s41586-024-08449-y",
+             "overlay": {"type": "highlight",
+                         "content": "below the surface code threshold"}}
+    slot = {"role": "develop", "start": 0.0, "end": 5.0}
+    content = _hero_content(block, slot, None, (540, 700), title="Квантовый чип")
+    params = hero_params("hero-paper", {}, content, slot)
+    assert params["source"] == "nature.com"
+    assert params["quote"] == "below the surface code threshold"
+
+    node = render_hero("hero-paper", _hero_ctx("hero-paper", params=params)).nodes[0]
+    assert "nature.com" in node
+    # Цитата разложена по строкам, поэтому целиком её в разметке нет — но ни
+    # одно слово потеряться не имеет права: обрывок цитаты уже не цитата.
+    for word in params["quote"].split():
+        assert word in node, word
+    # В разметке страницы нет ни одного слова реплики: тело набрано полосами.
+    assert "коррекции" not in node
+
+    # Без ссылки на источник приём не собирается. Контекст здесь строится
+    # напрямую: `_hero_ctx` подмешал бы домен из набора по умолчанию.
+    bare = dict(block); bare.pop("source_ref")
+    empty = hero_params("hero-paper", {}, _hero_content(bare, slot, None), slot)
+    assert not empty.get("source")
+    ctx = TemplateCtx(index=3, start=4.5, duration=2.0, target="avatar-01",
+                      track=13, params=empty)
+    assert not render_hero("hero-paper", ctx).nodes
+
+
 def test_every_css_variable_is_defined():
     """Опечатка в имени переменной не падает — она красит текст в чёрное.
 
@@ -340,7 +401,13 @@ def test_every_hero_gets_its_content_from_the_pipeline():
              # В тексте есть число: приёму со сменой значений больше нечем
              # наполниться, и без него проверка его бы не задела.
              "text": "Падение в чёрную дыру ты переживёшь. Это и есть "
-                     "худшая часть: 12 минут собственного времени."}
+                     "худшая часть: 12 минут собственного времени.",
+             # Ссылка на источник и помеченная цитата: без них страница
+             # первоисточника не собирается, и это её правило, а не пропуск.
+             "source_ref": "arxiv.org",
+             "overlay": {"type": "highlight",
+                         "content": "maximizing survival time below the "
+                                    "event horizon"}}
     # Тайминги слов конвейер отдаёт всегда: на них держится «список копится».
     spoken = [{"display": w, "start": 0.4 * i, "end": 0.4 * i + 0.35,
                "block_id": "b1"}

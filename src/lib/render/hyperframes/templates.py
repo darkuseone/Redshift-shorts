@@ -68,47 +68,90 @@ _INK, _MUTED_INK = "#111214", "#9A9CA1"
 
 
 @lru_cache(maxsize=4)
-def _display_font(size: int):
-    """Гарнитура заголовков из проверенного набора (§3.4). None — если её нет."""
+def _font(role: str, size: int):
+    """Гарнитура роли из проверенного набора (§3.4). None — если её нет."""
     try:
         from PIL import ImageFont
 
         manifest = json.loads(
             (Path("assets/fonts") / "fonts_manifest.json").read_text(encoding="utf-8"))
-        entry = next(f for f in manifest["fonts"] if f.get("role") == "display")
+        entry = next(f for f in manifest["fonts"] if f.get("role") == role)
         return ImageFont.truetype(str(Path("assets/fonts") / entry["file"]), size)
     except Exception:                                        # noqa: BLE001
         return None
 
 
-def text_width(text: str, size: int) -> float:
-    """Ширина строки в пикселях при данном кегле."""
-    font = _display_font(100)
+def text_width(text: str, size: int, *, role: str = "display") -> float:
+    """Ширина строки в пикселях при данном кегле.
+
+    Роль обязательна к правде: Nunito шире Oswald почти в полтора раза, и
+    строка, подобранная по метрике заголовка, набранная субтитровой
+    гарнитурой вылезает за поле.
+    """
+    font = _font(role, 100)
     if font is None:
         return len(text) * size * _FALLBACK_EM_PER_CHAR
     box = font.getbbox(text)
     return (box[2] - box[0]) * size / 100.0
 
 
-def widest(lines: Iterable[str]) -> str:
+def widest(lines: Iterable[str], *, role: str = "display") -> str:
     """Самая широкая строка, а не самая длинная.
 
     «МОЛЧА? НАПИШИ» и «ГАЗ ИЛИ ПАДАЛ» — по 13 знаков, но первая шире второй на
     11 %: ширина знака в Oswald гуляет вдвое. Подбор кегля по длиннейшей строке
     поэтому обрезал самую широкую краем кадра — проверено кадром.
     """
-    return max(lines, key=lambda line: text_width(str(line).upper(), 100),
+    return max(lines, key=lambda line: text_width(str(line).upper(), 100, role=role),
                default="")
 
 
-def fit_size(text: str, available_px: float, max_size: int) -> int:
+def fit_size(text: str, available_px: float, max_size: int, *,
+             role: str = "display") -> int:
     """Наибольший кегль, при котором строка укладывается в ширину."""
     if not text:
         return max_size
-    at_max = text_width(text, max_size)
+    at_max = text_width(text, max_size, role=role)
     if at_max <= available_px:
         return max_size
     return max(24, int(max_size * available_px / at_max))
+
+
+def wrap_measured(text: str, size: int, available_px: float, *,
+                  role: str = "display") -> list[str]:
+    """Перенос по словам, измеренный гарнитурой, а не счётом знаков.
+
+    Ни одно слово не теряется: строк выходит столько, сколько нужно. Сколько
+    их влезает — решает вызывающий, подбирая кегль (``fit_block``).
+    """
+    lines: list[str] = []
+    current = ""
+    for word in str(text).split():
+        candidate = f"{current} {word}".strip()
+        if current and text_width(candidate, size, role=role) > available_px:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    return lines
+
+
+def fit_block(text: str, available_px: float, max_size: int, rows: int, *,
+              role: str = "display") -> tuple[list[str], int]:
+    """Абзац в заданное число строк: кегль ужимается, пока не уложится.
+
+    Обрезать текст нельзя: обрывок цитаты — это уже не цитата. Поэтому
+    уменьшается кегль, а нижняя граница в 24 px честно признаёт поражение —
+    строк станет больше, и это видно в кадре, а не скрыто многоточием.
+    """
+    size = max_size
+    lines = wrap_measured(text, size, available_px, role=role)
+    while len(lines) > rows and size > 24:
+        size -= 2
+        lines = wrap_measured(text, size, available_px, role=role)
+    return lines, size
 
 
 # --- словарь появления --------------------------------------------------------
@@ -814,18 +857,49 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Поле панели сплита: ширина — сама панель без колонки лайк/коммент/шер и без
+# полей; высота — то, что помещается симметрично вокруг центра кадра между
+# верхом и низом рабочей зоны (§3.2).
+SPLIT_BOX = (236, 1120)
+
+
+def split_rows(word: str, max_size: int = 172) -> tuple[list[str], int]:
+    """Разложить слово по строкам панели так, чтобы кегль вышел наибольшим.
+
+    По одной букве в строке — лучшая раскладка, и короткие слова получают
+    именно её. Но «ЕДИНСТВЕННЫЙ» по одной букве упирается в высоту панели и
+    садится на кегль 108 — вдвое мельче, чем панель позволяет. По две буквы в
+    строке то же слово идёт кеглем 172. Поэтому раскладку выбирает не правило,
+    а измерение: побеждает та, при которой слово выходит крупнее. На длинном
+    слове это две буквы в строке — ровно как на референсе.
+    """
+    box_w, box_h = SPLIT_BOX
+    best: tuple[list[str], int] = ([word], 24)
+    for per in range(1, len(word) + 1):
+        rows = [word[i:i + per] for i in range(0, len(word), per)]
+        by_width = fit_size(widest(rows), box_w, max_size)
+        # 0.86 — межстрочное расстояние из CSS панели; высота строки от него и
+        # считается.
+        by_height = int(box_h / (len(rows) * 0.86))
+        size = min(by_width, by_height, max_size)
+        if size > best[1]:
+            best = (rows, size)
+    return best
+
+
 def hero_split(ctx: "TemplateCtx") -> Piece:
     """Кадр делится: ведущий слева, гигантское слово столбцом справа.
 
-    Слово набирается по буквам сверху вниз — на вертикали это читается лучше,
-    чем целиком, и даёт ритм. Панель въезжает справа, ведущий не двигается:
-    двигать обоих значит потерять лицо из фокуса.
+    Слово набирается сверху вниз — на вертикали это читается лучше, чем
+    целиком, и даёт ритм. По одной букве в строке или по две — решает
+    ``split_rows`` по кеглю, а не по вкусу. Панель въезжает справа.
     """
     word = str(ctx.params.get("word") or "")
     if not word:
         return Piece()
     node_id = f"hs-{ctx.index:02d}"
-    letters = "".join(f"<span>{_esc(ch)}</span>" for ch in word)
+    rows, size = split_rows(word, int(ctx.params.get("size", 172)))
+    letters = "".join(f"<span>{_esc(row)}</span>" for row in rows)
     # Ведущий уходит влево и укрупняется: панель занимает почти половину
     # кадра, и по центру от него осталась бы одна щека.
     shift = int(ctx.params.get("subject_shift", -210))
@@ -847,8 +921,8 @@ def hero_split(ctx: "TemplateCtx") -> Piece:
         f'tl.to("#{ctx.target}",'
         f'{{x:0,scale:1,duration:0.34,ease:"power2.inOut"}},{_num(back)});',
     ]
-    for i in range(len(word)):
-        # Буквы очередью, шаг плотный: выложенные по одной, они читаются
+    for i in range(len(rows)):
+        # Строки очередью, шаг плотный: выложенные по одной, они читаются
         # медленнее, чем слово произносится.
         tweens += entrance_tweens(
             f"#{node_id} .hs-word span:nth-child({i + 1})", ctx.start,
@@ -858,7 +932,8 @@ def hero_split(ctx: "TemplateCtx") -> Piece:
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
                f'data-track-index="{ctx.track}">'
                f'<div id="{node_id}-in" class="hs-in">'
-               f'<span class="hs-word">{letters}</span></div></div>'],
+               f'<span class="hs-word" style="font-size:{size}px">'
+               f'{letters}</span></div></div>'],
         tweens=tweens)
 
 
@@ -1617,6 +1692,115 @@ def hero_verdict(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Страница первоисточника: поле самой страницы и то, куда уезжает ведущий.
+PP_PAGE = (70, 170, 940, 1000)         # left, top, width, height
+PP_SHIFT_Y, PP_SHIFT_SCALE = 560, 0.80
+
+# Полосы «текста» страницы над цитатой и под ней — доля ширины колонки.
+PP_BARS_ABOVE = (0.96, 0.88, 1.0, 0.72)
+PP_BARS_BELOW = (1.0, 0.84)
+
+
+def hero_paper(ctx: "TemplateCtx") -> Piece:
+    """Первоисточник: страница статьи в кадре, по строке ползёт маркер.
+
+    Референс: скриншот страницы arXiv наезжает, по строке идёт жёлтая
+    заливка. Жёлтого в палитре нет — маркер здесь приглушённо-красный.
+
+    Текст страницы набран полосами, а не буквами, и это не украшение:
+    настоящего текста статьи у сборки нет, а сочинить абзац — значит показать
+    зрителю выдуманную цитату под настоящим доменом. Читается ровно одна
+    строка — та, которую сценарий действительно взял из источника
+    (``overlay.highlight``), и домен в адресной строке. Всё остальное на
+    странице честно нечитаемо.
+
+    Страница закрывает верхние две трети кадра, поэтому ведущий уезжает вниз и
+    уменьшается — как в «экспонате».
+    """
+    source = str(ctx.params.get("source") or "").strip()
+    quote = str(ctx.params.get("quote") or "").strip()
+    if not source or not quote:
+        return Piece()
+    node_id = f"pp-{ctx.index:02d}"
+    left, top, page_w, page_h = PP_PAGE
+    pad = 56
+    column = page_w - 2 * pad
+
+    # Цитата набирается субтитровой гарнитурой, ею же и меряется: Nunito шире
+    # Oswald почти в полтора раза, и кегль, подобранный по заголовочной
+    # метрике, вывалил бы строку за поле страницы.
+    lines, size = fit_block(quote, column - 24, int(ctx.params.get("size", 54)),
+                            int(ctx.params.get("rows", 3)), role="subtitle")
+    mark_h, mark_top = int(size * 1.02), int(size * 0.18)
+
+    quote_lines = "".join(
+        f'<span class="pp-line">'
+        f'<span class="pp-mark" style="width:'
+        f'{int(text_width(line, size, role="subtitle")) + 22}px;'
+        f'height:{mark_h}px;top:{mark_top}px"></span>'
+        f'<span class="pp-text">{_esc(line)}</span></span>'
+        for line in lines)
+
+    def bars(widths: tuple[float, ...]) -> str:
+        return "".join(
+            f'<span class="pp-bar" style="width:{int(column * w)}px"></span>'
+            for w in widths)
+
+    page = (
+        f'<div id="{node_id}-p" class="pp-page" style="left:{left}px;top:{top}px;'
+        f'width:{page_w}px;height:{page_h}px">'
+        f'<span class="pp-chrome">'
+        f'<span class="pp-dot"></span><span class="pp-dot"></span>'
+        f'<span class="pp-dot"></span>'
+        f'<span class="pp-url">{_esc(source)}</span></span>'
+        f'<span class="pp-doc" style="padding:{pad}px">'
+        f'<span class="pp-kicker">ИЗ ИСТОЧНИКА</span>'
+        f'{bars(PP_BARS_ABOVE)}'
+        f'<span class="pp-quote" style="font-size:{size}px">{quote_lines}</span>'
+        f'{bars(PP_BARS_BELOW)}'
+        f'</span></div>')
+
+    enter, leave = 0.5, 0.34
+    back = max(ctx.start + enter, ctx.start + ctx.duration - leave)
+    hold = max(0.3, back - ctx.start - enter)
+    away = top + page_h + 80
+    tweens = [
+        # Страницу подают сверху — так же, как кладут лист на стол.
+        f'tl.fromTo("#{node_id}",{{y:-90}},'
+        f'{{y:0,duration:{_num(enter)},ease:"expo.out"}},{_num(ctx.start)});',
+        f'tl.to("#{node_id}",{{y:-{away},duration:{_num(leave)},'
+        f'ease:"power2.in"}},{_num(back)});',
+        # Ведущий уходит вниз ровно на вход страницы и возвращается ровно на её
+        # уход: между этими двумя моментами его голова была бы за листом.
+        f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
+        f'{{y:{PP_SHIFT_Y},scale:{PP_SHIFT_SCALE},duration:{_num(enter)},'
+        f'ease:"expo.out"}},{_num(ctx.start)});',
+        f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:{_num(leave)},'
+        f'ease:"power2.inOut"}},{_num(back)});',
+    ]
+    # Медленный наезд на страницу — с референса. Тянет масштаб вложенного
+    # блока, а не клипа: у клипа масштаб уже занят входом и уходом.
+    tweens += drift_tween(f"#{node_id}-p", ctx.start + enter, hold)
+    tweens += entrance_tweens(f"#{node_id} .pp-kicker", ctx.start, name="dim",
+                              delay=0.18)
+    tweens += entrance_tweens(f"#{node_id} .pp-quote", ctx.start, name="rise",
+                              delay=0.34)
+    for i in range(len(lines)):
+        # Маркер идёт слева направо строку за строкой — как рукой. Ширина уже
+        # стоит в разметке, тянется только scaleX: анимировать ширину значит
+        # заставить движок пересчитывать раскладку на каждом кадре.
+        tweens.append(
+            f'tl.fromTo("#{node_id} .pp-line:nth-child({i + 1}) .pp-mark",'
+            f'{{scaleX:0}},{{scaleX:1,duration:0.42,ease:"power2.out"}},'
+            f'{_num(ctx.start + 0.62 + 0.16 * i)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-paper" '
+               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+               f'data-track-index="{ctx.track}">{page}</div>'],
+        tweens=tweens)
+
+
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-burst": hero_burst,
     "hero-headline": hero_headline,
@@ -1637,6 +1821,7 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-oversize": hero_oversize,
     "hero-figure": hero_figure,
     "hero-verdict": hero_verdict,
+    "hero-paper": hero_paper,
 }
 
 
@@ -1699,8 +1884,10 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "background:var(--color-accent-soft);display:flex;align-items:center;"
         f"justify-content:center;padding-right:{ui_column}px;"
         "will-change:transform}"
+        # Кегль ставит шаблон: он зависит от того, сколько строк вышло из
+        # слова, и в таблице стилей его знать неоткуда.
         ".hero-split .hs-word{display:flex;flex-direction:column;"
-        "align-items:center;font-family:var(--font-display);font-size:172px;"
+        "align-items:center;font-family:var(--font-display);"
         "line-height:0.86;text-transform:uppercase;color:var(--color-ink)}"
         ".hero-split .hs-word span{display:block}"
         # --- строки колонкой слева ---
@@ -1914,6 +2101,41 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-display);text-transform:uppercase;"
         "line-height:0.92;letter-spacing:-0.01em;pointer-events:none}"
         ".hero-verdict .vd-line{display:block;color:var(--color-ink)}"
+        # --- страница первоисточника ---
+        # Клип во весь кадр: у клипа с нулевой площадью продюсер не рисует ни
+        # рамку, ни детей, а сама страница лежит внутри со своими полями.
+        ".hero-paper{position:absolute;inset:0;width:var(--frame-w);"
+        f"height:var(--frame-h);z-index:{Z_AVATAR + 1};pointer-events:none}}"
+        ".hero-paper .pp-page{position:absolute;overflow:hidden;"
+        "border-radius:26px;background:var(--color-bg-pure);"
+        "box-shadow:0 34px 90px rgba(10,10,12,0.28);"
+        "display:flex;flex-direction:column}"
+        # Адресная строка — единственное место, где стоит настоящий домен.
+        ".hero-paper .pp-chrome{display:flex;align-items:center;gap:14px;"
+        "height:84px;padding:0 26px;background:var(--color-bg-light);"
+        "border-bottom:2px solid rgba(17,18,20,0.08);flex:none}"
+        ".hero-paper .pp-dot{width:16px;height:16px;border-radius:50%;"
+        "background:rgba(17,18,20,0.16);flex:none}"
+        ".hero-paper .pp-url{margin-left:12px;padding:10px 26px;"
+        "border-radius:999px;background:var(--color-bg-pure);"
+        "font-family:var(--font-mono);font-size:30px;color:var(--color-muted);"
+        "white-space:nowrap;overflow:hidden}"
+        ".hero-paper .pp-doc{display:flex;flex-direction:column;"
+        "align-items:flex-start;gap:26px;flex:1;justify-content:center}"
+        ".hero-paper .pp-kicker{font-family:var(--font-mono);font-size:26px;"
+        "letter-spacing:0.18em;color:var(--color-muted)}"
+        # Полосы вместо текста статьи: сочинённый абзац под настоящим доменом
+        # был бы выдуманной цитатой.
+        ".hero-paper .pp-bar{display:block;height:16px;border-radius:8px;"
+        "background:rgba(17,18,20,0.10)}"
+        ".hero-paper .pp-quote{display:block;font-family:var(--font-subtitle);"
+        "color:var(--color-ink);line-height:1.26;margin:6px 0}"
+        ".hero-paper .pp-line{position:relative;display:block}"
+        # Маркер тянется scaleX от левого края — как ведут рукой.
+        ".hero-paper .pp-mark{position:absolute;left:-11px;"
+        "background:var(--color-accent-soft);border-radius:4px;"
+        "transform-origin:left center}"
+        ".hero-paper .pp-text{position:relative}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"

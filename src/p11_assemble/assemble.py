@@ -129,6 +129,7 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-oversize": ("word",),
     "hero-figure": ("figures",),
     "hero-verdict": ("punch",),
+    "hero-paper": ("source", "quote"),
 }
 
 
@@ -163,6 +164,19 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
     return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
 
 
+def _accent_clause(block: dict[str, Any]) -> str:
+    """Клауза реплики с акцентным словом — или первая, если его нет.
+
+    Клауза — то, что между запятыми, тире и двоеточиями: окно, перешагнувшее
+    такую границу, начинается с середины чужой мысли.
+    """
+    text = str(block.get("text") or "").strip()
+    word = str(block.get("emphasis_word") or "").strip()
+    clauses = [c.strip(" —–-") for c in re.split(r"[,;:—–]|(?<=[.!?])\s+", text) if c.strip()]
+    return next((c for c in clauses if word and word.lower() in c.lower()),
+                clauses[0] if clauses else "")
+
+
 def _punch(block: dict[str, Any]) -> list[str]:
     """Фраза для плашки-удара: две короткие строки, акцент — во второй.
 
@@ -175,14 +189,8 @@ def _punch(block: dict[str, Any]) -> list[str]:
     if overlay.get("type") == "fullscreen_text" and str(overlay.get("content") or "").strip():
         return _wrap_lines(str(overlay["content"]).strip(), width=13, limit=2)
 
-    text = str(block.get("text") or "").strip()
     word = str(block.get("emphasis_word") or "").strip()
-    # Клауза — то, что между запятыми, тире и двоеточиями: окно, перешагнувшее
-    # такую границу, начинается с середины чужой мысли.
-    clauses = [c.strip(" —–-") for c in re.split(r"[,;:—–]|(?<=[.!?])\s+", text) if c.strip()]
-    chosen = next((c for c in clauses if word and word.lower() in c.lower()),
-                  clauses[0] if clauses else "")
-    words = [w for w in chosen.split() if w]
+    words = [w for w in _accent_clause(block).split() if w]
     if not words:
         return []
     end = next((i + 1 for i, w in enumerate(words) if word and word.lower() in w.lower()),
@@ -255,6 +263,39 @@ def _log_entries(words: list[dict[str, Any]], start: float) -> list[dict[str, An
     return out[:5]
 
 
+_URL_HOST = re.compile(r"https?://([^/\s]+)")
+
+
+def _source_site(block: dict[str, Any]) -> str:
+    """Что написать в адресной строке страницы первоисточника.
+
+    Из ссылки берётся хост, всё остальное показывается как есть. Достраивать
+    домен по имени («Nature» → nature.org») нельзя: это уже не ссылка автора,
+    а выдумка сборки под видом источника.
+    """
+    ref = str(block.get("source_ref") or "").strip()
+    if not ref:
+        return ""
+    found = _URL_HOST.search(ref)
+    if found:
+        return found.group(1).lower().removeprefix("www.")
+    return ref
+
+
+def _quote(block: dict[str, Any]) -> str:
+    """Строка, которую страница подсвечивает маркером.
+
+    Первым делом — то, что автор сценария сам пометил как цитату из источника
+    (``overlay.highlight``): это единственный текст в сценарии, про который
+    известно, что он взят из статьи. Своей реплики хватает на замену, но
+    маркер по ней — уже пересказ, а не цитата, поэтому она идёт второй.
+    """
+    overlay = block.get("overlay") or {}
+    if overlay.get("type") == "highlight" and str(overlay.get("content") or "").strip():
+        return str(overlay["content"]).strip()
+    return _accent_clause(block)
+
+
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
                   face: tuple[int, int] | None = None,
                   title: str = "",
@@ -322,6 +363,11 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         "figures": _figures(text),
         "brand": brand,
         "face": face,
+        # Страница первоисточника: домен из ссылки блока и та строка, которую
+        # сценарий взял из статьи. Без ссылки приём не показывается вовсе —
+        # страница без домена не источник, а просто белый лист.
+        "source": _source_site(block),
+        "quote": _quote(block),
     }
 
 
