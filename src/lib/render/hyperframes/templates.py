@@ -226,6 +226,11 @@ ENTRANCES: dict[str, dict[str, float | str]] = {
 # намеренно ниже порога осознанного замечания — работает боковым зрением.
 DRIFT_SCALE = 1.035
 DRIFT_MIN_SEC = 1.2
+# Зазор между входом и дрейфом. Стык встык линтер движка считает пересечением
+# по scale (он округляет время до 10 мс), и формально он прав: два твина на
+# одном свойстве в один момент — это порядок перезаписи, а он в GSAP зависит
+# от очерёдности. Двадцать миллисекунд глазу не видны, спор — снят.
+DRIFT_GAP = 0.02
 
 
 def entrance_tweens(target: str, start: float, *, name: str = "zoom-in",
@@ -290,7 +295,7 @@ def enter_and_drift(target: str, start: float, duration: float, *,
     рендерами.
     """
     spec = ENTRANCES.get(name) or ENTRANCES["zoom-in"]
-    enter_sec = float(spec["duration"]) + delay
+    enter_sec = float(spec["duration"]) + delay + DRIFT_GAP
     tweens = entrance_tweens(target, start, name=name, fade=fade, delay=delay)
     tweens += drift_tween(target, start + enter_sec,
                           max(0.0, duration - enter_sec))
