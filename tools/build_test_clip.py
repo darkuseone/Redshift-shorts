@@ -62,19 +62,41 @@ def _voice_track(clip: Path, dst: Path) -> Path:
     return dst
 
 
-def _cuts(duration: float, devices: list[str]) -> list[tuple[float, float, str | None]]:
+# Сколько кадра оставить чистому ведущему, если приёмы просят всё.
+CLEAN_MIN = 1.5
+
+
+def _cuts(duration: float, devices: list[str],
+          needs: list[float]) -> list[tuple[float, float, str | None]]:
     """Разрезать клип на шоты: первый — чистый ведущий, дальше по приёму на шот.
 
     Первый шот без приёма намеренно: зритель обязан увидеть, кто говорит,
     прежде чем кадр начнёт им распоряжаться.
+
+    Нарезка **не** ровная. В каталоге у каждого приёма записано, сколько ему
+    нужно, чтобы прочитаться (``duration_range``), и ровная нарезка эти числа
+    игнорировала: набираемая карточка получала 2.39 с при заявленных 2.6 и
+    показывала бы недобранную реплику. Проба, показавшая приём короче, чем он
+    живёт в ролике, — это не проба, а другой приём.
+
+    Минимумы берутся как доли; остаток раздаётся поровну. Если минимумы не
+    влезают в клип вовсе, шоты делятся пропорционально им — короткий клип
+    честнее показать сжатым, чем обрезать последний приём.
     """
-    pieces = len(devices) + 1
-    step = duration / pieces
+    wants = [max(CLEAN_MIN, 0.0)] + [max(0.6, n) for n in needs]
+    total = sum(wants)
+    if total > duration:
+        wants = [w * duration / total for w in wants]
+    else:
+        extra = (duration - total) / len(wants)
+        wants = [w + extra for w in wants]
+
     out: list[tuple[float, float, str | None]] = []
-    for i in range(pieces):
-        start = round(i * step, 3)
-        end = round(duration if i == pieces - 1 else (i + 1) * step, 3)
-        out.append((start, end, None if i == 0 else devices[i - 1]))
+    cursor = 0.0
+    for i, want in enumerate(wants):
+        start = round(cursor, 3)
+        cursor = duration if i == len(wants) - 1 else cursor + want
+        out.append((start, round(cursor, 3), None if i == 0 else devices[i - 1]))
     return out
 
 
@@ -110,8 +132,10 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
     catalog = {t["renderer"]: t for t in manifest["templates"]}
     catalog.update({t["id"]: t for t in manifest["templates"]})
 
+    needs = [float((catalog.get(name) or {}).get("duration_range", [1.4, 4.0])[0])
+             for name in devices]
     shots = []
-    for index, (start, end, name) in enumerate(_cuts(duration, devices)):
+    for index, (start, end, name) in enumerate(_cuts(duration, devices, needs)):
         slot = {"index": index, "start": start, "end": end, "duration": end - start,
                 "role": block.get("role", "hook"), "block_id": block["id"],
                 "kind": "avatar"}
