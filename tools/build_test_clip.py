@@ -40,6 +40,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.lib.audio import load_wav                                     # noqa: E402
+from src.lib.backdrop import describe as scene_why                     # noqa: E402
+from src.lib.backdrop import pick_scene, tone as scene_tone            # noqa: E402
 from src.lib.config import load_config                                 # noqa: E402
 from src.lib.ffmpeg import (alpha_opacity, has_alpha, head_box,   # noqa: E402
                             probe, run)
@@ -196,8 +198,12 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
     print(f"субтитр: {len(subtitles)} слов из {len(spoken)}, "
           f"приёмов: {len(devices)}")
 
+    scene = pick_scene(title, str(block.get("text") or ""))
+    print(f"фон: {scene} ({scene_why(scene)})")
+
     plan = {
         "video_id": out_path.stem, "variant": "A", "fps": 30,
+        "backdrop": {"scene": scene, "tone": scene_tone(scene)},
         "resolution": [1080, 1920], "duration_sec": duration,
         "audio": {"mix": voice.name},
         "shots": shots, "overlays": [], "subtitles": subtitles,

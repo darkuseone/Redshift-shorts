@@ -29,6 +29,9 @@ from ..lib.render.shots import (
     prepare_split_shot,
 )
 from ..lib.brand_icons import load_library as load_brand_icons
+from ..lib.backdrop import describe as scene_why
+from ..lib.backdrop import pick_scene
+from ..lib.backdrop import tone as scene_tone
 from ..lib.glyphs import match_glyphs
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
@@ -461,6 +464,16 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
         # за ними светлее заливки.
         if renderer in ("hero-bubble-card", "hero-bubble-typed"):
             params["face_cx"], params["face_cy"] = content["face"]
+            if content.get("head_box"):
+                # Круг считается от коробки головы: по фиксированному диаметру
+                # он срезал щёки и подбородок. Центр — тоже её, а не лица:
+                # радиус описан вокруг головы, и если посадить его на середину
+                # лица, макушка вылезет ровно на разницу между ними.
+                box = content["head_box"]
+                params["head_w"] = int(box[2]) - int(box[0])
+                params["head_h"] = int(box[3]) - int(box[1])
+                params["face_cx"] = (int(box[0]) + int(box[2])) // 2
+                params["face_cy"] = (int(box[1]) + int(box[3])) // 2
         if renderer == "hero-knockout":
             params["face_cy"] = content["face"][1]
     if renderer == "hero-brand-pill":
@@ -1094,6 +1107,12 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
         })
 
+    # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон
+    # держится весь ролик и посреди него не меняется.
+    scene = pick_scene(str(plan.get("title") or ""),
+                       " ".join(str(b.get("text") or "")
+                                for b in plan.get("blocks", [])))
+
     return {
         "video_id": plan["video_id"],
         "variant": variant,
@@ -1106,6 +1125,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "shots": shots,
         "overlays": overlays,
         "subtitles": subtitles,
+        "backdrop": {"scene": scene, "tone": scene_tone(scene),
+                     "why": scene_why(scene)},
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
             "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 975),

@@ -612,7 +612,7 @@ def test_icons_stay_inside_the_work_area_and_flash_in_turn():
 
     # Каждый знак приходит и уходит, и приходит он не одновременно с соседом.
     ins = sorted(float(m) for m in re.findall(
-        r'\.hi-mark:nth-child\(\d+\)".*?back\.out\(1\.8\)"\},([\d.]+)\)',
+        r'\.hi-mark:nth-child\(\d+\)",\{scale:[\d.]+,opacity:0\}[^;]*?\},([\d.]+)\)',
         " ".join(piece.tweens)))
     assert len(set(ins)) > 1, ins
     assert any("opacity:0" in t and "tl.to(" in t for t in piece.tweens)
@@ -667,7 +667,11 @@ def test_hero_plate_enters_by_approaching():
     assert piece.tweens, "панель появляется срезом"
     enter = piece.tweens[0]
     assert "opacity" not in enter, enter
-    assert "{scale:0.86}" in enter, f"панель обязана расти, а не отъезжать: {enter}"
+    # Проверяется правило, а не число: числа словаря живут в самом словаре и
+    # меняются, когда меняется вкус к движению.
+    start = float(re.search(r"\{scale:([\d.]+)", enter).group(1))
+    assert start < 1.0, f"панель обязана расти, а не отъезжать: {enter}"
+    assert "ease:\"back" not in enter, f"отскок — это игрушка: {enter}"
 
 
 def test_hero_headline_without_a_kicker_tweens_only_what_it_drew():
@@ -740,9 +744,20 @@ def test_entrance_without_a_fade_grows_instead_of_shrinking():
 
 
 def test_entrance_with_a_fade_keeps_the_dictionary_value():
+    """С проявлением вход идёт из значения словаря, без — из зеркального.
+
+    Число берётся из словаря, а не переписывается сюда: словарь и есть
+    источник правды о том, откуда приходит элемент.
+    """
     import re
+    spec = float(ENTRANCES["zoom-in"]["scale"])
     tween = entrance_tweens("#inner", 0.0, name="zoom-in", fade=True)[0]
-    assert float(re.search(r"\{scale:([\d.]+)", tween).group(1)) == 1.14
+    assert float(re.search(r"\{scale:([\d.]+)", tween).group(1)) == spec
+
+    # Без проявления вход обязан **расти**: уменьшение без проявления читается
+    # как отъезд, а не как появление.
+    plain = entrance_tweens("#inner", 0.0, name="zoom-in", fade=False)[0]
+    assert float(re.search(r"\{scale:([\d.]+)", plain).group(1)) < 1.0
 
 
 def test_drift_never_overlaps_the_entrance():
@@ -820,3 +835,60 @@ def test_bubble_leaves_no_residual_scale_on_the_shared_avatar():
     assert len(avatar) == 1, f"на аватаре больше одного твина: {avatar}"
     to_state = re.search(r"\},\{([^}]*)\}", avatar[0]).group(1)
     assert "scale:1.0," in to_state + ",", f"приём оставляет масштаб: {to_state}"
+
+
+def test_scene_follows_the_topic_of_the_video():
+    """Сцена выбирается темой ролика, и короткая основа обязана совпасть.
+
+    «Чёрная дыра» — основа «дыр», три буквы. У знаков такая основа сверяется
+    словом целиком, и ролик про горизонт событий получал нейтральную комнату:
+    «дыры» ≠ «дыр». У сцен правило другое (см. :func:`src.lib.backdrop._matches`),
+    и проверяется здесь именно этот случай.
+    """
+    from src.lib.backdrop import DEFAULT_SCENE, pick_scene
+
+    assert pick_scene("Что происходит внутри чёрной дыры") == "horizon"
+    assert pick_scene("", "Кубит держится доли секунды") == "grid"
+    assert pick_scene("Ракета села на баржу") == "space"
+    assert pick_scene("Как они делят деньги") == "room"
+    # Тема не опознана — фон нейтральный, а не случайный.
+    assert pick_scene("Просто разговор ни о чём") == DEFAULT_SCENE
+
+
+def test_every_scene_is_drawn_and_has_a_tone():
+    """Сцена без стилей — белый прямоугольник за ведущим, молча."""
+    from src.lib.backdrop import SCENES, backdrop_css, describe, tone
+
+    css = backdrop_css()
+    for name in SCENES:
+        assert f".vfx.scene-{name}{{" in css, name
+        assert tone(name) in ("dark", "light"), name
+        assert describe(name), name
+
+
+def test_text_on_a_dark_stage_does_not_stay_ink_black():
+    """То, что лежит прямо на фоне, обязано менять цвет вместе с ним.
+
+    Заголовок за головой, тема, знаки и накопительный список рисуются поверх
+    сцены без подложки. На тёмной сцене чернильный цвет из брендбука пропадает
+    в фоне — цвет берётся из ``--color-on-stage``, а тон сцены его переключает.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    assert "--color-on-stage" in css
+    dark = re.search(r"#root\.stage-dark\{([^}]*)\}", css)
+    assert dark, "тёмная сцена не переопределяет цвет надписей на фоне"
+    assert "--color-on-stage" in dark.group(1)
+
+    on_stage = (".hero-title-behind .tb-head", ".hero-log .lg-row",
+                ".hero-icons", ".hero-headline .hh-kicker")
+    for selector in on_stage:
+        # Правил у селектора может быть несколько: цвет достаточно задать в
+        # одном из них.
+        rules = [m.group(2) for m in
+                 re.finditer(r"([^{}]+)\{([^{}]*)\}", css)
+                 if selector in m.group(1)]
+        assert rules, selector
+        assert any("var(--color-on-stage)" in body for body in rules), selector

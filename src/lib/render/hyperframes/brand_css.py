@@ -14,6 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ...backdrop import backdrop_css
 from .templates import dataviz_css, hero_css, split_css, transition_css
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
@@ -94,6 +95,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"--font-display: {_stack(typo['display'], 'RS Display')};",
         f"--font-subtitle: {_stack(typo['subtitle'], 'RS Subtitle')};",
         f"--font-mono: {_stack(typo['mono'], 'RS Mono')};",
+        # Цвет того, что рисуется **прямо на фоне**: заголовок за головой, тема
+        # за головой, знаки, накопительный список. На тёмной сцене чернильная
+        # надпись пропадает, и тон сцены эти две переменные переключает.
+        "--color-on-stage: var(--color-ink);",
+        "--stage-halo: rgba(247,245,243,0.9);",
     ]
     parts.append(":root{" + "".join(var_lines) + "}")
 
@@ -245,12 +251,13 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # Мягкий градиент бренда вместо видеофона: он не спорит с аватаром и
     # держит долю акцента ниже потолка §3.3.1.
     parts.append(
-        ".vfx{position:absolute;inset:0;"
-        "background:radial-gradient(120% 90% at 50% 18%,"
-        "var(--color-bg-pure) 0%,var(--color-bg-light) 46%,#EDE7E4 100%)}"
-        ".vfx::after{content:'';position:absolute;inset:0;"
-        "background:radial-gradient(70% 45% at 50% 78%,"
-        "var(--color-accent-soft) 0%,transparent 70%);opacity:0.5}"
+        backdrop_css()
+        +
+        # Тёмная сцена переворачивает цвет надписей на фоне и их ореол. Не
+        # `--color-ink` целиком: он же красит текст на белых карточках, и его
+        # переворот сделал бы их нечитаемыми.
+        "#root.stage-dark{--color-on-stage:var(--color-bg-light);"
+        "--stage-halo:rgba(6,8,12,0.85)}"
     )
 
     # Слои переходов (§4.3, §15) — отдельный модуль: их 9 рендереров,

@@ -27,6 +27,7 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
+from ...backdrop import SCENES, pick_scene, tone as scene_tone
 from .templates import (
     TemplateCtx, enter_and_drift, entrance_tweens, fit_size, render_hero,
     render_motion, render_transition, text_width,
@@ -108,6 +109,23 @@ class CompositionBuilder:
             return "power2.out"
         return f"cubic-bezier({curve[0]},{curve[1]},{curve[2]},{curve[3]})"
 
+    @property
+    def scene(self) -> str:
+        """Сцена фона: из плана, иначе — по теме ролика.
+
+        Фон держится весь ролик и посреди него не меняется: это фон, а не
+        мигание. Поэтому сцена одна на композицию, а не на шот.
+        """
+        chosen = str((self.plan.get("backdrop") or {}).get("scene") or "")
+        if chosen in SCENES:
+            return chosen
+        return pick_scene(self.plan.get("title") or "",
+                          " ".join(str(b.get("text") or "")
+                                   for b in self.plan.get("_blocks", [])))
+
+    def _stage_class(self) -> str:
+        return "stage-dark" if scene_tone(self.scene) == "dark" else "stage-light"
+
     # --- шоты -----------------------------------------------------------
     def _alpha_slots(self) -> set[int]:
         """Слоты, где аватар лёг альфой и под ним нужен собственный фон.
@@ -169,7 +187,7 @@ class CompositionBuilder:
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
                 nodes.append(
                     f'<div id="{node_id}" class="clip shot-bg" {timing}>'
-                    f'<div class="vfx"></div></div>')
+                    f'<div class="vfx scene-{self.scene}"></div></div>')
             elif index in avatar_nodes or kind == "avatar":
                 # Аватар без альфы приходит со своим фоном и занимает кадр
                 # целиком: подкладывать под него нечего. Но переход ему нужен.
@@ -417,7 +435,7 @@ class CompositionBuilder:
             repeats = max(0, int(duration / period) - 1)
             self.tweens.append(
                 f'tl.fromTo("#{node_id}-pill",{{scale:0.6}},'
-                f'{{scale:1,duration:0.32,ease:"back.out(1.7)"}},{_num(start)});')
+                f'{{scale:1,duration:0.42,ease:"power3.out"}},{_num(start)});')
             self.tweens.append(
                 f'tl.to("#{node_id}-pill",{{scale:1.035,duration:{period / 2:.3f},'
                 f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(start + 0.32)});')
@@ -431,7 +449,9 @@ class CompositionBuilder:
     # --- субтитры -------------------------------------------------------
     def _subtitle_nodes(self) -> list[str]:
         spec = self.brandbook["subtitles"]
-        pop_ms = float(spec["pop_in_ms"][0]) / 1000.0
+        # Верхняя граница диапазона, а не нижняя: слово, всплывающее за 90 мс,
+        # читается как щелчок. Заказчик просил плавнее — «в стиле эпл».
+        pop_ms = float(spec["pop_in_ms"][1]) / 1000.0
         scale_from = float(spec["pop_scale_from"])
         baseline = self.plan.get("subtitle_style", {}).get(
             "baseline_y", spec["baseline_y_default"])
@@ -456,7 +476,7 @@ class CompositionBuilder:
             # его видимостью управляет фреймворк.
             self.tweens.append(
                 f'tl.fromTo("#{node_id}-t",{{scale:{scale_from}}},'
-                f'{{scale:1,duration:{pop_ms:.3f},ease:"back.out(1.7)"}},{_num(start)});')
+                f'{{scale:1,duration:{pop_ms:.3f},ease:"power2.out"}},{_num(start)});')
             self.stats["subtitle_words"] += 1
         return nodes
 
@@ -497,6 +517,7 @@ class CompositionBuilder:
   <body>
     <div
       id="root"
+      class="{self._stage_class()}"
       data-composition-id="{COMPOSITION_ID}"
       data-start="0"
       data-duration="{_num(self.duration)}"

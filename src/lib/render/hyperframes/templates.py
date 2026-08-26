@@ -187,9 +187,11 @@ def mark_word(text: str, accent: str, cls: str) -> str:
 #
 # * **Масштаб малый — 0.86…1.14.** Крупный наезд читается как зум видеоряда и
 #   спорит с Ken Burns; малый читается как «предмет подали ближе».
-# * **Кривая затухающая — ``power3.out`` и ``expo.out``.** Движение начинается
-#   быстро и долго успокаивается. Равномерная кривая выглядит машинной,
-#   ускоряющаяся — как срыв.
+# * **Кривая затухающая — ``power3.out``.** Движение начинается быстро и долго
+#   успокаивается. Равномерная кривая выглядит машинной, ускоряющаяся — как
+#   срыв, а отскок (``back.out``) — как игрушка: элемент проскакивает мимо
+#   места и возвращается. Заказчик просил «в стиле эпл», а там ничего не
+#   пружинит: смещения короче, длительности длиннее, хвост долгий.
 # * **Прозрачность едет тем же твином, что и масштаб.** Отдельная кривая для
 #   неё выиграла бы доли кадра и заняла второе окно на том же элементе — риск
 #   наложения твинов не стоит того.
@@ -204,21 +206,21 @@ def mark_word(text: str, accent: str, cls: str) -> str:
 
 ENTRANCES: dict[str, dict[str, float | str]] = {
     # Приближение: элемент приходит «издалека» и садится. База для всего.
-    "zoom-in": {"scale": 1.14, "y": 0, "duration": 0.55, "ease": "power3.out"},
+    "zoom-in": {"scale": 1.08, "y": 0, "duration": 0.72, "ease": "power3.out"},
     # Подача вперёд: элемент выходит из глубины. Для круглых рамок и плашек —
     # там приближение из большего масштаба обрезало бы края.
-    "zoom-out": {"scale": 0.86, "y": 0, "duration": 0.50, "ease": "back.out(1.4)"},
+    "zoom-out": {"scale": 0.94, "y": 0, "duration": 0.68, "ease": "power3.out"},
     # Всплытие: подъём со смещением. Для строк текста и подписей.
-    "rise": {"scale": 1.05, "y": 64, "duration": 0.52, "ease": "power3.out"},
+    "rise": {"scale": 1.03, "y": 40, "duration": 0.66, "ease": "power3.out"},
     # Оседание: короткий приход сверху. Для заголовков над головой.
-    "settle": {"scale": 1.04, "y": -46, "duration": 0.48, "ease": "expo.out"},
+    "settle": {"scale": 1.03, "y": -32, "duration": 0.62, "ease": "power3.out"},
     # Слово в набираемой строке: подача почти на месте. Те же 64 px, что у
     # «всплытия», на десятке слов подряд читаются как прыжки, а не как набор.
-    "type": {"scale": 1.06, "y": 16, "duration": 0.34, "ease": "power3.out"},
+    "type": {"scale": 1.04, "y": 12, "duration": 0.42, "ease": "power3.out"},
     # Единственное исключение из «ничего не включается»: полнокадровая
     # заслонка. Она не предмет, который приносят, а смена света — двигать её
     # нечем, любой масштаб обнажит края кадра.
-    "dim": {"scale": 1.0, "y": 0, "duration": 0.42, "ease": "power2.out"},
+    "dim": {"scale": 1.0, "y": 0, "duration": 0.52, "ease": "power2.out"},
 }
 
 # Дрейф на удержании: пока элемент висит, он еле заметно едет. Без этого кадр
@@ -339,7 +341,8 @@ def tr_zoom_punch(ctx: "TemplateCtx") -> Piece:
     overshoot = float(ctx.params.get("overshoot", 0.0))
     if overshoot and from_scale == 1.18:
         from_scale = 1.0 - overshoot
-    ease = "back.out(1.6)" if overshoot else "power3.out"
+    # Отскок убран из словаря целиком: он читается как игрушка.
+    ease = "power4.out" if overshoot else "power3.out"
     return Piece(tweens=[
         f'tl.fromTo("#{ctx.target}",{{scale:{from_scale}}},'
         f'{{scale:1,duration:{_num(ctx.duration)},ease:"{ease}"}},{_num(ctx.start)});'
@@ -696,7 +699,7 @@ def dv_dots(ctx: "TemplateCtx") -> Piece:
         tweens.append(
             f'tl.fromTo("#{node_id} .dv-dot:nth-child({i + 1})",'
             f'{{scale:0.4,opacity:0}},{{scale:1,opacity:1,duration:0.34,'
-            f'ease:"back.out(1.7)"}},{_num(ctx.start + step * i)});')
+            f'ease:"power3.out"}},{_num(ctx.start + step * i)});')
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay dv-dots" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
@@ -799,7 +802,7 @@ def split_css(brandbook: dict[str, Any]) -> str:
 # Иконки за головой: сколько живёт каждая и как часто они сменяются.
 # «Быстро появляться и исчезать» — это доли секунды: 0.22 на вход, столько же
 # на удержание, 0.18 на уход. Дольше — и это уже не вспышка, а список.
-ICON_IN, ICON_HOLD, ICON_OUT = 0.22, 0.22, 0.18
+ICON_IN, ICON_HOLD, ICON_OUT = 0.28, 0.26, 0.24
 ICON_STEP = 0.16                   # шаг между соседними по дуге
 ICON_LIFE = ICON_IN + ICON_HOLD + ICON_OUT
 ICON_SIZE = 158
@@ -892,7 +895,7 @@ def hero_icons(ctx: "TemplateCtx") -> Piece:
             tweens.append(
                 f'tl.fromTo("{target}",{{scale:0.62,opacity:0}},'
                 f'{{scale:1,opacity:1,duration:{_num(ICON_IN)},'
-                f'ease:"back.out(1.8)"}},{_num(ctx.start + at)});')
+                f'ease:"power3.out"}},{_num(ctx.start + at)});')
             gone = at + ICON_IN + ICON_HOLD
             tweens.append(
                 f'tl.to("{target}",{{scale:0.86,opacity:0,'
@@ -1200,6 +1203,32 @@ def hero_text_column(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Сколько свободного поля оставить между головой и краем круга.
+BUBBLE_MARGIN = 1.06
+
+
+def bubble_radius(params: dict, *, default: int = 460) -> int:
+    """Радиус круга — от измеренной коробки головы, а не от фикс. диаметра.
+
+    Круг обязан вместить голову целиком, и мерка тут — коробка головы. Но
+    описывать надо **овал, а не коробку**: у прямоугольника дальше всего от
+    центра углы, а в углах коробки головы нет — там фон. Полудиагональ давала
+    радиус на 25 % больше нужного, лицо болталось в середине пустого круга.
+    Радиус берётся по длинной полуоси овала, к ней добавляется поле: заказчик
+    просил 5–7 % свободного места между головой и кольцом.
+
+    Вход клипа внутри круга запаса не требует: приближение у клипов идёт
+    **снизу вверх** (``entrance_tweens`` разворачивает масштаб, когда нет
+    проявления) — голова начинает меньше и приходит ровно к измеренному
+    размеру, а не перерастает его.
+    """
+    w = float(params.get("head_w") or 0)
+    h = float(params.get("head_h") or 0)
+    if w <= 0 or h <= 0:
+        return int(params.get("ring", default)) // 2
+    return int(max(w, h) / 2 * float(params.get("head_margin", BUBBLE_MARGIN)))
+
+
 def bubble_field(node_id: str, face_x: int, face_y: int, radius: int, *,
                  cls: str) -> str:
     """Тёмное поле с круглой дыркой на лице и кольцом по её краю.
@@ -1250,10 +1279,9 @@ def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
     # Круг ставится по реальному лицу: у сегмента аватара есть face_bbox, и
     # догадка «четверть высоты кадра» промахивалась мимо головы на сотню
     # пикселей. Без bbox остаётся прежняя оценка.
-    ring = int(ctx.params.get("ring", 460))
+    radius = bubble_radius(ctx.params)
     face_x = int(ctx.params.get("face_cx", 540))
-    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + ring // 2))
-    radius = ring // 2
+    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + radius))
 
     body = "".join(
         f'<span class="bc-line{" accent" if accent_last and i == len(lines) - 1 else ""}">'
@@ -1863,10 +1891,9 @@ def hero_bubble_typed(ctx: "TemplateCtx") -> Piece:
     if not entries:
         return Piece()
     node_id = f"bt-{ctx.index:02d}"
-    ring = int(ctx.params.get("ring", 460))
+    radius = bubble_radius(ctx.params)
     face_x = int(ctx.params.get("face_cx", 540))
-    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + ring // 2))
-    radius = ring // 2
+    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + radius))
 
     chunks = [str(e["text"]).strip() for e in entries[:6]]
     # Кегль подбирается по всей реплике сразу: она набирается в одну карточку,
@@ -2071,7 +2098,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         # ни саму рамку, ни детей.
         ".hero-icons{position:absolute;inset:0;width:var(--frame-w);"
         f"height:var(--frame-h);z-index:{Z_BEHIND_HEAD};pointer-events:none;"
-        "color:var(--color-ink)}"
+        "color:var(--color-on-stage)}"
         # Место знака ставит шаблон, вход и уход — GSAP. Начальную прозрачность
         # задаёт fromTo: тот же transform в CSS спорил бы с твином.
         ".hero-icons .hi-mark{position:absolute;display:flex;"
@@ -2090,7 +2117,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         f"z-index:{Z_BEHIND_HEAD};pointer-events:none}}"
         ".hero-headline .hh-kicker{display:block;font-family:var(--font-subtitle);"
         "font-weight:800;font-size:34px;letter-spacing:0.22em;"
-        "text-transform:uppercase;color:var(--color-ink);opacity:0.75}"
+        "text-transform:uppercase;color:var(--color-on-stage);opacity:0.75}"
         ".hero-headline .hh-word{display:block;font-family:var(--font-display);"
         "font-size:168px;line-height:0.94;text-transform:uppercase;"
         "color:var(--color-accent);margin-top:10px}"
@@ -2123,7 +2150,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "color:var(--color-ink);will-change:transform;"
         # Под аватаром с альфой фон светлый (§7.7, .vfx), поэтому строки
         # тёмные, а ореол — светлый: белым по светлому читалась каша.
-        "text-shadow:0 4px 20px rgba(247,245,243,0.9),0 2px 6px rgba(247,245,243,0.9)}"
+        "text-shadow:0 4px 20px var(--stage-halo),0 2px 6px var(--stage-halo)}"
         # Золото референсов переведено в акцент бренда: выцветший красный.
         ".hero-text-column .tc-line.accent{color:var(--color-accent)}"
         # --- круглая рамка и карточка ---
@@ -2260,9 +2287,9 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "white-space:nowrap;"
         "font-family:var(--font-display);font-weight:700;line-height:.98;"
         "letter-spacing:-.01em;text-transform:uppercase}"
-        ".hero-title-behind .tb-head{color:var(--color-ink)}"
+        ".hero-title-behind .tb-head{color:var(--color-on-stage)}"
         ".hero-title-behind .tb-tail{color:var(--color-accent)}"
-        ".hero-title-behind .tb-head,.hero-title-behind .tb-tail{text-shadow:0 4px 20px rgba(247,245,243,0.9)}"
+        ".hero-title-behind .tb-head,.hero-title-behind .tb-tail{text-shadow:0 4px 20px var(--stage-halo)}"
         # --- экспонат ---
         # Карточка стоит на светлом поле поверх фона, но под субтитрами: имя
         # экспоната и слово субтитра — разные слои смысла и спорить не должны.
@@ -2307,10 +2334,10 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "line-height:1.02;letter-spacing:-0.005em;pointer-events:none}"
         # Тёмная строка со светлым ореолом: под аватаром с альфой фон светлый.
         ".hero-log .lg-hit{color:var(--color-accent)}"
-        ".hero-log .lg-row{display:block;color:var(--color-ink);"
+        ".hero-log .lg-row{display:block;color:var(--color-on-stage);"
         "will-change:transform;"
-        "text-shadow:0 4px 20px rgba(247,245,243,0.9),"
-        "0 2px 6px rgba(247,245,243,0.9)}"
+        "text-shadow:0 4px 20px var(--stage-halo),"
+        "0 2px 6px var(--stage-halo)}"
         # --- слово крупнее кадра ---
         f".hero-oversize{{position:absolute;inset:0;z-index:{Z_AVATAR + 3};"
         "background:var(--color-ink);display:flex;align-items:center;"
@@ -2331,7 +2358,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-figure .fg-value{display:block;font-family:var(--font-display);"
         "line-height:0.94;letter-spacing:-0.02em;color:var(--color-ink);"
         "font-variant-numeric:tabular-nums;"
-        "text-shadow:0 4px 20px rgba(247,245,243,0.9)}"
+        "text-shadow:0 4px 20px var(--stage-halo)}"
         ".hero-figure .fg-item.accent .fg-value{color:var(--color-accent)}"
         ".hero-figure .fg-note{display:block;font-family:var(--font-subtitle);"
         "font-weight:800;font-size:36px;color:#4A4D52;"
