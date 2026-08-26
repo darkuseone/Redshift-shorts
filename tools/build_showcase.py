@@ -24,6 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.lib.config import load_config                                  # noqa: E402
+from src.lib.backdrop import pick_scene, tone as scene_tone            # noqa: E402
+from src.lib.ffmpeg import HEAD_ASPECT                                  # noqa: E402
 from src.lib.render.hyperframes.brand_css import build_css              # noqa: E402
 from src.lib.render.hyperframes.templates import (                      # noqa: E402
     TemplateCtx, render_hero,
@@ -97,13 +99,21 @@ NOTES = {
 # которая уходит приёмам. Приём за головой садится по макушке, и если бы
 # витрина отдавала ему константу пресета, а конвейер — измерение, она
 # показывала бы не то, что соберётся в ролике.
-HEAD_CX, HEAD_CY, HEAD_RX, HEAD_RY = 540, 576, 163, 203
+# Пропорция овала — та самая, которой конвейер переводит измеренную
+# ширину головы в высоту (`ffmpeg.HEAD_ASPECT`). Нарисованная голова
+# другой формы показывала бы приёмы не там, где они встанут в ролике.
+HEAD_CX, HEAD_CY, HEAD_RX = 540, 570, 163
+HEAD_RY = round(HEAD_RX * HEAD_ASPECT)
 HEAD_BOX = (HEAD_CX - HEAD_RX, HEAD_CY - HEAD_RY,
             HEAD_CX + HEAD_RX, HEAD_CY + HEAD_RY)
 
+# Силуэт серединного тона намеренно. Чернильный читался только на светлой
+# подложке, а сцены за ведущим теперь в основном тёмные — на них силуэт
+# сливался с фоном, и карточка «ведущий в круге» показывала пустой круг.
+# Середина между тёмной сценой и светлой комнатой видна на обеих.
 SILHOUETTE = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920">'
-    '<g fill="#24262B">'
+    '<g fill="#5A6069">'
     f'<ellipse cx="{HEAD_CX}" cy="{HEAD_CY}" rx="{HEAD_RX}" ry="{HEAD_RY}"/>'
     '<path d="M540 792c-52 0-96 10-96 10l-8 44c-118 30-206 128-232 250'
     'l-52 824h776l-52-824c-26-122-114-220-232-250l-8-44s-44-10-96-10z"/>'
@@ -250,6 +260,11 @@ def _devices(cfg) -> list[dict]:
             "index": i,
             "nodes": [_as_image(n) for n in piece.nodes],
             "tweens": piece.tweens,
+            # Сцена у карточки своя — по её же реплике, тем же выбором, что и
+            # в ролике. На витрине это единственный способ показать приём на
+            # том фоне, на котором он окажется: на тёмной сцене надписи,
+            # лежащие прямо на фоне, меняют цвет.
+            "scene": pick_scene(title, block.get("text") or ""),
         })
     return out
 
@@ -388,14 +403,16 @@ footer{
 def _card(device: dict) -> str:
     tags = "".join(f"<span>{t}</span>" for t in device["tags"][:4])
     lo, hi = device["range"]
+    scene = device["scene"]
+    stage = scene_tone(scene)
     return f"""
     <article class="card">
       <div class="viewport">
-        <div class="rs-frame" id="fr-{device['index']:02d}">
-          <!-- Тот же фон, что и в кадре режима A с альфой: .vfx (§7.7), а не
+        <div class="rs-frame stage-{stage}" id="fr-{device['index']:02d}">
+          <!-- Тот же фон, что и в кадре режима A с альфой: сцена (§7.7), а не
                белая подложка — приёмы читаются именно на нём. -->
           <div class="stage-bg"></div>
-          <div class="vfx"></div>
+          <div class="vfx scene-{scene}"></div>
           <div class="avatar" id="av-{device['index']:02d}"></div>
           {''.join(device['nodes'])}
         </div>

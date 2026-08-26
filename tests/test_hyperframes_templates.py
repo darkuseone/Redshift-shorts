@@ -878,7 +878,7 @@ def test_text_on_a_dark_stage_does_not_stay_ink_black():
 
     css = build_css(load_config().brandbook, fonts={})
     assert "--color-on-stage" in css
-    dark = re.search(r"#root\.stage-dark\{([^}]*)\}", css)
+    dark = re.search(r"(?<![#\w-])\.stage-dark\{([^}]*)\}", css)
     assert dark, "тёмная сцена не переопределяет цвет надписей на фоне"
     assert "--color-on-stage" in dark.group(1)
 
