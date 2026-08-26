@@ -73,8 +73,26 @@ def test_oversized_icon_is_refused(library):
 
 
 def test_unknown_variant_is_refused(library):
-    with pytest.raises(ValueError, match="light или dark"):
+    with pytest.raises(ValueError, match="light, dark, mono"):
         library.add("ChatGPT", "neon", b"png")
+
+
+def test_vector_icon_keeps_its_extension(library):
+    """Расширение — по содержимому файла, а не по умолчанию.
+
+    Одноцветные знаки приходят вектором. Названный «.png», SVG ломается в
+    разметке молча: браузер не станет разбирать его как картинку.
+    """
+    icon = library.add("Nvidia", "mono", b'<svg xmlns="http://www.w3.org/2000/svg"/>')
+    assert icon.file.endswith(".svg")
+    assert (library.root / icon.file).exists()
+
+
+def test_found_icon_knows_where_it_lies(library):
+    """У найденного знака спрашивают путь — им приём и пользуется."""
+    library.add("Nvidia", "mono", b"<svg/>")
+    found = library.find("Nvidia")
+    assert found and found[0].path.endswith(str(library.root / found[0].file))
 
 
 def test_missing_file_is_not_reported_as_present(library):

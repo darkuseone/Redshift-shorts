@@ -4,9 +4,14 @@
 сохраняется сюда и в следующих роликах уже не ищется. Это не разовая закупка —
 набор растёт ровно на те бренды, которые реально прозвучали.
 
-Почему в репозитории, а не в кэше футажей: PNG с прозрачностью на 512 px весит
-десятки килобайт, и держать его рядом с кодом дешевле, чем каждый раз ходить за
-ним в сеть и заново проверять, что нашёлся именно официальный знак.
+Почему в репозитории, а не в кэше футажей: знак весит килобайты, и держать его
+рядом с кодом дешевле, чем каждый раз ходить за ним в сеть и заново проверять,
+что нашёлся именно официальный.
+
+Вариант ``mono`` — одноцветный вектор, который красится через ``currentColor``.
+Он заменяет пару «светлый + тёмный»: тот же контур читается и на тёмной сцене, и
+на белой карточке, а размер у него любой. Пара PNG остаётся для знаков, которые
+одним цветом не передать.
 
 Права. Логотип — товарный знак владельца. Мы берём его из официального
 press-kit и используем номинативно: называем продукт, о котором идёт речь. Не
@@ -51,20 +56,35 @@ def slugify(name: str) -> str:
     return out or "brand"
 
 
+VARIANTS = ("light", "dark", "mono")
+
+
 @dataclass
 class BrandIcon:
     brand: str
     slug: str
-    variant: str          # light | dark
+    variant: str          # light | dark | mono
     file: str
+    hex: str = ""
     source_url: str = ""
     added: str = ""
     used_in: list[str] = field(default_factory=list)
+    root: Path | None = None
+
+    @property
+    def path(self) -> str:
+        """Путь к файлу знака — то, что уходит в приём.
+
+        Приём получает путь, а не байты: разметка ссылается на файл, и читать
+        его в память ради этого незачем. Без корня возвращается имя как есть —
+        так запись остаётся годной и без библиотеки за спиной.
+        """
+        return str(self.root / self.file) if self.root else self.file
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "brand": self.brand, "slug": self.slug, "variant": self.variant,
-            "file": self.file, "source_url": self.source_url,
+            "file": self.file, "hex": self.hex, "source_url": self.source_url,
             "added": self.added, "used_in": self.used_in,
         }
 
@@ -83,8 +103,9 @@ class BrandIconLibrary:
 
     def find(self, brand: str, variant: str | None = None) -> list[BrandIcon]:
         slug = slugify(brand)
-        found = [BrandIcon(**{k: v for k, v in entry.items()
-                              if k in BrandIcon.__dataclass_fields__})
+        found = [BrandIcon(root=self.root,
+                           **{k: v for k, v in entry.items()
+                              if k in BrandIcon.__dataclass_fields__ and k != "root"})
                  for entry in self.data.get("brands", [])
                  if entry.get("slug") == slug]
         if variant:
@@ -107,8 +128,9 @@ class BrandIconLibrary:
         рекомендация, иначе один бренд разрастётся десятком почти одинаковых
         файлов.
         """
-        if variant not in ("light", "dark"):
-            raise ValueError(f"вариант должен быть light или dark, получено {variant!r}")
+        if variant not in VARIANTS:
+            raise ValueError(f"вариант должен быть одним из {', '.join(VARIANTS)}, "
+                             f"получено {variant!r}")
         if self.find(brand, variant):
             raise ValueError(f"иконка {brand} ({variant}) уже есть — "
                              f"библиотека пополняется, а не перезаписывается")
@@ -122,7 +144,11 @@ class BrandIconLibrary:
                              f"лимите {max_bytes}: пережмите или уменьшите сторону")
 
         slug = slugify(brand)
-        name = f"{slug}_{variant}.png"
+        # Расширение — по содержимому, а не по договорённости: одноцветные знаки
+        # приходят вектором, снятые с press-kit — растром, и назвать SVG «.png»
+        # значит сломать его в разметке молча.
+        suffix = "svg" if file_bytes.lstrip()[:1] == b"<" else "png"
+        name = f"{slug}_{variant}.{suffix}"
         (self.root / name).write_bytes(file_bytes)
 
         icon = BrandIcon(brand=brand, slug=slug, variant=variant, file=name,

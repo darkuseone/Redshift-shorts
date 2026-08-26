@@ -28,6 +28,7 @@ from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
     prepare_split_shot,
 )
+from ..lib.backdrop import plate_name as _scene_plate_name
 from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.backdrop import describe as scene_why
 from ..lib.backdrop import pick_scene
@@ -60,6 +61,21 @@ def _alpha_slots(avatar_meta: dict[str, Any]) -> set[int]:
     return {int(idx) for seg in avatar_meta.get("segments", [])
             if seg.get("has_alpha")
             for idx in seg.get("slot_indices", [])}
+
+
+def _backdrop_plate(cfg, scene: str) -> str:
+    """Путь к плите сцены — или пусто, если её нет на диске.
+
+    Проверка существования не формальность: имя плиты записано в
+    :mod:`src.lib.backdrop`, а сам файл живёт в ассетах, и разъехаться они
+    могут. Пустая строка честнее ссылки в никуда — сцена нарисуется
+    градиентами, как и задумано запасным путём.
+    """
+    name = _scene_plate_name(scene)
+    if not name:
+        return ""
+    path = cfg.path("paths.assets_dir", "assets") / "backdrops" / name
+    return str(path) if path.exists() else ""
 
 
 def _head_boxes(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int, int, int]]:
@@ -1126,7 +1142,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "overlays": overlays,
         "subtitles": subtitles,
         "backdrop": {"scene": scene, "tone": scene_tone(scene),
-                     "why": scene_why(scene)},
+                     "why": scene_why(scene),
+                     "plate": _backdrop_plate(ctx.cfg, scene)},
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
             "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 975),

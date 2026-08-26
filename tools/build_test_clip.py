@@ -49,7 +49,7 @@ from src.lib.render.hyperframes import runner                          # noqa: E
 from src.lib.render.hyperframes.project import HyperFramesProject      # noqa: E402
 from src.p4_align.aligner import align_by_energy, is_spoken_word       # noqa: E402
 from src.p11_assemble.assemble import (                                # noqa: E402
-    _HERO_NEEDS, _hero_content, hero_params,
+    _HERO_NEEDS, _backdrop_plate, _hero_content, hero_params,
 )
 
 # Приёмы по умолчанию — те, что показывают и материал источника, и речь.
@@ -203,7 +203,8 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
 
     plan = {
         "video_id": out_path.stem, "variant": "A", "fps": 30,
-        "backdrop": {"scene": scene, "tone": scene_tone(scene)},
+        "backdrop": {"scene": scene, "tone": scene_tone(scene),
+                     "plate": _backdrop_plate(cfg, scene)},
         "resolution": [1080, 1920], "duration_sec": duration,
         "audio": {"mix": voice.name},
         "shots": shots, "overlays": [], "subtitles": subtitles,

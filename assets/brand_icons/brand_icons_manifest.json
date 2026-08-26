@@ -1,16 +1,396 @@
 {
   "_comment": "Иконки брендов, накопленные по ходу роликов (§14). Копятся попутно: когда в кадре впервые нужен логотип, он сохраняется сюда и больше не ищется. Файлы маленькие (PNG с прозрачностью), поэтому живут в репозитории, в отличие от футажей.",
-  "version": 1,
-  "updated": "2026-08-18",
+  "version": 2,
+  "updated": "2026-08-26",
   "policy": {
-    "variants_per_brand": 2,
+    "variants_per_brand": 1,
     "_why_two": "Тёмный и светлый вариант: одна и та же иконка не читается и на белом фоне бренда, и на тёмном кадре.",
-    "format": "png",
+    "format": "svg",
     "max_side_px": 512,
-    "max_bytes": 120000,
+    "max_bytes": 20000,
     "background": "transparent",
-    "intake": "по ходу создания роликов, не разовой закупкой",
-    "licensing": "Логотип — товарный знак владельца. Берём только официальные press-kit или SVG с сайта бренда, используем номинативно (называем продукт, о котором речь). Не перекрашиваем, не искажаем пропорции, не ставим как знак одобрения."
+    "intake": "набран заранее по просьбе заказчика: тридцать с лишним знаков популярных компаний лежат в репозитории, чтобы во время сборки ролика их не искать. Остальные по-прежнему добавляются по ходу.",
+    "licensing": "Логотип — товарный знак владельца. Файлы взяты из Simple Icons (simple-icons, CC0-1.0 на сами файлы), собранных из официальных press-kit и брендбуков. Используем номинативно: называем компанию, о которой идёт речь. Не искажаем пропорции и не ставим как знак одобрения.",
+    "_why_svg": "Раньше библиотека задумывалась как PNG в двух вариантах — тёмном и светлом. Знаки Simple Icons одноцветные и красятся через currentColor, поэтому второй файл не нужен: тот же контур читается и на тёмной сцене, и на светлой карточке. Заодно они масштабируются без потерь, а весь набор из 37 знаков весит 156 КБ — меньше, чем один PNG 512×512.",
+    "brand_color": "У каждого знака записан официальный цвет бренда (`hex`). Кадру он нужен редко — брендбук REDSHIFT держит чёрный, белый и выцветший красный, — но перекрашивать логотип в акцент канала нельзя, поэтому цвет владельца хранится рядом со знаком.",
+    "absent_on_purpose": "OpenAI, Amazon, IBM, Oracle, Adobe и Microsoft в каталоге Simple Icons отсутствуют: правообладатели попросили убрать их знаки. Это не пробел набора, а ответ владельца — брать их из других мест значит обойти прямой отказ. Понадобится такой логотип в кадре — берём файл из официального press-kit бренда."
   },
-  "brands": []
+  "brands": [
+    {
+      "brand": "AMD",
+      "slug": "amd",
+      "variant": "mono",
+      "file": "svg/amd.svg",
+      "hex": "#ED1C24",
+      "source_url": "https://www.amd.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Anthropic",
+      "slug": "anthropic",
+      "variant": "mono",
+      "file": "svg/anthropic.svg",
+      "hex": "#191919",
+      "source_url": "https://www.anthropic.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Apple",
+      "slug": "apple",
+      "variant": "mono",
+      "file": "svg/apple.svg",
+      "hex": "#000000",
+      "source_url": "https://www.apple.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Arm",
+      "slug": "arm",
+      "variant": "mono",
+      "file": "svg/arm.svg",
+      "hex": "#0091BD",
+      "source_url": "https://www.arm.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Boeing",
+      "slug": "boeing",
+      "variant": "mono",
+      "file": "svg/boeing.svg",
+      "hex": "#1D439C",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Boeing_full_logo.svg",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Cloudflare",
+      "slug": "cloudflare",
+      "variant": "mono",
+      "file": "svg/cloudflare.svg",
+      "hex": "#F38020",
+      "source_url": "https://www.cloudflare.com/logo/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "DeepMind",
+      "slug": "deepmind",
+      "variant": "mono",
+      "file": "svg/deepmind.svg",
+      "hex": "#4285F4",
+      "source_url": "https://deepmind.google",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Discord",
+      "slug": "discord",
+      "variant": "mono",
+      "file": "svg/discord.svg",
+      "hex": "#5865F2",
+      "source_url": "https://discord.com/branding",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Docker",
+      "slug": "docker",
+      "variant": "mono",
+      "file": "svg/docker.svg",
+      "hex": "#2496ED",
+      "source_url": "https://www.docker.com/company/newsroom/media-resources",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "GitHub",
+      "slug": "github",
+      "variant": "mono",
+      "file": "svg/github.svg",
+      "hex": "#181717",
+      "source_url": "https://github.com/logos",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Google",
+      "slug": "google",
+      "variant": "mono",
+      "file": "svg/google.svg",
+      "hex": "#4285F4",
+      "source_url": "https://partnermarketinghub.withgoogle.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Google Cloud",
+      "slug": "google-cloud",
+      "variant": "mono",
+      "file": "svg/googlecloud.svg",
+      "hex": "#4285F4",
+      "source_url": "https://cloud.google.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Google Gemini",
+      "slug": "google-gemini",
+      "variant": "mono",
+      "file": "svg/googlegemini.svg",
+      "hex": "#8E75B2",
+      "source_url": "https://gemini.google.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Huawei",
+      "slug": "huawei",
+      "variant": "mono",
+      "file": "svg/huawei.svg",
+      "hex": "#FF0000",
+      "source_url": "https://e.huawei.com/ph/material/partner/0a72728b864949c48b22106454352483",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Intel",
+      "slug": "intel",
+      "variant": "mono",
+      "file": "svg/intel.svg",
+      "hex": "#0071C5",
+      "source_url": "https://www.intel.com/content/www/us/en/newsroom/resources/press-kits-intel-overview.html",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Kubernetes",
+      "slug": "kubernetes",
+      "variant": "mono",
+      "file": "svg/kubernetes.svg",
+      "hex": "#326CE5",
+      "source_url": "https://github.com/kubernetes/kubernetes/tree/cac53883f4714452f3084a22e4be20d042a9df33/logo",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Linux",
+      "slug": "linux",
+      "variant": "mono",
+      "file": "svg/linux.svg",
+      "hex": "#FCC624",
+      "source_url": "https://www.linuxfoundation.org/the-linux-mark/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Meta",
+      "slug": "meta",
+      "variant": "mono",
+      "file": "svg/meta.svg",
+      "hex": "#0467DF",
+      "source_url": "https://www.meta.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "NASA",
+      "slug": "nasa",
+      "variant": "mono",
+      "file": "svg/nasa.svg",
+      "hex": "#E03C31",
+      "source_url": "https://commons.wikimedia.org/wiki/File:NASA_Worm_logo.svg",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Netflix",
+      "slug": "netflix",
+      "variant": "mono",
+      "file": "svg/netflix.svg",
+      "hex": "#E50914",
+      "source_url": "https://brand.netflix.com/en/assets/logos",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "NVIDIA",
+      "slug": "nvidia",
+      "variant": "mono",
+      "file": "svg/nvidia.svg",
+      "hex": "#76B900",
+      "source_url": "https://www.nvidia.com/en-us",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "PayPal",
+      "slug": "paypal",
+      "variant": "mono",
+      "file": "svg/paypal.svg",
+      "hex": "#002991",
+      "source_url": "https://www.paypal.com/us",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Python",
+      "slug": "python",
+      "variant": "mono",
+      "file": "svg/python.svg",
+      "hex": "#3776AB",
+      "source_url": "https://www.python.org/community/logos/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "PyTorch",
+      "slug": "pytorch",
+      "variant": "mono",
+      "file": "svg/pytorch.svg",
+      "hex": "#EE4C2C",
+      "source_url": "https://github.com/pytorch/pytorch.github.io/blob/8f083bd12192ca12d5e1c1f3d236f4831d823d8f/assets/images/logo.svg",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Qualcomm",
+      "slug": "qualcomm",
+      "variant": "mono",
+      "file": "svg/qualcomm.svg",
+      "hex": "#3253DC",
+      "source_url": "https://www.qualcomm.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Reddit",
+      "slug": "reddit",
+      "variant": "mono",
+      "file": "svg/reddit.svg",
+      "hex": "#FF4500",
+      "source_url": "https://www.redditinc.com/brand",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Samsung",
+      "slug": "samsung",
+      "variant": "mono",
+      "file": "svg/samsung.svg",
+      "hex": "#1428A0",
+      "source_url": "https://www.samsung.com/us/about-us/brand-identity/logo/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Sony",
+      "slug": "sony",
+      "variant": "mono",
+      "file": "svg/sony.svg",
+      "hex": "#FFFFFF",
+      "source_url": "https://www.sony.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "SpaceX",
+      "slug": "spacex",
+      "variant": "mono",
+      "file": "svg/spacex.svg",
+      "hex": "#000000",
+      "source_url": "https://www.spacex.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Spotify",
+      "slug": "spotify",
+      "variant": "mono",
+      "file": "svg/spotify.svg",
+      "hex": "#1ED760",
+      "source_url": "https://developer.spotify.com/documentation/general/design-and-branding/#using-our-logo",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Telegram",
+      "slug": "telegram",
+      "variant": "mono",
+      "file": "svg/telegram.svg",
+      "hex": "#26A5E4",
+      "source_url": "https://telegram.org/tour/screenshots",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "TensorFlow",
+      "slug": "tensorflow",
+      "variant": "mono",
+      "file": "svg/tensorflow.svg",
+      "hex": "#FF6F00",
+      "source_url": "https://www.tensorflow.org",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Tesla",
+      "slug": "tesla",
+      "variant": "mono",
+      "file": "svg/tesla.svg",
+      "hex": "#CC0000",
+      "source_url": "https://www.tesla.com/tesla-gallery",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "TikTok",
+      "slug": "tiktok",
+      "variant": "mono",
+      "file": "svg/tiktok.svg",
+      "hex": "#000000",
+      "source_url": "https://tiktok.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "X",
+      "slug": "x",
+      "variant": "mono",
+      "file": "svg/x.svg",
+      "hex": "#000000",
+      "source_url": "https://x.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Xiaomi",
+      "slug": "xiaomi",
+      "variant": "mono",
+      "file": "svg/xiaomi.svg",
+      "hex": "#FF6900",
+      "source_url": "https://www.mi.com/global",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "YouTube",
+      "slug": "youtube",
+      "variant": "mono",
+      "file": "svg/youtube.svg",
+      "hex": "#FF0000",
+      "source_url": "https://www.youtube.com/howyoutubeworks/resources/brand-resources/#logos-icons-and-colors",
+      "added": "2026-08-26",
+      "used_in": []
+    }
+  ],
+  "source_catalog": {
+    "name": "Simple Icons",
+    "version": "16.28.0",
+    "url": "https://simpleicons.org",
+    "license": "CC0-1.0"
+  }
 }

@@ -104,6 +104,11 @@ class HyperFramesProject:
         for seg in plan.get("avatar", []):
             if seg.get("file"):
                 sources.append(str(seg["file"]))
+        # Плита фона — такой же файл проекта, как футаж: она обязана переехать
+        # внутрь, иначе разметка сошлётся на путь, которого в проекте нет.
+        plate = (plan.get("backdrop") or {}).get("plate")
+        if plate:
+            sources.append(str(plate))
 
         for path_text in sources:
             if path_text in assets:

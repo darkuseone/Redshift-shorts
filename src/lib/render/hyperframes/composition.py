@@ -126,6 +126,22 @@ class CompositionBuilder:
     def _stage_class(self) -> str:
         return "stage-dark" if scene_tone(self.scene) == "dark" else "stage-light"
 
+    def _plate(self) -> str:
+        """Разметка плиты сцены. Пусто — сцена рисуется одними градиентами.
+
+        Путь берётся из набора медиа проекта: в плане лежит путь на диске, а в
+        разметку обязан уйти путь внутри проекта.
+        """
+        plate = str((self.plan.get("backdrop") or {}).get("plate") or "")
+        src = self.assets.get(plate) if plate else ""
+        # Слой, а не <img>: картинка фона одна на весь ролик и повторяется в
+        # каждом шоте с альфой. Четыре одинаковых <img> продюсер считает
+        # четырьмя источниками с совпадающим временем и предупреждает о риске
+        # перепутать их при инжекте кадров. Фоном в стиле того же не случается —
+        # это не медиа плана, а оформление слоя.
+        return (f'<div class="vfx-plate" style="background-image:url(\'{src}\')">'
+                f'</div>') if src else ""
+
     # --- шоты -----------------------------------------------------------
     def _alpha_slots(self) -> set[int]:
         """Слоты, где аватар лёг альфой и под ним нужен собственный фон.
@@ -187,7 +203,7 @@ class CompositionBuilder:
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
                 nodes.append(
                     f'<div id="{node_id}" class="clip shot-bg" {timing}>'
-                    f'<div class="vfx scene-{self.scene}"></div></div>')
+                    f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
             elif index in avatar_nodes or kind == "avatar":
                 # Аватар без альфы приходит со своим фоном и занимает кадр
                 # целиком: подкладывать под него нечего. Но переход ему нужен.
