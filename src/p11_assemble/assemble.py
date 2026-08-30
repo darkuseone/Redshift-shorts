@@ -448,6 +448,32 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     }
 
 
+# Приёмы, закрывающие кадр сплошной заливкой. Заливка живёт секунду-две и
+# глушит субтитр на своём окне: под ней его всё равно не видно.
+_FULL_FRAME_HEROES = ("hero-slam", "hero-knockout")
+
+
+def hero_mutes_subtitle(renderer: str) -> dict[str, bool]:
+    """Отменяет ли приём пословный субтитр — и по какой из двух причин.
+
+    Отдельной функцией, а не двумя выражениями по месту: тем же правилом
+    живёт проба (`tools/build_test_clip.py`), и разъехавшись, она показала бы
+    кадр, которого конвейер не соберёт. Ровно так и вышло с выбивкой: в пробе
+    субтитр остался стоять на заливке.
+    """
+    return {
+        # Приём, который выкладывает реплику строками, сам и есть субтитр
+        # этого кадра. Пословное слово поверх той же фразы — дубль, и оно
+        # вдобавок ложится прямо на карточку: проверено кадром.
+        "carries_line": bool({"lines", "punch", "entries"}
+                             & set(_HERO_NEEDS.get(renderer, ()))),
+        # Приём, закрывающий кадр сплошной заливкой, съедает и субтитр: белое
+        # слово на светлой заливке не читается, а чернильное на тёмной — тем
+        # более. Своё слово он в кадре уже показывает.
+        "covers_frame": renderer in _FULL_FRAME_HEROES,
+    }
+
+
 def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
                 slot: dict[str, Any]) -> dict[str, Any]:
     """Наполнить пресет приёма содержимым блока.
@@ -492,6 +518,14 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
                 params["face_cy"] = (int(box[1]) + int(box[3])) // 2
         if renderer == "hero-knockout":
             params["face_cy"] = content["face"][1]
+            if content.get("head_box"):
+                # Выбивке нужна не точка лица, а его полоса: буквы вырезаны
+                # насквозь, и выше бровей за ними тёмные волосы — то же
+                # тёмное по тёмному, что и на торсе. Полосу приём считает
+                # сам, ему хватает макушки и высоты головы.
+                box = content["head_box"]
+                params["head_top"] = int(box[1])
+                params["head_h"] = int(box[3]) - int(box[1])
     if renderer == "hero-brand-pill":
         params.update(content["brand"])
     if renderer in ("hero-card-stack", "hero-exhibit"):
@@ -561,11 +595,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     entry: dict[str, Any] = {
         "template": template.id, "renderer": renderer, "params": params,
         "file": None, "duration": None,
-        # Приём, который выкладывает реплику строками, сам и есть субтитр этого
-        # кадра. Пословное слово поверх той же фразы — дубль, и оно вдобавок
-        # ложится прямо на карточку: проверено кадром.
-        "carries_line": bool({"lines", "punch", "entries"}
-                             & set(_HERO_NEEDS.get(renderer, ()))),
+        **hero_mutes_subtitle(renderer),
     }
     if plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-exhibit"):
         # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
@@ -573,8 +603,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         entry["file"] = plate_src["file"]
         entry["duration"] = round(min(float(slot["duration"]),
                                       plate_src["duration_sec"]), 3)
-    if renderer == "hero-slam":
-        # Плашка закрывает ведущего целиком и потому живёт секунду-две, а не
+    if renderer in _FULL_FRAME_HEROES:
+        # Заливка закрывает ведущего целиком и потому живёт секунду-две, а не
         # весь кадр: дольше — и это уже не удар, а пауза в ролике.
         entry["duration"] = round(min(float(slot["duration"]),
                                       float(template.duration_range[1])), 3)
@@ -1102,7 +1132,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   if s["kind"] == "fullscreen_text"]
     for shot in shots:
         hero = shot.get("hero") or {}
-        if not hero.get("carries_line"):
+        if not (hero.get("carries_line") or hero.get("covers_frame")):
             continue
         # Приём со своей длиной глушит субтитр только на своём окне: плашка на
         # 1.8 сек внутри четырёхсекундного кадра забрала бы все четыре.

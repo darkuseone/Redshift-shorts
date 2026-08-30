@@ -385,6 +385,25 @@ def test_line_carrying_devices_suppress_the_subtitle(cfg):
     assert any("lines" in _HERO_NEEDS[r] for r in seen), "приёмы со строками не выпали"
 
 
+def test_full_frame_fill_is_short_and_takes_the_subtitle_with_it(cfg):
+    """Заливка во весь кадр съедает и субтитр: белого слова на ней не видно."""
+    from src.p11_assemble.assemble import _FULL_FRAME_HEROES, _hero_device
+
+    catalog = TemplateCatalog.load(cfg)
+    slot = {"index": 4, "duration": 6.0, "role": "evidence"}
+    seen = set()
+    for seed in range(60):
+        entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=False,
+                             plate_src=None, recent_videos=[], exclude=[], seed=seed)
+        full = entry["renderer"] in _FULL_FRAME_HEROES
+        assert entry["covers_frame"] is full, entry["renderer"]
+        if full:
+            seen.add(entry["renderer"])
+            assert entry["duration"] and entry["duration"] < slot["duration"], (
+                f'{entry["renderer"]}: заливка досиживает весь кадр')
+    assert seen, "ни один приём с заливкой во весь кадр не выпал"
+
+
 def test_hero_plate_duration_never_exceeds_its_material(cfg):
     """Кадр-задник короче аватар-плана: растянутая панель досидит его пустой."""
     from src.p11_assemble.assemble import _hero_device

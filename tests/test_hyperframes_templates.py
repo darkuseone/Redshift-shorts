@@ -685,8 +685,21 @@ def test_hero_headline_without_a_kicker_tweens_only_what_it_drew():
 def test_hero_knockout_does_not_flood_the_frame_with_accent():
     """§3.3.1 держит акцент в 10–12 % площади, а приём закрывает кадр целиком."""
     node = render_hero("hero-knockout", _hero_ctx("hero-knockout")).nodes[0]
-    assert "var(--color-ink)" in node
+    assert "var(--color-knockout)" in node
     assert "accent" not in node
+
+
+def test_knockout_fill_turns_over_with_the_stage():
+    """Буквы — дырки: тёмная заливка на тёмной сцене даёт чёрное по чёрному."""
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    base = [rule for rule in css.split("}") if "--color-knockout:" in rule]
+    assert base, "цвет заливки выбивки не объявлен"
+    dark = [rule for rule in base if ".stage-dark" in rule]
+    assert dark, "на тёмной сцене заливка не переворачивается"
+    assert "bg-light" in dark[0], dark[0]
 
 
 def test_hero_knockout_fill_is_a_brandbook_token():
@@ -808,6 +821,44 @@ def test_knockout_sits_on_the_face_not_the_torso():
     # Без данных о лице остаётся середина кадра.
     mid = render_hero("hero-knockout", _hero_ctx("hero-knockout")).nodes[0]
     assert 700 < int(re.search(r'y="(\d+)"', mid).group(1)) < 1200
+
+
+def test_knockout_letters_stay_on_skin_not_on_hair():
+    """Выше бровей за дырками букв тёмные волосы — то же тёмное по тёмному.
+
+    Проверяется не число, а правило: нарисованная часть прописных целиком
+    лежит в полосе кожи, посчитанной по измеренной коробке головы.
+    """
+    import re
+
+    from src.lib.render.hyperframes.templates import face_band
+
+    for word in ("ЕДИНСТВЕННАЯ", "ЖИВОЙ ЭФИР", "ДА"):
+        params = {"head_top": 366, "head_h": 486, "word": word}
+        node = render_hero("hero-knockout",
+                           _hero_ctx("hero-knockout", params=params)).nodes[0]
+        size = int(re.search(r'font-size="(\d+)"', node).group(1))
+        rows = [int(y) for y in re.findall(r'<text x="540" y="(\d+)"', node)]
+        top, bottom = face_band(params)
+        assert rows, word
+        assert rows[0] - 0.72 * size >= top - 1, f"{word}: буквы залезли на волосы"
+        assert rows[-1] <= bottom + 1, f"{word}: буквы сползли на одежду"
+
+
+def test_knockout_shrinks_to_the_face_but_not_below_readable():
+    """Двухстрочное слово в лицо целиком не влезает — его мало опустить."""
+    import re
+
+    wide = _hero_ctx("hero-knockout", params={"word": "ЖИВОЙ ЭФИР"})
+    tight = _hero_ctx("hero-knockout",
+                      params={"word": "ЖИВОЙ ЭФИР", "head_top": 366,
+                              "head_h": 486})
+    free = int(re.search(r'font-size="(\d+)"',
+                         render_hero("hero-knockout", wide).nodes[0]).group(1))
+    fit = int(re.search(r'font-size="(\d+)"',
+                        render_hero("hero-knockout", tight).nodes[0]).group(1))
+    assert fit < free, "кегль не ужался под полосу лица"
+    assert fit >= 150, "выбивка измельчала до подписи"
 
 
 def test_headline_size_is_measured_too():

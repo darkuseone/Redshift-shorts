@@ -100,6 +100,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # надпись пропадает, и тон сцены эти две переменные переключает.
         "--color-on-stage: var(--color-ink);",
         "--stage-halo: rgba(247,245,243,0.9);",
+        # Заливка выбивки — противоположность сцене, а не постоянный цвет.
+        # Буквы там прорезаны насквозь, и видно сквозь них сцену: чернильная
+        # заливка на тёмной сцене превращает приём в чёрное по чёрному, и
+        # слово читается только там, где за ним оказалось лицо.
+        "--color-knockout: var(--color-ink);",
     ]
     parts.append(":root{" + "".join(var_lines) + "}")
 
@@ -262,6 +267,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # обоих. Привязка к `#root` молча оставляла бы витрину со светлыми
         # надписями на тёмной сцене.
         ".stage-dark{--color-on-stage:var(--color-bg-light);"
+        "--color-knockout:var(--color-bg-light);"
         "--stage-halo:rgba(6,8,12,0.85)}"
     )
 

@@ -49,7 +49,8 @@ from src.lib.render.hyperframes import runner                          # noqa: E
 from src.lib.render.hyperframes.project import HyperFramesProject      # noqa: E402
 from src.p4_align.aligner import align_by_energy, is_spoken_word       # noqa: E402
 from src.p11_assemble.assemble import (                                # noqa: E402
-    _HERO_NEEDS, _backdrop_plate, _hero_content, hero_params,
+    _FULL_FRAME_HEROES, _HERO_NEEDS, _backdrop_plate, _hero_content,
+    hero_mutes_subtitle, hero_params,
 )
 
 # Приёмы по умолчанию — те, что показывают и материал источника, и речь.
@@ -167,10 +168,14 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
                                          content, slot),
                            **({"src": str(plate)} if plate is not None else {})},
                 "file": None, "duration": None,
-                "carries_line": bool({"lines", "punch", "entries"}
-                                     & set(_HERO_NEEDS.get(renderer, ()))),
+                **hero_mutes_subtitle(renderer),
                 "why": "тестовый ролик",
             }
+            if renderer in _FULL_FRAME_HEROES:
+                # Заливка во весь кадр живёт секунду-две, а не весь шот —
+                # то же ограничение, что и в конвейере.
+                hero["duration"] = round(
+                    min(slot["duration"], float(template["duration_range"][1])), 3)
         shots.append({
             "index": index, "start": start, "end": end, "duration": end - start,
             "kind": "avatar", "block_id": block["id"],
@@ -188,11 +193,18 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
             "hero": hero,
         })
 
-    # Приём, который сам выкладывает реплику, глушит субтитр на своём окне —
-    # то же правило, что и в конвейере: пословное слово поверх той же фразы и
-    # дубль, и перекрытие карточки.
-    mute = [(s["start"], s["end"]) for s in shots
-            if (s.get("hero") or {}).get("carries_line")]
+    # Приём, который сам выкладывает реплику или закрывает кадр заливкой,
+    # глушит субтитр на своём окне — правило берётся у конвейера, а не
+    # переписывается здесь: две копии одного правила расходятся.
+    mute = []
+    for shot in shots:
+        hero = shot.get("hero") or {}
+        if not (hero.get("carries_line") or hero.get("covers_frame")):
+            continue
+        end = shot["end"]
+        if hero.get("duration"):
+            end = min(end, shot["start"] + float(hero["duration"]))
+        mute.append((shot["start"], end))
     subtitles = [w for w in spoken
                  if not any(w["start"] < b and w["end"] > a for a, b in mute)]
     print(f"субтитр: {len(subtitles)} слов из {len(spoken)}, "
