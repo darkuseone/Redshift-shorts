@@ -309,6 +309,15 @@ class CompositionBuilder:
                 f'data-start="{_num(seg["start"])}" '
                 f'data-duration="{_num(seg["duration"])}" '
                 f'data-track-index="{TRACK_AVATAR}" muted playsinline></video>')
+            # Опора для перемотки. Переходы и приёмы двигают сам клип ведущего,
+            # и все их твины помечены `immediateRender:false`, чтобы начальное
+            # состояние не уходило назад по ленте. Но перемотка назад через уже
+            # отыгранный твин возвращает его в это самое начальное состояние, а
+            # кадр по seek обязан совпадать с кадром по проигрыванию. Явная
+            # установка в начале клипа делает исход одинаковым в обе стороны.
+            self.tweens.append(
+                f'tl.set("#{node_id}",{{scale:1,x:0,y:0}},'
+                f'{_num(float(seg["start"]))});')
             self.stats["avatar_clips"] += 1
         return nodes
 

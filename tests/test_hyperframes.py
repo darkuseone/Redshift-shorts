@@ -298,6 +298,25 @@ def test_transition_on_avatar_shot_targets_the_avatar(plan, assets, brandbook):
         assert '"#avatar-00"' in tween, f"has_alpha={alpha}: {tween}"
 
 
+def test_transition_on_the_avatar_does_not_reach_back_before_its_shot(plan, assets,
+                                                                     brandbook):
+    """`fromTo` применяет `from` при сборке ленты, а клип живёт весь сегмент.
+
+    Наезд на третьем шоте откатывал ведущего в `scale:0.92` с нулевой секунды:
+    первые секунды он сидел в прямоугольнике 0.92 кадра с тёмными полями по
+    краям. Твин обязан нести запрет, а у клипа обязана быть опора в начале —
+    иначе перемотка назад вернёт его в то же начальное состояние.
+    """
+    plan["shots"][2]["transition"] = {"renderer": "zoom_punch", "duration": 0.32,
+                                      "params": {"from_scale": 1.18}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    tween = next(l for l in out.splitlines() if "scale:1.18" in l)
+    assert "immediateRender:false" in tween, tween
+    anchor = [l for l in out.splitlines()
+              if 'tl.set("#avatar-00"' in l and "scale:1" in l]
+    assert anchor, "у клипа ведущего нет опоры для перемотки"
+
+
 def test_every_tween_target_exists_in_the_markup(plan, assets, brandbook):
     """Твин по несуществующему id ничего не делает и не жалуется."""
     plan["shots"][0]["transition"] = {"renderer": "white_flash", "duration": 0.3,

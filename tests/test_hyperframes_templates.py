@@ -24,6 +24,10 @@ ALLOWED_PROPS = {
     "opacity", "x", "y", "scale", "scaleX", "scaleY", "rotation",
     "color", "backgroundColor", "borderRadius", "autoAlpha",
     "duration", "ease", "repeat", "yoyo", "stagger",
+    # Не свойство, а настройка самого твина: запрет применять начальное
+    # состояние сразу при сборке ленты. Твину на кадре она обязательна —
+    # иначе он откатывает ведущего к своему `from` с нулевой секунды.
+    "immediateRender",
 }
 
 
@@ -51,6 +55,42 @@ def test_transition_animates_only_allowed_properties(name, ctx):
     piece = render_transition(name, ctx)
     extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
     assert not extra, f"{name} тянет запрещённые свойства: {extra}"
+
+
+def test_tweens_on_the_frame_itself_do_not_reach_back_in_time(ctx):
+    """`fromTo` применяет своё `from` сразу при сборке ленты.
+
+    Клип ведущего живёт весь сегмент, и наезд, поставленный на третий шот,
+    откатывал его в `scale:0.92` с нулевой секунды: пять секунд ведущий сидел
+    в видимом прямоугольнике с тёмными полями. Видно кадром, не тестом, —
+    поэтому правило записано здесь.
+    """
+    from src.lib.render.hyperframes.templates import (
+        MOTION, render_motion, render_transition,
+    )
+
+    checked = 0
+    for name in sorted(TRANSITIONS):
+        checked += _assert_target_tweens_hold(render_transition(name, ctx).tweens,
+                                              ctx, name)
+    for name in sorted(MOTION):
+        checked += _assert_target_tweens_hold(render_motion(name, ctx).tweens,
+                                              ctx, name)
+    for name in sorted(HERO):
+        checked += _assert_target_tweens_hold(
+            render_hero(name, _hero_ctx(name)).tweens, _hero_ctx(name), name)
+    assert checked, "ни один твин по самому кадру не проверен"
+
+
+def _assert_target_tweens_hold(tweens, ctx, name) -> int:
+    """Сколько твинов `fromTo` по кадру проверено — все обязаны нести запрет."""
+    seen = 0
+    for tween in tweens:
+        if not tween.startswith("tl.fromTo(") or f'"#{ctx.target}"' not in tween:
+            continue
+        seen += 1
+        assert "immediateRender:false" in tween, f"{name}: {tween}"
+    return seen
 
 
 @pytest.mark.parametrize("name", sorted(MOTION))

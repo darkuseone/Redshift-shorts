@@ -223,6 +223,15 @@ ENTRANCES: dict[str, dict[str, float | str]] = {
     "dim": {"scale": 1.0, "y": 0, "duration": 0.52, "ease": "power2.out"},
 }
 
+# Твин на самом кадре — на ведущем или на футаже — обязан жить только в своём
+# окне. `fromTo` по умолчанию применяет начальное состояние сразу при сборке
+# ленты, а клип аватара живёт весь сегмент: наезд, поставленный на третий шот,
+# откатывал ведущего в `scale:0.92` с нулевой секунды, и первые пять секунд он
+# сидел в видимом прямоугольнике с тёмными полями по краям. Приёмам и входам,
+# которые двигают **свои** узлы, это не нужно: их узел до твина и должен стоять
+# в начальном состоянии, иначе он мигнёт готовым.
+HOLD = "immediateRender:false"
+
 # Дрейф на удержании: пока элемент висит, он еле заметно едет. Без этого кадр
 # после входа замирает, и монтаж рассыпается на статичные карточки. Величина
 # намеренно ниже порога осознанного замечания — работает боковым зрением.
@@ -237,11 +246,13 @@ DRIFT_GAP = 0.02
 
 def entrance_tweens(target: str, start: float, *, name: str = "zoom-in",
                     fade: bool = True, delay: float = 0.0,
-                    scale_to: float = 1.0) -> list[str]:
+                    scale_to: float = 1.0, hold: bool = False) -> list[str]:
     """Твины появления элемента.
 
     ``fade=False`` для клипов: прозрачность у них за движком.
     ``scale_to`` — конечный масштаб, если элемент обязан остаться увеличенным.
+    ``hold=True`` — элемент уже на экране до этого твина (клип ведущего живёт
+    весь сегмент), и начальное состояние не должно уходить назад по ленте.
     """
     spec = ENTRANCES.get(name) or ENTRANCES["zoom-in"]
     at = start + delay
@@ -265,6 +276,9 @@ def entrance_tweens(target: str, start: float, *, name: str = "zoom-in",
     if fade:
         from_state.append("opacity:0")
         to_state.append("opacity:1")
+
+    if hold:
+        to_state.append(HOLD)
 
     return [f'tl.fromTo("{target}",{{{",".join(from_state)}}},'
             f'{{{",".join(to_state)},duration:{_num(duration)},'
@@ -345,7 +359,8 @@ def tr_zoom_punch(ctx: "TemplateCtx") -> Piece:
     ease = "power4.out" if overshoot else "power3.out"
     return Piece(tweens=[
         f'tl.fromTo("#{ctx.target}",{{scale:{from_scale}}},'
-        f'{{scale:1,duration:{_num(ctx.duration)},ease:"{ease}"}},{_num(ctx.start)});'
+        f'{{scale:1,duration:{_num(ctx.duration)},ease:"{ease}",{HOLD}}},'
+        f'{_num(ctx.start)});'
     ])
 
 
@@ -385,7 +400,8 @@ def tr_whip_pan(ctx: "TemplateCtx") -> Piece:
                f'<span style="backdrop-filter:blur({blur}px)"></span></div>'],
         tweens=[
             f'tl.fromTo("#{ctx.target}",{{x:{offset}}},'
-            f'{{x:0,duration:{_num(d)},ease:"power4.out"}},{_num(ctx.start)});',
+            f'{{x:0,duration:{_num(d)},ease:"power4.out",{HOLD}}},'
+            f'{_num(ctx.start)});',
             f'tl.fromTo("#{node_id} span",{{opacity:0.9}},'
             f'{{opacity:0,duration:{_num(d * 0.6)},ease:"power2.out"}},{_num(ctx.start)});',
             f'tl.set("#{node_id} span",{{opacity:0}},{_num(ctx.start + d * 0.6)});',
@@ -400,7 +416,8 @@ def tr_paper_slide(ctx: "TemplateCtx") -> Piece:
     prop = "y" if axis == "y" else "x"
     return Piece(tweens=[
         f'tl.fromTo("#{ctx.target}",{{{prop}:{shift}}},'
-        f'{{{prop}:0,duration:{_num(ctx.duration)},ease:"power3.out"}},{_num(ctx.start)});'
+        f'{{{prop}:0,duration:{_num(ctx.duration)},ease:"power3.out",{HOLD}}},'
+        f'{_num(ctx.start)});'
     ])
 
 
@@ -473,7 +490,7 @@ def r_kenburns(ctx: "TemplateCtx") -> Piece:
     return Piece(tweens=[
         f'tl.fromTo("#{ctx.target}",{{scale:{from_scale},x:0,y:0}},'
         f'{{scale:{to_scale},x:{pan_x},y:{pan_y},'
-        f'duration:{_num(ctx.duration)},ease:"none"}},{_num(ctx.start)});'
+        f'duration:{_num(ctx.duration)},ease:"none",{HOLD}}},{_num(ctx.start)});'
     ])
 
 
@@ -484,7 +501,8 @@ def r_parallax(ctx: "TemplateCtx") -> Piece:
     far = int(near * 0.35)
     return Piece(tweens=[
         f'tl.fromTo("#{ctx.target}",{{scale:1.06,y:{-far}}},'
-        f'{{y:{far},duration:{_num(ctx.duration)},ease:"none"}},{_num(ctx.start)});',
+        f'{{y:{far},duration:{_num(ctx.duration)},ease:"none",{HOLD}}},'
+        f'{_num(ctx.start)});',
         f'tl.fromTo("#behind-{ctx.index:02d}",{{y:{near}}},'
         f'{{y:{-near},duration:{_num(ctx.duration)},ease:"none"}},{_num(ctx.start)});',
     ])
@@ -1078,8 +1096,8 @@ def hero_split(ctx: "TemplateCtx") -> Piece:
         # Ведущий одновременно уходит влево и приближается: сдвиг без укрупнения
         # читается как «его подвинули», а вместе — как смена плана.
         f'tl.fromTo("#{ctx.target}",{{x:0,scale:1}},'
-        f'{{x:{shift},scale:{zoom},duration:{_num(enter)},ease:"expo.out"}},'
-        f'{_num(ctx.start)});',
+        f'{{x:{shift},scale:{zoom},duration:{_num(enter)},ease:"expo.out",'
+        f'{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",'
         f'{{x:0,scale:1,duration:0.34,ease:"power2.inOut"}},{_num(back)});',
     ]
@@ -1362,7 +1380,7 @@ def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
             # обратный твин. Замереть ведущий при этом не может: он живое
             # видео и говорит.
             + entrance_tweens(f"#{ctx.target}", ctx.start,
-                              name="zoom-in", fade=False)
+                              name="zoom-in", fade=False, hold=True)
         ))
 
 
@@ -1663,7 +1681,7 @@ def hero_exhibit(ctx: "TemplateCtx") -> Piece:
         f'ease:"power2.in"}},{_num(back)});',
         f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
         f'{{y:{EX_SHIFT_Y},scale:{EX_SHIFT_SCALE},duration:{_num(enter)},'
-        f'ease:"expo.out"}},{_num(ctx.start)});',
+        f'ease:"expo.out",{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:{_num(leave)},'
         f'ease:"power2.inOut"}},{_num(back)});',
         # Материал в раме медленно наезжает — карточка не имеет права замереть.
@@ -1839,8 +1857,8 @@ def hero_figure(ctx: "TemplateCtx") -> Piece:
     rows = []
     tweens = [
         f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
-        f'{{y:{shift_y},scale:{shift_scale},duration:0.5,ease:"expo.out"}},'
-        f'{_num(ctx.start)});',
+        f'{{y:{shift_y},scale:{shift_scale},duration:0.5,ease:"expo.out",'
+        f'{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:0.34,ease:"power2.inOut"}},'
         f'{_num(back)});',
     ]
@@ -1968,7 +1986,7 @@ def hero_bubble_typed(ctx: "TemplateCtx") -> Piece:
               # включённая заслонка, а не как смена плана. Только вход, без
               # дрейфа: клип аватара общий, остаточный масштаб утёк бы дальше.
               + entrance_tweens(f"#{ctx.target}", ctx.start, name="zoom-in",
-                                fade=False))
+                                fade=False, hold=True))
     for i, entry in enumerate(entries[:6]):
         at = max(0.0, min(float(entry.get("at", 0.0)), max(0.0, ctx.duration - 0.3)))
         tweens += entrance_tweens(f"#{node_id} .bt-chunk:nth-child({i + 1})",
@@ -2075,7 +2093,7 @@ def hero_paper(ctx: "TemplateCtx") -> Piece:
         # уход: между этими двумя моментами его голова была бы за листом.
         f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
         f'{{y:{PP_SHIFT_Y},scale:{PP_SHIFT_SCALE},duration:{_num(enter)},'
-        f'ease:"expo.out"}},{_num(ctx.start)});',
+        f'ease:"expo.out",{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:{_num(leave)},'
         f'ease:"power2.inOut"}},{_num(back)});',
     ]
