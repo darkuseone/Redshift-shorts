@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import math
+import zlib
 from typing import Callable
 
 import numpy as np
@@ -73,6 +74,36 @@ def _normalize(x: np.ndarray, peak: float = 0.9) -> np.ndarray:
     return (x / m * peak).astype(np.float32)
 
 
+def _decay(n: int, rate: float, sr: int = SR) -> np.ndarray:
+    """Экспоненциальный спад. ``rate`` — во сколько e раз за секунду."""
+    return np.exp(-rate * np.arange(n, dtype=np.float64) / sr)
+
+
+def _transient(duration: float, rng, *, hp: float = 3000.0,
+               rate: float = 120.0) -> np.ndarray:
+    """Широкополосный щелчок атаки — то, из чего слышна «дорогая» подача."""
+    n = int(duration * SR)
+    return _highpass(_noise(duration, rng), hp)[:n] * _decay(n, rate)
+
+
+def _air(duration: float, rng, *, hp: float = 7000.0,
+         rate: float = 22.0) -> np.ndarray:
+    """Высокий хвост. Без него удар звучит глухо, будто отрезан фильтром."""
+    n = int(duration * SR)
+    return _highpass(_noise(duration, rng), hp)[:n] * _decay(n, rate)
+
+
+def _drive(x: np.ndarray, amount: float = 1.8) -> np.ndarray:
+    """Мягкое насыщение: даёт гармоники, которыми низ слышен на телефоне."""
+    return np.tanh(x * amount) / np.tanh(amount)
+
+
+# Динамик телефона ниже этой частоты почти ничего не отдаёт. Слой ниже неё
+# ощущается на хорошей акустике и пропадает на телефоне — значит, нести смысл
+# он не может, и громким его делать нельзя.
+PHONE_FLOOR_HZ = 350.0
+
+
 def _stereo(x: np.ndarray, width: float = 0.0) -> np.ndarray:
     """Мягкое расширение стерео сдвигом фазы одного канала."""
     if width <= 0:
@@ -93,21 +124,46 @@ def _whoosh(rng, *, reverse: bool = False) -> np.ndarray:
 
 
 def _hit_impact(rng) -> np.ndarray:
-    dur = 0.5
+    """Удар в четыре слоя: щелчок, тело, саб и воздух.
+
+    Был одним синусом на 70 Гц с тихим щелчком поверх. На телефоне 70 Гц не
+    воспроизводится вовсе — от удара оставался только слабый шорох, и он читался
+    как дешёвый. Смысл теперь несёт тело в 180–270 Гц с гармониками от
+    насыщения: это полоса, которую динамик телефона отдаёт. Саб оставлен, но
+    тихим — он для хорошей акустики, а не для смысла.
+    """
+    dur = 0.55
+    n = int(dur * SR)
     t = _t(dur)
-    body = np.sin(2 * np.pi * 70 * t * np.exp(-2.5 * t))
-    click = _highpass(_noise(dur, rng), 2500) * np.exp(-45 * t)
-    mix = body * 0.9 + click * 0.35
-    return _stereo(_normalize(mix * _env(len(mix), 0.005, 0.995, curve=3.0)))
+    # Средний слой стоит выше PHONE_FLOOR_HZ намеренно: он и есть удар на
+    # телефоне. Нижний и саб оставлены для нормальной акустики.
+    mid = _drive(np.sin(2 * np.pi * 430 * t) + 0.7 * np.sin(2 * np.pi * 660 * t),
+                 2.0) * _decay(n, 20.0)
+    low = _drive(np.sin(2 * np.pi * 160 * t), 2.2) * _decay(n, 14.0)
+    sub = np.sin(2 * np.pi * 58 * t) * _decay(n, 14.0)
+    mix = (_transient(dur, rng, hp=2800, rate=150.0) * 0.70
+           + mid * 1.2 + low * 0.45 + sub * 0.16 + _air(dur, rng) * 0.14)
+    return _stereo(_normalize(mix * _env(n, 0.004, 0.996, curve=2.6)))
 
 
 def _sub_drop(rng) -> np.ndarray:
+    """Падение вниз. Слышно его по гармоникам, а не по основному тону.
+
+    Чистый скользящий синус с 90 до 28 Гц на телефоне беззвучен. Насыщение
+    даёт ему ряд гармоник — падение слышно как движение тембра вниз даже там,
+    где самой основы нет.
+    """
     dur = 1.1
+    n = int(dur * SR)
     t = _t(dur)
-    freq = 90 * np.exp(-2.2 * t) + 28
-    phase = 2 * np.pi * np.cumsum(freq) / SR
-    tone = np.sin(phase)
-    return _stereo(_normalize(tone * _env(len(tone), 0.01, 0.99, curve=2.2)))
+    freq = 110 * np.exp(-2.2 * t) + 34
+    tone = _drive(np.sin(2 * np.pi * np.cumsum(freq) / SR), 2.6)
+    # Тот же спуск октавой выше — он остаётся в полосе телефона и ведёт
+    # движение там, где основы уже не слышно.
+    upper = _drive(np.sin(2 * np.pi * np.cumsum(freq * 4.0) / SR), 1.8) * _decay(n, 3.4)
+    mix = (_transient(dur, rng, hp=2200, rate=90.0) * 0.45
+           + tone * 0.60 + upper * 0.55 + _air(dur, rng, rate=14.0) * 0.10)
+    return _stereo(_normalize(mix * _env(n, 0.008, 0.992, curve=2.2)), width=0.25)
 
 
 def _riser(rng) -> np.ndarray:
@@ -166,19 +222,35 @@ def _glitch(rng) -> np.ndarray:
 
 def _reveal(rng) -> np.ndarray:
     dur = 0.7
+    n = int(dur * SR)
     t = _t(dur)
-    shimmer = sum(np.sin(2 * np.pi * f * t) for f in (880, 1320, 1760)) / 3
-    noise = _sweep_lowpass(_noise(dur, rng), 2000, 8000) * 0.3
-    env = _env(len(t), 0.06, 0.94, curve=2.2)
-    return _stereo(_normalize((shimmer * 0.7 + noise) * env), width=0.5)
+    # Аккорд, а не три равных тона: верхние тише и гаснут раньше — так слышен
+    # предмет, а не генератор.
+    shimmer = (np.sin(2 * np.pi * 880 * t) * _decay(n, 3.0)
+               + np.sin(2 * np.pi * 1320 * t) * _decay(n, 4.5) * 0.55
+               + np.sin(2 * np.pi * 1760 * t) * _decay(n, 6.5) * 0.3)
+    noise = _sweep_lowpass(_noise(dur, rng), 2000, 8000)[:n] * 0.3
+    env = _env(n, 0.06, 0.94, curve=2.2)
+    mix = (shimmer * 0.7 + noise + _air(dur, rng, hp=10000, rate=5.0) * 0.10) * env
+    return _stereo(_normalize(mix), width=0.5)
 
 
 def _chime(rng) -> np.ndarray:
+    """Колокольчик: удар язычка, тон с обертоном и воздух.
+
+    Был двумя чистыми синусами. Синус без атаки и без воздуха слышен как
+    сигнал будильника, а не как звук предмета: у настоящего колокольчика
+    сначала щелчок касания, потом тон, поверх — шум затухающего металла.
+    """
     dur = 1.0
+    n = int(dur * SR)
     t = _t(dur)
-    tone = (np.sin(2 * np.pi * 1046 * t) * np.exp(-4 * t)
-            + np.sin(2 * np.pi * 1568 * t) * np.exp(-5 * t) * 0.6)
-    return _stereo(_normalize(tone), width=0.35)
+    tone = (np.sin(2 * np.pi * 1046 * t) * _decay(n, 4.0)
+            + np.sin(2 * np.pi * 1568 * t) * _decay(n, 5.0) * 0.6
+            + np.sin(2 * np.pi * 3136 * t) * _decay(n, 9.0) * 0.22)
+    mix = (_transient(dur, rng, hp=4000, rate=320.0) * 0.42
+           + tone * 0.9 + _air(dur, rng, hp=9000, rate=6.0) * 0.08)
+    return _stereo(_normalize(mix), width=0.35)
 
 
 def _notification(rng) -> np.ndarray:
@@ -212,13 +284,18 @@ def _tick(rng) -> np.ndarray:
 
 
 def _boom(rng) -> np.ndarray:
+    """Финальный удар с телом и длинным воздушным хвостом."""
     dur = 1.5
+    n = int(dur * SR)
     t = _t(dur)
-    freq = 55 * np.exp(-1.4 * t) + 24
-    phase = 2 * np.pi * np.cumsum(freq) / SR
-    body = np.sin(phase)
-    crack = _highpass(_noise(dur, rng), 1800) * np.exp(-30 * t) * 0.4
-    return _stereo(_normalize((body + crack) * _env(len(t), 0.004, 0.996, curve=2.0)))
+    freq = 80 * np.exp(-1.4 * t) + 30
+    low = _drive(np.sin(2 * np.pi * np.cumsum(freq) / SR), 2.4) * _decay(n, 2.4)
+    body = _drive(np.sin(2 * np.pi * 210 * t), 1.9) * _decay(n, 9.0)
+    mid = _drive(np.sin(2 * np.pi * 480 * t) + 0.6 * np.sin(2 * np.pi * 720 * t),
+                 1.8) * _decay(n, 6.0)
+    mix = (_transient(dur, rng, hp=2000, rate=70.0) * 0.50
+           + low * 0.45 + body * 0.40 + mid * 0.95 + _air(dur, rng, rate=9.0) * 0.13)
+    return _stereo(_normalize(mix * _env(n, 0.003, 0.997, curve=1.9)), width=0.3)
 
 
 def _error_buzz(rng) -> np.ndarray:
@@ -243,14 +320,18 @@ def _meme_stinger(rng) -> np.ndarray:
 
 def _subscribe_ping(rng) -> np.ndarray:
     dur = 0.85
+    n = int(dur * SR)
     t = _t(dur)
     notes = (1046.5, 1318.5, 1568.0)
     tone = np.zeros_like(t)
     for i, freq in enumerate(notes):
         start = int(i * 0.09 * SR)
-        seg = np.sin(2 * np.pi * freq * t) * np.exp(-6 * t)
+        seg = (np.sin(2 * np.pi * freq * t) * _decay(n, 6.0)
+               + np.sin(2 * np.pi * freq * 2 * t) * _decay(n, 11.0) * 0.18)
         tone += np.roll(seg, start) * (1.0 - i * 0.18)
-    return _stereo(_normalize(tone), width=0.4)
+    mix = (_transient(dur, rng, hp=4500, rate=380.0) * 0.55
+           + tone * 0.9 + _air(dur, rng, hp=9000, rate=7.0) * 0.07)
+    return _stereo(_normalize(mix), width=0.4)
 
 
 SFX_RECIPES: dict[str, tuple[Callable, str]] = {
@@ -280,11 +361,22 @@ SFX_ROLES = tuple(SFX_RECIPES)
 assert len(SFX_ROLES) == 20, "§14.1 требует ровно 20 ролей SFX"
 
 
+def _seed(name: str, extra: int = 0) -> int:
+    """Зерно, одинаковое во всех запусках.
+
+    Здесь стоял встроенный ``hash(name)``, а он у строк рандомизируется от
+    процесса к процессу (PYTHONHASHSEED). Шум в рецептах брался от этого зерна,
+    и звук получался новый при каждом запуске: библиотека расходилась с кодом
+    молча, а обещание пересобираемости ролика не выполнялось. Обнаружено
+    сравнением записанных файлов с тем, что выдаёт синтез.
+    """
+    return (zlib.crc32(name.encode("utf-8")) + extra) % (2 ** 32)
+
+
 def synth_sfx(role: str, *, seed: int = 0) -> np.ndarray:
     if role not in SFX_RECIPES:
         raise KeyError(f"нет рецепта для роли SFX {role!r}")
-    rng = np.random.default_rng(abs(hash(role)) % (2 ** 32) + seed)
-    return SFX_RECIPES[role][0](rng)
+    return SFX_RECIPES[role][0](np.random.default_rng(_seed(role, seed)))
 
 
 def sfx_description(role: str) -> str:
@@ -319,20 +411,26 @@ def synth_music(mood: str, *, duration_sec: float = 75.0, seed: int = 0) -> np.n
     слышимости» и не воспринималась как музыка при обычном прослушивании.
     """
     spec = MUSIC_MOODS.get(mood) or MUSIC_MOODS["neutral_drive"]
-    rng = np.random.default_rng(abs(hash(mood)) % (2 ** 32) + seed)
+    rng = np.random.default_rng(_seed(mood, seed))
     t = _t(duration_sec)
     n = len(t)
 
     # Дрон: аккорд из чистых интервалов с медленными биениями.
     pad = np.zeros(n)
+    upper = np.zeros(n)
     for i, ratio in enumerate(spec["chord"]):
         freq = spec["root"] * ratio
         detune = 1.0 + (i - 1.5) * 0.0015
         lfo = 1.0 + 0.12 * np.sin(2 * np.pi * spec["lfo"] * t + i)
         pad += np.sin(2 * np.pi * freq * detune * t) * lfo / (i + 1.6)
+        # Тот же аккорд двумя октавами выше. Основа подложки лежит на 49–73 Гц,
+        # и на телефоне её нет вовсе: замер показал потерю 19–23 дБ, то есть
+        # музыки зритель не слышал совсем. Верхний голос ставит гармонию в
+        # полосу, которую динамик отдаёт, оставаясь «на грани слышимости» (§4.4).
+        upper += np.sin(2 * np.pi * freq * 4 * detune * t) * lfo / (i + 2.4)
 
     # Воздух: отфильтрованный шум, заполняющий тишину.
-    air = _lowpass(rng.normal(0, 1, n), 900) * spec["noise"]
+    air = _lowpass(rng.normal(0, 1, n), 2200) * spec["noise"]
 
     # Пульс: очень тихий, задаёт ощущение движения, но не ритм.
     pulse = np.zeros(n)
@@ -341,8 +439,9 @@ def synth_music(mood: str, *, duration_sec: float = 75.0, seed: int = 0) -> np.n
         phase = (np.arange(n) % period) / period
         pulse = np.exp(-8 * phase) * np.sin(2 * np.pi * spec["root"] * t) * 0.35
 
-    signal = pad / max(len(spec["chord"]), 1) + air + pulse
-    signal = _lowpass(signal, 2600)
+    chord_n = max(len(spec["chord"]), 1)
+    signal = pad / chord_n + upper / chord_n * 0.85 + air + pulse
+    signal = _lowpass(signal, 6000)
 
     # Бесшовный цикл: кроссфейд хвоста в голову.
     fade = int(2.0 * SR)

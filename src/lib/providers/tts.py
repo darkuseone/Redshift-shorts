@@ -23,7 +23,8 @@ from typing import Any
 import numpy as np
 
 from ...errors import ProviderError
-from ..audio import SAMPLE_RATE, load_audio_any, resample, save_wav
+from ..audio import (SAMPLE_RATE, load_audio_any, resample, save_wav,
+                     speech_bandwidth_hz)
 from ..logging import get_logger
 from ..retry import call_with_retry
 from ..schema import count_syllables
@@ -301,11 +302,15 @@ class ElevenLabsTTS(TTSProvider):
         # «buffer size must be a multiple of element size» — поймано на живом
         # прогоне. Берём ближайшую доступную и приводим к канону сами.
         api_sr = _nearest_supported_rate(sr)
+        # Формат вынесен в конфиг: он зависит от тарифа, а не от кода. На нашем
+        # тарифе pcm_* недоступен, и сервис молча подменяет его сжатым mp3 —
+        # заменить это правкой YAML должно быть можно без прогона по коду.
+        fmt = str(self.cfg.get("elevenlabs.output_format", "") or f"pcm_{api_sr}")
         url = f"{base}/v1/text-to-speech/{self.voice_id}/with-timestamps"
         payload = {
             "text": text,
             "model_id": model,
-            "output_format": f"pcm_{api_sr}",
+            "output_format": fmt,
             "voice_settings": self._voice_settings(speed, model=model),
         }
         headers = {"xi-api-key": self.api_key, "Content-Type": "application/json"}
@@ -323,6 +328,24 @@ class ElevenLabsTTS(TTSProvider):
         if not raw:
             raise ProviderError("ElevenLabs вернул пустое аудио", model=model)
         pcm = _decode_tts_audio(raw, api_sr=api_sr, target_sr=sr, model=model)
+
+        # Полоса — единственное, по чему видно, что на самом деле отдал сервис.
+        # На 0047 запрошен был pcm_44100, а пришёл сжатый mp3 со срезом на
+        # 11 кГц, и заказчик услышал это как «низкое качество» раньше, чем
+        # нашлась причина. Молча принимать такое нельзя: конвейер обязан
+        # сказать, что упёрся в тариф, а не в свой тракт.
+        band = speech_bandwidth_hz(pcm, sr)
+        floor = float(self.cfg.get("elevenlabs.min_bandwidth_hz", 14000))
+        _log.info("полоса синтезированной речи", extra={
+            "bandwidth_hz": round(band), "requested_format": fmt, "model": model})
+        if band < floor:
+            _log.warning(
+                "полоса речи ниже ожидаемой: сервис отдал сжатый звук",
+                extra={"bandwidth_hz": round(band), "expected_hz": round(floor),
+                       "requested_format": fmt, "model": model,
+                       "hint": "поднять тариф ElevenLabs или задать "
+                               "elevenlabs.output_format"})
+
         save_wav(out_path, pcm, sr)
 
         words = _words_from_alignment(
