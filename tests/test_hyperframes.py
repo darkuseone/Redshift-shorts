@@ -632,3 +632,21 @@ def test_word_behind_head_never_leaves_the_frame(plan, assets, brandbook,
     assert text_width(word.upper(), size) <= available + 1
     top = brandbook["text_behind_head"]["size_px"][1]
     assert (size == top) is fits_at_max, "кегль обязан падать только когда нужно"
+
+
+def test_word_behind_head_is_glass_not_a_dark_slab(brandbook):
+    """Тёмное по тёмному не читается, сплошное белое спорит с ведущим.
+
+    Слово набиралось цветом ink с прозрачностью 0.55. Кадры канала тёмные, и
+    на них его просто не было видно. Стекло решает обе задачи: заливка почти
+    прозрачна, форму держит светлый контур по краю.
+    """
+    css = build_css(brandbook, {})
+    block = css.split(".behind-head{", 1)[1].split("}", 1)[0]
+    assert "color:transparent" in block, "заливка обязана быть прозрачной"
+    assert "background-clip:text" in block, "градиент обязан обрезаться буквами"
+    assert "-webkit-text-stroke" in block, "без контура стекло не читается"
+    assert "drop-shadow" in block, (
+        "тень нужна по буквам: text-shadow у прозрачного текста рисует "
+        "прямоугольник")
+    assert "color:var(--color-ink)" not in block

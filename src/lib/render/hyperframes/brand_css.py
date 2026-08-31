@@ -140,13 +140,30 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # слове, потому что зависит от его ширины. Слово шире кадра иначе
     # обрезается краями, а обрезок читается как поломка (см.
     # ``CompositionBuilder._behind_head_size``).
+    #
+    # Стекло, а не заливка. Слово набиралось цветом ink с прозрачностью 0.55, и
+    # на тёмном кадре — а кадры у канала тёмные — тёмное по тёмному не читалось
+    # вовсе. Красить его в белое нельзя: сплошная белая надпись во весь кадр
+    # спорит с ведущим и с субтитром, у которых белый — рабочий цвет.
+    #
+    # Поэтому буквы стеклянные: сама заливка почти прозрачна и идёт градиентом
+    # (сверху светлее, к середине темнее, снизу отблеск), а форму держит
+    # светлый контур по краю. Читается силуэт и блик на грани, как у стекла,
+    # а не плашка. Тень взята через filter: у прозрачного текста text-shadow
+    # рисуется по прямоугольнику, а drop-shadow — по самим буквам.
     tbh = brandbook["text_behind_head"]
     parts.append(
         f".behind-head{{position:absolute;left:0;right:0;top:{int(height * 0.34)}px;"
         f"z-index:{Z_BEHIND_HEAD};text-align:center;"
         "font-family:var(--font-display);text-transform:uppercase;"
         f"font-size:{int(tbh['size_px'][1])}px;line-height:0.94;"
-        "color:var(--color-ink);opacity:0.55;transform:translateY(-50%)}"
+        "transform:translateY(-50%);color:transparent;"
+        "background:linear-gradient(180deg,"
+        "rgba(255,255,255,0.30) 0%,rgba(255,255,255,0.08) 52%,"
+        "rgba(255,255,255,0.20) 100%);"
+        "-webkit-background-clip:text;background-clip:text;"
+        "-webkit-text-stroke:2px rgba(255,255,255,0.34);"
+        "filter:drop-shadow(0 3px 22px rgba(0,0,0,0.5))}"
     )
 
     # --- субтитры (§5.1) ------------------------------------------------
