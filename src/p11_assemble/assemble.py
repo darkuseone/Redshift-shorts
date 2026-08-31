@@ -1111,7 +1111,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "template": template.id,
                 "invert": bool(template.params.get("invert")) or variant == "B",
                 "accent_word": _fullscreen_accent(content, block),
-                "file": str(prep.path) if prep is not None else None,
+                "file": prep["dst"] if prep is not None else None,
                 "asset_id": (asset or {}).get("asset_id"),
             })
             if prep is None:

@@ -731,3 +731,22 @@ def test_fullscreen_slot_gets_the_queries_of_its_block():
     assert slots[0].queries[0] == "thermal imaging hot rock"
     # Запросы блока раздаются по кругу: соседний кадр берёт следующий.
     assert slots[1].queries[0] == "molten rock glowing macro"
+
+
+def test_prepared_entry_is_a_dict_with_dst():
+    """Подготовленный кадр — словарь с ключом ``dst``, а не объект с ``.path``.
+
+    Ветка полноэкранного текста читала его как объект и падала на живом
+    прогоне: `'dict' object has no attribute 'path'`. Модульные тесты этого не
+    видели — сборку варианта они не звали, — а мок-прогон CI увидел сразу.
+    Здесь форма записи закреплена явно.
+    """
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [{"index": 3, "kind": "footage", "block_id": "b1"},
+             {"index": 4, "kind": "fullscreen_text", "block_id": "b1"}]
+    prepared = {3: {"dst": "/w/shots/a.mp4", "duration_sec": 4.2}}
+    plate = _plate_source(slots[1], slots, prepared, {3: {"source": "pexels"}})
+    assert plate is not None
+    assert plate["file"] == "/w/shots/a.mp4"
+    assert plate["duration_sec"] == pytest.approx(4.2)

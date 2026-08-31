@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-08-19",
-  "count": 195,
+  "updated": "2026-08-31",
+  "count": 212,
   "items": [
     {
       "id": "pexels_406de0a0_01",
@@ -6568,6 +6568,587 @@
       "width": 1080,
       "height": 1920,
       "file": "generated/gen_mock_9c3ba419.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "pexels_406de0a0_03",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/406de0a0/3",
+      "phash": "d5346a2bb394554b",
+      "tags": [
+        "quantum",
+        "computer",
+        "laboratory",
+        "wide"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «quantum computer laboratory wide»",
+      "score": 0.5671,
+      "duration_sec": 4.5,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "d5346a2bb394554b",
+        "d6503c7f0100ff1f",
+        "156aaab55d5aa505"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_406de0a0_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_a825830f_03",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/a825830f/3",
+      "phash": "2ed973200d87d173",
+      "tags": [
+        "superconducting",
+        "circuit"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «superconducting circuit»",
+      "score": 0.5461,
+      "duration_sec": 2.5,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "2ed973200d87d173",
+        "002d6b2c6dd6da33",
+        "d1782ca22f2ea4d7"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_a825830f_03.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_e719f3cd_05",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/e719f3cd/5",
+      "phash": "1c9c9c9c9c9c9c9c",
+      "tags": [
+        "scientific",
+        "paper",
+        "screen"
+      ],
+      "vision_summary": "тёмный, спокойный кадр по запросу «scientific paper on screen»",
+      "score": 0.4721,
+      "duration_sec": 5.9,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "1c9c9c9c9c9c9c9c",
+        "1797979791919191",
+        "1f9f9f9f91818101"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "file": "freepik/freepik_e719f3cd_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_03223e44_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/03223e44/0",
+      "phash": "0397878787878787",
+      "tags": [
+        "scientific",
+        "paper",
+        "screen"
+      ],
+      "vision_summary": "тёмный, спокойный кадр по запросу «scientific paper on screen»",
+      "score": 0.4556,
+      "duration_sec": 3.3,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "0397878787878787",
+        "0787878787878787",
+        "0787878787878787"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "file": "pexels/pexels_03223e44_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_531d282a_07",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/531d282a/7",
+      "phash": "022f6f405d454f79",
+      "tags": [
+        "data",
+        "visualization",
+        "error",
+        "rate",
+        "chart"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «data visualization error rate chart»",
+      "score": 0.5547,
+      "duration_sec": 3.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "022f6f405d454f79",
+        "d57f2a95c0c01f0f",
+        "d5953fe805ed18c2"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_531d282a_07.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_89ea9809_00",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/89ea9809/0",
+      "phash": "31b1b1b1b1b1b1b1",
+      "tags": [
+        "server",
+        "room",
+        "blue",
+        "light"
+      ],
+      "vision_summary": "тёмный, спокойный кадр по запросу «server room blue light»",
+      "score": 0.4738,
+      "duration_sec": 5.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "31b1b1b1b1b1b1b1",
+        "1292939393b3b3b1",
+        "f0b0b2b2b3939393"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "file": "freepik/freepik_89ea9809_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_e6a781bd_06",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/e6a781bd/6",
+      "phash": "29a9a9a9a9a9a9a9",
+      "tags": [
+        "abstract",
+        "blue",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "тёмный, спокойный кадр по запросу «abstract blue data particles»",
+      "score": 0.4569,
+      "duration_sec": 3.9,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "29a9a9a9a9a9a9a9",
+        "0d8d8d8d8d8d8d8d",
+        "0d8d8d8d8d8d8d8d"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "file": "pexels/pexels_e6a781bd_06.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_81aee56e_02",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/81aee56e/2",
+      "phash": "d5912af0274bb1cb",
+      "tags": [
+        "server",
+        "room",
+        "blue",
+        "light",
+        "black",
+        "background"
+      ],
+      "vision_summary": "тёмный, спокойный кадр по запросу «server room blue light black background»",
+      "score": 0.5359,
+      "duration_sec": 4.2,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "d5912af0274bb1cb",
+        "002b7f4b7ce44ccc",
+        "ff802b5681e2947e"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_81aee56e_02.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_ff6dac78_02",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/ff6dac78/2",
+      "phash": "c2273d9898c9c767",
+      "tags": [
+        "abstract",
+        "blue",
+        "data",
+        "particles",
+        "dark"
+      ],
+      "vision_summary": "тёмный, спокойный кадр по запросу «abstract blue data particles dark»",
+      "score": 0.5153,
+      "duration_sec": 4.7,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "c2273d9898c9c767",
+        "db2d915a64934bc5",
+        "319486c3fb783c0e"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_ff6dac78_02.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_ddb714bb_01",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/ddb714bb/1",
+      "phash": "3590c2f1fd1f03c1",
+      "tags": [
+        "abstract",
+        "blue",
+        "data",
+        "particles",
+        "black",
+        "background"
+      ],
+      "vision_summary": "тёмный, спокойный кадр по запросу «abstract blue data particles black background»",
+      "score": 0.5183,
+      "duration_sec": 5.9,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "3590c2f1fd1f03c1",
+        "d31a2d25ad9792d2",
+        "d42aa9566db3544b"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_ddb714bb_01.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "pexels_64e1a798_00",
+      "type": "video",
+      "source": "pexels",
+      "license": "mock-synthetic",
+      "url_origin": "mock://pexels/64e1a798/0",
+      "phash": "f02b9fc4c0683d3e",
+      "tags": [
+        "abstract",
+        "blue",
+        "data",
+        "particles",
+        "low",
+        "key"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «abstract blue data particles low key»",
+      "score": 0.6152,
+      "duration_sec": 4.5,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "f02b9fc4c0683d3e",
+        "d22bad9266ad925a",
+        "e02b9fc7c2213c3e"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "pexels/pexels_64e1a798_00.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_3a76a168_05",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/3a76a168/5",
+      "phash": "d5376a8ab5554a2a",
+      "tags": [
+        "light",
+        "through",
+        "darkness"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «light through darkness»",
+      "score": 0.5595,
+      "duration_sec": 4.5,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "d5376a8ab5554a2a",
+        "fd0be0f0071ff860",
+        "d5376a8ab5554a2a"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_3a76a168_05.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "freepik_d8176ace_06",
+      "type": "video",
+      "source": "freepik",
+      "license": "mock-synthetic",
+      "url_origin": "mock://freepik/d8176ace/6",
+      "phash": "0ec2730dace649d9",
+      "tags": [
+        "stock",
+        "market",
+        "data"
+      ],
+      "vision_summary": "средний по свету, спокойный кадр по запросу «stock market data»",
+      "score": 0.5959,
+      "duration_sec": 5.6,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "0ec2730dace649d9",
+        "f57f2880d1798653",
+        "0ad57f2b944893e2"
+      ],
+      "width": 606,
+      "height": 1080,
+      "file": "freepik/freepik_d8176ace_06.mp4",
+      "mock": true,
+      "extra": {
+        "attribution": "synthetic (mock provider)",
+        "author": "REDSHIFT mock"
+      }
+    },
+    {
+      "id": "gen_mock_fe72f7f0",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "d57a286a3595b41b",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Холодный кадр квантового процессора в криостате, крупно. quantum processor macro shot. Role: hook. Style: cinematic, vertical 9:16 composition, shallow depth of",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "d57a286a3595b41b",
+        "dd7a08633f273407",
+        "d57e03782f206c6e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_fe72f7f0.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_67133705",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "c6c6c6c6c6c6c6c6",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Холодный кадр квантового процессора в криостате, крупно. cryostat golden chandelier laboratory. Role: hook. Style: cinematic, vertical 9:16 composition, shallow",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "c6c6c6c6c6c6c6c6",
+        "c6c6c6c6c6c6c6c6",
+        "c6c6c6c6c6c6c6c6"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_67133705.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_fe72f7f0",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "d56e08623f27b507",
+      "tags": [
+        "generated",
+        "hook",
+        "abstract"
+      ],
+      "vision_summary": "Холодный кадр квантового процессора в криостате, крупно. quantum processor macro shot. Role: hook. Style: cinematic, vertical 9:16 composition, shallow depth of",
+      "score": 1.0,
+      "duration_sec": 2.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "d56e08623f27b507",
+        "d77f02780b612e6a",
+        "dd5d407a833d541e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_fe72f7f0.mp4",
+      "ai_generated": true,
+      "mock": true
+    },
+    {
+      "id": "gen_mock_6178204c",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "",
+      "phash": "2a59b56a962d9a64",
+      "tags": [
+        "generated",
+        "evidence",
+        "abstract"
+      ],
+      "vision_summary": "Скриншот статьи в браузере, подсветка ключевой строки. researcher reading article laptop. Role: evidence. Style: cinematic, vertical 9:16 composition, shallow d",
+      "score": 1.0,
+      "duration_sec": 3.367,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-08-31",
+      "phashes": [
+        "2a59b56a962d9a64",
+        "227f802ad5287f95",
+        "d72ad56e916a35c0"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/gen_mock_6178204c.mp4",
       "ai_generated": true,
       "mock": true
     }
