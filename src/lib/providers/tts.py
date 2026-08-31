@@ -254,7 +254,12 @@ class ElevenLabsTTS(TTSProvider):
                          extra={"model": model, "fallback": fallback, "error": exc.message})
             return self._request(text, out_path, model=fallback, speed=speed)
 
-    def _voice_settings(self, speed: float) -> dict[str, Any]:
+    # eleven_v3 принимает не любую ровность, а одно из трёх значений. Прислав
+    # промежуточное, получаешь отказ — и это стоит целого прогона. Числа взяты
+    # из схемы API: 0 — «творческий», 0.5 — «естественный», 1 — «ровный».
+    V3_STABILITY_STEPS = (0.0, 0.5, 1.0)
+
+    def _voice_settings(self, speed: float, *, model: str = "") -> dict[str, Any]:
         """Характер подачи. Числа в конфиге, а не здесь: их подбирают на слух.
 
         ``stability`` у ElevenLabs — это ровность, а не качество: чем выше, тем
@@ -269,8 +274,15 @@ class ElevenLabsTTS(TTSProvider):
         и сервис применял свои значения по умолчанию.
         """
         node = self.cfg.get("elevenlabs.voice_settings", {}) or {}
+        stability = float(node.get("stability", 0.30))
+        if model.startswith("eleven_v3"):
+            # Прижимаем к ближайшему разрешённому, а не падаем: конфиг
+            # настраивают на слух под основную модель, и запрет одной из них
+            # не повод останавливать прогон.
+            stability = min(self.V3_STABILITY_STEPS,
+                            key=lambda step: abs(step - stability))
         settings: dict[str, Any] = {
-            "stability": float(node.get("stability", 0.30)),
+            "stability": stability,
             "similarity_boost": float(node.get("similarity_boost", 0.85)),
             "style": float(node.get("style", 0.45)),
             "use_speaker_boost": bool(node.get("use_speaker_boost", True)),
@@ -294,7 +306,7 @@ class ElevenLabsTTS(TTSProvider):
             "text": text,
             "model_id": model,
             "output_format": f"pcm_{api_sr}",
-            "voice_settings": self._voice_settings(speed),
+            "voice_settings": self._voice_settings(speed, model=model),
         }
         headers = {"xi-api-key": self.api_key, "Content-Type": "application/json"}
 

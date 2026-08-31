@@ -566,14 +566,34 @@ def test_voice_settings_come_from_config_and_ask_for_expression():
     provider = ElevenLabsTTS.__new__(ElevenLabsTTS)
     provider.cfg = cfg
 
-    settings = provider._voice_settings(1.1)
+    settings = provider._voice_settings(1.1, model="eleven_multilingual_v2")
     assert settings["speed"] == 1.1
     assert settings["stability"] <= 0.35, "ровность выше — речь снова плоская"
     assert settings["style"] > 0, "манера исходного голоса не усиливается"
     assert settings["use_speaker_boost"] is True
 
     cfg.data["elevenlabs"]["voice_settings"]["stability"] = 0.7
-    assert provider._voice_settings(1.0)["stability"] == 0.7, "конфиг не читается"
+    assert provider._voice_settings(1.0, model="eleven_multilingual_v2")["stability"] == 0.7, \
+        "конфиг не читается"
+
+
+def test_v3_gets_a_stability_it_will_actually_accept():
+    """eleven_v3 принимает только 0, 0.5 или 1 — промежуточное значит отказ.
+
+    Стоимость ошибки — целый прогон, поэтому значение прижимается к ближайшему
+    разрешённому здесь, а не выясняется по ответу сервиса.
+    """
+    from src.lib.config import load_config
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    provider = ElevenLabsTTS.__new__(ElevenLabsTTS)
+    provider.cfg = load_config()
+
+    for asked, expected in ((0.30, 0.5), (0.1, 0.0), (0.9, 1.0)):
+        provider.cfg.data["elevenlabs"]["voice_settings"]["stability"] = asked
+        got = provider._voice_settings(1.0, model="eleven_v3")["stability"]
+        assert got == expected, f"{asked} → {got}, ждали {expected}"
+        assert got in ElevenLabsTTS.V3_STABILITY_STEPS
 
 
 def test_hesitations_are_cut_but_meaning_is_never_touched():
