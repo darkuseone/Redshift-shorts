@@ -21,6 +21,7 @@ from typing import Any
 
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id
+from ..lib.palette import palette_verdict
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 
 _log = get_logger("p8")
@@ -58,10 +59,13 @@ def run_step(ctx) -> dict[str, Any]:
     for candidate in doc["candidates"]:
         by_slot.setdefault(candidate["slot_index"], []).append(candidate)
 
+    palette_rules = dict(cfg.brandbook.get("color_rules", {}).get("footage_palette", {}))
+
     judged: list[dict[str, Any]] = []
     accepted: dict[int, dict[str, Any]] = {}
     arbiter_calls = 0
     reused_scores = 0
+    rejected_by_palette = 0
 
     for slot_index in sorted(by_slot):
         slot = slots_by_index.get(slot_index, {})
@@ -113,14 +117,32 @@ def run_step(ctx) -> dict[str, Any]:
                     verdict_dict["arbitration_skipped"] = (
                         f"{reason}; лимит арбитража {arbiter_budget} исчерпан")
 
+            # Цвет судится отдельно от смысла и бесплатно: кадры кандидата
+            # уже лежат на диске. Судья со зрением оценивает соответствие
+            # речи и про палитру канала не знает — на 0047 он принял стену из
+            # ярко-розовых кубов по запросу «dark red gradient».
+            palette = palette_verdict(
+                [Path(f) for f in candidate.get("frames", [])], palette_rules)
+
             entry = {**candidate, "verdict": verdict_dict,
-                     "score": float(verdict_dict["score"])}
+                     "score": float(verdict_dict["score"]), "palette": palette}
             entry["decision"] = (
                 "accept" if entry["score"] >= accept_threshold
                 else "reject" if entry["score"] < reject_threshold
                 else "borderline")
+            if not palette["passed"]:
+                # Отказ, а не штраф к оценке: §7.3 велит незакрытый слот
+                # отправлять в генерацию, а не затыкать слабым материалом.
+                # Кадр не той палитры — ровно такой слабый материал.
+                entry["decision"] = "reject_palette"
+                entry["reject_reason"] = palette["reason"]
+                rejected_by_palette += 1
+                _log.info("кандидат отклонён по палитре", extra={
+                    "slot": slot_index, "asset": candidate.get("asset_id"),
+                    "off_share": palette["off_share"]})
             judged.append(entry)
-            scored.append((entry["score"], entry))
+            if entry["decision"] != "reject_palette":
+                scored.append((entry["score"], entry))
 
         scored.sort(key=lambda pair: pair[0], reverse=True)
         best = next((entry for score, entry in scored if score >= accept_threshold), None)
@@ -193,6 +215,7 @@ def run_step(ctx) -> dict[str, Any]:
         "arbiter_calls": arbiter_calls,
         "arbiter_budget": arbiter_budget,
         "reused_scores": reused_scores,
+        "rejected_by_palette": rejected_by_palette,
         "judged_count": len(judged),
         "accepted_count": len(accepted),
         "slots_total": len(asset_slots),
@@ -208,10 +231,15 @@ def run_step(ctx) -> dict[str, Any]:
     if unfilled:
         ctx.warn(f"{len(unfilled)} слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
                  slots=unfilled)
+    if rejected_by_palette:
+        ctx.warn(f"{rejected_by_palette} кандидатов отклонены по палитре канала "
+                 f"(§3.1): посторонний цвет занимал больше "
+                 f"{float(palette_rules.get('off_share_max', 0.15)):.0%} кадра")
     _log.info("оценка футажей завершена", extra={
         "judged": len(judged), "accepted": len(accepted),
         "fill_rate": result["fill_rate"], "arbiter_calls": arbiter_calls,
         "reused": reused_scores, "unfilled": len(unfilled),
+        "rejected_by_palette": rejected_by_palette,
     })
     return {"accepted": len(accepted), "fill_rate": result["fill_rate"],
             "arbiter_calls": arbiter_calls}

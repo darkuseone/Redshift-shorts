@@ -30,7 +30,7 @@ from ..text_rules import subtitle_word
 from ...backdrop import SCENES, pick_scene, tone as scene_tone
 from .templates import (
     TemplateCtx, enter_and_drift, entrance_tweens, fit_size, render_hero,
-    render_motion, render_transition, text_width,
+    fit_size as fit_text_size, render_motion, render_transition, text_width,
 )
 
 TRACK_STAGE = 0
@@ -368,7 +368,8 @@ class CompositionBuilder:
             index = int(shot["index"])
             node_id = f"behind-{index:02d}"
             nodes.append(
-                f'<div id="{node_id}" class="clip behind-head" '
+                f'<div id="{node_id}" class="clip behind-head"'
+                f' style="font-size:{self._behind_head_size(word)}px" '
                 + _timing(float(shot["start"]),
                           float(shot["start"]) + float(shot["duration"]),
                           TRACK_BEHIND_HEAD)
@@ -380,6 +381,27 @@ class CompositionBuilder:
                 node_id and f"#{node_id}", float(shot["start"]),
                 float(shot["duration"]), name="zoom-in"))
         return nodes
+
+    def _behind_head_size(self, word: str) -> int:
+        """Кегль слова за головой: наибольший, при котором слово влезает.
+
+        Кегль стоял константой — верхней границей ``size_px`` из брендбука, —
+        и слово шире кадра просто обрезалось краями. На 0047 «ДВЕНАДЦАТЬ» при
+        260 px занимает 1498 px в кадре шириной 1080: зритель видел «ДВ…АДЦ».
+        Обрезок читается как поломка, а не как приём: смысл слова за головой в
+        том, что его читают.
+
+        Поле по краям берётся из рабочей зоны брендбука (§3.2), а не выдумано.
+        Слово при этом остаётся во всю ширину кадра, а не в рабочей зоне:
+        оно фон, и заезжать под колонку интерфейса ему можно — за кромку кадра
+        нельзя. Нижняя граница ``size_px`` тут пожелание, а не предел: слово,
+        которому и её мало, лучше набрать мельче, чем обрезать.
+        """
+        spec = self.brandbook["text_behind_head"]
+        margin = int(self.brandbook["safe_zones"]["work_area"]["x_min"])
+        available = int(self.brandbook["canvas"]["width"]) - 2 * margin
+        return fit_text_size(word.upper(), available, int(spec["size_px"][1]),
+                             role=str(spec.get("font_role", "display")))
 
     # --- приёмы вокруг ведущего -----------------------------------------
     def _hero_nodes(self) -> list[str]:

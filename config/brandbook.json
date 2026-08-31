@@ -27,7 +27,15 @@
       "accent",
       "accent_soft"
     ],
-    "inverse_only_for_fullscreen_numbers": true
+    "inverse_only_for_fullscreen_numbers": true,
+    "footage_palette": {
+      "_comment": "Цвет футажа против палитры канала. Числа выведены из кадров живого прогона 0047: годные дали 0.00–0.03, негодные 0.40 и 0.93.",
+      "hue_deg": 3.5,
+      "hue_tolerance_deg": 20,
+      "saturation_min": 0.35,
+      "value_min": 0.4,
+      "off_share_max": 0.15
+    }
   },
   "safe_zones": {
     "bottom_px": 400,

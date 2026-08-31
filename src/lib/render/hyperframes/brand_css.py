@@ -135,6 +135,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     )
 
     # --- слово за головой (§5.3) ---------------------------------------
+    #
+    # Кегль здесь — только запасной: настоящий приходит инлайном на каждом
+    # слове, потому что зависит от его ширины. Слово шире кадра иначе
+    # обрезается краями, а обрезок читается как поломка (см.
+    # ``CompositionBuilder._behind_head_size``).
     tbh = brandbook["text_behind_head"]
     parts.append(
         f".behind-head{{position:absolute;left:0;right:0;top:{int(height * 0.34)}px;"

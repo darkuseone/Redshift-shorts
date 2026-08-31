@@ -603,3 +603,32 @@ def test_composition_passes_the_engine_lint():
         proc = subprocess.run([sys.executable, str(tool), "--keep", td],
                               capture_output=True, text=True, timeout=600)
     assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+@pytest.mark.parametrize("word,fits_at_max", [
+    ("ДВЕНАДЦАТЬ", False),   # 1498 px при 260 — почти в полтора кадра
+    ("ВОСЕМЬДЕСЯТ", False),  # 1609 px при 260
+    ("ТЕЧЁТ", True),         # 621 px — кегль трогать незачем
+])
+def test_word_behind_head_never_leaves_the_frame(plan, assets, brandbook,
+                                                 word, fits_at_max):
+    """Обрезок слова читается как поломка, а не как приём.
+
+    На 0047 «ДВЕНАДЦАТЬ» стояло константным кеглем 260 px и уходило за оба
+    края: в кадре было «ДВ…АДЦ».
+    """
+    import re as _re
+
+    from src.lib.render.hyperframes.templates import text_width
+
+    plan["_blocks"] = [{"id": "b2", "emphasis_word": word}]
+    markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    found = _re.search(r'class="clip behind-head" style="font-size:(\d+)px"', markup)
+    assert found, "слова за головой нет в разметке"
+
+    size = int(found.group(1))
+    margin = brandbook["safe_zones"]["work_area"]["x_min"]
+    available = brandbook["canvas"]["width"] - 2 * margin
+    assert text_width(word.upper(), size) <= available + 1
+    top = brandbook["text_behind_head"]["size_px"][1]
+    assert (size == top) is fits_at_max, "кегль обязан падать только когда нужно"
