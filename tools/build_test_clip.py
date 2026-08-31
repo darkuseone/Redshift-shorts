@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.lib.audio import (                                            # noqa: E402
-    load_wav, measure_loudness_buffer, normalize_voice, save_wav,
+    load_wav, measure_loudness_buffer, normalize_voice, save_wav, to_stereo,
 )
 from src.lib.backdrop import describe as scene_why                     # noqa: E402
 from src.lib.backdrop import pick_scene, tone as scene_tone            # noqa: E402
@@ -76,8 +76,14 @@ def _voice_track(clip: Path, dst: Path) -> tuple[Path, float, float]:
         what="test_clip_voice")
     audio, sr = load_wav(raw)
     before = measure_loudness_buffer(audio, sr).integrated_lufs
-    audio, gain_db = normalize_voice(audio, sr)
-    save_wav(dst, audio, sr)
+    # Мерить и нормировать надо в той же раскладке каналов, в какой дорожка
+    # уйдёт в ролик. BS.1770 суммирует мощность каналов, поэтому моно,
+    # продублированное в стерео, измеряется на 3 LU громче: нормированная как
+    # моно до −14 дорожка давала в готовом mp4 −11.2 LUFS. В конвейере это
+    # учтено в P10 — здесь та же поправка, а не своя.
+    stereo = to_stereo(audio)
+    stereo, gain_db = normalize_voice(stereo, sr)
+    save_wav(dst, stereo, sr)
     return dst, before, gain_db
 
 
@@ -140,7 +146,10 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
     tokens = [w for w in str(block["text"]).split() if is_spoken_word(w)]
     spans = align_by_energy(tokens, (0.0, duration), audio, sr)
     emphasis = str(block.get("emphasis_word") or "").lower()
-    spoken = [{"display": w.strip(".,:;—«»\"'"), "start": round(a, 3),
+    # Пунктуация остаётся в слове, как её держит конвейер («может.», а не
+    # «может»). По ней приёмы режут реплику на куски: без неё «…комок газа. На
+    # снимке…» слиплось в «комок газа На снимке» — видно на кадре пробы.
+    spoken = [{"display": w, "start": round(a, 3),
                "end": round(b, 3), "block_id": block["id"],
                "emphasis": bool(emphasis) and emphasis in w.lower()}
               for w, (a, b) in zip(tokens, spans)]
@@ -182,10 +191,14 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
                     f"приёму {renderer} нечем наполниться: нет {', '.join(missing)}")
             hero = {
                 "template": template["id"], "renderer": renderer,
-                "params": {**hero_params(renderer, template.get("params", {}),
-                                         content, slot),
-                           **({"src": str(plate)} if plate is not None else {})},
-                "file": None, "duration": None,
+                "params": hero_params(renderer, template.get("params", {}),
+                                      content, slot),
+                # Материал приёма кладётся туда же, куда его кладёт конвейер, —
+                # в `file`. Прямая подстановка абсолютного пути в `src` мимо
+                # переноса медиа давала кадр без картинки: разметка ссылалась
+                # на файл вне проекта.
+                "file": str(plate) if plate is not None else None,
+                "duration": None,
                 **hero_mutes_subtitle(renderer),
                 "why": "тестовый ролик",
             }

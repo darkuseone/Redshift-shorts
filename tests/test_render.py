@@ -368,21 +368,26 @@ def test_hero_content_wraps_lines_and_marks_the_accent():
 
 def test_line_carrying_devices_suppress_the_subtitle(cfg):
     """Пословный субтитр поверх той же фразы — дубль, и он ложится на карточку."""
-    from src.p11_assemble.assemble import _HERO_NEEDS, _hero_device
+    from src.p11_assemble.assemble import (
+        _CAPTION_HEROES, _HERO_NEEDS, _hero_device, hero_mutes_subtitle,
+    )
 
     catalog = TemplateCatalog.load(cfg)
     slot = {"index": 4, "duration": 3.0, "role": "evidence"}
+    plate = {"file": "/w/shots/a.mp4", "duration_sec": 3.0}
     seen = set()
     for seed in range(40):
+        # С материалом, иначе приёмы, которым он нужен, отсеиваются до выбора и
+        # правило на них не проверяется вовсе — так и жил экспонат.
         entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=False,
-                             plate_src=None, recent_videos=[], exclude=[], seed=seed)
+                             plate_src=plate, recent_videos=[], exclude=[], seed=seed)
         seen.add(entry["renderer"])
-        # Приём сам выкладывает реплику, если ему дают её строками,
-        # фразой-ударом или кусками по таймингам речи.
-        expected = bool({"lines", "punch", "entries"}
-                        & set(_HERO_NEEDS[entry["renderer"]]))
-        assert entry["carries_line"] is expected, entry["renderer"]
+        assert entry["carries_line"] is hero_mutes_subtitle(
+            entry["renderer"])["carries_line"], entry["renderer"]
     assert any("lines" in _HERO_NEEDS[r] for r in seen), "приёмы со строками не выпали"
+    # Экспонат подписывает материал фразой целиком и потому тоже глушит субтитр,
+    # хотя строк ему никто не передаёт.
+    assert hero_mutes_subtitle(_CAPTION_HEROES[0])["carries_line"] is True
 
 
 def test_full_frame_fill_is_short_and_takes_the_subtitle_with_it(cfg):

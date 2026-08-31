@@ -1639,7 +1639,13 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
 # отъезжает ведущий. Разъехавшись, они спрячут ему голову за карточку.
 EX_PLATE_H = 1040
 EX_PIC = (150, 150, 780, 620)      # left, top, width, height
-EX_SHIFT_Y, EX_SHIFT_SCALE = 580, 0.78
+# Ведущий **сдвигается, но не уменьшается**. Масштаб меньше единицы у клипа
+# во весь кадр обнажает его собственные края: измерено на кадре — при 0.78
+# вертикальные швы вставали на x=118 и x=960 с перепадом яркости 134, ровно
+# там, где расчёт их и обещал. Сдвиг вниз уводит края за кадр целиком, а
+# голова оказывается там же, куда её ставило уменьшение, — пересчитано, чтобы
+# композиция не поехала.
+EX_SHIFT_Y, EX_SHIFT_SCALE = 660, 1.0
 
 
 def hero_exhibit(ctx: "TemplateCtx") -> Piece:
@@ -1859,9 +1865,10 @@ def hero_figure(ctx: "TemplateCtx") -> Piece:
     size = fit_size(widest_value, 1080 - 2 * 90, int(ctx.params.get("size", 300)))
 
     step = ctx.duration / len(figures)
-    # Ведущий отъезжает вниз и уменьшается: число живёт в верхней трети, и без
-    # сдвига подпись под ним ложится ему на голову — тёмным по тёмному.
-    shift_y, shift_scale = 300, 0.88
+    # Ведущий отъезжает вниз: число живёт в верхней трети, и без сдвига подпись
+    # под ним ложится ему на голову — тёмным по тёмному. Не уменьшается — см.
+    # `EX_SHIFT_*`: масштаб меньше единицы обнажает края клипа.
+    shift_y, shift_scale = 343, 1.0
     back = max(ctx.start + 0.5, ctx.start + ctx.duration - 0.34)
     rows = []
     tweens = [
@@ -2022,7 +2029,7 @@ def hero_bubble_typed(ctx: "TemplateCtx") -> Piece:
 # субтитр лёг ему поперёк глаз — это хуже первого. Между низом страницы и
 # головой остаётся полоса, и субтитр живёт в ней.
 PP_PAGE = (70, 140, 940, 700)          # left, top, width, height
-PP_SHIFT_Y, PP_SHIFT_SCALE = 560, 0.80
+PP_SHIFT_Y, PP_SHIFT_SCALE = 632, 1.0   # см. EX_SHIFT_* — сдвиг вместо масштаба
 
 # Полосы «текста» страницы над цитатой и под ней — доля ширины колонки.
 PP_BARS_ABOVE = (0.96, 0.88, 1.0, 0.72)
@@ -2268,8 +2275,11 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "will-change:transform}"
         # Куски встают в строку и держат место с самого начала: место занято,
         # видимость приходит твином.
-        ".hero-bubble-typed .bt-chunk{display:inline-block}"
-        ".hero-bubble-typed .bt-chunk::after{content:\" \"}"
+        # Отступ, а не пробел в `::after`: пробел внутри `inline-block`
+        # схлопывается на его конце и в кадре не рисуется — куски слипались в
+        # «комокгаза». Блочность самому куску нужна: вход тянет ему трансформу,
+        # а строчному элементу трансформа не применяется.
+        ".hero-bubble-typed .bt-chunk{display:inline-block;margin-right:0.28em}"
         ".hero-bubble-typed .bt-chunk.last{color:var(--color-accent)}"
         # --- пилюля бренда ---
         f".hero-brand-pill{{position:absolute;z-index:{Z_AVATAR + 1};"

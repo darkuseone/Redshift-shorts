@@ -983,3 +983,19 @@ def test_text_on_a_dark_stage_does_not_stay_ink_black():
                  if selector in m.group(1)]
         assert rules, selector
         assert any("var(--color-on-stage)" in body for body in rules), selector
+
+
+def test_typed_chunks_do_not_run_together():
+    """Пробел в `::after` внутри `inline-block` схлопывается и не рисуется.
+
+    На кадре это читалось как «комокгаза»: два куска карточки встык. Отступ
+    ставится полем блока, а не текстовым узлом внутри него.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    rules = [r for r in css.split("}") if ".bt-chunk" in r and "inline-block" in r]
+    assert rules, "кусок карточки перестал быть блочным"
+    assert "margin-right" in rules[0], rules[0]
+    assert ".bt-chunk::after" not in css, "пробел снова внутри блока"
