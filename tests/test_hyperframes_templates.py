@@ -268,6 +268,29 @@ def test_no_tween_targets_a_clip_element(name, ctx):
             assert target != f"#{clip_id}", f"{name} тянет сам клип: {tween}"
 
 
+@pytest.mark.parametrize("name", sorted(TRANSITIONS))
+def test_fade_to_nothing_is_followed_by_a_hard_kill(name, ctx):
+    """Затухание в ноль обязано заканчиваться tl.set на том же селекторе.
+
+    Перемотка назад через уже отыгранный твин возвращает элемент в начальное
+    состояние: полоса, которая должна была исчезнуть, остаётся в кадре. Кадр по
+    перемотке обязан совпадать с кадром по проигрыванию, и lint движка держит
+    это правилом gsap_exit_missing_hard_kill. На живом прогоне 0047 оно
+    остановило рендер по всем четырём полосам перехода tr-19.
+    """
+    piece = render_transition(name, ctx)
+    kills = {re.search(r'"([^"]+)"', t).group(1)
+             for t in piece.tweens if t.startswith("tl.set(")}
+    for tween in piece.tweens:
+        if tween.startswith("tl.set("):
+            continue
+        to_state = re.findall(r"\{[^{}]*\}", tween)[-1]
+        if not re.search(r"opacity:0(?![.\d])", to_state):
+            continue
+        target = re.search(r'"([^"]+)"', tween).group(1)
+        assert target in kills, f"{name}: затухание без гашения — {tween}"
+
+
 # --- приёмы вокруг ведущего ---------------------------------------------------
 #
 # Референсы заказчика: ведущий за столом, а кадр вокруг него живёт. Проверяется

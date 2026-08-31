@@ -474,10 +474,18 @@ def tr_glitch(ctx: "TemplateCtx") -> Piece:
         top = int(1920 * i / bars)
         height = int(1920 / bars)
         shift = (60 + (i * 37 + ctx.index * 13) % 120) * (1 if i % 2 else -1)
+        target = f"#{node_id} span:nth-child({i + 1})"
         spans.append(f'<span style="top:{top}px;height:{height}px"></span>')
         tweens.append(
-            f'tl.fromTo("#{node_id} span:nth-child({i + 1})",{{x:{shift},opacity:0.9}},'
+            f'tl.fromTo("{target}",{{x:{shift},opacity:0.9}},'
             f'{{x:0,opacity:0,duration:{_num(d)},ease:"steps(3)"}},{_num(ctx.start)});')
+        # Гашение в ноль по концу полосы. Затухание, дошедшее до конца клипа, при
+        # перемотке назад через уже отыгранный твин возвращает полосу в
+        # начальное состояние — она остаётся видимой в кадре, куда не входила.
+        # Это ловит lint движка (gsap_exit_missing_hard_kill), и на 0047 он
+        # остановил рендер по всем четырём полосам перехода tr-19. Селектор тот
+        # же, что у затухания: гашение на группе к отдельной полосе не относится.
+        tweens.append(f'tl.set("{target}",{{opacity:0}},{_num(ctx.start + d)});')
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip tr-glitch" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(d)}" '
