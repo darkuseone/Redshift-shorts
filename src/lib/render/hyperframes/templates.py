@@ -232,6 +232,13 @@ ENTRANCES: dict[str, dict[str, float | str]] = {
 # в начальном состоянии, иначе он мигнёт готовым.
 HOLD = "immediateRender:false"
 
+# Кривая для движения **самого ведущего** — сдвига и наезда на него. Мелким
+# элементам идёт `expo.out`: он снимает вопрос «откуда взялось» одним рывком.
+# Ведущему — нет: на дистанции 210 px expo проходит 102 px за первые 50 мс, то
+# есть за полтора кадра при 30 к/с, и движение читается как рывок, а не как
+# смена плана. `power3.out` на том же отрезке даёт 55 px и остаётся быстрым.
+SUBJECT_EASE = "power3.out"
+
 # Дрейф на удержании: пока элемент висит, он еле заметно едет. Без этого кадр
 # после входа замирает, и монтаж рассыпается на статичные карточки. Величина
 # намеренно ниже порога осознанного замечания — работает боковым зрением.
@@ -1096,7 +1103,7 @@ def hero_split(ctx: "TemplateCtx") -> Piece:
         # Ведущий одновременно уходит влево и приближается: сдвиг без укрупнения
         # читается как «его подвинули», а вместе — как смена плана.
         f'tl.fromTo("#{ctx.target}",{{x:0,scale:1}},'
-        f'{{x:{shift},scale:{zoom},duration:{_num(enter)},ease:"expo.out",'
+        f'{{x:{shift},scale:{zoom},duration:{_num(enter)},ease:"{SUBJECT_EASE}",'
         f'{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",'
         f'{{x:0,scale:1,duration:0.34,ease:"power2.inOut"}},{_num(back)});',
@@ -1683,7 +1690,7 @@ def hero_exhibit(ctx: "TemplateCtx") -> Piece:
         f'ease:"power2.in"}},{_num(back)});',
         f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
         f'{{y:{EX_SHIFT_Y},scale:{EX_SHIFT_SCALE},duration:{_num(enter)},'
-        f'ease:"expo.out",{HOLD}}},{_num(ctx.start)});',
+        f'ease:"{SUBJECT_EASE}",{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:{_num(leave)},'
         f'ease:"power2.inOut"}},{_num(back)});',
         # Материал в раме медленно наезжает — карточка не имеет права замереть.
@@ -1859,7 +1866,7 @@ def hero_figure(ctx: "TemplateCtx") -> Piece:
     rows = []
     tweens = [
         f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
-        f'{{y:{shift_y},scale:{shift_scale},duration:0.5,ease:"expo.out",'
+        f'{{y:{shift_y},scale:{shift_scale},duration:0.5,ease:"{SUBJECT_EASE}",'
         f'{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:0.34,ease:"power2.inOut"}},'
         f'{_num(back)});',
@@ -2095,7 +2102,7 @@ def hero_paper(ctx: "TemplateCtx") -> Piece:
         # уход: между этими двумя моментами его голова была бы за листом.
         f'tl.fromTo("#{ctx.target}",{{y:0,scale:1}},'
         f'{{y:{PP_SHIFT_Y},scale:{PP_SHIFT_SCALE},duration:{_num(enter)},'
-        f'ease:"expo.out",{HOLD}}},{_num(ctx.start)});',
+        f'ease:"{SUBJECT_EASE}",{HOLD}}},{_num(ctx.start)});',
         f'tl.to("#{ctx.target}",{{y:0,scale:1,duration:{_num(leave)},'
         f'ease:"power2.inOut"}},{_num(back)});',
     ]
