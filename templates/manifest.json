@@ -805,8 +805,7 @@
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0044",
-        "redshift_0046",
-        "redshift_0042"
+        "redshift_0046"
       ],
       "added": "2026-08-18"
     },
@@ -2238,9 +2237,7 @@
         "stroke"
       ],
       "renderer": "hero-script-stack",
-      "last_used_in": [
-        "redshift_0042"
-      ],
+      "last_used_in": [],
       "added": "2026-08-18"
     },
     {
@@ -2281,9 +2278,7 @@
         "behind"
       ],
       "renderer": "hero-title-behind",
-      "last_used_in": [
-        "redshift_0042"
-      ],
+      "last_used_in": [],
       "added": "2026-08-18"
     },
     {
@@ -2304,9 +2299,7 @@
         "source"
       ],
       "renderer": "hero-exhibit",
-      "last_used_in": [
-        "redshift_0042"
-      ],
+      "last_used_in": [],
       "added": "2026-08-18"
     },
     {
