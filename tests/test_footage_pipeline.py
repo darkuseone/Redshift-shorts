@@ -642,3 +642,37 @@ def test_refined_queries_survive_an_empty_list():
 
     assert _refine_queries([]) == []
     assert _refine_queries(["", "камень"]) == ["камень dark"]
+
+
+# --- окно переписки: только там, где спрашивают ------------------------------
+
+def test_chat_window_appears_only_on_a_real_question():
+    """Окно поиска ставилось на любой блок — переписка вместо реплики.
+
+    Признак — знак вопроса, и только он. Список вопросительных слов в начале
+    фразы к нему добавляли, но на сценариях репозитория он не поймал ни одного
+    лишнего вопроса и выдумал один: «Когда звезда умирала, она раздувалась…» —
+    здесь «когда» значит «в то время как».
+    """
+    from src.p11_assemble.assemble import _question
+
+    assert _question("Куда, по-твоему, копать дальше?") == "Куда, по-твоему, копать дальше"
+    # Вопрос в конце реплики — тоже вопрос блока.
+    assert _question("Скважину закрыли. Куда копать дальше?") == "Куда копать дальше"
+    # А это не вопрос, хотя начинается с «когда».
+    assert _question("Когда звезда умирала, она раздувалась и гасла.") == ""
+    assert _question("Кольскую скважину бурили двадцать лет.") == ""
+    assert _question("") == ""
+
+
+def test_chat_window_fires_once_per_script():
+    """Плотность: по одному вопросу на сценарий, и все — в блоке призыва."""
+    import glob
+    import json
+
+    from src.p11_assemble.assemble import _question
+
+    for path in sorted(glob.glob("scripts/redshift_00*.json")):
+        blocks = json.load(open(path, encoding="utf-8"))["blocks"]
+        asking = [b["id"] for b in blocks if _question(b["text"])]
+        assert len(asking) == 1, f"{path}: окон переписки {len(asking)}, ждали одно"
