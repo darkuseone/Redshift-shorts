@@ -357,6 +357,80 @@ def limit_true_peak(data: np.ndarray, max_dbtp: float = -1.0,
     return arr.astype(np.float32)
 
 
+# Канон громкости голоса (§4.4): −14 LUFS, True Peak ≤ −1 dBTP. Числа лежат
+# здесь, а не в каждом вызове по месту: проба брала звук из клипа HeyGen как
+# есть и отдавала −27.4 LUFS — тише канона на тринадцать децибел. Заказчик
+# услышал это раньше, чем кто-либо измерил.
+VOICE_LUFS = -14.0
+VOICE_TRUE_PEAK_DBTP = -1.0
+
+
+# Сжатие пиков. Порог задан **относительно целевой громкости**, а не в dBFS:
+# так он не зависит от того, насколько тихим пришёл исходник. Числа подобраны
+# измерением на живой дорожке от HeyGen — это наименьшее сжатие, при котором
+# канон −14 LUFS достигается с запасом по пику (получилось −2.2 dBTP).
+COMPRESS_ABOVE_TARGET_DB = 8.0
+COMPRESS_RATIO = 4.0
+
+
+def compress_peaks(data: np.ndarray, *, threshold_dbfs: float,
+                   ratio: float = COMPRESS_RATIO) -> np.ndarray:
+    """Мягкое сжатие всего, что выше порога. Без атаки и восстановления.
+
+    Компрессор по огибающей звучал бы естественнее, но он вносит время, а
+    значит и зависимость результата от того, где начался буфер. Здесь сжатие
+    поотсчётное: одна и та же входная выборка всегда даёт один и тот же выход,
+    и рендер остаётся воспроизводимым. Для речи разница на слух невелика —
+    сжимаются доли миллисекунды на вершинах.
+    """
+    arr = np.asarray(data, dtype=np.float32)
+    thresh = db_to_gain(threshold_dbfs)
+    mag = np.abs(arr)
+    over = mag > thresh
+    if not over.any():
+        return arr
+    # Над порогом превышение делится на ratio: 8 дБ сверху станут двумя.
+    excess = mag[over] / thresh
+    out = arr.copy()
+    out[over] = np.sign(arr[over]) * thresh * excess ** (1.0 / ratio)
+    return out.astype(np.float32)
+
+
+def normalize_voice(data: np.ndarray, sr: int = SAMPLE_RATE, *,
+                    target_lufs: float = VOICE_LUFS,
+                    true_peak_max: float = VOICE_TRUE_PEAK_DBTP,
+                    compress: bool = True) -> tuple[np.ndarray, float]:
+    """Голос к канону громкости: поднять, придавить выбросы, поднять, закрыть.
+
+    Порядок выведен из измерения, а не из привычки. Дорожка от HeyGen приходит
+    с пик-фактором 18.9 дБ — редкие выбросы торчат высоко над телом фразы. Если
+    просто поднять её до −14 LUFS, пик уходит на +4.9 dBTP, и лимитер, чтобы
+    закрыть потолок, опускает **всю** дорожку обратно: получалось −20 LUFS,
+    то есть тише, чем просили, при формально соблюдённом потолке.
+
+    Поэтому: сначала подъём к цели, потом сжатие выбросов (порог считается от
+    цели, а не в абсолютных dBFS — иначе он зависел бы от громкости исходника
+    и на тихом входе не срабатывал вовсе, что и случилось в первой версии),
+    потом подъём ещё раз, потому что сжатие немного просадило интеграл, и лишь
+    затем лимитер. На живой дорожке это даёт ровно −14.0 LUFS при −2.2 dBTP.
+
+    ``compress=False`` оставлен для дорожек, где выбросы значимы сами по себе.
+
+    Возвращает (аудио, суммарный gain в dB) — по нему видно, насколько тихим
+    пришёл исходник.
+    """
+    arr = np.asarray(data, dtype=np.float32)
+    before = measure_loudness_buffer(arr, sr).integrated_lufs
+    arr, _ = normalize_to_lufs(arr, target_lufs, sr, measured=before)
+    if compress:
+        arr = compress_peaks(arr, threshold_dbfs=target_lufs + COMPRESS_ABOVE_TARGET_DB)
+        measured = measure_loudness_buffer(arr, sr).integrated_lufs
+        arr, _ = normalize_to_lufs(arr, target_lufs, sr, measured=measured)
+    arr = limit_true_peak(arr, true_peak_max)
+    after = measure_loudness_buffer(arr, sr).integrated_lufs
+    return arr, after - before
+
+
 # --- Монтажные операции ------------------------------------------------------
 
 def rms_envelope(data: np.ndarray, sr: int, window_ms: float = 20.0) -> np.ndarray:

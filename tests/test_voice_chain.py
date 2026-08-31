@@ -519,3 +519,128 @@ def test_pace_makes_speech_faster_and_the_target_shorter():
     assert abs(target / pace - 54.55) < 0.05, "цель не сдвинулась на ту же долю"
     # Потолок коррекции тоже обязан ехать, иначе он срежет саму прибавку.
     assert 1.35 * pace > 1.35, "предел коррекции не даст speed выйти выше 1.35"
+
+
+def test_voice_canon_is_one_rule_for_pipeline_and_probe():
+    """Проба брала звук из клипа как есть и звучала на 13 дБ тише ролика.
+
+    Правило громкости живёт одной функцией: и P3, и проба зовут её. Проверяем
+    не число в конфиге, а то, что функция действительно приводит тихий вход к
+    канону и держит потолок пика.
+    """
+    import numpy as np
+
+    from src.lib.audio import (
+        VOICE_LUFS, VOICE_TRUE_PEAK_DBTP, measure_loudness_buffer, normalize_voice,
+    )
+
+    sr = 48000
+    # Сигнал с речевым пик-фактором: тон под медленной огибающей. Гауссов шум
+    # тут не годится — у него пики на 12 дБ выше среднего, лимитер срезал бы
+    # интеграл, и проверка ловила бы свойство тестового сигнала, а не правила.
+    t = np.arange(sr * 3) / sr
+    envelope = 0.55 + 0.45 * np.sin(2 * np.pi * 2.3 * t)
+    quiet = (np.sin(2 * np.pi * 1000 * t) * envelope * 0.008).astype(np.float32)
+
+    before = measure_loudness_buffer(quiet, sr).integrated_lufs
+    assert before < VOICE_LUFS - 8, f"вход недостаточно тихий для проверки: {before}"
+
+    loud, gain_db = normalize_voice(quiet, sr)
+    after = measure_loudness_buffer(loud, sr)
+    assert abs(after.integrated_lufs - VOICE_LUFS) <= 1.0, after.integrated_lufs
+    assert after.true_peak_dbtp <= VOICE_TRUE_PEAK_DBTP + 0.05, after.true_peak_dbtp
+    assert gain_db > 8, f"гейн не применён: {gain_db}"
+
+
+def test_voice_settings_come_from_config_and_ask_for_expression():
+    """Характер подачи был зашит в код, style и speaker boost не слались вовсе.
+
+    На stability 0.45 речь выходила плоской: разброс громкости готового ролика
+    2.0 LU. Проверяется, что настройки читаются из конфига и что дефолт просит
+    выразительности, а не ровности.
+    """
+    from src.lib.config import load_config
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    cfg = load_config()
+    provider = ElevenLabsTTS.__new__(ElevenLabsTTS)
+    provider.cfg = cfg
+
+    settings = provider._voice_settings(1.1)
+    assert settings["speed"] == 1.1
+    assert settings["stability"] <= 0.35, "ровность выше — речь снова плоская"
+    assert settings["style"] > 0, "манера исходного голоса не усиливается"
+    assert settings["use_speaker_boost"] is True
+
+    cfg.data["elevenlabs"]["voice_settings"]["stability"] = 0.7
+    assert provider._voice_settings(1.0)["stability"] == 0.7, "конфиг не читается"
+
+
+def test_hesitations_are_cut_but_meaning_is_never_touched():
+    """Первая версия правила съедала сказуемое — теперь так нельзя.
+
+    «Вот это поворот» и «Это значит, что…» — нормальная речь: вырезав из них
+    слово, мы ломаем фразу. Режутся только звуки-запинки.
+    """
+    from src.lib.fillers import discourse_hits, strip_hesitations
+
+    clean, dropped = strip_hesitations("Эээ, свет оказался красным.")
+    assert clean == "Свет оказался красным.", clean
+    assert dropped == ["Эээ,"]
+
+    for keep in ("Вот это поворот.", "Это значит, что вселенная расширяется.",
+                 "И вот ответ на вопрос."):
+        assert strip_hesitations(keep) == (keep, []), keep
+
+    # Вводные слова только называются, но не режутся.
+    assert discourse_hits("Ну, короче, это работает") == ["ну", "короче"]
+    assert discourse_hits("И вот ответ на вопрос") == [], "предупреждение врёт"
+
+
+def test_p0_stops_hesitations_before_a_single_credit_is_spent(sample_script, cfg):
+    """Запинку дешевле не озвучивать, чем вырезать из готового звука."""
+    from src.errors import FillerWords
+    from src.p0_validate.validator import validate_script
+
+    sample_script["blocks"][1]["text"] = "Эээ, телескоп поймал древний свет."
+    with pytest.raises(FillerWords) as exc:
+        validate_script(sample_script, cfg)
+    assert "Эээ," in str(exc.value)
+
+
+def test_loud_voice_survives_a_high_crest_source():
+    """Просто поднять громкость мало: лимитер опустит всё обратно.
+
+    Дорожка от HeyGen приходит с пик-фактором под 19 дБ. Подъём до −14 LUFS
+    выносил пик на +4.9 dBTP, лимитер закрывал потолок, опуская всю дорожку, и
+    на выходе было −20 LUFS — тише, чем просили. Проверяется, что цель
+    достигается **и** потолок соблюдён одновременно.
+    """
+    import numpy as np
+
+    from src.lib.audio import (
+        VOICE_LUFS, VOICE_TRUE_PEAK_DBTP, measure_loudness_buffer, normalize_voice,
+    )
+
+    sr = 48000
+    rng = np.random.default_rng(11)
+    t = np.arange(sr * 4) / sr
+    body = np.sin(2 * np.pi * 900 * t) * (0.5 + 0.5 * np.sin(2 * np.pi * 2.0 * t))
+    # Редкие выбросы поверх тела фразы — то, что и создаёт высокий пик-фактор.
+    spikes = np.zeros_like(body)
+    for at in rng.integers(0, t.size - 400, size=24):
+        spikes[at:at + 220] += np.hanning(220) * 6.0
+    quiet = ((body + body * spikes) * 0.02).astype(np.float32)
+
+    before = measure_loudness_buffer(quiet, sr)
+    crest = before.true_peak_dbtp - before.integrated_lufs
+    assert crest > 14, f"сигнал недостаточно пиковый для проверки: {crest:.1f} дБ"
+
+    loud, _gain = normalize_voice(quiet, sr)
+    after = measure_loudness_buffer(loud, sr)
+    assert abs(after.integrated_lufs - VOICE_LUFS) <= 0.6, after.integrated_lufs
+    assert after.true_peak_dbtp <= VOICE_TRUE_PEAK_DBTP, after.true_peak_dbtp
+
+    # Без сжатия та же дорожка до канона не дотягивает — ради этого оно и есть.
+    flat, _ = normalize_voice(quiet, sr, compress=False)
+    assert measure_loudness_buffer(flat, sr).integrated_lufs < after.integrated_lufs - 1

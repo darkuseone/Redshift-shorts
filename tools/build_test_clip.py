@@ -39,7 +39,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.lib.audio import load_wav                                     # noqa: E402
+from src.lib.audio import (                                            # noqa: E402
+    load_wav, measure_loudness_buffer, normalize_voice, save_wav,
+)
 from src.lib.backdrop import describe as scene_why                     # noqa: E402
 from src.lib.backdrop import pick_scene, tone as scene_tone            # noqa: E402
 from src.lib.config import load_config                                 # noqa: E402
@@ -57,12 +59,26 @@ from src.p11_assemble.assemble import (                                # noqa: E
 DEFAULT_DEVICES = ("hero-paper", "hero-bubble-typed")
 
 
-def _voice_track(clip: Path, dst: Path) -> Path:
-    """Дорожка речи из клипа: по ней считаются тайминги слов."""
+def _voice_track(clip: Path, dst: Path) -> tuple[Path, float, float]:
+    """Дорожка речи из клипа, приведённая к канону громкости.
+
+    HeyGen отдаёт клип заметно тише канона — измерено −27.4 LUFS против −14,
+    разница в тринадцать децибел. В ролике это лечит P3, но проба шла мимо
+    него и звучала «очень тихо»: заказчик услышал разницу раньше, чем её
+    кто-либо измерил. Правило берётся у конвейера (`normalize_voice`), а не
+    переписывается здесь — две копии одного правила расходятся.
+
+    Возвращает (путь, LUFS исходника, применённый gain).
+    """
     dst.parent.mkdir(parents=True, exist_ok=True)
-    run(["-y", "-i", str(clip), "-ac", "1", "-ar", "48000", str(dst)],
+    raw = dst.with_name("voice_raw.wav")
+    run(["-y", "-i", str(clip), "-ac", "1", "-ar", "48000", str(raw)],
         what="test_clip_voice")
-    return dst
+    audio, sr = load_wav(raw)
+    before = measure_loudness_buffer(audio, sr).integrated_lufs
+    audio, gain_db = normalize_voice(audio, sr)
+    save_wav(dst, audio, sr)
+    return dst, before, gain_db
 
 
 # Сколько кадра оставить чистому ведущему, если приёмы просят всё.
@@ -117,7 +133,9 @@ def build(clip: Path, block: dict, title: str, devices: list[str],
           f"{'' if opacity is None else f' (непрозрачных {opacity:.0%})'}"
           f"{'' if head is None else f', голова {head}'}")
 
-    voice = _voice_track(clip, work / "voice.wav")
+    voice, voice_lufs_before, voice_gain = _voice_track(clip, work / "voice.wav")
+    print(f"голос: {voice_lufs_before:.1f} LUFS в клипе, "
+          f"{voice_gain:+.1f} дБ до канона")
     audio, sr = load_wav(voice)
     tokens = [w for w in str(block["text"]).split() if is_spoken_word(w)]
     spans = align_by_energy(tokens, (0.0, duration), audio, sr)

@@ -164,10 +164,11 @@ def test_head_box_measures_the_head_and_not_the_props(tmp_path):
 
 
 def test_bubble_circle_leaves_the_asked_for_margin_around_the_head(tmp_path):
-    """Круг обязан вместить голову и оставить 5–7 % поля — как просил заказчик.
+    """Круг обязан вместить голову и оставить 10–15 % поля.
 
     Радиус по полудиагонали коробки формально голову вмещал, но поле выходило
-    вдвое больше просимого: лицо болталось в середине пустого круга.
+    вдвое больше просимого: лицо болталось в середине пустого круга. Обратная
+    крайность — 6 % — заказчику на кадре показалась впритык.
     """
     import math
 
@@ -179,6 +180,6 @@ def test_bubble_circle_leaves_the_asked_for_margin_around_the_head(tmp_path):
     # Голова — овал: самая дальняя её точка от центра лежит на длинной полуоси.
     reach = max(head_w, head_h) / 2
     assert radius > reach, "голова обязана помещаться целиком"
-    assert 1.05 <= radius / reach <= 1.07, f"поле {radius / reach:.3f}"
+    assert 1.10 <= radius / reach <= 1.16, f"поле {radius / reach:.3f}"
     # Полудиагональ коробки — прежнее правило — дала бы заметно больший круг.
     assert radius < math.hypot(head_w, head_h) / 2

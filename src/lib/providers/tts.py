@@ -254,6 +254,30 @@ class ElevenLabsTTS(TTSProvider):
                          extra={"model": model, "fallback": fallback, "error": exc.message})
             return self._request(text, out_path, model=fallback, speed=speed)
 
+    def _voice_settings(self, speed: float) -> dict[str, Any]:
+        """Характер подачи. Числа в конфиге, а не здесь: их подбирают на слух.
+
+        ``stability`` у ElevenLabs — это ровность, а не качество: чем выше, тем
+        монотоннее читает. На 0.45 речь выходила плоской — измеренный разброс
+        громкости готового ролика 2.0 LU, то есть почти ровная линия, и на слух
+        «неживо». Ниже — шире интонационный размах, но растёт риск, что модель
+        уведёт произношение; 0.30 — та граница, где размах уже слышен, а голос
+        ещё узнаётся.
+
+        ``style`` усиливает манеру исходного голоса, ``use_speaker_boost``
+        держит тембр ближе к клону. Оба параметра раньше не отправлялись вовсе,
+        и сервис применял свои значения по умолчанию.
+        """
+        node = self.cfg.get("elevenlabs.voice_settings", {}) or {}
+        settings: dict[str, Any] = {
+            "stability": float(node.get("stability", 0.30)),
+            "similarity_boost": float(node.get("similarity_boost", 0.85)),
+            "style": float(node.get("style", 0.45)),
+            "use_speaker_boost": bool(node.get("use_speaker_boost", True)),
+            "speed": speed,
+        }
+        return settings
+
     def _request(self, text: str, out_path: Path, *, model: str, speed: float) -> TTSResult:
         import requests
 
@@ -270,7 +294,7 @@ class ElevenLabsTTS(TTSProvider):
             "text": text,
             "model_id": model,
             "output_format": f"pcm_{api_sr}",
-            "voice_settings": {"stability": 0.45, "similarity_boost": 0.8, "speed": speed},
+            "voice_settings": self._voice_settings(speed),
         }
         headers = {"xi-api-key": self.api_key, "Content-Type": "application/json"}
 
