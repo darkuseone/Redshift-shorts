@@ -650,3 +650,32 @@ def test_word_behind_head_is_glass_not_a_dark_slab(brandbook):
         "тень нужна по буквам: text-shadow у прозрачного текста рисует "
         "прямоугольник")
     assert "color:var(--color-ink)" not in block
+
+
+def test_fullscreen_text_puts_its_footage_on_a_separate_track(plan, assets, brandbook):
+    """Фон под текстом — отдельный клип, а не вложенное видео.
+
+    Видео внутри клипа с таймингом застывает первым кадром (lint:
+    video_nested_in_timed_element), а трек шота уже занят самим текстом.
+    Соседний трек тоже занят: там встык стоят соседние шоты.
+    """
+    import re as _re
+
+    from src.lib.render.hyperframes.composition import TRACK_FS_BG
+
+    plan["shots"][1]["file"] = "/w/shots/a.mp4"
+    markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+    found = _re.search(r'<video id="shot-01-bg"[^>]*data-track-index="(\d+)"', markup)
+    assert found, "фон под полноэкранным текстом не собрался"
+    assert int(found.group(1)) == TRACK_FS_BG
+    assert 'class="clip fullscreen-text over-media"' in markup, (
+        "текст обязан знать, что под ним материал: иначе заливка перекроет его")
+
+
+def test_fullscreen_text_without_footage_keeps_the_flat_fill(plan, assets, brandbook):
+    """Материала нет — кадр собирается как прежде, а не ломается."""
+    plan["shots"][1].pop("file", None)
+    markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "shot-01-bg" not in markup
+    assert "over-media" not in markup

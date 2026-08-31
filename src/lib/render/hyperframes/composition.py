@@ -45,6 +45,11 @@ TRACK_SUBTITLE = 12
 # кадры стыкуются встык, а окно видимости клипа включает оба конца.
 TRACK_HERO_EVEN = 13
 TRACK_HERO_ODD = 14
+# Фон под полноэкранным текстом. Свой трек, а не трек шота: сам текст уже
+# занимает трек шота, а видео внутри клипа с таймингом застывает первым кадром
+# (lint: video_nested_in_timed_element) — значит, фон обязан быть отдельным
+# клипом, и класть его на соседний трек нельзя, там встык стоят соседние шоты.
+TRACK_FS_BG = 15
 TRACK_AUDIO = 20
 
 # Слово субтитра короче этого мигает, а не читается.
@@ -218,7 +223,13 @@ class CompositionBuilder:
             tr_sec = self._transition_duration(shot)
 
             if kind == "fullscreen_text":
-                nodes.append(self._fullscreen_text_node(node_id, shot, timing))
+                src = self._asset(shot.get("file"))
+                if src:
+                    nodes.append(self._media_node(
+                        f"{node_id}-bg", src,
+                        _timing(start, start + duration, TRACK_FS_BG), css="fs-bg"))
+                nodes.append(self._fullscreen_text_node(node_id, shot, timing,
+                                                        over_media=bool(src)))
                 # Раньше полноэкранный текст просто включался: клип открывался,
                 # и надпись стояла. На фоне пословных субтитров, которые всё
                 # время движутся, это читалось как подвисший кадр.
@@ -261,7 +272,7 @@ class CompositionBuilder:
                 f'{timing}{offset} muted playsinline></video>')
 
     def _fullscreen_text_node(self, node_id: str, shot: dict[str, Any],
-                              timing: str) -> str:
+                              timing: str, *, over_media: bool = False) -> str:
         content = str(shot.get("content") or "").strip()
         accent = str(shot.get("accent_word") or "").strip()
         invert = " invert" if shot.get("invert") else ""
@@ -282,7 +293,8 @@ class CompositionBuilder:
         available = self.width - 2 * safe_x
         longest = max(content.upper().split(), key=len, default="")
         size = fit_size(longest, available, int(fs["size_px"][1]))
-        return (f'<div id="{node_id}" class="clip fullscreen-text{invert}" {timing}>'
+        over = " over-media" if over_media else ""
+        return (f'<div id="{node_id}" class="clip fullscreen-text{invert}{over}" {timing}>'
                 f'<span id="{node_id}-inner" style="font-size:{size}px">'
                 f'{markup}</span></div>')
 

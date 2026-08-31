@@ -238,8 +238,15 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                     template_hint="" if kind == "meme" else hint,
                     meme_emotion=hint if kind == "meme" else "",
                     visual_intent=block.get("visual_intent", ""),
-                    needs_asset=(kind == "meme"),
-                    asset_role="meme" if kind == "meme" else "",
+                    # Полноэкранный текст тоже просит материал. Раньше он его
+                    # не просил, и кадр выходил белыми буквами на пустом
+                    # чёрном: слово-акцент есть, а смысла за ним нет. Материал
+                    # ищется по тем же запросам блока, что и остальной футаж,
+                    # — то есть по смыслу той самой фразы, которую он и
+                    # выносит крупно.
+                    needs_asset=kind in ("meme", "fullscreen_text"),
+                    asset_role=("meme" if kind == "meme"
+                                else "broll" if kind == "fullscreen_text" else ""),
                     reason="полноэкранный текст (§5.2)" if kind == "fullscreen_text"
                     else "мем-панчлайн (§5.8)",
                 ))

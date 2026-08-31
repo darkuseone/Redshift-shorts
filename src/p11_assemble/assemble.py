@@ -378,6 +378,50 @@ def _quote(block: dict[str, Any]) -> str:
     return _accent_clause(block)
 
 
+def _stem(word: str) -> str:
+    """Начало слова, по которому сравниваются формы одного корня.
+
+    Акцентное слово блока стоит в падеже реплики, а в полноэкранной фразе — в
+    своём: «воду» против «ВОДА». Сравнение целиком их не сводит, а полноценная
+    морфология здесь не нужна — достаточно общего начала. Длина растёт вместе
+    со словом: у короткого остаётся три буквы, у длинного почти всё.
+
+    Сравниваются начала целиком, а не «одно начинается с другого»: при
+    сравнении с вложением пятибуквенный «порыв» сжимался до «пор» и совпадал
+    с «породой». Равенство начал такого не допускает.
+    """
+    bare = word.strip(".,!?;:«»\"'—–").lower().replace("ё", "е")
+    return bare[:max(3, len(bare) - 2)]
+
+
+def _fullscreen_accent(content: str, block: dict[str, Any]) -> str | None:
+    """Какое слово в полноэкранной фразе горит красным.
+
+    Красным выделяется одно слово, а не строка (§3.3.2), и выбирать его наугад
+    нельзя: акцент — это то, ради чего кадр и появился. Поэтому берётся
+    акцентное слово блока, если оно в этой фразе есть; иначе — число, потому
+    что фраза с числом всегда про число; иначе — самое длинное слово, самое
+    содержательное из оставшихся.
+
+    ``None`` только для фразы из одного слова: там выделять нечего, всё и так
+    выделено размером.
+    """
+    words = [w for w in content.split() if w.strip(".,!?;:«»\"'—–")]
+    if len(words) < 2:
+        return None
+    emphasis = _stem(str(block.get("emphasis_word") or ""))
+    if emphasis:
+        for word in words:
+            bare = word.strip(".,!?;:«»\"'—–")
+            if _stem(bare) == emphasis:
+                return bare
+    digits = [w.strip(".,!?;:«»\"'—–") for w in words
+              if any(ch.isdigit() for ch in w)]
+    if digits:
+        return digits[0]
+    return max((w.strip(".,!?;:«»\"'—–") for w in words), key=len)
+
+
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
                   face: tuple[int, int] | None = None,
                   title: str = "",
@@ -1055,12 +1099,23 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                                     + [slot.get("template_hint", "")] + fullscreen_styles,
                                     seed=seed)
             used_templates.append(template.id)
+            content = slot.get("content", "")
+            block = blocks_by_id.get(slot["block_id"], {})
+            # Фон под текстом — тот же футаж, что и у остальных кадров блока.
+            # Раньше слот его не просил, и кадр выходил белыми буквами на
+            # пустом чёрном: фраза вынесена крупно, а стоит она ни на чём.
+            prep = prepared.get(slot["index"])
+            asset = assets.get(slot["index"])
             entry.update({
-                "content": slot.get("content", ""),
+                "content": content,
                 "template": template.id,
                 "invert": bool(template.params.get("invert")) or variant == "B",
-                "accent_word": None,
+                "accent_word": _fullscreen_accent(content, block),
+                "file": str(prep.path) if prep is not None else None,
+                "asset_id": (asset or {}).get("asset_id"),
             })
+            if prep is None:
+                entry["gap_reason"] = "фон под полноэкранный текст не найден"
             shots.append(entry)
             continue
 

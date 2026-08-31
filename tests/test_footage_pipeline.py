@@ -676,3 +676,58 @@ def test_chat_window_fires_once_per_script():
         blocks = json.load(open(path, encoding="utf-8"))["blocks"]
         asking = [b["id"] for b in blocks if _question(b["text"])]
         assert len(asking) == 1, f"{path}: окон переписки {len(asking)}, ждали одно"
+
+
+# --- акцент в полноэкранной фразе --------------------------------------------
+
+def test_fullscreen_accent_follows_the_meaning():
+    """Красным горит одно слово, и выбирать его наугад нельзя.
+
+    Берётся акцентное слово блока — оно и есть то, ради чего кадр появился, —
+    а падеж между репликой и фразой сводится по общему началу: «воду» против
+    «ВОДА». Числа идут следом: фраза с числом всегда про число.
+    """
+    from src.p11_assemble.assemble import _fullscreen_accent
+
+    assert _fullscreen_accent("ОНА ТЕЧЁТ", {"emphasis_word": "течёт"}) == "ТЕЧЁТ"
+    assert _fullscreen_accent("ВОДА ПОД ЗЕМЛЁЙ", {"emphasis_word": "воду"}) == "ВОДА"
+    # Акцент блока в этой фразе не звучит — тогда решает число.
+    assert _fullscreen_accent("180 ГРАДУСОВ", {"emphasis_word": "восемьдесят"}) == "180"
+    # Ни того, ни другого — самое содержательное слово.
+    assert _fullscreen_accent("ДВЕНАДЦАТЬ КИЛОМЕТРОВ", {}) == "ДВЕНАДЦАТЬ"
+    # Одно слово: выделять нечего, размер уже всё выделил.
+    assert _fullscreen_accent("ПЕРЕЖИВЁШЬ", {"emphasis_word": "переживёшь"}) is None
+
+
+def test_fullscreen_accent_does_not_confuse_similar_stems():
+    """«Порыв» не должен подсветить «породу»: начала сравниваются целиком."""
+    from src.p11_assemble.assemble import _fullscreen_accent
+
+    # Совпадения нет — работает запасной путь, а не ложный корень.
+    assert _fullscreen_accent("ПОРОДА ДЕРЖИТ", {"emphasis_word": "порыв"}) == "ПОРОДА"
+    assert _fullscreen_accent("ДЕРЖИТ ПОРОДА", {"emphasis_word": "порыв"}) == "ДЕРЖИТ"
+
+
+def test_fullscreen_slot_gets_the_queries_of_its_block():
+    """Кадр с текстом ищет материал теми же словами, что и остальной блок.
+
+    Он выносит крупно фразу этого блока, значит и картинка под ней — та же по
+    смыслу. Раньше слот материала не просил вовсе, и кадр выходил белыми
+    буквами на пустом чёрном.
+    """
+    from src.p5_replan.replanner import Slot, _assign_queries
+
+    slots = [
+        Slot(index=0, start=0.0, end=1.4, kind="fullscreen_text", block_id="b3",
+             role="evidence", mode="C", needs_asset=True, asset_role="broll"),
+        Slot(index=1, start=1.4, end=4.0, kind="footage", block_id="b3",
+             role="evidence", mode="C", needs_asset=True, asset_role="broll"),
+    ]
+    draft = {"blocks": [{"id": "b3",
+                         "broll_queries": ["thermal imaging hot rock",
+                                           "molten rock glowing macro"]}]}
+    _assign_queries(slots, draft)
+    assert slots[0].queries, "кадр с текстом остался без запросов"
+    assert slots[0].queries[0] == "thermal imaging hot rock"
+    # Запросы блока раздаются по кругу: соседний кадр берёт следующий.
+    assert slots[1].queries[0] == "molten rock glowing macro"

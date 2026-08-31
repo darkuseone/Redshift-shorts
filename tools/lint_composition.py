@@ -112,6 +112,17 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             w += WORD_STEP
         t += SHOT_SEC
 
+    # Полноэкранный текст с фоном: у него свой трек под материал, и проверить
+    # его надо здесь, а не живым прогоном.
+    shots.append({
+        "index": len(shots), "start": round(t, 3), "end": round(t + 1.4, 3),
+        "duration": 1.4, "kind": "fullscreen_text", "block_id": "b1",
+        "content": "180 ГРАДУСОВ", "accent_word": "180", "invert": False,
+        "file": str(media["shot"]),
+        "transition": {"renderer": "white_flash", "duration": 0.3},
+    })
+    t += 1.4
+
     for i, kind in enumerate(("source_card", "plaque", "cta")):
         overlays.append({"type": kind, "start": round(2.0 + i * 6.0, 3),
                          "end": round(5.0 + i * 6.0, 3),

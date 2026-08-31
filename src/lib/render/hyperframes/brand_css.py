@@ -64,6 +64,13 @@ def _text_rim(radius: int, color: str, *, rays: int = 12) -> str:
     return ",".join(steps)
 
 
+def _rgba(hex_color: str, alpha: float) -> str:
+    """#RRGGBB + прозрачность → rgba(). Цвет остаётся из брендбука."""
+    value = hex_color.lstrip("#")
+    r, g, b = (int(value[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r},{g},{b},{alpha:g})"
+
+
 def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     """Собрать таблицу стилей композиции.
 
@@ -204,6 +211,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
 
     # --- полноэкранный текст (§5.2) ------------------------------------
     fs = brandbook["fullscreen_text"]
+    scrim = float(fs.get("scrim_alpha", 0.55))
     parts.append(
         f".fullscreen-text{{position:absolute;inset:0;z-index:{Z_OVERLAY};"
         "display:flex;align-items:center;justify-content:center;"
@@ -213,6 +221,14 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"font-size:{int(fs['size_px'][1])}px;line-height:0.94}}"
         ".fullscreen-text.invert{background:var(--color-ink);color:var(--color-bg-pure)}"
         ".fullscreen-text .accent{color:var(--color-accent)}"
+        # Кадр с материалом за текстом: заливка уступает место футажу, а
+        # читаемость держит затемнение. Сплошной цвет здесь оставлял белые
+        # буквы на пустом чёрном — фраза вынесена крупно, а стоит она ни на чём.
+        f".fullscreen-text.over-media{{background:{_rgba(colors['ink'], scrim)};"
+        "color:var(--color-bg-pure)}"
+        ".fullscreen-text.over-media .accent{color:var(--color-accent-soft)}"
+        f".fs-bg{{position:absolute;inset:0;z-index:{Z_SHOT};"
+        "width:var(--frame-w);height:var(--frame-h);object-fit:cover}"
     )
 
     # --- мем ------------------------------------------------------------

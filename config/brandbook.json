@@ -176,7 +176,9 @@
     ],
     "scale_from": 1.0,
     "scale_to": 1.06,
-    "requires_sfx": true
+    "requires_sfx": true,
+    "_scrim_comment": "Затемнение футажа под полноэкранным текстом. 0.78 у overlay_dim делает кадр почти чёрным — ровно то, на что жаловался заказчик; 0.55 оставляет материал видимым и держит белые буквы читаемыми.",
+    "scrim_alpha": 0.55
   },
   "text_behind_head": {
     "font_role": "display",
