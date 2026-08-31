@@ -191,3 +191,39 @@ def test_assets_manifest_has_license_for_every_item(repo_root):
     manifest = json.loads(path.read_text(encoding="utf-8"))
     assert manifest["unlicensed"] == []
     assert all(item.get("license") for item in manifest["items"])
+
+
+def test_vp9_alpha_is_read_with_the_right_decoder(tmp_path):
+    """VP9 держит альфу отдельным блоком: штатный декодер её не отдаёт.
+
+    Без явного ``libvpx-vp9`` ffmpeg возвращает ``yuv420p``, а ``format=rgba``
+    дорисовывает к нему единицы — канал выходит не пустым, а полностью
+    непрозрачным. Оценка маски читала это как «покрывает почти весь кадр», то
+    есть как негодную, и молча выключала текст за головой и VFX-фон.
+    """
+    import subprocess
+
+    from PIL import Image
+
+    from src.lib.ffmpeg import ffmpeg_bin
+    from src.lib.render.matting import assess_matte
+
+    # Силуэт: непрозрачная колонка на прозрачном фоне, четверть кадра.
+    frame = Image.new("RGBA", (192, 384), (0, 0, 0, 0))
+    for x in range(72, 120):
+        for y in range(40, 384):
+            frame.putpixel((x, y), (200, 180, 170, 255))
+    png = tmp_path / "src.png"
+    frame.save(png)
+    clip = tmp_path / "seg_00.webm"
+    subprocess.run([ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
+                    "-loop", "1", "-i", str(png), "-t", "1.0", "-r", "10",
+                    "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p",
+                    "-auto-alt-ref", "0", "-b:v", "0", "-crf", "30",
+                    str(clip)], check=True, capture_output=True)
+
+    report = assess_matte(clip, tmp_path / "matte")
+    assert report.available, "альфа в клипе есть, а прочитана как отсутствующая"
+    assert report.coverage_mean < 0.5, (
+        f"маска прочитана как заливка кадра: покрытие {report.coverage_mean:.2f}")
+    assert report.usable, report.reason
