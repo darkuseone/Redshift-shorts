@@ -1112,7 +1112,16 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "invert": bool(template.params.get("invert")) or variant == "B",
                 "accent_word": _fullscreen_accent(content, block),
                 "file": prep["dst"] if prep is not None else None,
+                # Материал приходит со своим паспортом целиком. Без лицензии
+                # QC-12 валит ролик: кадр с asset_id без неё — это материал,
+                # право на который нечем подтвердить. Поймано мок-прогоном:
+                # asset_id я проставил, а остальное — нет.
                 "asset_id": (asset or {}).get("asset_id"),
+                "source": (asset or {}).get("source"),
+                "license": (asset or {}).get("license"),
+                "attribution": (asset or {}).get("attribution", ""),
+                "page_url": (asset or {}).get("page_url", ""),
+                "ai_generated": bool((asset or {}).get("ai_generated")),
             })
             if prep is None:
                 entry["gap_reason"] = "фон под полноэкранный текст не найден"
