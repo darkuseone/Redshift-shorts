@@ -574,3 +574,32 @@ def test_short_word_is_stretched_but_not_into_its_neighbour(plan, assets, brandb
     words = sorted(c for c in _clips(markup) if c[0] == TRACK_SUBTITLE)
     assert words[0][2] == pytest.approx(1.02, abs=1e-9), "слово растянуто до соседа"
     assert words[0][2] <= words[1][1] + 1e-9
+
+
+# --- настоящий lint движка ----------------------------------------------------
+
+def test_composition_passes_the_engine_lint():
+    """Композиция со всеми переходами и приёмами обязана проходить lint.
+
+    Правила lint ловят то, чего не видит ни один наш тест: наезд клипов на
+    треке, затухание без гашения, видео внутри тайминга. Раньше узнать про них
+    можно было только из упавшего прогона Actions — четверть часа и деньги на
+    поиск футажа, а падение в самом конце. Три захода на 0047 ушли так.
+
+    Тест пропускается, если движка нет в окружении: он не должен превращать
+    отсутствие npm-пакета в красный прогон.
+    """
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path
+
+    if not shutil.which("hyperframes"):
+        pytest.skip("hyperframes не установлен: npm install -g hyperframes")
+
+    tool = Path(__file__).resolve().parents[1] / "tools" / "lint_composition.py"
+    with tempfile.TemporaryDirectory() as td:
+        proc = subprocess.run([sys.executable, str(tool), "--keep", td],
+                              capture_output=True, text=True, timeout=600)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
