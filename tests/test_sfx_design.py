@@ -111,3 +111,19 @@ def test_bandwidth_metric_sees_where_the_spectrum_ends():
     assert 10000 < narrow < 11500, f"срез на 11 кГц прочитан как {narrow:.0f} Гц"
     assert wide > 18000, f"широкая полоса прочитана как {wide:.0f} Гц"
     assert wide - narrow > 6000, "мерка не различает сжатый источник и несжатый"
+
+
+def test_sfx_sit_at_the_quiet_end_of_the_corridor():
+    """«Еле слышно, но слышно, что дорого» — это уровень, а не только тембр.
+
+    Переработка ударов добавила им около пятнадцати децибел в полосе динамика
+    телефона. На прежнем пике −12 dBFS они кричали бы поверх речи, поэтому
+    ставятся на тихий край коридора §4.4, а слышимость держит сам звук.
+    """
+    from src.lib.config import load_config
+    from src.p10_audio.audio_build import sfx_peak_corridor, sfx_peak_target
+
+    cfg = load_config()
+    lo, hi = sfx_peak_corridor(cfg)
+    assert lo < hi, "коридор пиков задом наперёд"
+    assert sfx_peak_target(cfg) == lo

@@ -101,6 +101,24 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
     return placed
 
 
+def sfx_peak_corridor(cfg) -> tuple[float, float]:
+    """Коридор пиков SFX из конфига (§4.4)."""
+    lo, hi = cfg.get("audio.sfx_peak_dbfs", [-16, -12])
+    return float(lo), float(hi)
+
+
+def sfx_peak_target(cfg) -> float:
+    """На какой пик ставится акцент. Тихий край коридора, а не громкий.
+
+    Заказчик просил звук, который «еле слышно, но слышно, что дорого»: акцент
+    работает подачей, а не громкостью. Переработка ударов добавила им около
+    пятнадцати децибел в полосе, которую отдаёт динамик телефона, — на прежнем
+    пике −12 они стали бы кричать поверх речи. Четыре децибела вниз возвращают
+    их под голос, а слышимость держит уже сам звук.
+    """
+    return sfx_peak_corridor(cfg)[0]
+
+
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
     cfg = ctx.cfg
@@ -126,7 +144,7 @@ def run_step(ctx) -> dict[str, Any]:
     # --- SFX из библиотеки (§14.1) ---------------------------------------
     sfx_lib = open_library(cfg, "sfx")
     events = _plan_sfx(plan, cfg)
-    sfx_peak_lo, sfx_peak_hi = cfg.get("audio.sfx_peak_dbfs", [-16, -12])
+    sfx_peak_lo, sfx_peak_hi = sfx_peak_corridor(cfg)
     sfx_bus = np.zeros((length, 2), dtype=np.float32)
     placed: list[dict[str, Any]] = []
     missing_roles: list[str] = []
@@ -145,7 +163,7 @@ def run_step(ctx) -> dict[str, Any]:
         clip, clip_sr = A.load_audio_any(path, sr)
         if clip_sr != sr:
             clip = A.resample(clip, clip_sr, sr)
-        clip = A.normalize_peak(clip, float(sfx_peak_hi))
+        clip = A.normalize_peak(clip, sfx_peak_target(cfg))
         A.place(sfx_bus, clip, float(event["t"]), sr)
         sfx_lib.mark_used(record.id, plan["video_id"])
         placed.append({**event, "status": "placed", "asset_id": record.id,
@@ -212,6 +230,8 @@ def run_step(ctx) -> dict[str, Any]:
         "sample_rate": sr,
         "events": placed,
         "placed_count": sum(1 for e in placed if e.get("status") == "placed"),
+        "sfx_peak_dbfs": float(sfx_peak_lo),
+        "sfx_peak_corridor": [float(sfx_peak_lo), float(sfx_peak_hi)],
         "missing_roles": sorted(set(missing_roles)),
         "min_gap_sec": float(cfg.get("limits.sfx_min_gap_sec", 2.0)),
         "music": music_info,
