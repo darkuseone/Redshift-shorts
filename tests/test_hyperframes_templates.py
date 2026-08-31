@@ -163,7 +163,9 @@ def test_glitch_offsets_are_deterministic(ctx):
     first = render_transition("glitch", TemplateCtx(**{**ctx.__dict__, "params": params}))
     second = render_transition("glitch", TemplateCtx(**{**ctx.__dict__, "params": params}))
     assert first.tweens == second.tweens
-    assert len(first.tweens) == 7
+    # На полосу приходится два твина: затухание и гашение в ноль по концу.
+    assert len(first.tweens) == 14
+    assert sum(t.startswith("tl.set(") for t in first.tweens) == 7
 
 
 def test_glitch_bars_differ_between_shots(ctx):
