@@ -47,6 +47,9 @@ TRACK_HERO_EVEN = 13
 TRACK_HERO_ODD = 14
 TRACK_AUDIO = 20
 
+# Слово субтитра короче этого мигает, а не читается.
+MIN_WORD_SEC = 0.05
+
 COMPOSITION_ID = "redshift"
 
 
@@ -59,12 +62,37 @@ def _num(value: float) -> str:
     return f"{float(value):.3f}".rstrip("0").rstrip(".") or "0"
 
 
+def _timing(start: float, end: float, track: int) -> str:
+    """Атрибуты тайминга клипа. Границы округляются один раз — до вычитания.
+
+    Движок читает начало и длительность, а конец складывает сам. Пока начало и
+    длительность округлялись порознь, сумма могла перескочить настоящий конец:
+    начало 49.3568 печаталось как 49.357, длительность 0.4996 — как 0.5, и клип
+    заканчивался в 49.857 при следующем клипе с 49.856. Миллисекунда наезда, и
+    lint валит рендер целиком — на 0047 это случилось на 134 словах субтитра
+    после 804 секунд работы конвейера.
+
+    Округление к сетке монотонно: если конец не позже начала соседа, то и
+    округлённый конец не позже. Поэтому считаем длительность как разность уже
+    округлённых границ — тогда напечатанный конец совпадает с напечатанным
+    началом соседа и наезд невозможен в принципе, а не по везению. Пять
+    предыдущих роликов прошли именно по везению: перекрытий не было ни одного,
+    но и защиты от них тоже.
+    """
+    head = round(float(start), 3)
+    return (f'data-start="{_num(head)}" '
+            f'data-duration="{_num(round(float(end), 3) - head)}" '
+            f'data-track-index="{track}"')
+
+
 def _lay_out_tracks(items: list[dict[str, Any]], first_track: int) -> list[int]:
     """Разложить пересекающиеся во времени элементы по свободным трекам."""
     ends: list[float] = []
     tracks: list[int] = []
     for item in items:
-        start, end = float(item["start"]), float(item["end"])
+        # По округлённым границам: раскладка обязана судить о пересечении по
+        # тем же числам, которые прочитает движок, а не по исходным.
+        start, end = round(float(item["start"]), 3), round(float(item["end"]), 3)
         for track, busy_until in enumerate(ends):
             if start >= busy_until:
                 ends[track] = end
@@ -180,8 +208,7 @@ class CompositionBuilder:
             start, duration = float(shot["start"]), float(shot["duration"])
             kind = shot.get("kind")
             node_id = f"shot-{index:02d}"
-            timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
-                      f'data-track-index="{track}"')
+            timing = _timing(start, start + duration, track)
             # Цель перехода: для аватар-слотов — сам аватар, иначе — шот.
             target = avatar_nodes.get(index, node_id)
             # Переход и Ken Burns тянут одни и те же свойства одного элемента.
@@ -306,9 +333,9 @@ class CompositionBuilder:
             node_id = f"avatar-{index:02d}"
             nodes.append(
                 f'<video id="{node_id}" class="avatar" src="{_esc(src)}" '
-                f'data-start="{_num(seg["start"])}" '
-                f'data-duration="{_num(seg["duration"])}" '
-                f'data-track-index="{TRACK_AVATAR}" muted playsinline></video>')
+                + _timing(float(seg["start"]),
+                          float(seg["start"]) + float(seg["duration"]), TRACK_AVATAR)
+                + ' muted playsinline></video>')
             # Опора для перемотки. Переходы и приёмы двигают сам клип ведущего,
             # и все их твины помечены `immediateRender:false`, чтобы начальное
             # состояние не уходило назад по ленте. Но перемотка назад через уже
@@ -342,9 +369,10 @@ class CompositionBuilder:
             node_id = f"behind-{index:02d}"
             nodes.append(
                 f'<div id="{node_id}" class="clip behind-head" '
-                f'data-start="{_num(shot["start"])}" '
-                f'data-duration="{_num(shot["duration"])}" '
-                f'data-track-index="{TRACK_BEHIND_HEAD}">{_esc(word)}</div>')
+                + _timing(float(shot["start"]),
+                          float(shot["start"]) + float(shot["duration"]),
+                          TRACK_BEHIND_HEAD)
+                + f'>{_esc(word)}</div>')
             # Слово за головой держится весь кадр, и без движения оно
             # превращается в надпись на обоях. Медленный наезд даёт ту самую
             # глубину: ведущий стоит, фон еле едет.
@@ -410,10 +438,8 @@ class CompositionBuilder:
         nodes: list[str] = []
         for i, (ovl, track) in enumerate(zip(overlays, tracks)):
             start = float(ovl["start"])
-            duration = float(ovl["end"]) - start
             node_id = f"ovl-{i:02d}"
-            timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
-                      f'data-track-index="{track}"')
+            timing = _timing(start, float(ovl["end"]), track)
             body = self._overlay_body(node_id, ovl)
             if not body:
                 continue
@@ -482,21 +508,26 @@ class CompositionBuilder:
             "baseline_y", spec["baseline_y_default"])
 
         case_mode = spec.get("case", "lower")
+        words = list(self.plan.get("subtitles", []))
         nodes: list[str] = []
-        for i, word in enumerate(self.plan.get("subtitles", [])):
+        for i, word in enumerate(words):
             display = subtitle_word(str(word.get("display") or ""), case_mode)
             if not display:
                 continue
             start = float(word["start"])
-            duration = max(0.05, float(word["end"]) - start)
+            # Короткое слово растягивается до читаемого — но не дальше начала
+            # следующего. Субтитры лежат на одном треке встык, и наезд на
+            # соседа движок считает конфликтом: растянуть слово ценой падения
+            # рендера нельзя. Раньше пол в 50 мс стоял безусловно.
+            nxt = float(words[i + 1]["start"]) if i + 1 < len(words) else self.duration
+            end = max(float(word["end"]), min(start + MIN_WORD_SEC, nxt))
             node_id = f"w-{i:04d}"
             css = "clip word emphasis" if word.get("emphasis") else "clip word"
             style = f' style="top:{int(baseline)}px"'
             nodes.append(
                 f'<div id="{node_id}" class="{css}"{style} '
-                f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
-                f'data-track-index="{TRACK_SUBTITLE}">'
-                f'<span id="{node_id}-t">{_esc(display)}</span></div>')
+                + _timing(start, end, TRACK_SUBTITLE)
+                + f'><span id="{node_id}-t">{_esc(display)}</span></div>')
             # Pop-in анимируется на внутреннем span: сам клип отдан движку,
             # его видимостью управляет фреймворк.
             self.tweens.append(

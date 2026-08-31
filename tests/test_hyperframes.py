@@ -13,7 +13,7 @@ import pytest
 
 from src.lib.render.hyperframes.brand_css import build_css
 from src.lib.render.hyperframes.composition import (
-    CompositionBuilder, _lay_out_tracks, _num,
+    TRACK_SUBTITLE, CompositionBuilder, _lay_out_tracks, _num,
 )
 
 
@@ -520,3 +520,57 @@ def test_bubble_cuts_the_circle_with_a_mask_not_a_radius(plan, assets, brandbook
     assert out.count('class="clip hero-bubble-card"') == 1
     # Ведущий приближается внутри дырки — иначе это заслонка, а не смена плана.
     assert any('"#avatar-00"' in l and "scale" in l for l in out.splitlines())
+
+
+# --- тайминг: округление не имеет права создавать наезд ------------------------
+
+def _clips(markup: str) -> list[tuple[int, float, float]]:
+    """(трек, начало, конец) по тем числам, которые прочитает движок."""
+    out = []
+    for start, duration, track in re.findall(
+            r'data-start="([\d.]+)" data-duration="([\d.]+)" data-track-index="(\d+)"',
+            markup):
+        out.append((int(track), float(start), float(start) + float(duration)))
+    return out
+
+
+def test_no_two_clips_on_a_track_overlap(markup):
+    """Инвариант вёрстки: на треке клипы идут встык или с зазором, но не внахлёст."""
+    by_track: dict[int, list[tuple[float, float]]] = {}
+    for track, start, end in _clips(markup):
+        by_track.setdefault(track, []).append((start, end))
+    for track, spans in by_track.items():
+        spans.sort()
+        for (_, end), (start, _) in zip(spans, spans[1:]):
+            assert end <= start + 1e-9, (
+                f"трек {track}: клип кончается в {end}, следующий начинается в {start}")
+
+
+def test_rounding_never_pushes_a_word_onto_its_neighbour(plan, assets, brandbook):
+    """Границы округляются один раз, до вычитания, — иначе миллисекунда наезда.
+
+    Числа не выдуманы: на них упал живой прогон 0047. Начало 49.3568 печатается
+    как 49.357, длительность 0.4996 — как 0.5, сумма 49.857 при соседе с 49.856.
+    Порознь округлённые начало и длительность обе уехали вверх.
+    """
+    plan["duration_sec"] = 60.0
+    plan["subtitles"] = [
+        {"display": "первое", "start": 49.3568, "end": 49.8564, "emphasis": False},
+        {"display": "второе", "start": 49.8564, "end": 50.3, "emphasis": False},
+    ]
+    markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    words = [c for c in _clips(markup) if c[0] == TRACK_SUBTITLE]
+    assert len(words) == 2
+    assert words[0][2] <= words[1][1] + 1e-9, "наезд субтитра на соседа"
+
+
+def test_short_word_is_stretched_but_not_into_its_neighbour(plan, assets, brandbook):
+    """Пол в 50 мс уступает соседу: растянуть слово ценой падения рендера нельзя."""
+    plan["subtitles"] = [
+        {"display": "и", "start": 1.0, "end": 1.01, "emphasis": False},
+        {"display": "вот", "start": 1.02, "end": 1.4, "emphasis": False},
+    ]
+    markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    words = sorted(c for c in _clips(markup) if c[0] == TRACK_SUBTITLE)
+    assert words[0][2] == pytest.approx(1.02, abs=1e-9), "слово растянуто до соседа"
+    assert words[0][2] <= words[1][1] + 1e-9
