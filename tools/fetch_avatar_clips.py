@@ -6,10 +6,20 @@ Actions доходит до P6 без ключа HeyGen и оставляет `a
 генерируются снаружи — MCP-коннектором HeyGen из чата, — и возвращаются сюда
 по ссылкам.
 
-Скрипт не просто качает файлы. Он сверяет длительность каждого клипа с куском
-речи, под который тот сгенерирован: P6 отбраковывает расхождение больше 0.20
-сек как уехавший липсинк, и узнать об этом лучше здесь, за секунды, чем на
-следующем прогоне Actions, за двадцать минут.
+Скрипт не просто качает файлы. Он делает две вещи, без которых прогон
+возобновлять нельзя.
+
+Сверяет длительность каждого клипа с куском речи, под который тот
+сгенерирован: P6 отбраковывает расхождение больше 0.20 сек как уехавший
+липсинк, и узнать об этом лучше здесь, за секунды, чем на следующем прогоне
+Actions, за двадцать минут.
+
+И приводит клип к вертикали. Студийные луки HeyGen отдаются ландшафтными
+1920×1080, а конвейер работает с 1080×1920. P6 ландшафтный клип **примет** —
+он меряет то, что дали, — и брак вылезет только на готовом кадре, где
+композиция растянет чужую пропорцию. Кадрирование идёт по измеренной голове
+(`tools/reframe_avatar.py`), а не по середине кадра: ведущий в кадре стоит не
+по центру. Длительность при этом не меняется, поэтому сверка остаётся верной.
 
 Запуск:
     python tools/fetch_avatar_clips.py work/redshift_0046/avatar_request.json urls.json
@@ -28,6 +38,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.lib.ffmpeg import probe  # noqa: E402
+from tools.reframe_avatar import FRAME_H, FRAME_W, reframe  # noqa: E402
 
 TOLERANCE_SEC = 0.20      # тот же допуск, что у PreparedAvatar
 CHUNK = 1 << 20
@@ -63,6 +74,20 @@ def _clips_dir(request: dict) -> Path:
     return repo_root / "assets" / "avatar_clips" / str(request["video_id"])
 
 
+def _to_portrait(clip: Path) -> Path:
+    """Ландшафтный клип — в кадр конвейера. Вертикальный отдаётся как есть."""
+    info = probe(clip)
+    if int(info.width) == FRAME_W and int(info.height) == FRAME_H:
+        return clip
+    staged = clip.with_name(f"{clip.stem}_landscape{clip.suffix}")
+    clip.rename(staged)
+    plan = reframe(staged, clip, at_sec=min(0.5, info.duration_sec / 2))
+    staged.unlink()
+    print(f"  {clip.name}: {info.width}×{info.height} → {FRAME_W}×{FRAME_H}, "
+          f"окно {plan['width']}×{plan['height']} от x={plan['x0']}")
+    return clip
+
+
 def main(argv: list[str]) -> int:
     if len(argv) < 3:
         print("использование: fetch_avatar_clips.py <avatar_request.json> <urls.json>",
@@ -93,6 +118,7 @@ def main(argv: list[str]) -> int:
             continue
         dst = clips_dir / f"seg_{index:02d}{_suffix(url)}"
         _download(url, dst)
+        dst = _to_portrait(dst)
 
         want = float(segment["duration_sec"])
         got = probe(dst).duration_sec
