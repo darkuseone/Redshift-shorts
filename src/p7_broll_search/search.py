@@ -27,6 +27,7 @@ import yaml
 from ..lib.ffmpeg import extract_frames, probe
 from ..lib.logging import get_logger
 from ..lib.manifest import FootageIndex, open_library
+from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import build_queries, classify_intent
@@ -93,6 +94,8 @@ def run_step(ctx) -> dict[str, Any]:
 
     slots = [s for s in plan["slots"] if s["needs_asset"] and s["asset_role"] in ("broll", "evidence")]
     downloads = 0
+    researched = 0
+    palette_rules = dict(cfg.brandbook.get("color_rules", {}).get("footage_palette", {}))
     stage1_rejected: list[dict[str, Any]] = []
     candidates_out: list[dict[str, Any]] = []
     seen_hashes: list[tuple[str, list[str]]] = []
@@ -157,91 +160,124 @@ def run_step(ctx) -> dict[str, Any]:
         # Сначала собираем метаданные по всем запросам (это бесплатно), затем
         # ранжируем и качаем только лучших. §7.2.4 даёт 50 скачиваний на ролик:
         # если тратить их подряд, последние слоты останутся пустыми.
-        found_all: list[tuple[str, Any, str]] = []      # (source, candidate, query)
-        for query in queries:
-            for source in source_order:
-                provider = providers.get(source)
-                if provider is None:
-                    continue
+        def harvest(search_queries: list[str]) -> None:
+            """Найти, скачать и принять кандидатов по списку запросов."""
+            nonlocal downloads
+
+            found_all: list[tuple[str, Any, str]] = []
+            for query in search_queries:
+                for source in source_order:
+                    provider = providers.get(source)
+                    if provider is None:
+                        continue
+                    try:
+                        for candidate in provider.search(query, kind="video", limit=per_query):
+                            found_all.append((source, candidate, query))
+                    except Exception as exc:  # noqa: BLE001 — источник не должен ронять прогон
+                        ctx.warn(f"источник {source} недоступен: {exc}",
+                                 source=source, query=query)
+
+            passed: list[tuple[str, Any, str]] = []
+            for source, candidate, query in found_all:
+                reason = _stage1_reject(candidate, cfg, float(slot["duration"]))
+                if reason:
+                    stage1_rejected.append({"id": candidate.id, "source": candidate.source,
+                                            "reason": reason, "query": query})
+                else:
+                    passed.append((source, candidate, query))
+
+            passed.sort(key=lambda item: _prefetch_rank(item[1], source_order,
+                                                        float(slot["duration"])))
+
+            remaining_slots = max(1, len(slots) - slots.index(slot))
+            budget = max(2, (max_downloads - downloads) // remaining_slots)
+            taken = 0
+
+            for source, candidate, query in passed:
+                if taken >= min(budget, per_query) or downloads >= max_downloads:
+                    break
+                key = _cache_key(candidate)
+                local_file = ctx.wpath("broll", "raw", Path(key).name)
+                if ctx.storage.exists(key):
+                    ctx.storage.get(key, local_file)
+                else:
+                    try:
+                        providers[source].download(candidate, local_file)
+                    except Exception as exc:  # noqa: BLE001
+                        ctx.warn(f"скачивание не удалось: {exc}", id=candidate.id)
+                        continue
+                    ctx.storage.put(key, local_file)
+                    downloads += 1
+
                 try:
-                    for candidate in provider.search(query, kind="video", limit=per_query):
-                        found_all.append((source, candidate, query))
-                except Exception as exc:  # noqa: BLE001 — источник не должен ронять прогон
-                    ctx.warn(f"источник {source} недоступен: {exc}", source=source, query=query)
-
-        passed: list[tuple[str, Any, str]] = []
-        for source, candidate, query in found_all:
-            reason = _stage1_reject(candidate, cfg, float(slot["duration"]))
-            if reason:
-                stage1_rejected.append({"id": candidate.id, "source": candidate.source,
-                                        "reason": reason, "query": query})
-            else:
-                passed.append((source, candidate, query))
-
-        passed.sort(key=lambda item: _prefetch_rank(item[1], source_order, float(slot["duration"])))
-
-        remaining_slots = max(1, len(slots) - slots.index(slot))
-        budget = max(2, (max_downloads - downloads) // remaining_slots)
-        taken = 0
-
-        for source, candidate, query in passed:
-            if taken >= min(budget, per_query) or downloads >= max_downloads:
-                break
-            key = _cache_key(candidate)
-            local_file = ctx.wpath("broll", "raw", Path(key).name)
-            if ctx.storage.exists(key):
-                ctx.storage.get(key, local_file)
-            else:
-                try:
-                    providers[source].download(candidate, local_file)
+                    info = probe(local_file)
                 except Exception as exc:  # noqa: BLE001
-                    ctx.warn(f"скачивание не удалось: {exc}", id=candidate.id)
+                    ctx.warn(f"битый файл {candidate.id}: {exc}")
                     continue
-                ctx.storage.put(key, local_file)
-                downloads += 1
 
-            try:
-                info = probe(local_file)
-            except Exception as exc:  # noqa: BLE001
-                ctx.warn(f"битый файл {candidate.id}: {exc}")
-                continue
+                frames = extract_frames(local_file, frames_dir / candidate.id,
+                                        probe_positions if info.has_video else [0.5])
+                hashes = [phash_image(f) for f in frames]
 
-            frames = extract_frames(local_file, frames_dir / candidate.id,
-                                    probe_positions if info.has_video else [0.5])
-            hashes = [phash_image(f) for f in frames]
+                # Палитра канала (§3.1). Судится здесь, а не только у критика:
+                # кадр не той палитры отбраковывается до оплаты зрения, а слот
+                # успевает уйти на второй заход поиска, а не сразу в генерацию.
+                verdict = palette_verdict(frames, palette_rules)
+                if not verdict["passed"]:
+                    stage1_rejected.append({"id": candidate.id, "source": candidate.source,
+                                            "reason": verdict["reason"], "query": query})
+                    continue
 
-            # §7.2.5: дедуп внутри ролика и против всей базы
-            dup_local = _find_dup(hashes, seen_hashes, dedup_threshold)
-            if dup_local:
-                stage1_rejected.append({"id": candidate.id, "source": candidate.source,
-                                        "reason": f"визуальный дубль {dup_local} внутри ролика",
-                                        "query": query})
-                continue
-            dup_base = index.find_duplicate(hashes, dedup_threshold)
-            if dup_base is not None:
-                stage1_rejected.append({"id": candidate.id, "source": candidate.source,
-                                        "reason": f"дубль материала из базы {dup_base.id}",
-                                        "query": query})
-                continue
+                # §7.2.5: дедуп внутри ролика и против всей базы
+                dup_local = _find_dup(hashes, seen_hashes, dedup_threshold)
+                if dup_local:
+                    stage1_rejected.append({"id": candidate.id, "source": candidate.source,
+                                            "reason": f"визуальный дубль {dup_local} внутри ролика",
+                                            "query": query})
+                    continue
+                dup_base = index.find_duplicate(hashes, dedup_threshold)
+                if dup_base is not None:
+                    stage1_rejected.append({"id": candidate.id, "source": candidate.source,
+                                            "reason": f"дубль материала из базы {dup_base.id}",
+                                            "query": query})
+                    continue
 
-            seen_hashes.append((candidate.id, hashes))
-            taken += 1
-            slot_candidates.append({
-                "slot_index": slot["index"], "origin": "stock",
-                "asset_id": candidate.id, "source": candidate.source,
-                "kind": candidate.kind, "query": query,
-                "license": candidate.license, "license_confirmed": True,
-                "attribution": candidate.attribution, "author": candidate.author,
-                "page_url": candidate.page_url,
-                "width": info.width or candidate.width,
-                "height": info.height or candidate.height,
-                "duration_sec": info.duration_sec or candidate.duration_sec,
-                "fps": info.fps,
-                "local_file": str(local_file), "storage_key": key,
-                "frames": [str(f) for f in frames], "phashes": hashes,
-                "tags": candidate.tags, "mock": bool(candidate.meta.get("mock")),
-                "ai_generated": candidate.source == "magnific",
-            })
+                seen_hashes.append((candidate.id, hashes))
+                taken += 1
+                slot_candidates.append({
+                    "slot_index": slot["index"], "origin": "stock",
+                    "asset_id": candidate.id, "source": candidate.source,
+                    "kind": candidate.kind, "query": query,
+                    "license": candidate.license, "license_confirmed": True,
+                    "attribution": candidate.attribution, "author": candidate.author,
+                    "page_url": candidate.page_url,
+                    "width": info.width or candidate.width,
+                    "height": info.height or candidate.height,
+                    "duration_sec": info.duration_sec or candidate.duration_sec,
+                    "fps": info.fps,
+                    "local_file": str(local_file), "storage_key": key,
+                    "frames": [str(f) for f in frames], "phashes": hashes,
+                    "tags": candidate.tags, "mock": bool(candidate.meta.get("mock")),
+                    "ai_generated": candidate.source == "magnific",
+                    "palette": verdict,
+                })
+
+        harvest(queries)
+
+        # Второй заход. Пустой слот уходит в генерацию (§7.3), а генерация
+        # ограничена сорока процентами хронометража (QC-14) и стоит денег.
+        # Прежде чем тратить и то и другое, стоит спросить сток ещё раз —
+        # запросом, который называет нужную картинку прямо: тёмный кадр,
+        # приглушённый цвет. На 0047 сток по запросу «abstract dark red gradient
+        # background» отдал стену розовых кубов; уточнение — единственное, чем
+        # на это можно ответить, не платя за генерацию.
+        if not slot_candidates and not frozen:
+            refined = _refine_queries(queries)
+            ctx.warn(f"слот {slot['index']}: ни один кандидат не прошёл отбор — "
+                     f"второй заход по уточнённым запросам",
+                     slot=slot["index"], queries=refined)
+            researched += 1
+            harvest(refined)
 
         if not slot_candidates:
             ctx.warn(f"слот {slot['index']} ({slot['block_id']}) не получил ни одного кандидата",
@@ -268,6 +304,7 @@ def run_step(ctx) -> dict[str, Any]:
         "index_entries_without_files": sorted(set(missing_in_storage)),
         "cache_share": round(from_cache / max(len(candidates_out), 1), 4),
         "stage1_rejected": stage1_rejected,
+        "slots_researched": researched,
         "stage1_reject_share": round(
             len(stage1_rejected) / max(len(stage1_rejected) + len(candidates_out), 1), 4),
         "candidates": candidates_out,
@@ -284,8 +321,10 @@ def run_step(ctx) -> dict[str, Any]:
     _log.info("поиск B-roll завершён", extra={
         "slots": len(slots), "pool": len(candidates_out), "downloads": downloads,
         "from_cache": from_cache, "stage1_rejected": len(stage1_rejected),
+        "researched": researched,
     })
-    return {"pool": len(candidates_out), "downloads": downloads, "from_cache": from_cache}
+    return {"pool": len(candidates_out), "downloads": downloads,
+            "from_cache": from_cache, "researched": researched}
 
 
 def _pick_memes(ctx, plan: dict[str, Any], recent_videos: list[str]) -> list[dict[str, Any]]:
@@ -338,6 +377,21 @@ def _pick_memes(ctx, plan: dict[str, Any], recent_videos: list[str]) -> list[dic
             "mock": bool(record.mock),
         })
     return out
+
+
+# Слова, которыми запрос объясняет стоку палитру канала. Не перевод брендбука,
+# а то, на что сток отзывается: у стоков нет поля «оттенок», зато есть теги.
+_PALETTE_HINTS = ("dark", "low key", "black background", "monochrome", "desaturated")
+
+
+def _refine_queries(queries: Iterable[str], limit: int = 3) -> list[str]:
+    """Те же запросы, но с прямым указанием на палитру.
+
+    Второй заход отличается от первого только этим: искать то же самое ещё раз
+    теми же словами бессмысленно — сток отдаст ту же выдачу.
+    """
+    base = [q for q in queries if q][:limit]
+    return [f"{q} {hint}" for q, hint in zip(base, _PALETTE_HINTS)]
 
 
 def _tags_for(queries: Iterable[str]) -> list[str]:

@@ -618,3 +618,27 @@ def test_p9_dedup_helper_finds_duplicate():
     pool = [("existing", ["0" * 16, "0" * 16, "0" * 16])]
     assert _find_duplicate(["0" * 16, "0" * 16, "0" * 16], pool, 8) == "existing"
     assert _find_duplicate(["f" * 16, "f" * 16, "f" * 16], pool, 8) is None
+
+
+# --- второй заход поиска ------------------------------------------------------
+
+def test_refined_queries_name_the_palette():
+    """Искать те же слова второй раз бессмысленно — сток отдаст ту же выдачу.
+
+    На 0047 по запросу «abstract dark red gradient background» сток вернул
+    стену розовых кубов. Уточнение — единственное, чем на это можно ответить,
+    не платя за генерацию.
+    """
+    from src.p7_broll_search.search import _PALETTE_HINTS, _refine_queries
+
+    refined = _refine_queries(["deep drilling rig", "granite core sample", "tundra"])
+    assert len(refined) == 3
+    assert all(hint in q for q, hint in zip(refined, _PALETTE_HINTS))
+    assert refined[0].startswith("deep drilling rig ")
+
+
+def test_refined_queries_survive_an_empty_list():
+    from src.p7_broll_search.search import _refine_queries
+
+    assert _refine_queries([]) == []
+    assert _refine_queries(["", "камень"]) == ["камень dark"]
