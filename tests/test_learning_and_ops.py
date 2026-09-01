@@ -360,3 +360,40 @@ def test_maintenance_removes_orphan_index_entries(cfg, tmp_path, monkeypatch):
     cfg.set("storage.local_root", str(tmp_path / "store"))
     report = run_maintenance(cfg, dry_run=False)
     assert "ghost" in report["orphans_removed"]
+
+
+def test_mock_material_never_enters_the_shared_library(tmp_path, cfg):
+    """Синтетика мок-прогона в общей базе — чистый вред.
+
+    База лежит в репозитории и просматривается раньше внешних стоков (§7.2.1),
+    а мок-прогон CI гоняется на каждом коммите. К моменту находки в базе было
+    195 мок-записей из 213 — 92 % «материала», которого нет ни на одном диске.
+    Живому ролику такая запись даёт только промах: индекс говорит «материал
+    есть», файла нет, слот уходит в генерацию.
+    """
+    from src.lib.manifest import AssetRecord, FootageIndex
+
+    index = FootageIndex(tmp_path / "index.json")
+
+    def _record(asset_id: str, *, mock: bool) -> AssetRecord:
+        return AssetRecord(id=asset_id, type="video", source="pexels",
+                           license="Pexels License", url_origin="",
+                           phash="0" * 16, phashes=["0" * 16], tags=["гранит"],
+                           vision_summary="", score=0.8, duration_sec=3.0,
+                           width=1080, height=1920, file="footage/x.mp4",
+                           used_in=["redshift_0099"], mock=mock)
+
+    index.add(_record("mock_1", mock=True))
+    assert index.items == [], "мок-материал попал в общую базу"
+
+    index.add(_record("real_1", mock=False))
+    assert [i.id for i in index.items] == ["real_1"]
+
+
+def test_the_committed_library_holds_no_mock_rows(repo_root):
+    """И сама база в репозитории — тоже: 195 таких строк оттуда вычищены."""
+    path = repo_root / "cache" / "footage_index.json"
+    if not path.exists():
+        pytest.skip("базы нет")
+    items = json.loads(path.read_text(encoding="utf-8"))["items"]
+    assert not [i for i in items if i.get("mock")], "в базе снова синтетика"
