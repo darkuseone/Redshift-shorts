@@ -35,6 +35,10 @@ on:
         description: "Форматы пробы через запятую (пусто = как в конфиге)"
         required: false
         default: ""
+      probe_model:
+        description: "Модель синтеза для пробы (пусто = как в конфиге)"
+        required: false
+        default: ""
 
 concurrency:
   group: build-video-${{ github.event.inputs.script }}
@@ -84,7 +88,9 @@ jobs:
           # python успевает сделать mkdir, и прогон 33570833947 упал на этом,
           # уже получив ответ сервиса.
           mkdir -p work
-          python -m src.cli --pretty-logs voice-probe \
+          python -m src.cli --pretty-logs \
+            ${{ github.event.inputs.probe_model != '' && format('--set elevenlabs.model={0}', github.event.inputs.probe_model) || '' }} \
+            voice-probe \
             --formats "${{ github.event.inputs.probe_formats }}" \
             --out work/voice_probe.wav | tee work/voice_probe.json
       - name: Итог в Summary
