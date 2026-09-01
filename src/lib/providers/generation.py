@@ -233,19 +233,23 @@ class GrokImageGeneration(GenerationProvider):
         import requests
 
         base = str(self.cfg.get("vision.grok_api_base", "https://api.x.ai"))
+        # Дополнительные поля запроса — из конфига. Заказчик просит самую
+        # качественную модель Imagine, а тарифицируемые режимы у сервиса
+        # меняются чаще, чем код: слаг и режим правятся строкой YAML.
+        extra = dict(self.cfg.get("generation.grok_image_params", {}) or {})
 
         def _call() -> bytes:
             resp = requests.post(
                 f"{base}/v1/images/generations",
                 json={"model": model, "prompt": prompt, "n": 1,
-                      "response_format": "b64_json"},
+                      "response_format": "b64_json", **extra},
                 headers={"Authorization": f"Bearer {self.api_key}",
                          "Content-Type": "application/json"},
                 timeout=self._timeout())
             if resp.status_code >= 400:
                 raise ProviderError(f"Grok image вернул {resp.status_code}",
                                     status=resp.status_code, body=resp.text[:300],
-                                    model=model)
+                                    model=model, params=sorted(extra))
             payload = resp.json()
             items = payload.get("data") or []
             if not items:
@@ -272,7 +276,22 @@ class GrokImageGeneration(GenerationProvider):
         dst.parent.mkdir(parents=True, exist_ok=True)
 
         still = dst.with_suffix(".src.png")
-        still.write_bytes(self._image_bytes(prompt, model))
+        try:
+            still.write_bytes(self._image_bytes(prompt, model))
+        except ProviderError as exc:
+            # Слаг модели живёт своей жизнью: grok-2-image-1212 вывели из
+            # обращения, и прогон встал целиком. Сервис в теле ошибки сам
+            # называет замену, но узнать это можно было только по упавшему
+            # прогону. Теперь запасная модель берётся из конфига, а промах
+            # слага стоит одной строки в логе, а не всего ролика.
+            spare = str(self.cfg.get("generation.grok_image_model_fallback", "")).strip()
+            if not spare or spare == model:
+                raise
+            _log.warning("модель генерации не принята — беру запасную",
+                         extra={"model": model, "fallback": spare,
+                                "reason": str(exc)[:200]})
+            still.write_bytes(self._image_bytes(prompt, spare))
+            model = spare
 
         if kind == "photo":
             dst = dst.with_suffix(".png")

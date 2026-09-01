@@ -255,3 +255,45 @@ def test_card_marks_nothing_when_there_is_nothing_to_mark(phrase):
     html = _card({"domain": "d.com", "title": "Заголовок статьи", "highlight": phrase})
     assert 'class="hl"' not in html
     assert re.search(r">Заголовок статьи<", html)
+
+
+# --- подпись источника (§1, правило 8) ----------------------------------------
+
+def test_credit_is_printed_only_where_the_licence_asks_for_it():
+    """Заказчик: «где надо по правам указывай источник мелким шрифтом».
+
+    Где надо — сказано в каталоге источников, а не выдумано: ESA, Internet
+    Archive и кадр со страницы издания требуют подписи, Pexels и NASA — нет.
+    Лишняя подпись — это мусор в кадре, отсутствующая — нарушение права.
+    """
+    from src.p11_assemble.assemble import _credit_line
+
+    spec = {"sources": {"press": {"attribution_required": True},
+                        "pexels": {"attribution_required": False}}}
+
+    press = {"source": "press", "attribution": "Nature",
+             "meta": {"domain": "nature.com"}}
+    assert _credit_line(press, spec) == "Nature · nature.com"
+    assert _credit_line({"source": "pexels", "attribution": "Иван Петров"}, spec) == ""
+    # Своё авторство в кадре не декларируют.
+    assert _credit_line({**press, "ai_generated": True}, spec) == ""
+    # Домен не дублируется, если он уже в имени.
+    assert _credit_line({"source": "press", "attribution": "nature.com"}, spec) == "nature.com"
+
+
+def test_the_credit_sits_above_the_subtitle_band_and_never_over_it():
+    """Подпись — сноска, а не элемент композиции: она не имеет права лезть в
+    полосу субтитров и в колонку лайк/коммент/шер справа."""
+    import json
+    import re
+
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    brandbook = json.load(open("config/brandbook.json", encoding="utf-8"))
+    css = build_css(brandbook, {})
+    rule = re.search(r"\.credit\{([^}]*)\}", css).group(1)
+    assert "left:var(--safe-x-min)" in rule, "подпись ушла в правую колонку"
+    bottom = int(re.search(r"bottom:(\d+)px", rule).group(1))
+    subs = brandbook["subtitles"]
+    height = int(brandbook["canvas"]["height"])
+    assert bottom >= height - int(subs["baseline_y_default"]) + int(subs["size_px"][1]) // 2

@@ -56,12 +56,30 @@ def _prompt_for_slot(slot: dict[str, Any], plan: dict[str, Any]) -> str:
     # 3D-рендер, иллюстрация, вылизанный глянец без единой случайной детали.
     # Поэтому кадр просится фотографический, снятый камерой, с оптикой и
     # зерном — тем, чего у иллюстрации не бывает.
-    style = ("photographic still from a real camera, 35mm lens, natural light, "
-             "fine film grain, cinematic, vertical 9:16 composition, "
-             "shallow depth of field, muted palette with a single warm red accent, "
-             "no illustration, no 3d render, no CGI, no text, no logos, "
-             "no watermark, subtle motion")
+    # Оптика и точка съёмки меняются от слота к слоту. Без этого модель
+    # выдаёт свой любимый кадр: на 0047 три сгенерированных слота подряд стали
+    # одним и тем же раскалённым камнем в пустыне с разных сторон. Выбор
+    # детерминирован индексом слота — прогон обязан собираться одинаково.
+    look = _LOOKS[int(slot.get("index", 0)) % len(_LOOKS)]
+    style = ("documentary photograph, real location, shot on a full-frame camera, "
+             f"{look}, natural available light, true-to-life colour, fine film grain, "
+             "imperfect detail, vertical 9:16 framing with empty space in the lower "
+             "third for a caption, muted palette with a single warm red accent, "
+             "photorealistic — not an illustration, not a 3d render, not CGI, "
+             "no glossy studio product look, no text, no logos, no watermark")
     return f"{intent}. {queries[0]}. Role: {role}. Style: {style}"
+
+
+# Оптика, ракурс и дистанция. Список короткий и предметный: каждая строка
+# меняет кадр целиком, а не добавляет прилагательное.
+_LOOKS = (
+    "35mm lens, eye level, subject slightly off-centre, shallow depth of field",
+    "85mm lens, tight detail, compressed perspective, background falls away",
+    "24mm wide lens, low angle, foreground element entering the frame",
+    "50mm lens, handheld, slight motion blur, over-the-shoulder distance",
+    "macro lens, extreme close detail, texture filling the frame",
+    "telephoto from a distance, layered depth, haze between planes",
+)
 
 
 def run_step(ctx) -> dict[str, Any]:

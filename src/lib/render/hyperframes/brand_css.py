@@ -242,6 +242,19 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"{_glow({**subs.get('accent_glow', {}), 'rim_color': 'accent_deep', 'rim_alpha': 0.9})}}}"
     )
 
+    # --- подпись источника (§1, правило 8) ------------------------------
+    # Мелко, у левого края рабочей зоны, над полосой субтитров. Тень мягкая:
+    # подпись обязана читаться и на светлом кадре, но не спорить с ним — это
+    # сноска, а не элемент композиции.
+    credit_bottom = height - int(subs["baseline_y_default"]) + int(subs["size_px"][1])
+    parts.append(
+        f".credit{{position:absolute;left:var(--safe-x-min);"
+        f"bottom:{credit_bottom}px;z-index:{Z_OVERLAY};"
+        "font-family:var(--font-mono);font-size:22px;letter-spacing:.08em;"
+        "text-transform:uppercase;color:rgba(255,255,255,0.62);"
+        "text-shadow:0 1px 6px rgba(0,0,0,0.7);pointer-events:none}"
+    )
+
     # --- полноэкранный текст (§5.2) ------------------------------------
     fs = brandbook["fullscreen_text"]
     scrim = float(fs.get("scrim_alpha", 0.55))

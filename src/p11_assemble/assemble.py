@@ -39,6 +39,17 @@ from ..lib.templates import TemplateCatalog, Template, diff_count
 
 _log = get_logger("p11")
 
+
+def _load_yaml(path) -> dict:
+    """Каталог источников как есть. Отсутствие файла — не повод падать."""
+    import yaml
+
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return yaml.safe_load(fh) or {}
+    except FileNotFoundError:
+        return {}
+
 AVATAR_KINDS = ("avatar", "split")
 
 
@@ -448,6 +459,31 @@ def _stem(word: str) -> str:
     """
     bare = word.strip(".,!?;:«»\"'—–").lower().replace("ё", "е")
     return bare[:max(3, len(bare) - 2)]
+
+
+def _credit_line(asset: dict[str, Any], sources: dict[str, Any]) -> str:
+    """Подпись источника в кадр — там, где её требуют права.
+
+    Заказчик: «где надо по правам указывай источник мелким шрифтом». Требование
+    названо в `stock_sources.yaml` полем ``attribution_required`` и стоит у тех
+    источников, где оно и правда есть: ESA, Internet Archive, кадр со страницы
+    издания. У Pexels, Pixabay и NASA его нет, и лепить туда подпись значит
+    засорять кадр без причины.
+
+    Пустая строка — подписи не будет. Для сгенерированного материала подпись не
+    ставится вовсе: своё авторство в кадре не декларируют.
+    """
+    if not asset or asset.get("ai_generated"):
+        return ""
+    source = str(asset.get("source") or "").strip()
+    spec = (sources.get("sources") or {}).get(source) or {}
+    if not spec.get("attribution_required"):
+        return ""
+    name = str(asset.get("attribution") or "").strip()
+    domain = str(asset.get("meta", {}).get("domain") or "").strip()
+    if name and domain and domain.lower() not in name.lower():
+        return f"{name} · {domain}"
+    return name or domain or source
 
 
 def _fullscreen_accent(content: str, block: dict[str, Any]) -> str | None:
@@ -1160,6 +1196,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   recent_videos: list[str], preferences: dict[str, Any] | None = None,
                   asset_rotation: int = 0) -> dict[str, Any]:
     seed = _variant_seed(plan["video_id"], variant)
+    # Какие источники требуют подписи в кадре — сказано в самом каталоге
+    # источников, а не в коде: право на кадр приходит вместе с ним.
+    sources_spec = _load_yaml(ctx.cfg.repo_root / "config" / "stock_sources.yaml")
     # Накопленные предпочтения влияют на версию A: она несёт «текущий дефолт»,
     # а B остаётся альтернативой, иначе обучение схлопнет обе версии в одну.
     prefs = (preferences or {}) if variant == "A" else {}
@@ -1306,6 +1345,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "license": ("HeyGen ToS (цифровой двойник заказчика)" if is_avatar
                         else asset.get("license")),
             "attribution": asset.get("attribution", ""),
+            "credit": _credit_line(asset, sources_spec),
             "page_url": asset.get("page_url", ""),
             "avatar_offset_sec": prep.get("avatar_offset_sec"),
             "matte": prep.get("matte"),

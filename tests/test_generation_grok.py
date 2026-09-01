@@ -214,3 +214,25 @@ def test_a_hopeless_slot_stays_empty_instead_of_taking_a_weak_frame(
     doc = json.loads((tmp_path / "work" / "generated_assets.json").read_text("utf-8"))
     assert doc["generated"] == {}
     assert "судья" in doc["skipped"][0]["reason"]
+
+
+def test_two_slots_in_a_row_do_not_get_the_same_camera():
+    """На 0047 три сгенерированных слота подряд стали одним и тем же камнем.
+
+    Модель без указания оптики выдаёт свой любимый кадр, и дедуп по pHash его
+    не ловит — структура пикселей разная, сюжет один. Оптика и ракурс меняются
+    по индексу слота: детерминированно, потому что прогон обязан собираться
+    одинаково.
+    """
+    from src.p9_generate.generate import _LOOKS, _prompt_for_slot
+
+    plan = {"video_id": "x", "blocks": []}
+    def _p(i):
+        return _prompt_for_slot({"index": i, "role": "develop", "block_id": "b1",
+                                 "queries": ["granite core"],
+                                 "visual_intent": "гранит"}, plan)
+
+    assert _p(0) != _p(1) != _p(2)
+    assert _p(0) == _p(0), "промпт обязан быть детерминированным"
+    assert _p(0) == _p(len(_LOOKS)), "оптика ходит по кругу"
+    assert "not a 3d render" in _p(0)

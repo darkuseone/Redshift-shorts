@@ -630,6 +630,31 @@ class CompositionBuilder:
         # рядом с движущимся словом субтитра и без него.
         self.tweens.extend(entrance_tweens(f"#{node_id}", start, name="rise"))
 
+    def _credit_nodes(self) -> list[str]:
+        """Подпись источника мелким шрифтом (§1, правило 8).
+
+        Ставится только там, где её требуют права: список источников с
+        ``attribution_required`` ведёт P11, сюда приходит уже готовая строка.
+        Место — левый нижний угол рабочей зоны, над полосой субтитров: правый
+        занят колонкой лайк/коммент/шер площадки, а верх — приёмами.
+        """
+        nodes: list[str] = []
+        for shot in self.plan["shots"]:
+            credit = str(shot.get("credit") or "").strip()
+            if not credit:
+                continue
+            index = int(shot["index"])
+            start = float(shot["start"])
+            # Подпись живёт вместе с кадром, но появляется чуть позже него:
+            # одновременный въезд читается как часть монтажа, а не как сноска.
+            nodes.append(
+                f'<div id="credit-{index:02d}" class="clip credit" '
+                + _timing(start + 0.25, start + float(shot["duration"]), TRACK_OVERLAY + 5)
+                + f'>{_esc(credit)}</div>')
+            self.tweens.extend(entrance_tweens(f"#credit-{index:02d}", start + 0.25,
+                                               name="dim"))
+        return nodes
+
     # --- субтитры -------------------------------------------------------
     def _subtitle_nodes(self) -> list[str]:
         spec = self.brandbook["subtitles"]
@@ -689,6 +714,7 @@ class CompositionBuilder:
             f'data-track-index="{TRACK_STAGE}"></div>'
         ]
         body += self._shot_nodes()
+        body += self._credit_nodes()
         body += self._behind_head_nodes()
         body += self._avatar_nodes()
         body += self._hero_nodes()
