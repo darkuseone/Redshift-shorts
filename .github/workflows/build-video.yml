@@ -194,16 +194,62 @@ jobs:
             .redshift_cache
           key: redshift-work-${{ hashFiles(github.event.inputs.script) }}-${{ github.run_id }}
 
-      - name: Обновлённые библиотеки и индексы в коммит
+      # Артефакт Actions заказчику недоступен — ни скачать, ни открыть. Поэтому
+      # рядом с ним кладётся лёгкое превью: 540p, CRF 30, звук 96k. Обе версии
+      # вместе весят пару мегабайт, живут в репозитории рядом с голосом и
+      # клипами ведущего и доезжают до чата, где их наконец можно посмотреть.
+      # Каждый прогон перезаписывает превью своего ролика — репозиторий от
+      # этого не растёт.
+      - name: Лёгкое превью ролика
         if: success()
         run: |
+          set -euo pipefail
+          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          out="assets/preview/$video_id"
+          rm -rf "$out" && mkdir -p "$out"
+          for f in output/"$video_id"/*.mp4; do
+            [ -f "$f" ] || continue
+            ffmpeg -v error -y -i "$f" -vf "scale=540:-2" \
+              -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p \
+              -c:a aac -b:a 96k -movflags +faststart \
+              "$out/$(basename "$f")"
+          done
+          cp output/"$video_id"/thumbnail*.jpg "$out"/ 2>/dev/null || true
+          cp output/"$video_id"/build_report.json "$out"/ 2>/dev/null || true
+          cp output/"$video_id"/subtitles.srt "$out"/ 2>/dev/null || true
+          du -sh "$out" && ls -la "$out"
+
+      - name: Превью, библиотеки и индексы в коммит
+        if: success()
+        run: |
+          set -euo pipefail
           git config user.name  "redshift-bot"
           git config user.email "redshift-bot@users.noreply.github.com"
           git add -A assets config/editing_preferences.json config/pronunciation.json \
                      templates/manifest.json cache/footage_index.json instruction.md \
                      rejected_patterns.md || true
-          git diff --cached --quiet || git commit -m "chore(run): обновление библиотек и индексов после прогона"
-          git push || echo "нечего пушить"
+          if git diff --cached --quiet; then
+            echo "нечего коммитить"
+            exit 0
+          fi
+          git commit -m "chore(run): превью ролика, библиотеки и индексы после прогона"
+          # Ветка за время прогона уходит вперёд — прогон идёт час, а правки
+          # продолжаются. Прежний `git push || echo` это прятал: пуш прогона
+          # №33478384709 не прошёл молча, и превью не доехало бы никуда.
+          branch="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4; do
+            if git fetch origin "$branch" \
+               && git rebase "origin/$branch" \
+               && git push origin "HEAD:$branch"; then
+              echo "запушено с попытки $attempt"
+              exit 0
+            fi
+            git rebase --abort || true
+            echo "пуш не прошёл, попытка $attempt"
+            sleep $((attempt * 5))
+          done
+          echo "::error::не удалось запушить превью и индексы"
+          exit 1
 
       - name: Выложить артефакты
         if: always()
