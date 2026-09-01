@@ -125,9 +125,12 @@ def test_prompt_asks_for_a_photograph_not_an_illustration():
     plan = {"category": "science", "title": "Кольская сверхглубокая", "blocks": []}
     prompt = _prompt_for_slot(slot, plan).lower()
 
-    for asked in ("photographic", "35mm", "film grain"):
+    # Оптика в промпте меняется по индексу слота, поэтому конкретное «35mm»
+    # здесь не проверяется — проверяется, что камера названа вообще.
+    for asked in ("photograph", "lens", "film grain"):
         assert asked in prompt
-    for banned in ("no illustration", "no 3d render", "no cgi", "no text", "no logos"):
+    for banned in ("not an illustration", "not a 3d render", "not cgi",
+                   "no text", "no logos"):
         assert banned in prompt
 
 
