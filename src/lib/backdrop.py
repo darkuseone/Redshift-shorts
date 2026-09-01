@@ -41,8 +41,20 @@ from __future__ import annotations
 SCENES: dict[str, dict[str, object]] = {
     "horizon": {
         "tone": "dark",
-        "stems": ("дыр", "горизонт", "сингулярн", "коллапс", "гравитац"),
+        "stems": ("горизонт", "сингулярн", "коллапс", "гравитац"),
+        # «Дыра» сама по себе сцены не решает: на 0047 («самая глубокая дыра на
+        # Земле») она поставила за спину ведущего аккреционный диск, и ролик про
+        # скважину шёл на фоне чёрной дыры. Судья §11.2 отметил это дважды —
+        # «мужчина на фоне космоса». Пара слов однозначна, одна основа — нет.
+        "pairs": (("чёрн", "дыр"),),
         "why": "чёрная дыра: тёмное поле и раскалённое кольцо аккреции",
+    },
+    "depth": {
+        "tone": "dark",
+        "stems": ("бур", "скважин", "глубин", "глубок", "недр", "пород",
+                  "геолог", "грунт", "шахт", "тоннел", "туннел", "разлом",
+                  "гранит", "базальт", "керн", "рудник", "вулкан", "магм"),
+        "why": "недра: слои породы, уходящие вниз, и жар на глубине",
     },
     "space": {
         "tone": "dark",
@@ -96,12 +108,22 @@ def _matches(word: str, stems: tuple[str, ...]) -> bool:
 
 
 def pick_scene(*texts: str) -> str:
-    """Сцена по теме ролика. Совпадений нет — комната, она нейтральна."""
+    """Сцена по теме ролика. Совпадений нет — комната, она нейтральна.
+
+    Пара основ проверяется раньше одиночных: «чёрная дыра» — это горизонт
+    событий, а просто «дыра» в тексте про бурение — это недра. Одиночная основа
+    короткая и жадная, и разбирать спор двух сцен ей нельзя.
+    """
     words = [w.strip(".,!?;:»«\"'()—–-").lower()
              for w in " ".join(str(t or "") for t in texts).split()]
+    words = [w for w in words if w]
+    for name, scene in SCENES.items():
+        for pair in scene.get("pairs", ()):                   # type: ignore[union-attr]
+            if all(any(_matches(w, (stem,)) for w in words) for stem in pair):
+                return name
     for name, scene in SCENES.items():
         stems = scene["stems"]                                # type: ignore[index]
-        if any(w and _matches(w, stems) for w in words):      # type: ignore[arg-type]
+        if any(_matches(w, stems) for w in words):            # type: ignore[arg-type]
             return name
     return DEFAULT_SCENE
 
@@ -185,6 +207,34 @@ def backdrop_css() -> str:
         ".vfx.scene-horizon::after{content:'';position:absolute;inset:0;"
         "background:radial-gradient(38% 26% at 50% 34%,"
         "rgba(255,190,140,0.16) 0%,transparent 70%)}"
+
+        # --- недра: слои породы и жар внизу ---
+        # Слои чуть завалены: ровно горизонтальные полосы читаются как
+        # интерфейс, а не как порода. Свечение снизу — та самая температура,
+        # ради которой ролик и снят: чем глубже, тем горячее.
+        ".vfx.scene-depth{background:"
+        "linear-gradient(180deg,#181310 0%,#0E0B0A 40%,#070506 100%)}"
+        ".vfx.scene-depth::before{content:'';position:absolute;inset:-8%;"
+        # Пласты — широкие мягкие полосы неравной толщины, а не линии в
+        # клеточку: тонкие ровные штрихи давали тетрадный лист, проверено
+        # скриншотом. Два слоя под разными углами не дают рисунку повториться
+        # в кадре, а размытые края — краю пласта выглядеть линейкой.
+        "background:repeating-linear-gradient(183.4deg,"
+        "rgba(232,214,192,0.055) 0 22px,transparent 22px 74px,"
+        "rgba(158,120,92,0.075) 74px 132px,transparent 132px 178px,"
+        "rgba(232,214,192,0.032) 178px 214px,transparent 214px 296px),"
+        # Второй слой наклонён в ту же сторону, что и первый. Встречный угол
+        # давал решётку — кадр читался как плетёнка, а не как порода.
+        "repeating-linear-gradient(182.1deg,"
+        "rgba(96,74,60,0.10) 0 34px,transparent 34px 128px);"
+        "filter:blur(2.4px);"
+        "mask:linear-gradient(180deg,transparent 0%,#000 16%,#000 74%,"
+        "transparent 100%);"
+        "-webkit-mask:linear-gradient(180deg,transparent 0%,#000 16%,#000 74%,"
+        "transparent 100%)}"
+        ".vfx.scene-depth::after{content:'';position:absolute;inset:0;"
+        "background:radial-gradient(72% 34% at 50% 100%,"
+        "rgba(200,69,61,0.36) 0%,rgba(200,69,61,0.10) 46%,transparent 74%)}"
 
         # --- сетка: техническая глубина ---
         ".vfx.scene-grid{background:"

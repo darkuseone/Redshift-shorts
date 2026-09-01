@@ -28,6 +28,7 @@ from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
     prepare_split_shot,
 )
+from ..lib.render.text_rules import glue_short_cues
 from ..lib.backdrop import plate_name as _scene_plate_name
 from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.backdrop import describe as scene_why
@@ -1321,6 +1322,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "display": word["display"], "start": start, "end": end,
             "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
         })
+    # Склейка — после отбраковки, а не до: слово, снятое полноэкранным текстом,
+    # не имеет права утащить с собой приклеенный к нему предлог.
+    subtitles = glue_short_cues(subtitles)
 
     # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон
     # держится весь ролик и посреди него не меняется.

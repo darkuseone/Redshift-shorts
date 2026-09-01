@@ -5,12 +5,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
+from PIL import Image
 
 from src.errors import RedshiftError
 from src.lib.cache import StepCache, hash_obj
 from src.lib.learning import _differences, record_choice
 from src.lib.maintenance import run_maintenance
+from src.p12_render_qc.vision_qc import run_vision_qc
 from src.pipeline import Pipeline, RunContext, Step
 
 
@@ -237,6 +240,66 @@ def test_vision_qc_can_be_disabled(cfg, tmp_path):
     report = run_vision_qc(ctx, video_path=tmp_path / "nope.mp4",
                            plan={"duration_sec": 10, "shots": [], "subtitles": []})
     assert report["enabled"] is False
+
+
+def test_the_final_frame_is_not_judged_as_raw_stock(cfg, tmp_path, monkeypatch):
+    """§11.2 смотрит готовый кадр, и вопрос ему нужен другой.
+
+    Прежде судье показывали кадр ролика, а спрашивали про «материал B-roll». Он
+    честно снижал оценку за наш собственный субтитр («крупный текст в центре
+    портит B-roll») и за самого ведущего («это говорящая голова, а не B-roll»).
+    На 0047 так набралось четыре пробы из шести — 67 % расхождений там, где
+    картинка разошлась с речью в лучшем случае дважды.
+    """
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+
+    asked: list[dict] = []
+
+    class _Spy:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            asked.append({"intent": intent, "role": role, "query": query, "kind": kind})
+            return V.VisionVerdict(score=0.9, reason="", summary="кадр", judge="spy")
+
+    frame = tmp_path / "f.jpg"
+    Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
+    monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
+
+    plan = {"duration_sec": 12.0, "variant": "A",
+            "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "avatar",
+                       "role": "hook", "reason": "ведущий вводит тему"}],
+            "subtitles": [{"display": "бюджет", "lead": "не в", "start": 6.0,
+                           "end": 6.4}]}
+    report = run_vision_qc(_ctx(tmp_path, cfg), video_path=tmp_path / "v.mp4", plan=plan)
+
+    assert asked and all(a["kind"] == "final_frame" for a in asked)
+    # Судье сказано, что ведущий в кадре — это замысел, а не промах материала.
+    assert "ведущий в кадре" in asked[0]["intent"]
+    # Эталон речи не теряет приклеенное начало реплики: «не в бюджет», а не
+    # «бюджет» — иначе отрицание пропадает ровно там, где оно и есть смысл.
+    assert any("не в бюджет" in a["query"] for a in asked)
+    assert report["mismatch_share"] == 0.0
+    assert report["samples"][0]["expected"]
+
+
+def test_the_channel_own_captions_are_not_foreign_text(cfg, tmp_path):
+    """Субтитр канала — не «текст в кадре» (§11.2.2).
+
+    Судья-заглушка ловил текст по плотности краёв, а её на готовом кадре
+    поднимает наш же субтитр. Проба уходила в отчёт как чужая надпись.
+    """
+    from src.lib.costs import CostLedger
+    from src.lib.providers.vision import MockVision
+
+    frame = tmp_path / "busy.jpg"
+    noise = np.random.default_rng(7).integers(0, 255, (96, 54, 3), dtype=np.uint8)
+    Image.fromarray(noise).save(frame)
+    judge = MockVision(cfg, CostLedger())
+    for query in ("проба один", "проба два", "проба три", "проба четыре"):
+        verdict = judge.judge([frame], intent="кадр ролика", role="body",
+                              query=query, kind="final_frame")
+        assert verdict.has_text is False
 
 
 def test_vision_qc_is_not_blocking(repo_root):

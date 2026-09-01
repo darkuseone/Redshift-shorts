@@ -171,6 +171,17 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "-webkit-background-clip:text;background-clip:text;"
         "-webkit-text-stroke:2px rgba(255,255,255,0.34);"
         "filter:drop-shadow(0 3px 22px rgba(0,0,0,0.5))}"
+        # На тёмной сцене стекло приходится делать плотнее. Заливка в 8-30 %
+        # белого поверх плиты в 19 единиц яркости даёт букву, которую видно
+        # только по контуру: на 0047 «ДВЕНАДЦАТЬ» за головой читалось с трудом.
+        # Числа подобраны замером кадра, а не на глаз: слово должно проступать
+        # сквозь фон, но не спорить с ведущим.
+        ".stage-dark .behind-head{background:linear-gradient(180deg,"
+        "rgba(255,255,255,0.46) 0%,rgba(255,255,255,0.17) 52%,"
+        "rgba(255,255,255,0.32) 100%);"
+        "-webkit-background-clip:text;background-clip:text;"
+        "-webkit-text-stroke:2px rgba(255,255,255,0.62);"
+        "filter:drop-shadow(0 3px 26px rgba(0,0,0,0.62))}"
     )
 
     # --- субтитры (§5.1) ------------------------------------------------
@@ -195,8 +206,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     shadow = (f"0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
               f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px "
               f"rgba(0,0,0,{alpha * 0.8:.2f})")
+    accent_shadow = shadow
     if str(subs.get("readability_mode", "shadow")) == "stroke":
-        shadow = f"{_text_rim(int(subs['stroke_px'][0]), stroke_color)},{shadow}"
+        rim = int(subs["stroke_px"][0])
+        accent_shadow = f"{_text_rim(rim, colors['bg_pure'])},{shadow}"
+        shadow = f"{_text_rim(rim, stroke_color)},{shadow}"
     parts.append(
         f".word{{position:absolute;left:0;right:0;top:{int(subs['baseline_y_default'])}px;"
         f"z-index:{Z_SUBTITLE};text-align:center;transform:translateY(-50%);"
@@ -207,6 +221,19 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"text-shadow:{shadow}}}"
         ".word > span{display:inline-block;will-change:transform}"
         f".word.emphasis{{color:var(--color-{accent_var})}}"
+        # §4: у акцентного слова обводка **светлая** — тёмно-красный контур по
+        # светло-красному слову это два оттенка одного цвета, и слово теряет
+        # край. Но только на тёмной сцене: над светлой стеной студии белый
+        # контур пропадает вместе с фоном, и единственным краем у слова
+        # остаётся тот самый тёмно-красный. Проверено скриншотом обеих сцен.
+        f".stage-dark .word.emphasis{{text-shadow:{accent_shadow}}}"
+        # Приклеенный предлог живёт в цвете обычного слова даже внутри
+        # акцентной реплики: красный означает ударение, а не начало фразы.
+        # Обводка у него тоже своя, тёмная: светлый контур акцентного слова,
+        # доставшийся белому предлогу по наследству, залил ему просветы букв —
+        # «не в» слипалось в пятно. Видно на скриншоте, не в разметке.
+        f".word .lead{{font-style:normal;color:{subs['color']};"
+        f"text-shadow:{shadow}}}"
     )
 
     # --- полноэкранный текст (§5.2) ------------------------------------

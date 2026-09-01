@@ -112,9 +112,10 @@
       "text": "Скважину закрыли в девяносто втором, и сегодня это заваренный люк посреди тундры. Мы упёрлись не в бюджет, а в физику. Куда, по-твоему, копать дальше?",
       "emphasis_word": "физику",
       "avatar": "on",
-      "visual_intent": "Финальный кадр, кнопка подписки",
+      "visual_intent": "Заваренный люк на бетонной плите, вокруг тундра, финальный кадр",
       "broll_queries": [
-        "abstract dark red gradient background"
+        "welded steel hatch on concrete ground",
+        "abandoned industrial site tundra winter"
       ],
       "overlay": {
         "type": "none"

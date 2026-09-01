@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
@@ -664,3 +666,89 @@ def test_loud_voice_survives_a_high_crest_source():
     # Без сжатия та же дорожка до канона не дотягивает — ради этого оно и есть.
     flat, _ = normalize_voice(quiet, sr, compress=False)
     assert measure_loudness_buffer(flat, sr).integrated_lufs < after.integrated_lufs - 1
+
+
+# --- короткие реплики субтитра (§5.1) -----------------------------------------
+
+def _cues(words, *, step=0.14, hold=0.12, block="b1"):
+    out, t = [], 0.0
+    for word in words:
+        out.append({"display": word, "start": t, "end": t + hold, "block_id": block})
+        t += step
+    return out
+
+
+def test_single_letter_never_stands_alone_in_the_frame():
+    """«а» держалась 88 мс посреди кадра и читалась как сбой рендера.
+
+    Проверено на готовом ролике 0047: тридцать реплик из ста сорока шести — это
+    вспышка одной-двух букв. Растянуть её нельзя (соседний клип на том же
+    треке), поэтому она уезжает к следующему слову.
+    """
+    from src.lib.render.text_rules import glue_short_cues
+
+    glued = glue_short_cues(_cues(["гранит,", "а", "расчёты", "обещали"]))
+    assert [c["display"] for c in glued] == ["гранит,", "расчёты", "обещали"]
+    assert glued[1]["lead"] == "а"
+    # Реплика начинается там, где начиналось приклеенное слово: пропасть между
+    # речью и субтитром недопустима.
+    assert glued[1]["start"] == pytest.approx(0.14)
+    assert glued[1]["end"] == pytest.approx(0.40)
+
+
+def test_two_short_words_in_a_row_become_one_cue():
+    """«не в бюджет» — одна реплика, а не цепочка из трёх вспышек."""
+    from src.lib.render.text_rules import glue_short_cues
+
+    glued = glue_short_cues(_cues(["не", "в", "бюджет,", "а", "в", "физику."]))
+    assert [(c.get("lead"), c["display"]) for c in glued] == [
+        ("не в", "бюджет,"), ("а в", "физику.")]
+
+
+def test_a_short_word_does_not_jump_over_a_pause_or_a_block():
+    """За паузой и за границей блока слово принадлежит уже другой фразе."""
+    from src.lib.render.text_rules import glue_short_cues
+
+    far = _cues(["и", "дошли"], step=1.5)
+    assert [c.get("lead") for c in glue_short_cues(far)] == [None, None]
+
+    split = _cues(["и"]) + [{"display": "дошли", "start": 0.2, "end": 0.5,
+                             "block_id": "b2"}]
+    assert [c["display"] for c in glue_short_cues(split)] == ["и", "дошли"]
+
+
+def test_the_glued_word_keeps_the_accent_off_the_preposition():
+    """Красный цвет означает ударение, а не начало фразы (§5.1).
+
+    Поэтому приклеенное слово уезжает в отдельный span, а не в текст реплики:
+    иначе `.word.emphasis` покрасил бы и предлог.
+    """
+    from src.lib.render.hyperframes.composition import CompositionBuilder
+
+    cue = {"display": "расчёты", "lead": "а", "start": 1.0, "end": 1.4,
+           "emphasis": True, "block_id": "b1"}
+    builder = object.__new__(CompositionBuilder)
+    builder.brandbook = json.load(open("config/brandbook.json", encoding="utf-8"))
+    builder.plan = {"subtitles": [cue], "subtitle_style": {}}
+    builder.duration = 2.0
+    builder.tweens = []
+    builder.stats = {"subtitle_words": 0}
+    html = "".join(builder._subtitle_nodes())
+    assert 'class="clip word emphasis"' in html
+    assert '<i class="lead">а</i> расчёты' in html
+
+
+def test_srt_shows_the_same_cues_as_the_frame():
+    """Файл субтитров и кадр обязаны говорить одно и то же."""
+    from src.p4_align.aligner import AlignedWord
+
+    words = [
+        AlignedWord(0, "гранит,", 1.00, 1.12, "b1", "body", False, ["гранит"], "provider"),
+        AlignedWord(1, "а", 1.14, 1.26, "b1", "body", False, ["а"], "provider"),
+        AlignedWord(2, "расчёты", 1.28, 1.70, "b1", "body", False, ["расчёты"], "provider"),
+    ]
+    srt = build_srt(words)
+    assert "а расчёты" in srt
+    assert "\nа\n" not in srt
+    # Две реплики, а не три: нумерация обязана идти подряд.
+    assert srt.strip().split("\n\n")[-1].startswith("2")

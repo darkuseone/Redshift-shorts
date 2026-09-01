@@ -255,8 +255,20 @@ class CompositionBuilder:
                     nodes.append(self._media_node(
                         f"{node_id}-bg", src,
                         _timing(start, start + duration, TRACK_FS_BG), css="fs-bg"))
+                else:
+                    # Материала под кадр не нашлось — это бывает, и в отчёт это
+                    # уходит как gap_reason. Но фраза не имеет права вставать на
+                    # пустую заливку: на 0047 «180 ГРАДУСОВ» шло белыми буквами
+                    # по белому листу посреди тёмного ролика. Запасной фон —
+                    # сцена ролика, та же, что за ведущим: она по теме, она
+                    # тёмная и она уже есть.
+                    nodes.append(
+                        f'<div id="{node_id}-bg" class="clip shot-bg" '
+                        + _timing(start, start + duration, TRACK_FS_BG)
+                        + f'><div class="vfx scene-{self.scene}">'
+                        + self._plate() + "</div></div>")
                 nodes.append(self._fullscreen_text_node(node_id, shot, timing,
-                                                        over_media=bool(src)))
+                                                        over_media=True))
                 # Раньше полноэкранный текст просто включался: клип открывался,
                 # и надпись стояла. На фоне пословных субтитров, которые всё
                 # время движутся, это читалось как подвисший кадр.
@@ -304,7 +316,11 @@ class CompositionBuilder:
         accent = str(shot.get("accent_word") or "").strip()
         invert = " invert" if shot.get("invert") else ""
         markup = _esc(content)
-        if accent and accent.upper() in content.upper():
+        # Акцент, совпавший со всей фразой, красит не слово, а строку — и
+        # §3.3.2 перестаёт что-либо значить: выделять внутри фразы становится
+        # нечем. Фраза из одного слова и так выделена размером.
+        whole_line = accent.strip().upper() == content.strip().upper()
+        if accent and not whole_line and accent.upper() in content.upper():
             # §3.3.2: красным выделяется одно слово, не строка.
             idx = content.upper().index(accent.upper())
             markup = (_esc(content[:idx])
@@ -641,10 +657,16 @@ class CompositionBuilder:
             node_id = f"w-{i:04d}"
             css = "clip word emphasis" if word.get("emphasis") else "clip word"
             style = f' style="top:{int(baseline)}px"'
+            # Приклеенное начало реплики (§5.1) — своим span: акцент принадлежит
+            # знаменательному слову, и предлог перед ним остаётся белым.
+            lead = subtitle_word(str(word.get("lead") or ""), case_mode)
+            inner = _esc(display)
+            if lead:
+                inner = f'<i class="lead">{_esc(lead)}</i> {inner}'
             nodes.append(
                 f'<div id="{node_id}" class="{css}"{style} '
                 + _timing(start, end, TRACK_SUBTITLE)
-                + f'><span id="{node_id}-t">{_esc(display)}</span></div>')
+                + f'><span id="{node_id}-t">{inner}</span></div>')
             # Pop-in анимируется на внутреннем span: сам клип отдан движку,
             # его видимостью управляет фреймворк.
             self.tweens.append(

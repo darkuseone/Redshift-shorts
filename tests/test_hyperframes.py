@@ -673,9 +673,58 @@ def test_fullscreen_text_puts_its_footage_on_a_separate_track(plan, assets, bran
         "текст обязан знать, что под ним материал: иначе заливка перекроет его")
 
 
-def test_fullscreen_text_without_footage_keeps_the_flat_fill(plan, assets, brandbook):
-    """Материала нет — кадр собирается как прежде, а не ломается."""
+def test_fullscreen_text_without_footage_falls_back_to_the_scene(plan, assets, brandbook):
+    """Материала нет — под фразой сцена ролика, а не пустая заливка.
+
+    На 0047 материал под этот кадр не нашёлся, и «180 ГРАДУСОВ» встало чёрными
+    буквами по белому листу посреди тёмного ролика — на полторы секунды кадр
+    гас в пустоту. Заказчик это уже называл: «сзади фон должен быть какой-нибудь
+    тоже либо сгенерированный, либо футаж». Сцена по теме ролика тёмная, она уже
+    собрана для кадров с альфой, и терять её незачем.
+    """
+    from src.lib.render.hyperframes.composition import TRACK_FS_BG
+
     plan["shots"][1].pop("file", None)
     markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    assert "shot-01-bg" not in markup
-    assert "over-media" not in markup
+    assert f'<div id="shot-01-bg" class="clip shot-bg" data-start="3"' in markup
+    assert f'data-track-index="{TRACK_FS_BG}"><div class="vfx scene-' in markup
+    # Затемнение остаётся: буквы лежат на картинке, а не на плоском цвете.
+    assert 'class="clip fullscreen-text over-media"' in markup
+
+
+def test_the_whole_line_never_burns_red(plan, assets, brandbook):
+    """§3.3.2: красным горит слово, а не строка.
+
+    P11 акцент для фразы из одного слова не назначает вовсе, но правило живёт в
+    брендбуке, а не в одном шаге: план приходит и из кэша, и с прошлой версии
+    конвейера, и рендер обязан отказать сам.
+    """
+    plan["shots"][1]["content"] = "ПЕРЕЖИВЁШЬ"
+    plan["shots"][1]["accent_word"] = "ПЕРЕЖИВЁШЬ"
+    markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert 'class="accent"' not in markup
+
+
+def test_the_accent_word_gets_a_light_rim_only_on_a_dark_stage(brandbook):
+    """§4: обводка акцентного слова светлая — но не любой ценой.
+
+    Тёмно-красный контур по светло-красному слову это два оттенка одного цвета,
+    и слово теряет край: покадровый движок брал под акцент светлую обводку, а
+    рендер ролика — нет. Над светлой стеной студии, однако, белый контур
+    пропадает вместе с фоном, и единственным краем остаётся тот самый
+    тёмно-красный. Поэтому правило привязано к тону сцены; проверено
+    скриншотами обеих сцен, а не рассуждением.
+    """
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(brandbook, {})
+    deep = brandbook["colors"][brandbook["subtitles"]["stroke_color"]]
+    pure = brandbook["colors"]["bg_pure"]
+
+    base = re.search(r"\.word\{[^}]*text-shadow:([^};]*(?:;[^}]*)?)\}", css).group(1)
+    assert deep in base and pure not in base
+    accent = re.search(r"\.stage-dark \.word\.emphasis\{([^}]*)\}", css).group(1)
+    assert pure in accent and deep not in accent
+    # Приклеенное начало реплики белое, и светлый контур залил бы ему просветы.
+    lead = re.search(r"\.word \.lead\{([^}]*)\}", css).group(1)
+    assert deep in lead

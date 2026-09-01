@@ -23,6 +23,7 @@ import numpy as np
 from ..lib.audio import load_wav, rms_envelope
 from ..lib.jsonio import write_text
 from ..lib.logging import get_logger
+from ..lib.render.text_rules import glue_short_cues
 from ..lib.schema import count_syllables
 
 _log = get_logger("p4")
@@ -246,11 +247,19 @@ def _srt_time(seconds: float) -> str:
 
 
 def build_srt(words: list[AlignedWord]) -> str:
+    """Файл субтитров для площадки — теми же репликами, что и кадр.
+
+    Склейка коротких слов общая с рендером: разойдись они, зритель с включёнными
+    субтитрами читал бы одно, а видел другое.
+    """
+    cues = glue_short_cues([{"display": w.display, "start": w.start, "end": w.end,
+                             "block_id": w.block_id} for w in words])
     lines: list[str] = []
-    for i, word in enumerate(words, start=1):
+    for i, cue in enumerate(cues, start=1):
+        text = f'{cue["lead"]} {cue["display"]}' if cue.get("lead") else cue["display"]
         lines.append(str(i))
-        lines.append(f"{_srt_time(word.start)} --> {_srt_time(word.end)}")
-        lines.append(word.display)
+        lines.append(f'{_srt_time(cue["start"])} --> {_srt_time(cue["end"])}')
+        lines.append(text)
         lines.append("")
     return "\n".join(lines)
 
