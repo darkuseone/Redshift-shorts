@@ -138,7 +138,7 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
     asset = (assets or {}).get(int(nearest["index"])) or {}
     credit = str(asset.get("attribution") or asset.get("source") or "").strip()
     return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0),
-            "credit": credit}
+            "credit": credit, "ai_generated": bool(asset.get("ai_generated"))}
 
 
 # Что приёму нужно на входе. Без этого он рисует пустоту поверх ведущего, и
@@ -201,6 +201,30 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
     if index >= len(parts):
         return ""
     return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
+
+
+def _caption(text: str, *, limit: int = 8) -> str:
+    """Подпись под экспонатом — целая фраза, а не первые ``limit`` слов.
+
+    Обрезка по счёту слов давала обрывок: на 0047 под материалом стояло
+    «Скважину закрыли в девяносто втором, и сегодня это» — подпись обрывалась
+    на «это». В музейной табличке это читается как сбой набора, а не как
+    подпись. То же правило уже записано у плашки-удара (см. ``ask``).
+
+    Не влезла фраза целиком — берётся её первая часть до запятой или тире,
+    если та сама по себе законченная. Не влезла и она — подписи не будет:
+    приём покажет имя и кредит, а выдумывать текст неоткуда.
+    """
+    first = _sentence(text, 0, limit=10_000)
+    if not first:
+        return ""
+    if len(first.split()) <= limit:
+        return first
+    for part in re.split(r"[,—–:;]", first):
+        words = part.split()
+        if 3 <= len(words) <= limit:
+            return " ".join(words).strip(".,!?;: ")
+    return ""
 
 
 def _question(text: str, *, limit: int = 8) -> str:
@@ -525,7 +549,7 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # Подпись под экспонатом: первая фраза реплики целиком. Поисковый
         # запрос сюда не годится — он английский и написан для стока, а не
         # для зрителя.
-        "caption": _sentence(text, 0, limit=8),
+        "caption": _caption(text),
         # Куски для накопительного списка — по словам этого кадра, а не по
         # тексту блока: список идёт за речью, а кадр покрывает её часть.
         "entries": _log_entries(words or [], float(slot.get("start") or 0.0)),
@@ -694,6 +718,14 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
             continue
         needs = _HERO_NEEDS.get(template.renderer, ())
         if any(not available.get(key) for key in needs):
+            blocked.append(template.id)
+            continue
+        # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
+        # вот кем она снята. Под сгенерированным пятном она подписывала
+        # «REDSHIFT / GENERATED» и тем самым объявляла зрителю ровно то, чего
+        # заказчик просил не показывать. Приём остаётся для настоящего кадра.
+        if (template.renderer in _CAPTION_HEROES
+                and (plate_src or {}).get("ai_generated")):
             blocked.append(template.id)
 
     if not [t for t in catalog.by_category("hero-devices") if t.id not in blocked]:

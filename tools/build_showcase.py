@@ -39,6 +39,20 @@ from src.p11_assemble.assemble import (                                 # noqa: 
 DEMO_SCRIPTS = [ROOT / "scripts" / "redshift_0046.json",
                 ROOT / "scripts" / "redshift_0042.json"]
 
+# Окну генерации нужна реплика про генерацию — иначе `_gen_prompt` молчит и
+# приём собирается пустым (витрина это ловит и падает). Ни один сценарий
+# репозитория пока не про нейросети, и это правильно: приём включается смыслом,
+# а не расписанием. Поэтому реплика для витрины лежит здесь, а не в scripts/ —
+# сценарий там означал бы ролик, который никто не собирался снимать.
+GEN_BLOCK = {
+    "id": "gen", "role": "develop",
+    "text": ("Я попросил нейросеть дорисовать недостающий кусок кадра, "
+             "и она дорисовала то, чего на снимке никогда не было."),
+    "emphasis_word": "дорисовать",
+    "broll_queries": ["ai generated image closeup"],
+    "overlay": {"type": "none"},
+}
+
 # Роль блока меняет кикер над заголовком, поэтому у карточек она разная.
 ROLES = ["hook", "develop", "turn", "payoff"]
 
@@ -215,6 +229,7 @@ def _devices(cfg) -> list[dict]:
     demos = [json.loads(path.read_text("utf-8")) for path in DEMO_SCRIPTS]
     pool = [(block, script["meta"]["title"])
             for script in demos for block in script["blocks"]]
+    pool.append((GEN_BLOCK, "Что нейросеть дорисовывает за нас"))
 
     plate_uri = PLATE_URI
 

@@ -1750,7 +1750,11 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
 # Экспонат: габариты подписаны здесь, потому что по ним же считается, куда
 # отъезжает ведущий. Разъехавшись, они спрячут ему голову за карточку.
 EX_PLATE_H = 1040
-EX_PIC = (150, 150, 780, 620)      # left, top, width, height
+# Картинка ниже, чем была: подпись из трёх строк не влезала в остаток
+# плиты и уезжала под материал — на 0047 «ФИЗИКУ» было закрыто ровно
+# наполовину. 1040 − (150 + 560) − 30 − 46 оставляют подписи 254 px, а ей
+# нужно 232 даже с двумя строками уточнения.
+EX_PIC = (150, 150, 780, 560)      # left, top, width, height
 # Ведущий **сдвигается, но не уменьшается**. Масштаб меньше единицы у клипа
 # во весь кадр обнажает его собственные края: измерено на кадре — при 0.78
 # вертикальные швы вставали на x=118 и x=960 с перепадом яркости 134, ровно
@@ -2541,8 +2545,13 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         f".hero-exhibit{{position:absolute;left:0;top:0;width:var(--frame-w);"
         f"height:{EX_PLATE_H}px;z-index:{Z_AVATAR + 1};"
         "background:var(--color-bg-pure);display:flex;flex-direction:column;"
-        "align-items:center;justify-content:flex-end;"
-        "padding:0 90px 46px;text-align:center;pointer-events:none}"
+        # Подпись растёт **вниз** от нижнего края материала. Прижатая к
+        # низу плиты, она, переросши остаток, полезла вверх — под саму
+        # картинку. `overflow` — тот же запрет с другой стороны: за плиту,
+        # на ведущего, подпись выйти не имеет права.
+        "align-items:center;justify-content:flex-start;overflow:hidden;"
+        f"padding:{EX_PIC[1] + EX_PIC[3] + 30}px 90px 46px;"
+        "text-align:center;pointer-events:none}"
         # Паспарту: тень и скругление живут на обычном блоке, потому что на
         # самом видео продюсер их при сборке кадра не рисует.
         ".hero-exhibit .ex-frame{position:absolute;display:block;"

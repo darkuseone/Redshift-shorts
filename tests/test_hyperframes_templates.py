@@ -1092,3 +1092,69 @@ def test_typed_chunks_do_not_run_together():
     assert rules, "кусок карточки перестал быть блочным"
     assert "margin-right" in rules[0], rules[0]
     assert ".bt-chunk::after" not in css, "пробел снова внутри блока"
+
+
+# --- экспонат (§5.4) ----------------------------------------------------------
+
+def test_the_exhibit_label_never_rides_over_the_picture():
+    """На 0047 «ФИЗИКУ» было закрыто материалом ровно наполовину.
+
+    Подпись прижималась к низу плиты, и, переросши остаток высоты, лезла вверх
+    — под картинку. Проверяется геометрией, а не глазами: подпись начинается
+    ниже нижнего края материала и в плиту укладывается целиком.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.templates import EX_PIC, EX_PLATE_H, hero_css
+
+    css = hero_css(load_config().brandbook)
+    rule = re.search(r"\.hero-exhibit\{([^}]*)\}", css).group(1)
+    pad_top = int(re.search(r"padding:(\d+)px", rule).group(1))
+    assert pad_top >= EX_PIC[1] + EX_PIC[3], "подпись начинается выше картинки"
+    # Имя 88 px, уточнение в две строки по 38 px и кредит 24 px с полями по 14.
+    assert EX_PLATE_H - pad_top - 46 >= 88 + 14 + 2 * 46 + 14 + 24
+    assert "overflow:hidden" in rule, "подписи нечем удержаться внутри плиты"
+
+
+def test_the_exhibit_caption_is_a_whole_phrase():
+    """Подпись обрывалась на счёте слов: «…и сегодня это»."""
+    from src.p11_assemble.assemble import _caption
+
+    text = ("Скважину закрыли в девяносто втором, и сегодня это заваренный люк "
+            "посреди тундры. Мы упёрлись не в бюджет.")
+    assert _caption(text) == "Скважину закрыли в девяносто втором"
+    # Короткая фраза уходит целиком.
+    assert _caption("Её там не оказалось. Дальше шёл гранит.") == "Её там не оказалось"
+    # Нечего взять целиком — подписи не будет, выдумывать текст неоткуда.
+    assert _caption("Одно длинное предложение без единого знака препинания "
+                    "которое в подпись под экспонатом никак не помещается") == ""
+
+
+def test_a_generated_picture_gets_no_museum_label():
+    """Табличка — утверждение о материале, и под генерацией она лжёт формой.
+
+    В кадре она вдобавок подписывала «REDSHIFT / GENERATED»: ровно то, чего
+    заказчик просил в кадре не показывать.
+    """
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _hero_device
+
+    path = Path("templates/manifest.json")
+    catalog = TemplateCatalog(path, json.loads(path.read_text("utf-8")))
+    content = {"word": "ФИЗИКУ", "title": "Кольская сверхглубокая",
+               "caption": "Скважину закрыли в девяносто втором", "lines": ["а", "б"],
+               "punch": ["а", "б"], "entries": ["а"], "figures": [], "face": (540, 570)}
+    slot = {"index": 3, "role": "develop", "duration": 5.0, "start": 0.0, "end": 5.0}
+    picked = set()
+    for generated in (True, False):
+        plate = {"file": "/w/a.mp4", "duration_sec": 5.0, "credit": "NASA",
+                 "ai_generated": generated}
+        for seed in range(40):
+            entry = _hero_device(catalog, slot=slot, content=content,
+                                 has_alpha=True, plate_src=plate,
+                                 recent_videos=[], exclude=[], seed=seed)
+            if entry and generated:
+                assert entry["renderer"] != "hero-exhibit", entry["template"]
+            if entry and not generated:
+                picked.add(entry["renderer"])
+    # И обратное: на настоящем материале приём из каталога не исчез.
+    assert "hero-exhibit" in picked
