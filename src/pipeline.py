@@ -102,6 +102,12 @@ class Step:
     # №33508293306 закончился за две минуты и оставил выдачу пустой.
     # ``{video_id}`` и ``{variant}`` подставляются по контексту прогона.
     deliverables: tuple[str, ...] = ()
+    # Что именно шаг читает из входного JSON. Без этого отпечаток меняется от
+    # любой правки файла: P2 переозвучивал ролик из-за поискового запроса
+    # футажа, лежащего в том же плане, — а речь от запроса не зависит никак.
+    # Цена промаха тут не в минутах: переозвучка сдвигает границы фраз, и клипы
+    # ведущего, сгенерированные под прежнюю речь, уходят в брак все разом.
+    input_slice: dict[str, Any] = field(default_factory=dict)
     version: str = "1"
     optional: bool = False          # шаг может быть пропущен по фиче-флагу
     cacheable: bool = True
@@ -120,11 +126,18 @@ class Step:
         """Хеш входа: версия шага + код шага + входные артефакты + конфиг."""
         payload: dict[str, Any] = {"step": self.name, "version": self.version,
                                    "code": code_fingerprint(self.fn.__module__)}
+        # Шаг без входных файлов читает сам сценарий, и без него правка
+        # сценария не отменяла ничего: P0 при тёплом кэше считался свежим,
+        # выдавал прежний validated_script.json, и вся правка молча пропадала.
+        if not self.inputs:
+            payload["_script"] = hash_files([str(ctx.script_path)])
         for name in self.inputs:
             path = ctx.work_dir / name
             if path.exists():
                 if path.suffix == ".json":
-                    payload[name] = read_json_or(path, None)
+                    data = read_json_or(path, None)
+                    take = self.input_slice.get(name)
+                    payload[name] = take(data) if take and data is not None else data
                 else:
                     payload[name] = path.stat().st_size
         if self.config_inputs:

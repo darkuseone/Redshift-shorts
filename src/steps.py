@@ -13,6 +13,16 @@ from .pipeline import Pipeline, Step
 # тянет за собой numpy/Pillow, а падение одного шага при импорте не ломает CLI.
 
 
+def _speech_of_plan(plan: dict) -> dict:
+    """Часть плана, от которой зависит озвучка."""
+    return {
+        "video_id": plan.get("video_id"),
+        "tts_target_sec": plan.get("tts_target_sec"),
+        "blocks": [{key: block.get(key) for key in ("id", "role", "spoken_text")}
+                   for block in plan.get("blocks", [])],
+    }
+
+
 def build_pipeline() -> Pipeline:
     from .p0_validate.validator import run_step as p0
     from .p1_plan.planner import run_step as p1
@@ -35,7 +45,14 @@ def build_pipeline() -> Pipeline:
              inputs=("validated_script.json",), outputs=("draft_plan.json",),
              config_inputs=("config/pronunciation.json",)),
         Step("P2", "TTS: сырая озвучка с запасом длины", p2,
-             inputs=("draft_plan.json",), outputs=("voice_raw.wav", "tts_meta.json")),
+             inputs=("draft_plan.json",), outputs=("voice_raw.wav", "tts_meta.json"),
+             # Озвучка зависит от речи и только от неё. В том же плане лежат
+             # поисковые запросы футажа, visual_intent и подсказки шаблонов —
+             # правка любой из этих строк меняла отпечаток шага, ElevenLabs
+             # озвучивал заново, границы фраз уезжали, и клипы ведущего из
+             # репозитория браковались как разошедшийся липсинк. Здесь названо
+             # ровно то, что шаг и правда читает (см. src/p2_tts/tts.py).
+             input_slice={"draft_plan.json": _speech_of_plan}),
         Step("P3", "Оптимизация речи: паузы, вдохи, нормализация", p3,
              inputs=("voice_raw.wav", "tts_meta.json"),
              outputs=("voice_final.wav", "speech_map.json")),

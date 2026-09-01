@@ -355,3 +355,71 @@ def test_lru_respects_protected(tmp_path):
     removed = evict_lru(store, max_bytes=1500, protected={"g0.bin"})
     assert "g0.bin" not in removed
     assert store.exists("g0.bin")
+
+
+def _ctx_for(tmp_path, script: Path):
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.storage import build_storage
+    from src.pipeline import RunContext
+
+    work = tmp_path / "work"
+    work.mkdir(exist_ok=True)
+    cfg = load_config(overrides=["providers.mode=mock"])
+    return RunContext(video_id="redshift_0047", cfg=cfg, work_dir=work,
+                      output_dir=tmp_path / "out", script_path=script,
+                      cache=StepCache(work), costs=CostLedger(video_id="redshift_0047"),
+                      storage=build_storage(cfg))
+
+
+def test_editing_the_script_invalidates_the_first_step(tmp_path):
+    """Шаг без входных файлов читает сам сценарий — и обязан от него зависеть.
+
+    У P0 ``inputs`` пуст, и его отпечаток состоял из имени, версии и кода шага.
+    При тёплом кэше он считался свежим всегда: правка сценария не отменяла
+    ничего, P0 отдавал прежний validated_script.json, и правка молча пропадала.
+    """
+    from src.steps import build_pipeline
+
+    script = tmp_path / "s.json"
+    script.write_text('{"meta": {"video_id": "x"}, "blocks": []}', encoding="utf-8")
+    ctx = _ctx_for(tmp_path, script)
+    p0 = next(s for s in build_pipeline().steps if s.name == "P0")
+
+    before = p0.fingerprint(ctx)
+    script.write_text('{"meta": {"video_id": "x"}, "blocks": [{"id": "b1"}]}',
+                      encoding="utf-8")
+    assert p0.fingerprint(ctx) != before
+
+
+def test_a_footage_query_never_reprices_the_voice(tmp_path):
+    """Поисковый запрос футажа лежит в том же плане, что и речь.
+
+    Пока отпечаток P2 считался по всему файлу, правка одной строки запроса
+    означала переозвучку: ElevenLabs списывал кредиты, границы фраз сдвигались, и
+    клипы ведущего, сгенерированные под прежнюю речь, шли в брак все разом.
+    Цена промаха — оба сервиса сразу, поэтому правило закреплено тестом.
+    """
+    import json
+
+    from src.steps import build_pipeline
+
+    ctx = _ctx_for(tmp_path, tmp_path / "s.json")
+    plan = {"video_id": "redshift_0047", "tts_target_sec": 58.0,
+            "blocks": [{"id": "b1", "role": "hook", "spoken_text": "Самая глубокая дыра",
+                        "broll_queries": ["deep drilling rig night fog"],
+                        "visual_intent": "Тёмный кадр"}]}
+    path = ctx.work_dir / "draft_plan.json"
+    path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    p2 = next(s for s in build_pipeline().steps if s.name == "P2")
+    before = p2.fingerprint(ctx)
+
+    plan["blocks"][0]["broll_queries"] = ["welded steel hatch on concrete"]
+    plan["blocks"][0]["visual_intent"] = "Заваренный люк"
+    path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert p2.fingerprint(ctx) == before, "правка запроса футажа переозвучивает ролик"
+
+    # А правка самой речи — обязана переозвучить.
+    plan["blocks"][0]["spoken_text"] = "Самая глубокая скважина"
+    path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert p2.fingerprint(ctx) != before

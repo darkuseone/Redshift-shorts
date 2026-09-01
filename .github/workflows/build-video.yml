@@ -163,15 +163,46 @@ jobs:
             echo "готового голоса для $video_id нет — P2 озвучит заново"
           fi
 
+      # Ключ кэша считается по **речи** сценария, а не по всему файлу. Голос
+      # зависит только от текстов блоков; поисковый запрос футажа, visual_intent
+      # и подсказка шаблона на него не влияют никак. Пока ключом был файл
+      # целиком, правка одной строки запроса обнуляла кэш — а вместе с ним
+      # уезжала озвучка: ElevenLabs озвучивал заново, границы фраз сдвигались,
+      # и клипы ведущего из репозитория шли в брак как уехавший липсинк. Так
+      # уже случалось дважды, и цена ошибки — оба сервиса разом.
+      - name: Ключ кэша по речи сценария
+        id: speech_key
+        run: |
+          set -euo pipefail
+          key=$(python - <<'EOF'
+          import hashlib, json, os
+          script = os.environ["SCRIPT"]
+          data = json.load(open(script, encoding="utf-8"))
+          text = "\n".join(str(b.get("text") or "") for b in data["blocks"])
+          print(hashlib.sha256(text.encode("utf-8")).hexdigest()[:16])
+          EOF
+          )
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+          echo "ключ кэша по речи: $key"
+        env:
+          SCRIPT: ${{ github.event.inputs.script }}
+
+      # Три ключа восстановления, от точного к общему. Первый — по речи, второй
+      # — прежний формат по всему файлу сценария: без него кэш, сохранённый до
+      # этой правки, стал бы недостижим, и прогон переозвучил бы ролик заново.
+      # Третий ловит любой прошлый прогон: пустой work/ здесь не ошибка, а
+      # только потерянное время.
       - name: Восстановить кэш прогонов
         uses: actions/cache/restore@v4
         with:
           path: |
             work
             .redshift_cache
-          key: redshift-work-${{ hashFiles(github.event.inputs.script) }}-${{ github.run_id }}
+          key: redshift-work-${{ steps.speech_key.outputs.key }}-${{ github.run_id }}
           restore-keys: |
+            redshift-work-${{ steps.speech_key.outputs.key }}-
             redshift-work-${{ hashFiles(github.event.inputs.script) }}-
+            redshift-work-
 
       - name: Сборка ролика (A и B)
         run: |
@@ -198,7 +229,7 @@ jobs:
           path: |
             work
             .redshift_cache
-          key: redshift-work-${{ hashFiles(github.event.inputs.script) }}-${{ github.run_id }}
+          key: redshift-work-${{ steps.speech_key.outputs.key }}-${{ github.run_id }}
 
       # Артефакт Actions заказчику недоступен — ни скачать, ни открыть. Поэтому
       # рядом с ним кладётся лёгкое превью: 720p, CRF 30, звук 96k. Обе версии
@@ -229,6 +260,29 @@ jobs:
           cp output/"$video_id"/build_report.json "$out"/ 2>/dev/null || true
           cp output/"$video_id"/subtitles.srt "$out"/ 2>/dev/null || true
           du -sh "$out" && ls -la "$out"
+
+      # Голос переживает прогон только в кэше, а кэш терялся уже трижды. Пара
+      # «голос + клипы ведущего» при этом неразрывна: переозвучка сдвигает
+      # границы фраз, и P6 бракует все клипы разом. Поэтому голос уезжает в
+      # репозиторий тем же коммитом, что и превью, — и следующий прогон берёт
+      # его шагом «Засеять work/ готовым голосом», ничего не тратя.
+      - name: Готовый голос — в репозиторий
+        if: success()
+        run: |
+          set -euo pipefail
+          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          src="work/$video_id"
+          dst="assets/voice/$video_id"
+          if [ -f "$src/voice_final.wav" ]; then
+            mkdir -p "$dst"
+            cp -v "$src/voice_final.wav" "$dst"/
+            for name in speech_map draft_plan validated_script; do
+              cp -v "$src/$name.json" "$dst"/ 2>/dev/null || true
+            done
+            du -sh "$dst"
+          else
+            echo "голоса в work/ нет — нечего сохранять"
+          fi
 
       - name: Превью, библиотеки и индексы в коммит
         if: success()
