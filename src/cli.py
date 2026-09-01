@@ -136,6 +136,54 @@ def cmd_validate(args) -> int:
     return 0
 
 
+def cmd_voice_probe(args) -> int:
+    """Одна короткая фраза в ElevenLabs — чтобы узнать, что сервис отдаёт.
+
+    Тариф решает, придёт ли сырой PCM или молча подменённый mp3, и узнать это
+    можно было только по логу целого прогона за полдоллара. Проба стоит цента:
+    десяток слов, и в отчёте — формат тела ответа, частота и полоса речи.
+    Заказчик правит права ключа — здесь он видит, помогло ли.
+    """
+    from .lib.audio import speech_bandwidth_hz
+    from .lib.costs import CostLedger
+    from .lib.providers.tts import build_tts_provider
+
+    cfg = _load_cfg(args)
+    setup_logging(level="INFO", json_output=False)
+    costs = CostLedger(video_id="voice-probe")
+    provider = build_tts_provider(cfg, costs)
+    out = Path(args.out or "work/voice_probe.wav")
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    provider.synthesize(args.text, out, speed=1.0)
+    audio, sr = _read_wav_mono(out)
+    report = {
+        "provider": provider.name,
+        "mode": provider.mode.value if hasattr(provider.mode, "value") else str(provider.mode),
+        "model": cfg.get("elevenlabs.model", ""),
+        "requested_format": str(cfg.get("elevenlabs.output_format", "") or "pcm_*"),
+        "sample_rate": sr,
+        "duration_sec": round(len(audio) / max(sr, 1), 3),
+        "bandwidth_hz": round(speech_bandwidth_hz(audio, sr)),
+        "min_bandwidth_hz": float(cfg.get("elevenlabs.min_bandwidth_hz", 14000)),
+        "chars": len(args.text),
+        "usd": round(float(costs.total_usd), 4),
+        "file": str(out),
+    }
+    report["verdict"] = ("сервис отдаёт полноценный звук"
+                         if report["bandwidth_hz"] >= report["min_bandwidth_hz"]
+                         else "полоса ниже ожидаемой — сервис отдаёт сжатый звук")
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _read_wav_mono(path: Path):
+    from .lib.audio import load_wav
+
+    audio, sr = load_wav(path)
+    return (audio[:, 0] if getattr(audio, "ndim", 1) == 2 else audio), sr
+
+
 def cmd_fonts_check(args) -> int:
     from .lib.fonts import read_font, validate_font
 
@@ -289,6 +337,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     st = sub.add_parser("steps", help="контракты шагов пайплайна")
     st.set_defaults(func=cmd_steps)
+
+    vp = sub.add_parser("voice-probe",
+                        help="одна фраза в TTS: какой формат и полосу отдаёт сервис")
+    vp.add_argument("--text", default="Проверка формата ответа синтеза речи.")
+    vp.add_argument("--out", default=None)
+    vp.set_defaults(func=cmd_voice_probe)
     return parser
 
 
