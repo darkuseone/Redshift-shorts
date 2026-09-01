@@ -158,6 +158,7 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-phone-mock": ("lines",),
     "hero-script-stack": ("lines",),
     "hero-chat-typing": ("ask",),
+    "hero-chat-generate": ("gen_prompt", "plate"),
     "hero-title-behind": ("head", "tail"),
     "hero-exhibit": ("plate", "title"),
     "hero-slam": ("punch",),
@@ -223,6 +224,36 @@ def _question(text: str, *, limit: int = 8) -> str:
         if "?" in part:
             return " ".join(part.split()[:limit]).strip(".,!?;:")
     return ""
+
+
+# Слова, по которым видно, что реплика про генерацию, а не про что угодно.
+# Список короткий и предметный: «модель» сюда не входит — в науке это модель
+# Вселенной куда чаще, чем модель нейросети, и окно генерации всплыло бы в
+# ролике про чёрные дыры. Ровно так уже промахнулся список вопросительных слов
+# для окна переписки.
+_GEN_MARKERS = re.compile(
+    r"(нейросет|нейронк|сгенерир|генерир|генерац|промпт|prompt|chatgpt|"
+    r"midjourney|dall|sora|stable diffusion|диффузионн|искусственн\w+ интеллект|"
+    r"\bии\b|\bai\b|\bgpt\b)", re.IGNORECASE)
+
+
+def _gen_prompt(block: dict[str, Any], *, limit: int = 7) -> str:
+    """Короткий промпт для окна генерации — или пусто, если блок не про неё.
+
+    Заказчик просил показывать генерацию там, где о ней и речь: «новость про
+    искусственный интеллект, как будто делаешь короткий запрос, и там окно
+    генерации или уже сгенерированная картинка». Значит, приём включает не
+    длина реплики, а её предмет.
+
+    Промпт берётся клаузой с акцентным словом, а не первыми словами блока:
+    обрывок, начатый с середины чужой мысли, читается как сбой набора. Строчные
+    буквы — так и печатают в поле запроса; заглавная тут выдала бы заголовок.
+    """
+    text = str(block.get("text") or "").strip()
+    if not text or not _GEN_MARKERS.search(text):
+        return ""
+    clause = _accent_clause(block) or text
+    return " ".join(clause.split()[:limit]).strip(".,!?;:").lower()
 
 
 def _accent_clause(block: dict[str, Any]) -> str:
@@ -482,6 +513,8 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # читается как сбой набора, а не как реплика.
         "ask": _question(text),
         "answer": _sentence(text, 1, limit=6),
+        # Промпт для окна генерации — только если блок и правда про генерацию.
+        "gen_prompt": _gen_prompt(block),
         "head": head,
         "tail": tail,
         # Фраза для плашки-удара: одна фраза реплики, разбитая на две короткие
@@ -632,6 +665,8 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
         # рабочий кадр. Но если реплика длинная — ответ есть, и он читается.
         params["answer"] = content.get("answer", "")
         params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    if renderer == "hero-chat-generate":
+        params["app"] = str(slot.get("screen_template") or "ChatGPT")
     return params
 
 
@@ -674,7 +709,16 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         "file": None, "duration": None,
         **hero_mutes_subtitle(renderer),
     }
-    if plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-exhibit"):
+    if plate_src and renderer == "hero-chat-generate":
+        # Окно живёт весь кадр, а внутри него результат приходит своим клипом:
+        # длину приёма материалом здесь ограничивать нельзя, иначе окно исчезнет
+        # вместе с картинкой, не досидев до конца реплики. Материал короче кадра
+        # укорачивает только сам результат — это один прямоугольник внутри окна,
+        # и приём это переживает.
+        entry["file"] = plate_src["file"]
+        if plate_src.get("duration_sec"):
+            params["media_sec"] = round(float(plate_src["duration_sec"]), 3)
+    elif plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-exhibit"):
         # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
         # и растянутая панель досидела бы кадр пустой.
         entry["file"] = plate_src["file"]

@@ -185,7 +185,7 @@ def test_long_footage_run_is_broken_by_avatar():
 
 
 def test_long_footage_run_yields_to_appearance_count_limit():
-    """§3.5 против §3.5: новое появление вывело бы их число за 2–5.
+    """§3.5 против §3.5: новое появление вывело бы их число за 2–7.
 
     Непрерывный футаж — не блокирующая проверка, число появлений строже,
     поэтому кусок остаётся длинным, а причина уходит в план.
@@ -676,6 +676,38 @@ def test_chat_window_fires_once_per_script():
         blocks = json.load(open(path, encoding="utf-8"))["blocks"]
         asking = [b["id"] for b in blocks if _question(b["text"])]
         assert len(asking) == 1, f"{path}: окон переписки {len(asking)}, ждали одно"
+
+
+# --- окно генерации: только там, где речь о генерации -------------------------
+
+def test_generation_window_needs_the_topic_not_the_length():
+    """Промпт собирается там, где блок и правда про генерацию.
+
+    «Модель» в список не входит: в науке это модель Вселенной куда чаще, чем
+    модель нейросети, и окно всплыло бы в ролике про чёрные дыры — той же
+    ошибкой, что список вопросительных слов у окна переписки.
+    """
+    from src.p11_assemble.assemble import _gen_prompt
+
+    block = {"text": "Нейросеть рисует кадр за четыре секунды, и отличить его нельзя.",
+             "emphasis_word": "четыре"}
+    assert _gen_prompt(block) == "нейросеть рисует кадр за четыре секунды"
+    # Промпт печатают строчными: заглавная выдала бы заголовок, а не запрос.
+    assert _gen_prompt(block).islower()
+    assert _gen_prompt({"text": "Модель Вселенной пересобрали дважды."}) == ""
+    assert _gen_prompt({"text": ""}) == ""
+
+
+def test_generation_window_stays_silent_on_current_scripts():
+    """Ни один сценарий репозитория не про ИИ — и окна генерации в них нет."""
+    import glob
+    import json
+
+    from src.p11_assemble.assemble import _gen_prompt
+
+    for path in sorted(glob.glob("scripts/redshift_00*.json")):
+        blocks = json.load(open(path, encoding="utf-8"))["blocks"]
+        assert not [b["id"] for b in blocks if _gen_prompt(b)], path
 
 
 # --- акцент в полноэкранной фразе --------------------------------------------

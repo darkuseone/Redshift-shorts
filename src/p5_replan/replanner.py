@@ -9,7 +9,7 @@
 
 * визуальное событие не реже 1 раза в 2.5 сек (§4.1), первое — до 0.8 сек;
 * один футаж 1.5–5 сек, до 7 сек только при внутренних событиях (§3.6.2);
-* доля аватара 35–60 % (§3.5) и 2–5 появлений по 3–12 сек;
+* доля аватара 35–60 % (§3.5) и 2–7 появлений по 3–12 сек;
 * два аватар-сегмента подряд без перебивки запрещены (§7.4.3, R-3);
 * сплит-скрин ≤25 %, один блок футажа ≤40 % хронометража (§3.5);
 * полноэкранный текст 2–4 раза по 0.8–2 сек (§5.2), подсветка 1–3 раза (§5.5);
@@ -296,7 +296,7 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
     share_range = limits.get("avatar_share", [0.35, 0.60])
     share_lo, share_hi = float(share_range[0]), float(share_range[1])
     footage_share_max = float(limits.get("footage_block_share_max", 0.40))
-    appearances_max = int(brand["avatar"].get("appearances", [2, 5])[1])
+    appearances_max = int(brand["avatar"].get("appearances", [2, 7])[1])
     appearance_min = float(brand["avatar"]["appearance_sec"][0])
     appearance_max = float(brand["avatar"]["appearance_sec"][1])
 
@@ -484,7 +484,7 @@ def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], dur
     хвост, оставляя почти тот же кусок.
 
     Но чинить одно правило §3.5, ломая соседнее, нельзя: новое появление
-    аватара может вывести их число за 2–5. В отличие от доли аватара (QC-2)
+    аватара может вывести их число за 2–7. В отличие от доли аватара (QC-2)
     непрерывный футаж — не блокирующая проверка, поэтому при конфликте
     уступает именно он, а в план уходит запись, почему кусок остался длинным.
     """
@@ -921,7 +921,7 @@ def compute_stats(slots: list[Slot], duration: float) -> dict[str, Any]:
             run_start = None
 
     # Появление — непрерывный участок с аватаром в кадре, а не каждый слот:
-    # соседние сплиты одного блока — это одно появление (§3.5: 2–5 появлений).
+    # соседние сплиты одного блока — это одно появление (§3.5: 2–7 появлений).
     appearances: list[tuple[float, float]] = []
     for slot in slots:
         if slot.kind not in AVATAR_KINDS:
@@ -981,7 +981,7 @@ def run_step(ctx) -> dict[str, Any]:
     if stats["split_share"] > float(limits.get("split_share_max", 0.25)) + 1e-3:
         warnings.append(f"сплит-скрин {stats['split_share']:.0%} > 25 % (§3.5)")
 
-    lo_app, hi_app = ctx.cfg.brand("avatar.appearances", [2, 5])
+    lo_app, hi_app = ctx.cfg.brand("avatar.appearances", [2, 7])
     if not (lo_app <= stats["avatar_appearances"] <= hi_app):
         warnings.append(
             f"появлений аватара {stats['avatar_appearances']}, требуется {lo_app}–{hi_app} (§3.5)")

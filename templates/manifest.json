@@ -13,8 +13,8 @@
     "parallax": 4,
     "data-viz": 6,
     "outro-cta": 5,
-    "hero-devices": 22,
-    "_total": 103
+    "hero-devices": 23,
+    "_total": 104
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2258,6 +2258,31 @@
         "chat"
       ],
       "renderer": "hero-chat-typing",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/chat-generate",
+      "name": "chat-generate",
+      "category": "hero-devices",
+      "title": "Окно нейросети: промпт, отсчёт и готовый кадр",
+      "duration_range": [
+        3.4,
+        9.0
+      ],
+      "params": {
+        "generate_sec": 1.1
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "ui",
+        "chat",
+        "ai",
+        "footage"
+      ],
+      "renderer": "hero-chat-generate",
       "last_used_in": [],
       "added": "2026-08-18"
     },

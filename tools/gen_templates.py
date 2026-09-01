@@ -208,7 +208,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
     # над головой, панель сбоку, выбивка. Тег ``alpha`` помечает приёмы, для
     # которых аватар обязан прийти с прозрачным фоном: они рисуются ПОД ним, и
     # без альфы зритель их не увидит.
-    "hero-devices": (22, [
+    "hero-devices": (23, [
         ("plate-behind-back", "Кадр появляется за спиной ведущего", [1.4, 4.0],
          {"top": 300}, ["hero", "avatar", "alpha", "footage"], "hero-plate"),
         ("headline-over-head", "Заголовок вырастает над головой", [1.2, 3.4],
@@ -242,6 +242,13 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {}, ["hero", "avatar", "text", "lines", "stroke"], "hero-script-stack"),
         ("chat-typing", "Переписка: запрос набирается, ответ ждёт", [2.4, 5.0],
          {}, ["hero", "avatar", "text", "ui", "chat"], "hero-chat-typing"),
+        # Второе окно той же семьи, но про генерацию, а не про вопрос: промпт,
+        # отсчёт и готовый кадр внутри окна. Живёт дольше переписки — сцене
+        # нужно уместить набор, ожидание и сам результат.
+        ("chat-generate", "Окно нейросети: промпт, отсчёт и готовый кадр",
+         [3.4, 9.0], {"generate_sec": 1.1},
+         ["hero", "avatar", "text", "ui", "chat", "ai", "footage"],
+         "hero-chat-generate"),
         ("title-behind-head", "Двухстрочная тема за головой", [2.0, 5.2],
          {}, ["hero", "avatar", "text", "behind"], "hero-title-behind"),
         ("exhibit-card", "Экспонат в раме с музейной подписью", [2.4, 5.5],

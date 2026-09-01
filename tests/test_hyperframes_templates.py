@@ -318,6 +318,8 @@ HERO_PARAMS = {
     "hero-chat-typing": {"ask": "что будет за горизонтом событий",
                          "answer": "тело растянет в нить",
                          "app": "ChatGPT"},
+    "hero-chat-generate": {"gen_prompt": "нарисуй горизонт событий вблизи",
+                           "app": "ChatGPT", "src": "assets/m000_shot.mp4"},
     "hero-title-behind": {"head": "Наполеон", "tail": "проиграл машине"},
     "hero-exhibit": {"title": "Наполеон Бонапарт", "detail": "партия с турком, 1809",
                      "credit": "NASA · public domain", "src": "assets/m000_shot.mp4"},
@@ -569,8 +571,22 @@ def test_every_hero_gets_its_content_from_the_pipeline():
                             words=spoken)
     content["brand"] = {"label": "Google", "icon": "assets/icons/google.png"}
 
+    # Окно генерации включается предметом реплики, а не её длиной, и на блоке
+    # про чёрную дыру оно обязано молчать. Значит, содержимое ему надо брать с
+    # блока про генерацию — иначе проверка требовала бы от приёма ровно того,
+    # чего он делать не должен.
+    gen_block = {"id": "b2", "role": "develop", "emphasis_word": "четыре",
+                 "text": "Нейросеть рисует такой кадр за четыре секунды, "
+                         "и отличить его от съёмки уже нельзя."}
+    gen_content = _hero_content(gen_block, {"role": "develop", "start": 0.0, "end": 6.0},
+                                None, (540, 700), title="Кадр, которого не было",
+                                words=[{"display": w, "start": 0.4 * i,
+                                        "end": 0.4 * i + 0.35, "block_id": "b2"}
+                                       for i, w in enumerate(gen_block["text"].split())])
+
     for name in sorted(HERO):
-        params = hero_params(name, {}, content, {"role": "hook"})
+        source = gen_content if "gen_prompt" in _HERO_NEEDS.get(name, ()) else content
+        params = hero_params(name, {}, source, {"role": "hook"})
         if "plate" in _HERO_NEEDS.get(name, ()):
             # Материал приходит не из текста блока, а из соседнего кадра.
             params["src"] = "assets/m000_shot.mp4"
@@ -872,6 +888,55 @@ def test_hero_clips_of_one_device_never_share_a_track(name):
     tracks = [re.search(r'data-track-index="(\d+)"', node).group(1)
               for node in piece.nodes if "data-track-index" in node]
     assert len(tracks) == len(set(tracks)), f"{name}: клипы делят трек {tracks}"
+
+
+def test_generation_result_arrives_after_the_prompt_and_inside_the_window():
+    """Результат — отдельный клип: у него своё начало, и оно позже промпта.
+
+    Прозрачность клипу запрещена, поэтому «картинка появилась» делается не
+    проявлением, а тем, что клипа до этого момента просто нет. И лечь он обязан
+    в окно, а не рядом: рамка и медиа считаются одними числами (``CG_CARD``).
+    """
+    from src.lib.render.hyperframes.templates import CG_CARD, _cg_media_box
+
+    ctx = _hero_ctx("hero-chat-generate", duration=6.0)
+    piece = render_hero("hero-chat-generate", ctx)
+    starts = {re.search(r'id="([^"]+)"', node).group(1):
+              float(re.search(r'data-start="([\d.]+)"', node).group(1))
+              for node in piece.nodes}
+    chrome, media = f"cg-{ctx.index:02d}", f"cg-{ctx.index:02d}-m"
+    assert starts[chrome] == pytest.approx(ctx.start)
+    assert starts[media] > starts[chrome] + 0.6
+
+    mx, my, mw, mh = _cg_media_box()
+    left, top, width, height = CG_CARD
+    assert left <= mx and mx + mw <= left + width
+    assert top <= my and my + mh <= top + height
+    node = next(n for n in piece.nodes if 'id="' + media + '"' in n)
+    assert f"left:{mx}px" in node and f"top:{my}px" in node
+
+
+def test_generation_result_never_outlives_its_shot():
+    """Короткий кадр ужимает ожидание, а не выпускает клип за границу окна."""
+    ctx = _hero_ctx("hero-chat-generate", duration=2.0)
+    piece = render_hero("hero-chat-generate", ctx)
+    media = next(n for n in piece.nodes if n.startswith("<video"))
+    start = float(re.search(r'data-start="([\d.]+)"', media).group(1))
+    dur = float(re.search(r'data-duration="([\d.]+)"', media).group(1))
+    assert start >= ctx.start
+    assert start + dur <= ctx.start + ctx.duration + 1e-6
+    assert dur >= 0.4
+
+
+def test_generation_result_is_capped_by_the_material_length():
+    """Материал короче кадра укорачивает картинку, но не само окно."""
+    ctx = _hero_ctx("hero-chat-generate", duration=6.0,
+                    params={"media_sec": 0.9})
+    piece = render_hero("hero-chat-generate", ctx)
+    chrome = next(n for n in piece.nodes if n.startswith("<div"))
+    media = next(n for n in piece.nodes if n.startswith("<video"))
+    assert float(re.search(r'data-duration="([\d.]+)"', chrome).group(1)) == ctx.duration
+    assert float(re.search(r'data-duration="([\d.]+)"', media).group(1)) == pytest.approx(0.9)
 
 
 def test_knockout_sits_on_the_face_not_the_torso():

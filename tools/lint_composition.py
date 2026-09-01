@@ -43,6 +43,32 @@ from src.lib.render.hyperframes.templates import HERO, TRANSITIONS  # noqa: E402
 WORD_STEP = 0.4996
 SHOT_SEC = 2.4
 
+# Один набор параметров на все приёмы: чего в нём нет, то приём молча не
+# нарисует — вернёт пустой Piece, и lint такого шаблона просто не увидит.
+# Поэтому здесь лежит по ключу на каждую нужду каталога, а `run` проверяет,
+# что каждый приём и правда собрал узлы.
+HERO_PARAMS: dict = {
+    "content": "КОЛЬСКАЯ", "text": "двенадцать километров",
+    "title": "Кольская", "lines": ["один", "два", "три"],
+    "values": [3.0, 7.0, 12.0], "labels": ["а", "б", "в"],
+    "value": 12262, "domain": "nature.com",
+    "word": "ТЕЧЁТ", "caption": "порода течёт",
+    "ask": "почему скважину закрыли",
+    "answer": "порода начала течь",
+    "gen_prompt": "покажи ствол скважины на глубине",
+    "app": "ChatGPT",
+    "head": "КОЛЬСКАЯ", "tail": "СВЕРХГЛУБОКАЯ",
+    "punch": ["ПОРОДА", "ТЕЧЁТ"],
+    "entries": [{"text": "двенадцать", "at": 0.2},
+                {"text": "километров", "at": 0.8}],
+    "figures": [{"value": "12 262", "label": "метров"},
+                {"value": "220", "label": "°C"}],
+    "icons": [{"glyph": "chip"}, {"glyph": "flask"}, {"glyph": "bolt"}],
+    "label": "Кольская", "accent": "ТЕЧЁТ",
+    "source": "nature.com", "quote": "порода перестаёт быть камнем",
+    "detail": "двенадцать километров", "credit": "nature.com",
+}
+
 
 def _media(dst: Path) -> dict[str, Path]:
     """Минимальные заглушки материала. Lint смотрит разметку, а не картинку."""
@@ -88,11 +114,7 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
         if i < len(heroes):
             shot["hero"] = {
                 "renderer": heroes[i], "file": str(media["plate"]),
-                "params": {"content": "КОЛЬСКАЯ", "text": "двенадцать километров",
-                           "title": "Кольская", "lines": ["один", "два", "три"],
-                           "values": [3.0, 7.0, 12.0], "labels": ["а", "б", "в"],
-                           "value": 12262, "domain": "nature.com",
-                           "word": "ТЕЧЁТ", "caption": "порода течёт"},
+                "params": dict(HERO_PARAMS),
             }
         if kind == "avatar":
             avatar.append({
@@ -141,15 +163,39 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
     return plan, blocks
 
 
+def _uncovered(media: dict[str, Path]) -> list[str]:
+    """Приёмы, которые на этом наборе параметров ничего не рисуют.
+
+    Пустой Piece — не ошибка разметки, а дыра в проверке: шаблона в проекте
+    просто нет, и lint о нём ничего не скажет. Ловим это здесь, а не кадром.
+    """
+    from src.lib.render.hyperframes.templates import TemplateCtx, render_hero
+    params = {**HERO_PARAMS, "src": str(media["plate"]),
+              "icon": str(media["plate"])}
+    silent = []
+    for name in sorted(HERO):
+        piece = render_hero(name, TemplateCtx(index=1, start=1.0, duration=SHOT_SEC,
+                                              target="#shot-01", track=6,
+                                              params=dict(params)))
+        if not piece.nodes:
+            silent.append(name)
+    return silent
+
+
 def run(hyperframes: str, work: Path) -> tuple[int, str]:
     """Собрать проект и отдать его lint. Возвращает (код, вывод)."""
     media = _media(work / "media")
+    silent = _uncovered(media)
     plan, blocks = build_plan(media)
     root = work / "project"
     HyperFramesProject(root, load_config()).prepare(plan, media["mix"], blocks=blocks)
     proc = subprocess.run([hyperframes, "lint"], cwd=root,
                           capture_output=True, text=True, timeout=300)
-    return proc.returncode, proc.stdout + proc.stderr
+    out = proc.stdout + proc.stderr
+    if silent:
+        out += ("\nприёмы без узлов (проверкой не покрыты): "
+                + ", ".join(silent) + "\n")
+    return (proc.returncode or (1 if silent else 0)), out
 
 
 def main() -> int:

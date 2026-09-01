@@ -1604,6 +1604,110 @@ def hero_chat_typing(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Окно генерации: рама карточки и место под результат. Числа держим здесь, а не
+# в CSS: медиа-клип живёт отдельным элементом с абсолютными координатами, и
+# рамка под ним обязана считаться теми же числами, иначе картинка ляжет мимо.
+CG_CARD = (150, 150, 780, 780)     # left, top, width, height
+CG_PAD = 34
+CG_HEAD_H = 56
+CG_PROMPT_H = 132
+CG_BAR_H = 8
+
+
+def _cg_media_box() -> tuple[int, int, int, int]:
+    """Прямоугольник результата внутри окна — left, top, width, height."""
+    left, top, width, height = CG_CARD
+    x = left + CG_PAD
+    y = top + CG_PAD + CG_HEAD_H + 18 + CG_PROMPT_H + 16 + CG_BAR_H + 18
+    return x, y, width - 2 * CG_PAD, top + height - CG_PAD - y
+
+
+def hero_chat_generate(ctx: "TemplateCtx") -> Piece:
+    """Окно нейросети: короткий промпт, полоса генерации и готовый кадр.
+
+    Заказчик просил показывать не только вопрос, но и генерацию: «как будто
+    делаешь промпт, и там показано окно генерации или уже сгенерированная
+    картинка». Приём и собирает эту сцену целиком — запрос, ожидание, результат.
+
+    Результат — настоящий материал кадра, а не нарисованный прямоугольник:
+    приём берёт тот же файл, что лёг бы на панель за спиной. Поэтому он и
+    просит ``plate``: окно генерации без картинки — это окно ни о чём.
+
+    Картинка приходит **своим** клипом с собственным ``data-start``: движок
+    показывает клип с его начала, и это единственный способ показать
+    результат позже промпта, не трогая прозрачность (она у клипов за движком).
+    Пока клипа нет, в окне лежит плашка ожидания — она в раме окна, под
+    результатом, и он её закрывает, когда приходит.
+    """
+    prompt = str(ctx.params.get("gen_prompt") or "").strip()
+    src = str(ctx.params.get("src") or "")
+    if not prompt or not src:
+        return Piece()
+
+    node_id = f"cg-{ctx.index:02d}"
+    app = str(ctx.params.get("app") or "ChatGPT")
+    left, top, width, height = CG_CARD
+    inner = width - 2 * CG_PAD
+    mx, my, mw, mh = _cg_media_box()
+
+    # Промпт набирается словами: посимвольная печать не переживает перемотку,
+    # а слово за словом даёт ту же скорость чтения и остаётся детерминированным.
+    lines, size = fit_block(prompt, inner - 40, 38, 2, role="subtitle")
+    words: list[str] = []
+    tweens: list[str] = []
+    for i, word in enumerate(" ".join(lines).split()[:10]):
+        words.append(f'<span class="cg-w">{_esc(word)}</span>')
+        tweens += entrance_tweens(f"#{node_id} .cg-w:nth-child({i + 1})",
+                                  ctx.start, name="rise", delay=0.12 + 0.08 * i)
+
+    typed_for = 0.12 + 0.08 * min(len(prompt.split()), 10) + 0.14
+    gen_for = float(ctx.params.get("generate_sec", 1.1))
+    # Результат обязан успеть постоять в кадре: если окно короткое, ожидание
+    # ужимается, а не съедает картинку целиком.
+    media_start = min(ctx.start + typed_for + gen_for, ctx.start + ctx.duration - 0.6)
+    media_start = max(media_start, ctx.start + 0.3)
+    media_sec = float(ctx.params.get("media_sec") or 0.0)
+    media_dur = ctx.start + ctx.duration - media_start
+    if media_sec > 0:
+        media_dur = min(media_dur, media_sec)
+    media_dur = max(0.4, media_dur)
+
+    # Полоса заполняется ровно до прихода картинки: она и есть отсчёт.
+    fill_for = max(0.2, media_start - (ctx.start + typed_for))
+    tweens.append(f'tl.fromTo("#{node_id} .cg-fill",{{scaleX:0}},'
+                  f'{{scaleX:1,duration:{_num(fill_for)},ease:"none"}},'
+                  f'{_num(ctx.start + typed_for)});')
+
+    bars = "".join(f'<span class="cg-bar" style="width:{w}%"></span>'
+                   for w in (74, 92, 58))
+    for i in range(3):
+        tweens += entrance_tweens(f"#{node_id} .cg-bar:nth-child({i + 1})",
+                                  ctx.start, name="dim",
+                                  delay=typed_for + 0.08 + 0.10 * i)
+    tweens = entrance_tweens(f"#{node_id}-w", ctx.start, name="zoom-out") + tweens
+    # Картинка не проявляется, а встаёт: у клипа разрешены только трансформы.
+    tweens += enter_and_drift(f"#{node_id}-m", media_start, media_dur,
+                              name="zoom-in", fade=False)
+
+    chrome = (
+        f'<div id="{node_id}" class="clip hero-chat-generate" '
+        f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+        f'data-track-index="{ctx.track}">'
+        f'<div id="{node_id}-w" class="cg-window" '
+        f'style="left:{left}px;top:{top}px;width:{width}px;height:{height}px">'
+        f'<span class="cg-head"><span class="cg-app">{_esc(app)}</span>'
+        f'<span class="cg-state">генерация</span></span>'
+        f'<span class="cg-prompt" style="font-size:{size}px">{"".join(words)}</span>'
+        f'<span class="cg-track"><span class="cg-fill"></span></span>'
+        f'<span class="cg-canvas">{bars}</span>'
+        f'</div></div>')
+    media = (f'<video id="{node_id}-m" class="clip cg-media" src="{_esc(src)}" '
+             f'style="left:{mx}px;top:{my}px;width:{mw}px;height:{mh}px" '
+             f'data-start="{_num(media_start)}" data-duration="{_num(media_dur)}" '
+             f'data-track-index="{ctx.track_alt}" muted playsinline></video>')
+    return Piece(nodes=[chrome, media], tweens=tweens)
+
+
 def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     """Двухстрочный заголовок за головой: вторая строка — акцентом.
 
@@ -2162,6 +2266,7 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-phone-mock": hero_phone_mock,
     "hero-script-stack": hero_script_stack,
     "hero-chat-typing": hero_chat_typing,
+    "hero-chat-generate": hero_chat_generate,
     "hero-title-behind": hero_title_behind,
     "hero-exhibit": hero_exhibit,
     "hero-slam": hero_slam,
@@ -2380,6 +2485,43 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "padding:24px 30px;border-radius:30px 30px 30px 8px;background:#F0EEEB;"
         "color:var(--color-ink);font-family:var(--font-subtitle);font-size:40px;"
         "line-height:1.24}"
+        # --- окно генерации ---
+        # Слой поверх ведущего, но окно в нём стоит по своим координатам: под
+        # ним лежит медиа-клип с результатом, и оба обязаны считаться одними и
+        # теми же числами (CG_CARD).
+        f".hero-chat-generate{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
+        "pointer-events:none}"
+        ".hero-chat-generate .cg-window{position:absolute;display:flex;"
+        "flex-direction:column;background:var(--color-bg-pure);border-radius:40px;"
+        f"padding:{CG_PAD}px;box-shadow:0 40px 90px rgba(10,10,12,.34)}}"
+        f".hero-chat-generate .cg-head{{height:{CG_HEAD_H}px;display:flex;"
+        "align-items:center;justify-content:space-between}"
+        ".hero-chat-generate .cg-app{font-family:var(--font-mono);font-size:30px;"
+        "letter-spacing:.16em;text-transform:uppercase;color:var(--color-muted)}"
+        # Статус — единственное акцентное пятно окна: §3.3 не даёт красному
+        # растекаться, и на белой карточке одной подписи хватает.
+        ".hero-chat-generate .cg-state{font-family:var(--font-mono);font-size:24px;"
+        "letter-spacing:.18em;text-transform:uppercase;color:var(--color-accent);"
+        "border:2px solid var(--color-accent);border-radius:16px;padding:6px 16px}"
+        f".hero-chat-generate .cg-prompt{{margin-top:18px;height:{CG_PROMPT_H}px;"
+        "box-sizing:border-box;padding:22px 26px;border-radius:26px;"
+        "background:var(--color-ink);color:var(--color-bg-pure);"
+        "font-family:var(--font-subtitle);line-height:1.22;display:flex;"
+        "flex-wrap:wrap;gap:.30em;align-content:flex-start}"
+        ".hero-chat-generate .cg-w{display:inline-block}"
+        f".hero-chat-generate .cg-track{{margin-top:16px;height:{CG_BAR_H}px;"
+        "border-radius:4px;background:rgba(17,18,20,.10);overflow:hidden}"
+        ".hero-chat-generate .cg-fill{display:block;width:100%;height:100%;"
+        "border-radius:4px;background:var(--color-accent);transform-origin:left center}"
+        # Плашка ожидания лежит на месте результата: клип с картинкой встаёт
+        # поверх неё своим треком и закрывает целиком.
+        ".hero-chat-generate .cg-canvas{margin-top:18px;flex:1;border-radius:24px;"
+        "background:#F0EEEB;display:flex;flex-direction:column;justify-content:center;"
+        "gap:18px;padding:0 40px}"
+        ".hero-chat-generate .cg-bar{display:block;height:20px;border-radius:10px;"
+        "background:rgba(17,18,20,.14)}"
+        f".cg-media{{position:absolute;object-fit:cover;z-index:{Z_AVATAR + 2};"
+        "border-radius:24px}"
         # --- двухстрочный заголовок за головой ---
         # Слой уходит за аватара: голова обязана перекрывать низ второй строки,
         # иначе это обычная плашка поверх кадра, а не глубина.
