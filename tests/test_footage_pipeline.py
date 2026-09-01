@@ -782,3 +782,32 @@ def test_prepared_entry_is_a_dict_with_dst():
     assert plate is not None
     assert plate["file"] == "/w/shots/a.mp4"
     assert plate["duration_sec"] == pytest.approx(4.2)
+
+
+def test_the_repository_library_never_collects_generated_material(tmp_path, cfg, monkeypatch):
+    """Библиотека лежит в репозитории и просматривается раньше стоков (§7.2.1).
+
+    Накопив там AI, конвейер начал бы предпочитать его настоящему кадру — ровно
+    вопреки правилу «преимущество всегда за реальным материалом». Повторить
+    генерацию дёшево, а место в истории git не возвращается никогда.
+    """
+    import json
+
+    from src.lib.providers.vision import VisionVerdict
+    from src.p9_generate import generate as G
+    from tests.test_generation_grok import _run_generation
+
+    class _Critic:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            return VisionVerdict(score=0.9, reason="", summary="кадр", judge="critic")
+
+    monkeypatch.setattr(G, "build_vision_provider", lambda *a, **k: _Critic())
+    _run_generation(tmp_path, monkeypatch, cfg)
+
+    doc = json.loads((tmp_path / "work" / "generated_assets.json").read_text("utf-8"))
+    assert doc["generated"], "проба не сгенерировала ничего — тест бессмыслен"
+
+    index_path = tmp_path / "cache" / "footage_index.json"
+    items = json.loads(index_path.read_text("utf-8"))["items"] if index_path.exists() else []
+    assert not [i for i in items if i.get("ai_generated")], "AI попал в общую базу"
+    assert not list((tmp_path / "storage").rglob("*.mp4")), "AI попал в хранилище"

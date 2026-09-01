@@ -98,9 +98,15 @@ class LocalStorage(StorageBackend):
         if p.exists():
             p.unlink()
 
+    # Служебные файлы каталога — не материал. Библиотека теперь лежит в
+    # репозитории, и рядом с клипами живёт её README: без этого исключения
+    # вытеснение по LRU однажды удалило бы описание собственной библиотеки.
+    _NOT_MATERIAL = frozenset({".md", ".gitkeep", ".gitignore", ".keep"})
+
     def list(self) -> Iterator[StoredObject]:
         for p in self.root.rglob("*"):
-            if p.is_file():
+            if p.is_file() and p.suffix not in self._NOT_MATERIAL \
+                    and p.name not in self._NOT_MATERIAL:
                 st = p.stat()
                 yield StoredObject(
                     key=str(p.relative_to(self.root)),

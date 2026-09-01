@@ -19,7 +19,7 @@ from typing import Any
 
 from ..lib.ffmpeg import extract_frames, probe
 from ..lib.logging import get_logger
-from ..lib.manifest import AssetRecord, FootageIndex
+from ..lib.manifest import FootageIndex
 from ..lib.phash import phash_image
 from ..lib.providers.generation import build_generation_provider
 from ..lib.providers.vision import build_vision_provider
@@ -234,17 +234,14 @@ def run_step(ctx) -> dict[str, Any]:
         generated[str(slot_index)] = entry
         ai_budget_sec -= slot_duration
 
-        storage_key = f"generated/{asset.id}.mp4"
-        ctx.storage.put(storage_key, asset.path)
-        index.add(AssetRecord(
-            id=asset.id, type="video", source="magnific",
-            license="generated-owned", url_origin="",
-            phash=hashes[0] if hashes else "", phashes=hashes,
-            tags=entry["tags"], vision_summary=asset.prompt[:160],
-            score=float(entry["score"]), duration_sec=entry["duration_sec"],
-            width=entry["width"], height=entry["height"], file=storage_key,
-            used_in=[plan["video_id"]], ai_generated=True, mock=asset.mock,
-        ))
+        # В общую библиотеку сгенерированный кадр не кладётся. Библиотека
+        # живёт в репозитории и просматривается раньше внешних стоков — накопив
+        # там AI, конвейер начал бы предпочитать его настоящему кадру, ровно
+        # вопреки правилу «преимущество всегда за реальным материалом».
+        # Повторить генерацию дёшево, а место в истории git не возвращается
+        # никогда. Паспорт кадра остаётся в отчёте прогона.
+        _log.info("сгенерированный кадр в библиотеку не попадает",
+                  extra={"slot": slot_index, "asset_id": asset.id})
 
     index.save()
 
