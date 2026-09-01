@@ -184,8 +184,12 @@ class MockTTS(TTSProvider):
 # --- live --------------------------------------------------------------------
 
 def _decode_tts_audio(raw: bytes, *, api_sr: int, target_sr: int,
-                      model: str) -> np.ndarray:
-    """Тело ответа TTS → моно float32 на частоте конвейера.
+                      model: str) -> tuple[np.ndarray, str]:
+    """Тело ответа TTS → моно float32 на частоте конвейера и имя контейнера.
+
+    Контейнер возвращается наружу, а не только пишется в лог: проба голоса
+    показывает заказчику, что тариф отдал на самом деле, и «просили pcm_44100 —
+    пришёл .mp3» это ответ на его вопрос, а не строка в чужом журнале.
 
     Формат определяется по самим байтам, а не по тому, что мы попросили.
     ``pcm_*`` доступен не на всех тарифах, и на младших ElevenLabs **молча
@@ -211,7 +215,7 @@ def _decode_tts_audio(raw: bytes, *, api_sr: int, target_sr: int,
             path = Path(tmp) / f"tts{container}"
             path.write_bytes(raw)
             data, _ = load_audio_any(path, sr=target_sr)
-        return np.asarray(data, dtype=np.float32)
+        return np.asarray(data, dtype=np.float32), container
 
     if len(raw) % 2:
         raise ProviderError(
@@ -219,7 +223,8 @@ def _decode_tts_audio(raw: bytes, *, api_sr: int, target_sr: int,
             model=model, requested_format=f"pcm_{api_sr}", bytes=len(raw),
             head=raw[:16].hex())
     pcm = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
-    return resample(pcm, api_sr, target_sr) if api_sr != target_sr else pcm
+    pcm = resample(pcm, api_sr, target_sr) if api_sr != target_sr else pcm
+    return pcm, "pcm"
 
 
 # PCM ElevenLabs отдаёт только на этих частотах — проверено ответом сервиса.
@@ -327,7 +332,8 @@ class ElevenLabsTTS(TTSProvider):
         raw = base64.b64decode(data.get("audio_base64", ""))
         if not raw:
             raise ProviderError("ElevenLabs вернул пустое аудио", model=model)
-        pcm = _decode_tts_audio(raw, api_sr=api_sr, target_sr=sr, model=model)
+        pcm, container = _decode_tts_audio(raw, api_sr=api_sr, target_sr=sr,
+                                           model=model)
 
         # Полоса — единственное, по чему видно, что на самом деле отдал сервис.
         # На 0047 запрошен был pcm_44100, а пришёл сжатый mp3 со срезом на
@@ -336,6 +342,9 @@ class ElevenLabsTTS(TTSProvider):
         # сказать, что упёрся в тариф, а не в свой тракт.
         band = speech_bandwidth_hz(pcm, sr)
         floor = float(self.cfg.get("elevenlabs.min_bandwidth_hz", 14000))
+        # Что попросили и что получили — на виду у пробы голоса.
+        self.last_delivery = {"requested_format": fmt, "container": container,
+                              "bandwidth_hz": round(band)}
         _log.info("полоса синтезированной речи", extra={
             "bandwidth_hz": round(band), "requested_format": fmt, "model": model})
         if band < floor:

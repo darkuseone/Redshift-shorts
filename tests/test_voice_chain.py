@@ -752,3 +752,28 @@ def test_srt_shows_the_same_cues_as_the_frame():
     assert "\nа\n" not in srt
     # Две реплики, а не три: нумерация обязана идти подряд.
     assert srt.strip().split("\n\n")[-1].startswith("2")
+
+
+def test_the_probe_sweeps_formats_and_names_the_best_one(tmp_path, capsys, monkeypatch):
+    """Проба обязана отвечать на вопрос «какой формат брать», а не «сломалось ли».
+
+    Прогон 33570833947: попросили pcm_44100 — сервис отдал mp3 с полосой
+    8 кГц. Один формат за запуск означает гадание по документации ценой
+    очереди Actions; перебор в одном запуске даёт таблицу и победителя.
+    """
+    import argparse
+
+    from src.cli import cmd_voice_probe
+
+    args = argparse.Namespace(
+        text="Проверка формата.", out=str(tmp_path / "probe.wav"),
+        formats="pcm_44100,mp3_44100_128", config=None, set=None, brandbook=None)
+    monkeypatch.setenv("REDSHIFT_PROVIDERS_MODE", "mock")
+    assert cmd_voice_probe(args) == 0
+
+    report = json.loads(capsys.readouterr().out)
+    assert [p["format"] for p in report["probes"]] == ["pcm_44100", "mp3_44100_128"]
+    assert report["best"] in report["probes"], "победитель обязан быть из таблицы"
+    assert all("bandwidth_hz" in p for p in report["probes"])
+    # Каждый формат пишется отдельным файлом — иначе сравнивать нечего.
+    assert len({p["file"] for p in report["probes"]}) == 2

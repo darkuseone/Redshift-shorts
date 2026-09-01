@@ -137,12 +137,17 @@ def cmd_validate(args) -> int:
 
 
 def cmd_voice_probe(args) -> int:
-    """Одна короткая фраза в ElevenLabs — чтобы узнать, что сервис отдаёт.
+    """Короткая фраза в ElevenLabs — чтобы узнать, что сервис отдаёт на деле.
 
     Тариф решает, придёт ли сырой PCM или молча подменённый mp3, и узнать это
-    можно было только по логу целого прогона за полдоллара. Проба стоит цента:
-    десяток слов, и в отчёте — формат тела ответа, частота и полоса речи.
-    Заказчик правит права ключа — здесь он видит, помогло ли.
+    можно было только по логу целого прогона за полдоллара. Проба стоит цента.
+
+    ``--formats`` перебирает несколько форматов за один запуск. Это не роскошь:
+    прогон 33570833947 показал, что на запрос ``pcm_44100`` сервис отдаёт mp3 с
+    полосой 8 кГц — телефонное качество, и заказчик слышит его как «дешёвый
+    звук». Какой формат этот тариф отдаёт целиком, знает только сам сервис;
+    спросить его дешевле, чем гадать по документации, а перебор в одном запуске
+    экономит и деньги, и очередь Actions.
     """
     from .lib.audio import speech_bandwidth_hz
     from .lib.costs import CostLedger
@@ -151,28 +156,62 @@ def cmd_voice_probe(args) -> int:
     cfg = _load_cfg(args)
     setup_logging(level="INFO", json_output=False)
     costs = CostLedger(video_id="voice-probe")
-    provider = build_tts_provider(cfg, costs)
     out = Path(args.out or "work/voice_probe.wav")
     out.parent.mkdir(parents=True, exist_ok=True)
+    floor = float(cfg.get("elevenlabs.min_bandwidth_hz", 14000))
 
-    provider.synthesize(args.text, out, speed=1.0)
-    audio, sr = _read_wav_mono(out)
+    asked = [f.strip() for f in str(getattr(args, "formats", "") or "").split(",")
+             if f.strip()]
+    probes: list[dict[str, Any]] = []
+    spent = 0.0
+    for fmt in (asked or [""]):
+        if fmt:
+            cfg.set("elevenlabs.output_format", fmt)
+        provider = build_tts_provider(cfg, costs)
+        target = (out if len(asked) < 2
+                  else out.with_name(f"{out.stem}_{fmt.replace('*', 'x')}.wav"))
+        try:
+            provider.synthesize(args.text, target, speed=1.0)
+        except RedshiftError as exc:
+            # Формат, которого нет на тарифе, — это ответ, а не авария: он
+            # записывается в таблицу и не мешает проверить остальные.
+            probes.append({"format": fmt or "как в конфиге", "error": str(exc)})
+            continue
+        audio, sr = _read_wav_mono(target)
+        usd = round(float(costs.total_usd) - spent, 4)
+        spent = float(costs.total_usd)
+        delivery = dict(getattr(provider, "last_delivery", {}) or {})
+        probes.append({
+            "format": fmt or str(cfg.get("elevenlabs.output_format", "") or "pcm_*"),
+            "container": delivery.get("container", "?"),
+            "sample_rate": sr,
+            "bandwidth_hz": round(speech_bandwidth_hz(audio, sr)),
+            "duration_sec": round(len(audio) / max(sr, 1), 3),
+            "usd": usd,
+            "file": str(target),
+        })
+
+    good = [p for p in probes if "bandwidth_hz" in p]
+    best = max(good, key=lambda p: p["bandwidth_hz"]) if good else None
     report = {
-        "provider": provider.name,
-        "mode": provider.mode.value if hasattr(provider.mode, "value") else str(provider.mode),
+        "provider": "elevenlabs",
+        "mode": str(cfg.get("providers.mode", "auto")),
         "model": cfg.get("elevenlabs.model", ""),
-        "requested_format": str(cfg.get("elevenlabs.output_format", "") or "pcm_*"),
-        "sample_rate": sr,
-        "duration_sec": round(len(audio) / max(sr, 1), 3),
-        "bandwidth_hz": round(speech_bandwidth_hz(audio, sr)),
-        "min_bandwidth_hz": float(cfg.get("elevenlabs.min_bandwidth_hz", 14000)),
         "chars": len(args.text),
-        "usd": round(float(costs.total_usd), 4),
-        "file": str(out),
+        "min_bandwidth_hz": floor,
+        "probes": probes,
+        "best": best,
+        "usd_total": round(float(costs.total_usd), 4),
     }
-    report["verdict"] = ("сервис отдаёт полноценный звук"
-                         if report["bandwidth_hz"] >= report["min_bandwidth_hz"]
-                         else "полоса ниже ожидаемой — сервис отдаёт сжатый звук")
+    if best is None:
+        report["verdict"] = "ни один формат не удалось получить"
+    elif best["bandwidth_hz"] >= floor:
+        report["verdict"] = (f"полноценный звук на {best['format']} "
+                             f"({best['bandwidth_hz']} Гц) — впишите его в "
+                             f"elevenlabs.output_format")
+    else:
+        report["verdict"] = ("все форматы ниже ожидаемой полосы — упёрлись в "
+                             "тариф, а не в формат")
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
 
@@ -342,6 +381,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="одна фраза в TTS: какой формат и полосу отдаёт сервис")
     vp.add_argument("--text", default="Проверка формата ответа синтеза речи.")
     vp.add_argument("--out", default=None)
+    vp.add_argument("--formats", default="",
+                    help="список форматов через запятую: перебрать за один "
+                         "запуск и показать, какой тариф отдаёт целиком")
     vp.set_defaults(func=cmd_voice_probe)
     return parser
 

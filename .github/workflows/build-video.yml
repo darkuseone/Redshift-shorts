@@ -31,6 +31,10 @@ on:
         required: false
         default: false
         type: boolean
+      probe_formats:
+        description: "Форматы пробы через запятую (пусто = как в конфиге)"
+        required: false
+        default: ""
 
 concurrency:
   group: build-video-${{ github.event.inputs.script }}
@@ -76,7 +80,12 @@ jobs:
       - name: Проба голоса
         run: |
           set -euo pipefail
+          # Каталог создаётся до конвейера: tee открывает файл раньше, чем
+          # python успевает сделать mkdir, и прогон 33570833947 упал на этом,
+          # уже получив ответ сервиса.
+          mkdir -p work
           python -m src.cli --pretty-logs voice-probe \
+            --formats "${{ github.event.inputs.probe_formats }}" \
             --out work/voice_probe.wav | tee work/voice_probe.json
       - name: Итог в Summary
         if: always()
@@ -90,7 +99,7 @@ jobs:
         with:
           name: voice-probe
           path: |
-            work/voice_probe.wav
+            work/voice_probe*.wav
             work/voice_probe.json
           retention-days: 7
           if-no-files-found: ignore
