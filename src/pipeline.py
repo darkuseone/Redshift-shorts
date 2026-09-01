@@ -95,9 +95,26 @@ class Step:
     # брендбук, словарь произношений, накопленные предпочтения монтажа.
     # Не объявишь — шаг вернётся из кэша с результатом по старому файлу.
     config_inputs: tuple[str, ...] = ()
+    # Файлы, которые шаг кладёт не в рабочий каталог, а в выдачу. Кэш обязан
+    # проверять и их: рабочий каталог переживает прогон в кэше Actions, а
+    # `output/` — нет. P12 объявлял выходом только свой отчёт, и возобновление
+    # с него возвращалось «из кэша», не отрендерив ни одного ролика: прогон
+    # №33508293306 закончился за две минуты и оставил выдачу пустой.
+    # ``{video_id}`` и ``{variant}`` подставляются по контексту прогона.
+    deliverables: tuple[str, ...] = ()
     version: str = "1"
     optional: bool = False          # шаг может быть пропущен по фиче-флагу
     cacheable: bool = True
+
+    def deliverable_paths(self, ctx: "RunContext") -> tuple[Path, ...]:
+        """Абсолютные пути к тому, что шаг обязан оставить в выдаче."""
+        out: list[Path] = []
+        for pattern in self.deliverables:
+            names = ([pattern.format(video_id=ctx.video_id, variant=v)
+                      for v in ctx.variants] if "{variant}" in pattern
+                     else [pattern.format(video_id=ctx.video_id)])
+            out += [ctx.output_dir / name for name in names]
+        return tuple(out)
 
     def fingerprint(self, ctx: RunContext) -> str:
         """Хеш входа: версия шага + код шага + входные артефакты + конфиг."""
@@ -169,7 +186,8 @@ class Pipeline:
                 )
 
             fp = step.fingerprint(ctx)
-            if not force and step.cacheable and ctx.cache.is_fresh(step.name, fp, step.outputs):
+            expected = tuple(step.outputs) + step.deliverable_paths(ctx)
+            if not force and step.cacheable and ctx.cache.is_fresh(step.name, fp, expected):
                 _log.info("шаг из кэша", extra={"step": step.name})
                 entry.update({"status": "cached", "duration_sec": 0.0})
                 report["steps"].append(entry)

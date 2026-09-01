@@ -233,6 +233,46 @@ def test_step_cache_roundtrip(tmp_path):
     assert not cache.is_fresh("P1", fp, ["out.json"])
 
 
+def test_render_is_not_fresh_without_the_videos(tmp_path):
+    """Ролики лежат в выдаче, а она прогон не переживает.
+
+    P12 объявлял выходом только свой отчёт — тот живёт в рабочем каталоге и
+    приезжает из кэша Actions целым. Возобновление с P12 из-за этого
+    возвращалось «из кэша» за две минуты и оставляло выдачу пустой: прогон
+    №33508293306 не отрендерил ни одного ролика и не оставил ни превью, ни mp4.
+    """
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.storage import build_storage
+    from src.pipeline import RunContext, Step
+    from src.steps import build_pipeline
+
+    work, out = tmp_path / "work", tmp_path / "out"
+    work.mkdir()
+    out.mkdir()
+    (work / "build_report.json").write_text("{}", encoding="utf-8")
+
+    cfg = load_config(overrides=["providers.mode=mock"])
+    ctx = RunContext(video_id="redshift_0047", cfg=cfg, work_dir=work, output_dir=out,
+                     script_path=tmp_path / "s.json", cache=StepCache(work),
+                     costs=CostLedger(video_id="redshift_0047"),
+                     storage=build_storage(cfg))
+    p12 = next(s for s in build_pipeline().steps if s.name == "P12")
+
+    expected = tuple(p12.outputs) + p12.deliverable_paths(ctx)
+    assert [p.name for p in p12.deliverable_paths(ctx)] == [
+        "redshift_0047_A.mp4", "redshift_0047_B.mp4"]
+
+    fp = hash_obj({"p12": 1})
+    ctx.cache.record("P12", fp, outputs=expected)
+    # Отчёт на месте, роликов нет — шаг обязан считаться несвежим.
+    assert not ctx.cache.is_fresh("P12", fp, expected)
+
+    for path in p12.deliverable_paths(ctx):
+        path.write_bytes(b"mp4")
+    assert ctx.cache.is_fresh("P12", fp, expected)
+
+
 def test_step_cache_disabled(tmp_path):
     cache = StepCache(tmp_path, enabled=False)
     cache.record("P1", "x", outputs=[])

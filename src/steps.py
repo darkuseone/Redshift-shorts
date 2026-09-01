@@ -67,6 +67,10 @@ def build_pipeline() -> Pipeline:
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "edit_plan_B.json", "mix.wav"),
              outputs=("build_report.json",),
+             # Отчёт лежит в рабочем каталоге, а ролики — в выдаче, и она
+             # прогон не переживает. Без этой строки возобновление с P12
+             # возвращалось из кэша, не отрендерив ничего.
+             deliverables=("{video_id}_{variant}.mp4",),
              config_inputs=("config/brandbook.json",)),
     ])
 
