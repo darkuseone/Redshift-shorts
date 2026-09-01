@@ -195,7 +195,7 @@ def test_text_is_escaped(plan, assets, brandbook):
     # для проверки экранирования ставим внутрь слова.
     plan["subtitles"][0]["display"] = "ку<и>&я"
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    assert "ку&lt;и&gt;&amp;я" in out
+    assert "КУ&lt;И&gt;&amp;Я" in out
 
 
 # --- CSS ----------------------------------------------------------------------
@@ -237,17 +237,21 @@ def test_subtitle_coverage_of_empty_plan_is_zero():
 
 # --- правило текста доезжает до обоих движков ---------------------------------
 
-def test_subtitle_word_is_cleaned_and_lowercased(plan, assets, brandbook):
-    """До переноса правило жило внутри отрисовки, и HTML-движок его не видел."""
+def test_subtitle_word_is_cleaned_and_cased(plan, assets, brandbook):
+    """До переноса правило жило внутри отрисовки, и HTML-движок его не видел.
+
+    Регистр субтитра сменился на верхний вместе с новым начертанием: заказчик
+    прислал эталонный кадр, и там слово набрано прописными.
+    """
     plan["subtitles"] = [
         {"display": "Падение", "start": 0.0, "end": 0.5, "emphasis": False},
         {"display": "счётчик.", "start": 0.5, "end": 1.0, "emphasis": False},
         {"display": "ОТО", "start": 1.0, "end": 1.5, "emphasis": False},
     ]
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    assert ">падение<" in out
-    assert ">счётчик<" in out and "счётчик." not in out
-    assert ">ОТО<" in out          # аббревиатуру не трогаем
+    assert ">ПАДЕНИЕ<" in out
+    assert ">СЧЁТЧИК<" in out and "СЧЁТЧИК." not in out
+    assert ">ОТО<" in out
 
 
 def test_source_card_clears_the_subtitle_band(brandbook):
@@ -705,26 +709,30 @@ def test_the_whole_line_never_burns_red(plan, assets, brandbook):
     assert 'class="accent"' not in markup
 
 
-def test_the_accent_word_gets_a_light_rim_only_on_a_dark_stage(brandbook):
-    """§4: обводка акцентного слова светлая — но не любой ценой.
+def test_the_subtitle_glows_red_and_never_black(brandbook):
+    """Заказчик прислал эталонный кадр и правило: вместо чёрной тени — тонкий
+    красный градиент с размытием.
 
-    Тёмно-красный контур по светло-красному слову это два оттенка одного цвета,
-    и слово теряет край: покадровый движок брал под акцент светлую обводку, а
-    рендер ролика — нет. Над светлой стеной студии, однако, белый контур
-    пропадает вместе с фоном, и единственным краем остаётся тот самый
-    тёмно-красный. Поэтому правило привязано к тону сцены; проверено
-    скриншотами обеих сцен, а не рассуждением.
+    Проверяется не «красиво», а состав: чёрного в субтитре нет вообще, ободок
+    и зарево собраны из акцентных цветов брендбука, а самое широкое кольцо
+    зарева и правда размыто широко — иначе это снова обводка, а не градиент.
     """
     from src.lib.render.hyperframes.brand_css import build_css
 
     css = build_css(brandbook, {})
-    deep = brandbook["colors"][brandbook["subtitles"]["stroke_color"]]
-    pure = brandbook["colors"]["bg_pure"]
+    rule = re.search(r"\.word\{[^}]*text-shadow:([^;}]*)\}", css).group(1)
+    assert "rgba(0,0,0" not in rule and "#000" not in rule, "чёрная тень вернулась"
 
-    base = re.search(r"\.word\{[^}]*text-shadow:([^};]*(?:;[^}]*)?)\}", css).group(1)
-    assert deep in base and pure not in base
-    accent = re.search(r"\.stage-dark \.word\.emphasis\{([^}]*)\}", css).group(1)
-    assert pure in accent and deep not in accent
-    # Приклеенное начало реплики белое, и светлый контур залил бы ему просветы.
-    lead = re.search(r"\.word \.lead\{([^}]*)\}", css).group(1)
-    assert deep in lead
+    accent = brandbook["colors"]["accent"].lstrip("#")
+    rgb = ",".join(str(int(accent[i:i + 2], 16)) for i in (0, 2, 4))
+    assert f"rgba({rgb}," in rule, "ободок не из акцента брендбука"
+    blurs = [int(m) for m in re.findall(r"0 0 (\d+)px", rule)]
+    assert max(blurs) >= 60, f"зарево слишком узкое: {blurs}"
+
+    # Акцентное слово отличается не только заливкой: у него своё гало, иначе
+    # красное по красному потеряло бы край.
+    emphasis = re.search(r"\.word\.emphasis\{[^}]*text-shadow:([^;}]*)\}", css).group(1)
+    assert emphasis != rule
+    # На светлой сцене светлый ободок пропадает вместе с фоном.
+    light = re.search(r"\.stage-light \.word\.emphasis\{[^}]*\}", css)
+    assert light, "у акцента нет правила для светлой сцены"

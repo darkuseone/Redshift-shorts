@@ -188,52 +188,58 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # Центр — оптический центр кадра, а не середина рабочей зоны: правое поле
     # ужато под колонку лайк/коммент/шер и увело бы слово влево.
     #
-    # Читаемость держится мягкой тенью, а не обводкой. Обводка обводит каждое
-    # слово красным контуром, и цвет перестаёт что-либо значить: выделять
-    # смысловое слово нечем. Здесь белое слово идёт потоком, а важное — светлым
-    # красным, и это единственное место в кадре, где цвет несёт смысл.
-    halo = subs.get("shadow", {})
-    blur = int(halo.get("blur_px", 20))
-    offset = int(halo.get("offset_y_px", 4))
-    alpha = float(halo.get("alpha", 0.5))
+    # Читаемость держит **красное гало**, а не чёрная тень и не обводка.
+    # Заказчик прислал эталонный кадр и сказал прямо: белое слово, вместо
+    # чёрной тени — тонкий красный градиент с размытием. Гало устроено двумя
+    # слоями и обе части нужны:
+    #
+    #   * узкий ободок в 2-3 px почти непрозрачного акцента — он и есть край
+    #     буквы. На светлом грунте белое слово держится только им;
+    #   * широкое размытое зарево из того же красного, гаснущее к краям, — оно
+    #     сажает слово в кадр и даёт ту самую «дорогую» подсветку.
+    #
+    # Чёрного в субтитре больше нет нигде: тень уводила слово в «дешёвый»
+    # ютуб-каптион, а обводка красила контуром каждое слово и тем убивала цвет
+    # как носитель смысла.
     accent_var = str(subs.get("accent_color", "accent_soft")).replace("_", "-")
-    stroke_color = colors.get(str(subs.get("stroke_color", "ink")), "#111214")
-    # Тень под словом — всегда: она сажает слово на кадр. Обводка — по режиму
-    # брендбука, и она не украшение. Пока аватар приходил непрозрачным, слово
-    # ложилось на тёмный кадр и белого с тенью хватало. С рабочей альфой фон
-    # под ведущим светлый (.vfx), и белое слово на нём пропадает — на карточке
-    # приёма исчезало совсем. Обводка держит слово на обоих грунтах.
-    shadow = (f"0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
-              f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px "
-              f"rgba(0,0,0,{alpha * 0.8:.2f})")
-    accent_shadow = shadow
-    if str(subs.get("readability_mode", "shadow")) == "stroke":
-        rim = int(subs["stroke_px"][0])
-        accent_shadow = f"{_text_rim(rim, colors['bg_pure'])},{shadow}"
-        shadow = f"{_text_rim(rim, stroke_color)},{shadow}"
+
+    def _glow(spec: dict[str, Any]) -> str:
+        """Слои `text-shadow` из описания гало в брендбуке."""
+        rim = int(spec.get("rim_px", 3))
+        rim_rgba = _rgba(colors[str(spec.get("rim_color", "accent"))],
+                         float(spec.get("rim_alpha", 0.95)))
+        layers = [_text_rim(rim, rim_rgba)]
+        for step in spec.get("bloom", []):
+            rgba = _rgba(colors[str(step["color"])], float(step["alpha"]))
+            layers.append(f"0 0 {int(step['blur_px'])}px {rgba}")
+        return ",".join(layers)
+
+    glow = _glow(subs.get("glow", {}))
+    accent_glow = _glow(subs.get("accent_glow", subs.get("glow", {})))
     parts.append(
         f".word{{position:absolute;left:0;right:0;top:{int(subs['baseline_y_default'])}px;"
         f"z-index:{Z_SUBTITLE};text-align:center;transform:translateY(-50%);"
-        "font-family:var(--font-subtitle);font-weight:800;"
+        "font-family:var(--font-subtitle);font-weight:900;"
         f"font-size:{int(subs['size_px_default'])}px;"
         f"line-height:{typo['subtitle']['line_height']};"
+        f"letter-spacing:{typo['subtitle']['letter_spacing']}em;"
         f"color:{subs['color']};"
-        f"text-shadow:{shadow}}}"
+        f"text-shadow:{glow}}}"
         ".word > span{display:inline-block;will-change:transform}"
-        f".word.emphasis{{color:var(--color-{accent_var})}}"
-        # §4: у акцентного слова обводка **светлая** — тёмно-красный контур по
-        # светло-красному слову это два оттенка одного цвета, и слово теряет
-        # край. Но только на тёмной сцене: над светлой стеной студии белый
-        # контур пропадает вместе с фоном, и единственным краем у слова
-        # остаётся тот самый тёмно-красный. Проверено скриншотом обеих сцен.
-        f".stage-dark .word.emphasis{{text-shadow:{accent_shadow}}}"
+        # Акцентное слово — та же наклейка наизнанку: красная заливка и светлое
+        # гало. Красным по красному гало слово потеряло бы край, а другого
+        # цвета в брендбуке нет и заводить его незачем.
+        f".word.emphasis{{color:var(--color-{accent_var});"
+        f"text-shadow:{accent_glow}}}"
         # Приклеенный предлог живёт в цвете обычного слова даже внутри
         # акцентной реплики: красный означает ударение, а не начало фразы.
-        # Обводка у него тоже своя, тёмная: светлый контур акцентного слова,
-        # доставшийся белому предлогу по наследству, залил ему просветы букв —
-        # «не в» слипалось в пятно. Видно на скриншоте, не в разметке.
         f".word .lead{{font-style:normal;color:{subs['color']};"
-        f"text-shadow:{shadow}}}"
+        f"text-shadow:{glow}}}"
+        # Над светлой стеной студии белый ободок акцентного слова пропадает
+        # вместе с фоном — там край держит тёмно-красный. Проверено рендером
+        # обеих сцен, а не рассуждением.
+        f".stage-light .word.emphasis{{text-shadow:"
+        f"{_glow({**subs.get('accent_glow', {}), 'rim_color': 'accent_deep', 'rim_alpha': 0.9})}}}"
     )
 
     # --- полноэкранный текст (§5.2) ------------------------------------

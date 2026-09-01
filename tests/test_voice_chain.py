@@ -735,7 +735,7 @@ def test_the_glued_word_keeps_the_accent_off_the_preposition():
     builder.stats = {"subtitle_words": 0}
     html = "".join(builder._subtitle_nodes())
     assert 'class="clip word emphasis"' in html
-    assert '<i class="lead">а</i> расчёты' in html
+    assert '<i class="lead">А</i> РАСЧЁТЫ' in html
 
 
 def test_srt_shows_the_same_cues_as_the_frame():
