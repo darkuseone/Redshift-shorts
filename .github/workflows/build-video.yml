@@ -266,8 +266,14 @@ jobs:
       # границы фраз, и P6 бракует все клипы разом. Поэтому голос уезжает в
       # репозиторий тем же коммитом, что и превью, — и следующий прогон берёт
       # его шагом «Засеять work/ готовым голосом», ничего не тратя.
-      - name: Готовый голос — в репозиторий
-        if: success()
+      # `always()`, а не `success()`: фаза 1 двухфазного конвейера заканчивается
+      # падением **всегда** — P6 останавливает прогон, потому что клипов ведущего
+      # ещё нет. Ровно в этот момент голос и заявка на клипы и нужны в
+      # репозитории: без них следующий прогон озвучивает заново, а заявку не
+      # прочитать никак — артефакт Actions отсюда не скачать. Так и вышло на
+      # прогоне №33540770086: голос переозвучен, заявка осталась в артефакте.
+      - name: Готовый голос и заявка на клипы — в репозиторий
+        if: always()
         run: |
           set -euo pipefail
           video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
@@ -283,9 +289,31 @@ jobs:
           else
             echo "голоса в work/ нет — нечего сохранять"
           fi
+          # Заявка на клипы и куски речи ровно под те сегменты, которых не
+          # хватает. Целиком набор сегментов сюда не кладётся: он весит восемь
+          # мегабайт на ролик, а нужен один-два куска.
+          if [ -f "$src/avatar_request.json" ]; then
+            clips="assets/avatar_clips/$video_id"
+            mkdir -p "$clips"
+            cp -v "$src/avatar_request.json" "$clips"/
+            python - "$src" "$clips" <<'EOF'
+          import json, shutil, sys
+          from pathlib import Path
+          src, dst = Path(sys.argv[1]), Path(sys.argv[2])
+          req = json.loads((src / "avatar_request.json").read_text(encoding="utf-8"))
+          for seg in req.get("segments", []):
+              name = f"seg_{int(seg['index']):02d}.wav"
+              wav = src / "avatar" / name
+              if wav.exists():
+                  shutil.copy2(wav, dst / name)
+                  print("речь сегмента:", name, wav.stat().st_size, "байт")
+          EOF
+          fi
 
+      # Тоже `always()`: коммитить после падения фазы 1 есть что — голос и
+      # заявку на клипы. Без изменений шаг молча выходит.
       - name: Превью, библиотеки и индексы в коммит
-        if: success()
+        if: always()
         run: |
           set -euo pipefail
           git config user.name  "redshift-bot"
