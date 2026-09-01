@@ -107,3 +107,53 @@ def test_usage_is_recorded_per_video(library):
     library.mark_used("ChatGPT", "redshift_0002")
     saved = json.loads((library.root / "brand_icons_manifest.json").read_text())
     assert saved["brands"][0]["used_in"] == ["redshift_0001", "redshift_0002"]
+
+
+@pytest.fixture
+def real_library():
+    """Настоящая библиотека репозитория: русские написания живут в её манифесте."""
+    from src.lib.brand_icons import load_library
+    from src.lib.config import load_config
+
+    return load_library(load_config())
+
+
+class TestRussianNames:
+    """Сценарии пишутся по-русски, а слаги латиницей.
+
+    Прогон 0047: библиотека в сотню знаков, в кадре — ни одного логотипа.
+    Перебор слов реплики сверял «Гугла» со слагом ``google`` и уходил ни с
+    чем. Транслитерация спасает не всех: «Тесла» даёт tesla, но «Гугл» —
+    ``gugl``, «Ютуб» — ``yutub``.
+    """
+
+    def test_a_brand_is_found_through_its_russian_name(self, real_library):
+        for text, slug in (("Гугл показал модель", "google"),
+                           ("В Ютубе это разошлось", "youtube"),
+                           ("Эпл собирает их в Китае", "apple")):
+            found = real_library.match_text(text)
+            assert found and found.slug == slug, f"{text!r} → {found}"
+
+    def test_a_case_ending_does_not_hide_the_brand(self, real_library):
+        """В речи бренд склоняется: «у Гугла», «Тесле», «в Ютубе»."""
+        for text, slug in (("У Гугла своя лаборатория", "google"),
+                           ("Тесле это стоило миллиард", "tesla"),
+                           ("В Ютубе за сутки", "youtube")):
+            found = real_library.match_text(text)
+            assert found and found.slug == slug, f"{text!r} → {found}"
+
+    def test_a_common_word_does_not_summon_a_logo(self, real_library):
+        """«Металл» — не Meta, «эфир» — не Ethereum.
+
+        Открытый префиксный поиск дал бы знак Meta в кадре про металлургию.
+        Окончания поэтому перечислены закрытым списком.
+        """
+        for text in ("Расплавленный металл в тигле", "Метан горит синим",
+                     "Прямой эфир шёл два часа", "Метод оказался проще",
+                     "Он оформил визу заранее"):
+            assert real_library.match_text(text) is None, text
+
+    def test_every_alias_points_at_a_brand_that_exists(self, real_library):
+        """Основа без знака — обещание, которого библиотека не выполнит."""
+        missing = [slug for slug in real_library.aliases if not real_library.find(slug)]
+        assert not missing, f"основы без знака: {missing}"

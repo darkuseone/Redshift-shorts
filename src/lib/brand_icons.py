@@ -58,6 +58,23 @@ def slugify(name: str) -> str:
 
 VARIANTS = ("light", "dark", "mono")
 
+# Падежные окончания, на которые имя бренда меняется в русской речи. Список
+# закрытый, и в этом смысл: «гугл» + «а» — это «гугла», а «мета» + «лл» уже
+# «металл», и знак Meta в кадре про металлургию был бы враньём. Открытый
+# префиксный поиск такую разницу не видит, поэтому его здесь нет.
+CASE_ENDINGS = ("", "а", "е", "и", "ы", "у", "ю", "я", "ов", "ом", "ой",
+                "ам", "ах", "ами", "ей", "ье")
+
+# Короче трёх букв слаг не ищется по тексту: «x» и «go» совпали бы с любой
+# латинской буквой в реплике, и знак вставал бы наугад.
+MIN_SLUG_LEN = 3
+
+
+def _inflected(word: str, stem: str) -> bool:
+    """Слово — это основа с русским падежным окончанием и ничем больше."""
+    return word.startswith(stem) and word[len(stem):] in CASE_ENDINGS
+
+
 
 @dataclass
 class BrandIcon:
@@ -111,6 +128,45 @@ class BrandIconLibrary:
         if variant:
             found = [icon for icon in found if icon.variant == variant]
         return [icon for icon in found if (self.root / icon.file).exists()]
+
+    @property
+    def aliases(self) -> dict[str, list[str]]:
+        """Русские основы названий: слаг → список основ."""
+        return self.data.get("aliases", {})
+
+    def match_text(self, text: str) -> BrandIcon | None:
+        """Знак бренда, который реплика действительно называет.
+
+        Сценарии пишутся по-русски, а слаги латиницей. Транслитерация закрывает
+        часть случаев («Тесла» → tesla), но «Гугл» даёт ``gugl``, «Ютуб» —
+        ``yutub``, и библиотека из ста знаков оказывалась недостижима: за весь
+        прогон 0047 в кадр не попал ни один логотип. Поэтому сначала русские
+        основы из манифеста, потом транслитерация.
+
+        Длинная основа проверяется раньше короткой: «гугл клауд» обязан дать
+        знак облака, а не общий гугловский.
+        """
+        words = [w.strip('.,!?;:»«"\'()—–').lower()
+                 for w in str(text or "").split()]
+        words = [w for w in words if w]
+        phrases = words + [f"{a}{b}" for a, b in zip(words, words[1:])]
+
+        by_stem: list[tuple[str, str]] = [
+            (stem.replace(" ", ""), slug)
+            for slug, stems in self.aliases.items() for stem in stems]
+        for stem, slug in sorted(by_stem, key=lambda p: -len(p[0])):
+            if any(_inflected(w, stem) for w in phrases):
+                found = self.find(slug)
+                if found:
+                    return found[0]
+
+        for word in sorted(set(words), key=lambda w: (-len(w), w)):
+            if len(word) < MIN_SLUG_LEN:
+                continue
+            found = self.find(word)
+            if found:
+                return found[0]
+        return None
 
     def has(self, brand: str) -> bool:
         """Есть ли бренд в библиотеке — вопрос, ради которого она заведена."""

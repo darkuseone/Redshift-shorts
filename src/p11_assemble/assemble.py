@@ -526,15 +526,15 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     accent = [i for i, line in enumerate(lines)
               if word and word.lower() in line.lower()]
 
+    # Знак бренда ищет сама библиотека: она знает и русские написания, и
+    # падежи. Перебор слов реплики, который стоял здесь, сверял «Гугла» со
+    # слагом ``google`` и не находил ничего — за весь прогон 0047 в кадр не
+    # попал ни один логотип при библиотеке в сотню знаков.
     brand = None
     if icons is not None:
-        for candidate in sorted({w.strip(".,!?;:»«\"'()")
-                                 for w in text.split() if len(w) > 2},
-                                key=lambda w: (-len(w), w)):
-            found = icons.find(candidate)
-            if found:
-                brand = {"label": candidate, "icon": found[0].path}
-                break
+        match = icons.match_text(text)
+        if match:
+            brand = {"label": match.brand, "icon": match.path}
 
     # Двухстрочная тема за головой: первая строка — подлежащее реплики, вторая
     # — то, что с ним происходит, и она же берёт акцент. Делим по акцентному
