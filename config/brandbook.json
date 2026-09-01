@@ -34,7 +34,9 @@
       "hue_tolerance_deg": 20,
       "saturation_min": 0.35,
       "value_min": 0.4,
-      "off_share_max": 0.15
+      "off_share_max": 0.15,
+      "_press_comment": "Кадру со страницы источника палитра прощается шире: он показывается как цитата вместе с доменом, и по общему порогу не проходил бы почти никогда.",
+      "press_off_share_max": 0.35
     }
   },
   "safe_zones": {

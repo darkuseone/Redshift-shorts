@@ -266,16 +266,42 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:var(--color-bg-pure);color:var(--color-ink);"
         "box-shadow:0 18px 48px rgba(0,0,0,0.22)}"
         ".source-card .bar{display:flex;align-items:center;gap:10px;"
-        "padding:18px 22px;background:#ECEAE7}"
+        "padding:16px 22px;background:#ECEAE7}"
         ".source-card .dot{width:14px;height:14px;border-radius:50%;background:#C9C6C2}"
-        ".source-card .domain{margin-left:10px;font-family:var(--font-mono);"
-        "font-size:26px;color:var(--color-muted)}"
-        ".source-card .title{padding:22px 26px 6px;font-family:var(--font-display);"
+        # Строка адреса с настоящим путём статьи, а не одно имя домена: именно
+        # она и делает кадр страницей издания, а не «окном вообще».
+        ".source-card .url{flex:1;margin-left:12px;display:block;"
+        "padding:8px 18px;border-radius:16px;background:var(--color-bg-pure);"
+        "font-family:var(--font-mono);font-size:24px;color:var(--color-muted);"
+        "white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"
+        ".source-card .url b{color:var(--color-ink);font-weight:600}"
+        ".source-card .page{padding:22px 26px 26px}"
+        ".source-card .kicker{font-family:var(--font-mono);font-size:22px;"
+        "letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent)}"
+        ".source-card .title{padding:10px 0 0;font-family:var(--font-display);"
         "font-size:52px;line-height:1.04}"
-        ".source-card .snippet{padding:6px 26px 26px;font-size:30px;"
+        ".source-card .byline{display:flex;align-items:center;gap:12px;"
+        "padding:14px 0 0;font-size:24px;color:var(--color-muted)}"
+        ".source-card .favicon{width:34px;height:34px;border-radius:9px;"
+        "background:var(--color-accent);color:var(--color-bg-pure);"
+        "font-family:var(--font-display);font-size:22px;display:flex;"
+        "align-items:center;justify-content:center}"
+        ".source-card .snippet{padding:14px 0 0;font-size:30px;"
         "line-height:1.3;color:#3A3D42}"
-        ".source-card .hl{background:var(--color-accent-soft);"
-        "box-shadow:0 0 0 6px var(--color-accent-soft)}"
+        # Начало текста статьи серыми строками: страница продолжается за краем
+        # карточки, и это видно без единого лишнего слова в кадре.
+        ".source-card .lines{display:flex;flex-direction:column;gap:10px;"
+        "padding:20px 0 0}"
+        ".source-card .lines i{display:block;height:12px;border-radius:6px;"
+        "background:rgba(17,18,20,.09)}"
+        ".source-card .lines i:nth-child(2){width:88%}"
+        ".source-card .lines i:nth-child(3){width:62%}"
+        # Маркер лежит под строкой отдельной полосой: её протягивает твин, и
+        # это читается как проведённый маркер, а не как залитый фон.
+        ".source-card .hl{position:relative;z-index:0}"
+        ".source-card .hl i{position:absolute;left:-6px;right:-6px;top:.04em;"
+        "bottom:.02em;background:var(--color-accent-soft);border-radius:6px;"
+        "transform:scaleX(0);transform-origin:left center;z-index:-1}"
     )
 
     # --- CTA (§5.7) ------------------------------------------------------

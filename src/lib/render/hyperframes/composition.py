@@ -90,6 +90,28 @@ def _timing(start: float, end: float, track: int) -> str:
             f'data-track-index="{track}"')
 
 
+def _mark_phrase(text: str, phrase: str) -> str:
+    """Отметить в тексте ключевую строку источника маркером (§5.5).
+
+    Подсветка была объявлена в плане, но в кадре её не было: слой ``highlight``
+    рисовать нечем — у строки внутри абзаца нет координат снаружи. Маркер
+    поэтому лежит в самом тексте, а под ним — полоса, которую твин протягивает
+    слева направо, как настоящим маркером.
+
+    Совпадение ищется без учёта регистра и по первому вхождению: строка в
+    сценарии выписана из статьи и в ней же и стоит.
+    """
+    text = str(text or "")
+    phrase = str(phrase or "").strip()
+    if not phrase:
+        return _esc(text)
+    at = text.lower().find(phrase.lower())
+    if at < 0:
+        return _esc(text)
+    head, hit, tail = text[:at], text[at:at + len(phrase)], text[at + len(phrase):]
+    return (f'{_esc(head)}<span class="hl"><i></i>{_esc(hit)}</span>{_esc(tail)}')
+
+
 def _lay_out_tracks(items: list[dict[str, Any]], first_track: int) -> list[int]:
     """Разложить пересекающиеся во времени элементы по свободным трекам."""
     ends: list[float] = []
@@ -486,14 +508,7 @@ class CompositionBuilder:
         kind = ovl.get("type")
         params = ovl.get("params") or {}
         if kind == "source_card":
-            domain = _esc(params.get("domain"))
-            title = _esc(params.get("title"))
-            snippet = _esc(params.get("snippet"))
-            return (f'<div id="{node_id}" class="clip overlay source-card" __TIMING__>'
-                    f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
-                    f'<span class="dot"></span><span class="domain">{domain}</span></div>'
-                    f'<div class="title">{title}</div>'
-                    f'<div class="snippet">{snippet}</div></div>')
+            return self._source_card_body(node_id, params)
         if kind == "plaque":
             content = _esc(params.get("content") or ovl.get("content"))
             kicker = params.get("kicker") or params.get("domain")
@@ -507,6 +522,45 @@ class CompositionBuilder:
         # highlight рисуется поверх карточки источника её же стилем — отдельный
         # слой не нужен, подсветку несёт .hl внутри карточки.
         return None
+
+    def _source_card_body(self, node_id: str, params: dict[str, Any]) -> str:
+        """Страница издания, а не карточка «сайт вообще».
+
+        Заказчик просил, чтобы контент выглядел живым и меньше походил на
+        AI-генерацию. Разница здесь в том, что на карточке стоит: строка адреса
+        с настоящим путём статьи, дата, знак издания, начало текста и маркер на
+        той строке, ради которой источник и показан (§5.5). Это и есть та самая
+        страница, с которой конвейер берёт кадр, — а не абстрактное окно.
+        """
+        domain = str(params.get("domain") or "")
+        url = str(params.get("url") or "")
+        # Путь берём от первой косой черты, а не отрезая домен: у ссылки почти
+        # всегда есть «www.», а в сценарии домен записан без него — вычитание
+        # промахивалось, и в адресной строке оставалось голое имя сайта.
+        rest = url.split("://", 1)[-1].removeprefix("www.") if url else ""
+        cut = rest.find("/")
+        path = rest[cut:] if cut >= 0 else ""
+        path = path[:34] + ("…" if len(path) > 34 else "")
+        published = str(params.get("published") or "").strip()
+        # Дата приходит как ISO-строка со страницы или из сценария; в кадре от
+        # неё нужен только день, время читать некому.
+        kicker = published.split("T")[0] if published else "источник"
+        mark = (domain[:1] or "·").upper()
+        highlight = str(params.get("highlight") or "")
+        title = _mark_phrase(str(params.get("title") or ""), highlight)
+        snippet = _mark_phrase(str(params.get("snippet") or ""), highlight)
+        return (f'<div id="{node_id}" class="clip overlay source-card" __TIMING__>'
+                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
+                f'<span class="dot"></span>'
+                f'<span class="url"><b>{_esc(domain)}</b>{_esc(path)}</span></div>'
+                f'<div class="page">'
+                f'<div class="kicker">{_esc(kicker)}</div>'
+                f'<div class="title">{title}</div>'
+                f'<div class="byline"><span class="favicon">{_esc(mark)}</span>'
+                f'{_esc(domain)}</div>'
+                f'<div class="snippet">{snippet}</div>'
+                f'<div class="lines"><i></i><i></i><i></i></div>'
+                f'</div></div>')
 
     def _add_overlay_entrance(self, node_id: str, ovl: dict[str, Any],
                               start: float) -> None:
@@ -525,6 +579,23 @@ class CompositionBuilder:
                 f'tl.to("#{node_id}-pill",{{scale:1.035,duration:{period / 2:.3f},'
                 f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(start + 0.32)});')
             return
+        if kind == "source_card":
+            params = ovl.get("params") or {}
+            if params.get("highlight"):
+                # Маркер протягивается по строке, а не вспыхивает целиком:
+                # §5.5 просит фокус, и взгляд идёт за движением слева направо.
+                self.tweens.append(
+                    f'tl.fromTo("#{node_id} .hl i",{{scaleX:0}},'
+                    f'{{scaleX:1,duration:0.42,ease:"power2.out"}},'
+                    f'{_num(start + 0.6)});')
+            if params.get("scroll"):
+                # Страница едет вверх ровно столько, чтобы это читалось как
+                # прокрутка, а не как съезжающая вёрстка.
+                hold = max(0.4, float(ovl["end"]) - start - 0.9)
+                self.tweens.append(
+                    f'tl.to("#{node_id} .page",{{y:-46,duration:{_num(hold)},'
+                    f'ease:"none"}},{_num(start + 0.7)});')
+
         # Плашка всплывает и приближается, а не выезжает плоско: подъём без
         # масштаба читается как «панель подали снизу», с масштабом — как
         # «карточку поднесли». Дрейф на удержании не нужен: карточка стоит

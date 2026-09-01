@@ -1000,6 +1000,25 @@ def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
     return reports, behind_layers, vfx_clips, summary
 
 
+def _evidence_runs(slots: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """Куски доказательства: подряд идущие слоты одного блока — один кусок.
+
+    Карточка источника привязана к куску, а не к слоту: P5 режет длинный блок
+    на несколько слотов по лимиту длины кадра, и по слотам карточек вышло бы
+    три подряд на одной и той же статье.
+    """
+    runs: list[list[dict[str, Any]]] = []
+    for slot in slots:
+        if slot.get("asset_role") != "evidence" and slot.get("role") != "evidence":
+            continue
+        if (runs and runs[-1][-1]["block_id"] == slot["block_id"]
+                and abs(float(runs[-1][-1]["end"]) - float(slot["start"])) < 1e-6):
+            runs[-1].append(slot)
+        else:
+            runs.append([slot])
+    return runs
+
+
 def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str]) -> list[dict[str, Any]]:
@@ -1009,25 +1028,33 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     sources = plan.get("sources", [])
     on_screen = [s for s in sources if s.get("show_on_screen", True)]
 
-    evidence_slots = [s for s in plan["slots"]
-                      if s.get("asset_role") == "evidence" or s.get("role") == "evidence"]
-    if on_screen and evidence_slots:
-        source = on_screen[0]
-        anchor = evidence_slots[0]
+    # Источник показывается не один раз за ролик. Заказчик просил больше
+    # реального материала — а материал и есть источники: если сценарий назвал
+    # два издания и в ролике два куска доказательства, показать надо оба.
+    # Ставятся они по кускам, а не по слотам: соседние слоты одного блока —
+    # это один кусок доказательства, и вторая карточка встык читалась бы сбоем.
+    for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
+        anchor = run[0]
         card_template = catalog.pick(
             "browser-ui" if variant == "A" else "frames-cards",
             duration=float(anchor["duration"]), recent_videos=recent_videos,
-            exclude=used, seed=seed)
+            exclude=used, seed=seed + i)
         used.append(card_template.id)
         card_start = float(anchor["start"])
-        card_end = min(card_start + 3.4, float(evidence_slots[-1]["end"]))
+        card_end = min(card_start + 3.4, float(run[-1]["end"]))
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
             "template": card_template.id, "params": {
                 "template": source.get("screen_template", "browser"),
                 "domain": source.get("domain", ""),
+                "url": source.get("url", ""),
                 "title": source.get("title", ""),
                 "snippet": source.get("snippet", ""),
+                "published": source.get("published", ""),
+                # §5.5 требует подсветку ключевой строки. Она едет с карточкой,
+                # а не отдельным слоем: маркер лежит **внутри** текста статьи,
+                # и снаружи попасть в строку нечем — координат у неё нет.
+                "highlight": source.get("highlight_line", ""),
                 "typing": bool(card_template.params.get("typing")),
                 "scroll": bool(card_template.params.get("scroll")),
             },
@@ -1042,7 +1069,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         })
         plaque_template = catalog.pick("lower-thirds", duration=2.4,
                                        recent_videos=recent_videos, exclude=used,
-                                       prefer=["lower-thirds/source-domain"], seed=seed)
+                                       prefer=["lower-thirds/source-domain"],
+                                       seed=seed + i)
         used.append(plaque_template.id)
         overlays.append({
             "type": "plaque", "start": card_end - 0.2,

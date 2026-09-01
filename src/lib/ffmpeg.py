@@ -210,10 +210,17 @@ def extract_frames(src: str | Path, out_dir: str | Path, positions: Iterable[flo
     out_dir.mkdir(parents=True, exist_ok=True)
     result: list[Path] = []
     duration = info.duration_sec or 0.0
-    for idx, rel in enumerate(positions):
+    # Неподвижная картинка — единственный кадр длиной в четыре сотых секунды.
+    # Перемотка по ней проматывает **за** него: ffmpeg возвращает 0 и пустой
+    # файл, а вызывающий получает пустой список и молча остаётся без замера.
+    # Так и вышло с кадром из статьи: ни палитры, ни дедупа — один и тот же
+    # кадр вставал в четыре слота подряд.
+    still = int(info.nb_frames or 0) == 1 and duration <= 0.2
+    for idx, rel in enumerate([0.0] if still else list(positions)):
         ts = max(0.0, min(duration * float(rel), max(duration - 0.05, 0.0))) if duration else 0.0
         out = out_dir / f"frame_{idx:02d}.jpg"
-        run(["-y", "-ss", f"{ts:.3f}", "-i", str(src), "-frames:v", "1",
+        seek = [] if still else ["-ss", f"{ts:.3f}"]
+        run(["-y", *seek, "-i", str(src), "-frames:v", "1",
              "-vf", f"scale={width}:-2", "-q:v", "4", str(out)],
             what="extract_frame")
         if out.exists():
