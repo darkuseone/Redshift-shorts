@@ -4,7 +4,7 @@
   "max_items": 20,
   "count": 20,
   "frozen": true,
-  "updated": "2026-08-19",
+  "updated": "2026-09-01",
   "items": [
     {
       "id": "sfx_whoosh_in",
@@ -27,9 +27,10 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
-      "last_used": "2026-08-19",
+      "last_used": "2026-09-01",
       "added": "2026-08-18",
       "file": "whoosh_in.wav",
       "role": "whoosh_in"
@@ -55,9 +56,10 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
-      "last_used": "2026-08-19",
+      "last_used": "2026-09-01",
       "added": "2026-08-18",
       "file": "whoosh_out.wav",
       "role": "whoosh_out"
@@ -81,9 +83,10 @@
       "used_in": [
         "redshift_0042",
         "redshift_0044",
-        "redshift_0045"
+        "redshift_0045",
+        "redshift_0047"
       ],
-      "last_used": "2026-08-18",
+      "last_used": "2026-09-01",
       "added": "2026-08-18",
       "file": "hit_impact.wav",
       "role": "hit_impact"
@@ -264,9 +267,10 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
-      "last_used": "2026-08-19",
+      "last_used": "2026-09-01",
       "added": "2026-08-18",
       "file": "reveal.wav",
       "role": "reveal"
@@ -467,9 +471,10 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
-      "last_used": "2026-08-19",
+      "last_used": "2026-09-01",
       "added": "2026-08-18",
       "file": "subscribe_ping.wav",
       "role": "subscribe_ping"

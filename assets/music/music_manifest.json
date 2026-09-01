@@ -4,7 +4,7 @@
   "max_items": 5,
   "count": 5,
   "frozen": true,
-  "updated": "2026-08-19",
+  "updated": "2026-09-01",
   "items": [
     {
       "id": "music_cosmic_calm",
@@ -95,9 +95,10 @@
       "score": 0.0,
       "duration_sec": 60.0,
       "used_in": [
-        "redshift_0044"
+        "redshift_0044",
+        "redshift_0047"
       ],
-      "last_used": "2026-08-18",
+      "last_used": "2026-09-01",
       "added": "2026-08-18",
       "file": "discovery_warm.m4a",
       "mood": "discovery_warm"

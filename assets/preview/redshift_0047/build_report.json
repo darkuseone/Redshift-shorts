@@ -4,8 +4,8 @@
   "variants": {
     "A": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0047/redshift_0047_A.mp4",
-      "size_bytes": 40197960,
-      "duration_sec": 57.8,
+      "size_bytes": 48307339,
+      "duration_sec": 60.2,
       "fps": 30.0,
       "resolution": [
         1080,
@@ -14,20 +14,20 @@
       "thumbnail": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0047/thumbnail.jpg",
       "qc_passed": true,
       "render_stats": {
-        "frames": 1734,
-        "duration_sec": 57.77,
-        "shots": 21,
+        "frames": 1806,
+        "duration_sec": 60.194,
+        "shots": 23,
         "overlay_draws": 1,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 1158,
-        "speech_frames": 1158
+        "subtitle_frames": 1250,
+        "speech_frames": 1250
       }
     },
     "B": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0047/redshift_0047_B.mp4",
-      "size_bytes": 40080946,
-      "duration_sec": 57.8,
+      "size_bytes": 49387935,
+      "duration_sec": 60.2,
       "fps": 30.0,
       "resolution": [
         1080,
@@ -36,14 +36,14 @@
       "thumbnail": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0047/thumbnail_B.jpg",
       "qc_passed": true,
       "render_stats": {
-        "frames": 1734,
-        "duration_sec": 57.77,
-        "shots": 21,
+        "frames": 1806,
+        "duration_sec": 60.194,
+        "shots": 23,
         "overlay_draws": 1,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 1291,
-        "speech_frames": 1291
+        "subtitle_frames": 1216,
+        "speech_frames": 1216
       }
     }
   },
@@ -54,13 +54,13 @@
       "passed": true,
       "passed_count": 19,
       "total": 19,
-      "ai_share": 0.3434,
+      "ai_share": 0.3829,
       "checks": [
         {
           "id": "QC-1",
           "name": "Длительность",
           "passed": true,
-          "value": 57.8,
+          "value": 60.2,
           "threshold": [
             35,
             70
@@ -73,7 +73,7 @@
           "id": "QC-2",
           "name": "Доля аватара",
           "passed": true,
-          "value": 0.5074,
+          "value": 0.4887,
           "threshold": [
             0.35,
             0.6
@@ -86,7 +86,7 @@
           "id": "QC-3",
           "name": "Интервал без визуального события",
           "passed": true,
-          "value": 2.32,
+          "value": 2.38,
           "threshold": 2.5,
           "detail": "",
           "timecode_sec": null,
@@ -96,7 +96,7 @@
           "id": "QC-4",
           "name": "Длительность одного плана",
           "passed": true,
-          "value": 6.23,
+          "value": 6.4,
           "threshold": 7.0,
           "detail": "",
           "timecode_sec": null,
@@ -138,7 +138,7 @@
           "passed": true,
           "value": {
             "lufs": -14.0,
-            "true_peak_dbtp": -4.34
+            "true_peak_dbtp": -4.0
           },
           "threshold": {
             "lufs": [
@@ -208,7 +208,7 @@
           "id": "QC-14",
           "name": "Доля AI-generated футажа",
           "passed": true,
-          "value": 0.3434,
+          "value": 0.3829,
           "threshold": 0.4,
           "detail": "",
           "timecode_sec": null,
@@ -231,7 +231,7 @@
           "value": 1,
           "threshold": 1,
           "detail": "",
-          "timecode_sec": 55.8,
+          "timecode_sec": 58.2,
           "blocking": true
         },
         {
@@ -280,87 +280,91 @@
         "variant": "A",
         "samples": [
           {
-            "t": 4.81,
+            "t": 5.02,
             "shot_index": 0,
             "kind": "avatar",
+            "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "не из-за денег и не из-за политики.",
-            "score": 0.35,
-            "summary": "Мужчина в зелёной рубашке говорит в микрофон на фоне космоса с крупным текстом",
-            "has_text": true,
-            "watermark": false,
-            "reason": "Текст «ДВАДЦАТЬ» и «денег» в кадре, прямое противоречие фразе «не из-за денег»",
-            "judge": "grok"
-          },
-          {
-            "t": 14.44,
-            "shot_index": 4,
-            "kind": "footage",
-            "spoken": "рекорд, и это всего одна треть толщины земной",
-            "score": 0.45,
-            "summary": "Геологический разрез слоёв породы с красной линией и наложенным текстом «ВСЕГО»",
-            "has_text": true,
-            "watermark": false,
-            "reason": "хорошо показывает слои земли, но крупный текст «ВСЕГО» в центре и постановочный вид снижают пригодность как чистого B-roll",
-            "judge": "grok"
-          },
-          {
-            "t": 24.07,
-            "shot_index": 8,
-            "kind": "footage",
-            "spoken": "гранит, а расчёты обещали сто градусов —",
-            "score": 0.45,
-            "summary": "раскалённый докрасна камень с трещинами в пустыне",
-            "has_text": true,
-            "watermark": false,
-            "reason": "текст «a» по центру, стоковый/AI-вид, не гранит, слабая вертикальная композиция",
-            "judge": "grok"
-          },
-          {
-            "t": 33.7,
-            "shot_index": 12,
-            "kind": "split",
-            "spoken": "сам, а буровая колонна",
-            "score": 0.25,
-            "summary": "молодой мужчина в рубашке говорит в микрофон на фоне космоса",
+            "score": 0.85,
+            "summary": "Ведущий крупным планом с наложенным текстом «ДВАДЦАТЬ» за головой и «денег» на груди",
             "has_text": false,
             "watermark": false,
-            "reason": "кадр — это говорящая голова ведущего, а не B-roll буровой колонны; полное несоответствие смыслу блока",
+            "reason": "Текст — оформление канала, кадр соответствует хуку и речи про «не из-за денег»",
             "judge": "grok"
           },
           {
-            "t": 43.33,
-            "shot_index": 15,
+            "t": 15.05,
+            "shot_index": 4,
             "kind": "footage",
-            "spoken": "выдавило из самих минералов,",
-            "score": 0.55,
-            "summary": "Капля жидкости на мокрой тёмной скале с отражением",
-            "has_text": true,
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "мировой рекорд, и это всего одна треть",
+            "score": 0.65,
+            "summary": "Крупный план слоистой горной породы со шкалой и тонкой подсвеченной линией",
+            "has_text": false,
             "watermark": false,
-            "reason": "Отлично передаёт «выдавило из минералов», но крупный красный текст в центре сильно портит B-roll",
+            "reason": "кадр подходит под геологический setup и речь о рекорде, но выглядит постановочно, связь с «одной третью» слабая",
             "judge": "grok"
           },
           {
-            "t": 52.96,
-            "shot_index": 19,
+            "t": 25.08,
+            "shot_index": 9,
             "kind": "footage",
-            "spoken": "люк посреди тундры. Мы упёрлись",
-            "score": 0.15,
-            "summary": "Красный бархатный объект с неоновым текстом «тундры» на тёмном фоне",
-            "has_text": true,
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "неё шёл трещиноватый гранит, а расчёты",
+            "score": 0.9,
+            "summary": "Горящий треснувший камень в темноте",
+            "has_text": false,
             "watermark": false,
-            "reason": "Полное несоответствие смыслу (нет люка и тундры), крупный текст в кадре, абстрактный дизайн вместо реального B-roll",
+            "reason": "Кадр точно иллюстрирует «трещиноватый», футаж во весь экран, текст — субтитр канала",
+            "judge": "grok"
+          },
+          {
+            "t": 35.11,
+            "shot_index": 13,
+            "kind": "fullscreen_text",
+            "expected": "фраза во весь экран поверх фона — так и задумано",
+            "spoken": "сам,",
+            "score": 0.95,
+            "summary": "Large centered text 'ОНА ТЕЧЁТ' over dark abstract smoky background",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Matches full-screen text intent, high contrast, clean vertical composition; background has generic stock/AI fluid look",
+            "judge": "grok"
+          },
+          {
+            "t": 45.15,
+            "shot_index": 17,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "выдавило из самих",
+            "score": 0.45,
+            "summary": "крупный план чёрного сыпучего порошка или гранул",
+            "has_text": false,
+            "watermark": false,
+            "reason": "статичная текстура не иллюстрирует «выдавило», слишком абстрактно для twist",
+            "judge": "grok"
+          },
+          {
+            "t": 55.18,
+            "shot_index": 21,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "заваренный люк посреди тундры. Мы упёрлись",
+            "score": 0.9,
+            "summary": "металлический люк на бетонной плите посреди тундры",
+            "has_text": false,
+            "watermark": false,
+            "reason": "точно иллюстрирует «заваренный люк посреди тундры», текст — каналный субтитр",
             "judge": "grok"
           }
         ],
         "sample_count": 6,
-        "mismatch_share": 0.5,
+        "mismatch_share": 0.0,
         "mismatch_limit": 0.1,
-        "picture_matches_speech": false,
+        "picture_matches_speech": true,
         "watermarks_found": 0,
         "blocking": false,
-        "notes": [
-          "картинка расходится с речью на 50% проб (предел 10%, §11.2.1)"
-        ]
+        "notes": []
       }
     },
     "B": {
@@ -369,13 +373,13 @@
       "passed": true,
       "passed_count": 19,
       "total": 19,
-      "ai_share": 0.3477,
+      "ai_share": 0.382,
       "checks": [
         {
           "id": "QC-1",
           "name": "Длительность",
           "passed": true,
-          "value": 57.8,
+          "value": 60.2,
           "threshold": [
             35,
             70
@@ -388,7 +392,7 @@
           "id": "QC-2",
           "name": "Доля аватара",
           "passed": true,
-          "value": 0.5074,
+          "value": 0.4887,
           "threshold": [
             0.35,
             0.6
@@ -401,7 +405,7 @@
           "id": "QC-3",
           "name": "Интервал без визуального события",
           "passed": true,
-          "value": 2.32,
+          "value": 2.38,
           "threshold": 2.5,
           "detail": "",
           "timecode_sec": null,
@@ -411,7 +415,7 @@
           "id": "QC-4",
           "name": "Длительность одного плана",
           "passed": true,
-          "value": 6.23,
+          "value": 6.4,
           "threshold": 7.0,
           "detail": "",
           "timecode_sec": null,
@@ -453,7 +457,7 @@
           "passed": true,
           "value": {
             "lufs": -14.0,
-            "true_peak_dbtp": -4.34
+            "true_peak_dbtp": -4.0
           },
           "threshold": {
             "lufs": [
@@ -523,7 +527,7 @@
           "id": "QC-14",
           "name": "Доля AI-generated футажа",
           "passed": true,
-          "value": 0.3477,
+          "value": 0.382,
           "threshold": 0.4,
           "detail": "",
           "timecode_sec": null,
@@ -546,7 +550,7 @@
           "value": 1,
           "threshold": 1,
           "detail": "",
-          "timecode_sec": 55.8,
+          "timecode_sec": 58.2,
           "blocking": true
         },
         {
@@ -595,100 +599,102 @@
         "variant": "B",
         "samples": [
           {
-            "t": 4.81,
+            "t": 5.02,
             "shot_index": 0,
             "kind": "avatar",
+            "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "не из-за денег и не из-за политики.",
-            "score": 0.62,
-            "summary": "Man speaking into mic against space background with red 'денег' overlay",
-            "has_text": true,
-            "watermark": false,
-            "reason": "Direct avatar shot fits hook, but red text 'денег' in frame and thematic mismatch lower score",
-            "judge": "grok"
-          },
-          {
-            "t": 14.44,
-            "shot_index": 4,
-            "kind": "footage",
-            "spoken": "рекорд, и это всего одна треть толщины земной",
-            "score": 0.45,
-            "summary": "Модель слоёв породы с красной линией и текстом ВСЕГО",
-            "has_text": true,
-            "watermark": false,
-            "reason": "Текст в кадре, постановочная модель, горизонтальная композиция плохо ложится в 9:16",
-            "judge": "grok"
-          },
-          {
-            "t": 24.07,
-            "shot_index": 8,
-            "kind": "footage",
-            "spoken": "гранит, а расчёты обещали сто градусов —",
-            "score": 0.35,
-            "summary": "раскалённый расплав в тёмной печи",
-            "has_text": true,
-            "watermark": true,
-            "reason": "текст «a» по центру, стоковый вид, много пустого чёрного пространства сверху, слабая связь с гранитом и 100 °C",
-            "judge": "grok"
-          },
-          {
-            "t": 33.7,
-            "shot_index": 12,
-            "kind": "split",
-            "spoken": "сам, а буровая колонна",
-            "score": 0.15,
-            "summary": "Мужчина в зелёной рубашке говорит в микрофон на фоне космоса",
+            "score": 0.92,
+            "summary": "Ведущий в кадре с субтитром «денег» по центру",
             "has_text": false,
             "watermark": false,
-            "reason": "Кадр — говорящая голова ведущего, а не B-roll; полностью не соответствует теме «буровая колонна» и сплиту 50/50",
+            "reason": "Кадр точно соответствует речи про «денег», субтитр на месте, композиция крупного плана соблюдена",
             "judge": "grok"
           },
           {
-            "t": 43.33,
-            "shot_index": 15,
+            "t": 15.05,
+            "shot_index": 4,
             "kind": "footage",
-            "spoken": "Её выдавило из самих минералов,",
-            "score": 0.25,
-            "summary": "Крупный план чёрной зернистой минеральной поверхности с наложенным текстом",
-            "has_text": true,
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "мировой рекорд, и это всего одна треть",
+            "score": 0.9,
+            "summary": "геологическая модель слоёв породы с вертикальной линией измерения на столе",
+            "has_text": false,
             "watermark": false,
-            "reason": "Прямой текст в центре, стоковая текстура, не годится как чистый B-roll",
+            "reason": "полностью соответствует замыслу: наглядный футаж про глубину/рекорд, без дефектов",
             "judge": "grok"
           },
           {
-            "t": 52.96,
-            "shot_index": 19,
+            "t": 25.08,
+            "shot_index": 9,
             "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "неё шёл трещиноватый гранит, а расчёты",
+            "score": 0.85,
+            "summary": "Расколотая скала с яркой лавой в трещинах и крупной надписью",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Отлично иллюстрирует «трещиноватый», но выглядит постановочно-стоковым",
+            "judge": "grok"
+          },
+          {
+            "t": 35.11,
+            "shot_index": 13,
+            "kind": "fullscreen_text",
+            "expected": "фраза во весь экран поверх фона — так и задумано",
+            "spoken": "сам,",
+            "score": 0.9,
+            "summary": "крупный текст «ОНА ТЕЧЁТ» по центру на тёмном абстрактном фоне с дымом",
+            "has_text": false,
+            "watermark": false,
+            "reason": "полностью соответствует замыслу полноэкранного текста, фон стоковый/нейросетевой, но без дефектов",
+            "judge": "grok"
+          },
+          {
+            "t": 45.15,
+            "shot_index": 17,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "воду. Её выдавило из самих",
+            "score": 0.92,
+            "summary": "вода выдавливается из тёмного объекта сверху, падая вниз струёй с брызгами",
+            "has_text": false,
+            "watermark": false,
+            "reason": "идеально иллюстрирует «её выдавило», но материал выглядит постановочно/стоково",
+            "judge": "grok"
+          },
+          {
+            "t": 55.18,
+            "shot_index": 21,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "люк посреди тундры. Мы упёрлись",
-            "score": 0.12,
-            "summary": "Красный овальный предмет с наложенным текстом «тундры» на тёмно-красном фоне",
-            "has_text": true,
+            "score": 0.92,
+            "summary": "Металлический люк на потрескавшейся земле в тундре с надписью «посреди»",
+            "has_text": false,
             "watermark": false,
-            "reason": "Полное несоответствие теме «люк посреди тундры», текст в кадре, постановочная студийная съёмка",
+            "reason": "Точно по смыслу речи, но кадр выглядит нейросетевым",
             "judge": "grok"
           }
         ],
         "sample_count": 6,
-        "mismatch_share": 0.667,
+        "mismatch_share": 0.0,
         "mismatch_limit": 0.1,
-        "picture_matches_speech": false,
-        "watermarks_found": 1,
+        "picture_matches_speech": true,
+        "watermarks_found": 0,
         "blocking": false,
-        "notes": [
-          "картинка расходится с речью на 67% проб (предел 10%, §11.2.1)",
-          "подозрение на водяные знаки в 1 пробах"
-        ]
+        "notes": []
       }
     }
   },
   "assets": {
-    "count": 23,
+    "count": 27,
     "unlicensed": [],
     "mock_count": 0
   },
   "warnings": [
-    "смысловой QC: картинка расходится с речью на 50% проб (предел 10%, §11.2.1)",
-    "смысловой QC: картинка расходится с речью на 67% проб (предел 10%, §11.2.1)",
-    "смысловой QC: подозрение на водяные знаки в 1 пробах"
+    "13 записей индекса без файлов в storage — пропущены; вычистить: python -m src.cli maintenance",
+    "11 слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)"
   ],
-  "cost_usd": 0.072
+  "cost_usd": 2.082
 }
