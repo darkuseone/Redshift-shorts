@@ -107,3 +107,24 @@ def test_without_a_key_generation_falls_back_to_mock(cfg, monkeypatch):
     cfg.set("providers.mode", "auto")
     provider = build_generation_provider(cfg, CostLedger(video_id="t"))
     assert isinstance(provider, MockGeneration)
+
+
+def test_prompt_asks_for_a_photograph_not_an_illustration():
+    """Заказчик просил, чтобы кадр не читался как AI-генерация.
+
+    Узнаётся она по «нарисованности»: 3D-рендер, иллюстрация, глянец без
+    единой случайной детали. Промпт поэтому просит фотографию — камеру, оптику,
+    зерно — и прямо запрещает рендер.
+    """
+    from src.p9_generate.generate import _prompt_for_slot
+
+    slot = {"index": 4, "role": "develop", "duration": 3.0,
+            "visual_intent": "буровая колонна в стволе скважины",
+            "queries": ["deep borehole drill string"]}
+    plan = {"category": "science", "title": "Кольская сверхглубокая", "blocks": []}
+    prompt = _prompt_for_slot(slot, plan).lower()
+
+    for asked in ("photographic", "35mm", "film grain"):
+        assert asked in prompt
+    for banned in ("no illustration", "no 3d render", "no cgi", "no text", "no logos"):
+        assert banned in prompt

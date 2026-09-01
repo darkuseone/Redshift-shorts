@@ -149,6 +149,19 @@ def test_a_still_image_yields_exactly_one_frame(tmp_path):
     assert len(frames) == 1 and frames[0].exists()
 
 
+def test_press_material_never_lands_in_the_shared_library():
+    """Кадр из статьи не переиспользуется другим роликом.
+
+    В общей базе он был бы доступен любому сюжету, а вместе с ним исчезло бы
+    единственное основание его показывать — та самая страница рядом в кадре.
+    """
+    from src.p8_broll_judge.judge import belongs_to_its_source
+
+    assert belongs_to_its_source({"origin": "press", "asset_id": "press_1"})
+    assert not belongs_to_its_source({"origin": "stock", "asset_id": "px_1"})
+    assert not belongs_to_its_source({"asset_id": "px_1"})
+
+
 # --- карточка источника -------------------------------------------------------
 
 def _card(params: dict) -> str:

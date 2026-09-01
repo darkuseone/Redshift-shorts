@@ -41,6 +41,16 @@ def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
     return None
 
 
+def belongs_to_its_source(entry: dict[str, Any]) -> bool:
+    """Материал, который нельзя переиспользовать в другом ролике (§14.4).
+
+    Кадр со страницы статьи принадлежит своей статье: в общей базе он стал бы
+    доступен любому сюжету — и вместе с ним исчезло бы единственное основание
+    его показывать, та самая страница рядом в кадре.
+    """
+    return str(entry.get("origin") or "") == "press"
+
+
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
@@ -166,6 +176,8 @@ def run_step(ctx) -> dict[str, Any]:
             # Мемы живут в своей библиотеке с лимитом 100 (§14.3), в индексе
             # футажей им делать нечего.
             memes_used.append(entry["asset_id"])
+            continue
+        if belongs_to_its_source(entry):
             continue
         if entry.get("origin") == "local_cache":
             index.mark_used(entry["asset_id"], doc["video_id"])

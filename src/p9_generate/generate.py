@@ -50,8 +50,15 @@ def _prompt_for_slot(slot: dict[str, Any], plan: dict[str, Any]) -> str:
     queries = build_queries(slot, plan, count=3)
     intent = slot.get("visual_intent") or queries[0]
     role = slot.get("role", "")
-    style = ("cinematic, vertical 9:16 composition, shallow depth of field, "
-             "muted palette with a single warm red accent, no text, no logos, "
+    # Запреты в промпте — не украшение. Заказчик просил, чтобы кадр не читался
+    # как AI-генерация, а узнаётся она в первую очередь по «нарисованности»:
+    # 3D-рендер, иллюстрация, вылизанный глянец без единой случайной детали.
+    # Поэтому кадр просится фотографический, снятый камерой, с оптикой и
+    # зерном — тем, чего у иллюстрации не бывает.
+    style = ("photographic still from a real camera, 35mm lens, natural light, "
+             "fine film grain, cinematic, vertical 9:16 composition, "
+             "shallow depth of field, muted palette with a single warm red accent, "
+             "no illustration, no 3d render, no CGI, no text, no logos, "
              "no watermark, subtle motion")
     return f"{intent}. {queries[0]}. Role: {role}. Style: {style}"
 
