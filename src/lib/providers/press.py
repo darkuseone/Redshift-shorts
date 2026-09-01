@@ -40,7 +40,12 @@ _IMAGE_KEYS = ("og:image:secure_url", "og:image:url", "og:image", "twitter:image
                "twitter:image:src")
 _TITLE_KEYS = ("og:title", "twitter:title")
 _SITE_KEYS = ("og:site_name",)
-_TIME_KEYS = ("article:published_time", "article:modified_time", "date")
+# Дату каждое издание кладёт по-своему: у блогов это og-время статьи, у научных
+# журналов — Dublin Core и PRISM. Проверено на живых страницах: blog.google
+# отдаёт article:published_time, nature.com — только dc.date и
+# prism.publicationdate, и без них карточка осталась бы без даты.
+_TIME_KEYS = ("article:published_time", "article:modified_time",
+              "dc.date", "prism.publicationdate", "citation_online_date", "date")
 
 
 def meta_map(html: str) -> dict[str, str]:

@@ -48,6 +48,25 @@ def test_meta_is_read_in_any_attribute_order():
     assert meta["article:published_time"].startswith("2024-12-09")
 
 
+def test_date_is_found_where_the_publisher_put_it(monkeypatch):
+    """Дату каждое издание кладёт по-своему, и карточке она нужна.
+
+    Проверено на живых страницах: blog.google отдаёт article:published_time,
+    nature.com — только dc.date и prism.publicationdate.
+    """
+    page = ('<meta property="og:image" content="https://x/h.jpg">'
+            '<meta name="dc.date" content="2024-12-09">'
+            '<meta name="prism.publicationdate" content="2024-12-09">')
+    provider = PressProvider.__new__(PressProvider)
+    provider.name = "press"
+    monkeypatch.setattr(PressProvider, "_fetch", lambda self, url: page)
+    monkeypatch.setattr(PressProvider, "charge",
+                        lambda self, *a, **k: None, raising=False)
+
+    candidate = provider.search("https://www.nature.com/articles/s41586")[0]
+    assert candidate.meta["published"] == "2024-12-09"
+
+
 def test_press_candidate_carries_the_page_it_came_from(monkeypatch):
     """У кадра из статьи обязаны быть домен, ссылка и кредит: без них §1
     (правило 8) не выполнить, а показывать такой кадр нельзя."""
