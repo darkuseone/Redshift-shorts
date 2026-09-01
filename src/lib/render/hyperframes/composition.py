@@ -95,8 +95,13 @@ def _mark_phrase(text: str, phrase: str) -> str:
 
     Подсветка была объявлена в плане, но в кадре её не было: слой ``highlight``
     рисовать нечем — у строки внутри абзаца нет координат снаружи. Маркер
-    поэтому лежит в самом тексте, а под ним — полоса, которую твин протягивает
-    слева направо, как настоящим маркером.
+    поэтому лежит в самом тексте.
+
+    Полосой под текстом это не сделать: фраза переносится, а абсолютная полоса
+    внутри многострочного inline-элемента считается по одной коробке и в кадре
+    осталась красной чёрточкой на месте переноса — проверено кадром. Маркер
+    поэтому красит фон самого фрагмента, а ``box-decoration-break: clone``
+    повторяет его на каждой строке.
 
     Совпадение ищется без учёта регистра и по первому вхождению: строка в
     сценарии выписана из статьи и в ней же и стоит.
@@ -109,7 +114,7 @@ def _mark_phrase(text: str, phrase: str) -> str:
     if at < 0:
         return _esc(text)
     head, hit, tail = text[:at], text[at:at + len(phrase)], text[at + len(phrase):]
-    return (f'{_esc(head)}<span class="hl"><i></i>{_esc(hit)}</span>{_esc(tail)}')
+    return f'{_esc(head)}<span class="hl">{_esc(hit)}</span>{_esc(tail)}'
 
 
 def _lay_out_tracks(items: list[dict[str, Any]], first_track: int) -> list[int]:
@@ -582,12 +587,19 @@ class CompositionBuilder:
         if kind == "source_card":
             params = ovl.get("params") or {}
             if params.get("highlight"):
-                # Маркер протягивается по строке, а не вспыхивает целиком:
-                # §5.5 просит фокус, и взгляд идёт за движением слева направо.
+                # Маркер приходит после карточки, а не вместе с ней: §5.5 про
+                # фокус, а фокус — это отдельное движение глаза. Цвет задаётся
+                # литералом: var() GSAP в цвет не разворачивает.
+                # Полупрозрачный, как настоящий маркер: заголовок переносится,
+                # и непрозрачная плашка следующей строки срезала хвост буквы на
+                # предыдущей — «Quantum» читался как «Ouantum». Проверено кадром.
+                soft = str(self.brandbook["colors"].get("accent_soft", "#E4726A"))
+                rgb = ",".join(str(int(soft.lstrip("#")[i:i + 2], 16)) for i in (0, 2, 4))
                 self.tweens.append(
-                    f'tl.fromTo("#{node_id} .hl i",{{scaleX:0}},'
-                    f'{{scaleX:1,duration:0.42,ease:"power2.out"}},'
-                    f'{_num(start + 0.6)});')
+                    f'tl.fromTo("#{node_id} .hl",'
+                    f'{{backgroundColor:"rgba({rgb},0)"}},'
+                    f'{{backgroundColor:"rgba({rgb},0.55)",duration:0.42,'
+                    f'ease:"power2.out"}},{_num(start + 0.6)});')
             if params.get("scroll"):
                 # Страница едет вверх ровно столько, чтобы это читалось как
                 # прокрутка, а не как съезжающая вёрстка.

@@ -278,8 +278,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".source-card .page{padding:22px 26px 26px}"
         ".source-card .kicker{font-family:var(--font-mono);font-size:22px;"
         "letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent)}"
+        # Интерлиньяж 1.04 — плакатный, а маркер рисуется по строчной коробке:
+        # на двух строках его блоки наезжали друг на друга и срезали верхнюю.
+        # 1.18 — обычный для заголовка на сайте, и маркеры встают раздельно.
         ".source-card .title{padding:10px 0 0;font-family:var(--font-display);"
-        "font-size:52px;line-height:1.04}"
+        "font-size:52px;line-height:1.18}"
         ".source-card .byline{display:flex;align-items:center;gap:12px;"
         "padding:14px 0 0;font-size:24px;color:var(--color-muted)}"
         ".source-card .favicon{width:34px;height:34px;border-radius:9px;"
@@ -296,12 +299,14 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:rgba(17,18,20,.09)}"
         ".source-card .lines i:nth-child(2){width:88%}"
         ".source-card .lines i:nth-child(3){width:62%}"
-        # Маркер лежит под строкой отдельной полосой: её протягивает твин, и
-        # это читается как проведённый маркер, а не как залитый фон.
-        ".source-card .hl{position:relative;z-index:0}"
-        ".source-card .hl i{position:absolute;left:-6px;right:-6px;top:.04em;"
-        "bottom:.02em;background:var(--color-accent-soft);border-radius:6px;"
-        "transform:scaleX(0);transform-origin:left center;z-index:-1}"
+        # Маркер красит фон самого фрагмента, а не лежит под ним полосой:
+        # фраза переносится, и абсолютная полоса внутри многострочного
+        # inline-элемента считалась по одной коробке — в кадре оставалась
+        # красная чёрточка на месте переноса. `box-decoration-break: clone`
+        # повторяет фон на каждой строке, как настоящий маркер.
+        ".source-card .hl{border-radius:6px;padding:0 .10em;"
+        "-webkit-box-decoration-break:clone;box-decoration-break:clone;"
+        "background-color:rgba(0,0,0,0)}"
     )
 
     # --- CTA (§5.7) ------------------------------------------------------

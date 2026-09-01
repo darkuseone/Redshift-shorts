@@ -24,7 +24,7 @@ from typing import Any, Iterable
 
 import yaml
 
-from ..lib.ffmpeg import extract_frames, probe
+from ..lib.ffmpeg import extract_frames, grade_to_palette, probe
 from ..lib.logging import get_logger
 from ..lib.manifest import FootageIndex, open_library
 from ..lib.palette import palette_verdict
@@ -136,6 +136,9 @@ def run_step(ctx) -> dict[str, Any]:
     # Пресс-кадру палитра канала прощается шире: это цитата в рамке источника, а
     # не фон кадра, и по общему порогу он не проходил бы почти никогда.
     press_palette_max = float(palette_rules.get("press_off_share_max", 0.35))
+    grade_rules = {k: float(v) for k, v in
+                   (palette_rules.get("press_grade") or {}).items()
+                   if k in ("saturation", "red_lift", "contrast")}
     stage1_rejected: list[dict[str, Any]] = []
     candidates_out: list[dict[str, Any]] = []
     seen_hashes: list[tuple[str, list[str]]] = []
@@ -197,7 +200,8 @@ def run_step(ctx) -> dict[str, Any]:
             continue
 
         def accept(provider: Any, candidate: Any, query: str, *,
-                   origin: str = "stock", palette_max: float | None = None) -> bool:
+                   origin: str = "stock", palette_max: float | None = None,
+                   grade: bool = False) -> bool:
             """Скачать кандидата, промерить и положить в слот. False — не взяли.
 
             Отдельной функцией, а не телом цикла: тем же путём идёт кадр со
@@ -216,6 +220,19 @@ def run_step(ctx) -> dict[str, Any]:
                 except Exception as exc:  # noqa: BLE001
                     ctx.warn(f"скачивание не удалось: {exc}", id=candidate.id)
                     return False
+                if grade:
+                    # Грейд ложится в storage вместо исходника, а не рядом с
+                    # ним. Иначе возобновлённый прогон, у которого нет рабочего
+                    # каталога, вытянет по ключу неотгрейженный кадр — и в
+                    # ролик поедет цвет, который отбор уже отклонял.
+                    try:
+                        graded = local_file.with_name(
+                            f"{local_file.stem}_graded{local_file.suffix}")
+                        grade_to_palette(local_file, graded, **grade_rules)
+                        graded.replace(local_file)
+                    except Exception as exc:  # noqa: BLE001 — грейд не роняет прогон
+                        ctx.warn(f"грейд не удался, кадр берётся как есть: {exc}",
+                                 id=candidate.id)
                 ctx.storage.put(key, local_file)
                 downloads += 1
 
@@ -330,7 +347,9 @@ def run_step(ctx) -> dict[str, Any]:
         article = _article_for(slot, plan)
         if press is not None and article and not slot_candidates:
             try:
-                found = press.search(article["url"], kind="photo", limit=1)
+                # Просим не один кадр, а сколько есть: у страницы og:image один,
+                # но брать надо первый **прошедший** отбор, а не первый по счёту.
+                found = press.search(article["url"], kind="photo", limit=3)
             except Exception as exc:  # noqa: BLE001 — страница не должна ронять прогон
                 ctx.warn(f"страница источника недоступна: {exc}",
                          slot=slot["index"], url=article["url"][:120])
@@ -343,7 +362,7 @@ def run_step(ctx) -> dict[str, Any]:
                                             "reason": reason, "query": article["url"]})
                     continue
                 if accept(press, candidate, article["url"], origin="press",
-                          palette_max=press_palette_max):
+                          palette_max=press_palette_max, grade=True):
                     press_used += 1
                     break
 

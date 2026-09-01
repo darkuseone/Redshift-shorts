@@ -162,6 +162,40 @@ def test_press_material_never_lands_in_the_shared_library():
     assert not belongs_to_its_source({"asset_id": "px_1"})
 
 
+def test_grade_pulls_a_colourful_frame_into_the_channel_palette(tmp_path):
+    """Настоящая съёмка цветная, и отбор по палитре (§3.1) честно её бракует.
+
+    Ответ — не поднять порог до бессмыслицы, а свести кадр к палитре канала.
+    Числа взяты измерением: до грейда посторонний цвет занимает почти весь
+    кадр, после — укладывается даже в общий порог 0.15.
+    """
+    import json
+
+    from PIL import Image
+
+    from src.lib.ffmpeg import grade_to_palette
+    from src.lib.palette import off_palette_share
+
+    rules = json.load(open("config/brandbook.json", encoding="utf-8"))
+    rules = rules["color_rules"]["footage_palette"]
+    grade = {k: v for k, v in rules["press_grade"].items()}
+
+    src = tmp_path / "news.jpg"
+    # Дневной кадр: синее небо и зелень — ровно то, чем живёт пресс-фото.
+    frame = Image.new("RGB", (640, 360), (60, 130, 210))
+    for y in range(180, 360):
+        for x in range(0, 640, 2):
+            frame.putpixel((x, y), (70, 150, 60))
+    frame.save(src)
+    before = off_palette_share(Image.open(src), rules)
+
+    dst = grade_to_palette(src, tmp_path / "graded.jpg", **grade)
+    after = off_palette_share(Image.open(dst), rules)
+
+    assert before > float(rules["press_off_share_max"])
+    assert after <= float(rules["off_share_max"])
+
+
 # --- карточка источника -------------------------------------------------------
 
 def _card(params: dict) -> str:
@@ -185,7 +219,7 @@ def test_card_shows_the_real_address_and_a_marker_on_the_key_line():
     # Дата — днём, без времени: часы на карточке читать некому.
     assert ">2024-12-09<" in html
     assert 'class="favicon">N<' in html
-    assert '<span class="hl"><i></i>below the surface code threshold</span>' in html
+    assert '<span class="hl">below the surface code threshold</span>' in html
     # Маркер не съедает остальной заголовок.
     assert "Quantum error correction " in html
 

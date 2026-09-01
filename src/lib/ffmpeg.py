@@ -228,6 +228,34 @@ def extract_frames(src: str | Path, out_dir: str | Path, positions: Iterable[flo
     return result
 
 
+def grade_to_palette(src: str | Path, dst: str | Path, *, saturation: float = 0.22,
+                     red_lift: float = 0.07, contrast: float = 1.08) -> Path:
+    """Свести материал к палитре канала: почти монохром с красной подсветкой.
+
+    Нужно кадру из статьи (§3.1). Настоящая съёмка приходит цветной — дневное
+    небо, зелень, синие халаты, — и отбор по палитре её честно бракует: на
+    измерении бодрый кадр даёт 0.83 постороннего цвета при пороге 0.35. Грейд
+    решает то же самое правильным способом: цвет уводится, а кадр остаётся.
+    Проверено измерением на живом кадре: 0.83 → 0.14.
+
+    Числа не на глаз: при saturation 0.35 остаётся 0.65 постороннего цвета —
+    выше порога, при 0.18 кадр уже читается серым. 0.22 — нижняя точка, где
+    материал ещё цветной на вид и уже проходит отбор.
+    """
+    dst = Path(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    chain = (f"hue=s={saturation:.3f},"
+             f"colorbalance=rs={red_lift:.3f}:rm={red_lift:.3f}:rh={red_lift / 2:.3f},"
+             f"eq=contrast={contrast:.3f}:brightness=-0.02")
+    if dst.suffix.lower() in (".jpg", ".jpeg", ".png"):
+        run(["-y", "-i", str(src), "-vf", chain, "-frames:v", "1", "-q:v", "3", str(dst)],
+            what="grade photo")
+    else:
+        run(["-y", "-i", str(src), "-vf", chain, "-c:v", "libx264", "-preset", "veryfast",
+             "-crf", "20", "-pix_fmt", "yuv420p", "-an", str(dst)], what="grade video")
+    return dst
+
+
 def make_thumbnail(src: str | Path, out: str | Path, *, time_sec: float = 1.0,
                    width: int = 1080) -> Path:
     out = Path(out)
