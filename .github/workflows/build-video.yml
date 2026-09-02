@@ -285,11 +285,18 @@ jobs:
 
       - name: Сборка ролика (A и B)
         run: |
+          set -o pipefail
+          # Журнал сборки пишется рядом с выводом: логи Actions читаются через
+          # API кусками с конца, и строка с ошибкой в них не попадает — на
+          # прогоне 33666703565 три попытки вытащить её не дали ничего.
+          # Файл же уезжает в артефакт и в Summary целиком.
+          mkdir -p output
           python -m src.cli \
             --set providers.mode=${{ github.event.inputs.providers_mode }} \
             run --script "${{ github.event.inputs.script }}" \
             ${{ github.event.inputs.from_step != '' && format('--from {0}', github.event.inputs.from_step) || '' }} \
-            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            2>&1 | tee output/build.log
 
       # Кэш сохраняется явно и обязательно на любом исходе. Единый actions/cache
       # свой post-шаг на упавшей задаче не выполняет — а фаза 1 двухфазного
@@ -436,6 +443,7 @@ jobs:
         with:
           name: redshift-output
           path: |
+            output/build.log
             output/**/*.mp4
             output/**/*.jpg
             output/**/*.srt
@@ -466,6 +474,13 @@ jobs:
         if: always()
         run: |
           echo "## REDSHIFT — результат прогона" >> $GITHUB_STEP_SUMMARY
+          # Ошибка — первое, что нужно видеть, и видеть без раскопок в логах.
+          if [ -f output/build.log ] && grep -q '"code":' output/build.log; then
+            echo "### Прогон упал" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            sed -n '/^{$/,$p' output/build.log | head -60 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
           for report in output/*/build_report.json; do
             [ -f "$report" ] || continue
             echo "### $(dirname "$report")" >> $GITHUB_STEP_SUMMARY
