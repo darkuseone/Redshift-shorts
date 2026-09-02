@@ -127,3 +127,55 @@ def test_sfx_sit_at_the_quiet_end_of_the_corridor():
     lo, hi = sfx_peak_corridor(cfg)
     assert lo < hi, "коридор пиков задом наперёд"
     assert sfx_peak_target(cfg) == lo
+
+
+class TestMusicHasAir:
+    """Подложка обязана иметь верх, иначе она гудит, а не звучит.
+
+    Замер прежней библиотеки: 95 % энергии ниже 400–660 Гц, мастер-срез на
+    6 кГц. Выше не было ничего — и это ровно то, что заказчик слышал как
+    «дешёвый звук»: гул под голосом вместо воздуха.
+    """
+
+    def _bands(self, audio, sr=48000):
+        import numpy as np
+
+        mono = audio[:, 0] if getattr(audio, "ndim", 1) == 2 else audio
+        spec = np.abs(np.fft.rfft(mono)) ** 2
+        freqs = np.fft.rfftfreq(len(mono), 1 / sr)
+        total = max(spec.sum(), 1e-20)
+
+        def db(lo, hi):
+            return 10 * np.log10(max(spec[(freqs >= lo) & (freqs < hi)].sum(), 1e-20) / total)
+
+        return db
+
+    def test_every_mood_carries_air_above_the_voice(self):
+        """Слой стоит выше 9 кГц не наугад.
+
+        Проба голоса (прогоны 33571714855, 33572242247) показала, что клон
+        обрывается на ~9.6 кГц. Выше речи нет, и подложка там не маскирует ни
+        одного звука — воздух достаётся бесплатно.
+        """
+        from src.lib.sfx_synth import MUSIC_MOODS, synth_music
+
+        for mood in MUSIC_MOODS:
+            db = self._bands(synth_music(mood, duration_sec=6.0))
+            air = db(9000, 18000)
+            assert air > -45.0, f"{mood}: воздуха нет ({air:.1f} дБ)"
+
+    def test_air_stays_quieter_than_the_middle(self):
+        """Воздух — призвук, а не шипение: громче середины он быть не имеет права."""
+        from src.lib.sfx_synth import MUSIC_MOODS, synth_music
+
+        for mood in MUSIC_MOODS:
+            db = self._bands(synth_music(mood, duration_sec=6.0))
+            assert db(9000, 18000) < db(1000, 4000), f"{mood}: верх забивает середину"
+
+    def test_the_bed_still_rests_on_the_low_end(self):
+        """§4.4: подложка на грани слышимости. Низ обязан остаться основой."""
+        from src.lib.sfx_synth import MUSIC_MOODS, synth_music
+
+        for mood in MUSIC_MOODS:
+            db = self._bands(synth_music(mood, duration_sec=6.0))
+            assert db(20, 200) > db(9000, 18000) + 10.0, f"{mood}: подложка стала звенеть"

@@ -429,8 +429,28 @@ def synth_music(mood: str, *, duration_sec: float = 75.0, seed: int = 0) -> np.n
         # полосу, которую динамик отдаёт, оставаясь «на грани слышимости» (§4.4).
         upper += np.sin(2 * np.pi * freq * 4 * detune * t) * lfo / (i + 2.4)
 
+    chord_n_pre = max(len(spec["chord"]), 1)
+
     # Воздух: отфильтрованный шум, заполняющий тишину.
     air = _lowpass(rng.normal(0, 1, n), 2200) * spec["noise"]
+
+    # Верхний воздух — то, чем «дорогая» подложка отличается от гула.
+    # Замер прежней библиотеки: 95 % энергии ниже 400–660 Гц, потолок среза
+    # 6 кГц. Сверху не было ничего, и подложка читалась как гудение под
+    # голосом. Слой ставится выше 9 кГц не наугад: проба голоса показала, что
+    # клон обрывается на ~9.6 кГц, то есть речи там нет вовсе и маскировать
+    # нечего. Дыхание по амплитуде — чтобы это был воздух, а не шипение.
+    # Слой тональный, а не шумовой: чистый шум наверху читается шипением, а
+    # тот же аккорд семью октавами выше — призвуком, и подложка остаётся
+    # музыкой. Немного шума добавлено для фактуры, чтобы призвук не звенел
+    # синтетической синусоидой.
+    breathe = 0.62 + 0.38 * np.sin(2 * np.pi * spec["lfo"] * 0.7 * t + 1.3)
+    shimmer = np.zeros(n)
+    for i, ratio in enumerate(spec["chord"]):
+        shimmer += np.sin(2 * np.pi * spec["root"] * ratio * 128 * t) / (i + 2.0)
+    shimmer = shimmer / max(chord_n_pre, 1)
+    shimmer += _highpass(rng.normal(0, 1, n), 9000) * 0.35
+    shimmer = shimmer * breathe * float(spec.get("shimmer", 0.045))
 
     # Пульс: очень тихий, задаёт ощущение движения, но не ритм.
     pulse = np.zeros(n)
@@ -440,8 +460,9 @@ def synth_music(mood: str, *, duration_sec: float = 75.0, seed: int = 0) -> np.n
         pulse = np.exp(-8 * phase) * np.sin(2 * np.pi * spec["root"] * t) * 0.35
 
     chord_n = max(len(spec["chord"]), 1)
-    signal = pad / chord_n + upper / chord_n * 0.85 + air + pulse
-    signal = _lowpass(signal, 6000)
+    signal = pad / chord_n + upper / chord_n * 0.85 + air + pulse + shimmer
+    # Срез поднят с 6 кГц: он и срезал весь воздух, ради которого слой добавлен.
+    signal = _lowpass(signal, 16000)
 
     # Бесшовный цикл: кроссфейд хвоста в голову.
     fade = int(2.0 * SR)

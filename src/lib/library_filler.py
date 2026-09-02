@@ -97,7 +97,10 @@ def fill_music(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
         filename = f"{mood}.m4a"
         tmp_wav = lib.dir / f".{mood}.tmp.wav"
         save_wav(tmp_wav, audio, SAMPLE_RATE)
-        ffmpeg_run(["-y", "-i", str(tmp_wav), "-c:a", "aac", "-b:a", "96k",
+        # 128 кбит/с, а не 96: на 96 кодек срезает верх около 14 кГц, а
+        # воздух подложки живёт выше 9 — ровно то, ради чего слой добавлен.
+        # Пять файлов по минуте, разница в весе четверть мегабайта.
+        ffmpeg_run(["-y", "-i", str(tmp_wav), "-c:a", "aac", "-b:a", "128k",
                     "-ar", str(SAMPLE_RATE), "-ac", "2", str(lib.dir / filename)],
                    what="encode music bed")
         tmp_wav.unlink(missing_ok=True)
