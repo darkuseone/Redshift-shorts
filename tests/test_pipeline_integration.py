@@ -49,12 +49,16 @@ def test_fill_sfx_adds_nothing(cfg):
 
 
 def test_repository_sfx_and_music_are_curated(cfg):
-    """SFX и музыка курируемые: пустая библиотека законна, синтетика — нет."""
+    """SFX и музыка курируемые: синтетика запрещена, пустая база законна."""
     sfx = open_library(cfg, "sfx")
     music = open_library(cfg, "music")
     assert all(i.source != "synth" for i in sfx.items)
     assert sfx.count == 0 or all(i.source == "curated" for i in sfx.items)
     assert music.count == 0 or all(i.source == "curated" for i in music.items)
+    for item in sfx.items:
+        path = sfx.file_path(item)
+        assert path.exists(), f"в манифесте {item.id}, файла нет"
+        assert item.duration_sec <= 2.05
 
 
 def test_fill_sfx_does_not_write_files(cfg, repo_root):
@@ -95,10 +99,10 @@ def test_sfx_density_respects_two_second_rule(cfg):
 
 
 def test_sfx_covers_mandatory_points(cfg):
-    roles = {e["role"] for e in _plan_sfx(_plan_stub(), cfg)}
-    assert "reveal" in roles           # появление full-screen text
-    assert "subscribe_ping" in roles   # кнопка подписки
-    assert "whoosh_in" in roles or "swipe" in roles
+    intents = {e["intent"] for e in _plan_sfx(_plan_stub(), cfg)}
+    assert "fullscreen" in intents
+    assert "cta" in intents
+    assert {"avatar_in", "avatar_out", "transition", "picture_in"} & intents
 
 
 def test_dynamic_transition_always_gets_sfx(cfg):

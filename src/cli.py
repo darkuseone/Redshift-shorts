@@ -5,7 +5,7 @@
     python -m src.cli run --script ... --from P7          # resume после падения
     python -m src.cli fonts-check
     python -m src.cli libraries --status
-    python -m src.cli fill-libraries --kind memes
+    python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
     python -m src.cli maintenance
     python -m src.cli learn --video-id redshift_0042 --choice A
 """
@@ -297,6 +297,43 @@ def cmd_fill_libraries(args) -> int:
     return 0
 
 
+def cmd_add_sfx(args) -> int:
+    """Принять короткий звук в библиотеку.
+
+    SFX курируемые: их приносит заказчик, конвейер режет отрезок ≤2 сек,
+    меряет и заводит с тегами. Монтаж берёт их по смыслу кадра.
+    """
+    from .lib.sfx_library import (
+        TAGS, add_clip, ingest_customer_drop, inspect_clip, library_status,
+    )
+
+    cfg = _load_cfg(args)
+    setup_logging(level=cfg.get("logging.level", "INFO"), json_output=not args.pretty_logs)
+
+    if args.status:
+        print(json.dumps(library_status(cfg), ensure_ascii=False, indent=2))
+        return 0
+    if args.ingest_drop:
+        print(json.dumps(ingest_customer_drop(cfg), ensure_ascii=False, indent=2))
+        return 0
+    if args.inspect:
+        print(json.dumps(inspect_clip(Path(args.inspect)), ensure_ascii=False, indent=2))
+        return 0
+    if not args.file or not args.id or not args.tag:
+        print(json.dumps({"code": "SFX_ARGS",
+                          "message": "нужны --file, --id и хотя бы один --tag "
+                                     "(или --status/--inspect/--ingest-drop)",
+                          "tags": TAGS}, ensure_ascii=False, indent=2))
+        return 2
+
+    result = add_clip(cfg, source=Path(args.file), clip_id=args.id, tags=args.tag,
+                      role=args.role or "", title=args.title or "",
+                      start_sec=args.start if args.start is not None else 0.0,
+                      length_sec=args.length, force=args.force)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_add_music(args) -> int:
     """Принять живую запись подложки в библиотеку.
 
@@ -433,6 +470,24 @@ def build_parser() -> argparse.ArgumentParser:
     music.add_argument("--status", action="store_true",
                        help="что в библиотеке есть и чем покрыты теги")
     music.set_defaults(func=cmd_add_music)
+
+    sfx = sub.add_parser("add-sfx", help="принять короткий звук в библиотеку")
+    sfx.add_argument("--file", default=None, help="путь к записи (wav/mp3/m4a/flac)")
+    sfx.add_argument("--id", default=None, help="имя звука в библиотеке")
+    sfx.add_argument("--tag", action="append", default=None,
+                     help="тег из словаря; можно несколько раз")
+    sfx.add_argument("--role", default="", help="роль для старых сценариев (whoosh_in, …)")
+    sfx.add_argument("--title", default=None, help="описание своими словами")
+    sfx.add_argument("--start", type=float, default=None, help="начало отрезка, сек")
+    sfx.add_argument("--length", type=float, default=None, help="длина отрезка, сек")
+    sfx.add_argument("--force", action="store_true",
+                     help="принять вопреки замечаниям приёма")
+    sfx.add_argument("--inspect", default=None, help="только промерить файл")
+    sfx.add_argument("--status", action="store_true",
+                     help="что в библиотеке есть и чем покрыты теги")
+    sfx.add_argument("--ingest-drop", action="store_true",
+                     help="принять пачку, залитую заказчиком в assets/sfx/")
+    sfx.set_defaults(func=cmd_add_sfx)
 
     mnt = sub.add_parser("maintenance", help="LRU-очистка кэша футажей и отчёты")
     mnt.add_argument("--dry-run", action="store_true")

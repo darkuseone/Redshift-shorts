@@ -93,7 +93,7 @@ python -m src.cli steps                                       # контракт
 python -m src.cli validate --script scripts/x.json   # P0, коды ошибок §8.2
 python -m src.cli fonts-check                        # кириллица и лицензии гарнитур
 python -m src.cli libraries                          # состояние библиотек и лимитов
-python -m src.cli fill-libraries --kind memes        # долив мемов-заглушек; SFX и музыка — руками
+python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
 python -m src.cli templates --category transitions   # каталог шаблонов
 python -m src.cli maintenance --dry-run              # что вытеснит LRU
 python -m src.cli learn --video-id x --choice A      # записать выбор версии

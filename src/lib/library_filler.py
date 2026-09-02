@@ -31,19 +31,22 @@ def fill_sfx(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
     первым же прогоном ``fill-libraries``, который в наборе по умолчанию.
 
     Функция осталась, чтобы ``fill_libraries`` не спотыкался о недостающий
-    обработчик. Класть файлы будет заказчик; конвейер их подхватит из
-    манифеста, когда записи появятся.
+    обработчик. Класть файлы — ``python -m src.cli add-sfx``.
     """
-    lib = open_library(cfg, "sfx")
+    from .sfx_library import library_status
+
+    status = library_status(cfg)
     return {
         "kind": "sfx",
         "added": [],
         "blocked": [],
         "curated": True,
-        "count": lib.count,
-        "max_items": lib.max_items,
-        "frozen": lib.frozen,
-        "note": "короткие звуки кладутся руками заказчиком, не синтезируются",
+        "count": status["count"],
+        "max_items": 20,
+        "kinds_missing": status["kinds_missing"],
+        "by_tag": status["by_tag"],
+        "note": ("короткие звуки кладутся руками: python -m src.cli add-sfx "
+                 "--file <запись> --id <имя> --tag <тег> [--role <роль>]"),
     }
 
 

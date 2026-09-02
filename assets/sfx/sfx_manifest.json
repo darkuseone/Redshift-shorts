@@ -1,9 +1,603 @@
 {
-  "_comment": "Библиотека sfx. Лимит 20 (§14). Курируемая: короткие звуки кладёт заказчик, fill-libraries их не синтезирует. По достижении лимита пополнение блокируется.",
+  "_comment": "Библиотека sfx. Лимит 20 (§14). Курируемая.",
   "kind": "sfx",
   "max_items": 20,
-  "count": 0,
+  "count": 18,
   "frozen": false,
   "updated": "2026-09-02",
-  "items": []
+  "items": [
+    {
+      "id": "sfx_whoosh_sharp",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "whoosh",
+        "air",
+        "sharp"
+      ],
+      "vision_summary": "острый вжух воздуха",
+      "score": 0.0,
+      "duration_sec": 1.1,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "whoosh_sharp.wav",
+      "role": "whoosh_in",
+      "extra": {
+        "measured": {
+          "duration_sec": 1.1,
+          "peak_dbfs": -4.84,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -0.01
+        },
+        "source_file": "air-effect-single-sharp.mp3",
+        "segment_start_sec": 0.28,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_whoosh_soft",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "whoosh",
+        "air",
+        "soft"
+      ],
+      "vision_summary": "мягкий басовый вжух",
+      "score": 0.0,
+      "duration_sec": 1.1,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "whoosh_soft.wav",
+      "role": "whoosh_out",
+      "extra": {
+        "measured": {
+          "duration_sec": 1.1,
+          "peak_dbfs": -5.17,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -3.87
+        },
+        "source_file": "d53b652c49b8b0b.mp3",
+        "segment_start_sec": 0.12,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_whoosh_double",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "whoosh",
+        "swipe",
+        "air"
+      ],
+      "vision_summary": "двойной вжух-свайп",
+      "score": 0.0,
+      "duration_sec": 0.73,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "whoosh_double.wav",
+      "role": "swipe",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.73,
+          "peak_dbfs": -8.95,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -12.46
+        },
+        "source_file": "149206cfec5991.mp3",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_whoosh_cinematic",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "whoosh",
+        "air",
+        "wide"
+      ],
+      "vision_summary": "широкий кинематографический вжух",
+      "score": 0.0,
+      "duration_sec": 2.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "whoosh_cinematic.wav",
+      "role": "boom",
+      "extra": {
+        "measured": {
+          "duration_sec": 2.0,
+          "peak_dbfs": -6.0,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -14.99
+        },
+        "source_file": "viralaudio-descent-whoosh-long-cinematic-sound-effect-405921.mp3",
+        "segment_start_sec": 1.85,
+        "accepted_with_warnings": [
+          "пик 0.0 dBFS выше -0.5: в миксе к нему добавится голос"
+        ]
+      }
+    },
+    {
+      "id": "sfx_rumble_air",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "rumble",
+        "sub",
+        "air"
+      ],
+      "vision_summary": "глухой воздух: на телефоне не слышен, в монтаж картинки не берём",
+      "score": 0.0,
+      "duration_sec": 1.69,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "rumble_air.wav",
+      "extra": {
+        "measured": {
+          "duration_sec": 1.69,
+          "peak_dbfs": -6.0,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -29.01
+        },
+        "source_file": "air-effect-muted-soft.mp3",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": [
+          "пик 0.0 dBFS выше -0.5: в миксе к нему добавится голос"
+        ]
+      }
+    },
+    {
+      "id": "sfx_electric_airflow",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "electric",
+        "air",
+        "build"
+      ],
+      "vision_summary": "электрический поток, нарастание",
+      "score": 0.0,
+      "duration_sec": 2.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "electric_airflow.wav",
+      "role": "riser",
+      "extra": {
+        "measured": {
+          "duration_sec": 2.0,
+          "peak_dbfs": -1.97,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -3.0
+        },
+        "source_file": "scifi-airflow-with-current-sound-effects.mp3",
+        "segment_start_sec": 1.35,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_electric_spark",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "electric",
+        "spark"
+      ],
+      "vision_summary": "искра, разряд",
+      "score": 0.0,
+      "duration_sec": 0.7,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "electric_spark.wav",
+      "role": "glitch",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.7,
+          "peak_dbfs": -5.2,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -2.99
+        },
+        "source_file": "fe6e86e9eaa9860.mp3",
+        "segment_start_sec": 0.18,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_hit_punch",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "hit",
+        "punch"
+      ],
+      "vision_summary": "короткий удар",
+      "score": 0.0,
+      "duration_sec": 0.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "hit_punch.wav",
+      "role": "hit_impact",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.5,
+          "peak_dbfs": -5.54,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -2.59
+        },
+        "source_file": "1393d3ce4a381f6.mp3",
+        "segment_start_sec": 0.04,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_hit_silence",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "hit",
+        "sub"
+      ],
+      "vision_summary": "выстрел тишины",
+      "score": 0.0,
+      "duration_sec": 0.55,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "hit_silence.wav",
+      "role": "sub_drop",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.55,
+          "peak_dbfs": -3.07,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -6.17
+        },
+        "source_file": "dyihatelnaya-artilleriya--vyistrel-tishinyi.mp3",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_hit_thud",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "hit",
+        "sub",
+        "thud"
+      ],
+      "vision_summary": "глухой толчок",
+      "score": 0.0,
+      "duration_sec": 0.62,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "hit_thud.wav",
+      "role": "error_buzz",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.62,
+          "peak_dbfs": -5.37,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -7.93
+        },
+        "source_file": "4035a95a765fd86.mp3",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_click_claves",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "click",
+        "tick",
+        "ui"
+      ],
+      "vision_summary": "клаве, клик кнопки",
+      "score": 0.0,
+      "duration_sec": 0.06,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "click_claves.wav",
+      "role": "ui_click",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.06,
+          "peak_dbfs": -12.68,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -0.0
+        },
+        "source_file": "35916__altemark__claves.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_click_wood",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "click",
+        "tick",
+        "ui"
+      ],
+      "vision_summary": "деревянный клик, мышь",
+      "score": 0.0,
+      "duration_sec": 0.058,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "click_wood.wav",
+      "role": "tick",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.058,
+          "peak_dbfs": -17.48,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -0.0
+        },
+        "source_file": "35917__altemark__claves2.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_snap_clap",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "click",
+        "clap",
+        "snap"
+      ],
+      "vision_summary": "хлопок, щелчок плашки",
+      "score": 0.0,
+      "duration_sec": 0.228,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "snap_clap.wav",
+      "role": "pop",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.228,
+          "peak_dbfs": -6.32,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -0.12
+        },
+        "source_file": "35915__altemark__claps.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_hit_conga",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "hit",
+        "click"
+      ],
+      "vision_summary": "короткий удар мембраны",
+      "score": 0.0,
+      "duration_sec": 0.068,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "hit_conga.wav",
+      "role": "camera_shutter",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.068,
+          "peak_dbfs": -12.83,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -0.3
+        },
+        "source_file": "35918__altemark__conga.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_hat_open",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "hat",
+        "bright",
+        "reveal"
+      ],
+      "vision_summary": "открытый хэт — появление текста",
+      "score": 0.0,
+      "duration_sec": 0.736,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "hat_open.wav",
+      "role": "reveal",
+      "extra": {
+        "measured": {
+          "duration_sec": 0.736,
+          "peak_dbfs": -10.19,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -0.05
+        },
+        "source_file": "35919__altemark__oh.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_chime_kalimba_e",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "chime",
+        "kalimba",
+        "bright"
+      ],
+      "vision_summary": "калимба E",
+      "score": 0.0,
+      "duration_sec": 1.55,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "chime_kalimba_e.wav",
+      "role": "chime",
+      "extra": {
+        "measured": {
+          "duration_sec": 1.55,
+          "peak_dbfs": -16.83,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -1.15
+        },
+        "source_file": "35268__linse__thumbpiano_e_2.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_chime_kalimba_g",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "chime",
+        "kalimba",
+        "bright"
+      ],
+      "vision_summary": "калимба G",
+      "score": 0.0,
+      "duration_sec": 1.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "chime_kalimba_g.wav",
+      "role": "notification",
+      "extra": {
+        "measured": {
+          "duration_sec": 1.5,
+          "peak_dbfs": -15.96,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -0.28
+        },
+        "source_file": "35271__linse__thumbpiano_g_1.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "sfx_coin_pickup",
+      "type": "sfx",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "reward",
+        "chime",
+        "sting"
+      ],
+      "vision_summary": "звон награды, кнопка подписки",
+      "score": 0.0,
+      "duration_sec": 1.2,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "coin_pickup.wav",
+      "role": "subscribe_ping",
+      "extra": {
+        "measured": {
+          "duration_sec": 1.2,
+          "peak_dbfs": -4.6,
+          "sample_rate": 48000,
+          "channels": 2,
+          "phone_loss_db": -3.84
+        },
+        "source_file": "646673__sounddesignforyou__coin-pickup-sfx-1.wav",
+        "segment_start_sec": 0.0,
+        "accepted_with_warnings": null
+      }
+    }
+  ]
 }

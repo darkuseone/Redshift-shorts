@@ -9,35 +9,30 @@
 * SFX по смыслу, не на каждый стык, плотность ≤ 1 раза в 2 сек;
 * финальный микс −14 ±1 LUFS.
 
-SFX берутся **только** из библиотеки (§4.4.3–4): после её заполнения до 20
-файлов генерация заблокирована, и повторная генерация уже имеющегося звука
-считается ошибкой процесса. Если нужной роли в библиотеке нет, шаг не выдумывает
-звук, а честно фиксирует пропуск.
+SFX берутся **только** из курируемой библиотеки (§14.1): живые записи
+заказчика, выбор по смыслу кадра (теги) и по роли из сценария. Нет звука —
+шаг не выдумывает, а честно фиксирует пропуск.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
 from ..lib import audio as A
 from ..lib.logging import get_logger
 from ..lib.manifest import open_library
+from ..lib.sfx_library import (
+    INTENTS, WHOOSH_INTENTS, intent_for_role, pick_sfx,
+)
 
 _log = get_logger("p10")
 
-# Обязательные точки SFX (§4.4.2)
-MANDATORY_SFX = {
-    "avatar_in": "whoosh_in",
-    "avatar_out": "whoosh_out",
-    "fullscreen_text": "reveal",
-    "plaque": "pop",
-    "meme": "meme_stinger",
-    "cta": "subscribe_ping",
-}
 AVATAR_KINDS = ("avatar", "split")
+WHOOSH_SCRIPT_ROLES = frozenset({
+    "whoosh_in", "whoosh_out", "swipe", "riser", "none", "",
+})
 
 
 def choose_bed(cfg, plan: dict[str, Any]):
@@ -66,57 +61,94 @@ def choose_bed(cfg, plan: dict[str, Any]):
     return record
 
 
+def _event(t: float, intent: str, why: str, *, priority: int = 1,
+           role: str = "") -> dict[str, Any]:
+    return {"t": float(t), "intent": intent, "role": role, "why": why,
+            "priority": int(priority)}
+
+
+def _script_sfx_by_block(plan: dict[str, Any]) -> dict[str, str]:
+    return {
+        block["id"]: str(block.get("sfx") or "")
+        for block in plan.get("blocks", [])
+    }
+
+
 def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
-    """Расставить SFX по смыслу, соблюдая плотность ≤ 1 / 2 сек."""
+    """Расставить SFX по смыслу кадра, плотность ≤ 1 / 2 сек.
+
+    Картинка появилась — вжух. Плашка — клик. Переход — вжух. Это не чек-лист
+    ролей, а реакция на то, что зритель видит. Два вжуха в одну миллисекунду
+    сливаются в один: воздух не удваивается от того, что слот ещё и dynamic.
+    """
     slots = plan["slots"]
     duration = float(plan["duration_sec"])
     min_gap = float(cfg.get("limits.sfx_min_gap_sec", 2.0))
+    script_sfx = _script_sfx_by_block(plan)
     events: list[dict[str, Any]] = []
 
     for index, slot in enumerate(slots):
         prev = slots[index - 1] if index else None
         kind = slot["kind"]
+        t = float(slot["start"])
+        block_sfx = script_sfx.get(slot.get("block_id", ""), "")
 
         if kind == "fullscreen_text":
-            events.append({"t": slot["start"], "role": MANDATORY_SFX["fullscreen_text"],
-                           "why": "появление full-screen text (§5.2)", "priority": 1})
+            events.append(_event(t, "fullscreen", "появление full-screen text (§5.2)",
+                                 role="reveal"))
         elif kind == "meme":
-            events.append({"t": slot["start"], "role": MANDATORY_SFX["meme"],
-                           "why": "мем-вставка (§5.8)", "priority": 1})
+            events.append(_event(t, "meme", "мем-вставка (§5.8)", role="meme_stinger"))
         elif kind in AVATAR_KINDS and (prev is None or prev["kind"] not in AVATAR_KINDS):
-            events.append({"t": slot["start"], "role": MANDATORY_SFX["avatar_in"],
-                           "why": "вход аватара (§4.4.2)", "priority": 1})
+            events.append(_event(t, "avatar_in", "вход аватара (§4.4.2)",
+                                 role="whoosh_in"))
         elif prev is not None and prev["kind"] in AVATAR_KINDS and kind not in AVATAR_KINDS:
-            events.append({"t": slot["start"], "role": MANDATORY_SFX["avatar_out"],
-                           "why": "выход аватара (§4.4.2)", "priority": 1})
+            events.append(_event(t, "avatar_out", "выход аватара (§4.4.2)",
+                                 role="whoosh_out"))
+
+        # Появилась картинка — вжух. Не ставим, если автор уже дал блоку
+        # другой акцент (удар, искра): два звука в один кадр — каша.
+        picture_arrives = (
+            kind == "footage"
+            or (kind == "split" and (prev is None or prev["kind"] != "split"))
+        )
+        if picture_arrives and block_sfx in WHOOSH_SCRIPT_ROLES:
+            events.append(_event(t, "picture_in", "появилась картинка",
+                                 role="whoosh_in"))
 
         if slot.get("transition_in") == "dynamic":
-            # §4.3: каждый динамический переход обязан сопровождаться SFX.
-            events.append({"t": slot["start"], "role": "swipe",
-                           "why": "динамический переход обязан звучать (§4.3)",
-                           "priority": 1})
+            events.append(_event(t, "transition",
+                                 "динамический переход обязан звучать (§4.3)",
+                                 role="swipe"))
 
-    # Пожелания сценария по блокам — приоритет ниже обязательных точек.
+    for block in plan.get("blocks", []):
+        overlay = block.get("overlay") or {}
+        if overlay.get("type") != "lower_third":
+            continue
+        block_slots = [s for s in slots if s["block_id"] == block["id"]]
+        if block_slots:
+            events.append(_event(float(block_slots[0]["start"]) + 0.4, "plaque",
+                                 f"плашка блока {block['id']}", role="pop"))
+
     for block in plan.get("blocks", []):
         role = block.get("sfx")
         if not role or role == "none":
             continue
         block_slots = [s for s in slots if s["block_id"] == block["id"]]
         if block_slots:
-            events.append({"t": block_slots[0]["start"], "role": role,
-                           "why": f"указано в сценарии для блока {block['id']}",
-                           "priority": 2})
+            events.append(_event(float(block_slots[0]["start"]),
+                                 intent_for_role(str(role)) or "impact",
+                                 f"указано в сценарии для блока {block['id']}",
+                                 priority=2, role=str(role)))
 
     cta_start = float(plan.get("cta_window", [duration - 2, duration])[0])
-    events.append({"t": cta_start, "role": MANDATORY_SFX["cta"],
-                   "why": "кнопка подписки (§6, QC-16)", "priority": 1})
+    events.append(_event(cta_start, "cta", "кнопка подписки (§6, QC-16)",
+                         role="subscribe_ping"))
 
+    events = _collapse_whooshes(events)
     events.sort(key=lambda e: (e["t"], e["priority"]))
     placed: list[dict[str, Any]] = []
     for event in events:
         if placed and event["t"] - placed[-1]["t"] < min_gap:
-            # Плотность §4.4.1: обязательную точку пропускаем, только если рядом
-            # уже стоит другая обязательная.
             if event["priority"] > placed[-1]["priority"]:
                 continue
             if event["priority"] == placed[-1]["priority"] and event["t"] - placed[-1]["t"] < 0.35:
@@ -125,6 +157,40 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
                 continue
         placed.append(event)
     return placed
+
+
+def _collapse_whooshes(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Один вжух на один момент: вход аватара и картинка — одно движение воздуха."""
+    prefer = ("avatar_in", "avatar_out", "transition", "picture_in", "picture_out")
+    grouped: dict[float, list[dict[str, Any]]] = {}
+    for event in events:
+        grouped.setdefault(round(float(event["t"]), 3), []).append(event)
+    collapsed: list[dict[str, Any]] = []
+    for _t, group in grouped.items():
+        whooshes = [e for e in group if e.get("intent") in WHOOSH_INTENTS]
+        others = [e for e in group if e.get("intent") not in WHOOSH_INTENTS]
+        if whooshes:
+            others.append(min(whooshes, key=lambda e: (
+                prefer.index(e["intent"]) if e["intent"] in prefer else 99)))
+        collapsed.extend(others)
+    return collapsed
+
+
+def _resolve_sfx(cfg, event: dict[str, Any], *, video_id: str,
+                 avoid_ids: Sequence[str]):
+    """Роль из сценария, если есть в базе; иначе теги смысла кадра."""
+    sfx_lib = open_library(cfg, "sfx")
+    role = event.get("role") or ""
+    if role:
+        record = sfx_lib.by_role(role)
+        if record is not None and record.id not in set(avoid_ids):
+            return record
+    intent = event.get("intent") or intent_for_role(role)
+    want = INTENTS.get(intent, ())
+    record = pick_sfx(cfg, want=want, video_id=video_id, avoid_ids=avoid_ids)
+    if record is None and role:
+        return sfx_lib.by_role(role)
+    return record
 
 
 def sfx_peak_corridor(cfg) -> tuple[float, float]:
@@ -174,16 +240,18 @@ def run_step(ctx) -> dict[str, Any]:
     sfx_bus = np.zeros((length, 2), dtype=np.float32)
     placed: list[dict[str, Any]] = []
     missing_roles: list[str] = []
+    used_ids: list[str] = []
 
     for event in events:
-        record = sfx_lib.by_role(event["role"])
+        record = _resolve_sfx(cfg, event, video_id=plan.get("video_id", ""),
+                              avoid_ids=used_ids)
         if record is None:
-            missing_roles.append(event["role"])
+            missing_roles.append(event.get("role") or event.get("intent") or "?")
             placed.append({**event, "status": "missing_in_library"})
             continue
         path = sfx_lib.file_path(record)
         if not path.exists():
-            missing_roles.append(event["role"])
+            missing_roles.append(record.role or record.id)
             placed.append({**event, "status": "file_missing", "file": str(path)})
             continue
         clip, clip_sr = A.load_audio_any(path, sr)
@@ -192,8 +260,10 @@ def run_step(ctx) -> dict[str, Any]:
         clip = A.normalize_peak(clip, sfx_peak_target(cfg))
         A.place(sfx_bus, clip, float(event["t"]), sr)
         sfx_lib.mark_used(record.id, plan["video_id"])
+        used_ids.append(record.id)
         placed.append({**event, "status": "placed", "asset_id": record.id,
-                       "file": record.file})
+                       "file": record.file, "picked_role": record.role,
+                       "tags": list(record.tags)})
     sfx_lib.save()
 
     # --- музыкальная подложка (§14.2, §4.4) -------------------------------
@@ -226,10 +296,11 @@ def run_step(ctx) -> dict[str, Any]:
                                       "ducking_db": ducking_db}
     else:
         bed = np.zeros((length, 2), dtype=np.float32)
-        music_info = {"asset_id": None, "mood": mood,
+        music_info = {"asset_id": None, "mood": plan.get("music_mood") or "",
                       "note": "библиотека музыки пуста — подложка не добавлена "
-                              "(наполните через fill-libraries, §14.2)"}
-        ctx.warn("музыкальная подложка отсутствует: библиотека пуста (§14.2)", mood=mood)
+                              "(python -m src.cli add-music, §14.2)"}
+        ctx.warn("музыкальная подложка отсутствует: библиотека пуста (§14.2)",
+                 mood=plan.get("music_mood") or "")
 
     A.save_wav(ctx.wpath("music_bed.wav"), bed, sr)
 
