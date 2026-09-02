@@ -297,6 +297,35 @@ def cmd_fill_libraries(args) -> int:
     return 0
 
 
+def cmd_add_music(args) -> int:
+    """Принять живую запись подложки в библиотеку.
+
+    Подложки курируемые: их приносит заказчик, а конвейер меряет и заводит.
+    Синтез удалён — пятнадцать сгенерированных бедов были отвергнуты.
+    """
+    from .lib.music_library import MOOD_TITLES, add_bed, inspect_bed, library_status
+
+    cfg = _load_cfg(args)
+    setup_logging(level=cfg.get("logging.level", "INFO"), json_output=not args.pretty_logs)
+
+    if args.status:
+        print(json.dumps(library_status(cfg), ensure_ascii=False, indent=2))
+        return 0
+    if args.inspect:
+        print(json.dumps(inspect_bed(Path(args.inspect)), ensure_ascii=False, indent=2))
+        return 0
+    if not args.file or not args.mood:
+        print(json.dumps({"code": "MUSIC_ARGS",
+                          "message": "нужны --file и --mood (или --status/--inspect)",
+                          "moods": MOOD_TITLES}, ensure_ascii=False, indent=2))
+        return 2
+
+    result = add_bed(cfg, source=Path(args.file), mood=args.mood,
+                     title=args.title or "", force=args.force)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_maintenance(args) -> int:
     from .lib.maintenance import run_maintenance
 
@@ -382,6 +411,17 @@ def build_parser() -> argparse.ArgumentParser:
     fill.add_argument("--kind", nargs="+", choices=["sfx", "music", "memes"], default=None)
     fill.add_argument("--dry-run", action="store_true")
     fill.set_defaults(func=cmd_fill_libraries)
+
+    music = sub.add_parser("add-music", help="принять живую запись подложки в библиотеку")
+    music.add_argument("--file", default=None, help="путь к записи (wav/mp3/m4a/flac)")
+    music.add_argument("--mood", default=None, help="настроение из словаря MOODS")
+    music.add_argument("--title", default=None, help="описание своими словами")
+    music.add_argument("--force", action="store_true",
+                       help="принять вопреки замечаниям приёма")
+    music.add_argument("--inspect", default=None, help="только промерить файл")
+    music.add_argument("--status", action="store_true",
+                       help="что в библиотеке есть и чего не хватает")
+    music.set_defaults(func=cmd_add_music)
 
     mnt = sub.add_parser("maintenance", help="LRU-очистка кэша футажей и отчёты")
     mnt.add_argument("--dry-run", action="store_true")
