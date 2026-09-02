@@ -1,30 +1,21 @@
 """Наполнение капнутых библиотек до лимитов §14 (workflow ``fill-libraries``).
 
-Принцип §14: библиотеки конечны. Первые прогоны добирают недостающее, после
-достижения лимита пополнение блокируется, и дальше — **только переиспользование**.
-Повторная генерация уже имеющегося звука считается ошибкой процесса (§4.4.4),
-поэтому filler никогда не трогает роли, которые в библиотеке уже есть.
+Принцип §14: библиотеки конечны. После достижения лимита пополнение
+блокируется, и дальше — **только переиспользование**. Повторная генерация
+уже имеющегося звука считается ошибкой процесса (§4.4.4).
 
-SFX и музыка синтезируются собственными средствами (``sfx_synth``): это снимает
-риск Content ID полностью и делает звук ролика узнаваемым. Live-провайдер
-ElevenLabs используется, когда он доступен и в конфиге разрешён.
+SFX и музыка курируемые: их приносит заказчик. Синтез обоих удалён из
+наполнителя, а не спрятан за флагом — ``fill-libraries`` стоит в наборе
+по умолчанию и иначе вернул бы отвергнутое первым же прогоном.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Iterable, Sequence
-
-import numpy as np
+from typing import Any, Sequence
 
 from ..errors import LibraryFrozen
-from .audio import SAMPLE_RATE, measure_loudness_buffer, normalize_peak, save_wav
-from .ffmpeg import run as ffmpeg_run
 from .logging import get_logger
 from .manifest import AssetRecord, open_library, today
-from .sfx_synth import (
-    SFX_ROLES, sfx_description, synth_sfx,
-)
 
 _log = get_logger("library_filler")
 
@@ -33,47 +24,27 @@ MEME_EMOTIONS = ("ирония", "абсурд", "разочарование", "
 
 
 def fill_sfx(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
-    """Добрать SFX до 20 ролей §14.1. Существующие роли не трогаем."""
+    """Короткие звуки не синтезируются: библиотека курируемая (§14.1).
+
+    Двадцать синтетических wav заказчик снял, чтобы залить свои. Синтез
+    у наполнителя убран, а не отключён флагом: отключённый он вернулся бы
+    первым же прогоном ``fill-libraries``, который в наборе по умолчанию.
+
+    Функция осталась, чтобы ``fill_libraries`` не спотыкался о недостающий
+    обработчик. Класть файлы будет заказчик; конвейер их подхватит из
+    манифеста, когда записи появятся.
+    """
     lib = open_library(cfg, "sfx")
-    existing = {item.role for item in lib.items if item.role}
-    missing = [role for role in SFX_ROLES if role not in existing]
-    added: list[str] = []
-    blocked: list[str] = []
-
-    for role in missing:
-        if lib.is_full:
-            blocked.append(role)
-            continue
-        if dry_run:
-            added.append(role)
-            continue
-        audio = synth_sfx(role)
-        audio = normalize_peak(audio, -12.0)      # §4.4: пики SFX −16…−12 dBFS
-        filename = f"{role}.wav"
-        save_wav(lib.dir / filename, audio, SAMPLE_RATE)
-        duration = len(audio) / SAMPLE_RATE
-        try:
-            lib.add(AssetRecord(
-                id=f"sfx_{role}", type="sfx", source="synth",
-                license="generated-owned (REDSHIFT)", role=role,
-                tags=[role, *sfx_description(role).split()[:3]],
-                vision_summary=sfx_description(role),
-                duration_sec=duration, file=filename, added=today(),
-            ))
-        except LibraryFrozen:
-            blocked.append(role)
-            break
-        added.append(role)
-        if costs is not None:
-            costs.add("elevenlabs", "sfx_synth", 1, "clip", 0.0, mock=True, role=role)
-
-    if not dry_run:
-        lib.save()
-    return {"kind": "sfx", "added": added, "blocked": blocked,
-            "count": lib.count if not dry_run else lib.count + len(added),
-            "max_items": lib.max_items, "frozen": lib.frozen,
-            "missing_after": [r for r in SFX_ROLES
-                              if r not in existing and r not in added]}
+    return {
+        "kind": "sfx",
+        "added": [],
+        "blocked": [],
+        "curated": True,
+        "count": lib.count,
+        "max_items": lib.max_items,
+        "frozen": lib.frozen,
+        "note": "короткие звуки кладутся руками заказчиком, не синтезируются",
+    }
 
 
 def fill_music(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:

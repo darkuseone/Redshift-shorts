@@ -49,32 +49,17 @@ def test_sfx_is_deterministic(role):
     assert np.array_equal(synth_sfx(role), synth_sfx(role))
 
 
-@pytest.mark.parametrize("role", SFX_ROLES)
-def test_committed_wav_matches_the_synthesiser(role):
-    """Файл в библиотеке обязан быть тем, что выдаёт код сегодня.
+def test_library_wavs_are_not_tied_to_the_synthesiser():
+    """Библиотека курируемая: файл приносит заказчик, синтез его не перезаписывает.
 
-    Файлы лежат в git, а рецепт живёт в коде, и разъехаться они могут молча:
-    правка синтеза не перезаписывает библиотеку сама. При переработке ударов
-    выяснилось, что семь файлов уже разошлись с кодом до неё.
+    Прежняя проверка требовала побайтного совпадения wav с рецептом. После
+    замены синтетики живыми записями она бы браковала каждый настоящий файл.
     """
-    import subprocess
-    from pathlib import Path
+    from src.lib.config import load_config
+    from src.lib.manifest import open_library
 
-    from src.lib.audio import SAMPLE_RATE, normalize_peak
-
-    path = Path("assets/sfx") / f"{role}.wav"
-    if not path.exists():
-        pytest.skip(f"{path} нет в рабочем дереве")
-
-    raw = subprocess.run(
-        ["ffmpeg", "-v", "error", "-i", str(path), "-ac", "2", "-ar", str(SAMPLE_RATE),
-         "-f", "s16le", "-"], capture_output=True, check=True).stdout
-    on_disk = np.frombuffer(raw, dtype="<i2").astype(np.float64).reshape(-1, 2) / 32768.0
-    fresh = np.asarray(normalize_peak(synth_sfx(role), -12.0), dtype=np.float64)
-
-    assert on_disk.shape == fresh.shape, "длительность файла разошлась с рецептом"
-    assert np.max(np.abs(on_disk - fresh)) < 2e-4, (
-        f"{role}.wav не совпадает с синтезом — библиотеку надо перегенерировать")
+    lib = open_library(load_config(), "sfx")
+    assert all(item.source != "synth" for item in lib.items)
 
 
 def test_bandwidth_metric_sees_where_the_spectrum_ends():
