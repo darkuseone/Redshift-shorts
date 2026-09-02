@@ -480,6 +480,12 @@ jobs:
             echo '```json' >> $GITHUB_STEP_SUMMARY
             sed -n '/^{$/,$p' output/build.log | head -60 >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
+            # И в самый конец журнала задачи. Лог Actions читается через API
+            # окном с конца: ошибка, случившаяся в середине прогона, в это
+            # окно не попадает, а повторённая последним шагом — попадает
+            # всегда. Ради этого шаг и стоит последним.
+            echo "===== ОШИБКА ПРОГОНА (повтор в конец журнала) ====="
+            sed -n '/^{$/,$p' output/build.log | head -60
           fi
           for report in output/*/build_report.json; do
             [ -f "$report" ] || continue
