@@ -531,13 +531,23 @@ class CompositionBuilder:
         if kind == "source_card":
             return self._source_card_body(node_id, params)
         if kind == "plaque":
-            content = _esc(params.get("content") or ovl.get("content"))
-            kicker = params.get("kicker") or params.get("domain")
+            # Ключи те, которыми плашку и заполняет P11: `text` и `subtitle`.
+            # Читались `content` и `kicker` — таких в плане нет ни одного, и
+            # плашка выходила пустой: в кадре белая полоса без единой буквы.
+            # Видно это только на кадре готового ролика, поэтому и прожило
+            # долго: разметка валидна, lint молчит, QC меряет не текст.
+            content = _esc(params.get("text") or params.get("content")
+                           or ovl.get("content"))
+            kicker = (params.get("subtitle") or params.get("kicker")
+                      or params.get("domain"))
             extra = f'<span class="kicker">{_esc(kicker)}</span>' if kicker else ""
             return (f'<div id="{node_id}" class="clip overlay plaque" __TIMING__>'
                     f'{content}{extra}</div>')
         if kind == "cta":
-            text = _esc(params.get("content") or ovl.get("content") or "Подпишись")
+            # Тот же разнобой ключей: план пишет `text`, и без него кнопка
+            # молча показывала запасное «Подпишись» вместо заказанного слова.
+            text = _esc(params.get("text") or params.get("content")
+                        or ovl.get("content") or "Подпишись")
             return (f'<div id="{node_id}" class="clip overlay cta" __TIMING__>'
                     f'<span id="{node_id}-pill" class="pill">{text}</span></div>')
         # highlight рисуется поверх карточки источника её же стилем — отдельный

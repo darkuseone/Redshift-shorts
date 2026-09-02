@@ -736,3 +736,42 @@ def test_the_subtitle_glows_red_and_never_black(brandbook):
     # На светлой сцене светлый ободок пропадает вместе с фоном.
     light = re.search(r"\.stage-light \.word\.emphasis\{[^}]*\}", css)
     assert light, "у акцента нет правила для светлой сцены"
+
+
+class TestOverlaysCarryTheirText:
+    """Плашка обязана показывать то, что в неё положил P11.
+
+    Читались ключи `content` и `kicker`, а план пишет `text` и `subtitle` —
+    таких в нём нет ни одного. Плашка выходила пустой: в кадре готового
+    ролика белая полоса без единой буквы, и так дважды за ролик. Ни lint, ни
+    разметка, ни QC этого не видят — только кадр.
+    """
+
+    def _body(self, ovl):
+        from src.lib.render.hyperframes.composition import CompositionBuilder
+
+        return CompositionBuilder._overlay_body(
+            object.__new__(CompositionBuilder), "ovl-01", ovl) or ""
+
+    def test_a_plaque_shows_the_text_the_plan_gave_it(self):
+        body = self._body({"type": "plaque",
+                           "params": {"text": "Проверить нечем", "position": "middle"}})
+        assert "Проверить нечем" in body
+
+    def test_a_plaque_shows_its_kicker(self):
+        body = self._body({"type": "plaque",
+                           "params": {"text": "nature.com", "subtitle": "источник"}})
+        assert "nature.com" in body and "источник" in body
+
+    def test_the_button_shows_the_requested_word(self):
+        """Без ключа кнопка молча показывала запасное «Подпишись»."""
+        body = self._body({"type": "cta", "params": {"text": "ПОДПИСАТЬСЯ"}})
+        assert "ПОДПИСАТЬСЯ" in body
+
+    def test_an_overlay_never_renders_empty(self):
+        """Пустая плашка — белая полоса в кадре; лучше не рисовать вовсе."""
+        for ovl in ({"type": "plaque", "params": {"text": "Слово"}},
+                    {"type": "cta", "params": {"text": "ЖМИ"}}):
+            body = self._body(ovl)
+            inner = body.split("__TIMING__>", 1)[-1]
+            assert inner.strip("</div> \n"), f"пустая плашка: {ovl}"
