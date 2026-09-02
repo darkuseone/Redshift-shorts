@@ -3,18 +3,18 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 10,
+    "text-fullscreen": 12,
     "lower-thirds": 8,
-    "frames-cards": 6,
-    "browser-ui": 6,
-    "transitions": 12,
+    "frames-cards": 7,
+    "browser-ui": 8,
+    "transitions": 13,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 6,
+    "data-viz": 7,
     "outro-cta": 5,
-    "hero-devices": 11,
-    "_total": 92
+    "hero-devices": 13,
+    "_total": 101
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -55,7 +55,8 @@
       ],
       "params": {
         "scale_from": 1.35,
-        "sfx": "hit_impact"
+        "sfx": "hit_impact",
+        "slam": true
       },
       "tags": [
         "hook",
@@ -202,7 +203,8 @@
           260,
           420
         ],
-        "uppercase": true
+        "uppercase": true,
+        "slam": true
       },
       "tags": [
         "number",
@@ -420,6 +422,52 @@
       "added": "2026-08-18"
     },
     {
+      "id": "text-fullscreen/kinetic-stack",
+      "name": "kinetic-stack",
+      "category": "text-fullscreen",
+      "title": "Слова входят rise со стаггером — Texture / OBLIST",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "stagger_ms": 55,
+        "kinetic": true
+      },
+      "tags": [
+        "text",
+        "kinetic"
+      ],
+      "renderer": "kinetic_stack",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
+    },
+    {
+      "id": "text-fullscreen/number-slam-card",
+      "name": "number-slam-card",
+      "category": "text-fullscreen",
+      "title": "Цифра-удар на карточке — K3 promo",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "slam": true,
+        "scale_from": 1.35,
+        "uppercase": true
+      },
+      "tags": [
+        "number",
+        "impact",
+        "card"
+      ],
+      "renderer": "number_slam",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
+    },
+    {
       "id": "lower-thirds/name-title",
       "name": "name-title",
       "category": "lower-thirds",
@@ -634,7 +682,7 @@
         "source",
         "science"
       ],
-      "renderer": "source_card",
+      "renderer": "paper_reveal",
       "last_used_in": [
         "redshift_0042",
         "redshift_0043",
@@ -737,6 +785,28 @@
       "added": "2026-08-18"
     },
     {
+      "id": "frames-cards/paper-reveal",
+      "name": "paper-reveal",
+      "category": "frames-cards",
+      "title": "Строки статьи проявляются, одна вспыхивает",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "arxiv_card"
+      },
+      "tags": [
+        "source",
+        "science",
+        "reveal"
+      ],
+      "renderer": "paper_reveal",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
+    },
+    {
       "id": "browser-ui/browser-scroll",
       "name": "browser-scroll",
       "category": "browser-ui",
@@ -754,7 +824,7 @@
         "ui",
         "source"
       ],
-      "renderer": "source_card",
+      "renderer": "article_scroll",
       "last_used_in": [
         "redshift_0042",
         "redshift_0043"
@@ -802,7 +872,7 @@
         "ui",
         "ai"
       ],
-      "renderer": "source_card",
+      "renderer": "chat_thread",
       "last_used_in": [
         "redshift_0044",
         "redshift_0046"
@@ -879,6 +949,52 @@
         "redshift_0043"
       ],
       "added": "2026-08-18"
+    },
+    {
+      "id": "browser-ui/chat-thread",
+      "name": "chat-thread",
+      "category": "browser-ui",
+      "title": "Окно чата: запрос слева, ответ справа",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "chat_ai"
+      },
+      "tags": [
+        "ui",
+        "ai",
+        "chat"
+      ],
+      "renderer": "chat_thread",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
+      "id": "browser-ui/article-highlight",
+      "name": "article-highlight",
+      "category": "browser-ui",
+      "title": "Статья в браузере со скроллом и вырезом цитаты",
+      "duration_range": [
+        2.0,
+        4.5
+      ],
+      "params": {
+        "template": "browser",
+        "scroll": true,
+        "highlight": true
+      },
+      "tags": [
+        "ui",
+        "source",
+        "highlight"
+      ],
+      "renderer": "article_scroll",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
     },
     {
       "id": "transitions/cut",
@@ -1173,6 +1289,27 @@
         "redshift_0046"
       ],
       "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/zoom-through",
+      "name": "zoom-through",
+      "category": "transitions",
+      "title": "Наезд в деталь на склейке — жест SpaceX",
+      "duration_range": [
+        0.18,
+        0.3
+      ],
+      "params": {
+        "from_scale": 1.22
+      },
+      "tags": [
+        "dynamic",
+        "zoom"
+      ],
+      "renderer": "zoom_through",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
     {
       "id": "avatar-entry/hero-zoom-in",
@@ -1854,6 +1991,28 @@
       "added": "2026-08-18"
     },
     {
+      "id": "data-viz/stat-countup-card",
+      "name": "stat-countup-card",
+      "category": "data-viz",
+      "title": "Набегающая метрика на карточке",
+      "duration_range": [
+        1.2,
+        3.0
+      ],
+      "params": {
+        "steps": 12
+      },
+      "tags": [
+        "data",
+        "number",
+        "card"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
       "id": "outro-cta/subscribe-pulse",
       "name": "subscribe-pulse",
       "category": "outro-cta",
@@ -2221,6 +2380,53 @@
         "redshift_0046"
       ],
       "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/type-slab",
+      "name": "type-slab",
+      "category": "hero-devices",
+      "title": "Плита типа слева от ведущего — Srinika × Mercury",
+      "duration_range": [
+        1.4,
+        4.0
+      ],
+      "params": {
+        "top": 420
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines"
+      ],
+      "renderer": "hero-type-slab",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
+    },
+    {
+      "id": "hero-devices/footage-plate-pop",
+      "name": "footage-plate-pop",
+      "category": "hero-devices",
+      "title": "Футаж в рамке въезжает поверх кадра",
+      "duration_range": [
+        1.4,
+        4.0
+      ],
+      "params": {
+        "width": 920,
+        "height": 580,
+        "top": 210
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "footage"
+      ],
+      "renderer": "hero-plate-pop",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
     }
   ]
 }

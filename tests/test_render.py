@@ -257,15 +257,39 @@ def test_apply_kenburns_keeps_size():
 
 # --- каталог шаблонов (§15) ----------------------------------------------------
 
+def test_stats_from_text_skips_years_when_other_numbers_exist():
+    from src.p11_assemble.assemble import _stats_from_text
+
+    nums = _stats_from_text("В 2024 году чип набрал 105 кубитов и 12 %")
+    values = [n["value"] for n in nums]
+    assert 2024 not in values
+    assert 105 in values
+    assert 12 in values
+
+
+def test_overlay_renderer_maps_chat_and_paper():
+    from src.lib.templates import Template
+    from src.p11_assemble.assemble import _overlay_renderer
+
+    chat = Template(id="browser-ui/chat-thread", name="chat-thread",
+                    category="browser-ui", title="", duration_range=[1, 4],
+                    params={}, tags=[], renderer="chat_thread")
+    assert _overlay_renderer(chat) == "chat_thread"
+    old = Template(id="browser-ui/chat-ai-typing", name="chat-ai-typing",
+                   category="browser-ui", title="", duration_range=[1, 4],
+                   params={}, tags=[], renderer="source_card")
+    assert _overlay_renderer(old) == "chat_thread"
+
+
 def test_catalog_matches_spec_counts(cfg):
     catalog = TemplateCatalog.load(cfg)
     counts = catalog.counts()
     assert counts == {
-        "intro-hooks": 8, "text-fullscreen": 10, "lower-thirds": 8, "frames-cards": 6,
-        "browser-ui": 6, "transitions": 12, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 11,
+        "intro-hooks": 8, "text-fullscreen": 12, "lower-thirds": 8, "frames-cards": 7,
+        "browser-ui": 8, "transitions": 13, "avatar-entry": 6, "kenburns": 10,
+        "parallax": 4, "data-viz": 7, "outro-cta": 5, "hero-devices": 13,
     }
-    assert len(catalog.all()) == 92
+    assert len(catalog.all()) == 101
 
 
 def test_catalog_rotation_avoids_recent(cfg):

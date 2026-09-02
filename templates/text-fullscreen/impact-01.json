@@ -12,7 +12,8 @@
       260,
       420
     ],
-    "uppercase": true
+    "uppercase": true,
+    "slam": true
   },
   "tags": [
     "number",

@@ -1,0 +1,22 @@
+{
+  "id": "text-fullscreen/kinetic-stack",
+  "name": "kinetic-stack",
+  "category": "text-fullscreen",
+  "title": "Слова входят rise со стаггером — Texture / OBLIST",
+  "duration_range": [
+    0.8,
+    2.0
+  ],
+  "params": {
+    "stagger_ms": 55,
+    "kinetic": true
+  },
+  "tags": [
+    "text",
+    "kinetic"
+  ],
+  "renderer": "kinetic_stack",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
+}

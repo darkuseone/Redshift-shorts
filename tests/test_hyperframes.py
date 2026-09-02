@@ -420,6 +420,36 @@ def test_hero_devices_do_not_share_a_track_with_the_shots(plan, assets, brandboo
     assert track >= 13
 
 
+def test_kinetic_fullscreen_uses_word_stack(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "раз два три"
+    plan["shots"][1]["accent_word"] = "два"
+    plan["shots"][1]["params"] = {"stagger_ms": 55, "kinetic": True}
+    plan["shots"][1]["renderer"] = "kinetic_stack"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ks-word" in out
+    assert "ks-stack" in out
+
+
+def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
+    plan["overlays"][0]["renderer"] = "chat_thread"
+    plan["overlays"][0]["params"] = {
+        "prompt": "что внутри", "snippet": "Квантовый чип. Сто кубит.",
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "chat-thread" in out
+    assert "ct-row" in out
+
+
+def test_dataviz_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 2.4,
+        "template": "data-viz/compare-bars",
+        "params": {"values": [66, 28], "labels": ["A", "B"]},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "dv-bar" in out
+
+
 def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):
     """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
 

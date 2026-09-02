@@ -14,7 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .templates import dataviz_css, hero_css, split_css, transition_css
+from .templates import dataviz_css, hero_css, overlay_css, split_css, transition_css
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
 # отвечает за пересечения во времени, а не за то, что лежит поверх чего.
@@ -187,14 +187,14 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:var(--color-bg-pure);color:var(--color-ink);"
         "box-shadow:0 18px 48px rgba(0,0,0,0.22)}"
         ".source-card .bar{display:flex;align-items:center;gap:10px;"
-        "padding:18px 22px;background:#ECEAE7}"
-        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:#C9C6C2}"
+        "padding:18px 22px;background:var(--color-bg-light)}"
+        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:var(--color-muted)}"
         ".source-card .domain{margin-left:10px;font-family:var(--font-mono);"
         "font-size:26px;color:var(--color-muted)}"
         ".source-card .title{padding:22px 26px 6px;font-family:var(--font-display);"
         "font-size:52px;line-height:1.04}"
         ".source-card .snippet{padding:6px 26px 26px;font-size:30px;"
-        "line-height:1.3;color:#3A3D42}"
+        "line-height:1.3;color:var(--color-muted)}"
         ".source-card .hl{background:var(--color-accent-soft);"
         "box-shadow:0 0 0 6px var(--color-accent-soft)}"
     )
@@ -227,6 +227,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # и геометрия у них считается от кадра, а не от рабочей зоны.
     parts.append(transition_css(brandbook))
     parts.append(dataviz_css(brandbook))
+    parts.append(overlay_css(brandbook))
     parts.append(split_css(brandbook))
     parts.append(hero_css(brandbook))
 

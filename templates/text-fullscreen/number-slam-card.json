@@ -1,0 +1,24 @@
+{
+  "id": "text-fullscreen/number-slam-card",
+  "name": "number-slam-card",
+  "category": "text-fullscreen",
+  "title": "Цифра-удар на карточке — K3 promo",
+  "duration_range": [
+    0.8,
+    2.0
+  ],
+  "params": {
+    "slam": true,
+    "scale_from": 1.35,
+    "uppercase": true
+  },
+  "tags": [
+    "number",
+    "impact",
+    "card"
+  ],
+  "renderer": "number_slam",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
+}

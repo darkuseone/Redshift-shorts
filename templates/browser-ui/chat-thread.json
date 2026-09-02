@@ -1,0 +1,22 @@
+{
+  "id": "browser-ui/chat-thread",
+  "name": "chat-thread",
+  "category": "browser-ui",
+  "title": "Окно чата: запрос слева, ответ справа",
+  "duration_range": [
+    1.5,
+    4.0
+  ],
+  "params": {
+    "template": "chat_ai"
+  },
+  "tags": [
+    "ui",
+    "ai",
+    "chat"
+  ],
+  "renderer": "chat_thread",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+}

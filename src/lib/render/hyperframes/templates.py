@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-92 шаблона каталога — это не 92 реализации, а 30 рендереров с параметрами.
+101 шаблон каталога — это не 101 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -48,6 +49,37 @@ def _esc(text: Any) -> str:
 
 def _num(value: float) -> str:
     return f"{float(value):.3f}".rstrip("0").rstrip(".") or "0"
+
+
+def _timing(ctx: "TemplateCtx") -> str:
+    return (f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
+            f'data-track-index="{ctx.track}"')
+
+
+def _mark_accent(text: str, accent: str) -> str:
+    """Красным одно слово, не строка (§3.3.2)."""
+    if not accent or accent.upper() not in text.upper():
+        return _esc(text)
+    idx = text.upper().index(accent.upper())
+    return (_esc(text[:idx])
+            + f'<span class="accent">{_esc(text[idx:idx + len(accent)])}</span>'
+            + _esc(text[idx + len(accent):]))
+
+
+def _content_of(ctx: "TemplateCtx") -> tuple[str, str, bool]:
+    content = str(ctx.params.get("content") or "").strip()
+    accent = str(ctx.params.get("accent_word") or "").strip()
+    invert = bool(ctx.params.get("invert"))
+    return content, accent, invert
+
+
+def _enter_at(ctx: "TemplateCtx") -> float:
+    """Старт движения: клип уже виден, вход ждёт конца перехода кадра."""
+    return ctx.start + float(ctx.params.get("enter_delay") or 0)
+
+
+def _hold(ctx: "TemplateCtx") -> float:
+    return max(0.2, ctx.duration - float(ctx.params.get("enter_delay") or 0))
 
 
 # Ширина строки нужна, чтобы кегль подбирался под кадр, а не под догадку. Здесь
@@ -254,6 +286,19 @@ def tr_zoom_punch(ctx: "TemplateCtx") -> Piece:
     ])
 
 
+def tr_zoom_through(ctx: "TemplateCtx") -> Piece:
+    """Наезд в деталь на склейке — жест zoom-through из SpaceX explainer.
+
+    Тот же ``zoom_punch``, но сильнее: кадр входит из 1.22, будто камера
+    проваливается в следующий план. Динамический, со SFX, не чаще 1/6 сек.
+    """
+    merged = dict(ctx.params)
+    merged.setdefault("from_scale", 1.22)
+    return tr_zoom_punch(TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=ctx.duration,
+        target=ctx.target, track=ctx.track, params=merged))
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -399,6 +444,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "cut": tr_cut,
     "white_flash": tr_white_flash,
     "zoom_punch": tr_zoom_punch,
+    "zoom_through": tr_zoom_through,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -612,6 +658,42 @@ def dv_dots(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def dv_stat_card(ctx: "TemplateCtx") -> Piece:
+    """Набегающая метрика на карточке — жест SpaceX result card.
+
+    Ступени выписаны заранее, как у ``dv_counter``: рендер сэмплирует кадры
+    не по порядку, и таймер дал бы разные значения на одном таймкоде.
+    """
+    label = str(ctx.params.get("label") or "").strip()
+    node_id = f"sc-{ctx.index:02d}"
+    # Счётчик из dv_counter несёт свой id и трек. Пересобираем карточку
+    # вокруг тех же span-ступеней, чтобы вход шёл на обёртку, а не на клип.
+    target = float(ctx.params.get("value", 0))
+    steps = max(2, int(ctx.params.get("steps", 12)))
+    suffix = str(ctx.params.get("suffix", ""))
+    spans, tweens = [], []
+    per = ctx.duration * 0.7 / steps
+    for i in range(steps + 1):
+        value = target * (i / steps)
+        text = (f"{value:,.0f}".replace(",", " ") if abs(target) >= 1000
+                else f"{value:.0f}")
+        spans.append(f'<span>{_esc(text + suffix)}</span>')
+        at = ctx.start + per * i
+        tweens.append(f'tl.set("#{node_id} .sc-num span:nth-child({i + 1})",'
+                      f'{{opacity:1}},{_num(at)});')
+        if i < steps:
+            tweens.append(
+                f'tl.set("#{node_id} .sc-num span:nth-child({i + 1})",'
+                f'{{opacity:0}},{_num(at + per)});')
+    kicker = f'<span class="sc-label">{_esc(label)}</span>' if label else ""
+    tweens = entrance_tweens(f"#{node_id} .sc-in", ctx.start, name="zoom-out") + tweens
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay stat-card" {_timing(ctx)}>'
+               f'<div class="sc-in">{kicker}'
+               f'<span class="sc-num">{"".join(spans)}</span></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -619,6 +701,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "counter-roll": dv_counter,
     "donut-fill": dv_donut,
     "timeline-dots": dv_dots,
+    "stat-countup-card": dv_stat_card,
 }
 
 
@@ -643,7 +726,7 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         # Столбец обязан быть блочным и иметь ширину: у элемента нулевой ширины
         # масштаб не покажет ничего.
         ".dv-bar{display:block;height:54px;border-radius:12px;"
-        "background:var(--color-accent);transform-origin:left center}"
+        "background:var(--color-accent-soft);transform-origin:left center}"
         ".dv-value{font-size:32px;font-weight:800;color:var(--color-muted)}"
         ".dv-counter{text-align:center;font-family:var(--font-display);"
         "font-size:190px;line-height:1}"
@@ -659,6 +742,19 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         ".dv-ring i{position:absolute;left:50%;top:0;width:50%;height:100%;"
         "background:var(--color-accent);transform-origin:left center;display:block}"
         ".dv-pct{font-family:var(--font-display);font-size:96px}"
+        ".stat-card{left:var(--safe-x-min);"
+        "width:calc(var(--safe-x-max) - var(--safe-x-min));top:240px}"
+        ".stat-card .sc-in{display:block;padding:48px 40px 40px;border-radius:32px;"
+        "background:var(--color-bg-light);color:var(--color-ink);"
+        "box-shadow:0 22px 60px rgba(0,0,0,0.22);text-align:center;"
+        "will-change:transform}"
+        ".stat-card .sc-label{display:block;font-family:var(--font-subtitle);"
+        "font-weight:800;font-size:34px;letter-spacing:0.14em;"
+        "text-transform:uppercase;color:var(--color-muted);margin-bottom:12px}"
+        ".stat-card .sc-num{position:relative;display:block;height:1.05em;"
+        "font-family:var(--font-display);font-size:168px;line-height:1.05;"
+        "color:var(--color-ink)}"
+        ".stat-card .sc-num span{position:absolute;left:0;right:0;opacity:0}"
     )
 
 
@@ -1154,6 +1250,56 @@ def hero_phone_mock(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def hero_type_slab(ctx: "TemplateCtx") -> Piece:
+    """Плита типа слева от ведущего — жест Srinika × Mercury.
+
+    Два-три слова Oswald на всю высоту рабочей зоны. Субтитр на этом окне
+    гасится: те же слова по центру — дубль.
+    """
+    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
+    if not lines:
+        return Piece()
+    accents = {int(i) for i in (ctx.params.get("accent_lines") or [])}
+    node_id = f"ts-{ctx.index:02d}"
+    available = 1080 * 0.48
+    longest = max(lines, key=len)
+    size = fit_size(longest.upper(), available, int(ctx.params.get("size", 148)))
+    rows, tweens = [], []
+    for i, line in enumerate(lines[:4]):
+        cls = "accent" if i in accents else ""
+        rows.append(f'<span class="ts-line {cls}" style="font-size:{size}px">'
+                    f'{_esc(line.upper())}</span>')
+        tweens += entrance_tweens(f"#{node_id} .ts-line:nth-child({i + 1})",
+                                  ctx.start, name="settle", delay=0.05 * i)
+    top = int(ctx.params.get("top", 420))
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip hero-type-slab" style="top:{top}px" '
+               f'{_timing(ctx)}>{"".join(rows)}</div>'],
+        tweens=tweens)
+
+
+def hero_plate_pop(ctx: "TemplateCtx") -> Piece:
+    """Футаж в рамке въезжает поверх кадра — UI-окно как у Stripe-launch.
+
+    Видео само является клипом: вложенное в timed-элемент застывает первым
+    кадром. Рамка ``bg_pure``, вход ``zoom-out`` без прозрачности.
+    """
+    src = str(ctx.params.get("src") or "")
+    if not src:
+        return Piece()
+    node_id = f"pp-{ctx.index:02d}"
+    width = int(ctx.params.get("width", 920))
+    height = int(ctx.params.get("height", 580))
+    left = (1080 - width) // 2
+    top = int(ctx.params.get("top", 210))
+    return Piece(
+        nodes=[f'<video id="{node_id}" class="clip hero-plate-pop" src="{_esc(src)}" '
+               f'style="left:{left}px;top:{top}px;width:{width}px;height:{height}px" '
+               f'{_timing(ctx)} muted playsinline></video>'],
+        tweens=enter_and_drift(f"#{node_id}", ctx.start, ctx.duration,
+                               name="zoom-out", fade=False))
+
+
 HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-burst": hero_burst,
     "hero-headline": hero_headline,
@@ -1165,12 +1311,496 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-brand-pill": hero_brand_pill,
     "hero-card-stack": hero_card_stack,
     "hero-phone-mock": hero_phone_mock,
+    "hero-type-slab": hero_type_slab,
+    "hero-plate-pop": hero_plate_pop,
 }
 
 
 def render_hero(name: str, ctx: "TemplateCtx") -> Piece:
     fn = HERO.get(name.rsplit("/", 1)[-1])
     return fn(ctx) if fn else Piece()
+
+
+# --- полноэкранный текст: params шаблона наконец читаются ---------------------
+
+def _fs_ceiling(ctx: "TemplateCtx") -> int:
+    raw = ctx.params.get("size_px")
+    if isinstance(raw, (list, tuple)) and raw:
+        return int(raw[-1])
+    if isinstance(raw, (int, float)):
+        return int(raw)
+    if isinstance(raw, str) and raw.strip():
+        try:
+            return int(raw)
+        except ValueError:
+            return 420
+    return 420
+
+
+def _fs_size(ctx: "TemplateCtx", text: str) -> int:
+    ceiling = _fs_ceiling(ctx)
+    available = float(ctx.params.get("available_px") or 900)
+    longest = max(text.upper().split() or [text], key=len, default="")
+    return fit_size(longest, available, ceiling)
+
+
+def fs_plain(ctx: "TemplateCtx") -> Piece:
+    """Базовый полноэкранный кадр: одно поле, вход приближением."""
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    node_id = ctx.target
+    size = _fs_size(ctx, content)
+    cls = "clip fullscreen-text" + (" invert" if invert else "")
+    if ctx.params.get("underline"):
+        cls += " fs-underline"
+    if ctx.params.get("quotes"):
+        cls += " fs-quote"
+    markup = _mark_accent(content, accent)
+    if ctx.params.get("quotes"):
+        markup = f'<span class="fs-q">«</span>{markup}<span class="fs-q">»</span>'
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" style="font-size:{size}px">'
+               f'{markup}</span></div>'],
+        tweens=enter_and_drift(f"#{node_id}-inner", _enter_at(ctx), _hold(ctx),
+                               name="zoom-in"))
+
+
+def fs_kinetic_stack(ctx: "TemplateCtx") -> Piece:
+    """Слова входят очередью — Texture launch / OBLIST, не весь блок сразу."""
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    node_id = ctx.target
+    words = content.split()
+    size = _fs_size(ctx, content)
+    cls = "clip fullscreen-text fs-kinetic" + (" invert" if invert else "")
+    spans, tweens = [], []
+    stagger = float(ctx.params.get("stagger_ms", 55)) / 1000.0
+    at = _enter_at(ctx)
+    for i, word in enumerate(words):
+        marked = " accent" if accent and accent.lower() in word.lower() else ""
+        spans.append(f'<span class="ks-word{marked}">{_esc(word)}</span>')
+        tweens += entrance_tweens(
+            f"#{node_id} .ks-word:nth-child({i + 1})", at,
+            name="rise", delay=stagger * i)
+    hold_start = at + 0.55
+    hold = ctx.start + ctx.duration - hold_start
+    if hold > DRIFT_MIN_SEC:
+        tweens += drift_tween(f"#{node_id}-inner", hold_start, hold)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="ks-stack" '
+               f'style="font-size:{size}px">{"".join(spans)}</span></div>'],
+        tweens=tweens)
+
+
+def fs_number_slam(ctx: "TemplateCtx") -> Piece:
+    """Цифра-удар на карточке — K3 promo. Число отдельно, подпись ниже."""
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    parts = content.split()
+    if parts and re.match(r"^[\d$€£%.,+\-×xX]+", parts[0]):
+        number, caption = parts[0], " ".join(parts[1:])
+    else:
+        number, caption = content, ""
+    node_id = ctx.target
+    size = _fs_size(ctx, number)
+    cls = "clip fullscreen-text fs-slam" + (" invert" if invert else "")
+    cap = (f'<span class="fs-cap">{_esc(caption)}</span>' if caption else "")
+    tweens = entrance_tweens(f"#{node_id}-inner", _enter_at(ctx), name="zoom-in")
+    if caption:
+        tweens += entrance_tweens(f"#{node_id} .fs-cap", _enter_at(ctx),
+                                  name="rise", delay=0.12)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span class="fs-slam-card">'
+               f'<span id="{node_id}-inner" class="fs-num" '
+               f'style="font-size:{size}px">{_mark_accent(number, accent or number)}'
+               f'</span>{cap}</span></div>'],
+        tweens=tweens)
+
+
+def fs_stack_lines(ctx: "TemplateCtx") -> Piece:
+    """Три строки лесенкой: слова пакуются в max_lines и входят rise."""
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    words = content.split()
+    max_lines = max(1, int(ctx.params.get("max_lines") or 3))
+    per = max(1, (len(words) + max_lines - 1) // max_lines)
+    lines = [" ".join(words[i:i + per]) for i in range(0, len(words), per)][:max_lines]
+    node_id = ctx.target
+    size = _fs_size(ctx, max(lines, key=len))
+    cls = "clip fullscreen-text fs-stack" + (" invert" if invert else "")
+    rows, tweens = [], []
+    for i, line in enumerate(lines):
+        rows.append(f'<span class="fs-line">{_mark_accent(line, accent)}</span>')
+        tweens += entrance_tweens(f"#{node_id} .fs-line:nth-child({i + 1})",
+                                  _enter_at(ctx), name="rise", delay=0.07 * i)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="fs-lines" '
+               f'style="font-size:{size}px">{"".join(rows)}</span></div>'],
+        tweens=tweens)
+
+
+def fs_vs_compare(ctx: "TemplateCtx") -> Piece:
+    content, accent, invert = _content_of(ctx)
+    parts = re.split(r"\s+(?:VS|vs|Vs)\s+", content)
+    if len(parts) != 2:
+        parts = content.split(None, 1)
+    if len(parts) != 2:
+        return fs_plain(ctx)
+    node_id = ctx.target
+    size = _fs_size(ctx, max(parts, key=len))
+    cls = "clip fullscreen-text fs-vs" + (" invert" if invert else "")
+    tweens = entrance_tweens(f"#{node_id} .fs-vs-a", _enter_at(ctx), name="rise")
+    tweens += entrance_tweens(f"#{node_id} .fs-vs-b", _enter_at(ctx), name="rise",
+                              delay=0.1)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="fs-vs-row" '
+               f'style="font-size:{size}px">'
+               f'<span class="fs-vs-a">{_mark_accent(parts[0], accent)}</span>'
+               f'<span class="fs-vs-mid">VS</span>'
+               f'<span class="fs-vs-b">{_mark_accent(parts[1], accent)}</span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
+def fs_strip(ctx: "TemplateCtx") -> Piece:
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    node_id = ctx.target
+    size = min(_fs_size(ctx, content), 180)
+    height = int(ctx.params.get("strip_height") or 220)
+    cls = "clip fullscreen-text fs-strip" + (" invert" if invert else "")
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="fs-band" '
+               f'style="height:{height}px;font-size:{size}px">'
+               f'{_mark_accent(content, accent)}</span></div>'],
+        tweens=enter_and_drift(f"#{node_id}-inner", _enter_at(ctx), _hold(ctx),
+                               name="rise"))
+
+
+def fs_word_swap(ctx: "TemplateCtx") -> Piece:
+    """Слова сменяются на месте заранее выписанными кадрами, не таймером."""
+    content, accent, invert = _content_of(ctx)
+    words = content.split()
+    if len(words) < 2:
+        return fs_plain(ctx)
+    node_id = ctx.target
+    size = _fs_size(ctx, max(words, key=len))
+    cls = "clip fullscreen-text fs-swap" + (" invert" if invert else "")
+    per = _hold(ctx) * 0.82 / len(words)
+    spans, tweens = [], []
+    at0 = _enter_at(ctx)
+    for i, word in enumerate(words):
+        spans.append(f'<span class="fs-swap-word">'
+                     f'{_mark_accent(word, accent)}</span>')
+        at = at0 + per * i
+        tweens.append(
+            f'tl.set("#{node_id} .fs-swap-word:nth-child({i + 1})",'
+            f'{{opacity:1}},{_num(at)});')
+        if i < len(words) - 1:
+            tweens.append(
+                f'tl.set("#{node_id} .fs-swap-word:nth-child({i + 1})",'
+                f'{{opacity:0}},{_num(at + per)});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="fs-swap-box" '
+               f'style="font-size:{size}px">{"".join(spans)}</span></div>'],
+        tweens=tweens)
+
+
+def fs_fact_card(ctx: "TemplateCtx") -> Piece:
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    node_id = ctx.target
+    size = min(_fs_size(ctx, content), 160)
+    cls = "clip fullscreen-text fs-card" + (" invert" if invert else "")
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="fs-fact" '
+               f'style="font-size:{size}px">{_mark_accent(content, accent)}'
+               f'</span></div>'],
+        tweens=enter_and_drift(f"#{node_id}-inner", _enter_at(ctx), _hold(ctx),
+                               name="zoom-out"))
+
+
+FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
+    "fullscreen_text": fs_plain,
+    "kinetic_stack": fs_kinetic_stack,
+    "number_slam": fs_number_slam,
+}
+
+
+def render_fullscreen(ctx: "TemplateCtx") -> Piece:
+    """Собрать полноэкранный кадр по renderer и params шаблона."""
+    named = str(ctx.params.get("renderer") or "")
+    if named in FULLSCREEN and named != "fullscreen_text":
+        return FULLSCREEN[named](ctx)
+    params = ctx.params
+    if params.get("kinetic") or params.get("stagger_ms"):
+        return fs_kinetic_stack(ctx)
+    if params.get("slam") or params.get("scale_from"):
+        return fs_number_slam(ctx)
+    if params.get("split"):
+        return fs_vs_compare(ctx)
+    if params.get("max_lines"):
+        return fs_stack_lines(ctx)
+    if params.get("swap_ms"):
+        return fs_word_swap(ctx)
+    if params.get("strip_height"):
+        return fs_strip(ctx)
+    if params.get("card"):
+        return fs_fact_card(ctx)
+    return fs_plain(ctx)
+
+
+# --- оверлеи источника, чата, статьи -----------------------------------------
+
+def ov_source_card(ctx: "TemplateCtx") -> Piece:
+    domain = str(ctx.params.get("domain") or "")
+    title = str(ctx.params.get("title") or "")
+    snippet = str(ctx.params.get("snippet") or "")
+    highlight = str(ctx.params.get("highlight_line") or "")
+    node_id = ctx.target
+    body = _esc(snippet)
+    if highlight and highlight.lower() in snippet.lower():
+        idx = snippet.lower().index(highlight.lower())
+        body = (_esc(snippet[:idx])
+                + f'<span class="hl">{_esc(snippet[idx:idx + len(highlight)])}</span>'
+                + _esc(snippet[idx + len(highlight):]))
+    tweens = entrance_tweens(f"#{node_id} .bar", ctx.start, name="rise")
+    tweens += entrance_tweens(f"#{node_id} .title", ctx.start, name="rise", delay=0.05)
+    if snippet:
+        tweens += entrance_tweens(f"#{node_id} .snippet", ctx.start,
+                                  name="rise", delay=0.10)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay source-card" {_timing(ctx)}>'
+               f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
+               f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'
+               f'<div class="title">{_esc(title)}</div>'
+               f'<div class="snippet">{body}</div></div>'],
+        tweens=tweens)
+
+
+def ov_chat_thread(ctx: "TemplateCtx") -> Piece:
+    """Окно чата: запрос, затем ответ очередью. SpaceX chat-response."""
+    prompt = str(ctx.params.get("prompt") or ctx.params.get("title") or "").strip()
+    snippet = str(ctx.params.get("snippet") or ctx.params.get("reply") or "").strip()
+    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
+    if not lines and snippet:
+        lines = [s.strip() for s in re.split(r"(?<=[.!?])\s+", snippet) if s.strip()][:3]
+    if not prompt and not lines:
+        return Piece()
+    node_id = ctx.target
+    app = str(ctx.params.get("app") or "Chat")
+    rows: list[str] = []
+    if prompt:
+        rows.append(f'<span class="ct-row in">{_esc(prompt)}</span>')
+    for line in lines:
+        rows.append(f'<span class="ct-row out">{_esc(line)}</span>')
+    tweens = entrance_tweens(f"#{node_id} .ct-body", ctx.start, name="zoom-out")
+    for i in range(len(rows)):
+        tweens += entrance_tweens(
+            f"#{node_id} .ct-rows .ct-row:nth-child({i + 1})",
+            ctx.start, name="rise", delay=0.14 + 0.12 * i)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay chat-thread" {_timing(ctx)}>'
+               f'<div class="ct-body"><span class="ct-app">{_esc(app)}</span>'
+               f'<span class="ct-rows">{"".join(rows)}</span></div></div>'],
+        tweens=tweens)
+
+
+def ov_article_scroll(ctx: "TemplateCtx") -> Piece:
+    """Браузер со скроллом сниппета и подсветкой строки. Website → video."""
+    domain = str(ctx.params.get("domain") or "")
+    title = str(ctx.params.get("title") or "")
+    snippet = str(ctx.params.get("snippet") or "")
+    highlight = str(ctx.params.get("highlight_line") or "")
+    node_id = ctx.target
+    body = _esc(snippet)
+    if highlight and snippet:
+        lowered, needle = snippet.lower(), highlight.lower()
+        if needle in lowered:
+            idx = lowered.index(needle)
+            body = (_esc(snippet[:idx])
+                    + f'<span class="hl">{_esc(snippet[idx:idx + len(highlight)])}</span>'
+                    + _esc(snippet[idx + len(highlight):]))
+        elif highlight:
+            body = f'{body} <span class="hl">{_esc(highlight)}</span>'
+    shift = min(80, max(36, int(len(snippet) * 0.4)))
+    tweens = entrance_tweens(f"#{node_id} .as-frame", ctx.start, name="rise")
+    hold = max(0.0, ctx.duration - 0.55)
+    if hold >= 0.6:
+        tweens.append(
+            f'tl.fromTo("#{node_id} .as-body",{{y:0}},'
+            f'{{y:{-shift},duration:{_num(hold)},ease:"none"}},'
+            f'{_num(ctx.start + 0.5)});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay article-scroll" {_timing(ctx)}>'
+               f'<div class="as-frame">'
+               f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
+               f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'
+               f'<div class="as-clip"><div class="as-body">'
+               f'<div class="title">{_esc(title)}</div>'
+               f'<div class="snippet">{body}</div></div></div></div></div>'],
+        tweens=tweens)
+
+
+def ov_paper_reveal(ctx: "TemplateCtx") -> Piece:
+    """Строки статьи проявляются, одна вспыхивает. Жест PR-to-video → arxiv."""
+    domain = str(ctx.params.get("domain") or "")
+    title = str(ctx.params.get("title") or "")
+    snippet = str(ctx.params.get("snippet") or "")
+    highlight = str(ctx.params.get("highlight_line") or "")
+    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
+    if not lines and snippet:
+        lines = [s.strip() for s in re.split(r"(?<=[.!?])\s+", snippet) if s.strip()][:4]
+    if not lines and title:
+        lines = [title]
+    if not lines:
+        return Piece()
+    node_id = ctx.target
+    accent_at = -1
+    if highlight:
+        for i, line in enumerate(lines):
+            if highlight.lower() in line.lower():
+                accent_at = i
+                break
+        if accent_at < 0:
+            lines.append(highlight)
+            accent_at = len(lines) - 1
+    rows, tweens = [], []
+    tweens += entrance_tweens(f"#{node_id} .pr-card", ctx.start, name="zoom-out")
+    for i, line in enumerate(lines[:5]):
+        cls = " accent" if i == accent_at else ""
+        rows.append(f'<span class="pr-line{cls}">{_esc(line)}</span>')
+        tweens += entrance_tweens(f"#{node_id} .pr-line:nth-child({i + 1})",
+                                  ctx.start, name="rise", delay=0.14 + 0.11 * i)
+    kicker = f'<span class="pr-domain">{_esc(domain)}</span>' if domain else ""
+    head = f'<span class="pr-title">{_esc(title)}</span>' if title else ""
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay paper-reveal" {_timing(ctx)}>'
+               f'<div class="pr-card">{kicker}{head}'
+               f'<span class="pr-lines">{"".join(rows)}</span></div></div>'],
+        tweens=tweens)
+
+
+OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
+    "source_card": ov_source_card,
+    "chat_thread": ov_chat_thread,
+    "article_scroll": ov_article_scroll,
+    "paper_reveal": ov_paper_reveal,
+}
+
+
+def render_overlay(name: str, ctx: "TemplateCtx") -> Piece:
+    fn = OVERLAYS.get(name.rsplit("/", 1)[-1])
+    return fn(ctx) if fn else Piece()
+
+
+def overlay_css(brandbook: dict[str, Any]) -> str:
+    """Стили окон чата, статьи и paper-reveal. Цвета — токены брендбука."""
+    height = int(brandbook["canvas"]["height"])
+    safe = brandbook["safe_zones"]["work_area"]
+    subs = brandbook["subtitles"]
+    subtitle_top = int(subs["baseline_y_default"]) - int(subs["size_px"][1]) // 2 - 30
+    return (
+        ".fullscreen-text .ks-stack{display:flex;flex-wrap:wrap;justify-content:center;"
+        "gap:0.18em 0.28em;max-width:100%}"
+        ".fullscreen-text .ks-word{display:inline-block;will-change:transform}"
+        ".fullscreen-text .fs-slam-card{display:flex;flex-direction:column;"
+        "align-items:center;gap:18px;padding:48px 40px;border-radius:36px;"
+        "background:var(--color-bg-pure)}"
+        ".fullscreen-text.invert .fs-slam-card{background:var(--color-ink)}"
+        ".fullscreen-text .fs-num{display:block;line-height:0.9}"
+        ".fullscreen-text .fs-cap{display:block;font-family:var(--font-subtitle);"
+        "font-size:48px;font-weight:800;text-transform:none;color:var(--color-muted);"
+        "will-change:transform}"
+        ".fullscreen-text .fs-lines{display:flex;flex-direction:column;"
+        "align-items:flex-start;gap:0.12em;text-align:left}"
+        ".fullscreen-text .fs-line{display:block;will-change:transform}"
+        ".fullscreen-text.fs-vs{}"
+        ".fullscreen-text .fs-vs-row{display:flex;align-items:center;"
+        "justify-content:center;gap:28px}"
+        ".fullscreen-text .fs-vs-mid{font-size:0.38em;color:var(--color-accent);"
+        "letter-spacing:0.08em}"
+        ".fullscreen-text .fs-vs-a,.fullscreen-text .fs-vs-b"
+        "{display:block;will-change:transform}"
+        ".fullscreen-text .fs-band{display:flex;align-items:center;"
+        "justify-content:center;width:100%;background:var(--color-accent);"
+        "color:var(--color-bg-pure);will-change:transform}"
+        ".fullscreen-text.fs-strip{background:var(--color-bg-light)}"
+        ".fullscreen-text .fs-swap-box{position:relative;display:block;"
+        "min-height:1.1em}"
+        ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"
+        ".fullscreen-text .fs-fact{display:block;padding:52px 44px;border-radius:36px;"
+        "background:var(--color-bg-light);max-width:100%;will-change:transform}"
+        ".fullscreen-text.fs-underline .accent"
+        "{box-shadow:inset 0 -0.12em 0 var(--color-accent)}"
+        ".fullscreen-text .fs-q{color:var(--color-accent);font-size:0.55em}"
+        f".chat-thread{{left:var(--safe-x-min);"
+        "width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        f"top:{int(safe['y_min']) + 40}px}}"
+        ".chat-thread .ct-body{display:flex;flex-direction:column;gap:22px;"
+        "padding:36px 30px;border-radius:40px;background:var(--color-bg-pure);"
+        "box-shadow:0 24px 70px rgba(0,0,0,0.24);will-change:transform}"
+        ".chat-thread .ct-app{display:block;font-family:var(--font-mono);"
+        "font-size:28px;color:var(--color-muted);text-align:center}"
+        ".chat-thread .ct-rows{display:flex;flex-direction:column;gap:16px}"
+        ".chat-thread .ct-row{display:block;max-width:86%;padding:22px 28px;"
+        "border-radius:28px;font-family:var(--font-subtitle);font-weight:700;"
+        "font-size:38px;line-height:1.22;will-change:transform}"
+        ".chat-thread .ct-row.in{align-self:flex-start;background:var(--color-bg-light);"
+        "color:var(--color-ink)}"
+        ".chat-thread .ct-row.out{align-self:flex-end;"
+        "background:var(--color-accent-soft);color:var(--color-bg-pure)}"
+        f".article-scroll{{left:var(--safe-x-min);"
+        "width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        f"bottom:{height - subtitle_top}px}}"
+        ".article-scroll .as-frame{border-radius:22px;overflow:hidden;"
+        "background:var(--color-bg-pure);color:var(--color-ink);"
+        "box-shadow:0 18px 48px rgba(0,0,0,0.22);will-change:transform}"
+        ".article-scroll .bar{display:flex;align-items:center;gap:10px;"
+        "padding:18px 22px;background:var(--color-bg-light)}"
+        ".article-scroll .dot{width:14px;height:14px;border-radius:50%;"
+        "background:var(--color-muted)}"
+        ".article-scroll .domain{margin-left:10px;font-family:var(--font-mono);"
+        "font-size:26px;color:var(--color-muted)}"
+        ".article-scroll .title{padding:22px 26px 6px;font-family:var(--font-display);"
+        "font-size:52px;line-height:1.04}"
+        ".article-scroll .snippet{padding:6px 26px 26px;font-size:30px;"
+        "line-height:1.3;color:var(--color-muted)}"
+        ".article-scroll .hl{background:var(--color-accent-soft);"
+        "box-shadow:0 0 0 6px var(--color-accent-soft)}"
+        ".article-scroll .as-clip{overflow:hidden;max-height:420px}"
+        ".article-scroll .as-body{will-change:transform}"
+        f".paper-reveal{{left:var(--safe-x-min);"
+        "width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        f"top:{int(safe['y_min']) + 80}px}}"
+        ".paper-reveal .pr-card{display:block;padding:40px 36px 36px;"
+        "border-radius:28px;background:var(--color-bg-pure);color:var(--color-ink);"
+        "box-shadow:0 22px 56px rgba(0,0,0,0.2);will-change:transform}"
+        ".paper-reveal .pr-domain{display:block;font-family:var(--font-mono);"
+        "font-size:26px;color:var(--color-muted);margin-bottom:10px}"
+        ".paper-reveal .pr-title{display:block;font-family:var(--font-display);"
+        "font-size:56px;line-height:1.02;margin-bottom:22px}"
+        ".paper-reveal .pr-lines{display:flex;flex-direction:column;gap:14px}"
+        ".paper-reveal .pr-line{display:block;font-family:var(--font-subtitle);"
+        "font-size:34px;line-height:1.28;color:var(--color-muted);will-change:transform}"
+        ".paper-reveal .pr-line.accent{color:var(--color-ink);"
+        "background:var(--color-accent-soft);box-shadow:0 0 0 8px var(--color-accent-soft);"
+        "border-radius:8px}"
+    )
 
 
 def hero_css(brandbook: dict[str, Any]) -> str:
@@ -1304,9 +1934,24 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-phone-mock .pm-row{display:block;max-width:82%;padding:26px 32px;"
         "border-radius:34px;font-family:var(--font-subtitle);font-weight:700;"
         "font-size:44px;line-height:1.2;will-change:transform}"
-        ".hero-phone-mock .pm-row.in{align-self:flex-start;background:#F0EEEB}"
+        ".hero-phone-mock .pm-row.in{align-self:flex-start;background:var(--color-bg-light)}"
         ".hero-phone-mock .pm-row.out{align-self:flex-end;"
         "background:var(--color-accent-soft);color:var(--color-bg-pure)}"
+        # --- плита типа слева ---
+        f".hero-type-slab{{position:absolute;left:var(--safe-x-min);"
+        f"width:{int(width * 0.52)}px;z-index:{Z_AVATAR + 1};"
+        "display:flex;flex-direction:column;align-items:flex-start;gap:8px;"
+        "pointer-events:none}"
+        ".hero-type-slab .ts-line{display:block;font-family:var(--font-display);"
+        "text-transform:uppercase;line-height:0.9;color:var(--color-ink);"
+        "will-change:transform;"
+        "text-shadow:0 4px 22px rgba(247,245,243,0.9)}"
+        ".hero-type-slab .ts-line.accent{color:var(--color-accent)}"
+        # --- футаж-окно поверх ---
+        f".hero-plate-pop{{position:absolute;display:block;z-index:{Z_AVATAR + 1};"
+        "object-fit:cover;border-radius:28px;"
+        "border:10px solid var(--color-bg-pure);background:var(--color-bg-pure);"
+        "box-shadow:0 28px 80px rgba(0,0,0,0.34);pointer-events:none}"
         # --- выбивка ---
         ".hero-knockout{position:absolute;inset:0;"
         f"z-index:{Z_AVATAR + 1};pointer-events:none}}"

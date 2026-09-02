@@ -14,6 +14,7 @@ Edit-план — самодостаточный документ: §9.1 тре�
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from typing import Any
 
@@ -112,6 +113,8 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-brand-pill": ("brand",),
     "hero-card-stack": ("title", "plate"),
     "hero-phone-mock": ("lines",),
+    "hero-type-slab": ("lines",),
+    "hero-plate-pop": ("plate",),
 }
 
 
@@ -206,7 +209,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     if renderer == "hero-headline":
         params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
     if "lines" in _HERO_NEEDS.get(renderer, ()):
-        upper = renderer == "hero-text-column"
+        upper = renderer in ("hero-text-column", "hero-type-slab")
         params["lines"] = [l.upper() if upper else l for l in content["lines"]]
         params["accent_lines"] = content["accent_lines"]
     if content.get("face"):
@@ -231,7 +234,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # ложится прямо на карточку: проверено кадром.
         "carries_line": "lines" in _HERO_NEEDS.get(renderer, ()),
     }
-    if plate_src and renderer in ("hero-plate", "hero-card-stack"):
+    if plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-plate-pop"):
         # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
         # и растянутая панель досидела бы кадр пустой.
         entry["file"] = plate_src["file"]
@@ -508,10 +511,56 @@ def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
     return reports, behind_layers, vfx_clips, summary
 
 
+_OVERLAY_BY_NAME = {
+    "chat-thread": "chat_thread",
+    "chat-ai-typing": "chat_thread",
+    "article-highlight": "article_scroll",
+    "browser-scroll": "article_scroll",
+    "paper-reveal": "paper_reveal",
+    "arxiv-card": "paper_reveal",
+}
+
+_NUM_IN_TEXT = re.compile(
+    r"(?<![\d.])(\d+(?:[.,]\d+)?)(?:\s*(%|млрд|млн|тыс\.?|кубит(?:ов|а)?|[Tт]))?",
+    re.IGNORECASE,
+)
+
+
+def _overlay_renderer(template: Template) -> str:
+    """Какой HTML-рендерер рисует карточку источника."""
+    mapped = _OVERLAY_BY_NAME.get(template.name)
+    if mapped:
+        return mapped
+    if template.renderer in ("chat_thread", "article_scroll", "paper_reveal",
+                             "source_card"):
+        return template.renderer
+    return "source_card"
+
+
+def _stats_from_text(text: str) -> list[dict[str, Any]]:
+    """Числа из реплики блока. Годы 1900–2100 отбрасываем, если есть другие."""
+    found: list[dict[str, Any]] = []
+    for match in _NUM_IN_TEXT.finditer(text or ""):
+        raw = match.group(1).replace(",", ".")
+        try:
+            value = float(raw)
+        except ValueError:
+            continue
+        suffix = (match.group(2) or "").strip()
+        found.append({"value": value, "suffix": suffix,
+                      "raw": match.group(0).strip()})
+    if not found:
+        return []
+    years = [n for n in found
+             if n["value"] == int(n["value"]) and 1900 <= n["value"] <= 2100]
+    others = [n for n in found if n not in years]
+    return others or found
+
+
 def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str]) -> list[dict[str, Any]]:
-    """Плашки, карточки источников, подсветка и CTA (§5.4–5.6, §6)."""
+    """Плашки, карточки источников, подсветка, data-viz и CTA (§5.4–5.6, §6)."""
     overlays: list[dict[str, Any]] = []
     duration = float(plan["duration_sec"])
     sources = plan.get("sources", [])
@@ -522,20 +571,30 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     if on_screen and evidence_slots:
         source = on_screen[0]
         anchor = evidence_slots[0]
+        if variant == "A":
+            card_category = "browser-ui"
+            card_prefer = ["browser-ui/chat-thread", "browser-ui/article-highlight",
+                           "browser-ui/browser-scroll"]
+        else:
+            card_category = "frames-cards"
+            card_prefer = ["frames-cards/paper-reveal", "frames-cards/arxiv-card"]
         card_template = catalog.pick(
-            "browser-ui" if variant == "A" else "frames-cards",
-            duration=float(anchor["duration"]), recent_videos=recent_videos,
-            exclude=used, seed=seed)
+            card_category, duration=float(anchor["duration"]),
+            recent_videos=recent_videos, exclude=used, prefer=card_prefer,
+            seed=seed)
         used.append(card_template.id)
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(evidence_slots[-1]["end"]))
+        renderer = _overlay_renderer(card_template)
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
-            "template": card_template.id, "params": {
+            "template": card_template.id, "renderer": renderer, "params": {
                 "template": source.get("screen_template", "browser"),
                 "domain": source.get("domain", ""),
                 "title": source.get("title", ""),
                 "snippet": source.get("snippet", ""),
+                "prompt": source.get("title") or source.get("snippet", ""),
+                "highlight_line": source.get("highlight_line", ""),
                 "typing": bool(card_template.params.get("typing")),
                 "scroll": bool(card_template.params.get("scroll")),
             },
@@ -561,6 +620,9 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                           if k in ("position", "direction")}},
             "why": "§5.4: плашка с доменом источника",
         })
+
+    _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
+                    recent_videos=recent_videos, used=used)
 
     # Плашки из overlay-указаний сценария (lower_third).
     for block in plan.get("blocks", []):
@@ -600,6 +662,61 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     return overlays
 
 
+def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
+                    catalog: TemplateCatalog, *, variant: str, seed: int,
+                    recent_videos: list[str], used: list[str]) -> None:
+    """Оверлей с числом на evidence/develop — не чаще одного на ролик."""
+    duration = float(plan["duration_sec"])
+    cta_start = float((plan.get("cta_window") or [duration - 2.0, duration])[0])
+    occupied = [(float(o["start"]), float(o["end"])) for o in overlays
+                if o.get("type") in ("source_card", "cta", "plaque")]
+    blocks = {b["id"]: b for b in plan.get("blocks", [])}
+    for slot in plan["slots"]:
+        if slot.get("role") not in ("evidence", "develop"):
+            continue
+        if slot["kind"] not in ("footage", "meme", "avatar"):
+            continue
+        nums = _stats_from_text(str(blocks.get(slot["block_id"], {}).get("text") or ""))
+        if not nums:
+            continue
+        start = float(slot["start"]) + 0.25
+        end = min(float(slot["end"]) - 0.15, start + 3.0, cta_start)
+        if end - start < 1.2:
+            continue
+        if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
+            continue
+        prefer = (["data-viz/stat-countup-card"] if len(nums) == 1
+                  else ["data-viz/compare-bars", "data-viz/bar-race-mini"])
+        if variant == "B" and len(nums) >= 2:
+            prefer = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
+        template = catalog.pick("data-viz", duration=end - start,
+                                recent_videos=recent_videos, exclude=used,
+                                prefer=prefer, seed=seed + 11)
+        used.append(template.id)
+        name = template.name
+        if name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
+            suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""
+            params: dict[str, Any] = {
+                "value": nums[0]["value"], "suffix": suffix,
+                "label": nums[0]["raw"],
+                "values": [n["value"] for n in nums[:4]],
+                "labels": [n["raw"] for n in nums[:4]],
+            }
+        else:
+            params = {
+                "values": [n["value"] for n in nums[:4]],
+                "labels": [n["raw"] for n in nums[:4]],
+                "value": nums[0]["value"],
+            }
+        overlays.append({
+            "type": "dataviz", "start": start, "end": end,
+            "template": template.id, "renderer": template.renderer,
+            "params": params,
+            "why": "data-viz: в блоке есть число",
+        })
+        return
+
+
 def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   assets: dict[int, dict[str, Any]], prepared: dict[int, dict[str, Any]],
                   catalog: TemplateCatalog, avatar_meta: dict[str, Any],
@@ -630,7 +747,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     hero_offset = seed % 2
     hero_eligible = 0
 
-    fullscreen_styles = (["text-fullscreen/impact-01", "text-fullscreen/impact-02"]
+    fullscreen_styles = (["text-fullscreen/kinetic-stack",
+                          "text-fullscreen/number-slam-card"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
 
@@ -644,17 +762,25 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         if slot["kind"] == "fullscreen_text":
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")
+            content = slot.get("content", "")
+            styles = list(fullscreen_styles)
+            if variant == "A" and re.search(r"\d", str(content)):
+                styles = ["text-fullscreen/number-slam-card",
+                          "text-fullscreen/kinetic-stack"]
             template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
                                     recent_videos=recent_videos, exclude=used_templates,
                                     prefer=([preferred] if preferred else [])
-                                    + [slot.get("template_hint", "")] + fullscreen_styles,
+                                    + [slot.get("template_hint", "")] + styles,
                                     seed=seed)
             used_templates.append(template.id)
+            block = blocks_by_id.get(slot["block_id"], {})
             entry.update({
-                "content": slot.get("content", ""),
+                "content": content,
                 "template": template.id,
+                "renderer": template.renderer,
+                "params": dict(template.params),
                 "invert": bool(template.params.get("invert")) or variant == "B",
-                "accent_word": None,
+                "accent_word": block.get("emphasis_word") or slot.get("emphasis_word"),
             })
             shots.append(entry)
             continue
@@ -682,9 +808,12 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         if slot.get("transition_in") == "dynamic":
             category = "avatar-entry" if slot["kind"] in AVATAR_KINDS else "transitions"
             preferred = prefs.get(f"transition@{slot['role']}")
+            tr_prefer = [preferred] if preferred else []
+            if variant == "A" and category == "transitions":
+                tr_prefer.append("transitions/zoom-through")
             tr = catalog.pick(category, duration=0.24, recent_videos=recent_videos,
                               exclude=used_templates + ["transitions/cut"],
-                              prefer=[preferred] if preferred else [],
+                              prefer=tr_prefer,
                               tags={"dynamic", "entry"}, seed=seed + slot["index"] * 3)
             used_templates.append(tr.id)
             transition_entry = {

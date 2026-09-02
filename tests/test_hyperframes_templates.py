@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-92 шаблона каталога — это 30 рендереров с параметрами. Проверяется то, что
+101 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -14,9 +14,10 @@ from pathlib import Path
 import pytest
 
 from src.lib.render.hyperframes.templates import (
-    DATAVIZ, DRIFT_SCALE, ENTRANCES, HERO, MOTION, TRANSITIONS, Piece, TemplateCtx,
-    enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_hero,
-    render_motion, render_transition, transition_css,
+    DATAVIZ, DRIFT_SCALE, ENTRANCES, FULLSCREEN, HERO, MOTION, OVERLAYS,
+    TRANSITIONS, Piece, TemplateCtx,
+    enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_fullscreen,
+    render_hero, render_motion, render_overlay, render_transition, transition_css,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -145,7 +146,8 @@ def test_every_renderer_of_the_catalog_is_implemented():
     # оверлей, без параметров каталога.
     built_in = {"fullscreen_text", "source_card", "plaque", "footage", "avatar",
                 "cta_button"}
-    implemented = set(TRANSITIONS) | set(MOTION) | set(HERO) | built_in | {"dataviz"}
+    implemented = (set(TRANSITIONS) | set(MOTION) | set(HERO) | set(OVERLAYS)
+                   | set(FULLSCREEN) | built_in | {"dataviz"})
     missing = renderers - implemented
     assert not missing, f"рендереры каталога без реализации: {sorted(missing)}"
 
@@ -167,6 +169,7 @@ def test_css_covers_every_layer_the_transitions_use():
     ("data-viz/counter-roll", {"value": 27000, "suffix": " ч"}),
     ("data-viz/donut-fill", {"value": 73}),
     ("data-viz/timeline-dots", {"labels": ["1916", "1971", "2019"]}),
+    ("data-viz/stat-countup-card", {"value": 105, "suffix": " кубит", "label": "105"}),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -247,6 +250,8 @@ HERO_PARAMS = {
     "hero-card-stack": {"title": "СВЕТИЛ ВНУТРЬ", "src": "assets/m000_shot.mp4"},
     "hero-phone-mock": {"lines": ["что там внутри", "никто не знает"],
                         "app": "ChatGPT"},
+    "hero-type-slab": {"lines": ["ГОРИЗОНТ", "СОБЫТИЙ"], "accent_lines": [0]},
+    "hero-plate-pop": {"src": "assets/m000_shot.mp4"},
 }
 
 
@@ -558,3 +563,91 @@ def test_bubble_leaves_no_residual_scale_on_the_shared_avatar():
     assert len(avatar) == 1, f"на аватаре больше одного твина: {avatar}"
     to_state = re.search(r"\},\{([^}]*)\}", avatar[0]).group(1)
     assert "scale:1.0," in to_state + ",", f"приём оставляет масштаб: {to_state}"
+
+
+def _fs_ctx(**params):
+    return TemplateCtx(index=1, start=3.0, duration=1.4, target="shot-01",
+                       track=1, params={"available_px": 900, "size_px": 420,
+                                        **params})
+
+
+def test_kinetic_stack_staggers_words():
+    piece = render_fullscreen(_fs_ctx(content="раз два три", accent_word="два",
+                                     stagger_ms=55, kinetic=True))
+    assert "ks-word" in piece.nodes[0]
+    assert piece.nodes[0].count("ks-word") == 3
+    assert " accent" in piece.nodes[0]
+    assert len(piece.tweens) >= 3
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+
+
+def test_number_slam_splits_the_caption():
+    piece = render_fullscreen(_fs_ctx(content="105 кубитов", slam=True))
+    assert "fs-num" in piece.nodes[0]
+    assert "fs-cap" in piece.nodes[0]
+    assert "105" in piece.nodes[0] and "кубитов" in piece.nodes[0]
+
+
+def test_stack_lines_read_max_lines_param():
+    piece = render_fullscreen(_fs_ctx(content="один два три четыре", max_lines=2))
+    assert "fs-line" in piece.nodes[0]
+    assert piece.nodes[0].count('class="fs-line"') == 2
+
+
+def test_zoom_through_enters_from_a_stronger_scale(ctx):
+    piece = render_transition("zoom_through", ctx)
+    assert "scale:1.22" in piece.tweens[0]
+
+
+OVERLAY_PARAMS = {
+    "source_card": {"domain": "arxiv.org", "title": "Paper",
+                    "snippet": "Hello world", "highlight_line": "Hello"},
+    "chat_thread": {"prompt": "что внутри", "snippet": "Квантовый чип. Сто кубит."},
+    "article_scroll": {"domain": "nature.com", "title": "Title",
+                       "snippet": "long quoted line here", "highlight_line": "quoted"},
+    "paper_reveal": {"domain": "arxiv.org", "title": "Nature",
+                     "snippet": "One. Two. Three.", "highlight_line": "Two"},
+}
+
+
+@pytest.mark.parametrize("name", sorted(OVERLAYS))
+def test_overlay_animates_only_allowed_properties(name):
+    ctx = TemplateCtx(index=0, start=1.0, duration=3.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS[name])
+    piece = render_overlay(name, ctx)
+    assert piece.nodes, name
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra, f"{name}: {extra}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", f"{name} тянет сам клип: {tween}"
+
+
+def test_chat_thread_puts_the_user_on_the_left():
+    ctx = TemplateCtx(index=0, start=1.0, duration=3.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["chat_thread"])
+    node = render_overlay("chat_thread", ctx).nodes[0]
+    assert 'ct-row in' in node
+    assert node.index("ct-row in") < node.index("ct-row out")
+
+
+def test_hero_plate_pop_media_is_the_clip_itself():
+    piece = render_hero("hero-plate-pop", _hero_ctx("hero-plate-pop"))
+    assert piece.nodes[0].startswith("<video "), piece.nodes[0][:80]
+    assert "opacity" not in piece.tweens[0]
+
+
+def test_new_catalog_ids_carry_example_video():
+    manifest = json.loads(Path("templates/manifest.json").read_text(encoding="utf-8"))
+    needed = {
+        "text-fullscreen/kinetic-stack", "text-fullscreen/number-slam-card",
+        "browser-ui/chat-thread", "browser-ui/article-highlight",
+        "frames-cards/paper-reveal", "data-viz/stat-countup-card",
+        "hero-devices/type-slab", "hero-devices/footage-plate-pop",
+        "transitions/zoom-through",
+    }
+    by_id = {t["id"]: t for t in manifest["templates"]}
+    for tid in needed:
+        assert by_id[tid].get("example_video"), tid
+

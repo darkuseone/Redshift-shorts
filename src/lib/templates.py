@@ -6,7 +6,7 @@
    при наличии альтернативы.
 2. Наборы шаблонов версий A и B одного ролика отличаются минимум на 3 позиции.
 3. ``manifest.json`` фиксирует использование; редко используемые получают
-   приоритет — иначе каталог из 92 шаблонов выродится в 5 любимых, а QC-17
+   приоритет — иначе каталог из 101 шаблона выродится в 5 любимых, а QC-17
    («повтор набора шаблонов с предыдущим роликом») начнёт стабильно падать.
 """
 
@@ -38,6 +38,7 @@ class Template:
     renderer: str
     last_used_in: list[str] = field(default_factory=list)
     added: str = ""
+    example_video: str = ""
 
     def fits(self, duration: float) -> bool:
         lo, hi = self.duration_range
@@ -46,12 +47,15 @@ class Template:
         return lo - 1e-6 <= duration <= hi + 1e-6
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "id": self.id, "name": self.name, "category": self.category,
             "title": self.title, "duration_range": self.duration_range,
             "params": self.params, "tags": self.tags, "renderer": self.renderer,
             "last_used_in": self.last_used_in, "added": self.added,
         }
+        if self.example_video:
+            data["example_video"] = self.example_video
+        return data
 
 
 class TemplateCatalog:

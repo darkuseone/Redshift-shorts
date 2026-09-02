@@ -28,8 +28,9 @@ from typing import Any
 
 from ..text_rules import subtitle_word
 from .templates import (
-    TemplateCtx, enter_and_drift, entrance_tweens, fit_size, render_hero,
-    render_motion, render_transition, text_width,
+    OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, render_dataviz,
+    render_fullscreen, render_hero, render_motion, render_overlay,
+    render_transition,
 )
 
 TRACK_STAGE = 0
@@ -157,13 +158,10 @@ class CompositionBuilder:
             tr_sec = self._transition_duration(shot)
 
             if kind == "fullscreen_text":
-                nodes.append(self._fullscreen_text_node(node_id, shot, timing))
-                # Раньше полноэкранный текст просто включался: клип открывался,
-                # и надпись стояла. На фоне пословных субтитров, которые всё
-                # время движутся, это читалось как подвисший кадр.
-                self.tweens.extend(enter_and_drift(
-                    f"#{node_id}-inner", start + tr_sec,
-                    max(0.2, duration - tr_sec), name="zoom-in"))
+                piece = self._fullscreen_piece(node_id, shot, start, duration,
+                                               track, tr_sec)
+                nodes.extend(piece.nodes)
+                self.tweens.extend(piece.tweens)
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
@@ -199,31 +197,27 @@ class CompositionBuilder:
         return (f'<video id="{node_id}" class="{css}" src="{_esc(src)}" '
                 f'{timing}{offset} muted playsinline></video>')
 
-    def _fullscreen_text_node(self, node_id: str, shot: dict[str, Any],
-                              timing: str) -> str:
-        content = str(shot.get("content") or "").strip()
-        accent = str(shot.get("accent_word") or "").strip()
-        invert = " invert" if shot.get("invert") else ""
-        markup = _esc(content)
-        if accent and accent.upper() in content.upper():
-            # §3.3.2: красным выделяется одно слово, не строка.
-            idx = content.upper().index(accent.upper())
-            markup = (_esc(content[:idx])
-                      + f'<span class="accent">{_esc(content[idx:idx + len(accent)])}</span>'
-                      + _esc(content[idx + len(accent):]))
-        # Кегль подбирается под самое длинное слово, а не берётся потолком из
-        # брендбука. С фиксированными 420 px «ПЕРЕЖИВЁШЬ» занимало 2400 px и
-        # уезжало за оба края кадра — видно было «ЕЖИВЁ». Поймано кадром
-        # готового MP4, а не разметкой: QC меряет safe zones по оверлеям, а
-        # полноэкранный текст оверлеем не является.
+    def _fullscreen_piece(self, node_id: str, shot: dict[str, Any],
+                          start: float, duration: float, track: int,
+                          tr_sec: float):
+        """Полноэкранный кадр читает renderer и params шаблона, не одну заготовку."""
         fs = self.brandbook["fullscreen_text"]
         safe_x = int(self.brandbook["safe_zones"]["work_area"]["x_min"])
         available = self.width - 2 * safe_x
-        longest = max(content.upper().split(), key=len, default="")
-        size = fit_size(longest, available, int(fs["size_px"][1]))
-        return (f'<div id="{node_id}" class="clip fullscreen-text{invert}" {timing}>'
-                f'<span id="{node_id}-inner" style="font-size:{size}px">'
-                f'{markup}</span></div>')
+        params = dict(shot.get("params") or {})
+        params.update({
+            "content": shot.get("content") or "",
+            "accent_word": shot.get("accent_word") or "",
+            "invert": bool(shot.get("invert")),
+            "renderer": shot.get("renderer") or params.get("renderer") or "",
+            "available_px": available,
+            "enter_delay": tr_sec,
+        })
+        if "size_px" not in params:
+            params["size_px"] = int(fs["size_px"][1])
+        return render_fullscreen(TemplateCtx(
+            index=int(shot["index"]), start=start, duration=duration,
+            target=node_id, track=track, params=params))
 
     def _add_kenburns(self, node_id: str, shot: dict[str, Any],
                       start: float, duration: float) -> None:
@@ -369,6 +363,13 @@ class CompositionBuilder:
             start = float(ovl["start"])
             duration = float(ovl["end"]) - start
             node_id = f"ovl-{i:02d}"
+            piece = self._overlay_piece(node_id, ovl, start, duration, track)
+            if piece is not None:
+                nodes += piece.nodes
+                self.tweens.extend(piece.tweens)
+                if piece.nodes:
+                    self.stats["overlay_draws"] += 1
+                continue
             timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
                       f'data-track-index="{track}"')
             body = self._overlay_body(node_id, ovl)
@@ -378,6 +379,31 @@ class CompositionBuilder:
             self.stats["overlay_draws"] += 1
             self._add_overlay_entrance(node_id, ovl, start)
         return nodes
+
+    def _overlay_piece(self, node_id: str, ovl: dict[str, Any],
+                       start: float, duration: float, track: int):
+        """Карточки источника, чат, статья и data-viz идут в рендереры каталога."""
+        from .templates import Piece
+
+        kind = ovl.get("type") or ""
+        template_id = str(ovl.get("template") or ovl.get("id") or "")
+        renderer = str(ovl.get("renderer") or "")
+        params = dict(ovl.get("params") or {})
+        ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
+                          duration=duration, target=node_id, track=track,
+                          params=params)
+        if kind == "dataviz" or template_id.startswith("data-viz/"):
+            piece = render_dataviz(template_id or renderer, ctx)
+            return piece if piece.nodes else Piece()
+        overlay_name = renderer if renderer in OVERLAYS else ""
+        if not overlay_name and kind in OVERLAYS:
+            overlay_name = kind
+        if not overlay_name and kind == "source_card":
+            overlay_name = "source_card"
+        if overlay_name:
+            piece = render_overlay(overlay_name, ctx)
+            return piece if piece.nodes else None
+        return None
 
     def _overlay_body(self, node_id: str, ovl: dict[str, Any]) -> str | None:
         kind = ovl.get("type")
