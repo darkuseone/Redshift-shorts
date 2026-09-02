@@ -1718,16 +1718,18 @@ def fs_line_by_line_slide(ctx: "TemplateCtx") -> Piece:
         line_at = at + stagger * i
         tweens.append(
             f'tl.fromTo("#{lid}",{{x:{_num(enter_x)},y:{_num(travel_y)}}},'
-            f'{{x:0,y:0,duration:{_num(_LBLS_ENTER)},ease:"power3.out"}},'
-            f'{_num(line_at)});'
+            f'{{x:0,y:0,duration:{_num(_LBLS_ENTER)},ease:"power3.out",'
+            f'immediateRender:false}},{_num(line_at)});'
         )
         tweens.append(
             f'tl.fromTo("#{lid}-s",{{opacity:0}},{{opacity:1,'
-            f'duration:{_num(_LBLS_ENTER)},ease:"power3.out"}},{_num(line_at)});'
+            f'duration:{_num(_LBLS_ENTER)},ease:"power3.out",'
+            f'immediateRender:false}},{_num(line_at)});'
         )
         tweens.append(
             f'tl.fromTo("#{lid}-g",{{opacity:0.85}},{{opacity:0,'
-            f'duration:{_num(_LBLS_ENTER)},ease:"power3.out"}},{_num(line_at)});'
+            f'duration:{_num(_LBLS_ENTER)},ease:"power3.out",'
+            f'immediateRender:false}},{_num(line_at)});'
         )
         if do_exit:
             tweens.append(
@@ -2321,9 +2323,9 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "line-height:1;text-align:left;max-width:100%}"
         ".fullscreen-text .lbls-line{position:relative;display:block;"
         "white-space:nowrap;will-change:transform}"
-        ".fullscreen-text .lbls-sharp{position:relative;display:block}"
+        ".fullscreen-text .lbls-sharp{position:relative;display:block;opacity:0}"
         ".fullscreen-text .lbls-ghost{position:absolute;left:0;top:0;"
-        "white-space:nowrap;pointer-events:none}"
+        "white-space:nowrap;pointer-events:none;opacity:0}"
         ".fullscreen-text.fs-vs{}"
         ".fullscreen-text .fs-vs-row{display:flex;align-items:center;"
         "justify-content:center;gap:28px}"
