@@ -23,7 +23,7 @@ from .ffmpeg import run as ffmpeg_run
 from .logging import get_logger
 from .manifest import AssetRecord, open_library, today
 from .sfx_synth import (
-    MUSIC_MOODS, SFX_ROLES, sfx_description, synth_music, synth_sfx,
+    MUSIC_MOODS, SFX_ROLES, music_recipe, sfx_description, synth_music, synth_sfx,
 )
 
 _log = get_logger("library_filler")
@@ -77,7 +77,7 @@ def fill_sfx(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
 
 
 def fill_music(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
-    """Добрать подложки до 5 настроений §14.2."""
+    """Добрать подложки до всех настроений §14.2 (потолок — в конфиге)."""
     lib = open_library(cfg, "music")
     existing = {item.mood for item in lib.items if item.mood}
     missing = [mood for mood in MUSIC_MOODS if mood not in existing]
@@ -99,7 +99,7 @@ def fill_music(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
         save_wav(tmp_wav, audio, SAMPLE_RATE)
         # 128 кбит/с, а не 96: на 96 кодек срезает верх около 14 кГц, а
         # воздух подложки живёт выше 9 — ровно то, ради чего слой добавлен.
-        # Пять файлов по минуте, разница в весе четверть мегабайта.
+        # Файлы по минуте, разница в весе четверть мегабайта на штуку.
         ffmpeg_run(["-y", "-i", str(tmp_wav), "-c:a", "aac", "-b:a", "128k",
                     "-ar", str(SAMPLE_RATE), "-ac", "2", str(lib.dir / filename)],
                    what="encode music bed")
@@ -111,6 +111,9 @@ def fill_music(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
                 tags=[mood, "loopable", "no-vocals", "no-melody"],
                 vision_summary=MUSIC_MOODS[mood]["title"],
                 duration_sec=len(audio) / SAMPLE_RATE, file=filename, added=today(),
+                # Отпечаток рецепта: по нему тест видит, что файл на диске
+                # собран сегодняшним кодом, не пересинтезируя минуту звука.
+                extra={"recipe": music_recipe(mood)},
             ))
         except LibraryFrozen:
             blocked.append(mood)

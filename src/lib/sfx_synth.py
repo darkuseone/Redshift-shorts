@@ -1,6 +1,6 @@
 """Синтез брендовых SFX и музыкальных подложек (§14.1, §14.2).
 
-Библиотеки капнутые и конечные: 20 звуков и 5 подложек на всю жизнь канала.
+Библиотеки капнутые и конечные: 20 звуков и 15 подложек на всю жизнь канала.
 Синтез собственными средствами даёт три вещи, которых не даёт сток:
 
 * нулевой риск Content ID — звук не существовал до этого прогона;
@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import inspect
 import math
 import zlib
 from typing import Callable
@@ -177,10 +179,34 @@ def _riser(rng) -> np.ndarray:
 
 
 def _pop(rng) -> np.ndarray:
-    dur = 0.14
+    """Появление плашки. Не «поп», а мягкий удар с телом и воздухом.
+
+    Было: голая падающая синусоида 900→400 Гц за 0.14 с. Заказчик услышал её
+    как дешёвый звук — и он прав: одна синусоида без атаки и без тела звучит
+    генератором, а не предметом, который лёг в кадр.
+
+    Что делает звук «дорогим» — три слоя, а не громкость. Атака даёт материал
+    (по ней ухо узнаёт, обо что ударили), низ даёт вес, воздух даёт воздух —
+    ту же полосу выше 9 кГц, в которой теперь дышит и музыкальная подложка.
+    """
+    dur = 0.32
+    n = int(dur * SR)
     t = _t(dur)
-    tone = np.sin(2 * np.pi * (900 - 500 * t / dur) * t)
-    return _stereo(_normalize(tone * _env(len(tone), 0.02, 0.98, curve=3.5)))
+
+    # Атака: короткий яркий скол. Гаснет за десятки миллисекунд.
+    attack = _highpass(_noise(dur, rng), 2600) * _decay(n, 90.0) * 0.55
+    # Тело: главный вес. Свип держится в 460…210 Гц — там, где у телефона
+    # ещё есть отдача. Первая версия шла 150→80 Гц, и мерка динамика показала
+    # потерю 11.6 дБ: вес был, но слышал его только тот, кто в наушниках.
+    body = np.sin(2 * np.pi * (460 - 250 * t / dur) * t) * _decay(n, 13.0) * 0.85
+    # Подпор снизу: на хорошем динамике даёт объём, на телефоне пропадает —
+    # и пропадать ему нечего, вес уже отдан телом.
+    sub = np.sin(2 * np.pi * (150 - 70 * t / dur) * t) * _decay(n, 9.0) * 0.40
+    # Призвук наверху: та же полоса, что у воздуха подложки.
+    air = _highpass(_noise(dur, rng), 9000) * _decay(n, 26.0) * 0.22
+
+    mix = (attack + body + sub + air) * _env(n, 0.004, 0.996, curve=2.0)
+    return _stereo(_normalize(mix), width=0.35)
 
 
 def _ui_click(rng) -> np.ndarray:
@@ -401,7 +427,151 @@ MUSIC_MOODS: dict[str, dict] = {
     "dark_pulse": {"root": 49.0, "chord": (1.0, 1.19, 1.78, 2.0), "lfo": 0.13,
                    "noise": 0.09, "pulse": 0.75,
                    "title": "тёмный пульс"},
+    # --- инструментальные настроения (заказчик: «динамичная скрипка, тихое
+    # пианино, что-нибудь под грустный ролик») ---------------------------------
+    "violin_drive": {"root": 82.4, "chord": (1.0, 1.2, 1.5, 1.8), "lfo": 0.14,
+                     "noise": 0.04, "pulse": 0.0, "instrument": "strings",
+                     "bpm": 96, "note_octave": 4.0, "part_gain": 0.62,
+                     "pad_gain": 0.55, "shimmer": 0.05,
+                     "title": "струнные в движении, нарастающее напряжение"},
+    "strings_sad": {"root": 69.3, "chord": (1.0, 1.19, 1.5, 2.0), "lfo": 0.04,
+                    "noise": 0.05, "pulse": 0.0, "instrument": "strings",
+                    "bpm": 44, "note_octave": 4.0, "part_gain": 0.56,
+                    "pad_gain": 0.8, "shimmer": 0.035,
+                    "title": "печальные струнные, медленно"},
+    "strings_hope": {"root": 73.4, "chord": (1.0, 1.25, 1.5, 2.0), "lfo": 0.05,
+                     "noise": 0.05, "pulse": 0.0, "instrument": "strings",
+                     "bpm": 58, "note_octave": 4.0, "part_gain": 0.5,
+                     "pad_gain": 0.75, "shimmer": 0.05,
+                     "title": "светлые струнные, надежда"},
+    "piano_quiet": {"root": 65.4, "chord": (1.0, 1.5, 2.0, 3.0), "lfo": 0.03,
+                    "noise": 0.03, "pulse": 0.0, "instrument": "keys",
+                    "bpm": 52, "note_octave": 8.0, "part_gain": 0.52,
+                    "pad_gain": 0.5, "shimmer": 0.05,
+                    "title": "тихое пианино, разреженно"},
+    "piano_sad": {"root": 58.3, "chord": (1.0, 1.19, 1.5, 1.78), "lfo": 0.03,
+                  "noise": 0.04, "pulse": 0.0, "instrument": "keys",
+                  "bpm": 46, "note_octave": 8.0, "part_gain": 0.45,
+                  "pad_gain": 0.62, "shimmer": 0.04,
+                  "title": "пианино в миноре, грустно"},
+    "keys_curious": {"root": 87.3, "chord": (1.0, 1.125, 1.5, 1.875), "lfo": 0.08,
+                     "noise": 0.04, "pulse": 0.0, "instrument": "keys",
+                     "bpm": 84, "note_octave": 8.0, "part_gain": 0.4,
+                     "pad_gain": 0.45, "shimmer": 0.06,
+                     "title": "любопытство, лёгкие клавиши"},
+    "keys_night": {"root": 55.0, "chord": (1.0, 1.5, 2.0, 2.5), "lfo": 0.03,
+                   "noise": 0.06, "pulse": 0.0, "instrument": "keys",
+                   "bpm": 38, "note_octave": 8.0, "part_gain": 0.52,
+                   "pad_gain": 0.85, "shimmer": 0.05,
+                   "title": "ночь, редкие ноты"},
+    "pulse_urgent": {"root": 61.7, "chord": (1.0, 1.19, 1.5, 2.0), "lfo": 0.16,
+                     "noise": 0.05, "pulse": 1.6, "instrument": "pulse",
+                     "bpm": 128, "note_octave": 4.0, "part_gain": 0.44,
+                     "pad_gain": 0.7, "shimmer": 0.045,
+                     "title": "тревога, частый пульс"},
+    "pulse_news": {"root": 73.4, "chord": (1.0, 1.33, 1.5, 2.0), "lfo": 0.10,
+                   "noise": 0.04, "pulse": 1.2, "instrument": "pulse",
+                   "bpm": 104, "note_octave": 4.0, "part_gain": 0.44,
+                   "pad_gain": 0.75, "shimmer": 0.05,
+                   "title": "новостной ход, ровный ритм"},
+    "drone_deep": {"root": 43.7, "chord": (1.0, 1.5, 2.0, 3.0), "lfo": 0.035,
+                   "noise": 0.09, "pulse": 0.0, "instrument": "drone",
+                   "shimmer": 0.055,
+                   "title": "глубокий космос, почти без движения"},
 }
+
+
+# --- инструменты подложки -----------------------------------------------------
+#
+# Дрон был один на все настроения, и заказчик попросил разного: «динамичная
+# скрипка», «тихое пианино», «что-нибудь под грустный ролик». Дрон такого не
+# сыграет — у него нет ни атаки, ни нот. Поэтому у настроения появился
+# инструмент, а нота стала отдельной функцией.
+
+def _note(freq: float, dur: float, *, attack: float, decay: float,
+          harmonics: tuple[tuple[int, float], ...], vibrato: float = 0.0,
+          rng=None) -> np.ndarray:
+    """Одна нота: гармоники, атака и спад. Из них собираются партии."""
+    n = max(1, int(dur * SR))
+    t = np.arange(n) / SR
+    bend = 1.0
+    if vibrato:
+        bend = 1.0 + vibrato * np.sin(2 * np.pi * 5.2 * t)
+    sig = np.zeros(n)
+    for mult, amp in harmonics:
+        sig += amp * np.sin(2 * np.pi * freq * mult * bend * t)
+    if rng is not None:
+        # Немного шума на атаке — смычок и молоточек слышны именно по нему.
+        sig += _highpass(rng.normal(0, 1, n), 3000) * _decay(n, 60.0) * 0.05
+    rise = np.minimum(1.0, np.arange(n) / max(1, int(attack * SR)))
+    return sig * rise * _decay(n, decay)
+
+
+def _sequence(spec: dict, t: np.ndarray, rng) -> np.ndarray:
+    """Партия инструмента поверх аккорда настроения.
+
+    Ноты идут по кругу аккорда с шагом от темпа. Порядок детерминированный:
+    рендер обязан повторяться до бита, а «случайная» мелодия при пересборке
+    дала бы другой ролик.
+    """
+    n = len(t)
+    out = np.zeros(n)
+    instrument = str(spec.get("instrument", "drone"))
+    if instrument == "drone":
+        return out
+
+    bpm = float(spec.get("bpm", 60.0))
+    step = 60.0 / max(bpm, 1.0)
+    ratios = list(spec["chord"])
+    octave = float(spec.get("note_octave", 8.0))
+
+    if instrument == "keys":
+        shape = dict(attack=0.004, decay=2.6, harmonics=((1, 1.0), (2, 0.45),
+                                                         (3, 0.18), (5, 0.06)))
+        hold = step * 2.2
+    elif instrument == "strings":
+        shape = dict(attack=0.35, decay=0.9, vibrato=0.006,
+                     harmonics=((1, 1.0), (2, 0.6), (3, 0.35), (4, 0.2), (5, 0.1)))
+        hold = step * 3.0
+    else:                                   # pulse — короткий, ритмичный
+        shape = dict(attack=0.006, decay=7.0, harmonics=((1, 1.0), (2, 0.3)))
+        hold = step * 0.8
+
+    index = 0
+    position = 0.0
+    while position < t[-1]:
+        ratio = ratios[index % len(ratios)]
+        # Каждый второй круг — октавой выше: партия дышит, а не топчется.
+        lift = 2.0 if (index // len(ratios)) % 2 else 1.0
+        freq = spec["root"] * ratio * octave * lift
+        note = _note(freq, hold, rng=rng, **shape)
+        start = int(position * SR)
+        end = min(n, start + len(note))
+        if end > start:
+            out[start:end] += note[:end - start] / (index % len(ratios) + 1.4)
+        position += step
+        index += 1
+    return out
+
+
+def music_recipe(mood: str) -> str:
+    """Отпечаток рецепта подложки: настроение плюс исходник синтеза.
+
+    Библиотека едет в git, а рецепт живёт в коде, и разъехаться они могут
+    молча — правка синтеза не перезаписывает готовые файлы. С SFX это уже
+    случилось: семь файлов разошлись с кодом до того, как расхождение
+    заметили. Пересинтезировать минутный бед ради проверки дорого (13 секунд
+    на штуку), а сравнить отпечаток — нет. Отпечаток пишется в манифест при
+    наполнении, и тест сверяет его с сегодняшним кодом.
+    """
+    spec = MUSIC_MOODS.get(mood) or {}
+    parts = [repr(sorted(spec.items()))]
+    for func in (synth_music, _sequence, _note):
+        try:
+            parts.append(inspect.getsource(func))
+        except OSError:                     # исходника нет (замороженный пакет)
+            parts.append(func.__name__)
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
 
 
 def synth_music(mood: str, *, duration_sec: float = 75.0, seed: int = 0) -> np.ndarray:
@@ -460,7 +630,10 @@ def synth_music(mood: str, *, duration_sec: float = 75.0, seed: int = 0) -> np.n
         pulse = np.exp(-8 * phase) * np.sin(2 * np.pi * spec["root"] * t) * 0.35
 
     chord_n = max(len(spec["chord"]), 1)
-    signal = pad / chord_n + upper / chord_n * 0.85 + air + pulse + shimmer
+    # Партия инструмента: у дрона её нет, у остальных настроений — есть.
+    part = _sequence(spec, t, rng) * float(spec.get("part_gain", 0.5))
+    signal = (pad / chord_n * float(spec.get("pad_gain", 1.0))
+              + upper / chord_n * 0.85 + air + pulse + shimmer + part)
     # Срез поднят с 6 кГц: он и срезал весь воздух, ради которого слой добавлен.
     signal = _lowpass(signal, 16000)
 

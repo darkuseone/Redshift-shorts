@@ -160,7 +160,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # рисуется по прямоугольнику, а drop-shadow — по самим буквам.
     tbh = brandbook["text_behind_head"]
     parts.append(
-        f".behind-head{{position:absolute;left:0;right:0;top:{int(height * 0.34)}px;"
+        f".behind-head{{position:absolute;left:0;right:0;"
+        f"top:{int(height * float(tbh.get('center_y_pct', 0.27)))}px;"
         f"z-index:{Z_BEHIND_HEAD};text-align:center;"
         "font-family:var(--font-display);text-transform:uppercase;"
         f"font-size:{int(tbh['size_px'][1])}px;line-height:0.94;"

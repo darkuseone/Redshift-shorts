@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from ..lib.logging import get_logger
@@ -32,13 +33,36 @@ ROLE_MODE_PREFERENCE: dict[str, tuple[str, ...]] = {
 }
 
 # Подложка выбирается по категории и наличию поворота (§14.2).
-MUSIC_BY_CATEGORY = {
-    "space": "cosmic_calm",
-    "ai": "tech_tension",
-    "tech": "neutral_drive",
-    "science": "discovery_warm",
-    "medicine": "discovery_warm",
+#
+# Одно настроение на категорию означало один и тот же бед во всех роликах
+# рубрики. Заказчик просил разнообразия — «чтобы подложек этих разных лежало,
+# штук десять», — и библиотека выросла с 5 до 15. Чтобы новые беды не легли
+# мёртвым грузом, у категории теперь семья настроений, а конкретное берётся
+# по хэшу ``video_id``: между роликами разброс есть, пересборка того же
+# ролика даёт тот же бед. Ровно так же выбирается голос в ``pick_voice``.
+MUSIC_BY_CATEGORY: dict[str, tuple[str, ...]] = {
+    "space":    ("cosmic_calm", "drone_deep", "keys_night", "strings_hope"),
+    "ai":       ("tech_tension", "pulse_urgent", "violin_drive"),
+    "tech":     ("neutral_drive", "pulse_news", "keys_curious"),
+    "science":  ("discovery_warm", "strings_hope", "keys_curious"),
+    "medicine": ("discovery_warm", "piano_quiet", "strings_sad"),
 }
+MUSIC_DEFAULT: tuple[str, ...] = ("neutral_drive", "keys_curious", "pulse_news")
+# Поворот в сюжете про ИИ или технологии — повод для напряжения, и здесь
+# категория уступает драматургии.
+MUSIC_ON_TWIST: tuple[str, ...] = ("tech_tension", "pulse_urgent", "violin_drive")
+# Настроения, которые конвейер сам не ставит. Печаль — свойство сюжета, а не
+# рубрики: под случайным роликом про космос печальное пианино прозвучало бы
+# ложью. Такое настроение сценарий назначает руками через ``music_mood``.
+MUSIC_BY_SCRIPT_ONLY: frozenset[str] = frozenset({"piano_sad", "dark_pulse"})
+
+
+def pick_music_mood(category: str, video_id: str, *, twist: bool = False) -> str:
+    """Настроение подложки: семья по категории, штука — по хэшу ролика."""
+    family = MUSIC_ON_TWIST if twist else MUSIC_BY_CATEGORY.get(
+        category or "", MUSIC_DEFAULT)
+    digest = hashlib.sha256((video_id or "").encode("utf-8")).digest()
+    return family[digest[0] % len(family)]
 
 AVATAR_MODES = ("A", "B")   # режимы, в которых аватар присутствует в кадре
 
@@ -208,9 +232,10 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
     hl_lo, hl_hi = limits.get("highlight_per_video", [1, 3])
     scripted_hl = sum(1 for b in blocks if b["overlay"].get("type") == "highlight")
 
-    music_mood = meta.get("music_mood") or MUSIC_BY_CATEGORY.get(meta.get("category", ""), "neutral_drive")
-    if any(b["role"] == "twist" for b in blocks) and meta.get("category") in ("ai", "tech"):
-        music_mood = meta.get("music_mood") or "tech_tension"
+    twist = (any(b["role"] == "twist" for b in blocks)
+             and meta.get("category") in ("ai", "tech"))
+    music_mood = meta.get("music_mood") or pick_music_mood(
+        meta.get("category", ""), meta.get("video_id", ""), twist=twist)
 
     buffer_pct = float(cfg.get("elevenlabs.length_buffer_pct", 22))
     target = float(meta.get("target_duration_sec", total_sec))

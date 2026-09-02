@@ -12,6 +12,10 @@ from src.lib.library_filler import fill_libraries, fill_music, fill_sfx
 from src.lib.manifest import open_library
 from src.lib.render.matting import MatteReport, QUALITY_THRESHOLD, plan_vfx_backgrounds
 from src.lib.sfx_synth import MUSIC_MOODS, SFX_ROLES, synth_music, synth_sfx
+from src.p1_plan.planner import (
+    MUSIC_BY_CATEGORY, MUSIC_BY_SCRIPT_ONLY, MUSIC_DEFAULT, MUSIC_ON_TWIST,
+    pick_music_mood,
+)
 from src.p10_audio.audio_build import _plan_sfx
 
 
@@ -28,10 +32,45 @@ def test_sfx_catalog_matches_spec():
     }
 
 
-def test_music_moods_match_spec():
-    """§14.2 — по одной подложке на каждое из пяти настроений."""
-    assert set(MUSIC_MOODS) == {"cosmic_calm", "tech_tension", "neutral_drive",
-                                "discovery_warm", "dark_pulse"}
+def test_music_moods_keep_the_five_from_the_spec():
+    """§14.2 — пять исходных настроений никуда не деваются.
+
+    На них ссылаются ``used_in`` уже вышедших роликов: убрать настроение
+    значит оборвать историю, по которой P10 выбирает наименее заезженное.
+    """
+    assert {"cosmic_calm", "tech_tension", "neutral_drive",
+            "discovery_warm", "dark_pulse"} <= set(MUSIC_MOODS)
+
+
+def test_every_bed_in_the_library_can_actually_be_chosen():
+    """Бед, который конвейер не выберет, — мегабайт в репозитории впустую.
+
+    Заказчик просил «штук десять» разновидностей подложки. Их легко
+    сгенерировать и так же легко забыть подключить: раньше категория держала
+    одно настроение, и десять новых бедов пролежали бы мёртвым грузом.
+    Проверка держит связь: каждое настроение либо попадает в семью категории,
+    либо честно помечено как выбираемое только сценарием.
+    """
+    reachable = set(MUSIC_BY_SCRIPT_ONLY)
+    for family in MUSIC_BY_CATEGORY.values():
+        reachable |= set(family)
+    reachable |= set(MUSIC_DEFAULT) | set(MUSIC_ON_TWIST)
+    assert set(MUSIC_MOODS) <= reachable, \
+        f"недостижимые подложки: {sorted(set(MUSIC_MOODS) - reachable)}"
+    # И наоборот: семья не должна ссылаться на несуществующий бед — P10 в
+    # таком случае молча возьмёт первый попавшийся.
+    assert reachable <= set(MUSIC_MOODS), \
+        f"семья ссылается на пустоту: {sorted(reachable - set(MUSIC_MOODS))}"
+
+
+def test_the_bed_differs_between_videos_and_repeats_on_rebuild():
+    """Разнообразие между роликами, повторяемость внутри ролика."""
+    ids = [f"redshift_{n:04d}" for n in range(40, 80)]
+    picked = {pick_music_mood("space", vid) for vid in ids}
+    assert len(picked) > 1, "вся рубрика на одном беде — это и был прежний изъян"
+    assert picked <= set(MUSIC_BY_CATEGORY["space"])
+    assert pick_music_mood("space", "redshift_0047") == \
+        pick_music_mood("space", "redshift_0047")
 
 
 @pytest.mark.parametrize("role", ["whoosh_in", "hit_impact", "pop", "subscribe_ping"])
@@ -63,7 +102,7 @@ def test_fill_sfx_reaches_limit_then_freezes(cfg, tmp_path, monkeypatch):
 def test_fill_music_dry_run(cfg, tmp_path, monkeypatch):
     monkeypatch.setattr(cfg, "path", lambda *a, **k: tmp_path)
     result = fill_music(cfg, dry_run=True)
-    assert len(result["added"]) == 5
+    assert len(result["added"]) == len(MUSIC_MOODS) == 15
 
 
 def test_repository_libraries_are_at_limits(cfg):
@@ -71,7 +110,7 @@ def test_repository_libraries_are_at_limits(cfg):
     sfx = open_library(cfg, "sfx")
     music = open_library(cfg, "music")
     assert sfx.count == 20 and sfx.frozen
-    assert music.count == 5 and music.frozen
+    assert music.count == len(MUSIC_MOODS) and music.frozen
     assert {i.role for i in sfx.items} == set(SFX_ROLES)
 
 
