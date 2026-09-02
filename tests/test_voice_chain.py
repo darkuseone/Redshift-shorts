@@ -777,3 +777,47 @@ def test_the_probe_sweeps_formats_and_names_the_best_one(tmp_path, capsys, monke
     assert all("bandwidth_hz" in p for p in report["probes"])
     # Каждый формат пишется отдельным файлом — иначе сравнивать нечего.
     assert len({p["file"] for p in report["probes"]}) == 2
+
+
+class TestVoicePool:
+    """Два клона одного голоса чередуются между роликами.
+
+    Выбор идёт по video_id, а не случайно. Случайный дал бы при пересборке
+    другой голос, а пересборка обязана быть повторимой: новая озвучка стоит
+    денег, сдвигает границы фраз и бракует уже снятые клипы ведущего —
+    липсинк разъезжается, и вся фаза 2 переснимается заново.
+    """
+
+    def test_the_same_video_always_gets_the_same_voice(self):
+        from src.lib.config import load_config
+        from src.lib.providers.tts import pick_voice
+
+        cfg = load_config()
+        chosen = pick_voice(cfg, "redshift_0048")
+        assert chosen and all(pick_voice(cfg, "redshift_0048") == chosen
+                              for _ in range(5))
+
+    def test_different_videos_do_not_all_get_one_voice(self):
+        """Иначе пул бессмыслен: канал звучит одной дорожкой."""
+        from src.lib.config import load_config
+        from src.lib.providers.tts import pick_voice
+
+        cfg = load_config()
+        picked = {pick_voice(cfg, f"redshift_{n:04d}") for n in range(40, 80)}
+        assert len(picked) > 1, "все ролики получили один голос"
+
+    def test_the_pool_holds_only_ids_the_owner_gave(self):
+        from src.lib.config import load_config
+
+        pool = load_config().get("elevenlabs.voice_pool", [])
+        assert pool == ["14NozJq5eoBmDc1FXFDq", "7fU3YUxRrVGjNaZ5dzEH"]
+
+    def test_without_a_pool_the_explicit_voice_still_wins(self):
+        """Пустой пул не должен ломать прежний путь: явный id и env."""
+        from src.lib.config import load_config
+        from src.lib.providers.tts import pick_voice
+
+        cfg = load_config()
+        cfg.set("elevenlabs.voice_pool", [])
+        cfg.set("elevenlabs.voice_id", "explicit-one")
+        assert pick_voice(cfg, "redshift_0048") == "explicit-one"

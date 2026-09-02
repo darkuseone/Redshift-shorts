@@ -397,9 +397,28 @@ def _words_from_alignment(alignment: dict[str, Any]) -> list[WordTiming]:
     return [w for w in words if w.word]
 
 
+def pick_voice(cfg, video_id: str = "") -> str:
+    """Голос ролика: из пула по video_id, иначе явный, иначе из окружения.
+
+    Выбор детерминированный. Случайный дал бы при пересборке другой голос, а
+    пересборка обязана быть повторимой: новая озвучка стоит денег, сдвигает
+    границы фраз и бракует уже снятые клипы ведущего — липсинк разъезжается.
+    Тот же ролик всегда звучит одним голосом, разные ролики чередуются.
+    """
+    pool = [str(v).strip() for v in (cfg.get("elevenlabs.voice_pool", []) or [])
+            if str(v).strip()]
+    if pool and video_id:
+        digest = hashlib.sha256(video_id.encode("utf-8")).digest()
+        return pool[digest[0] % len(pool)]
+    if pool:
+        return pool[0]
+    return str(cfg.get("elevenlabs.voice_id", "")
+               or cfg.secret_for("elevenlabs.voice_id_env") or "")
+
+
 def build_tts_provider(cfg, costs) -> TTSProvider:
     api_key = cfg.secret_for("elevenlabs.api_key_env", purpose="ElevenLabs TTS")
-    voice_id = cfg.get("elevenlabs.voice_id", "") or cfg.secret_for("elevenlabs.voice_id_env") or ""
+    voice_id = pick_voice(cfg, str(getattr(costs, "video_id", "") or ""))
     mode = resolve_mode(cfg, api_key=api_key if (api_key and voice_id) else None, service="elevenlabs")
     if mode is ProviderMode.LIVE:
         return ElevenLabsTTS(cfg, costs, api_key or "", voice_id)
