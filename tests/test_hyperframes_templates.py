@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-104 шаблона каталога — это рендереры с параметрами. Проверяется то, что
+105 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -736,6 +736,54 @@ def test_kinetic_type_swap_exit_and_cues():
         prefix="ПИШИ", options="КОД,HTML", suffix="СЕЙЧАС",
         renderer="kinetic_type_swap", duration=4.0))
     assert "ПИШИ" in comma.nodes[0] and "СЕЙЧАС" in comma.nodes[0]
+
+
+def test_line_by_line_slide_staggers_from_the_left():
+    """Каталог твинит CSS-var и filter; здесь px + призрак со статическим blur."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД|СОБИРАЙ ОРБИТЫ|ШЛИ НА ПРОД",
+        accent_word="ОРБИТЫ", renderer="line_by_line_slide",
+        line_slide=True, direction="left", duration=1.8))
+    node = piece.nodes[0]
+    assert node.count("lbls-line") == 3
+    assert node.count("lbls-ghost") == 3
+    assert "filter:blur(" in node
+    assert "accent" in node
+    body = " ".join(piece.tweens)
+    assert "filter" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    t0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-l0"' in t][:1]
+    t1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-l1"' in t][:1]
+    assert t0 and t1 and t1[0] - t0[0] == pytest.approx(0.08)
+    assert re.search(r"x:-[0-9.]+,y:[0-9.]+", body)
+    assert "power3.out" in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    from src.lib.render.hyperframes.templates import _lbls_lines
+    assert _lbls_lines("А|Б|В", {}) == ["А", "Б", "В"]
+
+
+def test_line_by_line_slide_direction_and_tone():
+    right = render_fullscreen(_fs_ctx(
+        content="КОД|HTML", renderer="line_by_line_slide",
+        line_slide=True, direction="right", duration=1.8))
+    body = " ".join(right.tweens)
+    assert re.search(r"x:[0-9.]+,y:[0-9.]+", body)
+    paper = render_fullscreen(_fs_ctx(
+        content="КОД|HTML", renderer="line_by_line_slide",
+        line_slide=True, tone="paper", duration=1.8))
+    assert "invert" in paper.nodes[0]
+    packed = render_fullscreen(_fs_ctx(
+        content="один два три четыре пять шесть",
+        renderer="line_by_line_slide", line_slide=True, duration=1.8))
+    assert packed.nodes[0].count("lbls-line") == 3
 
 
 def test_number_slam_splits_the_caption():

@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/line-by-line-slide",
+  "name": "line-by-line-slide",
+  "category": "text-fullscreen",
+  "title": "Строки заезжают слева со стаггером — line-by-line-slide",
+  "duration_range": [
+    0.8,
+    2.4
+  ],
+  "params": {
+    "line_slide": true,
+    "direction": "left",
+    "size": "standard",
+    "density": "standard",
+    "tone": "ink"
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "stack"
+  ],
+  "renderer": "line_by_line_slide",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

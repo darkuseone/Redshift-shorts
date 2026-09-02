@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-104 шаблона каталога — это не 104 реализации, а набор рендереров с параметрами.
+105 шаблонов каталога — это не 105 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1625,6 +1625,136 @@ def fs_number_slam(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Line-by-Line Slide: каталог твинит CSS-переменные x/y/blur. 36/18/6 px
+# при 52 px Inter → 0.692/0.346/0.115 em. Стаггер 80 мс, вход 0.34s.
+_LBLS_SIZE = {"compact": 0.76, "standard": 1.0, "display": 1.18}
+_LBLS_GAP_EM = {"fine": 4 / 52, "standard": 10 / 52, "coarse": 20 / 52}
+_LBLS_X_EM = 36 / 52
+_LBLS_Y_EM = 18 / 52
+_LBLS_BLUR_EM = 6 / 52
+_LBLS_ENTER = 0.34
+_LBLS_EXIT = 0.28
+_LBLS_STAGGER = 0.08
+
+
+def _lbls_lines(content: str, params: dict[str, Any]) -> list[str]:
+    """Строки слота: явный список, пайп, перевод строки — иначе пачка как лесенка."""
+    raw = params.get("lines")
+    if isinstance(raw, (list, tuple)) and raw:
+        return [str(part).strip() for part in raw if str(part).strip()]
+    text = str(content or "").strip()
+    if not text:
+        return []
+    if "|" in text:
+        return [part.strip() for part in text.split("|") if part.strip()]
+    if "\n" in text:
+        return [part.strip() for part in text.splitlines() if part.strip()]
+    words = text.split()
+    max_lines = max(1, int(params.get("max_lines") or 3))
+    per = max(1, (len(words) + max_lines - 1) // max_lines)
+    return [" ".join(words[i:i + per]) for i in range(0, len(words), per)][:max_lines]
+
+
+def fs_line_by_line_slide(ctx: "TemplateCtx") -> Piece:
+    """Строки заезжают слева со стаггером и уезжают вправо — line-by-line-slide.
+
+    Каталог твинит ``--hf-line-x/y/blur`` и CSS ``filter``. Движок этого не
+    умеет: ход в пикселях, размытие — призрак со статическим ``filter:blur()``.
+    Inter 52 px / изумруд → Oswald, ``ink`` на ``bg_pure``, одно слово accent.
+    ``tone=paper`` переворачивает кадр. На ``.clip`` прозрачность не трогаем.
+    """
+    content, accent, invert = _content_of(ctx)
+    lines = _lbls_lines(content, ctx.params)
+    if not lines:
+        return Piece()
+    tone = str(ctx.params.get("tone") or "ink").lower()
+    if tone == "paper":
+        invert = True
+    direction = str(ctx.params.get("direction") or "left").lower()
+    if direction not in ("left", "right"):
+        direction = "left"
+    density = str(ctx.params.get("density") or "standard").lower()
+    gap_em = _LBLS_GAP_EM.get(density, _LBLS_GAP_EM["standard"])
+    size_key = str(ctx.params.get("size") or "standard").lower()
+    factor = _LBLS_SIZE.get(size_key, 1.0)
+
+    node_id = ctx.target
+    available = float(ctx.params.get("available_px") or 900)
+    longest = max(lines, key=len)
+    ceiling = max(24, int(_fs_ceiling(ctx) * factor))
+    size = fit_size(longest, available, ceiling)
+    gap = max(2, int(round(gap_em * size)))
+    travel_x = round(_LBLS_X_EM * size, 2)
+    travel_y = round(_LBLS_Y_EM * size, 2)
+    blur_px = max(1, int(round(_LBLS_BLUR_EM * size)))
+    enter_x = -travel_x if direction == "left" else travel_x
+    exit_x = travel_x if direction == "left" else -travel_x
+
+    stagger = float(ctx.params.get("stagger_ms", _LBLS_STAGGER * 1000)) / 1000.0
+    at = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    n = len(lines)
+    last_enter_end = at + _LBLS_ENTER + stagger * max(0, n - 1)
+    exit_dur = _LBLS_EXIT
+    exit_at = end - exit_dur
+    do_exit = last_enter_end + 0.05 <= exit_at
+    if not do_exit and last_enter_end + 0.16 < end:
+        exit_at = last_enter_end + 0.05
+        exit_dur = end - exit_at
+        do_exit = True
+
+    cls = "clip fullscreen-text fs-lbls" + (" invert" if invert else "")
+    rows: list[str] = []
+    tweens: list[str] = []
+    for i, line in enumerate(lines):
+        lid = f"{node_id}-l{i}"
+        marked = _mark_accent(line, accent)
+        rows.append(
+            f'<span id="{lid}" class="lbls-line">'
+            f'<span id="{lid}-s" class="lbls-sharp">{marked}</span>'
+            f'<span id="{lid}-g" class="lbls-ghost" style="filter:blur({blur_px}px)">'
+            f'{marked}</span></span>'
+        )
+        line_at = at + stagger * i
+        tweens.append(
+            f'tl.fromTo("#{lid}",{{x:{_num(enter_x)},y:{_num(travel_y)}}},'
+            f'{{x:0,y:0,duration:{_num(_LBLS_ENTER)},ease:"power3.out"}},'
+            f'{_num(line_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{lid}-s",{{opacity:0}},{{opacity:1,'
+            f'duration:{_num(_LBLS_ENTER)},ease:"power3.out"}},{_num(line_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{lid}-g",{{opacity:0.85}},{{opacity:0,'
+            f'duration:{_num(_LBLS_ENTER)},ease:"power3.out"}},{_num(line_at)});'
+        )
+        if do_exit:
+            tweens.append(
+                f'tl.fromTo("#{lid}",{{x:0,y:0}},{{x:{_num(exit_x)},'
+                f'duration:{_num(exit_dur)},ease:"power3.in",'
+                f'immediateRender:false}},{_num(exit_at)});'
+            )
+            tweens.append(
+                f'tl.fromTo("#{lid}-s",{{opacity:1}},{{opacity:0,'
+                f'duration:{_num(exit_dur)},ease:"power3.in",'
+                f'immediateRender:false}},{_num(exit_at)});'
+            )
+            tweens.append(
+                f'tl.fromTo("#{lid}-g",{{opacity:0}},{{opacity:0.8,'
+                f'duration:{_num(exit_dur)},ease:"power3.in",'
+                f'immediateRender:false}},{_num(exit_at)});'
+            )
+        tweens.append(f'tl.set("#{lid}-s",{{opacity:0}},{_num(end)});')
+        tweens.append(f'tl.set("#{lid}-g",{{opacity:0}},{_num(end)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<div id="{node_id}-inner" class="lbls-stack" '
+               f'style="font-size:{size}px;gap:{gap}px">{"".join(rows)}</div></div>'],
+        tweens=tweens)
+
+
 def fs_stack_lines(ctx: "TemplateCtx") -> Piece:
     """Три строки лесенкой: слова пакуются в max_lines и входят rise."""
     content, accent, invert = _content_of(ctx)
@@ -1972,6 +2102,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "blur_out_up": fs_blur_out_up,
     "bottom_up_letters": fs_bottom_up_letters,
     "kinetic_type_swap": fs_kinetic_type_swap,
+    "line_by_line_slide": fs_line_by_line_slide,
     "number_slam": fs_number_slam,
 }
 
@@ -1988,6 +2119,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_bottom_up_letters(ctx)
     if params.get("kinetic_swap"):
         return fs_kinetic_type_swap(ctx)
+    if params.get("line_slide"):
+        return fs_line_by_line_slide(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -2183,6 +2316,14 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .fs-lines{display:flex;flex-direction:column;"
         "align-items:flex-start;gap:0.12em;text-align:left}"
         ".fullscreen-text .fs-line{display:block;will-change:transform}"
+        ".fullscreen-text .lbls-stack{display:flex;flex-direction:column;"
+        "align-items:flex-start;overflow:hidden;letter-spacing:-0.04em;"
+        "line-height:1;text-align:left;max-width:100%}"
+        ".fullscreen-text .lbls-line{position:relative;display:block;"
+        "white-space:nowrap;will-change:transform}"
+        ".fullscreen-text .lbls-sharp{position:relative;display:block}"
+        ".fullscreen-text .lbls-ghost{position:absolute;left:0;top:0;"
+        "white-space:nowrap;pointer-events:none}"
         ".fullscreen-text.fs-vs{}"
         ".fullscreen-text .fs-vs-row{display:flex;align-items:center;"
         "justify-content:center;gap:28px}"

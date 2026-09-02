@@ -479,6 +479,22 @@ def test_kinetic_type_swap_fullscreen_masks_the_slot(plan, assets, brandbook):
     assert "back.out(1.7)" in out
 
 
+def test_line_by_line_slide_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД|СОБИРАЙ ОРБИТЫ|ШЛИ НА ПРОД"
+    plan["shots"][1]["accent_word"] = "ОРБИТЫ"
+    plan["shots"][1]["params"] = {
+        "line_slide": True, "direction": "left", "size": "standard",
+        "density": "standard", "tone": "ink",
+    }
+    plan["shots"][1]["renderer"] = "line_by_line_slide"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lbls-ghost" in out
+    assert "lbls-stack" in out
+    assert "filter:blur(" in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+
+
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     plan["overlays"][0]["renderer"] = "chat_thread"
     plan["overlays"][0]["params"] = {
