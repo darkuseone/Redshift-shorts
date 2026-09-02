@@ -1,0 +1,11 @@
+{
+  "name": "redshift",
+  "private": true,
+  "description": "Сборка YouTube Shorts. HyperFrames — движок монтажа в P12 и в GitHub Actions.",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "hyperframes": "0.8.26"
+  }
+}

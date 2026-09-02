@@ -1,8 +1,8 @@
 """Запуск CLI HyperFrames.
 
-Бинарь ищется в PATH, затем в node_modules проекта, затем через ``npx``. В
-GitHub Actions ставится глобально одной строкой, локально удобнее npx — обе
-дороги ведут к одному исполняемому файлу.
+Бинарь ищется так: ``HYPERFRAMES_BIN``, затем ``node_modules/.bin`` проекта,
+затем PATH, затем ``npx`` с той же пинованной версией. GitHub Actions ставит
+пакет через ``npm ci`` из lockfile — локально и в CI это один и тот же CLI.
 
 Перед рендером обязательно гоняется ``lint``: у композиции есть ошибки, которые
 иначе всплывают не сообщением, а сорокапятисекундным ожиданием таймлайна и
@@ -27,21 +27,36 @@ _log = get_logger("hyperframes.cli")
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
+# Держать в согласии с package.json и HYPERFRAMES_VERSION в GitHub Actions.
+PINNED_VERSION = "0.8.26"
+
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
+def _local_cli() -> Path | None:
+    candidate = _REPO_ROOT / "node_modules" / ".bin" / "hyperframes"
+    if candidate.exists():
+        return candidate
+    return None
+
 
 @lru_cache(maxsize=1)
 def cli_command() -> list[str]:
     env = os.environ.get("HYPERFRAMES_BIN")
     if env and Path(env).exists():
         return [env]
+    local = _local_cli()
+    if local is not None:
+        return [str(local)]
     found = shutil.which("hyperframes")
     if found:
         return [found]
     npx = shutil.which("npx")
     if npx:
-        return [npx, "--yes", "hyperframes@latest"]
+        return [npx, "--yes", f"hyperframes@{PINNED_VERSION}"]
     raise RenderError(
         "не найден CLI hyperframes",
-        hint="npm install -g hyperframes  либо задайте HYPERFRAMES_BIN")
+        hint="npm ci  либо npm install  либо задайте HYPERFRAMES_BIN")
 
 
 def _run(args: list[str], *, cwd: Path, timeout: int) -> subprocess.CompletedProcess:
