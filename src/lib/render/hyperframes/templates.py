@@ -20,6 +20,7 @@ from __future__ import annotations
 import html
 import json
 import math
+import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -846,6 +847,33 @@ ICON_STEP_DEG = 46                 # шаг между соседями по д�
 SAFE_X = (90, 830)
 
 
+@lru_cache(maxsize=256)
+def _brand_mark(path: str) -> str:
+    """Знак бренда — разметкой внутрь страницы, а не картинкой по ссылке.
+
+    Все 108 знаков библиотеки идут без атрибута ``fill``: по правилам SVG это
+    значит чёрный. Через ``<img>`` страница до них не дотягивается — картинка
+    рисуется отдельным документом, и ``color`` родителя в неё не попадает. На
+    тёмной сцене выходил чёрный знак на почти чёрном фоне, то есть ничего.
+
+    Библиотека заводилась ровно под обратное: «вариант mono — одноцветный
+    вектор, который красится через currentColor». Работает это только если
+    разметка знака лежит в той же странице.
+    """
+    file = Path(path)
+    if file.suffix.lower() != ".svg":
+        return f'<img src="{_esc(str(file))}" alt="">'
+    try:
+        markup = file.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    # Подпись знака в кадре не нужна и мешает: браузер показывает её подсказкой.
+    markup = re.sub(r"<title>.*?</title>", "", markup, flags=re.S)
+    markup = re.sub(r'\s(?:width|height|fill)="[^"]*"', "", markup, count=3)
+    return re.sub(r"<svg\b", '<svg fill="currentColor" width="100%" height="100%"',
+                  markup, count=1)
+
+
 def hero_icons(ctx: "TemplateCtx") -> Piece:
     """Знаки за головой: то, о чём речь, вспыхивает и гаснет.
 
@@ -910,7 +938,7 @@ def hero_icons(ctx: "TemplateCtx") -> Piece:
         angle = max(-left, min(right, angle))
         x = cx + radius * math.sin(angle)
         y = cy - radius * math.cos(angle)
-        body = (f'<img src="{_esc(str(icon["file"]))}" alt="">'
+        body = (_brand_mark(str(icon["file"]))
                 if icon.get("file") else glyph_svg(str(icon.get("glyph") or ""),
                                                    size=size))
         if not body:

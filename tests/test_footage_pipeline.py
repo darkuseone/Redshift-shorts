@@ -845,3 +845,26 @@ class TestScoreBelongsToItsSlot:
 
         assert not _same_intent("", "буровая колонна")
         assert not _same_intent("буровая колонна", "")
+
+
+def test_mock_material_never_reaches_the_shared_storage(tmp_path, monkeypatch):
+    """Мок-прогон не намывает файлов в библиотеку репозитория.
+
+    Запись индекс отклоняет с прошлой находки, а файл оставался: один прогон
+    CI клал в assets/footage восемьдесят синтетических клипов на девятнадцать
+    мегабайт, и `git add -A` уносил их в репозиторий. CI гоняется на каждом
+    коммите — библиотека засорялась быстрее, чем наполнялась настоящим.
+    """
+    import inspect
+
+    from src.p7_broll_search import search
+
+    body = inspect.getsource(search.run_step)
+    # Проверяется само правило, а не результат прогона: поднимать здесь весь
+    # P7 значит тащить провайдеры, ffmpeg и палитру ради одной строки.
+    assert 'if not candidate.meta.get("mock"):' in body, \
+        "мок-кандидат снова кладётся в общее хранилище"
+    put_line = next(line for line in body.splitlines()
+                    if "storage.put(key, local_file)" in line)
+    assert put_line.startswith(" " * 20), \
+        "storage.put вынесен из-под проверки на мок"

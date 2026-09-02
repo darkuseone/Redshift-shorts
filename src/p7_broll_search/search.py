@@ -236,7 +236,13 @@ def run_step(ctx) -> dict[str, Any]:
                     except Exception as exc:  # noqa: BLE001 — грейд не роняет прогон
                         ctx.warn(f"грейд не удался, кадр берётся как есть: {exc}",
                                  id=candidate.id)
-                ctx.storage.put(key, local_file)
+                # Синтетика мок-режима в общую базу не кладётся — ни записью,
+                # ни файлом. Запись индекс отклоняет с прошлой находки, а файл
+                # оставался: мок-прогон намывал в assets/footage десятки клипов,
+                # и `git add -A` уносил их в репозиторий. Девятнадцать мегабайт
+                # за один прогон CI, который гоняется на каждом коммите.
+                if not candidate.meta.get("mock"):
+                    ctx.storage.put(key, local_file)
                 downloads += 1
 
             try:

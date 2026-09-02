@@ -157,3 +157,49 @@ class TestRussianNames:
         """Основа без знака — обещание, которого библиотека не выполнит."""
         missing = [slug for slug in real_library.aliases if not real_library.find(slug)]
         assert not missing, f"основы без знака: {missing}"
+
+
+class TestTheMarkGetsTheStageColour:
+    """Знак обязан краситься страницей, иначе на тёмной сцене его нет.
+
+    Все 108 знаков библиотеки идут без атрибута ``fill`` — по правилам SVG
+    это чёрный. Через ``<img>`` страница до них не дотягивается: картинка
+    рисуется отдельным документом, и ``color`` родителя туда не попадает.
+    Библиотека же заводилась под обратное — «одноцветный вектор, который
+    красится через currentColor».
+    """
+
+    def test_the_mark_is_inlined_not_linked(self):
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        markup = _brand_mark("assets/brand_icons/svg/google.svg")
+        assert markup.startswith("<svg"), "знак ушёл ссылкой, а не разметкой"
+        assert 'fill="currentColor"' in markup
+        assert "<img" not in markup
+
+    def test_the_tooltip_title_is_dropped(self):
+        """<title> внутри SVG браузер показывает подсказкой поверх кадра."""
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        assert "<title>" not in _brand_mark("assets/brand_icons/svg/google.svg")
+
+    def test_a_raster_mark_still_goes_by_link(self):
+        """PNG инлайнить нечем — он остаётся картинкой."""
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        assert _brand_mark("assets/brand_icons/whatever.png").startswith("<img")
+
+    def test_no_icon_in_the_library_carries_its_own_colour(self):
+        """Если знак придёт с собственным fill, currentColor его не перекрасит.
+
+        Проверяется вся библиотека: один такой файл — и в кадре чёрное пятно.
+        """
+        import re
+        from pathlib import Path
+
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        for svg in sorted(Path("assets/brand_icons/svg").glob("*.svg")):
+            markup = _brand_mark(str(svg))
+            painted = re.findall(r'fill="([^"]*)"', markup)
+            assert painted == ["currentColor"], f"{svg.name}: заливка {painted}"
