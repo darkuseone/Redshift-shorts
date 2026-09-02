@@ -37,6 +37,11 @@ Z_CAPTION = 40
 # Соседние фразы стыкуются встык, окно клипа включает оба конца — как шоты.
 TRACK_CAPTION_EVEN = 18
 TRACK_CAPTION_ODD = 19
+# Акцент blend-difference лежит отдельным клипом: difference на родителе
+# инвертирует кровь в циан, а два клипа одной фразы не делят трек.
+TRACK_CAPTION_ACCENT_EVEN = 21
+TRACK_CAPTION_ACCENT_ODD = 22
+Z_CAPTION_ACCENT = Z_CAPTION + 1
 
 FRAMINGS = {"tight": 0.82, "standard": 1.0, "wide": 1.25}
 
@@ -353,18 +358,24 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         f"text-transform:uppercase;letter-spacing:{fill_track}em}}"
         f".caption-blend{{position:absolute;inset:0;z-index:{Z_CAPTION};"
         "pointer-events:none;overflow:visible;"
-        "width:var(--frame-w);height:var(--frame-h)}"
+        "width:var(--frame-w);height:var(--frame-h);"
+        "mix-blend-mode:var(--blend-mode,difference)}"
+        f".caption-blend-accent{{position:absolute;inset:0;z-index:{Z_CAPTION_ACCENT};"
+        "pointer-events:none;overflow:visible;"
+        "width:var(--frame-w);height:var(--frame-h);"
+        "mix-blend-mode:normal;isolation:isolate}"
+        ".caption-blend.mode-exclusion{--blend-mode:exclusion}"
+        ".caption-blend.mode-screen{--blend-mode:screen}"
         ".bd-group{position:absolute;left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
-        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end}"
+        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;"
+        "opacity:0}"
         ".bd-word{display:block;flex:0 0 auto;white-space:nowrap;"
         "font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{fill_track}em;"
-        f"color:{color};line-height:1.15;opacity:0;"
-        "mix-blend-mode:var(--blend-mode,difference)}"
-        ".caption-blend.mode-exclusion{--blend-mode:exclusion}"
-        ".caption-blend.mode-screen{--blend-mode:screen}"
-        ".bd-word.is-accent{mix-blend-mode:normal;isolation:isolate;"
+        f"color:{color};line-height:1.15}}"
+        ".bd-word.is-spacer{visibility:hidden}"
+        ".bd-word.is-accent{"
         f"color:var(--color-accent);{shadow}}}"
     )
 
@@ -881,6 +892,84 @@ def build_gradient_fill(
 _BLEND_MODES = {"difference", "exclusion", "screen"}
 
 
+def _bd_row(
+    phrase: list[dict[str, Any]],
+    *,
+    clip_id: str,
+    size: float,
+    gap_px: float,
+    accent_at: int,
+    kind: str,
+) -> list[str]:
+    """Один ряд слов: в blend-слое акцент — спейсер, в акцент-слое наоборот."""
+    n = len(phrase)
+    nodes: list[str] = []
+    for i, word in enumerate(phrase):
+        if kind == "blend":
+            cls = "bd-word is-spacer" if i == accent_at else "bd-word"
+        else:
+            cls = "bd-word is-accent" if i == accent_at else "bd-word is-spacer"
+        margin = _px(gap_px) if i < n - 1 else "0"
+        nodes.append(
+            f'<div id="{clip_id}-w{i}" class="{cls}" '
+            f'style="font-size:{size}px;line-height:{size}px;'
+            f'margin-right:{margin}px">{_esc(word["display"])}</div>'
+        )
+    return nodes
+
+
+def _bd_clip(
+    clip_id: str,
+    group_id: str,
+    css: str,
+    *,
+    start: float,
+    duration: float,
+    track: int,
+    top: int,
+    origin_x: float,
+    frame_w: float,
+    words: list[str],
+) -> str:
+    return (
+        f'<div id="{clip_id}" class="clip {css}" '
+        f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
+        f'data-track-index="{track}">'
+        f'<div id="{group_id}" class="bd-group" '
+        f'style="top:{top}px;left:{int(origin_x)}px;'
+        f'width:{int(frame_w)}px;gap:0">'
+        f'{"".join(words)}</div></div>'
+    )
+
+
+def _bd_group_motion(
+    group_id: str,
+    *,
+    start: float,
+    end: float,
+    enter_dur: float,
+    rise: float,
+    fade_dur: float,
+    fade_start: float,
+) -> list[str]:
+    tweens = [
+        f'tl.fromTo("#{group_id}",{{opacity:0,y:{_num(rise)}}},'
+        f'{{opacity:1,y:0,duration:{_num(enter_dur)},ease:"expo.out"}},'
+        f'{_num(start)});'
+    ]
+    if fade_dur >= 0.04:
+        fade_at = max(fade_start, start + enter_dur + 0.04)
+        if fade_at + fade_dur > end + 1e-6:
+            fade_dur = end - fade_at
+        if fade_dur >= 0.04:
+            tweens.append(
+                f'tl.to("#{group_id}",{{opacity:0,duration:{_num(fade_dur)},'
+                f'ease:"power1.out"}},{_num(fade_at)});'
+            )
+    tweens.append(f'tl.set("#{group_id}",{{opacity:0}},{_num(end)});')
+    return tweens
+
+
 def blend_difference_params(brandbook: dict[str, Any]) -> dict[str, Any]:
     spec = (brandbook.get("subtitles") or {}).get("blend_difference") or {}
     fill = gradient_fill_params(brandbook)
@@ -903,10 +992,9 @@ def build_blend_difference(
 ) -> tuple[list[str], list[str], int]:
     """Белые слова инвертируются о фон. Акцент не блендится — остаётся кровью.
 
-    ``mix-blend-mode`` статический: его нет в списке твинов. Корень композиции
-    несёт ``isolation: isolate``, иначе разница считается с фоном страницы.
-    Вход ``y``/``opacity`` на самом слове: тот же transform на группе
-    прячет футаж из backdrop и invert пропадает.
+    ``mix-blend-mode`` стоит на клипе — соседе видео. На слове внутри
+    трансформируемой группы invert не видит футаж. Акцент вынесен во второй
+    клип: difference на общем родителе уводит ``accent`` в циан.
     """
     params = blend_difference_params(brandbook)
     baseline = float(plan.get("subtitle_style", {}).get(
@@ -953,55 +1041,43 @@ def build_blend_difference(
         enter_dur = min(enter, max(0.08, span - 0.04))
 
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
+        accent_track = (
+            TRACK_CAPTION_ACCENT_EVEN if p % 2 == 0 else TRACK_CAPTION_ACCENT_ODD
+        )
         clip_id = f"bd-{p:02d}"
+        accent_id = f"{clip_id}a"
         group_id = f"{clip_id}-g"
+        accent_group = f"{accent_id}-g"
         accent_at = _accent_index(phrase)
         top = int(baseline - size / 2)
-        word_nodes: list[str] = []
-        word_ids: list[str] = []
-        for i, word in enumerate(phrase):
-            wid = f"{clip_id}-w{i}"
-            word_ids.append(wid)
-            marked = " is-accent" if i == accent_at else ""
-            margin = _px(gap_px) if i < n - 1 else "0"
-            word_nodes.append(
-                f'<div id="{wid}" class="bd-word{marked}" '
-                f'style="font-size:{size}px;line-height:{size}px;'
-                f'margin-right:{margin}px">{_esc(word["display"])}</div>'
-            )
-            count += 1
-
-        nodes.append(
-            f'<div id="{clip_id}" class="clip caption-blend{mode_cls}" '
-            f'data-start="{_num(start)}" data-duration="{_num(end - start)}" '
-            f'data-track-index="{track}">'
-            f'<div id="{group_id}" class="bd-group" '
-            f'style="top:{top}px;left:{int(params["origin_x"])}px;'
-            f'width:{int(params["frame_w"])}px;gap:0">'
-            f'{"".join(word_nodes)}</div></div>'
+        dur = end - start
+        layout = dict(
+            start=start, duration=dur, top=top,
+            origin_x=params["origin_x"], frame_w=params["frame_w"],
         )
-        # Ход и прозрачность на слове, не на группе: transform/opacity на
-        # родителе создают stacking context и mix-blend больше не видит футаж.
-        for wid in word_ids:
-            tweens.append(
-                f'tl.fromTo("#{wid}",{{opacity:0,y:{_num(rise)}}},'
-                f'{{opacity:1,y:0,duration:{_num(enter_dur)},ease:"expo.out"}},'
-                f'{_num(start)});'
-            )
-        if fade_dur >= 0.04:
-            fade_at = max(fade_start, start + enter_dur + 0.04)
-            if fade_at + fade_dur > end + 1e-6:
-                fade_dur = end - fade_at
-            if fade_dur >= 0.04:
-                for wid in word_ids:
-                    tweens.append(
-                        f'tl.to("#{wid}",{{opacity:0,duration:{_num(fade_dur)},'
-                        f'ease:"power1.out"}},{_num(fade_at)});'
-                    )
-        for wid in word_ids:
-            tweens.append(
-                f'tl.set("#{wid}",{{opacity:0}},{_num(end)});'
-            )
+        nodes.append(_bd_clip(
+            clip_id, group_id, f"caption-blend{mode_cls}",
+            track=track,
+            words=_bd_row(
+                phrase, clip_id=clip_id, size=size, gap_px=gap_px,
+                accent_at=accent_at, kind="blend"),
+            **layout,
+        ))
+        nodes.append(_bd_clip(
+            accent_id, accent_group, "caption-blend-accent",
+            track=accent_track,
+            words=_bd_row(
+                phrase, clip_id=accent_id, size=size, gap_px=gap_px,
+                accent_at=accent_at, kind="accent"),
+            **layout,
+        ))
+        count += n
+        motion = dict(
+            start=start, end=end, enter_dur=enter_dur, rise=rise,
+            fade_dur=fade_dur, fade_start=fade_start,
+        )
+        tweens.extend(_bd_group_motion(group_id, **motion))
+        tweens.extend(_bd_group_motion(accent_group, **motion))
 
     return nodes, tweens, count
 

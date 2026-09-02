@@ -102,11 +102,15 @@ def test_missing_caption_key_does_not_emit_blend(cfg) -> None:
 def test_css_has_difference_and_accent_escape(cfg) -> None:
     css = caption_css(cfg.brandbook)
     assert "mix-blend-mode:var(--blend-mode,difference)" in css.replace(" ", "")
+    assert ".caption-blend-accent{" in css
     assert ".bd-word.is-accent" in css
+    assert ".bd-word.is-spacer" in css
     assert "mix-blend-mode:normal" in css.replace(" ", "")
     assert "clip-path" not in css
     assert "filter" not in css
-    assert "text-shadow" not in css.split(".bd-word{")[1].split(".bd-word.is-accent")[0]
+    word_rule = css.split(".bd-word{")[1].split(".bd-word.is-spacer")[0]
+    assert "mix-blend-mode" not in word_rule
+    assert "text-shadow" not in word_rule
 
 
 def test_root_isolation_in_full_css(cfg) -> None:
@@ -122,15 +126,18 @@ def test_root_isolation_in_full_css(cfg) -> None:
 def test_build_emits_group_enter_not_clip_opacity(cfg) -> None:
     out = _blend(cfg, _words("пиши", ("html", True), "код"))
     assert 'class="clip caption-blend"' in out
+    assert 'class="clip caption-blend-accent"' in out
     assert 'id="bd-00-g"' in out
+    assert 'id="bd-00a-g"' in out
     assert 'id="bd-00-w0"' in out
-    assert 'id="bd-00-w1"' in out
+    assert 'id="bd-00a-w1"' in out
     assert 'class="bd-word is-accent"' in out
+    assert 'class="bd-word is-spacer"' in out
     assert ">HTML<" in out
-    assert 'fromTo("#bd-00-w0"' in out
-    assert 'fromTo("#bd-00-g"' not in out
-    assert 'fromTo("#bd-00"' not in out
-    assert 'to("#bd-00"' not in out
+    assert 'fromTo("#bd-00-g"' in out
+    assert 'fromTo("#bd-00a-g"' in out
+    assert 'fromTo("#bd-00",' not in out
+    assert 'fromTo("#bd-00a",' not in out
     tween_blob = "\n".join(
         line for line in out.splitlines() if line.strip().startswith("tl."))
     assert "mix-blend-mode" not in tween_blob
@@ -161,7 +168,7 @@ def test_enter_rise_scales_with_fitted_size(cfg) -> None:
     short = _blend(cfg, _words("А"))
     wide = _blend(cfg, _words("ПРОФЕССИОНАЛЬНОЕ", "ВИДЕООБРАБОТКА", "КОМПИЛЯЦИЯ"))
     def rise(html: str) -> float:
-        match = re.search(r'fromTo\("#bd-00-w0",\{opacity:0,y:([\d.]+)\}', html)
+        match = re.search(r'fromTo\("#bd-00-g",\{opacity:0,y:([\d.]+)\}', html)
         assert match, html
         return float(match.group(1))
     assert rise(short) > rise(wide)
@@ -176,7 +183,9 @@ def test_unique_clip_ids_across_phrases(cfg) -> None:
     ]
     out = _blend(cfg, words)
     assert 'id="bd-00"' in out
+    assert 'id="bd-00a"' in out
     assert 'id="bd-01"' in out
+    assert 'id="bd-01a"' in out
     assert 'id="bd-00-g"' in out
     assert 'id="bd-01-g"' in out
     ids = re.findall(r'\sid="([^"]+)"', out)

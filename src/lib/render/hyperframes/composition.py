@@ -27,6 +27,7 @@ import html
 from typing import Any
 
 from .captions import (
+    TRACK_CAPTION_ACCENT_EVEN, TRACK_CAPTION_ACCENT_ODD,
     TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD,
     build_blend_difference, build_camera_follow, build_clip_wipe,
     build_gradient_fill, resolve_caption,
@@ -52,6 +53,7 @@ TRACK_HERO_ODD = 14
 # там герой. 18/19 не пересекаются со звуком (20).
 assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
 TRACK_AUDIO = 20
+assert TRACK_CAPTION_ACCENT_EVEN == 21 and TRACK_CAPTION_ACCENT_ODD == 22
 
 COMPOSITION_ID = "redshift"
 
