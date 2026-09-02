@@ -602,13 +602,21 @@ class CompositionBuilder:
             hz = float(self.brandbook["cta"].get("button_pulse_hz", 1.6))
             period = 1.0 / hz
             duration = float(ovl["end"]) - start
-            repeats = max(0, int(duration / period) - 1)
+            # Пульс начинается ровно там, где кончается появление. Раньше он
+            # заходил на него сотней миллисекунд, и два твина сидели на scale
+            # одного элемента разом: чем это кончится, решает порядок
+            # перезаписи GSAP, а не разметка. Своё же правило — «два твина на
+            # одном свойстве одного элемента пересекаться не имеют права» —
+            # lint и ловил все прогоны подряд.
+            appear = 0.42
+            pulse_start = start + appear
+            repeats = max(0, int((duration - appear) / period) - 1)
             self.tweens.append(
                 f'tl.fromTo("#{node_id}-pill",{{scale:0.6}},'
-                f'{{scale:1,duration:0.42,ease:"power3.out"}},{_num(start)});')
+                f'{{scale:1,duration:{appear},ease:"power3.out"}},{_num(start)});')
             self.tweens.append(
                 f'tl.to("#{node_id}-pill",{{scale:1.035,duration:{period / 2:.3f},'
-                f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(start + 0.32)});')
+                f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(pulse_start)});')
             return
         if kind == "source_card":
             params = ovl.get("params") or {}
