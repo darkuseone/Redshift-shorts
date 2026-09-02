@@ -64,12 +64,13 @@ class TestTheSynthesiserIsGone:
         assert result["curated"] is True
         assert "add-music" in result["note"]
 
-    def test_the_sfx_synthesiser_is_untouched(self):
-        """Удалена музыка, а не звук: двадцать SFX остаются синтезированными."""
-        from src.lib.sfx_synth import SFX_ROLES, synth_sfx
+    def test_filling_sfx_also_adds_nothing(self, cfg):
+        """Короткие звуки тоже курируемые: fill не синтезирует их обратно."""
+        from src.lib.library_filler import fill_sfx
 
-        assert len(SFX_ROLES) == 20
-        assert len(synth_sfx("pop")) > 0
+        result = fill_sfx(cfg)
+        assert result["added"] == []
+        assert result["curated"] is True
 
 
 class TestIntakeMeasuresBeforeItAccepts:

@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from src.lib import audio as A
-from src.lib.library_filler import fill_libraries, fill_music, fill_sfx
+from src.lib.library_filler import fill_sfx
 from src.lib.manifest import open_library
 from src.lib.render.matting import MatteReport, QUALITY_THRESHOLD, plan_vfx_backgrounds
 from src.lib.sfx_synth import SFX_ROLES, synth_sfx
@@ -40,28 +40,30 @@ def test_sfx_is_deterministic():
     assert np.array_equal(synth_sfx("pop"), synth_sfx("pop"))
 
 
-def test_fill_sfx_reaches_limit_then_freezes(cfg, tmp_path, monkeypatch):
-    monkeypatch.setattr(cfg, "path", lambda *a, **k: tmp_path)
+def test_fill_sfx_adds_nothing(cfg):
+    """`fill-libraries` не имеет права воссоздать отвергнутые короткие звуки."""
     result = fill_sfx(cfg, dry_run=True)
-    assert len(result["added"]) == 20
+    assert result["added"] == []
+    assert result["curated"] is True
     assert result["max_items"] == 20
 
 
-def test_repository_libraries_are_at_limits(cfg):
-    """Библиотеки в репозитории заполнены и заморожены (§14)."""
+def test_repository_sfx_and_music_are_curated(cfg):
+    """SFX и музыка курируемые: пустая библиотека законна, синтетика — нет."""
     sfx = open_library(cfg, "sfx")
     music = open_library(cfg, "music")
-    assert sfx.count == 20 and sfx.frozen
-    # Библиотека музыки курируемая и наполняется руками — пустая она
-    # законна: заказчик отверг синтез и приносит свои записи.
+    assert all(i.source != "synth" for i in sfx.items)
+    assert sfx.count == 0 or all(i.source == "curated" for i in sfx.items)
     assert music.count == 0 or all(i.source == "curated" for i in music.items)
-    assert {i.role for i in sfx.items} == set(SFX_ROLES)
 
 
-def test_frozen_library_refills_nothing(cfg):
-    """После лимита генерация заблокирована — §4.4.4."""
-    result = fill_sfx(cfg, dry_run=True)
+def test_fill_sfx_does_not_write_files(cfg, repo_root):
+    folder = repo_root / "assets" / "sfx"
+    before = {p.name for p in folder.glob("*") if p.is_file()}
+    result = fill_sfx(cfg)
+    after = {p.name for p in folder.glob("*") if p.is_file()}
     assert result["added"] == []
+    assert after == before
 
 
 # --- расстановка SFX (§4.4) ---------------------------------------------------

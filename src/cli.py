@@ -5,7 +5,7 @@
     python -m src.cli run --script ... --from P7          # resume после падения
     python -m src.cli fonts-check
     python -m src.cli libraries --status
-    python -m src.cli fill-libraries --kind sfx
+    python -m src.cli fill-libraries --kind memes
     python -m src.cli maintenance
     python -m src.cli learn --video-id redshift_0042 --choice A
 """
