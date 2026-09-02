@@ -352,16 +352,15 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         ".gf-ink{font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{fill_track}em}}"
         f".caption-blend{{position:absolute;inset:0;z-index:{Z_CAPTION};"
-        "overflow:hidden;pointer-events:none;"
+        "pointer-events:none;overflow:visible;"
         "width:var(--frame-w);height:var(--frame-h)}"
         ".bd-group{position:absolute;left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
-        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;"
-        "opacity:0;will-change:transform}"
+        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end}"
         ".bd-word{display:block;flex:0 0 auto;white-space:nowrap;"
         "font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{fill_track}em;"
-        f"color:{color};line-height:1.15;"
+        f"color:{color};line-height:1.15;opacity:0;"
         "mix-blend-mode:var(--blend-mode,difference)}"
         ".caption-blend.mode-exclusion{--blend-mode:exclusion}"
         ".caption-blend.mode-screen{--blend-mode:screen}"
@@ -906,6 +905,8 @@ def build_blend_difference(
 
     ``mix-blend-mode`` статический: его нет в списке твинов. Корень композиции
     несёт ``isolation: isolate``, иначе разница считается с фоном страницы.
+    Вход ``y``/``opacity`` на самом слове: тот же transform на группе
+    прячет футаж из backdrop и invert пропадает.
     """
     params = blend_difference_params(brandbook)
     baseline = float(plan.get("subtitle_style", {}).get(
@@ -957,8 +958,10 @@ def build_blend_difference(
         accent_at = _accent_index(phrase)
         top = int(baseline - size / 2)
         word_nodes: list[str] = []
+        word_ids: list[str] = []
         for i, word in enumerate(phrase):
             wid = f"{clip_id}-w{i}"
+            word_ids.append(wid)
             marked = " is-accent" if i == accent_at else ""
             margin = _px(gap_px) if i < n - 1 else "0"
             word_nodes.append(
@@ -977,23 +980,28 @@ def build_blend_difference(
             f'width:{int(params["frame_w"])}px;gap:0">'
             f'{"".join(word_nodes)}</div></div>'
         )
-        tweens.append(
-            f'tl.fromTo("#{group_id}",{{opacity:0,y:{_num(rise)}}},'
-            f'{{opacity:1,y:0,duration:{_num(enter_dur)},ease:"expo.out"}},'
-            f'{_num(start)});'
-        )
+        # Ход и прозрачность на слове, не на группе: transform/opacity на
+        # родителе создают stacking context и mix-blend больше не видит футаж.
+        for wid in word_ids:
+            tweens.append(
+                f'tl.fromTo("#{wid}",{{opacity:0,y:{_num(rise)}}},'
+                f'{{opacity:1,y:0,duration:{_num(enter_dur)},ease:"expo.out"}},'
+                f'{_num(start)});'
+            )
         if fade_dur >= 0.04:
             fade_at = max(fade_start, start + enter_dur + 0.04)
             if fade_at + fade_dur > end + 1e-6:
                 fade_dur = end - fade_at
             if fade_dur >= 0.04:
-                tweens.append(
-                    f'tl.to("#{group_id}",{{opacity:0,duration:{_num(fade_dur)},'
-                    f'ease:"power1.out"}},{_num(fade_at)});'
-                )
-        tweens.append(
-            f'tl.set("#{group_id}",{{opacity:0}},{_num(end)});'
-        )
+                for wid in word_ids:
+                    tweens.append(
+                        f'tl.to("#{wid}",{{opacity:0,duration:{_num(fade_dur)},'
+                        f'ease:"power1.out"}},{_num(fade_at)});'
+                    )
+        for wid in word_ids:
+            tweens.append(
+                f'tl.set("#{wid}",{{opacity:0}},{_num(end)});'
+            )
 
     return nodes, tweens, count
 

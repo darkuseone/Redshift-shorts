@@ -127,7 +127,8 @@ def test_build_emits_group_enter_not_clip_opacity(cfg) -> None:
     assert 'id="bd-00-w1"' in out
     assert 'class="bd-word is-accent"' in out
     assert ">HTML<" in out
-    assert 'fromTo("#bd-00-g"' in out
+    assert 'fromTo("#bd-00-w0"' in out
+    assert 'fromTo("#bd-00-g"' not in out
     assert 'fromTo("#bd-00"' not in out
     assert 'to("#bd-00"' not in out
     tween_blob = "\n".join(
@@ -160,7 +161,7 @@ def test_enter_rise_scales_with_fitted_size(cfg) -> None:
     short = _blend(cfg, _words("А"))
     wide = _blend(cfg, _words("ПРОФЕССИОНАЛЬНОЕ", "ВИДЕООБРАБОТКА", "КОМПИЛЯЦИЯ"))
     def rise(html: str) -> float:
-        match = re.search(r'fromTo\("#bd-00-g",\{opacity:0,y:([\d.]+)\}', html)
+        match = re.search(r'fromTo\("#bd-00-w0",\{opacity:0,y:([\d.]+)\}', html)
         assert match, html
         return float(match.group(1))
     assert rise(short) > rise(wide)
