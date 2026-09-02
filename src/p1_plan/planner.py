@@ -32,37 +32,31 @@ ROLE_MODE_PREFERENCE: dict[str, tuple[str, ...]] = {
     "cta":      ("A", "C"),
 }
 
-# Подложка выбирается по категории и наличию поворота (§14.2).
+# Подложка выбирается по тегам, а не по имени файла (§14.2).
 #
-# Одно настроение на категорию означало один и тот же бед во всех роликах
-# рубрики. Заказчик просил разнообразия — «чтобы подложек этих разных лежало,
-# штук десять», — и библиотека выросла с 5 до 15. Чтобы новые беды не легли
-# мёртвым грузом, у категории теперь семья настроений, а конкретное берётся
-# по хэшу ``video_id``: между роликами разброс есть, пересборка того же
-# ролика даёт тот же бед. Ровно так же выбирается голос в ``pick_voice``.
-MUSIC_BY_CATEGORY: dict[str, tuple[str, ...]] = {
-    "space":    ("cosmic_calm", "drone_deep", "keys_night", "strings_hope"),
-    "ai":       ("tech_tension", "pulse_urgent", "violin_drive"),
-    "tech":     ("neutral_drive", "pulse_news", "keys_curious"),
-    "science":  ("discovery_warm", "strings_hope", "keys_curious"),
-    "medicine": ("discovery_warm", "piano_quiet", "strings_sad"),
+# Заказчик прислал живые записи и попросил: «Пометь их тэгами для удобного
+# использования в видео, чтобы монтаж умел брать их самостоятельно». Тег
+# честнее слота: у записи их несколько, и подложка находится по совпадению
+# смыслов. Здесь задаётся, чего мы хотим от подложки в каждой рубрике, а
+# ``pick_bed`` уже ищет, что этому ближе всего из того, что есть в наличии.
+MUSIC_TAGS_BY_CATEGORY: dict[str, tuple[str, ...]] = {
+    "space":    ("space", "ambient", "wide"),
+    "ai":       ("tech", "pulse", "driving"),
+    "tech":     ("tech", "driving"),
+    "science":  ("space", "strings", "bright"),
+    "medicine": ("calm", "piano", "sparse"),
 }
-MUSIC_DEFAULT: tuple[str, ...] = ("neutral_drive", "keys_curious", "pulse_news")
-# Поворот в сюжете про ИИ или технологии — повод для напряжения, и здесь
-# категория уступает драматургии.
-MUSIC_ON_TWIST: tuple[str, ...] = ("tech_tension", "pulse_urgent", "violin_drive")
-# Настроения, которые конвейер сам не ставит. Печаль — свойство сюжета, а не
-# рубрики: под случайным роликом про космос печальное пианино прозвучало бы
-# ложью. Такое настроение сценарий назначает руками через ``music_mood``.
-MUSIC_BY_SCRIPT_ONLY: frozenset[str] = frozenset({"piano_sad", "dark_pulse"})
+MUSIC_TAGS_DEFAULT: tuple[str, ...] = ("space", "ambient", "calm")
+# Поворот в сюжете просит нажима, и здесь рубрика уступает драматургии.
+MUSIC_TAGS_ON_TWIST: tuple[str, ...] = ("tense", "driving", "strings")
 
 
-def pick_music_mood(category: str, video_id: str, *, twist: bool = False) -> str:
-    """Настроение подложки: семья по категории, штука — по хэшу ролика."""
-    family = MUSIC_ON_TWIST if twist else MUSIC_BY_CATEGORY.get(
-        category or "", MUSIC_DEFAULT)
-    digest = hashlib.sha256((video_id or "").encode("utf-8")).digest()
-    return family[digest[0] % len(family)]
+def music_tags_for(category: str, *, twist: bool = False) -> tuple[str, ...]:
+    """Каких тегов ждём от подложки под эту рубрику."""
+    if twist:
+        return MUSIC_TAGS_ON_TWIST
+    return MUSIC_TAGS_BY_CATEGORY.get(category or "", MUSIC_TAGS_DEFAULT)
+
 
 AVATAR_MODES = ("A", "B")   # режимы, в которых аватар присутствует в кадре
 
@@ -234,8 +228,8 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
 
     twist = (any(b["role"] == "twist" for b in blocks)
              and meta.get("category") in ("ai", "tech"))
-    music_mood = meta.get("music_mood") or pick_music_mood(
-        meta.get("category", ""), meta.get("video_id", ""), twist=twist)
+    music_tags = list(music_tags_for(meta.get("category", ""), twist=twist))
+    music_mood = meta.get("music_mood") or ""
 
     buffer_pct = float(cfg.get("elevenlabs.length_buffer_pct", 22))
     target = float(meta.get("target_duration_sec", total_sec))
@@ -265,6 +259,7 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
             "bg_vfx": int(limits.get("bg_vfx_per_video", 2)) if meta.get("allow_bg_vfx") else 0,
         },
         "music_mood": music_mood,
+        "music_tags": music_tags,
         "sources": script.get("sources", []),
         "cta": script.get("cta", {}),
         "modes_by_block": {b["id"]: b["mode"] for b in blocks},
@@ -295,7 +290,7 @@ def run_step(ctx) -> dict[str, Any]:
         "avatar_share": share,
         "modes": ",".join(f"{b['id']}:{b['mode']}" for b in draft["blocks"]),
         "tts_target_sec": draft["tts_target_sec"],
-        "music": draft["music_mood"],
+        "music": ", ".join(draft["music_tags"]),
     })
     return {"avatar_share": share, "tts_target_sec": draft["tts_target_sec"],
-            "music_mood": draft["music_mood"]}
+            "music_mood": draft["music_mood"], "music_tags": draft["music_tags"]}

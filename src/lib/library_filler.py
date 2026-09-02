@@ -97,9 +97,10 @@ def fill_music(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
         "blocked": [],
         "curated": True,
         "count": status["count"],
-        "missing": status["missing"],
+        "instruments_missing": status["instruments_missing"],
+        "by_tag": status["by_tag"],
         "note": ("подложки кладутся руками: python -m src.cli add-music "
-                 "--file <запись> --mood <настроение>"),
+                 "--file <запись> --id <имя> --tag <тег> [--tag ...]"),
     }
 
 

@@ -2,8 +2,344 @@
   "_comment": "Библиотека music. Наполняется вручную живыми записями инструментов, которые присылает заказчик. Синтезированные подложки удалены 02.09: «это ужас, я хотел хорошие сэмплы живых инструментов».",
   "kind": "music",
   "max_items": 15,
-  "count": 0,
+  "count": 9,
   "frozen": false,
   "updated": "2026-09-02",
-  "items": []
+  "items": [
+    {
+      "id": "music_interstellar_distance",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ambient",
+        "space",
+        "wide",
+        "calm",
+        "sparse",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "межзвёздная даль: почти без движения",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "interstellar_distance.m4a",
+      "mood": "ambient",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -19.0,
+          "peak_dbfs": -4.1,
+          "loop_seam": 0.519,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Interstellar_Distance_Option_2.mp3",
+        "segment_start_sec": 35.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_earth_from_orbit",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ambient",
+        "space",
+        "calm",
+        "wide",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "Земля с орбиты: медленный дрейф",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "earth_from_orbit.m4a",
+      "mood": "ambient",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -18.28,
+          "peak_dbfs": -3.74,
+          "loop_seam": 0.08,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Earth_from_Orbit_Option_2.mp3",
+        "segment_start_sec": 87.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_data_sonification_low",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "ambient",
+        "tech",
+        "dark",
+        "driving",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "данные в звуке: тёмный ход",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "data_sonification_low.m4a",
+      "mood": "ambient",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -19.52,
+          "peak_dbfs": -6.78,
+          "loop_seam": 0.028,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Data_Sonification_Option_1.mp3",
+        "segment_start_sec": 57.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_late_night_research",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "piano",
+        "tech",
+        "calm",
+        "sparse",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "ночная работа: редкие клавиши",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "late_night_research.m4a",
+      "mood": "piano",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -19.71,
+          "peak_dbfs": -6.19,
+          "loop_seam": 0.221,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Late_Night_Research_Option_2.mp3",
+        "segment_start_sec": 96.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_data_sonification_strings",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "strings",
+        "tech",
+        "driving",
+        "tense",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "данные в звуке: струнные с нажимом",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "data_sonification_strings.m4a",
+      "mood": "strings",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -18.93,
+          "peak_dbfs": -6.7,
+          "loop_seam": 0.288,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Data_Sonification_Option_2.mp3",
+        "segment_start_sec": 92.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_gravitational_pull",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "strings",
+        "space",
+        "dark",
+        "driving",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "притяжение: тёмные струнные",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "gravitational_pull.m4a",
+      "mood": "strings",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -18.98,
+          "peak_dbfs": -6.49,
+          "loop_seam": 0.389,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Gravitational_Pull_Option_2.mp3",
+        "segment_start_sec": 57.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_synapse_wonder",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "strings",
+        "tech",
+        "bright",
+        "driving",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "синапс: светлые струнные",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "synapse_wonder.m4a",
+      "mood": "strings",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -18.07,
+          "peak_dbfs": -3.18,
+          "loop_seam": 0.777,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Synapse_Wonder_Option_2.mp3",
+        "segment_start_sec": 61.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_wonder_and_scale",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "strings",
+        "space",
+        "wide",
+        "bright",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "масштаб: широкие струнные",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "wonder_and_scale.m4a",
+      "mood": "strings",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -18.16,
+          "peak_dbfs": -4.71,
+          "loop_seam": 0.73,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Wonder_and_Scale_Option_2.mp3",
+        "segment_start_sec": 95.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_neural_data",
+      "type": "music",
+      "source": "curated",
+      "license": "предоставлено заказчиком",
+      "url_origin": "",
+      "phash": "",
+      "tags": [
+        "pulse",
+        "tech",
+        "bright",
+        "driving",
+        "tense",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "нейроданные: частый пульс",
+      "score": 0.0,
+      "duration_sec": 60.011,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "file": "neural_data.m4a",
+      "mood": "pulse",
+      "extra": {
+        "measured": {
+          "duration_sec": 60.011,
+          "integrated_lufs": -18.3,
+          "peak_dbfs": -4.5,
+          "loop_seam": 0.525,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Neural_Data_Option_2.mp3",
+        "segment_start_sec": 24.0,
+        "accepted_with_warnings": null
+      }
+    }
+  ]
 }

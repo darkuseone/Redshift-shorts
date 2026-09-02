@@ -172,8 +172,17 @@ def run_step(ctx) -> dict[str, Any]:
 
     # --- музыкальная подложка (§14.2, §4.4) -------------------------------
     music_lib = open_library(cfg, "music")
-    mood = plan.get("music_mood", "neutral_drive")
-    record = music_lib.by_mood(mood) or (music_lib.items[0] if music_lib.items else None)
+    # Подложка ищется по тегам: у живой записи их несколько, и совпадение
+    # смыслов честнее, чем единственная ячейка «настроение». Имя настроения
+    # уважается, если сценарий назвал его прямо, — это ручное решение автора.
+    mood = plan.get("music_mood") or ""
+    tags = plan.get("music_tags") or []
+    record = music_lib.by_mood(mood) if mood else None
+    if record is None and tags:
+        from ..lib.music_library import pick_bed
+        record = pick_bed(cfg, want=tags, video_id=plan["video_id"])
+    if record is None:
+        record = music_lib.items[0] if music_lib.items else None
     music_lufs_lo, music_lufs_hi = cfg.get("audio.music_lufs", [-34, -30])
     music_target = (float(music_lufs_lo) + float(music_lufs_hi)) / 2
     ducking_db = float(cfg.get("audio.ducking_db", -7))
@@ -194,6 +203,8 @@ def run_step(ctx) -> dict[str, Any]:
         music_lib.save()
         music_info: dict[str, Any] = {"asset_id": record.id, "mood": record.mood,
                                       "file": record.file,
+                                      "tags": list(record.tags),
+                                      "wanted_tags": list(tags),
                                       "target_lufs": music_target,
                                       "ducking_db": ducking_db}
     else:

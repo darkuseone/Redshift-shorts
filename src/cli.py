@@ -300,10 +300,11 @@ def cmd_fill_libraries(args) -> int:
 def cmd_add_music(args) -> int:
     """Принять живую запись подложки в библиотеку.
 
-    Подложки курируемые: их приносит заказчик, а конвейер меряет и заводит.
-    Синтез удалён — пятнадцать сгенерированных бедов были отвергнуты.
+    Подложки курируемые: их приносит заказчик, а конвейер режет интересный
+    отрезок, меряет и заводит с тегами. Синтез удалён — пятнадцать
+    сгенерированных бедов были отвергнуты.
     """
-    from .lib.music_library import MOOD_TITLES, add_bed, inspect_bed, library_status
+    from .lib.music_library import TAGS, add_bed, find_segment, inspect_bed, library_status
 
     cfg = _load_cfg(args)
     setup_logging(level=cfg.get("logging.level", "INFO"), json_output=not args.pretty_logs)
@@ -312,16 +313,21 @@ def cmd_add_music(args) -> int:
         print(json.dumps(library_status(cfg), ensure_ascii=False, indent=2))
         return 0
     if args.inspect:
-        print(json.dumps(inspect_bed(Path(args.inspect)), ensure_ascii=False, indent=2))
+        path = Path(args.inspect)
+        report = inspect_bed(path)
+        report["suggested_start_sec"] = find_segment(path, length_sec=args.length)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
         return 0
-    if not args.file or not args.mood:
+    if not args.file or not args.id or not args.tag:
         print(json.dumps({"code": "MUSIC_ARGS",
-                          "message": "нужны --file и --mood (или --status/--inspect)",
-                          "moods": MOOD_TITLES}, ensure_ascii=False, indent=2))
+                          "message": "нужны --file, --id и хотя бы один --tag "
+                                     "(или --status/--inspect)",
+                          "tags": TAGS}, ensure_ascii=False, indent=2))
         return 2
 
-    result = add_bed(cfg, source=Path(args.file), mood=args.mood,
-                     title=args.title or "", force=args.force)
+    result = add_bed(cfg, source=Path(args.file), bed_id=args.id, tags=args.tag,
+                     title=args.title or "", start_sec=args.start,
+                     length_sec=args.length, force=args.force)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
@@ -414,13 +420,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     music = sub.add_parser("add-music", help="принять живую запись подложки в библиотеку")
     music.add_argument("--file", default=None, help="путь к записи (wav/mp3/m4a/flac)")
-    music.add_argument("--mood", default=None, help="настроение из словаря MOODS")
+    music.add_argument("--id", default=None, help="имя подложки в библиотеке")
+    music.add_argument("--tag", action="append", default=None,
+                       help="тег из словаря; можно несколько раз")
     music.add_argument("--title", default=None, help="описание своими словами")
+    music.add_argument("--start", type=float, default=None,
+                       help="начало отрезка, сек; не задан — ищется сам")
+    music.add_argument("--length", type=float, default=60.0, help="длина отрезка, сек")
     music.add_argument("--force", action="store_true",
                        help="принять вопреки замечаниям приёма")
     music.add_argument("--inspect", default=None, help="только промерить файл")
     music.add_argument("--status", action="store_true",
-                       help="что в библиотеке есть и чего не хватает")
+                       help="что в библиотеке есть и чем покрыты теги")
     music.set_defaults(func=cmd_add_music)
 
     mnt = sub.add_parser("maintenance", help="LRU-очистка кэша футажей и отчёты")

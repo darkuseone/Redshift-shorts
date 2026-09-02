@@ -1001,6 +1001,7 @@ def run_step(ctx) -> dict[str, Any]:
         "duration_sec": round(duration, 3),
         "target_duration_sec": draft["target_duration_sec"],
         "music_mood": draft["music_mood"],
+        "music_tags": draft.get("music_tags", []),
         "category": draft.get("category"),
         "sources": draft.get("sources", []),
         "cta": draft.get("cta", {}),

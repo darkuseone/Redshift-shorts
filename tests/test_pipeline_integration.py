@@ -11,12 +11,7 @@ from src.lib import audio as A
 from src.lib.library_filler import fill_libraries, fill_music, fill_sfx
 from src.lib.manifest import open_library
 from src.lib.render.matting import MatteReport, QUALITY_THRESHOLD, plan_vfx_backgrounds
-from src.lib.music_library import MOOD_IDS
 from src.lib.sfx_synth import SFX_ROLES, synth_sfx
-from src.p1_plan.planner import (
-    MUSIC_BY_CATEGORY, MUSIC_BY_SCRIPT_ONLY, MUSIC_DEFAULT, MUSIC_ON_TWIST,
-    pick_music_mood,
-)
 from src.p10_audio.audio_build import _plan_sfx
 
 
@@ -31,37 +26,6 @@ def test_sfx_catalog_matches_spec():
         "camera_shutter", "data_beep", "tick", "boom", "error_buzz", "meme_stinger",
         "subscribe_ping",
     }
-
-
-def test_every_bed_in_the_library_can_actually_be_chosen():
-    """Бед, который конвейер не выберет, — мегабайт в репозитории впустую.
-
-    Заказчик просил «штук десять» разновидностей подложки. Их легко
-    сгенерировать и так же легко забыть подключить: раньше категория держала
-    одно настроение, и десять новых бедов пролежали бы мёртвым грузом.
-    Проверка держит связь: каждое настроение либо попадает в семью категории,
-    либо честно помечено как выбираемое только сценарием.
-    """
-    reachable = set(MUSIC_BY_SCRIPT_ONLY)
-    for family in MUSIC_BY_CATEGORY.values():
-        reachable |= set(family)
-    reachable |= set(MUSIC_DEFAULT) | set(MUSIC_ON_TWIST)
-    assert set(MOOD_IDS) <= reachable, \
-        f"недостижимые подложки: {sorted(set(MOOD_IDS) - reachable)}"
-    # И наоборот: семья не должна ссылаться на несуществующий бед — P10 в
-    # таком случае молча возьмёт первый попавшийся.
-    assert reachable <= set(MOOD_IDS), \
-        f"семья ссылается на пустоту: {sorted(reachable - set(MOOD_IDS))}"
-
-
-def test_the_bed_differs_between_videos_and_repeats_on_rebuild():
-    """Разнообразие между роликами, повторяемость внутри ролика."""
-    ids = [f"redshift_{n:04d}" for n in range(40, 80)]
-    picked = {pick_music_mood("space", vid) for vid in ids}
-    assert len(picked) > 1, "вся рубрика на одном беде — это и был прежний изъян"
-    assert picked <= set(MUSIC_BY_CATEGORY["space"])
-    assert pick_music_mood("space", "redshift_0047") == \
-        pick_music_mood("space", "redshift_0047")
 
 
 @pytest.mark.parametrize("role", ["whoosh_in", "hit_impact", "pop", "subscribe_ping"])
