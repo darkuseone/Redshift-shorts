@@ -383,7 +383,9 @@ class NasaStock(StockProvider):
                 license_confirmed=confirmed,
                 attribution=f"NASA / {meta.get('center', '')}",
                 tags=[str(k) for k in (meta.get("keywords") or [])][:10],
-                meta={"nasa_id": nasa_id, "collection_href": item.get("href", "")},
+                meta={"nasa_id": nasa_id, "collection_href": item.get("href", ""),
+                      "title": meta.get("title", ""),
+                      "description": (meta.get("description") or "")[:400]},
             ))
         self.charge("search", 1, "request", 0.0)
         return out

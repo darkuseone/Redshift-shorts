@@ -1,7 +1,1568 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-01",
-  "count": 0,
-  "items": []
+  "updated": "2026-09-02",
+  "count": 44,
+  "items": [
+    {
+      "id": "nasa_PIA12110",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA12110",
+      "phash": "ee801957c67829cf",
+      "tags": [
+        "galaxy",
+        "galaxies",
+        "deep",
+        "field",
+        "space",
+        "universe",
+        "cosmos",
+        "stars",
+        "starfield",
+        "Hubble Space Telescope"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "ee801957c67829cf"
+      ],
+      "width": 1246,
+      "height": 1280,
+      "file": "seed/galaxy/nasa_PIA12110.jpg",
+      "extra": {
+        "attribution": "NASA / STScI (Hubble)",
+        "seed_topic": "galaxy"
+      }
+    },
+    {
+      "id": "nasa_astronomers-set-a-new-galaxy-distance-record_17389972462_o",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-astronomers-set-a-new-galaxy-distance-record_17389972462_o",
+      "phash": "1966669999666699",
+      "tags": [
+        "galaxy",
+        "galaxies",
+        "deep",
+        "field",
+        "space",
+        "universe",
+        "cosmos",
+        "stars",
+        "starfield",
+        "Hubble",
+        "HST",
+        "Hubble Space Telescope"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "1966669999666699"
+      ],
+      "width": 1280,
+      "height": 1280,
+      "file": "seed/galaxy/nasa_astronomers-set-a-new-galaxy-distance-record_17389972462_o.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "galaxy"
+      }
+    },
+    {
+      "id": "nasa_0203046",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-0203046",
+      "phash": "e1e1e03c1e1f0f87",
+      "tags": [
+        "galaxy",
+        "galaxies",
+        "deep",
+        "field",
+        "space",
+        "universe",
+        "cosmos",
+        "stars",
+        "starfield",
+        "Hubble Space Telescope",
+        "HST",
+        "Advanced Camera for Surveys",
+        "ACS",
+        "Galaxy",
+        "Tadpole"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "e1e1e03c1e1f0f87"
+      ],
+      "width": 1756,
+      "height": 1920,
+      "file": "seed/galaxy/nasa_0203046.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "galaxy"
+      }
+    },
+    {
+      "id": "nasa_PIA03515",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA03515",
+      "phash": "16cc698ece1a2d2d",
+      "tags": [
+        "nebula",
+        "star",
+        "forming",
+        "region",
+        "space",
+        "gas",
+        "dust",
+        "Carina Nebula",
+        "Spitzer Space Telescope"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "16cc698ece1a2d2d"
+      ],
+      "width": 1920,
+      "height": 1508,
+      "file": "seed/nebula/nasa_PIA03515.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "nebula"
+      }
+    },
+    {
+      "id": "nasa_PIA14415",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA14415",
+      "phash": "c5e13e3cc4583b9c",
+      "tags": [
+        "nebula",
+        "star",
+        "forming",
+        "region",
+        "space",
+        "gas",
+        "dust",
+        "Chandra X-ray Observatory,Hubble Space Telescope,Spitzer Space T"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "c5e13e3cc4583b9c"
+      ],
+      "width": 1920,
+      "height": 1536,
+      "file": "seed/nebula/nasa_PIA14415.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "nebula"
+      }
+    },
+    {
+      "id": "nasa_PIA13118",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA13118",
+      "phash": "c93c6699e8671cc9",
+      "tags": [
+        "nebula",
+        "star",
+        "forming",
+        "region",
+        "space",
+        "gas",
+        "dust",
+        "Wide-field Infrared Survey Explorer WISE"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "c93c6699e8671cc9"
+      ],
+      "width": 1919,
+      "height": 1577,
+      "file": "seed/nebula/nasa_PIA13118.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "nebula"
+      }
+    },
+    {
+      "id": "nasa_iss061e003881",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss061e003881",
+      "phash": "d12ea6d919a66699",
+      "tags": [
+        "earth",
+        "orbit",
+        "space",
+        "station",
+        "planet",
+        "atmosphere",
+        "horizon",
+        "globe"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "d12ea6d919a66699"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/earth-orbit/nasa_iss061e003881.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "earth-orbit"
+      }
+    },
+    {
+      "id": "nasa_iss002e9767",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss002e9767",
+      "phash": "d939a6e666d189c8",
+      "tags": [
+        "earth",
+        "orbit",
+        "space",
+        "station",
+        "planet",
+        "atmosphere",
+        "horizon",
+        "globe"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "d939a6e666d189c8"
+      ],
+      "width": 1920,
+      "height": 1312,
+      "file": "seed/earth-orbit/nasa_iss002e9767.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "earth-orbit"
+      }
+    },
+    {
+      "id": "nasa_iss037e024908",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss037e024908",
+      "phash": "cc1be626e4987cc9",
+      "tags": [
+        "earth",
+        "orbit",
+        "space",
+        "station",
+        "planet",
+        "atmosphere",
+        "horizon",
+        "globe",
+        "SOLAR ARRAYS  EARTH OBSERVATIONS (FROM SPACE)  EXPEDITION 37",
+        "TWEETED PHOTO",
+        "SOCIAL MEDIA"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "cc1be626e4987cc9"
+      ],
+      "width": 1275,
+      "height": 1920,
+      "file": "seed/earth-orbit/nasa_iss037e024908.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "earth-orbit"
+      }
+    },
+    {
+      "id": "nasa_S74-23458",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-S74-23458",
+      "phash": "15d25a9b6a78251e",
+      "tags": [
+        "sun",
+        "solar",
+        "flare",
+        "corona",
+        "plasma",
+        "star"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "15d25a9b6a78251e"
+      ],
+      "width": 1920,
+      "height": 1511,
+      "file": "seed/sun/nasa_S74-23458.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "sun"
+      }
+    },
+    {
+      "id": "nasa_AFRC2017-0233-007",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-AFRC2017-0233-007",
+      "phash": "1e3361cc67339893",
+      "tags": [
+        "sun",
+        "solar",
+        "flare",
+        "corona",
+        "plasma",
+        "star",
+        "Sun",
+        "Total Solar Eclipse",
+        "Partial Solar Eclipse",
+        "G-III",
+        "Gulfstream III",
+        "Armstrong Flight Research Center",
+        "AFRC"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "1e3361cc67339893"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/sun/nasa_AFRC2017-0233-007.jpg",
+      "extra": {
+        "attribution": "NASA / AFRC",
+        "seed_topic": "sun"
+      }
+    },
+    {
+      "id": "nasa_AFRC2017-0233-008",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-AFRC2017-0233-008",
+      "phash": "183361cc66b39967",
+      "tags": [
+        "sun",
+        "solar",
+        "flare",
+        "corona",
+        "plasma",
+        "star",
+        "Sun",
+        "Total Solar Eclipse",
+        "Partial Solar Eclipse",
+        "G-III",
+        "Gulfstream III",
+        "Armstrong Flight Research Center",
+        "AFRC"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "183361cc66b39967"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/sun/nasa_AFRC2017-0233-008.jpg",
+      "extra": {
+        "attribution": "NASA / AFRC",
+        "seed_topic": "sun"
+      }
+    },
+    {
+      "id": "nasa_as08-14-2506",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-as08-14-2506",
+      "phash": "176a68a5c794da19",
+      "tags": [
+        "moon",
+        "lunar",
+        "surface",
+        "crater",
+        "apollo",
+        "regolith",
+        "APOLLO 8",
+        "APOLLO PROJECT",
+        "LUNAR CRATERS",
+        "LUNAR GEOLOGY",
+        "LUNAR PHOTOGRAPHS",
+        "LUNAR SURFACE",
+        "LUNAR TOPOGRAPHY",
+        "MOON",
+        "ONBOARD ACTIVITIES",
+        "PHOTOGRAPHY"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "176a68a5c794da19"
+      ],
+      "width": 1920,
+      "height": 1920,
+      "file": "seed/moon/nasa_as08-14-2506.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "moon"
+      }
+    },
+    {
+      "id": "nasa_as15-88-12002",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-as15-88-12002",
+      "phash": "04f94bc65f807c87",
+      "tags": [
+        "moon",
+        "lunar",
+        "surface",
+        "crater",
+        "apollo",
+        "regolith",
+        "APOLLO 15 FLIGHT",
+        "APOLLO PROJECT",
+        "CRATERS",
+        "LUNAR EXPLORATION",
+        "LUNAR SURFACE",
+        "LUNAR TOPOGRAPHY",
+        "MOON"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "04f94bc65f807c87"
+      ],
+      "width": 1920,
+      "height": 1912,
+      "file": "seed/moon/nasa_as15-88-12002.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "moon"
+      }
+    },
+    {
+      "id": "nasa_as08-13-2344",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-as08-13-2344",
+      "phash": "153a604f58b3b7a4",
+      "tags": [
+        "moon",
+        "lunar",
+        "surface",
+        "crater",
+        "apollo",
+        "regolith",
+        "APOLLO 8",
+        "APOLLO PROJECT",
+        "CRATERS",
+        "LUNAR EXPLORATION",
+        "LUNAR SURFACE",
+        "MOON",
+        "ONBOARD ACTIVITIES",
+        "PHOTOGRAPHY"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "153a604f58b3b7a4"
+      ],
+      "width": 1851,
+      "height": 1920,
+      "file": "seed/moon/nasa_as08-13-2344.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "moon"
+      }
+    },
+    {
+      "id": "nasa_Artemis II at the pad sunset 01282026_3",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-Artemis II at the pad sunset 01282026_3",
+      "phash": "11da6eb49349c8da",
+      "tags": [
+        "rocket",
+        "launch",
+        "pad",
+        "engine",
+        "flame",
+        "liftoff",
+        "spacecraft",
+        "Space Launch System",
+        "SLS",
+        "Artemis II",
+        "Kennedy Space Center",
+        "Sunset"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "11da6eb49349c8da"
+      ],
+      "width": 1920,
+      "height": 1441,
+      "file": "seed/rocket/nasa_Artemis II at the pad sunset 01282026_3.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "rocket"
+      }
+    },
+    {
+      "id": "nasa_Artemis II at the pad sunsetting jet in background 01292026_6",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-Artemis II at the pad sunsetting jet in background 01292026_6",
+      "phash": "ec19b3366646cc4d",
+      "tags": [
+        "rocket",
+        "launch",
+        "pad",
+        "engine",
+        "flame",
+        "liftoff",
+        "spacecraft",
+        "Kennedy Space Center",
+        "SLS",
+        "Space Launch System",
+        "Artemis II",
+        "Sunset"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "ec19b3366646cc4d"
+      ],
+      "width": 1280,
+      "height": 1920,
+      "file": "seed/rocket/nasa_Artemis II at the pad sunsetting jet in background 01292026_6.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "rocket"
+      }
+    },
+    {
+      "id": "nasa_Artemis II at the pad sunsetting jet in background 01292026_11",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-Artemis II at the pad sunsetting jet in background 01292026_11",
+      "phash": "e31c31c31ce30df6",
+      "tags": [
+        "rocket",
+        "launch",
+        "pad",
+        "engine",
+        "flame",
+        "liftoff",
+        "spacecraft",
+        "Artemis II",
+        "Space Launch System",
+        "SLS",
+        "Kennedy Space Center",
+        "Sunset"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "e31c31c31ce30df6"
+      ],
+      "width": 1920,
+      "height": 1282,
+      "file": "seed/rocket/nasa_Artemis II at the pad sunsetting jet in background 01292026_11.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "rocket"
+      }
+    },
+    {
+      "id": "nasa_GSFC_20171208_Archive_e000122",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-GSFC_20171208_Archive_e000122",
+      "phash": "119749aeacf4dc90",
+      "tags": [
+        "ice",
+        "antarctic",
+        "arctic",
+        "glacier",
+        "sheet",
+        "frozen",
+        "snow",
+        "polar",
+        "NASA’s Aerial Survey of Polar Ice Expands Its Arctic Reach"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "119749aeacf4dc90"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/ice/nasa_GSFC_20171208_Archive_e000122.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "ice"
+      }
+    },
+    {
+      "id": "nasa_GSFC_20171208_Archive_e000121",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-GSFC_20171208_Archive_e000121",
+      "phash": "ef8a90c42d1d5b72",
+      "tags": [
+        "ice",
+        "antarctic",
+        "arctic",
+        "glacier",
+        "sheet",
+        "frozen",
+        "snow",
+        "polar",
+        "NASA’s Aerial Survey of Polar Ice Expands Its Arctic Reach"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "ef8a90c42d1d5b72"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/ice/nasa_GSFC_20171208_Archive_e000121.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "ice"
+      }
+    },
+    {
+      "id": "nasa_iss066e137375",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss066e137375",
+      "phash": "c966c83d29d71dc4",
+      "tags": [
+        "desert",
+        "dunes",
+        "sand",
+        "arid",
+        "dry",
+        "tundra"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "c966c83d29d71dc4"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/desert/nasa_iss066e137375.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "desert"
+      }
+    },
+    {
+      "id": "nasa_iss070e030577",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss070e030577",
+      "phash": "c1b150dd1f4d518f",
+      "tags": [
+        "desert",
+        "dunes",
+        "sand",
+        "arid",
+        "dry",
+        "tundra"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "c1b150dd1f4d518f"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/desert/nasa_iss070e030577.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "desert"
+      }
+    },
+    {
+      "id": "nasa_iss066e137392",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss066e137392",
+      "phash": "178f609529b245f5",
+      "tags": [
+        "desert",
+        "dunes",
+        "sand",
+        "arid",
+        "dry",
+        "tundra"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "178f609529b245f5"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/desert/nasa_iss066e137392.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "desert"
+      }
+    },
+    {
+      "id": "nasa_PIA14052",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA14052",
+      "phash": "30e6dfc07f10262d",
+      "tags": [
+        "laboratory",
+        "lab",
+        "clean",
+        "room",
+        "engineer",
+        "science",
+        "research",
+        "instrument",
+        "Aquarius"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "30e6dfc07f10262d"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/lab/nasa_PIA14052.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "lab"
+      }
+    },
+    {
+      "id": "nasa_PIA14053",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA14053",
+      "phash": "0c979a3c35dbc03a",
+      "tags": [
+        "laboratory",
+        "lab",
+        "clean",
+        "room",
+        "engineer",
+        "science",
+        "research",
+        "instrument",
+        "Aquarius"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "0c979a3c35dbc03a"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/lab/nasa_PIA14053.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "lab"
+      }
+    },
+    {
+      "id": "nasa_PIA13308",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA13308",
+      "phash": "f45c462ab99eb189",
+      "tags": [
+        "laboratory",
+        "lab",
+        "clean",
+        "room",
+        "engineer",
+        "science",
+        "research",
+        "instrument",
+        "Mars Science Laboratory MSL"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "f45c462ab99eb189"
+      ],
+      "width": 1920,
+      "height": 1277,
+      "file": "seed/lab/nasa_PIA13308.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "lab"
+      }
+    },
+    {
+      "id": "nasa_PIA20602",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA20602",
+      "phash": "ee96b1694e1299ac",
+      "tags": [
+        "mars",
+        "surface",
+        "rover",
+        "planet",
+        "desert",
+        "crater",
+        "Mars",
+        "Mars Science Laboratory MSL",
+        "Curiosity self-portrait"
+      ],
+      "vision_summary": "Curiosity Self-Portrait at Okoruso Drill Hole",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "ee96b1694e1299ac"
+      ],
+      "width": 1430,
+      "height": 1919,
+      "file": "seed/mars/nasa_PIA20602.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "mars"
+      }
+    },
+    {
+      "id": "nasa_PIA20603",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA20603",
+      "phash": "ce96b3a96c12139d",
+      "tags": [
+        "mars",
+        "surface",
+        "rover",
+        "planet",
+        "desert",
+        "crater",
+        "Mars",
+        "Mars Science Laboratory MSL"
+      ],
+      "vision_summary": "Curiosity Self-Portrait at Okoruso Drill Hole",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "ce96b3a96c12139d"
+      ],
+      "width": 1496,
+      "height": 1919,
+      "file": "seed/mars/nasa_PIA20603.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "mars"
+      }
+    },
+    {
+      "id": "nasa_PIA19142",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA19142",
+      "phash": "17cad984b631293d",
+      "tags": [
+        "mars",
+        "surface",
+        "rover",
+        "planet",
+        "desert",
+        "crater",
+        "Mars",
+        "Mars Science Laboratory MSL"
+      ],
+      "vision_summary": "Curiosity Self-Portrait at Mojave Site on Mount Sharp",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "17cad984b631293d"
+      ],
+      "width": 1920,
+      "height": 983,
+      "file": "seed/mars/nasa_PIA19142.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "mars"
+      }
+    },
+    {
+      "id": "nasa_GSFC_20171208_Archive_e000495",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-GSFC_20171208_Archive_e000495",
+      "phash": "e9c6a83ec1364db2",
+      "tags": [
+        "telescope",
+        "observatory",
+        "dome",
+        "mirror",
+        "astronomy",
+        "James Webb Space Telescope Mirror Halfway Complete",
+        "nasa",
+        "jwst",
+        "jameswebbspacetelescope",
+        "nasagoddard"
+      ],
+      "vision_summary": "James Webb Space Telescope Mirror Halfway Complete",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "e9c6a83ec1364db2"
+      ],
+      "width": 1277,
+      "height": 1920,
+      "file": "seed/telescope/nasa_GSFC_20171208_Archive_e000495.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "telescope"
+      }
+    },
+    {
+      "id": "nasa_PIA23310",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA23310",
+      "phash": "cc3af3c196c8a393",
+      "tags": [
+        "machine",
+        "machinery",
+        "facility",
+        "tunnel",
+        "test",
+        "engineering",
+        "industrial",
+        "metal",
+        "Mariner"
+      ],
+      "vision_summary": "Mariner 1 in JPL's Spacecraft Assembly Facility",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "cc3af3c196c8a393"
+      ],
+      "width": 1920,
+      "height": 1815,
+      "file": "seed/machine/nasa_PIA23310.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "machine"
+      }
+    },
+    {
+      "id": "nasa_PIA23519",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA23519",
+      "phash": "3aa1a1de4c2f3651",
+      "tags": [
+        "machine",
+        "machinery",
+        "facility",
+        "tunnel",
+        "test",
+        "engineering",
+        "industrial",
+        "metal",
+        "Mars 2020 Rover"
+      ],
+      "vision_summary": "High Bay 1 in JPL's Spacecraft Assembly Facility",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "3aa1a1de4c2f3651"
+      ],
+      "width": 1920,
+      "height": 1277,
+      "file": "seed/machine/nasa_PIA23519.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "machine"
+      }
+    },
+    {
+      "id": "nasa_CXBN2_Students_ELaNa17",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-CXBN2_Students_ELaNa17",
+      "phash": "16ebb392b9e48c44",
+      "tags": [
+        "machine",
+        "machinery",
+        "facility",
+        "tunnel",
+        "test",
+        "engineering",
+        "industrial",
+        "metal",
+        "CSLI",
+        "CubeSat",
+        "Technology",
+        "AES",
+        "ELaNa XVII"
+      ],
+      "vision_summary": "CXBN-2 CubeSat Integration Team in the Morehead State University Spacecraft Integration and Assembly Facility",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "16ebb392b9e48c44"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/machine/nasa_CXBN2_Students_ELaNa17.jpg",
+      "extra": {
+        "attribution": "NASA / HQ",
+        "seed_topic": "machine"
+      }
+    },
+    {
+      "id": "nasa_PIA24803",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA24803",
+      "phash": "df893c3620e39c6c",
+      "tags": [
+        "drill",
+        "drilling",
+        "rig",
+        "core",
+        "sample",
+        "borehole",
+        "geology",
+        "rock",
+        "Mars 2020",
+        "Mars"
+      ],
+      "vision_summary": "Perseverance's Drill After Cleaning Operation",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "df893c3620e39c6c"
+      ],
+      "width": 1280,
+      "height": 956,
+      "file": "seed/drill/nasa_PIA24803.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "drill"
+      }
+    },
+    {
+      "id": "nasa_PIA24806",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA24806",
+      "phash": "123c2de173878ecc",
+      "tags": [
+        "drill",
+        "drilling",
+        "rig",
+        "core",
+        "sample",
+        "borehole",
+        "geology",
+        "rock",
+        "Mars 2020",
+        "Mars"
+      ],
+      "vision_summary": "Perseverance's First Cored Mars Rock in Sample Tube",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "123c2de173878ecc"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/drill/nasa_PIA24806.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "drill"
+      }
+    },
+    {
+      "id": "nasa_PIA12348",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA12348",
+      "phash": "c22d65fabe0d09d2",
+      "tags": [
+        "black",
+        "hole",
+        "accretion",
+        "disk",
+        "singularity",
+        "gravity",
+        "Chandra X-ray Observatory,Hubble Space Telescope,Spitzer Space T",
+        "milky way"
+      ],
+      "vision_summary": "Great Observatories Unique Views of the Milky Way",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "c22d65fabe0d09d2"
+      ],
+      "width": 1920,
+      "height": 959,
+      "file": "seed/black-hole/nasa_PIA12348.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "black-hole"
+      }
+    },
+    {
+      "id": "nasa_KSC-2009-2435",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-KSC-2009-2435",
+      "phash": "3e949fd860588ed8",
+      "tags": [
+        "telescope",
+        "observatory",
+        "dome",
+        "mirror",
+        "astronomy",
+        "SIC&DH, Hubble, MULE, carrier"
+      ],
+      "vision_summary": "KSC-2009-2435",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "3e949fd860588ed8"
+      ],
+      "width": 1285,
+      "height": 1920,
+      "file": "seed/telescope/nasa_KSC-2009-2435.jpg",
+      "extra": {
+        "attribution": "NASA / KSC",
+        "seed_topic": "telescope"
+      }
+    },
+    {
+      "id": "nasa_KSC-2009-2432",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-KSC-2009-2432",
+      "phash": "f8d1b7608f20e6a9",
+      "tags": [
+        "telescope",
+        "observatory",
+        "dome",
+        "mirror",
+        "astronomy",
+        "SIC&DH, Hubble, MULE, carrier"
+      ],
+      "vision_summary": "KSC-2009-2432",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "f8d1b7608f20e6a9"
+      ],
+      "width": 1920,
+      "height": 1285,
+      "file": "seed/telescope/nasa_KSC-2009-2432.jpg",
+      "extra": {
+        "attribution": "NASA / KSC",
+        "seed_topic": "telescope"
+      }
+    },
+    {
+      "id": "nasa_iss020e009048",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss020e009048",
+      "phash": "f1c68699996c853b",
+      "tags": [
+        "volcano",
+        "eruption",
+        "lava",
+        "magma",
+        "crater",
+        "ash"
+      ],
+      "vision_summary": "Earth Observations taken by the Expedition 20 crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "f1c68699996c853b"
+      ],
+      "width": 1920,
+      "height": 1311,
+      "file": "seed/volcano/nasa_iss020e009048.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "volcano"
+      }
+    },
+    {
+      "id": "nasa_iss011e08489",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss011e08489",
+      "phash": "eec6e6b8d8343131",
+      "tags": [
+        "volcano",
+        "eruption",
+        "lava",
+        "magma",
+        "crater",
+        "ash"
+      ],
+      "vision_summary": "Earth Obsersation taken by the Expedition 11 crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "eec6e6b8d8343131"
+      ],
+      "width": 1920,
+      "height": 1271,
+      "file": "seed/volcano/nasa_iss011e08489.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "volcano"
+      }
+    },
+    {
+      "id": "nasa_iss011e08490",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss011e08490",
+      "phash": "e88c3396ced92663",
+      "tags": [
+        "volcano",
+        "eruption",
+        "lava",
+        "magma",
+        "crater",
+        "ash"
+      ],
+      "vision_summary": "Earth Obsersation taken by the Expedition 11 crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "e88c3396ced92663"
+      ],
+      "width": 1920,
+      "height": 1271,
+      "file": "seed/volcano/nasa_iss011e08490.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "volcano"
+      }
+    },
+    {
+      "id": "nasa_iss005e15375",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss005e15375",
+      "phash": "d0ff844f81719a4e",
+      "tags": [
+        "ocean",
+        "sea",
+        "water",
+        "storm",
+        "hurricane",
+        "wave"
+      ],
+      "vision_summary": "Crew Earth Observations (CEO) by Expedition Five Crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "d0ff844f81719a4e"
+      ],
+      "width": 1920,
+      "height": 1307,
+      "file": "seed/ocean/nasa_iss005e15375.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "ocean"
+      }
+    },
+    {
+      "id": "nasa_0401559",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-0401559",
+      "phash": "35b6cac0353ccec2",
+      "tags": [
+        "ocean",
+        "sea",
+        "water",
+        "storm",
+        "hurricane",
+        "wave",
+        "Fincke",
+        "Expedition 9",
+        "Hurricane Ivan",
+        "International Space Station",
+        "ISS"
+      ],
+      "vision_summary": "Earth Science",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "35b6cac0353ccec2"
+      ],
+      "width": 1251,
+      "height": 1920,
+      "file": "seed/ocean/nasa_0401559.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "ocean"
+      }
+    },
+    {
+      "id": "nasa_0401558",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-0401558",
+      "phash": "0270cc6333f933b3",
+      "tags": [
+        "ocean",
+        "sea",
+        "water",
+        "storm",
+        "hurricane",
+        "wave",
+        "Fincke",
+        "Expedition 9",
+        "Hurricane Ivan",
+        "Caribbean",
+        "International Space Station",
+        "ISS"
+      ],
+      "vision_summary": "Earth Science",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "0270cc6333f933b3"
+      ],
+      "width": 1920,
+      "height": 1264,
+      "file": "seed/ocean/nasa_0401558.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "ocean"
+      }
+    }
+  ]
 }

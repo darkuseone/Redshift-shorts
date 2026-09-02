@@ -282,3 +282,29 @@ def evict_lru(storage: StorageBackend, *, max_bytes: int,
         _log.info("LRU-вытеснение кэша футажей",
                   extra={"removed": len(removed), "total_bytes": total, "limit": max_bytes})
     return removed
+
+
+# Расширение решает содержимое, а не ссылка. У NASA ссылка кандидата ведёт на
+# collection.json со списком файлов, а скачивается по ней настоящий JPEG:
+# засев сложил в базу три десятка снимков под именем ``.json``. Разметка такой
+# файл покажет, а любая ветка по суффиксу — сломается.
+_MAGIC: tuple[tuple[bytes, int, str], ...] = (
+    (b"\xff\xd8\xff", 0, ".jpg"),
+    (b"\x89PNG\r\n\x1a\n", 0, ".png"),
+    (b"GIF8", 0, ".gif"),
+    (b"ftyp", 4, ".mp4"),
+    (b"\x1a\x45\xdf\xa3", 0, ".webm"),
+)
+
+
+def sniff_suffix(path: "Path", default: str = "") -> str:
+    """Расширение по первым байтам файла. Пустая строка — формат неизвестен."""
+    from pathlib import Path as _P
+
+    head = _P(path).open("rb").read(16)
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return ".webp"
+    for magic, offset, suffix in _MAGIC:
+        if head[offset:offset + len(magic)] == magic:
+            return suffix
+    return default

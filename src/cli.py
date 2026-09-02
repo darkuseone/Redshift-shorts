@@ -216,6 +216,30 @@ def cmd_voice_probe(args) -> int:
     return 0
 
 
+def cmd_seed_footage(args) -> int:
+    """Засеять вечнозелёную базу материала (§7.2.1, §14).
+
+    Локальная база просматривается раньше стоков, но пустая база не экономит
+    ничего. Здесь она наполняется один раз материалом общественного достояния
+    по постоянному кругу тем канала — и дальше ролики берут кадр с полки.
+    """
+    from .lib.footage_seed import EVERGREEN, seed_footage
+
+    cfg = _load_cfg(args)
+    setup_logging(level="INFO", json_output=False)
+    topics = tuple(t.strip() for t in str(args.topics or "").split(",") if t.strip())
+    unknown = sorted(set(topics) - {t["id"] for t in EVERGREEN})
+    if unknown:
+        print(f"нет таких тем: {', '.join(unknown)}", file=sys.stderr)
+        return 2
+    report = seed_footage(cfg, storage=build_storage(cfg),
+                          costs=CostLedger(video_id="seed"),
+                          per_topic=int(args.per_topic), topics=topics,
+                          dry_run=bool(args.dry_run))
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
 def _read_wav_mono(path: Path):
     from .lib.audio import load_wav
 
@@ -385,6 +409,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="список форматов через запятую: перебрать за один "
                          "запуск и показать, какой тариф отдаёт целиком")
     vp.set_defaults(func=cmd_voice_probe)
+
+    sf = sub.add_parser("seed-footage",
+                        help="засеять вечнозелёную базу материала (NASA, Archive)")
+    sf.add_argument("--per-topic", type=int, default=2)
+    sf.add_argument("--topics", default="", help="список тем через запятую")
+    sf.add_argument("--dry-run", action="store_true")
+    sf.set_defaults(func=cmd_seed_footage)
     return parser
 
 
