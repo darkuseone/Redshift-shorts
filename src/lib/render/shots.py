@@ -256,10 +256,23 @@ def prepare_split_shot(*, top_src: Path, bottom_src: Path, dst: Path,
     args = ["-y"]
     for src, start, info in ((top_src, top_start_sec, top_info),
                              (bottom_src, bottom_start_sec, bottom_info)):
-        if start > 0:
-            args += ["-ss", f"{start:.3f}"]
-        if info.duration_sec and info.duration_sec < start + duration_sec:
-            args += ["-stream_loop", "-1"]
+        # Неподвижный кадр растягивается `-loop 1`, а не `-stream_loop -1`.
+        # Разница не косметическая: у одиночного JPEG `-stream_loop`
+        # бесконечно повторяет один и тот же пакет, метки времени не растут,
+        # и `-t` не наступает никогда. Мок-прогон встал на split-кадре с
+        # прессовым снимком наверху: 21 минута ffmpeg на 100 % процессора
+        # ради клипа в 2.8 секунды, и так до потолка задачи.
+        #
+        # В prepare_shot этот случай разведён с самого начала — здесь его
+        # просто забыли, и до вечнозелёной базы он почти не всплывал:
+        # снимков в верхней половине сплита раньше почти не бывало.
+        if not info.has_video or info.duration_sec < 0.05:
+            args += ["-loop", "1", "-t", f"{duration_sec:.3f}"]
+        else:
+            if start > 0:
+                args += ["-ss", f"{start:.3f}"]
+            if info.duration_sec and info.duration_sec < start + duration_sec:
+                args += ["-stream_loop", "-1"]
         args += ["-i", str(src)]
 
     args += ["-filter_complex", filter_complex, "-map", "[out]",
@@ -299,7 +312,13 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
     filters: list[str] = []
 
     if vfx_src is not None and Path(vfx_src).exists():
-        inputs += ["-stream_loop", "-1", "-i", str(vfx_src)]
+        # Тот же капкан, что в prepare_split: на неподвижном источнике
+        # `-stream_loop` не кончается.
+        vfx_info = probe(Path(vfx_src))
+        if not vfx_info.has_video or vfx_info.duration_sec < 0.05:
+            inputs += ["-loop", "1", "-t", f"{duration_sec:.3f}", "-i", str(vfx_src)]
+        else:
+            inputs += ["-stream_loop", "-1", "-i", str(vfx_src)]
         filters.append(f"[0:v]fps={fps},scale={width}:{height}:force_original_aspect_ratio=increase,"
                        f"crop={width}:{height},setsar=1[bg]")
     else:
