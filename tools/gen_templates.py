@@ -242,7 +242,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("stat-countup-card", "Набегающая метрика на карточке", [1.2, 3.0],
          {"steps": 12}, ["data", "number", "card"], "dataviz", _EX_SPACEX),
     ]),
-    "outro-cta": (5, [
+    "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],
          {"pulse_hz": 1.6}, ["cta", "subscribe"], "cta_button"),
         ("question-card", "Вопрос в карточке", [1.5, 2.5], {"card": True},
@@ -253,6 +253,11 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          ["cta", "teaser"], "plaque"),
         ("logo-stamp", "Штамп логотипа", [1.0, 2.0], {"stamp": True},
          ["cta", "brand"], "fullscreen_text"),
+        ("logo-brand-close", "Вордмарк каскадом и точка бренда — logo-brand-close",
+         [1.5, 4.5],
+         {"logo_close": True, "exit": "none", "wordmark": "РЕДШИФТ",
+          "tagline": "Пиши код. Шли на орбиту.", "url": "redshift.shorts"},
+         ["cta", "brand", "logo", "end-card"], "logo_brand_close"),
     ]),
     # Приёмы вокруг ведущего. Категория заведена по референсам заказчика:
     # ведущий за столом, а кадр вокруг него живёт — картинка за спиной, текст

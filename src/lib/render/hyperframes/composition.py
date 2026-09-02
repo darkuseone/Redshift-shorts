@@ -403,6 +403,16 @@ class CompositionBuilder:
         if kind == "dataviz" or template_id.startswith("data-viz/"):
             piece = render_dataviz(template_id or renderer, ctx)
             return piece if piece.nodes else Piece()
+        if (renderer == "logo_brand_close" or params.get("logo_close")
+                or template_id.endswith("logo-brand-close")):
+            safe_x = int(self.brandbook["safe_zones"]["work_area"]["x_min"])
+            params.setdefault("available_px", self.width - 2 * safe_x)
+            params["renderer"] = "logo_brand_close"
+            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
+                              duration=duration, target=node_id, track=track,
+                              params=params)
+            piece = render_fullscreen(ctx)
+            return piece if piece.nodes else Piece()
         overlay_name = renderer if renderer in OVERLAYS else ""
         if not overlay_name and kind in OVERLAYS:
             overlay_name = kind

@@ -495,6 +495,28 @@ def test_line_by_line_slide_fullscreen_uses_a_static_ghost(plan, assets, brandbo
         line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
 
 
+def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
+    """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
+    plan["overlays"][2] = {
+        "type": "cta", "start": 8.0, "end": 10.0,
+        "template": "outro-cta/logo-brand-close",
+        "renderer": "logo_brand_close",
+        "params": {"logo_close": True, "exit": "none", "wordmark": "РЕДШИФТ",
+                   "tagline": "Пиши код. Шли на орбиту.", "url": "redshift.shorts"},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lbc-mark" in out
+    assert "lbc-dot" in out
+    assert out.count("lbc-ch") == len("РЕДШИФТ")
+    assert "redshift.shorts" in out
+    assert 'class="pill"' not in out
+    assert 'id="ovl-02-pill"' not in out
+    assert "cqw" not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".lbc-mark" in css
+    assert ".lbc-dot" in css
+
+
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     plan["overlays"][0]["renderer"] = "chat_thread"
     plan["overlays"][0]["params"] = {

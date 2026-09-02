@@ -12,9 +12,9 @@
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
-    "outro-cta": 5,
+    "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 105
+    "_total": 106
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2214,6 +2214,32 @@
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
+    },
+    {
+      "id": "outro-cta/logo-brand-close",
+      "name": "logo-brand-close",
+      "category": "outro-cta",
+      "title": "Вордмарк каскадом и точка бренда — logo-brand-close",
+      "duration_range": [
+        1.5,
+        4.5
+      ],
+      "params": {
+        "logo_close": true,
+        "exit": "none",
+        "wordmark": "РЕДШИФТ",
+        "tagline": "Пиши код. Шли на орбиту.",
+        "url": "redshift.shorts"
+      },
+      "tags": [
+        "cta",
+        "brand",
+        "logo",
+        "end-card"
+      ],
+      "renderer": "logo_brand_close",
+      "last_used_in": [],
+      "added": "2026-09-02"
     },
     {
       "id": "hero-devices/plate-behind-back",

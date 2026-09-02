@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-105 шаблонов каталога — это не 105 реализаций, а набор рендереров с параметрами.
+106 шаблонов каталога — это не 106 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -2098,6 +2098,188 @@ def fs_fact_card(ctx: "TemplateCtx") -> Piece:
                                name="zoom-out"))
 
 
+# Logo Brand Close: вордмарк каскадом, акцентная точка, слоган и URL.
+# Каталог мерит getBoundingClientRect и твинит cqw/em; здесь px и fit_size.
+# HOLD без дрейфа. Точка — единственный accent. Это не кнопка подписки.
+_LBC_IN_BASE = 2.6
+_LBC_OUT_BASE = 0.5
+_LBC_LETTER = 1.15
+_LBC_STAGGER_AMOUNT = 0.7
+_LBC_MARK_SCALE = 2.4
+_LBC_PERIOD_AT = 0.95
+_LBC_PERIOD_DUR = 0.9
+_LBC_TAG_AT = 1.35
+_LBC_TAG_DUR = 0.9
+_LBC_URL_AT = 1.7
+_LBC_URL_DUR = 0.85
+_LBC_LETTER_Y_EM = 0.62
+_LBC_PERIOD_Y_EM = 0.08
+_LBC_TAG_Y_EM = 0.9
+_LBC_URL_SCALEX = 1.06
+_LBC_MARK_FROM = 1.04
+_LBC_CEILING = 768
+_LBC_WIDTH = 760
+_LBC_EXIT_Y = 48
+_LBC_DEFAULT_MARK = "РЕДШИФТ"
+_LBC_DEFAULT_TAG = "Пиши код. Шли на орбиту."
+_LBC_DEFAULT_URL = "redshift.shorts"
+
+
+def _lbc_copy(params: dict[str, Any]) -> tuple[str, str, str]:
+    """Вордмарк, слоган, URL. Явный пустой слоган/адрес прячет строку."""
+    content = str(params.get("content") or "").strip()
+    chunks = [part.strip() for part in content.split("|")] if content else []
+
+    def _field(name: str, fallback: str, index: int) -> str:
+        if name in params:
+            return str(params.get(name) or "").strip()
+        if index < len(chunks):
+            return chunks[index]
+        return fallback
+
+    wordmark = _field("wordmark", "", 0)
+    if not wordmark:
+        wordmark = _LBC_DEFAULT_MARK
+    # Одна колонка без пайпа — это вордмарк, слоган и адрес остаются дефолтом.
+    if content and "|" not in content:
+        tagline = (_field("tagline", _LBC_DEFAULT_TAG, 1)
+                   if "tagline" in params else _LBC_DEFAULT_TAG)
+        url = (_field("url", _LBC_DEFAULT_URL, 2)
+               if "url" in params else _LBC_DEFAULT_URL)
+        return wordmark, tagline, url
+    tagline = _field("tagline", _LBC_DEFAULT_TAG if not chunks else "", 1)
+    url = _field("url", _LBC_DEFAULT_URL if not chunks else "", 2)
+    return wordmark, tagline, url
+
+
+def _lbc_body_and_dot(wordmark: str) -> tuple[str, str]:
+    text = str(wordmark or "").strip() or _LBC_DEFAULT_MARK
+    if text.endswith("."):
+        return text[:-1], "."
+    return text, "."
+
+
+def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
+    """Вордмарк каскадом, точка accent, слоган и URL — logo-brand-close.
+
+    Каталог: ``cqw``/``em`` в твинах и ``getBoundingClientRect`` под кегль.
+    Движок этого не умеет: ход в пикселях, кегль через ``fit_size``.
+    Inter/крем/зелёная точка → Oswald, ``ink`` на ``bg_pure``, точка ``accent``.
+    HOLD стоит. Твины на сцене, не на ``.clip``. Это не CTA-кнопка.
+    """
+    wordmark, tagline, url = _lbc_copy(ctx.params)
+    invert = bool(ctx.params.get("invert"))
+    if str(ctx.params.get("tone") or "").lower() == "paper":
+        invert = True
+    exit_mode = str(ctx.params.get("exit") or "none").lower()
+    if exit_mode not in ("none", "fade", "up"):
+        exit_mode = "none"
+    body, dot = _lbc_body_and_dot(wordmark)
+    node_id = ctx.target
+    available = float(ctx.params.get("available_px") or _LBC_WIDTH)
+    size = fit_size(body + dot, available, _LBC_CEILING)
+    letter_y = round(_LBC_LETTER_Y_EM * size, 2)
+    period_y = round(_LBC_PERIOD_Y_EM * size, 2)
+    tag_size = max(28, min(48, int(round(size * 0.22))))
+    url_size = max(18, min(26, int(round(size * 0.11))))
+    if url:
+        tracking = 0.28 * max(0, len(url) - 1) * url_size
+        url_w = text_width(url, url_size) + tracking
+        if url_w > available:
+            url_size = max(16, int(url_size * available / url_w))
+    tag_y = round(_LBC_TAG_Y_EM * tag_size, 2)
+    gap = max(16, int(round(0.18 * size)))
+
+    t0 = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    duration = max(0.001, end - t0)
+    out_base = 0.0 if exit_mode == "none" else _LBC_OUT_BASE
+    total_base = max(0.001, _LBC_IN_BASE + out_base)
+    scale = duration / total_base if duration < total_base else 1.0
+    letter_dur = _LBC_LETTER * scale
+    stagger_amount = _LBC_STAGGER_AMOUNT * scale
+    mark_dur = _LBC_MARK_SCALE * scale
+    period_at = t0 + _LBC_PERIOD_AT * scale
+    period_dur = _LBC_PERIOD_DUR * scale
+    tag_at = t0 + _LBC_TAG_AT * scale
+    tag_dur = _LBC_TAG_DUR * scale
+    url_at = t0 + _LBC_URL_AT * scale
+    url_dur = _LBC_URL_DUR * scale
+    inn = _LBC_IN_BASE * scale
+    out = out_base * scale
+    out_at = t0 + max(inn, duration - out)
+
+    glyphs = list(body)
+    n_letters = sum(1 for ch in glyphs if not ch.isspace())
+    letter_delay = stagger_amount / max(1, n_letters - 1) if n_letters > 1 else 0.0
+
+    cls = "clip fullscreen-text fs-lbc" + (" invert" if invert else "")
+    chars: list[str] = []
+    tweens: list[str] = [
+        f'tl.fromTo("#{node_id}-mark",{{scale:{_num(_LBC_MARK_FROM)}}},'
+        f'{{scale:1,duration:{_num(mark_dur)},ease:"expo.out"}},{_num(t0)});'
+    ]
+    step = 0
+    for i, ch in enumerate(glyphs):
+        if ch.isspace():
+            chars.append(f'<span class="lbc-space" aria-hidden="true"></span>')
+            continue
+        cid = f"{node_id}-c{i}"
+        chars.append(f'<span id="{cid}" class="lbc-ch">{_esc(ch)}</span>')
+        letter_at = t0 + letter_delay * step
+        tweens.append(
+            f'tl.fromTo("#{cid}",{{opacity:0,y:{_num(letter_y)}}},'
+            f'{{opacity:1,y:0,duration:{_num(letter_dur)},ease:"expo.out"}},{_num(letter_at)});'
+        )
+        step += 1
+    chars.append(f'<span id="{node_id}-dot" class="lbc-dot">{_esc(dot)}</span>')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-dot",{{opacity:0,scale:0.2,y:{_num(period_y)}}},'
+        f'{{opacity:1,scale:1,y:0,duration:{_num(period_dur)},'
+        f'ease:"back.out(1.8)"}},{_num(period_at)});'
+    )
+
+    extras: list[str] = []
+    if tagline:
+        extras.append(
+            f'<span id="{node_id}-tag" class="lbc-tag" '
+            f'style="font-size:{tag_size}px">{_esc(tagline)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-tag",{{opacity:0,y:{_num(tag_y)}}},'
+            f'{{opacity:1,y:0,duration:{_num(tag_dur)},ease:"power3.out"}},'
+            f'{_num(tag_at)});'
+        )
+    if url:
+        extras.append(
+            f'<span id="{node_id}-url" class="lbc-url" '
+            f'style="font-size:{url_size}px">{_esc(url)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-url",{{opacity:0,scaleX:{_num(_LBC_URL_SCALEX)}}},'
+            f'{{opacity:1,scaleX:1,duration:{_num(url_dur)},ease:"power2.out"}},'
+            f'{_num(url_at)});'
+        )
+
+    if exit_mode == "fade" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-lock",{{opacity:1}},{{opacity:0,'
+            f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
+            f'{_num(out_at)});')
+    elif exit_mode == "up" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-lock",{{opacity:1,y:0}},'
+            f'{{opacity:0,y:{_num(-_LBC_EXIT_Y)},duration:{_num(out)},'
+            f'ease:"power2.in",immediateRender:false}},{_num(out_at)});')
+
+    extras_html = "".join(extras)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<div id="{node_id}-lock" class="lbc-lock" style="gap:{gap}px">'
+               f'<div id="{node_id}-mark" class="lbc-mark" '
+               f'style="font-size:{size}px">{"".join(chars)}</div>'
+               f'{extras_html}</div></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -2105,6 +2287,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bottom_up_letters": fs_bottom_up_letters,
     "kinetic_type_swap": fs_kinetic_type_swap,
     "line_by_line_slide": fs_line_by_line_slide,
+    "logo_brand_close": fs_logo_brand_close,
     "number_slam": fs_number_slam,
 }
 
@@ -2123,6 +2306,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_kinetic_type_swap(ctx)
     if params.get("line_slide"):
         return fs_line_by_line_slide(ctx)
+    if params.get("logo_close"):
+        return fs_logo_brand_close(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -2350,6 +2535,26 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .kts-word{position:absolute;left:0;right:0;top:0;"
         "color:var(--color-accent);text-align:center;white-space:nowrap;"
         "line-height:1;will-change:opacity}"
+        ".fullscreen-text.fs-lbc{z-index:45;width:var(--frame-w);"
+        "height:var(--frame-h)}"
+        ".fullscreen-text .lbc-lock{display:flex;flex-direction:column;"
+        "align-items:center;justify-content:center;width:100%;"
+        "will-change:transform}"
+        ".fullscreen-text .lbc-mark{display:flex;align-items:baseline;"
+        "justify-content:center;flex-wrap:wrap;letter-spacing:-0.045em;"
+        "line-height:0.9;transform-origin:50% 100%;will-change:transform}"
+        ".fullscreen-text .lbc-ch,.fullscreen-text .lbc-dot{display:inline-block;"
+        "opacity:0;will-change:transform}"
+        ".fullscreen-text .lbc-dot{color:var(--color-accent);"
+        "transform-origin:50% 65%}"
+        ".fullscreen-text .lbc-space{display:inline-block;width:0.34em}"
+        ".fullscreen-text .lbc-tag{display:block;font-family:var(--font-subtitle);"
+        "font-weight:800;text-transform:none;color:var(--color-ink);"
+        "line-height:1.15;max-width:100%;opacity:0;will-change:transform}"
+        ".fullscreen-text.invert .lbc-tag{color:var(--color-bg-pure)}"
+        ".fullscreen-text .lbc-url{display:block;font-family:var(--font-mono);"
+        "text-transform:none;letter-spacing:0.28em;color:var(--color-muted);"
+        "opacity:0;will-change:transform}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

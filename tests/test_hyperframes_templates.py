@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-105 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+106 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -784,6 +784,75 @@ def test_line_by_line_slide_direction_and_tone():
         content="один два три четыре пять шесть",
         renderer="line_by_line_slide", line_slide=True, duration=1.8))
     assert packed.nodes[0].count("lbls-line") == 3
+
+
+def test_logo_brand_close_cascades_letters_and_keeps_the_period_accent():
+    """Каталог: cqw/em и measure. Здесь px, точка accent, HOLD без дрейфа."""
+    piece = render_fullscreen(_fs_ctx(
+        wordmark="РЕДШИФТ", tagline="Пиши код. Шли на орбиту.",
+        url="redshift.shorts", renderer="logo_brand_close",
+        logo_close=True, exit="none", duration=4.0))
+    node = piece.nodes[0]
+    assert "lbc-mark" in node
+    assert "lbc-dot" in node
+    assert "lbc-tag" in node and "Пиши код" in node
+    assert "lbc-url" in node and "redshift.shorts" in node
+    assert node.count("lbc-ch") == len("РЕДШИФТ")
+    assert "lbc-dot" in node
+    body = " ".join(piece.tweens)
+    assert "cqw" not in node and "cqh" not in node
+    assert "yPercent" not in body
+    assert "letterSpacing" not in body
+    assert "0.62em" not in body and "0.08em" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert "back.out(1.8)" in body
+    assert "expo.out" in body
+    assert "scaleX:1.06" in body
+    assert "DRIFT" not in body and "1.035" not in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    from src.lib.render.hyperframes.templates import _lbc_copy, _lbc_body_and_dot
+    assert _lbc_copy({})[0] == "РЕДШИФТ"
+    assert _lbc_body_and_dot("РЕДШИФТ.") == ("РЕДШИФТ", ".")
+    doubled = render_fullscreen(_fs_ctx(
+        wordmark="РЕДШИФТ.", renderer="logo_brand_close", duration=4.0))
+    assert doubled.nodes[0].count("lbc-dot") == 1
+    assert doubled.nodes[0].count("lbc-ch") == len("РЕДШИФТ")
+
+
+def test_logo_brand_close_exit_and_hidden_lines():
+    fade = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close",
+        logo_close=True, exit="fade", duration=4.0))
+    assert 'fromTo("#shot-01-lock",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close",
+        logo_close=True, exit="up", duration=4.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    hidden = render_fullscreen(_fs_ctx(
+        wordmark="КОД", tagline="", url="",
+        renderer="logo_brand_close", duration=4.0))
+    assert "lbc-tag" not in hidden.nodes[0]
+    assert "lbc-url" not in hidden.nodes[0]
+    short = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close", duration=2.0))
+    starts = [float(t.rstrip(");").rsplit(",", 1)[1])
+              for t in short.tweens if "-dot\"" in t and "fromTo" in t]
+    assert starts and starts[0] < 3.0 + 0.95 - 0.01
+    piped = render_fullscreen(_fs_ctx(
+        content="ОРБИТА|Пиши HTML.|orbit.lab",
+        renderer="logo_brand_close", duration=4.0))
+    assert piped.nodes[0].count("lbc-ch") == len("ОРБИТА")
+    assert "Пиши HTML." in piped.nodes[0]
+    assert "orbit.lab" in piped.nodes[0]
+    paper = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close", tone="paper", duration=4.0))
+    assert "invert" in paper.nodes[0]
 
 
 def test_number_slam_splits_the_caption():

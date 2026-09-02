@@ -648,18 +648,32 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             "why": f"плашка из сценария, блок {block['id']}",
         })
 
-    # CTA — последние 2 сек, всегда (§6, QC-16).
+    # CTA — последние 2 сек, всегда (§6, QC-16). Identity close — вордмарк,
+    # не кнопка: если выпал logo-brand-close, композитор рисует локуп, не пилюлю.
     cta_start, cta_end = plan.get("cta_window", [duration - 2.0, duration])
+    cta_prefer = (["outro-cta/subscribe-pulse"] if variant == "A"
+                  else ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"])
     cta_template = catalog.pick("outro-cta", duration=float(cta_end) - float(cta_start),
                                 recent_videos=recent_videos, exclude=used,
-                                prefer=["outro-cta/subscribe-pulse"], seed=seed)
+                                prefer=cta_prefer, seed=seed)
     used.append(cta_template.id)
-    overlays.append({
-        "type": "cta", "start": float(cta_start), "end": float(cta_end),
-        "template": cta_template.id,
-        "params": {"text": "ПОДПИСАТЬСЯ"},
-        "why": "§6: кнопка подписки в последние 2 сек",
-    })
+    if (cta_template.renderer == "logo_brand_close"
+            or cta_template.params.get("logo_close")
+            or cta_template.name == "logo-brand-close"):
+        overlays.append({
+            "type": "cta", "start": float(cta_start), "end": float(cta_end),
+            "template": cta_template.id,
+            "renderer": "logo_brand_close",
+            "params": dict(cta_template.params),
+            "why": "§6: identity close — вордмарк, не кнопка подписки",
+        })
+    else:
+        overlays.append({
+            "type": "cta", "start": float(cta_start), "end": float(cta_end),
+            "template": cta_template.id,
+            "params": {"text": "ПОДПИСАТЬСЯ"},
+            "why": "§6: кнопка подписки в последние 2 сек",
+        })
     return overlays
 
 

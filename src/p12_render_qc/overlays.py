@@ -110,9 +110,14 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
 
         for item in _active(overlays, t):
             if item["type"] == "cta":
+                params = item.get("params") or {}
+                if (item.get("renderer") == "logo_brand_close"
+                        or params.get("logo_close")):
+                    # Локуп рисует HyperFrames; пилюля поверх вордмарка не нужна.
+                    continue
                 canvas.alpha_composite(subscribe_button(
                     ctx, progress=t - float(item["start"]),
-                    text=str(item.get("params", {}).get("text", "ПОДПИСАТЬСЯ"))))
+                    text=str(params.get("text", "ПОДПИСАТЬСЯ"))))
                 drew += 1
 
         stats.overlay_draws += drew
