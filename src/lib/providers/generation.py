@@ -97,7 +97,11 @@ class MockGeneration(GenerationProvider):
         palette = [str(self.cfg.color(name)).lstrip("#")
                    for name in ("accent", "accent_deep", "ink", "accent_soft", "muted")]
         c0 = palette[seed % len(palette)]
-        c1 = palette[(seed // 7 + 2) % len(palette)]
+        # Второй цвет обязан отличаться от первого. Раньше он брался
+        # независимо, и на пятицветной палитре пара нет-нет да совпадала —
+        # градиент вырождался в заливку.
+        c1 = palette[(seed % len(palette) + 1 + (seed // 7) % (len(palette) - 1))
+                     % len(palette)]
         # Разные промпты обязаны давать визуально разный кадр: одинаковый
         # градиент — это готовый дубль, который завалит QC-5.
         types = supported_gradient_types()
@@ -108,11 +112,24 @@ class MockGeneration(GenerationProvider):
                   f":x0={seed % max(width, 1)}:y0={(seed // 3) % max(height, 1)}"
                   f":speed={0.008 + (seed % 9) / 500.0:.4f}"
                   f":d={duration_sec:.2f}:type={gradient_type}")
+        # Поворот — единственная часть картинки, которая различает кадры при
+        # любой сборке ffmpeg. Типов градиента у сборки может оказаться и один:
+        # ``supported_gradient_types`` разбирает справку фильтра, и если разбор
+        # не удался, остаётся ``linear``. На CI так и вышло — три промпта дали
+        # один тип, пара цветов у двух совпала, и перцептивные хэши разошлись
+        # ровно на 8 бит при пороге «больше 8». Локально было 30–38: сборка
+        # знала четыре типа, и разница бралась оттуда. Угол же зависит только
+        # от семени и меняет саму геометрию кадра, а не палитру, — его видит
+        # и хэш, считающий по яркости.
+        angle = (seed % 360) * 3.14159265 / 180.0
+        chain = f"rotate=a={angle:.4f}:c=0x{c0}:ow=iw:oh=ih"
         if kind == "photo":
-            run(["-y", "-f", "lavfi", "-i", source, "-frames:v", "1", str(dst)],
+            run(["-y", "-f", "lavfi", "-i", source, "-vf", chain,
+                 "-frames:v", "1", str(dst)],
                 what="mock generation photo")
         else:
-            run(["-y", "-f", "lavfi", "-i", source, "-t", f"{duration_sec:.2f}",
+            run(["-y", "-f", "lavfi", "-i", source, "-vf", chain,
+                 "-t", f"{duration_sec:.2f}",
                  "-r", str(self.cfg.fps), "-c:v", "libx264", "-preset", "ultrafast",
                  "-crf", "30", "-g", "30", "-pix_fmt", "yuv420p", str(dst)],
                 what="mock generation video")

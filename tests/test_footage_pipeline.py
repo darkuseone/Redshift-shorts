@@ -612,6 +612,41 @@ def test_generated_clips_are_visually_distinct(cfg, tmp_path):
             assert distance > 8, f"промпты {i} и {j} дали дубль (hamming={distance})"
 
 
+def test_generated_clips_stay_distinct_on_a_plain_ffmpeg(cfg, tmp_path, monkeypatch):
+    """Различие кадров не имеет права зависеть от сборки ffmpeg.
+
+    Именно так тест выше и упал на CI, пройдя локально: типы градиента
+    ``supported_gradient_types`` вычитывает из справки фильтра, и если разбор
+    не удался, остаётся один ``linear``. Три промпта получили один тип, пара
+    цветов у двух совпала, и хэши разошлись ровно на 8 бит при пороге
+    «больше 8». Локально сборка знала четыре типа, разница бралась оттуда, и
+    расстояния были 30–38 — изъян не показывался.
+
+    Здесь бедная сборка воспроизводится нарочно.
+    """
+    import src.lib.providers.generation as G
+    from src.lib.ffmpeg import extract_frames
+    from src.lib.phash import hamming, phash_image
+
+    monkeypatch.setattr(G, "supported_gradient_types", lambda: ("linear",))
+    provider = G.build_generation_provider(cfg, None)
+    prompts = ["quantum processor macro. Role: hook",
+               "abstract data particles. Role: develop",
+               "white dwarf star. Role: twist"]
+    hashes = []
+    for i, prompt in enumerate(prompts):
+        asset = provider.generate(prompt, tmp_path / f"g{i}.mp4", kind="video",
+                                  duration_sec=2.0)
+        hashes.append(phash_image(extract_frames(asset.path, tmp_path / f"f{i}", [0.5])[0]))
+
+    for i in range(len(hashes)):
+        for j in range(i + 1, len(hashes)):
+            distance = hamming(hashes[i], hashes[j])
+            assert distance > 8, (
+                f"на одном типе градиента промпты {i} и {j} дали дубль "
+                f"(hamming={distance})")
+
+
 def test_p9_dedup_helper_finds_duplicate():
     from src.p9_generate.generate import _find_duplicate
 
