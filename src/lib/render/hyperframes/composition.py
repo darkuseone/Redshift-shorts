@@ -27,7 +27,7 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
-from .captions import TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD, build_camera_follow
+from .captions import TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD, build_camera_follow, build_clip_wipe
 from .templates import (
     OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, render_dataviz,
     render_fullscreen, render_hero, render_motion, render_overlay,
@@ -465,6 +465,12 @@ class CompositionBuilder:
         caption = str(self.plan.get("subtitle_style", {}).get("caption") or "word-pop")
         if caption == "camera-follow":
             nodes, tweens, count = build_camera_follow(
+                self.plan, self.brandbook, duration=self.duration)
+            self.tweens.extend(tweens)
+            self.stats["subtitle_words"] += count
+            return nodes
+        if caption == "clip-wipe":
+            nodes, tweens, count = build_clip_wipe(
                 self.plan, self.brandbook, duration=self.duration)
             self.tweens.extend(tweens)
             self.stats["subtitle_words"] += count

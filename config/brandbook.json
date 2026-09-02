@@ -158,6 +158,22 @@
       "letter_spacing_em": 0.005,
       "gap_em": 0.07,
       "case": "upper"
+    },
+    "clip_wipe": {
+      "base_px": 88,
+      "wipe_sec": 0.3,
+      "exit_sec": 0.25,
+      "stagger_sec": 0.04,
+      "flash_delay_sec": 0.1,
+      "flash_sec": 0.05,
+      "dim_sec": 0.2,
+      "hold_sec": 0.5,
+      "max_words": 6,
+      "pause_break_sec": 0.45,
+      "letter_spacing_em": 0.04,
+      "gap_em": 0.22,
+      "case": "upper",
+      "dim_color": "rgba(255,255,255,0.4)"
     }
   },
   "fullscreen_text": {

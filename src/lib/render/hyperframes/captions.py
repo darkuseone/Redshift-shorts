@@ -5,6 +5,12 @@
 отъезжает так, чтобы новое слово садилось в кадр тем же размером. Старые
 остаются гореть и просто мельчают к левому верхнему углу.
 
+``caption-clip-wipe``: слово стоит, раскрывается слева направо. В каталоге это
+``clip-path: inset`` — свойства нет в списке движка, поэтому маска с
+``overflow:hidden`` и ``scaleX`` от левого края, а буквы контр-масштабом
+остаются несплющенными. Уход — сдвиг чернил вправо внутри той же маски.
+Золотая вспышка ключевых слов → ``accent``, одно слово на фразу.
+
 Это не шаблон каталога и не вендорный HTML с examples HyperFrames: жест
 переложен на Oswald, кровь ``accent`` вместо золота, тайминг — реальные слова
 пайплайна, без ``filter``-смаза (его нет в списке анимируемых свойств).
@@ -221,9 +227,10 @@ def _ease(brandbook: dict[str, Any], name: str, fallback: str) -> str:
 
 
 def caption_css(brandbook: dict[str, Any]) -> str:
-    """Стили камеры. Без filter: смаз каталога сюда не переносится."""
+    """Стили жестов субтитра. Без filter и clip-path: их нет в списке движка."""
     subs = brandbook.get("subtitles") or {}
     spec = subs.get("camera_follow") or {}
+    wipe = subs.get("clip_wipe") or {}
     halo = subs.get("shadow") or {}
     blur = int(halo.get("blur_px", 20))
     offset = int(halo.get("offset_y_px", 4))
@@ -231,6 +238,12 @@ def caption_css(brandbook: dict[str, Any]) -> str:
     tracking = float(spec.get("letter_spacing_em", 0.005))
     line_height = float(spec.get("line_height", 0.78))
     color = str(subs.get("color", "#FFFFFF"))
+    wipe_track = float(wipe.get("letter_spacing_em", 0.04))
+    shadow = (
+        f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
+        f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px "
+        f"rgba(0,0,0,{alpha * 0.8:.2f})"
+    )
     return (
         f".caption-camera{{position:absolute;inset:0;z-index:{Z_CAPTION};"
         "overflow:hidden;pointer-events:none;"
@@ -241,14 +254,23 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         ".cf-word{position:absolute;white-space:nowrap;"
         "font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{tracking}em;"
-        f"line-height:{line_height};color:{color};opacity:0;"
-        f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
-        f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px "
-        f"rgba(0,0,0,{alpha * 0.8:.2f})}}"
+        f"line-height:{line_height};color:{color};opacity:0;{shadow}}}"
         ".cf-word.is-accent{color:var(--color-accent)}"
         ".cf-vignette{position:absolute;inset:0;pointer-events:none;"
         "background:radial-gradient(ellipse at 50% 50%,"
         "rgba(0,0,0,0) 42%,rgba(0,0,0,0.4) 100%)}"
+        f".caption-wipe{{position:absolute;inset:0;z-index:{Z_CAPTION};"
+        "overflow:hidden;pointer-events:none;"
+        "width:var(--frame-w);height:var(--frame-h)}"
+        ".cw-group{position:absolute;left:var(--safe-x-min);"
+        "width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end}"
+        ".cw-mask{display:block;flex:0 0 auto;overflow:hidden}"
+        ".cw-mask svg{display:block;overflow:visible}"
+        ".cw-wipe-r{transform-origin:0px 50%;transform-box:fill-box}"
+        ".cw-ink{font-family:var(--font-display);font-weight:700;"
+        f"text-transform:uppercase;letter-spacing:{wipe_track}em;"
+        f"fill:currentColor;color:{color};{shadow}}}"
     )
 
 
@@ -414,3 +436,181 @@ def _camera_from_to(world_id: str, src: Pose, dst: Pose, dur: float,
         f'scale:{_scale(dst.scale)},duration:{_num(dur)},ease:"{ease}"}},'
         f'{_num(at)});'
     )
+
+
+def clip_wipe_params(brandbook: dict[str, Any]) -> dict[str, Any]:
+    spec = (brandbook.get("subtitles") or {}).get("clip_wipe") or {}
+    subs = brandbook.get("subtitles") or {}
+    safe = brandbook["safe_zones"]["work_area"]
+    return {
+        "base_px": int(spec.get("base_px", subs.get("size_px_default", 88))),
+        "wipe_sec": float(spec.get("wipe_sec", 0.3)),
+        "exit_sec": float(spec.get("exit_sec", 0.25)),
+        "stagger_sec": float(spec.get("stagger_sec", 0.04)),
+        "flash_delay_sec": float(spec.get("flash_delay_sec", 0.1)),
+        "flash_sec": float(spec.get("flash_sec", 0.05)),
+        "dim_sec": float(spec.get("dim_sec", 0.2)),
+        "hold_sec": float(spec.get("hold_sec", 0.5)),
+        "max_words": int(spec.get("max_words", 6)),
+        "pause_break_sec": float(spec.get("pause_break_sec", 0.45)),
+        "letter_spacing_em": float(spec.get("letter_spacing_em", 0.04)),
+        "gap_em": float(spec.get("gap_em", 0.22)),
+        "case": str(spec.get("case", "upper")),
+        "dim_color": str(spec.get("dim_color", "rgba(255,255,255,0.4)")),
+        "frame_w": float(safe["x_max"]) - float(safe["x_min"]),
+        "origin_x": float(safe["x_min"]),
+        "baseline_y": float(subs.get("baseline_y_default", 975)),
+        "accent": str((brandbook.get("colors") or {}).get("accent", "#C8453D")),
+        "ink": str(subs.get("color", "#FFFFFF")),
+    }
+
+
+def fit_wipe_group(
+    texts: list[str],
+    *,
+    max_width: float,
+    base: int,
+    letter_spacing_em: float,
+    gap_em: float,
+) -> tuple[int, list[float]]:
+    """Кегль фразы, чтобы слова в ряд влезли в рабочую зону."""
+    size = int(base)
+    min_size = max(24, int(base * 0.45))
+    while size > min_size:
+        widths = [measure_word(t, size, letter_spacing_em) for t in texts]
+        gap = size * gap_em
+        total = sum(widths) + gap * max(0, len(texts) - 1)
+        if total <= max_width:
+            return size, widths
+        size -= 2
+    widths = [measure_word(t, min_size, letter_spacing_em) for t in texts]
+    return min_size, widths
+
+
+def build_clip_wipe(
+    plan: dict[str, Any],
+    brandbook: dict[str, Any],
+    *,
+    duration: float,
+) -> tuple[list[str], list[str], int]:
+    """Фразы с wipe слева направо. Твины на маске и чернилах, не на ``.clip``."""
+    params = clip_wipe_params(brandbook)
+    baseline = float(plan.get("subtitle_style", {}).get(
+        "baseline_y", params["baseline_y"]))
+    words = _visible_words(plan.get("subtitles") or [], params["case"])
+    if not words:
+        return [], [], 0
+
+    phrases = group_caption_phrases(
+        words,
+        max_words=params["max_words"],
+        pause_break_sec=params["pause_break_sec"],
+    )
+    nodes: list[str] = []
+    tweens: list[str] = []
+    count = 0
+
+    for p, phrase in enumerate(phrases):
+        start = float(phrase[0]["start"])
+        last_end = float(phrase[-1]["end"])
+        next_start = (
+            float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
+        )
+        texts = [w["display"] for w in phrase]
+        size, widths = fit_wipe_group(
+            texts,
+            max_width=params["frame_w"],
+            base=params["base_px"],
+            letter_spacing_em=params["letter_spacing_em"],
+            gap_em=params["gap_em"],
+        )
+        gap_px = size * params["gap_em"]
+        n = len(phrase)
+        exit_span = params["exit_sec"] + params["stagger_sec"] * max(0, n - 1)
+        hold_end = min(last_end + params["hold_sec"], next_start)
+        exit_at = min(hold_end - params["exit_sec"], next_start - exit_span)
+        last_wipe = max(float(w["start"]) + params["wipe_sec"] for w in phrase)
+        exit_at = max(start, last_wipe, exit_at)
+        end = max(exit_at + exit_span, start + 0.05)
+        if end > next_start + 1e-6 and p + 1 < len(phrases):
+            end = next_start
+            exit_at = max(start, end - exit_span)
+
+        track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
+        clip_id = f"cw-{p:02d}"
+        accent_at = _accent_index(phrase)
+        top = int(baseline - size / 2)
+        word_nodes: list[str] = []
+        for i, word in enumerate(phrase):
+            wid = f"{clip_id}-w{i}"
+            wpx = _px(widths[i])
+            margin = _px(gap_px) if i < n - 1 else "0"
+            # Маска — белый rect в SVG. Тянем scaleX rect, не clip-path и не
+            # контр-масштаб букв: слой 1000× в Chrome растрится в кашу.
+            word_nodes.append(
+                f'<div id="{wid}" class="cw-mask" '
+                f'style="width:{wpx}px;height:{size}px;margin-right:{margin}px">'
+                f'<svg width="{wpx}" height="{size}" viewBox="0 0 {wpx} {size}">'
+                f'<defs><mask id="{wid}-m" maskUnits="userSpaceOnUse" '
+                f'maskContentUnits="userSpaceOnUse">'
+                f'<rect id="{wid}-r" class="cw-wipe-r" x="0" y="0" '
+                f'width="{wpx}" height="{size}" fill="#fff"/></mask></defs>'
+                f'<text id="{wid}-ink" class="cw-ink" mask="url(#{wid}-m)" '
+                f'x="0" y="{_px(size * 0.82)}" font-size="{size}px">'
+                f"{_esc(word['display'])}</text></svg></div>"
+            )
+            count += 1
+
+        nodes.append(
+            f'<div id="{clip_id}" class="clip caption-wipe" '
+            f'data-start="{_num(start)}" data-duration="{_num(end - start)}" '
+            f'data-track-index="{track}">'
+            f'<div class="cw-group" style="top:{top}px;left:{int(params["origin_x"])}px;'
+            f'width:{int(params["frame_w"])}px;gap:0">'
+            f'{"".join(word_nodes)}</div></div>'
+        )
+
+        for i, word in enumerate(phrase):
+            wid = f"{clip_id}-w{i}"
+            at = float(word["start"])
+            wipe = params["wipe_sec"]
+            if at + wipe > exit_at:
+                wipe = max(0.08, exit_at - at)
+            tweens.append(
+                f'tl.fromTo("#{wid}-r",{{scaleX:0}},{{scaleX:1,'
+                f'duration:{_num(wipe)},ease:"power2.out"}},{_num(at)});'
+            )
+            ink = params["ink"]
+            dim_from = ink
+            if i == accent_at:
+                flash_at = at + params["flash_delay_sec"]
+                flash_end = flash_at + params["flash_sec"]
+                if flash_at + 0.02 < exit_at:
+                    tweens.append(
+                        f'tl.fromTo("#{wid}-ink",{{color:"{ink}"}},'
+                        f'{{color:"{params["accent"]}",'
+                        f'duration:{_num(params["flash_sec"])},ease:"power1.out"}},'
+                        f'{_num(flash_at)});'
+                    )
+                    dim_from = params["accent"]
+                else:
+                    flash_end = at
+            else:
+                flash_end = at
+            dim_at = max(float(word["end"]), flash_end)
+            if dim_at + 0.04 < exit_at:
+                dim_dur = min(params["dim_sec"], max(0.05, exit_at - dim_at))
+                tweens.append(
+                    f'tl.fromTo("#{wid}-ink",{{color:"{dim_from}"}},'
+                    f'{{color:"{params["dim_color"]}",'
+                    f'duration:{_num(dim_dur)},ease:"power1.out"}},'
+                    f'{_num(dim_at)});'
+                )
+            stagger = i * params["stagger_sec"]
+            tweens.append(
+                f'tl.fromTo("#{wid}-r",{{x:0}},{{x:{_px(widths[i])},'
+                f'duration:{_num(params["exit_sec"])},ease:"power2.in"}},'
+                f'{_num(exit_at + stagger)});'
+            )
+
+    return nodes, tweens, count
