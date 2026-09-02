@@ -90,12 +90,13 @@ def test_accent_uses_blood_not_siri_rainbow(cfg):
     assert cfg.brandbook["colors"]["accent_soft"] in out
     assert out.count('class="gf-word gf-accent"') == 1
     assert ">HTML<" in out
+    assert 'class="gf-base"' in out
 
 
-def test_fill_tweens_x_on_the_rect(cfg):
+def test_fill_tweens_scale_on_the_mask_rect(cfg):
     out = _fill(cfg, _words("пиши", ("html", True)))
     assert 'fromTo("#gf-00-w1-r"' in out
-    assert "scaleX" not in "".join(
+    assert "scaleX" in "".join(
         l for l in out.splitlines() if "gf-00-w1-r" in l)
     assert 'tl.set("#gf-00-w0"' in out
     assert 'tl.to("#gf-00-w0"' in out
@@ -119,15 +120,16 @@ def test_every_fill_tween_target_exists(cfg):
         assert selector in ids, f"твин целится в несуществующий {selector}: {tween}"
 
 
-def test_x_tweens_on_accent_rect_do_not_overlap(cfg):
+def test_fill_scale_tweens_on_accent_rect_do_not_overlap(cfg):
     out = _fill(cfg, _words("пиши", ("html", True), "код"))
     windows = []
     for line in out.splitlines():
-        if "fromTo" not in line or "-r" not in line:
+        if "scaleX" not in line or "fromTo" not in line:
             continue
         dur = float(re.search(r"duration:([\d.]+)", line).group(1))
         at = float(line.rstrip(");").rsplit(",", 1)[1])
         windows.append((at, at + dur))
+    assert windows
     windows.sort()
     for prev, nxt in zip(windows, windows[1:]):
         assert prev[1] <= nxt[0] + 1e-6, windows

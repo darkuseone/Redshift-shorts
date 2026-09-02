@@ -329,12 +329,14 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         ".gf-group{position:absolute;left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
         "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end}"
-        ".gf-word{display:block;flex:0 0 auto;overflow:hidden;"
+        ".gf-word{display:block;flex:0 0 auto;position:relative;"
         "font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{fill_track}em;"
         f"color:{color};line-height:1.15;white-space:nowrap;"
         f"transform-origin:50% 50%;{shadow}}}"
-        ".gf-word svg{display:block;overflow:visible}"
+        ".gf-word svg{display:block;overflow:visible;position:absolute;left:0;top:0;z-index:1}"
+        ".gf-base{display:block}"
+        ".gf-wipe-r{transform-origin:0px 50%;transform-box:fill-box}"
         ".gf-ink{font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{fill_track}em}}"
     )
@@ -697,8 +699,7 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "bounce_scale": float(spec.get("bounce_scale", 1.04)),
         "bounce_out_sec": float(spec.get("bounce_out_sec", 0.15)),
         "fade_sec": float(spec.get("fade_sec", 0.25)),
-        "fill_span": float(spec.get("fill_span", 3.5)),
-        "fill_from": float(spec.get("fill_from", 0.45)),
+        "wipe_sec": float(spec.get("wipe_sec", 0.0)),
         "frame_w": float(safe["x_max"]) - float(safe["x_min"]),
         "origin_x": float(safe["x_min"]),
         "baseline_y": float(subs.get("baseline_y_default", 975)),
@@ -708,21 +709,14 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _fill_x(frac: float, word_w: float, span: float) -> float:
-    """Сдвиг rect: 0 — цветная половина, 1 — белая (как backgroundPosition)."""
-    return word_w * (1.0 - span) * frac
-
-
-def _blood_gradient(gid: str, accent: str, soft: str, ink: str) -> str:
-    """Кровь вместо Siri-радуги каталога. Белая половина — незалитое слово."""
+def _blood_gradient(gid: str, accent: str, soft: str) -> str:
+    """Кровь вместо Siri-радуги: accent → accent_soft → accent."""
     return (
         f'<linearGradient id="{gid}" gradientUnits="objectBoundingBox" '
         f'x1="0" y1="0" x2="1" y2="0">'
         f'<stop offset="0%" stop-color="{accent}"/>'
-        f'<stop offset="22%" stop-color="{soft}"/>'
-        f'<stop offset="50%" stop-color="{accent}"/>'
-        f'<stop offset="50.5%" stop-color="{ink}"/>'
-        f'<stop offset="100%" stop-color="{ink}"/>'
+        f'<stop offset="55%" stop-color="{soft}"/>'
+        f'<stop offset="100%" stop-color="{accent}"/>'
         f"</linearGradient>"
     )
 
@@ -749,7 +743,6 @@ def build_gradient_fill(
     nodes: list[str] = []
     tweens: list[str] = []
     count = 0
-    span = params["fill_span"]
     bounce = params["bounce_scale"]
     bounce_out = params["bounce_out_sec"]
 
@@ -788,23 +781,23 @@ def build_gradient_fill(
             wpx = widths[i]
             margin = _px(gap_px) if i < n - 1 else "0"
             if i == accent_at:
-                paint_w = _px(wpx * span)
-                x_white = _px(_fill_x(1.0, wpx, span))
                 word_nodes.append(
                     f'<div id="{wid}" class="gf-word gf-accent" '
                     f'style="width:{_px(wpx)}px;height:{size}px;'
                     f'margin-right:{margin}px">'
+                    f'<span class="gf-base" style="font-size:{size}px;'
+                    f'line-height:{size}px">{_esc(word["display"])}</span>'
                     f'<svg width="{_px(wpx)}" height="{size}" '
                     f'viewBox="0 0 {_px(wpx)} {size}">'
-                    f'<defs>{_blood_gradient(f"{wid}-grad", params["accent"], params["accent_soft"], params["ink"])}'
+                    f'<defs>{_blood_gradient(f"{wid}-grad", params["accent"], params["accent_soft"])}'
                     f'<mask id="{wid}-m" maskUnits="userSpaceOnUse" '
                     f'maskContentUnits="userSpaceOnUse">'
-                    f'<text class="gf-ink" x="0" y="{_px(size * 0.82)}" '
-                    f'font-size="{size}px" fill="#fff">'
-                    f"{_esc(word['display'])}</text></mask></defs>"
-                    f'<rect id="{wid}-r" x="{x_white}" y="0" '
-                    f'width="{paint_w}" height="{size}" '
-                    f'fill="url(#{wid}-grad)" mask="url(#{wid}-m)"/>'
+                    f'<rect id="{wid}-r" class="gf-wipe-r" x="0" y="0" '
+                    f'width="{_px(wpx)}" height="{size}" fill="#fff"/>'
+                    f"</mask></defs>"
+                    f'<text class="gf-ink" mask="url(#{wid}-m)" '
+                    f'fill="url(#{wid}-grad)" x="0" y="{_px(size * 0.82)}" '
+                    f'font-size="{size}px">{_esc(word["display"])}</text>'
                     f"</svg></div>"
                 )
             else:
@@ -840,10 +833,10 @@ def build_gradient_fill(
                 f'ease:"power2.out"}},{_num(word_end)});'
             )
             if i == accent_at:
-                x_from = _px(_fill_x(params["fill_from"], widths[i], span))
+                wipe = dur if params["wipe_sec"] <= 0 else min(dur, params["wipe_sec"])
                 tweens.append(
-                    f'tl.fromTo("#{wid}-r",{{x:{x_from}}},{{x:0,'
-                    f'duration:{_num(dur)},ease:"none"}},{_num(at)});'
+                    f'tl.fromTo("#{wid}-r",{{scaleX:0}},{{scaleX:1,'
+                    f'duration:{_num(wipe)},ease:"power2.out"}},{_num(at)});'
                 )
 
         if fade_dur >= 0.04:
@@ -851,6 +844,9 @@ def build_gradient_fill(
                 f'tl.to("#{group_id}",{{opacity:0,duration:{_num(fade_dur)},'
                 f'ease:"power1.out"}},{_num(fade_start)});'
             )
+        tweens.append(
+            f'tl.set("#{group_id}",{{opacity:0}},{_num(end)});'
+        )
 
     return nodes, tweens, count
 

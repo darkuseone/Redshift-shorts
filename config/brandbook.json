@@ -147,9 +147,7 @@
       "case": "upper",
       "bounce_scale": 1.04,
       "bounce_out_sec": 0.15,
-      "fade_sec": 0.25,
-      "fill_span": 3.5,
-      "fill_from": 0.45
+      "fade_sec": 0.25
     },
     "camera_follow": {
       "framing": "standard",
