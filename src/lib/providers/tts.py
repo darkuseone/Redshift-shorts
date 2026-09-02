@@ -352,8 +352,9 @@ class ElevenLabsTTS(TTSProvider):
                 "полоса речи ниже ожидаемой: сервис отдал сжатый звук",
                 extra={"bandwidth_hz": round(band), "expected_hz": round(floor),
                        "requested_format": fmt, "model": model,
-                       "hint": "поднять тариф ElevenLabs или задать "
-                               "elevenlabs.output_format"})
+                       "hint": "замерено: потолок держит не формат и не тариф, "
+                               "а сам клон голоса — нужен образец в высоком "
+                               "качестве и новый клон"})
 
         save_wav(out_path, pcm, sr)
 
