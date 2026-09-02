@@ -222,6 +222,7 @@ def run_step(ctx) -> dict[str, Any]:
 
             key = _cache_key(candidate)
             local_file = ctx.wpath("broll", "raw", Path(key).name)
+            store_after_checks = False
             if ctx.storage.exists(key):
                 ctx.storage.get(key, local_file)
             else:
@@ -248,16 +249,13 @@ def run_step(ctx) -> dict[str, Any]:
                 # оставался: мок-прогон намывал в assets/footage десятки клипов,
                 # и `git add -A` уносил их в репозиторий. Девятнадцать мегабайт
                 # за один прогон CI, который гоняется на каждом коммите.
-                if not candidate.meta.get("mock"):
-                    # Ужать до того, как файл ляжет в хранилище: в git едет
-                    # именно он, и лечить вес задним числом уже поздно —
-                    # тяжёлая версия останется в истории навсегда.
-                    slim = slim_video(local_file, max_sec=slim_max_sec,
-                                      crf=slim_crf, max_short_side=max_short_side)
-                    if slim["slimmed"]:
-                        _log.info("сток ужат: %s %.1f → %.1f МБ", candidate.id,
-                                  slim["before"] / 1e6, slim["after"] / 1e6)
-                    ctx.storage.put(key, local_file)
+                # В хранилище файл кладётся не здесь, а ниже — после того,
+                # как пройдёт палитру и дедуп. Прежде клали сразу после
+                # скачивания, и отбракованный кадр всё равно оседал в
+                # репозитории навсегда: десять розовых клипов, вычищенных
+                # руками, вернулись первым же прогоном, потому что поиск
+                # находит их снова, а гейт палитры срабатывал уже после.
+                store_after_checks = not candidate.meta.get("mock")
                 downloads += 1
 
             try:
@@ -295,6 +293,17 @@ def run_step(ctx) -> dict[str, Any]:
                                         "reason": f"дубль материала из базы {dup_base.id}",
                                         "query": query})
                 return False
+
+            # Кандидат прошёл все заслоны — вот теперь его можно хранить.
+            # Ужимаем тоже здесь: перекодировка стоит секунд, и тратить их на
+            # кадр, который сейчас отбракуют, незачем.
+            if store_after_checks:
+                slim = slim_video(local_file, max_sec=slim_max_sec,
+                                  crf=slim_crf, max_short_side=max_short_side)
+                if slim["slimmed"]:
+                    _log.info("сток ужат: %s %.1f → %.1f МБ", candidate.id,
+                              slim["before"] / 1e6, slim["after"] / 1e6)
+                ctx.storage.put(key, local_file)
 
             seen_hashes.append((candidate.id, hashes))
             slot_candidates.append({

@@ -897,12 +897,43 @@ def test_mock_material_never_reaches_the_shared_storage(tmp_path, monkeypatch):
     body = inspect.getsource(search.run_step)
     # Проверяется само правило, а не результат прогона: поднимать здесь весь
     # P7 значит тащить провайдеры, ffmpeg и палитру ради одной строки.
-    assert 'if not candidate.meta.get("mock"):' in body, \
+    assert 'store_after_checks = not candidate.meta.get("mock")' in body, \
         "мок-кандидат снова кладётся в общее хранилище"
-    put_line = next(line for line in body.splitlines()
-                    if "storage.put(key, local_file)" in line)
-    assert put_line.startswith(" " * 20), \
-        "storage.put вынесен из-под проверки на мок"
+    lines = body.splitlines()
+    put_at = next(i for i, line in enumerate(lines)
+                  if "storage.put(key, local_file)" in line)
+    guard_at = next(i for i, line in enumerate(lines)
+                    if "if store_after_checks:" in line)
+    assert guard_at < put_at, "storage.put вынесен из-под проверки"
+
+
+def test_material_reaches_the_repository_only_after_it_passes_the_checks():
+    """Отбракованный кадр не имеет права осесть в репозитории.
+
+    Прежде ``storage.put`` стоял сразу после скачивания, а палитра судила
+    ниже — и кадр не той палитры всё равно оставался в базе навсегда. Десять
+    розовых клипов, вычищенных руками, вернулись первым же прогоном: поиск
+    находит их снова, качает, кладёт, и только потом бракует.
+    """
+    import inspect
+
+    from src.p7_broll_search import search
+
+    lines = inspect.getsource(search.run_step).splitlines()
+
+    def where(needle: str) -> int:
+        return next(i for i, line in enumerate(lines) if needle in line)
+
+    assert where("verdict = palette_verdict(frames, rules)") < \
+        where("storage.put(key, local_file)"), \
+        "палитра судит уже после того, как файл лёг в хранилище"
+    assert where("dup_base = index.find_duplicate") < \
+        where("storage.put(key, local_file)"), \
+        "дубль ложится в хранилище до проверки на дубль"
+    # Ужимание тоже ждёт: перекодировка стоит секунд, и тратить их на кадр,
+    # который сейчас отбракуют, незачем.
+    assert where("if store_after_checks:") < where("slim = slim_video("), \
+        "сток ужимается до того, как выяснилось, нужен ли он"
 
 
 def test_no_step_calls_something_the_context_does_not_have():
