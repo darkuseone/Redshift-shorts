@@ -397,3 +397,44 @@ def test_the_committed_library_holds_no_mock_rows(repo_root):
         pytest.skip("базы нет")
     items = json.loads(path.read_text(encoding="utf-8"))["items"]
     assert not [i for i in items if i.get("mock")], "в базе снова синтетика"
+
+
+def test_the_evergreen_base_is_never_evicted(cfg, tmp_path, monkeypatch):
+    """Курированная база переживает вытеснение — иначе она бессмысленна.
+
+    LRU защищал только материал последних пяти роликов. У свежего засева ноль
+    использований и самое старое время доступа, то есть по этому правилу он
+    уходил первым — все 44 снимка, собранные руками и глазами, ради которых
+    база и заведена: «чтоб не искать их постоянно новые, а брать из базы».
+    """
+    from src.lib.manifest import AssetRecord, FootageIndex
+
+    store = tmp_path / "store"
+    (store / "seed" / "galaxy").mkdir(parents=True, exist_ok=True)
+    (store / "pexels").mkdir(parents=True, exist_ok=True)
+    seed_file = store / "seed" / "galaxy" / "deep_field.jpg"
+    churn_file = store / "pexels" / "clip.mp4"
+    seed_file.write_bytes(b"x" * 4096)
+    churn_file.write_bytes(b"y" * 4096)
+
+    index_path = tmp_path / "cache" / "footage_index.json"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index = FootageIndex(index_path)
+    index.add(AssetRecord(id="seeded", type="photo", source="nasa",
+                          file="seed/galaxy/deep_field.jpg",
+                          extra={"seed_topic": "galaxy"}))
+    index.add(AssetRecord(id="churn", type="video", source="pexels",
+                          file="pexels/clip.mp4"))
+    index.save()
+
+    monkeypatch.setattr(cfg, "path", lambda dotted, default=None: (
+        tmp_path / "cache" if "cache" in dotted else store))
+    cfg.set("storage.local_root", str(store))
+    cfg.set("storage.max_bytes", 4096)          # места хватает ровно на один файл
+    report = run_maintenance(cfg, dry_run=False)
+
+    # Вытеснение обязано было сработать, иначе тест ничего не доказывает:
+    # лимит меньше суммы двух файлов, и один из них уйти должен.
+    assert report["evicted_count"] >= 1, "вытеснение не запускалось"
+    assert seed_file.exists(), "засев вытеснен — база потеряна"
+    assert not churn_file.exists(), "вытеснили не то: расходный клип на месте"
