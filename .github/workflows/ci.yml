@@ -9,8 +9,8 @@ on:
   pull_request:
 
 env:
-  # Та же версия, что и в build-video: она же задаёт ключ кэша Chrome.
-  HYPERFRAMES_VERSION: "0.8.2"
+  # Та же версия, что в package.json и в build-video: она же задаёт ключ кэша Chrome.
+  HYPERFRAMES_VERSION: "0.8.26"
 
 jobs:
   test:
@@ -29,9 +29,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
 
       - name: Установить HyperFrames
-        run: npm install -g hyperframes@${{ env.HYPERFRAMES_VERSION }}
+        run: |
+          npm ci
+          echo "$GITHUB_WORKSPACE/node_modules/.bin" >> $GITHUB_PATH
+
+      - name: Проверить CLI HyperFrames
+        run: |
+          hyperframes --version
+          version=$(hyperframes --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          test "$version" = "${{ env.HYPERFRAMES_VERSION }}"
 
       - name: Кэш headless Chrome
         uses: actions/cache@v4
