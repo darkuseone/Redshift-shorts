@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 13,
+    "text-fullscreen": 14,
     "lower-thirds": 8,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 5,
     "hero-devices": 13,
-    "_total": 102
+    "_total": 103
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -465,6 +465,31 @@
         "blur"
       ],
       "renderer": "blur_out_up",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/bottom-up-letters",
+      "name": "bottom-up-letters",
+      "category": "text-fullscreen",
+      "title": "Буквы поднимаются снизу со стаггером — bottom-up-letters",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "stagger_ms": 25,
+        "bottom_up": true,
+        "unit": "letter",
+        "direction": "up",
+        "travel": "standard"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "letters"
+      ],
+      "renderer": "bottom_up_letters",
       "last_used_in": [],
       "added": "2026-09-02"
     },

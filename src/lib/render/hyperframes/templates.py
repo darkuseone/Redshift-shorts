@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-102 шаблона каталога — это не 102 реализации, а набор рендереров с параметрами.
+103 шаблона каталога — это не 103 реализации, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1522,6 +1522,82 @@ def fs_blur_out_up(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_BUL_TRAVEL = {"close": 0.45, "standard": 0.85, "far": 1.5}
+_BUL_ENTER = 0.48
+_BUL_EASE = "back.out(1.7)"
+
+
+def fs_bottom_up_letters(ctx: "TemplateCtx") -> Piece:
+    """Буквы поднимаются с нижней линии — bottom-up-letters.
+
+    Каталог ставит стартовый ``translate`` в CSS и тянет ``tl.to``. Движок
+    требует ``fromTo`` без CSS-transform на том же узле. Кремовый Inter на
+    тёмном → Oswald, ``ink`` на ``bg_pure``, одно слово ``accent``. Стаггер
+    25 мс по глифу; ``unit=word`` поднимает целые слова тем же жестом.
+    """
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    node_id = ctx.target
+    words = content.split()
+    size = _fs_size(ctx, content)
+    unit = str(ctx.params.get("unit") or "letter").lower()
+    if unit not in ("letter", "word"):
+        unit = "letter"
+    direction = str(ctx.params.get("direction") or "up").lower()
+    sign = -1.0 if direction == "down" else 1.0
+    travel_em = _BUL_TRAVEL.get(str(ctx.params.get("travel") or "standard"), 0.85)
+    travel_px = sign * travel_em * size
+    stagger = float(ctx.params.get("stagger_ms", 25)) / 1000.0
+    at = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    n = len(words) if unit == "word" else sum(len(word) for word in words)
+    last_end = at + _BUL_ENTER + stagger * max(0, n - 1)
+    if n > 1 and last_end > end - 0.04:
+        stagger = max(0.012, (end - 0.04 - at - _BUL_ENTER) / (n - 1))
+
+    cls = "clip fullscreen-text fs-letters" + (" invert" if invert else "")
+    word_html: list[str] = []
+    tweens: list[str] = []
+    accented = False
+    step = 0
+
+    def _rise(target: str, when: float) -> str:
+        return (
+            f'tl.fromTo("{target}",{{opacity:0,y:{_num(travel_px)}}},'
+            f'{{opacity:1,y:0,duration:{_num(_BUL_ENTER)},'
+            f'ease:"{_BUL_EASE}"}},{_num(when)});'
+        )
+
+    for word in words:
+        marked = ""
+        if accent and not accented and accent.lower() in word.lower():
+            marked = " accent"
+            accented = True
+        if unit == "word":
+            cid = f"{node_id}-c{step}"
+            word_html.append(
+                f'<span id="{cid}" class="bul-word bul-unit{marked}">'
+                f'{_esc(word)}</span>'
+            )
+            tweens.append(_rise(f"#{cid}", at + stagger * step))
+            step += 1
+            continue
+        chars = []
+        for ch in word:
+            cid = f"{node_id}-c{step}"
+            chars.append(f'<span id="{cid}" class="bul-ch">{_esc(ch)}</span>')
+            tweens.append(_rise(f"#{cid}", at + stagger * step))
+            step += 1
+        word_html.append(f'<span class="bul-word{marked}">{"".join(chars)}</span>')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="bul-stack" '
+               f'style="font-size:{size}px">{"".join(word_html)}</span></div>'],
+        tweens=tweens)
+
+
 def fs_number_slam(ctx: "TemplateCtx") -> Piece:
     """Цифра-удар на карточке — K3 promo. Число отдельно, подпись ниже."""
     content, accent, invert = _content_of(ctx)
@@ -1664,6 +1740,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
     "blur_out_up": fs_blur_out_up,
+    "bottom_up_letters": fs_bottom_up_letters,
     "number_slam": fs_number_slam,
 }
 
@@ -1676,6 +1753,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
     params = ctx.params
     if params.get("blur_out"):
         return fs_blur_out_up(ctx)
+    if params.get("bottom_up"):
+        return fs_bottom_up_letters(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -1854,6 +1933,12 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .bou-sharp{position:relative;display:block}"
         ".fullscreen-text .bou-ghost{position:absolute;left:0;top:0;"
         "white-space:nowrap;pointer-events:none}"
+        ".fullscreen-text .bul-stack{display:flex;flex-wrap:wrap;justify-content:center;"
+        "align-items:center;gap:0.12em 0.22em;max-width:100%;letter-spacing:-0.02em;"
+        "line-height:1}"
+        ".fullscreen-text .bul-word{display:inline-flex;white-space:nowrap}"
+        ".fullscreen-text .bul-ch,.fullscreen-text .bul-unit{display:inline-block;"
+        "opacity:0;will-change:transform}"
         ".fullscreen-text .fs-slam-card{display:flex;flex-direction:column;"
         "align-items:center;gap:18px;padding:48px 40px;border-radius:36px;"
         "background:var(--color-bg-pure)}"

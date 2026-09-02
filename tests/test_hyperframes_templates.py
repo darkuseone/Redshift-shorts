@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-102 шаблона каталога — это рендереры с параметрами. Проверяется то, что
+103 шаблона каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -632,6 +632,58 @@ def test_blur_out_up_direction_flips_the_axis():
         return float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(piece.tweens)).group(1))
 
     assert enter_y(far) == pytest.approx(enter_y(std) * 1.85)
+
+
+def test_bottom_up_letters_staggers_glyphs():
+    """Каталог: буква из 0.85em ниже, back.out, стаггер 25 мс. Не CSS-transform."""
+    piece = render_fullscreen(_fs_ctx(
+        content="код живёт", accent_word="код",
+        renderer="bottom_up_letters", bottom_up=True, unit="letter",
+        direction="up", travel="standard", stagger_ms=25, duration=1.8))
+    node = piece.nodes[0]
+    assert node.count("bul-ch") == 8
+    assert node.count("bul-word") == 2
+    assert " accent" in node
+    body = " ".join(piece.tweens)
+    assert "back.out(1.7)" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    t0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if '-c0"' in t][0]
+    t1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if '-c1"' in t][0]
+    assert t1 - t0 == pytest.approx(0.025)
+    assert "opacity:0" in body and "y:0" in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+
+
+def test_bottom_up_letters_direction_and_unit():
+    down = render_fullscreen(_fs_ctx(
+        content="код", renderer="bottom_up_letters", direction="down",
+        duration=1.8))
+    assert re.search(r"opacity:0,y:-", " ".join(down.tweens))
+    words = render_fullscreen(_fs_ctx(
+        content="код живёт", renderer="bottom_up_letters", unit="word",
+        duration=1.8))
+    assert words.nodes[0].count("bul-ch") == 0
+    assert words.nodes[0].count("bul-unit") == 2
+    std = render_fullscreen(_fs_ctx(
+        content="код", renderer="bottom_up_letters", travel="standard",
+        duration=1.8))
+    far = render_fullscreen(_fs_ctx(
+        content="код", renderer="bottom_up_letters", travel="far",
+        duration=1.8))
+
+    def enter_y(piece):
+        return abs(float(re.search(r"opacity:0,y:(-?[0-9.]+)",
+                                   " ".join(piece.tweens)).group(1)))
+
+    assert enter_y(far) == pytest.approx(enter_y(std) * 1.5 / 0.85)
 
 
 def test_number_slam_splits_the_caption():

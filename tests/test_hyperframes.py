@@ -453,6 +453,20 @@ def test_blur_out_up_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
         line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
 
 
+def test_bottom_up_letters_fullscreen_splits_glyphs(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "код живёт"
+    plan["shots"][1]["accent_word"] = "код"
+    plan["shots"][1]["params"] = {
+        "stagger_ms": 25, "bottom_up": True, "unit": "letter",
+        "direction": "up", "travel": "standard",
+    }
+    plan["shots"][1]["renderer"] = "bottom_up_letters"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bul-ch" in out
+    assert "back.out(1.7)" in out
+    assert 'id="shot-01-c0"' in out
+
+
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     plan["overlays"][0]["renderer"] = "chat_thread"
     plan["overlays"][0]["params"] = {

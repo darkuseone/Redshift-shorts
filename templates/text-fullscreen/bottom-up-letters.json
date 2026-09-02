@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/bottom-up-letters",
+  "name": "bottom-up-letters",
+  "category": "text-fullscreen",
+  "title": "Буквы поднимаются снизу со стаггером — bottom-up-letters",
+  "duration_range": [
+    0.8,
+    2.0
+  ],
+  "params": {
+    "stagger_ms": 25,
+    "bottom_up": true,
+    "unit": "letter",
+    "direction": "up",
+    "travel": "standard"
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "letters"
+  ],
+  "renderer": "bottom_up_letters",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}
