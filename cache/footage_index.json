@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-02",
-  "count": 44,
+  "count": 47,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1475,8 +1475,10 @@
       "vision_summary": "Crew Earth Observations (CEO) by Expedition Five Crew",
       "score": 0.62,
       "duration_sec": 0.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": "2026-09-02",
       "added": "2026-09-02",
       "phashes": [
         "d0ff844f81719a4e"
@@ -1562,6 +1564,113 @@
       "extra": {
         "attribution": "NASA / MSFC",
         "seed_topic": "ocean"
+      }
+    },
+    {
+      "id": "pexels_v14171674",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/snowflakes-falling-on-a-flowing-creek-14171674/",
+      "phash": "1c4c7b4ca966196e",
+      "tags": [
+        "viscous",
+        "flow",
+        "slow",
+        "motion",
+        "dark"
+      ],
+      "vision_summary": "тёмная вязкая жидкость с пузырьками и медленными складками",
+      "score": 0.92,
+      "duration_sec": 48.725,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "1c4c7b4ca966196e",
+        "f64d70544de2914f",
+        "0c9a71596723994f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v14171674.mp4",
+      "extra": {
+        "attribution": "Pexels / binary Ego",
+        "author": "binary Ego",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v15168370",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-shapes-of-pink-ink-underwater-15168370/",
+      "phash": "097af0f562c6ba05",
+      "tags": [
+        "lava",
+        "flow",
+        "closeup",
+        "slow"
+      ],
+      "vision_summary": "Pink ink/particles slowly diffusing in dark viscous liquid",
+      "score": 0.82,
+      "duration_sec": 18.652,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "097af0f562c6ba05",
+        "3a7ce9fa4c4d022c",
+        "3278c5fb52c0396a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v15168370.mp4",
+      "extra": {
+        "attribution": "Pexels / Dan Cristian Pădureț",
+        "author": "Dan Cristian Pădureț",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v15168379",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/purple-ink-mixing-underwater-in-slow-motion-15168379/",
+      "phash": "cebc818b44d9c8fc",
+      "tags": [
+        "viscous",
+        "flow",
+        "slow",
+        "motion",
+        "dark"
+      ],
+      "vision_summary": "Пурпурная вязкая жидкость медленно растекается в чёрной жидкости",
+      "score": 0.93,
+      "duration_sec": 19.585,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "cebc818b44d9c8fc",
+        "10140dfd79474e7a",
+        "c6ce1c9a3868cafa"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v15168379.mp4",
+      "extra": {
+        "attribution": "Pexels / Dan Cristian Pădureț",
+        "author": "Dan Cristian Pădureț",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
       }
     }
   ]
