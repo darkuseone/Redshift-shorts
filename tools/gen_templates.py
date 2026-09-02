@@ -54,7 +54,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (12, [
+    "text-fullscreen": (13, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -79,6 +79,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("kinetic-stack", "Слова входят rise со стаггером — Texture / OBLIST",
          [0.8, 2.0], {"stagger_ms": 55, "kinetic": True},
          ["text", "kinetic"], "kinetic_stack", _EX_TEXTURE),
+        ("blur-out-up", "Слова выходят из размытия и уходят вверх — blur-out-up",
+         [0.8, 2.0], {"stagger_ms": 55, "blur_out": True, "direction": "up",
+                      "distance": "standard", "blur": "standard"},
+         ["text", "kinetic", "blur"], "blur_out_up"),
         ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),
@@ -303,10 +307,12 @@ def main() -> int:
     # манифест «с нуля» значит обнулить ротацию §15.12 и заставить каталог
     # заново сойтись на первых попавшихся шаблонах.
     history: dict[str, list[str]] = {}
+    added_on: dict[str, str] = {}
     existing = TEMPLATES / "manifest.json"
     if existing.exists():
         for entry in json.loads(existing.read_text(encoding="utf-8"))["templates"]:
             history[entry["id"]] = entry.get("last_used_in", [])
+            added_on[entry["id"]] = entry.get("added", "2026-08-18")
 
     total = 0
     for category, (expected, items) in CATALOG.items():
@@ -325,7 +331,7 @@ def main() -> int:
                 "tags": tags,
                 "renderer": renderer,
                 "last_used_in": history.get(f"{category}/{tid}", []),
-                "added": "2026-09-02" if example_video else "2026-08-18",
+                "added": added_on.get(f"{category}/{tid}") or "2026-09-02",
             }
             if example_video:
                 entry["example_video"] = example_video

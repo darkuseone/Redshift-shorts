@@ -749,6 +749,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     hero_eligible = 0
 
     fullscreen_styles = (["text-fullscreen/kinetic-stack",
+                          "text-fullscreen/blur-out-up",
                           "text-fullscreen/number-slam-card"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])

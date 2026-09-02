@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-101 шаблон каталога — это рендереры с параметрами. Проверяется то, что
+102 шаблона каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -566,7 +566,8 @@ def test_bubble_leaves_no_residual_scale_on_the_shared_avatar():
 
 
 def _fs_ctx(**params):
-    return TemplateCtx(index=1, start=3.0, duration=1.4, target="shot-01",
+    duration = float(params.pop("duration", 1.4))
+    return TemplateCtx(index=1, start=3.0, duration=duration, target="shot-01",
                        track=1, params={"available_px": 900, "size_px": 420,
                                         **params})
 
@@ -580,6 +581,47 @@ def test_kinetic_stack_staggers_words():
     assert len(piece.tweens) >= 3
     extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
     assert not extra
+
+
+def test_blur_out_up_staggers_words_from_a_static_ghost():
+    """Каталог тянет filter; здесь призрак со статическим blur и смена opacity."""
+    piece = render_fullscreen(_fs_ctx(
+        content="сигнал с орбиты", accent_word="орбиты",
+        renderer="blur_out_up", blur_out=True, stagger_ms=55,
+        direction="up", duration=1.8))
+    node = piece.nodes[0]
+    assert "bou-word" in node
+    assert node.count("bou-word") == 3
+    assert node.count("bou-ghost") == 3
+    assert "filter:blur(5px)" in node
+    assert " accent" in node
+    body = " ".join(piece.tweens)
+    assert "filter" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    assert all(f'#{_fs_ctx().target}' != re.search(r'"(#[^"]+)"', t).group(1)
+               for t in piece.tweens)
+    starts = [float(t.rstrip(");").rsplit(",", 1)[1])
+              for t in piece.tweens if "fromTo" in t and "-w0\"" in t][:1]
+    later = [float(t.rstrip(");").rsplit(",", 1)[1])
+             for t in piece.tweens if "fromTo" in t and "-w1\"" in t][:1]
+    assert starts and later and later[0] - starts[0] == pytest.approx(0.055)
+    assert "y:22" in body and "y:-22" in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+
+
+def test_blur_out_up_direction_flips_the_axis():
+    left = render_fullscreen(_fs_ctx(
+        content="код", renderer="blur_out_up", direction="left", duration=1.8))
+    body = " ".join(left.tweens)
+    assert "x:-22" in body and "x:22" in body
+    assert "{y:" not in body and ",y:" not in body
+    far = render_fullscreen(_fs_ctx(
+        content="код", renderer="blur_out_up", direction="up",
+        distance="far", blur="heavy", duration=1.8))
+    assert "filter:blur(11px)" in far.nodes[0]
+    assert "y:40.7" in " ".join(far.tweens)
 
 
 def test_number_slam_splits_the_caption():

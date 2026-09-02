@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 12,
+    "text-fullscreen": 13,
     "lower-thirds": 8,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 5,
     "hero-devices": 13,
-    "_total": 101
+    "_total": 102
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -442,6 +442,31 @@
       "last_used_in": [],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
+    },
+    {
+      "id": "text-fullscreen/blur-out-up",
+      "name": "blur-out-up",
+      "category": "text-fullscreen",
+      "title": "Слова выходят из размытия и уходят вверх — blur-out-up",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "stagger_ms": 55,
+        "blur_out": true,
+        "direction": "up",
+        "distance": "standard",
+        "blur": "standard"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "blur"
+      ],
+      "renderer": "blur_out_up",
+      "last_used_in": [],
+      "added": "2026-09-02"
     },
     {
       "id": "text-fullscreen/number-slam-card",

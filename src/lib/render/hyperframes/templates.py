@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-101 шаблон каталога — это не 101 реализация, а набор рендереров с параметрами.
+102 шаблона каталога — это не 102 реализации, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1367,6 +1367,30 @@ def fs_plain(ctx: "TemplateCtx") -> Piece:
                                name="zoom-in"))
 
 
+# Каталог blur-out-up: ось, дальность, сила размытия. Движок не тянет filter,
+# поэтому пиксели считаются здесь и кладутся в статичный CSS у призрака.
+_BOU_AXES = {"up": (0, 1), "down": (0, -1), "left": (-1, 0), "right": (1, 0)}
+_BOU_REACH = {"close": 0.5, "standard": 1.0, "far": 1.85}
+_BOU_BLUR = {"soft": 0.45, "standard": 1.0, "heavy": 2.2}
+_BOU_BASE_PX = 22.0
+_BOU_BASE_BLUR = 5.0
+_BOU_ENTER = 0.3
+_BOU_EXIT = 0.28
+_BOU_SCALE_FROM = 0.92
+
+
+def _bou_motion(params: dict[str, Any]) -> tuple[float, float, int]:
+    """Смещение входа и радиус призрака из переменных каталога."""
+    direction = str(params.get("direction") or "up").lower()
+    if direction not in _BOU_AXES:
+        direction = "up"
+    axis_x, axis_y = _BOU_AXES[direction]
+    reach = _BOU_REACH.get(str(params.get("distance") or "standard"), 1.0)
+    blur_scale = _BOU_BLUR.get(str(params.get("blur") or "standard"), 1.0)
+    dist = _BOU_BASE_PX * reach
+    return axis_x * dist, axis_y * dist, max(1, int(round(_BOU_BASE_BLUR * blur_scale)))
+
+
 def fs_kinetic_stack(ctx: "TemplateCtx") -> Piece:
     """Слова входят очередью — Texture launch / OBLIST, не весь блок сразу."""
     content, accent, invert = _content_of(ctx)
@@ -1392,6 +1416,105 @@ def fs_kinetic_stack(ctx: "TemplateCtx") -> Piece:
     return Piece(
         nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
                f'<span id="{node_id}-inner" class="ks-stack" '
+               f'style="font-size:{size}px">{"".join(spans)}</span></div>'],
+        tweens=tweens)
+
+
+def fs_blur_out_up(ctx: "TemplateCtx") -> Piece:
+    """Слова выходят из размытия и уходят дальше по оси — blur-out-up.
+
+    Каталог HyperFrames анимирует CSS ``filter``. Движок этого не умеет,
+    поэтому у каждого слова два слоя: острый и призрак со статическим
+    ``filter: blur()``. Проявляется сменой прозрачности, подъём — ``y``/``x``
+    и ``scale`` на обёртке, не на клипе. Жёлтый/изумруд каталога → ``accent``
+    на одном слове. Выход продолжает ту же ось: вверх для ``direction=up``.
+    """
+    content, accent, invert = _content_of(ctx)
+    if not content:
+        return Piece()
+    node_id = ctx.target
+    words = content.split()
+    size = _fs_size(ctx, content)
+    enter_x, enter_y, blur_px = _bou_motion(ctx.params)
+    stagger = float(ctx.params.get("stagger_ms", 55)) / 1000.0
+    at = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    n = len(words)
+    last_enter_end = at + _BOU_ENTER + stagger * max(0, n - 1)
+    exit_dur = _BOU_EXIT
+    exit_at = end - exit_dur
+    do_exit = last_enter_end + 0.05 <= exit_at
+    if not do_exit and last_enter_end + 0.16 < end:
+        exit_at = last_enter_end + 0.05
+        exit_dur = end - exit_at
+        do_exit = True
+
+    cls = "clip fullscreen-text fs-blur-up" + (" invert" if invert else "")
+    spans: list[str] = []
+    tweens: list[str] = []
+    accented = False
+    enter_from = [f"scale:{_num(_BOU_SCALE_FROM)}"]
+    enter_to = ["scale:1"]
+    exit_from = ["scale:1"]
+    exit_to = ["scale:0.96"]
+    if enter_x:
+        enter_from.append(f"x:{_num(enter_x)}")
+        enter_to.append("x:0")
+        exit_from.append("x:0")
+        exit_to.append(f"x:{_num(-enter_x)}")
+    if enter_y:
+        enter_from.append(f"y:{_num(enter_y)}")
+        enter_to.append("y:0")
+        exit_from.append("y:0")
+        exit_to.append(f"y:{_num(-enter_y)}")
+    enter_from_s, enter_to_s = ",".join(enter_from), ",".join(enter_to)
+    exit_from_s, exit_to_s = ",".join(exit_from), ",".join(exit_to)
+
+    for i, word in enumerate(words):
+        marked = ""
+        if accent and not accented and accent.lower() in word.lower():
+            marked = " accent"
+            accented = True
+        wid = f"{node_id}-w{i}"
+        spans.append(
+            f'<span id="{wid}" class="bou-word{marked}">'
+            f'<span id="{wid}-s" class="bou-sharp">{_esc(word)}</span>'
+            f'<span id="{wid}-g" class="bou-ghost" style="filter:blur({blur_px}px)">'
+            f'{_esc(word)}</span></span>'
+        )
+        word_at = at + stagger * i
+        tweens.append(
+            f'tl.fromTo("#{wid}",{{{enter_from_s}}},{{{enter_to_s},'
+            f'duration:{_num(_BOU_ENTER)},ease:"power3.out"}},{_num(word_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{wid}-s",{{opacity:0}},{{opacity:1,'
+            f'duration:{_num(_BOU_ENTER)},ease:"power3.out"}},{_num(word_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{wid}-g",{{opacity:0.85}},{{opacity:0,'
+            f'duration:{_num(_BOU_ENTER)},ease:"power3.out"}},{_num(word_at)});'
+        )
+        if do_exit:
+            # Выход без стаггера: иначе последнее слово вылезает за окно клипа.
+            tweens.append(
+                f'tl.fromTo("#{wid}",{{{exit_from_s}}},{{{exit_to_s},'
+                f'duration:{_num(exit_dur)},ease:"power3.in"}},{_num(exit_at)});'
+            )
+            tweens.append(
+                f'tl.fromTo("#{wid}-s",{{opacity:1}},{{opacity:0,'
+                f'duration:{_num(exit_dur)},ease:"power3.in"}},{_num(exit_at)});'
+            )
+            tweens.append(
+                f'tl.fromTo("#{wid}-g",{{opacity:0}},{{opacity:0.8,'
+                f'duration:{_num(exit_dur)},ease:"power3.in"}},{_num(exit_at)});'
+            )
+        tweens.append(f'tl.set("#{wid}-s",{{opacity:0}},{_num(end)});')
+        tweens.append(f'tl.set("#{wid}-g",{{opacity:0}},{_num(end)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="bou-stack" '
                f'style="font-size:{size}px">{"".join(spans)}</span></div>'],
         tweens=tweens)
 
@@ -1537,6 +1660,7 @@ def fs_fact_card(ctx: "TemplateCtx") -> Piece:
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
+    "blur_out_up": fs_blur_out_up,
     "number_slam": fs_number_slam,
 }
 
@@ -1547,6 +1671,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
     if named in FULLSCREEN and named != "fullscreen_text":
         return FULLSCREEN[named](ctx)
     params = ctx.params
+    if params.get("blur_out"):
+        return fs_blur_out_up(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -1718,6 +1844,13 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .ks-stack{display:flex;flex-wrap:wrap;justify-content:center;"
         "gap:0.18em 0.28em;max-width:100%}"
         ".fullscreen-text .ks-word{display:inline-block;will-change:transform}"
+        ".fullscreen-text .bou-stack{display:flex;flex-wrap:wrap;justify-content:center;"
+        "gap:0.18em 0.28em;max-width:100%;letter-spacing:-0.04em}"
+        ".fullscreen-text .bou-word{position:relative;display:inline-block;"
+        "will-change:transform}"
+        ".fullscreen-text .bou-sharp{position:relative;display:block}"
+        ".fullscreen-text .bou-ghost{position:absolute;left:0;top:0;"
+        "white-space:nowrap;pointer-events:none}"
         ".fullscreen-text .fs-slam-card{display:flex;flex-direction:column;"
         "align-items:center;gap:18px;padding:48px 40px;border-radius:36px;"
         "background:var(--color-bg-pure)}"

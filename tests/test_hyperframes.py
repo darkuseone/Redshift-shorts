@@ -438,6 +438,21 @@ def test_kinetic_fullscreen_uses_word_stack(plan, assets, brandbook):
     assert "ks-stack" in out
 
 
+def test_blur_out_up_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "сигнал с орбиты"
+    plan["shots"][1]["accent_word"] = "орбиты"
+    plan["shots"][1]["params"] = {
+        "stagger_ms": 55, "blur_out": True, "direction": "up",
+        "distance": "standard", "blur": "standard",
+    }
+    plan["shots"][1]["renderer"] = "blur_out_up"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bou-ghost" in out
+    assert "filter:blur(5px)" in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+
+
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     plan["overlays"][0]["renderer"] = "chat_thread"
     plan["overlays"][0]["params"] = {
