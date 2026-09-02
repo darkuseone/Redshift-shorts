@@ -166,14 +166,22 @@ def test_cta_pulse_is_finite(markup):
     assert re.search(r"repeat:\d+", pulse.replace(" ", ""))
 
 
-def test_subtitle_popin_animates_inner_span(markup):
-    """Видимостью клипа управляет фреймворк — анимируем вложенный span."""
-    assert 'tl.fromTo("#w-0000-t"' in markup
-    assert 'tl.fromTo("#w-0000"' not in markup
+def test_subtitle_gradient_fill_animates_inner_word(markup):
+    """Видимостью клипа управляет движок — bounce и заливка на вложенном слове."""
+    assert 'class="clip caption-grad"' in markup
+    assert 'fromTo("#gf-00"' not in markup
+    assert 'tl.set("#gf-00-w' in markup
+    assert "backgroundPosition" not in markup
+    assert "clip-path" not in markup
+    assert 'id="w-0000"' not in markup
 
 
-def test_emphasis_word_marked_in_markup(markup):
-    assert 'id="w-0001" class="clip word emphasis"' in markup
+def test_emphasis_word_gets_blood_gradient(markup):
+    assert "gf-accent" in markup
+    assert "#C8453D" in markup
+    assert "#E4726A" in markup
+    assert "#FFD700" not in markup
+    assert "#fe9f1b" not in markup.lower()
 
 
 def test_text_behind_head_taken_from_block(markup):
@@ -195,7 +203,7 @@ def test_text_is_escaped(plan, assets, brandbook):
     # для проверки экранирования ставим внутрь слова.
     plan["subtitles"][0]["display"] = "ку<и>&я"
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    assert "ку&lt;и&gt;&amp;я" in out
+    assert "КУ&lt;И&gt;&amp;Я" in out
 
 
 # --- CSS ----------------------------------------------------------------------
@@ -206,11 +214,11 @@ def test_css_takes_colors_from_brandbook(brandbook):
     assert "@font-face" in css and "fonts/Nunito-ExtraBold.ttf" in css
 
 
-def test_subtitle_is_centered_on_the_frame(brandbook):
-    """Центр кадра, а не середина рабочей зоны (правое поле ужато под UI)."""
+def test_subtitle_group_is_centered_on_the_work_area(brandbook):
+    """Фраза центрируется в рабочей зоне, не в оптическом центре кадра."""
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
-    rule = re.search(r"\.word\{([^}]*)\}", css).group(1)
-    assert "left:0" in rule and "right:0" in rule and "text-align:center" in rule
+    rule = re.search(r"\.gf-group\{([^}]*)\}", css).group(1)
+    assert "justify-content:center" in rule
 
 
 # --- статистика для отчёта ----------------------------------------------------
@@ -237,7 +245,7 @@ def test_subtitle_coverage_of_empty_plan_is_zero():
 
 # --- правило текста доезжает до обоих движков ---------------------------------
 
-def test_subtitle_word_is_cleaned_and_lowercased(plan, assets, brandbook):
+def test_subtitle_word_is_cleaned_and_uppercased(plan, assets, brandbook):
     """До переноса правило жило внутри отрисовки, и HTML-движок его не видел."""
     plan["subtitles"] = [
         {"display": "Падение", "start": 0.0, "end": 0.5, "emphasis": False},
@@ -245,9 +253,9 @@ def test_subtitle_word_is_cleaned_and_lowercased(plan, assets, brandbook):
         {"display": "ОТО", "start": 1.0, "end": 1.5, "emphasis": False},
     ]
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    assert ">падение<" in out
-    assert ">счётчик<" in out and "счётчик." not in out
-    assert ">ОТО<" in out          # аббревиатуру не трогаем
+    assert ">ПАДЕНИЕ<" in out
+    assert ">СЧЁТЧИК<" in out and "счётчик." not in out
+    assert ">ОТО<" in out
 
 
 def test_source_card_clears_the_subtitle_band(brandbook):

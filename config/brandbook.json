@@ -127,11 +127,6 @@
       250,
       450
     ],
-    "pop_in_ms": [
-      90,
-      120
-    ],
-    "pop_scale_from": 0.92,
     "accent_word_ratio": [
       6,
       8
@@ -142,7 +137,20 @@
       "alpha": 0.5
     },
     "accent_color": "accent_soft",
-    "caption": "camera-follow",
+    "caption": "gradient-fill",
+    "gradient_fill": {
+      "base_px": 88,
+      "max_words": 4,
+      "pause_break_sec": 0.45,
+      "letter_spacing_em": 0.04,
+      "gap_em": 0.22,
+      "case": "upper",
+      "bounce_scale": 1.04,
+      "bounce_out_sec": 0.15,
+      "fade_sec": 0.25,
+      "fill_span": 3.5,
+      "fill_from": 0.45
+    },
     "camera_follow": {
       "framing": "standard",
       "ratio": 0.72,

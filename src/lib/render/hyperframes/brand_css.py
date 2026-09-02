@@ -115,30 +115,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     )
 
     # --- субтитры (§5.1) ------------------------------------------------
-    # Центр — оптический центр кадра, а не середина рабочей зоны: правое поле
-    # ужато под колонку лайк/коммент/шер и увело бы слово влево.
-    #
-    # Читаемость держится мягкой тенью, а не обводкой. Обводка обводит каждое
-    # слово красным контуром, и цвет перестаёт что-либо значить: выделять
-    # смысловое слово нечем. Здесь белое слово идёт потоком, а важное — светлым
-    # красным, и это единственное место в кадре, где цвет несёт смысл.
-    halo = subs.get("shadow", {})
-    blur = int(halo.get("blur_px", 20))
-    offset = int(halo.get("offset_y_px", 4))
-    alpha = float(halo.get("alpha", 0.5))
-    accent_var = str(subs.get("accent_color", "accent_soft")).replace("_", "-")
-    parts.append(
-        f".word{{position:absolute;left:0;right:0;top:{int(subs['baseline_y_default'])}px;"
-        f"z-index:{Z_SUBTITLE};text-align:center;transform:translateY(-50%);"
-        "font-family:var(--font-subtitle);font-weight:800;"
-        f"font-size:{int(subs['size_px_default'])}px;"
-        f"line-height:{typo['subtitle']['line_height']};"
-        f"color:{subs['color']};"
-        f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
-        f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px rgba(0,0,0,{alpha * 0.8:.2f})}}"
-        ".word > span{display:inline-block;will-change:transform}"
-        f".word.emphasis{{color:var(--color-{accent_var})}}"
-    )
+    # Жесты живут в caption_css: pop-in Nunito больше не рисуется.
     parts.append(caption_css(brandbook))
 
     # --- полноэкранный текст (§5.2) ------------------------------------

@@ -136,5 +136,5 @@ def test_wipe_scale_tweens_on_a_word_do_not_overlap(cfg):
             assert prev[1] <= nxt[0] + 1e-6, f"{target}: {windows}"
 
 
-def test_default_caption_stays_camera_follow(cfg):
-    assert cfg.brand("subtitles.caption") == "camera-follow"
+def test_default_caption_is_gradient_fill(cfg):
+    assert cfg.brand("subtitles.caption") == "gradient-fill"

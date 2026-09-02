@@ -26,8 +26,10 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from ..text_rules import subtitle_word
-from .captions import TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD, build_camera_follow, build_clip_wipe
+from .captions import (
+    TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD,
+    build_camera_follow, build_clip_wipe, build_gradient_fill, resolve_caption,
+)
 from .templates import (
     OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, render_dataviz,
     render_fullscreen, render_hero, render_motion, render_overlay,
@@ -41,7 +43,6 @@ TRACK_AVATAR = 3
 TRACK_BEHIND_HEAD = 4
 TRACK_OVERLAY = 5      # и следующие, если плашки пересекаются во времени
 TRACK_TRANSITION = 11
-TRACK_SUBTITLE = 12
 # Приёмы вокруг ведущего чередуют треки по той же причине, что и шоты: соседние
 # кадры стыкуются встык, а окно видимости клипа включает оба конца.
 TRACK_HERO_EVEN = 13
@@ -460,52 +461,18 @@ class CompositionBuilder:
 
     # --- субтитры -------------------------------------------------------
     def _subtitle_nodes(self) -> list[str]:
-        # Камера включается только из плана: фикстуры без caption остаются
-        # на pop-in, даже если брендбук уже переведён на follow.
-        caption = str(self.plan.get("subtitle_style", {}).get("caption") or "word-pop")
-        if caption == "camera-follow":
-            nodes, tweens, count = build_camera_follow(
-                self.plan, self.brandbook, duration=self.duration)
-            self.tweens.extend(tweens)
-            self.stats["subtitle_words"] += count
-            return nodes
-        if caption == "clip-wipe":
-            nodes, tweens, count = build_clip_wipe(
-                self.plan, self.brandbook, duration=self.duration)
-            self.tweens.extend(tweens)
-            self.stats["subtitle_words"] += count
-            return nodes
-        return self._subtitle_pop_nodes()
-
-    def _subtitle_pop_nodes(self) -> list[str]:
-        spec = self.brandbook["subtitles"]
-        pop_ms = float(spec["pop_in_ms"][0]) / 1000.0
-        scale_from = float(spec["pop_scale_from"])
-        baseline = self.plan.get("subtitle_style", {}).get(
-            "baseline_y", spec["baseline_y_default"])
-
-        case_mode = spec.get("case", "lower")
-        nodes: list[str] = []
-        for i, word in enumerate(self.plan.get("subtitles", [])):
-            display = subtitle_word(str(word.get("display") or ""), case_mode)
-            if not display:
-                continue
-            start = float(word["start"])
-            duration = max(0.05, float(word["end"]) - start)
-            node_id = f"w-{i:04d}"
-            css = "clip word emphasis" if word.get("emphasis") else "clip word"
-            style = f' style="top:{int(baseline)}px"'
-            nodes.append(
-                f'<div id="{node_id}" class="{css}"{style} '
-                f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
-                f'data-track-index="{TRACK_SUBTITLE}">'
-                f'<span id="{node_id}-t">{_esc(display)}</span></div>')
-            # Pop-in анимируется на внутреннем span: сам клип отдан движку,
-            # его видимостью управляет фреймворк.
-            self.tweens.append(
-                f'tl.fromTo("#{node_id}-t",{{scale:{scale_from}}},'
-                f'{{scale:1,duration:{pop_ms:.3f},ease:"back.out(1.7)"}},{_num(start)});')
-            self.stats["subtitle_words"] += 1
+        caption = resolve_caption(
+            str(self.plan.get("subtitle_style", {}).get("caption") or ""))
+        builders = {
+            "clip-wipe": build_clip_wipe,
+            "camera-follow": build_camera_follow,
+            "gradient-fill": build_gradient_fill,
+        }
+        builder = builders.get(caption, build_gradient_fill)
+        nodes, tweens, count = builder(
+            self.plan, self.brandbook, duration=self.duration)
+        self.tweens.extend(tweens)
+        self.stats["subtitle_words"] += count
         return nodes
 
     # --- звук -----------------------------------------------------------

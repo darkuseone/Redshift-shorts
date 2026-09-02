@@ -231,13 +231,15 @@ cut по-прежнему база ≥70 %.
 
 ## Жесты субтитров (не каталог §15)
 
-`caption-camera-follow` — стиль субтитра, не id шаблона. P11 кладёт
-`subtitle_style.caption` из `subtitles.caption` брендбука. Слова стоят в
-мире, камера (`x`/`y`/`scale`) едет по вложенному `#cf-NN-world`, не по
-`.clip`. Смаз каталога — `filter`, его нет. Фразы режутся паузой, блоком и
-потолком 12 слов, иначе ранняя надпись становится пылью.
+`caption-gradient-fill` — прод по умолчанию. P11 кладёт
+`subtitle_style.caption` через `pick_caption_style`. Каталог анимирует
+`backgroundPosition`; движок этого не умеет, поэтому SVG-маска и сдвиг `x`
+у градиентного rect. Siri-радуга → `accent → accent_soft` на одном слове
+фразы. Bounce 1.04 на каждом слове, не на `.clip`.
 
-`caption-clip-wipe` — тоже стиль, не id. Каталог тянет `clip-path: inset`;
-движок этого не умеет, поэтому маска с `overflow:hidden` и `scaleX` от
-левого края, буквы контр-масштабом. Золото → `accent`. Включать планом
-`caption: clip-wipe`, брендбук по умолчанию остаётся на camera-follow.
+`caption-clip-wipe` — космос (`category: space` или космические слова в
+теме/заголовке). Каталог тянет `clip-path: inset`; маска с `scaleX` на
+белом SVG-rect. Золото → `accent`.
+
+`caption-camera-follow` остаётся доступен явным `caption` в плане. Pop-in
+Nunito удалён.

@@ -1,24 +1,25 @@
 """Жесты субтитров, которых нет в каталоге §15.
 
-``caption-camera-follow``: слова стоят на месте, едет камера. Раскладка
-самоподобная — каждое новое слово меряется от коробки уже написанного, камера
-отъезжает так, чтобы новое слово садилось в кадр тем же размером. Старые
-остаются гореть и просто мельчают к левому верхнему углу.
+``caption-gradient-fill`` (прод по умолчанию): слово стоит, при произнесении
+через него проезжает заливка. В каталоге это ``backgroundPosition`` по
+Siri-радуге — свойства нет в списке движка, поэтому SVG-маска букв и сдвиг
+``x`` у широкого градиентного rect. Радуга → кровь ``accent → accent_soft``,
+одно слово на фразу. Остальные слова белые, с тем же bounce.
 
-``caption-clip-wipe``: слово стоит, раскрывается слева направо. В каталоге это
-``clip-path: inset`` — свойства нет в списке движка, поэтому маска с
-``overflow:hidden`` и ``scaleX`` от левого края, а буквы контр-масштабом
-остаются несплющенными. Уход — сдвиг чернил вправо внутри той же маски.
-Золотая вспышка ключевых слов → ``accent``, одно слово на фразу.
+``caption-clip-wipe`` (космос): слово стоит, раскрывается слева направо.
+В каталоге это ``clip-path: inset``. Маска — белый SVG-rect, вход ``scaleX``,
+уход сдвигом ``x``. Жёлтая вспышка → ``accent``.
 
-Это не шаблон каталога и не вендорный HTML с examples HyperFrames: жест
-переложен на Oswald, кровь ``accent`` вместо золота, тайминг — реальные слова
-пайплайна, без ``filter``-смаза (его нет в списке анимируемых свойств).
+``caption-camera-follow``: слова стоят, едет камера. Раскладка самоподобная.
+
+Это не шаблон каталога и не вендорный HTML: жесты переложены на Oswald,
+тайминг — слова пайплайна. Pop-in Nunito в проекте больше нет.
 """
 
 from __future__ import annotations
 
 import html
+import re
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -38,6 +39,55 @@ FRAMINGS = {"tight": 0.82, "standard": 1.0, "wide": 1.25}
 EASE_STEP = "cubic-bezier(0.31,0,0.11,1)"
 EASE_WIDE = "cubic-bezier(0.42,0,0.14,1)"
 EASE_INK = "cubic-bezier(0.2,0.7,0.3,1)"
+
+# Старые имена однословного pop-in: композитор больше его не собирает.
+_LEGACY_POP = frozenset({"", "word-pop", "pop-in", "pop", "nunito"})
+
+_SPACE_RE = re.compile(
+    r"космос|космическ|орбит[аеуы]|астронавт|галактик|вселенн|"
+    r"\bnasa\b|\besa\b|spacex|starship|"
+    r"спутник|телескоп|\bмарс[аеу]?\b|\bлун[аеуы]\b|"
+    r"ракет[аеуы]|astronaut|\bgalaxy\b|\buniverse\b|"
+    r"хаббл|\bhubble\b|уэбб|\bwebb\b|\bмкс\b|\biss\b|"
+    r"черн\w*\s*дыр|black\s*hole|туманност",
+    re.I,
+)
+
+
+def is_space_theme(plan: dict[str, Any]) -> bool:
+    """Космос — категория ``space`` или космические слова в теме ролика."""
+    if str(plan.get("category") or "").lower() == "space":
+        return True
+    meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
+    chunks = [
+        plan.get("title"), plan.get("topic"), plan.get("category"),
+        meta.get("title"), meta.get("topic"), meta.get("category"),
+    ]
+    for block in plan.get("blocks") or []:
+        chunks += [block.get("text"), block.get("spoken_text"),
+                   block.get("visual_intent")]
+    blob = " ".join(str(c or "") for c in chunks)
+    return bool(_SPACE_RE.search(blob))
+
+
+def pick_caption_style(plan: dict[str, Any],
+                       brandbook: dict[str, Any] | None = None) -> str:
+    """Прод: gradient-fill; космос — clip-wipe. Pop-in больше не выбирается."""
+    if is_space_theme(plan):
+        return "clip-wipe"
+    spec = (brandbook or {}).get("subtitles") or {}
+    name = str(spec.get("caption") or "gradient-fill").strip()
+    if name in _LEGACY_POP:
+        return "gradient-fill"
+    return name
+
+
+def resolve_caption(name: str | None) -> str:
+    """Имя из плана → существующий жест. Пустое и pop-in → gradient-fill."""
+    raw = str(name or "").strip()
+    if raw in _LEGACY_POP:
+        return "gradient-fill"
+    return raw or "gradient-fill"
 
 
 def _num(value: float) -> str:
@@ -239,6 +289,8 @@ def caption_css(brandbook: dict[str, Any]) -> str:
     line_height = float(spec.get("line_height", 0.78))
     color = str(subs.get("color", "#FFFFFF"))
     wipe_track = float(wipe.get("letter_spacing_em", 0.04))
+    fill = subs.get("gradient_fill") or {}
+    fill_track = float(fill.get("letter_spacing_em", 0.04))
     shadow = (
         f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
         f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px "
@@ -271,6 +323,20 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         ".cw-ink{font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{wipe_track}em;"
         f"fill:currentColor;color:{color};{shadow}}}"
+        f".caption-grad{{position:absolute;inset:0;z-index:{Z_CAPTION};"
+        "overflow:hidden;pointer-events:none;"
+        "width:var(--frame-w);height:var(--frame-h)}"
+        ".gf-group{position:absolute;left:var(--safe-x-min);"
+        "width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end}"
+        ".gf-word{display:block;flex:0 0 auto;overflow:hidden;"
+        "font-family:var(--font-display);font-weight:700;"
+        f"text-transform:uppercase;letter-spacing:{fill_track}em;"
+        f"color:{color};line-height:1.15;white-space:nowrap;"
+        f"transform-origin:50% 50%;{shadow}}}"
+        ".gf-word svg{display:block;overflow:visible}"
+        ".gf-ink{font-family:var(--font-display);font-weight:700;"
+        f"text-transform:uppercase;letter-spacing:{fill_track}em}}"
     )
 
 
@@ -614,3 +680,177 @@ def build_clip_wipe(
             )
 
     return nodes, tweens, count
+
+
+def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
+    spec = (brandbook.get("subtitles") or {}).get("gradient_fill") or {}
+    subs = brandbook.get("subtitles") or {}
+    colors = brandbook.get("colors") or {}
+    safe = brandbook["safe_zones"]["work_area"]
+    return {
+        "base_px": int(spec.get("base_px", subs.get("size_px_default", 88))),
+        "max_words": int(spec.get("max_words", 4)),
+        "pause_break_sec": float(spec.get("pause_break_sec", 0.45)),
+        "letter_spacing_em": float(spec.get("letter_spacing_em", 0.04)),
+        "gap_em": float(spec.get("gap_em", 0.22)),
+        "case": str(spec.get("case", "upper")),
+        "bounce_scale": float(spec.get("bounce_scale", 1.04)),
+        "bounce_out_sec": float(spec.get("bounce_out_sec", 0.15)),
+        "fade_sec": float(spec.get("fade_sec", 0.25)),
+        "fill_span": float(spec.get("fill_span", 3.5)),
+        "fill_from": float(spec.get("fill_from", 0.45)),
+        "frame_w": float(safe["x_max"]) - float(safe["x_min"]),
+        "origin_x": float(safe["x_min"]),
+        "baseline_y": float(subs.get("baseline_y_default", 975)),
+        "accent": str(colors.get("accent", "#C8453D")),
+        "accent_soft": str(colors.get("accent_soft", "#E4726A")),
+        "ink": str(subs.get("color", "#FFFFFF")),
+    }
+
+
+def _fill_x(frac: float, word_w: float, span: float) -> float:
+    """Сдвиг rect: 0 — цветная половина, 1 — белая (как backgroundPosition)."""
+    return word_w * (1.0 - span) * frac
+
+
+def _blood_gradient(gid: str, accent: str, soft: str, ink: str) -> str:
+    """Кровь вместо Siri-радуги каталога. Белая половина — незалитое слово."""
+    return (
+        f'<linearGradient id="{gid}" gradientUnits="objectBoundingBox" '
+        f'x1="0" y1="0" x2="1" y2="0">'
+        f'<stop offset="0%" stop-color="{accent}"/>'
+        f'<stop offset="22%" stop-color="{soft}"/>'
+        f'<stop offset="50%" stop-color="{accent}"/>'
+        f'<stop offset="50.5%" stop-color="{ink}"/>'
+        f'<stop offset="100%" stop-color="{ink}"/>'
+        f"</linearGradient>"
+    )
+
+
+def build_gradient_fill(
+    plan: dict[str, Any],
+    brandbook: dict[str, Any],
+    *,
+    duration: float,
+) -> tuple[list[str], list[str], int]:
+    """Фразы с bounce и заливкой акцента. Твины на слове и rect, не на ``.clip``."""
+    params = gradient_fill_params(brandbook)
+    baseline = float(plan.get("subtitle_style", {}).get(
+        "baseline_y", params["baseline_y"]))
+    words = _visible_words(plan.get("subtitles") or [], params["case"])
+    if not words:
+        return [], [], 0
+
+    phrases = group_caption_phrases(
+        words,
+        max_words=params["max_words"],
+        pause_break_sec=params["pause_break_sec"],
+    )
+    nodes: list[str] = []
+    tweens: list[str] = []
+    count = 0
+    span = params["fill_span"]
+    bounce = params["bounce_scale"]
+    bounce_out = params["bounce_out_sec"]
+
+    for p, phrase in enumerate(phrases):
+        start = float(phrase[0]["start"])
+        last_end = float(phrase[-1]["end"])
+        next_start = (
+            float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
+        )
+        texts = [w["display"] for w in phrase]
+        size, widths = fit_wipe_group(
+            texts,
+            max_width=params["frame_w"],
+            base=params["base_px"],
+            letter_spacing_em=params["letter_spacing_em"],
+            gap_em=params["gap_em"],
+        )
+        gap_px = size * params["gap_em"]
+        n = len(phrase)
+        gap = max(0.0, next_start - last_end)
+        fade_dur = min(params["fade_sec"], gap * 0.8) if gap > 0.04 else 0.0
+        fade_start = (next_start - fade_dur) if fade_dur else last_end
+        end = max(next_start if fade_dur else last_end, start + 0.05)
+        if p + 1 < len(phrases) and end > next_start + 1e-6:
+            end = next_start
+
+        track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
+        clip_id = f"gf-{p:02d}"
+        group_id = f"{clip_id}-g"
+        accent_at = _accent_index(phrase)
+        top = int(baseline - size / 2)
+        word_nodes: list[str] = []
+
+        for i, word in enumerate(phrase):
+            wid = f"{clip_id}-w{i}"
+            wpx = widths[i]
+            margin = _px(gap_px) if i < n - 1 else "0"
+            if i == accent_at:
+                paint_w = _px(wpx * span)
+                x_white = _px(_fill_x(1.0, wpx, span))
+                word_nodes.append(
+                    f'<div id="{wid}" class="gf-word gf-accent" '
+                    f'style="width:{_px(wpx)}px;height:{size}px;'
+                    f'margin-right:{margin}px">'
+                    f'<svg width="{_px(wpx)}" height="{size}" '
+                    f'viewBox="0 0 {_px(wpx)} {size}">'
+                    f'<defs>{_blood_gradient(f"{wid}-grad", params["accent"], params["accent_soft"], params["ink"])}'
+                    f'<mask id="{wid}-m" maskUnits="userSpaceOnUse" '
+                    f'maskContentUnits="userSpaceOnUse">'
+                    f'<text class="gf-ink" x="0" y="{_px(size * 0.82)}" '
+                    f'font-size="{size}px" fill="#fff">'
+                    f"{_esc(word['display'])}</text></mask></defs>"
+                    f'<rect id="{wid}-r" x="{x_white}" y="0" '
+                    f'width="{paint_w}" height="{size}" '
+                    f'fill="url(#{wid}-grad)" mask="url(#{wid}-m)"/>'
+                    f"</svg></div>"
+                )
+            else:
+                word_nodes.append(
+                    f'<div id="{wid}" class="gf-word" '
+                    f'style="width:{_px(wpx)}px;height:{size}px;'
+                    f'font-size:{size}px;line-height:{size}px;'
+                    f'margin-right:{margin}px">'
+                    f"{_esc(word['display'])}</div>"
+                )
+            count += 1
+
+        nodes.append(
+            f'<div id="{clip_id}" class="clip caption-grad" '
+            f'data-start="{_num(start)}" data-duration="{_num(end - start)}" '
+            f'data-track-index="{track}">'
+            f'<div id="{group_id}" class="gf-group" '
+            f'style="top:{top}px;left:{int(params["origin_x"])}px;'
+            f'width:{int(params["frame_w"])}px;gap:0">'
+            f'{"".join(word_nodes)}</div></div>'
+        )
+
+        for i, word in enumerate(phrase):
+            wid = f"{clip_id}-w{i}"
+            at = float(word["start"])
+            word_end = float(word["end"])
+            dur = max(0.05, word_end - at)
+            tweens.append(
+                f'tl.set("#{wid}",{{scale:{_scale(bounce)}}},{_num(at)});'
+            )
+            tweens.append(
+                f'tl.to("#{wid}",{{scale:1,duration:{_num(bounce_out)},'
+                f'ease:"power2.out"}},{_num(word_end)});'
+            )
+            if i == accent_at:
+                x_from = _px(_fill_x(params["fill_from"], widths[i], span))
+                tweens.append(
+                    f'tl.fromTo("#{wid}-r",{{x:{x_from}}},{{x:0,'
+                    f'duration:{_num(dur)},ease:"none"}},{_num(at)});'
+                )
+
+        if fade_dur >= 0.04:
+            tweens.append(
+                f'tl.to("#{group_id}",{{opacity:0,duration:{_num(fade_dur)},'
+                f'ease:"power1.out"}},{_num(fade_start)});'
+            )
+
+    return nodes, tweens, count
+

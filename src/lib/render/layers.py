@@ -1,8 +1,8 @@
-"""Слои графики: субтитры, полноэкранный текст, плашки, подсветка, карточки.
+"""Слои графики: полноэкранный текст, плашки, подсветка, карточки.
 
 Каждая функция возвращает RGBA-слой размером с кадр, который композитор кладёт
 поверх видеоряда. Вся геометрия считается от safe zones брендбука (§3.2), все
-анимационные константы — из ``brandbook.json`` (§5).
+анимационные константы — из ``brandbook.json`` (§5). Субтитры рисует HyperFrames.
 """
 
 from __future__ import annotations
@@ -18,8 +18,6 @@ from .canvas import (
     FontBook, RGBA, SafeZones, clamp01, cut_hole, dim_layer, draw_text, ease, measure,
     mix, new_layer, parse_color, rounded_rect, with_alpha,
 )
-# Правило регистра общее для обоих движков рендера — см. text_rules.
-from .text_rules import apply_case, subtitle_word
 
 _log = get_logger("layers")
 
@@ -117,86 +115,7 @@ def fit_block(ctx: Ctx, text: str, role: str, *, max_width: int, max_size: int,
 
 
 # --- субтитры (§5.1) ----------------------------------------------------------
-
-def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
-             baseline_y: int | None = None, mode: str = "stroke") -> Image.Image:
-    """Одно слово по центру кадра. Pop-in 90–120 мс, scale 0.92→1.0, без вращений."""
-    spec = ctx.brandbook["subtitles"]
-    layer = ctx.new()
-    display = subtitle_word(word, spec.get("case", "lower"))
-    if not display:
-        return layer
-
-    max_width = min(int(spec["max_block_width_px"]), ctx.centered_width)
-    size, lines = fit_block(ctx, display, "subtitle", max_width=max_width,
-                            max_size=int(spec["size_px"][1]),
-                            min_size=int(spec["size_px"][0]) - 24, max_lines=1)
-    font = ctx.fonts.font("subtitle", size)
-    text = lines[0]
-
-    # Цвет — единственное, что в потоке субтитров несёт смысл: белое слово идёт
-    # фоном речи, светло-красное отмечает то, на что стоит опереться. Обводка
-    # красила бы контуром каждое слово, и выделять смысловое стало бы нечем.
-    color = (ctx.color(spec.get("accent_color", "accent_soft")) if emphasis
-             else parse_color(spec["color"]))
-    stroke_color = ctx.color("bg_pure") if emphasis else ctx.color(spec["stroke_color"])
-    stroke = int(spec["stroke_px"][0]) if mode == "stroke" else 0
-
-    y = baseline_y if baseline_y is not None else int(spec["baseline_y_default"])
-    x = ctx.center_x
-
-    pop = clamp01(progress)
-    scale = 0.92 + 0.08 * ctx.ease("ease_out_back", pop)
-    alpha = clamp01(pop * 2.2)
-
-    tw, th = measure(text, font)
-    if mode == "pill":
-        pad_x, pad_y = spec["pill_padding_px"]
-    elif mode == "shadow":
-        halo_pad = int(spec.get("shadow", {}).get("blur_px", 20))
-        pad_x, pad_y = halo_pad, halo_pad + int(spec.get("shadow", {}).get("offset_y_px", 4))
-    else:
-        pad_x, pad_y = stroke + 8, stroke + 8
-    tile_w, tile_h = int(tw + pad_x * 2 + 16), int(th + pad_y * 2 + 16)
-    tile = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
-    cx, cy = tile_w // 2, tile_h // 2
-
-    if mode == "pill":
-        rounded_rect(tile, (cx - tw / 2 - pad_x, cy - th / 2 - pad_y,
-                            cx + tw / 2 + pad_x, cy + th / 2 + pad_y),
-                     radius=int(spec["pill_radius_px"]),
-                     fill=with_alpha(parse_color(ctx.brandbook["colors"]["overlay_dim"]), alpha))
-        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha), anchor="mm")
-    elif mode == "shadow":
-        # Тень рисуется отдельным слоем и размывается: обводка держит контраст
-        # жёстким контуром, тень — мягким ореолом, и слово остаётся читаемым на
-        # светлом футаже, не превращаясь в наклейку.
-        shadow_spec = spec.get("shadow", {})
-        blur = float(shadow_spec.get("blur_px", 20)) / 2.0
-        offset = int(shadow_spec.get("offset_y_px", 4))
-        halo = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
-        draw_text(halo, (cx, cy + offset), text, font,
-                  fill=(0, 0, 0, int(255 * float(shadow_spec.get("alpha", 0.5)) * alpha)),
-                  anchor="mm")
-        tile.alpha_composite(halo.filter(ImageFilter.GaussianBlur(blur)))
-        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha), anchor="mm")
-    else:
-        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha),
-                  stroke_width=stroke, stroke_fill=with_alpha(stroke_color, alpha),
-                  anchor="mm")
-
-    if abs(scale - 1.0) > 1e-3:
-        tile = tile.resize((max(1, int(tile_w * scale)), max(1, int(tile_h * scale))),
-                           Image.Resampling.LANCZOS)
-
-    # По горизонтали центруем по фактическим чернилам: у глифов разные боковые
-    # свесы, и центровка по ширине строки уводит слово на несколько пикселей.
-    # По вертикали — строго по метрикам шрифта: центровка по чернилам заставила
-    # бы слова с выносными («у», «р») прыгать вверх-вниз на каждой смене.
-    ink = tile.getbbox()
-    ink_cx = (ink[0] + ink[2]) / 2 if ink else tile.width / 2
-    layer.alpha_composite(tile, (round(x - ink_cx), round(y - tile.height / 2)))
-    return layer
+# Pop-in Nunito удалён. Жесты рисует HyperFrames: gradient-fill и clip-wipe.
 
 
 def subtitle_baseline(ctx: Ctx, *, face_bbox: tuple[int, int, int, int] | None) -> int:

@@ -194,5 +194,5 @@ def test_adjacent_phrases_use_two_tracks(cfg):
     assert {t for _, t in tracks} <= {"18", "19"}
 
 
-def test_brandbook_default_caption_is_camera_follow(cfg):
-    assert cfg.brand("subtitles.caption") == "camera-follow"
+def test_brandbook_default_caption_is_gradient_fill(cfg):
+    assert cfg.brand("subtitles.caption") == "gradient-fill"
