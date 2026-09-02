@@ -14,8 +14,9 @@ from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
     Slot, _avatar_runs, _avatar_share, _break_long_footage_run,
-    _insert_avatar_interstitials, _longest_footage_run, _needs_interstitial,
-    _irony_emotion, _raise_avatar_share, _split_span, close_gaps, compute_stats,
+    _enforce_shot_limits, _insert_avatar_interstitials, _longest_footage_run,
+    _needs_interstitial, _irony_emotion, _raise_avatar_share, _split_span,
+    close_gaps, compute_stats,
 )
 from src.p7_broll_search.search import _stage1_reject
 from src.p8_broll_judge.judge import _needs_arbitration
@@ -83,6 +84,36 @@ def test_interstitial_taken_from_tail_when_there_is_room():
     out = _insert_avatar_interstitials(slots, min_shot=1.5, appearance_min=3.0, notes=[])
     assert [s.kind for s in out] == ["avatar", "footage", "avatar"]
     assert out[1].end == pytest.approx(8.0)           # вырез именно из первого
+
+
+def test_long_avatar_shot_is_broken_by_cutaway():
+    """QC-4 меряет любой план, а не только футажный: аватар 8.8 сек висит.
+
+    Резать его на два аватар-плана подряд нельзя (QC-18) — вырезаем перебивку.
+    """
+    slots = [_slot(0, 0.0, 8.8, kind="avatar", block="b1", mode="A")]
+    out = _enforce_shot_limits(slots, 5.0, 7.0, 1.5, [], appearance_min=3.0)
+    assert [s.kind for s in out] == ["avatar", "footage", "avatar"]
+    assert all(s.duration <= 7.0 + 1e-6 for s in out if s.kind == "avatar")
+    assert all(s.duration >= 3.0 - 1e-6 for s in out if s.kind == "avatar")
+    assert out[0].start == pytest.approx(0.0) and out[-1].end == pytest.approx(8.8)
+    assert out[1].needs_asset and out[1].asset_role == "broll"
+
+
+def test_avatar_cutaway_lands_on_word_boundaries():
+    """Рез посреди слова отдал бы слово обоим клипам сразу (P6 snap_to_phrase)."""
+    words = [{"start": round(i * 0.4, 2), "end": round(i * 0.4 + 0.35, 2)}
+             for i in range(23)]
+    out = _enforce_shot_limits([_slot(0, 0.0, 9.2, kind="avatar", block="b1", mode="A")],
+                               5.0, 7.0, 1.5, [], appearance_min=3.0, words=words)
+    bounds = {round(w["start"], 2) for w in words} | {round(w["end"], 2) for w in words}
+    assert round(out[0].end, 2) in bounds
+    assert round(out[1].end, 2) in bounds
+
+
+def test_avatar_shot_within_limit_untouched():
+    slots = [_slot(0, 0.0, 6.5, kind="avatar", block="b1", mode="A")]
+    assert _enforce_shot_limits(slots, 5.0, 7.0, 1.5, []) == slots
 
 
 def test_close_gaps_makes_strict_partition():
@@ -154,7 +185,7 @@ def test_long_footage_run_is_broken_by_avatar():
 
 
 def test_long_footage_run_yields_to_appearance_count_limit():
-    """§3.5 против §3.5: новое появление вывело бы их число за 2–5.
+    """§3.5 против §3.5: новое появление вывело бы их число за 2–7.
 
     Непрерывный футаж — не блокирующая проверка, число появлений строже,
     поэтому кусок остаётся длинным, а причина уходит в план.
@@ -214,11 +245,16 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
     path = repo_root / "work" / "redshift_0042" / "cut_plan.json"
     if not path.exists():
         pytest.skip("нет прогона: запустите python -m src.cli run --script scripts/redshift_0042.json")
-    stats = json.loads(path.read_text(encoding="utf-8"))["stats"]
+    plan = json.loads(path.read_text(encoding="utf-8"))
+    stats = plan["stats"]
     assert 0.35 <= stats["avatar_share"] <= 0.60
     assert 2 <= stats["avatar_appearances"] <= 5
     assert all(3.0 <= d <= 12.0 for d in stats["avatar_appearance_durations"])
-    assert stats["max_shot_sec"] <= 5.0 + 1e-6
+    # QC-4 меряет не самый длинный слот вообще, а каждый по своему потолку:
+    # 5 сек без внутренних событий, 7 — с ними.
+    for slot in plan["slots"]:
+        allowed = 7.0 if len(slot.get("events") or []) > 1 else 5.0
+        assert slot["duration"] <= allowed + 1e-3, slot
     assert stats["max_event_gap_sec"] <= 2.5 + 1e-3
     assert stats["first_event_sec"] <= 0.8
     assert stats["split_share"] <= 0.25 + 1e-3
@@ -576,9 +612,367 @@ def test_generated_clips_are_visually_distinct(cfg, tmp_path):
             assert distance > 8, f"промпты {i} и {j} дали дубль (hamming={distance})"
 
 
+def test_generated_clips_stay_distinct_on_a_plain_ffmpeg(cfg, tmp_path, monkeypatch):
+    """Различие кадров не имеет права зависеть от сборки ffmpeg.
+
+    Именно так тест выше и упал на CI, пройдя локально: типы градиента
+    ``supported_gradient_types`` вычитывает из справки фильтра, и если разбор
+    не удался, остаётся один ``linear``. Три промпта получили один тип, пара
+    цветов у двух совпала, и хэши разошлись ровно на 8 бит при пороге
+    «больше 8». Локально сборка знала четыре типа, разница бралась оттуда, и
+    расстояния были 30–38 — изъян не показывался.
+
+    Здесь бедная сборка воспроизводится нарочно.
+    """
+    import src.lib.providers.generation as G
+    from src.lib.ffmpeg import extract_frames
+    from src.lib.phash import hamming, phash_image
+
+    monkeypatch.setattr(G, "supported_gradient_types", lambda: ("linear",))
+    provider = G.build_generation_provider(cfg, None)
+    prompts = ["quantum processor macro. Role: hook",
+               "abstract data particles. Role: develop",
+               "white dwarf star. Role: twist"]
+    hashes = []
+    for i, prompt in enumerate(prompts):
+        asset = provider.generate(prompt, tmp_path / f"g{i}.mp4", kind="video",
+                                  duration_sec=2.0)
+        hashes.append(phash_image(extract_frames(asset.path, tmp_path / f"f{i}", [0.5])[0]))
+
+    for i in range(len(hashes)):
+        for j in range(i + 1, len(hashes)):
+            distance = hamming(hashes[i], hashes[j])
+            assert distance > 8, (
+                f"на одном типе градиента промпты {i} и {j} дали дубль "
+                f"(hamming={distance})")
+
+
 def test_p9_dedup_helper_finds_duplicate():
     from src.p9_generate.generate import _find_duplicate
 
     pool = [("existing", ["0" * 16, "0" * 16, "0" * 16])]
     assert _find_duplicate(["0" * 16, "0" * 16, "0" * 16], pool, 8) == "existing"
     assert _find_duplicate(["f" * 16, "f" * 16, "f" * 16], pool, 8) is None
+
+
+# --- второй заход поиска ------------------------------------------------------
+
+def test_refined_queries_name_the_palette():
+    """Искать те же слова второй раз бессмысленно — сток отдаст ту же выдачу.
+
+    На 0047 по запросу «abstract dark red gradient background» сток вернул
+    стену розовых кубов. Уточнение — единственное, чем на это можно ответить,
+    не платя за генерацию.
+    """
+    from src.p7_broll_search.search import _PALETTE_HINTS, _refine_queries
+
+    refined = _refine_queries(["deep drilling rig", "granite core sample", "tundra"])
+    assert len(refined) == 3
+    assert all(hint in q for q, hint in zip(refined, _PALETTE_HINTS))
+    assert refined[0].startswith("deep drilling rig ")
+
+
+def test_refined_queries_survive_an_empty_list():
+    from src.p7_broll_search.search import _refine_queries
+
+    assert _refine_queries([]) == []
+    assert _refine_queries(["", "камень"]) == ["камень dark"]
+
+
+# --- окно переписки: только там, где спрашивают ------------------------------
+
+def test_chat_window_appears_only_on_a_real_question():
+    """Окно поиска ставилось на любой блок — переписка вместо реплики.
+
+    Признак — знак вопроса, и только он. Список вопросительных слов в начале
+    фразы к нему добавляли, но на сценариях репозитория он не поймал ни одного
+    лишнего вопроса и выдумал один: «Когда звезда умирала, она раздувалась…» —
+    здесь «когда» значит «в то время как».
+    """
+    from src.p11_assemble.assemble import _question
+
+    assert _question("Куда, по-твоему, копать дальше?") == "Куда, по-твоему, копать дальше"
+    # Вопрос в конце реплики — тоже вопрос блока.
+    assert _question("Скважину закрыли. Куда копать дальше?") == "Куда копать дальше"
+    # А это не вопрос, хотя начинается с «когда».
+    assert _question("Когда звезда умирала, она раздувалась и гасла.") == ""
+    assert _question("Кольскую скважину бурили двадцать лет.") == ""
+    assert _question("") == ""
+
+
+def test_chat_window_fires_once_per_script():
+    """Плотность: по одному вопросу на сценарий, и все — в блоке призыва."""
+    import glob
+    import json
+
+    from src.p11_assemble.assemble import _question
+
+    for path in sorted(glob.glob("scripts/redshift_00*.json")):
+        blocks = json.load(open(path, encoding="utf-8"))["blocks"]
+        asking = [b["id"] for b in blocks if _question(b["text"])]
+        assert len(asking) == 1, f"{path}: окон переписки {len(asking)}, ждали одно"
+
+
+# --- окно генерации: только там, где речь о генерации -------------------------
+
+def test_generation_window_needs_the_topic_not_the_length():
+    """Промпт собирается там, где блок и правда про генерацию.
+
+    «Модель» в список не входит: в науке это модель Вселенной куда чаще, чем
+    модель нейросети, и окно всплыло бы в ролике про чёрные дыры — той же
+    ошибкой, что список вопросительных слов у окна переписки.
+    """
+    from src.p11_assemble.assemble import _gen_prompt
+
+    block = {"text": "Нейросеть рисует кадр за четыре секунды, и отличить его нельзя.",
+             "emphasis_word": "четыре"}
+    assert _gen_prompt(block) == "нейросеть рисует кадр за четыре секунды"
+    # Промпт печатают строчными: заглавная выдала бы заголовок, а не запрос.
+    assert _gen_prompt(block).islower()
+    assert _gen_prompt({"text": "Модель Вселенной пересобрали дважды."}) == ""
+    assert _gen_prompt({"text": ""}) == ""
+
+
+def test_generation_window_stays_silent_on_current_scripts():
+    """Ни один сценарий репозитория не про ИИ — и окна генерации в них нет."""
+    import glob
+    import json
+
+    from src.p11_assemble.assemble import _gen_prompt
+
+    for path in sorted(glob.glob("scripts/redshift_00*.json")):
+        blocks = json.load(open(path, encoding="utf-8"))["blocks"]
+        assert not [b["id"] for b in blocks if _gen_prompt(b)], path
+
+
+# --- акцент в полноэкранной фразе --------------------------------------------
+
+def test_fullscreen_accent_follows_the_meaning():
+    """Красным горит одно слово, и выбирать его наугад нельзя.
+
+    Берётся акцентное слово блока — оно и есть то, ради чего кадр появился, —
+    а падеж между репликой и фразой сводится по общему началу: «воду» против
+    «ВОДА». Числа идут следом: фраза с числом всегда про число.
+    """
+    from src.p11_assemble.assemble import _fullscreen_accent
+
+    assert _fullscreen_accent("ОНА ТЕЧЁТ", {"emphasis_word": "течёт"}) == "ТЕЧЁТ"
+    assert _fullscreen_accent("ВОДА ПОД ЗЕМЛЁЙ", {"emphasis_word": "воду"}) == "ВОДА"
+    # Акцент блока в этой фразе не звучит — тогда решает число.
+    assert _fullscreen_accent("180 ГРАДУСОВ", {"emphasis_word": "восемьдесят"}) == "180"
+    # Ни того, ни другого — самое содержательное слово.
+    assert _fullscreen_accent("ДВЕНАДЦАТЬ КИЛОМЕТРОВ", {}) == "ДВЕНАДЦАТЬ"
+    # Одно слово: выделять нечего, размер уже всё выделил.
+    assert _fullscreen_accent("ПЕРЕЖИВЁШЬ", {"emphasis_word": "переживёшь"}) is None
+
+
+def test_fullscreen_accent_does_not_confuse_similar_stems():
+    """«Порыв» не должен подсветить «породу»: начала сравниваются целиком."""
+    from src.p11_assemble.assemble import _fullscreen_accent
+
+    # Совпадения нет — работает запасной путь, а не ложный корень.
+    assert _fullscreen_accent("ПОРОДА ДЕРЖИТ", {"emphasis_word": "порыв"}) == "ПОРОДА"
+    assert _fullscreen_accent("ДЕРЖИТ ПОРОДА", {"emphasis_word": "порыв"}) == "ДЕРЖИТ"
+
+
+def test_fullscreen_slot_gets_the_queries_of_its_block():
+    """Кадр с текстом ищет материал теми же словами, что и остальной блок.
+
+    Он выносит крупно фразу этого блока, значит и картинка под ней — та же по
+    смыслу. Раньше слот материала не просил вовсе, и кадр выходил белыми
+    буквами на пустом чёрном.
+    """
+    from src.p5_replan.replanner import Slot, _assign_queries
+
+    slots = [
+        Slot(index=0, start=0.0, end=1.4, kind="fullscreen_text", block_id="b3",
+             role="evidence", mode="C", needs_asset=True, asset_role="broll"),
+        Slot(index=1, start=1.4, end=4.0, kind="footage", block_id="b3",
+             role="evidence", mode="C", needs_asset=True, asset_role="broll"),
+    ]
+    draft = {"blocks": [{"id": "b3",
+                         "broll_queries": ["thermal imaging hot rock",
+                                           "molten rock glowing macro"]}]}
+    _assign_queries(slots, draft)
+    assert slots[0].queries, "кадр с текстом остался без запросов"
+    assert slots[0].queries[0] == "thermal imaging hot rock"
+    # Запросы блока раздаются по кругу: соседний кадр берёт следующий.
+    assert slots[1].queries[0] == "molten rock glowing macro"
+
+
+def test_prepared_entry_is_a_dict_with_dst():
+    """Подготовленный кадр — словарь с ключом ``dst``, а не объект с ``.path``.
+
+    Ветка полноэкранного текста читала его как объект и падала на живом
+    прогоне: `'dict' object has no attribute 'path'`. Модульные тесты этого не
+    видели — сборку варианта они не звали, — а мок-прогон CI увидел сразу.
+    Здесь форма записи закреплена явно.
+    """
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [{"index": 3, "kind": "footage", "block_id": "b1"},
+             {"index": 4, "kind": "fullscreen_text", "block_id": "b1"}]
+    prepared = {3: {"dst": "/w/shots/a.mp4", "duration_sec": 4.2}}
+    plate = _plate_source(slots[1], slots, prepared, {3: {"source": "pexels"}})
+    assert plate is not None
+    assert plate["file"] == "/w/shots/a.mp4"
+    assert plate["duration_sec"] == pytest.approx(4.2)
+
+
+def test_the_repository_library_never_collects_generated_material(tmp_path, cfg, monkeypatch):
+    """Библиотека лежит в репозитории и просматривается раньше стоков (§7.2.1).
+
+    Накопив там AI, конвейер начал бы предпочитать его настоящему кадру — ровно
+    вопреки правилу «преимущество всегда за реальным материалом». Повторить
+    генерацию дёшево, а место в истории git не возвращается никогда.
+    """
+    import json
+
+    from src.lib.providers.vision import VisionVerdict
+    from src.p9_generate import generate as G
+    from tests.test_generation_grok import _run_generation
+
+    class _Critic:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            return VisionVerdict(score=0.9, reason="", summary="кадр", judge="critic")
+
+    monkeypatch.setattr(G, "build_vision_provider", lambda *a, **k: _Critic())
+    _run_generation(tmp_path, monkeypatch, cfg)
+
+    doc = json.loads((tmp_path / "work" / "generated_assets.json").read_text("utf-8"))
+    assert doc["generated"], "проба не сгенерировала ничего — тест бессмыслен"
+
+    index_path = tmp_path / "cache" / "footage_index.json"
+    items = json.loads(index_path.read_text("utf-8"))["items"] if index_path.exists() else []
+    assert not [i for i in items if i.get("ai_generated")], "AI попал в общую базу"
+    assert not list((tmp_path / "storage").rglob("*.mp4")), "AI попал в хранилище"
+
+
+class TestScoreBelongsToItsSlot:
+    """Оценка принадлежит паре «кадр + смысл слота», а не кадру.
+
+    Судья отвечал на вопрос «подходит ли снимок вот этой реплике». Перенести
+    ответ на другой слот значит утверждать непроверенное: снимок галактики
+    получил бы 0.9 в кадре про буровую, потому что у слотов совпал тег
+    «space». Вечнозелёная база вскрыла это ребром — её записи не судились ни
+    разу, у них ровный SEED_SCORE 0.62 при пороге приёма 0.70, и по старому
+    пути весь засев навсегда оставался «borderline».
+    """
+
+    def test_the_same_shot_phrased_differently_is_the_same_slot(self):
+        from src.p8_broll_judge.judge import _same_intent
+
+        assert _same_intent("трещиноватый гранит крупным планом",
+                            "крупный план трещиноватого гранита")
+        assert _same_intent("ракета на старте ночью", "ракета на старте ночью")
+
+    def test_a_different_slot_does_not_inherit_the_verdict(self):
+        from src.p8_broll_judge.judge import _same_intent
+
+        assert not _same_intent("далёкие галактики в глубоком поле",
+                                "буровая колонна в стволе скважины")
+        assert not _same_intent("ракета поднимается над стартовым столом",
+                                "инженеры в чистой комнате собирают аппарат")
+
+    def test_material_without_a_recorded_intent_is_judged_afresh(self):
+        """У засева и у старых записей смысла не записано — значит, судить."""
+        from src.p8_broll_judge.judge import _same_intent
+
+        assert not _same_intent("", "буровая колонна")
+        assert not _same_intent("буровая колонна", "")
+
+
+def test_mock_material_never_reaches_the_shared_storage(tmp_path, monkeypatch):
+    """Мок-прогон не намывает файлов в библиотеку репозитория.
+
+    Запись индекс отклоняет с прошлой находки, а файл оставался: один прогон
+    CI клал в assets/footage восемьдесят синтетических клипов на девятнадцать
+    мегабайт, и `git add -A` уносил их в репозиторий. CI гоняется на каждом
+    коммите — библиотека засорялась быстрее, чем наполнялась настоящим.
+    """
+    import inspect
+
+    from src.p7_broll_search import search
+
+    body = inspect.getsource(search.run_step)
+    # Проверяется само правило, а не результат прогона: поднимать здесь весь
+    # P7 значит тащить провайдеры, ffmpeg и палитру ради одной строки.
+    assert 'store_after_checks = not candidate.meta.get("mock")' in body, \
+        "мок-кандидат снова кладётся в общее хранилище"
+    lines = body.splitlines()
+    put_at = next(i for i, line in enumerate(lines)
+                  if "storage.put(key, local_file)" in line)
+    guard_at = next(i for i, line in enumerate(lines)
+                    if "if store_after_checks:" in line)
+    assert guard_at < put_at, "storage.put вынесен из-под проверки"
+
+
+def test_material_reaches_the_repository_only_after_it_passes_the_checks():
+    """Отбракованный кадр не имеет права осесть в репозитории.
+
+    Прежде ``storage.put`` стоял сразу после скачивания, а палитра судила
+    ниже — и кадр не той палитры всё равно оставался в базе навсегда. Десять
+    розовых клипов, вычищенных руками, вернулись первым же прогоном: поиск
+    находит их снова, качает, кладёт, и только потом бракует.
+    """
+    import inspect
+
+    from src.p7_broll_search import search
+
+    lines = inspect.getsource(search.run_step).splitlines()
+
+    def where(needle: str) -> int:
+        return next(i for i, line in enumerate(lines) if needle in line)
+
+    assert where("verdict = palette_verdict(frames, rules)") < \
+        where("storage.put(key, local_file)"), \
+        "палитра судит уже после того, как файл лёг в хранилище"
+    assert where("dup_base = index.find_duplicate") < \
+        where("storage.put(key, local_file)"), \
+        "дубль ложится в хранилище до проверки на дубль"
+    # Ужимание тоже ждёт: перекодировка стоит секунд, и тратить их на кадр,
+    # который сейчас отбракуют, незачем.
+    assert where("if store_after_checks:") < where("slim = slim_video("), \
+        "сток ужимается до того, как выяснилось, нужен ли он"
+
+
+def test_no_step_calls_something_the_context_does_not_have():
+    """Шаг обращается к ``ctx`` только за тем, что у ``RunContext`` есть.
+
+    Прогон 33644475244 упал на живом материале с
+    ``'RunContext' object has no attribute 'log'``: в P7 была написана строка
+    ``ctx.log.info(...)``, а журнал у модуля свой, ``_log``. Локально это не
+    ловилось — ветка живёт под ``if not candidate.meta.get("mock")``, а в
+    мок-режиме мок стоит у каждого кандидата, и строка не выполнялась ни разу.
+    Тридцать минут прогона ушли на опечатку в имени атрибута.
+
+    Проверка статическая: разбирает исходники шагов и сверяет каждое
+    обращение ``ctx.<имя>`` с полями и методами ``RunContext``. Ветку она
+    исполнять не обязана — и именно поэтому ловит ту, которую не исполняет
+    ни один тест.
+    """
+    import ast
+    from pathlib import Path
+
+    from src.pipeline import RunContext
+
+    known = set(dir(RunContext)) | set(getattr(RunContext, "__annotations__", {}))
+    offenders: list[str] = []
+    # Только тела ``run_step`` и вложенных в них функций: имя ``ctx`` занято и
+    # в рисовании кадра, где это совсем другой объект — со своими ``color``,
+    # ``brandbook`` и ``safe``. Шагам конвейера принадлежит именно ``run_step``.
+    for path in sorted(Path("src").rglob("*.py")):
+        tree = ast.parse(path.read_text("utf-8"), filename=str(path))
+        steps = [n for n in ast.walk(tree)
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                 and n.name == "run_step"]
+        for step in steps:
+            for node in ast.walk(step):
+                if (isinstance(node, ast.Attribute)
+                        and isinstance(node.value, ast.Name)
+                        and node.value.id == "ctx"
+                        and node.attr not in known):
+                    offenders.append(f"{path}:{node.lineno} ctx.{node.attr}")
+    assert not offenders, (
+        "шаг просит у контекста то, чего в RunContext нет:\n  "
+        + "\n  ".join(offenders))

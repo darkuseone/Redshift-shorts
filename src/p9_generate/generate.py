@@ -19,9 +19,10 @@ from typing import Any
 
 from ..lib.ffmpeg import extract_frames, probe
 from ..lib.logging import get_logger
-from ..lib.manifest import AssetRecord, FootageIndex
+from ..lib.manifest import FootageIndex
 from ..lib.phash import phash_image
 from ..lib.providers.generation import build_generation_provider
+from ..lib.providers.vision import build_vision_provider
 from ..lib.query import build_queries
 
 _log = get_logger("p9")
@@ -50,10 +51,35 @@ def _prompt_for_slot(slot: dict[str, Any], plan: dict[str, Any]) -> str:
     queries = build_queries(slot, plan, count=3)
     intent = slot.get("visual_intent") or queries[0]
     role = slot.get("role", "")
-    style = ("cinematic, vertical 9:16 composition, shallow depth of field, "
-             "muted palette with a single warm red accent, no text, no logos, "
-             "no watermark, subtle motion")
+    # Запреты в промпте — не украшение. Заказчик просил, чтобы кадр не читался
+    # как AI-генерация, а узнаётся она в первую очередь по «нарисованности»:
+    # 3D-рендер, иллюстрация, вылизанный глянец без единой случайной детали.
+    # Поэтому кадр просится фотографический, снятый камерой, с оптикой и
+    # зерном — тем, чего у иллюстрации не бывает.
+    # Оптика и точка съёмки меняются от слота к слоту. Без этого модель
+    # выдаёт свой любимый кадр: на 0047 три сгенерированных слота подряд стали
+    # одним и тем же раскалённым камнем в пустыне с разных сторон. Выбор
+    # детерминирован индексом слота — прогон обязан собираться одинаково.
+    look = _LOOKS[int(slot.get("index", 0)) % len(_LOOKS)]
+    style = ("documentary photograph, real location, shot on a full-frame camera, "
+             f"{look}, natural available light, true-to-life colour, fine film grain, "
+             "imperfect detail, vertical 9:16 framing with empty space in the lower "
+             "third for a caption, muted palette with a single warm red accent, "
+             "photorealistic — not an illustration, not a 3d render, not CGI, "
+             "no glossy studio product look, no text, no logos, no watermark")
     return f"{intent}. {queries[0]}. Role: {role}. Style: {style}"
+
+
+# Оптика, ракурс и дистанция. Список короткий и предметный: каждая строка
+# меняет кадр целиком, а не добавляет прилагательное.
+_LOOKS = (
+    "35mm lens, eye level, subject slightly off-centre, shallow depth of field",
+    "85mm lens, tight detail, compressed perspective, background falls away",
+    "24mm wide lens, low angle, foreground element entering the frame",
+    "50mm lens, handheld, slight motion blur, over-the-shoulder distance",
+    "macro lens, extreme close detail, texture filling the frame",
+    "telephoto from a distance, layered depth, haze between planes",
+)
 
 
 def run_step(ctx) -> dict[str, Any]:
@@ -77,6 +103,20 @@ def run_step(ctx) -> dict[str, Any]:
     ai_budget_sec = max(0.0, ai_share_max * duration - ai_sec)
 
     provider = build_generation_provider(cfg, ctx.costs)
+    # Сгенерированный кадр судится тем же судьёй, что и сток. До сих пор он
+    # проверялся только на дубль по pHash — то есть на «не такой, как соседи», а
+    # не на «годится ли вообще». В ролике 0047 так и вышло: на 21 и 24 секунде
+    # встал «раскалённый камень в пустыне», который судья §11.2 потом честно
+    # назвал стоковым и не про гранит. Заказчик просил использовать генерацию
+    # только там, где она выходит качественно, — а решить это можно, только
+    # посмотрев на результат.
+    critic = build_vision_provider(cfg, ctx.costs, role="primary")
+    # Порог мягче, чем у стока: сгенерированный кадр — запасной путь, и
+    # требовать от него оценки принятия значит оставить слоты пустыми. Но ниже
+    # порога отбраковки он в монтаж не идёт: там начинается тот самый вид,
+    # ради которого всё это и затевалось.
+    min_score = float(cfg.get("vision.generated_min_score",
+                              cfg.get("vision.reject_threshold", 0.45)))
     index = FootageIndex.load(cfg)
     dedup_threshold = int(cfg.get("stock.dedup_hamming_max", 8))
 
@@ -115,6 +155,7 @@ def run_step(ctx) -> dict[str, Any]:
             continue
 
         base_prompt = _prompt_for_slot(slot, plan)
+        asset_verdict = None
         # Платные модели — редкое исключение (§7.7), считаем их долю честно.
         use_free = prefer_free or (paid_used + 1) / max(len(unfilled), 1) > paid_share_limit
         out = ctx.wpath("broll", "generated", f"slot_{slot_index:02d}.mp4")
@@ -139,18 +180,31 @@ def run_step(ctx) -> dict[str, Any]:
             candidate_hashes = [phash_image(f) for f in candidate_frames]
 
             duplicate = _find_duplicate(candidate_hashes, seen_hashes, dedup_threshold)
-            if duplicate is None:
-                asset, info, hashes = candidate, candidate_info, candidate_hashes
-                frames = candidate_frames
-                break
-            rejected_attempts.append(f"похож на {duplicate}")
+            if duplicate is not None:
+                rejected_attempts.append(f"похож на {duplicate}")
+                continue
+
+            verdict = critic.judge(
+                candidate_frames,
+                intent=str(slot.get("visual_intent") or slot.get("reason") or ""),
+                role=str(slot.get("role") or ""), query=prompt)
+            if verdict.score < min_score:
+                rejected_attempts.append(
+                    f"судья {verdict.score:.2f} < {min_score:.2f}: {verdict.reason[:120]}")
+                continue
+
+            asset, info, hashes = candidate, candidate_info, candidate_hashes
+            frames = candidate_frames
+            asset_verdict = verdict
+            break
 
         if asset is None:
+            # Пустой слот честнее плохого кадра: его видно в отчёте, а слабую
+            # генерацию видно только зрителю.
             skipped.append({
                 "slot": slot_index,
-                "reason": (f"сгенерированный материал каждый раз получался дублем "
-                           f"({'; '.join(rejected_attempts)}) — слот оставлен пустым, "
-                           f"чтобы не нарушить QC-5"),
+                "reason": (f"генерация не дала годного кадра "
+                           f"({'; '.join(rejected_attempts)}) — слот оставлен пустым"),
             })
             continue
 
@@ -168,22 +222,26 @@ def run_step(ctx) -> dict[str, Any]:
             "width": info.width or asset.width, "height": info.height or asset.height,
             "tags": ["generated", slot.get("role", ""), "abstract"],
             "attribution": "REDSHIFT / generated",
-            "score": 1.0,   # материал сделан под слот, релевантность гарантирована
+            # Оценка — от судьи, а не единица по умолчанию. «Материал сделан под
+            # слот, релевантность гарантирована» — ровно то предположение, из-за
+            # которого в 0047 встал раскалённый камень вместо гранита: модель
+            # рисует по промпту, а не по смыслу блока, и проверить это можно
+            # только взглядом.
+            "score": round(float(asset_verdict.score), 4) if asset_verdict else 0.5,
+            "vision_summary": asset_verdict.summary if asset_verdict else "",
+            "verdict": asset_verdict.to_dict() if asset_verdict else {},
         }
         generated[str(slot_index)] = entry
         ai_budget_sec -= slot_duration
 
-        storage_key = f"generated/{asset.id}.mp4"
-        ctx.storage.put(storage_key, asset.path)
-        index.add(AssetRecord(
-            id=asset.id, type="video", source="magnific",
-            license="generated-owned", url_origin="",
-            phash=hashes[0] if hashes else "", phashes=hashes,
-            tags=entry["tags"], vision_summary=asset.prompt[:160],
-            score=1.0, duration_sec=entry["duration_sec"],
-            width=entry["width"], height=entry["height"], file=storage_key,
-            used_in=[plan["video_id"]], ai_generated=True, mock=asset.mock,
-        ))
+        # В общую библиотеку сгенерированный кадр не кладётся. Библиотека
+        # живёт в репозитории и просматривается раньше внешних стоков — накопив
+        # там AI, конвейер начал бы предпочитать его настоящему кадру, ровно
+        # вопреки правилу «преимущество всегда за реальным материалом».
+        # Повторить генерацию дёшево, а место в истории git не возвращается
+        # никогда. Паспорт кадра остаётся в отчёте прогона.
+        _log.info("сгенерированный кадр в библиотеку не попадает",
+                  extra={"slot": slot_index, "asset_id": asset.id})
 
     index.save()
 

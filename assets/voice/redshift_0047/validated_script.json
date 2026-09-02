@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "video_id": "redshift_0047",
+    "title": "Почему самую глубокую дыру на Земле закрыли",
+    "topic": "Кольская сверхглубокая: 12 262 метра, температура вдвое выше расчётной и вода там, где её быть не должно",
+    "category": "science",
+    "language": "ru",
+    "target_duration_sec": 58,
+    "allow_memes": false,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-08-31"
+  },
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Самая глубокая дыра на Земле — двенадцать километров. Бурить перестали не из-за денег и не из-за политики.",
+      "emphasis_word": "двенадцать",
+      "avatar": "on",
+      "visual_intent": "Тёмный кадр, буровая вышка в тумане, медленное приближение",
+      "broll_queries": [
+        "deep drilling rig night fog",
+        "industrial borehole machinery closeup"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "sub_drop",
+      "meme_allowed": false,
+      "mode_hint": "A",
+      "_estimated_sec": 7.22,
+      "_words": 18
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Кольскую скважину бурили двадцать лет и дошли до двенадцати тысяч двухсот шестидесяти двух метров. Это до сих пор мировой рекорд, и это всего одна треть толщины земной коры.",
+      "emphasis_word": "рекорд",
+      "avatar": "auto",
+      "visual_intent": "Схема разреза земной коры, отметка глубины",
+      "broll_queries": [
+        "earth crust cross section diagram",
+        "geology layers underground illustration"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "meme_allowed": false,
+      "mode_hint": "A",
+      "_estimated_sec": 10.74,
+      "_words": 28
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Геологи ждали на семи километрах границу гранита и базальта. Её там не оказалось. Вместо неё шёл трещиноватый гранит, а расчёты обещали сто градусов — термометр показал сто восемьдесят.",
+      "emphasis_word": "восемьдесят",
+      "avatar": "off",
+      "visual_intent": "Раскалённая порода, тепловая карта, красный градиент",
+      "broll_queries": [
+        "thermal imaging hot rock",
+        "molten rock glowing macro"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "180 ГРАДУСОВ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "source_ref": "nature.com",
+      "_estimated_sec": 12.52,
+      "_words": 27
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "При такой температуре порода перестаёт вести себя как камень. Она течёт, ствол затягивается сам, а буровая колонна остаётся внизу. Одну такую потеряли и больше не достали.",
+      "emphasis_word": "течёт",
+      "avatar": "off",
+      "visual_intent": "Медленное течение вязкого вещества, тёмный фон",
+      "broll_queries": [
+        "viscous flow slow motion dark",
+        "lava flow closeup slow"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ОНА ТЕЧЁТ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "riser",
+      "meme_allowed": false,
+      "mode_hint": "B",
+      "_estimated_sec": 12.15,
+      "_words": 26
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "А на глубине, где воде взяться неоткуда, нашли воду. Её выдавило из самих минералов, и вниз она уйти не может — сверху её держит непроницаемая порода.",
+      "emphasis_word": "воду",
+      "avatar": "on",
+      "visual_intent": "Капля воды на тёмном камне, отражение",
+      "broll_queries": [
+        "water drop on dark stone macro",
+        "underground water seepage rock"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "reveal",
+      "meme_allowed": false,
+      "mode_hint": "A",
+      "_estimated_sec": 10.73,
+      "_words": 25
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Скважину закрыли в девяносто втором, и сегодня это заваренный люк посреди тундры. Мы упёрлись не в бюджет, а в физику. Куда, по-твоему, копать дальше?",
+      "emphasis_word": "физику",
+      "avatar": "on",
+      "visual_intent": "Заваренный люк на бетонной плите, вокруг тундра, финальный кадр",
+      "broll_queries": [
+        "welded steel hatch on concrete ground",
+        "abandoned industrial site tundra winter"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "meme_allowed": false,
+      "mode_hint": "A",
+      "_estimated_sec": 10.05,
+      "_words": 25
+    }
+  ],
+  "cta": {
+    "text": "Скважину закрыли в девяносто втором, и сегодня это заваренный люк посреди тундры. Мы упёрлись не в бюджет, а в физику. Куда, по-твоему, копать дальше?",
+    "type": "statement"
+  },
+  "_validation": {
+    "ok": true,
+    "estimated_duration_sec": 63.91,
+    "duration_range": [
+      35,
+      70
+    ],
+    "warnings": [],
+    "fonts": [
+      {
+        "role": "display",
+        "family": "Oswald",
+        "file": "Oswald-Bold.ttf",
+        "glyphs": 850
+      },
+      {
+        "role": "subtitle",
+        "family": "Nunito ExtraBold",
+        "file": "Nunito-ExtraBold.ttf",
+        "glyphs": 938
+      },
+      {
+        "role": "mono",
+        "family": "JetBrains Mono",
+        "file": "JetBrainsMono-Bold.ttf",
+        "glyphs": 976
+      }
+    ],
+    "cost_estimate": {
+      "total_usd": 2.4422,
+      "limit_usd": 6.0,
+      "within_budget": true,
+      "by_service": {
+        "elevenlabs": 0.3422,
+        "heygen": 1.74,
+        "gemini": 0.072,
+        "grok": 0.048,
+        "magnific": 0.24
+      },
+      "assumptions": {
+        "tts_chars": 1141,
+        "avatar_sec": 34.8,
+        "vision_items": 60,
+        "grok_calls": 8,
+        "generated_images": 3
+      }
+    },
+    "roles": [
+      "hook",
+      "setup",
+      "evidence",
+      "develop",
+      "twist",
+      "cta"
+    ]
+  }
+}

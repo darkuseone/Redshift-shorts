@@ -5,7 +5,7 @@
     python -m src.cli run --script ... --from P7          # resume после падения
     python -m src.cli fonts-check
     python -m src.cli libraries --status
-    python -m src.cli fill-libraries --kind sfx
+    python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
     python -m src.cli maintenance
     python -m src.cli learn --video-id redshift_0042 --choice A
 """
@@ -136,6 +136,117 @@ def cmd_validate(args) -> int:
     return 0
 
 
+def cmd_voice_probe(args) -> int:
+    """Короткая фраза в ElevenLabs — чтобы узнать, что сервис отдаёт на деле.
+
+    Тариф решает, придёт ли сырой PCM или молча подменённый mp3, и узнать это
+    можно было только по логу целого прогона за полдоллара. Проба стоит цента.
+
+    ``--formats`` перебирает несколько форматов за один запуск. Это не роскошь:
+    прогон 33570833947 показал, что на запрос ``pcm_44100`` сервис отдаёт mp3 с
+    полосой 8 кГц — телефонное качество, и заказчик слышит его как «дешёвый
+    звук». Какой формат этот тариф отдаёт целиком, знает только сам сервис;
+    спросить его дешевле, чем гадать по документации, а перебор в одном запуске
+    экономит и деньги, и очередь Actions.
+    """
+    from .lib.audio import speech_bandwidth_hz
+    from .lib.costs import CostLedger
+    from .lib.providers.tts import build_tts_provider
+
+    cfg = _load_cfg(args)
+    setup_logging(level="INFO", json_output=False)
+    costs = CostLedger(video_id="voice-probe")
+    out = Path(args.out or "work/voice_probe.wav")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    floor = float(cfg.get("elevenlabs.min_bandwidth_hz", 14000))
+
+    asked = [f.strip() for f in str(getattr(args, "formats", "") or "").split(",")
+             if f.strip()]
+    probes: list[dict[str, Any]] = []
+    spent = 0.0
+    for fmt in (asked or [""]):
+        if fmt:
+            cfg.set("elevenlabs.output_format", fmt)
+        provider = build_tts_provider(cfg, costs)
+        target = (out if len(asked) < 2
+                  else out.with_name(f"{out.stem}_{fmt.replace('*', 'x')}.wav"))
+        try:
+            provider.synthesize(args.text, target, speed=1.0)
+        except RedshiftError as exc:
+            # Формат, которого нет на тарифе, — это ответ, а не авария: он
+            # записывается в таблицу и не мешает проверить остальные.
+            probes.append({"format": fmt or "как в конфиге", "error": str(exc)})
+            continue
+        audio, sr = _read_wav_mono(target)
+        usd = round(float(costs.total_usd) - spent, 4)
+        spent = float(costs.total_usd)
+        delivery = dict(getattr(provider, "last_delivery", {}) or {})
+        probes.append({
+            "format": fmt or str(cfg.get("elevenlabs.output_format", "") or "pcm_*"),
+            "container": delivery.get("container", "?"),
+            "sample_rate": sr,
+            "bandwidth_hz": round(speech_bandwidth_hz(audio, sr)),
+            "duration_sec": round(len(audio) / max(sr, 1), 3),
+            "usd": usd,
+            "file": str(target),
+        })
+
+    good = [p for p in probes if "bandwidth_hz" in p]
+    best = max(good, key=lambda p: p["bandwidth_hz"]) if good else None
+    report = {
+        "provider": "elevenlabs",
+        "mode": str(cfg.get("providers.mode", "auto")),
+        "model": cfg.get("elevenlabs.model", ""),
+        "chars": len(args.text),
+        "min_bandwidth_hz": floor,
+        "probes": probes,
+        "best": best,
+        "usd_total": round(float(costs.total_usd), 4),
+    }
+    if best is None:
+        report["verdict"] = "ни один формат не удалось получить"
+    elif best["bandwidth_hz"] >= floor:
+        report["verdict"] = (f"полноценный звук на {best['format']} "
+                             f"({best['bandwidth_hz']} Гц) — впишите его в "
+                             f"elevenlabs.output_format")
+    else:
+        report["verdict"] = ("все форматы ниже ожидаемой полосы — упёрлись в "
+                             "тариф, а не в формат")
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_seed_footage(args) -> int:
+    """Засеять вечнозелёную базу материала (§7.2.1, §14).
+
+    Локальная база просматривается раньше стоков, но пустая база не экономит
+    ничего. Здесь она наполняется один раз материалом общественного достояния
+    по постоянному кругу тем канала — и дальше ролики берут кадр с полки.
+    """
+    from .lib.footage_seed import EVERGREEN, seed_footage
+
+    cfg = _load_cfg(args)
+    setup_logging(level="INFO", json_output=False)
+    topics = tuple(t.strip() for t in str(args.topics or "").split(",") if t.strip())
+    unknown = sorted(set(topics) - {t["id"] for t in EVERGREEN})
+    if unknown:
+        print(f"нет таких тем: {', '.join(unknown)}", file=sys.stderr)
+        return 2
+    report = seed_footage(cfg, storage=build_storage(cfg),
+                          costs=CostLedger(video_id="seed"),
+                          per_topic=int(args.per_topic), topics=topics,
+                          dry_run=bool(args.dry_run))
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _read_wav_mono(path: Path):
+    from .lib.audio import load_wav
+
+    audio, sr = load_wav(path)
+    return (audio[:, 0] if getattr(audio, "ndim", 1) == 2 else audio), sr
+
+
 def cmd_fonts_check(args) -> int:
     from .lib.fonts import read_font, validate_font
 
@@ -182,6 +293,78 @@ def cmd_fill_libraries(args) -> int:
                        hard_stop=bool(cfg.get("budget.hard_stop_on_exceed", True)))
     result = fill_libraries(cfg, kinds=args.kind or ["sfx", "music", "memes"],
                             costs=costs, dry_run=args.dry_run)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_add_sfx(args) -> int:
+    """Принять короткий звук в библиотеку.
+
+    SFX курируемые: их приносит заказчик, конвейер режет отрезок ≤2 сек,
+    меряет и заводит с тегами. Монтаж берёт их по смыслу кадра.
+    """
+    from .lib.sfx_library import (
+        TAGS, add_clip, ingest_customer_drop, inspect_clip, library_status,
+    )
+
+    cfg = _load_cfg(args)
+    setup_logging(level=cfg.get("logging.level", "INFO"), json_output=not args.pretty_logs)
+
+    if args.status:
+        print(json.dumps(library_status(cfg), ensure_ascii=False, indent=2))
+        return 0
+    if args.ingest_drop:
+        print(json.dumps(ingest_customer_drop(cfg), ensure_ascii=False, indent=2))
+        return 0
+    if args.inspect:
+        print(json.dumps(inspect_clip(Path(args.inspect)), ensure_ascii=False, indent=2))
+        return 0
+    if not args.file or not args.id or not args.tag:
+        print(json.dumps({"code": "SFX_ARGS",
+                          "message": "нужны --file, --id и хотя бы один --tag "
+                                     "(или --status/--inspect/--ingest-drop)",
+                          "tags": TAGS}, ensure_ascii=False, indent=2))
+        return 2
+
+    result = add_clip(cfg, source=Path(args.file), clip_id=args.id, tags=args.tag,
+                      role=args.role or "", title=args.title or "",
+                      start_sec=args.start if args.start is not None else 0.0,
+                      length_sec=args.length, force=args.force)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_add_music(args) -> int:
+    """Принять живую запись подложки в библиотеку.
+
+    Подложки курируемые: их приносит заказчик, а конвейер режет интересный
+    отрезок, меряет и заводит с тегами. Синтез удалён — пятнадцать
+    сгенерированных бедов были отвергнуты.
+    """
+    from .lib.music_library import TAGS, add_bed, find_segment, inspect_bed, library_status
+
+    cfg = _load_cfg(args)
+    setup_logging(level=cfg.get("logging.level", "INFO"), json_output=not args.pretty_logs)
+
+    if args.status:
+        print(json.dumps(library_status(cfg), ensure_ascii=False, indent=2))
+        return 0
+    if args.inspect:
+        path = Path(args.inspect)
+        report = inspect_bed(path)
+        report["suggested_start_sec"] = find_segment(path, length_sec=args.length)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return 0
+    if not args.file or not args.id or not args.tag:
+        print(json.dumps({"code": "MUSIC_ARGS",
+                          "message": "нужны --file, --id и хотя бы один --tag "
+                                     "(или --status/--inspect)",
+                          "tags": TAGS}, ensure_ascii=False, indent=2))
+        return 2
+
+    result = add_bed(cfg, source=Path(args.file), bed_id=args.id, tags=args.tag,
+                     title=args.title or "", start_sec=args.start,
+                     length_sec=args.length, force=args.force)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
@@ -272,6 +455,40 @@ def build_parser() -> argparse.ArgumentParser:
     fill.add_argument("--dry-run", action="store_true")
     fill.set_defaults(func=cmd_fill_libraries)
 
+    music = sub.add_parser("add-music", help="принять живую запись подложки в библиотеку")
+    music.add_argument("--file", default=None, help="путь к записи (wav/mp3/m4a/flac)")
+    music.add_argument("--id", default=None, help="имя подложки в библиотеке")
+    music.add_argument("--tag", action="append", default=None,
+                       help="тег из словаря; можно несколько раз")
+    music.add_argument("--title", default=None, help="описание своими словами")
+    music.add_argument("--start", type=float, default=None,
+                       help="начало отрезка, сек; не задан — ищется сам")
+    music.add_argument("--length", type=float, default=60.0, help="длина отрезка, сек")
+    music.add_argument("--force", action="store_true",
+                       help="принять вопреки замечаниям приёма")
+    music.add_argument("--inspect", default=None, help="только промерить файл")
+    music.add_argument("--status", action="store_true",
+                       help="что в библиотеке есть и чем покрыты теги")
+    music.set_defaults(func=cmd_add_music)
+
+    sfx = sub.add_parser("add-sfx", help="принять короткий звук в библиотеку")
+    sfx.add_argument("--file", default=None, help="путь к записи (wav/mp3/m4a/flac)")
+    sfx.add_argument("--id", default=None, help="имя звука в библиотеке")
+    sfx.add_argument("--tag", action="append", default=None,
+                     help="тег из словаря; можно несколько раз")
+    sfx.add_argument("--role", default="", help="роль для старых сценариев (whoosh_in, …)")
+    sfx.add_argument("--title", default=None, help="описание своими словами")
+    sfx.add_argument("--start", type=float, default=None, help="начало отрезка, сек")
+    sfx.add_argument("--length", type=float, default=None, help="длина отрезка, сек")
+    sfx.add_argument("--force", action="store_true",
+                     help="принять вопреки замечаниям приёма")
+    sfx.add_argument("--inspect", default=None, help="только промерить файл")
+    sfx.add_argument("--status", action="store_true",
+                     help="что в библиотеке есть и чем покрыты теги")
+    sfx.add_argument("--ingest-drop", action="store_true",
+                     help="принять пачку, залитую заказчиком в assets/sfx/")
+    sfx.set_defaults(func=cmd_add_sfx)
+
     mnt = sub.add_parser("maintenance", help="LRU-очистка кэша футажей и отчёты")
     mnt.add_argument("--dry-run", action="store_true")
     mnt.set_defaults(func=cmd_maintenance)
@@ -289,6 +506,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     st = sub.add_parser("steps", help="контракты шагов пайплайна")
     st.set_defaults(func=cmd_steps)
+
+    vp = sub.add_parser("voice-probe",
+                        help="одна фраза в TTS: какой формат и полосу отдаёт сервис")
+    vp.add_argument("--text", default="Проверка формата ответа синтеза речи.")
+    vp.add_argument("--out", default=None)
+    vp.add_argument("--formats", default="",
+                    help="список форматов через запятую: перебрать за один "
+                         "запуск и показать, какой тариф отдаёт целиком")
+    vp.set_defaults(func=cmd_voice_probe)
+
+    sf = sub.add_parser("seed-footage",
+                        help="засеять вечнозелёную базу материала (NASA, Archive)")
+    sf.add_argument("--per-topic", type=int, default=2)
+    sf.add_argument("--topics", default="", help="список тем через запятую")
+    sf.add_argument("--dry-run", action="store_true")
+    sf.set_defaults(func=cmd_seed_footage)
     return parser
 
 

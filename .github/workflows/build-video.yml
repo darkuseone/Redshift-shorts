@@ -26,15 +26,104 @@ on:
         required: false
         default: false
         type: boolean
+      voice_probe:
+        description: "Только проба голоса: что TTS отдаёт на этом тарифе (цент вместо прогона)"
+        required: false
+        default: false
+        type: boolean
+      probe_formats:
+        description: "Форматы пробы через запятую (пусто = как в конфиге)"
+        required: false
+        default: ""
+      probe_model:
+        description: "Модель синтеза для пробы (пусто = как в конфиге)"
+        required: false
+        default: ""
 
 concurrency:
   group: build-video-${{ github.event.inputs.script }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  # Проба голоса живёт и отдельным workflow (`voice-probe.yml`), но тот
+  # диспатчится только с ветки по умолчанию — правило GitHub, не наше. Пока
+  # правка не влита, спросить сервис можно отсюда: это тот же цент, и сборка при
+  # этом не запускается вовсе.
+  probe:
+    if: github.event.inputs.voice_probe == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 10
+    env:
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Кэш ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/ffmpeg
+          key: ffmpeg-static-linux64-gpl-v1
+      - name: Поставить ffmpeg
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/.local/ffmpeg/bin/ffmpeg" ]; then
+            mkdir -p "$HOME/.local/ffmpeg"
+            curl -sSL -o /tmp/ffmpeg.tar.xz \
+              https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+            tar -xJf /tmp/ffmpeg.tar.xz -C "$HOME/.local/ffmpeg" --strip-components=1
+          fi
+          echo "$HOME/.local/ffmpeg/bin" >> "$GITHUB_PATH"
+      - name: Установить зависимости
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Проба голоса
+        run: |
+          set -euo pipefail
+          # Каталог создаётся до конвейера: tee открывает файл раньше, чем
+          # python успевает сделать mkdir, и прогон 33570833947 упал на этом,
+          # уже получив ответ сервиса.
+          mkdir -p work
+          python -m src.cli --pretty-logs \
+            ${{ github.event.inputs.probe_model != '' && format('--set elevenlabs.model={0}', github.event.inputs.probe_model) || '' }} \
+            voice-probe \
+            --formats "${{ github.event.inputs.probe_formats }}" \
+            --out work/voice_probe.wav | tee work/voice_probe.json
+      - name: Итог в Summary
+        if: always()
+        run: |
+          echo '## Проба голоса' >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          sed -n '/^{/,$p' work/voice_probe.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: voice-probe
+          path: |
+            work/voice_probe*.wav
+            work/voice_probe.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+  build:
+    if: github.event.inputs.voice_probe != 'true'
+    runs-on: ubuntu-latest
+    # Прогон коммитит в ветку превью ролика, библиотеки и индексы. По умолчанию
+    # токен задачи только читает, и пуш возвращал 403 «Permission denied to
+    # github-actions[bot]» — прежний `git push || echo` это прятал, и превью
+    # молча никуда не уезжало (прогон №33513667380).
+    permissions:
+      contents: write
+    # Весь путь P4-P12 за один прогон: поиск футажа около 40 минут, рендер двух
+    # версий ещё 20. На кэш между прогонами опираться нельзя — он терялся даже
+    # через три минуты после сохранения, — поэтому сборка должна укладываться
+    # целиком, а не по частям.
+    timeout-minutes: 150
     env:
       # Версия движка рендера пиньнится: та же, что в package.json.
       # Обновление меняет и ключ кэша Chrome.
@@ -61,11 +150,42 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Установить ffmpeg
+      # ffmpeg в образе ubuntu-latest не поставляется, а зеркало apt его
+      # выдаёт непредсказуемо: прогон №3 качал libcodec2 шестнадцать минут и
+      # был снят вручную, прогон №4 упёрся в потолок на том же месте. Два
+      # прогона подряд умерли не на своей задаче, а на установке зависимости.
+      #
+      # Поэтому бинарь берётся статической сборкой с релизов GitHub — оттуда же,
+      # откуда раннер тянет и сам себя, — и кладётся в кэш: со второго прогона
+      # шаг не ходит в сеть вообще. Сборка скользящая (тег latest), и это
+      # осознанный размен: воспроизводимость версии ffmpeg здесь стоит меньше,
+      # чем прогон, который доходит до конца.
+      - name: Кэш ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/ffmpeg
+          key: ffmpeg-static-linux64-gpl-v1
+
+      - name: Поставить ffmpeg
+        timeout-minutes: 10
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg
-          ffmpeg -version | head -1
+          set -euo pipefail
+          BIN="$HOME/.local/ffmpeg"
+          if [ ! -x "$BIN/ffmpeg" ]; then
+            mkdir -p "$BIN"
+            curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors \
+              https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
+              -o /tmp/ffmpeg.tar.xz
+            tar -xJf /tmp/ffmpeg.tar.xz --strip-components=2 -C "$BIN" \
+              ffmpeg-master-latest-linux64-gpl/bin/ffmpeg \
+              ffmpeg-master-latest-linux64-gpl/bin/ffprobe
+            rm -f /tmp/ffmpeg.tar.xz
+          fi
+          echo "$BIN" >> "$GITHUB_PATH"
+          # ffprobe проверяется наравне с ffmpeg: конвейер меряет им длительность
+          # каждого клипа, и его отсутствие вскрылось бы только на P6.
+          "$BIN/ffmpeg" -version | head -1
+          "$BIN/ffprobe" -version | head -1
 
       - uses: actions/setup-node@v4
         with:
@@ -108,34 +228,222 @@ jobs:
       - name: Валидация сценария
         run: python -m src.cli validate --script "${{ github.event.inputs.script }}"
 
+      # Голос и клипы ведущего рождаются парой: клипы липсинка сгенерированы под
+      # конкретную озвучку, и разойтись им нельзя. Клипы лежат в git, а голос
+      # до сих пор жил только в кэше Actions — и когда кэш терялся, пара
+      # распадалась: переозвучка сдвигала границы фраз, и P6 отбраковывал все
+      # клипы разом. Так это и случилось дважды.
+      #
+      # Поэтому голос — такой же входной артефакт репозитория, как и клипы.
+      # Здесь он раскладывается в work/, и прогон с --from P4 воспроизводит
+      # P4-P6 детерминированно, ничего не завися от кэша.
+      - name: Засеять work/ готовым голосом
+        run: |
+          set -euo pipefail
+          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          seed="assets/voice/$video_id"
+          if [ -d "$seed" ]; then
+            mkdir -p "work/$video_id"
+            cp -v "$seed"/voice_final.wav "$seed"/*.json "work/$video_id"/
+            echo "голос взят из репозитория: $seed"
+          else
+            echo "готового голоса для $video_id нет — P2 озвучит заново"
+          fi
+
+      # Ключ кэша считается по **речи** сценария, а не по всему файлу. Голос
+      # зависит только от текстов блоков; поисковый запрос футажа, visual_intent
+      # и подсказка шаблона на него не влияют никак. Пока ключом был файл
+      # целиком, правка одной строки запроса обнуляла кэш — а вместе с ним
+      # уезжала озвучка: ElevenLabs озвучивал заново, границы фраз сдвигались,
+      # и клипы ведущего из репозитория шли в брак как уехавший липсинк. Так
+      # уже случалось дважды, и цена ошибки — оба сервиса разом.
+      - name: Ключ кэша по речи сценария
+        id: speech_key
+        run: |
+          set -euo pipefail
+          key=$(python - <<'EOF'
+          import hashlib, json, os
+          script = os.environ["SCRIPT"]
+          data = json.load(open(script, encoding="utf-8"))
+          text = "\n".join(str(b.get("text") or "") for b in data["blocks"])
+          print(hashlib.sha256(text.encode("utf-8")).hexdigest()[:16])
+          EOF
+          )
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+          echo "ключ кэша по речи: $key"
+        env:
+          SCRIPT: ${{ github.event.inputs.script }}
+
+      # Три ключа восстановления, от точного к общему. Первый — по речи, второй
+      # — прежний формат по всему файлу сценария: без него кэш, сохранённый до
+      # этой правки, стал бы недостижим, и прогон переозвучил бы ролик заново.
+      # Третий ловит любой прошлый прогон: пустой work/ здесь не ошибка, а
+      # только потерянное время.
       - name: Восстановить кэш прогонов
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             work
             .redshift_cache
-          key: redshift-work-${{ hashFiles(github.event.inputs.script) }}-${{ github.run_id }}
+          key: redshift-work-${{ steps.speech_key.outputs.key }}-${{ github.run_id }}
           restore-keys: |
+            redshift-work-${{ steps.speech_key.outputs.key }}-
             redshift-work-${{ hashFiles(github.event.inputs.script) }}-
+            redshift-work-
 
       - name: Сборка ролика (A и B)
         run: |
+          set -o pipefail
+          # Журнал сборки пишется рядом с выводом: логи Actions читаются через
+          # API кусками с конца, и строка с ошибкой в них не попадает — на
+          # прогоне 33666703565 три попытки вытащить её не дали ничего.
+          # Файл же уезжает в артефакт и в Summary целиком.
+          mkdir -p output
           python -m src.cli \
             --set providers.mode=${{ github.event.inputs.providers_mode }} \
             run --script "${{ github.event.inputs.script }}" \
             ${{ github.event.inputs.from_step != '' && format('--from {0}', github.event.inputs.from_step) || '' }} \
-            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            2>&1 | tee output/build.log
 
-      - name: Обновлённые библиотеки и индексы в коммит
+      # Кэш сохраняется явно и обязательно на любом исходе. Единый actions/cache
+      # свой post-шаг на упавшей задаче не выполняет — а фаза 1 двухфазного
+      # конвейера заканчивается падением всегда: P6 останавливает прогон, потому
+      # что клипов ведущего ещё нет. Из-за этого work/ вместе с voice_final.wav
+      # умирал с раннером, и возобновление с P6 падало на MISSING_STEP_INPUT,
+      # не найдя ничего от фазы 1. Шов между фазами не закрывался никогда.
+      #
+      # Переозвучить вместо этого нельзя: TTS недетерминирован, длительности
+      # кусков речи уедут, и клипы, сгенерированные под прежнюю речь, будут
+      # отбракованы как уехавший липсинк. Речь фазы 1 обязана дожить до фазы 3.
+      - name: Сохранить кэш прогонов
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            work
+            .redshift_cache
+          key: redshift-work-${{ steps.speech_key.outputs.key }}-${{ github.run_id }}
+
+      # Артефакт Actions заказчику недоступен — ни скачать, ни открыть. Поэтому
+      # рядом с ним кладётся лёгкое превью: 720p, CRF 30, звук 96k. Обе версии
+      # вместе весят около десяти мегабайт, живут в репозитории рядом с голосом
+      # и клипами ведущего и доезжают до чата, где их наконец можно посмотреть.
+      # Каждый прогон перезаписывает превью своего ролика — репозиторий от
+      # этого не растёт.
+      #
+      # 540p было мало: на превью прогона №33515561869 обводка субтитров (6-8 px
+      # по §4.2) сжималась до трёх пикселей, тёмно-красный сливался с белым, и
+      # слово читалось красным — дефект, которого в самом ролике нет. Отсюда и
+      # lanczos: он держит край буквы при уменьшении вдвое, а не размывает его.
+      - name: Лёгкое превью ролика
         if: success()
         run: |
+          set -euo pipefail
+          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          out="assets/preview/$video_id"
+          rm -rf "$out" && mkdir -p "$out"
+          for f in output/"$video_id"/*.mp4; do
+            [ -f "$f" ] || continue
+            ffmpeg -v error -y -i "$f" -vf "scale=720:-2:flags=lanczos" \
+              -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p \
+              -c:a aac -b:a 96k -movflags +faststart \
+              "$out/$(basename "$f")"
+          done
+          cp output/"$video_id"/thumbnail*.jpg "$out"/ 2>/dev/null || true
+          cp output/"$video_id"/build_report.json "$out"/ 2>/dev/null || true
+          cp output/"$video_id"/subtitles.srt "$out"/ 2>/dev/null || true
+          du -sh "$out" && ls -la "$out"
+
+      # Библиотека материала живёт в репозитории, и её потолок держится не
+      # обещанием, а вытеснением: без этого шага она росла бы каждым прогоном,
+      # а удалённое из git не возвращается — история растёт необратимо.
+      - name: Вытеснить лишнее из библиотеки материала
+        if: always()
+        run: python -m src.cli maintenance 2>&1 | tail -20 || true
+
+      # Голос переживает прогон только в кэше, а кэш терялся уже трижды. Пара
+      # «голос + клипы ведущего» при этом неразрывна: переозвучка сдвигает
+      # границы фраз, и P6 бракует все клипы разом. Поэтому голос уезжает в
+      # репозиторий тем же коммитом, что и превью, — и следующий прогон берёт
+      # его шагом «Засеять work/ готовым голосом», ничего не тратя.
+      # `always()`, а не `success()`: фаза 1 двухфазного конвейера заканчивается
+      # падением **всегда** — P6 останавливает прогон, потому что клипов ведущего
+      # ещё нет. Ровно в этот момент голос и заявка на клипы и нужны в
+      # репозитории: без них следующий прогон озвучивает заново, а заявку не
+      # прочитать никак — артефакт Actions отсюда не скачать. Так и вышло на
+      # прогоне №33540770086: голос переозвучен, заявка осталась в артефакте.
+      - name: Готовый голос и заявка на клипы — в репозиторий
+        if: always()
+        run: |
+          set -euo pipefail
+          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          src="work/$video_id"
+          dst="assets/voice/$video_id"
+          if [ -f "$src/voice_final.wav" ]; then
+            mkdir -p "$dst"
+            cp -v "$src/voice_final.wav" "$dst"/
+            for name in speech_map draft_plan validated_script; do
+              cp -v "$src/$name.json" "$dst"/ 2>/dev/null || true
+            done
+            du -sh "$dst"
+          else
+            echo "голоса в work/ нет — нечего сохранять"
+          fi
+          # Заявка на клипы и куски речи ровно под те сегменты, которых не
+          # хватает. Целиком набор сегментов сюда не кладётся: он весит восемь
+          # мегабайт на ролик, а нужен один-два куска.
+          if [ -f "$src/avatar_request.json" ]; then
+            clips="assets/avatar_clips/$video_id"
+            mkdir -p "$clips"
+            cp -v "$src/avatar_request.json" "$clips"/
+            python - "$src" "$clips" <<'EOF'
+          import json, shutil, sys
+          from pathlib import Path
+          src, dst = Path(sys.argv[1]), Path(sys.argv[2])
+          req = json.loads((src / "avatar_request.json").read_text(encoding="utf-8"))
+          for seg in req.get("segments", []):
+              name = f"seg_{int(seg['index']):02d}.wav"
+              wav = src / "avatar" / name
+              if wav.exists():
+                  shutil.copy2(wav, dst / name)
+                  print("речь сегмента:", name, wav.stat().st_size, "байт")
+          EOF
+          fi
+
+      # Тоже `always()`: коммитить после падения фазы 1 есть что — голос и
+      # заявку на клипы. Без изменений шаг молча выходит.
+      - name: Превью, библиотеки и индексы в коммит
+        if: always()
+        run: |
+          set -euo pipefail
           git config user.name  "redshift-bot"
           git config user.email "redshift-bot@users.noreply.github.com"
           git add -A assets config/editing_preferences.json config/pronunciation.json \
                      templates/manifest.json cache/footage_index.json instruction.md \
                      rejected_patterns.md || true
-          git diff --cached --quiet || git commit -m "chore(run): обновление библиотек и индексов после прогона"
-          git push || echo "нечего пушить"
+          if git diff --cached --quiet; then
+            echo "нечего коммитить"
+            exit 0
+          fi
+          git commit -m "chore(run): превью ролика, библиотеки и индексы после прогона"
+          # Ветка за время прогона уходит вперёд — прогон идёт час, а правки
+          # продолжаются. Прежний `git push || echo` это прятал: пуш прогона
+          # №33478384709 не прошёл молча, и превью не доехало бы никуда.
+          branch="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4; do
+            if git fetch origin "$branch" \
+               && git rebase "origin/$branch" \
+               && git push origin "HEAD:$branch"; then
+              echo "запушено с попытки $attempt"
+              exit 0
+            fi
+            git rebase --abort || true
+            echo "пуш не прошёл, попытка $attempt"
+            sleep $((attempt * 5))
+          done
+          echo "::error::не удалось запушить превью и индексы"
+          exit 1
 
       - name: Выложить артефакты
         if: always()
@@ -143,6 +451,7 @@ jobs:
         with:
           name: redshift-output
           path: |
+            output/build.log
             output/**/*.mp4
             output/**/*.jpg
             output/**/*.srt
@@ -162,6 +471,10 @@ jobs:
           path: |
             work/*/avatar_request.json
             work/*/avatar/seg_*.wav
+            work/*/voice_final.wav
+            work/*/speech_map.json
+            work/*/draft_plan.json
+            work/*/validated_script.json
           retention-days: 14
           if-no-files-found: ignore
 
@@ -169,6 +482,19 @@ jobs:
         if: always()
         run: |
           echo "## REDSHIFT — результат прогона" >> $GITHUB_STEP_SUMMARY
+          # Ошибка — первое, что нужно видеть, и видеть без раскопок в логах.
+          if [ -f output/build.log ] && grep -q '"code":' output/build.log; then
+            echo "### Прогон упал" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            sed -n '/^{$/,$p' output/build.log | head -60 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            # И в самый конец журнала задачи. Лог Actions читается через API
+            # окном с конца: ошибка, случившаяся в середине прогона, в это
+            # окно не попадает, а повторённая последним шагом — попадает
+            # всегда. Ради этого шаг и стоит последним.
+            echo "===== ОШИБКА ПРОГОНА (повтор в конец журнала) ====="
+            sed -n '/^{$/,$p' output/build.log | head -60
+          fi
           for report in output/*/build_report.json; do
             [ -f "$report" ] || continue
             echo "### $(dirname "$report")" >> $GITHUB_STEP_SUMMARY

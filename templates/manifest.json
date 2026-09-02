@@ -13,8 +13,8 @@
     "parallax": 4,
     "data-viz": 6,
     "outro-cta": 5,
-    "hero-devices": 11,
-    "_total": 92
+    "hero-devices": 23,
+    "_total": 104
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -214,7 +214,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -240,7 +241,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -267,7 +269,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -415,7 +418,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -922,7 +926,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0044",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -948,7 +953,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0044",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -973,7 +979,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -998,7 +1005,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1023,7 +1031,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1048,7 +1057,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0044",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1070,7 +1080,8 @@
       "last_used_in": [
         "redshift_0042",
         "redshift_0043",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1095,7 +1106,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1120,7 +1132,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0044",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1145,7 +1158,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1170,7 +1184,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1196,7 +1211,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1223,7 +1239,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1249,7 +1266,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1277,7 +1295,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1304,7 +1323,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1330,7 +1350,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1359,7 +1380,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1389,7 +1411,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1418,7 +1441,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1451,7 +1475,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1484,7 +1509,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1517,7 +1543,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1550,7 +1577,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1583,7 +1611,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1616,7 +1645,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1646,7 +1676,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -1875,7 +1906,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -2033,27 +2065,26 @@
       "added": "2026-08-18"
     },
     {
-      "id": "hero-devices/burst-behind-head",
-      "name": "burst-behind-head",
+      "id": "hero-devices/icons-behind-head",
+      "name": "icons-behind-head",
       "category": "hero-devices",
-      "title": "Лучи расходятся из-за головы",
+      "title": "Знаки о предмете речи вспыхивают за головой",
       "duration_range": [
-        1.0,
-        3.0
+        1.4,
+        3.4
       ],
       "params": {
-        "rays": 9,
-        "spread_deg": 150,
-        "center_y": 560
+        "spread_deg": 170
       },
       "tags": [
         "hero",
         "avatar",
-        "alpha"
+        "alpha",
+        "icons"
       ],
-      "renderer": "hero-burst",
+      "renderer": "hero-icons",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -2078,7 +2109,8 @@
       ],
       "renderer": "hero-split",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -2150,7 +2182,8 @@
       ],
       "renderer": "hero-bubble-card",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -2218,7 +2251,274 @@
       ],
       "renderer": "hero-phone-mock",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/script-stack",
+      "name": "script-stack",
+      "category": "hero-devices",
+      "title": "Реплика строками с толстой обводкой",
+      "duration_range": [
+        1.6,
+        4.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "stroke"
+      ],
+      "renderer": "hero-script-stack",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/chat-typing",
+      "name": "chat-typing",
+      "category": "hero-devices",
+      "title": "Переписка: запрос набирается, ответ ждёт",
+      "duration_range": [
+        2.4,
+        5.0
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "ui",
+        "chat"
+      ],
+      "renderer": "hero-chat-typing",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/chat-generate",
+      "name": "chat-generate",
+      "category": "hero-devices",
+      "title": "Окно нейросети: промпт, отсчёт и готовый кадр",
+      "duration_range": [
+        3.4,
+        9.0
+      ],
+      "params": {
+        "generate_sec": 1.1
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "ui",
+        "chat",
+        "ai",
+        "footage"
+      ],
+      "renderer": "hero-chat-generate",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/title-behind-head",
+      "name": "title-behind-head",
+      "category": "hero-devices",
+      "title": "Двухстрочная тема за головой",
+      "duration_range": [
+        2.0,
+        5.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "behind"
+      ],
+      "renderer": "hero-title-behind",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/exhibit-card",
+      "name": "exhibit-card",
+      "category": "hero-devices",
+      "title": "Экспонат в раме с музейной подписью",
+      "duration_range": [
+        2.4,
+        5.5
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "footage",
+        "source"
+      ],
+      "renderer": "hero-exhibit",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/statement-slam",
+      "name": "statement-slam",
+      "category": "hero-devices",
+      "title": "Плашка с фразой забирает кадр и уходит",
+      "duration_range": [
+        1.4,
+        2.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "slam"
+      ],
+      "renderer": "hero-slam",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/phrase-log",
+      "name": "phrase-log",
+      "category": "hero-devices",
+      "title": "Список фраз копится слева по ходу речи",
+      "duration_range": [
+        2.6,
+        6.0
+      ],
+      "params": {
+        "top": 150
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "sync"
+      ],
+      "renderer": "hero-log",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/oversize-word",
+      "name": "oversize-word",
+      "category": "hero-devices",
+      "title": "Слово крупнее кадра, края обрезаны",
+      "duration_range": [
+        1.6,
+        3.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "slam"
+      ],
+      "renderer": "hero-oversize",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/figure-swap",
+      "name": "figure-swap",
+      "category": "hero-devices",
+      "title": "Числа сменяются на одном месте",
+      "duration_range": [
+        2.2,
+        5.0
+      ],
+      "params": {
+        "top": 170
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "number",
+        "data"
+      ],
+      "renderer": "hero-figure",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/verdict-card",
+      "name": "verdict-card",
+      "category": "hero-devices",
+      "title": "Светлая плашка: вторая строка темнеет",
+      "duration_range": [
+        1.8,
+        3.0
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "slam"
+      ],
+      "renderer": "hero-verdict",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/source-paper",
+      "name": "source-paper",
+      "category": "hero-devices",
+      "title": "Страница первоисточника, по строке идёт маркер",
+      "duration_range": [
+        2.4,
+        5.5
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "source",
+        "ui"
+      ],
+      "renderer": "hero-paper",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/bubble-typed",
+      "name": "bubble-typed",
+      "category": "hero-devices",
+      "title": "Ведущий в круге, реплика набирается в карточке",
+      "duration_range": [
+        2.6,
+        6.0
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "sync"
+      ],
+      "renderer": "hero-bubble-typed",
+      "last_used_in": [
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     }

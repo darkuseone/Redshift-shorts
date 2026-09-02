@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
@@ -369,3 +371,453 @@ def test_top_up_survives_a_text_of_only_function_words():
              for i, w in enumerate("и а но то же ли бы не ни как".split())]
     assert top_up_emphasis(words, [6, 8]) == 0
     assert not any(w.emphasis for w in words)
+
+
+# --- формат ответа ElevenLabs -------------------------------------------------
+
+def test_pcm_rate_is_one_the_service_actually_offers():
+    """Конвейер живёт на 48 кГц, а PCM ElevenLabs на этой частоте не отдаёт.
+
+    Поймано живым прогоном: запрос pcm_48000 возвращал не сырой PCM, и разбор
+    падал невнятным «buffer size must be a multiple of element size».
+    """
+    from src.lib.providers.tts import ELEVENLABS_PCM_RATES, _nearest_supported_rate
+
+    assert 48000 not in ELEVENLABS_PCM_RATES
+    assert _nearest_supported_rate(48000) == 44100
+    for sr in (8000, 16000, 22050, 24000, 44100):
+        assert _nearest_supported_rate(sr) == sr
+    # Ниже самой малой частоты выбирается она же, а не пустота.
+    assert _nearest_supported_rate(4000) == 8000
+
+
+def test_unknown_body_names_what_came_back(tmp_path, monkeypatch):
+    """Без проверки numpy роняет прогон сообщением, по которому не найти причину."""
+    import base64
+
+    from src.errors import ProviderError
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    cfg = load_config()
+    provider = ElevenLabsTTS(cfg, CostLedger(video_id="t"), "key", "voice")
+
+    class _Resp:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            # Нечётная длина и без узнаваемого заголовка — это не аудио.
+            return {"audio_base64": base64.b64encode(b"\x00\x01\x02").decode(),
+                    "alignment": {}}
+
+    monkeypatch.setattr("requests.post", lambda *a, **k: _Resp())
+    with pytest.raises(ProviderError) as exc:
+        provider._request("текст", tmp_path / "out.wav",
+                          model="eleven_v3", speed=1.0)
+    assert "не PCM" in exc.value.message
+    assert exc.value.details.get("bytes") == 3
+
+
+def test_mp3_body_is_decoded_instead_of_crashing(tmp_path, monkeypatch):
+    """pcm_* есть не на всех тарифах, и сервис молча отдаёт mp3.
+
+    Поймано живым прогоном: тело начиналось с ID3, а код разбирал его как
+    s16le. Формат определяется по байтам, а не по тому, что мы попросили.
+    """
+    import base64
+    import subprocess
+
+    import numpy as np
+
+    from src.lib.audio import load_wav, save_wav
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.ffmpeg import ffmpeg_bin
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    # Настоящий mp3 на секунду — чтобы проверялся разбор, а не заглушка.
+    src = tmp_path / "tone.wav"
+    sr = 44100
+    save_wav(src, (0.2 * np.sin(np.linspace(0, 220 * 2 * np.pi, sr))).astype(np.float32), sr)
+    mp3 = tmp_path / "tone.mp3"
+    subprocess.run([ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
+                    "-i", str(src), "-codec:a", "libmp3lame", "-b:a", "128k",
+                    str(mp3)], check=True, capture_output=True)
+    body = mp3.read_bytes()
+    assert body[:3] == b"ID3" or body[0] == 0xFF
+
+    cfg = load_config()
+    cfg.set("elevenlabs.sample_rate", 48000)
+    provider = ElevenLabsTTS(cfg, CostLedger(video_id="t"), "key", "voice")
+
+    class _Resp:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"audio_base64": base64.b64encode(body).decode(), "alignment": {}}
+
+    monkeypatch.setattr("requests.post", lambda *a, **k: _Resp())
+    out = tmp_path / "out.wav"
+    result = provider._request("текст", out, model="eleven_v3", speed=1.0)
+
+    data, out_sr = load_wav(out)
+    assert out_sr == 48000
+    assert abs(result.duration_sec - 1.0) < 0.1
+    assert float(np.abs(data).max()) > 0.01, "получилась тишина"
+
+
+def test_pcm_is_resampled_to_the_pipeline_rate(tmp_path, monkeypatch):
+    """Сервис отдаёт 44100, конвейер работает на 48000 — приводим сами."""
+    import base64
+
+    import numpy as np
+
+    from src.lib.audio import load_wav
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    cfg = load_config()
+    cfg.set("elevenlabs.sample_rate", 48000)
+    provider = ElevenLabsTTS(cfg, CostLedger(video_id="t"), "key", "voice")
+
+    one_second_at_44100 = (np.zeros(44100, dtype="<i2")).tobytes()
+
+    class _Resp:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"audio_base64": base64.b64encode(one_second_at_44100).decode(),
+                    "alignment": {}}
+
+    monkeypatch.setattr("requests.post", lambda *a, **k: _Resp())
+    out = tmp_path / "out.wav"
+    result = provider._request("текст", out, model="eleven_v3", speed=1.0)
+
+    data, sr = load_wav(out)
+    assert sr == 48000
+    assert len(data) == 48000                      # секунда осталась секундой
+    assert abs(result.duration_sec - 1.0) < 1e-3
+
+
+def test_pace_makes_speech_faster_and_the_target_shorter():
+    """Темп 1.1 обязан пережить коррекцию длины.
+
+    Поднять одну скорость мало: коррекция подгоняет озвучку под плановую
+    длительность и вернула бы прежний темп. Поэтому цель едет вместе со
+    скоростью — речь быстрее, ролик соразмерно короче.
+    """
+    from src.lib.config import load_config
+
+    cfg = load_config()
+    cfg.set("elevenlabs.pace", 1.1)
+    pace = float(cfg.get("elevenlabs.pace"))
+    target = 60.0
+
+    assert abs(target / pace - 54.55) < 0.05, "цель не сдвинулась на ту же долю"
+    # Потолок коррекции тоже обязан ехать, иначе он срежет саму прибавку.
+    assert 1.35 * pace > 1.35, "предел коррекции не даст speed выйти выше 1.35"
+
+
+def test_voice_canon_is_one_rule_for_pipeline_and_probe():
+    """Проба брала звук из клипа как есть и звучала на 13 дБ тише ролика.
+
+    Правило громкости живёт одной функцией: и P3, и проба зовут её. Проверяем
+    не число в конфиге, а то, что функция действительно приводит тихий вход к
+    канону и держит потолок пика.
+    """
+    import numpy as np
+
+    from src.lib.audio import (
+        VOICE_LUFS, VOICE_TRUE_PEAK_DBTP, measure_loudness_buffer, normalize_voice,
+    )
+
+    sr = 48000
+    # Сигнал с речевым пик-фактором: тон под медленной огибающей. Гауссов шум
+    # тут не годится — у него пики на 12 дБ выше среднего, лимитер срезал бы
+    # интеграл, и проверка ловила бы свойство тестового сигнала, а не правила.
+    t = np.arange(sr * 3) / sr
+    envelope = 0.55 + 0.45 * np.sin(2 * np.pi * 2.3 * t)
+    quiet = (np.sin(2 * np.pi * 1000 * t) * envelope * 0.008).astype(np.float32)
+
+    before = measure_loudness_buffer(quiet, sr).integrated_lufs
+    assert before < VOICE_LUFS - 8, f"вход недостаточно тихий для проверки: {before}"
+
+    loud, gain_db = normalize_voice(quiet, sr)
+    after = measure_loudness_buffer(loud, sr)
+    assert abs(after.integrated_lufs - VOICE_LUFS) <= 1.0, after.integrated_lufs
+    assert after.true_peak_dbtp <= VOICE_TRUE_PEAK_DBTP + 0.05, after.true_peak_dbtp
+    assert gain_db > 8, f"гейн не применён: {gain_db}"
+
+
+def test_voice_settings_come_from_config_and_ask_for_expression():
+    """Характер подачи был зашит в код, style и speaker boost не слались вовсе.
+
+    На stability 0.45 речь выходила плоской: разброс громкости готового ролика
+    2.0 LU. Проверяется, что настройки читаются из конфига и что дефолт просит
+    выразительности, а не ровности.
+    """
+    from src.lib.config import load_config
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    cfg = load_config()
+    provider = ElevenLabsTTS.__new__(ElevenLabsTTS)
+    provider.cfg = cfg
+
+    settings = provider._voice_settings(1.1, model="eleven_multilingual_v2")
+    assert settings["speed"] == 1.1
+    assert settings["stability"] <= 0.35, "ровность выше — речь снова плоская"
+    assert settings["style"] > 0, "манера исходного голоса не усиливается"
+    assert settings["use_speaker_boost"] is True
+
+    cfg.data["elevenlabs"]["voice_settings"]["stability"] = 0.7
+    assert provider._voice_settings(1.0, model="eleven_multilingual_v2")["stability"] == 0.7, \
+        "конфиг не читается"
+
+
+def test_v3_gets_a_stability_it_will_actually_accept():
+    """eleven_v3 принимает только 0, 0.5 или 1 — промежуточное значит отказ.
+
+    Стоимость ошибки — целый прогон, поэтому значение прижимается к ближайшему
+    разрешённому здесь, а не выясняется по ответу сервиса.
+    """
+    from src.lib.config import load_config
+    from src.lib.providers.tts import ElevenLabsTTS
+
+    provider = ElevenLabsTTS.__new__(ElevenLabsTTS)
+    provider.cfg = load_config()
+
+    for asked, expected in ((0.30, 0.5), (0.1, 0.0), (0.9, 1.0)):
+        provider.cfg.data["elevenlabs"]["voice_settings"]["stability"] = asked
+        got = provider._voice_settings(1.0, model="eleven_v3")["stability"]
+        assert got == expected, f"{asked} → {got}, ждали {expected}"
+        assert got in ElevenLabsTTS.V3_STABILITY_STEPS
+
+
+def test_hesitations_are_cut_but_meaning_is_never_touched():
+    """Первая версия правила съедала сказуемое — теперь так нельзя.
+
+    «Вот это поворот» и «Это значит, что…» — нормальная речь: вырезав из них
+    слово, мы ломаем фразу. Режутся только звуки-запинки.
+    """
+    from src.lib.fillers import discourse_hits, strip_hesitations
+
+    clean, dropped = strip_hesitations("Эээ, свет оказался красным.")
+    assert clean == "Свет оказался красным.", clean
+    assert dropped == ["Эээ,"]
+
+    for keep in ("Вот это поворот.", "Это значит, что вселенная расширяется.",
+                 "И вот ответ на вопрос."):
+        assert strip_hesitations(keep) == (keep, []), keep
+
+    # Вводные слова только называются, но не режутся.
+    assert discourse_hits("Ну, короче, это работает") == ["ну", "короче"]
+    assert discourse_hits("И вот ответ на вопрос") == [], "предупреждение врёт"
+
+
+def test_p0_stops_hesitations_before_a_single_credit_is_spent(sample_script, cfg):
+    """Запинку дешевле не озвучивать, чем вырезать из готового звука."""
+    from src.errors import FillerWords
+    from src.p0_validate.validator import validate_script
+
+    sample_script["blocks"][1]["text"] = "Эээ, телескоп поймал древний свет."
+    with pytest.raises(FillerWords) as exc:
+        validate_script(sample_script, cfg)
+    assert "Эээ," in str(exc.value)
+
+
+def test_loud_voice_survives_a_high_crest_source():
+    """Просто поднять громкость мало: лимитер опустит всё обратно.
+
+    Дорожка от HeyGen приходит с пик-фактором под 19 дБ. Подъём до −14 LUFS
+    выносил пик на +4.9 dBTP, лимитер закрывал потолок, опуская всю дорожку, и
+    на выходе было −20 LUFS — тише, чем просили. Проверяется, что цель
+    достигается **и** потолок соблюдён одновременно.
+    """
+    import numpy as np
+
+    from src.lib.audio import (
+        VOICE_LUFS, VOICE_TRUE_PEAK_DBTP, measure_loudness_buffer, normalize_voice,
+    )
+
+    sr = 48000
+    rng = np.random.default_rng(11)
+    t = np.arange(sr * 4) / sr
+    body = np.sin(2 * np.pi * 900 * t) * (0.5 + 0.5 * np.sin(2 * np.pi * 2.0 * t))
+    # Редкие выбросы поверх тела фразы — то, что и создаёт высокий пик-фактор.
+    spikes = np.zeros_like(body)
+    for at in rng.integers(0, t.size - 400, size=24):
+        spikes[at:at + 220] += np.hanning(220) * 6.0
+    quiet = ((body + body * spikes) * 0.02).astype(np.float32)
+
+    before = measure_loudness_buffer(quiet, sr)
+    crest = before.true_peak_dbtp - before.integrated_lufs
+    assert crest > 14, f"сигнал недостаточно пиковый для проверки: {crest:.1f} дБ"
+
+    loud, _gain = normalize_voice(quiet, sr)
+    after = measure_loudness_buffer(loud, sr)
+    assert abs(after.integrated_lufs - VOICE_LUFS) <= 0.6, after.integrated_lufs
+    assert after.true_peak_dbtp <= VOICE_TRUE_PEAK_DBTP, after.true_peak_dbtp
+
+    # Без сжатия та же дорожка до канона не дотягивает — ради этого оно и есть.
+    flat, _ = normalize_voice(quiet, sr, compress=False)
+    assert measure_loudness_buffer(flat, sr).integrated_lufs < after.integrated_lufs - 1
+
+
+# --- короткие реплики субтитра (§5.1) -----------------------------------------
+
+def _cues(words, *, step=0.14, hold=0.12, block="b1"):
+    out, t = [], 0.0
+    for word in words:
+        out.append({"display": word, "start": t, "end": t + hold, "block_id": block})
+        t += step
+    return out
+
+
+def test_single_letter_never_stands_alone_in_the_frame():
+    """«а» держалась 88 мс посреди кадра и читалась как сбой рендера.
+
+    Проверено на готовом ролике 0047: тридцать реплик из ста сорока шести — это
+    вспышка одной-двух букв. Растянуть её нельзя (соседний клип на том же
+    треке), поэтому она уезжает к следующему слову.
+    """
+    from src.lib.render.text_rules import glue_short_cues
+
+    glued = glue_short_cues(_cues(["гранит,", "а", "расчёты", "обещали"]))
+    assert [c["display"] for c in glued] == ["гранит,", "расчёты", "обещали"]
+    assert glued[1]["lead"] == "а"
+    # Реплика начинается там, где начиналось приклеенное слово: пропасть между
+    # речью и субтитром недопустима.
+    assert glued[1]["start"] == pytest.approx(0.14)
+    assert glued[1]["end"] == pytest.approx(0.40)
+
+
+def test_two_short_words_in_a_row_become_one_cue():
+    """«не в бюджет» — одна реплика, а не цепочка из трёх вспышек."""
+    from src.lib.render.text_rules import glue_short_cues
+
+    glued = glue_short_cues(_cues(["не", "в", "бюджет,", "а", "в", "физику."]))
+    assert [(c.get("lead"), c["display"]) for c in glued] == [
+        ("не в", "бюджет,"), ("а в", "физику.")]
+
+
+def test_a_short_word_does_not_jump_over_a_pause_or_a_block():
+    """За паузой и за границей блока слово принадлежит уже другой фразе."""
+    from src.lib.render.text_rules import glue_short_cues
+
+    far = _cues(["и", "дошли"], step=1.5)
+    assert [c.get("lead") for c in glue_short_cues(far)] == [None, None]
+
+    split = _cues(["и"]) + [{"display": "дошли", "start": 0.2, "end": 0.5,
+                             "block_id": "b2"}]
+    assert [c["display"] for c in glue_short_cues(split)] == ["и", "дошли"]
+
+
+def test_the_glued_word_keeps_the_accent_off_the_preposition():
+    """Красный цвет означает ударение, а не начало фразы (§5.1).
+
+    Поэтому приклеенное слово уезжает в отдельный span, а не в текст реплики:
+    иначе `.word.emphasis` покрасил бы и предлог.
+    """
+    from src.lib.render.hyperframes.composition import CompositionBuilder
+
+    cue = {"display": "расчёты", "lead": "а", "start": 1.0, "end": 1.4,
+           "emphasis": True, "block_id": "b1"}
+    builder = object.__new__(CompositionBuilder)
+    builder.brandbook = json.load(open("config/brandbook.json", encoding="utf-8"))
+    builder.plan = {"subtitles": [cue], "subtitle_style": {}}
+    builder.duration = 2.0
+    builder.tweens = []
+    builder.stats = {"subtitle_words": 0}
+    html = "".join(builder._subtitle_nodes())
+    assert 'class="clip word emphasis"' in html
+    assert '<i class="lead">А</i> РАСЧЁТЫ' in html
+
+
+def test_srt_shows_the_same_cues_as_the_frame():
+    """Файл субтитров и кадр обязаны говорить одно и то же."""
+    from src.p4_align.aligner import AlignedWord
+
+    words = [
+        AlignedWord(0, "гранит,", 1.00, 1.12, "b1", "body", False, ["гранит"], "provider"),
+        AlignedWord(1, "а", 1.14, 1.26, "b1", "body", False, ["а"], "provider"),
+        AlignedWord(2, "расчёты", 1.28, 1.70, "b1", "body", False, ["расчёты"], "provider"),
+    ]
+    srt = build_srt(words)
+    assert "а расчёты" in srt
+    assert "\nа\n" not in srt
+    # Две реплики, а не три: нумерация обязана идти подряд.
+    assert srt.strip().split("\n\n")[-1].startswith("2")
+
+
+def test_the_probe_sweeps_formats_and_names_the_best_one(tmp_path, capsys, monkeypatch):
+    """Проба обязана отвечать на вопрос «какой формат брать», а не «сломалось ли».
+
+    Прогон 33570833947: попросили pcm_44100 — сервис отдал mp3 с полосой
+    8 кГц. Один формат за запуск означает гадание по документации ценой
+    очереди Actions; перебор в одном запуске даёт таблицу и победителя.
+    """
+    import argparse
+
+    from src.cli import cmd_voice_probe
+
+    args = argparse.Namespace(
+        text="Проверка формата.", out=str(tmp_path / "probe.wav"),
+        formats="pcm_44100,mp3_44100_128", config=None, set=None, brandbook=None)
+    monkeypatch.setenv("REDSHIFT_PROVIDERS_MODE", "mock")
+    assert cmd_voice_probe(args) == 0
+
+    report = json.loads(capsys.readouterr().out)
+    assert [p["format"] for p in report["probes"]] == ["pcm_44100", "mp3_44100_128"]
+    assert report["best"] in report["probes"], "победитель обязан быть из таблицы"
+    assert all("bandwidth_hz" in p for p in report["probes"])
+    # Каждый формат пишется отдельным файлом — иначе сравнивать нечего.
+    assert len({p["file"] for p in report["probes"]}) == 2
+
+
+class TestVoicePool:
+    """Два клона одного голоса чередуются между роликами.
+
+    Выбор идёт по video_id, а не случайно. Случайный дал бы при пересборке
+    другой голос, а пересборка обязана быть повторимой: новая озвучка стоит
+    денег, сдвигает границы фраз и бракует уже снятые клипы ведущего —
+    липсинк разъезжается, и вся фаза 2 переснимается заново.
+    """
+
+    def test_the_same_video_always_gets_the_same_voice(self):
+        from src.lib.config import load_config
+        from src.lib.providers.tts import pick_voice
+
+        cfg = load_config()
+        chosen = pick_voice(cfg, "redshift_0048")
+        assert chosen and all(pick_voice(cfg, "redshift_0048") == chosen
+                              for _ in range(5))
+
+    def test_different_videos_do_not_all_get_one_voice(self):
+        """Иначе пул бессмыслен: канал звучит одной дорожкой."""
+        from src.lib.config import load_config
+        from src.lib.providers.tts import pick_voice
+
+        cfg = load_config()
+        picked = {pick_voice(cfg, f"redshift_{n:04d}") for n in range(40, 80)}
+        assert len(picked) > 1, "все ролики получили один голос"
+
+    def test_the_pool_holds_only_ids_the_owner_gave(self):
+        from src.lib.config import load_config
+
+        pool = load_config().get("elevenlabs.voice_pool", [])
+        assert pool == ["14NozJq5eoBmDc1FXFDq", "7fU3YUxRrVGjNaZ5dzEH"]
+
+    def test_without_a_pool_the_explicit_voice_still_wins(self):
+        """Пустой пул не должен ломать прежний путь: явный id и env."""
+        from src.lib.config import load_config
+        from src.lib.providers.tts import pick_voice
+
+        cfg = load_config()
+        cfg.set("elevenlabs.voice_pool", [])
+        cfg.set("elevenlabs.voice_id", "explicit-one")
+        assert pick_voice(cfg, "redshift_0048") == "explicit-one"

@@ -15,7 +15,9 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # Сорока минут перестало хватать: сквозной прогон вырос вместе с поиском.
+    # Потолок поднят с запасом, а сам прогон ужат по ширине поиска ниже.
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -62,9 +64,17 @@ jobs:
       - name: Тесты
         run: python -m pytest tests/ -q --maxfail=1
 
+      # Прогон здесь доказывает, что конвейер собирается и проходит QC, а не
+      # что сток отдаёт хороший материал: материал всё равно синтетический.
+      # Поэтому ширина поиска ужата — два запроса на слот вместо четырёх и
+      # четыре кандидата вместо восьми. Каждый кандидат в mock-режиме это
+      # отдельный вызов ffmpeg, и на полной ширине P7 съедал половину бюджета
+      # задачи: прогон 33481687527 сняли по сорокаминутному потолку.
       - name: Сквозной прогон в mock-режиме
         run: |
           python -m src.cli --set providers.mode=mock --pretty-logs \
+            --set stock.queries_per_slot=2 \
+            --set stock.max_candidates_per_query=4 \
             run --script scripts/redshift_0042.json
 
       - name: Проверить, что ролики собрались и прошли QC

@@ -16,11 +16,13 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id
+from ..lib.palette import palette_verdict
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 
 _log = get_logger("p8")
@@ -38,6 +40,37 @@ def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
     if role in ("evidence", "twist"):
         return f"роль блока {role} — цена ошибки выше обычной"
     return None
+
+
+def belongs_to_its_source(entry: dict[str, Any]) -> bool:
+    """Материал, который нельзя переиспользовать в другом ролике (§14.4).
+
+    Кадр со страницы статьи принадлежит своей статье: в общей базе он стал бы
+    доступен любому сюжету — и вместе с ним исчезло бы единственное основание
+    его показывать, та самая страница рядом в кадре.
+    """
+    return str(entry.get("origin") or "") == "press"
+
+
+def _same_intent(left: str, right: str) -> bool:
+    """Тот же ли это по сути слот, для которого оценка ставилась.
+
+    Сравнение по словам, а не побуквенно: реплики разных роликов формулируют
+    один и тот же кадр по-разному («трещиноватый гранит крупным планом» и
+    «крупный план гранита»), и требовать точного совпадения значило бы
+    пересуживать один и тот же кадр каждый прогон. Половина общих слов —
+    порог, при котором слоты ещё про одно и то же.
+    """
+    def words(text: str) -> set[str]:
+        # Сравниваются основы, а не слова целиком: по-русски один и тот же
+        # кадр называют «трещиноватый гранит крупным планом» и «крупный план
+        # трещиноватого гранита» — общих слов ноль, смысл один.
+        return {w[:4] for w in re.findall(r"\w{4,}", str(text).lower())}
+
+    a, b = words(left), words(right)
+    if not a or not b:
+        return False
+    return len(a & b) / len(a | b) >= 0.5
 
 
 def run_step(ctx) -> dict[str, Any]:
@@ -58,10 +91,13 @@ def run_step(ctx) -> dict[str, Any]:
     for candidate in doc["candidates"]:
         by_slot.setdefault(candidate["slot_index"], []).append(candidate)
 
+    palette_rules = dict(cfg.brandbook.get("color_rules", {}).get("footage_palette", {}))
+
     judged: list[dict[str, Any]] = []
     accepted: dict[int, dict[str, Any]] = {}
     arbiter_calls = 0
     reused_scores = 0
+    rejected_by_palette = 0
 
     for slot_index in sorted(by_slot):
         slot = slots_by_index.get(slot_index, {})
@@ -85,8 +121,20 @@ def run_step(ctx) -> dict[str, Any]:
         scored: list[tuple[float, dict[str, Any]]] = []
         for candidate in by_slot[slot_index]:
             # Материал из локальной базы уже оценивался — платить второй раз
-            # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6).
-            if candidate.get("origin") == "local_cache" and candidate.get("prior_score"):
+            # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6). Но оценка
+            # принадлежит паре «кадр + смысл слота», а не кадру: судья отвечал
+            # на вопрос «подходит ли снимок вот этой реплике». Перенести её на
+            # другой слот значит утверждать то, чего никто не проверял —
+            # снимок галактики получил бы 0.9 в кадре про буровую, потому что
+            # у слотов совпал тег «space».
+            #
+            # Вечнозелёная база вскрыла это ребром: её записи не судились ни
+            # разу, у них стоит ровный SEED_SCORE 0.62 при пороге приёма 0.70,
+            # и по этому пути весь засев навсегда оставался «borderline».
+            reusable = (candidate.get("prior_score")
+                        and candidate.get("prior_intent")
+                        and _same_intent(candidate.get("prior_intent", ""), intent))
+            if candidate.get("origin") == "local_cache" and reusable:
                 verdict_dict = {
                     "score": float(candidate["prior_score"]),
                     "reason": "оценка переиспользована из локальной базы",
@@ -113,14 +161,32 @@ def run_step(ctx) -> dict[str, Any]:
                     verdict_dict["arbitration_skipped"] = (
                         f"{reason}; лимит арбитража {arbiter_budget} исчерпан")
 
-            entry = {**candidate, "verdict": verdict_dict,
-                     "score": float(verdict_dict["score"])}
+            # Цвет судится отдельно от смысла и бесплатно: кадры кандидата
+            # уже лежат на диске. Судья со зрением оценивает соответствие
+            # речи и про палитру канала не знает — на 0047 он принял стену из
+            # ярко-розовых кубов по запросу «dark red gradient».
+            palette = palette_verdict(
+                [Path(f) for f in candidate.get("frames", [])], palette_rules)
+
+            entry = {**candidate, "verdict": verdict_dict, "intent": intent,
+                     "score": float(verdict_dict["score"]), "palette": palette}
             entry["decision"] = (
                 "accept" if entry["score"] >= accept_threshold
                 else "reject" if entry["score"] < reject_threshold
                 else "borderline")
+            if not palette["passed"]:
+                # Отказ, а не штраф к оценке: §7.3 велит незакрытый слот
+                # отправлять в генерацию, а не затыкать слабым материалом.
+                # Кадр не той палитры — ровно такой слабый материал.
+                entry["decision"] = "reject_palette"
+                entry["reject_reason"] = palette["reason"]
+                rejected_by_palette += 1
+                _log.info("кандидат отклонён по палитре", extra={
+                    "slot": slot_index, "asset": candidate.get("asset_id"),
+                    "off_share": palette["off_share"]})
             judged.append(entry)
-            scored.append((entry["score"], entry))
+            if entry["decision"] != "reject_palette":
+                scored.append((entry["score"], entry))
 
         scored.sort(key=lambda pair: pair[0], reverse=True)
         best = next((entry for score, entry in scored if score >= accept_threshold), None)
@@ -144,6 +210,8 @@ def run_step(ctx) -> dict[str, Any]:
             # Мемы живут в своей библиотеке с лимитом 100 (§14.3), в индексе
             # футажей им делать нечего.
             memes_used.append(entry["asset_id"])
+            continue
+        if belongs_to_its_source(entry):
             continue
         if entry.get("origin") == "local_cache":
             index.mark_used(entry["asset_id"], doc["video_id"])
@@ -169,7 +237,10 @@ def run_step(ctx) -> dict[str, Any]:
             ai_generated=bool(entry.get("ai_generated")),
             mock=bool(entry.get("mock")),
             extra={"attribution": entry.get("attribution", ""),
-                   "author": entry.get("author", "")},
+                   "author": entry.get("author", ""),
+                   # Смысл слота, за который оценка получена: без него она
+                   # не переиспользуема — см. _same_intent.
+                   "judged_intent": entry.get("intent", "")},
         ))
         added_to_index += 1
     index.save()
@@ -193,6 +264,7 @@ def run_step(ctx) -> dict[str, Any]:
         "arbiter_calls": arbiter_calls,
         "arbiter_budget": arbiter_budget,
         "reused_scores": reused_scores,
+        "rejected_by_palette": rejected_by_palette,
         "judged_count": len(judged),
         "accepted_count": len(accepted),
         "slots_total": len(asset_slots),
@@ -208,10 +280,15 @@ def run_step(ctx) -> dict[str, Any]:
     if unfilled:
         ctx.warn(f"{len(unfilled)} слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
                  slots=unfilled)
+    if rejected_by_palette:
+        ctx.warn(f"{rejected_by_palette} кандидатов отклонены по палитре канала "
+                 f"(§3.1): посторонний цвет занимал больше "
+                 f"{float(palette_rules.get('off_share_max', 0.15)):.0%} кадра")
     _log.info("оценка футажей завершена", extra={
         "judged": len(judged), "accepted": len(accepted),
         "fill_rate": result["fill_rate"], "arbiter_calls": arbiter_calls,
         "reused": reused_scores, "unfilled": len(unfilled),
+        "rejected_by_palette": rejected_by_palette,
     })
     return {"accepted": len(accepted), "fill_rate": result["fill_rate"],
             "arbiter_calls": arbiter_calls}

@@ -263,9 +263,9 @@ def test_catalog_matches_spec_counts(cfg):
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 10, "lower-thirds": 8, "frames-cards": 6,
         "browser-ui": 6, "transitions": 12, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 11,
+        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 23,
     }
-    assert len(catalog.all()) == 92
+    assert len(catalog.all()) == 104
 
 
 def test_catalog_rotation_avoids_recent(cfg):
@@ -329,6 +329,12 @@ def test_hero_device_requires_what_it_draws(cfg):
     from src.p11_assemble.assemble import _HERO_NEEDS, _hero_device
 
     catalog = TemplateCatalog.load(cfg)
+    # История использования обнуляется: выбор ранжирует приёмы по ней (§15.12),
+    # и любой прогон конвейера её меняет — тест начинал падать не от правки
+    # кода, а от того, что рядом собрали ролик. Здесь проверяется правило
+    # выбора, а не то, что канал успел показать.
+    for template in catalog.all():
+        template.last_used_in = []
     slot = {"index": 4, "duration": 3.0, "role": "evidence"}
 
     empty = {"word": "", "lines": [], "accent_lines": [], "title": "", "brand": None}
@@ -368,18 +374,51 @@ def test_hero_content_wraps_lines_and_marks_the_accent():
 
 def test_line_carrying_devices_suppress_the_subtitle(cfg):
     """Пословный субтитр поверх той же фразы — дубль, и он ложится на карточку."""
-    from src.p11_assemble.assemble import _HERO_NEEDS, _hero_device
+    from src.p11_assemble.assemble import (
+        _CAPTION_HEROES, _HERO_NEEDS, _hero_device, hero_mutes_subtitle,
+    )
 
     catalog = TemplateCatalog.load(cfg)
+    # История прогонов обнуляется намеренно. Ротация ранжирует по числу
+    # использований, и после живого прогона приёмы со строками уходят вниз на
+    # всех сорока зёрнах — тест начинает падать от того, что кто-то собрал
+    # ролик, а не от того, что правило сломалось. Проверяется правило.
+    for template in catalog.templates:
+        template.last_used_in = []
     slot = {"index": 4, "duration": 3.0, "role": "evidence"}
+    plate = {"file": "/w/shots/a.mp4", "duration_sec": 3.0}
     seen = set()
     for seed in range(40):
+        # С материалом, иначе приёмы, которым он нужен, отсеиваются до выбора и
+        # правило на них не проверяется вовсе — так и жил экспонат.
+        entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=False,
+                             plate_src=plate, recent_videos=[], exclude=[], seed=seed)
+        seen.add(entry["renderer"])
+        assert entry["carries_line"] is hero_mutes_subtitle(
+            entry["renderer"])["carries_line"], entry["renderer"]
+    assert any("lines" in _HERO_NEEDS[r] for r in seen), "приёмы со строками не выпали"
+    # Экспонат подписывает материал фразой целиком и потому тоже глушит субтитр,
+    # хотя строк ему никто не передаёт.
+    assert hero_mutes_subtitle(_CAPTION_HEROES[0])["carries_line"] is True
+
+
+def test_full_frame_fill_is_short_and_takes_the_subtitle_with_it(cfg):
+    """Заливка во весь кадр съедает и субтитр: белого слова на ней не видно."""
+    from src.p11_assemble.assemble import _FULL_FRAME_HEROES, _hero_device
+
+    catalog = TemplateCatalog.load(cfg)
+    slot = {"index": 4, "duration": 6.0, "role": "evidence"}
+    seen = set()
+    for seed in range(60):
         entry = _hero_device(catalog, slot=slot, content=_content(), has_alpha=False,
                              plate_src=None, recent_videos=[], exclude=[], seed=seed)
-        seen.add(entry["renderer"])
-        expected = "lines" in _HERO_NEEDS[entry["renderer"]]
-        assert entry["carries_line"] is expected, entry["renderer"]
-    assert any("lines" in _HERO_NEEDS[r] for r in seen), "приёмы со строками не выпали"
+        full = entry["renderer"] in _FULL_FRAME_HEROES
+        assert entry["covers_frame"] is full, entry["renderer"]
+        if full:
+            seen.add(entry["renderer"])
+            assert entry["duration"] and entry["duration"] < slot["duration"], (
+                f'{entry["renderer"]}: заливка досиживает весь кадр')
+    assert seen, "ни один приём с заливкой во весь кадр не выпал"
 
 
 def test_hero_plate_duration_never_exceeds_its_material(cfg):
@@ -466,3 +505,52 @@ def test_subtitle_straddling_a_cut_is_dropped():
     assert not kept(2.50, 2.90)      # целиком внутри
     assert not kept(3.30, 3.70)      # начало внутри
     assert kept(3.45, 3.90)          # целиком после
+
+
+class TestRotationRespectsTheAiCeiling:
+    """Перестановка вставок не имеет права выносить ролик за потолок AI.
+
+    P9 выдаёт генерацию под конкретные слоты и считает долю по их
+    длительности. Ротация версии B переносит тот же кадр на слот вдвое
+    длиннее — материала не прибавилось, а доля выросла. Прогон CI
+    33607509470: P9 отчитался о 0.1995, вариант A собрался в 0.3420,
+    вариант B — в 0.3971 при потолке 0.35. QC-14 не выдал ролик, за который
+    уже заплачены голос, аватар и генерация: худший из возможных отказов.
+    """
+
+    slots = [{"index": 0, "block_id": "b1", "duration": 0.3},
+             {"index": 1, "block_id": "b1", "duration": 2.5},
+             {"index": 2, "block_id": "b2", "duration": 1.0}]
+    assets = {0: {"ai_generated": True, "asset_id": "gen"},
+              1: {"ai_generated": False, "asset_id": "stock"},
+              2: {"ai_generated": False, "asset_id": "stock2"}}
+
+    def _ai_seconds(self, mapping):
+        return sum(s["duration"] for s in self.slots
+                   if mapping[s["index"]].get("ai_generated"))
+
+    def test_rotation_alone_can_double_the_ai_share(self):
+        """Сначала показать саму беду: без потолка доля растёт вдвое."""
+        from src.p11_assemble.assemble import _rotate_assets
+
+        rotated = _rotate_assets(self.slots, self.assets, shift=1)
+        assert self._ai_seconds(rotated) > self._ai_seconds(self.assets)
+
+    def test_the_offending_block_is_rolled_back(self):
+        from src.p11_assemble.assemble import _rotate_assets
+
+        capped = _rotate_assets(self.slots, self.assets, shift=1, ai_budget_sec=1.0)
+        assert self._ai_seconds(capped) <= 1.0
+
+    def test_other_blocks_keep_their_rotation(self):
+        """Откатывается блок-виновник, а не всё различие версий (§4.5)."""
+        from src.p11_assemble.assemble import _rotate_assets
+
+        capped = _rotate_assets(self.slots, self.assets, shift=1, ai_budget_sec=1.0)
+        assert capped[2]["asset_id"] == "stock2"
+
+    def test_a_rotation_within_budget_survives(self):
+        from src.p11_assemble.assemble import _rotate_assets
+
+        kept = _rotate_assets(self.slots, self.assets, shift=1, ai_budget_sec=5.0)
+        assert kept[1]["asset_id"] == "gen", "ротацию откатили без нужды"

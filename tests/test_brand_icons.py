@@ -73,8 +73,26 @@ def test_oversized_icon_is_refused(library):
 
 
 def test_unknown_variant_is_refused(library):
-    with pytest.raises(ValueError, match="light или dark"):
+    with pytest.raises(ValueError, match="light, dark, mono"):
         library.add("ChatGPT", "neon", b"png")
+
+
+def test_vector_icon_keeps_its_extension(library):
+    """Расширение — по содержимому файла, а не по умолчанию.
+
+    Одноцветные знаки приходят вектором. Названный «.png», SVG ломается в
+    разметке молча: браузер не станет разбирать его как картинку.
+    """
+    icon = library.add("Nvidia", "mono", b'<svg xmlns="http://www.w3.org/2000/svg"/>')
+    assert icon.file.endswith(".svg")
+    assert (library.root / icon.file).exists()
+
+
+def test_found_icon_knows_where_it_lies(library):
+    """У найденного знака спрашивают путь — им приём и пользуется."""
+    library.add("Nvidia", "mono", b"<svg/>")
+    found = library.find("Nvidia")
+    assert found and found[0].path.endswith(str(library.root / found[0].file))
 
 
 def test_missing_file_is_not_reported_as_present(library):
@@ -89,3 +107,99 @@ def test_usage_is_recorded_per_video(library):
     library.mark_used("ChatGPT", "redshift_0002")
     saved = json.loads((library.root / "brand_icons_manifest.json").read_text())
     assert saved["brands"][0]["used_in"] == ["redshift_0001", "redshift_0002"]
+
+
+@pytest.fixture
+def real_library():
+    """Настоящая библиотека репозитория: русские написания живут в её манифесте."""
+    from src.lib.brand_icons import load_library
+    from src.lib.config import load_config
+
+    return load_library(load_config())
+
+
+class TestRussianNames:
+    """Сценарии пишутся по-русски, а слаги латиницей.
+
+    Прогон 0047: библиотека в сотню знаков, в кадре — ни одного логотипа.
+    Перебор слов реплики сверял «Гугла» со слагом ``google`` и уходил ни с
+    чем. Транслитерация спасает не всех: «Тесла» даёт tesla, но «Гугл» —
+    ``gugl``, «Ютуб» — ``yutub``.
+    """
+
+    def test_a_brand_is_found_through_its_russian_name(self, real_library):
+        for text, slug in (("Гугл показал модель", "google"),
+                           ("В Ютубе это разошлось", "youtube"),
+                           ("Эпл собирает их в Китае", "apple")):
+            found = real_library.match_text(text)
+            assert found and found.slug == slug, f"{text!r} → {found}"
+
+    def test_a_case_ending_does_not_hide_the_brand(self, real_library):
+        """В речи бренд склоняется: «у Гугла», «Тесле», «в Ютубе»."""
+        for text, slug in (("У Гугла своя лаборатория", "google"),
+                           ("Тесле это стоило миллиард", "tesla"),
+                           ("В Ютубе за сутки", "youtube")):
+            found = real_library.match_text(text)
+            assert found and found.slug == slug, f"{text!r} → {found}"
+
+    def test_a_common_word_does_not_summon_a_logo(self, real_library):
+        """«Металл» — не Meta, «эфир» — не Ethereum.
+
+        Открытый префиксный поиск дал бы знак Meta в кадре про металлургию.
+        Окончания поэтому перечислены закрытым списком.
+        """
+        for text in ("Расплавленный металл в тигле", "Метан горит синим",
+                     "Прямой эфир шёл два часа", "Метод оказался проще",
+                     "Он оформил визу заранее"):
+            assert real_library.match_text(text) is None, text
+
+    def test_every_alias_points_at_a_brand_that_exists(self, real_library):
+        """Основа без знака — обещание, которого библиотека не выполнит."""
+        missing = [slug for slug in real_library.aliases if not real_library.find(slug)]
+        assert not missing, f"основы без знака: {missing}"
+
+
+class TestTheMarkGetsTheStageColour:
+    """Знак обязан краситься страницей, иначе на тёмной сцене его нет.
+
+    Все 108 знаков библиотеки идут без атрибута ``fill`` — по правилам SVG
+    это чёрный. Через ``<img>`` страница до них не дотягивается: картинка
+    рисуется отдельным документом, и ``color`` родителя туда не попадает.
+    Библиотека же заводилась под обратное — «одноцветный вектор, который
+    красится через currentColor».
+    """
+
+    def test_the_mark_is_inlined_not_linked(self):
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        markup = _brand_mark("assets/brand_icons/svg/google.svg")
+        assert markup.startswith("<svg"), "знак ушёл ссылкой, а не разметкой"
+        assert 'fill="currentColor"' in markup
+        assert "<img" not in markup
+
+    def test_the_tooltip_title_is_dropped(self):
+        """<title> внутри SVG браузер показывает подсказкой поверх кадра."""
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        assert "<title>" not in _brand_mark("assets/brand_icons/svg/google.svg")
+
+    def test_a_raster_mark_still_goes_by_link(self):
+        """PNG инлайнить нечем — он остаётся картинкой."""
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        assert _brand_mark("assets/brand_icons/whatever.png").startswith("<img")
+
+    def test_no_icon_in_the_library_carries_its_own_colour(self):
+        """Если знак придёт с собственным fill, currentColor его не перекрасит.
+
+        Проверяется вся библиотека: один такой файл — и в кадре чёрное пятно.
+        """
+        import re
+        from pathlib import Path
+
+        from src.lib.render.hyperframes.templates import _brand_mark
+
+        for svg in sorted(Path("assets/brand_icons/svg").glob("*.svg")):
+            markup = _brand_mark(str(svg))
+            painted = re.findall(r'fill="([^"]*)"', markup)
+            assert painted == ["currentColor"], f"{svg.name}: заливка {painted}"

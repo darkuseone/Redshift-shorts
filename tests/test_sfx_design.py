@@ -1,0 +1,102 @@
+"""Звук должен доходить до зрителя, а зритель смотрит с телефона.
+
+Заказчик услышал «дешёвый звук» на появлении полноэкранного текста. Причина
+нашлась замером: удар был чистым синусом на 70 Гц, а динамик телефона ниже
+400 Гц почти ничего не отдаёт — в ролике от удара оставался слабый шорох.
+Здесь это правило, а не наблюдение.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from src.lib.audio import phone_speaker_loss_db
+from src.lib.sfx_synth import SFX_ROLES, SR, synth_sfx
+
+# Бюджет потерь на динамике телефона. Прежние удары теряли 16–25 дБ и звучали
+# глухо; после переработки худший — sub_drop с 9.2 дБ, и это его роль.
+PHONE_LOSS_MAX_DB = 10.0
+
+# Роли, у которых работа — акцент: у них обязана быть слышимая атака.
+ACCENTS = ("hit_impact", "boom", "sub_drop", "chime", "subscribe_ping", "reveal")
+
+
+@pytest.mark.parametrize("role", SFX_ROLES)
+def test_every_sfx_survives_a_phone_speaker(role):
+    loss = phone_speaker_loss_db(synth_sfx(role), SR)
+    assert loss > -PHONE_LOSS_MAX_DB, (
+        f"{role}: на телефоне теряется {-loss:.1f} дБ — звук уходит под порог динамика")
+
+
+@pytest.mark.parametrize("role", ACCENTS)
+def test_accent_has_a_transient(role):
+    """Без широкополосной атаки акцент читается как гудок, а не как удар."""
+    mono = synth_sfx(role)[:, 0].astype(np.float64)
+    # Окно в 21 мс: щелчок гаснет за десяток миллисекунд, и на длинном окне
+    # его целиком забивает тон, который идёт следом.
+    n = min(1 << 10, len(mono))
+    head = mono[:n] * np.hanning(n)
+    spec = np.abs(np.fft.rfft(head)) ** 2
+    freqs = np.fft.rfftfreq(n, 1.0 / SR)
+    high = spec[freqs > 4000].sum() / (spec.sum() + 1e-20)
+    assert high > 0.002, f"{role}: в атаке нет высоких — доля выше 4 кГц {high:.4f}"
+
+
+@pytest.mark.parametrize("role", SFX_ROLES)
+def test_sfx_is_deterministic(role):
+    """Один и тот же ролик обязан звучать одинаково при пересборке."""
+    assert np.array_equal(synth_sfx(role), synth_sfx(role))
+
+
+def test_library_wavs_are_not_tied_to_the_synthesiser():
+    """Библиотека курируемая: файл приносит заказчик, синтез его не перезаписывает.
+
+    Прежняя проверка требовала побайтного совпадения wav с рецептом. После
+    замены синтетики живыми записями она бы браковала каждый настоящий файл.
+    """
+    from src.lib.config import load_config
+    from src.lib.manifest import open_library
+
+    lib = open_library(load_config(), "sfx")
+    assert all(item.source != "synth" for item in lib.items)
+
+
+def test_bandwidth_metric_sees_where_the_spectrum_ends():
+    """Полоса — единственное, по чему видно, что сервис отдал вместо PCM.
+
+    Формат ответа ElevenLabs не сообщает: на 0047 запрошен был pcm_44100, а
+    пришёл mp3 со срезом на 11 кГц. Мерка обязана этот срез показывать.
+
+    Материал — гребёнка тонов с заданным потолком, а не белый шум: у шума
+    спектр плоский, и доля 0.999 у него приходится далеко за срез фильтра.
+    У речи спектр падает круто, поэтому гребёнка ближе к делу.
+    """
+    from src.lib.audio import SAMPLE_RATE, speech_bandwidth_hz
+
+    def comb(top_hz: float) -> np.ndarray:
+        t = np.arange(SAMPLE_RATE * 3) / SAMPLE_RATE
+        tones = np.arange(200.0, top_hz, 200.0)
+        return sum(np.sin(2 * np.pi * f * t) / (1 + f / 500.0) for f in tones)
+
+    narrow = speech_bandwidth_hz(comb(11000), SAMPLE_RATE)
+    wide = speech_bandwidth_hz(comb(20000), SAMPLE_RATE)
+    assert 10000 < narrow < 11500, f"срез на 11 кГц прочитан как {narrow:.0f} Гц"
+    assert wide > 18000, f"широкая полоса прочитана как {wide:.0f} Гц"
+    assert wide - narrow > 6000, "мерка не различает сжатый источник и несжатый"
+
+
+def test_sfx_sit_at_the_quiet_end_of_the_corridor():
+    """«Еле слышно, но слышно, что дорого» — это уровень, а не только тембр.
+
+    Переработка ударов добавила им около пятнадцати децибел в полосе динамика
+    телефона. На прежнем пике −12 dBFS они кричали бы поверх речи, поэтому
+    ставятся на тихий край коридора §4.4, а слышимость держит сам звук.
+    """
+    from src.lib.config import load_config
+    from src.p10_audio.audio_build import sfx_peak_corridor, sfx_peak_target
+
+    cfg = load_config()
+    lo, hi = sfx_peak_corridor(cfg)
+    assert lo < hi, "коридор пиков задом наперёд"
+    assert sfx_peak_target(cfg) == lo

@@ -120,8 +120,16 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
                         ctx, face_bbox=(avatar_face_bbox or {}).get(shot.get("block_id"))
                         if shot.get("kind") in ("avatar", "split") else None)
                     elapsed = t - float(word["start"])
+                    # Приклеенное начало реплики (§5.1) рисуется вместе со
+                    # словом: этот движок кладёт слово одной строкой, и цвет
+                    # акцента здесь достаётся ей целиком. Разложить его на два
+                    # цвета умеет только композиция HyperFrames — она и рисует
+                    # готовый ролик, а этот путь остаётся для проб и QC.
+                    text = str(word["display"])
+                    if word.get("lead"):
+                        text = f'{word["lead"]} {text}'
                     canvas.alpha_composite(subtitle(
-                        ctx, str(word["display"]), progress=clamp01(elapsed / 0.11),
+                        ctx, text, progress=clamp01(elapsed / 0.11),
                         emphasis=bool(word.get("emphasis")),
                         baseline_y=baseline, mode=mode))
                     stats.subtitle_frames += 1

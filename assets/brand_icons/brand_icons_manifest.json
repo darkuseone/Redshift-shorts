@@ -1,16 +1,1384 @@
 {
   "_comment": "Иконки брендов, накопленные по ходу роликов (§14). Копятся попутно: когда в кадре впервые нужен логотип, он сохраняется сюда и больше не ищется. Файлы маленькие (PNG с прозрачностью), поэтому живут в репозитории, в отличие от футажей.",
-  "version": 1,
-  "updated": "2026-08-18",
+  "version": 2,
+  "updated": "2026-09-01",
   "policy": {
-    "variants_per_brand": 2,
+    "variants_per_brand": 1,
     "_why_two": "Тёмный и светлый вариант: одна и та же иконка не читается и на белом фоне бренда, и на тёмном кадре.",
-    "format": "png",
+    "format": "svg",
     "max_side_px": 512,
-    "max_bytes": 120000,
+    "max_bytes": 20000,
     "background": "transparent",
-    "intake": "по ходу создания роликов, не разовой закупкой",
-    "licensing": "Логотип — товарный знак владельца. Берём только официальные press-kit или SVG с сайта бренда, используем номинативно (называем продукт, о котором речь). Не перекрашиваем, не искажаем пропорции, не ставим как знак одобрения."
+    "intake": "набран заранее по просьбе заказчика: тридцать с лишним знаков популярных компаний лежат в репозитории, чтобы во время сборки ролика их не искать. Остальные по-прежнему добавляются по ходу.",
+    "licensing": "Логотип — товарный знак владельца. Файлы взяты из Simple Icons (simple-icons, CC0-1.0 на сами файлы), собранных из официальных press-kit и брендбуков. Используем номинативно: называем компанию, о которой идёт речь. Не искажаем пропорции и не ставим как знак одобрения.",
+    "_why_svg": "Раньше библиотека задумывалась как PNG в двух вариантах — тёмном и светлом. Знаки Simple Icons одноцветные и красятся через currentColor, поэтому второй файл не нужен: тот же контур читается и на тёмной сцене, и на светлой карточке. Заодно они масштабируются без потерь, а весь набор из 37 знаков весит 156 КБ — меньше, чем один PNG 512×512.",
+    "brand_color": "У каждого знака записан официальный цвет бренда (`hex`). Кадру он нужен редко — брендбук REDSHIFT держит чёрный, белый и выцветший красный, — но перекрашивать логотип в акцент канала нельзя, поэтому цвет владельца хранится рядом со знаком.",
+    "absent_on_purpose": "OpenAI, Amazon, IBM, Oracle, Adobe и Microsoft в каталоге Simple Icons отсутствуют: правообладатели попросили убрать их знаки. Это не пробел набора, а ответ владельца — брать их из других мест значит обойти прямой отказ. Понадобится такой логотип в кадре — берём файл из официального press-kit бренда."
   },
-  "brands": []
+  "brands": [
+    {
+      "brand": "Airbnb",
+      "slug": "airbnb",
+      "variant": "mono",
+      "file": "svg/airbnb.svg",
+      "hex": "#FF5A5F",
+      "source_url": "https://www.airbnb.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "AMD",
+      "slug": "amd",
+      "variant": "mono",
+      "file": "svg/amd.svg",
+      "hex": "#ED1C24",
+      "source_url": "https://www.amd.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Android",
+      "slug": "android",
+      "variant": "mono",
+      "file": "svg/android.svg",
+      "hex": "#3DDC84",
+      "source_url": "https://partnermarketinghub.withgoogle.com/brands/android/visual-identity/visual-identity/logo-lock-ups",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Anthropic",
+      "slug": "anthropic",
+      "variant": "mono",
+      "file": "svg/anthropic.svg",
+      "hex": "#191919",
+      "source_url": "https://www.anthropic.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Apple",
+      "slug": "apple",
+      "variant": "mono",
+      "file": "svg/apple.svg",
+      "hex": "#000000",
+      "source_url": "https://www.apple.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Arm",
+      "slug": "arm",
+      "variant": "mono",
+      "file": "svg/arm.svg",
+      "hex": "#0091BD",
+      "source_url": "https://www.arm.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "arXiv",
+      "slug": "arxiv",
+      "variant": "mono",
+      "file": "svg/arxiv.svg",
+      "hex": "#B31B1B",
+      "source_url": "https://arxiv.org",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Binance",
+      "slug": "binance",
+      "variant": "mono",
+      "file": "svg/binance.svg",
+      "hex": "#F0B90B",
+      "source_url": "https://binance.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Bitcoin",
+      "slug": "bitcoin",
+      "variant": "mono",
+      "file": "svg/bitcoin.svg",
+      "hex": "#F7931A",
+      "source_url": "https://bitcoin.org",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Blender",
+      "slug": "blender",
+      "variant": "mono",
+      "file": "svg/blender.svg",
+      "hex": "#E87D0D",
+      "source_url": "https://www.blender.org/about/logo",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "BMW",
+      "slug": "bmw",
+      "variant": "mono",
+      "file": "svg/bmw.svg",
+      "hex": "#0066B1",
+      "source_url": "https://bmw.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Boeing",
+      "slug": "boeing",
+      "variant": "mono",
+      "file": "svg/boeing.svg",
+      "hex": "#1D439C",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Boeing_full_logo.svg",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Bosch",
+      "slug": "bosch",
+      "variant": "mono",
+      "file": "svg/bosch.svg",
+      "hex": "#EA0016",
+      "source_url": "https://www.bosch.de",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Cloudflare",
+      "slug": "cloudflare",
+      "variant": "mono",
+      "file": "svg/cloudflare.svg",
+      "hex": "#F38020",
+      "source_url": "https://www.cloudflare.com/logo/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Coinbase",
+      "slug": "coinbase",
+      "variant": "mono",
+      "file": "svg/coinbase.svg",
+      "hex": "#0052FF",
+      "source_url": "https://www.coinbase.com/press",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Databricks",
+      "slug": "databricks",
+      "variant": "mono",
+      "file": "svg/databricks.svg",
+      "hex": "#FF3621",
+      "source_url": "https://www.databricks.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Debian",
+      "slug": "debian",
+      "variant": "mono",
+      "file": "svg/debian.svg",
+      "hex": "#A81D33",
+      "source_url": "https://www.debian.org/logos",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "DeepMind",
+      "slug": "deepmind",
+      "variant": "mono",
+      "file": "svg/deepmind.svg",
+      "hex": "#4285F4",
+      "source_url": "https://deepmind.google",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Discord",
+      "slug": "discord",
+      "variant": "mono",
+      "file": "svg/discord.svg",
+      "hex": "#5865F2",
+      "source_url": "https://discord.com/branding",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "DJI",
+      "slug": "dji",
+      "variant": "mono",
+      "file": "svg/dji.svg",
+      "hex": "#000000",
+      "source_url": "https://www.dji.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Docker",
+      "slug": "docker",
+      "variant": "mono",
+      "file": "svg/docker.svg",
+      "hex": "#2496ED",
+      "source_url": "https://www.docker.com/company/newsroom/media-resources",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Epic Games",
+      "slug": "epicgames",
+      "variant": "mono",
+      "file": "svg/epicgames.svg",
+      "hex": "#313131",
+      "source_url": "https://dev.epicgames.com/docs/services/en-US/EpicAccountServices/DesignGuidelines/index.html#epicgamesbrandguidelines",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Ethereum",
+      "slug": "ethereum",
+      "variant": "mono",
+      "file": "svg/ethereum.svg",
+      "hex": "#3C3C3D",
+      "source_url": "https://ethereum.org/en/assets/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Facebook",
+      "slug": "facebook",
+      "variant": "mono",
+      "file": "svg/facebook.svg",
+      "hex": "#0866FF",
+      "source_url": "https://about.meta.com/brand/resources/facebook/logo",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Figma",
+      "slug": "figma",
+      "variant": "mono",
+      "file": "svg/figma.svg",
+      "hex": "#F24E1E",
+      "source_url": "https://www.figma.com/using-the-figma-brand/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Ford",
+      "slug": "ford",
+      "variant": "mono",
+      "file": "svg/ford.svg",
+      "hex": "#00274E",
+      "source_url": "https://secure.ford.com/brochures/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Garmin",
+      "slug": "garmin",
+      "variant": "mono",
+      "file": "svg/garmin.svg",
+      "hex": "#000000",
+      "source_url": "https://creative.garmin.com/styleguide/logo/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "GitHub",
+      "slug": "github",
+      "variant": "mono",
+      "file": "svg/github.svg",
+      "hex": "#181717",
+      "source_url": "https://github.com/logos",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Go",
+      "slug": "go",
+      "variant": "mono",
+      "file": "svg/go.svg",
+      "hex": "#00ADD8",
+      "source_url": "https://blog.golang.org/go-brand",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Google",
+      "slug": "google",
+      "variant": "mono",
+      "file": "svg/google.svg",
+      "hex": "#4285F4",
+      "source_url": "https://partnermarketinghub.withgoogle.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Google Cloud",
+      "slug": "google-cloud",
+      "variant": "mono",
+      "file": "svg/googlecloud.svg",
+      "hex": "#4285F4",
+      "source_url": "https://cloud.google.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Google Gemini",
+      "slug": "google-gemini",
+      "variant": "mono",
+      "file": "svg/googlegemini.svg",
+      "hex": "#8E75B2",
+      "source_url": "https://gemini.google.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Google Chrome",
+      "slug": "googlechrome",
+      "variant": "mono",
+      "file": "svg/googlechrome.svg",
+      "hex": "#4285F4",
+      "source_url": "https://www.google.com/chrome",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Huawei",
+      "slug": "huawei",
+      "variant": "mono",
+      "file": "svg/huawei.svg",
+      "hex": "#FF0000",
+      "source_url": "https://e.huawei.com/ph/material/partner/0a72728b864949c48b22106454352483",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Hugging Face",
+      "slug": "huggingface",
+      "variant": "mono",
+      "file": "svg/huggingface.svg",
+      "hex": "#FFD21E",
+      "source_url": "https://huggingface.co/brand",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Instagram",
+      "slug": "instagram",
+      "variant": "mono",
+      "file": "svg/instagram.svg",
+      "hex": "#FF0069",
+      "source_url": "https://about.meta.com/brand/resources/instagram",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Intel",
+      "slug": "intel",
+      "variant": "mono",
+      "file": "svg/intel.svg",
+      "hex": "#0071C5",
+      "source_url": "https://www.intel.com/content/www/us/en/newsroom/resources/press-kits-intel-overview.html",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "iOS",
+      "slug": "ios",
+      "variant": "mono",
+      "file": "svg/ios.svg",
+      "hex": "#000000",
+      "source_url": "https://en.wikipedia.org/wiki/IOS",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "JavaScript",
+      "slug": "javascript",
+      "variant": "mono",
+      "file": "svg/javascript.svg",
+      "hex": "#F7DF1E",
+      "source_url": "https://github.com/voodootikigod/logo.js/blob/1544bdeed6d618a6cfe4f0650d04ab8d9cfa76d9/js.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Jupyter",
+      "slug": "jupyter",
+      "variant": "mono",
+      "file": "svg/jupyter.svg",
+      "hex": "#F37626",
+      "source_url": "https://github.com/jupyter/design/blob/80716ee75dd7b2a6ec6abcd89922d020483589b1/logos/Logo%20Mark/logomark-whitebody-whitemoons/logomark-whitebody-whitemoons.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Keras",
+      "slug": "keras",
+      "variant": "mono",
+      "file": "svg/keras.svg",
+      "hex": "#D00000",
+      "source_url": "https://keras.io",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Kubernetes",
+      "slug": "kubernetes",
+      "variant": "mono",
+      "file": "svg/kubernetes.svg",
+      "hex": "#326CE5",
+      "source_url": "https://github.com/kubernetes/kubernetes/tree/cac53883f4714452f3084a22e4be20d042a9df33/logo",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Linux",
+      "slug": "linux",
+      "variant": "mono",
+      "file": "svg/linux.svg",
+      "hex": "#FCC624",
+      "source_url": "https://www.linuxfoundation.org/the-linux-mark/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "MasterCard",
+      "slug": "mastercard",
+      "variant": "mono",
+      "file": "svg/mastercard.svg",
+      "hex": "#EB001B",
+      "source_url": "https://www.mastercard.com/brandcenter/us/en/download-artwork.html",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Meta",
+      "slug": "meta",
+      "variant": "mono",
+      "file": "svg/meta.svg",
+      "hex": "#0467DF",
+      "source_url": "https://www.meta.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Mistral AI",
+      "slug": "mistralai",
+      "variant": "mono",
+      "file": "svg/mistralai.svg",
+      "hex": "#FA520F",
+      "source_url": "https://chat.mistral.ai",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "MongoDB",
+      "slug": "mongodb",
+      "variant": "mono",
+      "file": "svg/mongodb.svg",
+      "hex": "#47A248",
+      "source_url": "https://www.mongodb.com/pressroom",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "MySQL",
+      "slug": "mysql",
+      "variant": "mono",
+      "file": "svg/mysql.svg",
+      "hex": "#4479A1",
+      "source_url": "https://www.mysql.com/about/legal/logos.html",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "NASA",
+      "slug": "nasa",
+      "variant": "mono",
+      "file": "svg/nasa.svg",
+      "hex": "#E03C31",
+      "source_url": "https://commons.wikimedia.org/wiki/File:NASA_Worm_logo.svg",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Netflix",
+      "slug": "netflix",
+      "variant": "mono",
+      "file": "svg/netflix.svg",
+      "hex": "#E50914",
+      "source_url": "https://brand.netflix.com/en/assets/logos",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "NGINX",
+      "slug": "nginx",
+      "variant": "mono",
+      "file": "svg/nginx.svg",
+      "hex": "#009639",
+      "source_url": "https://www.nginx.com/press/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Node.js",
+      "slug": "nodedotjs",
+      "variant": "mono",
+      "file": "svg/nodedotjs.svg",
+      "hex": "#5FA04E",
+      "source_url": "https://nodejs.org/en/about/branding",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Notion",
+      "slug": "notion",
+      "variant": "mono",
+      "file": "svg/notion.svg",
+      "hex": "#000000",
+      "source_url": "https://www.notion.so",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "NumPy",
+      "slug": "numpy",
+      "variant": "mono",
+      "file": "svg/numpy.svg",
+      "hex": "#013243",
+      "source_url": "https://numpy.org/press-kit/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "NVIDIA",
+      "slug": "nvidia",
+      "variant": "mono",
+      "file": "svg/nvidia.svg",
+      "hex": "#76B900",
+      "source_url": "https://www.nvidia.com/en-us",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "ONNX",
+      "slug": "onnx",
+      "variant": "mono",
+      "file": "svg/onnx.svg",
+      "hex": "#005CED",
+      "source_url": "https://github.com/onnx/onnx.github.io/blob/382e7036b616ce1555499ac41730245a2478513c/images/ONNX-ICON.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "OpenCV",
+      "slug": "opencv",
+      "variant": "mono",
+      "file": "svg/opencv.svg",
+      "hex": "#5C3EE8",
+      "source_url": "https://opencv.org/resources/media-kit/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "OpenJDK",
+      "slug": "openjdk",
+      "variant": "mono",
+      "file": "svg/openjdk.svg",
+      "hex": "#000000",
+      "source_url": "https://hg.openjdk.java.net/duke/duke/file/ca00f100dafc/vector/Agent.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Palantir",
+      "slug": "palantir",
+      "variant": "mono",
+      "file": "svg/palantir.svg",
+      "hex": "#101113",
+      "source_url": "https://github.com/palantir/conjure/blob/1b0d450dc52c4822b4c9d1da8c61ad7f78855fe5/docs/media/palantir-logo.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "pandas",
+      "slug": "pandas",
+      "variant": "mono",
+      "file": "svg/pandas.svg",
+      "hex": "#150458",
+      "source_url": "https://pandas.pydata.org/about/citing.html",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "PayPal",
+      "slug": "paypal",
+      "variant": "mono",
+      "file": "svg/paypal.svg",
+      "hex": "#002991",
+      "source_url": "https://www.paypal.com/us",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Perplexity",
+      "slug": "perplexity",
+      "variant": "mono",
+      "file": "svg/perplexity.svg",
+      "hex": "#1FB8CD",
+      "source_url": "https://www.perplexity.ai",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Pinterest",
+      "slug": "pinterest",
+      "variant": "mono",
+      "file": "svg/pinterest.svg",
+      "hex": "#BD081C",
+      "source_url": "https://business.pinterest.com/en/brand-guidelines",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "PlayStation",
+      "slug": "playstation",
+      "variant": "mono",
+      "file": "svg/playstation.svg",
+      "hex": "#0070D1",
+      "source_url": "https://www.playstation.com/en-us/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "PostgreSQL",
+      "slug": "postgresql",
+      "variant": "mono",
+      "file": "svg/postgresql.svg",
+      "hex": "#4169E1",
+      "source_url": "https://wiki.postgresql.org/wiki/Logo",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Python",
+      "slug": "python",
+      "variant": "mono",
+      "file": "svg/python.svg",
+      "hex": "#3776AB",
+      "source_url": "https://www.python.org/community/logos/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "PyTorch",
+      "slug": "pytorch",
+      "variant": "mono",
+      "file": "svg/pytorch.svg",
+      "hex": "#EE4C2C",
+      "source_url": "https://github.com/pytorch/pytorch.github.io/blob/8f083bd12192ca12d5e1c1f3d236f4831d823d8f/assets/images/logo.svg",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Qualcomm",
+      "slug": "qualcomm",
+      "variant": "mono",
+      "file": "svg/qualcomm.svg",
+      "hex": "#3253DC",
+      "source_url": "https://www.qualcomm.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Raspberry Pi",
+      "slug": "raspberrypi",
+      "variant": "mono",
+      "file": "svg/raspberrypi.svg",
+      "hex": "#A22846",
+      "source_url": "https://www.raspberrypi.org/trademark-rules",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "React",
+      "slug": "react",
+      "variant": "mono",
+      "file": "svg/react.svg",
+      "hex": "#61DAFB",
+      "source_url": "https://github.com/facebook/create-react-app/blob/282c03f9525fdf8061ffa1ec50dce89296d916bd/test/fixtures/relative-paths/src/logo.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Reddit",
+      "slug": "reddit",
+      "variant": "mono",
+      "file": "svg/reddit.svg",
+      "hex": "#FF4500",
+      "source_url": "https://www.redditinc.com/brand",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Red Hat",
+      "slug": "redhat",
+      "variant": "mono",
+      "file": "svg/redhat.svg",
+      "hex": "#EE0000",
+      "source_url": "https://www.redhat.com/en/about/brand/new-brand/details",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Redis",
+      "slug": "redis",
+      "variant": "mono",
+      "file": "svg/redis.svg",
+      "hex": "#FF4438",
+      "source_url": "https://redis.io/brand-guidelines",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Roblox",
+      "slug": "roblox",
+      "variant": "mono",
+      "file": "svg/roblox.svg",
+      "hex": "#000000",
+      "source_url": "https://www.roblox.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Rust",
+      "slug": "rust",
+      "variant": "mono",
+      "file": "svg/rust.svg",
+      "hex": "#000000",
+      "source_url": "https://www.rust-lang.org",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Safari",
+      "slug": "safari",
+      "variant": "mono",
+      "file": "svg/safari.svg",
+      "hex": "#006CFF",
+      "source_url": "https://apps.apple.com/us/app/safari/id1146562112",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Samsung",
+      "slug": "samsung",
+      "variant": "mono",
+      "file": "svg/samsung.svg",
+      "hex": "#1428A0",
+      "source_url": "https://www.samsung.com/us/about-us/brand-identity/logo/",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "SAP",
+      "slug": "sap",
+      "variant": "mono",
+      "file": "svg/sap.svg",
+      "hex": "#0FAAFF",
+      "source_url": "https://www.sap.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "scikit-learn",
+      "slug": "scikitlearn",
+      "variant": "mono",
+      "file": "svg/scikitlearn.svg",
+      "hex": "#F7931E",
+      "source_url": "https://github.com/scikit-learn/scikit-learn/blob/c5ef2e985c13119001aa697e446ebb3dbcb326e5/doc/logos/scikit-learn-logo.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Shopify",
+      "slug": "shopify",
+      "variant": "mono",
+      "file": "svg/shopify.svg",
+      "hex": "#7AB55C",
+      "source_url": "https://www.shopify.com/brand-assets",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Siemens",
+      "slug": "siemens",
+      "variant": "mono",
+      "file": "svg/siemens.svg",
+      "hex": "#009999",
+      "source_url": "https://siemens.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Snapchat",
+      "slug": "snapchat",
+      "variant": "mono",
+      "file": "svg/snapchat.svg",
+      "hex": "#FFFC00",
+      "source_url": "https://www.snapchat.com/brand-guidelines",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Snowflake",
+      "slug": "snowflake",
+      "variant": "mono",
+      "file": "svg/snowflake.svg",
+      "hex": "#29B5E8",
+      "source_url": "https://www.snowflake.com/brand-guidelines/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Sony",
+      "slug": "sony",
+      "variant": "mono",
+      "file": "svg/sony.svg",
+      "hex": "#FFFFFF",
+      "source_url": "https://www.sony.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "SpaceX",
+      "slug": "spacex",
+      "variant": "mono",
+      "file": "svg/spacex.svg",
+      "hex": "#000000",
+      "source_url": "https://www.spacex.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Spotify",
+      "slug": "spotify",
+      "variant": "mono",
+      "file": "svg/spotify.svg",
+      "hex": "#1ED760",
+      "source_url": "https://developer.spotify.com/documentation/general/design-and-branding/#using-our-logo",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Steam",
+      "slug": "steam",
+      "variant": "mono",
+      "file": "svg/steam.svg",
+      "hex": "#000000",
+      "source_url": "https://partner.steamgames.com/doc/marketing/branding",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Stripe",
+      "slug": "stripe",
+      "variant": "mono",
+      "file": "svg/stripe.svg",
+      "hex": "#635BFF",
+      "source_url": "https://stripe.com/newsroom/information",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Telegram",
+      "slug": "telegram",
+      "variant": "mono",
+      "file": "svg/telegram.svg",
+      "hex": "#26A5E4",
+      "source_url": "https://telegram.org/tour/screenshots",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "TensorFlow",
+      "slug": "tensorflow",
+      "variant": "mono",
+      "file": "svg/tensorflow.svg",
+      "hex": "#FF6F00",
+      "source_url": "https://www.tensorflow.org",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Tesla",
+      "slug": "tesla",
+      "variant": "mono",
+      "file": "svg/tesla.svg",
+      "hex": "#CC0000",
+      "source_url": "https://www.tesla.com/tesla-gallery",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "TikTok",
+      "slug": "tiktok",
+      "variant": "mono",
+      "file": "svg/tiktok.svg",
+      "hex": "#000000",
+      "source_url": "https://tiktok.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Toyota",
+      "slug": "toyota",
+      "variant": "mono",
+      "file": "svg/toyota.svg",
+      "hex": "#EB0A1E",
+      "source_url": "https://www.toyota.com/brandguidelines/logo/",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Twitch",
+      "slug": "twitch",
+      "variant": "mono",
+      "file": "svg/twitch.svg",
+      "hex": "#9146FF",
+      "source_url": "https://brand.twitch.tv",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "TypeScript",
+      "slug": "typescript",
+      "variant": "mono",
+      "file": "svg/typescript.svg",
+      "hex": "#3178C6",
+      "source_url": "https://www.typescriptlang.org/branding",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Uber",
+      "slug": "uber",
+      "variant": "mono",
+      "file": "svg/uber.svg",
+      "hex": "#000000",
+      "source_url": "https://assets.uber.com/d/k4nuxdZ8MC7E/logos/collection/151",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Ubuntu",
+      "slug": "ubuntu",
+      "variant": "mono",
+      "file": "svg/ubuntu.svg",
+      "hex": "#E95420",
+      "source_url": "https://design.ubuntu.com/resources",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Unity",
+      "slug": "unity",
+      "variant": "mono",
+      "file": "svg/unity.svg",
+      "hex": "#FFFFFF",
+      "source_url": "https://brand.unity.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Unreal Engine",
+      "slug": "unrealengine",
+      "variant": "mono",
+      "file": "svg/unrealengine.svg",
+      "hex": "#0E1128",
+      "source_url": "https://www.unrealengine.com/en-US/branding",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Visa",
+      "slug": "visa",
+      "variant": "mono",
+      "file": "svg/visa.svg",
+      "hex": "#1A1F71",
+      "source_url": "https://merchantsignageeu.visa.com/product.asp?dptID=696",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Volkswagen",
+      "slug": "volkswagen",
+      "variant": "mono",
+      "file": "svg/volkswagen.svg",
+      "hex": "#151F5D",
+      "source_url": "https://www.vw.com",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Vue.js",
+      "slug": "vuedotjs",
+      "variant": "mono",
+      "file": "svg/vuedotjs.svg",
+      "hex": "#4FC08D",
+      "source_url": "https://github.com/vuejs/art/blob/a1c78b74569b70a25300925b4eacfefcc143b8f6/logo.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "WhatsApp",
+      "slug": "whatsapp",
+      "variant": "mono",
+      "file": "svg/whatsapp.svg",
+      "hex": "#25D366",
+      "source_url": "https://about.meta.com/brand/resources/whatsapp/whatsapp-brand",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "Wikipedia",
+      "slug": "wikipedia",
+      "variant": "mono",
+      "file": "svg/wikipedia.svg",
+      "hex": "#000000",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Wikipedia-logo-v2.svg",
+      "added": "2026-09-01",
+      "used_in": []
+    },
+    {
+      "brand": "X",
+      "slug": "x",
+      "variant": "mono",
+      "file": "svg/x.svg",
+      "hex": "#000000",
+      "source_url": "https://x.com",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Xiaomi",
+      "slug": "xiaomi",
+      "variant": "mono",
+      "file": "svg/xiaomi.svg",
+      "hex": "#FF6900",
+      "source_url": "https://www.mi.com/global",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "YouTube",
+      "slug": "youtube",
+      "variant": "mono",
+      "file": "svg/youtube.svg",
+      "hex": "#FF0000",
+      "source_url": "https://www.youtube.com/howyoutubeworks/resources/brand-resources/#logos-icons-and-colors",
+      "added": "2026-08-26",
+      "used_in": []
+    },
+    {
+      "brand": "Zoom",
+      "slug": "zoom",
+      "variant": "mono",
+      "file": "svg/zoom.svg",
+      "hex": "#0B5CFF",
+      "source_url": "https://brand.zoom.us/media-library/",
+      "added": "2026-09-01",
+      "used_in": []
+    }
+  ],
+  "source_catalog": {
+    "name": "Simple Icons",
+    "version": "16.28.0",
+    "url": "https://simpleicons.org",
+    "license": "CC0-1.0"
+  },
+  "aliases": {
+    "airbnb": [
+      "эйрбиэнби"
+    ],
+    "amd": [
+      "амд"
+    ],
+    "android": [
+      "андроид"
+    ],
+    "anthropic": [
+      "антропик"
+    ],
+    "apple": [
+      "эпл",
+      "эппл",
+      "айфон",
+      "айпад",
+      "макбук"
+    ],
+    "arxiv": [
+      "архив препринтов"
+    ],
+    "binance": [
+      "бинанс"
+    ],
+    "bitcoin": [
+      "биткоин",
+      "биткойн"
+    ],
+    "bmw": [
+      "бмв"
+    ],
+    "boeing": [
+      "боинг"
+    ],
+    "bosch": [
+      "бош"
+    ],
+    "cloudflare": [
+      "клаудфлер"
+    ],
+    "coinbase": [
+      "коинбейс"
+    ],
+    "databricks": [
+      "датабрикс"
+    ],
+    "debian": [
+      "дебиан"
+    ],
+    "deepmind": [
+      "дипмайнд"
+    ],
+    "discord": [
+      "дискорд"
+    ],
+    "docker": [
+      "докер"
+    ],
+    "epicgames": [
+      "эпикгеймс"
+    ],
+    "ethereum": [
+      "эфириум"
+    ],
+    "facebook": [
+      "фейсбук",
+      "фэйсбук"
+    ],
+    "figma": [
+      "фигма"
+    ],
+    "ford": [
+      "форд"
+    ],
+    "garmin": [
+      "гармин"
+    ],
+    "github": [
+      "гитхаб"
+    ],
+    "google": [
+      "гугл"
+    ],
+    "google-gemini": [
+      "джемини",
+      "гемини"
+    ],
+    "huawei": [
+      "хуавей",
+      "хуавэй"
+    ],
+    "huggingface": [
+      "хаггингфейс"
+    ],
+    "instagram": [
+      "инстаграм",
+      "инстаграмм"
+    ],
+    "intel": [
+      "интел"
+    ],
+    "javascript": [
+      "джаваскрипт"
+    ],
+    "jupyter": [
+      "юпитер"
+    ],
+    "kubernetes": [
+      "кубернетес"
+    ],
+    "linux": [
+      "линукс"
+    ],
+    "mastercard": [
+      "мастеркард"
+    ],
+    "meta": [
+      "мета"
+    ],
+    "mistralai": [
+      "мистраль"
+    ],
+    "mongodb": [
+      "монгодб"
+    ],
+    "nasa": [
+      "наса"
+    ],
+    "netflix": [
+      "нетфликс"
+    ],
+    "notion": [
+      "ноушен"
+    ],
+    "nvidia": [
+      "нвидиа",
+      "энвидиа"
+    ],
+    "palantir": [
+      "палантир"
+    ],
+    "paypal": [
+      "пейпал"
+    ],
+    "perplexity": [
+      "перплексити"
+    ],
+    "pinterest": [
+      "пинтерест"
+    ],
+    "playstation": [
+      "плейстейшн",
+      "плестейшн"
+    ],
+    "postgresql": [
+      "постгрес"
+    ],
+    "python": [
+      "питон",
+      "пайтон"
+    ],
+    "pytorch": [
+      "пайторч"
+    ],
+    "qualcomm": [
+      "квалком"
+    ],
+    "raspberrypi": [
+      "распберри"
+    ],
+    "react": [
+      "реакт"
+    ],
+    "reddit": [
+      "реддит"
+    ],
+    "redhat": [
+      "редхат"
+    ],
+    "redis": [
+      "редис"
+    ],
+    "roblox": [
+      "роблокс"
+    ],
+    "rust": [
+      "раст"
+    ],
+    "samsung": [
+      "самсунг"
+    ],
+    "shopify": [
+      "шопифай"
+    ],
+    "siemens": [
+      "сименс"
+    ],
+    "snapchat": [
+      "снэпчат"
+    ],
+    "sony": [
+      "сони"
+    ],
+    "spacex": [
+      "спейсикс",
+      "спейс-икс"
+    ],
+    "spotify": [
+      "спотифай"
+    ],
+    "steam": [
+      "стим"
+    ],
+    "stripe": [
+      "страйп"
+    ],
+    "telegram": [
+      "телеграм",
+      "телеграмм"
+    ],
+    "tensorflow": [
+      "тензорфлоу"
+    ],
+    "tesla": [
+      "тесл"
+    ],
+    "tiktok": [
+      "тикток"
+    ],
+    "toyota": [
+      "тойота"
+    ],
+    "twitch": [
+      "твич"
+    ],
+    "typescript": [
+      "тайпскрипт"
+    ],
+    "uber": [
+      "убер"
+    ],
+    "ubuntu": [
+      "убунту"
+    ],
+    "unity": [
+      "юнити"
+    ],
+    "unrealengine": [
+      "анрил"
+    ],
+    "volkswagen": [
+      "фольксваген"
+    ],
+    "whatsapp": [
+      "ватсап",
+      "вотсап"
+    ],
+    "wikipedia": [
+      "википеди"
+    ],
+    "x": [
+      "твиттер",
+      "твитер"
+    ],
+    "xiaomi": [
+      "сяоми",
+      "ксиаоми"
+    ],
+    "youtube": [
+      "ютуб"
+    ],
+    "zoom": [
+      "зум"
+    ]
+  },
+  "_aliases_comment": "Русские основы названий: сценарии пишутся по-русски, а слаги латиницей, и без этой таблицы библиотека знаков недостижима. Основа, а не слово: падежное окончание конвейер приставляет сам («гугл» → «гугла», «гуглом»). Бренды, чьё русское написание получается транслитерацией слага («Тесла» → tesla), в таблице не нужны и здесь не перечислены."
 }

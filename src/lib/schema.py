@@ -56,6 +56,9 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                     "screen_template": {"enum": list(SCREEN_TEMPLATES)},
                     "snippet": {"type": "string"},
                     "highlight_line": {"type": "string"},
+                    # Дата публикации на карточке источника: страница издания
+                    # без даты читается как макет, а не как статья.
+                    "published": {"type": "string"},
                     "license": {"type": "string"},
                 },
             },

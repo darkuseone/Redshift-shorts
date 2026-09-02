@@ -3,6 +3,20 @@
   "version": 1,
   "fonts": [
     {
+      "id": "montserrat-black",
+      "role": "subtitle",
+      "family": "Montserrat Black",
+      "subfamily": "Regular",
+      "file": "Montserrat-Black.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://scripts.sil.org/OFL",
+      "source": "Google Fonts",
+      "cyrillic": true,
+      "fs_type": 0,
+      "verified": true,
+      "_why": "Субтитр канала. Заказчик прислал кадр с эталонным начертанием — широкий геометрический гротеск предельной жирности. Nunito рядом с ним читается мягким и узким. Montserrat Black — ближайшее начертание с полной кириллицей и OFL: проверено validate_font, 1312 глифов, fsType 0."
+    },
+    {
       "id": "oswald-bold",
       "role": "display",
       "family": "Oswald",
@@ -17,7 +31,7 @@
     },
     {
       "id": "nunito-extrabold",
-      "role": "subtitle",
+      "role": "subtitle_fallback",
       "family": "Nunito ExtraBold",
       "subfamily": "Regular",
       "file": "Nunito-ExtraBold.ttf",
@@ -55,8 +69,18 @@
     }
   ],
   "fallback_chain": {
-    "display": ["Oswald-Bold.ttf", "Golos-Text-Black.ttf", "Unbounded-ExtraBold.ttf"],
-    "subtitle": ["Nunito-ExtraBold.ttf", "Manrope-ExtraBold.ttf", "Rubik-Bold.ttf"],
-    "mono": ["JetBrainsMono-Bold.ttf"]
+    "display": [
+      "Oswald-Bold.ttf",
+      "Golos-Text-Black.ttf",
+      "Unbounded-ExtraBold.ttf"
+    ],
+    "subtitle": [
+      "Montserrat-Black.ttf",
+      "Nunito-ExtraBold.ttf",
+      "Manrope-ExtraBold.ttf"
+    ],
+    "mono": [
+      "JetBrainsMono-Bold.ttf"
+    ]
   }
 }

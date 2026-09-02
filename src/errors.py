@@ -60,6 +60,10 @@ class NoSource(ValidationError):
     code = "NO_SOURCE"
 
 
+class FillerWords(ValidationError):
+    code = "FILLER_WORDS"
+
+
 class FontMissingCyrillic(ValidationError):
     code = "FONT_MISSING_CYRILLIC"
 

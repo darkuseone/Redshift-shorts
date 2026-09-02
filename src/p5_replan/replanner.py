@@ -9,7 +9,7 @@
 
 * визуальное событие не реже 1 раза в 2.5 сек (§4.1), первое — до 0.8 сек;
 * один футаж 1.5–5 сек, до 7 сек только при внутренних событиях (§3.6.2);
-* доля аватара 35–60 % (§3.5) и 2–5 появлений по 3–12 сек;
+* доля аватара 35–60 % (§3.5) и 2–7 появлений по 3–12 сек;
 * два аватар-сегмента подряд без перебивки запрещены (§7.4.3, R-3);
 * сплит-скрин ≤25 %, один блок футажа ≤40 % хронометража (§3.5);
 * полноэкранный текст 2–4 раза по 0.8–2 сек (§5.2), подсветка 1–3 раза (§5.5);
@@ -238,8 +238,15 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                     template_hint="" if kind == "meme" else hint,
                     meme_emotion=hint if kind == "meme" else "",
                     visual_intent=block.get("visual_intent", ""),
-                    needs_asset=(kind == "meme"),
-                    asset_role="meme" if kind == "meme" else "",
+                    # Полноэкранный текст тоже просит материал. Раньше он его
+                    # не просил, и кадр выходил белыми буквами на пустом
+                    # чёрном: слово-акцент есть, а смысла за ним нет. Материал
+                    # ищется по тем же запросам блока, что и остальной футаж,
+                    # — то есть по смыслу той самой фразы, которую он и
+                    # выносит крупно.
+                    needs_asset=kind in ("meme", "fullscreen_text"),
+                    asset_role=("meme" if kind == "meme"
+                                else "broll" if kind == "fullscreen_text" else ""),
                     reason="полноэкранный текст (§5.2)" if kind == "fullscreen_text"
                     else "мем-панчлайн (§5.8)",
                 ))
@@ -289,7 +296,7 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
     share_range = limits.get("avatar_share", [0.35, 0.60])
     share_lo, share_hi = float(share_range[0]), float(share_range[1])
     footage_share_max = float(limits.get("footage_block_share_max", 0.40))
-    appearances_max = int(brand["avatar"].get("appearances", [2, 5])[1])
+    appearances_max = int(brand["avatar"].get("appearances", [2, 7])[1])
     appearance_min = float(brand["avatar"]["appearance_sec"][0])
     appearance_max = float(brand["avatar"]["appearance_sec"][1])
 
@@ -305,7 +312,8 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
             _limit_appearance_length(slots, appearance_min, appearance_max, min_shot, notes),
             duration)
         slots = close_gaps(
-            _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes), duration)
+            _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes,
+                                 appearance_min=appearance_min, words=all_words), duration)
         # Оба правила §3.5 чинятся одним действием — «отдать аватару футажный
         # слот», и оба должны попасть в ту же сходимость: разрыв футажа может
         # поднять долю, а добор доли — разорвать футаж.
@@ -476,7 +484,7 @@ def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], dur
     хвост, оставляя почти тот же кусок.
 
     Но чинить одно правило §3.5, ломая соседнее, нельзя: новое появление
-    аватара может вывести их число за 2–5. В отличие от доли аватара (QC-2)
+    аватара может вывести их число за 2–7. В отличие от доли аватара (QC-2)
     непрерывный футаж — не блокирующая проверка, поэтому при конфликте
     уступает именно он, а в план уходит запись, почему кусок остался длинным.
     """
@@ -729,11 +737,89 @@ def _limit_appearance_length(slots: list[Slot], min_appearance: float, max_appea
     return slots
 
 
+def _cut_away_from_avatar(slot: Slot, max_shot_ev: float, appearance_min: float,
+                          words: list[dict[str, Any]], notes: list[str]) -> list[Slot]:
+    """Разорвать перебивкой аватар-слот, который висит дольше §3.6.2.
+
+    Появление 3–12 сек законно (§3.5), но одним планом столько висеть нельзя:
+    режем не «на два аватара подряд» — это запрещено (QC-18) — а вырезаем из
+    середины окно под футаж. Голос под ним продолжает звучать: аватар уходит с
+    экрана, речь не прерывается.
+    """
+    pieces = 2
+    while slot.duration / pieces > max_shot_ev:
+        pieces += 1
+    # Перебивка короче 0.9 сек читается как брак склейки, а не как приём.
+    room = (slot.duration - pieces * appearance_min) / (pieces - 1)
+    cut = min(min(1.4, max(0.9, slot.duration * 0.15)), room)
+    if cut < 0.9 - 1e-9:
+        notes.append(
+            f"аватар-слот {slot.start:.2f}–{slot.end:.2f} сек висит дольше {max_shot_ev} сек, "
+            f"но перебивка не помещается: куски выходят короче {appearance_min:.0f} сек")
+        return [slot]
+    piece = (slot.duration - cut * (pieces - 1)) / pieces
+
+    bounds = [slot.start]
+    for i in range(pieces - 1):
+        gap_start = bounds[-1] + piece
+        bounds += [gap_start, gap_start + cut]
+    bounds.append(slot.end)
+    snapped = _snap_avatar_bounds(bounds, words, max_shot_ev, appearance_min)
+
+    out: list[Slot] = []
+    for i in range(0, len(snapped) - 1, 2):
+        out.append(Slot(**{**slot.__dict__,
+                           "start": snapped[i], "end": snapped[i + 1], "events": [],
+                           "transition_in": "cut" if i else slot.transition_in}))
+        if i + 2 < len(snapped):
+            out.append(Slot(
+                index=0, start=snapped[i + 1], end=snapped[i + 2], kind="footage",
+                block_id=slot.block_id, role=slot.role, mode="C",
+                visual_intent=slot.visual_intent, queries=list(slot.queries),
+                needs_asset=True, asset_role="broll", transition_in="cut",
+                reason="перебивка внутри длинного аватар-плана (§3.6.2, QC-4)",
+            ))
+    notes.append(f"аватар-план {slot.start:.2f}–{slot.end:.2f} сек разорван "
+                 f"{pieces - 1} перебивкой (лимит {max_shot_ev} сек)")
+    return out
+
+
+def _snap_avatar_bounds(bounds: list[float], words: list[dict[str, Any]],
+                        max_shot_ev: float, appearance_min: float) -> list[float]:
+    """Прижать края перебивки к границам слов — иначе клип аватара режется по слогу.
+
+    P6 берёт в сегмент каждое слово, задевающее его окно (``snap_to_phrase``):
+    рез посреди слова отдал бы это слово обоим клипам сразу. Если прижатие
+    ломает сами лимиты — оставляем расчётные моменты.
+    """
+    if not words:
+        return bounds
+    out = [bounds[0]] + [_snap_to_word(t, words) for t in bounds[1:-1]] + [bounds[-1]]
+    for a, b in zip(out, out[1:]):
+        if b - a < 0.4:
+            return bounds
+    for i in range(0, len(out) - 1, 2):
+        if not (appearance_min - 1e-6 <= out[i + 1] - out[i] <= max_shot_ev + 1e-6):
+            return bounds
+    return out
+
+
 def _enforce_shot_limits(slots: list[Slot], max_shot: float, max_shot_ev: float,
-                         min_shot: float, notes: list[str]) -> list[Slot]:
-    """Ни один футажный слот не висит дольше допустимого (§3.6.2, QC-4)."""
+                         min_shot: float, notes: list[str], *,
+                         appearance_min: float = 3.0,
+                         words: list[dict[str, Any]] | None = None) -> list[Slot]:
+    """Ни один слот не висит дольше допустимого (§3.6.2, QC-4).
+
+    Футаж режется на планы: материал тот же, склейка новая. С аватаром так
+    нельзя — два аватар-плана подряд это тот же непрерывный кадр (QC-18),
+    поэтому длинный аватар разрывается перебивкой.
+    """
     out: list[Slot] = []
     for slot in slots:
+        if slot.kind == "avatar" and slot.duration > max_shot_ev + 1e-3:
+            out.extend(_cut_away_from_avatar(slot, max_shot_ev, appearance_min,
+                                             words or [], notes))
+            continue
         if slot.kind not in ("footage", "split") or slot.duration <= max_shot:
             out.append(slot)
             continue
@@ -835,7 +921,7 @@ def compute_stats(slots: list[Slot], duration: float) -> dict[str, Any]:
             run_start = None
 
     # Появление — непрерывный участок с аватаром в кадре, а не каждый слот:
-    # соседние сплиты одного блока — это одно появление (§3.5: 2–5 появлений).
+    # соседние сплиты одного блока — это одно появление (§3.5: 2–7 появлений).
     appearances: list[tuple[float, float]] = []
     for slot in slots:
         if slot.kind not in AVATAR_KINDS:
@@ -895,7 +981,7 @@ def run_step(ctx) -> dict[str, Any]:
     if stats["split_share"] > float(limits.get("split_share_max", 0.25)) + 1e-3:
         warnings.append(f"сплит-скрин {stats['split_share']:.0%} > 25 % (§3.5)")
 
-    lo_app, hi_app = ctx.cfg.brand("avatar.appearances", [2, 5])
+    lo_app, hi_app = ctx.cfg.brand("avatar.appearances", [2, 7])
     if not (lo_app <= stats["avatar_appearances"] <= hi_app):
         warnings.append(
             f"появлений аватара {stats['avatar_appearances']}, требуется {lo_app}–{hi_app} (§3.5)")
@@ -908,10 +994,14 @@ def run_step(ctx) -> dict[str, Any]:
     cta_tail = float(limits.get("cta_tail_sec", 2.0))
     plan_doc = {
         "video_id": draft["video_id"],
+        # Тема ролика едет дальше по конвейеру: приём «заголовок за головой»
+        # ставит за ведущим именно её, а не обрывок текущей реплики.
+        "title": draft.get("title", ""),
         "fps": ctx.cfg.fps,
         "duration_sec": round(duration, 3),
         "target_duration_sec": draft["target_duration_sec"],
         "music_mood": draft["music_mood"],
+        "music_tags": draft.get("music_tags", []),
         "category": draft.get("category"),
         "sources": draft.get("sources", []),
         "cta": draft.get("cta", {}),

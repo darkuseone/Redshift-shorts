@@ -93,7 +93,7 @@ python -m src.cli steps                                       # контракт
 python -m src.cli validate --script scripts/x.json   # P0, коды ошибок §8.2
 python -m src.cli fonts-check                        # кириллица и лицензии гарнитур
 python -m src.cli libraries                          # состояние библиотек и лимитов
-python -m src.cli fill-libraries --kind sfx          # долив до лимита
+python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
 python -m src.cli templates --category transitions   # каталог шаблонов
 python -m src.cli maintenance --dry-run              # что вытеснит LRU
 python -m src.cli learn --video-id x --choice A      # записать выбор версии
@@ -104,12 +104,14 @@ python -m src.cli learn --video-id x --choice A      # записать выбо
 ```
 config/       конфиг, брендбук, словарь ударений, источники, предпочтения монтажа
 src/          пайплайн P0…P12, общие подсистемы, провайдеры, слой рендера
-templates/    92 шаблона в 12 категориях
-assets/       SFX (20), музыка (5), мемы (≤100), шрифты — капнутые библиотеки
+templates/    104 шаблона в 12 категориях
+assets/       SFX (≤20, курируемые), музыка (≤15, курируемые), мемы (≤100), шрифты
 cache/        индекс кэша футажей; сами файлы во внешнем storage
 scripts/      входные JSON-сценарии
 .claude/      16 скиллов: исполняемая форма правил сборки
-tools/        генератор каталога шаблонов, проверка артефактов прогона
+tools/        каталог шаблонов, витрина приёмов, забор клипов аватара,
+              короткая проба кадра, проверка артефактов прогона,
+              lint композиции движком до прогона Actions
 ```
 
 ## Что сделано своими средствами и почему

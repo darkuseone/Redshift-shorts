@@ -26,9 +26,11 @@ import numpy as np
 
 from ..errors import DurationOutOfRange, ScriptTooShort
 from ..lib.audio import (
-    apply_gain_db, crossfade_concat, limit_true_peak, load_wav, measure_loudness_buffer,
-    measure_loudness_file, normalize_to_lufs, rms_envelope, save_wav, trailing_silence_ms,
+    VOICE_LUFS, VOICE_TRUE_PEAK_DBTP,
+    apply_gain_db, crossfade_concat, load_wav, measure_loudness_buffer,
+    measure_loudness_file, normalize_voice, rms_envelope, save_wav, trailing_silence_ms,
 )
+from ..lib.fillers import is_hesitation
 from ..lib.logging import get_logger
 
 _log = get_logger("p3")
@@ -214,6 +216,24 @@ def run_step(ctx) -> dict[str, Any]:
         sr = file_sr
     audio = audio[:, 0] if audio.ndim == 2 else audio
 
+    # Запинки, которые модель добавила от себя. В сценарий их не пускает P0,
+    # но на высоком `style` ElevenLabs вставляет их сам. Убираются не отдельным
+    # механизмом: слово просто выпадает из списка, соседняя пауза срастается
+    # через него и подрезается тем же планировщиком, что режет обычные паузы, —
+    # на месте запинки остаётся нормальный короткий вдох.
+    hesitations: list[str] = []
+    for block in meta["blocks"]:
+        keep = []
+        for word in block["words"]:
+            if is_hesitation(str(word.get("word") or "")):
+                hesitations.append(str(word["word"]))
+            else:
+                keep.append(word)
+        # Реплику целиком из запинок не выбрасываем: пустой блок сломал бы
+        # раскладку по блокам, а причина такого блока — не здесь.
+        if keep:
+            block["words"] = keep
+
     words: list[dict[str, Any]] = []
     for block in meta["blocks"]:
         words.extend(block["words"])
@@ -259,12 +279,12 @@ def run_step(ctx) -> dict[str, Any]:
             final_sec=round(final_sec, 2), max_sec=hi_dur,
         )
 
-    # Громкость голосового слоя: −14 LUFS, True Peak ≤ −1 dBTP (§4.4).
-    target_lufs = float(ctx.cfg.get("audio.voice_lufs", -14))
-    tp_max = float(ctx.cfg.get("audio.true_peak_max", -1))
-    measured_before = measure_loudness_buffer(voice, sr).integrated_lufs
-    voice, gain_db = normalize_to_lufs(voice, target_lufs, sr, measured=measured_before)
-    voice = limit_true_peak(voice, tp_max)
+    # Громкость голосового слоя: −14 LUFS, True Peak ≤ −1 dBTP (§4.4). Правило
+    # одно на конвейер и пробу — иначе проба звучит не так, как ролик.
+    voice, gain_db = normalize_voice(
+        voice, sr,
+        target_lufs=float(ctx.cfg.get("audio.voice_lufs", VOICE_LUFS)),
+        true_peak_max=float(ctx.cfg.get("audio.true_peak_max", VOICE_TRUE_PEAK_DBTP)))
     save_wav(ctx.wpath("voice_final.wav"), voice, sr)
     final_loudness = measure_loudness_file(ctx.work_dir / "voice_final.wav")
 
@@ -321,6 +341,7 @@ def run_step(ctx) -> dict[str, Any]:
         "removed_sec": round(source_sec - final_sec, 2),
         "pauses_cut": sum(1 for c in cuts if c["kind"] in ("pause", "breath")),
         "breaths_removed": breaths,
+        "hesitations_removed": hesitations,
         "lufs": speech_map["loudness"]["integrated_lufs"],
         "tail_ms": speech_map["loudness"]["trailing_silence_ms"],
     })

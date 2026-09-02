@@ -208,7 +208,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
     # над головой, панель сбоку, выбивка. Тег ``alpha`` помечает приёмы, для
     # которых аватар обязан прийти с прозрачным фоном: они рисуются ПОД ним, и
     # без альфы зритель их не увидит.
-    "hero-devices": (11, [
+    "hero-devices": (23, [
         ("plate-behind-back", "Кадр появляется за спиной ведущего", [1.4, 4.0],
          {"top": 300}, ["hero", "avatar", "alpha", "footage"], "hero-plate"),
         ("headline-over-head", "Заголовок вырастает над головой", [1.2, 3.4],
@@ -218,9 +218,9 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("headline-behind-head", "Крупный заголовок из-за головы", [1.2, 3.4],
          {"top": 300, "size": 232}, ["hero", "avatar", "alpha", "text"],
          "hero-headline"),
-        ("burst-behind-head", "Лучи расходятся из-за головы", [1.0, 3.0],
-         {"rays": 9, "spread_deg": 150, "center_y": 560},
-         ["hero", "avatar", "alpha"], "hero-burst"),
+        ("icons-behind-head", "Знаки о предмете речи вспыхивают за головой",
+         [1.4, 3.4], {"spread_deg": 170},
+         ["hero", "avatar", "alpha", "icons"], "hero-icons"),
         ("split-panel-right", "Кадр делится: ведущий слева, слово справа", [1.4, 4.0],
          {"subject_shift": -210, "subject_zoom": 1.14},
          ["hero", "avatar", "split", "text"], "hero-split"),
@@ -238,6 +238,36 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "hero-card-stack"),
         ("phone-mock", "Экран приложения поверх расфокуса", [1.8, 4.5],
          {}, ["hero", "avatar", "text", "lines", "ui"], "hero-phone-mock"),
+        ("script-stack", "Реплика строками с толстой обводкой", [1.6, 4.2],
+         {}, ["hero", "avatar", "text", "lines", "stroke"], "hero-script-stack"),
+        ("chat-typing", "Переписка: запрос набирается, ответ ждёт", [2.4, 5.0],
+         {}, ["hero", "avatar", "text", "ui", "chat"], "hero-chat-typing"),
+        # Второе окно той же семьи, но про генерацию, а не про вопрос: промпт,
+        # отсчёт и готовый кадр внутри окна. Живёт дольше переписки — сцене
+        # нужно уместить набор, ожидание и сам результат.
+        ("chat-generate", "Окно нейросети: промпт, отсчёт и готовый кадр",
+         [3.4, 9.0], {"generate_sec": 1.1},
+         ["hero", "avatar", "text", "ui", "chat", "ai", "footage"],
+         "hero-chat-generate"),
+        ("title-behind-head", "Двухстрочная тема за головой", [2.0, 5.2],
+         {}, ["hero", "avatar", "text", "behind"], "hero-title-behind"),
+        ("exhibit-card", "Экспонат в раме с музейной подписью", [2.4, 5.5],
+         {}, ["hero", "avatar", "alpha", "footage", "source"], "hero-exhibit"),
+        ("statement-slam", "Плашка с фразой забирает кадр и уходит", [1.4, 2.2],
+         {}, ["hero", "avatar", "text", "slam"], "hero-slam"),
+        ("phrase-log", "Список фраз копится слева по ходу речи", [2.6, 6.0],
+         {"top": 150}, ["hero", "avatar", "text", "lines", "sync"], "hero-log"),
+        ("oversize-word", "Слово крупнее кадра, края обрезаны", [1.6, 3.2],
+         {}, ["hero", "avatar", "text", "slam"], "hero-oversize"),
+        ("figure-swap", "Числа сменяются на одном месте", [2.2, 5.0],
+         {"top": 170}, ["hero", "avatar", "number", "data"], "hero-figure"),
+        ("verdict-card", "Светлая плашка: вторая строка темнеет", [1.8, 3.0],
+         {}, ["hero", "avatar", "text", "slam"], "hero-verdict"),
+        ("source-paper", "Страница первоисточника, по строке идёт маркер",
+         [2.4, 5.5], {}, ["hero", "avatar", "source", "ui"], "hero-paper"),
+        ("bubble-typed", "Ведущий в круге, реплика набирается в карточке",
+         [2.6, 6.0], {}, ["hero", "avatar", "text", "lines", "sync"],
+         "hero-bubble-typed"),
     ]),
 }
 

@@ -27,6 +27,13 @@ def run_maintenance(cfg, *, dry_run: bool = True) -> dict[str, Any]:
     recent_videos = {r.get("video_id") for r in history.get("runs", [])[-5:]}
     protected = {item.file for item in index.items
                  if item.file and set(item.used_in) & recent_videos}
+    # Вечнозелёная база не вытесняется никогда. Её собирали руками и глазами,
+    # она весит около двенадцати мегабайт на четыре сотни разрешённых, и она
+    # ровно то, ради чего база вообще заведена: «чтоб не искать их постоянно
+    # новые, а брать из базы». По LRU она ушла бы первой — у свежего засева
+    # ноль использований и самое старое время доступа.
+    protected |= {item.file for item in index.items
+                  if item.file and (item.extra or {}).get("seed_topic")}
 
     removed: list[str] = []
     if total_bytes > max_bytes and not dry_run:

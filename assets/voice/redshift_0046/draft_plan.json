@@ -1,0 +1,1300 @@
+{
+  "video_id": "redshift_0046",
+  "title": "Можно ли выжить внутри чёрной дыры",
+  "category": "space",
+  "language": "ru",
+  "target_duration_sec": 47.0,
+  "estimated_speech_sec": 49.397,
+  "tts_length_buffer_pct": 22.0,
+  "tts_target_sec": 60.264,
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Падение в чёрную дыру ты переживёшь. Это и есть худшая часть.",
+      "spoken_text": "Падение в чёрную дыру ты переживёшь. Это и есть худшая часть.",
+      "tokens": [
+        {
+          "display": "Падение",
+          "spoken": [
+            "Падение"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "чёрную",
+          "spoken": [
+            "чёрную"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "дыру",
+          "spoken": [
+            "дыру"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "ты",
+          "spoken": [
+            "ты"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "переживёшь.",
+          "spoken": [
+            "переживёшь",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": true
+        },
+        {
+          "display": "Это",
+          "spoken": [
+            "Это"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "есть",
+          "spoken": [
+            "есть"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "худшая",
+          "spoken": [
+            "худшая"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "часть.",
+          "spoken": [
+            "часть",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "переживёшь",
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Тёмный кадр, диск раскалённого газа, медленное приближение",
+      "broll_queries": [
+        "black hole accretion disk simulation",
+        "deep space dark nebula slow motion"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ПЕРЕЖИВЁШЬ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "sub_drop",
+      "meme_allowed": false,
+      "source_ref": null,
+      "_estimated_sec": 4.379,
+      "planned_start_sec": 0.0,
+      "planned_end_sec": 4.379
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Всё решает размер. Приливная сила растягивает тело в нить, но у горизонта она тем слабее, чем тяжелее дыра. Через горизонт сверхмассивной проходишь целым и не чувствуешь границы.",
+      "spoken_text": "Всё решает размер. Приливная сила растягивает тело в нить, но у горизонта она тем слабее, чем тяжелее дыра. Через горизонт сверхмассивной проходишь целым и не чувствуешь границы.",
+      "tokens": [
+        {
+          "display": "Всё",
+          "spoken": [
+            "Всё"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "решает",
+          "spoken": [
+            "решает"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "размер.",
+          "spoken": [
+            "размер",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": true
+        },
+        {
+          "display": "Приливная",
+          "spoken": [
+            "Приливная"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "сила",
+          "spoken": [
+            "сила"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "растягивает",
+          "spoken": [
+            "растягивает"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "тело",
+          "spoken": [
+            "тело"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "нить,",
+          "spoken": [
+            "нить",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "но",
+          "spoken": [
+            "но"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "у",
+          "spoken": [
+            "у"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "горизонта",
+          "spoken": [
+            "горизонта"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "она",
+          "spoken": [
+            "она"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "тем",
+          "spoken": [
+            "тем"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "слабее,",
+          "spoken": [
+            "слабее",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "чем",
+          "spoken": [
+            "чем"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "тяжелее",
+          "spoken": [
+            "тяжелее"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "дыра.",
+          "spoken": [
+            "дыра",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Через",
+          "spoken": [
+            "Через"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "горизонт",
+          "spoken": [
+            "горизонт"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "сверхмассивной",
+          "spoken": [
+            "сверхмассивной"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "проходишь",
+          "spoken": [
+            "проходишь"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "целым",
+          "spoken": [
+            "целым"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "чувствуешь",
+          "spoken": [
+            "чувствуешь"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "границы.",
+          "spoken": [
+            "границы",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "размер",
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Ведущий крупно, за головой — слово ГОРИЗОНТ",
+      "broll_queries": [
+        "gravitational lensing visualization space"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 11.781,
+      "planned_start_sec": 4.379,
+      "planned_end_sec": 16.16
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Дальше работает жёсткий счётчик. Расчёт для метрики Шварцшильда даёт предел собственного времени: в Стрельце A звезда это около минуты, в дыре галактики M87 — почти сутки.",
+      "spoken_text": "Дальше работает жёсткий счётчик. Расчёт для метрики Шварцшильда даёт предел собственного времени: в Стрельце A звезда это около минуты, в дыре галактики M87 — почти сутки.",
+      "tokens": [
+        {
+          "display": "Дальше",
+          "spoken": [
+            "Дальше"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "работает",
+          "spoken": [
+            "работает"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "жёсткий",
+          "spoken": [
+            "жёсткий"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "счётчик.",
+          "spoken": [
+            "счётчик",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Расчёт",
+          "spoken": [
+            "Расчёт"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "для",
+          "spoken": [
+            "для"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "метрики",
+          "spoken": [
+            "метрики"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Шварцшильда",
+          "spoken": [
+            "Шварцшильда"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "даёт",
+          "spoken": [
+            "даёт"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "предел",
+          "spoken": [
+            "предел"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "собственного",
+          "spoken": [
+            "собственного"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "времени:",
+          "spoken": [
+            "времени",
+            ":"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Стрельце",
+          "spoken": [
+            "Стрельце"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "A",
+          "spoken": [
+            "A"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "звезда",
+          "spoken": [
+            "звезда"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "это",
+          "spoken": [
+            "это"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "около",
+          "spoken": [
+            "около"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "минуты,",
+          "spoken": [
+            "минуты",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": true
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "дыре",
+          "spoken": [
+            "дыре"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "галактики",
+          "spoken": [
+            "галактики"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "M87 —",
+          "spoken": [
+            "M87",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "почти",
+          "spoken": [
+            "почти"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "сутки.",
+          "spoken": [
+            "сутки",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "минуты",
+      "avatar_directive": "auto",
+      "mode": "C",
+      "mode_reason": "снятие доли аватара до верхней границы 60 %",
+      "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
+      "broll_queries": [
+        "scientific paper on screen dark",
+        "observatory radio telescope night"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "maximizing survival time below the event horizon",
+        "template_hint": "browser/article-quote"
+      },
+      "sfx": "data_beep",
+      "meme_allowed": true,
+      "source_ref": "arxiv.org",
+      "_estimated_sec": 10.67,
+      "planned_start_sec": 16.16,
+      "planned_end_sec": 26.83
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "И тут срабатывает главная ловушка. Включишь двигатель, чтобы оттянуть падение, — и умрёшь раньше, чем если бы просто летел молча. Спойлер: сопротивление здесь всегда стоит времени.",
+      "spoken_text": "И тут срабатывает главная ловушка. Включишь двигатель, чтобы оттянуть падение, — и умрёшь раньше, чем если бы просто летел молча. Спойлер: сопротивление здесь всегда стоит времени.",
+      "tokens": [
+        {
+          "display": "И",
+          "spoken": [
+            "И"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "тут",
+          "spoken": [
+            "тут"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "срабатывает",
+          "spoken": [
+            "срабатывает"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "главная",
+          "spoken": [
+            "главная"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "ловушка.",
+          "spoken": [
+            "ловушка",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Включишь",
+          "spoken": [
+            "Включишь"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "двигатель,",
+          "spoken": [
+            "двигатель",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "чтобы",
+          "spoken": [
+            "чтобы"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "оттянуть",
+          "spoken": [
+            "оттянуть"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "падение, —",
+          "spoken": [
+            "падение",
+            ",",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "умрёшь",
+          "spoken": [
+            "умрёшь"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "раньше,",
+          "spoken": [
+            "раньше",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": true
+        },
+        {
+          "display": "чем",
+          "spoken": [
+            "чем"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "если",
+          "spoken": [
+            "если"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "бы",
+          "spoken": [
+            "бы"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "просто",
+          "spoken": [
+            "просто"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "летел",
+          "spoken": [
+            "летел"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "молча.",
+          "spoken": [
+            "молча",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Спойлер:",
+          "spoken": [
+            "Спойлер",
+            ":"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "сопротивление",
+          "spoken": [
+            "сопротивление"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "здесь",
+          "spoken": [
+            "здесь"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "всегда",
+          "spoken": [
+            "всегда"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "стоит",
+          "spoken": [
+            "стоит"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "времени.",
+          "spoken": [
+            "времени",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "раньше",
+      "avatar_directive": "auto",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Тревожный ритм, абстрактное искривление пространства",
+      "broll_queries": [
+        "abstract spacetime grid distortion",
+        "rocket engine burn dark background",
+        "warped light abstract macro"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ХУЖЕ",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "riser",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 11.221,
+      "planned_start_sec": 26.83,
+      "planned_end_sec": 38.051
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "Поэтому выжить внутри нельзя. Можно только выбрать, сколько ты продержишься, — и лучшая из стратегий это не делать ничего.",
+      "spoken_text": "Поэтому выжить внутри нельзя. Можно только выбрать, сколько ты продержишься, — и лучшая из стратегий это не делать ничего.",
+      "tokens": [
+        {
+          "display": "Поэтому",
+          "spoken": [
+            "Поэтому"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "выжить",
+          "spoken": [
+            "выжить"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "внутри",
+          "spoken": [
+            "внутри"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "нельзя.",
+          "spoken": [
+            "нельзя",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Можно",
+          "spoken": [
+            "Можно"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "только",
+          "spoken": [
+            "только"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "выбрать,",
+          "spoken": [
+            "выбрать",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "сколько",
+          "spoken": [
+            "сколько"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "ты",
+          "spoken": [
+            "ты"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "продержишься, —",
+          "spoken": [
+            "продержишься",
+            ",",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "лучшая",
+          "spoken": [
+            "лучшая"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "из",
+          "spoken": [
+            "из"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "стратегий",
+          "spoken": [
+            "стратегий"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "это",
+          "spoken": [
+            "это"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "делать",
+          "spoken": [
+            "делать"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "ничего.",
+          "spoken": [
+            "ничего",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": true
+        }
+      ],
+      "emphasis_word": "ничего",
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Ведущий крупно, поворотный момент, акцентное слово",
+      "broll_queries": [
+        "astronaut helmet reflection dark"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Свободное падение — максимум времени",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 7.522,
+      "planned_start_sec": 38.051,
+      "planned_end_sec": 45.573
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Ты бы жал на газ или падал молча? Напиши в комментариях.",
+      "spoken_text": "Ты бы жал на газ или падал молча? Напиши в комментариях.",
+      "tokens": [
+        {
+          "display": "Ты",
+          "spoken": [
+            "Ты"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "бы",
+          "spoken": [
+            "бы"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "жал",
+          "spoken": [
+            "жал"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "на",
+          "spoken": [
+            "на"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "газ",
+          "spoken": [
+            "газ"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "или",
+          "spoken": [
+            "или"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "падал",
+          "spoken": [
+            "падал"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "молча?",
+          "spoken": [
+            "молча",
+            "?"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": true
+        },
+        {
+          "display": "Напиши",
+          "spoken": [
+            "Напиши"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "комментариях.",
+          "spoken": [
+            "комментариях",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "молча",
+      "avatar_directive": "auto",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Финальный кадр, кнопка подписки",
+      "broll_queries": [
+        "abstract red gradient background"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 3.824,
+      "planned_start_sec": 45.573,
+      "planned_end_sec": 49.397
+    }
+  ],
+  "avatar": {
+    "planned_share": 0.4682,
+    "planned_sec": 23.127,
+    "appearances": 3,
+    "avatar_id": "54172d7a5b2946ed8a592dee955fb0c7"
+  },
+  "planned_counts": {
+    "fullscreen_text": 2,
+    "fullscreen_text_scripted": 2,
+    "highlight": 1,
+    "highlight_scripted": 1,
+    "memes": 1,
+    "bg_vfx": 2
+  },
+  "music_mood": "cosmic_calm",
+  "sources": [
+    {
+      "title": "No Way Back: Maximizing Survival Time Below the Schwarzschild Event Horizon",
+      "domain": "arxiv.org",
+      "url": "https://arxiv.org/abs/0705.1029",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "snippet": "Максимальное собственное время под горизонтом достигается в свободном падении: любой манёвр двигателем его сокращает.",
+      "highlight_line": "maximizing survival time below the event horizon"
+    },
+    {
+      "title": "First M87 Event Horizon Telescope Results I: The Shadow of the Supermassive Black Hole",
+      "domain": "iopscience.iop.org",
+      "url": "https://iopscience.iop.org/article/10.3847/2041-8213/ab0ec7",
+      "show_on_screen": false,
+      "screen_template": "search"
+    }
+  ],
+  "cta": {
+    "text": "Ты бы жал на газ или падал молча?",
+    "type": "question"
+  },
+  "modes_by_block": {
+    "b1": "C",
+    "b2": "A",
+    "b3": "C",
+    "b4": "C",
+    "b5": "A",
+    "b6": "A"
+  },
+  "conflicts": []
+}

@@ -12,10 +12,11 @@ from pathlib import Path
 from typing import Any
 
 from ..errors import (
-    BudgetExceeded, DurationOutOfRange, HookUnanswered, MissingCta, MissingHook,
-    NoSource, QuoteTooLong, ValidationError,
+    BudgetExceeded, DurationOutOfRange, FillerWords, HookUnanswered, MissingCta,
+    MissingHook, NoSource, QuoteTooLong, ValidationError,
 )
 from ..lib.costs import estimate_cost, guard_estimate
+from ..lib.fillers import discourse_hits, strip_hesitations
 from ..lib.fonts import validate_font
 from ..lib.jsonio import read_json
 from ..lib.logging import get_logger
@@ -195,6 +196,29 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
             "code": "TARGET_DURATION_MISMATCH",
             "message": f"target_duration_sec={target} заметно расходится с оценкой {estimated:.1f} сек",
         })
+
+    # --- FILLER_WORDS
+    # Речь ролика — это TTS нашего же текста, поэтому паразит попадает в звук
+    # единственным путём: его написали здесь. Ловим до синтеза, пока он ничего
+    # не стоит. Запинка — ошибка сценария: она бессмысленна в любой позиции.
+    # Вводное слово — предупреждение: «вот» бывает усилителем, «значит» —
+    # сказуемым, и решать, паразит ли это, обязан человек, а не список.
+    for block in blocks:
+        text = str(block.get("text") or "")
+        _cleaned, hesitations = strip_hesitations(text)
+        if hesitations:
+            raise FillerWords(
+                f"блок {block.get('id')}: запинки в тексте "
+                f"({', '.join(hesitations)}) — их незачем озвучивать",
+                block_id=block.get("id"), words=hesitations,
+            )
+        hits = discourse_hits(text)
+        if hits:
+            warnings.append({
+                "code": "FILLER_WORDS",
+                "message": (f"блок {block.get('id')}: вводные слова "
+                            f"({', '.join(hits)}) — проверьте, не паразиты ли"),
+            })
 
     # --- FONT_MISSING_CYRILLIC
     fonts = _check_fonts(cfg)

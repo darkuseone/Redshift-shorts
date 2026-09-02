@@ -5,12 +5,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
+from PIL import Image
 
 from src.errors import RedshiftError
 from src.lib.cache import StepCache, hash_obj
 from src.lib.learning import _differences, record_choice
 from src.lib.maintenance import run_maintenance
+from src.p12_render_qc.vision_qc import run_vision_qc
 from src.pipeline import Pipeline, RunContext, Step
 
 
@@ -239,6 +242,66 @@ def test_vision_qc_can_be_disabled(cfg, tmp_path):
     assert report["enabled"] is False
 
 
+def test_the_final_frame_is_not_judged_as_raw_stock(cfg, tmp_path, monkeypatch):
+    """§11.2 смотрит готовый кадр, и вопрос ему нужен другой.
+
+    Прежде судье показывали кадр ролика, а спрашивали про «материал B-roll». Он
+    честно снижал оценку за наш собственный субтитр («крупный текст в центре
+    портит B-roll») и за самого ведущего («это говорящая голова, а не B-roll»).
+    На 0047 так набралось четыре пробы из шести — 67 % расхождений там, где
+    картинка разошлась с речью в лучшем случае дважды.
+    """
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+
+    asked: list[dict] = []
+
+    class _Spy:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            asked.append({"intent": intent, "role": role, "query": query, "kind": kind})
+            return V.VisionVerdict(score=0.9, reason="", summary="кадр", judge="spy")
+
+    frame = tmp_path / "f.jpg"
+    Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
+    monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
+
+    plan = {"duration_sec": 12.0, "variant": "A",
+            "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "avatar",
+                       "role": "hook", "reason": "ведущий вводит тему"}],
+            "subtitles": [{"display": "бюджет", "lead": "не в", "start": 6.0,
+                           "end": 6.4}]}
+    report = run_vision_qc(_ctx(tmp_path, cfg), video_path=tmp_path / "v.mp4", plan=plan)
+
+    assert asked and all(a["kind"] == "final_frame" for a in asked)
+    # Судье сказано, что ведущий в кадре — это замысел, а не промах материала.
+    assert "ведущий в кадре" in asked[0]["intent"]
+    # Эталон речи не теряет приклеенное начало реплики: «не в бюджет», а не
+    # «бюджет» — иначе отрицание пропадает ровно там, где оно и есть смысл.
+    assert any("не в бюджет" in a["query"] for a in asked)
+    assert report["mismatch_share"] == 0.0
+    assert report["samples"][0]["expected"]
+
+
+def test_the_channel_own_captions_are_not_foreign_text(cfg, tmp_path):
+    """Субтитр канала — не «текст в кадре» (§11.2.2).
+
+    Судья-заглушка ловил текст по плотности краёв, а её на готовом кадре
+    поднимает наш же субтитр. Проба уходила в отчёт как чужая надпись.
+    """
+    from src.lib.costs import CostLedger
+    from src.lib.providers.vision import MockVision
+
+    frame = tmp_path / "busy.jpg"
+    noise = np.random.default_rng(7).integers(0, 255, (96, 54, 3), dtype=np.uint8)
+    Image.fromarray(noise).save(frame)
+    judge = MockVision(cfg, CostLedger())
+    for query in ("проба один", "проба два", "проба три", "проба четыре"):
+        verdict = judge.judge([frame], intent="кадр ролика", role="body",
+                              query=query, kind="final_frame")
+        assert verdict.has_text is False
+
+
 def test_vision_qc_is_not_blocking(repo_root):
     """§11.2 даёт материал для правки правил, но брак определяет §11.1."""
     path = repo_root / "output" / "redshift_0042" / "build_report.json"
@@ -297,3 +360,81 @@ def test_maintenance_removes_orphan_index_entries(cfg, tmp_path, monkeypatch):
     cfg.set("storage.local_root", str(tmp_path / "store"))
     report = run_maintenance(cfg, dry_run=False)
     assert "ghost" in report["orphans_removed"]
+
+
+def test_mock_material_never_enters_the_shared_library(tmp_path, cfg):
+    """Синтетика мок-прогона в общей базе — чистый вред.
+
+    База лежит в репозитории и просматривается раньше внешних стоков (§7.2.1),
+    а мок-прогон CI гоняется на каждом коммите. К моменту находки в базе было
+    195 мок-записей из 213 — 92 % «материала», которого нет ни на одном диске.
+    Живому ролику такая запись даёт только промах: индекс говорит «материал
+    есть», файла нет, слот уходит в генерацию.
+    """
+    from src.lib.manifest import AssetRecord, FootageIndex
+
+    index = FootageIndex(tmp_path / "index.json")
+
+    def _record(asset_id: str, *, mock: bool) -> AssetRecord:
+        return AssetRecord(id=asset_id, type="video", source="pexels",
+                           license="Pexels License", url_origin="",
+                           phash="0" * 16, phashes=["0" * 16], tags=["гранит"],
+                           vision_summary="", score=0.8, duration_sec=3.0,
+                           width=1080, height=1920, file="footage/x.mp4",
+                           used_in=["redshift_0099"], mock=mock)
+
+    index.add(_record("mock_1", mock=True))
+    assert index.items == [], "мок-материал попал в общую базу"
+
+    index.add(_record("real_1", mock=False))
+    assert [i.id for i in index.items] == ["real_1"]
+
+
+def test_the_committed_library_holds_no_mock_rows(repo_root):
+    """И сама база в репозитории — тоже: 195 таких строк оттуда вычищены."""
+    path = repo_root / "cache" / "footage_index.json"
+    if not path.exists():
+        pytest.skip("базы нет")
+    items = json.loads(path.read_text(encoding="utf-8"))["items"]
+    assert not [i for i in items if i.get("mock")], "в базе снова синтетика"
+
+
+def test_the_evergreen_base_is_never_evicted(cfg, tmp_path, monkeypatch):
+    """Курированная база переживает вытеснение — иначе она бессмысленна.
+
+    LRU защищал только материал последних пяти роликов. У свежего засева ноль
+    использований и самое старое время доступа, то есть по этому правилу он
+    уходил первым — все 44 снимка, собранные руками и глазами, ради которых
+    база и заведена: «чтоб не искать их постоянно новые, а брать из базы».
+    """
+    from src.lib.manifest import AssetRecord, FootageIndex
+
+    store = tmp_path / "store"
+    (store / "seed" / "galaxy").mkdir(parents=True, exist_ok=True)
+    (store / "pexels").mkdir(parents=True, exist_ok=True)
+    seed_file = store / "seed" / "galaxy" / "deep_field.jpg"
+    churn_file = store / "pexels" / "clip.mp4"
+    seed_file.write_bytes(b"x" * 4096)
+    churn_file.write_bytes(b"y" * 4096)
+
+    index_path = tmp_path / "cache" / "footage_index.json"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index = FootageIndex(index_path)
+    index.add(AssetRecord(id="seeded", type="photo", source="nasa",
+                          file="seed/galaxy/deep_field.jpg",
+                          extra={"seed_topic": "galaxy"}))
+    index.add(AssetRecord(id="churn", type="video", source="pexels",
+                          file="pexels/clip.mp4"))
+    index.save()
+
+    monkeypatch.setattr(cfg, "path", lambda dotted, default=None: (
+        tmp_path / "cache" if "cache" in dotted else store))
+    cfg.set("storage.local_root", str(store))
+    cfg.set("storage.max_bytes", 4096)          # места хватает ровно на один файл
+    report = run_maintenance(cfg, dry_run=False)
+
+    # Вытеснение обязано было сработать, иначе тест ничего не доказывает:
+    # лимит меньше суммы двух файлов, и один из них уйти должен.
+    assert report["evicted_count"] >= 1, "вытеснение не запускалось"
+    assert seed_file.exists(), "засев вытеснен — база потеряна"
+    assert not churn_file.exists(), "вытеснили не то: расходный клип на месте"

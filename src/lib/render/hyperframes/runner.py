@@ -77,8 +77,13 @@ def lint(project: Path, *, timeout: int = 300) -> dict[str, int]:
             "композиция HyperFrames не прошла lint: " + "; ".join(errors[:4]),
             code="HYPERFRAMES_LINT_FAILED")
     if warnings:
-        _log.info("lint: предупреждения", extra={"count": len(warnings),
-                                                 "first": warnings[0][:160]})
+        # Все, а не только первое. По одному «first» в логе нельзя понять, одна
+        # это беда в четырёх местах или четыре разных: чтобы разобрать нахлёст
+        # твинов на кнопке, пришлось запускать рендер заново ради строки,
+        # которой в логе не было.
+        _log.info("lint: предупреждения", extra={"count": len(warnings)})
+        for warning in warnings[:12]:
+            _log.info("lint", extra={"warning": warning[:200]})
     return {"errors": len(errors), "warnings": len(warnings)}
 
 

@@ -15,8 +15,8 @@ import pytest
 
 from src.lib.render.hyperframes.templates import (
     DATAVIZ, DRIFT_SCALE, ENTRANCES, HERO, MOTION, TRANSITIONS, Piece, TemplateCtx,
-    enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_hero,
-    render_motion, render_transition, transition_css,
+    SS_STROKE, enter_and_drift, entrance_tweens, hero_css, render_dataviz,
+    render_hero, render_motion, render_transition, text_width, transition_css,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -24,6 +24,10 @@ ALLOWED_PROPS = {
     "opacity", "x", "y", "scale", "scaleX", "scaleY", "rotation",
     "color", "backgroundColor", "borderRadius", "autoAlpha",
     "duration", "ease", "repeat", "yoyo", "stagger",
+    # Не свойство, а настройка самого твина: запрет применять начальное
+    # состояние сразу при сборке ленты. Твину на кадре она обязательна —
+    # иначе он откатывает ведущего к своему `from` с нулевой секунды.
+    "immediateRender",
 }
 
 
@@ -51,6 +55,42 @@ def test_transition_animates_only_allowed_properties(name, ctx):
     piece = render_transition(name, ctx)
     extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
     assert not extra, f"{name} тянет запрещённые свойства: {extra}"
+
+
+def test_tweens_on_the_frame_itself_do_not_reach_back_in_time(ctx):
+    """`fromTo` применяет своё `from` сразу при сборке ленты.
+
+    Клип ведущего живёт весь сегмент, и наезд, поставленный на третий шот,
+    откатывал его в `scale:0.92` с нулевой секунды: пять секунд ведущий сидел
+    в видимом прямоугольнике с тёмными полями. Видно кадром, не тестом, —
+    поэтому правило записано здесь.
+    """
+    from src.lib.render.hyperframes.templates import (
+        MOTION, render_motion, render_transition,
+    )
+
+    checked = 0
+    for name in sorted(TRANSITIONS):
+        checked += _assert_target_tweens_hold(render_transition(name, ctx).tweens,
+                                              ctx, name)
+    for name in sorted(MOTION):
+        checked += _assert_target_tweens_hold(render_motion(name, ctx).tweens,
+                                              ctx, name)
+    for name in sorted(HERO):
+        checked += _assert_target_tweens_hold(
+            render_hero(name, _hero_ctx(name)).tweens, _hero_ctx(name), name)
+    assert checked, "ни один твин по самому кадру не проверен"
+
+
+def _assert_target_tweens_hold(tweens, ctx, name) -> int:
+    """Сколько твинов `fromTo` по кадру проверено — все обязаны нести запрет."""
+    seen = 0
+    for tween in tweens:
+        if not tween.startswith("tl.fromTo(") or f'"#{ctx.target}"' not in tween:
+            continue
+        seen += 1
+        assert "immediateRender:false" in tween, f"{name}: {tween}"
+    return seen
 
 
 @pytest.mark.parametrize("name", sorted(MOTION))
@@ -123,7 +163,9 @@ def test_glitch_offsets_are_deterministic(ctx):
     first = render_transition("glitch", TemplateCtx(**{**ctx.__dict__, "params": params}))
     second = render_transition("glitch", TemplateCtx(**{**ctx.__dict__, "params": params}))
     assert first.tweens == second.tweens
-    assert len(first.tweens) == 7
+    # На полосу приходится два твина: затухание и гашение в ноль по концу.
+    assert len(first.tweens) == 14
+    assert sum(t.startswith("tl.set(") for t in first.tweens) == 7
 
 
 def test_glitch_bars_differ_between_shots(ctx):
@@ -228,13 +270,38 @@ def test_no_tween_targets_a_clip_element(name, ctx):
             assert target != f"#{clip_id}", f"{name} тянет сам клип: {tween}"
 
 
+@pytest.mark.parametrize("name", sorted(TRANSITIONS))
+def test_fade_to_nothing_is_followed_by_a_hard_kill(name, ctx):
+    """Затухание в ноль обязано заканчиваться tl.set на том же селекторе.
+
+    Перемотка назад через уже отыгранный твин возвращает элемент в начальное
+    состояние: полоса, которая должна была исчезнуть, остаётся в кадре. Кадр по
+    перемотке обязан совпадать с кадром по проигрыванию, и lint движка держит
+    это правилом gsap_exit_missing_hard_kill. На живом прогоне 0047 оно
+    остановило рендер по всем четырём полосам перехода tr-19.
+    """
+    piece = render_transition(name, ctx)
+    kills = {re.search(r'"([^"]+)"', t).group(1)
+             for t in piece.tweens if t.startswith("tl.set(")}
+    for tween in piece.tweens:
+        if tween.startswith("tl.set("):
+            continue
+        to_state = re.findall(r"\{[^{}]*\}", tween)[-1]
+        if not re.search(r"opacity:0(?![.\d])", to_state):
+            continue
+        target = re.search(r'"([^"]+)"', tween).group(1)
+        assert target in kills, f"{name}: затухание без гашения — {tween}"
+
+
 # --- приёмы вокруг ведущего ---------------------------------------------------
 #
 # Референсы заказчика: ведущий за столом, а кадр вокруг него живёт. Проверяется
 # то, что уже ломалось в реальном рендере, а не то, что легко проверить.
 
 HERO_PARAMS = {
-    "hero-burst": {},
+    "hero-icons": {"icons": [{"glyph": "chip"}, {"glyph": "atom"},
+                             {"glyph": "clock"}],
+                   "face_cx": 579, "face_cy": 579, "head_half": 207},
     "hero-headline": {"word": "ГОРИЗОНТ", "kicker": "ОДНА ТЕОРИЯ"},
     "hero-plate": {"src": "assets/m000_shot.mp4"},
     "hero-split": {"word": "ВНИМАНИЕ"},
@@ -247,6 +314,29 @@ HERO_PARAMS = {
     "hero-card-stack": {"title": "СВЕТИЛ ВНУТРЬ", "src": "assets/m000_shot.mp4"},
     "hero-phone-mock": {"lines": ["что там внутри", "никто не знает"],
                         "app": "ChatGPT"},
+    "hero-script-stack": {"lines": ["если ты", "зайдёшь", "за горизонт"]},
+    "hero-chat-typing": {"ask": "что будет за горизонтом событий",
+                         "answer": "тело растянет в нить",
+                         "app": "ChatGPT"},
+    "hero-chat-generate": {"gen_prompt": "нарисуй горизонт событий вблизи",
+                           "app": "ChatGPT", "src": "assets/m000_shot.mp4"},
+    "hero-title-behind": {"head": "Наполеон", "tail": "проиграл машине"},
+    "hero-exhibit": {"title": "Наполеон Бонапарт", "detail": "партия с турком, 1809",
+                     "credit": "NASA · public domain", "src": "assets/m000_shot.mp4"},
+    "hero-slam": {"punch": ["Ты сам", "не разгадал"]},
+    "hero-log": {"entries": [{"text": "не по правилам,", "at": 0.0},
+                             {"text": "турок вернул фигуру", "at": 0.9},
+                             {"text": "сходил ещё раз,", "at": 1.8}]},
+    "hero-oversize": {"word": "за фокус"},
+    "hero-figure": {"figures": [{"value": "$902 626 748", "note": "получает Google"},
+                                {"value": "$18 530 611", "note": "получает Google"},
+                                {"value": "$0", "note": "получает Google"}]},
+    "hero-verdict": {"punch": ["Себе", "ноль"]},
+    "hero-bubble-typed": {"entries": [{"text": "ни одна компания", "at": 0.0},
+                                      {"text": "не платит гуглу", "at": 0.9},
+                                      {"text": "ни рубля", "at": 1.8}]},
+    "hero-paper": {"source": "arxiv.org",
+                   "quote": "maximizing survival time below the event horizon"},
 }
 
 
@@ -261,7 +351,7 @@ def _css_rule(css: str, selector: str) -> str:
 
 
 def _css_rules_under(css: str, selector: str) -> list[tuple[str, str]]:
-    """Правила для потомков селектора: ``.hero-burst span``, ``.hero-plate .hp-in``."""
+    """Правила для потомков селектора: ``.hero-icons .hi-mark``, ``.hero-plate .hp-in``."""
     pattern = re.escape(selector) + r"(?:\s|>)+([^{,]+)\{([^}]*)\}"
     return [(m.group(1).strip(), m.group(2)) for m in re.finditer(pattern, css)]
 
@@ -272,6 +362,237 @@ def _hero_ctx(name, **over):
                 track=13, params=params)
     base.update(over)
     return TemplateCtx(**base)
+
+
+def test_script_stack_fits_the_widest_line_not_the_longest():
+    """Кегль подбирается по ширине строки, а не по числу знаков.
+
+    «ГАЗ ИЛИ ПАДАЛ» и «МОЛЧА? НАПИШИ» — по 13 знаков, но вторая шире на 11 %:
+    подбор по длине обрезал её краем кадра. Обводка тоже входит в бюджет — она
+    рисуется наружу от глифа.
+    """
+    lines = ["Ты бы жал на", "газ или падал", "молча? Напиши"]
+    piece = render_hero("hero-script-stack",
+                        _hero_ctx("hero-script-stack", params={"lines": lines}))
+    size = int(re.search(r"font-size:(\d+)px", piece.nodes[0]).group(1))
+    for line in lines:
+        drawn = text_width(line.upper(), size) + 2 * SS_STROKE
+        assert drawn <= 1080 - 2 * 90 + 1e-6, (line, drawn)
+
+
+def test_split_column_fits_the_panel_on_any_word():
+    """Столбец сплита обязан уложиться в панель и по ширине, и по высоте.
+
+    По одной букве в строке «ЕДИНСТВЕННЫЙ» уходил кеглем за нижний край
+    панели. Раскладка теперь выбирается измерением, и проверять надо оба
+    поля: короткое слово не должно потерять крупный кегль, длинное — вылезти.
+    """
+    from src.lib.render.hyperframes.templates import (
+        SPLIT_BOX, split_rows, widest)
+
+    box_w, box_h = SPLIT_BOX
+    for word in ("НЕТ", "НИЧЕГО", "ВНИМАНИЕ", "ЕДИНСТВЕННЫЙ", "НЕВОЗВРАТА"):
+        rows, size = split_rows(word)
+        assert "".join(rows) == word, (word, rows)
+        assert text_width(widest(rows), size) <= box_w + 1e-6, (word, rows, size)
+        assert len(rows) * size * 0.86 <= box_h + 1e-6, (word, rows, size)
+        # Короткое слово получает и лучшую раскладку, и полный кегль.
+        if len(word) <= 6:
+            assert rows == list(word) and size == 172, (word, rows, size)
+
+
+def test_behind_head_devices_sit_on_the_measured_crown():
+    """Строка за головой садится по макушке, а не по числу из пресета.
+
+    Голова обязана перекрывать только низ последней строки. На новом аватаре
+    константа пресета пришлась слову ровно поперёк: «НЕЧЕМ» читалось как
+    «НЕ⋯ЕМ» — голова закрыла середину. Проверяется само правило: где бы ни
+    оказалась макушка, перекрытие остаётся долей высоты знака.
+    """
+    from src.lib.render.hyperframes.templates import BEHIND_HEAD_BITE
+
+    for head_top in (300, 372, 520):
+        params = {"word": "НЕЧЕМ", "kicker": "ВОПРОС", "head_top": head_top}
+        node = render_hero("hero-headline",
+                           _hero_ctx("hero-headline", params=params)).nodes[0]
+        top = int(re.search(r'class="clip hero-headline" style="top:(\d+)px', node).group(1))
+        size = int(re.search(r"font-size:(\d+)px", node).group(1))
+        cap = size * 0.72
+        # Низ прописных — вот сколько от них съедает голова.
+        bite = (top + cap) - head_top
+        assert abs(bite - cap * BEHIND_HEAD_BITE) <= 1.5, (head_top, top, bite)
+
+    # Без измерения остаётся число пресета: догадка хуже, но лучше пустоты.
+    plain = render_hero("hero-headline",
+                        _hero_ctx("hero-headline",
+                                  params={"word": "НЕЧЕМ", "top": 190})).nodes[0]
+    assert 'style="top:190px' in plain
+
+
+def test_log_marks_the_accent_word_and_never_shows_a_bare_dash():
+    """Список копится чёрным, и одно слово в нём горит — акцентное.
+
+    Заодно проверяется, чем список не имеет права быть: куском из одной
+    пунктуации («—» отдельной строкой) и оборванным на предлоге хвостом.
+    Тире закрывает кусок так же, как запятая, поэтому отдельным словом оно
+    давало кусок из себя одного.
+    """
+    from src.p11_assemble.assemble import _hero_content, hero_params
+
+    block = {"id": "b5", "emphasis_word": "выбрать",
+             "text": "Выжить внутри нельзя. Можно только выбрать, "
+                     "сколько ты продержишься, — и лучшая стратегия на"}
+    spoken = [{"display": w, "start": 0.4 * i, "end": 0.4 * i + 0.35,
+               "block_id": "b5"}
+              for i, w in enumerate(block["text"].split())]
+    slot = {"role": "turn", "start": 0.0, "end": 8.0}
+    content = _hero_content(block, slot, None, words=spoken)
+    entries = content["entries"]
+    assert all(any(ch.isalnum() for ch in e["text"]) for e in entries), entries
+    assert not entries[-1]["text"].endswith(" на"), entries[-1]
+
+    params = hero_params("hero-log", {}, content, slot)
+    node = render_hero("hero-log", _hero_ctx("hero-log", params=params)).nodes[0]
+    assert '<b class="lg-hit">ВЫБРАТЬ,</b>' in node, node
+
+
+def test_typed_card_is_centred_by_position_and_accents_its_last_chunk():
+    """Карточка набирается кусками, последний приходит акцентом.
+
+    Центровка — позицией, а не ``translateX``: вход тянет ``transform``
+    целиком, и первый же твин стёр бы сдвиг на половину ширины — карточка
+    уехала бы вправо на весь ролик.
+    """
+    from src.lib.render.hyperframes.templates import BT_CARD_W
+
+    piece = render_hero("hero-bubble-typed", _hero_ctx("hero-bubble-typed"))
+    node = piece.nodes[0]
+    assert node.count('class="bt-chunk') == 3
+    assert 'class="bt-chunk last"' in node
+    assert f'left:{(1080 - BT_CARD_W) // 2}px' in node
+    # Каждый кусок приходит на своей отметке, а не через ровный шаг.
+    starts = sorted(float(m) for m in re.findall(
+        r'\.bt-chunk:nth-child\(\d+\)"[^;]*?,([\d.]+)\);', " ".join(piece.tweens)))
+    assert len(starts) == 3 and len(set(starts)) == 3, starts
+    assert starts == sorted(starts) and starts[-1] > starts[0], starts
+
+
+def test_source_page_shows_only_what_the_script_really_cites():
+    """Страница первоисточника не досочиняет ни домена, ни текста статьи.
+
+    Домен берётся из ссылки блока как есть; цитата — из ``overlay.highlight``.
+    Без ссылки приёма нет вовсе: страница без домена — не источник.
+    """
+    from src.p11_assemble.assemble import _hero_content, hero_params
+
+    block = {"id": "b3", "emphasis_word": "порог",
+             "text": "Ошибки упали ниже порога коррекции.",
+             "source_ref": "https://www.nature.com/articles/s41586-024-08449-y",
+             "overlay": {"type": "highlight",
+                         "content": "below the surface code threshold"}}
+    slot = {"role": "develop", "start": 0.0, "end": 5.0}
+    content = _hero_content(block, slot, None, (540, 700), title="Квантовый чип")
+    params = hero_params("hero-paper", {}, content, slot)
+    assert params["source"] == "nature.com"
+    assert params["quote"] == "below the surface code threshold"
+
+    node = render_hero("hero-paper", _hero_ctx("hero-paper", params=params)).nodes[0]
+    assert "nature.com" in node
+    # Цитата разложена по строкам, поэтому целиком её в разметке нет — но ни
+    # одно слово потеряться не имеет права: обрывок цитаты уже не цитата.
+    for word in params["quote"].split():
+        assert word in node, word
+    # В разметке страницы нет ни одного слова реплики: тело набрано полосами.
+    assert "коррекции" not in node
+
+    # Без ссылки на источник приём не собирается. Контекст здесь строится
+    # напрямую: `_hero_ctx` подмешал бы домен из набора по умолчанию.
+    bare = dict(block); bare.pop("source_ref")
+    empty = hero_params("hero-paper", {}, _hero_content(bare, slot, None), slot)
+    assert not empty.get("source")
+    ctx = TemplateCtx(index=3, start=4.5, duration=2.0, target="avatar-01",
+                      track=13, params=empty)
+    assert not render_hero("hero-paper", ctx).nodes
+
+
+def test_every_css_variable_is_defined():
+    """Опечатка в имени переменной не падает — она красит текст в чёрное.
+
+    Брендбук отдаёт цвета как ``--color-ink``; ``var(--ink)`` браузер считает
+    невалидным и берёт унаследованное значение. Так три приёма разом потеряли
+    и обводку, и акцент, и цвет пузыря — молча, в живом ролике. Здесь список
+    имён проверяется целиком, а не по одному приёму.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    root = re.search(r":root\{(.*?)\}", css, re.S)
+    assert root, "в таблице стилей нет блока :root с переменными брендбука"
+    defined = {m.group(1) for m in re.finditer(r"(--[\w-]+)\s*:", root.group(1))}
+    used = {m.group(1) for m in re.finditer(r"var\((--[\w-]+)", css)}
+    # Эти две ставит сам шаблон в атрибуте style каждого луча.
+    inline = {"--a", "--len"}
+    assert not (used - defined - inline), sorted(used - defined - inline)
+
+
+def test_every_hero_gets_its_content_from_the_pipeline():
+    """Приём, выбранный конвейером, обязан получить и содержимое.
+
+    Пропуск в отображении не падает и не пишет в лог: рендерер возвращает
+    пустой ``Piece``, и приёма в кадре просто нет. Проверяется именно связка
+    «что конвейер кладёт в params» ↔ «что рендерер оттуда читает».
+    """
+    from src.p11_assemble.assemble import _HERO_NEEDS, _hero_content, hero_params
+
+    block = {"id": "b1", "emphasis_word": "переживёшь",
+             # В тексте есть число: приёму со сменой значений больше нечем
+             # наполниться, и без него проверка его бы не задела.
+             # Число — приёму со сменой значений, «минут» и «эксперимент» —
+             # знакам за головой: одного знака им мало, это очередь.
+             # Вопрос в конце — приёму с перепиской: окно поиска ставится
+             # только там, где блок и правда спрашивает.
+             "text": "Падение в чёрную дыру ты переживёшь. Это и есть "
+                     "худшая часть: 12 минут собственного времени, "
+                     "и ни один эксперимент этого не проверит. "
+                     "Сколько бы выдержал ты?",
+             # Ссылка на источник и помеченная цитата: без них страница
+             # первоисточника не собирается, и это её правило, а не пропуск.
+             "source_ref": "arxiv.org",
+             "overlay": {"type": "highlight",
+                         "content": "maximizing survival time below the "
+                                    "event horizon"}}
+    # Тайминги слов конвейер отдаёт всегда: на них держится «список копится».
+    spoken = [{"display": w, "start": 0.4 * i, "end": 0.4 * i + 0.35,
+               "block_id": "b1"}
+              for i, w in enumerate(block["text"].split())]
+    content = _hero_content(block, {"role": "hook", "start": 0.0, "end": 6.0}, None,
+                            (540, 700), title="Можно ли выжить внутри чёрной дыры",
+                            words=spoken)
+    content["brand"] = {"label": "Google", "icon": "assets/icons/google.png"}
+
+    # Окно генерации включается предметом реплики, а не её длиной, и на блоке
+    # про чёрную дыру оно обязано молчать. Значит, содержимое ему надо брать с
+    # блока про генерацию — иначе проверка требовала бы от приёма ровно того,
+    # чего он делать не должен.
+    gen_block = {"id": "b2", "role": "develop", "emphasis_word": "четыре",
+                 "text": "Нейросеть рисует такой кадр за четыре секунды, "
+                         "и отличить его от съёмки уже нельзя."}
+    gen_content = _hero_content(gen_block, {"role": "develop", "start": 0.0, "end": 6.0},
+                                None, (540, 700), title="Кадр, которого не было",
+                                words=[{"display": w, "start": 0.4 * i,
+                                        "end": 0.4 * i + 0.35, "block_id": "b2"}
+                                       for i, w in enumerate(gen_block["text"].split())])
+
+    for name in sorted(HERO):
+        source = gen_content if "gen_prompt" in _HERO_NEEDS.get(name, ()) else content
+        params = hero_params(name, {}, source, {"role": "hook"})
+        if "plate" in _HERO_NEEDS.get(name, ()):
+            # Материал приходит не из текста блока, а из соседнего кадра.
+            params["src"] = "assets/m000_shot.mp4"
+        ctx = TemplateCtx(index=3, start=4.5, duration=3.0, target="avatar-01",
+                          track=13, params=params)
+        assert render_hero(name, ctx).nodes, f"{name} остался без содержимого"
 
 
 @pytest.mark.parametrize("name", sorted(HERO))
@@ -356,13 +677,38 @@ def test_hero_plate_without_media_draws_nothing():
     assert render_hero("hero-plate", _hero_ctx("hero-plate", params={"src": ""})) == Piece()
 
 
-def test_hero_burst_box_covers_the_longest_ray():
-    """Коробка обязана накрыть веер: на неё смотрит продюсер, а не на лучи."""
-    piece = render_hero("hero-burst", _hero_ctx("hero-burst"))
+def test_icons_stay_inside_the_work_area_and_flash_in_turn():
+    """Знаки не заезжают под колонку интерфейса и вспыхивают очередью.
+
+    Дуга несимметрична намеренно: голова стоит правее середины кадра, а правое
+    поле съедает колонка лайк/коммент/шер (§3.2). Знак, заехавший под неё, в
+    ролике не читается — проверяется именно это, а не красота дуги.
+    """
+    from src.lib.render.hyperframes.templates import ICON_SIZE, SAFE_X
+
+    piece = render_hero("hero-icons", _hero_ctx("hero-icons"))
     node = piece.nodes[0]
-    reach = max(int(n) for n in re.findall(r"--len:(\d+)px", node))
-    height = int(re.search(r"height:(\d+)px", node).group(1))
-    assert height >= reach
+    places = [(int(x), int(y)) for x, y in
+              re.findall(r"left:(-?\d+)px;top:(-?\d+)px", node)]
+    assert len(places) == 3
+    for x, _ in places:
+        assert SAFE_X[0] <= x and x + ICON_SIZE <= SAFE_X[1], (x, places)
+
+    # Каждый знак приходит и уходит, и приходит он не одновременно с соседом.
+    ins = sorted(float(m) for m in re.findall(
+        r'\.hi-mark:nth-child\(\d+\)",\{scale:[\d.]+,opacity:0\}[^;]*?\},([\d.]+)\)',
+        " ".join(piece.tweens)))
+    assert len(set(ins)) > 1, ins
+    assert any("opacity:0" in t and "tl.to(" in t for t in piece.tweens)
+
+
+def test_short_shot_gets_no_frozen_icon():
+    """Шот короче одной вспышки не получает знака вовсе.
+
+    Иначе знак замер бы в кадре с недоигранным входом: это не приём, а брак.
+    """
+    piece = render_hero("hero-icons", _hero_ctx("hero-icons", duration=0.3))
+    assert not piece.nodes and not piece.tweens
 
 
 def test_hero_split_returns_the_subject_to_the_centre():
@@ -405,7 +751,11 @@ def test_hero_plate_enters_by_approaching():
     assert piece.tweens, "панель появляется срезом"
     enter = piece.tweens[0]
     assert "opacity" not in enter, enter
-    assert "{scale:0.86}" in enter, f"панель обязана расти, а не отъезжать: {enter}"
+    # Проверяется правило, а не число: числа словаря живут в самом словаре и
+    # меняются, когда меняется вкус к движению.
+    start = float(re.search(r"\{scale:([\d.]+)", enter).group(1))
+    assert start < 1.0, f"панель обязана расти, а не отъезжать: {enter}"
+    assert "ease:\"back" not in enter, f"отскок — это игрушка: {enter}"
 
 
 def test_hero_headline_without_a_kicker_tweens_only_what_it_drew():
@@ -419,8 +769,21 @@ def test_hero_headline_without_a_kicker_tweens_only_what_it_drew():
 def test_hero_knockout_does_not_flood_the_frame_with_accent():
     """§3.3.1 держит акцент в 10–12 % площади, а приём закрывает кадр целиком."""
     node = render_hero("hero-knockout", _hero_ctx("hero-knockout")).nodes[0]
-    assert "var(--color-ink)" in node
+    assert "var(--color-knockout)" in node
     assert "accent" not in node
+
+
+def test_knockout_fill_turns_over_with_the_stage():
+    """Буквы — дырки: тёмная заливка на тёмной сцене даёт чёрное по чёрному."""
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    base = [rule for rule in css.split("}") if "--color-knockout:" in rule]
+    assert base, "цвет заливки выбивки не объявлен"
+    dark = [rule for rule in base if ".stage-dark" in rule]
+    assert dark, "на тёмной сцене заливка не переворачивается"
+    assert "bg-light" in dark[0], dark[0]
 
 
 def test_hero_knockout_fill_is_a_brandbook_token():
@@ -478,9 +841,20 @@ def test_entrance_without_a_fade_grows_instead_of_shrinking():
 
 
 def test_entrance_with_a_fade_keeps_the_dictionary_value():
+    """С проявлением вход идёт из значения словаря, без — из зеркального.
+
+    Число берётся из словаря, а не переписывается сюда: словарь и есть
+    источник правды о том, откуда приходит элемент.
+    """
     import re
+    spec = float(ENTRANCES["zoom-in"]["scale"])
     tween = entrance_tweens("#inner", 0.0, name="zoom-in", fade=True)[0]
-    assert float(re.search(r"\{scale:([\d.]+)", tween).group(1)) == 1.14
+    assert float(re.search(r"\{scale:([\d.]+)", tween).group(1)) == spec
+
+    # Без проявления вход обязан **расти**: уменьшение без проявления читается
+    # как отъезд, а не как появление.
+    plain = entrance_tweens("#inner", 0.0, name="zoom-in", fade=False)[0]
+    assert float(re.search(r"\{scale:([\d.]+)", plain).group(1)) < 1.0
 
 
 def test_drift_never_overlaps_the_entrance():
@@ -516,6 +890,55 @@ def test_hero_clips_of_one_device_never_share_a_track(name):
     assert len(tracks) == len(set(tracks)), f"{name}: клипы делят трек {tracks}"
 
 
+def test_generation_result_arrives_after_the_prompt_and_inside_the_window():
+    """Результат — отдельный клип: у него своё начало, и оно позже промпта.
+
+    Прозрачность клипу запрещена, поэтому «картинка появилась» делается не
+    проявлением, а тем, что клипа до этого момента просто нет. И лечь он обязан
+    в окно, а не рядом: рамка и медиа считаются одними числами (``CG_CARD``).
+    """
+    from src.lib.render.hyperframes.templates import CG_CARD, _cg_media_box
+
+    ctx = _hero_ctx("hero-chat-generate", duration=6.0)
+    piece = render_hero("hero-chat-generate", ctx)
+    starts = {re.search(r'id="([^"]+)"', node).group(1):
+              float(re.search(r'data-start="([\d.]+)"', node).group(1))
+              for node in piece.nodes}
+    chrome, media = f"cg-{ctx.index:02d}", f"cg-{ctx.index:02d}-m"
+    assert starts[chrome] == pytest.approx(ctx.start)
+    assert starts[media] > starts[chrome] + 0.6
+
+    mx, my, mw, mh = _cg_media_box()
+    left, top, width, height = CG_CARD
+    assert left <= mx and mx + mw <= left + width
+    assert top <= my and my + mh <= top + height
+    node = next(n for n in piece.nodes if 'id="' + media + '"' in n)
+    assert f"left:{mx}px" in node and f"top:{my}px" in node
+
+
+def test_generation_result_never_outlives_its_shot():
+    """Короткий кадр ужимает ожидание, а не выпускает клип за границу окна."""
+    ctx = _hero_ctx("hero-chat-generate", duration=2.0)
+    piece = render_hero("hero-chat-generate", ctx)
+    media = next(n for n in piece.nodes if n.startswith("<video"))
+    start = float(re.search(r'data-start="([\d.]+)"', media).group(1))
+    dur = float(re.search(r'data-duration="([\d.]+)"', media).group(1))
+    assert start >= ctx.start
+    assert start + dur <= ctx.start + ctx.duration + 1e-6
+    assert dur >= 0.4
+
+
+def test_generation_result_is_capped_by_the_material_length():
+    """Материал короче кадра укорачивает картинку, но не само окно."""
+    ctx = _hero_ctx("hero-chat-generate", duration=6.0,
+                    params={"media_sec": 0.9})
+    piece = render_hero("hero-chat-generate", ctx)
+    chrome = next(n for n in piece.nodes if n.startswith("<div"))
+    media = next(n for n in piece.nodes if n.startswith("<video"))
+    assert float(re.search(r'data-duration="([\d.]+)"', chrome).group(1)) == ctx.duration
+    assert float(re.search(r'data-duration="([\d.]+)"', media).group(1)) == pytest.approx(0.9)
+
+
 def test_knockout_sits_on_the_face_not_the_torso():
     """Буквы выбивки — дырки: на уровне торса сквозь них видна тёмная одежда,
     неотличимая от тёмной заливки, и слово пропадает серединой."""
@@ -531,6 +954,44 @@ def test_knockout_sits_on_the_face_not_the_torso():
     # Без данных о лице остаётся середина кадра.
     mid = render_hero("hero-knockout", _hero_ctx("hero-knockout")).nodes[0]
     assert 700 < int(re.search(r'y="(\d+)"', mid).group(1)) < 1200
+
+
+def test_knockout_letters_stay_on_skin_not_on_hair():
+    """Выше бровей за дырками букв тёмные волосы — то же тёмное по тёмному.
+
+    Проверяется не число, а правило: нарисованная часть прописных целиком
+    лежит в полосе кожи, посчитанной по измеренной коробке головы.
+    """
+    import re
+
+    from src.lib.render.hyperframes.templates import face_band
+
+    for word in ("ЕДИНСТВЕННАЯ", "ЖИВОЙ ЭФИР", "ДА"):
+        params = {"head_top": 366, "head_h": 486, "word": word}
+        node = render_hero("hero-knockout",
+                           _hero_ctx("hero-knockout", params=params)).nodes[0]
+        size = int(re.search(r'font-size="(\d+)"', node).group(1))
+        rows = [int(y) for y in re.findall(r'<text x="540" y="(\d+)"', node)]
+        top, bottom = face_band(params)
+        assert rows, word
+        assert rows[0] - 0.72 * size >= top - 1, f"{word}: буквы залезли на волосы"
+        assert rows[-1] <= bottom + 1, f"{word}: буквы сползли на одежду"
+
+
+def test_knockout_shrinks_to_the_face_but_not_below_readable():
+    """Двухстрочное слово в лицо целиком не влезает — его мало опустить."""
+    import re
+
+    wide = _hero_ctx("hero-knockout", params={"word": "ЖИВОЙ ЭФИР"})
+    tight = _hero_ctx("hero-knockout",
+                      params={"word": "ЖИВОЙ ЭФИР", "head_top": 366,
+                              "head_h": 486})
+    free = int(re.search(r'font-size="(\d+)"',
+                         render_hero("hero-knockout", wide).nodes[0]).group(1))
+    fit = int(re.search(r'font-size="(\d+)"',
+                        render_hero("hero-knockout", tight).nodes[0]).group(1))
+    assert fit < free, "кегль не ужался под полосу лица"
+    assert fit >= 150, "выбивка измельчала до подписи"
 
 
 def test_headline_size_is_measured_too():
@@ -558,3 +1019,142 @@ def test_bubble_leaves_no_residual_scale_on_the_shared_avatar():
     assert len(avatar) == 1, f"на аватаре больше одного твина: {avatar}"
     to_state = re.search(r"\},\{([^}]*)\}", avatar[0]).group(1)
     assert "scale:1.0," in to_state + ",", f"приём оставляет масштаб: {to_state}"
+
+
+def test_scene_follows_the_topic_of_the_video():
+    """Сцена выбирается темой ролика, и короткая основа обязана совпасть.
+
+    «Чёрная дыра» — основа «дыр», три буквы. У знаков такая основа сверяется
+    словом целиком, и ролик про горизонт событий получал нейтральную комнату:
+    «дыры» ≠ «дыр». У сцен правило другое (см. :func:`src.lib.backdrop._matches`),
+    и проверяется здесь именно этот случай.
+    """
+    from src.lib.backdrop import DEFAULT_SCENE, pick_scene
+
+    assert pick_scene("Что происходит внутри чёрной дыры") == "horizon"
+    assert pick_scene("", "Кубит держится доли секунды") == "grid"
+    assert pick_scene("Ракета села на баржу") == "space"
+    assert pick_scene("Как они делят деньги") == "room"
+    # Тема не опознана — фон нейтральный, а не случайный.
+    assert pick_scene("Просто разговор ни о чём") == DEFAULT_SCENE
+
+
+def test_every_scene_is_drawn_and_has_a_tone():
+    """Сцена без стилей — белый прямоугольник за ведущим, молча."""
+    from src.lib.backdrop import SCENES, backdrop_css, describe, tone
+
+    css = backdrop_css()
+    for name in SCENES:
+        assert f".vfx.scene-{name}{{" in css, name
+        assert tone(name) in ("dark", "light"), name
+        assert describe(name), name
+
+
+def test_text_on_a_dark_stage_does_not_stay_ink_black():
+    """То, что лежит прямо на фоне, обязано менять цвет вместе с ним.
+
+    Заголовок за головой, тема, знаки и накопительный список рисуются поверх
+    сцены без подложки. На тёмной сцене чернильный цвет из брендбука пропадает
+    в фоне — цвет берётся из ``--color-on-stage``, а тон сцены его переключает.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    assert "--color-on-stage" in css
+    dark = re.search(r"(?<![#\w-])\.stage-dark\{([^}]*)\}", css)
+    assert dark, "тёмная сцена не переопределяет цвет надписей на фоне"
+    assert "--color-on-stage" in dark.group(1)
+
+    on_stage = (".hero-title-behind .tb-head", ".hero-log .lg-row",
+                ".hero-icons", ".hero-headline .hh-kicker")
+    for selector in on_stage:
+        # Правил у селектора может быть несколько: цвет достаточно задать в
+        # одном из них.
+        rules = [m.group(2) for m in
+                 re.finditer(r"([^{}]+)\{([^{}]*)\}", css)
+                 if selector in m.group(1)]
+        assert rules, selector
+        assert any("var(--color-on-stage)" in body for body in rules), selector
+
+
+def test_typed_chunks_do_not_run_together():
+    """Пробел в `::after` внутри `inline-block` схлопывается и не рисуется.
+
+    На кадре это читалось как «комокгаза»: два куска карточки встык. Отступ
+    ставится полем блока, а не текстовым узлом внутри него.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.brand_css import build_css
+
+    css = build_css(load_config().brandbook, fonts={})
+    rules = [r for r in css.split("}") if ".bt-chunk" in r and "inline-block" in r]
+    assert rules, "кусок карточки перестал быть блочным"
+    assert "margin-right" in rules[0], rules[0]
+    assert ".bt-chunk::after" not in css, "пробел снова внутри блока"
+
+
+# --- экспонат (§5.4) ----------------------------------------------------------
+
+def test_the_exhibit_label_never_rides_over_the_picture():
+    """На 0047 «ФИЗИКУ» было закрыто материалом ровно наполовину.
+
+    Подпись прижималась к низу плиты, и, переросши остаток высоты, лезла вверх
+    — под картинку. Проверяется геометрией, а не глазами: подпись начинается
+    ниже нижнего края материала и в плиту укладывается целиком.
+    """
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.templates import EX_PIC, EX_PLATE_H, hero_css
+
+    css = hero_css(load_config().brandbook)
+    rule = re.search(r"\.hero-exhibit\{([^}]*)\}", css).group(1)
+    pad_top = int(re.search(r"padding:(\d+)px", rule).group(1))
+    assert pad_top >= EX_PIC[1] + EX_PIC[3], "подпись начинается выше картинки"
+    # Имя 88 px, уточнение в две строки по 38 px и кредит 24 px с полями по 14.
+    assert EX_PLATE_H - pad_top - 46 >= 88 + 14 + 2 * 46 + 14 + 24
+    assert "overflow:hidden" in rule, "подписи нечем удержаться внутри плиты"
+
+
+def test_the_exhibit_caption_is_a_whole_phrase():
+    """Подпись обрывалась на счёте слов: «…и сегодня это»."""
+    from src.p11_assemble.assemble import _caption
+
+    text = ("Скважину закрыли в девяносто втором, и сегодня это заваренный люк "
+            "посреди тундры. Мы упёрлись не в бюджет.")
+    assert _caption(text) == "Скважину закрыли в девяносто втором"
+    # Короткая фраза уходит целиком.
+    assert _caption("Её там не оказалось. Дальше шёл гранит.") == "Её там не оказалось"
+    # Нечего взять целиком — подписи не будет, выдумывать текст неоткуда.
+    assert _caption("Одно длинное предложение без единого знака препинания "
+                    "которое в подпись под экспонатом никак не помещается") == ""
+
+
+def test_a_generated_picture_gets_no_museum_label():
+    """Табличка — утверждение о материале, и под генерацией она лжёт формой.
+
+    В кадре она вдобавок подписывала «REDSHIFT / GENERATED»: ровно то, чего
+    заказчик просил в кадре не показывать.
+    """
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _hero_device
+
+    path = Path("templates/manifest.json")
+    catalog = TemplateCatalog(path, json.loads(path.read_text("utf-8")))
+    content = {"word": "ФИЗИКУ", "title": "Кольская сверхглубокая",
+               "caption": "Скважину закрыли в девяносто втором", "lines": ["а", "б"],
+               "punch": ["а", "б"], "entries": ["а"], "figures": [], "face": (540, 570)}
+    slot = {"index": 3, "role": "develop", "duration": 5.0, "start": 0.0, "end": 5.0}
+    picked = set()
+    for generated in (True, False):
+        plate = {"file": "/w/a.mp4", "duration_sec": 5.0, "credit": "NASA",
+                 "ai_generated": generated}
+        for seed in range(40):
+            entry = _hero_device(catalog, slot=slot, content=content,
+                                 has_alpha=True, plate_src=plate,
+                                 recent_videos=[], exclude=[], seed=seed)
+            if entry and generated:
+                assert entry["renderer"] != "hero-exhibit", entry["template"]
+            if entry and not generated:
+                picked.add(entry["renderer"])
+    # И обратное: на настоящем материале приём из каталога не исчез.
+    assert "hero-exhibit" in picked

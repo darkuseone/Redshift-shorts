@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from ..lib.logging import get_logger
@@ -31,14 +32,31 @@ ROLE_MODE_PREFERENCE: dict[str, tuple[str, ...]] = {
     "cta":      ("A", "C"),
 }
 
-# Подложка выбирается по категории и наличию поворота (§14.2).
-MUSIC_BY_CATEGORY = {
-    "space": "cosmic_calm",
-    "ai": "tech_tension",
-    "tech": "neutral_drive",
-    "science": "discovery_warm",
-    "medicine": "discovery_warm",
+# Подложка выбирается по тегам, а не по имени файла (§14.2).
+#
+# Заказчик прислал живые записи и попросил: «Пометь их тэгами для удобного
+# использования в видео, чтобы монтаж умел брать их самостоятельно». Тег
+# честнее слота: у записи их несколько, и подложка находится по совпадению
+# смыслов. Здесь задаётся, чего мы хотим от подложки в каждой рубрике, а
+# ``pick_bed`` уже ищет, что этому ближе всего из того, что есть в наличии.
+MUSIC_TAGS_BY_CATEGORY: dict[str, tuple[str, ...]] = {
+    "space":    ("space", "ambient", "wide"),
+    "ai":       ("tech", "pulse", "driving"),
+    "tech":     ("tech", "driving"),
+    "science":  ("space", "strings", "bright"),
+    "medicine": ("calm", "piano", "sparse"),
 }
+MUSIC_TAGS_DEFAULT: tuple[str, ...] = ("space", "ambient", "calm")
+# Поворот в сюжете просит нажима, и здесь рубрика уступает драматургии.
+MUSIC_TAGS_ON_TWIST: tuple[str, ...] = ("tense", "driving", "strings")
+
+
+def music_tags_for(category: str, *, twist: bool = False) -> tuple[str, ...]:
+    """Каких тегов ждём от подложки под эту рубрику."""
+    if twist:
+        return MUSIC_TAGS_ON_TWIST
+    return MUSIC_TAGS_BY_CATEGORY.get(category or "", MUSIC_TAGS_DEFAULT)
+
 
 AVATAR_MODES = ("A", "B")   # режимы, в которых аватар присутствует в кадре
 
@@ -208,9 +226,10 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
     hl_lo, hl_hi = limits.get("highlight_per_video", [1, 3])
     scripted_hl = sum(1 for b in blocks if b["overlay"].get("type") == "highlight")
 
-    music_mood = meta.get("music_mood") or MUSIC_BY_CATEGORY.get(meta.get("category", ""), "neutral_drive")
-    if any(b["role"] == "twist" for b in blocks) and meta.get("category") in ("ai", "tech"):
-        music_mood = meta.get("music_mood") or "tech_tension"
+    twist = (any(b["role"] == "twist" for b in blocks)
+             and meta.get("category") in ("ai", "tech"))
+    music_tags = list(music_tags_for(meta.get("category", ""), twist=twist))
+    music_mood = meta.get("music_mood") or ""
 
     buffer_pct = float(cfg.get("elevenlabs.length_buffer_pct", 22))
     target = float(meta.get("target_duration_sec", total_sec))
@@ -240,6 +259,7 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
             "bg_vfx": int(limits.get("bg_vfx_per_video", 2)) if meta.get("allow_bg_vfx") else 0,
         },
         "music_mood": music_mood,
+        "music_tags": music_tags,
         "sources": script.get("sources", []),
         "cta": script.get("cta", {}),
         "modes_by_block": {b["id"]: b["mode"] for b in blocks},
@@ -270,7 +290,7 @@ def run_step(ctx) -> dict[str, Any]:
         "avatar_share": share,
         "modes": ",".join(f"{b['id']}:{b['mode']}" for b in draft["blocks"]),
         "tts_target_sec": draft["tts_target_sec"],
-        "music": draft["music_mood"],
+        "music": ", ".join(draft["music_tags"]),
     })
     return {"avatar_share": share, "tts_target_sec": draft["tts_target_sec"],
-            "music_mood": draft["music_mood"]}
+            "music_mood": draft["music_mood"], "music_tags": draft["music_tags"]}

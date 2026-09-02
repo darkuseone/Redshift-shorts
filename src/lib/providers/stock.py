@@ -88,6 +88,19 @@ class StockProvider(Provider):
     def _max_height(self) -> int:
         return int(self.cfg.get("stock.max_download_height", MAX_HEIGHT_DEFAULT))
 
+    def _fits_resolution(self, width: Any, height: Any) -> bool:
+        """§3.6.1 — потолок 1080p, но по короткой стороне.
+
+        Ролик вертикальный, 1080×1920. Сравнивать с потолком высоту значит
+        отбраковывать ровно тот формат, ради которого всё и делается: у
+        вертикального исходника 1080×1920 высота 1920, и он «выше 1080p»
+        только по названию оси. Класс разрешения задаёт короткая сторона —
+        1080×1920 это 1080p, а 2160×3840 остаётся 4K, и его по-прежнему не
+        берём.
+        """
+        short = min(int(width or 0), int(height or 0))
+        return short <= self._max_height() if short else True
+
     def _http_download(self, url: str, dst: Path) -> Path:
         import requests
 
@@ -119,6 +132,10 @@ _LAVFI_PATTERNS = (
 )
 
 _MOCK_SIZES = ((1080, 1920), (1920, 1080), (1080, 1080), (1280, 720), (720, 1280))
+
+# Оттенок фирменного красного (#C8453D и соседи стоят на 3–4°). Мок держится
+# около него, чтобы отдавать материал, похожий на настоящий сток канала.
+_BRAND_HUE_DEG = 3.5
 
 
 class MockStock(StockProvider):
@@ -159,9 +176,22 @@ class MockStock(StockProvider):
             scale = self._max_height() / max(width, height)
             width, height = int(width * scale) // 2 * 2, int(height * scale) // 2 * 2
 
-        hue = (seed % 360) / 360.0
-        c0 = _hex_color(hue, 0.55, 0.85)
-        c1 = _hex_color((hue + 0.12) % 1.0, 0.7, 0.35)
+        # Оттенок ложится в палитру канала у трёх кандидатов из четырёх, а
+        # четвёртый уходит куда угодно. Раньше он был равномерным по кругу, и
+        # мок отдавал материал, который отбор по палитре (§3.1) обязан
+        # браковать: годным оказывался примерно каждый девятый кадр, слоты
+        # уходили в генерацию, и мок-прогон валился по QC-14 на доле AI-футажа.
+        # Настоящий сток так себя не ведёт — на живом 0047 прошло 10 кадров из
+        # 12, — а фикстура, которую конвейер обязан отвергать, не проверяет
+        # ветку приёма вообще.
+        if seed % 4:
+            hue = ((_BRAND_HUE_DEG + ((seed % 31) - 15)) % 360) / 360.0
+            c0 = _hex_color(hue, 0.5, 0.30)
+            c1 = _hex_color(hue, 0.6, 0.12)
+        else:
+            hue = (seed % 360) / 360.0
+            c0 = _hex_color(hue, 0.55, 0.85)
+            c1 = _hex_color((hue + 0.12) % 1.0, 0.7, 0.35)
         pattern = _LAVFI_PATTERNS[seed % len(_LAVFI_PATTERNS)]
         duration = max(2.0, candidate.duration_sec or 4.0)
         source = pattern.format(w=width, h=height, c0=f"0x{c0}", c1=f"0x{c1}",
@@ -214,12 +244,12 @@ class PexelsStock(StockProvider):
 
         data = call_with_retry(_call, **self._retry_kwargs("Pexels search"))
         out: list[StockCandidate] = []
-        max_h = self._max_height()
 
         if kind == "video":
             for item in data.get("videos", []):
                 files = [f for f in item.get("video_files", [])
-                         if f.get("height") and int(f["height"]) <= max_h]
+                         if f.get("height")
+                         and self._fits_resolution(f.get("width"), f.get("height"))]
                 if not files:
                     continue
                 best = max(files, key=lambda f: int(f.get("height") or 0))
@@ -277,12 +307,12 @@ class PixabayStock(StockProvider):
             return resp.json()
 
         data = call_with_retry(_call, **self._retry_kwargs("Pixabay search"))
-        max_h = self._max_height()
         out: list[StockCandidate] = []
         for item in data.get("hits", []):
             if kind == "video":
                 variants = [v for v in (item.get("videos") or {}).values()
-                            if v.get("height") and int(v["height"]) <= max_h]
+                            if v.get("height")
+                            and self._fits_resolution(v.get("width"), v.get("height"))]
                 if not variants:
                     continue
                 best = max(variants, key=lambda v: int(v.get("height") or 0))
@@ -353,7 +383,9 @@ class NasaStock(StockProvider):
                 license_confirmed=confirmed,
                 attribution=f"NASA / {meta.get('center', '')}",
                 tags=[str(k) for k in (meta.get("keywords") or [])][:10],
-                meta={"nasa_id": nasa_id, "collection_href": item.get("href", "")},
+                meta={"nasa_id": nasa_id, "collection_href": item.get("href", ""),
+                      "title": meta.get("title", ""),
+                      "description": (meta.get("description") or "")[:400]},
             ))
         self.charge("search", 1, "request", 0.0)
         return out
@@ -510,6 +542,35 @@ class FreepikStock(StockProvider):
     def _headers(self) -> dict[str, str]:
         return {"x-freepik-api-key": self.api_key, "Accept": "application/json"}
 
+    @staticmethod
+    def _duration_sec(raw: Any) -> float:
+        """Длительность ролика в секундах.
+
+        Каталог отдаёт её строкой «ЧЧ:ММ:СС», и ровно на этом поле поиск падал
+        целиком: ``float("00:00:05")`` бросает ValueError, ошибка одного поля
+        уносила весь источник, и Freepik не дал ни одного кандидата ни по
+        одному запросу за весь прогон. Отсюда два правила: понимать обе записи
+        и не бросать никогда — неизвестная длительность это 0.0, а не
+        потерянный источник.
+        """
+        if raw in (None, ""):
+            return 0.0
+        if isinstance(raw, (int, float)):
+            return float(raw) / 1000.0        # числом приходят миллисекунды
+        text = str(raw).strip()
+        if ":" in text:
+            seconds = 0.0
+            for part in text.split(":"):
+                try:
+                    seconds = seconds * 60 + float(part)
+                except ValueError:
+                    return 0.0
+            return seconds
+        try:
+            return float(text) / 1000.0
+        except ValueError:
+            return 0.0
+
     def search(self, query: str, *, kind: str = "video", limit: int = 8
                ) -> list[StockCandidate]:
         import requests
@@ -537,29 +598,40 @@ class FreepikStock(StockProvider):
             item_id = str(item.get("id") or "")
             if not item_id:
                 continue
-            premium = bool(item.get("premium", item.get("licenses", [{}])[0]
-                                    .get("type") == "premium"))
-            width = int((item.get("dimensions") or {}).get("width") or 0)
-            height = int((item.get("dimensions") or {}).get("height") or 0)
-            if height and height > self._max_height():
-                continue                    # §3.6.1: выше 1080p не берём
-            out.append(StockCandidate(
-                id=f"freepik_{item_id}",
-                source="freepik", kind=kind, query=query,
-                width=width, height=height,
-                duration_sec=float(item.get("duration") or 0) / 1000.0,
-                page_url=str(item.get("url") or ""),
-                preview_url=str((item.get("image") or {}).get("source", {}).get("url", "")),
-                license=self.license_name,
-                # Подтверждаем лицензию поштучно: свободный материал — сразу,
-                # премиальный — как доступный по действующей подписке.
-                license_confirmed=True,
-                attribution=f"Freepik / {item.get('author', {}).get('name', '')}".strip(" /"),
-                author=str((item.get("author") or {}).get("name") or ""),
-                tags=[t.get("name", "") for t in (item.get("tags") or [])][:8],
-                meta={"premium": premium, "ai_generated": bool(item.get("ai_generated"))},
-            ))
+            try:
+                out.append(self._candidate(item, item_id, kind, query))
+            except Exception as exc:      # noqa: BLE001 — см. ниже
+                # Один странный элемент выдачи не должен уносить весь источник.
+                # Так и вышло: разбор длительности бросил ValueError, и Freepik
+                # — первый по очереди источник — оказался недоступен целиком.
+                _log.warning("freepik: пропущен элемент выдачи",
+                             extra={"id": item_id, "error": str(exc)[:200]})
         return out
+
+    def _candidate(self, item: dict[str, Any], item_id: str, kind: str,
+                   query: str) -> StockCandidate:
+        premium = bool(item.get("premium", item.get("licenses", [{}])[0]
+                                .get("type") == "premium"))
+        width = int((item.get("dimensions") or {}).get("width") or 0)
+        height = int((item.get("dimensions") or {}).get("height") or 0)
+        if not self._fits_resolution(width, height):
+            raise ValueError(f"{width}×{height} выше потолка §3.6.1")
+        return StockCandidate(
+            id=f"freepik_{item_id}",
+            source="freepik", kind=kind, query=query,
+            width=width, height=height,
+            duration_sec=self._duration_sec(item.get("duration")),
+            page_url=str(item.get("url") or ""),
+            preview_url=str((item.get("image") or {}).get("source", {}).get("url", "")),
+            license=self.license_name,
+            # Подтверждаем лицензию поштучно: свободный материал — сразу,
+            # премиальный — как доступный по действующей подписке.
+            license_confirmed=True,
+            attribution=f"Freepik / {item.get('author', {}).get('name', '')}".strip(" /"),
+            author=str((item.get("author") or {}).get("name") or ""),
+            tags=[tag.get("name", "") for tag in (item.get("tags") or [])][:8],
+            meta={"premium": premium, "ai_generated": bool(item.get("ai_generated"))},
+        )
 
     def download(self, candidate: StockCandidate, dst: Path) -> Path:
         import requests

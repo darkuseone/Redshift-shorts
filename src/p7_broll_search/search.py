@@ -24,12 +24,15 @@ from typing import Any, Iterable
 
 import yaml
 
-from ..lib.ffmpeg import extract_frames, probe
+from ..lib.ffmpeg import extract_frames, grade_to_palette, probe
 from ..lib.logging import get_logger
 from ..lib.manifest import FootageIndex, open_library
+from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
+from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import build_queries, classify_intent
+from ..lib.render.shots import slim_video
 
 _log = get_logger("p7")
 
@@ -45,9 +48,18 @@ def _sources_for(intent_kind: str, routing: dict[str, Any]) -> list[str]:
     return list(table.get(intent_kind) or table.get("default", ["pexels"]))
 
 
-def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float) -> str | None:
+def _license_mode(source: str, routing: dict[str, Any]) -> str:
+    """Как источник подтверждает лицензию: ``per_item``, ``source_default`` или
+    ``owner_decision`` — последнее принимает владелец канала, а не конвейер."""
+    spec = ((routing or {}).get("sources") or {}).get(source) or {}
+    return str(spec.get("license_check") or "per_item")
+
+
+def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
+                   routing: dict[str, Any] | None = None) -> str | None:
     """Шаг 1 §7.3 — дешёвая отбраковка без vision. Возвращает причину или None."""
-    if not candidate.license_confirmed:
+    if (not candidate.license_confirmed
+            and _license_mode(candidate.source, routing or {}) != "owner_decision"):
         return "лицензия не подтверждена (§7.2.7)"
     max_h = int(cfg.get("stock.max_download_height", 1080))
     if candidate.height and candidate.height > max_h and candidate.width > max_h:
@@ -64,6 +76,31 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float) -> str 
     lowered = f"{candidate.attribution} {' '.join(candidate.tags)}".lower()
     if any(bad in lowered for bad in ("watermark", "shutterstock", "getty", "preview")):
         return "признаки водяного знака или чужого стока"
+    return None
+
+
+def _article_for(slot: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any] | None:
+    """Статья, на которую ссылается блок этого слота, — или ``None``.
+
+    Связь идёт через ``source_ref`` блока, а не через «первый источник ролика»:
+    кадр обязан иллюстрировать ту самую статью, которую в этот момент цитируют,
+    иначе это уже не реальный материал, а картинка по теме.
+    """
+    if slot.get("asset_role") != "evidence":
+        return None
+    block = next((b for b in plan.get("blocks", [])
+                  if b.get("id") == slot.get("block_id")), None)
+    ref = str((block or {}).get("source_ref") or "").strip().lower()
+    if not ref:
+        return None
+    for source in plan.get("sources", []) or []:
+        domain = str(source.get("domain") or "").lower()
+        url = str(source.get("url") or "")
+        if not url:
+            continue
+        if ref in (domain, url.lower()) or (domain and domain in ref):
+            return {"url": url, "domain": domain,
+                    "title": source.get("title", "")}
     return None
 
 
@@ -93,6 +130,22 @@ def run_step(ctx) -> dict[str, Any]:
 
     slots = [s for s in plan["slots"] if s["needs_asset"] and s["asset_role"] in ("broll", "evidence")]
     downloads = 0
+    researched = 0
+    press_used = 0
+    press = build_press_provider(cfg, ctx.costs, sources=routing)
+    palette_rules = dict(cfg.brandbook.get("color_rules", {}).get("footage_palette", {}))
+    # Пресс-кадру палитра канала прощается шире: это цитата в рамке источника, а
+    # не фон кадра, и по общему порогу он не проходил бы почти никогда.
+    press_palette_max = float(palette_rules.get("press_off_share_max", 0.35))
+    grade_rules = {k: float(v) for k, v in
+                   (palette_rules.get("press_grade") or {}).items()
+                   if k in ("saturation", "red_lift", "contrast")}
+    # Вес принимаемого материала. Хранилище живёт в репозитории, и клип на
+    # 45 МБ остаётся в истории git навсегда — ужимать надо на приёме.
+    slim_max_sec = float(cfg.get("stock.keep_sec", 20.0))
+    slim_crf = int(cfg.get("stock.intake_crf", 23))
+    max_short_side = int(cfg.get("stock.max_download_height", 1080))
+
     stage1_rejected: list[dict[str, Any]] = []
     candidates_out: list[dict[str, Any]] = []
     seen_hashes: list[tuple[str, list[str]]] = []
@@ -139,6 +192,9 @@ def run_step(ctx) -> dict[str, Any]:
                 "phashes": record.phashes or ([record.phash] if record.phash else []),
                 "storage_key": record.file, "tags": record.tags,
                 "vision_summary": record.vision_summary, "prior_score": record.score,
+                # Смысл, за который оценка записи получена. Пусто у засева и у
+                # старых записей — такой материал судится заново.
+                "prior_intent": record.extra.get("judged_intent", ""),
                 "ai_generated": record.ai_generated, "mock": record.mock,
                 "attribution": record.extra.get("attribution", ""),
                 "page_url": record.url_origin,
@@ -153,62 +209,76 @@ def run_step(ctx) -> dict[str, Any]:
                      slot=slot["index"])
             continue
 
-        # --- 2. внешние стоки -------------------------------------------------
-        # Сначала собираем метаданные по всем запросам (это бесплатно), затем
-        # ранжируем и качаем только лучших. §7.2.4 даёт 50 скачиваний на ролик:
-        # если тратить их подряд, последние слоты останутся пустыми.
-        found_all: list[tuple[str, Any, str]] = []      # (source, candidate, query)
-        for query in queries:
-            for source in source_order:
-                provider = providers.get(source)
-                if provider is None:
-                    continue
-                try:
-                    for candidate in provider.search(query, kind="video", limit=per_query):
-                        found_all.append((source, candidate, query))
-                except Exception as exc:  # noqa: BLE001 — источник не должен ронять прогон
-                    ctx.warn(f"источник {source} недоступен: {exc}", source=source, query=query)
+        def accept(provider: Any, candidate: Any, query: str, *,
+                   origin: str = "stock", palette_max: float | None = None,
+                   grade: bool = False) -> bool:
+            """Скачать кандидата, промерить и положить в слот. False — не взяли.
 
-        passed: list[tuple[str, Any, str]] = []
-        for source, candidate, query in found_all:
-            reason = _stage1_reject(candidate, cfg, float(slot["duration"]))
-            if reason:
-                stage1_rejected.append({"id": candidate.id, "source": candidate.source,
-                                        "reason": reason, "query": query})
-            else:
-                passed.append((source, candidate, query))
+            Отдельной функцией, а не телом цикла: тем же путём идёт кадр со
+            страницы статьи, и разъехавшись, он потерял бы дедуп, палитру и
+            учёт скачиваний — то есть всё, ради чего этот путь и написан.
+            """
+            nonlocal downloads
 
-        passed.sort(key=lambda item: _prefetch_rank(item[1], source_order, float(slot["duration"])))
-
-        remaining_slots = max(1, len(slots) - slots.index(slot))
-        budget = max(2, (max_downloads - downloads) // remaining_slots)
-        taken = 0
-
-        for source, candidate, query in passed:
-            if taken >= min(budget, per_query) or downloads >= max_downloads:
-                break
             key = _cache_key(candidate)
             local_file = ctx.wpath("broll", "raw", Path(key).name)
+            store_after_checks = False
             if ctx.storage.exists(key):
                 ctx.storage.get(key, local_file)
             else:
                 try:
-                    providers[source].download(candidate, local_file)
+                    provider.download(candidate, local_file)
                 except Exception as exc:  # noqa: BLE001
                     ctx.warn(f"скачивание не удалось: {exc}", id=candidate.id)
-                    continue
-                ctx.storage.put(key, local_file)
+                    return False
+                if grade:
+                    # Грейд ложится в storage вместо исходника, а не рядом с
+                    # ним. Иначе возобновлённый прогон, у которого нет рабочего
+                    # каталога, вытянет по ключу неотгрейженный кадр — и в
+                    # ролик поедет цвет, который отбор уже отклонял.
+                    try:
+                        graded = local_file.with_name(
+                            f"{local_file.stem}_graded{local_file.suffix}")
+                        grade_to_palette(local_file, graded, **grade_rules)
+                        graded.replace(local_file)
+                    except Exception as exc:  # noqa: BLE001 — грейд не роняет прогон
+                        ctx.warn(f"грейд не удался, кадр берётся как есть: {exc}",
+                                 id=candidate.id)
+                # Синтетика мок-режима в общую базу не кладётся — ни записью,
+                # ни файлом. Запись индекс отклоняет с прошлой находки, а файл
+                # оставался: мок-прогон намывал в assets/footage десятки клипов,
+                # и `git add -A` уносил их в репозиторий. Девятнадцать мегабайт
+                # за один прогон CI, который гоняется на каждом коммите.
+                # В хранилище файл кладётся не здесь, а ниже — после того,
+                # как пройдёт палитру и дедуп. Прежде клали сразу после
+                # скачивания, и отбракованный кадр всё равно оседал в
+                # репозитории навсегда: десять розовых клипов, вычищенных
+                # руками, вернулись первым же прогоном, потому что поиск
+                # находит их снова, а гейт палитры срабатывал уже после.
+                store_after_checks = not candidate.meta.get("mock")
                 downloads += 1
 
             try:
                 info = probe(local_file)
             except Exception as exc:  # noqa: BLE001
                 ctx.warn(f"битый файл {candidate.id}: {exc}")
-                continue
+                return False
 
             frames = extract_frames(local_file, frames_dir / candidate.id,
                                     probe_positions if info.has_video else [0.5])
             hashes = [phash_image(f) for f in frames]
+
+            # Палитра канала (§3.1). Судится здесь, а не только у критика:
+            # кадр не той палитры отбраковывается до оплаты зрения, а слот
+            # успевает уйти на второй заход поиска, а не сразу в генерацию.
+            rules = dict(palette_rules)
+            if palette_max is not None:
+                rules["off_share_max"] = palette_max
+            verdict = palette_verdict(frames, rules)
+            if not verdict["passed"]:
+                stage1_rejected.append({"id": candidate.id, "source": candidate.source,
+                                        "reason": verdict["reason"], "query": query})
+                return False
 
             # §7.2.5: дедуп внутри ролика и против всей базы
             dup_local = _find_dup(hashes, seen_hashes, dedup_threshold)
@@ -216,21 +286,32 @@ def run_step(ctx) -> dict[str, Any]:
                 stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                         "reason": f"визуальный дубль {dup_local} внутри ролика",
                                         "query": query})
-                continue
+                return False
             dup_base = index.find_duplicate(hashes, dedup_threshold)
             if dup_base is not None:
                 stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                         "reason": f"дубль материала из базы {dup_base.id}",
                                         "query": query})
-                continue
+                return False
+
+            # Кандидат прошёл все заслоны — вот теперь его можно хранить.
+            # Ужимаем тоже здесь: перекодировка стоит секунд, и тратить их на
+            # кадр, который сейчас отбракуют, незачем.
+            if store_after_checks:
+                slim = slim_video(local_file, max_sec=slim_max_sec,
+                                  crf=slim_crf, max_short_side=max_short_side)
+                if slim["slimmed"]:
+                    _log.info("сток ужат: %s %.1f → %.1f МБ", candidate.id,
+                              slim["before"] / 1e6, slim["after"] / 1e6)
+                ctx.storage.put(key, local_file)
 
             seen_hashes.append((candidate.id, hashes))
-            taken += 1
             slot_candidates.append({
-                "slot_index": slot["index"], "origin": "stock",
+                "slot_index": slot["index"], "origin": origin,
                 "asset_id": candidate.id, "source": candidate.source,
                 "kind": candidate.kind, "query": query,
-                "license": candidate.license, "license_confirmed": True,
+                "license": candidate.license,
+                "license_confirmed": candidate.license_confirmed or origin != "press",
                 "attribution": candidate.attribution, "author": candidate.author,
                 "page_url": candidate.page_url,
                 "width": info.width or candidate.width,
@@ -241,7 +322,100 @@ def run_step(ctx) -> dict[str, Any]:
                 "frames": [str(f) for f in frames], "phashes": hashes,
                 "tags": candidate.tags, "mock": bool(candidate.meta.get("mock")),
                 "ai_generated": candidate.source == "magnific",
+                "palette": verdict,
+                "press": dict(candidate.meta) if origin == "press" else {},
             })
+            return True
+
+        def harvest(search_queries: list[str]) -> None:
+            """Найти, скачать и принять кандидатов по списку запросов.
+
+            Сначала собираем метаданные по всем запросам (это бесплатно), затем
+            ранжируем и качаем только лучших. §7.2.4 даёт 50 скачиваний на
+            ролик: если тратить их подряд, последние слоты останутся пустыми.
+            """
+            found_all: list[tuple[str, Any, str]] = []
+            for query in search_queries:
+                for source in source_order:
+                    provider = providers.get(source)
+                    if provider is None:
+                        continue
+                    try:
+                        for candidate in provider.search(query, kind="video", limit=per_query):
+                            found_all.append((source, candidate, query))
+                    except Exception as exc:  # noqa: BLE001 — источник не должен ронять прогон
+                        ctx.warn(f"источник {source} недоступен: {exc}",
+                                 source=source, query=query)
+
+            passed: list[tuple[str, Any, str]] = []
+            for source, candidate, query in found_all:
+                reason = _stage1_reject(candidate, cfg, float(slot["duration"]),
+                                        routing=routing)
+                if reason:
+                    stage1_rejected.append({"id": candidate.id, "source": candidate.source,
+                                            "reason": reason, "query": query})
+                else:
+                    passed.append((source, candidate, query))
+
+            passed.sort(key=lambda item: _prefetch_rank(item[1], source_order,
+                                                        float(slot["duration"])))
+
+            remaining_slots = max(1, len(slots) - slots.index(slot))
+            budget = max(2, (max_downloads - downloads) // remaining_slots)
+            taken = 0
+
+            for source, candidate, query in passed:
+                if taken >= min(budget, per_query) or downloads >= max_downloads:
+                    break
+                if accept(providers[source], candidate, query):
+                    taken += 1
+
+        # --- 2. кадр из самой статьи (§7.2, «реальный материал») -------------
+        # Заказчик просил брать материал прямо со страницы, на которую ролик и
+        # ссылается. Это идёт до стоков: слот доказательства лучше закрыть той
+        # самой статьей, чем «чем-нибудь по теме», и уж точно лучше, чем
+        # генерацией. Палитра здесь мягче: пресс-кадр — цитата в рамке
+        # источника, и требовать от него палитру канала значит не брать его
+        # никогда.
+        article = _article_for(slot, plan)
+        if press is not None and article and not slot_candidates:
+            try:
+                # Просим не один кадр, а сколько есть: у страницы og:image один,
+                # но брать надо первый **прошедший** отбор, а не первый по счёту.
+                found = press.search(article["url"], kind="photo", limit=3)
+            except Exception as exc:  # noqa: BLE001 — страница не должна ронять прогон
+                ctx.warn(f"страница источника недоступна: {exc}",
+                         slot=slot["index"], url=article["url"][:120])
+                found = []
+            for candidate in found:
+                reason = _stage1_reject(candidate, cfg, float(slot["duration"]),
+                                        routing=routing)
+                if reason:
+                    stage1_rejected.append({"id": candidate.id, "source": candidate.source,
+                                            "reason": reason, "query": article["url"]})
+                    continue
+                if accept(press, candidate, article["url"], origin="press",
+                          palette_max=press_palette_max, grade=True):
+                    press_used += 1
+                    break
+
+        # --- 3. внешние стоки -------------------------------------------------
+        harvest(queries)
+
+        # Второй заход. Пустой слот уходит в генерацию (§7.3), а генерация
+        # ограничена сорока процентами хронометража (QC-14) и стоит денег.
+        # Прежде чем тратить и то и другое, стоит спросить сток ещё раз —
+        # запросом, который называет нужную картинку прямо: тёмный кадр,
+        # приглушённый цвет. На 0047 сток по запросу «abstract dark red gradient
+        # background» отдал стену розовых кубов; уточнение — единственное, чем
+        # на это можно ответить, не платя за генерацию.
+        if not slot_candidates and not frozen:
+            refined = _refine_queries(queries)
+            ctx.warn(f"слот {slot['index']}: ни один кандидат не прошёл отбор — "
+                     f"второй заход по уточнённым запросам",
+                     slot=slot["index"], queries=refined)
+            researched += 1
+            harvest(refined)
 
         if not slot_candidates:
             ctx.warn(f"слот {slot['index']} ({slot['block_id']}) не получил ни одного кандидата",
@@ -268,6 +442,8 @@ def run_step(ctx) -> dict[str, Any]:
         "index_entries_without_files": sorted(set(missing_in_storage)),
         "cache_share": round(from_cache / max(len(candidates_out), 1), 4),
         "stage1_rejected": stage1_rejected,
+        "slots_researched": researched,
+        "slots_from_press": press_used,
         "stage1_reject_share": round(
             len(stage1_rejected) / max(len(stage1_rejected) + len(candidates_out), 1), 4),
         "candidates": candidates_out,
@@ -284,8 +460,11 @@ def run_step(ctx) -> dict[str, Any]:
     _log.info("поиск B-roll завершён", extra={
         "slots": len(slots), "pool": len(candidates_out), "downloads": downloads,
         "from_cache": from_cache, "stage1_rejected": len(stage1_rejected),
+        "researched": researched, "press": press_used,
     })
-    return {"pool": len(candidates_out), "downloads": downloads, "from_cache": from_cache}
+    return {"pool": len(candidates_out), "downloads": downloads,
+            "from_cache": from_cache, "researched": researched,
+            "press": press_used}
 
 
 def _pick_memes(ctx, plan: dict[str, Any], recent_videos: list[str]) -> list[dict[str, Any]]:
@@ -338,6 +517,21 @@ def _pick_memes(ctx, plan: dict[str, Any], recent_videos: list[str]) -> list[dic
             "mock": bool(record.mock),
         })
     return out
+
+
+# Слова, которыми запрос объясняет стоку палитру канала. Не перевод брендбука,
+# а то, на что сток отзывается: у стоков нет поля «оттенок», зато есть теги.
+_PALETTE_HINTS = ("dark", "low key", "black background", "monochrome", "desaturated")
+
+
+def _refine_queries(queries: Iterable[str], limit: int = 3) -> list[str]:
+    """Те же запросы, но с прямым указанием на палитру.
+
+    Второй заход отличается от первого только этим: искать то же самое ещё раз
+    теми же словами бессмысленно — сток отдаст ту же выдачу.
+    """
+    base = [q for q in queries if q][:limit]
+    return [f"{q} {hint}" for q, hint in zip(base, _PALETTE_HINTS)]
 
 
 def _tags_for(queries: Iterable[str]) -> list[str]:

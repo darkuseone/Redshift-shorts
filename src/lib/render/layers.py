@@ -139,8 +139,9 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     # красила бы контуром каждое слово, и выделять смысловое стало бы нечем.
     color = (ctx.color(spec.get("accent_color", "accent_soft")) if emphasis
              else parse_color(spec["color"]))
-    stroke_color = ctx.color("bg_pure") if emphasis else ctx.color(spec["stroke_color"])
-    stroke = int(spec["stroke_px"][0]) if mode == "stroke" else 0
+    glow_spec = spec.get("accent_glow" if emphasis else "glow", {}) or {}
+    stroke = int(glow_spec.get("rim_px", 0)) if mode == "glow" else 0
+    stroke_color = ctx.color(str(glow_spec.get("rim_color", "accent")))
 
     y = baseline_y if baseline_y is not None else int(spec["baseline_y_default"])
     x = ctx.center_x
@@ -152,9 +153,11 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
     tw, th = measure(text, font)
     if mode == "pill":
         pad_x, pad_y = spec["pill_padding_px"]
-    elif mode == "shadow":
-        halo_pad = int(spec.get("shadow", {}).get("blur_px", 20))
-        pad_x, pad_y = halo_pad, halo_pad + int(spec.get("shadow", {}).get("offset_y_px", 4))
+    elif mode == "glow":
+        # Место под самое широкое кольцо зарева: обрезанное гало видно краем
+        # прямоугольника, и наклейка перестаёт быть наклейкой.
+        widest = max((int(b["blur_px"]) for b in glow_spec.get("bloom", [])), default=20)
+        pad_x = pad_y = widest + stroke + 8
     else:
         pad_x, pad_y = stroke + 8, stroke + 8
     tile_w, tile_h = int(tw + pad_x * 2 + 16), int(th + pad_y * 2 + 16)
@@ -167,19 +170,25 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
                      radius=int(spec["pill_radius_px"]),
                      fill=with_alpha(parse_color(ctx.brandbook["colors"]["overlay_dim"]), alpha))
         draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha), anchor="mm")
-    elif mode == "shadow":
-        # Тень рисуется отдельным слоем и размывается: обводка держит контраст
-        # жёстким контуром, тень — мягким ореолом, и слово остаётся читаемым на
-        # светлом футаже, не превращаясь в наклейку.
-        shadow_spec = spec.get("shadow", {})
-        blur = float(shadow_spec.get("blur_px", 20)) / 2.0
-        offset = int(shadow_spec.get("offset_y_px", 4))
-        halo = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
-        draw_text(halo, (cx, cy + offset), text, font,
-                  fill=(0, 0, 0, int(255 * float(shadow_spec.get("alpha", 0.5)) * alpha)),
+    elif mode == "glow":
+        # Красное зарево — слоями от широкого к узкому, каждый своим размытием.
+        # Так же оно собрано и в CSS композиции: движки разные, вид один.
+        for step in sorted(glow_spec.get("bloom", []),
+                           key=lambda b: -int(b["blur_px"])):
+            layer = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
+            draw_text(layer, (cx, cy), text, font,
+                      fill=with_alpha(ctx.color(str(step["color"])),
+                                      alpha * float(step["alpha"])),
+                      stroke_width=stroke, stroke_fill=with_alpha(
+                          ctx.color(str(step["color"])), alpha * float(step["alpha"])),
+                      anchor="mm")
+            tile.alpha_composite(
+                layer.filter(ImageFilter.GaussianBlur(int(step["blur_px"]) / 2.0)))
+        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha),
+                  stroke_width=stroke,
+                  stroke_fill=with_alpha(stroke_color,
+                                         alpha * float(glow_spec.get("rim_alpha", 0.9))),
                   anchor="mm")
-        tile.alpha_composite(halo.filter(ImageFilter.GaussianBlur(blur)))
-        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha), anchor="mm")
     else:
         draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha),
                   stroke_width=stroke, stroke_fill=with_alpha(stroke_color, alpha),

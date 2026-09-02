@@ -8,10 +8,10 @@ import numpy as np
 import pytest
 
 from src.lib import audio as A
-from src.lib.library_filler import fill_libraries, fill_music, fill_sfx
+from src.lib.library_filler import fill_sfx
 from src.lib.manifest import open_library
 from src.lib.render.matting import MatteReport, QUALITY_THRESHOLD, plan_vfx_backgrounds
-from src.lib.sfx_synth import MUSIC_MOODS, SFX_ROLES, synth_music, synth_sfx
+from src.lib.sfx_synth import SFX_ROLES, synth_sfx
 from src.p10_audio.audio_build import _plan_sfx
 
 
@@ -28,12 +28,6 @@ def test_sfx_catalog_matches_spec():
     }
 
 
-def test_music_moods_match_spec():
-    """§14.2 — по одной подложке на каждое из пяти настроений."""
-    assert set(MUSIC_MOODS) == {"cosmic_calm", "tech_tension", "neutral_drive",
-                                "discovery_warm", "dark_pulse"}
-
-
 @pytest.mark.parametrize("role", ["whoosh_in", "hit_impact", "pop", "subscribe_ping"])
 def test_sfx_is_short_and_normalized(role):
     """§14.1: каждый файл ≤2 сек и нормализован."""
@@ -46,39 +40,34 @@ def test_sfx_is_deterministic():
     assert np.array_equal(synth_sfx("pop"), synth_sfx("pop"))
 
 
-def test_music_is_loopable_and_quiet_enough():
-    bed = synth_music("tech_tension", duration_sec=8.0)
-    # Кроссфейд хвоста в голову: стык не должен щёлкать.
-    head, tail = bed[:2000], bed[-2000:]
-    assert abs(float(np.mean(np.abs(head))) - float(np.mean(np.abs(tail)))) < 0.25
-
-
-def test_fill_sfx_reaches_limit_then_freezes(cfg, tmp_path, monkeypatch):
-    monkeypatch.setattr(cfg, "path", lambda *a, **k: tmp_path)
+def test_fill_sfx_adds_nothing(cfg):
+    """`fill-libraries` не имеет права воссоздать отвергнутые короткие звуки."""
     result = fill_sfx(cfg, dry_run=True)
-    assert len(result["added"]) == 20
+    assert result["added"] == []
+    assert result["curated"] is True
     assert result["max_items"] == 20
 
 
-def test_fill_music_dry_run(cfg, tmp_path, monkeypatch):
-    monkeypatch.setattr(cfg, "path", lambda *a, **k: tmp_path)
-    result = fill_music(cfg, dry_run=True)
-    assert len(result["added"]) == 5
-
-
-def test_repository_libraries_are_at_limits(cfg):
-    """Библиотеки в репозитории заполнены и заморожены (§14)."""
+def test_repository_sfx_and_music_are_curated(cfg):
+    """SFX и музыка курируемые: синтетика запрещена, пустая база законна."""
     sfx = open_library(cfg, "sfx")
     music = open_library(cfg, "music")
-    assert sfx.count == 20 and sfx.frozen
-    assert music.count == 5 and music.frozen
-    assert {i.role for i in sfx.items} == set(SFX_ROLES)
+    assert all(i.source != "synth" for i in sfx.items)
+    assert sfx.count == 0 or all(i.source == "curated" for i in sfx.items)
+    assert music.count == 0 or all(i.source == "curated" for i in music.items)
+    for item in sfx.items:
+        path = sfx.file_path(item)
+        assert path.exists(), f"в манифесте {item.id}, файла нет"
+        assert item.duration_sec <= 2.05
 
 
-def test_frozen_library_refills_nothing(cfg):
-    """После лимита генерация заблокирована — §4.4.4."""
-    result = fill_sfx(cfg, dry_run=True)
+def test_fill_sfx_does_not_write_files(cfg, repo_root):
+    folder = repo_root / "assets" / "sfx"
+    before = {p.name for p in folder.glob("*") if p.is_file()}
+    result = fill_sfx(cfg)
+    after = {p.name for p in folder.glob("*") if p.is_file()}
     assert result["added"] == []
+    assert after == before
 
 
 # --- расстановка SFX (§4.4) ---------------------------------------------------
@@ -110,10 +99,10 @@ def test_sfx_density_respects_two_second_rule(cfg):
 
 
 def test_sfx_covers_mandatory_points(cfg):
-    roles = {e["role"] for e in _plan_sfx(_plan_stub(), cfg)}
-    assert "reveal" in roles           # появление full-screen text
-    assert "subscribe_ping" in roles   # кнопка подписки
-    assert "whoosh_in" in roles or "swipe" in roles
+    intents = {e["intent"] for e in _plan_sfx(_plan_stub(), cfg)}
+    assert "fullscreen" in intents
+    assert "cta" in intents
+    assert {"avatar_in", "avatar_out", "transition", "picture_in"} & intents
 
 
 def test_dynamic_transition_always_gets_sfx(cfg):
@@ -191,3 +180,39 @@ def test_assets_manifest_has_license_for_every_item(repo_root):
     manifest = json.loads(path.read_text(encoding="utf-8"))
     assert manifest["unlicensed"] == []
     assert all(item.get("license") for item in manifest["items"])
+
+
+def test_vp9_alpha_is_read_with_the_right_decoder(tmp_path):
+    """VP9 держит альфу отдельным блоком: штатный декодер её не отдаёт.
+
+    Без явного ``libvpx-vp9`` ffmpeg возвращает ``yuv420p``, а ``format=rgba``
+    дорисовывает к нему единицы — канал выходит не пустым, а полностью
+    непрозрачным. Оценка маски читала это как «покрывает почти весь кадр», то
+    есть как негодную, и молча выключала текст за головой и VFX-фон.
+    """
+    import subprocess
+
+    from PIL import Image
+
+    from src.lib.ffmpeg import ffmpeg_bin
+    from src.lib.render.matting import assess_matte
+
+    # Силуэт: непрозрачная колонка на прозрачном фоне, четверть кадра.
+    frame = Image.new("RGBA", (192, 384), (0, 0, 0, 0))
+    for x in range(72, 120):
+        for y in range(40, 384):
+            frame.putpixel((x, y), (200, 180, 170, 255))
+    png = tmp_path / "src.png"
+    frame.save(png)
+    clip = tmp_path / "seg_00.webm"
+    subprocess.run([ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
+                    "-loop", "1", "-i", str(png), "-t", "1.0", "-r", "10",
+                    "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p",
+                    "-auto-alt-ref", "0", "-b:v", "0", "-crf", "30",
+                    str(clip)], check=True, capture_output=True)
+
+    report = assess_matte(clip, tmp_path / "matte")
+    assert report.available, "альфа в клипе есть, а прочитана как отсутствующая"
+    assert report.coverage_mean < 0.5, (
+        f"маска прочитана как заливка кадра: покрытие {report.coverage_mean:.2f}")
+    assert report.usable, report.reason
