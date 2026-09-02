@@ -141,7 +141,24 @@
       "offset_y_px": 4,
       "alpha": 0.5
     },
-    "accent_color": "accent_soft"
+    "accent_color": "accent_soft",
+    "caption": "camera-follow",
+    "camera_follow": {
+      "framing": "standard",
+      "ratio": 0.72,
+      "margin": 1.36,
+      "close_margin": 1.2,
+      "move_sec": 0.4,
+      "ink_sec": 0.16,
+      "close_sec": 0.94,
+      "max_words": 12,
+      "pause_break_sec": 0.45,
+      "line_height": 0.78,
+      "font_size_base": 0.16,
+      "letter_spacing_em": 0.005,
+      "gap_em": 0.07,
+      "case": "upper"
+    }
   },
   "fullscreen_text": {
     "font_role": "display",
@@ -355,6 +372,24 @@
       0.0,
       0.0,
       1.0,
+      1.0
+    ],
+    "caption_camera_step": [
+      0.31,
+      0.0,
+      0.11,
+      1.0
+    ],
+    "caption_camera_wide": [
+      0.42,
+      0.0,
+      0.14,
+      1.0
+    ],
+    "caption_camera_ink": [
+      0.2,
+      0.7,
+      0.3,
       1.0
     ]
   }

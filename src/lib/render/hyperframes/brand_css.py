@@ -14,6 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .captions import caption_css
 from .templates import dataviz_css, hero_css, overlay_css, split_css, transition_css
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
@@ -138,6 +139,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".word > span{display:inline-block;will-change:transform}"
         f".word.emphasis{{color:var(--color-{accent_var})}}"
     )
+    parts.append(caption_css(brandbook))
 
     # --- полноэкранный текст (§5.2) ------------------------------------
     fs = brandbook["fullscreen_text"]

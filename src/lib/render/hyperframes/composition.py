@@ -27,6 +27,7 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
+from .captions import TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD, build_camera_follow
 from .templates import (
     OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, render_dataviz,
     render_fullscreen, render_hero, render_motion, render_overlay,
@@ -45,6 +46,9 @@ TRACK_SUBTITLE = 12
 # кадры стыкуются встык, а окно видимости клипа включает оба конца.
 TRACK_HERO_EVEN = 13
 TRACK_HERO_ODD = 14
+# Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
+# там герой. 18/19 не пересекаются со звуком (20).
+assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
 TRACK_AUDIO = 20
 
 COMPOSITION_ID = "redshift"
@@ -456,6 +460,18 @@ class CompositionBuilder:
 
     # --- субтитры -------------------------------------------------------
     def _subtitle_nodes(self) -> list[str]:
+        # Камера включается только из плана: фикстуры без caption остаются
+        # на pop-in, даже если брендбук уже переведён на follow.
+        caption = str(self.plan.get("subtitle_style", {}).get("caption") or "word-pop")
+        if caption == "camera-follow":
+            nodes, tweens, count = build_camera_follow(
+                self.plan, self.brandbook, duration=self.duration)
+            self.tweens.extend(tweens)
+            self.stats["subtitle_words"] += count
+            return nodes
+        return self._subtitle_pop_nodes()
+
+    def _subtitle_pop_nodes(self) -> list[str]:
         spec = self.brandbook["subtitles"]
         pop_ms = float(spec["pop_in_ms"][0]) / 1000.0
         scale_from = float(spec["pop_scale_from"])

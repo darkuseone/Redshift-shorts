@@ -911,6 +911,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
             "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 975),
+            "caption": ctx.cfg.brand("subtitles.caption", "word-pop"),
         },
         "avatar": avatar_meta.get("segments", []),
         "templates_used": used_templates,
