@@ -251,6 +251,7 @@ Nunito удалён.
 
 `caption-blend-difference` — opt-in (`blend-difference` /
 `caption-blend-difference`). Каталог вешает `mix-blend-mode: difference`
-на белый текст; движок blend-mode не твинит. Акцент изолирован, чтобы
-`#C8453D` не ушёл в циан. `#root { isolation: isolate }` обязателен:
-без него разница считается с фоном страницы, а не с футажом.
+на белый текст; движок blend-mode не твинит. Difference стоит на клипе
+(соседе видео): на слове внутри transform invert не видит футаж. Акцент —
+второй клип без difference, иначе `#C8453D` уходит в циан.
+`#root { isolation: isolate }` обязателен.

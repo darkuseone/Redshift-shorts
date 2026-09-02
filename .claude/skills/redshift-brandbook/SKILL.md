@@ -68,10 +68,9 @@ description: Цвета, шрифты, кегли, safe zones и анимаци�
   стоят, едет камера. Pop-in Nunito из проекта удалён.
 * **blend-difference** — только явным `subtitles.caption` /
   `subtitle_style.caption`. Белые слова: статический
-  `mix-blend-mode: difference` против футажа (не твин). Корень
-  `#root` несёт `isolation: isolate`, иначе инверт считается с
-  фоном страницы. Акцент — `mix-blend-mode: normal`. Прод по
-  умолчанию не меняет.
+  `mix-blend-mode: difference` на клипе субтитра (соседе футажа, не твин).
+  Корень `#root` несёт `isolation: isolate`. Акцент — второй клип без
+  difference, иначе `#C8453D` уходит в циан. Прод по умолчанию не меняет.
 * вход плашки: 200–280 мс с overshoot 6–8 %, уход 160–200 мс в ту же сторону
 * Ken Burns: 1.0 → 1.08…1.15 за 2.5–5 сек, `ease_out_cubic`
 * полноэкранный текст: вход 180–250 мс + приближение до 1.06
