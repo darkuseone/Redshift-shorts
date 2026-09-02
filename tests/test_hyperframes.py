@@ -775,3 +775,51 @@ class TestOverlaysCarryTheirText:
             body = self._body(ovl)
             inner = body.split("__TIMING__>", 1)[-1]
             assert inner.strip("</div> \n"), f"пустая плашка: {ovl}"
+
+
+class TestAnEmptySlotNeverShowsAHole:
+    """Слот без материала обязан быть закрыт, а не показывать подложку сцены.
+
+    На пересборке 0047 три кадра вышли чистым белым полотном с одиноким
+    субтитром посреди тёмного ролика: «ГРАНИТ» дважды и «ТУНДРЫ». Дыра
+    оказалась не чёрной, а светлой — ``.stage-bg`` заливает кадр
+    ``--color-bg-light`` (#F7F5F3), и слот без медиа показывал именно её.
+
+    Пустой слот при этом законен: генерация вывела бы долю AI-футажа за 35 %,
+    и P9 честно отказался — четыре слота остались без материала. Отказ от
+    генерации не повод показывать зрителю пустой лист.
+    """
+
+    def _markup(self, plan, assets, brandbook, kind):
+        plan = {**plan, "shots": [dict(s) for s in plan["shots"]]}
+        plan["shots"][0].update({"kind": kind, "file": None})
+        return CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+    @pytest.mark.parametrize("kind", ["footage", "meme"])
+    def test_the_slot_still_gets_a_clip(self, plan, assets, brandbook, kind):
+        markup = self._markup(plan, assets, brandbook, kind)
+        assert 'id="shot-00"' in markup, f"{kind}: слот без файла не дал ни одного элемента"
+
+    @pytest.mark.parametrize("kind", ["footage", "meme"])
+    def test_the_clip_covers_the_whole_slot(self, plan, assets, brandbook, kind):
+        """Полдыры — та же дыра: окно запасного фона совпадает со слотом."""
+        markup = self._markup(plan, assets, brandbook, kind)
+        node = re.search(r'<div id="shot-00"[^>]*>', markup)
+        assert node, f"{kind}: элемента слота нет"
+        assert 'data-start="0"' in node.group(0), node.group(0)
+        assert 'data-duration="3"' in node.group(0), node.group(0)
+
+    @pytest.mark.parametrize("kind", ["footage", "meme"])
+    def test_the_backdrop_is_the_scene_not_the_light_stage(self, plan, assets, brandbook, kind):
+        """Фон берётся тот же, что за ведущим: по теме и тёмный."""
+        markup = self._markup(plan, assets, brandbook, kind)
+        node = re.search(r'<div id="shot-00"[^>]*>(.*?)</div></div>', markup, re.S)
+        assert node and "scene-" in node.group(1), \
+            f"{kind}: запасной фон не несёт сцену ролика"
+
+    def test_a_slot_with_a_file_is_untouched(self, plan, assets, brandbook):
+        """Запасной фон не имеет права подменять нормальный материал."""
+        markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+        assert "assets/m000_a.mp4" in markup
+        node = re.search(r'<[^>]*id="shot-00"[^>]*>', markup)
+        assert node and "shot-bg" not in node.group(0), node.group(0)

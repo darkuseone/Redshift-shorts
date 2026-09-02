@@ -229,6 +229,22 @@ class CompositionBuilder:
                 out[int(slot)] = node_id
         return out
 
+    def _scene_backdrop(self, node_id: str, timing: str) -> str:
+        """Запасной фон слота: сцена ролика вместо дыры в кадре.
+
+        Дыра в кадре не чёрная, а светлая: ``.stage-bg`` заливает кадр
+        ``--color-bg-light`` (#F7F5F3), и слот без медиа показывает именно её.
+        На пересборке 0047 так вышло три кадра подряд — белое полотно с
+        одиноким субтитром посреди тёмного ролика («ГРАНИТ», «ТУНДРЫ»).
+
+        Слот остаётся пустым по законной причине: генерация вывела бы долю
+        AI-футажа за 35 %, и P9 честно отказался. Отказ от генерации не повод
+        показывать зрителю пустой лист — сцена ролика по теме, она тёмная и
+        она уже собрана.
+        """
+        return (f'<div id="{node_id}" class="clip shot-bg" {timing}>'
+                f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
+
     def _shot_nodes(self) -> list[str]:
         nodes: list[str] = []
         alpha_slots = self._alpha_slots()
@@ -262,11 +278,9 @@ class CompositionBuilder:
                     # по белому листу посреди тёмного ролика. Запасной фон —
                     # сцена ролика, та же, что за ведущим: она по теме, она
                     # тёмная и она уже есть.
-                    nodes.append(
-                        f'<div id="{node_id}-bg" class="clip shot-bg" '
-                        + _timing(start, start + duration, TRACK_FS_BG)
-                        + f'><div class="vfx scene-{self.scene}">'
-                        + self._plate() + "</div></div>")
+                    nodes.append(self._scene_backdrop(
+                        f"{node_id}-bg",
+                        _timing(start, start + duration, TRACK_FS_BG)))
                 nodes.append(self._fullscreen_text_node(node_id, shot, timing,
                                                         over_media=True))
                 # Раньше полноэкранный текст просто включался: клип открывался,
@@ -289,6 +303,8 @@ class CompositionBuilder:
                 src = self._asset(shot.get("file"))
                 if src:
                     nodes.append(self._media_node(node_id, src, timing, css="meme"))
+                else:
+                    nodes.append(self._scene_backdrop(node_id, timing))
             else:
                 src = self._asset(shot.get("file"))
                 if src:
@@ -296,6 +312,8 @@ class CompositionBuilder:
                                                   media_start=shot.get("avatar_offset_sec")))
                     self._add_kenburns(node_id, shot, start + tr_sec,
                                        max(0.1, duration - tr_sec))
+                else:
+                    nodes.append(self._scene_backdrop(node_id, timing))
             nodes += self._add_transition(target, shot, start)
             self.stats["shots"] += 1
         return nodes

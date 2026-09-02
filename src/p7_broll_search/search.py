@@ -32,6 +32,7 @@ from ..lib.phash import phash_image
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import build_queries, classify_intent
+from ..lib.render.shots import slim_video
 
 _log = get_logger("p7")
 
@@ -139,6 +140,12 @@ def run_step(ctx) -> dict[str, Any]:
     grade_rules = {k: float(v) for k, v in
                    (palette_rules.get("press_grade") or {}).items()
                    if k in ("saturation", "red_lift", "contrast")}
+    # Вес принимаемого материала. Хранилище живёт в репозитории, и клип на
+    # 45 МБ остаётся в истории git навсегда — ужимать надо на приёме.
+    slim_max_sec = float(cfg.get("stock.keep_sec", 20.0))
+    slim_crf = int(cfg.get("stock.intake_crf", 23))
+    max_short_side = int(cfg.get("stock.max_download_height", 1080))
+
     stage1_rejected: list[dict[str, Any]] = []
     candidates_out: list[dict[str, Any]] = []
     seen_hashes: list[tuple[str, list[str]]] = []
@@ -242,6 +249,14 @@ def run_step(ctx) -> dict[str, Any]:
                 # и `git add -A` уносил их в репозиторий. Девятнадцать мегабайт
                 # за один прогон CI, который гоняется на каждом коммите.
                 if not candidate.meta.get("mock"):
+                    # Ужать до того, как файл ляжет в хранилище: в git едет
+                    # именно он, и лечить вес задним числом уже поздно —
+                    # тяжёлая версия останется в истории навсегда.
+                    slim = slim_video(local_file, max_sec=slim_max_sec,
+                                      crf=slim_crf, max_short_side=max_short_side)
+                    if slim["slimmed"]:
+                        ctx.log.info("сток ужат: %s %.1f → %.1f МБ", candidate.id,
+                                     slim["before"] / 1e6, slim["after"] / 1e6)
                     ctx.storage.put(key, local_file)
                 downloads += 1
 

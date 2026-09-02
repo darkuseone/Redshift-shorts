@@ -48,7 +48,11 @@ class TestSeeding:
     @pytest.fixture
     def cfg(self, tmp_path):
         cfg = load_config()
-        cfg.set("paths.storage_dir", str(tmp_path / "storage"))
+        # Ключ именно ``storage.local_root``: его читает ``build_storage``.
+        # С ``paths.storage_dir`` подмена не срабатывала, и засев тестов
+        # ложился в настоящую базу — три PNG-заглушки уехали в репозиторий
+        # и вернулись после каждого прогона тестов.
+        cfg.set("storage.local_root", str(tmp_path / "storage"))
         cfg.set("paths.cache_dir", str(tmp_path / "cache"))
         cfg.set("paths.work_dir", str(tmp_path / "work"))
         cfg.set("providers.mode", "mock")

@@ -379,6 +379,12 @@ def test_line_carrying_devices_suppress_the_subtitle(cfg):
     )
 
     catalog = TemplateCatalog.load(cfg)
+    # История прогонов обнуляется намеренно. Ротация ранжирует по числу
+    # использований, и после живого прогона приёмы со строками уходят вниз на
+    # всех сорока зёрнах — тест начинает падать от того, что кто-то собрал
+    # ролик, а не от того, что правило сломалось. Проверяется правило.
+    for template in catalog.templates:
+        template.last_used_in = []
     slot = {"index": 4, "duration": 3.0, "role": "evidence"}
     plate = {"file": "/w/shots/a.mp4", "duration_sec": 3.0}
     seen = set()
