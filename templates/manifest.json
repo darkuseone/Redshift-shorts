@@ -1005,7 +1005,8 @@
         "redshift_0042",
         "redshift_0043",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -2108,7 +2109,8 @@
       ],
       "renderer": "hero-split",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -2180,7 +2182,8 @@
       ],
       "renderer": "hero-bubble-card",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },
@@ -2248,7 +2251,8 @@
       ],
       "renderer": "hero-phone-mock",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0047"
       ],
       "added": "2026-08-18"
     },

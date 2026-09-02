@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-02",
-  "count": 46,
+  "count": 49,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1249,8 +1249,10 @@
       "vision_summary": "Perseverance's First Cored Mars Rock in Sample Tube",
       "score": 0.62,
       "duration_sec": 0.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": "2026-09-02",
       "added": "2026-09-02",
       "phashes": [
         "123c2de173878ecc"
@@ -1635,6 +1637,137 @@
       "extra": {
         "attribution": "Pexels / Dan Cristian Pădureț",
         "author": "Dan Cristian Pădureț",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v7565432",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/a-cloud-of-white-paint-underwater-7565432/",
+      "phash": "0787617195cf6c34",
+      "tags": [
+        "viscous",
+        "flow",
+        "slow",
+        "motion",
+        "dark"
+      ],
+      "vision_summary": "White viscous fluid slowly diffusing in dark background",
+      "score": 0.93,
+      "duration_sec": 20.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "0787617195cf6c34",
+        "05010a077f0f1ffd",
+        "c101fefe54032f56"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v7565432.mp4",
+      "extra": {
+        "attribution": "Pexels / MART  PRODUCTION",
+        "author": "MART  PRODUCTION",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v113379",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-113379/",
+      "phash": "05ed77764c468a61",
+      "tags": [
+        "connection",
+        "science",
+        "abstract",
+        "communication",
+        "plexus",
+        "background",
+        "futuristic",
+        "network",
+        "geometric",
+        "cybernetic",
+        "concept",
+        "design",
+        "digital",
+        "line",
+        "3d",
+        "biology",
+        "chaos",
+        "connect",
+        "data",
+        "galaxy",
+        "global",
+        "beautiful wallpaper",
+        "graphic",
+        "internet",
+        "molecular",
+        "particle"
+      ],
+      "vision_summary": "Abstract glowing network of multicolored lines and nodes on black background",
+      "score": 0.78,
+      "duration_sec": 19.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "05ed77764c468a61",
+        "113679931e3266ba",
+        "198c640e7bb335e1"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v113379.mp4",
+      "extra": {
+        "attribution": "Pixabay / Digital_View",
+        "author": "Digital_View",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v200531",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-200531/",
+      "phash": "e93f253b27bf0018",
+      "tags": [
+        "hexagons",
+        "geometric",
+        "motion",
+        "black-and-white",
+        "beautiful wallpaper",
+        "background",
+        "screensaver"
+      ],
+      "vision_summary": "flowing white hexagons on black geometric background",
+      "score": 0.55,
+      "duration_sec": 10.047,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "e93f253b27bf0018",
+        "e6ce1555a7aec214",
+        "058327ad67bfa284"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v200531.mp4",
+      "extra": {
+        "attribution": "Pixabay / clst5",
+        "author": "clst5",
         "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
       }
     }
