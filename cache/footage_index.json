@@ -1603,41 +1603,6 @@
       }
     },
     {
-      "id": "pexels_v15168370",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/abstract-shapes-of-pink-ink-underwater-15168370/",
-      "phash": "097af0f562c6ba05",
-      "tags": [
-        "lava",
-        "flow",
-        "closeup",
-        "slow"
-      ],
-      "vision_summary": "Pink ink/particles slowly diffusing in dark viscous liquid",
-      "score": 0.82,
-      "duration_sec": 18.652,
-      "used_in": [
-        "redshift_0047"
-      ],
-      "last_used": null,
-      "added": "2026-09-02",
-      "phashes": [
-        "097af0f562c6ba05",
-        "3a7ce9fa4c4d022c",
-        "3278c5fb52c0396a"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v15168370.mp4",
-      "extra": {
-        "attribution": "Pexels / Dan Cristian Pădureț",
-        "author": "Dan Cristian Pădureț",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
-      }
-    },
-    {
       "id": "pexels_v15168379",
       "type": "video",
       "source": "pexels",

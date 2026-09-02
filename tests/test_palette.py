@@ -89,3 +89,74 @@ def test_no_frames_is_not_a_rejection(rules, tmp_path):
     """Нечего мерить — нечего и предъявлять: кандидат судится по смыслу."""
     verdict = palette_verdict([tmp_path / "нет.png"], rules)
     assert verdict["passed"] and not verdict["measured"]
+
+
+class TestPinkNeverPassesAgain:
+    """Розовое поле — то, что заказчик назвал прямо, посмотрев 0047.
+
+    Прежняя мерка его пропускала: коридор был симметричным, и его холодный
+    край (343.5°) впускал пурпурно-розовое как «красное». Клип
+    ``pexels_v15168370`` набирал 0.026 при пороге 0.15 и уехал в ролик.
+
+    Кадры здесь собираются из чисел, а не берутся из репозитория: клипы,
+    на которых мерка калибровалась, из базы удалены — держать в git 58 МБ
+    брака ради теста незачем.
+    """
+
+    def _field(self, rgb, share=1.0):
+        """Кадр, залитый цветом на заданную долю; остальное — почти чёрное."""
+        a = np.full((568, 320, 3), 14, dtype=np.uint8)
+        a[: int(568 * share)] = rgb
+        return Image.fromarray(a)
+
+    def test_a_pink_haze_is_rejected(self, rules):
+        """Тон 330–347°, насыщенность 0.25–0.40 — та самая дымка."""
+        for rgb in ((214, 150, 178), (198, 120, 155), (232, 168, 196)):
+            verdict = palette_verdict([self._field(rgb, 0.5)], rules)
+            assert not verdict["passed"], f"{rgb}: розовая дымка прошла"
+
+    def test_the_brand_red_still_passes_at_any_size(self, rules):
+        for rgb in ((200, 69, 61), (142, 47, 42), (228, 114, 106)):
+            assert palette_verdict([self._field(rgb)], rules)["passed"], rgb
+
+    def test_earth_passes_but_gold_does_not(self, rules):
+        """Оба стоят на 30–45°, и разводит их насыщенность, а не оттенок.
+
+        Песок карьера и порода — 0.46–0.58, жёлто-оранжевая лава — 0.83.
+        Без этой границы пришлось бы выбирать между двумя ошибками: либо
+        снятый материал уходит в брак вместе с золотом, либо наоборот.
+        """
+        sand = (186, 150, 104)          # тон ~38°, насыщенность 0.44
+        gold = (232, 150, 40)           # тон ~34°, насыщенность 0.83
+        assert palette_verdict([self._field(sand, 0.6)], rules)["passed"], "земля в браке"
+        assert not palette_verdict([self._field(gold, 0.6)], rules)["passed"], "золото прошло"
+
+    def test_one_hue_and_five_hues_of_the_same_size_end_differently(self, rules):
+        """Розовое поле и живая сцена различаются не количеством цвета.
+
+        Мерка по сумме этого не различала: рабочий стол с деревом, кожей и
+        зелёными клавишами набирал 0.217 — больше, чем фиолетовые чернила.
+        Здесь оба кадра несут поровну постороннего цвета, 14 % площади, и
+        оба укладываются в общий предел 15 %. Расходятся они на том, как
+        этот цвет разложен: пять тонов по 2.8 % — живая съёмка, один
+        пурпурный на все 14 % — заливка, которой в палитре канала нет.
+        """
+        def bands(colors):
+            a = np.full((568, 320, 3), 20, dtype=np.uint8)
+            height = int(568 * 0.14 / len(colors))
+            for i, rgb in enumerate(colors):
+                a[i * height:(i + 1) * height] = rgb
+            return Image.fromarray(a)
+
+        alive = bands([(150, 120, 90), (60, 140, 130), (120, 110, 160),
+                       (90, 150, 90), (170, 130, 110)])
+        pink = bands([(214, 150, 178)])
+        assert palette_verdict([alive], rules)["passed"], \
+            palette_verdict([alive], rules)["reason"]
+        assert not palette_verdict([pink], rules)["passed"], "розовая заливка прошла"
+
+    def test_the_verdict_names_the_offending_hue(self, rules):
+        """Отчёт обязан говорить, какой именно тон забраковал кадр."""
+        verdict = palette_verdict([self._field((214, 150, 178), 0.5)], rules)
+        assert 300 <= verdict["dominant_off_hue"] <= 345, verdict
+        assert "°" in verdict["reason"] and "розов" in verdict["reason"]
