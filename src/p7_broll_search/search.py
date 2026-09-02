@@ -255,8 +255,8 @@ def run_step(ctx) -> dict[str, Any]:
                     slim = slim_video(local_file, max_sec=slim_max_sec,
                                       crf=slim_crf, max_short_side=max_short_side)
                     if slim["slimmed"]:
-                        ctx.log.info("сток ужат: %s %.1f → %.1f МБ", candidate.id,
-                                     slim["before"] / 1e6, slim["after"] / 1e6)
+                        _log.info("сток ужат: %s %.1f → %.1f МБ", candidate.id,
+                                  slim["before"] / 1e6, slim["after"] / 1e6)
                     ctx.storage.put(key, local_file)
                 downloads += 1
 

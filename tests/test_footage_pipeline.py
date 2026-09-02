@@ -903,3 +903,45 @@ def test_mock_material_never_reaches_the_shared_storage(tmp_path, monkeypatch):
                     if "storage.put(key, local_file)" in line)
     assert put_line.startswith(" " * 20), \
         "storage.put вынесен из-под проверки на мок"
+
+
+def test_no_step_calls_something_the_context_does_not_have():
+    """Шаг обращается к ``ctx`` только за тем, что у ``RunContext`` есть.
+
+    Прогон 33644475244 упал на живом материале с
+    ``'RunContext' object has no attribute 'log'``: в P7 была написана строка
+    ``ctx.log.info(...)``, а журнал у модуля свой, ``_log``. Локально это не
+    ловилось — ветка живёт под ``if not candidate.meta.get("mock")``, а в
+    мок-режиме мок стоит у каждого кандидата, и строка не выполнялась ни разу.
+    Тридцать минут прогона ушли на опечатку в имени атрибута.
+
+    Проверка статическая: разбирает исходники шагов и сверяет каждое
+    обращение ``ctx.<имя>`` с полями и методами ``RunContext``. Ветку она
+    исполнять не обязана — и именно поэтому ловит ту, которую не исполняет
+    ни один тест.
+    """
+    import ast
+    from pathlib import Path
+
+    from src.pipeline import RunContext
+
+    known = set(dir(RunContext)) | set(getattr(RunContext, "__annotations__", {}))
+    offenders: list[str] = []
+    # Только тела ``run_step`` и вложенных в них функций: имя ``ctx`` занято и
+    # в рисовании кадра, где это совсем другой объект — со своими ``color``,
+    # ``brandbook`` и ``safe``. Шагам конвейера принадлежит именно ``run_step``.
+    for path in sorted(Path("src").rglob("*.py")):
+        tree = ast.parse(path.read_text("utf-8"), filename=str(path))
+        steps = [n for n in ast.walk(tree)
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                 and n.name == "run_step"]
+        for step in steps:
+            for node in ast.walk(step):
+                if (isinstance(node, ast.Attribute)
+                        and isinstance(node.value, ast.Name)
+                        and node.value.id == "ctx"
+                        and node.attr not in known):
+                    offenders.append(f"{path}:{node.lineno} ctx.{node.attr}")
+    assert not offenders, (
+        "шаг просит у контекста то, чего в RunContext нет:\n  "
+        + "\n  ".join(offenders))
