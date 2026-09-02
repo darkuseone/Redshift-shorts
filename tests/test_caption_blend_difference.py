@@ -115,6 +115,8 @@ def test_root_isolation_in_full_css(cfg) -> None:
     assert "isolation:isolate" in root.replace(" ", "")
     assert "background" not in root
     assert ".caption-blend{" in css
+    assert css.count("{") == css.count("}"), "лишняя скобка ломает последующие правила"
+    assert caption_css(cfg.brandbook).count("{") == caption_css(cfg.brandbook).count("}")
 
 
 def test_build_emits_group_enter_not_clip_opacity(cfg) -> None:

@@ -353,7 +353,7 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         f"text-transform:uppercase;letter-spacing:{fill_track}em}}"
         f".caption-blend{{position:absolute;inset:0;z-index:{Z_CAPTION};"
         "overflow:hidden;pointer-events:none;"
-        "width:var(--frame-w);height:var(--frame-h)}}"
+        "width:var(--frame-w);height:var(--frame-h)}"
         ".bd-group{position:absolute;left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
         "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;"
