@@ -235,3 +235,52 @@ def test_the_committed_library_is_tagged_for_the_montage():
         assert tags & set(INSTRUMENTS), f"{item['id']}: нет тега инструмента"
         assert tags & set(THEMES), f"{item['id']}: нет тега темы"
         assert (Path("assets/music") / item["file"]).exists(), item["file"]
+
+
+class TestThePlanReachesTheMix:
+    """Стык «план → библиотека»: P10 обязан услышать теги из плана.
+
+    Проверяется отдельной функцией, а не через весь P10: поднимать ради трёх
+    условий голос, SFX и ffmpeg значит не проверять стык вовсе. Ровно на
+    непроверенном стыке конвейер уже падал — строка жила под условием,
+    которого не бывает в мок-режиме, и вылезла только на живом прогоне через
+    полчаса работы раннера.
+    """
+
+    def _fill(self, cfg, tmp_path):
+        for bed_id, tags in (("calm_space", ["ambient", "space", "calm"]),
+                             ("busy_tech", ["pulse", "tech", "driving"]),
+                             ("soft_keys", ["piano", "tech", "sparse"])):
+            add_bed(cfg, source=_bed(tmp_path / f"{bed_id}.mp3", seconds=120.0),
+                    bed_id=bed_id, tags=tags)
+
+    def test_tags_from_the_plan_choose_the_bed(self, cfg, tmp_path):
+        from src.p10_audio.audio_build import choose_bed
+
+        self._fill(cfg, tmp_path)
+        bed = choose_bed(cfg, {"video_id": "redshift_0047",
+                               "music_tags": ["tech", "pulse", "driving"]})
+        assert bed.id == "music_busy_tech", bed.tags
+
+    def test_a_mood_named_by_the_script_wins_over_tags(self, cfg, tmp_path):
+        """Ручное решение автора важнее любой автоматики."""
+        from src.p10_audio.audio_build import choose_bed
+
+        self._fill(cfg, tmp_path)
+        bed = choose_bed(cfg, {"video_id": "redshift_0047", "music_mood": "piano",
+                               "music_tags": ["tech", "pulse", "driving"]})
+        assert bed.id == "music_soft_keys", bed.tags
+
+    def test_a_plan_without_music_still_gets_a_bed(self, cfg, tmp_path):
+        """Старый план без тегов не должен оставлять ролик без подложки."""
+        from src.p10_audio.audio_build import choose_bed
+
+        self._fill(cfg, tmp_path)
+        assert choose_bed(cfg, {"video_id": "redshift_0047"}) is not None
+
+    def test_an_empty_library_leaves_the_mix_without_a_bed(self, cfg):
+        """И это не падение: P10 предупреждает и собирает микс без подложки."""
+        from src.p10_audio.audio_build import choose_bed
+
+        assert choose_bed(cfg, {"video_id": "redshift_0047",
+                                "music_tags": ["space"]}) is None

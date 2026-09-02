@@ -40,6 +40,32 @@ MANDATORY_SFX = {
 AVATAR_KINDS = ("avatar", "split")
 
 
+def choose_bed(cfg, plan: dict[str, Any]):
+    """Какая подложка играет под этот ролик. ``None`` — библиотека пуста.
+
+    Отдельной функцией, а не строками внутри сборки микса: это стык между
+    планом и библиотекой, и проверить его иначе нельзя — поднимать ради трёх
+    условий весь P10 с голосом, SFX и ffmpeg значит не проверять его вовсе.
+    Ровно на таком непроверенном стыке конвейер уже падал: строка жила под
+    условием, которого не бывает в мок-режиме, и вылезла только на живом
+    прогоне через полчаса работы раннера.
+
+    Порядок: имя настроения из сценария (ручное решение автора важнее любой
+    автоматики), затем теги, затем что есть.
+    """
+    from ..lib.music_library import pick_bed
+
+    music_lib = open_library(cfg, "music")
+    mood = plan.get("music_mood") or ""
+    tags = plan.get("music_tags") or []
+    record = music_lib.by_mood(mood) if mood else None
+    if record is None and tags:
+        record = pick_bed(cfg, want=tags, video_id=plan.get("video_id", ""))
+    if record is None:
+        record = music_lib.items[0] if music_lib.items else None
+    return record
+
+
 def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
     """Расставить SFX по смыслу, соблюдая плотность ≤ 1 / 2 сек."""
     slots = plan["slots"]
@@ -172,17 +198,8 @@ def run_step(ctx) -> dict[str, Any]:
 
     # --- музыкальная подложка (§14.2, §4.4) -------------------------------
     music_lib = open_library(cfg, "music")
-    # Подложка ищется по тегам: у живой записи их несколько, и совпадение
-    # смыслов честнее, чем единственная ячейка «настроение». Имя настроения
-    # уважается, если сценарий назвал его прямо, — это ручное решение автора.
-    mood = plan.get("music_mood") or ""
+    record = choose_bed(cfg, plan)
     tags = plan.get("music_tags") or []
-    record = music_lib.by_mood(mood) if mood else None
-    if record is None and tags:
-        from ..lib.music_library import pick_bed
-        record = pick_bed(cfg, want=tags, video_id=plan["video_id"])
-    if record is None:
-        record = music_lib.items[0] if music_lib.items else None
     music_lufs_lo, music_lufs_hi = cfg.get("audio.music_lufs", [-34, -30])
     music_target = (float(music_lufs_lo) + float(music_lufs_hi)) / 2
     ducking_db = float(cfg.get("audio.ducking_db", -7))
