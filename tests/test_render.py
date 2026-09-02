@@ -329,6 +329,12 @@ def test_hero_device_requires_what_it_draws(cfg):
     from src.p11_assemble.assemble import _HERO_NEEDS, _hero_device
 
     catalog = TemplateCatalog.load(cfg)
+    # История использования обнуляется: выбор ранжирует приёмы по ней (§15.12),
+    # и любой прогон конвейера её меняет — тест начинал падать не от правки
+    # кода, а от того, что рядом собрали ролик. Здесь проверяется правило
+    # выбора, а не то, что канал успел показать.
+    for template in catalog.all():
+        template.last_used_in = []
     slot = {"index": 4, "duration": 3.0, "role": "evidence"}
 
     empty = {"word": "", "lines": [], "accent_lines": [], "title": "", "brand": None}
@@ -493,3 +499,52 @@ def test_subtitle_straddling_a_cut_is_dropped():
     assert not kept(2.50, 2.90)      # целиком внутри
     assert not kept(3.30, 3.70)      # начало внутри
     assert kept(3.45, 3.90)          # целиком после
+
+
+class TestRotationRespectsTheAiCeiling:
+    """Перестановка вставок не имеет права выносить ролик за потолок AI.
+
+    P9 выдаёт генерацию под конкретные слоты и считает долю по их
+    длительности. Ротация версии B переносит тот же кадр на слот вдвое
+    длиннее — материала не прибавилось, а доля выросла. Прогон CI
+    33607509470: P9 отчитался о 0.1995, вариант A собрался в 0.3420,
+    вариант B — в 0.3971 при потолке 0.35. QC-14 не выдал ролик, за который
+    уже заплачены голос, аватар и генерация: худший из возможных отказов.
+    """
+
+    slots = [{"index": 0, "block_id": "b1", "duration": 0.3},
+             {"index": 1, "block_id": "b1", "duration": 2.5},
+             {"index": 2, "block_id": "b2", "duration": 1.0}]
+    assets = {0: {"ai_generated": True, "asset_id": "gen"},
+              1: {"ai_generated": False, "asset_id": "stock"},
+              2: {"ai_generated": False, "asset_id": "stock2"}}
+
+    def _ai_seconds(self, mapping):
+        return sum(s["duration"] for s in self.slots
+                   if mapping[s["index"]].get("ai_generated"))
+
+    def test_rotation_alone_can_double_the_ai_share(self):
+        """Сначала показать саму беду: без потолка доля растёт вдвое."""
+        from src.p11_assemble.assemble import _rotate_assets
+
+        rotated = _rotate_assets(self.slots, self.assets, shift=1)
+        assert self._ai_seconds(rotated) > self._ai_seconds(self.assets)
+
+    def test_the_offending_block_is_rolled_back(self):
+        from src.p11_assemble.assemble import _rotate_assets
+
+        capped = _rotate_assets(self.slots, self.assets, shift=1, ai_budget_sec=1.0)
+        assert self._ai_seconds(capped) <= 1.0
+
+    def test_other_blocks_keep_their_rotation(self):
+        """Откатывается блок-виновник, а не всё различие версий (§4.5)."""
+        from src.p11_assemble.assemble import _rotate_assets
+
+        capped = _rotate_assets(self.slots, self.assets, shift=1, ai_budget_sec=1.0)
+        assert capped[2]["asset_id"] == "stock2"
+
+    def test_a_rotation_within_budget_survives(self):
+        from src.p11_assemble.assemble import _rotate_assets
+
+        kept = _rotate_assets(self.slots, self.assets, shift=1, ai_budget_sec=5.0)
+        assert kept[1]["asset_id"] == "gen", "ротацию откатили без нужды"

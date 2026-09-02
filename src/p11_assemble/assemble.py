@@ -812,11 +812,24 @@ def _asset_for_slot(slot: dict[str, Any], accepted: dict[str, Any],
 
 
 def _rotate_assets(slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]],
-                   shift: int) -> dict[int, dict[str, Any]]:
+                   shift: int, *, ai_budget_sec: float | None = None,
+                   ) -> dict[int, dict[str, Any]]:
     """Порядок вставок внутри блока — законное отличие версий (§4.5).
 
     Материал остаётся тот же, меняется только то, какой кадр в каком месте
     блока стоит. Это ровно «различаются монтажные решения, не материал».
+
+    Но экранное время у слотов разное, и перестановка меняет не только
+    порядок. P9 выдаёт генерацию под конкретные слоты и считает долю по их
+    длительности; ротация переносит тот же кадр на слот вдвое длиннее, и доля
+    растёт, хотя материала не прибавилось. Прогон CI 33607509470: P9
+    отчитался о 0.1995, вариант A собрался в 0.3420, вариант B — в 0.3971 при
+    потолке 0.35, и QC-14 не выдал ролик, за который уже заплачено всё.
+
+    ``ai_budget_sec`` — потолок экранного времени AI-материала. Ротация,
+    выводящая за него, откатывается по блокам: сначала тот блок, который
+    добавил больше всего AI-секунд. Различие версий при этом сохраняется
+    везде, где оно ничего не ломает.
     """
     if shift == 0:
         return dict(assets)
@@ -825,6 +838,8 @@ def _rotate_assets(slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]
     for slot in slots:
         if slot["index"] in assets:
             by_block.setdefault(slot["block_id"], []).append(slot["index"])
+
+    rotated_blocks: list[list[int]] = []
     for indices in by_block.values():
         if len(indices) < 2:
             continue
@@ -833,6 +848,25 @@ def _rotate_assets(slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]
         rotated = values[offset:] + values[:offset]
         for index, value in zip(indices, rotated):
             out[index] = value
+        rotated_blocks.append(indices)
+
+    if ai_budget_sec is None:
+        return out
+
+    seconds = {int(s["index"]): float(s.get("duration") or 0.0) for s in slots}
+
+    def ai_sec(mapping: dict[int, dict[str, Any]], indices=None) -> float:
+        keys = mapping if indices is None else indices
+        return sum(seconds.get(i, 0.0) for i in keys
+                   if (mapping.get(i) or {}).get("ai_generated"))
+
+    while ai_sec(out) > ai_budget_sec + 1e-6 and rotated_blocks:
+        # Откатываем блок, чья перестановка стоила больше всего AI-секунд.
+        worst = max(rotated_blocks,
+                    key=lambda idx: ai_sec(out, idx) - ai_sec(assets, idx))
+        for index in worst:
+            out[index] = assets[index]
+        rotated_blocks.remove(worst)
     return out
 
 
@@ -1514,7 +1548,13 @@ def run_step(ctx) -> dict[str, Any]:
     variants = list(ctx.variants)
     plans: dict[str, dict[str, Any]] = {}
     for offset, variant in enumerate(variants):
-        assets = _rotate_assets(plan["slots"], base_assets, shift=offset)
+        # Потолок доли AI считается по экранному времени — там же, где его
+        # меряет QC-14. Иначе ротация версии B выносит за него ролик, за
+        # который уже заплачены и голос, и аватар, и генерация.
+        ai_budget = float(ctx.cfg.get("limits.ai_footage_share_max", 0.35)) * \
+            float(plan["duration_sec"])
+        assets = _rotate_assets(plan["slots"], base_assets, shift=offset,
+                                ai_budget_sec=ai_budget)
         prepared = _prepare_shots(ctx, plan["slots"], assets, pillarbox_limit,
                                   avatar_segments=avatar_meta.get("segments", []),
                                   matte_reports=matte_reports,
