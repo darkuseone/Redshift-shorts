@@ -248,3 +248,9 @@ cut по-прежнему база ≥70 %.
 
 `caption-camera-follow` остаётся доступен явным `caption` в плане. Pop-in
 Nunito удалён.
+
+`caption-blend-difference` — opt-in (`blend-difference` /
+`caption-blend-difference`). Каталог вешает `mix-blend-mode: difference`
+на белый текст; движок blend-mode не твинит. Акцент изолирован, чтобы
+`#C8453D` не ушёл в циан. `#root { isolation: isolate }` обязателен:
+без него разница считается с фоном страницы, а не с футажом.

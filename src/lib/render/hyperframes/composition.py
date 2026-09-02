@@ -28,7 +28,8 @@ from typing import Any
 
 from .captions import (
     TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD,
-    build_camera_follow, build_clip_wipe, build_gradient_fill, resolve_caption,
+    build_blend_difference, build_camera_follow, build_clip_wipe,
+    build_gradient_fill, resolve_caption,
 )
 from .templates import (
     OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, render_dataviz,
@@ -467,6 +468,7 @@ class CompositionBuilder:
             "clip-wipe": build_clip_wipe,
             "camera-follow": build_camera_follow,
             "gradient-fill": build_gradient_fill,
+            "blend-difference": build_blend_difference,
         }
         builder = builders.get(caption, build_gradient_fill)
         nodes, tweens, count = builder(

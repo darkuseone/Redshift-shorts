@@ -149,6 +149,13 @@
       "bounce_out_sec": 0.15,
       "fade_sec": 0.25
     },
+    "blend_difference": {
+      "enter_sec": 0.6,
+      "rise_em": 0.42,
+      "fade_sec": 0.25,
+      "max_words": 4,
+      "mode": "difference"
+    },
     "camera_follow": {
       "framing": "standard",
       "ratio": 0.72,

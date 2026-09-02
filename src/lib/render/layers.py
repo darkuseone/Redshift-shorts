@@ -2,7 +2,7 @@
 
 Каждая функция возвращает RGBA-слой размером с кадр, который композитор кладёт
 поверх видеоряда. Вся геометрия считается от safe zones брендбука (§3.2), все
-анимационные константы — из ``brandbook.json`` (§5). Субтитры рисует HyperFrames.
+анимационные константы — из ``brandbook.json`` (§5). Субтитры рисует HyperFrames (gradient-fill / clip-wipe / blend-difference).
 """
 
 from __future__ import annotations

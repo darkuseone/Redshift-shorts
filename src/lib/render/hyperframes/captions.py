@@ -12,6 +12,11 @@ Siri-радуге — свойства нет в списке движка, по
 
 ``caption-camera-follow``: слова стоят, едет камера. Раскладка самоподобная.
 
+``caption-blend-difference``: белые слова инвертируются по пикселю
+(``mix-blend-mode: difference``, не твин). Акцент изолирован — остаётся
+``accent``, не уходит в циан. Каталог: ``isolation: isolate`` на корне.
+Включается явным ``caption`` в плане, прод по умолчанию не меняет.
+
 Это не шаблон каталога и не вендорный HTML: жесты переложены на Oswald,
 тайминг — слова пайплайна. Pop-in Nunito в проекте больше нет.
 """
@@ -42,6 +47,9 @@ EASE_INK = "cubic-bezier(0.2,0.7,0.3,1)"
 
 # Старые имена однословного pop-in: композитор больше его не собирает.
 _LEGACY_POP = frozenset({"", "word-pop", "pop-in", "pop", "nunito"})
+_BLEND_NAMES = frozenset({
+    "blend-difference", "caption-blend-difference", "blend_difference",
+})
 
 _SPACE_RE = re.compile(
     r"космос|космическ|орбит[аеуы]|астронавт|галактик|вселенн|"
@@ -72,11 +80,13 @@ def is_space_theme(plan: dict[str, Any]) -> bool:
 
 def pick_caption_style(plan: dict[str, Any],
                        brandbook: dict[str, Any] | None = None) -> str:
-    """Прод: gradient-fill; космос — clip-wipe. Pop-in больше не выбирается."""
-    if is_space_theme(plan):
-        return "clip-wipe"
+    """Прод: gradient-fill; космос — clip-wipe. Blend только явным caption."""
     spec = (brandbook or {}).get("subtitles") or {}
     name = str(spec.get("caption") or "gradient-fill").strip()
+    if name in _BLEND_NAMES:
+        return "blend-difference"
+    if is_space_theme(plan):
+        return "clip-wipe"
     if name in _LEGACY_POP:
         return "gradient-fill"
     return name
@@ -87,6 +97,8 @@ def resolve_caption(name: str | None) -> str:
     raw = str(name or "").strip()
     if raw in _LEGACY_POP:
         return "gradient-fill"
+    if raw in _BLEND_NAMES:
+        return "blend-difference"
     return raw or "gradient-fill"
 
 
@@ -339,6 +351,22 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         ".gf-wipe-r{transform-origin:0px 50%;transform-box:fill-box}"
         ".gf-ink{font-family:var(--font-display);font-weight:700;"
         f"text-transform:uppercase;letter-spacing:{fill_track}em}}"
+        f".caption-blend{{position:absolute;inset:0;z-index:{Z_CAPTION};"
+        "overflow:hidden;pointer-events:none;"
+        "width:var(--frame-w);height:var(--frame-h)}}"
+        ".bd-group{position:absolute;left:var(--safe-x-min);"
+        "width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;"
+        "opacity:0;will-change:transform}"
+        ".bd-word{display:block;flex:0 0 auto;white-space:nowrap;"
+        "font-family:var(--font-display);font-weight:700;"
+        f"text-transform:uppercase;letter-spacing:{fill_track}em;"
+        f"color:{color};line-height:1.15;"
+        "mix-blend-mode:var(--blend-mode,difference)}"
+        ".caption-blend.mode-exclusion{--blend-mode:exclusion}"
+        ".caption-blend.mode-screen{--blend-mode:screen}"
+        ".bd-word.is-accent{mix-blend-mode:normal;isolation:isolate;"
+        f"color:var(--color-accent);{shadow}}}"
     )
 
 
@@ -844,6 +872,125 @@ def build_gradient_fill(
                 f'tl.to("#{group_id}",{{opacity:0,duration:{_num(fade_dur)},'
                 f'ease:"power1.out"}},{_num(fade_start)});'
             )
+        tweens.append(
+            f'tl.set("#{group_id}",{{opacity:0}},{_num(end)});'
+        )
+
+    return nodes, tweens, count
+
+
+_BLEND_MODES = {"difference", "exclusion", "screen"}
+
+
+def blend_difference_params(brandbook: dict[str, Any]) -> dict[str, Any]:
+    spec = (brandbook.get("subtitles") or {}).get("blend_difference") or {}
+    fill = gradient_fill_params(brandbook)
+    mode = str(spec.get("mode") or "difference").lower()
+    if mode not in _BLEND_MODES:
+        mode = "difference"
+    fill["mode"] = mode
+    fill["enter_sec"] = float(spec.get("enter_sec", 0.6))
+    fill["rise_em"] = float(spec.get("rise_em", 0.42))
+    fill["max_words"] = int(spec.get("max_words", fill["max_words"]))
+    fill["fade_sec"] = float(spec.get("fade_sec", fill["fade_sec"]))
+    return fill
+
+
+def build_blend_difference(
+    plan: dict[str, Any],
+    brandbook: dict[str, Any],
+    *,
+    duration: float,
+) -> tuple[list[str], list[str], int]:
+    """Белые слова инвертируются о фон. Акцент не блендится — остаётся кровью.
+
+    ``mix-blend-mode`` статический: его нет в списке твинов. Корень композиции
+    несёт ``isolation: isolate``, иначе разница считается с фоном страницы.
+    """
+    params = blend_difference_params(brandbook)
+    baseline = float(plan.get("subtitle_style", {}).get(
+        "baseline_y", params["baseline_y"]))
+    words = _visible_words(plan.get("subtitles") or [], params["case"])
+    if not words:
+        return [], [], 0
+
+    phrases = group_caption_phrases(
+        words,
+        max_words=params["max_words"],
+        pause_break_sec=params["pause_break_sec"],
+    )
+    nodes: list[str] = []
+    tweens: list[str] = []
+    count = 0
+    mode_cls = "" if params["mode"] == "difference" else f" mode-{params['mode']}"
+    enter = params["enter_sec"]
+
+    for p, phrase in enumerate(phrases):
+        start = float(phrase[0]["start"])
+        last_end = float(phrase[-1]["end"])
+        next_start = (
+            float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
+        )
+        texts = [w["display"] for w in phrase]
+        size, widths = fit_wipe_group(
+            texts,
+            max_width=params["frame_w"],
+            base=params["base_px"],
+            letter_spacing_em=params["letter_spacing_em"],
+            gap_em=params["gap_em"],
+        )
+        gap_px = size * params["gap_em"]
+        n = len(phrase)
+        gap = max(0.0, next_start - last_end)
+        fade_dur = min(params["fade_sec"], gap * 0.8) if gap > 0.04 else 0.0
+        fade_start = (next_start - fade_dur) if fade_dur else last_end
+        end = max(next_start if fade_dur else last_end, start + 0.05)
+        if p + 1 < len(phrases) and end > next_start + 1e-6:
+            end = next_start
+        rise = size * params["rise_em"]
+        span = max(0.08, end - start)
+        enter_dur = min(enter, max(0.08, span - 0.04))
+
+        track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
+        clip_id = f"bd-{p:02d}"
+        group_id = f"{clip_id}-g"
+        accent_at = _accent_index(phrase)
+        top = int(baseline - size / 2)
+        word_nodes: list[str] = []
+        for i, word in enumerate(phrase):
+            wid = f"{clip_id}-w{i}"
+            marked = " is-accent" if i == accent_at else ""
+            margin = _px(gap_px) if i < n - 1 else "0"
+            word_nodes.append(
+                f'<div id="{wid}" class="bd-word{marked}" '
+                f'style="font-size:{size}px;line-height:{size}px;'
+                f'margin-right:{margin}px">{_esc(word["display"])}</div>'
+            )
+            count += 1
+
+        nodes.append(
+            f'<div id="{clip_id}" class="clip caption-blend{mode_cls}" '
+            f'data-start="{_num(start)}" data-duration="{_num(end - start)}" '
+            f'data-track-index="{track}">'
+            f'<div id="{group_id}" class="bd-group" '
+            f'style="top:{top}px;left:{int(params["origin_x"])}px;'
+            f'width:{int(params["frame_w"])}px;gap:0">'
+            f'{"".join(word_nodes)}</div></div>'
+        )
+        tweens.append(
+            f'tl.fromTo("#{group_id}",{{opacity:0,y:{_num(rise)}}},'
+            f'{{opacity:1,y:0,duration:{_num(enter_dur)},ease:"expo.out"}},'
+            f'{_num(start)});'
+        )
+        if fade_dur >= 0.04:
+            fade_at = max(fade_start, start + enter_dur + 0.04)
+            if fade_at + fade_dur > end + 1e-6:
+                fade_dur = end - fade_at
+            if fade_dur >= 0.04:
+                tweens.append(
+                    f'tl.to("#{group_id}",{{opacity:0,duration:{_num(fade_dur)},'
+                    f'ease:"power1.out"}},{_num(fade_at)});'
+                )
         tweens.append(
             f'tl.set("#{group_id}",{{opacity:0}},{_num(end)});'
         )

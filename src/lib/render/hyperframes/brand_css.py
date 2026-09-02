@@ -85,7 +85,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # Заливка кадра живёт на full-bleed ребёнке: фон самого корня продюсер
         # при компоновке кадра теряет, и рендер уходит в чёрное.
         f"#root{{position:relative;width:var(--frame-w);height:var(--frame-h);"
-        f"overflow:hidden;font-family:var(--font-subtitle)}}"
+        f"overflow:hidden;font-family:var(--font-subtitle);"
+        "isolation:isolate}}"
         f".stage-bg{{position:absolute;inset:0;z-index:{Z_STAGE};"
         "background:var(--color-bg-light)}"
     )

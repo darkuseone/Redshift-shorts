@@ -102,8 +102,9 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
                     ctx, str(params.get("text", "")), progress=progress))
                 drew += 1
 
-        # Субтитры рисует HyperFrames (gradient-fill / clip-wipe). Покадровый
-        # композитор больше не кладёт pop-in Nunito поверх кадра.
+        # Субтитры рисует HyperFrames (gradient-fill / clip-wipe /
+        # blend-difference). Покадровый композитор больше не кладёт
+        # pop-in Nunito поверх кадра.
         if shot.get("kind") != "fullscreen_text":
             stats.speech_frames += 1
 
