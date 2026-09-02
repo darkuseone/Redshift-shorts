@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,27 @@ def belongs_to_its_source(entry: dict[str, Any]) -> bool:
     его показывать, та самая страница рядом в кадре.
     """
     return str(entry.get("origin") or "") == "press"
+
+
+def _same_intent(left: str, right: str) -> bool:
+    """Тот же ли это по сути слот, для которого оценка ставилась.
+
+    Сравнение по словам, а не побуквенно: реплики разных роликов формулируют
+    один и тот же кадр по-разному («трещиноватый гранит крупным планом» и
+    «крупный план гранита»), и требовать точного совпадения значило бы
+    пересуживать один и тот же кадр каждый прогон. Половина общих слов —
+    порог, при котором слоты ещё про одно и то же.
+    """
+    def words(text: str) -> set[str]:
+        # Сравниваются основы, а не слова целиком: по-русски один и тот же
+        # кадр называют «трещиноватый гранит крупным планом» и «крупный план
+        # трещиноватого гранита» — общих слов ноль, смысл один.
+        return {w[:4] for w in re.findall(r"\w{4,}", str(text).lower())}
+
+    a, b = words(left), words(right)
+    if not a or not b:
+        return False
+    return len(a & b) / len(a | b) >= 0.5
 
 
 def run_step(ctx) -> dict[str, Any]:
@@ -99,8 +121,20 @@ def run_step(ctx) -> dict[str, Any]:
         scored: list[tuple[float, dict[str, Any]]] = []
         for candidate in by_slot[slot_index]:
             # Материал из локальной базы уже оценивался — платить второй раз
-            # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6).
-            if candidate.get("origin") == "local_cache" and candidate.get("prior_score"):
+            # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6). Но оценка
+            # принадлежит паре «кадр + смысл слота», а не кадру: судья отвечал
+            # на вопрос «подходит ли снимок вот этой реплике». Перенести её на
+            # другой слот значит утверждать то, чего никто не проверял —
+            # снимок галактики получил бы 0.9 в кадре про буровую, потому что
+            # у слотов совпал тег «space».
+            #
+            # Вечнозелёная база вскрыла это ребром: её записи не судились ни
+            # разу, у них стоит ровный SEED_SCORE 0.62 при пороге приёма 0.70,
+            # и по этому пути весь засев навсегда оставался «borderline».
+            reusable = (candidate.get("prior_score")
+                        and candidate.get("prior_intent")
+                        and _same_intent(candidate.get("prior_intent", ""), intent))
+            if candidate.get("origin") == "local_cache" and reusable:
                 verdict_dict = {
                     "score": float(candidate["prior_score"]),
                     "reason": "оценка переиспользована из локальной базы",
@@ -134,7 +168,7 @@ def run_step(ctx) -> dict[str, Any]:
             palette = palette_verdict(
                 [Path(f) for f in candidate.get("frames", [])], palette_rules)
 
-            entry = {**candidate, "verdict": verdict_dict,
+            entry = {**candidate, "verdict": verdict_dict, "intent": intent,
                      "score": float(verdict_dict["score"]), "palette": palette}
             entry["decision"] = (
                 "accept" if entry["score"] >= accept_threshold
@@ -203,7 +237,10 @@ def run_step(ctx) -> dict[str, Any]:
             ai_generated=bool(entry.get("ai_generated")),
             mock=bool(entry.get("mock")),
             extra={"attribution": entry.get("attribution", ""),
-                   "author": entry.get("author", "")},
+                   "author": entry.get("author", ""),
+                   # Смысл слота, за который оценка получена: без него она
+                   # не переиспользуема — см. _same_intent.
+                   "judged_intent": entry.get("intent", "")},
         ))
         added_to_index += 1
     index.save()

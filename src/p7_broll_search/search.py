@@ -185,6 +185,9 @@ def run_step(ctx) -> dict[str, Any]:
                 "phashes": record.phashes or ([record.phash] if record.phash else []),
                 "storage_key": record.file, "tags": record.tags,
                 "vision_summary": record.vision_summary, "prior_score": record.score,
+                # Смысл, за который оценка записи получена. Пусто у засева и у
+                # старых записей — такой материал судится заново.
+                "prior_intent": record.extra.get("judged_intent", ""),
                 "ai_generated": record.ai_generated, "mock": record.mock,
                 "attribution": record.extra.get("attribution", ""),
                 "page_url": record.url_origin,

@@ -811,3 +811,37 @@ def test_the_repository_library_never_collects_generated_material(tmp_path, cfg,
     items = json.loads(index_path.read_text("utf-8"))["items"] if index_path.exists() else []
     assert not [i for i in items if i.get("ai_generated")], "AI попал в общую базу"
     assert not list((tmp_path / "storage").rglob("*.mp4")), "AI попал в хранилище"
+
+
+class TestScoreBelongsToItsSlot:
+    """Оценка принадлежит паре «кадр + смысл слота», а не кадру.
+
+    Судья отвечал на вопрос «подходит ли снимок вот этой реплике». Перенести
+    ответ на другой слот значит утверждать непроверенное: снимок галактики
+    получил бы 0.9 в кадре про буровую, потому что у слотов совпал тег
+    «space». Вечнозелёная база вскрыла это ребром — её записи не судились ни
+    разу, у них ровный SEED_SCORE 0.62 при пороге приёма 0.70, и по старому
+    пути весь засев навсегда оставался «borderline».
+    """
+
+    def test_the_same_shot_phrased_differently_is_the_same_slot(self):
+        from src.p8_broll_judge.judge import _same_intent
+
+        assert _same_intent("трещиноватый гранит крупным планом",
+                            "крупный план трещиноватого гранита")
+        assert _same_intent("ракета на старте ночью", "ракета на старте ночью")
+
+    def test_a_different_slot_does_not_inherit_the_verdict(self):
+        from src.p8_broll_judge.judge import _same_intent
+
+        assert not _same_intent("далёкие галактики в глубоком поле",
+                                "буровая колонна в стволе скважины")
+        assert not _same_intent("ракета поднимается над стартовым столом",
+                                "инженеры в чистой комнате собирают аппарат")
+
+    def test_material_without_a_recorded_intent_is_judged_afresh(self):
+        """У засева и у старых записей смысла не записано — значит, судить."""
+        from src.p8_broll_judge.judge import _same_intent
+
+        assert not _same_intent("", "буровая колонна")
+        assert not _same_intent("буровая колонна", "")
