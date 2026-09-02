@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-103 шаблона каталога — это рендереры с параметрами. Проверяется то, что
+104 шаблона каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -24,7 +24,7 @@ from src.lib.render.hyperframes.templates import (
 ALLOWED_PROPS = {
     "opacity", "x", "y", "scale", "scaleX", "scaleY", "rotation",
     "color", "backgroundColor", "borderRadius", "autoAlpha",
-    "duration", "ease", "repeat", "yoyo", "stagger",
+    "duration", "ease", "repeat", "yoyo", "stagger", "immediateRender",
 }
 
 
@@ -684,6 +684,58 @@ def test_bottom_up_letters_direction_and_unit():
                                    " ".join(piece.tweens)).group(1)))
 
     assert enter_y(far) == pytest.approx(enter_y(std) * 1.5 / 0.85)
+
+
+def test_kinetic_type_swap_rolls_the_slot_without_reflow():
+    """Каталог: yPercent/cqw. Здесь px, слот = самое широкое слово, не .clip."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ПИШИ|КОД|HTML|ОРБИТЫ", renderer="kinetic_type_swap",
+        kinetic_swap=True, exit="none", duration=4.0))
+    node = piece.nodes[0]
+    assert "kts-slot" in node
+    assert "kts-prefix" in node and "ПИШИ" in node
+    assert node.count("kts-word") == 3
+    assert "КОД" in node and "HTML" in node and "ОРБИТЫ" in node
+    body = " ".join(piece.tweens)
+    assert "yPercent" not in body
+    assert "cqw" not in node and "cqh" not in node
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert "back.out(1.7)" in body
+    assert "power4.in" in body
+    assert "immediateRender:false" in body
+    assert re.search(r'style="width:\d+px;height:\d+px"', node)
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    from src.lib.render.hyperframes.templates import _kts_sentence
+    prefix, options, suffix = _kts_sentence({"content": "ПИШИ|КОД|HTML|ОРБИТЫ"})
+    assert (prefix, options, suffix) == ("ПИШИ", ["КОД", "HTML", "ОРБИТЫ"], "")
+
+
+def test_kinetic_type_swap_exit_and_cues():
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД,HTML", renderer="kinetic_type_swap",
+        kinetic_swap=True, exit="fade", duration=4.0))
+    assert 'fromTo("#shot-01-stage",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        content="КОД,HTML", renderer="kinetic_type_swap",
+        kinetic_swap=True, exit="up", duration=4.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    cued = render_fullscreen(_fs_ctx(
+        content="А|Б|В", renderer="kinetic_type_swap",
+        kinetic_swap=True, cues="0.4,1.2", duration=4.0))
+    starts = [float(t.rstrip(");").rsplit(",", 1)[1])
+              for t in cued.tweens if "fromTo" in t and '-w0"' in t]
+    assert starts and any(abs(at - 3.4) < 1e-6 or abs(at - 0.4) < 1e-6
+                          for at in starts)
+    comma = render_fullscreen(_fs_ctx(
+        prefix="ПИШИ", options="КОД,HTML", suffix="СЕЙЧАС",
+        renderer="kinetic_type_swap", duration=4.0))
+    assert "ПИШИ" in comma.nodes[0] and "СЕЙЧАС" in comma.nodes[0]
 
 
 def test_number_slam_splits_the_caption():

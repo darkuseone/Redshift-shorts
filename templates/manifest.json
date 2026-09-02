@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 14,
+    "text-fullscreen": 15,
     "lower-thirds": 8,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 5,
     "hero-devices": 13,
-    "_total": 103
+    "_total": 104
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -490,6 +490,28 @@
         "letters"
       ],
       "renderer": "bottom_up_letters",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/kinetic-type-swap",
+      "name": "kinetic-type-swap",
+      "category": "text-fullscreen",
+      "title": "Фраза стоит, в маске катится слово — kinetic-type-swap",
+      "duration_range": [
+        0.8,
+        4.0
+      ],
+      "params": {
+        "kinetic_swap": true,
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "swap"
+      ],
+      "renderer": "kinetic_type_swap",
       "last_used_in": [],
       "added": "2026-09-02"
     },

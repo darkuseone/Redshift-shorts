@@ -467,6 +467,18 @@ def test_bottom_up_letters_fullscreen_splits_glyphs(plan, assets, brandbook):
     assert 'id="shot-01-c0"' in out
 
 
+def test_kinetic_type_swap_fullscreen_masks_the_slot(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ|КОД|HTML|ОРБИТЫ"
+    plan["shots"][1]["params"] = {"kinetic_swap": True, "exit": "none"}
+    plan["shots"][1]["renderer"] = "kinetic_type_swap"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "kts-slot" in out
+    assert "kts-word" in out
+    assert 'class="kts-slot"' in out
+    assert "yPercent" not in out
+    assert "back.out(1.7)" in out
+
+
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     plan["overlays"][0]["renderer"] = "chat_thread"
     plan["overlays"][0]["params"] = {

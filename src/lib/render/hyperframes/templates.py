@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-103 шаблона каталога — это не 103 реализации, а набор рендереров с параметрами.
+104 шаблона каталога — это не 104 реализации, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1690,6 +1690,236 @@ def fs_strip(ctx: "TemplateCtx") -> Piece:
                                name="rise"))
 
 
+# Kinetic Type Swap: префикс и суффикс стоят, в маске катится слот.
+# Каталог тянет yPercent/cqw; здесь px и fit_size. IN 2.25 сжимается вместе
+# с OUT, если кадр короче базы. HOLD — остаток. Слот шириной в самое длинное
+# слово, покадровая перекладка предложения запрещена.
+_KTS_IN_BASE = 2.25
+_KTS_OUT_BASE = 0.45
+_KTS_ARRIVAL = 0.3
+_KTS_SWAP_START = 0.48
+_KTS_ROLL = 0.46
+_KTS_SETTLE = 0.18
+_KTS_TRAVEL_EM = 1.12
+_KTS_GAP_EM = 0.26
+_KTS_EXIT_Y = 58
+
+
+def _kts_sentence(params: dict[str, Any]) -> tuple[str, list[str], str]:
+    """Префикс, варианты слота, суффикс. Явные params важнее content.
+
+    Пайп: ``ПИШИ|КОД|HTML|CSS`` — первое слово стоит, остальные катятся.
+    ``ПИШИ|КОД,HTML,CSS|сейчас`` — суффикс после списка через запятую.
+    Без пайпа все слова катятся в слоте: так P11 не ломает обычную фразу.
+    """
+    prefix = str(params.get("prefix") or "").strip()
+    suffix = str(params.get("suffix") or "").strip()
+    raw = params.get("options")
+    options: list[str] = []
+    if isinstance(raw, (list, tuple)):
+        options = [str(part).strip() for part in raw if str(part).strip()]
+    elif raw is not None and str(raw).strip():
+        options = [part.strip() for part in str(raw).split(",") if part.strip()]
+
+    content = str(params.get("content") or "").strip()
+    if options:
+        return prefix, options, suffix
+    if not content:
+        return prefix, [], suffix
+
+    if "|" in content:
+        chunks = [part.strip() for part in content.split("|")]
+        rest = chunks
+        if not prefix:
+            prefix = chunks[0]
+            rest = chunks[1:]
+        if len(rest) == 2 and "," in rest[0]:
+            options = [part.strip() for part in rest[0].split(",") if part.strip()]
+            if not suffix:
+                suffix = rest[1]
+        elif len(rest) == 1 and "," in rest[0]:
+            options = [part.strip() for part in rest[0].split(",") if part.strip()]
+        else:
+            options = [part for part in rest if part]
+        return prefix, options, suffix
+
+    if "," in content:
+        return prefix, [part.strip() for part in content.split(",") if part.strip()], suffix
+    return prefix, content.split(), suffix
+
+
+def _kts_cues(params: dict[str, Any]) -> list[float]:
+    raw = params.get("cues")
+    tokens: list[str]
+    if isinstance(raw, (list, tuple)):
+        tokens = [str(item).strip() for item in raw]
+    else:
+        tokens = str(raw or "").split(",")
+    cues: list[float] = []
+    for token in tokens:
+        if not token:
+            continue
+        try:
+            seconds = float(token)
+        except (TypeError, ValueError):
+            continue
+        if seconds >= 0 and seconds == seconds:  # not NaN
+            cues.append(seconds)
+    cues.sort()
+    return cues
+
+
+def _kts_fit(prefix: str, options: list[str], suffix: str,
+             available: float, ceiling: int) -> tuple[int, int]:
+    """Кегль и ширина слота: слот = самое широкое слово, предложение не живёт."""
+
+    def measure(size: int) -> tuple[float, int]:
+        widest = max(text_width(word, size) for word in options)
+        gap = _KTS_GAP_EM * size
+        total = widest
+        if prefix:
+            total += text_width(prefix, size) + gap
+        if suffix:
+            total += text_width(suffix, size) + gap
+        return total, max(1, int(round(widest)))
+
+    width, slot = measure(ceiling)
+    if width <= available:
+        return ceiling, slot
+    size = max(24, int(ceiling * available / width))
+    _, slot = measure(size)
+    return size, slot
+
+
+def fs_kinetic_type_swap(ctx: "TemplateCtx") -> Piece:
+    """Держится фраза, в маске катится слово — kinetic-type-swap.
+
+    Каталог: ``yPercent``, ``cqw`` и ``color-mix``. Движок этого не умеет:
+    ход в пикселях (1.12 кегля), кегль через ``fit_size``, слот — статическая
+    маска ``overflow:hidden`` шириной в самое длинное слово. Зелёный/синий/
+    фиолетовый слота → ``accent``. Префикс и суффикс — ``ink``. Жёлтого нет.
+    Твины на сцене и словах, не на ``.clip``.
+    """
+    prefix, options, suffix = _kts_sentence(ctx.params)
+    if not options:
+        return fs_plain(ctx) if str(ctx.params.get("content") or "").strip() else Piece()
+    invert = bool(ctx.params.get("invert"))
+    exit_mode = str(ctx.params.get("exit") or "none").lower()
+    if exit_mode not in ("none", "fade", "up"):
+        exit_mode = "none"
+    node_id = ctx.target
+    available = float(ctx.params.get("available_px") or 900)
+    size, slot_w = _kts_fit(prefix, options, suffix, available, _fs_ceiling(ctx))
+    travel = round(_KTS_TRAVEL_EM * size, 2)
+    t0 = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    duration = max(0.001, end - t0)
+    out_base = 0.0 if exit_mode == "none" else _KTS_OUT_BASE
+    total_base = max(0.001, _KTS_IN_BASE + out_base)
+    scale = duration / total_base if duration < total_base else 1.0
+    arrival = _KTS_ARRIVAL * scale
+    inn = _KTS_IN_BASE * scale
+    out = out_base * scale
+    swap_start = _KTS_SWAP_START * scale
+    roll = _KTS_ROLL * scale
+    settle = _KTS_SETTLE * scale
+    enter_delay = float(ctx.params.get("enter_delay") or 0)
+    cues = [max(0.0, cue - enter_delay) for cue in _kts_cues(ctx.params)]
+
+    swap_count = len(options) - 1
+    swap_times: list[float] = []
+    roll_duration = roll
+    if swap_count > 0:
+        if cues:
+            last_cue = cues[-1]
+            cue_gap = (max(0.05, (last_cue - cues[0]) / (len(cues) - 1))
+                       if len(cues) >= 2 else roll)
+            latest_swap = max(0.0, duration - out - roll - settle)
+            for index in range(swap_count):
+                cue_at = (cues[index] if index < len(cues)
+                          else last_cue + (index - (len(cues) - 1)) * cue_gap)
+                swap_times.append(min(latest_swap, max(0.0, cue_at)))
+            gaps = [swap_times[i] - swap_times[i - 1]
+                    for i in range(1, len(swap_times))]
+            if gaps:
+                roll_duration = min(roll, max(0.04, min(gaps) * 0.72))
+        else:
+            last_swap_start = max(swap_start, inn - settle - roll)
+            swap_step = (0.0 if swap_count == 1
+                         else (last_swap_start - swap_start) / (swap_count - 1))
+            roll_duration = (roll if swap_count <= 2
+                             else min(roll, max(0.04, swap_step * 0.72)))
+            for index in range(1, swap_count + 1):
+                swap_times.append(
+                    last_swap_start if swap_count == 1
+                    else swap_start + (index - 1) * swap_step)
+    swaps_end = (swap_times[-1] + roll_duration + settle if swap_times else inn)
+    hold_start = min(max(0.0, duration - out), max(inn, swaps_end))
+    hold = max(0.0, duration - (hold_start + out))
+    out_at = t0 + hold_start + hold
+
+    cls = "clip fullscreen-text fs-kts" + (" invert" if invert else "")
+    prefix_html = f'<span class="kts-prefix">{_esc(prefix)}</span>'
+    suffix_html = f'<span class="kts-suffix">{_esc(suffix)}</span>'
+    words_html: list[str] = []
+    tweens: list[str] = [
+        f'tl.fromTo("#{node_id}-stage",{{opacity:0}},{{opacity:1,'
+        f'duration:{_num(arrival)},ease:"power2.out"}},{_num(t0)});'
+    ]
+    for index, option in enumerate(options):
+        wid = f"{node_id}-w{index}"
+        words_html.append(
+            f'<span id="{wid}" class="kts-word">{_esc(option)}</span>')
+        if index == 0:
+            tweens.append(
+                f'tl.set("#{wid}",{{y:0,opacity:1}},{_num(t0)});')
+        else:
+            tweens.append(
+                f'tl.set("#{wid}",{{y:{_num(travel)},opacity:0}},{_num(t0)});')
+
+    for swap_index, local_at in enumerate(swap_times):
+        outgoing = f"{node_id}-w{swap_index}"
+        incoming = f"{node_id}-w{swap_index + 1}"
+        word_index = swap_index + 1
+        incoming_ease = "back.out(1.7)" if word_index == len(options) - 1 else "power4.out"
+        out_dur = roll_duration * 0.55
+        in_dur = roll_duration * 0.55
+        swap_at = t0 + local_at
+        in_start = swap_at + roll_duration - in_dur
+        tweens.append(
+            f'tl.fromTo("#{outgoing}",{{y:0}},{{y:{_num(-travel)},'
+            f'duration:{_num(out_dur)},ease:"power4.in",immediateRender:false}},'
+            f'{_num(swap_at)});')
+        tweens.append(
+            f'tl.set("#{outgoing}",{{opacity:0}},{_num(swap_at + out_dur)});')
+        tweens.append(
+            f'tl.fromTo("#{incoming}",{{y:{_num(travel)},opacity:0}},'
+            f'{{y:0,opacity:1,duration:{_num(in_dur)},ease:"{incoming_ease}",'
+            f'immediateRender:false}},{_num(in_start)});')
+
+    if exit_mode == "fade" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{opacity:1}},{{opacity:0,'
+            f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
+            f'{_num(out_at)});')
+    elif exit_mode == "up" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{opacity:1,y:0}},'
+            f'{{opacity:0,y:{_num(-_KTS_EXIT_Y)},duration:{_num(out)},'
+            f'ease:"power2.in",immediateRender:false}},{_num(out_at)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<div id="{node_id}-stage" class="kts-stage">'
+               f'<div class="kts-sentence" style="font-size:{size}px">'
+               f'{prefix_html}'
+               f'<span class="kts-slot" style="width:{slot_w}px;height:{size}px">'
+               f'{"".join(words_html)}</span>'
+               f'{suffix_html}'
+               f'</div></div></div>'],
+        tweens=tweens)
+
+
 def fs_word_swap(ctx: "TemplateCtx") -> Piece:
     """Слова сменяются на месте заранее выписанными кадрами, не таймером."""
     content, accent, invert = _content_of(ctx)
@@ -1741,6 +1971,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "kinetic_stack": fs_kinetic_stack,
     "blur_out_up": fs_blur_out_up,
     "bottom_up_letters": fs_bottom_up_letters,
+    "kinetic_type_swap": fs_kinetic_type_swap,
     "number_slam": fs_number_slam,
 }
 
@@ -1755,6 +1986,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_blur_out_up(ctx)
     if params.get("bottom_up"):
         return fs_bottom_up_letters(ctx)
+    if params.get("kinetic_swap"):
+        return fs_kinetic_type_swap(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -1961,6 +2194,19 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "justify-content:center;width:100%;background:var(--color-accent);"
         "color:var(--color-bg-pure);will-change:transform}"
         ".fullscreen-text.fs-strip{background:var(--color-bg-light)}"
+        ".fullscreen-text .kts-stage{display:flex;align-items:center;"
+        "justify-content:center;width:100%;height:100%;will-change:opacity}"
+        ".fullscreen-text .kts-sentence{display:flex;align-items:baseline;"
+        "justify-content:center;gap:0.26em;max-width:100%;white-space:nowrap;"
+        "letter-spacing:-0.045em;line-height:1.08}"
+        ".fullscreen-text .kts-prefix,.fullscreen-text .kts-suffix{flex:0 0 auto}"
+        ".fullscreen-text .kts-prefix:empty,.fullscreen-text .kts-suffix:empty"
+        "{display:none}"
+        ".fullscreen-text .kts-slot{position:relative;display:block;flex:0 0 auto;"
+        "overflow:hidden;color:var(--color-accent)}"
+        ".fullscreen-text .kts-word{position:absolute;left:0;right:0;top:0;"
+        "color:var(--color-accent);text-align:center;white-space:nowrap;"
+        "line-height:1;will-change:opacity}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"
