@@ -1374,12 +1374,13 @@ _BOU_REACH = {"close": 0.5, "standard": 1.0, "far": 1.85}
 _BOU_BLUR = {"soft": 0.45, "standard": 1.0, "heavy": 2.2}
 _BOU_BASE_PX = 22.0
 _BOU_BASE_BLUR = 5.0
+_BOU_REF_SIZE = 56.0  # кегль демо-каталога; ход масштабируем к Oswald
 _BOU_ENTER = 0.3
 _BOU_EXIT = 0.28
 _BOU_SCALE_FROM = 0.92
 
 
-def _bou_motion(params: dict[str, Any]) -> tuple[float, float, int]:
+def _bou_motion(params: dict[str, Any], size: int) -> tuple[float, float, int]:
     """Смещение входа и радиус призрака из переменных каталога."""
     direction = str(params.get("direction") or "up").lower()
     if direction not in _BOU_AXES:
@@ -1387,7 +1388,9 @@ def _bou_motion(params: dict[str, Any]) -> tuple[float, float, int]:
     axis_x, axis_y = _BOU_AXES[direction]
     reach = _BOU_REACH.get(str(params.get("distance") or "standard"), 1.0)
     blur_scale = _BOU_BLUR.get(str(params.get("blur") or "standard"), 1.0)
-    dist = _BOU_BASE_PX * reach
+    # 22 px при 56 px в каталоге. На 9:16 кегль ~200–420, иначе ход не читается.
+    em = max(24, size) / _BOU_REF_SIZE
+    dist = _BOU_BASE_PX * reach * em
     return axis_x * dist, axis_y * dist, max(1, int(round(_BOU_BASE_BLUR * blur_scale)))
 
 
@@ -1435,7 +1438,7 @@ def fs_blur_out_up(ctx: "TemplateCtx") -> Piece:
     node_id = ctx.target
     words = content.split()
     size = _fs_size(ctx, content)
-    enter_x, enter_y, blur_px = _bou_motion(ctx.params)
+    enter_x, enter_y, blur_px = _bou_motion(ctx.params, size)
     stagger = float(ctx.params.get("stagger_ms", 55)) / 1000.0
     at = _enter_at(ctx)
     end = ctx.start + ctx.duration
@@ -1845,7 +1848,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "gap:0.18em 0.28em;max-width:100%}"
         ".fullscreen-text .ks-word{display:inline-block;will-change:transform}"
         ".fullscreen-text .bou-stack{display:flex;flex-wrap:wrap;justify-content:center;"
-        "gap:0.18em 0.28em;max-width:100%;letter-spacing:-0.04em}"
+        "align-items:center;gap:0.18em 0.28em;max-width:100%;letter-spacing:-0.04em}"
         ".fullscreen-text .bou-word{position:relative;display:inline-block;"
         "will-change:transform}"
         ".fullscreen-text .bou-sharp{position:relative;display:block}"

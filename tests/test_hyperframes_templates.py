@@ -599,14 +599,17 @@ def test_blur_out_up_staggers_words_from_a_static_ghost():
     assert "filter" not in body
     extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
     assert not extra
-    assert all(f'#{_fs_ctx().target}' != re.search(r'"(#[^"]+)"', t).group(1)
-               for t in piece.tweens)
-    starts = [float(t.rstrip(");").rsplit(",", 1)[1])
-              for t in piece.tweens if "fromTo" in t and "-w0\"" in t][:1]
-    later = [float(t.rstrip(");").rsplit(",", 1)[1])
-             for t in piece.tweens if "fromTo" in t and "-w1\"" in t][:1]
-    assert starts and later and later[0] - starts[0] == pytest.approx(0.055)
-    assert "y:22" in body and "y:-22" in body
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    w0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w0"' in t][:1]
+    w1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w1"' in t][:1]
+    assert w0 and w1 and w1[0] - w0[0] == pytest.approx(0.055)
+    assert re.search(r"scale:0.92,y:[0-9.]+", body)
+    assert re.search(r"y:-[0-9.]+", body)
     ids = re.findall(r'id="([^"]+)"', node)
     assert len(ids) == len(set(ids))
 
@@ -615,13 +618,20 @@ def test_blur_out_up_direction_flips_the_axis():
     left = render_fullscreen(_fs_ctx(
         content="код", renderer="blur_out_up", direction="left", duration=1.8))
     body = " ".join(left.tweens)
-    assert "x:-22" in body and "x:22" in body
+    assert re.search(r"scale:0.92,x:-", body)
+    assert re.search(r"scale:0.96,x:[0-9.]+", body)
     assert "{y:" not in body and ",y:" not in body
+    std = render_fullscreen(_fs_ctx(
+        content="код", renderer="blur_out_up", duration=1.8))
     far = render_fullscreen(_fs_ctx(
         content="код", renderer="blur_out_up", direction="up",
         distance="far", blur="heavy", duration=1.8))
     assert "filter:blur(11px)" in far.nodes[0]
-    assert "y:40.7" in " ".join(far.tweens)
+
+    def enter_y(piece):
+        return float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(piece.tweens)).group(1))
+
+    assert enter_y(far) == pytest.approx(enter_y(std) * 1.85)
 
 
 def test_number_slam_splits_the_caption():
