@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/terminal-simulator",
+  "name": "terminal-simulator",
+  "category": "text-fullscreen",
+  "title": "Окно IDE: скелет строк и команда в терминале — terminal-simulator",
+  "duration_range": [
+    1.5,
+    5.0
+  ],
+  "params": {
+    "terminal_simulator": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "terminal",
+    "developer"
+  ],
+  "needs": [
+    "device"
+  ],
+  "renderer": "terminal_simulator",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/shared-axis-z",
+  "name": "shared-axis-z",
+  "category": "text-fullscreen",
+  "title": "Слова набухают по оси Z со стаггером — shared-axis-z",
+  "duration_range": [
+    0.8,
+    2.4
+  ],
+  "params": {
+    "shared_axis_z": true,
+    "direction": "in",
+    "depth": "standard",
+    "tone": "ink"
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "scale"
+  ],
+  "needs": [],
+  "renderer": "shared_axis_z",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

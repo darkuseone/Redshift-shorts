@@ -1,0 +1,26 @@
+{
+  "id": "text-fullscreen/code-diff",
+  "name": "code-diff",
+  "category": "text-fullscreen",
+  "title": "Правка как цветной diff: минус схлопывается, плюс раскрывается — code-diff",
+  "duration_range": [
+    1.5,
+    6.0
+  ],
+  "params": {
+    "code_diff": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "diff",
+    "developer"
+  ],
+  "needs": [
+    "device",
+    "comparison"
+  ],
+  "renderer": "code_diff",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "transitions/whip-pan",
+  "name": "whip-pan",
+  "category": "transitions",
+  "title": "Whip pan: оба кадра едут вбок с направленным смазом — whip-pan",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "pan",
+    "shader"
+  ],
+  "needs": [],
+  "renderer": "whip_pan_shader",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

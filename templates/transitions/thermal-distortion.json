@@ -1,0 +1,22 @@
+{
+  "id": "transitions/thermal-distortion",
+  "name": "thermal-distortion",
+  "category": "transitions",
+  "title": "Thermal distortion: heat shimmer снизу и haze — thermal-distortion",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "thermal",
+    "shader"
+  ],
+  "needs": [
+    "danger"
+  ],
+  "renderer": "thermal_distortion",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

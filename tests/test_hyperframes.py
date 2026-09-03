@@ -1168,6 +1168,17 @@ class TestChannelSurfacesAreDark:
         # Не плита, а чернила: пылинка приёма «текст рассыпается» на тёмном
         # фоне обязана быть светлой — это точка, а не поверхность.
         "ptd-dot",
+        # То же и у точки на линии графика: маркер 22 пикселя, не плита.
+        "mlg-dot",
+        # Экран телефона с перепиской — такой же чужой интерфейс, как окно
+        # браузера: белым он и обязан быть.
+        "acr-",
+        # Не поверхность, а операция: `mix-blend-mode` считает разницу с
+        # белым операндом, и другого цвета вспышка просто не даст.
+        "gs-flick", "cw-invert", "tto-flash", "bfc-flash",
+        # Каретка редактора — чернила, а не плита: прямоугольник в две буквы
+        # шириной, которым текст показывает, где он сейчас пишется.
+        "dp-caret",
     )
 
     def test_no_surface_of_the_channel_paints_itself_light(self, brandbook):
@@ -1254,3 +1265,98 @@ class TestTheBrandMarksFrameTheCard:
         css = brand_marks_css(brandbook)
         token = str(brandbook["brand_marks"]["color"]).replace("_", "-")
         assert f"var(--color-{token})" in css
+
+
+class TestThePortedDevicesSpeakTheChannelLanguage:
+    """Перенос из соседней ветки приходит со своим каналом — и не должен.
+
+    Ветка шаблонов писалась под другой канал: 81 цветное значение по всему
+    кругу оттенков (бирюза, охра, маджента) и `font-family:Inter`, которого
+    в проекте нет. Цвет — узнаваемость, а незнакомый шрифт молча подменяется
+    системным, который шире модели ширины на восемнадцать процентов: подпись
+    вылезает за рабочую зону. Приведение делает `tools/port_templates.py`;
+    тест сторожит, что следующий перенос не привезёт чужое снова.
+    """
+
+    def _sources(self):
+        from pathlib import Path
+
+        pkg = Path(__file__).resolve().parents[1] / "src/lib/render/hyperframes"
+        return [(path.name, path.read_text(encoding="utf-8"))
+                for path in (pkg / "templates_sci.py", pkg / "acr_chat.py")
+                if path.exists()]
+
+    def test_no_literal_colour_survives_the_port(self, brandbook):
+        """Чужого цвета не остаётся: либо переменная, либо цвет брендбука.
+
+        Второе — не поблажка. Карта мира смешивает два цвета шкалы
+        арифметикой (`int(h[0:2], 16)`), и переменную CSS там не посчитать:
+        приём падал на `int('va', 16)`. Такому месту достаётся число самого
+        брендбука, а не чужой цвет.
+        """
+        import re
+
+        ours = {v.upper() for v in brandbook["colors"].values()
+                if isinstance(v, str) and v.startswith("#")}
+        for name, source in self._sources():
+            found = {c.upper() for c in
+                     re.findall(r"#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b", source)}
+            assert not (found - ours), \
+                f"{name}: цвет мимо брендбука — {sorted(found - ours)[:6]}"
+
+    def test_no_saturated_rgba_survives_the_port(self, brandbook):
+        """Полупрозрачный цвет — либо вуаль, либо цвет брендбука.
+
+        Переменную CSS в `rgba()` не подставить, поэтому насыщенное значение
+        приводится к числам самого брендбука; всё прочее насыщенное — чужое.
+        """
+        import colorsys
+        import re
+
+        ours = set()
+        for value in brandbook["colors"].values():
+            if isinstance(value, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+                ours.add(tuple(int(value[i:i + 2], 16) for i in (1, 3, 5)))
+        for name, source in self._sources():
+            for red, green, blue, _alpha in re.findall(
+                    r"rgba\((\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\)", source):
+                channels = (int(red), int(green), int(blue))
+                if channels in ours:
+                    continue
+                _hue, _light, sat = colorsys.rgb_to_hls(*(c / 255 for c in channels))
+                # Ненасыщенное — вуали и тени, им цвет канала не нужен.
+                assert sat < 0.18, f"{name}: цветная rgba{channels}"
+
+    def test_every_family_is_a_font_of_the_project(self):
+        import re
+
+        for name, source in self._sources():
+            families = re.findall(r"font-family:([^;\"'}]*)", source)
+            for family in families:
+                assert family.startswith("var(--font-"), f"{name}: {family!r}"
+
+    def test_no_ported_chart_fills_the_frame_with_one_colour(self, brandbook):
+        """Плита остаётся плитой, даже если перекрасить её в цвет канала.
+
+        Гонка столбиков приехала с белым холстом во весь кадр; приведение
+        цвета сделало его лососевым — и полтора экрана залило одним тоном.
+        Кадр во весь рост заливается только «космосом» или чернилами: это
+        сцена, а не заливка.
+        """
+        import re
+
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "a.ttf", "subtitle": "b.ttf",
+                                    "mono": "c.ttf"})
+        allowed = {"var(--color-space-deep)", "var(--color-ink)",
+                   "var(--color-panel)", "transparent", "none"}
+        offenders = []
+        for match in re.finditer(r"(\.[a-zA-Z0-9_.\- >]+)\{([^}]*)\}", css):
+            body = match.group(2)
+            if "width:1080px" not in body or "height:1920px" not in body:
+                continue
+            fill = re.search(r"background(?:-color)?:\s*([^;}]+)", body)
+            if fill and fill.group(1).strip() not in allowed:
+                offenders.append(f"{match.group(1).strip()} → {fill.group(1).strip()}")
+        assert not offenders, f"кадр залит не сценой: {offenders}"

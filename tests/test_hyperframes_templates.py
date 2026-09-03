@@ -1737,6 +1737,10 @@ OVERLAY_PARAMS = {
                        "snippet": "long quoted line here", "highlight_line": "quoted"},
     "paper_reveal": {"domain": "arxiv.org", "title": "Nature",
                      "snippet": "One. Two. Three.", "highlight_line": "Two"},
+    # Перенесённые приёмы: нижние трети и разговор с моделью.
+    "lt_accent_underline": {"title": "Кольская", "subtitle": "12 262 метра"},
+    "lt_clean_bar": {"title": "Кольская", "subtitle": "12 262 метра"},
+    "lt_dark_card": {"title": "Кольская", "subtitle": "12 262 метра"},
 }
 
 

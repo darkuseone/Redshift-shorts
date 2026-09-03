@@ -1,0 +1,26 @@
+{
+  "id": "text-fullscreen/code-particle-assemble",
+  "name": "code-particle-assemble",
+  "category": "text-fullscreen",
+  "title": "Пыль собирается в глифы кода — code-particle-assemble",
+  "duration_range": [
+    1.5,
+    8.0
+  ],
+  "params": {
+    "code_particle_assemble": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "particles",
+    "developer"
+  ],
+  "needs": [
+    "device",
+    "discovery"
+  ],
+  "renderer": "code_particle_assemble",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

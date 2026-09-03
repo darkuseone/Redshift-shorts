@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/code-typing",
+  "name": "code-typing",
+  "category": "text-fullscreen",
+  "title": "Посимвольный набор с кареткой — code-typing",
+  "duration_range": [
+    1.5,
+    5.0
+  ],
+  "params": {
+    "code_typing": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "typing",
+    "developer"
+  ],
+  "needs": [
+    "device"
+  ],
+  "renderer": "code_typing",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

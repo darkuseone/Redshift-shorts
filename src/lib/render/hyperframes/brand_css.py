@@ -16,6 +16,7 @@ from typing import Any
 
 from ...backdrop import backdrop_css
 from .captions import caption_css
+from .templates_sci import ported_css
 from .templates import (
     brand_marks_css, dataviz_css, hero_css, overlay_css, split_css,
     transition_css,
@@ -428,6 +429,10 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     parts.append(overlay_css(brandbook))
     parts.append(split_css(brandbook))
     parts.append(hero_css(brandbook))
+    # Стиль перенесённых приёмов идёт последним: у него свои классы, и он
+    # ничего не переопределяет — но если когда-нибудь начнёт, спор решится
+    # в пользу нашего, а не чужого.
+    parts.append(ported_css(brandbook))
 
     return "\n".join(parts) + "\n"
 

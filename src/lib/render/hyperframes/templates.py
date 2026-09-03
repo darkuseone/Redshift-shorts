@@ -5047,3 +5047,45 @@ def brand_marks_css(brandbook: dict[str, Any]) -> str:
         ".brand-marks .bm-tick{opacity:0.8}"
     )
 
+# --- перенесено из ветки шаблонов ---------------
+# Импорт внизу файла намеренно: перенесённое зовёт наши
+# `Piece`, `fit_size` и прочее, а к этой строке они уже
+# определены. Реестры пополняются здесь же, чтобы движок
+# находил новый приём по тому же имени, что и старый.
+from . import templates_sci as _sci  # noqa: E402
+
+DATAVIZ["animated-bar-chart"] = _sci.dv_animated_bar_chart
+DATAVIZ["bar-chart-race"] = _sci.dv_bar_chart_race
+DATAVIZ["chart-story"] = _sci.dv_chart_story
+DATAVIZ["conic-progress-ring"] = _sci.dv_conic_progress_ring
+DATAVIZ["decline-chart"] = _sci.dv_decline_chart
+DATAVIZ["mk-line-graph"] = _sci.dv_mk_line_graph
+DATAVIZ["star-rating-fill"] = _sci.dv_star_rating_fill
+DATAVIZ["world-map"] = _sci.dv_world_map
+FULLSCREEN["apple_terminal_clear_dark"] = _sci.fs_apple_terminal_clear_dark
+FULLSCREEN["beat_freeze_cut"] = _sci.fs_beat_freeze_cut
+FULLSCREEN["code_3d_extrude"] = _sci.fs_code_3d_extrude
+FULLSCREEN["code_diff"] = _sci.fs_code_diff
+FULLSCREEN["code_particle_assemble"] = _sci.fs_code_particle_assemble
+FULLSCREEN["code_scroll"] = _sci.fs_code_scroll
+FULLSCREEN["code_typing"] = _sci.fs_code_typing
+FULLSCREEN["dark_plus"] = _sci.fs_dark_plus
+FULLSCREEN["shared_axis_z"] = _sci.fs_shared_axis_z
+FULLSCREEN["terminal_simulator"] = _sci.fs_terminal_simulator
+OVERLAYS["lt_accent_underline"] = _sci.ov_lt_accent_underline
+OVERLAYS["lt_clean_bar"] = _sci.ov_lt_clean_bar
+OVERLAYS["lt_dark_card"] = _sci.ov_lt_dark_card
+TRANSITIONS["cinematic_zoom"] = _sci.tr_cinematic_zoom
+TRANSITIONS["glitch_shader"] = _sci.tr_glitch_shader
+TRANSITIONS["gravitational_lens"] = _sci.tr_gravitational_lens
+TRANSITIONS["light_leak"] = _sci.tr_light_leak
+TRANSITIONS["mk_clone_wall"] = _sci.tr_mk_clone_wall
+TRANSITIONS["sdf_iris"] = _sci.tr_sdf_iris
+TRANSITIONS["thermal_distortion"] = _sci.tr_thermal_distortion
+TRANSITIONS["transitions_3d"] = _sci.tr_transitions_3d
+TRANSITIONS["transitions_blur"] = _sci.tr_transitions_blur
+TRANSITIONS["transitions_cover"] = _sci.tr_transitions_cover
+TRANSITIONS["transitions_destruction"] = _sci.tr_transitions_destruction
+TRANSITIONS["transitions_light"] = _sci.tr_transitions_light
+TRANSITIONS["transitions_other"] = _sci.tr_transitions_other
+TRANSITIONS["whip_pan_shader"] = _sci.tr_whip_pan_shader

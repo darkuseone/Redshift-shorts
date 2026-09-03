@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-other",
+  "name": "transitions-other",
+  "category": "transitions",
+  "title": "Flash cut: белая вспышка на склейке, SCENE B проявляется — transitions-other",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "flash",
+    "cut"
+  ],
+  "needs": [],
+  "renderer": "transitions_other",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

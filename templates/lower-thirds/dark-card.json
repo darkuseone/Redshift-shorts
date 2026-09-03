@@ -1,0 +1,24 @@
+{
+  "id": "lower-thirds/dark-card",
+  "name": "dark-card",
+  "category": "lower-thirds",
+  "title": "Угольная карточка на светлом футаже",
+  "duration_range": [
+    1.5,
+    4.8
+  ],
+  "params": {
+    "dark_card": true,
+    "position": "bottom"
+  },
+  "tags": [
+    "person",
+    "lower-third",
+    "overlay",
+    "dark"
+  ],
+  "needs": [],
+  "renderer": "lt_dark_card",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

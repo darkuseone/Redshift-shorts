@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-blur",
+  "name": "transitions-blur",
+  "category": "transitions",
+  "title": "Blur through: SCENE A уходит в размытие, SCENE B выходит из него — transitions-blur",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "blur",
+    "through"
+  ],
+  "needs": [],
+  "renderer": "transitions_blur",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

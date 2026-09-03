@@ -1,0 +1,27 @@
+{
+  "id": "text-fullscreen/apple-terminal-clear-dark",
+  "name": "apple-terminal-clear-dark",
+  "category": "text-fullscreen",
+  "title": "Terminal.app Clear Dark: набор команды и вывод — apple-terminal-clear-dark",
+  "duration_range": [
+    2.0,
+    12.0
+  ],
+  "params": {
+    "apple_terminal_clear_dark": true
+  },
+  "tags": [
+    "code",
+    "developer",
+    "showcase",
+    "terminal",
+    "apple",
+    "apple-terminal"
+  ],
+  "needs": [
+    "device"
+  ],
+  "renderer": "apple_terminal_clear_dark",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

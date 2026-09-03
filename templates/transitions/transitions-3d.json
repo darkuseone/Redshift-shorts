@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-3d",
+  "name": "transitions-3d",
+  "category": "transitions",
+  "title": "3D card flip: SCENE A схлопывается, SCENE B раскрывается — transitions-3d",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "3d",
+    "flip"
+  ],
+  "needs": [],
+  "renderer": "transitions_3d",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

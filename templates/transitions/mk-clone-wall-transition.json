@@ -1,0 +1,22 @@
+{
+  "id": "transitions/mk-clone-wall-transition",
+  "name": "mk-clone-wall-transition",
+  "category": "transitions",
+  "title": "Clone wall: плитка слов накрывает кадр и инвертируется — mk-clone-wall-transition",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {
+    "word": "HyperFrames"
+  },
+  "tags": [
+    "dynamic",
+    "typography",
+    "wipe"
+  ],
+  "needs": [],
+  "renderer": "mk_clone_wall",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

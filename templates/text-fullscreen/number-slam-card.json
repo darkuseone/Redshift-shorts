@@ -21,7 +21,10 @@
     "number"
   ],
   "renderer": "number_slam",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0047",
+    "redshift_0042"
+  ],
   "added": "2026-09-02",
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
 }

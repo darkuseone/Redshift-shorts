@@ -24,6 +24,8 @@
     "device"
   ],
   "renderer": "scramble_reveal",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0047"
+  ],
   "added": "2026-09-02"
 }

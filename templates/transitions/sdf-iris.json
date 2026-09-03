@@ -1,0 +1,20 @@
+{
+  "id": "transitions/sdf-iris",
+  "name": "sdf-iris",
+  "category": "transitions",
+  "title": "SDF iris: круг из центра и onion rings — sdf-iris",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "iris",
+    "shader"
+  ],
+  "needs": [],
+  "renderer": "sdf_iris",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

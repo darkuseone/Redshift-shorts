@@ -1,0 +1,22 @@
+{
+  "id": "transitions/cinematic-zoom",
+  "name": "cinematic-zoom",
+  "category": "transitions",
+  "title": "Cinematic zoom: radial blur и сдвиг каналов — cinematic-zoom",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {
+    "from_scale": 1.16
+  },
+  "tags": [
+    "dynamic",
+    "zoom",
+    "shader"
+  ],
+  "needs": [],
+  "renderer": "cinematic_zoom",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

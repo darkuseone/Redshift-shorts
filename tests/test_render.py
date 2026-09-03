@@ -238,9 +238,9 @@ def test_catalog_matches_spec_counts(cfg):
     catalog = TemplateCatalog.load(cfg)
     counts = catalog.counts()
     assert counts == {
-        "avatar-entry": 6, "browser-ui": 8, "data-viz": 7, "frames-cards": 7, "hero-devices": 25, "intro-hooks": 8, "kenburns": 10, "lower-thirds": 8, "outro-cta": 6, "parallax": 4, "text-fullscreen": 20, "transitions": 13,
+        "avatar-entry": 6, "browser-ui": 8, "data-viz": 15, "frames-cards": 7, "hero-devices": 25, "intro-hooks": 8, "kenburns": 10, "lower-thirds": 11, "outro-cta": 6, "parallax": 4, "text-fullscreen": 30, "transitions": 27,
     }
-    assert len(catalog.all()) == 122
+    assert len(catalog.all()) == 157
 
 
 def test_catalog_rotation_avoids_recent(cfg):

@@ -1,0 +1,26 @@
+{
+  "id": "transitions/gravitational-lens",
+  "name": "gravitational-lens",
+  "category": "transitions",
+  "title": "Gravitational lens: колодец, горизонт и chroma — gravitational-lens",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {
+    "from_scale": 1.14
+  },
+  "tags": [
+    "dynamic",
+    "lens",
+    "shader"
+  ],
+  "needs": [
+    "discovery",
+    "place",
+    "superlative"
+  ],
+  "renderer": "gravitational_lens",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

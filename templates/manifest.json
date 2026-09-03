@@ -3,18 +3,18 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 20,
-    "lower-thirds": 8,
+    "text-fullscreen": 30,
+    "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 13,
+    "transitions": 27,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 7,
+    "data-viz": 15,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 122
+    "_total": 157
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -728,6 +728,259 @@
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
     },
     {
+      "id": "text-fullscreen/shared-axis-z",
+      "name": "shared-axis-z",
+      "category": "text-fullscreen",
+      "title": "Слова набухают по оси Z со стаггером — shared-axis-z",
+      "duration_range": [
+        0.8,
+        2.4
+      ],
+      "params": {
+        "shared_axis_z": true,
+        "direction": "in",
+        "depth": "standard",
+        "tone": "ink"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "scale"
+      ],
+      "needs": [],
+      "renderer": "shared_axis_z",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/code-3d-extrude",
+      "name": "code-3d-extrude",
+      "category": "text-fullscreen",
+      "title": "Код на скошенной плите, посадка из глубины — code-3d-extrude",
+      "duration_range": [
+        1.5,
+        8.0
+      ],
+      "params": {
+        "code_3d_extrude": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "3d",
+        "developer"
+      ],
+      "needs": [
+        "device"
+      ],
+      "renderer": "code_3d_extrude",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/code-diff",
+      "name": "code-diff",
+      "category": "text-fullscreen",
+      "title": "Правка как цветной diff: минус схлопывается, плюс раскрывается — code-diff",
+      "duration_range": [
+        1.5,
+        6.0
+      ],
+      "params": {
+        "code_diff": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "diff",
+        "developer"
+      ],
+      "needs": [
+        "device",
+        "comparison"
+      ],
+      "renderer": "code_diff",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/code-particle-assemble",
+      "name": "code-particle-assemble",
+      "category": "text-fullscreen",
+      "title": "Пыль собирается в глифы кода — code-particle-assemble",
+      "duration_range": [
+        1.5,
+        8.0
+      ],
+      "params": {
+        "code_particle_assemble": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "particles",
+        "developer"
+      ],
+      "needs": [
+        "device",
+        "discovery"
+      ],
+      "renderer": "code_particle_assemble",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/code-scroll",
+      "name": "code-scroll",
+      "category": "text-fullscreen",
+      "title": "Камера скроллит файл к целевой строке — code-scroll",
+      "duration_range": [
+        1.5,
+        6.0
+      ],
+      "params": {
+        "code_scroll": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "scroll",
+        "developer"
+      ],
+      "needs": [
+        "device"
+      ],
+      "renderer": "code_scroll",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/code-typing",
+      "name": "code-typing",
+      "category": "text-fullscreen",
+      "title": "Посимвольный набор с кареткой — code-typing",
+      "duration_range": [
+        1.5,
+        5.0
+      ],
+      "params": {
+        "code_typing": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "typing",
+        "developer"
+      ],
+      "needs": [
+        "device"
+      ],
+      "renderer": "code_typing",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/terminal-simulator",
+      "name": "terminal-simulator",
+      "category": "text-fullscreen",
+      "title": "Окно IDE: скелет строк и команда в терминале — terminal-simulator",
+      "duration_range": [
+        1.5,
+        5.0
+      ],
+      "params": {
+        "terminal_simulator": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "terminal",
+        "developer"
+      ],
+      "needs": [
+        "device"
+      ],
+      "renderer": "terminal_simulator",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/apple-terminal-clear-dark",
+      "name": "apple-terminal-clear-dark",
+      "category": "text-fullscreen",
+      "title": "Terminal.app Clear Dark: набор команды и вывод — apple-terminal-clear-dark",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "apple_terminal_clear_dark": true
+      },
+      "tags": [
+        "code",
+        "developer",
+        "showcase",
+        "terminal",
+        "apple",
+        "apple-terminal"
+      ],
+      "needs": [
+        "device"
+      ],
+      "renderer": "apple_terminal_clear_dark",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/dark-plus",
+      "name": "dark-plus",
+      "category": "text-fullscreen",
+      "title": "VS Code Dark+: workbench и посимвольный набор — dark-plus",
+      "duration_range": [
+        2.0,
+        11.0
+      ],
+      "params": {
+        "dark_plus": true
+      },
+      "tags": [
+        "code",
+        "developer",
+        "showcase",
+        "vscode"
+      ],
+      "needs": [
+        "device"
+      ],
+      "renderer": "dark_plus",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/beat-freeze-cut",
+      "name": "beat-freeze-cut",
+      "category": "text-fullscreen",
+      "title": "Beat freeze cut: рамп, фриз DROP и hard-cut — beat-freeze-cut",
+      "duration_range": [
+        2.0,
+        6.5
+      ],
+      "params": {
+        "beat_freeze_cut": true
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "beat",
+        "freeze",
+        "music"
+      ],
+      "needs": [],
+      "renderer": "beat_freeze_cut",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
       "id": "lower-thirds/name-title",
       "name": "name-title",
       "category": "lower-thirds",
@@ -909,6 +1162,78 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/accent-underline",
+      "name": "accent-underline",
+      "category": "lower-thirds",
+      "title": "Имя и роль с акцентной чертой",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "accent_underline": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "minimal"
+      ],
+      "needs": [],
+      "renderer": "lt_accent_underline",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "lower-thirds/clean-bar",
+      "name": "clean-bar",
+      "category": "lower-thirds",
+      "title": "Белая плашка с акцентной полоской",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "clean_bar": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "podcast"
+      ],
+      "needs": [],
+      "renderer": "lt_clean_bar",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "lower-thirds/dark-card",
+      "name": "dark-card",
+      "category": "lower-thirds",
+      "title": "Угольная карточка на светлом футаже",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "dark_card": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "dark"
+      ],
+      "needs": [],
+      "renderer": "lt_dark_card",
+      "last_used_in": [],
+      "added": "2026-09-02"
     },
     {
       "id": "frames-cards/article-card",
@@ -1633,6 +1958,304 @@
       ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
+      "id": "transitions/cinematic-zoom",
+      "name": "cinematic-zoom",
+      "category": "transitions",
+      "title": "Cinematic zoom: radial blur и сдвиг каналов — cinematic-zoom",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {
+        "from_scale": 1.16
+      },
+      "tags": [
+        "dynamic",
+        "zoom",
+        "shader"
+      ],
+      "needs": [],
+      "renderer": "cinematic_zoom",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/glitch",
+      "name": "glitch",
+      "category": "transitions",
+      "title": "Glitch: scan lines, scramble и chroma — glitch",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "glitch",
+        "shader"
+      ],
+      "needs": [
+        "danger",
+        "negation"
+      ],
+      "renderer": "glitch_shader",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/gravitational-lens",
+      "name": "gravitational-lens",
+      "category": "transitions",
+      "title": "Gravitational lens: колодец, горизонт и chroma — gravitational-lens",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {
+        "from_scale": 1.14
+      },
+      "tags": [
+        "dynamic",
+        "lens",
+        "shader"
+      ],
+      "needs": [
+        "discovery",
+        "place",
+        "superlative"
+      ],
+      "renderer": "gravitational_lens",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/light-leak",
+      "name": "light-leak",
+      "category": "transitions",
+      "title": "Light leak: тёплый засвет, flare и ACES — light-leak",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "light",
+        "shader"
+      ],
+      "needs": [],
+      "renderer": "light_leak",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/sdf-iris",
+      "name": "sdf-iris",
+      "category": "transitions",
+      "title": "SDF iris: круг из центра и onion rings — sdf-iris",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "iris",
+        "shader"
+      ],
+      "needs": [],
+      "renderer": "sdf_iris",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/thermal-distortion",
+      "name": "thermal-distortion",
+      "category": "transitions",
+      "title": "Thermal distortion: heat shimmer снизу и haze — thermal-distortion",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "thermal",
+        "shader"
+      ],
+      "needs": [
+        "danger"
+      ],
+      "renderer": "thermal_distortion",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/whip-pan",
+      "name": "whip-pan",
+      "category": "transitions",
+      "title": "Whip pan: оба кадра едут вбок с направленным смазом — whip-pan",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "pan",
+        "shader"
+      ],
+      "needs": [],
+      "renderer": "whip_pan_shader",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/mk-clone-wall-transition",
+      "name": "mk-clone-wall-transition",
+      "category": "transitions",
+      "title": "Clone wall: плитка слов накрывает кадр и инвертируется — mk-clone-wall-transition",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {
+        "word": "HyperFrames"
+      },
+      "tags": [
+        "dynamic",
+        "typography",
+        "wipe"
+      ],
+      "needs": [],
+      "renderer": "mk_clone_wall",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/transitions-3d",
+      "name": "transitions-3d",
+      "category": "transitions",
+      "title": "3D card flip: SCENE A схлопывается, SCENE B раскрывается — transitions-3d",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "3d",
+        "flip"
+      ],
+      "needs": [],
+      "renderer": "transitions_3d",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/transitions-blur",
+      "name": "transitions-blur",
+      "category": "transitions",
+      "title": "Blur through: SCENE A уходит в размытие, SCENE B выходит из него — transitions-blur",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "blur",
+        "through"
+      ],
+      "needs": [],
+      "renderer": "transitions_blur",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/transitions-cover",
+      "name": "transitions-cover",
+      "category": "transitions",
+      "title": "Cover: staggered blocks накрывают SCENE A и открывают SCENE B — transitions-cover",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "cover",
+        "wipe"
+      ],
+      "needs": [],
+      "renderer": "transitions_cover",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/transitions-destruction",
+      "name": "transitions-destruction",
+      "category": "transitions",
+      "title": "Page burn: SCENE A сгорает кругом, SCENE B проявляется — transitions-destruction",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "burn",
+        "destruction"
+      ],
+      "needs": [
+        "danger",
+        "negation"
+      ],
+      "renderer": "transitions_destruction",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/transitions-light",
+      "name": "transitions-light",
+      "category": "transitions",
+      "title": "Light leak: тёплые блики едут по кадру, SCENE B проявляется — transitions-light",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "light",
+        "warm"
+      ],
+      "needs": [],
+      "renderer": "transitions_light",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "transitions/transitions-other",
+      "name": "transitions-other",
+      "category": "transitions",
+      "title": "Flash cut: белая вспышка на склейке, SCENE B проявляется — transitions-other",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "flash",
+        "cut"
+      ],
+      "needs": [],
+      "renderer": "transitions_other",
+      "last_used_in": [],
+      "added": "2026-09-02"
     },
     {
       "id": "avatar-entry/hero-zoom-in",
@@ -2391,6 +3014,241 @@
       "last_used_in": [],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
+      "id": "data-viz/animated-bar-chart",
+      "name": "animated-bar-chart",
+      "category": "data-viz",
+      "title": "Карточка: столбики растут снизу (scaleY), KPI +42%.",
+      "duration_range": [
+        2.0,
+        4.0
+      ],
+      "params": {
+        "bars": 7
+      },
+      "tags": [
+        "data",
+        "bars",
+        "card"
+      ],
+      "needs": [
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "data-viz/bar-chart-race",
+      "name": "bar-chart-race",
+      "category": "data-viz",
+      "title": "Гонка столбиков: ряды меняются местами, лидер красный — bar-chart-race",
+      "duration_range": [
+        2.0,
+        8.0
+      ],
+      "params": {
+        "bars": 6
+      },
+      "tags": [
+        "data",
+        "bars",
+        "race"
+      ],
+      "needs": [
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "data-viz/chart-story",
+      "name": "chart-story",
+      "category": "data-viz",
+      "title": "Столбики растут по очереди, акцент и коллаут на последнем значении — chart-story",
+      "duration_range": [
+        2.0,
+        5.0
+      ],
+      "params": {
+        "bars": 4
+      },
+      "tags": [
+        "data",
+        "bars",
+        "story"
+      ],
+      "needs": [
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "data-viz/conic-progress-ring",
+      "name": "conic-progress-ring",
+      "category": "data-viz",
+      "title": "Кольцо заполняется от 12 часов, центр считает в такт — conic-progress-ring",
+      "duration_range": [
+        1.2,
+        4.0
+      ],
+      "params": {
+        "percent": true
+      },
+      "tags": [
+        "data",
+        "ring",
+        "progress"
+      ],
+      "needs": [
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "data-viz/decline-chart",
+      "name": "decline-chart",
+      "category": "data-viz",
+      "title": "Линия падает вниз, число считает вниз, фон темнеет — decline-chart",
+      "duration_range": [
+        1.2,
+        4.0
+      ],
+      "params": {
+        "start_value": 82,
+        "end_value": 34
+      },
+      "tags": [
+        "data",
+        "line",
+        "decline"
+      ],
+      "needs": [
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "data-viz/mk-line-graph",
+      "name": "mk-line-graph",
+      "category": "data-viz",
+      "title": "Две линии рисуются слева направо, точки и числа на фронте — mk-line-graph",
+      "duration_range": [
+        1.5,
+        7.0
+      ],
+      "params": {
+        "series": [
+          {
+            "name": "Renders",
+            "values": [
+              12,
+              26,
+              22,
+              38,
+              44,
+              58
+            ]
+          },
+          {
+            "name": "Projects",
+            "values": [
+              8,
+              14,
+              18,
+              16,
+              28,
+              36
+            ]
+          }
+        ],
+        "xLabels": [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun"
+        ]
+      },
+      "tags": [
+        "data",
+        "line",
+        "series"
+      ],
+      "needs": [
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "data-viz/star-rating-fill",
+      "name": "star-rating-fill",
+      "category": "data-viz",
+      "title": "Золотые звёзды заливаются слева направо, число считает в такт — star-rating-fill",
+      "duration_range": [
+        1.2,
+        4.0
+      ],
+      "params": {
+        "rating": 4.8,
+        "starCount": 5,
+        "showValue": true
+      },
+      "tags": [
+        "data",
+        "stars",
+        "rating"
+      ],
+      "needs": [
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "data-viz/world-map",
+      "name": "world-map",
+      "category": "data-viz",
+      "title": "Хороплет мира: страны от центра, CH/NO/US/AU/SE пульс — world-map",
+      "duration_range": [
+        2.0,
+        14.0
+      ],
+      "params": {
+        "title": "Global GDP per Capita",
+        "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+        "source": "Source: International Monetary Fund",
+        "highlight": [
+          "756",
+          "578",
+          "840",
+          "036",
+          "752"
+        ]
+      },
+      "tags": [
+        "data",
+        "map",
+        "world"
+      ],
+      "needs": [
+        "place"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02"
     },
     {
       "id": "outro-cta/subscribe-pulse",

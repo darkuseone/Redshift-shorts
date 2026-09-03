@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/code-scroll",
+  "name": "code-scroll",
+  "category": "text-fullscreen",
+  "title": "Камера скроллит файл к целевой строке — code-scroll",
+  "duration_range": [
+    1.5,
+    6.0
+  ],
+  "params": {
+    "code_scroll": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "scroll",
+    "developer"
+  ],
+  "needs": [
+    "device"
+  ],
+  "renderer": "code_scroll",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

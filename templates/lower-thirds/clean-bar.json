@@ -1,0 +1,24 @@
+{
+  "id": "lower-thirds/clean-bar",
+  "name": "clean-bar",
+  "category": "lower-thirds",
+  "title": "Белая плашка с акцентной полоской",
+  "duration_range": [
+    1.5,
+    4.8
+  ],
+  "params": {
+    "clean_bar": true,
+    "position": "bottom"
+  },
+  "tags": [
+    "person",
+    "lower-third",
+    "overlay",
+    "podcast"
+  ],
+  "needs": [],
+  "renderer": "lt_clean_bar",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

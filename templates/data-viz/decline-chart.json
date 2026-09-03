@@ -1,0 +1,25 @@
+{
+  "id": "data-viz/decline-chart",
+  "name": "decline-chart",
+  "category": "data-viz",
+  "title": "Линия падает вниз, число считает вниз, фон темнеет — decline-chart",
+  "duration_range": [
+    1.2,
+    4.0
+  ],
+  "params": {
+    "start_value": 82,
+    "end_value": 34
+  },
+  "tags": [
+    "data",
+    "line",
+    "decline"
+  ],
+  "needs": [
+    "number"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}
