@@ -1256,6 +1256,7 @@ def test_code_3d_extrude_css_keeps_github_dark_and_mono():
     edge = re.search(r"\.c3d-edge\{[^}]+\}", css).group(0)
     assert "background:#141d2b" in edge
     assert "transform:translate(14px,16px)" in edge
+    assert "text-transform:none" in css
     slab = re.search(r"\.c3d-slab\{[^}]+\}", css).group(0)
     assert "transform:" not in slab.replace("will-change:transform", "")
     assert "THREE" not in css
