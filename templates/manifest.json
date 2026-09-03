@@ -11,10 +11,10 @@
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 16,
+    "data-viz": 17,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 146
+    "_total": 147
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -3103,6 +3103,29 @@
         "data",
         "map",
         "usa"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/us-map-flow",
+      "name": "us-map-flow",
+      "category": "data-viz",
+      "title": "Дуги коридоров между городами, точки бегут по дуге — us-map-flow",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "title": "Interstate Flow Connections",
+        "subtitle": "Relative volume of major city-to-city corridors",
+        "source": "Source: Illustrative data"
+      },
+      "tags": [
+        "data",
+        "map",
+        "flow"
       ],
       "renderer": "dataviz",
       "last_used_in": [],

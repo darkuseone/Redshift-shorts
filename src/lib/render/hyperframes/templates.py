@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-146 шаблон каталога — это не 146 реализация, а набор рендереров с параметрами.
+147 шаблон каталога — это не 147 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .spm_shapes import SPM_SHAPES, SPM_VB
+from .umf_shapes import UMF_CITIES, UMF_FLOWS, UMF_SHAPES, UMF_VB
 from .usm_shapes import USM_SHAPES, USM_VB
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
@@ -5047,6 +5048,338 @@ def dv_us_map(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_UMF_CATALOG_DUR = 12.0
+_UMF_HL_DUR = 1.0
+_UMF_SUB_AT = 0.3
+_UMF_SUB_DUR = 0.5
+_UMF_ST_AT = 0.6
+_UMF_ST_DUR = 0.8
+_UMF_DOT_AT = 1.5
+_UMF_DOT_DUR = 0.4
+_UMF_DOT_STAGGER = 0.05
+_UMF_LAB_AT = 2.5
+_UMF_LAB_DUR = 0.3
+_UMF_LAB_STAGGER = 0.05
+_UMF_ARC_AT = 3.5
+_UMF_ARC_DUR = 1.0
+_UMF_ARC_STAGGER = 0.2
+_UMF_TD_AT = 7.0
+_UMF_TD_DUR = 1.5
+_UMF_TD_STAGGER = 0.1
+_UMF_TD_FADE = 0.3
+_UMF_SRC_AT = 9.0
+_UMF_SRC_DUR = 0.6
+_UMF_TITLE = "Interstate Flow Connections"
+_UMF_SUBTITLE = "Relative volume of major city-to-city corridors"
+_UMF_SOURCE = "Source: Illustrative data"
+_UMF_MAP_LEFT = 40
+_UMF_MAP_TOP = 310
+_UMF_MAP_W = 1000
+_UMF_MAP_H = 562
+_UMF_CITY_R = 10.0
+_UMF_TDOT = 12.0
+_UMF_MIN_W = 1.5
+_UMF_MAX_W = 4.0
+_UMF_MAX_VOL = 100.0
+_UMF_LAB_DX = 12.0
+_UMF_LAB_DY = -18.0
+
+
+def _umf_play(duration: float) -> float:
+    return duration if duration <= 0.001 else max(0.001, duration - 0.001)
+
+
+def _umf_times(duration: float) -> dict[str, float]:
+    """Окно us-map-flow: каталог 12 с, короче — те же доли."""
+    d = max(0.05, float(duration))
+    s = d / _UMF_CATALOG_DUR if d < _UMF_CATALOG_DUR else 1.0
+    return {
+        "scale": s,
+        "hl_dur": max(0.001, _UMF_HL_DUR * s),
+        "sub_at": _UMF_SUB_AT * s,
+        "sub_dur": max(0.001, _UMF_SUB_DUR * s),
+        "st_at": _UMF_ST_AT * s,
+        "st_dur": max(0.001, _UMF_ST_DUR * s),
+        "dot_at": _UMF_DOT_AT * s,
+        "dot_dur": max(0.001, _UMF_DOT_DUR * s),
+        "dot_stagger": _UMF_DOT_STAGGER * s,
+        "lab_at": _UMF_LAB_AT * s,
+        "lab_dur": max(0.001, _UMF_LAB_DUR * s),
+        "lab_stagger": _UMF_LAB_STAGGER * s,
+        "arc_at": _UMF_ARC_AT * s,
+        "arc_dur": max(0.001, _UMF_ARC_DUR * s),
+        "arc_stagger": _UMF_ARC_STAGGER * s,
+        "td_at": _UMF_TD_AT * s,
+        "td_dur": max(0.001, _UMF_TD_DUR * s),
+        "td_stagger": _UMF_TD_STAGGER * s,
+        "td_fade": max(0.001, _UMF_TD_FADE * s),
+        "src_at": _UMF_SRC_AT * s,
+        "src_dur": max(0.001, _UMF_SRC_DUR * s),
+        "kill_at": d,
+    }
+
+
+def _umf_num(raw: Any, default: float | None = None) -> float | None:
+    if raw in (None, ""):
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _umf_xy(x: float, y: float) -> tuple[float, float]:
+    vb_x, vb_y, vb_w, vb_h = UMF_VB
+    sx = _UMF_MAP_LEFT + (x - vb_x) * _UMF_MAP_W / vb_w
+    sy = _UMF_MAP_TOP + (y - vb_y) * _UMF_MAP_H / vb_h
+    return sx, sy
+
+
+def _umf_quad(x1: float, y1: float, cx: float, cy: float,
+              x2: float, y2: float, t: float) -> tuple[float, float]:
+    u = 1.0 - t
+    return (u * u * x1 + 2.0 * u * t * cx + t * t * x2,
+            u * u * y1 + 2.0 * u * t * cy + t * t * y2)
+
+
+def _umf_spec(params: dict[str, Any]
+              ) -> tuple[list[dict[str, Any]], list[dict[str, Any]],
+                         str, str, str] | None:
+    """Города, дуги, заголовок, подзаголовок, источник."""
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("cities", "flows", "title", "headline", "subtitle")):
+        return None
+    cities: list[dict[str, Any]] = []
+    raw_c = params.get("cities")
+    if isinstance(raw_c, (list, tuple)):
+        for item in raw_c:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            x = _umf_num(item.get("x"))
+            y = _umf_num(item.get("y"))
+            if not name or x is None or y is None:
+                continue
+            cities.append({"name": name, "x": x, "y": y})
+    if not cities:
+        cities = [{"name": str(item["name"]), "x": float(item["x"]),
+                   "y": float(item["y"])} for item in UMF_CITIES]
+    by_name = {str(item["name"]): item for item in cities}
+    flows: list[dict[str, Any]] = []
+    raw_f = params.get("flows")
+    src_flows = raw_f if isinstance(raw_f, (list, tuple)) and raw_f else UMF_FLOWS
+    for item in src_flows:
+        if not isinstance(item, dict):
+            continue
+        src = str(item.get("from") or item.get("source") or "").strip()
+        dst = str(item.get("to") or item.get("target") or "").strip()
+        if src not in by_name or dst not in by_name:
+            continue
+        vol = _umf_num(item.get("volume", item.get("value")), 50.0)
+        if vol is None:
+            continue
+        flows.append({"from": src, "to": dst, "volume": vol})
+    if not cities or not flows:
+        return None
+    title = str(params.get("title") or params.get("headline") or _UMF_TITLE)
+    subtitle = str(params.get("subtitle") or _UMF_SUBTITLE)
+    source = str(params.get("source") or _UMF_SOURCE)
+    return cities, flows, title, subtitle, source
+
+
+def dv_us_map_flow(ctx: "TemplateCtx") -> Piece:
+    """Карта коридоров США: дуги между городами, точки бегут по дуге.
+
+    Каталог DEMO 1 тянет topojson, твинит ``clipPath`` заголовка,
+    ``strokeDashoffset`` дуг и ``onUpdate``/``getPointAtLength`` точек.
+    Здесь контуры и xy запечены, вайп заголовка ``scaleX``, дуги растут
+    ``scale`` от города-источника, точки едут GSAP ``x``/``y`` по квадратике.
+    Градиент ``#0f172a``/``#1e293b``, дуги ``#3b82f6``, точки ``#60a5fa``
+    как в каталоге — жест карты, не палитра канала. Inter.
+    ``-apple-system`` не ставим. ``us-map`` / ``spain-map`` / ``.dv-bar``
+    не трогаем.
+    """
+    spec = _umf_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    cities, flows, title, subtitle, source = spec
+    node_id = f"umf-{ctx.index:02d}"
+    times = _umf_times(ctx.duration)
+    start = ctx.start
+    sid = f"{node_id}-stage"
+    wid = f"{node_id}-wipe"
+    hid = f"{node_id}-hl"
+    uid = f"{node_id}-sub"
+    xid = f"{node_id}-src"
+    tweens: list[str] = []
+    paths: list[str] = []
+    region_ids: list[str] = []
+    city_html: list[str] = []
+    city_ids: list[str] = []
+    labels: list[str] = []
+    label_ids: list[str] = []
+    arcs: list[str] = []
+    arc_ids: list[str] = []
+    dots: list[str] = []
+    dot_ids: list[str] = []
+    vb_x, vb_y, vb_w, vb_h = UMF_VB
+    by_name = {str(item["name"]): item for item in cities}
+
+    for index, shape in enumerate(UMF_SHAPES):
+        rid = f"{node_id}-r{index}"
+        region_ids.append(rid)
+        paths.append(
+            f'<path id="{rid}" class="umf-region" d="{_esc(shape["d"])}"></path>')
+        tweens.append(
+            f'tl.fromTo("#{rid}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(_umf_play(times["st_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["st_at"])});')
+
+    for index, city in enumerate(cities):
+        cid = f"{node_id}-c{index}"
+        lab_id = f"{node_id}-l{index}"
+        city_ids.append(cid)
+        label_ids.append(lab_id)
+        cx = float(city["x"])
+        cy = float(city["y"])
+        city_html.append(
+            f'<circle id="{cid}" class="umf-city" cx="{_num(cx)}" '
+            f'cy="{_num(cy)}" r="{_num(_UMF_CITY_R)}"></circle>')
+        lx, ly = _umf_xy(cx, cy)
+        labels.append(
+            f'<div id="{lab_id}" class="umf-lab" data-layout-allow-overlap="" '
+            f'style="left:{lx + _UMF_LAB_DX:.1f}px;'
+            f'top:{ly + _UMF_LAB_DY:.1f}px">{_esc(city["name"])}</div>')
+        delay = index * times["dot_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{cid}",{{opacity:0,scale:0}},'
+            f'{{opacity:1,scale:1,duration:{_num(_umf_play(times["dot_dur"]))},'
+            f'ease:"back.out(1.7)",immediateRender:false}},'
+            f'{_num(start + times["dot_at"] + delay)});')
+        lab_delay = index * times["lab_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{lab_id}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(_umf_play(times["lab_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["lab_at"] + lab_delay)});')
+
+    half = _UMF_TDOT / 2.0
+    for index, flow in enumerate(flows):
+        src = by_name[str(flow["from"])]
+        dst = by_name[str(flow["to"])]
+        x1 = float(src["x"])
+        y1 = float(src["y"])
+        x2 = float(dst["x"])
+        y2 = float(dst["y"])
+        mid_x = (x1 + x2) / 2.0
+        mid_y = min(y1, y2) - abs(x2 - x1) * 0.15
+        vol = min(max(float(flow["volume"]), 0.0), _UMF_MAX_VOL)
+        t = vol / _UMF_MAX_VOL
+        stroke_w = _UMF_MIN_W + t * (_UMF_MAX_W - _UMF_MIN_W)
+        arc_op = 0.4 + t * 0.6
+        aid = f"{node_id}-a{index}"
+        did = f"{node_id}-d{index}"
+        arc_ids.append(aid)
+        dot_ids.append(did)
+        d_attr = (f"M{_num(x1)},{_num(y1)} Q{_num(mid_x)},{_num(mid_y)} "
+                  f"{_num(x2)},{_num(y2)}")
+        arcs.append(
+            f'<path id="{aid}" class="umf-arc" d="{_esc(d_attr)}" '
+            f'stroke-width="{_num(stroke_w)}" '
+            f'style="transform-origin:{_num(x1)}px {_num(y1)}px"></path>')
+        sx1, sy1 = _umf_xy(x1, y1)
+        sxm, sym = _umf_xy(*_umf_quad(x1, y1, mid_x, mid_y, x2, y2, 0.5))
+        sx2, sy2 = _umf_xy(x2, y2)
+        dots.append(
+            f'<div id="{did}" class="umf-tdot" data-layout-allow-overlap="" '
+            f'style="left:{sx1 - half:.1f}px;top:{sy1 - half:.1f}px"></div>')
+        arc_delay = index * times["arc_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{aid}",{{opacity:0,scale:0}},'
+            f'{{opacity:{_num(arc_op)},scale:1,'
+            f'duration:{_num(_umf_play(times["arc_dur"]))},'
+            f'ease:"power2.inOut",immediateRender:false}},'
+            f'{_num(start + times["arc_at"] + arc_delay)});')
+        td_delay = index * times["td_stagger"]
+        t0 = start + times["td_at"] + td_delay
+        seg = times["td_dur"] / 2.0
+        tweens.append(
+            f'tl.fromTo("#{did}",{{opacity:0}},'
+            f'{{opacity:0.9,duration:{_num(_umf_play(0.001))},'
+            f'ease:"none",immediateRender:false}},'
+            f'{_num(t0)});')
+        tweens.append(
+            f'tl.fromTo("#{did}",{{x:0,y:0}},'
+            f'{{x:{_num(sxm - sx1)},y:{_num(sym - sy1)},'
+            f'duration:{_num(_umf_play(seg))},'
+            f'ease:"power1.in",immediateRender:false}},'
+            f'{_num(t0)});')
+        tweens.append(
+            f'tl.fromTo("#{did}",{{x:{_num(sxm - sx1)},y:{_num(sym - sy1)}}},'
+            f'{{x:{_num(sx2 - sx1)},y:{_num(sy2 - sy1)},'
+            f'duration:{_num(_umf_play(seg))},'
+            f'ease:"power1.out",immediateRender:false}},'
+            f'{_num(t0 + seg)});')
+        tweens.append(
+            f'tl.fromTo("#{did}",{{opacity:0.9}},'
+            f'{{opacity:0,duration:{_num(_umf_play(times["td_fade"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(t0 + times["td_dur"])});')
+
+    tweens.insert(0,
+        f'tl.fromTo("#{wid}",{{scaleX:1}},'
+        f'{{scaleX:0,duration:{_num(_umf_play(times["hl_dur"]))},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{uid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_umf_play(times["sub_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["sub_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{xid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_umf_play(times["src_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["src_at"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(f'tl.set("#{wid}",{{scaleX:1}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{uid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{xid}",{{opacity:0}},{_num(kill_at)});')
+    for rid in region_ids:
+        tweens.append(f'tl.set("#{rid}",{{opacity:0}},{_num(kill_at)});')
+    for cid in city_ids:
+        tweens.append(
+            f'tl.set("#{cid}",{{opacity:0,scale:0}},{_num(kill_at)});')
+    for lab_id in label_ids:
+        tweens.append(f'tl.set("#{lab_id}",{{opacity:0}},{_num(kill_at)});')
+    for aid in arc_ids:
+        tweens.append(
+            f'tl.set("#{aid}",{{opacity:0,scale:0}},{_num(kill_at)});')
+    for did in dot_ids:
+        tweens.append(
+            f'tl.set("#{did}",{{opacity:0,x:0,y:0}},{_num(kill_at)});')
+
+    view = f"{_num(vb_x)} {_num(vb_y)} {_num(vb_w)} {_num(vb_h)}"
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay umf-chart" {_timing(ctx)}>'
+               f'<div class="umf-bg"></div>'
+               f'<div id="{sid}" class="umf-stage">'
+               f'<div class="umf-hl-clip" data-layout-allow-overlap="">'
+               f'<div id="{hid}" class="umf-hl">{_esc(title)}</div>'
+               f'<div id="{wid}" class="umf-wipe"></div></div>'
+               f'<div id="{uid}" class="umf-sub" data-layout-allow-overlap="">'
+               f'{_esc(subtitle)}</div>'
+               f'<svg class="umf-svg" viewBox="{view}" '
+               f'preserveAspectRatio="xMidYMid meet" aria-hidden="true">'
+               f'{"".join(paths)}{"".join(arcs)}{"".join(city_html)}</svg>'
+               f'{"".join(labels)}{"".join(dots)}'
+               f'<div id="{xid}" class="umf-src" data-layout-allow-overlap="">'
+               f'{_esc(source)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -5064,6 +5397,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "spain-map": dv_spain_map,
     "star-rating-fill": dv_star_rating_fill,
     "us-map": dv_us_map,
+    "us-map-flow": dv_us_map_flow,
 }
 
 
@@ -5434,6 +5768,44 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         ".usm-src{position:absolute;left:40px;top:968px;width:1000px;"
         "font-weight:400;font-size:18px;color:#475569;text-align:right;"
         "opacity:0}"
+        ".umf-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0f172a;font-family:Inter,system-ui,sans-serif;"
+        "color:#e2e8f0}"
+        ".umf-bg{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%)}"
+        ".umf-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        ".umf-hl-clip{position:absolute;left:40px;top:140px;width:1000px;"
+        "overflow:hidden;z-index:4}"
+        ".umf-hl{font-weight:700;font-size:38px;letter-spacing:-0.02em;"
+        "color:#f8fafc;text-align:left;line-height:1.15}"
+        ".umf-wipe{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%);"
+        "transform-origin:100% 50%}"
+        ".umf-sub{position:absolute;left:40px;top:236px;width:1000px;"
+        "font-weight:300;font-size:22px;color:#94a3b8;text-align:left;"
+        "opacity:0;z-index:4}"
+        ".umf-svg{position:absolute;left:40px;top:310px;width:1000px;"
+        "height:562px;overflow:visible}"
+        ".umf-region{fill:#1e293b;stroke:#334155;stroke-width:0.5;"
+        "opacity:0;vector-effect:non-scaling-stroke}"
+        ".umf-arc{fill:none;stroke:#3b82f6;stroke-linecap:round;opacity:0;"
+        "transform-box:view-box;vector-effect:non-scaling-stroke}"
+        ".umf-city{fill:#ffffff;opacity:0;transform-origin:50% 50%;"
+        "transform-box:fill-box}"
+        ".umf-lab{position:absolute;font-weight:500;font-size:16px;"
+        "color:#cbd5e1;white-space:nowrap;opacity:0;z-index:2;"
+        "pointer-events:none}"
+        ".umf-tdot{position:absolute;width:12px;height:12px;"
+        "border-radius:50%;background:#60a5fa;opacity:0;z-index:3;"
+        "pointer-events:none}"
+        ".umf-src{position:absolute;left:40px;top:968px;width:1000px;"
+        "font-weight:400;font-size:18px;color:#475569;text-align:right;"
+        "opacity:0;z-index:4}"
     )
 
 

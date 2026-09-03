@@ -31,6 +31,7 @@ from ..lib.render.shots import (
 from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.render.hyperframes.captions import pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
+from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
 from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
@@ -795,6 +796,12 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "california")):
             prefer = ["data-viz/us-map"] + [
                 item for item in prefer if item != "data-viz/us-map"]
+        if variant != "B" and any(key in blob for key in (
+                "interstate flow", "flow connection", "city-to-city",
+                "city to city", "corridor", "миграционн", "поток между",
+                "рейс между", "между городами")):
+            prefer = ["data-viz/us-map-flow"] + [
+                item for item in prefer if item != "data-viz/us-map-flow"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -868,6 +875,30 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "source": "Source: U.S. Census Bureau",
                 "regions": regions,
                 "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+            }
+        elif name == "us-map-flow":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            cities = [{
+                "name": str(city["name"]),
+                "x": float(city["x"]),
+                "y": float(city["y"]),
+            } for city in UMF_CITIES]
+            flows = [{
+                "from": str(flow["from"]),
+                "to": str(flow["to"]),
+                "volume": float(flow["volume"]),
+            } for flow in UMF_FLOWS]
+            if nums:
+                for index, flow in enumerate(flows):
+                    if index >= len(nums):
+                        break
+                    flow["volume"] = float(nums[index]["value"])
+            params = {
+                "title": heading or "Interstate Flow Connections",
+                "subtitle": "Relative volume of major city-to-city corridors",
+                "source": "Source: Illustrative data",
+                "cities": cities,
+                "flows": flows,
             }
         elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
             suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""

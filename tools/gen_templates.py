@@ -372,7 +372,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (16, [
+    "data-viz": (17, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -453,6 +453,13 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "source": "Source: U.S. Census Bureau",
              "highlight": ["CA", "NY", "TX", "FL", "NJ"],
          }, ["data", "map", "usa"], "dataviz"),
+        ("us-map-flow",
+         "Дуги коридоров между городами, точки бегут по дуге — us-map-flow",
+         [2.0, 12.0], {
+             "title": "Interstate Flow Connections",
+             "subtitle": "Relative volume of major city-to-city corridors",
+             "source": "Source: Illustrative data",
+         }, ["data", "map", "flow"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

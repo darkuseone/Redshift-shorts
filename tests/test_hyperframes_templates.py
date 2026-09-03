@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-146 шаблон каталога — это рендереры с параметрами. Проверяется то, что
+147 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _usm_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _usm_times, _umf_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -238,6 +238,11 @@ def test_css_covers_every_layer_the_transitions_use():
         "title": "Population Density by State",
         "highlight": ["CA", "NY", "TX", "FL", "NJ"],
     }),
+    ("data-viz/us-map-flow", {
+        "title": "Interstate Flow Connections",
+        "subtitle": "Relative volume of major city-to-city corridors",
+        "source": "Source: Illustrative data",
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -263,6 +268,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/spain-map", ctx) == Piece()
     assert render_dataviz("data-viz/star-rating-fill", ctx) == Piece()
     assert render_dataviz("data-viz/us-map", ctx) == Piece()
+    assert render_dataviz("data-viz/us-map-flow", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -299,6 +305,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "spm-" not in compare and "spm-" not in race
     assert "srf-" not in compare and "srf-" not in race
     assert "usm-" not in compare and "usm-" not in race
+    assert "umf-" not in compare and "umf-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
@@ -310,6 +317,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "spm-" not in donut
     assert "srf-" not in donut
     assert "usm-" not in donut
+    assert "umf-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -869,6 +877,7 @@ def test_spain_map_bakes_paths_not_fetch(ctx):
     assert "mlg-" not in node
     assert "srf-" not in node
     assert "usm-" not in node
+    assert "umf-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -975,6 +984,7 @@ def test_star_rating_fill_wipes_mask_not_clip_path(ctx):
     assert "mlg-" not in node
     assert "spm-" not in node
     assert "usm-" not in node
+    assert "umf-" not in node
     assert "stat-card" not in node
     assert "textContent" not in node
     assert "clipPath" not in node
@@ -1093,6 +1103,7 @@ def test_us_map_bakes_paths_not_fetch(ctx):
     assert "mlg-" not in node
     assert "spm-" not in node
     assert "srf-" not in node
+    assert "umf-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -1155,7 +1166,7 @@ def test_us_map_keeps_catalog_tokens():
     assert "transform-origin:100% 50%" in wipe
     assert "transform-origin:50% 50%" in region
     assert "transform-box:fill-box" in region
-    block = css.split(".usm-chart", 1)[1]
+    block = css.split(".usm-chart", 1)[1].split(".umf-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
@@ -1167,8 +1178,9 @@ def test_us_map_keeps_catalog_tokens():
                 .replace("transform-origin:0px 50%", "")
                 .replace("transform-origin:100% 50%", "")
                 .replace("transform-box:fill-box", "")
+                .replace("transform-box:view-box", "")
                 .replace("text-transform:uppercase", ""))
-    assert "transform:" not in stripped.split(".usm-chart", 1)[1]
+    assert "transform:" not in stripped.split(".usm-chart", 1)[1].split(".umf-chart", 1)[0]
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "usm-" not in dv_bar
     donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
@@ -1177,6 +1189,158 @@ def test_us_map_keeps_catalog_tokens():
     assert "usm-" not in spm
     srf = re.search(r"\.srf-wipe\{[^}]+\}", css).group(0)
     assert "usm-" not in srf
+
+
+def test_us_map_flow_bakes_paths_not_fetch(ctx):
+    """Каталог DEMO 1 тянет topojson и твинит clipPath/dash/onUpdate; здесь scale и x/y."""
+    piece = render_dataviz("data-viz/us-map-flow", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=12.0, target=ctx.target,
+        track=6, params={
+            "title": "Interstate Flow Connections",
+            "subtitle": "Relative volume of major city-to-city corridors",
+            "source": "Source: Illustrative data",
+        }))
+    node = piece.nodes[0]
+    assert "umf-chart" in node
+    assert "umf-bg" in node and "umf-stage" in node and "umf-region" in node
+    assert "umf-wipe" in node and "umf-arc" in node and "umf-city" in node
+    assert "umf-tdot" in node and "umf-lab" in node
+    assert "Interstate Flow" in node
+    assert "city-to-city" in node
+    assert "Illustrative data" in node
+    assert "San Francisco" in node and "New York" in node and "Miami" in node
+    assert "Chicago" in node and "Dallas" in node
+    assert node.count('class="umf-region"') == 50
+    assert node.count('class="umf-arc"') == 12
+    assert node.count('class="umf-city"') == 12
+    assert node.count("umf-tdot") == 12
+    assert "0 0 1920 1080" in node
+    assert "dv-bar" not in node
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "srf-" not in node
+    assert "usm-" not in node
+    assert "stat-card" not in node
+    assert "jsdelivr" not in node
+    assert "topojson" not in node
+    assert "textContent" not in node
+    assert "clipPath" not in node
+    assert "clip-path" not in node
+    assert "strokeDashoffset" not in node
+    assert "stroke-dashoffset" not in node
+    assert "getPointAtLength" not in node
+    assert "onUpdate" not in node
+    assert "filter" not in node
+    assert node.count(f'id="umf-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    assert f'id="umf-{ctx.index:02d}-stage"' in node
+    assert f'id="umf-{ctx.index:02d}-wipe"' in node
+    assert f'id="umf-{ctx.index:02d}-hl"' in node
+    assert f'id="umf-{ctx.index:02d}-sub"' in node
+    assert f'id="umf-{ctx.index:02d}-src"' in node
+    assert f'id="umf-{ctx.index:02d}-r0"' in node
+    assert f'id="umf-{ctx.index:02d}-c0"' in node
+    assert f'id="umf-{ctx.index:02d}-l0"' in node
+    assert f'id="umf-{ctx.index:02d}-a0"' in node
+    assert f'id="umf-{ctx.index:02d}-d0"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scaleX:1" in body and "scaleX:0" in body
+    assert "back.out(1.7)" in body
+    assert "immediateRender:false" in body
+    assert "filter" not in body
+    assert "clipPath" not in body
+    assert "clip-path" not in body
+    assert "strokeDashoffset" not in body
+    assert "onUpdate" not in body
+    assert "getPointAtLength" not in body
+    assert "strokeWidth" not in body
+    assert "textContent" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#umf-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _umf_times(12.0)
+    assert abs(times["hl_dur"] - 1.0) < 1e-9
+    assert abs(times["sub_at"] - 0.3) < 1e-9
+    assert abs(times["st_at"] - 0.6) < 1e-9
+    assert abs(times["dot_at"] - 1.5) < 1e-9
+    assert abs(times["lab_at"] - 2.5) < 1e-9
+    assert abs(times["arc_at"] - 3.5) < 1e-9
+    assert abs(times["td_at"] - 7.0) < 1e-9
+    assert abs(times["src_at"] - 9.0) < 1e-9
+    short = _umf_times(0.22)
+    assert short["kill_at"] <= 0.22 + 1e-9
+    assert short["src_at"] + short["src_dur"] <= short["kill_at"] + 1e-9
+
+
+def test_us_map_flow_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".umf-chart" in css
+    assert ".umf-arc" in css
+    assert ".umf-city" in css
+    chart = re.search(r"\.umf-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.umf-bg\{[^}]+\}", css).group(0)
+    hl = re.search(r"\.umf-hl\{[^}]+\}", css).group(0)
+    wipe = re.search(r"\.umf-wipe\{[^}]+\}", css).group(0)
+    region = re.search(r"\.umf-region\{[^}]+\}", css).group(0)
+    arc = re.search(r"\.umf-arc\{[^}]+\}", css).group(0)
+    city = re.search(r"\.umf-city\{[^}]+\}", css).group(0)
+    tdot = re.search(r"\.umf-tdot\{[^}]+\}", css).group(0)
+    lab = re.search(r"\.umf-lab\{[^}]+\}", css).group(0)
+    assert "#0f172a" in chart and "#0f172a" in bg
+    assert "#1e293b" in bg
+    assert "#f8fafc" in hl
+    assert "#1e293b" in region and "#334155" in region
+    assert "#3b82f6" in arc
+    assert "#ffffff" in city
+    assert "#60a5fa" in tdot
+    assert "#cbd5e1" in lab
+    assert "transform-origin:100% 50%" in wipe
+    assert "transform-origin:50% 50%" in city
+    assert "transform-box:fill-box" in city
+    assert "transform-box:view-box" in arc
+    block = css.split(".umf-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    stripped = (css.replace("transform-origin:left center", "")
+                .replace("transform-origin:50% 50%", "")
+                .replace("transform-origin:50% 100%", "")
+                .replace("transform-origin:0px 50%", "")
+                .replace("transform-origin:100% 50%", "")
+                .replace("transform-box:fill-box", "")
+                .replace("transform-box:view-box", "")
+                .replace("text-transform:uppercase", ""))
+    assert "transform:" not in stripped.split(".umf-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "umf-" not in dv_bar
+    donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
+    assert "umf-" not in donut
+    spm = re.search(r"\.spm-region\{[^}]+\}", css).group(0)
+    assert "umf-" not in spm
+    srf = re.search(r"\.srf-wipe\{[^}]+\}", css).group(0)
+    assert "umf-" not in srf
+    usm = re.search(r"\.usm-region\{[^}]+\}", css).group(0)
+    assert "umf-" not in usm
 
 
 def test_split_moves_both_halves_towards_the_seam():
