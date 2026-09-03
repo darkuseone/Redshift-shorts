@@ -127,8 +127,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"#root{{position:relative;width:var(--frame-w);height:var(--frame-h);"
         f"overflow:hidden;font-family:var(--font-subtitle);"
         "isolation:isolate}"
+        # Основание кадра — космос брендбука. Светлым оно осталось от старой
+        # палитры, и всякая дыра в раскладке показывала белый лист посреди
+        # тёмного ролика: на пересборке 0047 так вышло три кадра подряд.
         f".stage-bg{{position:absolute;inset:0;z-index:{Z_STAGE};"
-        "background:var(--color-bg-light)}"
+        "background:var(--color-space-deep)}"
     )
 
     # --- шоты -----------------------------------------------------------
@@ -269,10 +272,15 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f".fullscreen-text{{position:absolute;inset:0;z-index:{Z_OVERLAY};"
         "display:flex;align-items:center;justify-content:center;"
         "padding:0 var(--safe-x-min);text-align:center;"
-        "background:var(--color-bg-pure);color:var(--color-ink);"
+        # Заливки нет: под фразой всегда лежит материал или сцена ролика, а
+        # сплошная плита — то, на что заказчик жаловался прямо. Кто хочет
+        # плиту, берёт `.solid`.
+        "background:transparent;color:var(--color-bg-pure);"
         "font-family:var(--font-display);text-transform:uppercase;"
         f"font-size:{int(fs['size_px'][1])}px;line-height:0.94}}"
-        ".fullscreen-text.invert{background:var(--color-ink);color:var(--color-bg-pure)}"
+        ".fullscreen-text.invert{background:var(--color-space-deep);"
+        "color:var(--color-bg-pure)}"
+        ".fullscreen-text.solid{background:var(--color-space-deep)}"
         ".fullscreen-text .accent{color:var(--color-accent)}"
         # Кадр с материалом за текстом: заливка уступает место футажу, а
         # читаемость держит затемнение. Сплошной цвет здесь оставлял белые
@@ -288,7 +296,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     parts.append(
         f".meme{{position:absolute;inset:0;z-index:{Z_SHOT};"
         "width:var(--frame-w);height:var(--frame-h);object-fit:contain;"
-        "background:var(--color-bg-light)}"
+        "background:var(--color-space-deep)}"
     )
 
     # --- холст поверх сцены (canvas_fx.py) ------------------------------

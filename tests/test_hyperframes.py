@@ -1144,3 +1144,62 @@ class TestTheCanvasLayerObeysTheEngine:
         js = canvas_js(brandbook["colors"])
         assert brandbook["colors"]["accent"] in js
         assert brandbook["colors"]["space_deep"] in js
+
+
+class TestChannelSurfacesAreDark:
+    """Светлым остаётся только чужой интерфейс, всё наше — панель канала.
+
+    Палитра брендбука тёмная: космос #0B132B, панель #1A1F2E. Белая плита
+    посреди тёмного ролика читается дырой — заказчик назвал это прямо, увидев
+    «180 ГРАДУСОВ» белыми буквами по белой карточке.
+
+    Чужой интерфейс — исключение и остаётся светлым намеренно: окно браузера,
+    карточка статьи, пузырь мессенджера, отпечаток в раме и экран телефона
+    обязаны выглядеть собой, а не панелью канала.
+    """
+
+    # Поверхности, которым белое к лицу: они изображают не нас.
+    FOREIGN = (
+        "source-card", "chat-thread", "article-scroll", "paper-reveal",
+        "hero-phone-mock", "hero-chat-typing", "hero-chat-generate", "hero-paper",
+        "hero-bubble-card", "hero-bubble-typed", "ex-frame", "hero-plate",
+        "hero-verdict", "tr-flash", "tr-mask-circle", "tr-mask-diagonal",
+        "pm-row", "ct-skeleton", "ct-answer", "cg-canvas", "url", "bar",
+        # Не плита, а чернила: пылинка приёма «текст рассыпается» на тёмном
+        # фоне обязана быть светлой — это точка, а не поверхность.
+        "ptd-dot",
+    )
+
+    def test_no_surface_of_the_channel_paints_itself_light(self, brandbook):
+        import re
+
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "Oswald-Bold.ttf",
+                                    "subtitle": "Montserrat-Black.ttf",
+                                    "mono": "JetBrainsMono-Bold.ttf"})
+        light = re.compile(r"background:\s*(var\(--color-bg-(pure|light)\)|#F7F5F3|#FFFFFF|#F0EEEB)")
+        offenders = []
+        for match in re.finditer(r"(\.[a-zA-Z0-9_.\- >]+)\{([^}]*)\}", css):
+            selector, body = match.group(1).strip(), match.group(2)
+            if not light.search(body):
+                continue
+            if any(name in selector for name in self.FOREIGN):
+                continue
+            offenders.append(selector)
+        assert not offenders, f"светлая заливка у поверхности канала: {offenders}"
+
+    def test_the_floor_of_the_frame_is_the_space_of_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "Oswald-Bold.ttf"})
+        assert ".stage-bg{" in css
+        floor = css.split(".stage-bg{")[1].split("}")[0]
+        assert "var(--color-space-deep)" in floor, floor
+
+    def test_the_number_card_is_the_panel_of_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "Oswald-Bold.ttf"})
+        card = css.split(".fullscreen-text .fs-slam-card{")[1].split("}")[0]
+        assert "var(--color-panel)" in card, card

@@ -792,7 +792,7 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         ".stat-card{left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));top:240px}"
         ".stat-card .sc-in{display:block;padding:48px 40px 40px;border-radius:32px;"
-        "background:var(--color-bg-light);color:var(--color-ink);"
+        "background:var(--color-panel);color:var(--color-bg-pure);"
         "box-shadow:0 22px 60px rgba(0,0,0,0.22);text-align:center;"
         "will-change:transform}"
         ".stat-card .sc-label{display:block;font-family:var(--font-subtitle);"
@@ -2461,11 +2461,13 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         # --- карточка сверху, ведущий снизу ---
         f".hero-card-stack{{position:absolute;left:0;right:0;top:0;"
         f"z-index:{Z_AVATAR + 1};border-radius:0 0 44px 44px;overflow:hidden;"
-        "background:var(--color-bg-pure);display:flex;justify-content:center;"
+        # Панель канала, а не белая плита: приём занимает верх кадра целиком,
+        # и белым он спорит с тёмной сценой сильнее любого другого.
+        "background:var(--color-panel);display:flex;justify-content:center;"
         "padding:110px 60px 0;pointer-events:none}"
         ".hero-card-stack .cs-title{display:block;text-align:center;"
         "font-family:var(--font-display);text-transform:uppercase;"
-        "font-size:104px;line-height:0.96;color:var(--color-ink);"
+        "font-size:104px;line-height:0.96;color:var(--color-bg-pure);"
         "will-change:transform}"
         f".cs-media{{position:absolute;left:60px;width:{width - 120}px;"
         f"z-index:{Z_AVATAR + 2};object-fit:cover;border-radius:28px;"
@@ -2586,7 +2588,9 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         # экспоната и слово субтитра — разные слои смысла и спорить не должны.
         f".hero-exhibit{{position:absolute;left:0;top:0;width:var(--frame-w);"
         f"height:{EX_PLATE_H}px;z-index:{Z_AVATAR + 1};"
-        "background:var(--color-bg-pure);display:flex;flex-direction:column;"
+        # Панель вокруг рамы — канальная. Само паспарту ниже остаётся белым:
+        # это отпечаток в раме, он и должен выглядеть бумагой.
+        "background:var(--color-panel);display:flex;flex-direction:column;"
         # Подпись растёт **вниз** от нижнего края материала. Прижатая к
         # низу плиты, она, переросши остаток, полезла вверх — под саму
         # картинку. `overflow` — тот же запрет с другой стороны: за плиту,
@@ -2599,15 +2603,17 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-exhibit .ex-frame{position:absolute;display:block;"
         "background:var(--color-bg-pure);border-radius:22px;"
         "box-shadow:0 30px 72px rgba(10,10,12,0.30)}"
+        # Подпись читается на тёмной панели: имя белым, пояснение —
+        # второстепенным цветом брендбука.
         ".hero-exhibit .ex-name{display:block;font-family:var(--font-display);"
         "text-transform:uppercase;line-height:0.94;letter-spacing:-0.01em;"
-        "color:var(--color-ink)}"
+        "color:var(--color-bg-pure)}"
         ".hero-exhibit .ex-detail{display:block;margin-top:14px;"
         "font-family:var(--font-subtitle);font-weight:700;font-size:38px;"
-        "color:#4A4D52}"
+        "color:var(--color-text-soft)}"
         ".hero-exhibit .ex-credit{display:block;margin-top:14px;"
         "font-family:var(--font-mono);font-size:24px;letter-spacing:0.10em;"
-        "text-transform:uppercase;color:var(--color-muted)}"
+        "text-transform:uppercase;color:var(--color-text-soft);opacity:0.7}"
         f".ex-media{{position:absolute;display:block;z-index:{Z_AVATAR + 2};"
         "object-fit:cover;pointer-events:none}"
         # --- удар цветом ---
@@ -4763,10 +4769,14 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .bul-word{display:inline-flex;white-space:nowrap}"
         ".fullscreen-text .bul-ch,.fullscreen-text .bul-unit{display:inline-block;"
         "opacity:0;will-change:transform}"
+        # Карточка числа — панель канала (#1A1F2E), а не белая плита: на
+        # тёмном ролике белый прямоугольник читается дырой, и это ровно то,
+        # на что жаловался заказчик.
         ".fullscreen-text .fs-slam-card{display:flex;flex-direction:column;"
         "align-items:center;gap:18px;padding:48px 40px;border-radius:36px;"
-        "background:var(--color-bg-pure)}"
-        ".fullscreen-text.invert .fs-slam-card{background:var(--color-ink)}"
+        "background:var(--color-panel);color:var(--color-bg-pure);"
+        "box-shadow:0 26px 70px rgba(0,0,0,0.45)}"
+        ".fullscreen-text.invert .fs-slam-card{background:var(--color-space-deep)}"
         ".fullscreen-text .fs-num{display:block;line-height:0.9}"
         ".fullscreen-text .fs-cap{display:block;font-family:var(--font-subtitle);"
         "font-size:48px;font-weight:800;text-transform:none;color:var(--color-muted);"
@@ -4792,7 +4802,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .fs-band{display:flex;align-items:center;"
         "justify-content:center;width:100%;background:var(--color-accent);"
         "color:var(--color-bg-pure);will-change:transform}"
-        ".fullscreen-text.fs-strip{background:var(--color-bg-light)}"
+        ".fullscreen-text.fs-strip{background:var(--color-panel)}"
         ".fullscreen-text .kts-stage{display:flex;align-items:center;"
         "justify-content:center;width:100%;height:100%;will-change:opacity}"
         ".fullscreen-text .kts-sentence{display:flex;align-items:baseline;"
@@ -4912,7 +4922,8 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"
         ".fullscreen-text .fs-fact{display:block;padding:52px 44px;border-radius:36px;"
-        "background:var(--color-bg-light);max-width:100%;will-change:transform}"
+        "background:var(--color-panel);color:var(--color-bg-pure);"
+        "max-width:100%;will-change:transform}"
         ".fullscreen-text.fs-underline .accent"
         "{box-shadow:inset 0 -0.12em 0 var(--color-accent)}"
         ".fullscreen-text .fs-q{color:var(--color-accent);font-size:0.55em}"
