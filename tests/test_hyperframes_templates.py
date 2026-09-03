@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-117 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+118 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -20,7 +20,7 @@ from src.lib.render.hyperframes.templates import (
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
-    _cpa_times, _cpa_rng, _CPA_CAP,
+    _cpa_times, _cpa_rng, _CPA_CAP, _cs_times,
     _sr_frame_table,
 )
 
@@ -1428,6 +1428,119 @@ def test_code_particle_assemble_keeps_github_dark_and_mono():
     invert = re.search(r"\.fullscreen-text\.fs-code-pa\.invert\{[^}]+\}", css).group(0)
     assert "background:#05070b" in invert
     assert "#C8453D" not in dot
+
+
+_CS_DEMO = (
+    'import { createClient } from "./client"\n'
+    'import { logger } from "./logger"\n'
+    "\n"
+    "const RETRIES = 3\n"
+    "\n"
+    "export async function fetchWithRetry(url, opts = {}) {\n"
+    "  const client = createClient(opts)\n"
+    "  let lastError = null\n"
+    "\n"
+    "  for (let attempt = 1; attempt <= RETRIES; attempt++) {\n"
+    "    try {\n"
+    "      const res = await client.get(url)\n"
+    "      if (res.ok) return res.body\n"
+    "      lastError = new Error(\"bad status \" + res.status)\n"
+    "    } catch (err) {\n"
+    "      lastError = err\n"
+    "      logger.warn(\"attempt \" + attempt + \" failed\")\n"
+    "    }\n"
+    "    await sleep(attempt * 250)\n"
+    "  }\n"
+    "\n"
+    "  throw lastError\n"
+    "}"
+)
+
+
+def test_code_scroll_centers_the_target_line_without_dom_measure():
+    """Каталог меряет getBoundingClientRect; здесь заранее y и vis=14."""
+    piece = render_fullscreen(_fs_ctx(
+        content=_CS_DEMO, renderer="code_scroll", code_scroll=True,
+        duration=6.0, filename="fetchWithRetry.js", line=12))
+    node = piece.nodes[0]
+    assert "fs-code-scroll" in node
+    assert "cs-editor" in node and "cs-scroll" in node and "cs-hl" in node
+    assert "cs-gutter" in node and "fetchWithRetry.js" in node
+    assert "createClient" in node and "lastError" in node and "await" in node
+    assert "CONST" not in node
+    assert "FETCHWITHRETRY" not in node
+    assert "position:absolute" not in node.split("cs-stage", 1)[0]
+    assert node.count('id="shot-01"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert "power2.inOut" in body and "power2.out" in body
+    assert "opacity:0.35" in body
+    assert "y:" in body
+    y_vals = [float(v) for v in re.findall(
+        r'tl\.fromTo\("#shot-01-scroll",\{y:0\},\{y:(-?[0-9.]+)', body)]
+    assert y_vals and y_vals[0] < -80
+    assert "height:" not in body
+    assert "width:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "onUpdate" not in body
+    assert "Math.random" not in body
+    assert "getBoundingClientRect" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith("#shot-01-")
+    flagged = render_fullscreen(_fs_ctx(
+        content=_CS_DEMO, code_scroll=True, stagger_ms=55, duration=6.0))
+    assert "fs-code-scroll" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="code_scroll", duration=6.0))
+    assert empty.nodes == []
+    times = _cs_times(6.0)
+    assert times["fade_at"] + times["fade"] <= times["scroll_at"] + 1e-9
+    assert abs(times["scroll_at"] - 1.25) < 1e-9
+    assert abs(times["arr_at"] - 2.95) < 1e-9
+    assert times["dim_at"] + times["dim_dur"] <= 6.0 + 1e-9
+    short = _cs_times(1.5)
+    assert short["fade_at"] + short["fade"] <= short["scroll_at"] + 1e-9
+    assert short["arr_at"] <= 1.5 + 1e-9
+    assert short["dim_at"] + short["dim_dur"] <= 1.5 + 1e-9
+    focused = render_fullscreen(_fs_ctx(
+        content=_CS_DEMO, renderer="code_scroll", duration=6.0,
+        focus="throw lastError"))
+    focused_body = " ".join(focused.tweens)
+    assert 'tl.fromTo("#shot-01-ln21",{opacity:1}' not in focused_body
+    assert 'tl.fromTo("#shot-01-ln11",{opacity:1}' in focused_body
+
+
+def test_code_scroll_keeps_github_dark_spotlight_and_mono():
+    from src.lib.config import load_config
+
+    piece = render_fullscreen(_fs_ctx(
+        content=_CS_DEMO, renderer="code_scroll", duration=6.0))
+    node = piece.nodes[0]
+    assert "#F97583" in node and "#B392F0" in node and "#79B8FF" in node
+    css = overlay_css(load_config().brandbook)
+    assert "JetBrains Mono" in css
+    assert "#05070b" in css
+    assert ".fs-code-scroll" in css
+    assert "text-transform:none" in css
+    hl = re.search(r"\.cs-hl\{[^}]+\}", css).group(0)
+    assert "#58a6ff" in hl
+    assert "#C8453D" not in hl
+    editor = re.search(r"\.cs-editor\{[^}]+\}", css).group(0)
+    assert "transform:" not in editor.replace("will-change:transform,opacity", "")
+    scroll = re.search(r"\.cs-scroll\{[^}]+\}", css).group(0)
+    assert "transform:" not in scroll.replace("will-change:transform,opacity", "")
+    stage = re.search(r"\.cs-stage\{[^}]+\}", css).group(0)
+    assert "position:absolute" not in stage
+    invert = re.search(r"\.fullscreen-text\.fs-code-scroll\.invert\{[^}]+\}", css).group(0)
+    assert "background:#05070b" in invert
 
 
 def test_number_slam_splits_the_caption():

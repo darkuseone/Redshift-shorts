@@ -208,3 +208,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Полноэкранный жест code-3d-extrude: код на скошенной плите | каталог: Three.js ExtrudeGeometry и onUpdate; здесь 2D scale/x/y/rotation, github-dark и JetBrains Mono как в каталоге |
 | 2026-09-03 | Полноэкранный жест code-diff: минус схлопывается, плюс раскрывается | каталог твинит height; здесь scaleY и заранее y, github-dark и #f85149/#3fb950 как в каталоге |
 | 2026-09-03 | Полноэкранный жест code-particle-assemble: пыль собирается в глифы кода | каталог: Three.js Points, uProgress и onUpdate; здесь capped span, mulberry32 seed 23, github-dark и JetBrains Mono как в каталоге |
+| 2026-09-03 | Полноэкранный жест code-scroll: камера скроллит файл к целевой строке | каталог меряет getBoundingClientRect; здесь заранее y и окно ~14 строк, github-dark и прожектор #58a6ff как в каталоге |

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-117 шаблонов каталога — это не 117 реализаций, а набор рендереров с параметрами.
+118 шаблонов каталога — это не 118 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3775,6 +3775,240 @@ def fs_code_particle_assemble(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог code-scroll: камера скроллит файл к целевой строке и подсвечивает
+# её. document.fonts.ready + getBoundingClientRect здесь нельзя — dy
+# заранее в Python. CSS-transform на editor/scroll запрещён: жест — scale/y.
+_CS_VIS = 14
+_CS_GUTTER = 56
+_CS_TITLE_H = 48
+_CS_PAD_TOP = 12
+_CS_PAD_X = 16
+_CS_LH_EM = 1.55
+_CS_SIZE_FLOOR = 13
+_CS_SIZE_CEILING = 22
+_CS_EDITOR_SCALE = 0.985
+_CS_DIM = 0.35
+_CS_FRAME_W = 1080
+_CS_FRAME_H = 1920
+_CS_DEFAULT_LINE = 12
+_CS_DEFAULT_FILE = "fetchWithRetry.js"
+
+
+def _cs_num(value: float) -> str:
+    """_num(-0.0) даёт '-0' — линт и GSAP этого не едят."""
+    if abs(float(value)) < 5e-4:
+        return "0"
+    return _num(value)
+
+
+def _cs_times(duration: float) -> dict[str, float]:
+    """Каталог Code Scroll To Line на 6 с: editor 0.50, fade 0.45 с 0.45,
+    пауза 0.35, scroll 1.70 с 1.25, дим/прожектор за 0.35 до прибытия.
+    """
+    d = max(1.5, float(duration))
+    enter = 0.50
+    fade = 0.45
+    gap = 0.35
+    scroll = 1.70
+    dim_lead = 0.35
+    dim_dur = 0.50
+    hl_dur = 0.45
+    fade_at = 0.45
+    packed = fade_at + fade + gap + scroll
+    if packed > d - 0.04:
+        fit = (d - 0.04) / packed
+        enter *= fit
+        fade *= fit
+        gap *= fit
+        scroll *= fit
+        dim_lead *= fit
+        dim_dur *= fit
+        hl_dur *= fit
+        fade_at *= fit
+    fade_at = round(fade_at, 4)
+    enter = round(enter, 4)
+    fade = round(fade, 4)
+    gap = round(gap, 4)
+    scroll = round(scroll, 4)
+    dim_lead = round(dim_lead, 4)
+    dim_dur = round(dim_dur, 4)
+    hl_dur = round(hl_dur, 4)
+    scroll_at = round(fade_at + fade + gap, 4)
+    arr_at = round(scroll_at + scroll, 4)
+    dim_at = round(max(fade_at + fade + 0.02, arr_at - dim_lead), 4)
+    end_limit = d - 0.01
+    if dim_at + dim_dur > end_limit:
+        dim_dur = round(max(0.08, end_limit - dim_at), 4)
+    if dim_at + hl_dur > end_limit:
+        hl_dur = round(max(0.08, end_limit - dim_at), 4)
+    return {
+        "enter": enter,
+        "fade_at": fade_at,
+        "fade": fade,
+        "scroll_at": scroll_at,
+        "scroll": scroll,
+        "arr_at": arr_at,
+        "dim_at": dim_at,
+        "dim_dur": dim_dur,
+        "hl_dur": hl_dur,
+    }
+
+
+def _cs_pick_line(raws: list[str], params: dict[str, Any]) -> int:
+    """1-indexed line / target_line, иначе подстрока focus, иначе строка 12."""
+    n = len(raws)
+    if n <= 0:
+        return 0
+    raw = params.get("line", params.get("target_line"))
+    if isinstance(raw, bool):
+        raw = None
+    if isinstance(raw, (int, float)):
+        return max(0, min(n - 1, int(raw) - 1))
+    if isinstance(raw, str) and raw.strip().isdigit():
+        return max(0, min(n - 1, int(raw.strip()) - 1))
+    focus = str(params.get("focus") or params.get("highlight_line") or "").strip()
+    if focus:
+        for i, text in enumerate(raws):
+            if focus in text:
+                return i
+    return max(0, min(n - 1, _CS_DEFAULT_LINE - 1))
+
+
+def _cs_metrics(raws: list[str], frame_w: int, frame_h: int,
+                vis: int) -> tuple[int, int, int, int, int]:
+    """Карточка короче файла: vis строк в окне, чтобы dy был заметным."""
+    vis = max(6, min(int(vis), 16))
+    editor_w = min(int(round(frame_w * 0.90)), 980)
+    inner_w = max(80, editor_w - _CS_GUTTER - _CS_PAD_X * 2)
+    max_chars = max((len(row) for row in raws), default=8)
+    max_editor_h = int(round(frame_h * 0.58))
+    max_surface = max(120, max_editor_h - _CS_TITLE_H)
+    lh_cap = max(18, int((max_surface - _CS_PAD_TOP) / vis))
+    font = min(
+        _CS_SIZE_CEILING,
+        max(_CS_SIZE_FLOOR, int(inner_w / max(max_chars * _C3D_MONO_EM, 8))),
+    )
+    font = min(font, max(_CS_SIZE_FLOOR, int(lh_cap / _CS_LH_EM)))
+    font = max(_CS_SIZE_FLOOR, font)
+    lh = max(18, int(round(font * _CS_LH_EM)))
+    surface_h = vis * lh + _CS_PAD_TOP
+    editor_h = _CS_TITLE_H + surface_h
+    if editor_h > max_editor_h:
+        extra = editor_h - max_editor_h
+        drop = max(1, int(math.ceil(extra / vis)))
+        lh = max(18, lh - drop)
+        surface_h = vis * lh + _CS_PAD_TOP
+        editor_h = _CS_TITLE_H + surface_h
+    return font, lh, editor_w, editor_h, surface_h
+
+
+def fs_code_scroll(ctx: "TemplateCtx") -> Piece:
+    """Камера скроллит файл к целевой строке и подсвечивает её.
+
+    Каталог меряет ``getBoundingClientRect`` после ``fonts.ready``. Здесь
+    ``y`` заранее, окно ~14 строк, чтобы на 9:16 сдвиг был виден. Твины на
+    ``#…-editor`` / ``#…-scroll`` / строках, не на ``.clip``. JetBrains Mono,
+    github-dark и прожектор ``#58a6ff`` как в каталоге — это сам жест.
+    """
+    params = ctx.params
+    code = str(params.get("code") or params.get("content") or params.get("text")
+               or "").replace("\r\n", "\n").replace("\t", "  ").strip("\n")
+    raw_tokens = params.get("tokens")
+    token_rows = _cd_rows_from_tokens(raw_tokens)
+    if token_rows is not None:
+        lines = token_rows
+        if not any(piece for line in lines for piece, _color in line):
+            return Piece()
+    else:
+        if not code.strip():
+            return Piece()
+        lines = _c3d_highlight(code)
+    if not lines:
+        return Piece()
+    raws = ["".join(text for text, _color in line) for line in lines]
+    idx = _cs_pick_line(raws, params)
+    node_id = ctx.target
+    frame_w = int(params.get("frame_w") or _CS_FRAME_W)
+    frame_h = int(params.get("frame_h") or _CS_FRAME_H)
+    vis = int(params.get("visible_lines") or _CS_VIS)
+    size, lh, editor_w, editor_h, surface_h = _cs_metrics(raws, frame_w, frame_h, vis)
+    line_center = _CS_PAD_TOP + idx * lh + lh / 2.0
+    dy = int(round(surface_h * 0.5 - line_center))
+    if abs(dy) < 1:
+        dy = 0
+    t = _cs_times(ctx.duration)
+    at = _enter_at(ctx)
+    filename = str(params.get("filename") or _CS_DEFAULT_FILE)
+    invert = " invert" if params.get("invert") else ""
+    hl_top = _CS_PAD_TOP + idx * lh
+    tweens = [
+        f'tl.fromTo("#{node_id}-editor",'
+        f'{{opacity:0,scale:{_num(_CS_EDITOR_SCALE)}}},'
+        f'{{opacity:1,scale:1,duration:{_num(t["enter"])},'
+        f'ease:"power2.out"}},{_num(at)});',
+        f'tl.fromTo("#{node_id}-scroll",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(t["fade"])},ease:"power1.out"}},'
+        f'{_num(at + t["fade_at"])});',
+        f'tl.fromTo("#{node_id}-scroll",{{y:0}},'
+        f'{{y:{_cs_num(dy)},duration:{_num(t["scroll"])},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(at + t["scroll_at"])});',
+        f'tl.fromTo("#{node_id}-hl",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(t["hl_dur"])},ease:"power1.out"}},'
+        f'{_num(at + t["dim_at"])});',
+    ]
+    for i in range(len(lines)):
+        if i == idx:
+            continue
+        tweens.append(
+            f'tl.fromTo("#{node_id}-ln{i}",{{opacity:1}},'
+            f'{{opacity:{_num(_CS_DIM)},duration:{_num(t["dim_dur"])},'
+            f'ease:"power1.out"}},{_num(at + t["dim_at"])});')
+    gutter_html = "".join(
+        f'<span class="cs-gn" style="height:{lh}px;line-height:{lh}px">{i}</span>'
+        for i in range(1, len(lines) + 1)
+    )
+    line_html: list[str] = []
+    for i, line in enumerate(lines):
+        toks = "".join(
+            f'<span class="cs-tok" style="color:{html.escape(color, quote=True)}">'
+            f'{_esc(text)}</span>'
+            for text, color in line
+        )
+        line_html.append(
+            f'<span id="{node_id}-ln{i}" class="cs-line" '
+            f'style="height:{lh}px;line-height:{lh}px">{toks}</span>')
+    scroll_h = _CS_PAD_TOP + len(lines) * lh + 8
+    code_pl = _CS_GUTTER + 8
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text fs-code-scroll'
+               f'{invert}" {_timing(ctx)}>'
+               f'<span class="cs-stage">'
+               f'<span class="cs-grid"></span>'
+               f'<span class="cs-glow cs-glow-a"></span>'
+               f'<span class="cs-glow cs-glow-b"></span>'
+               f'<span id="{node_id}-editor" class="cs-editor" '
+               f'style="width:{editor_w}px;height:{editor_h}px;font-size:{size}px">'
+               f'<span class="cs-titlebar"><span class="cs-dots">'
+               f'<span class="cs-dot cs-dot-r"></span>'
+               f'<span class="cs-dot cs-dot-y"></span>'
+               f'<span class="cs-dot cs-dot-g"></span></span>'
+               f'<span class="cs-filename"><span class="cs-file">'
+               f'{_esc(filename)}</span> — Code Scroll To Line</span></span>'
+               f'<span class="cs-surface" style="height:{surface_h}px">'
+               f'<span id="{node_id}-scroll" class="cs-scroll" '
+               f'style="height:{scroll_h}px">'
+               f'<span class="cs-gutter" style="top:{_CS_PAD_TOP}px;'
+               f'width:{_CS_GUTTER}px;font-size:{size}px;line-height:{lh}px">'
+               f'{gutter_html}</span>'
+               f'<span class="cs-code" style="padding:{_CS_PAD_TOP}px '
+               f'{_CS_PAD_X}px 8px {code_pl}px">'
+               f'<span id="{node_id}-hl" class="cs-hl" '
+               f'style="top:{hl_top}px;height:{lh}px"></span>'
+               f'{"".join(line_html)}</span></span></span></span></span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -3791,6 +4025,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "code_3d_extrude": fs_code_3d_extrude,
     "code_diff": fs_code_diff,
     "code_particle_assemble": fs_code_particle_assemble,
+    "code_scroll": fs_code_scroll,
     "number_slam": fs_number_slam,
 }
 
@@ -3827,6 +4062,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_code_diff(ctx)
     if params.get("code_particle_assemble"):
         return fs_code_particle_assemble(ctx)
+    if params.get("code_scroll"):
+        return fs_code_scroll(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -4608,6 +4845,58 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .pa-line{display:block;white-space:pre;font-weight:700;"
         "letter-spacing:0}"
         ".fullscreen-text .pa-tok{font-weight:700}"
+        ".fullscreen-text.fs-code-scroll{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:flex;"
+        "align-items:center;justify-content:center;"
+        "background:radial-gradient(120% 70% at 50% 18%,#0e1726 0%,#05070b 72%);"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;font-weight:500;"
+        "text-transform:none;letter-spacing:0;color:#e6edf3}"
+        ".fullscreen-text.fs-code-scroll.invert{background:#05070b;color:#e6edf3}"
+        ".fullscreen-text .cs-stage{position:relative;display:flex;"
+        "align-items:center;justify-content:center;width:100%;height:100%}"
+        ".fullscreen-text .cs-grid{position:absolute;inset:0;z-index:0;"
+        "pointer-events:none;background-image:linear-gradient("
+        "rgba(88,166,255,0.05) 1px,transparent 1px),linear-gradient("
+        "90deg,rgba(88,166,255,0.05) 1px,transparent 1px);background-size:48px 48px}"
+        ".fullscreen-text .cs-glow{position:absolute;width:520px;height:520px;"
+        "border-radius:50%;filter:blur(90px);opacity:0.5;pointer-events:none;"
+        "z-index:0}"
+        ".fullscreen-text .cs-glow-a{background:#1f6feb55;left:-80px;top:-120px}"
+        ".fullscreen-text .cs-glow-b{background:#2ea04355;right:-100px;bottom:-160px}"
+        ".fullscreen-text .cs-editor{position:relative;z-index:1;display:flex;"
+        "flex-direction:column;box-sizing:border-box;background:#0b0f17;"
+        "border:1px solid #1d2733;border-radius:16px;"
+        "box-shadow:0 40px 120px rgba(0,0,0,0.6),0 2px 0 rgba(255,255,255,0.03) inset;"
+        "overflow:hidden;will-change:transform,opacity}"
+        ".fullscreen-text .cs-titlebar{display:flex;align-items:center;gap:14px;"
+        "flex:0 0 48px;height:48px;padding:0 18px;"
+        "background:linear-gradient(#11161f,#0c111a);border-bottom:1px solid #1b2430}"
+        ".fullscreen-text .cs-dots{display:flex;gap:8px}"
+        ".fullscreen-text .cs-dot{display:block;width:12px;height:12px;"
+        "border-radius:50%}"
+        ".fullscreen-text .cs-dot-r{background:#ff5f57}"
+        ".fullscreen-text .cs-dot-y{background:#febc2e}"
+        ".fullscreen-text .cs-dot-g{background:#28c840}"
+        ".fullscreen-text .cs-filename{font-size:15px;color:#8b98a9;"
+        "letter-spacing:0.2px;text-transform:none}"
+        ".fullscreen-text .cs-file{color:#d6e2f0}"
+        ".fullscreen-text .cs-surface{position:relative;flex:0 0 auto;"
+        "overflow:hidden}"
+        ".fullscreen-text .cs-scroll{position:relative;display:block;"
+        "will-change:transform,opacity;opacity:0}"
+        ".fullscreen-text .cs-gutter{position:absolute;left:0;z-index:1;"
+        "text-align:right;color:#828c9b;user-select:none;"
+        "font-variant-ligatures:none}"
+        ".fullscreen-text .cs-gn{display:block}"
+        ".fullscreen-text .cs-code{position:relative;display:block;width:100%;"
+        "box-sizing:border-box;font-variant-ligatures:none;tab-size:2;"
+        "text-align:left;text-transform:none}"
+        ".fullscreen-text .cs-line{display:block;white-space:pre;position:relative;"
+        "z-index:1;text-transform:none;font-weight:500}"
+        ".fullscreen-text .cs-tok{font-weight:500}"
+        ".fullscreen-text .cs-hl{position:absolute;left:0;right:0;z-index:0;"
+        "background:rgba(88,166,255,0.16);border-left:3px solid #58a6ff;"
+        "border-radius:6px;pointer-events:none;opacity:0}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

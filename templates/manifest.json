@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 24,
+    "text-fullscreen": 25,
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 117
+    "_total": 118
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -724,6 +724,28 @@
         "developer"
       ],
       "renderer": "code_particle_assemble",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-scroll",
+      "name": "code-scroll",
+      "category": "text-fullscreen",
+      "title": "Камера скроллит файл к целевой строке — code-scroll",
+      "duration_range": [
+        1.5,
+        6.0
+      ],
+      "params": {
+        "code_scroll": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "scroll",
+        "developer"
+      ],
+      "renderer": "code_scroll",
       "last_used_in": [],
       "added": "2026-09-03"
     },
