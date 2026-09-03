@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-118 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+119 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -20,7 +20,7 @@ from src.lib.render.hyperframes.templates import (
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
-    _cpa_times, _cpa_rng, _CPA_CAP, _cs_times,
+    _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times,
     _sr_frame_table,
 )
 
@@ -1540,6 +1540,92 @@ def test_code_scroll_keeps_github_dark_spotlight_and_mono():
     stage = re.search(r"\.cs-stage\{[^}]+\}", css).group(0)
     assert "position:absolute" not in stage
     invert = re.search(r"\.fullscreen-text\.fs-code-scroll\.invert\{[^}]+\}", css).group(0)
+    assert "background:#05070b" in invert
+
+
+_CT_DEMO = (
+    "async function loadConfig(path) {\n"
+    "  const raw = await readFile(path, \"utf8\")\n"
+    "  const config = JSON.parse(raw)\n"
+    "  return validate(config)\n"
+    "}"
+)
+
+
+def test_code_typing_reveals_glyphs_with_a_precomputed_caret():
+    """Каталог меряет getBoundingClientRect; здесь заранее x/y каретки."""
+    piece = render_fullscreen(_fs_ctx(
+        content=_CT_DEMO, renderer="code_typing", code_typing=True,
+        duration=5.0, filename="loadConfig.js"))
+    node = piece.nodes[0]
+    assert "fs-code-typing" in node
+    assert "ct-editor" in node and "ct-caret" in node and "ct-ch" in node
+    assert "loadConfig.js" in node
+    plain = re.sub(r"<[^>]+>", "", node)
+    assert "readFile" in plain and "loadConfig" in plain
+    assert "LOADCONFIG" not in node
+    assert "position:absolute" not in node.split("ct-stage", 1)[0]
+    assert node.count('id="shot-01"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    n_chars = sum(1 for ch in _CT_DEMO if ch != "\n")
+    assert node.count("ct-ch") == n_chars
+    body = " ".join(piece.tweens)
+    assert "power2.out" in body and 'ease:"none"' in body
+    assert "getBoundingClientRect" not in body
+    assert "height:" not in body
+    assert "width:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "onUpdate" not in body
+    assert "Math.random" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    caret_tweens = [tw for tw in piece.tweens if "#shot-01-caret" in tw]
+    assert len(caret_tweens) == n_chars
+    assert all("x:" in tw and "y:" in tw for tw in caret_tweens)
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith("#shot-01-")
+    flagged = render_fullscreen(_fs_ctx(
+        content=_CT_DEMO, code_typing=True, stagger_ms=55, duration=5.0))
+    assert "fs-code-typing" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="code_typing", duration=5.0))
+    assert empty.nodes == []
+    times = _ct_times(5.0, n_chars)
+    assert abs(times["per"] - 0.028) < 1e-9
+    assert times["fade_at"] + times["fade"] <= times["type_at"] + 1e-9
+    assert times["type_at"] + n_chars * times["per"] <= 5.0 + 1e-9
+    short = _ct_times(1.5, n_chars)
+    assert short["fade_at"] + short["fade"] <= short["type_at"] + 1e-9
+    assert short["type_at"] + n_chars * short["per"] <= 1.5 + 1e-9
+
+
+def test_code_typing_keeps_github_dark_caret_and_mono():
+    from src.lib.config import load_config
+
+    piece = render_fullscreen(_fs_ctx(
+        content=_CT_DEMO, renderer="code_typing", duration=5.0))
+    node = piece.nodes[0]
+    assert "#F97583" in node and "#B392F0" in node and "#79B8FF" in node
+    css = overlay_css(load_config().brandbook)
+    assert "JetBrains Mono" in css
+    assert "#05070b" in css
+    assert ".fs-code-typing" in css
+    assert "text-transform:none" in css
+    caret = re.search(r"\.ct-caret\{[^}]+\}", css).group(0)
+    assert "#58a6ff" in caret
+    assert "#C8453D" not in caret
+    assert "transform:" not in caret.replace("will-change:transform", "")
+    editor = re.search(r"\.ct-editor\{[^}]+\}", css).group(0)
+    assert "transform:" not in editor.replace("will-change:transform,opacity", "")
+    stage = re.search(r"\.ct-stage\{[^}]+\}", css).group(0)
+    assert "position:absolute" not in stage
+    invert = re.search(r"\.fullscreen-text\.fs-code-typing\.invert\{[^}]+\}", css).group(0)
     assert "background:#05070b" in invert
 
 

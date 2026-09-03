@@ -808,6 +808,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                           "text-fullscreen/code-diff",
                           "text-fullscreen/code-particle-assemble",
                           "text-fullscreen/code-scroll",
+                          "text-fullscreen/code-typing",
                           "text-fullscreen/number-slam-card"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
@@ -830,7 +831,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             if variant == "A" and _CODEISH.search(str(content)):
                 styles = ["text-fullscreen/code-3d-extrude",
                           "text-fullscreen/code-particle-assemble",
-                          "text-fullscreen/code-scroll"] + styles
+                          "text-fullscreen/code-scroll",
+                          "text-fullscreen/code-typing"] + styles
+            if (variant == "A" and _CODEISH.search(str(content))
+                    and str(content).count("\n") < 7):
+                styles = ["text-fullscreen/code-typing"] + styles
             if variant == "A" and str(content).count("\n") >= 7:
                 styles = ["text-fullscreen/code-scroll"] + styles
             if variant == "A" and _DIFFISH.search(str(content)):

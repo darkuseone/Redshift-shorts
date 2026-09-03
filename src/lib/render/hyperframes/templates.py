@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-118 шаблонов каталога — это не 118 реализаций, а набор рендереров с параметрами.
+119 шаблонов каталога — это не 119 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -4009,6 +4009,250 @@ def fs_code_scroll(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог code-typing: посимвольный набор с кареткой. getBoundingClientRect
+# после fonts.ready здесь нельзя — x/y каретки заранее. CSS-transform на
+# editor/caret запрещён. Каретка #58a6ff — жест, не акцент канала.
+_CT_GUTTER = 56
+_CT_TITLE_H = 48
+_CT_PAD_TOP = 16
+_CT_PAD_X = 18
+_CT_LH_EM = 1.55
+_CT_SIZE_FLOOR = 16
+_CT_SIZE_CEILING = 26
+_CT_EDITOR_SCALE = 0.985
+_CT_PER = 0.028
+_CT_CHAR_FADE = 0.12
+_CT_WS_FADE = 0.01
+_CT_CARET_W = 3
+_CT_FRAME_W = 1080
+_CT_FRAME_H = 1920
+_CT_DEFAULT_FILE = "loadConfig.js"
+
+
+def _ct_num(value: float) -> str:
+    """_num(-0.0) даёт '-0' — линт и GSAP этого не едят."""
+    if abs(float(value)) < 5e-4:
+        return "0"
+    return _num(value)
+
+
+def _ct_times(duration: float, n_chars: int) -> dict[str, float]:
+    """Каталог Code Typing на 5 с: editor 0.50, fade 0.45 с 0.45,
+    затем 0.028 с на знак. Если набор не влезает — сжимаем PER.
+    """
+    d = max(1.5, float(duration))
+    n = max(1, int(n_chars))
+    enter = 0.50
+    fade = 0.45
+    fade_at = 0.45
+    per = _CT_PER
+    char_fade = _CT_CHAR_FADE
+    ws_fade = _CT_WS_FADE
+    packed = fade_at + fade + n * per
+    if packed > d - 0.04:
+        fit = (d - 0.04) / packed
+        enter *= fit
+        fade *= fit
+        fade_at *= fit
+        per *= fit
+        char_fade *= fit
+        ws_fade *= fit
+    fade_at = round(fade_at, 4)
+    enter = round(enter, 4)
+    fade = round(fade, 4)
+    per = round(per, 5)
+    char_fade = round(max(0.04, char_fade), 4)
+    ws_fade = round(max(0.008, ws_fade), 4)
+    type_at = round(fade_at + fade, 4)
+    last_at = type_at + max(0, n - 1) * per
+    end_limit = d - 0.01
+    if last_at + char_fade > end_limit:
+        char_fade = round(max(0.04, end_limit - last_at), 4)
+    if last_at + ws_fade > end_limit:
+        ws_fade = round(max(0.008, end_limit - last_at), 4)
+    return {
+        "enter": enter,
+        "fade_at": fade_at,
+        "fade": fade,
+        "type_at": type_at,
+        "per": per,
+        "char_fade": char_fade,
+        "ws_fade": ws_fade,
+    }
+
+
+def _ct_metrics(raws: list[str], frame_w: int, frame_h: int
+                ) -> tuple[int, int, int, int, int]:
+    n = max(1, len(raws))
+    editor_w = min(int(round(frame_w * 0.90)), 980)
+    inner_w = max(80, editor_w - _CT_GUTTER - _CT_PAD_X * 2)
+    max_chars = max((len(row) for row in raws), default=8)
+    max_editor_h = int(round(frame_h * 0.62))
+    max_surface = max(120, max_editor_h - _CT_TITLE_H)
+    font = min(
+        _CT_SIZE_CEILING,
+        max(_CT_SIZE_FLOOR, int(inner_w / max(max_chars * _C3D_MONO_EM, 8))),
+    )
+    lh = max(22, int(round(font * _CT_LH_EM)))
+    while n * lh + _CT_PAD_TOP + 8 > max_surface and font > _CT_SIZE_FLOOR:
+        font -= 1
+        lh = max(22, int(round(font * _CT_LH_EM)))
+    surface_h = n * lh + _CT_PAD_TOP + 8
+    editor_h = _CT_TITLE_H + surface_h
+    return font, lh, editor_w, editor_h, surface_h
+
+
+def _ct_advance(ch: str, font, em: float) -> float:
+    if font is not None:
+        try:
+            wide = float(font.getlength(ch))
+            if wide > 0:
+                return wide
+        except Exception:                                    # noqa: BLE001
+            pass
+    return em
+
+
+def fs_code_typing(ctx: "TemplateCtx") -> Piece:
+    """Посимвольный набор с кареткой: каталог меряет DOM.
+
+    Здесь ширина глифа из JetBrains Mono, ``x``/``y`` каретки заранее.
+    Твины на ``#…-editor`` / ``#…-scene`` / знаках / каретке, не на
+    ``.clip``. github-dark и ``#58a6ff`` как в каталоге — это сам жест.
+    """
+    params = ctx.params
+    code = str(params.get("code") or params.get("content") or params.get("text")
+               or "").replace("\r\n", "\n").replace("\t", "  ").strip("\n")
+    raw_tokens = params.get("tokens")
+    token_rows = _cd_rows_from_tokens(raw_tokens)
+    if token_rows is not None:
+        lines = token_rows
+        if not any(piece for line in lines for piece, _color in line):
+            return Piece()
+    else:
+        if not code.strip():
+            return Piece()
+        lines = _c3d_highlight(code)
+    if not lines:
+        return Piece()
+    glyphs: list[tuple[str, str, int, bool]] = []
+    for li, line in enumerate(lines):
+        for text, color in line:
+            for ch in text:
+                glyphs.append((ch, color, li, ch == " "))
+    if not glyphs:
+        return Piece()
+    node_id = ctx.target
+    frame_w = int(params.get("frame_w") or _CT_FRAME_W)
+    frame_h = int(params.get("frame_h") or _CT_FRAME_H)
+    raws = ["".join(text for text, _color in line) for line in lines]
+    size, lh, editor_w, editor_h, surface_h = _ct_metrics(raws, frame_w, frame_h)
+    pad_left = _CT_GUTTER + 8
+    caret_h = max(14, int(round(size * 32 / 30)))
+    caret_gap = max(0, int(round((lh - caret_h) / 2)))
+    font = _cpa_mono_font(size)
+    em = size * _C3D_MONO_EM
+    if font is not None:
+        try:
+            measured = float(font.getlength("M"))
+            if measured > 0:
+                em = measured
+        except Exception:                                    # noqa: BLE001
+            pass
+    t = _ct_times(ctx.duration, len(glyphs))
+    at = _enter_at(ctx)
+    filename = str(params.get("filename") or _CT_DEFAULT_FILE)
+    invert = " invert" if params.get("invert") else ""
+    xs: list[float] = []
+    ys: list[float] = []
+    rights: list[float] = []
+    cursor_x = 0.0
+    prev_line = 0
+    for ch, _color, li, _ws in glyphs:
+        if li != prev_line:
+            cursor_x = 0.0
+            prev_line = li
+        wide = _ct_advance(ch, font, em)
+        left = pad_left + cursor_x
+        top = _CT_PAD_TOP + li * lh + caret_gap
+        xs.append(left)
+        ys.append(top)
+        rights.append(left + wide)
+        cursor_x += wide
+    tweens = [
+        f'tl.fromTo("#{node_id}-editor",'
+        f'{{opacity:0,scale:{_num(_CT_EDITOR_SCALE)}}},'
+        f'{{opacity:1,scale:1,duration:{_num(t["enter"])},'
+        f'ease:"power2.out"}},{_num(at)});',
+        f'tl.fromTo("#{node_id}-scene",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(t["fade"])},ease:"power1.out"}},'
+        f'{_num(at + t["fade_at"])});',
+    ]
+    prev_x, prev_y = xs[0], ys[0]
+    type_at = at + t["type_at"]
+    for i, (ch, _color, _li, ws) in enumerate(glyphs):
+        start = type_at + i * t["per"] + (0.001 if i else 0)
+        fade = t["ws_fade"] if ws else t["char_fade"]
+        tweens.append(
+            f'tl.fromTo("#{node_id}-c{i}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(fade)},ease:"power1.out"}},'
+            f'{_num(start)});')
+        nx, ny = rights[i], ys[i]
+        extra = ',immediateRender:false' if i else ""
+        tweens.append(
+            f'tl.fromTo("#{node_id}-caret",'
+            f'{{x:{_ct_num(prev_x)},y:{_ct_num(prev_y)}}},'
+            f'{{x:{_ct_num(nx)},y:{_ct_num(ny)},duration:{_num(t["per"])},'
+            f'ease:"none"{extra}}},{_num(start)});')
+        prev_x, prev_y = nx, ny
+    gutter_html = "".join(
+        f'<span class="ct-gn" style="height:{lh}px;line-height:{lh}px">{i}</span>'
+        for i in range(1, len(lines) + 1)
+    )
+    line_html: list[str] = []
+    gi = 0
+    for li, line in enumerate(lines):
+        pieces: list[str] = []
+        n_on_line = sum(len(text) for text, _color in line)
+        for _ in range(n_on_line):
+            ch, color, _ln, _ws = glyphs[gi]
+            pieces.append(
+                f'<span id="{node_id}-c{gi}" class="ct-ch" '
+                f'style="color:{html.escape(color, quote=True)}">'
+                f'{_esc(ch)}</span>')
+            gi += 1
+        line_html.append(
+            f'<span class="ct-line" style="height:{lh}px;line-height:{lh}px">'
+            f'{"".join(pieces)}</span>')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text fs-code-typing'
+               f'{invert}" {_timing(ctx)}>'
+               f'<span class="ct-stage">'
+               f'<span class="ct-grid"></span>'
+               f'<span class="ct-glow ct-glow-a"></span>'
+               f'<span class="ct-glow ct-glow-b"></span>'
+               f'<span id="{node_id}-editor" class="ct-editor" '
+               f'style="width:{editor_w}px;height:{editor_h}px;font-size:{size}px">'
+               f'<span class="ct-titlebar"><span class="ct-dots">'
+               f'<span class="ct-dot ct-dot-r"></span>'
+               f'<span class="ct-dot ct-dot-y"></span>'
+               f'<span class="ct-dot ct-dot-g"></span></span>'
+               f'<span class="ct-filename"><span class="ct-file">'
+               f'{_esc(filename)}</span> — Code Typing</span></span>'
+               f'<span class="ct-surface" style="height:{surface_h}px">'
+               f'<span id="{node_id}-scene" class="ct-scene">'
+               f'<span class="ct-gutter" style="top:{_CT_PAD_TOP}px;'
+               f'width:{_CT_GUTTER}px;font-size:{size}px;line-height:{lh}px">'
+               f'{gutter_html}</span>'
+               f'<span class="ct-code" style="padding:{_CT_PAD_TOP}px '
+               f'{_CT_PAD_X}px 8px {pad_left}px">'
+               f'{"".join(line_html)}'
+               f'<span id="{node_id}-caret" class="ct-caret" '
+               f'style="width:{_CT_CARET_W}px;height:{caret_h}px"></span>'
+               f'</span></span></span></span></span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -4026,6 +4270,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "code_diff": fs_code_diff,
     "code_particle_assemble": fs_code_particle_assemble,
     "code_scroll": fs_code_scroll,
+    "code_typing": fs_code_typing,
     "number_slam": fs_number_slam,
 }
 
@@ -4064,6 +4309,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_code_particle_assemble(ctx)
     if params.get("code_scroll"):
         return fs_code_scroll(ctx)
+    if params.get("code_typing"):
+        return fs_code_typing(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -4897,6 +5144,59 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .cs-hl{position:absolute;left:0;right:0;z-index:0;"
         "background:rgba(88,166,255,0.16);border-left:3px solid #58a6ff;"
         "border-radius:6px;pointer-events:none;opacity:0}"
+        ".fullscreen-text.fs-code-typing{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:flex;"
+        "align-items:center;justify-content:center;"
+        "background:radial-gradient(120% 70% at 50% 18%,#0e1726 0%,#05070b 72%);"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;font-weight:500;"
+        "text-transform:none;letter-spacing:0;color:#e6edf3}"
+        ".fullscreen-text.fs-code-typing.invert{background:#05070b;color:#e6edf3}"
+        ".fullscreen-text .ct-stage{position:relative;display:flex;"
+        "align-items:center;justify-content:center;width:100%;height:100%}"
+        ".fullscreen-text .ct-grid{position:absolute;inset:0;z-index:0;"
+        "pointer-events:none;background-image:linear-gradient("
+        "rgba(88,166,255,0.05) 1px,transparent 1px),linear-gradient("
+        "90deg,rgba(88,166,255,0.05) 1px,transparent 1px);background-size:48px 48px}"
+        ".fullscreen-text .ct-glow{position:absolute;width:520px;height:520px;"
+        "border-radius:50%;filter:blur(90px);opacity:0.5;pointer-events:none;"
+        "z-index:0}"
+        ".fullscreen-text .ct-glow-a{background:#1f6feb55;left:-80px;top:-120px}"
+        ".fullscreen-text .ct-glow-b{background:#2ea04355;right:-100px;bottom:-160px}"
+        ".fullscreen-text .ct-editor{position:relative;z-index:1;display:flex;"
+        "flex-direction:column;box-sizing:border-box;background:#0b0f17;"
+        "border:1px solid #1d2733;border-radius:16px;"
+        "box-shadow:0 40px 120px rgba(0,0,0,0.6),0 2px 0 rgba(255,255,255,0.03) inset;"
+        "overflow:hidden;will-change:transform,opacity}"
+        ".fullscreen-text .ct-titlebar{display:flex;align-items:center;gap:14px;"
+        "flex:0 0 48px;height:48px;padding:0 18px;"
+        "background:linear-gradient(#11161f,#0c111a);border-bottom:1px solid #1b2430}"
+        ".fullscreen-text .ct-dots{display:flex;gap:8px}"
+        ".fullscreen-text .ct-dot{display:block;width:12px;height:12px;"
+        "border-radius:50%}"
+        ".fullscreen-text .ct-dot-r{background:#ff5f57}"
+        ".fullscreen-text .ct-dot-y{background:#febc2e}"
+        ".fullscreen-text .ct-dot-g{background:#28c840}"
+        ".fullscreen-text .ct-filename{font-size:15px;color:#8b98a9;"
+        "letter-spacing:0.2px;text-transform:none}"
+        ".fullscreen-text .ct-file{color:#d6e2f0}"
+        ".fullscreen-text .ct-surface{position:relative;flex:0 0 auto;"
+        "overflow:hidden}"
+        ".fullscreen-text .ct-scene{position:relative;display:block;width:100%;"
+        "height:100%;opacity:0}"
+        ".fullscreen-text .ct-gutter{position:absolute;left:0;z-index:1;"
+        "text-align:right;color:#828c9b;user-select:none;"
+        "font-variant-ligatures:none}"
+        ".fullscreen-text .ct-gn{display:block}"
+        ".fullscreen-text .ct-code{position:relative;display:block;width:100%;"
+        "box-sizing:border-box;font-variant-ligatures:none;tab-size:2;"
+        "text-align:left;text-transform:none}"
+        ".fullscreen-text .ct-line{display:block;white-space:pre;position:relative;"
+        "z-index:1;text-transform:none;font-weight:500}"
+        ".fullscreen-text .ct-ch{display:inline-block;white-space:pre;opacity:0;"
+        "font-weight:500;will-change:opacity}"
+        ".fullscreen-text .ct-caret{position:absolute;left:0;top:0;z-index:3;"
+        "background:#58a6ff;border-radius:1px;pointer-events:none;"
+        "will-change:transform}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

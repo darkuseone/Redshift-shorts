@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 25,
+    "text-fullscreen": 26,
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 118
+    "_total": 119
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -746,6 +746,28 @@
         "developer"
       ],
       "renderer": "code_scroll",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-typing",
+      "name": "code-typing",
+      "category": "text-fullscreen",
+      "title": "Посимвольный набор с кареткой — code-typing",
+      "duration_range": [
+        1.5,
+        5.0
+      ],
+      "params": {
+        "code_typing": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "typing",
+        "developer"
+      ],
+      "renderer": "code_typing",
       "last_used_in": [],
       "added": "2026-09-03"
     },

@@ -738,6 +738,40 @@ def test_code_scroll_fullscreen_reaches_the_markup(plan, assets, brandbook):
     assert ".cs-editor" in css
 
 
+def test_code_typing_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        "async function loadConfig(path) {\n"
+        "  const raw = await readFile(path, \"utf8\")\n"
+        "  const config = JSON.parse(raw)\n"
+        "  return validate(config)\n"
+        "}"
+    )
+    plan["shots"][1]["duration"] = 5.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 5.0
+    plan["shots"][1]["params"] = {"code_typing": True, "filename": "loadConfig.js"}
+    plan["shots"][1]["renderer"] = "code_typing"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-typing" in out
+    assert "ct-editor" in out and "ct-caret" in out and "ct-ch" in out
+    assert "loadConfig.js" in out
+    plain = re.sub(r"<[^>]+>", "", out)
+    assert "readFile" in plain and "loadConfig" in plain
+    assert "LOADCONFIG" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "onUpdate" not in tween_src
+    assert "getBoundingClientRect" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    assert "x:" in tween_src and "y:" in tween_src
+    assert 'ease:"none"' in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#58a6ff" in css
+    assert ".ct-caret" in css
+    assert ".ct-editor" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {
