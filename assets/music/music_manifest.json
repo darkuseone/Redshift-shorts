@@ -24,7 +24,7 @@
       ],
       "vision_summary": "межзвёздная даль: почти без движения",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -32,15 +32,15 @@
       "mood": "ambient",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -19.0,
-          "peak_dbfs": -4.1,
-          "loop_seam": 0.519,
+          "duration_sec": 70.016,
+          "integrated_lufs": -19.19,
+          "peak_dbfs": -4.52,
+          "loop_seam": 0.241,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Interstellar_Distance_Option_2.mp3",
-        "segment_start_sec": 35.0,
+        "segment_start_sec": 31.0,
         "accepted_with_warnings": null
       }
     },
@@ -61,7 +61,7 @@
       ],
       "vision_summary": "Земля с орбиты: медленный дрейф",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -69,15 +69,15 @@
       "mood": "ambient",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -18.28,
-          "peak_dbfs": -3.74,
-          "loop_seam": 0.08,
+          "duration_sec": 70.016,
+          "integrated_lufs": -18.94,
+          "peak_dbfs": -4.17,
+          "loop_seam": 0.206,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Earth_from_Orbit_Option_2.mp3",
-        "segment_start_sec": 87.0,
+        "segment_start_sec": 75.0,
         "accepted_with_warnings": null
       }
     },
@@ -98,7 +98,7 @@
       ],
       "vision_summary": "данные в звуке: тёмный ход",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -106,15 +106,15 @@
       "mood": "ambient",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -19.52,
-          "peak_dbfs": -6.78,
-          "loop_seam": 0.028,
+          "duration_sec": 70.016,
+          "integrated_lufs": -19.12,
+          "peak_dbfs": -5.5,
+          "loop_seam": 0.039,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Data_Sonification_Option_1.mp3",
-        "segment_start_sec": 57.0,
+        "segment_start_sec": 74.0,
         "accepted_with_warnings": null
       }
     },
@@ -135,7 +135,7 @@
       ],
       "vision_summary": "ночная работа: редкие клавиши",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -143,15 +143,15 @@
       "mood": "piano",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -19.71,
-          "peak_dbfs": -6.19,
-          "loop_seam": 0.221,
+          "duration_sec": 70.016,
+          "integrated_lufs": -18.82,
+          "peak_dbfs": -4.13,
+          "loop_seam": 0.12,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Late_Night_Research_Option_2.mp3",
-        "segment_start_sec": 96.0,
+        "segment_start_sec": 42.0,
         "accepted_with_warnings": null
       }
     },
@@ -172,7 +172,7 @@
       ],
       "vision_summary": "данные в звуке: струнные с нажимом",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -180,15 +180,15 @@
       "mood": "strings",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -18.93,
-          "peak_dbfs": -6.7,
-          "loop_seam": 0.288,
+          "duration_sec": 70.016,
+          "integrated_lufs": -19.01,
+          "peak_dbfs": -6.67,
+          "loop_seam": 0.222,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Data_Sonification_Option_2.mp3",
-        "segment_start_sec": 92.0,
+        "segment_start_sec": 89.0,
         "accepted_with_warnings": null
       }
     },
@@ -209,7 +209,7 @@
       ],
       "vision_summary": "притяжение: тёмные струнные",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -217,15 +217,15 @@
       "mood": "strings",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -18.98,
-          "peak_dbfs": -6.49,
-          "loop_seam": 0.389,
+          "duration_sec": 70.016,
+          "integrated_lufs": -18.26,
+          "peak_dbfs": -4.03,
+          "loop_seam": 0.327,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Gravitational_Pull_Option_2.mp3",
-        "segment_start_sec": 57.0,
+        "segment_start_sec": 40.0,
         "accepted_with_warnings": null
       }
     },
@@ -246,7 +246,7 @@
       ],
       "vision_summary": "синапс: светлые струнные",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -254,15 +254,15 @@
       "mood": "strings",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -18.07,
-          "peak_dbfs": -3.18,
-          "loop_seam": 0.777,
+          "duration_sec": 70.016,
+          "integrated_lufs": -17.98,
+          "peak_dbfs": -3.92,
+          "loop_seam": 0.851,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Synapse_Wonder_Option_2.mp3",
-        "segment_start_sec": 61.0,
+        "segment_start_sec": 51.0,
         "accepted_with_warnings": null
       }
     },
@@ -283,7 +283,7 @@
       ],
       "vision_summary": "масштаб: широкие струнные",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -291,15 +291,15 @@
       "mood": "strings",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
+          "duration_sec": 70.016,
           "integrated_lufs": -18.16,
-          "peak_dbfs": -4.71,
-          "loop_seam": 0.73,
+          "peak_dbfs": -4.52,
+          "loop_seam": 0.65,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Wonder_and_Scale_Option_2.mp3",
-        "segment_start_sec": 95.0,
+        "segment_start_sec": 85.0,
         "accepted_with_warnings": null
       }
     },
@@ -321,7 +321,7 @@
       ],
       "vision_summary": "нейроданные: частый пульс",
       "score": 0.0,
-      "duration_sec": 60.011,
+      "duration_sec": 70.016,
       "used_in": [],
       "last_used": null,
       "added": "2026-09-02",
@@ -329,15 +329,15 @@
       "mood": "pulse",
       "extra": {
         "measured": {
-          "duration_sec": 60.011,
-          "integrated_lufs": -18.3,
-          "peak_dbfs": -4.5,
-          "loop_seam": 0.525,
+          "duration_sec": 70.016,
+          "integrated_lufs": -18.52,
+          "peak_dbfs": -4.1,
+          "loop_seam": 0.236,
           "sample_rate": 48000,
           "channels": 2
         },
         "source_file": "Neural_Data_Option_2.mp3",
-        "segment_start_sec": 24.0,
+        "segment_start_sec": 19.0,
         "accepted_with_warnings": null
       }
     }

@@ -463,7 +463,7 @@ def build_parser() -> argparse.ArgumentParser:
     music.add_argument("--title", default=None, help="описание своими словами")
     music.add_argument("--start", type=float, default=None,
                        help="начало отрезка, сек; не задан — ищется сам")
-    music.add_argument("--length", type=float, default=60.0, help="длина отрезка, сек")
+    music.add_argument("--length", type=float, default=70.0, help="длина отрезка, сек")
     music.add_argument("--force", action="store_true",
                        help="принять вопреки замечаниям приёма")
     music.add_argument("--inspect", default=None, help="только промерить файл")

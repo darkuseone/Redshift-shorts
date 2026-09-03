@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import math
+
 from pathlib import Path
 from typing import Any, Callable
 
@@ -133,13 +135,28 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                          value={"lufs": mix_lufs, "true_peak_dbtp": true_peak},
                          threshold={"lufs": [target - 1, target + 1], "tp_max": tp_max}))
 
-    # 9. Уровень музыкальной подложки −30…−34 LUFS
+    # 9. Уровень подложки — доля от голоса, как её задаёт заказчик.
+    # Коридор считается из ``audio.music_voice_ratio`` тем же способом, что и
+    # цель в P10: два места с одним смыслом обязаны считать одинаково, иначе
+    # QC однажды забракует ровно то, что сам конвейер и собрал.
+    from ..p10_audio.audio_build import music_target_lufs
+
     music_lufs = loudness.get("music_lufs")
-    music_lo, music_hi = cfg.get("audio.music_lufs", [-34, -30])
+    ratio = cfg.get("audio.music_voice_ratio", None)
+    if ratio:
+        voice = float(cfg.get("audio.voice_lufs", -14))
+        music_lo = round(voice + 20.0 * math.log10(float(ratio[0])) - 1.5, 2)
+        music_hi = round(voice + 20.0 * math.log10(float(ratio[-1])) + 1.5, 2)
+    else:
+        bounds = cfg.get("audio.music_lufs", [-40, -37])
+        music_lo, music_hi = float(bounds[0]), float(bounds[-1])
     music_ok = music_lufs is None or (float(music_lo) <= float(music_lufs) <= float(music_hi))
+    share = (None if music_lufs is None
+             else round(10 ** ((float(music_lufs) - float(cfg.get("audio.voice_lufs", -14))) / 20) * 100, 1))
     checks.append(_check(9, "Уровень музыкальной подложки", music_ok,
                          value=music_lufs, threshold=[music_lo, music_hi],
-                         detail="подложка отсутствует" if music_lufs is None else ""))
+                         detail="подложка отсутствует" if music_lufs is None
+                                else f"{share} % от голоса (цель {music_target_lufs(cfg)} LUFS)"))
 
     # 10. Рассинхрон субтитров ≤ 80 мс
     drift = _subtitle_drift(plan)
