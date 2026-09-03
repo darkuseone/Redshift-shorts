@@ -529,6 +529,9 @@ _CODEISH = re.compile(
     r"(?m)(^\s*(async\s+)?function\b|^\s*def\s+\w+|^\s*const\s+\w+|^\s*class\s+\w+"
     r"|[{};]\s*$|=>|::|\breturn\s+\w|\bimport\s+\w)",
 )
+_SHELLISH = re.compile(
+    r"(?m)(^\s*\$\s|\b(?:npx|npm|pip3?|cargo|hyperframes|brew|apt-get)\s)",
+)
 _DIFFISH = re.compile(
     r"(?ms)(^\s*---\s*$)|(^\s*diff\s+--git\b)|"
     r"(^\s*-[^-\n].*$.*?^\s*\+[^+\n])",
@@ -809,6 +812,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                           "text-fullscreen/code-particle-assemble",
                           "text-fullscreen/code-scroll",
                           "text-fullscreen/code-typing",
+                          "text-fullscreen/terminal-simulator",
                           "text-fullscreen/number-slam-card"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
@@ -832,7 +836,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 styles = ["text-fullscreen/code-3d-extrude",
                           "text-fullscreen/code-particle-assemble",
                           "text-fullscreen/code-scroll",
-                          "text-fullscreen/code-typing"] + styles
+                          "text-fullscreen/code-typing",
+                          "text-fullscreen/terminal-simulator"] + styles
             if (variant == "A" and _CODEISH.search(str(content))
                     and str(content).count("\n") < 7):
                 styles = ["text-fullscreen/code-typing"] + styles
@@ -840,6 +845,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 styles = ["text-fullscreen/code-scroll"] + styles
             if variant == "A" and _DIFFISH.search(str(content)):
                 styles = ["text-fullscreen/code-diff"] + styles
+            if variant == "A" and _SHELLISH.search(str(content)):
+                styles = ["text-fullscreen/terminal-simulator"] + styles
             template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
                                     recent_videos=recent_videos, exclude=used_templates,
                                     prefer=([preferred] if preferred else [])

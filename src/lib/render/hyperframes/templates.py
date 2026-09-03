@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-119 шаблонов каталога — это не 119 реализаций, а набор рендереров с параметрами.
+120 шаблонов каталога — это не 120 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -4259,6 +4259,185 @@ def fs_code_typing(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог terminal-simulator: скелет строк через CSS-var --hf-line и
+# команда снизу. Движок CSS-var не твинит — scaleX и opacity, y терминала.
+_TS_CATALOG_W = 760
+_TS_CHROME_H = 48
+_TS_BODY_H = 340
+_TS_TERM_H = 78
+_TS_FILES_W = 210
+_TS_RADIUS = 24
+_TS_LINE_H = 18
+_TS_LINE_GAP = 14
+_TS_PAD = 22
+_TS_DOT = 11
+_TS_CHROME_SIZE = 14
+_TS_BODY_SIZE = 15
+_TS_START = 0.50
+_TS_LINE_DUR = 0.24
+_TS_LINE_STAGGER = 0.08
+_TS_TERM_DELAY = 0.48
+_TS_TERM_DUR = 0.34
+_TS_TERM_Y = 16
+_TS_LINE_WIDTHS = (92, 72, 84, 58, 78)
+_TS_DEFAULT_TITLE = "Terminal Simulator"
+_TS_DEFAULT_CMD = "$ hyperframes render --skill=terminal-simulator"
+_TS_DEFAULT_FILES = ("index.html", "style.css", "timeline.js")
+_TS_FRAME_W = 1080
+_TS_FRAME_H = 1920
+_TS_N_LINES = 5
+
+
+def _ts_num(value: float) -> str:
+    """_num(-0.0) даёт '-0' — линт и GSAP этого не едят."""
+    if abs(float(value)) < 5e-4:
+        return "0"
+    return _num(value)
+
+
+def _ts_times(duration: float) -> dict[str, float]:
+    """Каталог: строки с 0.50, 0.24 с, стаггер 0.08; терминал с 0.98."""
+    d = max(1.5, float(duration))
+    start = _TS_START
+    line_dur = _TS_LINE_DUR
+    stagger = _TS_LINE_STAGGER
+    term_delay = _TS_TERM_DELAY
+    term_dur = _TS_TERM_DUR
+    packed = start + term_delay + term_dur
+    if packed > d - 0.04:
+        fit = (d - 0.04) / packed
+        start *= fit
+        line_dur *= fit
+        stagger *= fit
+        term_delay *= fit
+        term_dur *= fit
+    return {
+        "start": round(start, 4),
+        "line_dur": round(line_dur, 4),
+        "stagger": round(stagger, 4),
+        "term_delay": round(term_delay, 4),
+        "term_dur": round(term_dur, 4),
+        "term_at": round(start + term_delay, 4),
+    }
+
+
+def _ts_metrics(frame_w: int, frame_h: int) -> dict[str, int]:
+    catalog_h = _TS_CHROME_H + _TS_BODY_H + _TS_TERM_H
+    scale = min(frame_w * 0.90 / _TS_CATALOG_W, frame_h * 0.55 / catalog_h)
+    scale = max(0.85, min(1.45, scale))
+
+    def px(catalog: float) -> int:
+        return max(1, int(round(catalog * scale)))
+
+    return {
+        "card_w": px(_TS_CATALOG_W),
+        "chrome_h": px(_TS_CHROME_H),
+        "body_h": px(_TS_BODY_H),
+        "term_h": px(_TS_TERM_H),
+        "files_w": px(_TS_FILES_W),
+        "radius": px(_TS_RADIUS),
+        "line_h": px(_TS_LINE_H),
+        "line_gap": px(_TS_LINE_GAP),
+        "pad": px(_TS_PAD),
+        "dot": px(_TS_DOT),
+        "chrome_size": px(_TS_CHROME_SIZE),
+        "body_size": px(_TS_BODY_SIZE),
+        "term_y": px(_TS_TERM_Y),
+        "shadow_y": px(28),
+        "shadow_blur": px(80),
+    }
+
+
+def _ts_command(params: dict[str, Any], code: str) -> str:
+    raw = str(params.get("command") or code or "").replace("\r\n", "\n").strip()
+    if not raw:
+        return _TS_DEFAULT_CMD
+    first = raw.split("\n", 1)[0].strip()
+    if not first.startswith("$"):
+        first = f"$ {first}"
+    return first
+
+
+def _ts_files(params: dict[str, Any]) -> list[str]:
+    raw = params.get("files")
+    names: list[str] = []
+    if isinstance(raw, str):
+        blob = raw.replace(",", "\n")
+        names = [ln.strip() for ln in blob.split("\n") if ln.strip()]
+    elif isinstance(raw, (list, tuple)):
+        names = [str(item).strip() for item in raw if str(item).strip()]
+    return names or list(_TS_DEFAULT_FILES)
+
+
+def fs_terminal_simulator(ctx: "TemplateCtx") -> Piece:
+    """Окно IDE: скелет строк и команда. Каталог твинит CSS-var.
+
+    Здесь ``scaleX``/``opacity`` на полосках и ``y`` терминала, не на
+    ``.clip``. Сланец ``#0f172a`` и зелёный ``#86efac`` как в каталоге —
+    это жест терминала, не палитра канала.
+    """
+    params = ctx.params
+    code = str(params.get("code") or params.get("content") or params.get("text")
+               or "").replace("\r\n", "\n").replace("\t", "  ").strip("\n")
+    command = _ts_command(params, code)
+    files = _ts_files(params)
+    title = str(params.get("title") or _TS_DEFAULT_TITLE)
+    node_id = ctx.target
+    frame_w = int(params.get("frame_w") or _TS_FRAME_W)
+    frame_h = int(params.get("frame_h") or _TS_FRAME_H)
+    m = _ts_metrics(frame_w, frame_h)
+    t = _ts_times(ctx.duration)
+    at = _enter_at(ctx)
+    invert = " invert" if params.get("invert") else ""
+    tweens: list[str] = []
+    for i in range(_TS_N_LINES):
+        start = at + t["start"] + i * t["stagger"]
+        tweens.append(
+            f'tl.fromTo("#{node_id}-l{i}",{{scaleX:0,opacity:0}},'
+            f'{{scaleX:1,opacity:1,duration:{_num(t["line_dur"])},'
+            f'ease:"power2.out"}},{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-term",{{opacity:0,y:{_ts_num(m["term_y"])}}},'
+        f'{{opacity:1,y:0,duration:{_num(t["term_dur"])},ease:"power2.out"}},'
+        f'{_num(at + t["term_at"])});')
+    lines_html = "".join(
+        f'<span id="{node_id}-l{i}" class="ts-line" '
+        f'style="width:{_TS_LINE_WIDTHS[i]}%;height:{m["line_h"]}px"></span>'
+        for i in range(_TS_N_LINES)
+    )
+    files_html = "<br />".join(_esc(name) for name in files)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text '
+               f'fs-terminal-simulator{invert}" {_timing(ctx)}>'
+               f'<span class="ts-stage">'
+               f'<span class="ts-card" style="width:{m["card_w"]}px;'
+               f'border-radius:{m["radius"]}px;'
+               f'box-shadow:0 {m["shadow_y"]}px {m["shadow_blur"]}px '
+               f'rgba(15,23,42,0.2)">'
+               f'<span class="ts-chrome" style="height:{m["chrome_h"]}px;'
+               f'font-size:{m["chrome_size"]}px">'
+               f'<span class="ts-dots" style="gap:{max(6, m["dot"] - 3)}px">'
+               f'<span class="ts-dot ts-dot-r" style="width:{m["dot"]}px;'
+               f'height:{m["dot"]}px"></span>'
+               f'<span class="ts-dot ts-dot-y" style="width:{m["dot"]}px;'
+               f'height:{m["dot"]}px"></span>'
+               f'<span class="ts-dot ts-dot-g" style="width:{m["dot"]}px;'
+               f'height:{m["dot"]}px"></span></span>'
+               f'<span class="ts-title">{_esc(title)}</span></span>'
+               f'<span class="ts-body" style="min-height:{m["body_h"]}px;'
+               f'grid-template-columns:{m["files_w"]}px 1fr">'
+               f'<span class="ts-files" style="padding:{m["pad"]}px;'
+               f'font-size:{m["body_size"]}px">{files_html}</span>'
+               f'<span class="ts-editor" style="padding:{m["pad"]}px;'
+               f'gap:{m["line_gap"]}px">{lines_html}</span></span>'
+               f'<span id="{node_id}-term" class="ts-term" '
+               f'style="min-height:{m["term_h"]}px;font-size:{m["body_size"]}px;'
+               f'padding:{max(12, int(round(m["pad"] * 0.82)))}px {m["pad"]}px '
+               f'{m["pad"]}px">{_esc(command)}</span>'
+               f'</span></span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -4277,6 +4456,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "code_particle_assemble": fs_code_particle_assemble,
     "code_scroll": fs_code_scroll,
     "code_typing": fs_code_typing,
+    "terminal_simulator": fs_terminal_simulator,
     "number_slam": fs_number_slam,
 }
 
@@ -4317,6 +4497,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_code_scroll(ctx)
     if params.get("code_typing"):
         return fs_code_typing(ctx)
+    if params.get("terminal_simulator"):
+        return fs_terminal_simulator(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -5203,6 +5385,41 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .ct-caret{position:absolute;left:0;top:0;z-index:3;"
         "background:#58a6ff;border-radius:1px;pointer-events:none;"
         "will-change:transform}"
+        ".fullscreen-text.fs-terminal-simulator{width:var(--frame-w);"
+        "height:var(--frame-h);padding:0;overflow:hidden;isolation:isolate;"
+        "display:flex;align-items:center;justify-content:center;"
+        "background:#f7f7f8;color:#e4e4e7;"
+        "font-family:ui-monospace,SFMono-Regular,Menlo,'JetBrains Mono',monospace;"
+        "font-weight:500;text-transform:none;letter-spacing:0}"
+        ".fullscreen-text.fs-terminal-simulator.invert{background:#f7f7f8;"
+        "color:#e4e4e7}"
+        ".fullscreen-text .ts-stage{position:relative;display:flex;"
+        "align-items:center;justify-content:center;width:100%;height:100%}"
+        ".fullscreen-text .ts-card{position:relative;z-index:1;display:flex;"
+        "flex-direction:column;box-sizing:border-box;background:#0f172a;"
+        "color:#e4e4e7;overflow:hidden}"
+        ".fullscreen-text .ts-chrome{display:flex;align-items:center;gap:8px;"
+        "flex:0 0 auto;padding:0 18px;background:#111827;color:#94a3b8;"
+        "text-transform:none}"
+        ".fullscreen-text .ts-dots{display:flex;align-items:center}"
+        ".fullscreen-text .ts-dot{display:block;border-radius:999px}"
+        ".fullscreen-text .ts-dot-r{background:#ef4444}"
+        ".fullscreen-text .ts-dot-y{background:#f59e0b}"
+        ".fullscreen-text .ts-dot-g{background:#22c55e}"
+        ".fullscreen-text .ts-title{text-transform:none;color:#94a3b8}"
+        ".fullscreen-text .ts-body{display:grid;min-height:0}"
+        ".fullscreen-text .ts-files{box-sizing:border-box;"
+        "border-right:1px solid rgba(148,163,184,0.18);color:#94a3b8;"
+        "text-align:left;text-transform:none;line-height:1.8}"
+        ".fullscreen-text .ts-editor{box-sizing:border-box;display:grid;"
+        "align-content:start}"
+        ".fullscreen-text .ts-line{display:block;border-radius:999px;"
+        "background:rgba(228,228,231,0.18);transform-origin:left center;"
+        "opacity:0;will-change:transform,opacity}"
+        ".fullscreen-text .ts-term{box-sizing:border-box;"
+        "border-top:1px solid rgba(148,163,184,0.18);color:#86efac;"
+        "text-align:left;text-transform:none;opacity:0;"
+        "will-change:transform,opacity}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

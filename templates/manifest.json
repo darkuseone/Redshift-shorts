@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 26,
+    "text-fullscreen": 27,
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 119
+    "_total": 120
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -768,6 +768,28 @@
         "developer"
       ],
       "renderer": "code_typing",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/terminal-simulator",
+      "name": "terminal-simulator",
+      "category": "text-fullscreen",
+      "title": "Окно IDE: скелет строк и команда в терминале — terminal-simulator",
+      "duration_range": [
+        1.5,
+        5.0
+      ],
+      "params": {
+        "terminal_simulator": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "terminal",
+        "developer"
+      ],
+      "renderer": "terminal_simulator",
       "last_used_in": [],
       "added": "2026-09-03"
     },

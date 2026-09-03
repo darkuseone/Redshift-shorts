@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-119 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+120 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -20,7 +20,7 @@ from src.lib.render.hyperframes.templates import (
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
-    _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times,
+    _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _sr_frame_table,
 )
 
@@ -1636,6 +1636,90 @@ def test_code_typing_keeps_github_dark_caret_and_mono():
     assert "position:absolute" not in stage
     invert = re.search(r"\.fullscreen-text\.fs-code-typing\.invert\{[^}]+\}", css).group(0)
     assert "background:#05070b" in invert
+
+
+_TS_DEMO = "$ hyperframes render --skill=terminal-simulator"
+
+
+def test_terminal_simulator_grows_skeleton_lines_then_the_command():
+    """Каталог твинит CSS-var; здесь scaleX полосок и y терминала."""
+    piece = render_fullscreen(_fs_ctx(
+        content=_TS_DEMO, renderer="terminal_simulator",
+        terminal_simulator=True, duration=5.0))
+    node = piece.nodes[0]
+    assert "fs-terminal-simulator" in node
+    assert "ts-card" in node and "ts-term" in node and "ts-line" in node
+    assert "Terminal Simulator" in node
+    assert "index.html" in node and "style.css" in node and "timeline.js" in node
+    assert _TS_DEMO in node
+    assert "HYPERFRAMES RENDER" not in node
+    assert "position:absolute" not in node.split("ts-stage", 1)[0]
+    assert node.count('id="shot-01"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    assert node.count("ts-line") == 5
+    body = " ".join(piece.tweens)
+    assert "scaleX:0" in body and "scaleX:1" in body
+    assert "power2.out" in body
+    assert "--hf-line" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith("#shot-01-")
+    assert sum(1 for tw in piece.tweens if "-l" in tw) == 5
+    assert sum(1 for tw in piece.tweens if "-term" in tw) == 1
+    flagged = render_fullscreen(_fs_ctx(
+        content=_TS_DEMO, terminal_simulator=True, stagger_ms=55, duration=5.0))
+    assert "fs-terminal-simulator" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="terminal_simulator", duration=5.0))
+    assert _TS_DEMO in empty.nodes[0]
+    custom = render_fullscreen(_fs_ctx(
+        content="npx hyperframes render", renderer="terminal_simulator",
+        duration=5.0))
+    assert "$ npx hyperframes render" in custom.nodes[0]
+    times = _ts_times(5.0)
+    assert abs(times["start"] - 0.50) < 1e-9
+    assert abs(times["stagger"] - 0.08) < 1e-9
+    assert abs(times["term_at"] - 0.98) < 1e-9
+    short = _ts_times(1.5)
+    assert short["term_at"] + short["term_dur"] <= 1.5 + 1e-9
+
+
+def test_terminal_simulator_keeps_catalog_slate_and_green():
+    from src.lib.config import load_config
+
+    piece = render_fullscreen(_fs_ctx(
+        content=_TS_DEMO, renderer="terminal_simulator", duration=5.0))
+    node = piece.nodes[0]
+    assert "ts-dot-r" in node and "ts-dot-y" in node and "ts-dot-g" in node
+    css = overlay_css(load_config().brandbook)
+    assert ".fs-terminal-simulator" in css
+    assert "text-transform:none" in css
+    assert "#0f172a" in css
+    assert "#f7f7f8" in css
+    term = re.search(r"\.ts-term\{[^}]+\}", css).group(0)
+    assert "#86efac" in term
+    assert "#C8453D" not in term
+    line = re.search(r"\.ts-line\{[^}]+\}", css).group(0)
+    assert "transform-origin:left center" in line
+    assert "transform:" not in line.replace("will-change:transform,opacity", "").replace(
+        "transform-origin:left center", "")
+    card = re.search(r"\.ts-card\{[^}]+\}", css).group(0)
+    assert "transform:" not in card
+    stage = re.search(r"\.ts-stage\{[^}]+\}", css).group(0)
+    assert "position:absolute" not in stage
+    invert = re.search(
+        r"\.fullscreen-text\.fs-terminal-simulator\.invert\{[^}]+\}", css).group(0)
+    assert "background:#f7f7f8" in invert
 
 
 def test_number_slam_splits_the_caption():
