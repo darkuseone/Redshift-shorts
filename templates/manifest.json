@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 19,
+    "text-fullscreen": 20,
     "lower-thirds": 8,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 109
+    "_total": 110
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -609,6 +609,31 @@
         "chromatic"
       ],
       "renderer": "scan_band",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/scramble-reveal",
+      "name": "scramble-reveal",
+      "category": "text-fullscreen",
+      "title": "Строка собирается из детерминированного шума — scramble-reveal",
+      "duration_range": [
+        0.8,
+        4.0
+      ],
+      "params": {
+        "scramble_reveal": true,
+        "accent": "green",
+        "style": "terminal",
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "scramble",
+        "reveal"
+      ],
+      "renderer": "scramble_reveal",
       "last_used_in": [],
       "added": "2026-09-02"
     },

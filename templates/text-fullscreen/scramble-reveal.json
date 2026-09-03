@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/scramble-reveal",
+  "name": "scramble-reveal",
+  "category": "text-fullscreen",
+  "title": "Строка собирается из детерминированного шума — scramble-reveal",
+  "duration_range": [
+    0.8,
+    4.0
+  ],
+  "params": {
+    "scramble_reveal": true,
+    "accent": "green",
+    "style": "terminal",
+    "exit": "none"
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "scramble",
+    "reveal"
+  ],
+  "renderer": "scramble_reveal",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

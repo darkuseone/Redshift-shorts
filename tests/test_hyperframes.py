@@ -556,6 +556,29 @@ def test_scan_band_fullscreen_keeps_catalog_chromatic(plan, assets, brandbook):
     assert ".sb-band" in css
 
 
+def test_scramble_reveal_fullscreen_keeps_catalog_terminal(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СИГНАЛ"
+    plan["shots"][1]["duration"] = 3.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 3.0
+    plan["shots"][1]["params"] = {
+        "scramble_reveal": True, "accent": "green", "style": "terminal",
+        "exit": "none"}
+    plan["shots"][1]["renderer"] = "scramble_reveal"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-scramble-reveal" in out
+    assert "sr-green" in out and "sr-prefix" in out
+    assert "textContent" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "clip-path" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#71f5a7" in css
+    assert ".sr-shell" in css
+    assert "var(--font-mono)" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

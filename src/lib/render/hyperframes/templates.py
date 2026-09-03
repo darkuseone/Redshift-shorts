@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-109 шаблонов каталога — это не 109 реализаций, а набор рендереров с параметрами.
+110 шаблонов каталога — это не 110 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -2669,6 +2669,182 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Scramble Reveal: каталог пишет textContent из LCG-таблицы на каждом кадре.
+# Движок не твинит textContent — таблица считается в Python (seed 0x27c0ffee),
+# строки заранее в DOM, показ — opacity. cqw/cqh → px. Зелёный/синий/фиолет
+# каталога остаются: это терминальный жест, не палитра канала.
+_SR_IN_BASE = 1.65
+_SR_OUT_BASE = 0.45
+_SR_ARRIVAL_BASE = 0.42
+_SR_LOCK_TAIL_BASE = 0.15
+_SR_STILLNESS = 0.3
+_SR_FPS = 30
+_SR_FRAME_W = 1080
+_SR_FRAME_H = 1920
+_SR_SEED = 0x27C0FFEE
+_SR_GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+?<>"
+_SR_ACCENTS = ("green", "blue", "violet")
+
+
+def _js_round(value: float) -> int:
+    """Math.round для неотрицательных: 0.5 вверх, не банковское Python."""
+    return int(math.floor(float(value) + 0.5))
+
+
+def _sr_frame_table(text: str, last_frame: int, scale: float = 1.0) -> list[str]:
+    """Кадры каталога: LCG 0x27c0ffee, лок слева направо."""
+    characters = list(text)
+    last_frame = max(1, int(last_frame))
+    first_lock = min(last_frame, max(1, _js_round(0.2 * _SR_FPS * scale)))
+    n = len(characters)
+    lock_at: list[int] = []
+    for i, ch in enumerate(characters):
+        if ch.isspace():
+            lock_at.append(0)
+            continue
+        position = 1.0 if n <= 1 else i / (n - 1)
+        lock_at.append(_js_round(first_lock + position * (last_frame - first_lock)))
+    state = _SR_SEED & 0xFFFFFFFF
+    glen = len(_SR_GLYPHS)
+    rows: list[str] = []
+    for frame in range(last_frame + 1):
+        out: list[str] = []
+        for i, ch in enumerate(characters):
+            if ch.isspace() or frame >= lock_at[i]:
+                out.append(ch)
+                continue
+            state = (1664525 * state + 1013904223) & 0xFFFFFFFF
+            glyph_index = state % glen
+            glyph = _SR_GLYPHS[glyph_index]
+            if glyph == ch:
+                glyph = _SR_GLYPHS[(glyph_index + 1) % glen]
+            out.append(glyph)
+        rows.append("".join(out))
+    return rows
+
+
+def fs_scramble_reveal(ctx: "TemplateCtx") -> Piece:
+    """Строка собирается из детерминированного шума слева направо.
+
+    Каталог ставит ``textContent`` на каждом кадре. Здесь таблица LCG
+    выписана span-ами, показ — ``opacity``. Приход сцены — ``x``/``y``/
+    ``opacity`` в px, не ``cqw``. Твины на сцене, не на ``.clip``.
+    """
+    content = str(ctx.params.get("text") or ctx.params.get("content") or "").strip()
+    if not content:
+        return Piece()
+    accent = str(ctx.params.get("accent") or "green").lower()
+    if accent not in _SR_ACCENTS:
+        accent = "green"
+    style = str(ctx.params.get("style") or "terminal").lower()
+    if style != "clean":
+        style = "terminal"
+    exit_mode = str(ctx.params.get("exit") or "none").lower()
+    if exit_mode not in ("none", "fade", "up"):
+        exit_mode = "none"
+
+    node_id = ctx.target
+    frame_w = int(ctx.params.get("frame_w") or _SR_FRAME_W)
+    frame_h = int(ctx.params.get("frame_h") or _SR_FRAME_H)
+    fitted = min(11.0, 118.0 / max(1, len(content)))
+    size = max(28, min(round(fitted / 100.0 * frame_w), round(0.24 * frame_h)))
+    x0 = round(-0.04 * frame_w, 2)
+    y0 = round(0.024 * frame_h, 2)
+    drift_y = round(-0.0055 * frame_h, 2)
+    exit_x = round(0.05 * frame_w, 2)
+    exit_y = round(-0.035 * frame_h, 2)
+
+    at = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    dur = max(0.001, end - at)
+    out_base = 0.0 if exit_mode == "none" else _SR_OUT_BASE
+    total_base = max(0.001, _SR_IN_BASE + out_base)
+    scale = dur / total_base if dur < total_base else 1.0
+    inn = _SR_IN_BASE * scale
+    out = out_base * scale
+    arrival = _SR_ARRIVAL_BASE * scale
+    lock_tail = _SR_LOCK_TAIL_BASE * scale
+    hold = max(0.0, dur - inn - out)
+    hold_start = at + inn
+    out_at = at + inn + hold
+    reveal = max(0.0, inn - lock_tail)
+    last_frame = max(1, _js_round(reveal * _SR_FPS))
+    table = _sr_frame_table(content, last_frame, scale)
+
+    runs: list[tuple[str, int]] = []
+    for i, row in enumerate(table):
+        if not runs or runs[-1][0] != row:
+            runs.append((row, i))
+
+    tweens = [
+        f'tl.fromTo("#{node_id}-stage",{{opacity:0}},{{opacity:1,'
+        f'duration:{_num(arrival)},ease:"power2.out"}},{_num(at)});',
+        f'tl.fromTo("#{node_id}-stage",{{x:{_num(x0)}}},{{x:0,'
+        f'duration:{_num(arrival)},ease:"power3.out"}},{_num(at)});',
+        f'tl.fromTo("#{node_id}-stage",{{y:{_num(y0)}}},{{y:0,'
+        f'duration:{_num(arrival)},ease:"sine.inOut"}},{_num(at)});',
+    ]
+    prev_id = ""
+    for i, (row, frame) in enumerate(runs):
+        rid = f"{node_id}-r{i}"
+        t = at + frame / _SR_FPS
+        tweens.append(f'tl.set("#{rid}",{{opacity:1}},{_num(t)});')
+        if prev_id:
+            tweens.append(f'tl.set("#{prev_id}",{{opacity:0}},{_num(t)});')
+        prev_id = rid
+
+    drift_half = max(0.0, hold - _SR_STILLNESS) / 2.0
+    if drift_half > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{y:0}},{{y:{_num(drift_y)},'
+            f'duration:{_num(drift_half)},ease:"sine.inOut",yoyo:true,'
+            f'repeat:1,immediateRender:false}},{_num(hold_start)});'
+        )
+    if exit_mode == "up" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{x:0}},{{x:{_num(exit_x)},'
+            f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
+            f'{_num(out_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{y:0}},{{y:{_num(exit_y)},'
+            f'duration:{_num(out)},ease:"sine.inOut",immediateRender:false}},'
+            f'{_num(out_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{opacity:1}},{{opacity:0,'
+            f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
+            f'{_num(out_at)});'
+        )
+    elif exit_mode == "fade" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{opacity:1}},{{opacity:0,'
+            f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
+            f'{_num(out_at)});'
+        )
+
+    label = _esc(content)
+    rows_html = []
+    for i, (row, _frame) in enumerate(runs):
+        on = " sr-row-on" if i == 0 else ""
+        rows_html.append(
+            f'<span id="{node_id}-r{i}" class="sr-row{on}">{_esc(row)}</span>'
+        )
+    clean_cls = " sr-clean" if style == "clean" else ""
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text fs-scramble-reveal '
+               f'sr-{accent}{clean_cls}" {_timing(ctx)} '
+               f'data-sr-accent="{accent}" data-sr-style="{style}">'
+               f'<div id="{node_id}-stage" class="sr-stage" role="img" '
+               f'aria-label="{label}">'
+               f'<div class="sr-shell">'
+               f'<span class="sr-prefix" aria-hidden="true">{_esc(">_")}</span>'
+               f'<div class="sr-text" style="font-size:{size}px">'
+               f'<span class="sr-sizer">{label}</span>'
+               f'{"".join(rows_html)}</div></div></div></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -2680,6 +2856,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "particle_text_dissolve": fs_particle_text_dissolve,
     "per_word_crossfade": fs_per_word_crossfade,
     "scan_band": fs_scan_band,
+    "scramble_reveal": fs_scramble_reveal,
     "number_slam": fs_number_slam,
 }
 
@@ -2706,6 +2883,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_per_word_crossfade(ctx)
     if params.get("scan_band"):
         return fs_scan_band(ctx)
+    if params.get("scramble_reveal"):
+        return fs_scramble_reveal(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -3003,6 +3182,41 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .sb-clone-red{color:#ff3158;opacity:0.9}"
         ".fullscreen-text .sb-clone-cyan{color:#36efff;opacity:0.9}"
         ".fullscreen-text .sb-clone-core{color:#f7f8fa}"
+        ".fullscreen-text.fs-scramble-reveal{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:grid;place-items:center;"
+        "background:#0b1016;color:#f8fafc;"
+        "font-family:var(--font-mono);font-weight:780}"
+        ".fullscreen-text .sr-stage{display:block;width:950px;max-width:88%;"
+        "will-change:transform,opacity}"
+        ".fullscreen-text .sr-shell{display:flex;align-items:center;"
+        "justify-content:center;width:100%;min-height:653px;padding:96px 54px;"
+        "overflow:hidden;border:2px solid #5fb28d;border-radius:26px;"
+        "background:#132222;box-shadow:0 67px 192px rgba(0,0,0,0.42),"
+        "inset 0 0 77px rgba(113,245,167,0.07)}"
+        ".fullscreen-text .sr-prefix{flex:0 0 auto;margin-right:19px;"
+        "color:#90f7ba;font-size:0.74em;font-weight:700;line-height:1;opacity:0.78}"
+        ".fullscreen-text .sr-text{position:relative;display:block;min-width:0;"
+        "overflow:hidden;color:#71f5a7;font-weight:780;line-height:1;"
+        "letter-spacing:0.055em;text-align:center;white-space:pre;"
+        "text-shadow:0 0 54px rgba(113,245,167,0.34)}"
+        ".fullscreen-text .sr-sizer{visibility:hidden;display:block;white-space:pre}"
+        ".fullscreen-text .sr-row{position:absolute;inset:0;display:flex;"
+        "align-items:center;justify-content:center;opacity:0;white-space:pre;"
+        "color:inherit;text-shadow:inherit}"
+        ".fullscreen-text .sr-row.sr-row-on{opacity:1}"
+        ".fullscreen-text.sr-clean .sr-shell{min-height:499px;padding:58px 22px;"
+        "border-color:transparent;background:transparent;box-shadow:none}"
+        ".fullscreen-text.sr-clean .sr-prefix{display:none}"
+        ".fullscreen-text.sr-blue .sr-shell{border-color:#5685c0;background:#121c29;"
+        "box-shadow:0 67px 192px rgba(0,0,0,0.42),inset 0 0 77px rgba(97,168,255,0.07)}"
+        ".fullscreen-text.sr-blue .sr-prefix{color:#84bbff}"
+        ".fullscreen-text.sr-blue .sr-text{color:#61a8ff;"
+        "text-shadow:0 0 54px rgba(97,168,255,0.34)}"
+        ".fullscreen-text.sr-violet .sr-shell{border-color:#9082c0;background:#1a1c29;"
+        "box-shadow:0 67px 192px rgba(0,0,0,0.42),inset 0 0 77px rgba(197,163,255,0.07)}"
+        ".fullscreen-text.sr-violet .sr-prefix{color:#d2b7ff}"
+        ".fullscreen-text.sr-violet .sr-text{color:#c5a3ff;"
+        "text-shadow:0 0 54px rgba(197,163,255,0.34)}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

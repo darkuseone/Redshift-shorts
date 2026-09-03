@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-109 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+110 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -18,6 +18,7 @@ from src.lib.render.hyperframes.templates import (
     TRANSITIONS, Piece, TemplateCtx,
     enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_fullscreen,
     render_hero, render_motion, render_overlay, render_transition, transition_css,
+    _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -1042,6 +1043,70 @@ def test_scan_band_angle_envelope_and_empty():
     assert "-band" not in " ".join(short.tweens)
     empty = render_fullscreen(_fs_ctx(
         content="", renderer="scan_band", duration=3.5))
+    assert empty.nodes == []
+
+
+def test_scramble_reveal_locks_left_to_right():
+    """Каталог пишет textContent. Здесь LCG-таблица и opacity по кадрам."""
+    table = _sr_frame_table("ABCD", last_frame=20, scale=1.0)
+    assert table[-1] == "ABCD"
+    assert table[0] != "ABCD"
+    locked = [False] * 4
+    for row in table:
+        for col, ch in enumerate("ABCD"):
+            if locked[col]:
+                assert row[col] == ch
+            if row[col] == ch:
+                locked[col] = True
+    assert all(locked)
+    piece = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", renderer="scramble_reveal", scramble_reveal=True,
+        accent="green", style="terminal", exit="none", duration=3.0))
+    node = piece.nodes[0]
+    assert "fs-scramble-reveal" in node
+    assert "sr-green" in node
+    assert "sr-prefix" in node
+    assert "СИГНАЛ" in node
+    assert node.count('class="sr-row') >= 2
+    assert "textContent" not in " ".join(piece.tweens)
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert f'fromTo("{clip}-stage",{{opacity:0}}' in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    flagged = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", scramble_reveal=True, duration=3.0))
+    assert "fs-scramble-reveal" in flagged.nodes[0]
+
+
+def test_scramble_reveal_envelope_style_and_empty():
+    clean = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", style="clean",
+        accent="blue", duration=3.0))
+    assert "sr-clean" in clean.nodes[0]
+    assert 'data-sr-accent="blue"' in clean.nodes[0]
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", exit="fade", duration=3.0))
+    up = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", exit="up", duration=3.0))
+    none = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", exit="none", duration=3.0))
+    fade_body = " ".join(fade.tweens)
+    up_body = " ".join(up.tweens)
+    none_body = " ".join(none.tweens)
+    assert 'ease:"power2.in"' in fade_body
+    assert "x:" in up_body and "y:" in up_body
+    assert none_body.count("power2.in") == 0
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="scramble_reveal", duration=3.0))
     assert empty.nodes == []
 
 
