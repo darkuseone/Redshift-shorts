@@ -1407,6 +1407,23 @@ def test_chart_story_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "bcr-" not in node
 
 
+def test_conic_progress_ring_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 4.2,
+        "template": "data-viz/conic-progress-ring",
+        "params": {"progress": 100, "label": "100", "thickness": 12},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "cpr-chart" in out
+    assert "cpr-bg" in out
+    assert "cpr-paint" in out
+    node = next(line for line in out.splitlines() if "cpr-chart" in line)
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+
+
 def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):
     """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
 

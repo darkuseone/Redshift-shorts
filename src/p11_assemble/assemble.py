@@ -739,7 +739,11 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             continue
         if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
             continue
-        prefer = (["data-viz/stat-countup-card"] if len(nums) == 1
+        pct = str(nums[0].get("suffix") or "").lstrip().startswith("%")
+        prefer = (["data-viz/conic-progress-ring",
+                   "data-viz/stat-countup-card"]
+                  if len(nums) == 1 and pct and variant != "B"
+                  else ["data-viz/stat-countup-card"] if len(nums) == 1
                   else ["data-viz/bar-chart-race",
                         "data-viz/chart-story",
                         "data-viz/animated-bar-chart",
@@ -755,7 +759,19 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                                 prefer=prefer, seed=seed + 11)
         used.append(template.id)
         name = template.name
-        if name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
+        if name == "conic-progress-ring":
+            val = float(nums[0]["value"])
+            suffix = str(nums[0]["suffix"]) if nums[0].get("suffix") else "%"
+            token = (str(int(round(val))) if abs(val - round(val)) < 1e-9
+                     else f"{val:g}")
+            fill = val if 0.0 <= val <= 100.0 else 100.0
+            params = {
+                "progress": fill,
+                "value": val,
+                "label": f"{token}{suffix}",
+                "thickness": 12,
+            }
+        elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
             suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""
             params: dict[str, Any] = {
                 "value": nums[0]["value"], "suffix": suffix,

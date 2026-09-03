@@ -11,10 +11,10 @@
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 10,
+    "data-viz": 11,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 140
+    "_total": 141
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2830,6 +2830,27 @@
         "data",
         "bars",
         "story"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/conic-progress-ring",
+      "name": "conic-progress-ring",
+      "category": "data-viz",
+      "title": "Кольцо заполняется от 12 часов, центр считает в такт — conic-progress-ring",
+      "duration_range": [
+        1.2,
+        4.0
+      ],
+      "params": {
+        "percent": true
+      },
+      "tags": [
+        "data",
+        "ring",
+        "progress"
       ],
       "renderer": "dataviz",
       "last_used_in": [],

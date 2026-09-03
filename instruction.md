@@ -231,3 +231,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Data-viz animated-bar-chart: столбики растут scaleY, карточка +42% | каталог твинит --hf-grow/--hf-dash; здесь GSAP scaleY, 7 столбиков 42…95%, Inter/#111827; bar-race-mini не трогаем |
 | 2026-09-03 | Data-viz bar-chart-race: гонка рядов scaleX, лидер #c8452d | каталог твинит width и textContent; здесь GSAP scaleX/x/y, 8 серий 2019–2024, Inter/#1f1d1b/#f5f3ef; bar-race-mini и animated-bar-chart не трогаем |
 | 2026-09-03 | Data-viz chart-story: столбики растут scaleY, коллаут 64% | каталог твинит attr.height и textContent; здесь GSAP scaleY/scaleX/scale, Q1–Q4 12…64%, Inter/#0a0a0a/#71f5a7; abc/bcr/dv-bar не трогаем |
+| 2026-09-03 | Data-viz conic-progress-ring: кольцо rotation, центр считает 0→100 | каталог твинит --ring-progress и textContent; здесь GSAP rotation половинок, Inter/#0a0a0a/#35d6a0/#1b2938; donut-fill не трогаем |

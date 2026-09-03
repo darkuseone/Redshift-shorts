@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-140 шаблонов каталога — это не 140 реализаций, а набор рендереров с параметрами.
+141 шаблон каталога — это не 141 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3234,6 +3234,222 @@ def dv_chart_story(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_CPR_IN_BASE = 1.4
+_CPR_OUT_BASE = 0.5
+_CPR_DISC = 734
+_CPR_LEFT = 173
+_CPR_TOP = 593
+_CPR_FONT = 194
+_CPR_BRAND = "#35d6a0"
+_CPR_SURFACE = "#1b2938"
+_CPR_FG = "#f4f7fb"
+_CPR_BG = "#0a0a0a"
+_CPR_THICK_LO = 4.0
+_CPR_THICK_HI = 30.0
+_CPR_THICK_DEFAULT = 12.0
+_CPR_FPS = 30.0
+
+
+def _cpr_clamp(value: float, lo: float, hi: float) -> float:
+    return lo if value < lo else hi if value > hi else value
+
+
+def _cpr_power2_out(t: float) -> float:
+    u = 1.0 - _cpr_clamp(t, 0.0, 1.0)
+    return 1.0 - u * u
+
+
+def _cpr_times(duration: float) -> dict[str, float]:
+    """Окно conic-progress-ring: IN 1.4 с, OUT 0.5 с, HOLD остаток.
+
+    Короче 1.9 с — IN и OUT сжимаются вместе. HOLD не трогаем.
+    """
+    d = max(0.05, float(duration))
+    min_io = _CPR_IN_BASE + _CPR_OUT_BASE
+    s = d / min_io if d < min_io else 1.0
+    inn = _CPR_IN_BASE * s
+    out = _CPR_OUT_BASE * s
+    if inn + out + 0.001 > d:
+        s = max(0.001, d - 0.001) / min_io
+        inn = _CPR_IN_BASE * s
+        out = max(0.001, d - inn - 0.001)
+    hold = max(0.0, d - inn - out)
+    out_start = inn + hold
+    return {
+        "in": inn,
+        "out": out,
+        "hold": hold,
+        "out_start": out_start,
+        "kill_at": d,
+    }
+
+
+def _cpr_angles(fill: float) -> tuple[float, float]:
+    """Правая половина −180→0, левая 0→180. Заполнение с 12 часов по часовой."""
+    p = _cpr_clamp(fill, 0.0, 100.0)
+    right = -180.0 + (min(p, 50.0) / 50.0) * 180.0
+    left = (max(p - 50.0, 0.0) / 50.0) * 180.0
+    return right, left
+
+
+def _cpr_spec(params: dict[str, Any]) -> tuple[float, str, float | None, str, float] | None:
+    """progress, label_text, numeric target, suffix, thickness. Пусто → None."""
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("progress", "value", "label", "values")):
+        return None
+    raw_progress = params.get("progress", params.get("value"))
+    if raw_progress in (None, "") and params.get("values"):
+        raw_progress = params["values"][0]
+    if raw_progress in (None, ""):
+        progress = 100.0
+    else:
+        try:
+            progress = float(raw_progress)
+        except (TypeError, ValueError):
+            progress = 100.0
+        if not (0.0 <= progress <= 100.0) and "progress" not in params:
+            progress = 100.0
+    progress = _cpr_clamp(progress, 0.0, 100.0)
+    raw_label = params.get("label")
+    if raw_label is None or str(raw_label) == "":
+        if "value" in params and params["value"] not in (None, ""):
+            try:
+                val = float(params["value"])
+            except (TypeError, ValueError):
+                val = progress
+            suffix = str(params.get("suffix") or "")
+            token = str(int(round(val))) if abs(val - round(val)) < 1e-9 else f"{val:g}"
+            raw_label = f"{token}{suffix}"
+        else:
+            raw_label = f"{int(round(progress))}"
+    label_text = str(raw_label)
+    match = re.match(r"^\s*(-?\d+(?:\.\d+)?)(.*)$", label_text)
+    label_target = float(match.group(1)) if match else None
+    suffix = match.group(2) if match else ""
+    raw_thick = params.get("thickness", _CPR_THICK_DEFAULT)
+    try:
+        thickness = float(raw_thick)
+    except (TypeError, ValueError):
+        thickness = _CPR_THICK_DEFAULT
+    thickness = _cpr_clamp(thickness, _CPR_THICK_LO, _CPR_THICK_HI)
+    return progress, label_text, label_target, suffix, thickness
+
+
+def dv_conic_progress_ring(ctx: "TemplateCtx") -> Piece:
+    """Кольцо заполняется от 12 часов, центр считает в такт.
+
+    Каталог DEMO 1 твинит ``--ring-progress`` на conic-gradient и пишет
+    ``textContent`` из ``onUpdate``. Здесь GSAP ``rotation`` двух половинок
+    и заранее span-ы. Сцена ``#0a0a0a``, бренд ``#35d6a0``, дорожка
+    ``#1b2938``, чернила ``#f4f7fb`` как в каталоге — жест, не палитра
+    канала. Inter. ``-apple-system`` не ставим. ``donut-fill`` / ``.dv-donut``
+    / ``chart-story`` / ``animated-bar-chart`` / ``bar-chart-race`` не трогаем.
+    """
+    spec = _cpr_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    progress, label_text, label_target, suffix, thickness = spec
+    node_id = f"cpr-{ctx.index:02d}"
+    times = _cpr_times(ctx.duration)
+    start = ctx.start
+    inn = times["in"]
+    sid = f"{node_id}-stage"
+    aid = f"{node_id}-a"
+    bid = f"{node_id}-b"
+    vid = f"{node_id}-cv"
+    hole_d = _CPR_DISC * (1.0 - thickness / 100.0)
+    hole_x = _CPR_LEFT + (_CPR_DISC - hole_d) / 2.0
+    hole_y = _CPR_TOP + (_CPR_DISC - hole_d) / 2.0
+    frames = max(1, int(round(inn * _CPR_FPS)))
+    tweens: list[str] = []
+    spans: list[str] = []
+    texts: list[str] = []
+    for frame in range(frames + 1):
+        if label_target is None:
+            text = label_text
+        elif frame == frames:
+            text = label_text
+        else:
+            t = frame / frames
+            fill = progress * _cpr_power2_out(t)
+            ratio = fill / progress if progress > 0 else 1.0
+            text = f"{int(round(label_target * ratio))}{suffix}"
+        texts.append(text)
+        spans.append(f'<span id="{vid}-{frame}">{_esc(text)}</span>')
+
+    r0, l0 = _cpr_angles(0.0)
+    tweens.append(
+        f'tl.set("#{aid}",{{rotation:{_num(r0)}}},{_num(start)});')
+    tweens.append(
+        f'tl.set("#{bid}",{{rotation:{_num(l0)}}},{_num(start)});')
+    prev_r, prev_l = r0, l0
+    prev_t = 0.0
+    for frame in range(1, frames + 1):
+        t = frame / frames
+        fill = progress * _cpr_power2_out(t)
+        right, left = _cpr_angles(fill)
+        at = start + inn * prev_t
+        dt = inn * (t - prev_t)
+        play = dt if dt <= 0.001 else max(0.001, dt - 0.001)
+        tweens.append(
+            f'tl.fromTo("#{aid}",{{rotation:{_num(prev_r)}}},'
+            f'{{rotation:{_num(right)},duration:{_num(play)},'
+            f'ease:"none",immediateRender:false}},{_num(at)});')
+        tweens.append(
+            f'tl.fromTo("#{bid}",{{rotation:{_num(prev_l)}}},'
+            f'{{rotation:{_num(left)},duration:{_num(play)},'
+            f'ease:"none",immediateRender:false}},{_num(at)});')
+        prev_r, prev_l, prev_t = right, left, t
+
+    tweens.append(
+        f'tl.set("#{vid}-0",{{opacity:1}},{_num(start)});')
+    prev_shown = 0
+    for frame in range(1, frames + 1):
+        if texts[frame] == texts[prev_shown]:
+            continue
+        at = start + inn * (frame / frames)
+        tweens.append(
+            f'tl.set("#{vid}-{prev_shown}",{{opacity:0}},{_num(at)});')
+        tweens.append(
+            f'tl.set("#{vid}-{frame}",{{opacity:1}},{_num(at)});')
+        prev_shown = frame
+
+    out_dur = times["out"]
+    out_play = out_dur if out_dur <= 0.001 else max(0.001, out_dur - 0.001)
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:1}},'
+        f'{{opacity:0,duration:{_num(out_play)},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["out_start"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(
+        f'tl.set("#{sid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{aid}",{{rotation:{_num(r0)}}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{bid}",{{rotation:{_num(l0)}}},{_num(kill_at)});')
+    for frame in range(frames + 1):
+        tweens.append(
+            f'tl.set("#{vid}-{frame}",{{opacity:0}},{_num(kill_at)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay cpr-chart" {_timing(ctx)}>'
+               f'<div class="cpr-bg"></div>'
+               f'<div id="{sid}" class="cpr-stage">'
+               f'<div class="cpr-disc">'
+               f'<div class="cpr-right"><div id="{aid}" class="cpr-rot">'
+               f'<div class="cpr-paint"></div></div></div>'
+               f'<div class="cpr-left"><div id="{bid}" class="cpr-rot">'
+               f'<div class="cpr-paint"></div></div></div></div>'
+               f'<div class="cpr-hole" data-layout-allow-overlap="" '
+               f'style="left:{hole_x:.1f}px;top:{hole_y:.1f}px;'
+               f'width:{hole_d:.1f}px;height:{hole_d:.1f}px"></div>'
+               f'<div id="{vid}" class="cpr-cv" data-layout-allow-overlap="">'
+               f'{"".join(spans)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -3245,6 +3461,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "animated-bar-chart": dv_animated_bar_chart,
     "bar-chart-race": dv_bar_chart_race,
     "chart-story": dv_chart_story,
+    "conic-progress-ring": dv_conic_progress_ring,
 }
 
 
@@ -3402,6 +3619,36 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "font-size:29px;font-weight:600;color:#05070b;"
         "letter-spacing:0.03em}"
         ".cst-cv span{position:absolute;left:0;right:0;top:0;bottom:0;"
+        "display:flex;align-items:center;justify-content:center;opacity:0}"
+        ".cpr-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0a0a0a;font-family:Inter,system-ui,sans-serif;"
+        "color:#f4f7fb}"
+        ".cpr-bg{position:absolute;inset:0;background:#0a0a0a}"
+        ".cpr-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        f".cpr-disc{{position:absolute;left:{_CPR_LEFT}px;top:{_CPR_TOP}px;"
+        f"width:{_CPR_DISC}px;height:{_CPR_DISC}px;"
+        "border-radius:50%;overflow:hidden;background:#1b2938}"
+        ".cpr-right,.cpr-left{position:absolute;top:0;width:50%;height:100%;"
+        "overflow:hidden}"
+        ".cpr-right{left:50%}"
+        ".cpr-left{left:0}"
+        ".cpr-rot{position:absolute;top:0;left:-100%;width:200%;height:100%;"
+        "transform-origin:50% 50%}"
+        ".cpr-left .cpr-rot{left:0}"
+        ".cpr-paint{position:absolute;left:50%;top:0;width:50%;height:100%;"
+        "background:#35d6a0}"
+        ".cpr-hole{position:absolute;border-radius:50%;background:#0a0a0a}"
+        f".cpr-cv{{position:absolute;left:{_CPR_LEFT}px;top:{_CPR_TOP}px;"
+        f"width:{_CPR_DISC}px;height:{_CPR_DISC}px;"
+        "font-family:Inter,system-ui,sans-serif;"
+        f"font-size:{_CPR_FONT}px;font-weight:700;letter-spacing:-0.04em;"
+        "line-height:1;color:#f4f7fb;font-variant-numeric:tabular-nums}"
+        ".cpr-cv span{position:absolute;left:0;top:0;right:0;bottom:0;"
         "display:flex;align-items:center;justify-content:center;opacity:0}"
     )
 
