@@ -1335,6 +1335,31 @@ def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     assert "ct-row" in out
 
 
+def test_ai_chat_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][0]["renderer"] = "ai_chat_reveal"
+    plan["overlays"][0]["params"] = {
+        "userMessage": "How do I turn my HTML into real video?",
+        "answer1": "You do not need an editor. REDSHIFT renders HTML.",
+        "ecCta": "Try REDSHIFT",
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ai-chat-reveal" in out
+    assert "acr-keyboard" in out
+    assert "How do I turn my HTML" in out
+    assert "Try REDSHIFT" in out
+    node = next(line for line in out.splitlines() if "ai-chat-reveal" in line)
+    assert "ct-row" not in node
+    assert "chat-thread" not in node
+    assert "textContent" not in node
+    assert "autoAlpha" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "autoAlpha" not in tween_src
+    assert "visibility" not in tween_src
+
+
 def test_dataviz_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 2.4,

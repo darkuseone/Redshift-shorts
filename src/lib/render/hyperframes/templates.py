@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-149 шаблон каталога — это не 149 реализация, а набор рендереров с параметрами.
+150 шаблон каталога — это не 150 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -11642,6 +11642,9 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+from .acr_chat import acr_overlay_css, ov_ai_chat_reveal
+
+
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
     "chat_thread": ov_chat_thread,
@@ -11650,6 +11653,7 @@ OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "lt_accent_underline": ov_lt_accent_underline,
     "lt_clean_bar": ov_lt_clean_bar,
     "lt_dark_card": ov_lt_dark_card,
+    "ai_chat_reveal": ov_ai_chat_reveal,
 }
 
 
@@ -12462,6 +12466,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".lt-dc-role{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
         "font-weight:400;color:#aeb6c2;line-height:1.2;letter-spacing:0.02em;"
         "white-space:nowrap;will-change:opacity}"
+        + acr_overlay_css()
     )
 
 

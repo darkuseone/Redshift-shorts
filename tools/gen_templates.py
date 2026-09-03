@@ -223,7 +223,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (8, [
+    "browser-ui": (9, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -242,6 +242,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("article-highlight", "Статья в браузере со скроллом и вырезом цитаты",
          [2.0, 4.5], {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source", "highlight"], "article_scroll", _EX_WEBSITE),
+        ("ai-chat-reveal",
+         "iPhone-чат: набор, стрим ответа и end card — ai-chat-reveal",
+         [2.0, 19.4], {"template": "chat_ai", "typing": True, "stream": True},
+         ["ui", "ai", "chat", "reveal"], "ai_chat_reveal"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

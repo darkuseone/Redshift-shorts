@@ -522,6 +522,7 @@ _OVERLAY_BY_NAME = {
     "browser-scroll": "article_scroll",
     "paper-reveal": "paper_reveal",
     "arxiv-card": "paper_reveal",
+    "ai-chat-reveal": "ai_chat_reveal",
 }
 
 _NUM_IN_TEXT = re.compile(
@@ -551,7 +552,7 @@ def _overlay_renderer(template: Template) -> str:
     if mapped:
         return mapped
     if template.renderer in ("chat_thread", "article_scroll", "paper_reveal",
-                             "source_card"):
+                             "source_card", "ai_chat_reveal"):
         return template.renderer
     return "source_card"
 
@@ -607,6 +608,19 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             card_category = "browser-ui"
             card_prefer = ["browser-ui/chat-thread", "browser-ui/article-highlight",
                            "browser-ui/browser-scroll"]
+            blob = " ".join([
+                str(source.get("title") or ""),
+                str(source.get("snippet") or ""),
+                str(source.get("domain") or ""),
+                str(source.get("screen_template") or ""),
+            ]).lower()
+            if any(key in blob for key in (
+                    "ai chat", "ai-chat", "ask anything", "chatgpt",
+                    "chat gpt", "нейросет", "ии-чат", "чат-бот", "chatbot",
+                    "gpt-4", "gpt4", "claude.ai")):
+                card_prefer = ["browser-ui/ai-chat-reveal"] + [
+                    item for item in card_prefer
+                    if item != "browser-ui/ai-chat-reveal"]
         else:
             card_category = "frames-cards"
             card_prefer = ["frames-cards/paper-reveal", "frames-cards/arxiv-card"]
@@ -618,18 +632,24 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(evidence_slots[-1]["end"]))
         renderer = _overlay_renderer(card_template)
+        card_params = {
+            "template": source.get("screen_template", "browser"),
+            "domain": source.get("domain", ""),
+            "title": source.get("title", ""),
+            "snippet": source.get("snippet", ""),
+            "prompt": source.get("title") or source.get("snippet", ""),
+            "highlight_line": source.get("highlight_line", ""),
+            "typing": bool(card_template.params.get("typing")),
+            "scroll": bool(card_template.params.get("scroll")),
+        }
+        if renderer == "ai_chat_reveal":
+            card_params["userMessage"] = (
+                source.get("title") or source.get("snippet") or "")
+            card_params["botName"] = "Assistant"
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
-            "template": card_template.id, "renderer": renderer, "params": {
-                "template": source.get("screen_template", "browser"),
-                "domain": source.get("domain", ""),
-                "title": source.get("title", ""),
-                "snippet": source.get("snippet", ""),
-                "prompt": source.get("title") or source.get("snippet", ""),
-                "highlight_line": source.get("highlight_line", ""),
-                "typing": bool(card_template.params.get("typing")),
-                "scroll": bool(card_template.params.get("scroll")),
-            },
+            "template": card_template.id, "renderer": renderer,
+            "params": card_params,
             "why": "§5.6: источник обязан появиться на экране",
         })
         # §5.5: подсветка обязательна при показе скриншота статьи.

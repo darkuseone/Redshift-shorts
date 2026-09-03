@@ -4534,6 +4534,18 @@ OVERLAY_PARAMS = {
                      "role": "Ведущая · нейрофизиолог"},
     "lt_dark_card": {"name": "Майя Чен",
                      "role": "Ведущая · нейрофизиолог"},
+    "ai_chat_reveal": {
+        "userMessage": "How do I turn my HTML into real video?",
+        "answer1": "You do not need an editor. REDSHIFT renders HTML.",
+        "answer2": "It is markup, not magic.",
+        "answer3": "What you get out of the box:",
+        "bullet1": "A catalog of motion primitives you install and own",
+        "bullet2": "GSAP timelines that seek to any frame",
+        "bullet3": "9:16 renders from a single pipeline",
+        "ecHeadline": "It's not magic.|It's HTML.",
+        "ecCta": "Try REDSHIFT",
+        "ecFooter": "REDSHIFT.SHORTS",
+    },
 }
 
 
@@ -4745,6 +4757,79 @@ def test_chat_thread_puts_the_user_on_the_left():
     node = render_overlay("chat_thread", ctx).nodes[0]
     assert 'ct-row in' in node
     assert node.index("ct-row in") < node.index("ct-row out")
+    assert "acr-" not in node
+    assert "ai-chat-reveal" not in node
+
+
+def test_ai_chat_reveal_types_spans_not_textcontent():
+    """Catalog writes textContent / autoAlpha; here baked spans and opacity."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=19.333, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["ai_chat_reveal"])
+    piece = render_overlay("ai_chat_reveal", ctx)
+    node = piece.nodes[0]
+    assert "ai-chat-reveal" in node
+    assert "acr-keyboard" in node and "acr-composer" in node
+    assert "acr-bubble" in node and "How do I turn my HTML" in node
+    assert "Ask anything" in node
+    assert "qwertyuiop" not in node.replace("acr-key", "")
+    assert "acr-key" in node and ">q<" in node and ">p<" in node
+    assert "REDSHIFT" in node and "РЕДШИФТ" in node
+    assert "Try REDSHIFT" in node
+    assert "not magic" in node
+    assert "HTML." in node
+    assert "acr-w" in node and "acr-ch" in node
+    assert "ct-row" not in node
+    assert "chat-thread" not in node
+    assert "textContent" not in node
+    assert "autoAlpha" not in node
+    assert "Math.random" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "-apple-system" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "autoAlpha" not in body
+    assert "visibility" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    assert 'y:482' in body and "y:-497" in body
+    assert 'color:"#767676"' in body and 'color:"#141414"' in body
+    assert "power2.out" in body and "power1.inOut" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("ai_chat_reveal", TemplateCtx(
+        index=0, start=0.0, duration=19.333, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_ai_chat_reveal_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".ai-chat-reveal" in css
+    assert ".acr-keyboard" in css
+    assert ".acr-endcard-inner" in css
+    root = re.search(r"\.ai-chat-reveal\{[^}]+\}", css).group(0)
+    kbd = re.search(r"\.ai-chat-reveal \.acr-keyboard\{[^}]+\}", css).group(0)
+    cta = re.search(r"\.ai-chat-reveal \.acr-eccta\{[^}]+\}", css).group(0)
+    inner = re.search(r"\.ai-chat-reveal \.acr-endcard-inner\{[^}]+\}", css).group(0)
+    assert "Inter" in root
+    assert "-apple-system" not in css.split(".ai-chat-reveal", 1)[1]
+    assert "#d2d5e0" in kbd
+    assert "#3ce6ac" in cta
+    assert "#14110e" in inner and "#221b13" in inner
+    block = css.split(".ai-chat-reveal", 1)[1]
+    assert "HyperFrames" not in block
+    chat = render_overlay("chat_thread", TemplateCtx(
+        index=0, start=1.0, duration=3.0, target="ovl-00",
+        track=5, params=OVERLAY_PARAMS["chat_thread"])).nodes[0]
+    assert "acr-" not in chat
 
 
 def test_hero_plate_pop_media_is_the_clip_itself():

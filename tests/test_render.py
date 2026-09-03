@@ -232,6 +232,10 @@ def test_overlay_renderer_maps_chat_and_paper():
                    category="browser-ui", title="", duration_range=[1, 4],
                    params={}, tags=[], renderer="source_card")
     assert _overlay_renderer(old) == "chat_thread"
+    reveal = Template(id="browser-ui/ai-chat-reveal", name="ai-chat-reveal",
+                      category="browser-ui", title="", duration_range=[2, 19.4],
+                      params={}, tags=[], renderer="ai_chat_reveal")
+    assert _overlay_renderer(reveal) == "ai_chat_reveal"
 
 
 def test_plaque_overlay_attaches_custom_renderer():
@@ -272,10 +276,10 @@ def test_catalog_matches_spec_counts(cfg):
     counts = catalog.counts()
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 30, "lower-thirds": 11, "frames-cards": 7,
-        "browser-ui": 8, "transitions": 27, "avatar-entry": 6, "kenburns": 10,
+        "browser-ui": 9, "transitions": 27, "avatar-entry": 6, "kenburns": 10,
         "parallax": 4, "data-viz": 19, "outro-cta": 6, "hero-devices": 13,
     }
-    assert len(catalog.all()) == 149
+    assert len(catalog.all()) == 150
 
 
 def test_catalog_rotation_avoids_recent(cfg):
