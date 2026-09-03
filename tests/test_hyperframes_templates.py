@@ -1368,9 +1368,10 @@ def test_code_particle_assemble_flies_capped_dust_without_webgl():
     ids = re.findall(r'id="([^"]+)"', node)
     assert len(ids) == len(set(ids))
     n_dots = node.count("pa-dot")
-    assert 1 <= n_dots <= _CPA_CAP
+    assert 80 <= n_dots <= _CPA_CAP
     body = " ".join(piece.tweens)
     assert "power2.out" in body
+    assert "scale:0.62" in body
     assert "THREE" not in body and "onUpdate" not in body
     assert "Math.random" not in body
     assert "visibility" not in body
@@ -1400,9 +1401,12 @@ def test_code_particle_assemble_flies_capped_dust_without_webgl():
     assert rng() == _cpa_rng()()
     times = _cpa_times(8.0)
     assert abs(times["assemble"] - 5.76) < 1e-9
+    assert times["code_at"] + times["code_dur"] <= times["assemble"] + 1e-9
+    assert times["fade_at"] > times["assemble"]
     assert times["code_at"] + times["code_dur"] <= 8.0 + 1e-9
     short = _cpa_times(1.5)
     assert short["code_at"] + short["code_dur"] <= 1.5 + 1e-9
+    assert short["fade_at"] + short["fade"] <= 1.5 + 1e-9
 
 
 def test_code_particle_assemble_keeps_github_dark_and_mono():

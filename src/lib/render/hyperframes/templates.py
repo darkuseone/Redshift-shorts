@@ -3431,21 +3431,21 @@ def fs_code_diff(ctx: "TemplateCtx") -> Piece:
 # с заранее посчитанным x/y, mulberry32 seed 23, как в каталоге.
 _CPA_SEED = 23
 _CPA_SEED_MIX = 2654435761
-_CPA_CAP = 72
-_CPA_DOT = 8
+_CPA_CAP = 160
+_CPA_DOT = 12
 _CPA_ASSEMBLE_FRAC = 0.72
 _CPA_SPAN = 0.62
-_CPA_SIZE_CEILING = 42
-_CPA_SIZE_FLOOR = 18
+_CPA_SIZE_CEILING = 56
+_CPA_SIZE_FLOOR = 22
 _CPA_FONT_PX_CAT = 46
 _CPA_LINE_H_CAT = 70
 _CPA_PAD_X_CAT = 70
 _CPA_PAD_Y_CAT = 64
-_CPA_THRESH = 120
-_CPA_WORLD_W = 13.0
+_CPA_THRESH = 220
 _CPA_BG_RGB = (11, 15, 23)
 _CPA_FRAME_W = 1080
 _CPA_FRAME_H = 1920
+_CPA_SCALE_FROM = 0.62
 
 
 def _cpa_i32(value: int) -> int:
@@ -3487,19 +3487,25 @@ def _cpa_num(value: float) -> str:
 
 
 def _cpa_times(duration: float) -> dict[str, float]:
-    """Сборка 72 % длительности, как uProgress в каталоге; span 0.62."""
+    """Сборка 72 % длительности, как uProgress в каталоге; span 0.62.
+
+    До конца сборки кадр — пыль. Острый код проявляется к финишу, пыль
+    гаснет после стыка +1 мс, иначе opacity на точке пересекается.
+    """
     assemble = max(0.35, duration * _CPA_ASSEMBLE_FRAC)
     if assemble > duration - 0.04:
         assemble = max(0.35, duration - 0.04)
     move = assemble * _CPA_SPAN
-    code_at = assemble * _CPA_SPAN
-    code_dur = max(0.18, min(assemble * 0.28, max(0.18, duration - code_at - 0.02)))
-    fade = max(0.12, min(0.45, move * 0.22))
+    code_at = assemble * 0.78
+    code_dur = max(0.16, assemble - code_at)
+    fade_at = assemble + 0.001
+    fade = max(0.12, min(0.40, duration - fade_at - 0.02))
     return {
         "assemble": assemble,
         "move": move,
         "code_at": code_at,
         "code_dur": code_dur,
+        "fade_at": fade_at,
         "fade": fade,
     }
 
@@ -3542,8 +3548,7 @@ def _cpa_mono_font(size: int):
 
 def _cpa_metrics(lines: list[list[tuple[str, str]]], available: float,
                  frame_w: int, frame_h: int) -> tuple[int, int, int, int]:
-    size = min(_CPA_SIZE_CEILING, _c3d_fit(lines, available))
-    size = max(_CPA_SIZE_FLOOR, size)
+    longest = max((sum(len(piece[0]) for piece in line) for line in lines), default=1)
 
     def dims(s: int) -> tuple[int, int, int]:
         lh = max(1, int(round(s * _CPA_LINE_H_CAT / _CPA_FONT_PX_CAT)))
@@ -3551,16 +3556,43 @@ def _cpa_metrics(lines: list[list[tuple[str, str]]], available: float,
         py = max(8, int(round(s * _CPA_PAD_Y_CAT / _CPA_FONT_PX_CAT)))
         return lh, px, py
 
+    size = _CPA_SIZE_CEILING
     lh, px, py = dims(size)
+    text_avail = max(80.0, min(available, frame_w * 0.88) - 2 * px)
     while size > _CPA_SIZE_FLOOR:
         tall = len(lines) * lh + 2 * py
-        longest = max((sum(len(piece[0]) for piece in line) for line in lines), default=1)
         wide = longest * size * _C3D_MONO_EM + 2 * px
-        if tall <= frame_h * 0.82 and wide <= frame_w * 0.92:
+        if (tall <= frame_h * 0.72 and wide <= frame_w * 0.90
+                and longest * size * _C3D_MONO_EM <= text_avail):
             break
         size -= 1
         lh, px, py = dims(size)
     return size, lh, px, py
+
+
+def _cpa_token_boxes(lines: list[list[tuple[str, str]]], font, pad_x: int,
+                     pad_y: int, line_h: int) -> list[tuple[float, float, int, int, str]]:
+    boxes: list[tuple[float, float, int, int, str]] = []
+    for li, line in enumerate(lines):
+        x = float(pad_x)
+        y0 = pad_y + li * line_h
+        y1 = y0 + line_h
+        for text, color in line:
+            if not text:
+                continue
+            wide = font.getlength(text) if font is not None else len(text) * 16.0
+            if text.strip():
+                boxes.append((x, x + wide, y0, y1, color))
+            x += wide
+    return boxes
+
+
+def _cpa_snap_color(x: int, y: int, boxes: list[tuple[float, float, int, int, str]],
+                    fallback: str) -> str:
+    for x0, x1, y0, y1, color in boxes:
+        if x0 <= x < x1 and y0 <= y < y1:
+            return color
+    return fallback
 
 
 def _cpa_glyph_hits(lines: list[list[tuple[str, str]]], size: int, pad_x: int,
@@ -3632,6 +3664,9 @@ def _cpa_sample_hits(lines: list[list[tuple[str, str]]], size: int, pad_x: int,
             if r + g + b < _CPA_THRESH:
                 continue
             hits.append((x, y, _cpa_rgb_hex((r, g, b))))
+    boxes = _cpa_token_boxes(lines, font, pad_x, pad_y, line_h)
+    if hits and boxes:
+        hits = [(x, y, _cpa_snap_color(x, y, boxes, color)) for x, y, color in hits]
     if not hits:
         return _cpa_glyph_hits(lines, size, pad_x, pad_y, line_h, cap, font), cw, ch
     if len(hits) > cap:
@@ -3674,46 +3709,44 @@ def fs_code_particle_assemble(ctx: "TemplateCtx") -> Piece:
     t = _cpa_times(ctx.duration)
     at = _enter_at(ctx)
     rng = _cpa_rng(int(params.get("seed") or _CPA_SEED))
-    world_w = _CPA_WORLD_W
-    world_h = world_w * (ch / cw) if cw else world_w
     code_left = (frame_w - cw) / 2.0
     code_top = (frame_h - ch) / 2.0
     radius = _CPA_DOT // 2
+    spread_x = frame_w * 0.46
+    spread_y = frame_h * 0.40
+    fade_at = at + t["fade_at"]
     dust: list[str] = []
     tweens: list[str] = []
     for i, (px, py, color) in enumerate(hits):
-        sx = (rng() * 2 - 1) * world_w * 1.15
-        sy = (rng() * 2 - 1) * world_h * 1.7
+        sx = (rng() * 2 - 1) * spread_x
+        sy = (rng() * 2 - 1) * spread_y
         sz = (rng() * 2 - 1) * 9.0 - 2.0
         delay = rng()
-        ox = (sx / world_w + 0.5) * cw
-        oy = (-sy / world_h + 0.5) * ch
-        z_push = sz * (cw / world_w) * 0.08
-        scatter_x = ox + z_push - px
-        scatter_y = oy - py
+        origin_x = frame_w / 2.0 + sx + sz * 16.0
+        origin_y = frame_h / 2.0 + sy + sz * 10.0
+        scatter_x = origin_x - (code_left + px)
+        scatter_y = origin_y - (code_top + py)
         start = at + delay * (1.0 - _CPA_SPAN) * t["assemble"]
-        land = start + t["move"]
         did = f"{node_id}-d{i}"
         left = int(round(code_left + px - radius))
         top = int(round(code_top + py - radius))
+        token = html.escape(color, quote=True)
         dust.append(
             f'<span id="{did}" class="pa-dot" style="'
             f'left:{left}px;top:{top}px;width:{_CPA_DOT}px;height:{_CPA_DOT}px;'
-            f'background:{html.escape(color, quote=True)}"></span>')
+            f'background:{token}"></span>')
         bright = _cpa_brighten(color)
         tweens.append(
             f'tl.fromTo("#{did}",'
             f'{{x:{_cpa_num(scatter_x)},y:{_cpa_num(scatter_y)},'
-            f'opacity:0.7,scale:0.45,backgroundColor:"{bright}"}},'
-            f'{{x:0,y:0,opacity:1,scale:1,backgroundColor:"{color}",'
+            f'opacity:0.85,scale:{_num(_CPA_SCALE_FROM)},backgroundColor:"{bright}"}},'
+            f'{{x:0,y:0,opacity:1,scale:1,backgroundColor:"{token}",'
             f'duration:{_num(t["move"])},ease:"power2.out"}},'
             f'{_num(start)});')
-        fade_at = land + 0.001
         if fade_at + 0.05 < ctx.start + ctx.duration:
-            fade_dur = min(t["fade"], max(0.08, ctx.start + ctx.duration - fade_at - 0.01))
             tweens.append(
                 f'tl.fromTo("#{did}",{{opacity:1}},{{opacity:0,'
-                f'duration:{_num(fade_dur)},ease:"power2.in",'
+                f'duration:{_num(t["fade"])},ease:"power2.in",'
                 f'immediateRender:false}},{_num(fade_at)});')
     tweens.append(
         f'tl.fromTo("#{node_id}-code",{{opacity:0}},'
@@ -4566,7 +4599,8 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .pa-dust{position:absolute;inset:0;z-index:1;"
         "pointer-events:none}"
         ".fullscreen-text .pa-dot{position:absolute;display:block;"
-        "border-radius:50%;pointer-events:none;will-change:transform,opacity}"
+        "border-radius:50%;pointer-events:none;will-change:transform,opacity;"
+        "box-shadow:0 0 10px rgba(225,228,232,0.4)}"
         ".fullscreen-text .pa-code{position:relative;z-index:2;display:flex;"
         "flex-direction:column;align-items:flex-start;box-sizing:border-box;"
         "opacity:0;white-space:pre;text-align:left;font-variant-ligatures:none;"
