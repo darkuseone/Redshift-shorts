@@ -243,6 +243,12 @@ def test_css_covers_every_layer_the_transitions_use():
         "subtitle": "Relative volume of major city-to-city corridors",
         "source": "Source: Illustrative data",
     }),
+    ("data-viz/us-map-hex", {
+        "title": "Median Household Income by State",
+        "subtitle": "American Community Survey, 2024",
+        "source": "Source: U.S. Census Bureau",
+        "highlight": ["MD", "NJ", "MA", "CT", "HI"],
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -269,6 +275,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/star-rating-fill", ctx) == Piece()
     assert render_dataviz("data-viz/us-map", ctx) == Piece()
     assert render_dataviz("data-viz/us-map-flow", ctx) == Piece()
+    assert render_dataviz("data-viz/us-map-hex", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -306,6 +313,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "srf-" not in compare and "srf-" not in race
     assert "usm-" not in compare and "usm-" not in race
     assert "umf-" not in compare and "umf-" not in race
+    assert "umh-" not in compare and "umh-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
@@ -318,6 +326,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "srf-" not in donut
     assert "usm-" not in donut
     assert "umf-" not in donut
+    assert "umh-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -878,6 +887,7 @@ def test_spain_map_bakes_paths_not_fetch(ctx):
     assert "srf-" not in node
     assert "usm-" not in node
     assert "umf-" not in node
+    assert "umh-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -985,6 +995,7 @@ def test_star_rating_fill_wipes_mask_not_clip_path(ctx):
     assert "spm-" not in node
     assert "usm-" not in node
     assert "umf-" not in node
+    assert "umh-" not in node
     assert "stat-card" not in node
     assert "textContent" not in node
     assert "clipPath" not in node
@@ -1104,6 +1115,7 @@ def test_us_map_bakes_paths_not_fetch(ctx):
     assert "spm-" not in node
     assert "srf-" not in node
     assert "umf-" not in node
+    assert "umh-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -1226,6 +1238,7 @@ def test_us_map_flow_bakes_paths_not_fetch(ctx):
     assert "spm-" not in node
     assert "srf-" not in node
     assert "usm-" not in node
+    assert "umh-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -1341,6 +1354,76 @@ def test_us_map_flow_keeps_catalog_tokens():
     assert "umf-" not in srf
     usm = re.search(r"\.usm-region\{[^}]+\}", css).group(0)
     assert "umf-" not in usm
+
+
+def test_us_map_hex_bakes_hexes_not_fetch(ctx):
+    """Catalog computes hex geometry in JS; here hexes are pre-baked."""
+    piece = render_dataviz("data-viz/us-map-hex", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=10.0, target=ctx.target,
+        track=6, params={
+            "title": "Median Household Income by State",
+            "subtitle": "American Community Survey, 2024",
+            "source": "Source: U.S. Census Bureau",
+            "highlight": ["MD", "NJ", "MA", "CT", "HI"],
+        }))
+    node = piece.nodes[0]
+    assert "umh-chart" in node
+    assert "umh-bg" in node and "umh-stage" in node and "umh-poly" in node
+    assert "umh-wipe" in node and "umh-text" in node
+    assert "Median Household" in node
+    assert "Census Bureau" in node
+    assert node.count('class="umh-poly"') == 51
+    assert node.count('class="umh-hi"') == 5
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "spm-" not in node
+    assert "srf-" not in node
+    assert "stat-card" not in node
+    assert "jsdelivr" not in node
+    assert "topojson" not in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert node.count(f'id="umh-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert "scaleX:1" in body and "scaleX:0" in body
+    assert "back.out(1.4)" in body
+    assert "immediateRender:false" in body
+    assert "filter" not in body
+    assert "clipPath" not in body
+    assert "brightness" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#umh-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+
+
+def test_us_map_hex_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".umh-chart" in css
+    assert ".umh-poly" in css
+    assert ".umh-text" in css
+    chart = re.search(r"\.umh-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.umh-bg\{[^}]+\}", css).group(0)
+    poly = re.search(r"\.umh-poly\{[^}]+\}", css).group(0)
+    legend_bar = re.search(r"\.umh-legend-bar\{[^}]+\}", css).group(0)
+    assert "#0f172a" in chart and "#0f172a" in bg
+    assert "#1e293b" in bg
+    assert "#0f172a" in poly
+    assert "#451a03" in legend_bar and "#f59e0b" in legend_bar and "#fef3c7" in legend_bar
+    block = css.split(".umh-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
 
 
 def test_split_moves_both_halves_towards_the_seam():

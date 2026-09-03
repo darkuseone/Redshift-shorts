@@ -802,6 +802,12 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "рейс между", "между городами")):
             prefer = ["data-viz/us-map-flow"] + [
                 item for item in prefer if item != "data-viz/us-map-flow"]
+        if variant != "B" and any(key in blob for key in (
+                "hex grid", "hex map", "hexagonal", "hexagon",
+                "гексагон", "гекс-карт", "income by state",
+                "household income")):
+            prefer = ["data-viz/us-map-hex"] + [
+                item for item in prefer if item != "data-viz/us-map-hex"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -875,6 +881,14 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "source": "Source: U.S. Census Bureau",
                 "regions": regions,
                 "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+            }
+        elif name == "us-map-hex":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params = {
+                "title": heading or "Median Household Income by State",
+                "subtitle": "American Community Survey, 2024",
+                "source": "Source: U.S. Census Bureau, American Community Survey 2024",
+                "highlight": ["MD", "NJ", "MA", "CT", "HI"],
             }
         elif name == "us-map-flow":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")

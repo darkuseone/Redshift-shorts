@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-147 шаблон каталога — это не 147 реализация, а набор рендереров с параметрами.
+148 шаблон каталога — это не 148 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -28,6 +28,11 @@ from typing import Any, Callable
 
 from .spm_shapes import SPM_SHAPES, SPM_VB
 from .umf_shapes import UMF_CITIES, UMF_FLOWS, UMF_SHAPES, UMF_VB
+from .umh_shapes import (
+    UMH_TOP5, UMH_TITLE, UMH_SUBTITLE, UMH_SOURCE,
+    UMH_LEG_LOW, UMH_LEG_HIGH, umh_build_hexes, umh_color, umh_is_light_text,
+    UMH_INCOME,
+)
 from .usm_shapes import USM_SHAPES, USM_VB
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
@@ -5380,6 +5385,235 @@ def dv_us_map_flow(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# ---------- us-map-hex constants ----------
+_UMH_CATALOG_DUR = 10.0
+_UMH_HL_DUR = 1.0
+_UMH_SUB_AT = 0.3
+_UMH_SUB_DUR = 0.5
+_UMH_HEX_AT = 0.8
+_UMH_HEX_DUR = 0.4
+_UMH_HEX_STAGGER = 0.03
+_UMH_LAB_AT = 3.5
+_UMH_LAB_DUR = 0.3
+_UMH_LAB_STAGGER = 0.02
+_UMH_LEG_AT = 5.0
+_UMH_LEG_DUR = 0.6
+_UMH_SRC_AT = 5.5
+_UMH_SRC_DUR = 0.5
+_UMH_HI_AT = 6.0
+_UMH_HI_DUR = 0.4
+_UMH_HI_GAP = 0.08
+_UMH_HI2_AT = 6.8
+_UMH_HI3_AT = 7.4
+_UMH_HI4_AT = 8.0
+_UMH_OUT_Y = 60
+_UMH_MAP_LEFT = 40
+_UMH_MAP_TOP = 140
+
+
+def _umh_play(duration: float) -> float:
+    return duration if duration <= 0.001 else max(0.001, duration - 0.001)
+
+
+def _umh_times(duration: float) -> dict[str, float]:
+    """Window us-map-hex: catalog 10 s, shorter — same ratios."""
+    d = max(0.05, float(duration))
+    s = d / _UMH_CATALOG_DUR if d < _UMH_CATALOG_DUR else 1.0
+    return {
+        "scale": s,
+        "hl_dur": max(0.001, _UMH_HL_DUR * s),
+        "sub_at": _UMH_SUB_AT * s,
+        "sub_dur": max(0.001, _UMH_SUB_DUR * s),
+        "hex_at": _UMH_HEX_AT * s,
+        "hex_dur": max(0.001, _UMH_HEX_DUR * s),
+        "hex_stagger": _UMH_HEX_STAGGER * s,
+        "lab_at": _UMH_LAB_AT * s,
+        "lab_dur": max(0.001, _UMH_LAB_DUR * s),
+        "lab_stagger": _UMH_LAB_STAGGER * s,
+        "leg_at": _UMH_LEG_AT * s,
+        "leg_dur": max(0.001, _UMH_LEG_DUR * s),
+        "src_at": _UMH_SRC_AT * s,
+        "src_dur": max(0.001, _UMH_SRC_DUR * s),
+        "hi_at": _UMH_HI_AT * s,
+        "hi_dur": max(0.001, _UMH_HI_DUR * s),
+        "hi_gap": _UMH_HI_GAP * s,
+        "hi2_at": _UMH_HI2_AT * s,
+        "hi3_at": _UMH_HI3_AT * s,
+        "hi4_at": _UMH_HI4_AT * s,
+        "out_start": max(0.001, d - 0.8),
+        "out_dur": max(0.001, 0.6 * s),
+        "kill_at": max(0.001, d - 0.05),
+    }
+
+
+def dv_us_map_hex(ctx: "TemplateCtx") -> Piece:
+    """Hex grid map USA: hexagons scale from center, top-5 pulse.
+
+    Catalog DEMO 1 computes hex geometry in JS, tweens ``filter:brightness``
+    for highlights. Here hexes are pre-baked, wipe is ``scaleX``,
+    highlights use white overlay ``opacity`` (no ``filter`` tween).
+    Gradient ``#0f172a``/``#1e293b``, amber scale ``#451a03``→``#f59e0b``→
+    ``#fef3c7`` as in catalog. Inter.
+    """
+    params = ctx.params
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("regions", "states", "values", "labels", "title",
+                         "headline", "subtitle")):
+        return Piece()
+
+    hexes = umh_build_hexes()
+    title = str(params.get("title") or params.get("headline") or UMH_TITLE)
+    subtitle = str(params.get("subtitle") or UMH_SUBTITLE)
+    source = str(params.get("source") or UMH_SOURCE)
+    leg_low = str(params.get("legend_low") or UMH_LEG_LOW)
+    leg_high = str(params.get("legend_high") or UMH_LEG_HIGH)
+    raw_hi = params.get("highlight") or params.get("highlights")
+    highlights: list[str] = []
+    if isinstance(raw_hi, (list, tuple)):
+        highlights = [str(item).upper() for item in raw_hi if str(item).strip()]
+    if not highlights:
+        highlights = list(UMH_TOP5)
+
+    node_id = f"umh-{ctx.index:02d}"
+    times = _umh_times(ctx.duration)
+    start = ctx.start
+    sid = f"{node_id}-stage"
+    wid = f"{node_id}-wipe"
+    uid = f"{node_id}-sub"
+    lid = f"{node_id}-leg"
+    xid = f"{node_id}-src"
+
+    tweens: list[str] = []
+    polys: list[str] = []
+    text_els: list[str] = []
+    hi_ids: list[str] = []
+    hex_ids: list[str] = []
+    lab_ids: list[str] = []
+    hi_hex_map: dict[str, str] = {}
+
+    for i, h in enumerate(hexes):
+        pid = f"{node_id}-p{i}"
+        tid = f"{node_id}-t{i}"
+        hex_ids.append(pid)
+        lab_ids.append(tid)
+        abbr = h["abbr"]
+        text_cls = "umh-text umh-text-light" if h["light_text"] else "umh-text"
+        polys.append(
+            f'<polygon id="{pid}" class="umh-poly" '
+            f'points="{h["points"]}" fill="{_esc(h["color"])}"></polygon>')
+        text_els.append(
+            f'<text id="{tid}" class="{text_cls}" '
+            f'x="{h["cx"]:.1f}" y="{h["cy"]:.1f}">{_esc(abbr)}</text>')
+        if abbr in highlights:
+            hid_r = f"{node_id}-h{i}"
+            hi_ids.append(hid_r)
+            hi_hex_map[abbr] = hid_r
+            polys.append(
+                f'<polygon id="{hid_r}" class="umh-hi" '
+                f'points="{h["points"]}" fill="#f8fafc"></polygon>')
+
+        delay = i * times["hex_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{pid}",{{opacity:0,scale:0}},'
+            f'{{opacity:1,scale:1,duration:{_num(_umh_play(times["hex_dur"]))},'
+            f'ease:"back.out(1.4)",immediateRender:false}},'
+            f'{_num(start + times["hex_at"] + delay)});')
+        lab_delay = i * times["lab_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{tid}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(_umh_play(times["lab_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["lab_at"] + lab_delay)});')
+
+    tweens.insert(0,
+        f'tl.fromTo("#{wid}",{{scaleX:1}},'
+        f'{{scaleX:0,duration:{_num(_umh_play(times["hl_dur"]))},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{uid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_umh_play(times["sub_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["sub_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{lid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_umh_play(times["leg_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["leg_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{xid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_umh_play(times["src_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["src_at"])});')
+
+    for hi_i, abbr in enumerate(highlights):
+        hid_r = hi_hex_map.get(abbr)
+        if not hid_r:
+            continue
+        d = _umh_play(times["hi_dur"])
+        gap = hi_i * times["hi_gap"]
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0}},'
+            f'{{opacity:0.35,duration:{_num(d)},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["hi_at"] + gap)});')
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0.35}},'
+            f'{{opacity:0,duration:{_num(d)},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(start + times["hi2_at"] + gap)});')
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0}},'
+            f'{{opacity:0.25,duration:{_num(_umh_play(0.3 * times["scale"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["hi3_at"] + gap * 0.75)});')
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0.25}},'
+            f'{{opacity:0,duration:{_num(_umh_play(0.5 * times["scale"]))},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(start + times["hi4_at"] + gap * 0.75)});')
+
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:1,y:0}},'
+        f'{{opacity:0,y:{_UMH_OUT_Y},duration:{_num(_umh_play(times["out_dur"]))},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["out_start"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(f'tl.set("#{sid}",{{y:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{wid}",{{scaleX:1}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{uid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{lid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{xid}",{{opacity:0}},{_num(kill_at)});')
+    for pid in hex_ids:
+        tweens.append(
+            f'tl.set("#{pid}",{{opacity:0,scale:0}},{_num(kill_at)});')
+    for tid in lab_ids:
+        tweens.append(f'tl.set("#{tid}",{{opacity:0}},{_num(kill_at)});')
+    for hid_r in hi_ids:
+        tweens.append(f'tl.set("#{hid_r}",{{opacity:0}},{_num(kill_at)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay umh-chart" {_timing(ctx)}>'
+               f'<div class="umh-bg"></div>'
+               f'<div id="{sid}" class="umh-stage">'
+               f'<div class="umh-hl-clip" data-layout-allow-overlap="">'
+               f'<div class="umh-hl">{_esc(title)}</div>'
+               f'<div id="{wid}" class="umh-wipe"></div></div>'
+               f'<div id="{uid}" class="umh-sub" data-layout-allow-overlap="">'
+               f'{_esc(subtitle)}</div>'
+               f'<svg class="umh-svg" viewBox="0 0 1080 1920" '
+               f'preserveAspectRatio="xMidYMid meet" aria-hidden="true">'
+               f'{"".join(polys)}{"".join(text_els)}</svg>'
+               f'<div id="{lid}" class="umh-legend" data-layout-allow-overlap="">'
+               f'<span class="umh-legend-lab">{_esc(leg_low)}</span>'
+               f'<div class="umh-legend-bar"></div>'
+               f'<span class="umh-legend-lab">{_esc(leg_high)}</span></div>'
+               f'<div id="{xid}" class="umh-src" data-layout-allow-overlap="">'
+               f'{_esc(source)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -5398,6 +5632,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "star-rating-fill": dv_star_rating_fill,
     "us-map": dv_us_map,
     "us-map-flow": dv_us_map_flow,
+    "us-map-hex": dv_us_map_hex,
 }
 
 
@@ -5806,6 +6041,45 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         ".umf-src{position:absolute;left:40px;top:968px;width:1000px;"
         "font-weight:400;font-size:18px;color:#475569;text-align:right;"
         "opacity:0;z-index:4}"
+        ".umh-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0f172a;font-family:Inter,system-ui,sans-serif;"
+        "color:#e2e8f0}"
+        ".umh-bg{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%)}"
+        ".umh-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        ".umh-hl-clip{position:absolute;left:40px;top:140px;width:1000px;"
+        "overflow:hidden}"
+        ".umh-hl{font-weight:700;font-size:38px;letter-spacing:-0.02em;"
+        "color:#f8fafc;line-height:1.15}"
+        ".umh-wipe{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%);"
+        "transform-origin:100% 50%}"
+        ".umh-sub{position:absolute;left:40px;top:236px;width:1000px;"
+        "font-weight:300;font-size:22px;color:#94a3b8;opacity:0}"
+        ".umh-svg{position:absolute;left:40px;top:280px;width:1000px;"
+        "height:620px;overflow:visible}"
+        ".umh-poly{stroke:#0f172a;stroke-width:2;opacity:0;"
+        "transform-origin:50% 50%;transform-box:fill-box;"
+        "vector-effect:non-scaling-stroke}"
+        ".umh-text{font-family:Inter,system-ui,sans-serif;font-size:14px;"
+        "font-weight:600;fill:#0f172a;text-anchor:middle;"
+        "dominant-baseline:central;opacity:0}"
+        ".umh-text-light{fill:#fef3c7}"
+        ".umh-hi{fill:#f8fafc;opacity:0;pointer-events:none}"
+        ".umh-legend{position:absolute;left:40px;top:920px;width:1000px;"
+        "display:flex;justify-content:center;align-items:center;gap:12px;"
+        "opacity:0}"
+        ".umh-legend-bar{width:240px;height:14px;border-radius:4px;"
+        "background:linear-gradient(90deg,#451a03,#f59e0b,#fef3c7)}"
+        ".umh-legend-lab{font-weight:500;font-size:18px;color:#94a3b8}"
+        ".umh-src{position:absolute;left:40px;top:968px;width:1000px;"
+        "font-weight:400;font-size:16px;color:#475569;text-align:right;"
+        "opacity:0}"
     )
 
 

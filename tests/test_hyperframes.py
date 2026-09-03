@@ -1566,6 +1566,35 @@ def test_us_map_flow_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "getPointAtLength" not in node
 
 
+def test_us_map_hex_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 10.2,
+        "template": "data-viz/us-map-hex",
+        "params": {
+            "title": "Median Household Income by State",
+            "subtitle": "American Community Survey, 2024",
+            "source": "Source: U.S. Census Bureau",
+            "highlight": ["MD", "NJ", "MA", "CT", "HI"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "umh-chart" in out
+    assert "umh-bg" in out
+    assert "umh-poly" in out
+    assert "Median Household" in out
+    node = next(line for line in out.splitlines() if "umh-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "spm-" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "topojson" not in node.lower()
+    assert "jsdelivr" not in node
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,
