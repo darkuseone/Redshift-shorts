@@ -1,0 +1,22 @@
+{
+  "id": "text-fullscreen/split-flap-board",
+  "name": "split-flap-board",
+  "category": "text-fullscreen",
+  "title": "Табло аэропорта (split-flap) перелистывает буквы — split-flap-board",
+  "duration_range": [
+    2.0,
+    6.0
+  ],
+  "params": {
+    "word": "FLIGHT"
+  },
+  "tags": [
+    "text",
+    "board",
+    "airport",
+    "flip"
+  ],
+  "renderer": "split_flap_board",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

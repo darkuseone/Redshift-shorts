@@ -276,6 +276,10 @@ def test_css_covers_every_layer_the_transitions_use():
             {"abbr": "EXT", "value": 19200},
         ],
     }),
+    ("data-viz/us-map-bubble", {}),
+    ("data-viz/flowchart", {}),
+    ("data-viz/oscilloscope-trace", {}),
+    ("data-viz/weight-wave", {}),
     ("data-viz/star-rating-fill", {
         "rating": 4.8,
         "starCount": 5,
@@ -5248,6 +5252,8 @@ OVERLAY_PARAMS = {
         "name": "James Medrano",
         "subtitle": "Premium Member",
     },
+    "vpn_youtube_spot": {},
+    "blue_sweater": {},
 }
 
 
@@ -5764,3 +5770,13 @@ def test_a_generated_picture_gets_no_museum_label():
                 picked.add(entry["renderer"])
     # И обратное: на настоящем материале приём из каталога не исчез.
     assert "hero-exhibit" in picked
+
+def test_split_flap_board():
+    piece = render_fullscreen(_fs_ctx(renderer="split_flap_board", word="FLIGHT"))
+    assert piece.nodes
+    assert "sfb-board" in piece.nodes[0]
+
+def test_news_ticker():
+    piece = render_fullscreen(_fs_ctx(renderer="news_ticker", text="BREAKING"))
+    assert piece.nodes
+    assert "ntk-scroll" in piece.nodes[0]

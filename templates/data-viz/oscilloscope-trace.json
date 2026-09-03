@@ -1,0 +1,19 @@
+{
+  "id": "data-viz/oscilloscope-trace",
+  "name": "oscilloscope-trace",
+  "category": "data-viz",
+  "title": "Осциллограф: линия рисует форму волны — oscilloscope-trace",
+  "duration_range": [
+    2.0,
+    10.0
+  ],
+  "params": {},
+  "tags": [
+    "data",
+    "wave",
+    "oscilloscope"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

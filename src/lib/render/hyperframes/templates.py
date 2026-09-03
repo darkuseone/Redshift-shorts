@@ -5999,7 +5999,11 @@ def dv_world_map(ctx: "TemplateCtx") -> Piece:
 from .apple_money import amc_css, dv_apple_money_count  # noqa: E402
 from .north_korea import nkl_css, dv_north_korea_locked_down  # noqa: E402
 from .nyc_paris import npf_css, dv_nyc_paris_flight  # noqa: E402
+from .us_map_bubble import umb_css, dv_us_map_bubble  # noqa: E402
 from .mk_progress import mps_css, dv_mk_progress_stat  # noqa: E402
+from .flowchart import flc_css, dv_flowchart  # noqa: E402
+from .text_templates import sfb_css, txt_split_flap_board, txt_news_ticker  # noqa: E402
+from .wave_templates import wv_css, dv_oscilloscope_trace, dv_weight_wave  # noqa: E402
 
 
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
@@ -6021,11 +6025,15 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "us-map": dv_us_map,
     "us-map-flow": dv_us_map_flow,
     "us-map-hex": dv_us_map_hex,
+    "us-map-bubble": dv_us_map_bubble,
     "world-map": dv_world_map,
     "apple-money-count": dv_apple_money_count,
     "north-korea-locked-down": dv_north_korea_locked_down,
     "nyc-paris-flight": dv_nyc_paris_flight,
     "mk-progress-stat": dv_mk_progress_stat,
+    "flowchart": dv_flowchart,
+    "oscilloscope-trace": dv_oscilloscope_trace,
+    "weight-wave": dv_weight_wave,
 }
 
 
@@ -6513,6 +6521,8 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         + nkl_css()
         + npf_css()
         + mps_css()
+        + umb_css()
+        + flc_css()
     )
 
 
@@ -12255,6 +12265,8 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "dark_plus": fs_dark_plus,
     "beat_freeze_cut": fs_beat_freeze_cut,
     "number_slam": fs_number_slam,
+    "split_flap_board": txt_split_flap_board,
+    "news_ticker": txt_news_ticker,
 }
 
 
@@ -12804,7 +12816,8 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
 
 from .acr_chat import acr_overlay_css, ov_ai_chat_reveal
 from .app_showcase import aps_overlay_css, ov_app_showcase
-
+from .vpn_spot import vys_overlay_css, ov_vpn_youtube_spot
+from .blue_sweater import bs_overlay_css, ov_blue_sweater
 
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
@@ -12816,8 +12829,9 @@ OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "lt_dark_card": ov_lt_dark_card,
     "ai_chat_reveal": ov_ai_chat_reveal,
     "app_showcase": ov_app_showcase,
+    "vpn_youtube_spot": ov_vpn_youtube_spot,
+    "blue_sweater": ov_blue_sweater,
 }
-
 
 def render_overlay(name: str, ctx: "TemplateCtx") -> Piece:
     fn = OVERLAYS.get(name.rsplit("/", 1)[-1])
@@ -13630,6 +13644,10 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "white-space:nowrap;will-change:opacity}"
         + acr_overlay_css()
         + aps_overlay_css()
+        + vys_overlay_css()
+        + bs_overlay_css()
+        + sfb_css()
+        + wv_css()
     )
 
 

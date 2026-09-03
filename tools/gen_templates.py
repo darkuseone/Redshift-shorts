@@ -54,7 +54,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (30, [
+    "text-fullscreen": (32, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -178,6 +178,14 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),
+        ("split-flap-board",
+         "Табло аэропорта (split-flap) перелистывает буквы — split-flap-board",
+         [2.0, 6.0], {"word": "FLIGHT"},
+         ["text", "board", "airport", "flip"], "split_flap_board"),
+        ("news-ticker",
+         "Бегущая строка новостей — news-ticker",
+         [2.0, 10.0], {"text": "BREAKING NEWS: SOMETHING HAPPENED"},
+         ["text", "news", "ticker", "scroll"], "news_ticker"),
     ]),
     "lower-thirds": (11, [
         ("name-title", "Имя и должность", [1.5, 4.0],
@@ -223,7 +231,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (10, [
+    "browser-ui": (12, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -250,6 +258,14 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Три телефона веером: дашборд, кольцо, график — app-showcase",
          [2.0, 5.5], {"template": "phone", "showcase": True},
          ["ui", "app", "showcase", "device"], "app_showcase"),
+        ("vpn-youtube-spot",
+         "App Store: скролл, установка и открытие приложения — vpn-youtube-spot",
+         [2.0, 8.0], {"template": "phone"},
+         ["ui", "app", "store", "vpn"], "vpn_youtube_spot"),
+        ("blue-sweater-intro-video",
+         "AI генерирует видео: ввод промпта, загрузка, результат — blue-sweater-intro-video",
+         [4.0, 12.0], {"template": "browser"},
+         ["ui", "ai", "video", "generate"], "blue_sweater"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
@@ -380,7 +396,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (23, [
+    "data-viz": (27, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -476,6 +492,24 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "source": "Source: U.S. Census Bureau, American Community Survey 2024",
              "highlight": ["MD", "NJ", "MA", "CT", "HI"],
          }, ["data", "map", "hex"], "dataviz"),
+        ("us-map-bubble",
+         "Карта США с бабблами по городам — us-map-bubble",
+         [2.0, 12.0], {
+             "title": "Major Tech Hubs",
+             "subtitle": "Tech employment by city, 2024",
+             "source": "Source: Tech.co",
+         }, ["data", "map", "bubble"], "dataviz"),
+        ("flowchart",
+         "Блок-схема с узлами и связями — flowchart",
+         [2.0, 12.0], {
+             "nodes": ["Start", "Process", "Decision", "End"],
+         }, ["data", "flowchart"], "dataviz"),
+        ("oscilloscope-trace",
+         "Осциллограф: линия рисует форму волны — oscilloscope-trace",
+         [2.0, 10.0], {}, ["data", "wave", "oscilloscope"], "dataviz"),
+        ("weight-wave",
+         "Волна весов (weight-wave) — weight-wave",
+         [2.0, 10.0], {}, ["data", "wave", "weight"], "dataviz"),
         ("world-map",
          "Хороплет мира: страны от центра, CH/NO/US/AU/SE пульс — world-map",
          [2.0, 14.0], {
