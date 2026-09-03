@@ -823,3 +823,43 @@ class TestAnEmptySlotNeverShowsAHole:
         assert "assets/m000_a.mp4" in markup
         node = re.search(r'<[^>]*id="shot-00"[^>]*>', markup)
         assert node and "shot-bg" not in node.group(0), node.group(0)
+
+
+class TestThePaletteComesFromTheBrandbook:
+    """Цвета канала живут в брендбуке, а не числами в генераторе CSS.
+
+    Плашка красилась `rgba(247,245,243)` и рамкой `rgba(192,57,43)` — краски,
+    которой в палитре уже не было вовсе. Смена акцента её не трогала, и
+    брендбук расходился с кадром молча.
+    """
+
+    def _css(self):
+        import json
+        from pathlib import Path
+
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        root = Path(__file__).resolve().parents[1]
+        book = json.loads((root / "config" / "brandbook.json").read_text(encoding="utf-8"))
+        fonts = {"subtitle": "Montserrat-Black.ttf", "display": "Oswald-Bold.ttf",
+                 "mono": "JetBrainsMono-Bold.ttf"}
+        return build_css(book, fonts), book
+
+    def test_the_plaque_is_painted_by_its_tokens(self):
+        css, book = self._css()
+        plaque = book["plaque"]
+        panel = book["colors"][plaque["bg"]].lstrip("#")
+        r, g, b = (int(panel[i:i + 2], 16) for i in (0, 2, 4))
+        assert f"rgba({r},{g},{b},{plaque['bg_alpha']:g})" in css
+        assert "rgba(247,245,243," not in css.split(".plaque{")[1].split("}")[0]
+        assert "rgba(192,57,43," not in css
+
+    def test_comments_of_the_brandbook_do_not_become_colours(self):
+        css, _book = self._css()
+        assert "--color--comment" not in css
+
+    def test_the_accent_of_the_channel_reaches_the_subtitle(self):
+        css, book = self._css()
+        accent = book["colors"]["accent"].lstrip("#")
+        r, g, b = (int(accent[i:i + 2], 16) for i in (0, 2, 4))
+        assert f"rgba({r},{g},{b}," in css      # гало субтитра — акцентом канала

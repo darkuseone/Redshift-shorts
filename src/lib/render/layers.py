@@ -339,7 +339,8 @@ def plaque(ctx: Ctx, text: str, *, progress: float, out_progress: float = 0.0,
     box = (x_center - box_w / 2 + dx, y_center - box_h / 2 + dy,
            x_center + box_w / 2 + dx, y_center + box_h / 2 + dy)
     rounded_rect(layer, box, radius=int(spec["radius_px_default"]),
-                 fill=with_alpha(ctx.color("bg_light", float(spec["bg_alpha"])), alpha),
+                 fill=with_alpha(ctx.color(str(spec.get("bg", "panel")),
+                                          float(spec["bg_alpha"])), alpha),
                  outline=with_alpha(ctx.color("accent", float(spec["border_alpha"])), alpha),
                  width=int(spec["border_px"]),
                  shadow=spec.get("shadow"))
@@ -347,7 +348,8 @@ def plaque(ctx: Ctx, text: str, *, progress: float, out_progress: float = 0.0,
     text_y = box[1] + pad_y + line_h // 2
     for line in lines:
         draw_text(layer, (x_center + dx, text_y), line, font,
-                  fill=with_alpha(ctx.color("ink"), alpha), anchor="mm")
+                  fill=with_alpha(ctx.color(str(spec.get("text", "bg_pure"))), alpha),
+                  anchor="mm")
         text_y += line_h
     if subtitle_text:
         draw_text(layer, (x_center + dx, text_y + 4), subtitle_text, sub_font,

@@ -12,11 +12,15 @@
     "bg_light": "#F7F5F3",
     "bg_pure": "#FFFFFF",
     "ink": "#111214",
-    "accent": "#C8453D",
-    "accent_soft": "#E4726A",
-    "accent_deep": "#8E2F2A",
+    "space_deep": "#0B132B",
+    "panel": "#1A1F2E",
+    "accent": "#E63946",
+    "accent_soft": "#ED747D",
+    "accent_deep": "#9F1A24",
     "muted": "#7A7D82",
-    "overlay_dim": "rgba(10,10,12,0.78)"
+    "text_soft": "#C7C9D1",
+    "overlay_dim": "rgba(11,19,43,0.78)",
+    "_comment": "Палитра брендбука «IT КОСМОС»: акцент #E63946, космос #0B132B, техно-нейтраль #1A1F2E, второстепенный текст #C7C9D1, свет #FFFFFF. bg_light и bg_pure остались светлыми намеренно: это поверхности настоящего интерфейса — окно браузера и карточка статьи, которые обязаны выглядеть настоящей страницей, а не панелью канала."
   },
   "color_rules": {
     "accent_max_frame_share": 0.12,
@@ -262,7 +266,7 @@
       28
     ],
     "radius_px_default": 24,
-    "bg": "bg_light",
+    "bg": "panel",
     "bg_alpha": 0.92,
     "border_px": 2,
     "border_color": "accent",
@@ -288,7 +292,10 @@
       1.5,
       4.0
     ],
-    "max_simultaneous": 2
+    "max_simultaneous": 2,
+    "text": "bg_pure",
+    "kicker": "text_soft",
+    "_comment": "Плашка — панель канала из брендбука: тёмная #1A1F2E, белый текст, второстепенная строка #C7C9D1, рамка акцентом. Светлой она была от старой светлой палитры; окно браузера и карточка статьи остаются светлыми — это чужой интерфейс, а не наша панель."
   },
   "highlight": {
     "dim_opacity": [

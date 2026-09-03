@@ -90,8 +90,10 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     for role, file_name in fonts.items():
         parts.append(_font_face(f"RS {role.title()}", file_name))
 
+    # Ключи с подчёркиванием в начале — комментарии брендбука, а не цвета:
+    # без этой отсечки в CSS уезжала переменная --color--comment с текстом.
     var_lines = [f"--color-{name.replace('_', '-')}: {value};"
-                 for name, value in colors.items()]
+                 for name, value in colors.items() if not name.startswith("_")]
     var_lines += [
         f"--frame-w: {width}px;",
         f"--frame-h: {height}px;",
@@ -293,12 +295,18 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".plaque{left:var(--safe-x-min);right:calc(var(--frame-w) - var(--safe-x-max));"
         f"bottom:{height - int(safe['y_max']) + 60}px;padding:26px 34px;"
         f"border-radius:{int(plaque['radius_px_default'])}px;"
-        f"background:rgba(247,245,243,{plaque['bg_alpha']});color:var(--color-ink);"
-        f"border:{int(plaque['border_px'])}px solid rgba(192,57,43,{plaque['border_alpha']});"
+        # Цвета плашки берутся из брендбука, а не стоят числами. Стояли: фон
+        # 247,245,243 и рамка 192,57,43 — второй такой краски в палитре уже не
+        # было вовсе, и смена акцента её не трогала.
+        f"background:{_rgba(colors[str(plaque.get('bg', 'panel'))], float(plaque['bg_alpha']))};"
+        f"color:var(--color-{str(plaque.get('text', 'bg_pure')).replace('_', '-')});"
+        f"border:{int(plaque['border_px'])}px solid "
+        f"{_rgba(colors[str(plaque.get('border_color', 'accent'))], float(plaque['border_alpha']))};"
         "font-family:var(--font-subtitle);font-weight:800;font-size:44px;"
         f"box-shadow:0 {int(shadow['offset_y_px'])}px {int(shadow['blur_px'])}px "
         f"rgba(0,0,0,{shadow['alpha']})}}"
-        ".plaque .kicker{display:block;font-size:28px;color:var(--color-muted);"
+        ".plaque .kicker{display:block;font-size:28px;"
+        f"color:var(--color-{str(plaque.get('kicker', 'muted')).replace('_', '-')});"
         "margin-top:8px;font-weight:700}"
     )
     # Карточка источника прижимается снизу к полосе субтитров, а не ставится по
