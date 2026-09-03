@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 20,
+    "text-fullscreen": 21,
     "lower-thirds": 8,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 110
+    "_total": 111
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -636,6 +636,30 @@
       "renderer": "scramble_reveal",
       "last_used_in": [],
       "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/shared-axis-z",
+      "name": "shared-axis-z",
+      "category": "text-fullscreen",
+      "title": "Слова набухают по оси Z со стаггером — shared-axis-z",
+      "duration_range": [
+        0.8,
+        2.4
+      ],
+      "params": {
+        "shared_axis_z": true,
+        "direction": "in",
+        "depth": "standard",
+        "tone": "ink"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "scale"
+      ],
+      "renderer": "shared_axis_z",
+      "last_used_in": [],
+      "added": "2026-09-03"
     },
     {
       "id": "text-fullscreen/number-slam-card",

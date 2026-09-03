@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-110 шаблонов каталога — это не 110 реализаций, а набор рендереров с параметрами.
+111 шаблонов каталога — это не 111 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -2845,6 +2845,85 @@ def fs_scramble_reveal(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Shared Axis Z: каталог твинит --hf-word-scale и кладёт глубину в CSS-var.
+# Движок CSS-var не тянет — стартовый scale считается здесь.
+# visual = 1 + (word_scale - 1) * (sign * reach); word_scale едет 0.72 → 1.
+_SAZ_SCALE_FROM = 0.72
+_SAZ_REACH = {"shallow": 0.5, "standard": 1.0, "deep": 1.85}
+_SAZ_SIGN = {"in": 1.0, "out": -1.0}
+_SAZ_TONES = ("ink", "paper", "accent")
+_SAZ_ENTER = 0.34
+_SAZ_STAGGER = 0.06
+_SAZ_REF_SIZE = 56.0
+_SAZ_GAP_PX = 12.0
+
+
+def _saz_start_scale(direction: str, depth: str) -> float:
+    """Старт scale: 1 + (0.72 - 1) * sign * reach. На покое всегда 1."""
+    sign = _SAZ_SIGN.get(direction, 1.0)
+    reach = _SAZ_REACH.get(depth, 1.0)
+    return 1.0 + (_SAZ_SCALE_FROM - 1.0) * (sign * reach)
+
+
+def fs_shared_axis_z(ctx: "TemplateCtx") -> Piece:
+    """Слова набухают по оси Z — shared-axis-z.
+
+    Каталог твинит ``--hf-word-scale`` и пишет глубину в CSS-var. Здесь
+    стартовый ``scale`` заранее: ``1 + (0.72-1) * sign * reach``.
+    Inter 900 и ``#18181b`` как в каталоге; ``tone=accent`` → ``#C8453D``,
+    не изумруд ``#34d399``. Стаггер 60 мс разложен в Python. HOLD без ухода.
+    """
+    content = str(ctx.params.get("text") or ctx.params.get("content") or "").strip()
+    if not content:
+        return Piece()
+    words = content.split()
+    if not words:
+        return Piece()
+
+    direction = str(ctx.params.get("direction") or "in").lower()
+    if direction not in _SAZ_SIGN:
+        direction = "in"
+    depth = str(ctx.params.get("depth") or "standard").lower()
+    if depth not in _SAZ_REACH:
+        depth = "standard"
+    tone = str(ctx.params.get("tone") or "ink").lower()
+    if tone not in _SAZ_TONES:
+        tone = "ink"
+
+    start_scale = _saz_start_scale(direction, depth)
+    node_id = ctx.target
+    size = _fs_size(ctx, content)
+    gap = max(1, int(round(_SAZ_GAP_PX / _SAZ_REF_SIZE * size)))
+    stagger = _SAZ_STAGGER
+    at = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    n = len(words)
+    last_end = at + _SAZ_ENTER + stagger * max(0, n - 1)
+    if n > 1 and last_end > end - 0.04:
+        stagger = max(0.02, (end - 0.04 - at - _SAZ_ENTER) / (n - 1))
+
+    cls = f"clip fullscreen-text fs-shared-axis-z saz-{tone}"
+    spans: list[str] = []
+    tweens: list[str] = []
+    for i, word in enumerate(words):
+        wid = f"{node_id}-w{i}"
+        spans.append(f'<span id="{wid}" class="saz-word">{_esc(word)}</span>')
+        word_at = at + stagger * i
+        tweens.append(
+            f'tl.fromTo("#{wid}",{{opacity:0,scale:{_num(start_scale)}}},'
+            f'{{opacity:1,scale:1,duration:{_num(_SAZ_ENTER)},'
+            f'ease:"back.out(1.8)"}},{_num(word_at)});'
+        )
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)} '
+               f'data-saz-direction="{direction}" data-saz-depth="{depth}">'
+               f'<span id="{node_id}-inner" class="saz-stack" '
+               f'style="font-size:{size}px;gap:{gap}px">'
+               f'{"".join(spans)}</span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -2857,6 +2936,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "per_word_crossfade": fs_per_word_crossfade,
     "scan_band": fs_scan_band,
     "scramble_reveal": fs_scramble_reveal,
+    "shared_axis_z": fs_shared_axis_z,
     "number_slam": fs_number_slam,
 }
 
@@ -2885,6 +2965,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_scan_band(ctx)
     if params.get("scramble_reveal"):
         return fs_scramble_reveal(ctx)
+    if params.get("shared_axis_z"):
+        return fs_shared_axis_z(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -3217,6 +3299,17 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text.sr-violet .sr-prefix{color:#d2b7ff}"
         ".fullscreen-text.sr-violet .sr-text{color:#c5a3ff;"
         "text-shadow:0 0 54px rgba(197,163,255,0.34)}"
+        ".fullscreen-text.fs-shared-axis-z{width:var(--frame-w);height:var(--frame-h);"
+        "overflow:hidden;isolation:isolate;display:flex;align-items:center;"
+        "justify-content:center;background:#FFFFFF;color:#18181b;"
+        "font-family:Inter,system-ui,sans-serif;font-weight:900;"
+        "letter-spacing:-0.04em;line-height:1}"
+        ".fullscreen-text.fs-shared-axis-z.saz-paper{background:#18181b;color:#fafafa}"
+        ".fullscreen-text.fs-shared-axis-z.saz-accent{color:#C8453D}"
+        ".fullscreen-text .saz-stack{display:inline-flex;flex-wrap:wrap;"
+        "justify-content:center;align-items:center;max-width:100%;line-height:1}"
+        ".fullscreen-text .saz-word{display:inline-block;"
+        "will-change:transform,opacity}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

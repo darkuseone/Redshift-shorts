@@ -54,7 +54,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (20, [
+    "text-fullscreen": (21, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -117,6 +117,12 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"scramble_reveal": True, "accent": "green", "style": "terminal",
           "exit": "none"},
          ["text", "kinetic", "scramble", "reveal"], "scramble_reveal"),
+        ("shared-axis-z",
+         "Слова набухают по оси Z со стаггером — shared-axis-z",
+         [0.8, 2.4],
+         {"shared_axis_z": True, "direction": "in", "depth": "standard",
+          "tone": "ink"},
+         ["text", "kinetic", "scale"], "shared_axis_z"),
         ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),
@@ -370,7 +376,7 @@ def main() -> int:
                 "tags": tags,
                 "renderer": renderer,
                 "last_used_in": history.get(f"{category}/{tid}", []),
-                "added": added_on.get(f"{category}/{tid}") or "2026-09-02",
+                "added": added_on.get(f"{category}/{tid}") or "2026-09-03",
             }
             if example_video:
                 entry["example_video"] = example_video

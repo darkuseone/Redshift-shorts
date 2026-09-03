@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-110 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+111 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -1108,6 +1108,73 @@ def test_scramble_reveal_envelope_style_and_empty():
     empty = render_fullscreen(_fs_ctx(
         content="", renderer="scramble_reveal", duration=3.0))
     assert empty.nodes == []
+
+
+def test_shared_axis_z_swells_words_on_scale():
+    """Каталог твинит CSS-var; здесь заранее посчитанный scale и opacity."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД", renderer="shared_axis_z", shared_axis_z=True,
+        direction="in", depth="standard", tone="ink", duration=1.4))
+    node = piece.nodes[0]
+    assert "fs-shared-axis-z" in node
+    assert "saz-ink" in node
+    assert node.count("saz-word") == 2
+    assert "ПИШИ" in node and "КОД" in node
+    assert "--hf-" not in node
+    assert "filter:" not in node
+    body = " ".join(piece.tweens)
+    assert "--hf-" not in body
+    assert "filter" not in body
+    assert "back.out(1.8)" in body
+    assert "scale:0.72" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    w0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w0"' in t]
+    w1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w1"' in t]
+    assert w0 and w1 and w1[0] - w0[0] == pytest.approx(0.06)
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    flagged = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД", shared_axis_z=True, duration=1.4))
+    assert "fs-shared-axis-z" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+
+
+def test_shared_axis_z_depth_direction_tone_and_empty():
+    cases = {
+        ("in", "standard"): "0.72",
+        ("in", "shallow"): "0.86",
+        ("in", "deep"): "0.482",
+        ("out", "standard"): "1.28",
+        ("out", "shallow"): "1.14",
+        ("out", "deep"): "1.518",
+    }
+    for (direction, depth), scale in cases.items():
+        piece = render_fullscreen(_fs_ctx(
+            content="А Б", renderer="shared_axis_z",
+            direction=direction, depth=depth, duration=1.4))
+        body = " ".join(piece.tweens)
+        assert f"scale:{scale}" in body, (direction, depth, body)
+    paper = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="shared_axis_z", tone="paper", duration=1.4))
+    assert "saz-paper" in paper.nodes[0]
+    accent = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="shared_axis_z", tone="accent", duration=1.4))
+    assert "saz-accent" in accent.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="shared_axis_z", duration=1.4))
+    assert empty.nodes == []
+    unknown = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="shared_axis_z",
+        direction="sideways", depth="extreme", tone="neon", duration=1.4))
+    assert "saz-ink" in unknown.nodes[0]
+    assert "scale:0.72" in " ".join(unknown.tweens)
 
 
 def test_number_slam_splits_the_caption():

@@ -579,6 +579,32 @@ def test_scramble_reveal_fullscreen_keeps_catalog_terminal(plan, assets, brandbo
     assert "var(--font-mono)" in css
 
 
+def test_shared_axis_z_fullscreen_keeps_catalog_inter(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД"
+    plan["shots"][1]["duration"] = 1.4
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 1.4
+    plan["shots"][1]["params"] = {
+        "shared_axis_z": True, "direction": "in", "depth": "standard",
+        "tone": "ink"}
+    plan["shots"][1]["renderer"] = "shared_axis_z"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-shared-axis-z" in out
+    assert "saz-word" in out and "saz-ink" in out
+    assert "--hf-word" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "--hf-" not in tween_src
+    assert "filter" not in tween_src
+    assert "back.out(1.8)" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".saz-stack" in css and ".saz-word" in css
+    assert "Inter,system-ui,sans-serif" in css
+    assert "#18181b" in css
+    assert ".fullscreen-text.fs-shared-axis-z.saz-accent{color:#C8453D}" in css
+    assert "#fafafa" in css
+    assert "#34d399" not in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {
