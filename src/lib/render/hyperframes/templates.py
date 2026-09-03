@@ -2567,7 +2567,7 @@ def fs_particle_text_dissolve(ctx: "TemplateCtx") -> Piece:
 
 
 # Scan Band: каталог твинит --sb-band-position и clip-path. Движок этого не
-# умеет — параллелограмм статичен, полоса едет x, мир внутри на -x.
+# умеет — полоса с overflow:hidden едет x, мир внутри на -x.
 # Inter, #0b0c0e/#f7f8fa и RGB-сдвиг #ff3158/#36efff как в каталоге:
 # это сам жест, не чужой бренд-токен.
 _SB_IN_BASE = 0.45
@@ -2577,6 +2577,7 @@ _SB_HALF_PCT = 6.0
 _SB_POS0_PCT = -60.0
 _SB_POS1_PCT = 160.0
 _SB_FRAME_W = 1080
+_SB_FRAME_H = 1920
 _SB_ANGLE_DEFAULT = 12.0
 
 
@@ -2585,9 +2586,8 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
 
     Внутри полосы три клипа: красный и циан со сдвигом, ядро чуть правее.
     Снаружи слово чистое. Каталог тянет CSS-var на ``clip-path``; здесь
-    многоугольник посчитан в Python, твин — ``x`` полосы и обратный ``x``
-    мира. Цвета и Inter каталога не трогаются: циан/красное — аберрация,
-    не палитра канала.
+    окно ``overflow:hidden`` и ``x``, наклон — статический ``skewX`` на
+    обёртке, которую твин не трогает. Цвета и Inter каталога не трогаются.
     """
     content, _accent, _invert = _content_of(ctx)
     if not content:
@@ -2600,16 +2600,16 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
     if not math.isfinite(angle):
         angle = _SB_ANGLE_DEFAULT
     angle = max(-30.0, min(30.0, angle))
-    lean = math.tan(math.radians(angle)) * 50.0
-    pos, half = _SB_POS0_PCT, _SB_HALF_PCT
-    clip = (
-        f"polygon({_num(pos - half - lean)}% 0%,"
-        f"{_num(pos + half - lean)}% 0%,"
-        f"{_num(pos + half + lean)}% 100%,"
-        f"{_num(pos - half + lean)}% 100%)"
-    )
     frame_w = int(ctx.params.get("frame_w") or _SB_FRAME_W)
-    travel = (_SB_POS1_PCT - _SB_POS0_PCT) / 100.0 * frame_w
+    frame_h = int(ctx.params.get("frame_h") or _SB_FRAME_H)
+    band_w = round(_SB_HALF_PCT / 50.0 * frame_w)
+    # Полоса должна иметь paint-box на старте, иначе продюсер её выкидывает.
+    x0 = 0
+    x1 = frame_w
+    size = max(28, min(150, round(0.13 * frame_w)))
+    red_x = round(-0.008 * frame_w, 2)
+    cyan_x = round(0.017 * frame_w, 2)
+    core_x = round(0.0065 * frame_w, 2)
 
     at = _enter_at(ctx)
     end = ctx.start + ctx.duration
@@ -2631,11 +2631,11 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
     ]
     if sweep > 0:
         tweens.append(
-            f'tl.fromTo("#{node_id}-band",{{x:0}},{{x:{_num(travel)},'
+            f'tl.fromTo("#{node_id}-band",{{x:{_num(x0)}}},{{x:{_num(x1)},'
             f'duration:{_num(sweep)},ease:"power2.out"}},{_num(at + inn)});'
         )
         tweens.append(
-            f'tl.fromTo("#{node_id}-inner",{{x:0}},{{x:{_num(-travel)},'
+            f'tl.fromTo("#{node_id}-inner",{{x:{_num(-x0)}}},{{x:{_num(-x1)},'
             f'duration:{_num(sweep)},ease:"power2.out"}},{_num(at + inn)});'
         )
     if out > 0:
@@ -2649,14 +2649,23 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
                f'{_timing(ctx)}>'
                f'<div id="{node_id}-stage" class="sb-stage" role="img" '
                f'aria-label="{label}">'
-               f'<span class="sb-wordmark">{label}</span>'
-               f'<div id="{node_id}-band" class="sb-band" aria-hidden="true" '
-               f'style="clip-path:{clip}">'
-               f'<div id="{node_id}-inner" class="sb-inner">'
-               f'<span class="sb-clone sb-clone-red">{label}</span>'
-               f'<span class="sb-clone sb-clone-cyan">{label}</span>'
-               f'<span class="sb-clone sb-clone-core">{label}</span>'
-               f'</div></div></div></div>'],
+               f'<span class="sb-wordmark" style="font-size:{size}px">{label}</span>'
+               f'<div class="sb-skew" style="transform:skewX({_num(-angle)}deg);'
+               f'transform-origin:0 0">'
+               f'<div id="{node_id}-band" class="sb-band" '
+               f'style="width:{band_w}px;height:{frame_h}px" '
+               f'data-band-angle="{_num(angle)}" data-layout-allow-overflow="true">'
+               f'<div class="sb-unskew" style="transform:skewX({_num(angle)}deg);'
+               f'transform-origin:0 0;width:{frame_w}px;height:{frame_h}px">'
+               f'<div id="{node_id}-inner" class="sb-inner" '
+               f'style="width:{frame_w}px;height:{frame_h}px">'
+               f'<span class="sb-clone sb-clone-red" style="font-size:{size}px;'
+               f'transform:translateX({_num(red_x)}px)">{label}</span>'
+               f'<span class="sb-clone sb-clone-cyan" style="font-size:{size}px;'
+               f'transform:translateX({_num(cyan_x)}px)">{label}</span>'
+               f'<span class="sb-clone sb-clone-core" style="font-size:{size}px;'
+               f'transform:translateX({_num(core_x)}px)">{label}</span>'
+               f'</div></div></div></div></div></div>'],
         tweens=tweens)
 
 
@@ -2970,30 +2979,30 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-display);font-weight:700;letter-spacing:-0.02em}"
         ".fullscreen-text .ptd-ink .accent{fill:var(--color-accent)}"
         ".fullscreen-text.fs-scan-band{width:var(--frame-w);height:var(--frame-h);"
-        "padding:0;overflow:hidden;container-type:size;isolation:isolate;"
+        "padding:0;overflow:hidden;isolation:isolate;"
         "background:#0b0c0e;color:#f7f8fa;"
         "font-family:Inter,system-ui,sans-serif;font-weight:850;"
         "letter-spacing:-0.065em}"
-        ".fullscreen-text .sb-stage,.fullscreen-text .sb-band,"
-        ".fullscreen-text .sb-inner,.fullscreen-text .sb-clone"
-        "{position:absolute;inset:0}"
-        ".fullscreen-text .sb-stage,.fullscreen-text .sb-clone"
-        "{display:grid;place-items:center}"
-        ".fullscreen-text .sb-stage{opacity:0;will-change:opacity}"
+        ".fullscreen-text .sb-stage{position:absolute;inset:0;opacity:0;"
+        "will-change:opacity}"
         ".fullscreen-text .sb-wordmark,.fullscreen-text .sb-clone"
-        "{font-size:clamp(28px,13cqw,150px);font-weight:850;line-height:0.86;"
-        "letter-spacing:-0.065em;white-space:nowrap}"
+        "{position:absolute;inset:0;display:grid;place-items:center;"
+        "font-weight:850;line-height:0.86;letter-spacing:-0.065em;"
+        "white-space:nowrap}"
         ".fullscreen-text .sb-wordmark{color:#f7f8fa;"
-        "text-shadow:0 1.2cqh 4cqh color-mix(in srgb,#000 45%,transparent)}"
-        ".fullscreen-text .sb-band{overflow:hidden;will-change:transform}"
-        ".fullscreen-text .sb-inner{will-change:transform}"
+        "text-shadow:0 23px 77px rgba(0,0,0,0.45)}"
+        ".fullscreen-text .sb-skew{position:absolute;inset:0;"
+        "transform-origin:0 0}"
+        ".fullscreen-text .sb-band{position:absolute;top:0;left:0;"
+        "overflow:hidden;will-change:transform;z-index:1}"
+        ".fullscreen-text .sb-unskew{position:absolute;top:0;left:0;"
+        "transform-origin:0 0}"
+        ".fullscreen-text .sb-inner{position:absolute;top:0;left:0;"
+        "will-change:transform}"
         ".fullscreen-text .sb-clone{text-shadow:none}"
-        ".fullscreen-text .sb-clone-red{color:#ff3158;opacity:0.9;"
-        "transform:translateX(-0.8cqw)}"
-        ".fullscreen-text .sb-clone-cyan{color:#36efff;opacity:0.9;"
-        "transform:translateX(1.7cqw)}"
-        ".fullscreen-text .sb-clone-core{color:#f7f8fa;"
-        "transform:translateX(0.65cqw)}"
+        ".fullscreen-text .sb-clone-red{color:#ff3158;opacity:0.9}"
+        ".fullscreen-text .sb-clone-cyan{color:#36efff;opacity:0.9}"
+        ".fullscreen-text .sb-clone-core{color:#f7f8fa}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

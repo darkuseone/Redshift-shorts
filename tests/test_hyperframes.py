@@ -544,7 +544,7 @@ def test_scan_band_fullscreen_keeps_catalog_chromatic(plan, assets, brandbook):
     assert "fs-scan-band" in out
     assert "sb-clone-red" in out and "sb-clone-cyan" in out
     assert "--sb-band" not in out
-    assert "clip-path:polygon(" in out
+    assert "clip-path" not in out
     tween_src = "".join(
         line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
     assert "clip-path" not in tween_src

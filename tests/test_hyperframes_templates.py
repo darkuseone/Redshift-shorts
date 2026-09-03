@@ -991,7 +991,7 @@ def test_per_word_crossfade_drift_tone_and_exit():
 
 
 def test_scan_band_sweeps_a_static_clip_on_x():
-    """Каталог твинит CSS-var и clip-path. Здесь x полосы и -x мира, RGB как есть."""
+    """Каталог твинит CSS-var и clip-path. Здесь overflow-окно и x / -x."""
     piece = render_fullscreen(_fs_ctx(
         content="СИГНАЛ", renderer="scan_band", scan_band=True,
         band_angle=12, duration=3.5))
@@ -1001,7 +1001,10 @@ def test_scan_band_sweeps_a_static_clip_on_x():
     assert node.count('class="sb-clone') == 3
     assert "sb-clone-red" in node and "sb-clone-cyan" in node
     assert "СИГНАЛ" in node
-    assert "clip-path:polygon(" in node
+    assert "clip-path" not in node
+    assert "skewX(-12deg)" in node and "skewX(12deg)" in node
+    assert "transform-origin:0 0" in node
+    assert "overflow" not in " ".join(piece.tweens)
     body = " ".join(piece.tweens)
     assert "--sb-band" not in body
     assert "clip-path" not in body
@@ -1016,8 +1019,8 @@ def test_scan_band_sweeps_a_static_clip_on_x():
         assert selector != clip, tween
     assert f'fromTo("{clip}-band",{{x:0}}' in body
     assert f'fromTo("{clip}-inner",{{x:0}}' in body
-    assert "x:2376" in body
-    assert "x:-2376" in body
+    assert "x:1080" in body
+    assert "x:-1080" in body
     assert f'fromTo("{clip}-stage",{{opacity:0}}' in body
     ids = re.findall(r'id="([^"]+)"', node)
     assert len(ids) == len(set(ids))
@@ -1031,12 +1034,9 @@ def test_scan_band_angle_envelope_and_empty():
         content="КОД", renderer="scan_band", band_angle=30, duration=3.5))
     flat = render_fullscreen(_fs_ctx(
         content="КОД", renderer="scan_band", band_angle=0, duration=3.5))
-
-    def _poly(piece):
-        return re.search(r"clip-path:polygon\(([^)]+)\)", piece.nodes[0]).group(1)
-
-    assert _poly(steep) != _poly(flat)
-    assert float(_poly(steep).split("%", 1)[0]) < float(_poly(flat).split("%", 1)[0])
+    assert 'data-band-angle="30"' in steep.nodes[0]
+    assert 'data-band-angle="0"' in flat.nodes[0]
+    assert "skewX(-30deg)" in steep.nodes[0]
     short = render_fullscreen(_fs_ctx(
         content="КОД", renderer="scan_band", duration=0.8))
     assert "-band" not in " ".join(short.tweens)
