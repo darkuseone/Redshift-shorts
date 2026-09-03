@@ -234,15 +234,34 @@ def test_overlay_renderer_maps_chat_and_paper():
     assert _overlay_renderer(old) == "chat_thread"
 
 
+def test_plaque_overlay_attaches_custom_renderer():
+    from src.lib.templates import Template
+    from src.p11_assemble.assemble import _plaque_overlay
+
+    custom = Template(id="lower-thirds/accent-underline", name="accent-underline",
+                      category="lower-thirds", title="", duration_range=[1.5, 4.8],
+                      params={"accent_underline": True}, tags=["person"],
+                      renderer="lt_accent_underline")
+    ovl = _plaque_overlay(template=custom, start=1.0, end=3.6,
+                          params={"name": "МАЙЯ ЧЕН"}, why="test")
+    assert ovl["renderer"] == "lt_accent_underline"
+    generic = Template(id="lower-thirds/name-title", name="name-title",
+                       category="lower-thirds", title="", duration_range=[1.5, 4.0],
+                       params={}, tags=["person"], renderer="plaque")
+    plain = _plaque_overlay(template=generic, start=1.0, end=3.0,
+                            params={"text": "x"}, why="test")
+    assert "renderer" not in plain
+
+
 def test_catalog_matches_spec_counts(cfg):
     catalog = TemplateCatalog.load(cfg)
     counts = catalog.counts()
     assert counts == {
-        "intro-hooks": 8, "text-fullscreen": 21, "lower-thirds": 8, "frames-cards": 7,
+        "intro-hooks": 8, "text-fullscreen": 21, "lower-thirds": 9, "frames-cards": 7,
         "browser-ui": 8, "transitions": 13, "avatar-entry": 6, "kenburns": 10,
         "parallax": 4, "data-viz": 7, "outro-cta": 6, "hero-devices": 13,
     }
-    assert len(catalog.all()) == 111
+    assert len(catalog.all()) == 112
 
 
 def test_catalog_rotation_avoids_recent(cfg):

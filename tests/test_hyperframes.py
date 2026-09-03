@@ -627,6 +627,30 @@ def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook
     assert ".lbc-dot" in css
 
 
+def test_lt_accent_underline_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][1] = {
+        "type": "plaque", "start": 0.2, "end": 5.0,
+        "template": "lower-thirds/accent-underline",
+        "params": {"name": "МАЙЯ ЧЕН", "role": "ВЕДУЩАЯ · НЕЙРОФИЗИОЛОГ",
+                   "accent_underline": True},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lt-accent-underline" in out
+    assert "lt-au-rule" in out
+    assert "МАЙЯ ЧЕН" in out
+    assert "#ovl-01-name" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "visibility" not in tween_src
+    assert "scaleX:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "Space Mono" in css
+    assert "#C8453D" in css
+    assert "#46e5b7" not in css
+    assert "Oswald" in css
+
+
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     plan["overlays"][0]["renderer"] = "chat_thread"
     plan["overlays"][0]["params"] = {

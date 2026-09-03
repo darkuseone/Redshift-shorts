@@ -127,9 +127,12 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),
     ]),
-    "lower-thirds": (8, [
+    "lower-thirds": (9, [
         ("name-title", "Имя и должность", [1.5, 4.0],
          {"position": "bottom", "direction": "left"}, ["person"], "plaque"),
+        ("accent-underline", "Имя и роль с акцентной чертой", [1.5, 4.8],
+         {"accent_underline": True, "position": "bottom"},
+         ["person", "lower-third", "overlay", "minimal"], "lt_accent_underline"),
         ("source-domain", "Домен источника", [1.5, 3.0],
          {"position": "bottom", "direction": "left", "icon": "link"}, ["source"], "plaque"),
         ("metric-badge", "Значение метрики", [1.5, 3.0],

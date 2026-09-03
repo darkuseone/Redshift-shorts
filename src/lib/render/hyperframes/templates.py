@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-111 шаблонов каталога — это не 111 реализаций, а набор рендереров с параметрами.
+112 шаблонов каталога — это не 112 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3130,11 +3130,123 @@ def ov_paper_reveal(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог lt-accent-underline: 4.8 с, имя ↑, черта scaleX, роль ↑, затем уход.
+_LT_AU_NAME_CEILING = 72
+_LT_AU_ROLE_SIZE = 26
+_LT_AU_NAME_FROM_Y = 28
+_LT_AU_ROLE_FROM_Y = 16
+_LT_AU_NAME_EXIT_Y = -16
+
+
+def _lt_au_times(duration: float) -> dict[str, float]:
+    """Вход как в каталоге; выход прижат к концу, если окно короче 4.8 с."""
+    name_in_at, name_in_dur = 0.10, 0.55
+    rule_in_at, rule_in_dur = 0.30, 0.50
+    role_in_at, role_in_dur = 0.46, 0.50
+    role_out_dur, rule_out_dur, name_out_dur = 0.30, 0.30, 0.32
+    role_out_lead, rule_out_lead, name_out_lead = 0.55, 0.50, 0.45
+    enter_end = role_in_at + role_in_dur
+    first_out = duration - role_out_lead
+    if first_out < enter_end + 0.001:
+        room = max(0.35, first_out - 0.001)
+        scale = room / enter_end
+        name_in_at *= scale
+        name_in_dur *= scale
+        rule_in_at *= scale
+        rule_in_dur *= scale
+        role_in_at *= scale
+        role_in_dur *= scale
+        enter_end = role_in_at + role_in_dur
+    role_out_at = max(enter_end + 0.001, duration - role_out_lead)
+    rule_out_at = max(role_out_at + 0.001, duration - rule_out_lead)
+    name_out_at = max(rule_out_at + 0.001, duration - name_out_lead)
+    return {
+        "name_in_at": name_in_at, "name_in_dur": name_in_dur,
+        "rule_in_at": rule_in_at, "rule_in_dur": rule_in_dur,
+        "role_in_at": role_in_at, "role_in_dur": role_in_dur,
+        "role_out_at": role_out_at, "role_out_dur": role_out_dur,
+        "rule_out_at": rule_out_at, "rule_out_dur": rule_out_dur,
+        "name_out_at": name_out_at, "name_out_dur": name_out_dur,
+    }
+
+
+def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
+    """Нижняя треть без карточки: имя, акцентная черта left→right, роль.
+
+    Каталог твинит ``tl.to`` после ``gsap.set`` и прячет обёртку через
+    ``visibility``. Движок требует ``fromTo`` на вложенных узлах; ``visibility``
+    вне списка. Мятный ``#46e5b7`` — чужой бренд, черта канала ``#C8453D``.
+    Oswald и Space Mono как в каталоге. Клип в потоке: абсолютный единственный
+    ребёнок обнуляет paint-box.
+    """
+    params = ctx.params
+    name = str(params.get("name") or params.get("content") or params.get("text")
+               or "").strip()
+    role = str(params.get("role") or params.get("kicker") or params.get("subtitle")
+               or "").strip()
+    if not name and not role:
+        return Piece()
+    node_id = ctx.target
+    available = float(params.get("available_px") or 740)
+    name_size = (fit_size(name.upper(), available, _LT_AU_NAME_CEILING)
+                 if name else _LT_AU_NAME_CEILING)
+    role_size = (min(_LT_AU_ROLE_SIZE, fit_size(role, available, _LT_AU_ROLE_SIZE))
+                 if role else _LT_AU_ROLE_SIZE)
+    name_w = text_width(name.upper(), name_size) if name else 0.0
+    role_w = text_width(role, role_size) if role else 0.0
+    rule_w = max(40, int(round(max(name_w, role_w))))
+    t = _lt_au_times(ctx.duration)
+    at = ctx.start
+    parts: list[str] = []
+    tweens: list[str] = []
+    if name:
+        parts.append(
+            f'<span id="{node_id}-name" class="lt-au-name" '
+            f'style="font-size:{name_size}px">{_esc(name)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-name",{{y:{_LT_AU_NAME_FROM_Y},opacity:0}},'
+            f'{{y:0,opacity:1,duration:{_num(t["name_in_dur"])},'
+            f'ease:"power3.out"}},{_num(at + t["name_in_at"])});')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-name",{{y:0,opacity:1}},'
+            f'{{y:{_LT_AU_NAME_EXIT_Y},opacity:0,duration:{_num(t["name_out_dur"])},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(at + t["name_out_at"])});')
+    parts.append(
+        f'<span id="{node_id}-rule" class="lt-au-rule" '
+        f'style="width:{rule_w}px"></span>')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-rule",{{scaleX:0}},'
+        f'{{scaleX:1,duration:{_num(t["rule_in_dur"])},ease:"power4.out"}},'
+        f'{_num(at + t["rule_in_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-rule",{{scaleX:1}},'
+        f'{{scaleX:0,duration:{_num(t["rule_out_dur"])},ease:"power2.in",'
+        f'immediateRender:false}},{_num(at + t["rule_out_at"])});')
+    if role:
+        parts.append(
+            f'<span id="{node_id}-role" class="lt-au-role" '
+            f'style="font-size:{role_size}px">{_esc(role)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-role",{{y:{_LT_AU_ROLE_FROM_Y},opacity:0}},'
+            f'{{y:0,opacity:1,duration:{_num(t["role_in_dur"])},'
+            f'ease:"power3.out"}},{_num(at + t["role_in_at"])});')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-role",{{opacity:1}},'
+            f'{{opacity:0,duration:{_num(t["role_out_dur"])},ease:"power2.in",'
+            f'immediateRender:false}},{_num(at + t["role_out_at"])});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay lt-accent-underline" '
+               f'{_timing(ctx)}>{"".join(parts)}</div>'],
+        tweens=tweens)
+
+
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
     "chat_thread": ov_chat_thread,
     "article_scroll": ov_article_scroll,
     "paper_reveal": ov_paper_reveal,
+    "lt_accent_underline": ov_lt_accent_underline,
 }
 
 
@@ -3144,7 +3256,7 @@ def render_overlay(name: str, ctx: "TemplateCtx") -> Piece:
 
 
 def overlay_css(brandbook: dict[str, Any]) -> str:
-    """Стили окон чата, статьи и paper-reveal. Цвета — токены брендбука."""
+    """Стили окон чата, статьи, paper-reveal и нижней трети."""
     height = int(brandbook["canvas"]["height"])
     safe = brandbook["safe_zones"]["work_area"]
     subs = brandbook["subtitles"]
@@ -3386,6 +3498,21 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".paper-reveal .pr-line.accent{color:var(--color-ink);"
         "background:var(--color-accent-soft);box-shadow:0 0 0 8px var(--color-accent-soft);"
         "border-radius:8px}"
+        f".lt-accent-underline{{left:var(--safe-x-min);"
+        f"bottom:{height - int(safe['y_max']) + 60}px;"
+        "max-width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        "display:flex;flex-direction:column;align-items:flex-start;gap:14px;"
+        "background:transparent}"
+        ".lt-au-name{display:block;font-family:'Oswald',var(--font-display),sans-serif;"
+        "font-weight:700;color:#ffffff;line-height:0.96;letter-spacing:0.005em;"
+        "text-transform:uppercase;white-space:nowrap;"
+        "text-shadow:0 2px 22px rgba(0,0,0,0.45);will-change:transform,opacity}"
+        ".lt-au-rule{display:block;height:6px;border-radius:3px;background:#C8453D;"
+        "transform-origin:0% 50%;will-change:transform}"
+        ".lt-au-role{display:block;font-family:'Space Mono',var(--font-mono),monospace;"
+        "font-weight:400;color:#e7eaf0;line-height:1.2;letter-spacing:0.04em;"
+        "white-space:nowrap;text-shadow:0 2px 16px rgba(0,0,0,0.45);"
+        "will-change:transform,opacity}"
     )
 
 

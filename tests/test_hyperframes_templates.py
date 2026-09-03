@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-111 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+112 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -16,9 +16,10 @@ import pytest
 from src.lib.render.hyperframes.templates import (
     DATAVIZ, DRIFT_SCALE, ENTRANCES, FULLSCREEN, HERO, MOTION, OVERLAYS,
     TRANSITIONS, Piece, TemplateCtx,
-    enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_fullscreen,
-    render_hero, render_motion, render_overlay, render_transition, transition_css,
-    _fs_size, _sr_frame_table,
+    enter_and_drift, entrance_tweens, hero_css, overlay_css, render_dataviz,
+    render_fullscreen, render_hero, render_motion, render_overlay,
+    render_transition, transition_css,
+    _fs_size, _lt_au_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -1206,6 +1207,8 @@ OVERLAY_PARAMS = {
                        "snippet": "long quoted line here", "highlight_line": "quoted"},
     "paper_reveal": {"domain": "arxiv.org", "title": "Nature",
                      "snippet": "One. Two. Three.", "highlight_line": "Two"},
+    "lt_accent_underline": {"name": "МАЙЯ ЧЕН",
+                            "role": "ВЕДУЩАЯ · НЕЙРОФИЗИОЛОГ"},
 }
 
 
@@ -1220,6 +1223,69 @@ def test_overlay_animates_only_allowed_properties(name):
     for tween in piece.tweens:
         selector = re.search(r'"(#[^"]+)"', tween).group(1)
         assert selector != "#ovl-00", f"{name} тянет сам клип: {tween}"
+
+
+def test_lt_accent_underline_draws_the_rule_with_scalex():
+    ctx = TemplateCtx(index=0, start=0.0, duration=4.8, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["lt_accent_underline"])
+    piece = render_overlay("lt_accent_underline", ctx)
+    node = piece.nodes[0]
+    assert "lt-accent-underline" in node
+    assert 'id="ovl-00-name"' in node and "МАЙЯ ЧЕН" in node
+    assert 'id="ovl-00-rule"' in node
+    assert 'id="ovl-00-role"' in node and "НЕЙРОФИЗИОЛОГ" in node
+    assert node.count('id="ovl-00"') == 1
+    assert "position:absolute" not in node
+    body = " ".join(piece.tweens)
+    assert "scaleX:0" in body and "scaleX:1" in body
+    assert "power4.out" in body and "power3.out" in body
+    assert "visibility" not in body
+    assert "width:" not in body
+    assert "#46e5b7" not in node and "#46e5b7" not in body
+    exits = [t for t in piece.tweens if "power2.in" in t]
+    assert len(exits) == 3
+    for tween in exits:
+        assert "immediateRender:false" in tween
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+    times = _lt_au_times(4.8)
+    assert abs(times["name_in_at"] - 0.10) < 1e-9
+    assert abs(times["role_out_at"] - 4.25) < 1e-9
+
+
+def test_lt_accent_underline_short_window_keeps_enter_before_exit():
+    times = _lt_au_times(2.6)
+    assert times["role_in_at"] + times["role_in_dur"] < times["role_out_at"]
+    assert times["rule_in_at"] + times["rule_in_dur"] < times["rule_out_at"]
+    assert times["name_in_at"] + times["name_in_dur"] < times["name_out_at"]
+    squeezed = _lt_au_times(1.5)
+    assert squeezed["role_in_at"] + squeezed["role_in_dur"] < squeezed["role_out_at"]
+
+
+def test_lt_accent_underline_reads_text_and_skips_empty():
+    ctx = TemplateCtx(index=0, start=0.0, duration=2.6, target="ovl-01",
+                      track=5, params={"text": "МАЙЯ ЧЕН"})
+    piece = render_overlay("lt_accent_underline", ctx)
+    assert "МАЙЯ ЧЕН" in piece.nodes[0]
+    assert "ovl-01-role" not in piece.nodes[0]
+    empty = render_overlay("lt_accent_underline", TemplateCtx(
+        index=0, start=0.0, duration=2.6, target="ovl-02", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_lt_accent_underline_css_keeps_oswald_and_remaps_mint():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert "#46e5b7" not in css
+    assert ".lt-au-rule{display:block;height:6px;border-radius:3px;background:#C8453D;" in css
+    rule = re.search(r"\.lt-au-rule\{[^}]+\}", css).group(0)
+    assert "transform-origin:0% 50%" in rule
+    assert "transform:" not in rule.replace("transform-origin:0% 50%", "")
+    assert "Oswald" in css
+    assert "Space Mono" in css
+    assert "#ffffff" in css and "#e7eaf0" in css
 
 
 def test_chat_thread_puts_the_user_on_the_left():

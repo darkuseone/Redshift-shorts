@@ -4,7 +4,7 @@
   "counts": {
     "intro-hooks": 8,
     "text-fullscreen": 21,
-    "lower-thirds": 8,
+    "lower-thirds": 9,
     "frames-cards": 7,
     "browser-ui": 8,
     "transitions": 13,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 111
+    "_total": 112
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -704,6 +704,29 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/accent-underline",
+      "name": "accent-underline",
+      "category": "lower-thirds",
+      "title": "Имя и роль с акцентной чертой",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "accent_underline": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "minimal"
+      ],
+      "renderer": "lt_accent_underline",
+      "last_used_in": [],
+      "added": "2026-09-03"
     },
     {
       "id": "lower-thirds/source-domain",

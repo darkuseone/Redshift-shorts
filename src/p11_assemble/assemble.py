@@ -538,6 +538,19 @@ def _overlay_renderer(template: Template) -> str:
     return "source_card"
 
 
+def _plaque_overlay(*, template: Template, start: float, end: float,
+                    params: dict[str, Any], why: str) -> dict[str, Any]:
+    """Плашка: кастомный рендерер (accent-underline), иначе generic plaque."""
+    ovl: dict[str, Any] = {
+        "type": "plaque", "start": start, "end": end,
+        "template": template.id, "params": params, "why": why,
+    }
+    renderer = template.renderer
+    if renderer and renderer != "plaque":
+        ovl["renderer"] = renderer
+    return ovl
+
+
 def _stats_from_text(text: str) -> list[dict[str, Any]]:
     """Числа из реплики блока. Годы 1900–2100 отбрасываем, если есть другие."""
     found: list[dict[str, Any]] = []
@@ -612,15 +625,17 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                                        recent_videos=recent_videos, exclude=used,
                                        prefer=["lower-thirds/source-domain"], seed=seed)
         used.append(plaque_template.id)
-        overlays.append({
-            "type": "plaque", "start": card_end - 0.2,
-            "end": min(card_end + 2.2, duration),
-            "template": plaque_template.id,
-            "params": {"text": source.get("domain", ""), "subtitle": "источник",
-                       **{k: v for k, v in plaque_template.params.items()
-                          if k in ("position", "direction")}},
-            "why": "§5.4: плашка с доменом источника",
-        })
+        domain = source.get("domain", "")
+        overlays.append(_plaque_overlay(
+            template=plaque_template,
+            start=card_end - 0.2,
+            end=min(card_end + 2.2, duration),
+            params={"text": domain, "subtitle": "источник",
+                    "name": domain, "role": "источник",
+                    **{k: v for k, v in plaque_template.params.items()
+                       if k in ("position", "direction", "accent_underline")}},
+            why="§5.4: плашка с доменом источника",
+        ))
 
     _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
                     recent_videos=recent_videos, used=used)
@@ -633,20 +648,26 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         block_slots = [s for s in plan["slots"] if s["block_id"] == block["id"]]
         if not block_slots:
             continue
+        hint = overlay.get("template_hint") or ""
+        prefer = ([hint, "lower-thirds/accent-underline"] if hint
+                  else ["lower-thirds/accent-underline"])
         template = catalog.pick("lower-thirds", duration=2.4, recent_videos=recent_videos,
-                                exclude=used, prefer=[overlay.get("template_hint", "")],
-                                seed=seed + 7)
+                                exclude=used, prefer=prefer, seed=seed + 7)
         used.append(template.id)
         start = float(block_slots[0]["start"]) + 0.4
-        overlays.append({
-            "type": "plaque", "start": start,
-            "end": min(start + 2.6, float(block_slots[-1]["end"])),
-            "template": template.id,
-            "params": {"text": overlay.get("content", ""),
-                       **{k: v for k, v in template.params.items()
-                          if k in ("position", "direction")}},
-            "why": f"плашка из сценария, блок {block['id']}",
-        })
+        content = overlay.get("content", "")
+        role = (overlay.get("role") or overlay.get("subtitle")
+                or overlay.get("kicker") or "")
+        overlays.append(_plaque_overlay(
+            template=template,
+            start=start,
+            end=min(start + 2.6, float(block_slots[-1]["end"])),
+            params={"text": content, "content": content, "name": content,
+                    "role": role,
+                    **{k: v for k, v in template.params.items()
+                       if k in ("position", "direction", "accent_underline")}},
+            why=f"плашка из сценария, блок {block['id']}",
+        ))
 
     # CTA — последние 2 сек, всегда (§6, QC-16). Identity close — вордмарк,
     # не кнопка: если выпал logo-brand-close, композитор рисует локуп, не пилюлю.
