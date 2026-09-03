@@ -2417,11 +2417,11 @@ def fs_particle_text_dissolve(ctx: "TemplateCtx") -> Piece:
                     f'opacity:0}},{{x:0,y:0,opacity:0.82,duration:{_num(move_s)},'
                     f'ease:"power3.out"}},{_num(birth)});'
                 )
-                # Уход пыли стыкуется с settle, без перекрытия opacity.
+                # Стык в одной точке lint считает перекрытием opacity.
                 tweens.append(
                     f'tl.fromTo("#{did}",{{opacity:0.82}},{{opacity:0,'
                     f'duration:{_num(fade_s)},ease:"power2.in",'
-                    f'immediateRender:false}},{_num(settle)});'
+                    f'immediateRender:false}},{_num(settle + 0.001)});'
                 )
             else:
                 tweens.append(
