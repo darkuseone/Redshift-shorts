@@ -33,6 +33,82 @@ _EX_SRINIKA = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
 _EX_STRIPE = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
               "launch-HF-heygen-stripe-v1-s.mp4")
 
+
+# --- чем приём обязан быть оправдан (§3.1, src/lib/meaning.py) ---------------
+# «Хотя бы один из признаков блока». Пусто — приём смысла не несёт и годится
+# везде: движение кадра, переход, вход аватара. Ключи: точный id, потом имя
+# рендерера, потом категория.
+#
+# Правило простое: приёму нужно наполнение. Карточке числа — число, окну
+# переписки — вопрос, развороту статьи — цитата, сравнению — две величины.
+# Нечем наполнить — приём не ставится, и в отчёте видно почему.
+NEEDS_BY_ID: dict[str, tuple[str, ...]] = {
+    "intro-hooks/hook-question-flash": ("question",),
+    "intro-hooks/hook-number-slam": ("number",),
+    "intro-hooks/hook-countdown-3": ("number",),
+    "intro-hooks/hook-typing-search": ("question",),
+    "text-fullscreen/impact-01": ("number",),
+    "text-fullscreen/impact-02": ("number",),
+    "text-fullscreen/number-slam-card": ("number",),
+    "text-fullscreen/vs-compare": ("comparison",),
+    "text-fullscreen/quote-card": ("quote",),
+    "text-fullscreen/stack-lines": ("list",),
+    "text-fullscreen/kinetic-stack": ("list",),
+    "text-fullscreen/line-by-line-slide": ("list",),
+    "text-fullscreen/word-swap": ("comparison",),
+    "text-fullscreen/scramble-reveal": ("discovery", "device"),
+    "text-fullscreen/particle-text-dissolve": ("discovery",),
+    "browser-ui/chat-thread": ("question",),
+    "browser-ui/chat-ai-typing": ("question",),
+    "browser-ui/article-highlight": ("quote",),
+    "browser-ui/browser-scroll": ("quote",),
+    "frames-cards/paper-reveal": ("quote",),
+    "frames-cards/arxiv-card": ("quote",),
+    "hero-devices/figure-swap": ("number",),
+    "hero-devices/log-list": ("list",),
+    "hero-devices/statement-slam": ("negation", "superlative", "discovery"),
+    "hero-devices/verdict-light": ("negation", "superlative", "discovery"),
+    "hero-devices/brand-pill": ("brand",),
+    "hero-devices/exhibit-card": ("device",),
+    "hero-devices/paper-quote": ("quote",),
+    "hero-devices/chat-typing": ("question",),
+    "hero-devices/oversize-word": ("superlative",),
+    "hero-devices/knockout-word": ("superlative", "negation"),
+    "hero-devices/split-statement": ("comparison",),
+}
+
+NEEDS_BY_RENDERER: dict[str, tuple[str, ...]] = {
+    "hero-figure": ("number",),
+    "hero-log": ("list",),
+    "hero-slam": ("negation", "superlative", "discovery"),
+    "hero-verdict": ("negation", "superlative", "discovery"),
+    "hero-brand-pill": ("brand",),
+    "hero-exhibit": ("device",),
+    "hero-paper": ("quote",),
+    "hero-chat-typing": ("question",),
+    "hero-oversize": ("superlative",),
+    "hero-knockout": ("superlative", "negation"),
+    "hero-split": ("comparison",),
+    "chat_thread": ("question",),
+    "article_scroll": ("quote",),
+    "paper_reveal": ("quote",),
+}
+
+# Вся категория целиком: график без числа — пустая рамка.
+NEEDS_BY_CATEGORY: dict[str, tuple[str, ...]] = {
+    "data-viz": ("number",),
+}
+
+
+def needs_of(template_id: str, renderer: str, category: str) -> list[str]:
+    """Чем приём обязан быть оправдан: id точнее рендерера, рендерер — категории."""
+    if template_id in NEEDS_BY_ID:
+        return list(NEEDS_BY_ID[template_id])
+    if renderer in NEEDS_BY_RENDERER:
+        return list(NEEDS_BY_RENDERER[renderer])
+    return list(NEEDS_BY_CATEGORY.get(category, ()))
+
+
 # (id, описание, duration_range, params, tags, renderer[, example_video])
 CATALOG: dict[str, tuple[int, list[tuple]]] = {
     "intro-hooks": (8, [
@@ -398,6 +474,7 @@ def main() -> int:
                 "duration_range": duration,
                 "params": params,
                 "tags": tags,
+                "needs": needs_of(f"{category}/{tid}", renderer, category),
                 "renderer": renderer,
                 "last_used_in": history.get(f"{category}/{tid}", []),
                 "added": added_on.get(f"{category}/{tid}") or "2026-09-02",

@@ -16,6 +16,10 @@
     "avatar",
     "text"
   ],
+  "needs": [
+    "superlative",
+    "negation"
+  ],
   "renderer": "hero-knockout",
   "last_used_in": [
     "redshift_0046"

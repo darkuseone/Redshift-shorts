@@ -12,6 +12,7 @@
     "dynamic",
     "light"
   ],
+  "needs": [],
   "renderer": "light_sweep",
   "last_used_in": [
     "redshift_0042",

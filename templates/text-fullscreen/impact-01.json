@@ -19,6 +19,9 @@
     "number",
     "impact"
   ],
+  "needs": [
+    "number"
+  ],
   "renderer": "fullscreen_text",
   "last_used_in": [
     "redshift_0042",

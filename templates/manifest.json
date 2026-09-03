@@ -40,6 +40,9 @@
         "text",
         "flash"
       ],
+      "needs": [
+        "question"
+      ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -60,6 +63,9 @@
       },
       "tags": [
         "hook",
+        "number"
+      ],
+      "needs": [
         "number"
       ],
       "renderer": "fullscreen_text",
@@ -83,6 +89,7 @@
         "text",
         "dark"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -103,6 +110,7 @@
         "hook",
         "footage"
       ],
+      "needs": [],
       "renderer": "footage",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -123,6 +131,7 @@
         "hook",
         "split"
       ],
+      "needs": [],
       "renderer": "split",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -145,6 +154,9 @@
         "ui",
         "typing"
       ],
+      "needs": [
+        "question"
+      ],
       "renderer": "source_card",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -163,6 +175,9 @@
       },
       "tags": [
         "hook",
+        "number"
+      ],
+      "needs": [
         "number"
       ],
       "renderer": "fullscreen_text",
@@ -185,6 +200,7 @@
         "hook",
         "avatar"
       ],
+      "needs": [],
       "renderer": "avatar",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -209,6 +225,9 @@
       "tags": [
         "number",
         "impact"
+      ],
+      "needs": [
+        "number"
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
@@ -236,6 +255,9 @@
       "tags": [
         "word",
         "impact"
+      ],
+      "needs": [
+        "number"
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
@@ -265,6 +287,7 @@
         "text",
         "stack"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [
         "redshift_0042",
@@ -292,6 +315,9 @@
         "text",
         "swap"
       ],
+      "needs": [
+        "comparison"
+      ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -313,6 +339,7 @@
         "quote",
         "text"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -333,6 +360,7 @@
         "date",
         "mono"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -351,6 +379,9 @@
       },
       "tags": [
         "compare"
+      ],
+      "needs": [
+        "comparison"
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
@@ -373,6 +404,7 @@
       "tags": [
         "label"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -394,6 +426,7 @@
         "footage",
         "mask"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -414,6 +447,7 @@
         "fact",
         "card"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [
         "redshift_0042",
@@ -442,6 +476,9 @@
         "text",
         "kinetic"
       ],
+      "needs": [
+        "list"
+      ],
       "renderer": "kinetic_stack",
       "last_used_in": [],
       "added": "2026-09-02",
@@ -468,6 +505,7 @@
         "kinetic",
         "blur"
       ],
+      "needs": [],
       "renderer": "blur_out_up",
       "last_used_in": [],
       "added": "2026-09-02"
@@ -493,6 +531,7 @@
         "kinetic",
         "letters"
       ],
+      "needs": [],
       "renderer": "bottom_up_letters",
       "last_used_in": [],
       "added": "2026-09-02"
@@ -515,6 +554,7 @@
         "kinetic",
         "swap"
       ],
+      "needs": [],
       "renderer": "kinetic_type_swap",
       "last_used_in": [],
       "added": "2026-09-02"
@@ -540,6 +580,9 @@
         "kinetic",
         "stack"
       ],
+      "needs": [
+        "list"
+      ],
       "renderer": "line_by_line_slide",
       "last_used_in": [],
       "added": "2026-09-02"
@@ -563,6 +606,9 @@
         "text",
         "kinetic",
         "particles"
+      ],
+      "needs": [
+        "discovery"
       ],
       "renderer": "particle_text_dissolve",
       "last_used_in": [],
@@ -589,6 +635,7 @@
         "kinetic",
         "blur"
       ],
+      "needs": [],
       "renderer": "per_word_crossfade",
       "last_used_in": [],
       "added": "2026-09-02"
@@ -612,6 +659,7 @@
         "scan",
         "chromatic"
       ],
+      "needs": [],
       "renderer": "scan_band",
       "last_used_in": [],
       "added": "2026-09-02"
@@ -637,8 +685,14 @@
         "scramble",
         "reveal"
       ],
+      "needs": [
+        "discovery",
+        "device"
+      ],
       "renderer": "scramble_reveal",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0047"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -660,8 +714,13 @@
         "impact",
         "card"
       ],
+      "needs": [
+        "number"
+      ],
       "renderer": "number_slam",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0047"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
     },
@@ -681,6 +740,7 @@
       "tags": [
         "person"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -702,6 +762,7 @@
       "tags": [
         "source"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [
         "redshift_0042",
@@ -729,6 +790,7 @@
       "tags": [
         "metric"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -749,6 +811,7 @@
       "tags": [
         "note"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [
         "redshift_0042",
@@ -774,6 +837,7 @@
       "tags": [
         "warning"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [
         "redshift_0044"
@@ -796,6 +860,7 @@
       "tags": [
         "progress"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -816,6 +881,7 @@
       "tags": [
         "tags"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -836,6 +902,7 @@
       "tags": [
         "time"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -856,6 +923,7 @@
         "source",
         "article"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0042",
@@ -879,6 +947,9 @@
       "tags": [
         "source",
         "science"
+      ],
+      "needs": [
+        "quote"
       ],
       "renderer": "paper_reveal",
       "last_used_in": [
@@ -904,6 +975,7 @@
         "source",
         "patent"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0042",
@@ -927,6 +999,7 @@
       "tags": [
         "person"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0042",
@@ -950,6 +1023,7 @@
       "tags": [
         "product"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0042",
@@ -974,6 +1048,7 @@
       "tags": [
         "data"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0042",
@@ -999,6 +1074,9 @@
         "science",
         "reveal"
       ],
+      "needs": [
+        "quote"
+      ],
       "renderer": "paper_reveal",
       "last_used_in": [],
       "added": "2026-09-02",
@@ -1021,6 +1099,9 @@
       "tags": [
         "ui",
         "source"
+      ],
+      "needs": [
+        "quote"
       ],
       "renderer": "article_scroll",
       "last_used_in": [
@@ -1046,6 +1127,7 @@
         "ui",
         "typing"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0044",
@@ -1069,6 +1151,9 @@
       "tags": [
         "ui",
         "ai"
+      ],
+      "needs": [
+        "question"
       ],
       "renderer": "chat_thread",
       "last_used_in": [
@@ -1094,6 +1179,7 @@
         "ui",
         "typing"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0044",
@@ -1118,6 +1204,7 @@
         "ui",
         "code"
       ],
+      "needs": [],
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0044",
@@ -1142,6 +1229,7 @@
         "ui",
         "notification"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [
         "redshift_0043"
@@ -1164,6 +1252,9 @@
         "ui",
         "ai",
         "chat"
+      ],
+      "needs": [
+        "question"
       ],
       "renderer": "chat_thread",
       "last_used_in": [],
@@ -1189,6 +1280,9 @@
         "source",
         "highlight"
       ],
+      "needs": [
+        "quote"
+      ],
       "renderer": "article_scroll",
       "last_used_in": [],
       "added": "2026-09-02",
@@ -1208,6 +1302,7 @@
         "cut",
         "base"
       ],
+      "needs": [],
       "renderer": "cut",
       "last_used_in": [
         "redshift_0044"
@@ -1231,6 +1326,7 @@
         "dynamic",
         "pan"
       ],
+      "needs": [],
       "renderer": "whip_pan",
       "last_used_in": [
         "redshift_0042",
@@ -1258,6 +1354,7 @@
         "dynamic",
         "pan"
       ],
+      "needs": [],
       "renderer": "whip_pan",
       "last_used_in": [
         "redshift_0042",
@@ -1284,6 +1381,7 @@
         "dynamic",
         "zoom"
       ],
+      "needs": [],
       "renderer": "zoom_punch",
       "last_used_in": [
         "redshift_0042",
@@ -1310,6 +1408,7 @@
         "dynamic",
         "zoom"
       ],
+      "needs": [],
       "renderer": "zoom_punch",
       "last_used_in": [
         "redshift_0042",
@@ -1336,6 +1435,7 @@
         "dynamic",
         "mask"
       ],
+      "needs": [],
       "renderer": "mask_wipe",
       "last_used_in": [
         "redshift_0042",
@@ -1362,6 +1462,7 @@
         "dynamic",
         "mask"
       ],
+      "needs": [],
       "renderer": "mask_wipe",
       "last_used_in": [
         "redshift_0042",
@@ -1386,6 +1487,7 @@
         "dynamic",
         "light"
       ],
+      "needs": [],
       "renderer": "light_sweep",
       "last_used_in": [
         "redshift_0042",
@@ -1411,6 +1513,7 @@
         "dynamic",
         "glitch"
       ],
+      "needs": [],
       "renderer": "glitch",
       "last_used_in": [
         "redshift_0042",
@@ -1437,6 +1540,7 @@
         "dynamic",
         "slide"
       ],
+      "needs": [],
       "renderer": "paper_slide",
       "last_used_in": [
         "redshift_0042",
@@ -1463,6 +1567,7 @@
         "dynamic",
         "blur"
       ],
+      "needs": [],
       "renderer": "blur_dip",
       "last_used_in": [
         "redshift_0042",
@@ -1489,6 +1594,7 @@
         "dynamic",
         "flash"
       ],
+      "needs": [],
       "renderer": "white_flash",
       "last_used_in": [
         "redshift_0042",
@@ -1515,8 +1621,11 @@
         "dynamic",
         "zoom"
       ],
+      "needs": [],
       "renderer": "zoom_through",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0047"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
@@ -1536,6 +1645,7 @@
         "avatar",
         "entry"
       ],
+      "needs": [],
       "renderer": "zoom_punch",
       "last_used_in": [
         "redshift_0042",
@@ -1564,6 +1674,7 @@
         "avatar",
         "entry"
       ],
+      "needs": [],
       "renderer": "paper_slide",
       "last_used_in": [
         "redshift_0042",
@@ -1591,6 +1702,7 @@
         "avatar",
         "entry"
       ],
+      "needs": [],
       "renderer": "mask_wipe",
       "last_used_in": [
         "redshift_0042",
@@ -1620,6 +1732,7 @@
         "entry",
         "split"
       ],
+      "needs": [],
       "renderer": "paper_slide",
       "last_used_in": [
         "redshift_0042",
@@ -1648,6 +1761,7 @@
         "entry",
         "flash"
       ],
+      "needs": [],
       "renderer": "white_flash",
       "last_used_in": [
         "redshift_0042",
@@ -1675,6 +1789,7 @@
         "avatar",
         "entry"
       ],
+      "needs": [],
       "renderer": "zoom_punch",
       "last_used_in": [
         "redshift_0042",
@@ -1705,6 +1820,7 @@
         "kenburns",
         "zoom"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1736,6 +1852,7 @@
         "kenburns",
         "zoom"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1766,6 +1883,7 @@
         "kenburns",
         "zoom"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1800,6 +1918,7 @@
         "kenburns",
         "pan"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1834,6 +1953,7 @@
         "kenburns",
         "pan"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1868,6 +1988,7 @@
         "kenburns",
         "pan"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1902,6 +2023,7 @@
         "kenburns",
         "pan"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1936,6 +2058,7 @@
         "kenburns",
         "drift"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -1970,6 +2093,7 @@
         "kenburns",
         "push"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -2001,6 +2125,7 @@
         "kenburns",
         "parallax"
       ],
+      "needs": [],
       "renderer": "kenburns",
       "last_used_in": [
         "redshift_0042",
@@ -2029,6 +2154,7 @@
         "parallax",
         "text"
       ],
+      "needs": [],
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2049,6 +2175,7 @@
       "tags": [
         "parallax"
       ],
+      "needs": [],
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2070,6 +2197,7 @@
         "parallax",
         "push"
       ],
+      "needs": [],
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2091,6 +2219,7 @@
         "parallax",
         "sweep"
       ],
+      "needs": [],
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2110,6 +2239,9 @@
       "tags": [
         "data",
         "bars"
+      ],
+      "needs": [
+        "number"
       ],
       "renderer": "dataviz",
       "last_used_in": [],
@@ -2131,6 +2263,9 @@
         "data",
         "line"
       ],
+      "needs": [
+        "number"
+      ],
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2149,6 +2284,9 @@
       },
       "tags": [
         "data",
+        "number"
+      ],
+      "needs": [
         "number"
       ],
       "renderer": "dataviz",
@@ -2171,6 +2309,9 @@
         "data",
         "donut"
       ],
+      "needs": [
+        "number"
+      ],
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2191,6 +2332,9 @@
         "data",
         "timeline"
       ],
+      "needs": [
+        "number"
+      ],
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2210,6 +2354,9 @@
       "tags": [
         "data",
         "compare"
+      ],
+      "needs": [
+        "number"
       ],
       "renderer": "dataviz",
       "last_used_in": [],
@@ -2232,6 +2379,9 @@
         "number",
         "card"
       ],
+      "needs": [
+        "number"
+      ],
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-02",
@@ -2253,6 +2403,7 @@
         "cta",
         "subscribe"
       ],
+      "needs": [],
       "renderer": "cta_button",
       "last_used_in": [
         "redshift_0042",
@@ -2280,6 +2431,7 @@
         "cta",
         "question"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2300,6 +2452,7 @@
         "cta",
         "loop"
       ],
+      "needs": [],
       "renderer": "footage",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2320,6 +2473,7 @@
         "cta",
         "teaser"
       ],
+      "needs": [],
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2340,6 +2494,7 @@
         "cta",
         "brand"
       ],
+      "needs": [],
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2366,8 +2521,11 @@
         "logo",
         "end-card"
       ],
+      "needs": [],
       "renderer": "logo_brand_close",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0047"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -2388,6 +2546,7 @@
         "alpha",
         "footage"
       ],
+      "needs": [],
       "renderer": "hero-plate",
       "last_used_in": [
         "redshift_0046"
@@ -2412,6 +2571,7 @@
         "alpha",
         "text"
       ],
+      "needs": [],
       "renderer": "hero-headline",
       "last_used_in": [
         "redshift_0046"
@@ -2437,6 +2597,7 @@
         "alpha",
         "text"
       ],
+      "needs": [],
       "renderer": "hero-headline",
       "last_used_in": [
         "redshift_0046"
@@ -2461,6 +2622,7 @@
         "alpha",
         "icons"
       ],
+      "needs": [],
       "renderer": "hero-icons",
       "last_used_in": [
         "redshift_0047"
@@ -2485,6 +2647,9 @@
         "avatar",
         "split",
         "text"
+      ],
+      "needs": [
+        "comparison"
       ],
       "renderer": "hero-split",
       "last_used_in": [
@@ -2511,6 +2676,10 @@
         "avatar",
         "text"
       ],
+      "needs": [
+        "superlative",
+        "negation"
+      ],
       "renderer": "hero-knockout",
       "last_used_in": [
         "redshift_0046"
@@ -2535,6 +2704,7 @@
         "text",
         "lines"
       ],
+      "needs": [],
       "renderer": "hero-text-column",
       "last_used_in": [
         "redshift_0046"
@@ -2559,6 +2729,7 @@
         "text",
         "lines"
       ],
+      "needs": [],
       "renderer": "hero-bubble-card",
       "last_used_in": [
         "redshift_0046",
@@ -2583,6 +2754,9 @@
         "avatar",
         "brand"
       ],
+      "needs": [
+        "brand"
+      ],
       "renderer": "hero-brand-pill",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2605,6 +2779,7 @@
         "text",
         "footage"
       ],
+      "needs": [],
       "renderer": "hero-card-stack",
       "last_used_in": [
         "redshift_0046"
@@ -2628,6 +2803,7 @@
         "lines",
         "ui"
       ],
+      "needs": [],
       "renderer": "hero-phone-mock",
       "last_used_in": [
         "redshift_0046",
@@ -2652,6 +2828,7 @@
         "lines",
         "stroke"
       ],
+      "needs": [],
       "renderer": "hero-script-stack",
       "last_used_in": [
         "redshift_0047"
@@ -2674,6 +2851,9 @@
         "text",
         "ui",
         "chat"
+      ],
+      "needs": [
+        "question"
       ],
       "renderer": "hero-chat-typing",
       "last_used_in": [
@@ -2702,6 +2882,7 @@
         "ai",
         "footage"
       ],
+      "needs": [],
       "renderer": "hero-chat-generate",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2722,6 +2903,7 @@
         "text",
         "behind"
       ],
+      "needs": [],
       "renderer": "hero-title-behind",
       "last_used_in": [
         "redshift_0047"
@@ -2745,6 +2927,9 @@
         "footage",
         "source"
       ],
+      "needs": [
+        "device"
+      ],
       "renderer": "hero-exhibit",
       "last_used_in": [
         "redshift_0047"
@@ -2766,6 +2951,11 @@
         "avatar",
         "text",
         "slam"
+      ],
+      "needs": [
+        "negation",
+        "superlative",
+        "discovery"
       ],
       "renderer": "hero-slam",
       "last_used_in": [],
@@ -2790,6 +2980,9 @@
         "lines",
         "sync"
       ],
+      "needs": [
+        "list"
+      ],
       "renderer": "hero-log",
       "last_used_in": [
         "redshift_0047"
@@ -2811,6 +3004,9 @@
         "avatar",
         "text",
         "slam"
+      ],
+      "needs": [
+        "superlative"
       ],
       "renderer": "hero-oversize",
       "last_used_in": [],
@@ -2834,6 +3030,9 @@
         "number",
         "data"
       ],
+      "needs": [
+        "number"
+      ],
       "renderer": "hero-figure",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2854,6 +3053,11 @@
         "text",
         "slam"
       ],
+      "needs": [
+        "negation",
+        "superlative",
+        "discovery"
+      ],
       "renderer": "hero-verdict",
       "last_used_in": [],
       "added": "2026-08-18"
@@ -2873,6 +3077,9 @@
         "avatar",
         "source",
         "ui"
+      ],
+      "needs": [
+        "quote"
       ],
       "renderer": "hero-paper",
       "last_used_in": [],
@@ -2895,6 +3102,7 @@
         "lines",
         "sync"
       ],
+      "needs": [],
       "renderer": "hero-bubble-typed",
       "last_used_in": [
         "redshift_0047"
@@ -2919,8 +3127,11 @@
         "text",
         "lines"
       ],
+      "needs": [],
       "renderer": "hero-type-slab",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0047"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
     },
@@ -2943,8 +3154,11 @@
         "avatar",
         "footage"
       ],
+      "needs": [],
       "renderer": "hero-plate-pop",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0047"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
     }

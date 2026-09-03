@@ -13,6 +13,7 @@
   "tags": [
     "person"
   ],
+  "needs": [],
   "renderer": "source_card",
   "last_used_in": [
     "redshift_0042",

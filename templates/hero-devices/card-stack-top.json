@@ -16,6 +16,7 @@
     "text",
     "footage"
   ],
+  "needs": [],
   "renderer": "hero-card-stack",
   "last_used_in": [
     "redshift_0046"

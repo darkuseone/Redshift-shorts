@@ -16,6 +16,9 @@
     "ui",
     "source"
   ],
+  "needs": [
+    "quote"
+  ],
   "renderer": "article_scroll",
   "last_used_in": [
     "redshift_0042",

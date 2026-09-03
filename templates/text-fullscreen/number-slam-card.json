@@ -17,6 +17,9 @@
     "impact",
     "card"
   ],
+  "needs": [
+    "number"
+  ],
   "renderer": "number_slam",
   "last_used_in": [],
   "added": "2026-09-02",

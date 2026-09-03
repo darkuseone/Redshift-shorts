@@ -35,6 +35,7 @@ from ..lib.backdrop import describe as scene_why
 from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
 from ..lib.glyphs import match_glyphs
+from ..lib.meaning import block_traits, explain, matched
 from ..lib.render.hyperframes.captions import pick_caption_style
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
@@ -738,7 +739,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  content: dict[str, Any], has_alpha: bool,
                  plate_src: dict[str, Any] | None,
                  recent_videos: list[str], exclude: list[str],
-                 seed: int) -> dict[str, Any] | None:
+                 seed: int, block: dict[str, Any] | None = None,
+                 ) -> dict[str, Any] | None:
     """Выбрать приём вокруг ведущего под конкретный кадр.
 
     Приём отбрасывается, если кадр не может его показать: без альфы всё, что
@@ -770,15 +772,24 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     if not [t for t in catalog.by_category("hero-devices") if t.id not in blocked]:
         return None
 
+    # Признаки известны только вместе с блоком. Без него отбор по смыслу не
+    # делается вовсе: молча выключить дюжину приёмов хуже, чем не отбирать.
+    traits = None if block is None else block_traits(str(block.get("text") or ""))
     template = catalog.pick("hero-devices", duration=float(slot["duration"]),
                             recent_videos=recent_videos, exclude=blocked,
-                            seed=seed + int(slot["index"]) * 7)
+                            seed=seed + int(slot["index"]) * 7, traits=traits)
     renderer = template.renderer
     params = hero_params(renderer, template.params, content, slot)
 
     entry: dict[str, Any] = {
         "template": template.id, "renderer": renderer, "params": params,
         "file": None, "duration": None,
+        # Почему именно этот приём здесь — словами, а не «роль блока».
+        "traits": sorted(traits or ()),
+        "grounded_on": sorted(matched(template.needs, traits or ())),
+        "why": (f"приём оправдан: {explain(matched(template.needs, traits or ()))}"
+                if matched(template.needs, traits or ())
+                else "приём без смысловых требований: держит кадр, не спорит с речью"),
         **hero_mutes_subtitle(renderer),
     }
     if plate_src and renderer == "hero-chat-generate":
@@ -1319,7 +1330,9 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             prefer = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
-                                prefer=prefer, seed=seed + 11)
+                                prefer=prefer, seed=seed + 11,
+                                traits=block_traits(
+                                    str(blocks.get(slot["block_id"], {}).get("text") or "")))
         used.append(template.id)
         name = template.name
         if name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
@@ -1407,11 +1420,15 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             if variant == "A" and re.search(r"\d", str(content)):
                 styles = ["text-fullscreen/number-slam-card",
                           "text-fullscreen/kinetic-stack"]
+            # Признаки блока, а не только фразы на экране: фраза короткая, а
+            # приём отвечает за весь смысл кадра.
+            fs_block = blocks_by_id.get(slot["block_id"], {})
+            fs_traits = block_traits(f"{fs_block.get('text', '')} {content}")
             template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
                                     recent_videos=recent_videos, exclude=used_templates,
                                     prefer=([preferred] if preferred else [])
                                     + [slot.get("template_hint", "")] + styles,
-                                    seed=seed)
+                                    seed=seed, traits=fs_traits)
             used_templates.append(template.id)
             content = slot.get("content", "")
             block = blocks_by_id.get(slot["block_id"], {})
@@ -1425,6 +1442,12 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "template": template.id,
                 "renderer": template.renderer,
                 "params": dict(template.params),
+                "traits": sorted(fs_traits),
+                "grounded_on": sorted(matched(template.needs, fs_traits)),
+                "why_template": (
+                    f"приём оправдан: {explain(matched(template.needs, fs_traits))}"
+                    if matched(template.needs, fs_traits)
+                    else "приём без смысловых требований"),
                 "invert": bool(template.params.get("invert")) or variant == "B",
                 "accent_word": _fullscreen_accent(content, block),
                 "file": prep["dst"] if prep is not None else None,
@@ -1508,7 +1531,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
-                    seed=seed)
+                    seed=seed, block=block)
                 if hero_entry:
                     used_templates.append(hero_entry["template"])
 

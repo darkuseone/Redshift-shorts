@@ -16,6 +16,7 @@
     "text",
     "lines"
   ],
+  "needs": [],
   "renderer": "hero-bubble-card",
   "last_used_in": [
     "redshift_0046",

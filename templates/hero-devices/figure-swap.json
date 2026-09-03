@@ -16,6 +16,9 @@
     "number",
     "data"
   ],
+  "needs": [
+    "number"
+  ],
   "renderer": "hero-figure",
   "last_used_in": [],
   "added": "2026-08-18"

@@ -15,6 +15,9 @@
     "footage",
     "source"
   ],
+  "needs": [
+    "device"
+  ],
   "renderer": "hero-exhibit",
   "last_used_in": [
     "redshift_0047"

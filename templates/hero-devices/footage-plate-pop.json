@@ -17,6 +17,7 @@
     "avatar",
     "footage"
   ],
+  "needs": [],
   "renderer": "hero-plate-pop",
   "last_used_in": [],
   "added": "2026-09-02",

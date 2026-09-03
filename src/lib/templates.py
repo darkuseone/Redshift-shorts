@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from ..errors import RedshiftError
+from .meaning import matched, satisfies
 from .jsonio import read_json, write_json
 from .logging import get_logger
 
@@ -36,6 +37,9 @@ class Template:
     params: dict[str, Any]
     tags: list[str]
     renderer: str
+    # Чем приём обязан быть оправдан: «хотя бы один из признаков блока»
+    # (см. src/lib/meaning.py). Пусто — приём смысла не несёт и годится везде.
+    needs: list[str] = field(default_factory=list)
     last_used_in: list[str] = field(default_factory=list)
     added: str = ""
     example_video: str = ""
@@ -50,7 +54,8 @@ class Template:
         data = {
             "id": self.id, "name": self.name, "category": self.category,
             "title": self.title, "duration_range": self.duration_range,
-            "params": self.params, "tags": self.tags, "renderer": self.renderer,
+            "params": self.params, "tags": self.tags, "needs": self.needs,
+            "renderer": self.renderer,
             "last_used_in": self.last_used_in, "added": self.added,
         }
         if self.example_video:
@@ -97,8 +102,23 @@ class TemplateCatalog:
     def pick(self, category: str, *, duration: float | None = None,
              recent_videos: Sequence[str] = (), exclude: Iterable[str] = (),
              prefer: Iterable[str] = (), seed: int = 0,
-             tags: Iterable[str] = ()) -> Template:
-        """Выбрать шаблон категории с учётом ротации §15.12."""
+             tags: Iterable[str] = (),
+             traits: Iterable[str] | None = None) -> Template:
+        """Выбрать шаблон категории: сперва смысл, потом ротация §15.12.
+
+        ``traits`` — признаки блока (src/lib/meaning.py). Приём, которому
+        нечем наполниться, из отбора выпадает: карточка числа без числа —
+        пустая рамка, окно переписки без вопроса — декорация. Если после
+        смыслового отсева не осталось ничего, берутся приёмы без требований;
+        и только если нет и таких — прежний отбор целиком, чтобы слот не
+        остался пустым.
+
+        ``None`` и пустое множество — разные вещи. ``None`` значит «признаки
+        неизвестны»: отбор по смыслу не делается вовсе. Пустое множество
+        значит «признаков нет», и тогда остаются ровно приёмы без требований.
+        Разница нужна, чтобы забытый аргумент не выключал молча дюжину
+        приёмов — он бы просто перестал их выбирать, и никто бы не заметил.
+        """
         pool = self.by_category(category)
         if not pool:
             raise RedshiftError(f"в каталоге нет категории {category}",
@@ -106,6 +126,7 @@ class TemplateCatalog:
 
         excluded = set(exclude)
         wanted_tags = {t for t in tags if t}
+        block_traits = None if traits is None else {str(t) for t in traits if t}
         candidates = [t for t in pool if t.id not in excluded]
         if duration is not None:
             fitting = [t for t in candidates if t.fits(duration)]
@@ -113,6 +134,11 @@ class TemplateCatalog:
         if wanted_tags:
             tagged = [t for t in candidates if wanted_tags & set(t.tags)]
             candidates = tagged or candidates
+        # Смысловой отсев. Считается и на пустом наборе: тогда остаются ровно
+        # приёмы без требований, и это правильный ответ.
+        if block_traits is not None:
+            meaningful = [t for t in candidates if satisfies(t.needs, block_traits)]
+            candidates = meaningful or [t for t in candidates if not t.needs] or candidates
         if not candidates:
             candidates = pool
 
@@ -122,15 +148,19 @@ class TemplateCatalog:
         def rank(template: Template) -> tuple:
             # 1. Явное пожелание сценария/edit-плана.
             explicit = 0 if template.id in preferred else 1
+            # 1.5. Приём, у которого есть основание в блоке, идёт впереди
+            # приёма безразличного: это и есть «по смыслу, а не по счётчику».
+            grounded = 0 if (template.needs and block_traits is not None
+                             and satisfies(template.needs, block_traits)) else 1
             # 2. Использованные в последних N роликах — в хвост (§15.12.1).
             used_recently = 1 if set(template.last_used_in[-ROTATION_WINDOW:]) & recent else 0
             # 3. Редко используемые получают приоритет (§15.12.3).
             usage = len(template.last_used_in)
-            return (explicit, used_recently, usage, template.id)
+            return (explicit, grounded, used_recently, usage, template.id)
 
         candidates.sort(key=rank)
-        best_rank = rank(candidates[0])[:3]
-        equals = [t for t in candidates if rank(t)[:3] == best_rank]
+        best_rank = rank(candidates[0])[:4]
+        equals = [t for t in candidates if rank(t)[:4] == best_rank]
         return random.Random(seed).choice(equals) if len(equals) > 1 else candidates[0]
 
     def mark_used(self, template_ids: Iterable[str], video_id: str) -> None:

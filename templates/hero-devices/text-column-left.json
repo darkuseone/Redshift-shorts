@@ -16,6 +16,7 @@
     "text",
     "lines"
   ],
+  "needs": [],
   "renderer": "hero-text-column",
   "last_used_in": [
     "redshift_0046"

@@ -18,6 +18,9 @@
     "kinetic",
     "particles"
   ],
+  "needs": [
+    "discovery"
+  ],
   "renderer": "particle_text_dissolve",
   "last_used_in": [],
   "added": "2026-09-02"

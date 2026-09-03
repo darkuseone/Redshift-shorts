@@ -19,6 +19,7 @@
     "kinetic",
     "blur"
   ],
+  "needs": [],
   "renderer": "per_word_crossfade",
   "last_used_in": [],
   "added": "2026-09-02"

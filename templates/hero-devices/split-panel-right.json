@@ -17,6 +17,9 @@
     "split",
     "text"
   ],
+  "needs": [
+    "comparison"
+  ],
   "renderer": "hero-split",
   "last_used_in": [
     "redshift_0046",

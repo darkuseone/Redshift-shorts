@@ -15,6 +15,9 @@
     "text",
     "kinetic"
   ],
+  "needs": [
+    "list"
+  ],
   "renderer": "kinetic_stack",
   "last_used_in": [],
   "added": "2026-09-02",

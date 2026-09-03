@@ -17,6 +17,9 @@
     "source",
     "highlight"
   ],
+  "needs": [
+    "quote"
+  ],
   "renderer": "article_scroll",
   "last_used_in": [],
   "added": "2026-09-02",

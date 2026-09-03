@@ -16,6 +16,7 @@
     "text",
     "lines"
   ],
+  "needs": [],
   "renderer": "hero-type-slab",
   "last_used_in": [],
   "added": "2026-09-02",

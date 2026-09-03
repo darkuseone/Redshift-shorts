@@ -15,6 +15,7 @@
     "lines",
     "stroke"
   ],
+  "needs": [],
   "renderer": "hero-script-stack",
   "last_used_in": [
     "redshift_0047"

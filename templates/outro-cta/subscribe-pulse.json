@@ -14,6 +14,7 @@
     "cta",
     "subscribe"
   ],
+  "needs": [],
   "renderer": "cta_button",
   "last_used_in": [
     "redshift_0042",

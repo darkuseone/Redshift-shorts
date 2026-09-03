@@ -19,6 +19,7 @@
     "kinetic",
     "letters"
   ],
+  "needs": [],
   "renderer": "bottom_up_letters",
   "last_used_in": [],
   "added": "2026-09-02"

@@ -12,6 +12,7 @@
     "cut",
     "base"
   ],
+  "needs": [],
   "renderer": "cut",
   "last_used_in": [
     "redshift_0044"

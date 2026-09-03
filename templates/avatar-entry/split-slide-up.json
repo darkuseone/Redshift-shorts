@@ -16,6 +16,7 @@
     "entry",
     "split"
   ],
+  "needs": [],
   "renderer": "paper_slide",
   "last_used_in": [
     "redshift_0042",

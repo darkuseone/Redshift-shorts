@@ -14,6 +14,7 @@
   "tags": [
     "note"
   ],
+  "needs": [],
   "renderer": "plaque",
   "last_used_in": [
     "redshift_0042",

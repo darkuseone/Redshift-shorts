@@ -14,6 +14,9 @@
     "data",
     "line"
   ],
+  "needs": [
+    "number"
+  ],
   "renderer": "dataviz",
   "last_used_in": [],
   "added": "2026-08-18"

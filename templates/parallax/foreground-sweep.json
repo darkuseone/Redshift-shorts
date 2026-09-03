@@ -15,6 +15,7 @@
     "parallax",
     "sweep"
   ],
+  "needs": [],
   "renderer": "parallax",
   "last_used_in": [],
   "added": "2026-08-18"

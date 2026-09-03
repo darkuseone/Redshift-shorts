@@ -20,6 +20,7 @@
     "logo",
     "end-card"
   ],
+  "needs": [],
   "renderer": "logo_brand_close",
   "last_used_in": [],
   "added": "2026-09-02"
