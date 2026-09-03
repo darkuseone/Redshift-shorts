@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-129 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+130 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -21,7 +21,7 @@ from src.lib.render.hyperframes.templates import (
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
-    _atcd_times, _dp_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
+    _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
     _gw_times, _ll_times, _si_times, _td_times, _wp_times, _sr_frame_table,
 )
 
@@ -1898,6 +1898,94 @@ def test_dark_plus_keeps_theme_tokens():
     invert = re.search(
         r"\.fullscreen-text\.fs-dark-plus\.invert\{[^}]+\}", css).group(0)
     assert "#0a0a0a" in invert
+
+
+def test_beat_freeze_cut_ramps_then_freezes_without_webgl():
+    """Каталог твинит filter/visibility; здесь scale/x/y/opacity и 12 баров."""
+    piece = render_fullscreen(_fs_ctx(
+        content="", renderer="beat_freeze_cut", beat_freeze_cut=True,
+        duration=6.0))
+    node = piece.nodes[0]
+    assert "fs-beat-freeze-cut" in node
+    assert "bfc-card" in node and "bfc-bars" in node
+    assert node.count('class="bfc-bar"') == 12
+    assert "DROP" in node
+    assert "FREEZE" in node
+    assert "HARD" in node and "CUT" in node
+    assert "ON THE BEAT" in node
+    assert "MUSIC PROMO" in node
+    assert "position:absolute" not in node.split("bfc-stage", 1)[0]
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert "WebGL" not in body
+    assert "onUpdate" not in body
+    assert "visibility" not in body
+    assert "filter" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith("#shot-01-")
+    flagged = render_fullscreen(_fs_ctx(
+        content="", beat_freeze_cut=True, stagger_ms=55, duration=6.0))
+    assert "fs-beat-freeze-cut" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    labeled = render_fullscreen(_fs_ctx(
+        content="УДАР", renderer="beat_freeze_cut", duration=6.0))
+    assert "УДАР" in labeled.nodes[0]
+    assert "DROP" not in labeled.nodes[0]
+    times = _bfc_times(6.0)
+    assert abs(times["beat1"] - 0.7) < 1e-9
+    assert abs(times["freeze"] - 2.2) < 1e-9
+    assert abs(times["cut"] - 3.0) < 1e-9
+    assert times["hold"] + times["hold_dur"] <= 6.0 + 1e-6
+    short = _bfc_times(2.0)
+    assert short["hold"] + short["hold_dur"] <= 2.0 + 1e-6
+    assert short["freeze"] < times["freeze"]
+
+
+def test_beat_freeze_cut_keeps_channel_accent_not_catalog_mint():
+    from src.lib.config import load_config
+
+    piece = render_fullscreen(_fs_ctx(
+        content="", renderer="beat_freeze_cut", duration=6.0))
+    node = piece.nodes[0]
+    assert "#00E5C7" not in node and "#00e5c7" not in node
+    css = overlay_css(load_config().brandbook)
+    assert ".fs-beat-freeze-cut" in css
+    block = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
+    assert "#C8453D" in block
+    assert "#00E5C7" not in block and "#00e5c7" not in block
+    assert "#111214" in block
+    assert "#F7F5F3" in block
+    assert "#7A7D82" in block
+    assert "-apple-system" not in block
+    bar = re.search(r"\.bfc-bar\{[^}]+\}", css).group(0)
+    assert "#C8453D" in bar
+    assert "transform-origin:50% 100%" in bar
+    assert "transform:" not in bar.replace("transform-origin:50% 100%", "").replace(
+        "will-change:transform", "")
+    wave = re.search(r"\.bfc-wave-path\{[^}]+\}", css).group(0)
+    assert "stroke:#C8453D" in wave
+    eyebrow = re.search(r"\.bfc-eyebrow\{[^}]+\}", css).group(0)
+    assert "color:#C8453D" in eyebrow
+    pill = re.search(r"\.bfc-pill\{[^}]+\}", css).group(0)
+    assert "background:#C8453D" in pill
+    assert "color:#ffffff" in pill
+    stage = re.search(r"\.bfc-stage\{[^}]+\}", css).group(0)
+    assert "position:absolute" not in stage
+    invert = re.search(
+        r"\.fullscreen-text\.fs-beat-freeze-cut\.invert\{[^}]+\}", css).group(0)
+    assert "#111214" in invert
 
 
 def test_number_slam_splits_the_caption():

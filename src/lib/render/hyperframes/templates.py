@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-129 шаблонов каталога — это не 129 реализаций, а набор рендереров с параметрами.
+130 шаблонов каталога — это не 130 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -5954,6 +5954,283 @@ def fs_dark_plus(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_BFC_CATALOG_END = 5.55
+_BFC_PATTERN = (0.55, 1.15, 0.7, 1.35, 0.9, 1.4, 0.65, 1.1, 0.5, 1.25, 0.8, 1.45)
+_BFC_WAVE_FILL = (
+    "M0,160 C40,150 60,90 100,100 C140,110 160,40 200,55 C240,70 260,150 300,140 "
+    "C340,130 360,30 400,45 C440,60 460,130 500,120 C540,110 560,70 592,80 "
+    "L592,220 L0,220 Z")
+_BFC_WAVE_PATH = (
+    "M0,160 C40,150 60,90 100,100 C140,110 160,40 200,55 C240,70 260,150 300,140 "
+    "C340,130 360,30 400,45 C440,60 460,130 500,120 C540,110 560,70 592,80")
+
+
+def _bfc_n(value: float) -> str:
+    if abs(float(value)) < 1e-9:
+        return "0"
+    return _num(value)
+
+
+def _bfc_times(duration: float) -> dict[str, float]:
+    """Каталог на 6 с: beat 0.7, freeze 2.2, cut 3.0, hold 5.2."""
+    d = max(2.0, float(duration))
+    fit = 1.0
+    if _BFC_CATALOG_END > d - 0.04:
+        fit = (d - 0.04) / _BFC_CATALOG_END
+
+    def pack(value: float) -> float:
+        return round(value * fit, 4)
+
+    freeze = pack(2.2)
+    ramp = pack(1.35)
+    return {
+        "card_dur": pack(0.55),
+        "zoom0_dur": pack(0.69),
+        "intro_at": pack(0.12),
+        "intro_in": pack(0.28),
+        "intro_out_at": pack(0.52),
+        "intro_out": pack(0.18),
+        "bar_in_at": pack(0.12),
+        "bar_in_stagger": pack(0.02),
+        "bar_in_dur": pack(0.42),
+        "beat1": pack(0.70),
+        "crop1_dur": pack(0.22),
+        "zoom1_dur": pack(0.28),
+        "bar_beat_stagger": pack(0.01),
+        "bar_beat_dur": pack(0.16),
+        "ramp": ramp,
+        "ramp_dur": round(max(0.12, freeze - ramp), 4),
+        "freeze": freeze,
+        "flash_dur": pack(0.28),
+        "hit_in": pack(0.05),
+        "hit_out_at": pack(2.75),
+        "hit_out": pack(0.20),
+        "settle_at": pack(2.55),
+        "settle_dur": pack(0.35),
+        "cut": pack(3.0),
+        "smear_in": pack(0.12),
+        "switch": pack(3.14),
+        "zoom_rec": pack(0.18),
+        "smear_out_at": pack(3.16),
+        "smear_out": pack(0.16),
+        "bleft_dur": pack(0.40),
+        "bcard_dur": pack(0.38),
+        "bcard_stagger": pack(0.06),
+        "zoom_b_at": pack(3.33),
+        "zoom_b_dur": pack(1.17),
+        "beat3": pack(4.7),
+        "zoom3_dur": pack(0.14),
+        "bc_punch": pack(0.12),
+        "bc_back_at": pack(4.84),
+        "bc_back": pack(0.22),
+        "hold": pack(5.2),
+        "hold_dur": pack(0.35),
+        "bar_ramp_stagger": pack(0.01),
+        "bar_ramp_dur": pack(0.70),
+    }
+
+
+def _bfc_place(prev_end: float, want: float) -> float:
+    if want >= prev_end + 0.001:
+        return want
+    return round(prev_end + 0.001, 4)
+
+
+def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
+    """Music-promo: рамп → freeze DROP → hard-cut. Каталог твинит filter.
+
+    Здесь scale/x/y/opacity и статичный backdrop-filter. Твины на карточке,
+    кропе, барах и слоях freeze/cut, не на ``.clip``. Мята каталога ``#00E5C7``
+    спорит с каналом — акцент ``#C8453D``, сцена ``#111214``.
+    """
+    params = ctx.params
+    raw = str(params.get("content") or params.get("text") or "").strip()
+    line = raw.split("\n")[0].strip() if raw else ""
+    primary = line if 1 <= len(line) <= 16 else "DROP"
+    secondary = str(params.get("secondary") or "ON THE BEAT").strip() or "ON THE BEAT"
+    node_id = ctx.target
+    invert = " invert" if params.get("invert") else ""
+    t = _bfc_times(ctx.duration)
+    at = _enter_at(ctx)
+
+    def ft(sel: str, frm: str, too: str, dur: float, ease: str, start: float,
+           *, ir: bool = False) -> str:
+        flag = ",immediateRender:false" if ir else ""
+        return (
+            f'tl.fromTo("{sel}",{{{frm}}},{{{too},duration:{_bfc_n(dur)},'
+            f'ease:"{ease}"{flag}}},{_bfc_n(start)});')
+
+    zoom = f"#{node_id}-zoom"
+    crop = f"#{node_id}-crop"
+    card = f"#{node_id}-card"
+    shot_a = f"#{node_id}-a"
+    shot_b = f"#{node_id}-b"
+    intro = f"#{node_id}-intro"
+    hit = f"#{node_id}-hit"
+    flash = f"#{node_id}-flash"
+    outline = f"#{node_id}-outline"
+    contour = f"#{node_id}-contour"
+    badge = f"#{node_id}-badge"
+    smear = f"#{node_id}-smear"
+    blur = f"#{node_id}-blur"
+    bleft = f"#{node_id}-bleft"
+    tweens = [
+        ft(card, "scale:0.9,y:20", "scale:1,y:0", t["card_dur"], "power3.out", at),
+        ft(zoom, "scale:1", "scale:1.04", t["zoom0_dur"], "power1.out", at),
+        ft(intro, "opacity:0,y:-12", "opacity:1,y:0",
+           t["intro_in"], "power2.out", at + t["intro_at"]),
+        ft(intro, "opacity:1,y:0", "opacity:0,y:-8",
+           t["intro_out"], "power2.in", at + t["intro_out_at"], ir=True),
+    ]
+    zoom_end = at + t["zoom0_dur"]
+    z1_at = _bfc_place(zoom_end, at + t["beat1"])
+    tweens.append(ft(zoom, "scale:1.04", "scale:1.08",
+                     t["zoom1_dur"], "expo.out", z1_at, ir=True))
+    zoom_end = z1_at + t["zoom1_dur"]
+    tweens.append(ft(crop, "scale:1,x:0,y:0", "scale:1.18,x:-80,y:24",
+                     t["crop1_dur"], "power4.out", at + t["beat1"]))
+    crop_end = at + t["beat1"] + t["crop1_dur"]
+    ramp_at = _bfc_place(crop_end, at + t["ramp"])
+    z_ramp = _bfc_place(zoom_end, at + t["ramp"])
+    tweens.append(ft(crop, "scale:1.18,x:-80,y:24", "scale:1.28,x:28,y:-12",
+                     t["ramp_dur"], "power3.in", ramp_at, ir=True))
+    tweens.append(ft(zoom, "scale:1.08", "scale:1.12",
+                     t["ramp_dur"], "power2.in", z_ramp, ir=True))
+    zoom_end = z_ramp + t["ramp_dur"]
+    for i, peak in enumerate(_BFC_PATTERN):
+        bar = f"#{node_id}-bar{i}"
+        in_at = at + t["bar_in_at"] + i * t["bar_in_stagger"]
+        tweens.append(ft(bar, "scaleY:0.55", "scaleY:1",
+                         t["bar_in_dur"], "power2.out", in_at))
+        in_end = in_at + t["bar_in_dur"]
+        beat_at = _bfc_place(in_end, at + t["beat1"] + i * t["bar_beat_stagger"])
+        tweens.append(ft(bar, "scaleY:1", f"scaleY:{_bfc_n(peak)}",
+                         t["bar_beat_dur"], "power3.out", beat_at, ir=True))
+        beat_end = beat_at + t["bar_beat_dur"]
+        ramp_bar = _bfc_place(
+            beat_end, at + t["ramp"] + i * t["bar_ramp_stagger"])
+        tweens.append(ft(bar, f"scaleY:{_bfc_n(peak)}", "scaleY:1.55",
+                         t["bar_ramp_dur"], "power2.in", ramp_bar, ir=True))
+    freeze_at = at + t["freeze"]
+    tweens.extend([
+        ft(flash, "opacity:0.55", "opacity:0",
+           t["flash_dur"], "power2.out", freeze_at),
+        ft(outline, "opacity:0", "opacity:1",
+           t["hit_in"], "power4.out", freeze_at),
+        ft(contour, "opacity:0", "opacity:0.85",
+           t["hit_in"], "power4.out", freeze_at),
+        ft(badge, "opacity:0", "opacity:1",
+           t["hit_in"], "power4.out", freeze_at),
+        ft(hit, "opacity:0,scale:1.15", "opacity:1,scale:1",
+           t["hit_in"], "power4.out", freeze_at),
+        ft(hit, "opacity:1,scale:1", "opacity:0,scale:0.96",
+           t["hit_out"], "power2.in", at + t["hit_out_at"], ir=True),
+        ft(outline, "opacity:1", "opacity:0.75",
+           t["settle_dur"], "sine.out", at + t["settle_at"], ir=True),
+        ft(contour, "opacity:0.85", "opacity:0.75",
+           t["settle_dur"], "sine.out", at + t["settle_at"], ir=True),
+        ft(badge, "opacity:1", "opacity:0.75",
+           t["settle_dur"], "sine.out", at + t["settle_at"], ir=True),
+    ])
+    cut_at = at + t["cut"]
+    switch_at = at + t["switch"]
+    tweens.extend([
+        ft(smear, "opacity:0,scaleX:0.35,x:-280", "opacity:0.95,scaleX:1.6,x:120",
+           t["smear_in"], "power4.in", cut_at),
+        ft(blur, "opacity:0", "opacity:0.85",
+           t["smear_in"], "power3.in", cut_at),
+        ft(smear, "opacity:0.95,x:120", "opacity:0,x:360",
+           t["smear_out"], "power2.out", at + t["smear_out_at"], ir=True),
+        ft(blur, "opacity:0.85", "opacity:0",
+           t["zoom_rec"], "power3.out", switch_at, ir=True),
+        ft(shot_a, "opacity:1", "opacity:0", 0.001, "none", switch_at),
+        ft(shot_b, "opacity:0", "opacity:1", 0.001, "none", switch_at),
+        ft(outline, "opacity:0.75", "opacity:0", 0.001, "none", switch_at, ir=True),
+        ft(contour, "opacity:0.75", "opacity:0", 0.001, "none", switch_at, ir=True),
+        ft(badge, "opacity:0.75", "opacity:0", 0.001, "none", switch_at, ir=True),
+        ft(bleft, "opacity:0,x:-24", "opacity:1,x:0",
+           t["bleft_dur"], "power3.out", switch_at),
+    ])
+    for i in range(3):
+        card_at = switch_at + i * t["bcard_stagger"]
+        tweens.append(ft(f"#{node_id}-bc{i}", "opacity:0,x:24", "opacity:1,x:0",
+                         t["bcard_dur"], "power3.out", card_at))
+    rec_at = _bfc_place(zoom_end, switch_at)
+    tweens.append(ft(zoom, "scale:1.12", "scale:1",
+                     t["zoom_rec"], "power3.out", rec_at, ir=True))
+    zoom_end = rec_at + t["zoom_rec"]
+    zb_at = _bfc_place(zoom_end, at + t["zoom_b_at"])
+    tweens.append(ft(zoom, "scale:1", "scale:1.02",
+                     t["zoom_b_dur"], "sine.out", zb_at, ir=True))
+    zoom_end = zb_at + t["zoom_b_dur"]
+    z3_at = _bfc_place(zoom_end, at + t["beat3"])
+    tweens.append(ft(zoom, "scale:1.02", "scale:1.08",
+                     t["zoom3_dur"], "power4.out", z3_at, ir=True))
+    zoom_end = z3_at + t["zoom3_dur"]
+    hold_at = _bfc_place(zoom_end, at + t["hold"])
+    tweens.append(ft(zoom, "scale:1.08", "scale:1.03",
+                     t["hold_dur"], "power2.out", hold_at, ir=True))
+    bc1 = f"#{node_id}-bc1"
+    tweens.append(ft(bc1, "scale:1", "scale:1.04",
+                     t["bc_punch"], "power3.out", at + t["beat3"]))
+    tweens.append(ft(bc1, "scale:1.04", "scale:1",
+                     t["bc_back"], "power2.out", at + t["bc_back_at"], ir=True))
+    bars_html = "".join(
+        f'<span id="{node_id}-bar{i}" class="bfc-bar"></span>'
+        for i in range(12))
+    b_cards = (
+        ('Ramp', '1.35→2.2', False),
+        ('Freeze', '0.8s', True),
+        ('Cut', '3.00', False),
+    )
+    cards_html = "".join(
+        f'<span id="{node_id}-bc{i}" class="bfc-b-card">'
+        f'<span class="bfc-b-label">{_esc(label)}</span>'
+        f'<span class="bfc-b-value{" accent" if accent else ""}">'
+        f'{_esc(value)}</span></span>'
+        for i, (label, value, accent) in enumerate(b_cards))
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text '
+               f'fs-beat-freeze-cut{invert}" {_timing(ctx)}>'
+               f'<span class="bfc-stage">'
+               f'<span class="bfc-bg"></span><span class="bfc-grid"></span>'
+               f'<span id="{node_id}-zoom" class="bfc-zoom">'
+               f'<span id="{node_id}-a" class="bfc-shot-a">'
+               f'<span id="{node_id}-crop" class="bfc-crop">'
+               f'<span id="{node_id}-card" class="bfc-card">'
+               f'<span class="bfc-glow"></span>'
+               f'<span class="bfc-wave"><svg viewBox="0 0 592 220" '
+               f'preserveAspectRatio="none" aria-hidden="true">'
+               f'<path class="bfc-wave-fill" d="{_BFC_WAVE_FILL}"/>'
+               f'<path class="bfc-wave-path" d="{_BFC_WAVE_PATH}"/>'
+               f'</svg></span>'
+               f'<span class="bfc-bars">{bars_html}</span>'
+               f'<span class="bfc-meta"><span class="bfc-kicker">MUSIC PROMO</span>'
+               f'<span class="bfc-pill">LIVE</span></span>'
+               f'</span></span></span>'
+               f'<span id="{node_id}-b" class="bfc-shot-b">'
+               f'<span id="{node_id}-bleft" class="bfc-b-copy">'
+               f'<span class="bfc-eyebrow">Next shot</span>'
+               f'<span class="bfc-title"><span>HARD</span><span>CUT</span></span>'
+               f'<span class="bfc-accent-bar"></span>'
+               f'<span class="bfc-sub">Beat-locked freeze, then cut. '
+               f'Built for music-led promos and montages.</span></span>'
+               f'<span class="bfc-b-list">{cards_html}</span>'
+               f'</span></span>'
+               f'<span id="{node_id}-intro" class="bfc-intro">'
+               f'<span class="bfc-intro-label">{_esc(secondary)}</span></span>'
+               f'<span id="{node_id}-hit" class="bfc-hit">{_esc(primary)}</span>'
+               f'<span id="{node_id}-outline" class="bfc-outline"></span>'
+               f'<span id="{node_id}-flash" class="bfc-flash"></span>'
+               f'<span id="{node_id}-contour" class="bfc-contour"></span>'
+               f'<span id="{node_id}-badge" class="bfc-badge">FREEZE</span>'
+               f'<span id="{node_id}-smear" class="bfc-smear"></span>'
+               f'<span id="{node_id}-blur" class="bfc-blur"></span>'
+               f'<span class="bfc-vignette"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -5975,6 +6252,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "terminal_simulator": fs_terminal_simulator,
     "apple_terminal_clear_dark": fs_apple_terminal_clear_dark,
     "dark_plus": fs_dark_plus,
+    "beat_freeze_cut": fs_beat_freeze_cut,
     "number_slam": fs_number_slam,
 }
 
@@ -6021,6 +6299,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_apple_terminal_clear_dark(ctx)
     if params.get("dark_plus"):
         return fs_dark_plus(ctx)
+    if params.get("beat_freeze_cut"):
+        return fs_beat_freeze_cut(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -7112,6 +7392,124 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "align-items:center;padding:0 10px;margin-left:-10px;background:#16825D;"
         "color:#ffffff}"
         ".fullscreen-text .dp-stage svg{display:block}"
+        ".fullscreen-text.fs-beat-freeze-cut{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:flex;"
+        "align-items:stretch;justify-content:center;background:#111214;"
+        "color:#F7F5F3;font-family:Inter,system-ui,sans-serif;font-weight:700;"
+        "text-transform:none;letter-spacing:0}"
+        ".fullscreen-text.fs-beat-freeze-cut.invert{background:#111214;color:#F7F5F3}"
+        ".fullscreen-text .bfc-stage{position:relative;display:block;width:100%;"
+        "height:100%}"
+        ".fullscreen-text .bfc-bg{position:absolute;inset:0;background:"
+        "radial-gradient(ellipse 80% 60% at 50% 40%,rgba(200,69,61,0.07) 0%,"
+        "transparent 55%),radial-gradient(ellipse 50% 40% at 80% 80%,"
+        "rgba(255,255,255,0.03) 0%,transparent 50%),#111214}"
+        ".fullscreen-text .bfc-grid{position:absolute;inset:0;opacity:0.22;"
+        "background-image:linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),"
+        "linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px);"
+        "background-size:80px 80px;pointer-events:none}"
+        ".fullscreen-text .bfc-zoom{position:absolute;inset:0;display:block;"
+        "transform-origin:50% 50%;will-change:transform}"
+        ".fullscreen-text .bfc-shot-a,.fullscreen-text .bfc-shot-b,"
+        ".fullscreen-text .bfc-crop{position:absolute;inset:0;display:block;"
+        "overflow:hidden}"
+        ".fullscreen-text .bfc-crop{display:flex;align-items:center;"
+        "justify-content:center;transform-origin:50% 50%;will-change:transform}"
+        ".fullscreen-text .bfc-shot-b{opacity:0;display:flex;flex-direction:column;"
+        "justify-content:flex-start;padding:96px 48px 72px;will-change:opacity}"
+        ".fullscreen-text .bfc-card{position:relative;width:900px;height:1020px;"
+        "border-radius:32px;overflow:hidden;"
+        "background:linear-gradient(160deg,rgba(255,255,255,0.06) 0%,transparent 40%),"
+        "linear-gradient(180deg,#1a1c22 0%,#14181f 100%);"
+        "border:1px solid rgba(255,255,255,0.08);"
+        "box-shadow:0 40px 120px rgba(0,0,0,0.55),0 0 0 1px rgba(200,69,61,0.08),"
+        "inset 0 1px 0 rgba(255,255,255,0.06);will-change:transform,opacity}"
+        ".fullscreen-text .bfc-glow{position:absolute;left:50%;top:28%;width:380px;"
+        "height:380px;margin-left:-190px;margin-top:-190px;border-radius:50%;"
+        "background:radial-gradient(circle,rgba(200,69,61,0.28) 0%,transparent 68%);"
+        "pointer-events:none}"
+        ".fullscreen-text .bfc-wave{position:absolute;left:56px;right:56px;top:110px;"
+        "height:200px}"
+        ".fullscreen-text .bfc-wave svg{width:100%;height:100%;display:block}"
+        ".fullscreen-text .bfc-wave-path{fill:none;stroke:#C8453D;stroke-width:4;"
+        "stroke-linecap:round;stroke-linejoin:round}"
+        ".fullscreen-text .bfc-wave-fill{fill:#C8453D;opacity:0.12}"
+        ".fullscreen-text .bfc-bars{position:absolute;left:72px;right:72px;"
+        "bottom:150px;height:96px;display:flex;align-items:flex-end;gap:8px}"
+        ".fullscreen-text .bfc-bar{flex:1;height:40%;border-radius:6px 6px 2px 2px;"
+        "background:linear-gradient(180deg,#C8453D 0%,rgba(200,69,61,0.25) 100%);"
+        "transform-origin:50% 100%;will-change:transform}"
+        ".fullscreen-text .bfc-meta{position:absolute;left:56px;right:56px;"
+        "bottom:52px;display:flex;align-items:center;justify-content:space-between}"
+        ".fullscreen-text .bfc-kicker{font-size:16px;font-weight:600;"
+        "letter-spacing:0.18em;text-transform:uppercase;color:#7A7D82}"
+        ".fullscreen-text .bfc-pill{font-size:14px;font-weight:700;"
+        "letter-spacing:0.08em;text-transform:uppercase;color:#ffffff;"
+        "background:#C8453D;padding:8px 16px;border-radius:999px}"
+        ".fullscreen-text .bfc-b-copy{display:flex;flex-direction:column;gap:22px;"
+        "will-change:transform,opacity}"
+        ".fullscreen-text .bfc-eyebrow{font-size:18px;font-weight:700;"
+        "letter-spacing:0.22em;text-transform:uppercase;color:#C8453D}"
+        ".fullscreen-text .bfc-title{display:flex;flex-direction:column;"
+        "font-size:92px;font-weight:900;line-height:0.92;letter-spacing:-0.04em;"
+        "text-transform:uppercase;color:#F7F5F3}"
+        ".fullscreen-text .bfc-accent-bar{width:120px;height:6px;border-radius:999px;"
+        "background:#C8453D}"
+        ".fullscreen-text .bfc-sub{font-size:24px;font-weight:500;color:#7A7D82;"
+        "line-height:1.35;max-width:640px;text-transform:none}"
+        ".fullscreen-text .bfc-b-list{display:flex;flex-direction:column;gap:14px;"
+        "margin-top:36px}"
+        ".fullscreen-text .bfc-b-card{display:flex;align-items:center;"
+        "justify-content:space-between;gap:20px;padding:22px 26px;border-radius:20px;"
+        "background:linear-gradient(135deg,#1a1c22,#14181f);"
+        "border:1px solid rgba(255,255,255,0.08);"
+        "box-shadow:0 18px 48px rgba(0,0,0,0.35);will-change:transform,opacity}"
+        ".fullscreen-text .bfc-b-label{font-size:16px;font-weight:600;"
+        "letter-spacing:0.12em;text-transform:uppercase;color:#7A7D82}"
+        ".fullscreen-text .bfc-b-value{font-size:32px;font-weight:800;"
+        "letter-spacing:-0.03em;color:#F7F5F3;text-transform:none}"
+        ".fullscreen-text .bfc-b-value.accent{color:#C8453D}"
+        ".fullscreen-text .bfc-intro{position:absolute;left:0;right:0;top:72px;"
+        "display:flex;justify-content:center;pointer-events:none;z-index:20;"
+        "opacity:0;will-change:transform,opacity}"
+        ".fullscreen-text .bfc-intro-label{font-size:16px;font-weight:700;"
+        "letter-spacing:0.28em;text-transform:uppercase;color:#7A7D82;"
+        "padding:10px 18px;border:1px solid rgba(255,255,255,0.08);"
+        "border-radius:999px;background:rgba(17,18,20,0.55);"
+        "backdrop-filter:blur(8px)}"
+        ".fullscreen-text .bfc-hit{position:absolute;inset:0;display:flex;"
+        "align-items:center;justify-content:center;pointer-events:none;z-index:30;"
+        "opacity:0;font-size:120px;font-weight:900;letter-spacing:-0.04em;"
+        "text-transform:uppercase;color:#F7F5F3;"
+        "text-shadow:0 0 40px rgba(200,69,61,0.35),0 8px 40px rgba(0,0,0,0.55);"
+        "will-change:transform,opacity}"
+        ".fullscreen-text .bfc-outline{position:absolute;inset:48px;border:3px solid "
+        "#C8453D;border-radius:8px;box-shadow:0 0 0 1px rgba(200,69,61,0.25),"
+        "inset 0 0 0 1px rgba(200,69,61,0.15),0 0 48px rgba(200,69,61,0.2);"
+        "opacity:0;pointer-events:none;z-index:25;will-change:opacity}"
+        ".fullscreen-text .bfc-flash{position:absolute;inset:0;background:#ffffff;"
+        "opacity:0;mix-blend-mode:screen;pointer-events:none;z-index:26;"
+        "will-change:opacity}"
+        ".fullscreen-text .bfc-contour{position:absolute;inset:0;background:"
+        "linear-gradient(90deg,transparent 0%,rgba(200,69,61,0.08) 48%,"
+        "transparent 52%),radial-gradient(ellipse 40% 55% at 50% 48%,"
+        "transparent 40%,rgba(200,69,61,0.18) 100%);opacity:0;"
+        "mix-blend-mode:screen;pointer-events:none;z-index:25;will-change:opacity}"
+        ".fullscreen-text .bfc-badge{position:absolute;top:80px;right:48px;"
+        "font-size:15px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;"
+        "color:#ffffff;background:#C8453D;padding:10px 18px;border-radius:6px;"
+        "opacity:0;z-index:27;will-change:opacity}"
+        ".fullscreen-text .bfc-smear{position:absolute;inset:-8% -20%;"
+        "pointer-events:none;z-index:40;opacity:0;background:linear-gradient(90deg,"
+        "transparent 0%,rgba(200,69,61,0.12) 35%,rgba(255,255,255,0.55) 50%,"
+        "rgba(200,69,61,0.12) 65%,transparent 100%);filter:blur(18px);"
+        "transform-origin:50% 50%;will-change:transform,opacity}"
+        ".fullscreen-text .bfc-blur{position:absolute;inset:0;pointer-events:none;"
+        "z-index:39;opacity:0;backdrop-filter:blur(14px);"
+        "background:rgba(17,18,20,0.12);will-change:opacity}"
+        ".fullscreen-text .bfc-vignette{position:absolute;inset:0;pointer-events:none;"
+        "z-index:15;background:radial-gradient(ellipse 75% 70% at 50% 50%,"
+        "transparent 45%,rgba(0,0,0,0.55) 100%);opacity:0.85}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

@@ -1004,6 +1004,31 @@ def test_dark_plus_fullscreen_reaches_the_markup(plan, assets, brandbook):
     assert ".dp-wb" in css
 
 
+def test_beat_freeze_cut_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "DROP"
+    plan["shots"][1]["duration"] = 6.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 6.0
+    plan["shots"][1]["params"] = {"beat_freeze_cut": True}
+    plan["shots"][1]["renderer"] = "beat_freeze_cut"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-beat-freeze-cut" in out
+    assert "bfc-card" in out and "bfc-hit" in out
+    assert "DROP" in out and "FREEZE" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "visibility" not in tween_src
+    assert "filter" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    assert 'tl.fromTo("#shot-01",' not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#C8453D" in css
+    assert ".bfc-card" in css
+    assert ".bfc-bar" in css
+    bfc = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
+    assert "#00E5C7" not in bfc and "#00e5c7" not in bfc
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

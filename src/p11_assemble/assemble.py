@@ -536,6 +536,10 @@ _DIFFISH = re.compile(
     r"(?ms)(^\s*---\s*$)|(^\s*diff\s+--git\b)|"
     r"(^\s*-[^-\n].*$.*?^\s*\+[^+\n])",
 )
+_BEATISH = re.compile(
+    r"(drop|freeze|beat|hard\s*cut|on the beat|дроп|бит|замороз)",
+    re.I,
+)
 
 
 def _overlay_renderer(template: Template) -> str:
@@ -797,7 +801,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     hero_offset = seed % 2
     hero_eligible = 0
 
-    fullscreen_styles = (["text-fullscreen/kinetic-stack",
+    fullscreen_styles = (["text-fullscreen/beat-freeze-cut",
+                          "text-fullscreen/kinetic-stack",
                           "text-fullscreen/blur-out-up",
                           "text-fullscreen/bottom-up-letters",
                           "text-fullscreen/kinetic-type-swap",
@@ -854,6 +859,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             if variant == "A" and _SHELLISH.search(str(content)):
                 styles = ["text-fullscreen/apple-terminal-clear-dark",
                           "text-fullscreen/terminal-simulator"] + styles
+            if variant == "A" and _BEATISH.search(str(content)):
+                styles = ["text-fullscreen/beat-freeze-cut"] + styles
             template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
                                     recent_videos=recent_videos, exclude=used_templates,
                                     prefer=([preferred] if preferred else [])
