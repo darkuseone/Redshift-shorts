@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-164 шаблона каталога — это не 164 реализации, а набор рендереров с параметрами.
+165 шаблонов каталога — это не 165 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -5997,6 +5997,7 @@ def dv_world_map(ctx: "TemplateCtx") -> Piece:
 
 
 from .apple_money import amc_css, dv_apple_money_count  # noqa: E402
+from .north_korea import nkl_css, dv_north_korea_locked_down  # noqa: E402
 
 
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
@@ -6020,6 +6021,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "us-map-hex": dv_us_map_hex,
     "world-map": dv_world_map,
     "apple-money-count": dv_apple_money_count,
+    "north-korea-locked-down": dv_north_korea_locked_down,
 }
 
 
@@ -6504,6 +6506,7 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "font-weight:400;font-size:16px;color:#475569;text-align:right;"
         "opacity:0}"
         + amc_css()
+        + nkl_css()
     )
 
 

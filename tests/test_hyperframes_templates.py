@@ -26,6 +26,7 @@ from src.lib.render.hyperframes.templates import (
     SS_STROKE, text_width,
 )
 from src.lib.render.hyperframes.apple_money import _amc_times
+from src.lib.render.hyperframes.north_korea import _nkl_times
 
 # §7 контракта детерминизма: анимировать можно только это.
 ALLOWED_PROPS = {
@@ -303,6 +304,9 @@ def test_css_covers_every_layer_the_transitions_use():
         "end_value": 10000,
         "prefix": "$",
     }),
+    ("data-viz/north-korea-locked-down", {
+        "label": "LOCKED DOWN",
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -335,6 +339,7 @@ def test_dataviz_without_data_draws_nothing():
                          TemplateCtx(index=4, start=10.0, duration=3.0,
                                      target="ovl-04", track=6,
                                      params={"end_value": 0})) == Piece()
+    assert render_dataviz("data-viz/north-korea-locked-down", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -1613,7 +1618,63 @@ def test_apple_money_count_keeps_catalog_tokens():
     assert "#111315" in chart
     assert "#30d158" in flash and "#30d158" in hit
     assert "#ffd54f" in css
-    block = css.split(".amc-chart", 1)[1]
+    block = css.split(".amc-chart", 1)[1].split(".nkl-chart", 1)[0]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
+def test_north_korea_locked_down_bakes_mask_not_dash(ctx):
+    """Catalog tweens filter/strokeDashoffset; here scale/x/y and SVG-mask."""
+    piece = render_dataviz("data-viz/north-korea-locked-down", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=7.0, target=ctx.target,
+        track=6, params={"label": "LOCKED DOWN"}))
+    node = piece.nodes[0]
+    assert "nkl-chart" in node
+    assert "nkl-cam" in node and "nkl-ann" in node and "nkl-lab" in node
+    assert "LOCKED" in node and "DOWN" in node
+    assert "nkl-circ" in node and "nkl-wipe" in node
+    assert "nkl-nk" in node
+    assert node.count('class="nkl-land"') >= 3
+    assert "korea-map.png" not in node
+    assert "textContent" not in node
+    assert "strokeDashoffset" not in node
+    assert "clip-path" not in node
+    assert "filter:" not in "".join(piece.tweens)
+    assert "strokeDashoffset" not in "".join(piece.tweens)
+    assert "textContent" not in "".join(piece.tweens)
+    body = " ".join(piece.tweens)
+    assert "scaleX:1" in body and "scaleX:0" in body
+    assert "expo.inOut" in body
+    assert "back.out(2.1)" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#nkl-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _nkl_times(7.0)
+    assert abs(times["cam2_at"] - 3.18) < 1e-9
+    assert abs(times["circ_a_at"] - 3.24) < 1e-9
+    assert abs(times["label_at"] - 3.78) < 1e-9
+
+
+def test_north_korea_locked_down_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".nkl-chart" in css
+    assert ".nkl-circ-a" in css
+    assert ".nkl-nk" in css
+    chart = re.search(r"\.nkl-chart\{[^}]+\}", css).group(0)
+    circ = re.search(r"\.nkl-circ-a\{[^}]+\}", css).group(0)
+    lab = re.search(r"\.nkl-lab\{[^}]+\}", css).group(0)
+    assert "#eef3f4" in chart
+    assert "#151515" in chart
+    assert "#e21d2f" in circ
+    assert "#111111" in lab
+    assert "#ff3b30" in css
+    block = css.split(".nkl-chart", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
 

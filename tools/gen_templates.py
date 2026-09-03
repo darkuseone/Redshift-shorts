@@ -380,7 +380,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (20, [
+    "data-viz": (21, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -488,6 +488,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Счёт $0→$10 000, затем веер купюр и монет — apple-money-count",
          [2.0, 5.0], {"end_value": 10000, "prefix": "$"},
          ["data", "number", "money", "count"], "dataviz"),
+        ("north-korea-locked-down",
+         "Наезд на КНДР, красный scribble и LOCKED DOWN — north-korea-locked-down",
+         [2.0, 7.0], {"label": "LOCKED DOWN"},
+         ["data", "map", "korea", "lock"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

@@ -1466,6 +1466,13 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "выручк", "капитализац", "доллар"))):
             prefer = ["data-viz/apple-money-count"] + [
                 item for item in prefer if item != "data-viz/apple-money-count"]
+        if variant != "B" and any(key in blob for key in (
+                "north korea", "northkorea", "кндр", "северной коре",
+                "северная коре", "locked down", "изоляц", "санкци",
+                "пхеньян", "pyongyang", "закрыт")):
+            prefer = ["data-viz/north-korea-locked-down"] + [
+                item for item in prefer
+                if item != "data-viz/north-korea-locked-down"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -1559,6 +1566,9 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         elif name == "apple-money-count":
             val = float(nums[0]["value"]) if nums else 10000.0
             params = {"end_value": val, "prefix": "$"}
+        elif name == "north-korea-locked-down":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params = {"label": heading or "LOCKED DOWN"}
         elif name == "us-map-flow":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
             cities = [{

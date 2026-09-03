@@ -155,6 +155,11 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
         "template": "data-viz/apple-money-count", "renderer": "dataviz",
         "params": {"end_value": 10000, "prefix": "$"},
     })
+    overlays.append({
+        "type": "dataviz", "start": 14.0, "end": 21.0,
+        "template": "data-viz/north-korea-locked-down", "renderer": "dataviz",
+        "params": {"label": "LOCKED DOWN"},
+    })
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

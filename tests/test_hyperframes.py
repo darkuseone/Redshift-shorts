@@ -1706,6 +1706,31 @@ def test_world_map_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "jsdelivr" not in node
 
 
+def test_north_korea_locked_down_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 7.2,
+        "template": "data-viz/north-korea-locked-down",
+        "params": {"label": "LOCKED DOWN"},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "nkl-chart" in out
+    assert "nkl-cam" in out
+    assert "LOCKED" in out
+    node = next(line for line in out.splitlines() if "nkl-chart" in line)
+    assert "dv-bar" not in node
+    assert "amc-" not in node
+    assert "wmp-" not in node
+    assert "korea-map.png" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "strokeDashoffset" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "strokeDashoffset" not in tween_src
+    assert "filter:" not in tween_src
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,
