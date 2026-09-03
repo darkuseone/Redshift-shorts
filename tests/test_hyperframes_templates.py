@@ -27,6 +27,7 @@ from src.lib.render.hyperframes.templates import (
 )
 from src.lib.render.hyperframes.apple_money import _amc_times
 from src.lib.render.hyperframes.north_korea import _nkl_times
+from src.lib.render.hyperframes.nyc_paris import _npf_times
 
 # §7 контракта детерминизма: анимировать можно только это.
 ALLOWED_PROPS = {
@@ -307,6 +308,11 @@ def test_css_covers_every_layer_the_transitions_use():
     ("data-viz/north-korea-locked-down", {
         "label": "LOCKED DOWN",
     }),
+    ("data-viz/nyc-paris-flight", {
+        "origin": "New York", "dest": "Paris",
+        "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+        "km": "5,837",
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -340,6 +346,7 @@ def test_dataviz_without_data_draws_nothing():
                                      target="ovl-04", track=6,
                                      params={"end_value": 0})) == Piece()
     assert render_dataviz("data-viz/north-korea-locked-down", ctx) == Piece()
+    assert render_dataviz("data-viz/nyc-paris-flight", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -1674,7 +1681,62 @@ def test_north_korea_locked_down_keeps_catalog_tokens():
     assert "#e21d2f" in circ
     assert "#111111" in lab
     assert "#ff3b30" in css
-    block = css.split(".nkl-chart", 1)[1]
+    block = css.split(".nkl-chart", 1)[1].split(".npf-chart", 1)[0]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
+def test_nyc_paris_flight_bakes_path_not_offset(ctx):
+    """Catalog tweens offsetDistance/strokeDashoffset; here x/y and SVG-mask."""
+    piece = render_dataviz("data-viz/nyc-paris-flight", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=6.0, target=ctx.target,
+        track=6, params={
+            "origin": "New York", "dest": "Paris",
+            "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+            "km": "5,837",
+        }))
+    node = piece.nodes[0]
+    assert "npf-chart" in node
+    assert "npf-plane" in node and "npf-pin" in node and "npf-line" in node
+    assert "New York" in node and "Paris" in node
+    assert "ARRIVED" in node
+    assert "5,837" in node
+    assert "map-nyc-paris.png" not in node
+    assert "offsetDistance" not in node
+    assert "offset-path" not in node
+    assert "strokeDashoffset" not in node
+    assert "textContent" not in node
+    body = " ".join(piece.tweens)
+    assert "scaleX:1" in body and "scaleX:0" in body
+    assert "offsetDistance" not in body
+    assert "strokeDashoffset" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#npf-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _npf_times(6.0)
+    assert abs(times["fly_at"] - 1.17) < 1e-9
+    assert abs(times["white_at"] - 5.5) < 1e-9
+
+
+def test_nyc_paris_flight_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".npf-chart" in css
+    assert ".npf-plane" in css
+    assert ".npf-line" in css
+    chart = re.search(r"\.npf-chart\{[^}]+\}", css).group(0)
+    line = re.search(r"\.npf-line\{[^}]+\}", css).group(0)
+    badge = re.search(r"\.npf-badge\{[^}]+\}", css).group(0)
+    assert "#f5f5f7" in chart
+    assert "#1d1d1f" in chart
+    assert "#0071e3" in line
+    assert "#d70015" in badge
+    block = css.split(".npf-chart", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
 

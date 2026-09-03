@@ -11,10 +11,10 @@
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 21,
+    "data-viz": 22,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 165
+    "_total": 166
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -3309,6 +3309,32 @@
         "map",
         "korea",
         "lock"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/nyc-paris-flight",
+      "name": "nyc-paris-flight",
+      "category": "data-viz",
+      "title": "Самолёт Нью-Йорк→Париж, doodle посадки и ARRIVED — nyc-paris-flight",
+      "duration_range": [
+        2.0,
+        6.0
+      ],
+      "params": {
+        "origin": "New York",
+        "dest": "Paris",
+        "origin_code": "JFK / NYC",
+        "dest_code": "CDG / FR",
+        "km": "5,837"
+      },
+      "tags": [
+        "data",
+        "map",
+        "flight",
+        "travel"
       ],
       "renderer": "dataviz",
       "last_used_in": [],

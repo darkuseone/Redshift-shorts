@@ -1,0 +1,26 @@
+{
+  "id": "data-viz/nyc-paris-flight",
+  "name": "nyc-paris-flight",
+  "category": "data-viz",
+  "title": "Самолёт Нью-Йорк→Париж, doodle посадки и ARRIVED — nyc-paris-flight",
+  "duration_range": [
+    2.0,
+    6.0
+  ],
+  "params": {
+    "origin": "New York",
+    "dest": "Paris",
+    "origin_code": "JFK / NYC",
+    "dest_code": "CDG / FR",
+    "km": "5,837"
+  },
+  "tags": [
+    "data",
+    "map",
+    "flight",
+    "travel"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

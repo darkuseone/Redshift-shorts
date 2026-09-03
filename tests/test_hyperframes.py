@@ -1731,6 +1731,34 @@ def test_north_korea_locked_down_overlay_reaches_the_markup(plan, assets, brandb
     assert "filter:" not in tween_src
 
 
+def test_nyc_paris_flight_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 6.2,
+        "template": "data-viz/nyc-paris-flight",
+        "params": {
+            "origin": "New York", "dest": "Paris",
+            "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+            "km": "5,837",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "npf-chart" in out
+    assert "npf-plane" in out
+    assert "New York" in out and "Paris" in out
+    node = next(line for line in out.splitlines() if "npf-chart" in line)
+    assert "dv-bar" not in node
+    assert "umf-" not in node
+    assert "nkl-" not in node
+    assert "map-nyc-paris.png" not in node
+    assert "offsetDistance" not in node
+    assert "strokeDashoffset" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "offsetDistance" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

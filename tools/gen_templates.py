@@ -380,7 +380,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (21, [
+    "data-viz": (22, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -492,6 +492,13 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Наезд на КНДР, красный scribble и LOCKED DOWN — north-korea-locked-down",
          [2.0, 7.0], {"label": "LOCKED DOWN"},
          ["data", "map", "korea", "lock"], "dataviz"),
+        ("nyc-paris-flight",
+         "Самолёт Нью-Йорк→Париж, doodle посадки и ARRIVED — nyc-paris-flight",
+         [2.0, 6.0], {
+             "origin": "New York", "dest": "Paris",
+             "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+             "km": "5,837",
+         }, ["data", "map", "flight", "travel"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

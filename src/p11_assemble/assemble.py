@@ -1473,6 +1473,12 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             prefer = ["data-viz/north-korea-locked-down"] + [
                 item for item in prefer
                 if item != "data-viz/north-korea-locked-down"]
+        if variant != "B" and any(key in blob for key in (
+                "transatlantic", "jfk", "cdg", "new york to paris",
+                "нью-йорк", "нью йорк", "париж", "рейс ", "самолёт",
+                "самолет", "перелёт", "перелет", "flight to")):
+            prefer = ["data-viz/nyc-paris-flight"] + [
+                item for item in prefer if item != "data-viz/nyc-paris-flight"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -1569,6 +1575,12 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         elif name == "north-korea-locked-down":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
             params = {"label": heading or "LOCKED DOWN"}
+        elif name == "nyc-paris-flight":
+            params = {
+                "origin": "New York", "dest": "Paris",
+                "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+                "km": "5,837",
+            }
         elif name == "us-map-flow":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
             cities = [{
