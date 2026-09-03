@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 13,
+    "transitions": 14,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 122
+    "_total": 123
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1775,6 +1775,27 @@
       "last_used_in": [],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
+      "id": "transitions/cinematic-zoom",
+      "name": "cinematic-zoom",
+      "category": "transitions",
+      "title": "Cinematic zoom: radial blur и сдвиг каналов — cinematic-zoom",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {
+        "from_scale": 1.16
+      },
+      "tags": [
+        "dynamic",
+        "zoom",
+        "shader"
+      ],
+      "renderer": "cinematic_zoom",
+      "last_used_in": [],
+      "added": "2026-09-03"
     },
     {
       "id": "avatar-entry/hero-zoom-in",

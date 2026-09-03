@@ -319,6 +319,26 @@ def test_every_tween_target_exists_in_the_markup(plan, assets, brandbook):
         assert selector in ids, f"твин целится в несуществующий {selector}: {tween}"
 
 
+def test_cinematic_zoom_overlay_scales_the_incoming_shot(plan, assets, brandbook):
+    """Шейдер каталога не вендорится: оверлей + scale входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "cinematic_zoom", "duration": 0.4,
+        "params": {"from_scale": 1.16}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-cinematic-zoom" in out
+    assert "cz-from" in out and "cz-to" in out
+    assert "cz-r" in out and "cz-b" in out
+    tween = next(l for l in out.splitlines() if "scale:1.16" in l)
+    assert '"#shot-00"' in tween
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and ("tr-00" in l or "scale:1.16" in l)]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

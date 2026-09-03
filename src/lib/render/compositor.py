@@ -179,6 +179,43 @@ def _tr_white_flash(incoming, outgoing, progress, params, ctx):
     return Image.blend(incoming, white, clamp01(amount))
 
 
+def _zoom_crop(img: Image.Image, scale: float) -> Image.Image:
+    """Наезд: scale>1 вырезает центр. Как zoom_punch, без letterbox."""
+    rgb = img.convert("RGB")
+    w, h = rgb.size
+    scale = max(1.0, float(scale))
+    if abs(scale - 1.0) < 1e-3:
+        return rgb
+    win_w, win_h = w / scale, h / scale
+    box = ((w - win_w) / 2, (h - win_h) / 2, (w + win_w) / 2, (h + win_h) / 2)
+    return rgb.resize((w, h), Image.Resampling.BILINEAR, box=box)
+
+
+def _tr_cinematic_zoom(incoming, outgoing, progress, params, ctx):
+    """From зумит наружу, to — внутрь из tight, RGB-сдвиг по радиусу.
+
+    Каталог — WebGL 12 семплов. Здесь crop-zoom, mix и лёгкий blur к середине.
+    """
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    from_scale = float(params.get("from_scale", 1.16))
+    to_frame = _zoom_crop(incoming, from_scale + (1.0 - from_scale) * eased)
+    if outgoing is not None:
+        from_frame = _zoom_crop(outgoing, 1.0 + 0.14 * eased)
+        mixed = Image.blend(from_frame, to_frame, eased)
+    else:
+        mixed = to_frame
+    blur_amt = 8.0 * math.sin(math.pi * eased)
+    if blur_amt > 0.6:
+        mixed = mixed.filter(ImageFilter.GaussianBlur(blur_amt / 2.5))
+    fringe = 0.045 * math.sin(math.pi * eased)
+    if fringe > 0.004:
+        red = _zoom_crop(mixed, 1.0 + fringe * 1.06)
+        blue = _zoom_crop(mixed, 1.0 + fringe * 0.94)
+        mixed = Image.merge("RGB", (red.split()[0], mixed.split()[1], blue.split()[2]))
+    return mixed
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -205,6 +242,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "white_flash": _tr_white_flash,
     "light_sweep": _tr_light_sweep,
     "glitch": _tr_glitch,
+    "cinematic_zoom": _tr_cinematic_zoom,
 }
 
 

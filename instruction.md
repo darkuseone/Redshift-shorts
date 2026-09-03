@@ -213,3 +213,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Полноэкранный жест terminal-simulator: скелет строк и команда в терминале | каталог твинит CSS-var; здесь scaleX полосок и y терминала, #0f172a и #86efac как в каталоге |
 | 2026-09-03 | Полноэкранный жест apple-terminal-clear-dark: набор команды и вывод Terminal.app | каталог пишет textContent и innerHTML; здесь span-ы и opacity, Clear Dark #1a1a1a и #888888 как в каталоге |
 | 2026-09-03 | Полноэкранный жест dark-plus: VS Code workbench и посимвольный набор | каталог меряет DOM и rotateY; здесь заранее x/y и 2D rotation/x, цвета Dark+ как в каталоге |
+| 2026-09-03 | Переход cinematic-zoom: radial zoom-blur и сдвиг каналов | каталог — WebGL onUpdate; здесь scale входящего, вуали #3d348b/#f7b801 и chroma |

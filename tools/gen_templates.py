@@ -237,7 +237,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          [2.0, 4.5], {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source", "highlight"], "article_scroll", _EX_WEBSITE),
     ]),
-    "transitions": (13, [
+    "transitions": (14, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
         ("whip-pan-l", "Резкий пан влево", [0.16, 0.28], {"direction": -1, "blur": 24},
          ["dynamic", "pan"], "whip_pan"),
@@ -263,6 +263,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          ["dynamic", "flash"], "white_flash"),
         ("zoom-through", "Наезд в деталь на склейке — жест SpaceX", [0.18, 0.30],
          {"from_scale": 1.22}, ["dynamic", "zoom"], "zoom_through", _EX_SPACEX),
+        ("cinematic-zoom",
+         "Cinematic zoom: radial blur и сдвиг каналов — cinematic-zoom",
+         [0.22, 0.42], {"from_scale": 1.16},
+         ["dynamic", "zoom", "shader"], "cinematic_zoom"),
     ]),
     "avatar-entry": (6, [
         ("hero-zoom-in", "Вход зумом на аватар", [0.2, 0.4], {"from_scale": 1.18},

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-122 шаблонов каталога — это не 122 реализаций, а набор рендереров с параметрами.
+123 шаблонов каталога — это не 123 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -300,6 +300,92 @@ def tr_zoom_through(ctx: "TemplateCtx") -> Piece:
         target=ctx.target, track=ctx.track, params=merged))
 
 
+def _cz_times(duration: float) -> dict[str, float]:
+    """Окно cinematic-zoom: каталог держит 2 с шейдера внутри 4 с демо.
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Вуаль «to» вспыхивает
+    к середине и гаснет; join +1 мс, чтобы opacity не наложилась.
+    """
+    d = max(0.05, float(duration))
+    mid = d * 0.5
+    to_out_at = mid + 0.001
+    return {
+        "dur": max(0.001, d - 0.001),
+        "mid": mid,
+        "to_out_at": to_out_at,
+        "to_out": max(0.001, d - to_out_at - 0.001),
+    }
+
+
+def tr_cinematic_zoom(ctx: "TemplateCtx") -> Piece:
+    """Cinematic zoom: from зумит наружу, to — внутрь из tight, RGB-сдвиг.
+
+    Каталог рисует WebGL: 12 радиальных семплов, per-channel offset,
+    ``onUpdate`` на шейдер. Здесь входящий кадр садится с ``from_scale``,
+    индиго-вуаль уезжает наружу, золотая входит из tight, хроматические
+    кольца и статичный ``backdrop-filter``. Без canvas и без Three.js.
+    Цвета ``#3d348b`` / ``#f7b801`` — жест SCENE A/B каталога, не палитра
+    канала.
+    """
+    from_scale = float(ctx.params.get("from_scale", 1.16))
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _cz_times(d)
+    start = ctx.start
+    ghosts = []
+    tweens = [
+        f'tl.fromTo("#{ctx.target}",{{scale:{_num(from_scale)}}},'
+        f'{{scale:1,duration:{_num(d)},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-from",{{scale:1,opacity:0.55}},'
+        f'{{scale:1.14,opacity:0,duration:{_num(times["dur"])},'
+        f'ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{scale:1.12}},'
+        f'{{scale:1,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{opacity:0}},'
+        f'{{opacity:0.42,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-to",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-r",{{scale:0.92,opacity:0.5}},'
+        f'{{scale:1.18,opacity:0,duration:{_num(times["dur"])},'
+        f'ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-b",{{scale:0.96,opacity:0.45}},'
+        f'{{scale:1.12,opacity:0,duration:{_num(times["dur"])},'
+        f'ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-blur",{{opacity:0.85}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+    ]
+    for i in range(3):
+        g_from = 1.0 + i * 0.03
+        g_to = 1.10 + i * 0.05
+        g_op = 0.26 - i * 0.05
+        ghosts.append(f'<span id="{node_id}-g{i}" class="cz-ghost"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-g{i}",{{scale:{_num(g_from)},opacity:{_num(g_op)}}},'
+            f'{{scale:{_num(g_to)},opacity:0,duration:{_num(times["dur"])},'
+            f'ease:"power2.inOut"}},{_num(start)});')
+        tweens.append(
+            f'tl.set("#{node_id}-g{i}",{{opacity:0}},{_num(start + d)});')
+    tweens.extend([
+        f'tl.set("#{node_id}-from",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-to",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-r",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-blur",{{opacity:0}},{_num(start + d)});',
+    ])
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-cinematic-zoom" {_timing(ctx)}>'
+               f'<span class="cz-stage">'
+               f'<span id="{node_id}-blur" class="cz-blur"></span>'
+               f'<span id="{node_id}-from" class="cz-from"></span>'
+               f'<span id="{node_id}-to" class="cz-to"></span>'
+               f'{"".join(ghosts)}'
+               f'<span id="{node_id}-r" class="cz-r"></span>'
+               f'<span id="{node_id}-b" class="cz-b"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -446,6 +532,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "white_flash": tr_white_flash,
     "zoom_punch": tr_zoom_punch,
     "zoom_through": tr_zoom_through,
+    "cinematic_zoom": tr_cinematic_zoom,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -529,6 +616,27 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "overflow:hidden;pointer-events:none}"
         ".tr-glitch span{position:absolute;left:0;width:100%;display:block;"
         "background:var(--color-accent-soft);opacity:0}"
+        f".tr-cinematic-zoom{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-cinematic-zoom .cz-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-cinematic-zoom .cz-blur,.tr-cinematic-zoom .cz-from,"
+        ".tr-cinematic-zoom .cz-to,.tr-cinematic-zoom .cz-r,"
+        ".tr-cinematic-zoom .cz-b,.tr-cinematic-zoom .cz-ghost{"
+        "position:absolute;inset:0;display:block;opacity:0;"
+        "transform-origin:50% 50%}"
+        ".tr-cinematic-zoom .cz-blur{backdrop-filter:blur(16px)}"
+        ".tr-cinematic-zoom .cz-from{background:#3d348b;mix-blend-mode:overlay}"
+        ".tr-cinematic-zoom .cz-to{background:#f7b801;mix-blend-mode:overlay}"
+        ".tr-cinematic-zoom .cz-r{inset:-18%;border-radius:50%;"
+        "background:radial-gradient(circle,rgba(255,77,58,0.72) 0%,transparent 58%);"
+        "mix-blend-mode:screen}"
+        ".tr-cinematic-zoom .cz-b{inset:-14%;border-radius:50%;"
+        "background:radial-gradient(circle,rgba(61,198,255,0.65) 0%,transparent 58%);"
+        "mix-blend-mode:screen}"
+        ".tr-cinematic-zoom .cz-ghost{"
+        "background:radial-gradient(circle,rgba(255,255,255,0.22) 0%,transparent 70%);"
+        "mix-blend-mode:screen}"
     )
 
 

@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-122 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+123 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -21,7 +21,7 @@ from src.lib.render.hyperframes.templates import (
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
-    _atcd_times, _dp_times, _sr_frame_table,
+    _atcd_times, _dp_times, _cz_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -161,7 +161,7 @@ def test_css_covers_every_layer_the_transitions_use():
 
     css = transition_css(load_config().brandbook)
     for cls in (".tr-flash", ".tr-blur", ".tr-mask-circle", ".tr-mask-diagonal",
-                ".tr-sweep", ".tr-glitch"):
+                ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom"):
         assert cls in css, cls
 
 
@@ -1913,6 +1913,67 @@ def test_stack_lines_read_max_lines_param():
 def test_zoom_through_enters_from_a_stronger_scale(ctx):
     piece = render_transition("zoom_through", ctx)
     assert "scale:1.22" in piece.tweens[0]
+
+
+def test_cinematic_zoom_from_out_to_in_without_webgl(ctx):
+    """Каталог крутит шейдер в onUpdate; здесь scale/opacity и статичный blur."""
+    piece = render_transition("cinematic_zoom", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.16}}))
+    node = piece.nodes[0]
+    assert "tr-cinematic-zoom" in node
+    assert "cz-stage" in node
+    assert "cz-from" in node and "cz-to" in node
+    assert "cz-r" in node and "cz-b" in node
+    assert "cz-blur" in node
+    assert node.count("cz-ghost") == 3
+    assert "position:absolute" not in node.split("cz-stage", 1)[0]
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert f'scale:1.16' in body
+    assert f'"#{ctx.target}"' in body
+    assert "power2.inOut" in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "text:" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    times = _cz_times(ctx.duration)
+    assert times["mid"] + times["to_out"] < ctx.duration + 1e-9
+    assert times["to_out_at"] > times["mid"]
+    short = _cz_times(0.22)
+    assert short["to_out_at"] + short["to_out"] <= 0.22 + 1e-9
+
+
+def test_cinematic_zoom_keeps_catalog_indigo_and_gold():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-cinematic-zoom" in css
+    frm = re.search(r"\.tr-cinematic-zoom \.cz-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-cinematic-zoom \.cz-to\{[^}]+\}", css).group(0)
+    assert "#3d348b" in frm
+    assert "#f7b801" in too
+    assert "#C8453D" not in frm and "#C8453D" not in too
+    stage = re.search(r"\.tr-cinematic-zoom \.cz-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    # GSAP owns scale — no CSS transform on tweened layers
+    assert "transform:" not in stripped.split(".tr-cinematic-zoom", 1)[1]
+    assert "backdrop-filter:blur(16px)" in css
 
 
 OVERLAY_PARAMS = {
