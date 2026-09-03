@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-124 шаблонов каталога — это не 124 реализаций, а набор рендереров с параметрами.
+125 шаблонов каталога — это не 125 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -386,6 +386,84 @@ def tr_cinematic_zoom(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def _gw_times(duration: float) -> dict[str, float]:
+    """Окно gravitational-lens: каталог держит 2 с шейдера внутри 4 с демо."""
+    return _cz_times(duration)
+
+
+def tr_gravitational_lens(ctx: "TemplateCtx") -> Piece:
+    """Gravitational lens: from затягивает к центру, горизонт, chroma.
+
+    Каталог рисует WebGL ``onUpdate``: warp к колодцу, chromatic aberration,
+    event horizon. Здесь входящий кадр выходит из tight, фиолетовая вуаль
+    ``#10002b`` схлопывается к центру, магента ``#f20089`` выходит из well,
+    кольца и статичный ``backdrop-filter``. Без canvas. Цвета SCENE A/B
+    каталога — жест шейдера, не палитра канала.
+    """
+    from_scale = float(ctx.params.get("from_scale", 1.14))
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _gw_times(d)
+    start = ctx.start
+    ghosts = []
+    tweens = [
+        f'tl.fromTo("#{ctx.target}",{{scale:{_num(from_scale)}}},'
+        f'{{scale:1,duration:{_num(d)},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-from",{{scale:1,opacity:0.58}},'
+        f'{{scale:0.62,opacity:0,duration:{_num(times["dur"])},'
+        f'ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-well",{{scale:0.22,opacity:0.9}},'
+        f'{{scale:1.4,opacity:0,duration:{_num(times["dur"])},'
+        f'ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{scale:0.48}},'
+        f'{{scale:1,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{opacity:0}},'
+        f'{{opacity:0.48,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-to",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-r",{{scale:0.82,opacity:0.52}},'
+        f'{{scale:1.2,opacity:0,duration:{_num(times["dur"])},'
+        f'ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-b",{{scale:0.88,opacity:0.4}},'
+        f'{{scale:1.14,opacity:0,duration:{_num(times["dur"])},'
+        f'ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-blur",{{opacity:0.8}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+    ]
+    for i in range(3):
+        g_from = 1.18 + i * 0.08
+        g_to = 0.55 + i * 0.08
+        g_op = 0.28 - i * 0.06
+        ghosts.append(f'<span id="{node_id}-g{i}" class="gw-ghost"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-g{i}",{{scale:{_num(g_from)},opacity:{_num(g_op)}}},'
+            f'{{scale:{_num(g_to)},opacity:0,duration:{_num(times["dur"])},'
+            f'ease:"power2.inOut"}},{_num(start)});')
+        tweens.append(
+            f'tl.set("#{node_id}-g{i}",{{opacity:0}},{_num(start + d)});')
+    tweens.extend([
+        f'tl.set("#{node_id}-from",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-to",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-well",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-r",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-blur",{{opacity:0}},{_num(start + d)});',
+    ])
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-gravitational-lens" {_timing(ctx)}>'
+               f'<span class="gw-stage">'
+               f'<span id="{node_id}-blur" class="gw-blur"></span>'
+               f'<span id="{node_id}-from" class="gw-from"></span>'
+               f'<span id="{node_id}-to" class="gw-to"></span>'
+               f'<span id="{node_id}-well" class="gw-well"></span>'
+               f'{"".join(ghosts)}'
+               f'<span id="{node_id}-r" class="gw-r"></span>'
+               f'<span id="{node_id}-b" class="gw-b"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -650,6 +728,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "zoom_punch": tr_zoom_punch,
     "zoom_through": tr_zoom_through,
     "cinematic_zoom": tr_cinematic_zoom,
+    "gravitational_lens": tr_gravitational_lens,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -777,6 +856,31 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "mix-blend-mode:overlay}"
         ".tr-glitch-shader .gs-block{position:absolute;display:block;opacity:0;"
         "background:rgba(152,193,217,0.35);mix-blend-mode:screen}"
+        f".tr-gravitational-lens{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-gravitational-lens .gw-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-gravitational-lens .gw-blur,.tr-gravitational-lens .gw-from,"
+        ".tr-gravitational-lens .gw-to,.tr-gravitational-lens .gw-well,"
+        ".tr-gravitational-lens .gw-r,.tr-gravitational-lens .gw-b,"
+        ".tr-gravitational-lens .gw-ghost{"
+        "position:absolute;inset:0;display:block;opacity:0;"
+        "transform-origin:50% 50%}"
+        ".tr-gravitational-lens .gw-blur{backdrop-filter:blur(14px)}"
+        ".tr-gravitational-lens .gw-from{background:#10002b;mix-blend-mode:overlay}"
+        ".tr-gravitational-lens .gw-to{background:#f20089;mix-blend-mode:overlay}"
+        ".tr-gravitational-lens .gw-well{inset:-28%;border-radius:50%;"
+        "background:radial-gradient(circle,#000000 0%,transparent 62%);"
+        "mix-blend-mode:multiply}"
+        ".tr-gravitational-lens .gw-r{inset:-16%;border-radius:50%;"
+        "background:radial-gradient(circle,rgba(242,0,137,0.78) 0%,transparent 58%);"
+        "mix-blend-mode:screen}"
+        ".tr-gravitational-lens .gw-b{inset:-12%;border-radius:50%;"
+        "background:radial-gradient(circle,rgba(160,128,160,0.62) 0%,transparent 58%);"
+        "mix-blend-mode:screen}"
+        ".tr-gravitational-lens .gw-ghost{"
+        "background:radial-gradient(circle,rgba(242,0,137,0.2) 0%,transparent 70%);"
+        "mix-blend-mode:screen}"
     )
 
 

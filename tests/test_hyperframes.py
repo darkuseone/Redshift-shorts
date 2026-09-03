@@ -364,6 +364,28 @@ def test_cinematic_zoom_overlay_scales_the_incoming_shot(plan, assets, brandbook
         assert selector in ids, line
 
 
+def test_gravitational_lens_overlay_scales_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: оверлей + scale входящего из well."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "gravitational_lens", "duration": 0.4,
+        "params": {"from_scale": 1.14}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-gravitational-lens" in out
+    assert "gw-from" in out and "gw-to" in out
+    assert "gw-well" in out
+    assert "gw-r" in out and "gw-b" in out
+    tween = next(l for l in out.splitlines() if "scale:1.14" in l)
+    assert '"#shot-00"' in tween
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and ("tr-00" in l or "scale:1.14" in l)]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-124 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+125 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _sr_frame_table,
+    _gw_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -163,7 +163,7 @@ def test_css_covers_every_layer_the_transitions_use():
     css = transition_css(load_config().brandbook)
     for cls in (".tr-flash", ".tr-blur", ".tr-mask-circle", ".tr-mask-diagonal",
                 ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom",
-                ".tr-glitch-shader"):
+                ".tr-glitch-shader", ".tr-gravitational-lens"):
         assert cls in css, cls
 
 
@@ -2055,6 +2055,69 @@ def test_glitch_shader_keeps_catalog_slate_and_coral():
         params={"bars": 7}))
     assert "tr-glitch-shader" not in short.nodes[0]
     assert 'class="clip tr-glitch"' in short.nodes[0]
+
+
+def test_gravitational_lens_warps_in_without_webgl(ctx):
+    """Каталог крутит шейдер в onUpdate; здесь scale к центру и chroma."""
+    piece = render_transition("gravitational_lens", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.14}}))
+    node = piece.nodes[0]
+    assert "tr-gravitational-lens" in node
+    assert "gw-stage" in node
+    assert "gw-from" in node and "gw-to" in node
+    assert "gw-well" in node
+    assert "gw-r" in node and "gw-b" in node
+    assert "gw-blur" in node
+    assert node.count("gw-ghost") == 3
+    assert "position:absolute" not in node.split("gw-stage", 1)[0]
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.14" in body
+    assert f'"#{ctx.target}"' in body
+    assert "scale:0.62" in body
+    assert "power2.inOut" in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "text:" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    times = _gw_times(ctx.duration)
+    assert times["mid"] + times["to_out"] < ctx.duration + 1e-9
+    assert times["to_out_at"] > times["mid"]
+    short = _gw_times(0.22)
+    assert short["to_out_at"] + short["to_out"] <= 0.22 + 1e-9
+
+
+def test_gravitational_lens_keeps_catalog_magenta():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-gravitational-lens" in css
+    frm = re.search(r"\.tr-gravitational-lens \.gw-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-gravitational-lens \.gw-to\{[^}]+\}", css).group(0)
+    assert "#10002b" in frm
+    assert "#f20089" in too
+    assert "#C8453D" not in frm and "#C8453D" not in too
+    assert "#a080a0" in css or "160,128,160" in css
+    stage = re.search(r"\.tr-gravitational-lens \.gw-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".tr-gravitational-lens", 1)[1]
+    assert "backdrop-filter:blur(14px)" in css
 
 
 OVERLAY_PARAMS = {

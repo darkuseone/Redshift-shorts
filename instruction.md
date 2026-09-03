@@ -215,3 +215,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Полноэкранный жест dark-plus: VS Code workbench и посимвольный набор | каталог меряет DOM и rotateY; здесь заранее x/y и 2D rotation/x, цвета Dark+ как в каталоге |
 | 2026-09-03 | Переход cinematic-zoom: radial zoom-blur и сдвиг каналов | каталог — WebGL onUpdate; здесь scale входящего, вуали #3d348b/#f7b801 и chroma |
 | 2026-09-03 | Переход glitch: scan lines, scramble и chroma | каталог — WebGL onUpdate; здесь полосы/клетки, вуали #293241/#ee6c4d; glitch-short не трогаем |
+| 2026-09-03 | Переход gravitational-lens: колодец, горизонт и chroma | каталог — WebGL onUpdate; здесь scale к центру, вуали #10002b/#f20089 |

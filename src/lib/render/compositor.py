@@ -216,6 +216,46 @@ def _tr_cinematic_zoom(incoming, outgoing, progress, params, ctx):
     return mixed
 
 
+def _horizon_darken(img: Image.Image, amount: float) -> Image.Image:
+    """Затемнение к центру — event horizon без шейдера."""
+    if amount < 0.02:
+        return img.convert("RGB")
+    arr = np.asarray(img.convert("RGB")).astype(np.float32)
+    h, w = arr.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    cx, cy = w / 2.0, h / 2.0
+    dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+    maxd = math.hypot(cx, cy) or 1.0
+    falloff = np.clip(dist / (maxd * 0.38), 0.0, 1.0)
+    factor = 1.0 - amount * (1.0 - falloff)
+    arr *= factor[..., None]
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+
+
+def _tr_gravitational_lens(incoming, outgoing, progress, params, ctx):
+    """From затягивает к центру, to выходит из well, RGB-сдвиг.
+
+    Каталог — WebGL warp + horizon. Здесь crop-zoom, mix smoothstep и затемнение.
+    """
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    from_scale = float(params.get("from_scale", 1.14))
+    to_frame = _zoom_crop(incoming, from_scale + (1.0 - from_scale) * eased)
+    if outgoing is not None:
+        from_frame = _zoom_crop(outgoing, 1.0 + 0.32 * eased)
+        mix_t = 0.0 if eased < 0.3 else (1.0 if eased > 0.9 else (eased - 0.3) / 0.6)
+        mixed = Image.blend(from_frame, to_frame, mix_t)
+    else:
+        mixed = to_frame
+    mixed = _horizon_darken(mixed, 0.62 * math.sin(math.pi * eased))
+    fringe = 0.05 * math.sin(math.pi * eased)
+    if fringe > 0.004:
+        red = _zoom_crop(mixed, 1.0 + fringe * 1.08)
+        blue = _zoom_crop(mixed, 1.0 + fringe * 0.92)
+        mixed = Image.merge("RGB", (red.split()[0], mixed.split()[1], blue.split()[2]))
+    return mixed
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -268,6 +308,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "glitch": _tr_glitch,
     "glitch_shader": _tr_glitch_shader,
     "cinematic_zoom": _tr_cinematic_zoom,
+    "gravitational_lens": _tr_gravitational_lens,
 }
 
 
