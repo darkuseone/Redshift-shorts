@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-107 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+108 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -920,6 +920,73 @@ def test_particle_text_dissolve_direction_density_and_exit():
     assert "invert" in paper.nodes[0]
     empty = render_fullscreen(_fs_ctx(
         content="", renderer="particle_text_dissolve", duration=4.0))
+    assert empty.nodes == []
+
+
+def test_per_word_crossfade_rises_from_a_static_ghost():
+    """Каталог твинит CSS-var и filter. Здесь y/scale и призрак, HOLD без ухода."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД НА ОРБИТЕ", accent_word="ОРБИТЕ",
+        renderer="per_word_crossfade", word_crossfade=True,
+        drift="standard", blur="standard", tone="ink", exit="none",
+        duration=2.0))
+    node = piece.nodes[0]
+    assert "pwc-word" in node
+    assert node.count("pwc-word") == 4
+    assert node.count("pwc-ghost") == 4
+    assert "filter:blur(5px)" in node
+    assert " accent" in node
+    body = " ".join(piece.tweens)
+    assert "filter" not in body
+    assert "--hf-word" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    w0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w0"' in t][:1]
+    w1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w1"' in t][:1]
+    assert w0 and w1 and w1[0] - w0[0] == pytest.approx(0.055)
+    assert re.search(r"scale:0.92,y:[0-9.]+", body)
+    assert "y:-" not in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    flagged = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД", word_crossfade=True, duration=2.0))
+    assert "pwc-word" in flagged.nodes[0]
+
+
+def test_per_word_crossfade_drift_tone_and_exit():
+    close = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", drift="close",
+        duration=2.0))
+    far = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", drift="far",
+        duration=2.0))
+    cy = float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(close.tweens)).group(1))
+    fy = float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(far.tweens)).group(1))
+    assert fy > cy
+    heavy = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", blur="heavy",
+        duration=2.0))
+    assert "filter:blur(11px)" in heavy.nodes[0]
+    paper = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", tone="paper",
+        duration=2.0))
+    assert "invert" in paper.nodes[0]
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", exit="fade",
+        duration=2.0))
+    assert 'fromTo("#shot-01-inner",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", exit="up",
+        duration=2.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="per_word_crossfade", duration=2.0))
     assert empty.nodes == []
 
 

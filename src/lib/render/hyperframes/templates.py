@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-107 шаблонов каталога — это не 107 реализаций, а набор рендереров с параметрами.
+108 шаблонов каталога — это не 108 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1523,6 +1523,100 @@ def fs_blur_out_up(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Per-Word Crossfade: каталог твинит CSS-var и filter. Вход тот же, что у
+# blur-out-up, но без ухода: HOLD стоит. drift/blur — те же шкалы, что distance.
+_PWC_ENTER = 0.3
+_PWC_STAGGER = 0.055
+_PWC_SCALE_FROM = 0.92
+_PWC_EXIT_Y = 76
+
+
+def fs_per_word_crossfade(ctx: "TemplateCtx") -> Piece:
+    """Слова входят из лёгкого блюра с коротким подъёмом — per-word-crossfade.
+
+    Каталог тянет ``--hf-word-y`` / ``--hf-word-blur`` и ``filter``. Здесь ход
+    в px, призрак со статическим ``filter:blur()``, ``scale`` 0.92→1.
+    Inter / ``#18181b`` / зелёный ``--brand`` → Oswald, ``ink`` на ``bg_pure``,
+    одно слово ``accent``. Твины на словах, не на ``.clip``. HOLD без дрейфа.
+    """
+    content, accent, invert = _content_of(ctx)
+    if str(ctx.params.get("tone") or "").lower() == "paper":
+        invert = True
+    if not content:
+        return Piece()
+    node_id = ctx.target
+    words = content.split()
+    if not words:
+        return Piece()
+    size = _fs_size(ctx, content)
+    motion = dict(ctx.params)
+    motion["direction"] = "up"
+    motion["distance"] = str(motion.get("drift") or motion.get("distance") or "standard")
+    _ex, enter_y, blur_px = _bou_motion(motion, size)
+    stagger = float(ctx.params.get("stagger_ms") or _PWC_STAGGER * 1000) / 1000.0
+    at = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    n = len(words)
+    last_end = at + _PWC_ENTER + stagger * max(0, n - 1)
+    if n > 1 and last_end > end - 0.04:
+        stagger = max(0.02, (end - 0.04 - at - _PWC_ENTER) / (n - 1))
+    exit_mode = str(ctx.params.get("exit") or "none").lower()
+    if exit_mode not in ("none", "fade", "up"):
+        exit_mode = "none"
+    out = 0.0 if exit_mode == "none" else 0.28
+    out_at = end - out if out else end
+
+    cls = "clip fullscreen-text fs-pwc" + (" invert" if invert else "")
+    spans: list[str] = []
+    tweens: list[str] = []
+    accented = False
+    for i, word in enumerate(words):
+        marked = ""
+        if accent and not accented and accent.lower() in word.lower():
+            marked = " accent"
+            accented = True
+        wid = f"{node_id}-w{i}"
+        spans.append(
+            f'<span id="{wid}" class="pwc-word{marked}">'
+            f'<span id="{wid}-s" class="pwc-sharp">{_esc(word)}</span>'
+            f'<span id="{wid}-g" class="pwc-ghost" style="filter:blur({blur_px}px)">'
+            f'{_esc(word)}</span></span>'
+        )
+        word_at = at + stagger * i
+        tweens.append(
+            f'tl.fromTo("#{wid}",{{scale:{_num(_PWC_SCALE_FROM)},'
+            f'y:{_num(enter_y)}}},{{scale:1,y:0,duration:{_num(_PWC_ENTER)},'
+            f'ease:"power3.out"}},{_num(word_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{wid}-s",{{opacity:0}},{{opacity:1,'
+            f'duration:{_num(_PWC_ENTER)},ease:"power3.out",'
+            f'immediateRender:false}},{_num(word_at)});'
+        )
+        tweens.append(
+            f'tl.fromTo("#{wid}-g",{{opacity:0.85}},{{opacity:0,'
+            f'duration:{_num(_PWC_ENTER)},ease:"power3.out",'
+            f'immediateRender:false}},{_num(word_at)});'
+        )
+
+    if exit_mode == "fade" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-inner",{{opacity:1}},{{opacity:0,'
+            f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
+            f'{_num(out_at)});')
+    elif exit_mode == "up" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-inner",{{opacity:1,y:0}},'
+            f'{{opacity:0,y:{_num(-_PWC_EXIT_Y)},duration:{_num(out)},'
+            f'ease:"power2.in",immediateRender:false}},{_num(out_at)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<span id="{node_id}-inner" class="pwc-stack" '
+               f'style="font-size:{size}px">{"".join(spans)}</span></div>'],
+        tweens=tweens)
+
+
 _BUL_TRAVEL = {"close": 0.45, "standard": 0.85, "far": 1.5}
 _BUL_ENTER = 0.48
 _BUL_EASE = "back.out(1.7)"
@@ -2481,6 +2575,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "line_by_line_slide": fs_line_by_line_slide,
     "logo_brand_close": fs_logo_brand_close,
     "particle_text_dissolve": fs_particle_text_dissolve,
+    "per_word_crossfade": fs_per_word_crossfade,
     "number_slam": fs_number_slam,
 }
 
@@ -2503,6 +2598,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_logo_brand_close(ctx)
     if params.get("particle_dissolve"):
         return fs_particle_text_dissolve(ctx)
+    if params.get("word_crossfade"):
+        return fs_per_word_crossfade(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -2681,6 +2778,14 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .bou-sharp{position:relative;display:block}"
         ".fullscreen-text .bou-ghost{position:absolute;left:0;top:0;"
         "white-space:nowrap;pointer-events:none}"
+        ".fullscreen-text .pwc-stack{display:flex;flex-wrap:wrap;justify-content:center;"
+        "align-items:center;gap:0.21em 0.21em;max-width:100%;letter-spacing:-0.04em;"
+        "line-height:1}"
+        ".fullscreen-text .pwc-word{position:relative;display:inline-block;"
+        "will-change:transform}"
+        ".fullscreen-text .pwc-sharp{position:relative;display:block;opacity:0}"
+        ".fullscreen-text .pwc-ghost{position:absolute;left:0;top:0;"
+        "white-space:nowrap;pointer-events:none;opacity:0}"
         ".fullscreen-text .bul-stack{display:flex;flex-wrap:wrap;justify-content:center;"
         "align-items:center;gap:0.12em 0.22em;max-width:100%;letter-spacing:-0.02em;"
         "line-height:1}"

@@ -515,6 +515,25 @@ def test_particle_text_dissolve_fullscreen_has_no_canvas(plan, assets, brandbook
     assert ".ptd-dot" in css
 
 
+def test_per_word_crossfade_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД НА ОРБИТЕ"
+    plan["shots"][1]["accent_word"] = "ОРБИТЕ"
+    plan["shots"][1]["params"] = {
+        "word_crossfade": True, "drift": "standard", "blur": "standard",
+        "tone": "ink", "exit": "none",
+    }
+    plan["shots"][1]["renderer"] = "per_word_crossfade"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "pwc-ghost" in out
+    assert "filter:blur(5px)" in out
+    assert "--hf-word" not in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".pwc-stack" in css
+    assert ".pwc-ghost" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

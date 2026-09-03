@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 17,
+    "text-fullscreen": 18,
     "lower-thirds": 8,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 107
+    "_total": 108
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -561,6 +561,31 @@
         "particles"
       ],
       "renderer": "particle_text_dissolve",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/per-word-crossfade",
+      "name": "per-word-crossfade",
+      "category": "text-fullscreen",
+      "title": "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
+      "duration_range": [
+        0.8,
+        2.4
+      ],
+      "params": {
+        "word_crossfade": true,
+        "drift": "standard",
+        "blur": "standard",
+        "tone": "ink",
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "blur"
+      ],
+      "renderer": "per_word_crossfade",
       "last_used_in": [],
       "added": "2026-09-02"
     },

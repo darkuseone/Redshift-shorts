@@ -54,7 +54,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (17, [
+    "text-fullscreen": (18, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -100,6 +100,12 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"particle_dissolve": True, "direction": "in", "density": "med",
           "exit": "none"},
          ["text", "kinetic", "particles"], "particle_text_dissolve"),
+        ("per-word-crossfade",
+         "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
+         [0.8, 2.4],
+         {"word_crossfade": True, "drift": "standard", "blur": "standard",
+          "tone": "ink", "exit": "none"},
+         ["text", "kinetic", "blur"], "per_word_crossfade"),
         ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),
