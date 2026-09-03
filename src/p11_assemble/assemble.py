@@ -1479,6 +1479,11 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "самолет", "перелёт", "перелет", "flight to")):
             prefer = ["data-viz/nyc-paris-flight"] + [
                 item for item in prefer if item != "data-viz/nyc-paris-flight"]
+        if variant != "B" and any(key in blob for key in (
+                "goals reached", "progress track", "great job",
+                "целей достиг", "прогресс", "достигнут")):
+            prefer = ["data-viz/mk-progress-stat"] + [
+                item for item in prefer if item != "data-viz/mk-progress-stat"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -1580,6 +1585,16 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "origin": "New York", "dest": "Paris",
                 "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
                 "km": "5,837",
+            }
+        elif name == "mk-progress-stat":
+            val = float(nums[0]["value"]) if nums else 22.0
+            params = {
+                "value": int(round(val)),
+                "max": max(int(round(val * 1.4)), int(round(val)) + 1),
+                "suffix": str(nums[0].get("suffix") or "") if nums else "",
+                "label": str(blocks.get(slot["block_id"], {}).get("heading")
+                             or "Goals reached"),
+                "caption": "Great job, we are getting closer!",
             }
         elif name == "us-map-flow":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")

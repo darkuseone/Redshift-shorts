@@ -1759,6 +1759,28 @@ def test_nyc_paris_flight_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_mk_progress_stat_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 7.2,
+        "template": "data-viz/mk-progress-stat",
+        "params": {
+            "value": 22, "max": 30, "label": "Goals reached",
+            "caption": "Great job, we are getting closer!",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "mps-chart" in out
+    assert "Goals reached" in out
+    node = next(line for line in out.splitlines() if "mps-chart" in line)
+    assert "textContent" not in node
+    assert "amc-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "visibility" not in tween_src
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

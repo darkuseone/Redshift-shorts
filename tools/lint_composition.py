@@ -169,6 +169,14 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "km": "5,837",
         },
     })
+    overlays.append({
+        "type": "dataviz", "start": 29.0, "end": 36.0,
+        "template": "data-viz/mk-progress-stat", "renderer": "dataviz",
+        "params": {
+            "value": 22, "max": 30, "label": "Goals reached",
+            "caption": "Great job, we are getting closer!",
+        },
+    })
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

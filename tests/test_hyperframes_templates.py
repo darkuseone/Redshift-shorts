@@ -28,6 +28,7 @@ from src.lib.render.hyperframes.templates import (
 from src.lib.render.hyperframes.apple_money import _amc_times
 from src.lib.render.hyperframes.north_korea import _nkl_times
 from src.lib.render.hyperframes.nyc_paris import _npf_times
+from src.lib.render.hyperframes.mk_progress import _mps_times
 
 # §7 контракта детерминизма: анимировать можно только это.
 ALLOWED_PROPS = {
@@ -313,6 +314,10 @@ def test_css_covers_every_layer_the_transitions_use():
         "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
         "km": "5,837",
     }),
+    ("data-viz/mk-progress-stat", {
+        "value": 22, "max": 30, "label": "Goals reached",
+        "caption": "Great job, we are getting closer!",
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -347,6 +352,7 @@ def test_dataviz_without_data_draws_nothing():
                                      params={"end_value": 0})) == Piece()
     assert render_dataviz("data-viz/north-korea-locked-down", ctx) == Piece()
     assert render_dataviz("data-viz/nyc-paris-flight", ctx) == Piece()
+    assert render_dataviz("data-viz/mk-progress-stat", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -1736,7 +1742,52 @@ def test_nyc_paris_flight_keeps_catalog_tokens():
     assert "#1d1d1f" in chart
     assert "#0071e3" in line
     assert "#d70015" in badge
-    block = css.split(".npf-chart", 1)[1]
+    block = css.split(".npf-chart", 1)[1].split(".mps-chart", 1)[0]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
+def test_mk_progress_stat_bakes_spans_not_textcontent(ctx):
+    """Catalog writes textContent; here spans, track scaleX."""
+    piece = render_dataviz("data-viz/mk-progress-stat", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=7.0, target=ctx.target,
+        track=6, params={
+            "value": 22, "max": 30, "label": "Goals reached",
+            "caption": "Great job, we are getting closer!",
+        }))
+    node = piece.nodes[0]
+    assert "mps-chart" in node
+    assert "mps-fill" in node and "mps-num" in node
+    assert "Goals reached" in node
+    assert "22" in node
+    assert "textContent" not in node
+    assert "visibility" not in "".join(piece.tweens)
+    assert "textContent" not in "".join(piece.tweens)
+    body = " ".join(piece.tweens)
+    assert "scaleX:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#mps-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _mps_times(7.0)
+    assert abs(times["count_at"] - 0.5) < 1e-9
+
+
+def test_mk_progress_stat_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".mps-chart" in css
+    assert ".mps-fill" in css
+    chart = re.search(r"\.mps-chart\{[^}]+\}", css).group(0)
+    fill = re.search(r"\.mps-fill\{[^}]+\}", css).group(0)
+    assert "#f5f5f7" in chart
+    assert "#1d1d1f" in chart
+    assert "#0071e3" in fill
+    block = css.split(".mps-chart", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
 
