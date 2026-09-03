@@ -2773,9 +2773,13 @@ def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
         x0 = sx0 * _BCR_TRACK_W
         y_px = y0[j] * pitch
         color0 = _BCR_ACCENT if j == lead0 else _BCR_INK
-        tweens.append(
-            f'tl.set("#{rid}",{{y:{_num(y_px)},opacity:{_num(o0[j])}}},'
-            f'{_num(start)});')
+        if o0[j] >= 0.001:
+            tweens.append(
+                f'tl.set("#{rid}",{{y:{_num(y_px)},opacity:{_num(o0[j])}}},'
+                f'{_num(start)});')
+        else:
+            tweens.append(
+                f'tl.set("#{rid}",{{y:{_num(y_px)}}},{_num(start)});')
         tweens.append(
             f'tl.set("#{bid}",{{scaleX:{_num(sx0)},opacity:1,'
             f'backgroundColor:"{color0}"}},{_num(start)});')
@@ -2783,9 +2787,6 @@ def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
             f'tl.set("#{vid}",{{x:{_num(x0)}}},{_num(start)});')
         tweens.append(
             f'tl.set("#{vid}-p0",{{opacity:1}},{_num(start)});')
-        for p in range(1, t_count):
-            tweens.append(
-                f'tl.set("#{vid}-p{p}",{{opacity:0}},{_num(start)});')
 
     ticks_html: list[str] = []
     for k in range(_BCR_TICK_POOL):
@@ -2817,24 +2818,25 @@ def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
     tick0 = _tick_state(frames[0][5])
     for k in range(_BCR_TICK_POOL):
         tx, lx, vis = tick0[k]
-        tweens.append(
-            f'tl.set("#{node_id}-k{k}",{{x:{_num(tx)},opacity:{_num(vis)}}},'
-            f'{_num(start)});')
-        tweens.append(
-            f'tl.set("#{node_id}-l{k}",{{x:{_num(lx)},opacity:{_num(vis)}}},'
-            f'{_num(start)});')
+        if vis >= 0.5:
+            tweens.append(
+                f'tl.set("#{node_id}-k{k}",{{x:{_num(tx)},opacity:1}},'
+                f'{_num(start)});')
+            tweens.append(
+                f'tl.set("#{node_id}-l{k}",{{x:{_num(lx)},opacity:1}},'
+                f'{_num(start)});')
+        else:
+            tweens.append(
+                f'tl.set("#{node_id}-k{k}",{{x:{_num(tx)}}},{_num(start)});')
+            tweens.append(
+                f'tl.set("#{node_id}-l{k}",{{x:{_num(lx)}}},{_num(start)});')
         tweens.append(
             f'tl.set("#{node_id}-l{k}-p0",{{opacity:1}},{_num(start)});')
-        for p in range(1, t_count):
-            tweens.append(
-                f'tl.set("#{node_id}-l{k}-p{p}",{{opacity:0}},{_num(start)});')
 
     period_spans = []
     for p, label in enumerate(periods):
         period_spans.append(f'<span id="{node_id}-p{p}">{_esc(label)}</span>')
     tweens.append(f'tl.set("#{node_id}-p0",{{opacity:1}},{_num(start)});')
-    for p in range(1, t_count):
-        tweens.append(f'tl.set("#{node_id}-p{p}",{{opacity:0}},{_num(start)});')
 
     prev_lead = lead0
     prev_period = 0
@@ -2842,6 +2844,7 @@ def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
         t_at, vals, ys, ops, leader, scale_max = frames[m]
         t_prev, pvals, pys, pops, _plead, pscale = frames[m - 1]
         dur = max(0.001, t_at - t_prev)
+        play = dur if dur <= 0.001 else max(0.001, dur - 0.001)
         at = start + t_prev
         for j in range(n_series):
             rid, bid, vid = f"{node_id}-r{j}", f"{node_id}-b{j}", f"{node_id}-v{j}"
@@ -2850,15 +2853,15 @@ def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
             tweens.append(
                 f'tl.fromTo("#{rid}",{{y:{_num(pys[j] * pitch)},'
                 f'opacity:{_num(pops[j])}}},{{y:{_num(ys[j] * pitch)},'
-                f'opacity:{_num(ops[j])},duration:{_num(dur)},ease:"none",'
+                f'opacity:{_num(ops[j])},duration:{_num(play)},ease:"none",'
                 f'immediateRender:false}},{_num(at)});')
             tweens.append(
                 f'tl.fromTo("#{bid}",{{scaleX:{_num(sx_a)},opacity:1}},'
-                f'{{scaleX:{_num(sx_b)},opacity:1,duration:{_num(dur)},'
+                f'{{scaleX:{_num(sx_b)},opacity:1,duration:{_num(play)},'
                 f'ease:"none",immediateRender:false}},{_num(at)});')
             tweens.append(
                 f'tl.fromTo("#{vid}",{{x:{_num(sx_a * _BCR_TRACK_W)}}},'
-                f'{{x:{_num(sx_b * _BCR_TRACK_W)},duration:{_num(dur)},'
+                f'{{x:{_num(sx_b * _BCR_TRACK_W)},duration:{_num(play)},'
                 f'ease:"none",immediateRender:false}},{_num(at)});')
         ticks_a = _tick_state(pscale)
         ticks_b = _tick_state(scale_max)
@@ -2867,11 +2870,11 @@ def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
             bx, blx, bv = ticks_b[k]
             tweens.append(
                 f'tl.fromTo("#{node_id}-k{k}",{{x:{_num(ax)},opacity:{_num(av)}}},'
-                f'{{x:{_num(bx)},opacity:{_num(bv)},duration:{_num(dur)},'
+                f'{{x:{_num(bx)},opacity:{_num(bv)},duration:{_num(play)},'
                 f'ease:"none",immediateRender:false}},{_num(at)});')
             tweens.append(
                 f'tl.fromTo("#{node_id}-l{k}",{{x:{_num(alx)},opacity:{_num(av)}}},'
-                f'{{x:{_num(blx)},opacity:{_num(bv)},duration:{_num(dur)},'
+                f'{{x:{_num(blx)},opacity:{_num(bv)},duration:{_num(play)},'
                 f'ease:"none",immediateRender:false}},{_num(at)});')
         catalog_t = m * kf_dur
         period_i = int(_bcr_clamp(math.floor(catalog_t / _BCR_PERIOD_SEC), 0, t_count - 1))
@@ -3056,7 +3059,7 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "white-space:nowrap}"
         f".bcr-plot{{position:absolute;left:0;top:{_BCR_PLOT_TOP}px;"
         f"width:{canvas_w}px;height:{_BCR_PLOT_H}px;overflow:hidden}}"
-        f".bcr-row{{position:absolute;left:0;top:0;width:{canvas_w}px}}"
+        f".bcr-row{{position:absolute;left:0;top:0;width:{canvas_w}px;opacity:0}}"
         ".bcr-name{position:absolute;left:32px;width:204px;top:0;height:100%;"
         "display:flex;align-items:center;justify-content:flex-end;"
         "text-align:right;font-size:20px;font-weight:600;line-height:1.2;"
@@ -3072,11 +3075,11 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "background-color:#f5f3ef}"
         ".bcr-axis{position:absolute;inset:0;z-index:5000;pointer-events:none}"
         f".bcr-tick-line{{position:absolute;top:{_BCR_PLOT_TOP}px;left:0;width:1px;"
-        f"height:{_BCR_PLOT_H}px;background-color:rgba(31,29,27,0.11)}}"
+        f"height:{_BCR_PLOT_H}px;background-color:rgba(31,29,27,0.11);opacity:0}}"
         ".bcr-tick-line.bcr-tick-zero{background-color:rgba(31,29,27,0.5)}"
         f".bcr-tick-label{{position:absolute;top:{_BCR_PLOT_TOP - 32}px;left:0;"
         f"width:{_BCR_TICK_LABEL_W}px;font-size:15px;font-weight:500;"
-        "font-variant-numeric:tabular-nums;color:#6b6560}"
+        "font-variant-numeric:tabular-nums;color:#6b6560;opacity:0}"
         f".bcr-tick-label span{{position:absolute;left:0;top:0;width:{_BCR_TICK_LABEL_W}px;"
         "text-align:center;opacity:0;white-space:nowrap}"
         ".bcr-source{position:absolute;left:48px;top:1748px;margin:0;"
