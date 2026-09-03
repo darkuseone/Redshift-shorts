@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-127 шаблонов каталога — это не 127 реализаций, а набор рендереров с параметрами.
+128 шаблонов каталога — это не 128 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -614,6 +614,93 @@ def tr_sdf_iris(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def _td_times(duration: float) -> dict[str, float]:
+    """Окно thermal-distortion: каталог держит 2 с шейдера внутри 4 с демо."""
+    return _cz_times(duration)
+
+
+def tr_thermal_distortion(ctx: "TemplateCtx") -> Piece:
+    """Thermal distortion: heat shimmer снизу вверх и тёплый haze.
+
+    Каталог рисует WebGL ``onUpdate``: FBM displacement, sine, haze.
+    Здесь вуали ``#3d405b``/``#e07a5f``, пятно снизу и полосы, ``y`` вверх.
+    Без canvas. Цвета SCENE A/B каталога — жест шейдера, не палитра канала.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _td_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-from",{{opacity:0.5}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{opacity:0}},'
+        f'{{opacity:0.4,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-to",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-mist",{{opacity:0.22}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-blur",{{opacity:0.7}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-haze",{{scale:0.42}},'
+        f'{{scale:1.28,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-haze",{{opacity:0.2}},'
+        f'{{opacity:0.82,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-haze",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-hot",{{scale:0.28}},'
+        f'{{scale:1.08,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-hot",{{opacity:0.16}},'
+        f'{{opacity:0.7,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-hot",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+    ]
+    bands = []
+    for i in range(5):
+        x0 = (32 - i * 6) * (1 if i % 2 else -1)
+        x1 = -x0
+        rise = -220 - i * 28
+        op = 0.64 - i * 0.08
+        bands.append(
+            f'<span id="{node_id}-b{i}" class="td-band td-b{i}"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-b{i}",{{y:0,x:{x0}}},'
+            f'{{y:{rise},x:{x1},duration:{_num(times["dur"])},'
+            f'ease:"power2.inOut"}},{_num(start)});')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-b{i}",{{opacity:0}},'
+            f'{{opacity:{_num(op)},duration:{_num(times["mid"])},'
+            f'ease:"power2.out"}},{_num(start)});')
+        tweens.append(
+            f'tl.to("#{node_id}-b{i}",{{opacity:0,duration:{_num(times["to_out"])},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(start + times["to_out_at"])});')
+        tweens.append(
+            f'tl.set("#{node_id}-b{i}",{{opacity:0}},{_num(start + d)});')
+    tweens.extend([
+        f'tl.set("#{node_id}-from",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-to",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-mist",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-blur",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-haze",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-hot",{{opacity:0}},{_num(start + d)});',
+    ])
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-thermal-distortion" {_timing(ctx)}>'
+               f'<span class="td-stage">'
+               f'<span id="{node_id}-blur" class="td-blur"></span>'
+               f'<span id="{node_id}-from" class="td-from"></span>'
+               f'<span id="{node_id}-to" class="td-to"></span>'
+               f'<span id="{node_id}-mist" class="td-mist"></span>'
+               f'<span id="{node_id}-haze" class="td-haze"></span>'
+               f'<span id="{node_id}-hot" class="td-hot"></span>'
+               f'{"".join(bands)}'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -881,6 +968,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "gravitational_lens": tr_gravitational_lens,
     "light_leak": tr_light_leak,
     "sdf_iris": tr_sdf_iris,
+    "thermal_distortion": tr_thermal_distortion,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -1083,6 +1171,38 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "background:radial-gradient(circle,transparent 46%,"
         "rgba(255,217,153,0.92) 50%,transparent 54%);"
         "mix-blend-mode:screen}"
+        f".tr-thermal-distortion{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-thermal-distortion .td-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-thermal-distortion .td-from,.tr-thermal-distortion .td-to,"
+        ".tr-thermal-distortion .td-mist,.tr-thermal-distortion .td-blur{"
+        "position:absolute;inset:0;display:block;opacity:0;"
+        "transform-origin:50% 50%}"
+        ".tr-thermal-distortion .td-from{background:#3d405b;mix-blend-mode:overlay}"
+        ".tr-thermal-distortion .td-to{background:#e07a5f;mix-blend-mode:overlay}"
+        ".tr-thermal-distortion .td-mist{background:#a0a0b0;mix-blend-mode:overlay}"
+        ".tr-thermal-distortion .td-blur{backdrop-filter:blur(10px)}"
+        ".tr-thermal-distortion .td-haze,.tr-thermal-distortion .td-hot{"
+        "position:absolute;display:block;opacity:0;border-radius:50%;"
+        "transform-origin:50% 50%}"
+        ".tr-thermal-distortion .td-haze{inset:32% -24% -28% -24%;"
+        "background:radial-gradient(circle at 50% 78%,"
+        "rgba(255,230,179,0.92) 0%,rgba(224,122,95,0.55) 42%,transparent 70%);"
+        "mix-blend-mode:screen}"
+        ".tr-thermal-distortion .td-hot{inset:58% -8% -22% -8%;"
+        "background:radial-gradient(circle,rgba(255,230,179,0.9) 0%,transparent 62%);"
+        "mix-blend-mode:screen}"
+        ".tr-thermal-distortion .td-band{position:absolute;left:-12%;width:124%;"
+        "height:120px;display:block;opacity:0;"
+        "background:linear-gradient(180deg,transparent 0%,"
+        "rgba(255,230,179,0.7) 50%,transparent 100%);"
+        "mix-blend-mode:screen;transform-origin:50% 50%}"
+        ".tr-thermal-distortion .td-b0{top:1080px}"
+        ".tr-thermal-distortion .td-b1{top:1240px}"
+        ".tr-thermal-distortion .td-b2{top:1400px}"
+        ".tr-thermal-distortion .td-b3{top:1560px}"
+        ".tr-thermal-distortion .td-b4{top:1720px}"
     )
 
 

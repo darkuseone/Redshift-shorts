@@ -218,3 +218,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Переход gravitational-lens: колодец, горизонт и chroma | каталог — WebGL onUpdate; здесь scale к центру, вуали #10002b/#f20089 |
 | 2026-09-03 | Переход light-leak: тёплый засвет, flare и ACES | каталог — WebGL onUpdate; здесь пятно/полоса, вуали #001524/#fb8b24; light-sweep не трогаем |
 | 2026-09-03 | Переход sdf-iris: круг из центра и onion rings | каталог — WebGL onUpdate; здесь диск/кольца, вуали #003049/#ffc300; mask-wipe-circle не трогаем |
+| 2026-09-03 | Переход thermal-distortion: heat shimmer снизу и haze | каталог — WebGL onUpdate; здесь полосы/пятно, вуали #3d405b/#e07a5f |

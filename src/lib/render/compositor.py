@@ -321,6 +321,34 @@ def _tr_sdf_iris(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed * 255.0, 0, 255).astype(np.uint8))
 
 
+def _tr_thermal_distortion(incoming, outgoing, progress, params, ctx):
+    """Heat shimmer снизу и тёплый haze. Без WebGL / FBM."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32) / 255.0
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32) / 255.0
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = xx / max(w - 1, 1)
+    uv_y = yy / max(h - 1, 1)
+    y_fade = _smoothstep(0.08, 1.0, uv_y)
+    heat = eased * 1.5
+    shimmer = np.sin(uv_y * 40.0 + np.sin(uv_x * 18.0 + eased * 8.0) * 2.0 + eased * 6.0)
+    disp = np.rint(shimmer * heat * 0.03 * y_fade * w).astype(np.int32)
+    src_x = np.clip(xx + disp, 0, w - 1)
+    warped_a = np.take_along_axis(a, src_x[..., None], axis=1)
+    inv = np.sin(uv_y * 40.0 + np.sin(uv_x * 18.0 + 3.0) * 2.0 + eased * 6.0)
+    disp2 = np.rint(inv * (1.0 - eased) * 0.03 * y_fade * w).astype(np.int32)
+    src_x2 = np.clip(xx + disp2, 0, w - 1)
+    warped_b = np.take_along_axis(b, src_x2[..., None], axis=1)
+    mixed = warped_a * (1.0 - eased) + warped_b * eased
+    haze = heat * y_fade * 0.15 * (1.0 - eased)
+    warm = np.array([1.0, 0.9, 0.7], dtype=np.float32)
+    mixed = mixed + warm * haze[..., None]
+    return Image.fromarray(np.clip(mixed * 255.0, 0, 255).astype(np.uint8))
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -376,6 +404,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "gravitational_lens": _tr_gravitational_lens,
     "light_leak": _tr_light_leak,
     "sdf_iris": _tr_sdf_iris,
+    "thermal_distortion": _tr_thermal_distortion,
 }
 
 

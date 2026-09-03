@@ -897,6 +897,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             preferred = prefs.get(f"transition@{slot['role']}")
             tr_prefer = [preferred] if preferred else []
             if variant == "A" and category == "transitions":
+                tr_prefer.append("transitions/thermal-distortion")
                 tr_prefer.append("transitions/sdf-iris")
                 tr_prefer.append("transitions/light-leak")
                 tr_prefer.append("transitions/gravitational-lens")
