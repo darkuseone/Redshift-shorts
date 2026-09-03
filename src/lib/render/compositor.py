@@ -232,6 +232,30 @@ def _tr_glitch(incoming, outgoing, progress, params, ctx):
     return frame.convert("RGB")
 
 
+def _tr_glitch_shader(incoming, outgoing, progress, params, ctx):
+    """Scan lines stand-in: RGB-сдвиг, mix и flicker — без WebGL."""
+    from PIL import ImageChops
+
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    inten = eased * (1.0 - eased) * 4.0
+    seed = int(params.get("seed", 0))
+    src = incoming.convert("RGB")
+    w, _h = src.size
+    shift = max(0, int(round(w * 0.035 * inten)))
+    if shift:
+        red, green, blue = src.split()
+        red = ImageChops.offset(red, shift, 0)
+        blue = ImageChops.offset(blue, -shift, 0)
+        src = Image.merge("RGB", (red, green, blue))
+    if outgoing is not None:
+        src = Image.blend(src, outgoing.convert("RGB"), eased)
+    flick = 1.0 + ((((seed * 23 + int(eased * 11)) % 100) / 100.0) - 0.5) * 0.3 * inten
+    if abs(flick - 1.0) > 0.01:
+        src = src.point(lambda v, f=flick: max(0, min(255, int(v * f))))
+    return src
+
+
 TRANSITIONS: dict[str, TransitionFn] = {
     "cut": _tr_cut,
     "zoom_punch": _tr_zoom_punch,
@@ -242,6 +266,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "white_flash": _tr_white_flash,
     "light_sweep": _tr_light_sweep,
     "glitch": _tr_glitch,
+    "glitch_shader": _tr_glitch_shader,
     "cinematic_zoom": _tr_cinematic_zoom,
 }
 

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-123 шаблонов каталога — это не 123 реализаций, а набор рендереров с параметрами.
+124 шаблонов каталога — это не 124 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -498,6 +498,123 @@ def tr_glitch(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_GS_COLS = 8
+_GS_ROWS = 12
+_GS_SCANS = 12
+
+
+def _gs_times(duration: float) -> dict[str, float]:
+    """Окно shader-glitch: каталог держит 2 с шейдера внутри 4 с демо."""
+    d = max(0.05, float(duration))
+    mid = d * 0.5
+    to_out_at = mid + 0.001
+    return {
+        "dur": max(0.001, d - 0.001),
+        "mid": mid,
+        "to_out_at": to_out_at,
+        "to_out": max(0.001, d - to_out_at - 0.001),
+    }
+
+
+def _gs_blocks(index: int, seed: int) -> list[tuple[int, int, int, int, int, int]]:
+    """Блоки scramble: ~17 % ячеек 8×12, как step(0.83) в шейдере каталога."""
+    cw = 1080 // _GS_COLS
+    ch = 1920 // _GS_ROWS
+    out: list[tuple[int, int, int, int, int, int]] = []
+    for row in range(_GS_ROWS):
+        for col in range(_GS_COLS):
+            h = (col * 47 + row * 91 + seed * 13 + index * 17) % 100
+            if h < 83:
+                continue
+            dx = ((h * 37 + seed) % 70) - 35
+            dy = ((h * 19 + index) % 70) - 35
+            out.append((col * cw, row * ch, cw, ch, dx, dy))
+            if len(out) >= 16:
+                return out
+    return out
+
+
+def tr_glitch_shader(ctx: "TemplateCtx") -> Piece:
+    """Glitch shader: scan lines, block scramble, chroma, flicker.
+
+    Каталог рисует WebGL ``onUpdate``: 60 scan-line, 12×8 блоки, RGB-сдвиг,
+    posterize. Здесь заранее полосы и клетки, ``x``/``y``/``opacity``, chroma
+    и вуали ``#293241``/``#ee6c4d``. Без canvas и без ``Math.random``.
+    ``glitch-short`` остаётся короткими полосами; это жест из каталога.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _gs_times(d)
+    start = ctx.start
+    seed = int(ctx.params.get("seed", ctx.index * 17 + 9))
+    spans: list[str] = [
+        f'<span id="{node_id}-from" class="gs-from"></span>',
+        f'<span id="{node_id}-to" class="gs-to"></span>',
+        f'<span id="{node_id}-lines" class="gs-lines"></span>',
+        f'<span id="{node_id}-flick" class="gs-flick"></span>',
+        f'<span id="{node_id}-r" class="gs-r"></span>',
+        f'<span id="{node_id}-b" class="gs-b"></span>',
+    ]
+    tweens = [
+        f'tl.fromTo("#{node_id}-from",{{opacity:0.5}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{opacity:0}},'
+        f'{{opacity:0.4,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-to",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-lines",{{opacity:0}},'
+        f'{{opacity:0.55,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-lines",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-flick",{{opacity:0.32}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"steps(5)"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-r",{{x:0,opacity:0}},'
+        f'{{x:36,opacity:0.5,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-r",{{x:0,opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-b",{{x:0,opacity:0}},'
+        f'{{x:-32,opacity:0.45,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-b",{{x:0,opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.set("#{node_id}-from",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-to",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-lines",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-flick",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-r",{{opacity:0,x:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0,x:0}},{_num(start + d)});',
+    ]
+    for i in range(_GS_SCANS):
+        top = int(1920 * i / _GS_SCANS) + (i * 7 + seed) % 18
+        ht = 3 + i % 3
+        shift = (80 + (i * 37 + ctx.index * 13) % 110) * (1 if i % 2 else -1)
+        spans.append(
+            f'<span id="{node_id}-s{i}" class="gs-scan" '
+            f'style="top:{top}px;height:{ht}px"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-s{i}",{{x:{shift},opacity:0.75}},'
+            f'{{x:0,opacity:0,duration:{_num(times["dur"])},ease:"steps(3)"}},{_num(start)});')
+        tweens.append(
+            f'tl.set("#{node_id}-s{i}",{{opacity:0}},{_num(start + d)});')
+    for i, (left, top, w, h, dx, dy) in enumerate(_gs_blocks(ctx.index, seed)):
+        spans.append(
+            f'<span id="{node_id}-k{i}" class="gs-block" '
+            f'style="left:{left}px;top:{top}px;width:{w}px;height:{h}px"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-k{i}",{{x:{dx},y:{dy},opacity:0.55}},'
+            f'{{x:0,y:0,opacity:0,duration:{_num(times["dur"])},'
+            f'ease:"steps(2)"}},{_num(start)});')
+        tweens.append(
+            f'tl.set("#{node_id}-k{i}",{{opacity:0}},{_num(start + d)});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-glitch-shader" {_timing(ctx)}>'
+               f'<span class="gs-stage">{"".join(spans)}</span></div>'],
+        tweens=tweens)
+
+
 # --- движение кадра -----------------------------------------------------------
 
 def r_kenburns(ctx: "TemplateCtx") -> Piece:
@@ -539,6 +656,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "mask_wipe": tr_mask_wipe,
     "light_sweep": tr_light_sweep,
     "glitch": tr_glitch,
+    "glitch_shader": tr_glitch_shader,
 }
 
 MOTION: dict[str, Callable[["TemplateCtx"], Piece]] = {
@@ -637,6 +755,28 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         ".tr-cinematic-zoom .cz-ghost{"
         "background:radial-gradient(circle,rgba(255,255,255,0.22) 0%,transparent 70%);"
         "mix-blend-mode:screen}"
+        f".tr-glitch-shader{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-glitch-shader .gs-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-glitch-shader .gs-from,.tr-glitch-shader .gs-to,"
+        ".tr-glitch-shader .gs-lines,.tr-glitch-shader .gs-flick,"
+        ".tr-glitch-shader .gs-r,.tr-glitch-shader .gs-b{"
+        "position:absolute;inset:0;display:block;opacity:0;"
+        "transform-origin:50% 50%}"
+        ".tr-glitch-shader .gs-from{background:#293241;mix-blend-mode:overlay}"
+        ".tr-glitch-shader .gs-to{background:#ee6c4d;mix-blend-mode:overlay}"
+        ".tr-glitch-shader .gs-lines{background:repeating-linear-gradient("
+        "to bottom,transparent 0px,transparent 1px,rgba(0,0,0,0.22) 1px,"
+        "rgba(0,0,0,0.22) 2px);mix-blend-mode:multiply}"
+        ".tr-glitch-shader .gs-flick{background:#ffffff;mix-blend-mode:overlay}"
+        ".tr-glitch-shader .gs-r{background:#ee6c4d;mix-blend-mode:screen}"
+        ".tr-glitch-shader .gs-b{background:#98c1d9;mix-blend-mode:screen}"
+        ".tr-glitch-shader .gs-scan{position:absolute;left:-12%;width:124%;"
+        "display:block;opacity:0;background:rgba(238,108,77,0.5);"
+        "mix-blend-mode:overlay}"
+        ".tr-glitch-shader .gs-block{position:absolute;display:block;opacity:0;"
+        "background:rgba(152,193,217,0.35);mix-blend-mode:screen}"
     )
 
 

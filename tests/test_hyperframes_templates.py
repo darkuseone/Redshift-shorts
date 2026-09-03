@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-123 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+124 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -21,7 +21,8 @@ from src.lib.render.hyperframes.templates import (
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
-    _atcd_times, _dp_times, _cz_times, _sr_frame_table,
+    _atcd_times, _dp_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
+    _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -161,7 +162,8 @@ def test_css_covers_every_layer_the_transitions_use():
 
     css = transition_css(load_config().brandbook)
     for cls in (".tr-flash", ".tr-blur", ".tr-mask-circle", ".tr-mask-diagonal",
-                ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom"):
+                ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom",
+                ".tr-glitch-shader"):
         assert cls in css, cls
 
 
@@ -1974,6 +1976,85 @@ def test_cinematic_zoom_keeps_catalog_indigo_and_gold():
     # GSAP owns scale — no CSS transform on tweened layers
     assert "transform:" not in stripped.split(".tr-cinematic-zoom", 1)[1]
     assert "backdrop-filter:blur(16px)" in css
+
+
+def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
+    """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
+    seed = 9
+    piece = render_transition("glitch_shader", TemplateCtx(
+        **{**ctx.__dict__, "params": {"seed": seed}}))
+    node = piece.nodes[0]
+    assert "tr-glitch-shader" in node
+    assert "gs-stage" in node
+    assert "gs-from" in node and "gs-to" in node
+    assert "gs-r" in node and "gs-b" in node
+    assert "gs-lines" in node and "gs-flick" in node
+    assert node.count("gs-scan") == _GS_SCANS
+    blocks = _gs_blocks(ctx.index, seed)
+    assert node.count("gs-block") == len(blocks)
+    assert "position:absolute" not in node.split("gs-stage", 1)[0]
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    ids = re.findall(r'\sid="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "power2.inOut" in body
+    assert "steps(3)" in body and "steps(2)" in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "text:" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector != f"#{ctx.target}", tween
+    times = _gs_times(ctx.duration)
+    assert times["mid"] + times["to_out"] < ctx.duration + 1e-9
+    assert times["to_out_at"] > times["mid"]
+    short = _gs_times(0.22)
+    assert short["to_out_at"] + short["to_out"] <= 0.22 + 1e-9
+    again = render_transition("glitch_shader", TemplateCtx(
+        **{**ctx.__dict__, "params": {"seed": seed}}))
+    assert again.tweens == piece.tweens
+    other = render_transition("glitch_shader", TemplateCtx(
+        **{**ctx.__dict__, "index": ctx.index + 1, "params": {"seed": seed}}))
+    assert other.tweens != piece.tweens
+    assert _gs_blocks(ctx.index, seed) == _gs_blocks(ctx.index, seed)
+    assert _gs_blocks(ctx.index, seed) != _gs_blocks(ctx.index + 1, seed)
+
+
+def test_glitch_shader_keeps_catalog_slate_and_coral():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-glitch-shader" in css
+    frm = re.search(r"\.tr-glitch-shader \.gs-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-glitch-shader \.gs-to\{[^}]+\}", css).group(0)
+    assert "#293241" in frm
+    assert "#ee6c4d" in too
+    assert "#C8453D" not in frm and "#C8453D" not in too
+    assert "#98c1d9" in css
+    stage = re.search(r"\.tr-glitch-shader \.gs-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".tr-glitch-shader", 1)[1]
+    short = render_transition("glitch", TemplateCtx(
+        index=1, start=0.0, duration=0.2, target="shot-01", track=11,
+        params={"bars": 7}))
+    assert "tr-glitch-shader" not in short.nodes[0]
+    assert 'class="clip tr-glitch"' in short.nodes[0]
 
 
 OVERLAY_PARAMS = {

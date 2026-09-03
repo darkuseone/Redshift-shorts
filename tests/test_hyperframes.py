@@ -319,6 +319,31 @@ def test_every_tween_target_exists_in_the_markup(plan, assets, brandbook):
         assert selector in ids, f"твин целится в несуществующий {selector}: {tween}"
 
 
+def test_glitch_shader_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только оверлей, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "glitch_shader", "duration": 0.4,
+        "params": {"seed": 9}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-glitch-shader" in out
+    assert "gs-from" in out and "gs-to" in out
+    assert "gs-scan" in out and "gs-block" in out
+    assert "gs-r" in out and "gs-b" in out
+    assert 'class="clip tr-glitch"' not in out
+    assert "scale:1.16" not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_cinematic_zoom_overlay_scales_the_incoming_shot(plan, assets, brandbook):
     """Шейдер каталога не вендорится: оверлей + scale входящего кадра."""
     plan["shots"][0]["transition"] = {
