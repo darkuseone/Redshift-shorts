@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-136 шаблонов каталога — это не 136 реализаций, а набор рендереров с параметрами.
+137 шаблонов каталога — это не 137 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1349,6 +1349,91 @@ def tr_transitions_light(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_TTO_CATALOG_SEC = 2.4
+
+
+def _tto_times(duration: float) -> dict[str, float]:
+    """Окно flash cut: каталог 0.03 с вспышка, 0.1 с спад.
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Доли 2.4 с окна
+    (удержание A → flash → удержание B) сохраняем, стыки +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _TTO_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    def span(start_cat: float, end_cat: float,
+             after: float = 0.0) -> tuple[float, float]:
+        at = max(t(start_cat), after)
+        end = min(d, t(end_cat))
+        if at + 0.001 > end:
+            end = min(d, at + 0.001)
+        if at + 0.001 > end:
+            at = max(0.0, end - 0.001)
+        return at, max(0.001, end - at)
+
+    flash_in_at, flash_in_dur = span(1.00, 1.03)
+    flash_out_at, flash_out_dur = span(
+        1.05, 1.15, after=flash_in_at + flash_in_dur + 0.001)
+    swap_at = min(max(t(1.03), flash_in_at + flash_in_dur), flash_out_at)
+    return {
+        "flash_in_at": flash_in_at,
+        "flash_in_dur": flash_in_dur,
+        "swap_at": swap_at,
+        "flash_out_at": flash_out_at,
+        "flash_out_dur": flash_out_dur,
+    }
+
+
+def tr_transitions_other(ctx: "TemplateCtx") -> Piece:
+    """Flash cut: белая вспышка на склейке, SCENE B проявляется.
+
+    Каталог DEMO 1 твинит ``opacity`` белого оверлея 0.03 с вверх и
+    0.1 с вниз. Здесь те же твины без CSS ``transform`` и без ``filter``.
+    Твины на гранях / вспышке, не на ``.clip`` и не на входящем кадре.
+    Цвета SCENE A/B и белой вспышки каталога — жест карточки, не палитра
+    канала. ``-apple-system`` не ставим. Inter как запас вместо
+    системного стека. ``white_flash`` не трогаем.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _tto_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-flash",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(times["flash_in_dur"])},'
+        f'ease:"power4.out",immediateRender:false}},'
+        f'{_num(start + times["flash_in_at"])});',
+        f'tl.fromTo("#{node_id}-flash",{{opacity:1}},'
+        f'{{opacity:0,duration:{_num(times["flash_out_dur"])},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["flash_out_at"])});',
+        f'tl.fromTo("#{node_id}-a",{{opacity:1}},'
+        f'{{opacity:0,duration:0.001,ease:"none",immediateRender:false}},'
+        f'{_num(start + times["swap_at"])});',
+        f'tl.fromTo("#{node_id}-b",{{opacity:0}},'
+        f'{{opacity:1,duration:0.001,ease:"none",immediateRender:false}},'
+        f'{_num(start + times["swap_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-flash",{{opacity:0}},{_num(start + d)});',
+    ]
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-transitions-other" {_timing(ctx)}>'
+               f'<span class="tto-stage">'
+               f'<span id="{node_id}-a" class="tto-face tto-a">'
+               f'<span class="tto-big">ONE</span>'
+               f'<span class="tto-label">SCENE A</span></span>'
+               f'<span id="{node_id}-b" class="tto-face tto-b">'
+               f'<span class="tto-big">TWO</span>'
+               f'<span class="tto-label">SCENE B</span></span>'
+               f'<span id="{node_id}-flash" class="tto-flash"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 _TDS_CATALOG_SEC = 2.4
 _TDS_HOLE_FROM = 1.0
 _TDS_HOLE_TO = 0.04
@@ -1722,6 +1807,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "transitions_blur": tr_transitions_blur,
     "transitions_cover": tr_transitions_cover,
     "transitions_light": tr_transitions_light,
+    "transitions_other": tr_transitions_other,
     "transitions_destruction": tr_transitions_destruction,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
@@ -2134,6 +2220,26 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "width:1350px;height:2489px;"
         "background:radial-gradient(ellipse at 60% 50%,"
         "rgba(255,200,0,0.4),transparent 50%)}"
+        f".tr-transitions-other{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-transitions-other .tto-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-transitions-other .tto-face{position:absolute;inset:0;display:flex;"
+        "flex-direction:column;align-items:center;justify-content:center;"
+        "transform-origin:50% 50%}"
+        ".tr-transitions-other .tto-a{background:#1b263b}"
+        ".tr-transitions-other .tto-b{background:#e07a5f;opacity:0}"
+        ".tr-transitions-other .tto-big{font-family:Inter,system-ui,sans-serif;"
+        "font-size:280px;font-weight:900;line-height:1;letter-spacing:-0.04em;"
+        "user-select:none}"
+        ".tr-transitions-other .tto-a .tto-big{color:rgba(255,255,255,0.12)}"
+        ".tr-transitions-other .tto-b .tto-big{color:rgba(0,0,0,0.12)}"
+        ".tr-transitions-other .tto-label{font-family:Inter,system-ui,sans-serif;"
+        "font-size:40px;font-weight:700;letter-spacing:6px;"
+        "margin-top:12px;color:#ffffff}"
+        ".tr-transitions-other .tto-flash{position:absolute;inset:0;display:block;"
+        "opacity:0;pointer-events:none;background:#ffffff;"
+        "transform-origin:50% 50%}"
     )
 
 

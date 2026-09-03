@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 26,
+    "transitions": 27,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 136
+    "_total": 137
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2049,6 +2049,25 @@
         "warm"
       ],
       "renderer": "transitions_light",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-other",
+      "name": "transitions-other",
+      "category": "transitions",
+      "title": "Flash cut: белая вспышка на склейке, SCENE B проявляется — transitions-other",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "flash",
+        "cut"
+      ],
+      "renderer": "transitions_other",
       "last_used_in": [],
       "added": "2026-09-03"
     },

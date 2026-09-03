@@ -438,6 +438,30 @@ def _tr_transitions_cover(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
 
 
+def _tr_transitions_other(incoming, outgoing, progress, params, ctx):
+    """Flash cut stand-in: navy → white flash → terracotta. Без tween .clip."""
+    p = clamp01(progress)
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    white = np.array([255.0, 255.0, 255.0], dtype=np.float32)
+    if p < 0.4:
+        t = p / 0.4
+        mixed = a * (1.0 - t) + navy * t
+    elif p < 0.5:
+        t = (p - 0.4) / 0.1
+        mixed = navy * (1.0 - t) + white * t
+    elif p < 0.6:
+        t = (p - 0.5) / 0.1
+        mixed = white * (1.0 - t) + terra * t
+    else:
+        t = (p - 0.6) / 0.4
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
 def _tr_transitions_light(incoming, outgoing, progress, params, ctx):
     """Light leak stand-in: navy → orange wash → terracotta. Без filter."""
     p = clamp01(progress)
@@ -567,6 +591,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "transitions_blur": _tr_transitions_blur,
     "transitions_cover": _tr_transitions_cover,
     "transitions_light": _tr_transitions_light,
+    "transitions_other": _tr_transitions_other,
     "transitions_destruction": _tr_transitions_destruction,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,

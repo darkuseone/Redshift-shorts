@@ -227,3 +227,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Переход transitions-cover: staggered blocks накрывают SCENE A и открывают SCENE B | каталог ставит translateX в CSS; здесь GSAP x на 1080 px, вайпы #f72585/#7209b7; blur/3d/paper-slide не трогаем |
 | 2026-09-03 | Переход transitions-destruction: page burn, SCENE A сгорает кругом и SCENE B проявляется | каталог рисует canvas и clip-path; здесь scale круга overflow:hidden, огонь #ff6400/#ff3200/#c81e00; sdf-iris и mask-wipe-circle не трогаем |
 | 2026-09-03 | Переход transitions-light: тёплые блики едут по кадру, SCENE B проявляется | каталог DEMO 1 твинит opacity/x; здесь GSAP x на 9:16, блики #ffa500/#ff8c00/#ffc800; light-leak и light-sweep не трогаем |
+| 2026-09-03 | Переход transitions-other: белая вспышка на склейке, SCENE B проявляется | каталог DEMO 1 твинит opacity 0.03 с / 0.1 с; здесь те же твины, вспышка #ffffff; white_flash не трогаем |
