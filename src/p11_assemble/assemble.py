@@ -769,6 +769,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                           "text-fullscreen/line-by-line-slide",
                           "text-fullscreen/particle-text-dissolve",
                           "text-fullscreen/per-word-crossfade",
+                          "text-fullscreen/scan-band",
                           "text-fullscreen/number-slam-card"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])

@@ -534,6 +534,28 @@ def test_per_word_crossfade_fullscreen_uses_a_static_ghost(plan, assets, brandbo
     assert ".pwc-ghost" in css
 
 
+def test_scan_band_fullscreen_keeps_catalog_chromatic(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СИГНАЛ"
+    plan["shots"][1]["duration"] = 3.5
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 3.5
+    plan["shots"][1]["params"] = {"scan_band": True, "band_angle": 12}
+    plan["shots"][1]["renderer"] = "scan_band"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-scan-band" in out
+    assert "sb-clone-red" in out and "sb-clone-cyan" in out
+    assert "--sb-band" not in out
+    assert "clip-path:polygon(" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "clip-path" not in tween_src
+    assert "--sb-" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "Inter,system-ui,sans-serif" in css
+    assert "#ff3158" in css and "#36efff" in css
+    assert "#0b0c0e" in css
+    assert ".sb-band" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

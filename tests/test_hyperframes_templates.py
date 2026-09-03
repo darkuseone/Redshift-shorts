@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-108 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+109 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -987,6 +987,61 @@ def test_per_word_crossfade_drift_tone_and_exit():
     assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
     empty = render_fullscreen(_fs_ctx(
         content="", renderer="per_word_crossfade", duration=2.0))
+    assert empty.nodes == []
+
+
+def test_scan_band_sweeps_a_static_clip_on_x():
+    """Каталог твинит CSS-var и clip-path. Здесь x полосы и -x мира, RGB как есть."""
+    piece = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", renderer="scan_band", scan_band=True,
+        band_angle=12, duration=3.5))
+    node = piece.nodes[0]
+    assert "fs-scan-band" in node
+    assert "sb-wordmark" in node
+    assert node.count("sb-clone") == 3
+    assert "sb-clone-red" in node and "sb-clone-cyan" in node
+    assert "СИГНАЛ" in node
+    assert "clip-path:polygon(" in node
+    body = " ".join(piece.tweens)
+    assert "--sb-band" not in body
+    assert "clip-path" not in body
+    assert "filter" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    assert "Math.random" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert f'fromTo("#{clip}-band",{{x:0}}' in body
+    assert f'fromTo("#{clip}-inner",{{x:0}}' in body
+    assert "x:2376" in body
+    assert "x:-2376" in body
+    assert f'fromTo("#{clip}-stage",{{opacity:0}}' in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    flagged = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", scan_band=True, duration=3.5))
+    assert "fs-scan-band" in flagged.nodes[0]
+
+
+def test_scan_band_angle_envelope_and_empty():
+    steep = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scan_band", band_angle=30, duration=3.5))
+    flat = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scan_band", band_angle=0, duration=3.5))
+
+    def _poly(piece):
+        return re.search(r"clip-path:polygon\(([^)]+)\)", piece.nodes[0]).group(1)
+
+    assert _poly(steep) != _poly(flat)
+    assert float(_poly(steep).split("%", 1)[0]) < float(_poly(flat).split("%", 1)[0])
+    short = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scan_band", duration=0.8))
+    assert "-band" not in " ".join(short.tweens)
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="scan_band", duration=3.5))
     assert empty.nodes == []
 
 
