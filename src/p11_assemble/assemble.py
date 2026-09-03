@@ -16,7 +16,7 @@ from __future__ import annotations
 import hashlib
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from ..errors import RedshiftError
 from ..lib.ffmpeg import probe
@@ -735,6 +735,36 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
     return params
 
 
+def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
+               block: dict[str, Any]) -> str:
+    """Что вынести на экран, когда материала под кадр нет.
+
+    Не выдумка и не заголовок: ровно те слова, которые звучат в это мгновение.
+    Экран договаривает речь, а не спорит с ней, и зритель видит то же, что
+    слышит. Берётся три-четыре слова — больше в кегль полноэкранного текста
+    не встанет.
+    """
+    start, end = float(slot["start"]), float(slot["end"])
+    said = [str(w.get("word") or "") for w in words
+            if float(w["end"]) > start and float(w["start"]) < end]
+    said = [w for w in said if w.strip()]
+    if not said:
+        said = str(block.get("text") or "").split()[:4]
+    return " ".join(said[:4]).upper().strip(" ,.;:—-")
+
+
+def explain_choice(template: Any, traits: Iterable[str]) -> str:
+    """Почему именно этот приём здесь — словами, а не «роль блока».
+
+    Одна формулировка на все категории: строка уходит в edit-план и в отчёт
+    сборки, и читать её будет человек, а не разбор.
+    """
+    hit = matched(template.needs, traits)
+    if hit:
+        return f"приём оправдан: {explain(hit)}"
+    return "приём без смысловых требований: держит кадр, не спорит с речью"
+
+
 def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  content: dict[str, Any], has_alpha: bool,
                  plate_src: dict[str, Any] | None,
@@ -787,9 +817,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # Почему именно этот приём здесь — словами, а не «роль блока».
         "traits": sorted(traits or ()),
         "grounded_on": sorted(matched(template.needs, traits or ())),
-        "why": (f"приём оправдан: {explain(matched(template.needs, traits or ()))}"
-                if matched(template.needs, traits or ())
-                else "приём без смысловых требований: держит кадр, не спорит с речью"),
+        "why": explain_choice(template, traits or ()),
         **hero_mutes_subtitle(renderer),
     }
     if plate_src and renderer == "hero-chat-generate":
@@ -1483,10 +1511,37 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         prep = prepared.get(slot["index"])
         asset = assets.get(slot["index"])
         if prep is None or (asset is None and slot["kind"] not in AVATAR_KINDS):
-            # Пустой слот закрывается фирменной заливкой, но это дефект плана,
-            # и он обязан быть виден в отчёте, а не «раствориться» в кадре.
-            entry.update({"file": None, "asset_id": None,
-                          "gap_reason": "материал не найден"})
+            # Пустой слот закрывается не заливкой, а приёмом. Заливка — это
+            # чёрный кадр: в живом 0047 таких набралось 9.5 секунды из 60, и
+            # пять из них подряд, с одним субтитром на пустоте. QC при этом
+            # показал 19 из 19 — он не смотрит, есть ли в кадре что-нибудь.
+            #
+            # Приём выбирается по смыслу блока, как и везде: у нас полтораста
+            # шаблонов, и слово, вынесенное крупно, честнее пустоты. Причина
+            # пропуска остаётся в отчёте — дефект плана никуда не делся.
+            gap_block = blocks_by_id.get(slot["block_id"], {})
+            content = gap_phrase(words_doc["words"], slot, gap_block)
+            gap_traits = block_traits(f"{gap_block.get('text', '')} {content}")
+            template = catalog.pick(
+                "text-fullscreen", duration=float(slot["duration"]),
+                recent_videos=recent_videos, exclude=used_templates,
+                prefer=list(fullscreen_styles), seed=seed + int(slot["index"]),
+                traits=gap_traits)
+            used_templates.append(template.id)
+            entry.update({
+                "kind": "fullscreen_text",
+                "content": content,
+                "template": template.id,
+                "renderer": template.renderer,
+                "params": dict(template.params),
+                "traits": sorted(gap_traits),
+                "grounded_on": sorted(matched(template.needs, gap_traits)),
+                "why_template": explain_choice(template, gap_traits),
+                "invert": bool(template.params.get("invert")) or variant == "B",
+                "accent_word": _fullscreen_accent(content, gap_block),
+                "file": None, "asset_id": None,
+                "gap_reason": "материал не найден: кадр закрыт словом блока",
+            })
             shots.append(entry)
             continue
 
@@ -1506,13 +1561,22 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             tr_prefer = [preferred] if preferred else []
             if variant == "A" and category == "transitions":
                 tr_prefer.append("transitions/zoom-through")
+            # Переход отвечает за то, что он вводит: признаки берутся у блока,
+            # к которому он ведёт. Нейтральный переход требований не несёт и
+            # годится везде; линза и марево — только там, где им есть что
+            # значить.
+            tr_traits = block_traits(
+                str(blocks_by_id.get(slot.get("block_id"), {}).get("text") or ""))
             tr = catalog.pick(category, duration=0.24, recent_videos=recent_videos,
                               exclude=used_templates + ["transitions/cut"],
-                              prefer=tr_prefer,
+                              prefer=tr_prefer, traits=tr_traits,
                               tags={"dynamic", "entry"}, seed=seed + slot["index"] * 3)
             used_templates.append(tr.id)
             transition_entry = {
                 "template": tr.id, "renderer": tr.renderer,
+                "traits": sorted(tr_traits),
+                "grounded_on": sorted(matched(tr.needs, tr_traits)),
+                "why": explain_choice(tr, tr_traits),
                 "duration": max(0.16, min(0.32, float(tr.duration_range[1] or 0.24))),
                 "params": {**tr.params, "seed": seed + slot["index"]},
             }

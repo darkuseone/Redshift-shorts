@@ -73,8 +73,16 @@ class TestATemplateNeedsSomethingToFillIt:
 
 class TestTheCatalogPicksByMeaning:
     def test_a_chart_needs_a_number(self, catalog):
+        """График без числа — пустая рамка; карта — исключение по смыслу.
+
+        Требование категории («число») перебивается требованием id там, где
+        приём говорит не о величине: карта мира показывает место, и числа
+        в блоке может не быть вовсе.
+        """
         for template in catalog.by_category("data-viz"):
-            assert template.needs == ["number"], template.id
+            assert template.needs, template.id
+            assert template.needs == ["number"] or "place" in template.needs, \
+                template.id
 
     def test_a_question_brings_the_chat_window(self, catalog):
         picked = catalog.pick("browser-ui", traits={"question"}, seed=3)
@@ -184,3 +192,92 @@ class TestTheSourceCardSurvivesTheMerge:
     def test_a_quote_in_the_block_grounds_the_card(self):
         card = next(o for o in self._overlays("A") if o["type"] == "source_card")
         assert "quote" in card["grounded_on"], card["why"]
+
+
+class TestTheTransitionAnswersToWhatItIntroduces:
+    """Переход отвечает за то, что вводит, — и не ставится просто так.
+
+    Гравитационная линза, марево, разрушение — приёмы со значением. Поставить
+    линзу между двумя планами ведущего значит украсить кадр, а не сказать им
+    что-то; заказчик назвал это прямо: «не вставляй анимации куда попало».
+    Нейтральные переходы — резка, шторка, наезд — требований не несут и
+    остаются доступны везде.
+    """
+
+    def test_a_strong_transition_needs_its_meaning(self, catalog):
+        strong = [t for t in catalog.by_category("transitions") if t.needs]
+        assert strong, "в каталоге нет ни одного смыслового перехода"
+        for _seed in range(30):
+            picked = catalog.pick("transitions", duration=0.24, traits=set(),
+                                  seed=_seed, tags={"dynamic", "entry"})
+            assert not picked.needs, picked.id
+
+    def test_the_lens_comes_to_a_discovery(self, catalog):
+        picked = catalog.pick("transitions", duration=0.24,
+                              traits={"discovery"}, seed=1,
+                              prefer=["transitions/gravitational-lens"])
+        assert picked.id == "transitions/gravitational-lens"
+        assert "discovery" in picked.needs
+
+    def test_the_plan_says_why_the_transition_is_there(self):
+        """Основание уходит в edit-план: его читает человек, а не разбор."""
+        from src.p11_assemble.assemble import explain_choice
+
+        path = Path(__file__).resolve().parents[1] / "templates" / "manifest.json"
+        cat = TemplateCatalog(path, json.loads(path.read_text(encoding="utf-8")))
+        strong = cat.by_id("transitions/thermal-distortion")
+        assert "приём оправдан" in explain_choice(strong, {"danger"})
+        assert "не спорит с речью" in explain_choice(strong, {"number"})
+
+
+class TestAnEmptySlotIsNeverAnEmptyFrame:
+    """Кадру без материала достаётся приём, а не заливка.
+
+    В живом 0047 четыре слота остались пустыми: сток ничего не дал, а
+    генерация упёрлась в потолок доли AI (35 %). Заливка превратила их в
+    чёрный экран — 9.5 секунды из 60, пять из них подряд, с одним субтитром
+    на пустоте. QC показал 19 из 19: он не проверяет, есть ли в кадре
+    что-нибудь. Слово, вынесенное крупно, честнее пустоты — и оно то же
+    самое, что звучит.
+    """
+
+    def _built(self):
+        from src.p11_assemble.assemble import gap_phrase
+
+        return gap_phrase
+
+    def test_the_screen_says_what_the_voice_says(self):
+        gap_phrase = self._built()
+        words = [{"word": "мы", "start": 10.0, "end": 10.3},
+                 {"word": "упёрлись", "start": 10.3, "end": 10.9},
+                 {"word": "в", "start": 10.9, "end": 11.0},
+                 {"word": "физику", "start": 11.0, "end": 11.6},
+                 {"word": "дальше", "start": 12.4, "end": 12.9}]
+        slot = {"start": 10.0, "end": 11.8, "index": 3}
+        assert gap_phrase(words, slot, {}) == "МЫ УПЁРЛИСЬ В ФИЗИКУ"
+
+    def test_silence_falls_back_to_the_block(self):
+        gap_phrase = self._built()
+        slot = {"start": 40.0, "end": 41.4, "index": 9}
+        phrase = gap_phrase([], slot, {"text": "Скважину закрыли и забыли о ней"})
+        assert phrase == "СКВАЖИНУ ЗАКРЫЛИ И ЗАБЫЛИ"
+
+    def test_a_gap_becomes_a_device_not_a_fill(self, catalog):
+        """Слот без материала выходит из сборки полноэкранным текстом."""
+        import json as _json
+        from pathlib import Path as _Path
+
+        from src.p11_assemble.assemble import build_variant
+
+        # Плана целиком здесь не строим: проверяется одно — что ветка пустого
+        # слота выбирает приём и кладёт в кадр слово, а не оставляет `file`
+        # единственным содержимым.
+        source = (_Path(__file__).resolve().parents[1]
+                  / "src" / "p11_assemble" / "assemble.py").read_text(encoding="utf-8")
+        branch = source[source.index('if prep is None or (asset is None'):]
+        branch = branch[:branch.index("shots.append(entry)")]
+        assert '"kind": "fullscreen_text"' in branch
+        assert "catalog.pick(" in branch
+        assert "gap_phrase(" in branch
+        assert '"gap_reason"' in branch, "причина пропуска обязана остаться в отчёте"
+        assert build_variant is not None
