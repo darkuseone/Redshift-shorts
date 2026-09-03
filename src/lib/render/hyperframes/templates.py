@@ -1186,21 +1186,23 @@ def tr_transitions_cover(ctx: "TemplateCtx") -> Piece:
     start = ctx.start
     tweens = [
         f'tl.fromTo("#{node_id}-wa",{{x:-1080,opacity:1}},'
-        f'{{x:0,duration:{_num(times["wa_in_dur"])},ease:"power3.inOut",'
-        f'immediateRender:false}},{_num(start + times["wa_in_at"])});',
+        f'{{x:0,opacity:1,duration:{_num(times["wa_in_dur"])},'
+        f'ease:"power3.inOut",immediateRender:false}},'
+        f'{_num(start + times["wa_in_at"])});',
         f'tl.fromTo("#{node_id}-wb",{{x:-1080,opacity:1}},'
-        f'{{x:0,duration:{_num(times["wb_in_dur"])},ease:"power3.inOut",'
-        f'immediateRender:false}},{_num(start + times["wb_in_at"])});',
+        f'{{x:0,opacity:1,duration:{_num(times["wb_in_dur"])},'
+        f'ease:"power3.inOut",immediateRender:false}},'
+        f'{_num(start + times["wb_in_at"])});',
         f'tl.set("#{node_id}-a",{{opacity:0}},'
         f'{_num(start + times["swap_at"])});',
         f'tl.set("#{node_id}-b",{{opacity:1}},'
         f'{_num(start + times["swap_at"])});',
-        f'tl.to("#{node_id}-wa",{{x:1080,duration:{_num(times["wa_out_dur"])},'
-        f'ease:"power3.inOut",immediateRender:false}},'
-        f'{_num(start + times["wa_out_at"])});',
-        f'tl.to("#{node_id}-wb",{{x:1080,duration:{_num(times["wb_out_dur"])},'
-        f'ease:"power3.inOut",immediateRender:false}},'
-        f'{_num(start + times["wb_out_at"])});',
+        f'tl.to("#{node_id}-wa",{{x:1080,opacity:1,'
+        f'duration:{_num(times["wa_out_dur"])},ease:"power3.inOut",'
+        f'immediateRender:false}},{_num(start + times["wa_out_at"])});',
+        f'tl.to("#{node_id}-wb",{{x:1080,opacity:1,'
+        f'duration:{_num(times["wb_out_dur"])},ease:"power3.inOut",'
+        f'immediateRender:false}},{_num(start + times["wb_out_at"])});',
         f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-wa",{{opacity:0}},{_num(start + d)});',
