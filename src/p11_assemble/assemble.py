@@ -1484,6 +1484,11 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "целей достиг", "прогресс", "достигнут")):
             prefer = ["data-viz/mk-progress-stat"] + [
                 item for item in prefer if item != "data-viz/mk-progress-stat"]
+        if variant != "B" and any(key in blob for key in (
+                "flowchart", "блок-схем", "блок схем", "дерево решен",
+                "decision tree", "алгоритм", "разветвл")):
+            prefer = ["data-viz/flowchart-vertical"] + [
+                item for item in prefer if item != "data-viz/flowchart-vertical"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -1595,6 +1600,15 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "label": str(blocks.get(slot["block_id"], {}).get("heading")
                              or "Goals reached"),
                 "caption": "Great job, we are getting closer!",
+            }
+        elif name == "flowchart-vertical":
+            params = {
+                "root": "Should I learn to code?",
+                "branches": ["Yes", "Not sure"],
+                "leaves": [
+                    "Start with Python", "Try no-code first",
+                    "Build a personal website", "Take a free intro course",
+                ],
             }
         elif name == "us-map-flow":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")

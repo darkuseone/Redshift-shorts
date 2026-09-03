@@ -29,6 +29,7 @@ from src.lib.render.hyperframes.apple_money import _amc_times
 from src.lib.render.hyperframes.north_korea import _nkl_times
 from src.lib.render.hyperframes.nyc_paris import _npf_times
 from src.lib.render.hyperframes.mk_progress import _mps_times
+from src.lib.render.hyperframes.flowchart_vertical import _fcv_times
 
 # §7 контракта детерминизма: анимировать можно только это.
 ALLOWED_PROPS = {
@@ -322,6 +323,14 @@ def test_css_covers_every_layer_the_transitions_use():
         "value": 22, "max": 30, "label": "Goals reached",
         "caption": "Great job, we are getting closer!",
     }),
+    ("data-viz/flowchart-vertical", {
+        "root": "Should I learn to code?",
+        "branches": ["Yes", "Not sure"],
+        "leaves": [
+            "Start with Python", "Try no-code first",
+            "Build a personal website", "Take a free intro course",
+        ],
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -357,6 +366,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/north-korea-locked-down", ctx) == Piece()
     assert render_dataviz("data-viz/nyc-paris-flight", ctx) == Piece()
     assert render_dataviz("data-viz/mk-progress-stat", ctx) == Piece()
+    assert render_dataviz("data-viz/flowchart-vertical", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -1792,6 +1802,58 @@ def test_mk_progress_stat_keeps_catalog_tokens():
     assert "#1d1d1f" in chart
     assert "#0071e3" in fill
     block = css.split(".mps-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
+def test_flowchart_vertical_bakes_spans_not_textcontent(ctx):
+    """Catalog writes textContent; here pre-baked spans, SVG-mask."""
+    piece = render_dataviz("data-viz/flowchart-vertical", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=12.0, target=ctx.target,
+        track=6, params={
+            "root": "Should I learn to code?",
+            "branches": ["Yes", "Not sure"],
+            "leaves": [
+                "Start with Python", "Try no-code first",
+                "Build a personal website", "Take a free intro course",
+            ],
+        }))
+    node = piece.nodes[0]
+    assert "fcv-chart" in node
+    assert "Should I learn to code?" in node
+    assert "Start with Python" in node
+    assert "Pythom" in node
+    assert "textContent" not in node
+    assert "filter:" not in "".join(piece.tweens)
+    assert "strokeDashoffset" not in "".join(piece.tweens)
+    assert "textContent" not in "".join(piece.tweens)
+    body = " ".join(piece.tweens)
+    assert "scale:" in body or "scaleY:" in body
+    assert "opacity:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#fcv-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _fcv_times(12.0)
+    assert abs(times["root_at"] - 0.2) < 1e-9
+
+
+def test_flowchart_vertical_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".fcv-chart" in css
+    assert ".fcv-node" in css
+    assert "#e8d44d" in css
+    assert "#c2e8a0" in css
+    assert "#f5c5a3" in css
+    assert "#d4c5f9" in css
+    assert "#9747ff" in css
+    assert "#0b84f3" in css
+    block = css.split(".fcv-chart", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
 

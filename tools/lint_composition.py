@@ -177,6 +177,18 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "caption": "Great job, we are getting closer!",
         },
     })
+    overlays.append({
+        "type": "dataviz", "start": 37.0, "end": 49.0,
+        "template": "data-viz/flowchart-vertical", "renderer": "dataviz",
+        "params": {
+            "root": "Should I learn to code?",
+            "branches": ["Yes", "Not sure"],
+            "leaves": [
+                "Start with Python", "Try no-code first",
+                "Build a personal website", "Take a free intro course",
+            ],
+        },
+    })
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

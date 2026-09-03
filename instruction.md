@@ -380,3 +380,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Data-viz mk-progress-stat: цифра считает вверх, полоса scaleX | каталог пишет textContent и visibility; здесь span-ы и opacity, Inter/#1d1d1f/#0071e3/#f5f5f7; stat-countup-card не трогаем |
 | 2026-09-03 | Browser-ui ai-chat-reveal: iPhone-чат, набор, стрим ответа и end card | каталог пишет textContent и autoAlpha; здесь span-ы и opacity, Inter/#fdfdfd/#d2d5e0/#3ce6ac; chat-thread не трогаем |
 | 2026-09-03 | Browser-ui app-showcase: три телефона веером, кольцо, бары, график | каталог твинит width/strokeDashoffset; здесь scaleX/rotation/SVG-mask, Inter/#e4fa72/#271f15/#f1f2ec; phone-notification не трогаем |
+| 2026-09-03 | Data-viz flowchart-vertical: вертикальная блок-схема, ветви scaleY-маска, курсор x/y, исправление опечатки | каталог твинит strokeDashoffset и innerHTML; здесь SVG-маска scaleY, слои опечатки opacity, курсор x/y, Inter/#ffffff/#111214; flowchart не трогаем |

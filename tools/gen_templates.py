@@ -396,7 +396,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (27, [
+    "data-viz": (28, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -540,6 +540,16 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "label": "Goals reached",
              "caption": "Great job, we are getting closer!",
          }, ["data", "number", "progress"], "dataviz"),
+        ("flowchart-vertical",
+         "Вертикальная блок-схема с узлами, связями и выбором — flowchart-vertical",
+         [2.0, 12.0], {
+             "root": "Should I learn to code?",
+             "branches": ["Yes", "Not sure"],
+             "leaves": [
+                 "Start with Python", "Try no-code first",
+                 "Build a personal website", "Take a free intro course",
+             ],
+         }, ["data", "flowchart", "vertical"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

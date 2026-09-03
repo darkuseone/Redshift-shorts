@@ -1781,6 +1781,32 @@ def test_mk_progress_stat_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "visibility" not in tween_src
 
 
+def test_flowchart_vertical_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 12.2,
+        "template": "data-viz/flowchart-vertical",
+        "params": {
+            "root": "Should I learn to code?",
+            "branches": ["Yes", "Not sure"],
+            "leaves": [
+                "Start with Python", "Try no-code first",
+                "Build a personal website", "Take a free intro course",
+            ],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fcv-chart" in out
+    assert "Should I learn to code?" in out
+    node = next(line for line in out.splitlines() if "fcv-chart" in line)
+    assert "textContent" not in node
+    assert "amc-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

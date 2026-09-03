@@ -6002,6 +6002,7 @@ from .nyc_paris import npf_css, dv_nyc_paris_flight  # noqa: E402
 from .us_map_bubble import umb_css, dv_us_map_bubble  # noqa: E402
 from .mk_progress import mps_css, dv_mk_progress_stat  # noqa: E402
 from .flowchart import flc_css, dv_flowchart  # noqa: E402
+from .flowchart_vertical import fcv_css, dv_flowchart_vertical  # noqa: E402
 from .text_templates import sfb_css, txt_split_flap_board, txt_news_ticker  # noqa: E402
 from .wave_templates import wv_css, dv_oscilloscope_trace, dv_weight_wave  # noqa: E402
 
@@ -6032,6 +6033,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "nyc-paris-flight": dv_nyc_paris_flight,
     "mk-progress-stat": dv_mk_progress_stat,
     "flowchart": dv_flowchart,
+    "flowchart-vertical": dv_flowchart_vertical,
     "oscilloscope-trace": dv_oscilloscope_trace,
     "weight-wave": dv_weight_wave,
 }
@@ -6523,6 +6525,7 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         + mps_css()
         + umb_css()
         + flc_css()
+        + fcv_css()
     )
 
 
