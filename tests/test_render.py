@@ -271,11 +271,11 @@ def test_catalog_matches_spec_counts(cfg):
     catalog = TemplateCatalog.load(cfg)
     counts = catalog.counts()
     assert counts == {
-        "intro-hooks": 8, "text-fullscreen": 23, "lower-thirds": 11, "frames-cards": 7,
+        "intro-hooks": 8, "text-fullscreen": 24, "lower-thirds": 11, "frames-cards": 7,
         "browser-ui": 8, "transitions": 13, "avatar-entry": 6, "kenburns": 10,
         "parallax": 4, "data-viz": 7, "outro-cta": 6, "hero-devices": 13,
     }
-    assert len(catalog.all()) == 116
+    assert len(catalog.all()) == 117
 
 
 def test_catalog_rotation_avoids_recent(cfg):

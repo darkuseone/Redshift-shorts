@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-116 шаблонов каталога — это не 116 реализаций, а набор рендереров с параметрами.
+117 шаблонов каталога — это не 117 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3426,6 +3426,322 @@ def fs_code_diff(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог code-particle-assemble: Three.js Points, шейдер uProgress, canvas
+# getImageData. Движок WebGL, onUpdate и Math.random не умеет — capped span-ы
+# с заранее посчитанным x/y, mulberry32 seed 23, как в каталоге.
+_CPA_SEED = 23
+_CPA_SEED_MIX = 2654435761
+_CPA_CAP = 72
+_CPA_DOT = 8
+_CPA_ASSEMBLE_FRAC = 0.72
+_CPA_SPAN = 0.62
+_CPA_SIZE_CEILING = 42
+_CPA_SIZE_FLOOR = 18
+_CPA_FONT_PX_CAT = 46
+_CPA_LINE_H_CAT = 70
+_CPA_PAD_X_CAT = 70
+_CPA_PAD_Y_CAT = 64
+_CPA_THRESH = 120
+_CPA_WORLD_W = 13.0
+_CPA_BG_RGB = (11, 15, 23)
+_CPA_FRAME_W = 1080
+_CPA_FRAME_H = 1920
+
+
+def _cpa_i32(value: int) -> int:
+    value &= 0xFFFFFFFF
+    return value - 0x100000000 if value >= 0x80000000 else value
+
+
+def _cpa_u32(value: int) -> int:
+    return value & 0xFFFFFFFF
+
+
+class _CpaRng:
+    """mulberry32 каталога (seed 23, mix 2654435761). Без Math.random."""
+
+    __slots__ = ("state",)
+
+    def __init__(self, seed: int) -> None:
+        self.state = _cpa_i32(seed)
+
+    def __call__(self) -> float:
+        a = _cpa_i32(self.state + 0x6D2B79F5)
+        self.state = a
+        t = _cpa_i32(_cpa_i32(a ^ (_cpa_u32(a) >> 15)) * (1 | a))
+        t = _cpa_i32(t + _cpa_i32(_cpa_i32(t ^ (_cpa_u32(t) >> 7)) * (61 | t))) ^ t
+        t = _cpa_i32(t)
+        return _cpa_u32(t ^ (_cpa_u32(t) >> 14)) / 4294967296.0
+
+
+def _cpa_rng(seed: int = _CPA_SEED) -> _CpaRng:
+    mixed = ((seed or 1) * _CPA_SEED_MIX) & 0xFFFFFFFF
+    return _CpaRng(mixed)
+
+
+def _cpa_num(value: float) -> str:
+    """_num(-0.0) даёт '-0' — линт и GSAP этого не едят."""
+    if abs(float(value)) < 5e-4:
+        return "0"
+    return _num(value)
+
+
+def _cpa_times(duration: float) -> dict[str, float]:
+    """Сборка 72 % длительности, как uProgress в каталоге; span 0.62."""
+    assemble = max(0.35, duration * _CPA_ASSEMBLE_FRAC)
+    if assemble > duration - 0.04:
+        assemble = max(0.35, duration - 0.04)
+    move = assemble * _CPA_SPAN
+    code_at = assemble * _CPA_SPAN
+    code_dur = max(0.18, min(assemble * 0.28, max(0.18, duration - code_at - 0.02)))
+    fade = max(0.12, min(0.45, move * 0.22))
+    return {
+        "assemble": assemble,
+        "move": move,
+        "code_at": code_at,
+        "code_dur": code_dur,
+        "fade": fade,
+    }
+
+
+def _cpa_hex_rgb(color: str) -> tuple[int, int, int]:
+    raw = str(color or "").strip().lstrip("#")
+    if len(raw) == 3:
+        raw = "".join(ch * 2 for ch in raw)
+    if len(raw) < 6:
+        return 225, 228, 232
+    try:
+        return int(raw[0:2], 16), int(raw[2:4], 16), int(raw[4:6], 16)
+    except ValueError:
+        return 225, 228, 232
+
+
+def _cpa_rgb_hex(rgb: tuple[int, int, int]) -> str:
+    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+
+
+def _cpa_brighten(color: str) -> str:
+    r, g, b = _cpa_hex_rgb(color)
+    bump = int(round(0.32 * 255))
+    return _cpa_rgb_hex((min(255, r + bump), min(255, g + bump), min(255, b + bump)))
+
+
+@lru_cache(maxsize=8)
+def _cpa_mono_font(size: int):
+    """JetBrains Mono Bold из проверенного набора. None — если файла нет."""
+    try:
+        from PIL import ImageFont
+
+        manifest = json.loads(
+            (Path("assets/fonts") / "fonts_manifest.json").read_text(encoding="utf-8"))
+        entry = next(f for f in manifest["fonts"] if f.get("role") == "mono")
+        return ImageFont.truetype(str(Path("assets/fonts") / entry["file"]), size)
+    except Exception:                                        # noqa: BLE001
+        return None
+
+
+def _cpa_metrics(lines: list[list[tuple[str, str]]], available: float,
+                 frame_w: int, frame_h: int) -> tuple[int, int, int, int]:
+    size = min(_CPA_SIZE_CEILING, _c3d_fit(lines, available))
+    size = max(_CPA_SIZE_FLOOR, size)
+
+    def dims(s: int) -> tuple[int, int, int]:
+        lh = max(1, int(round(s * _CPA_LINE_H_CAT / _CPA_FONT_PX_CAT)))
+        px = max(8, int(round(s * _CPA_PAD_X_CAT / _CPA_FONT_PX_CAT)))
+        py = max(8, int(round(s * _CPA_PAD_Y_CAT / _CPA_FONT_PX_CAT)))
+        return lh, px, py
+
+    lh, px, py = dims(size)
+    while size > _CPA_SIZE_FLOOR:
+        tall = len(lines) * lh + 2 * py
+        longest = max((sum(len(piece[0]) for piece in line) for line in lines), default=1)
+        wide = longest * size * _C3D_MONO_EM + 2 * px
+        if tall <= frame_h * 0.82 and wide <= frame_w * 0.92:
+            break
+        size -= 1
+        lh, px, py = dims(size)
+    return size, lh, px, py
+
+
+def _cpa_glyph_hits(lines: list[list[tuple[str, str]]], size: int, pad_x: int,
+                    pad_y: int, line_h: int, cap: int, font) -> list[tuple[int, int, str]]:
+    hits: list[tuple[int, int, str]] = []
+    em = size * _C3D_MONO_EM
+    for li, line in enumerate(lines):
+        x = float(pad_x)
+        y = pad_y + li * line_h + int(round(line_h * 0.38))
+        for text, color in line:
+            for ch in text:
+                wide = font.getlength(ch) if font is not None and ch else em
+                if not ch:
+                    continue
+                if not ch.isspace():
+                    hits.append((int(x + wide / 2), int(y), color))
+                x += wide
+    if len(hits) <= cap:
+        return hits
+    n = len(hits)
+    return [hits[int(round(i * (n - 1) / (cap - 1)))] for i in range(cap)]
+
+
+def _cpa_sample_hits(lines: list[list[tuple[str, str]]], size: int, pad_x: int,
+                     pad_y: int, line_h: int, cap: int) -> tuple[list[tuple[int, int, str]], int, int]:
+    """Семпл ярких пикселей глифов, как getImageData в каталоге. Cap — DOM."""
+    font = _cpa_mono_font(size)
+    if font is None:
+        longest = max((sum(len(piece[0]) for piece in line) for line in lines), default=1)
+        cw = max(2, int(math.ceil(longest * size * _C3D_MONO_EM + 2 * pad_x)))
+        ch = max(2, int(len(lines) * line_h + 2 * pad_y))
+        return _cpa_glyph_hits(lines, size, pad_x, pad_y, line_h, cap, None), cw, ch
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:                                        # noqa: BLE001
+        longest = max((sum(len(piece[0]) for piece in line) for line in lines), default=1)
+        cw = max(2, int(math.ceil(font.getlength("".join(t[0] for t in lines[0])) + 2 * pad_x)))
+        ch = max(2, int(len(lines) * line_h + 2 * pad_y))
+        return _cpa_glyph_hits(lines, size, pad_x, pad_y, line_h, cap, font), cw, ch
+
+    max_w = 0.0
+    for line in lines:
+        wide = 0.0
+        for text, _color in line:
+            if text:
+                wide += font.getlength(text)
+        if wide > max_w:
+            max_w = wide
+    cw = max(2, int(math.ceil(max_w + 2 * pad_x)))
+    ch = max(2, int(math.ceil(len(lines) * line_h + 2 * pad_y)))
+    img = Image.new("RGB", (cw, ch), _CPA_BG_RGB)
+    draw = ImageDraw.Draw(img)
+    for li, line in enumerate(lines):
+        x = float(pad_x)
+        y = pad_y + li * line_h
+        for text, color in line:
+            if not text:
+                continue
+            draw.text((x, y), text, font=font, fill=_cpa_hex_rgb(color), anchor="lt")
+            x += font.getlength(text)
+    pix = img.load()
+    step = 2
+    if cw * ch > 400_000:
+        step = 4
+    hits: list[tuple[int, int, str]] = []
+    for y in range(0, ch, step):
+        for x in range(0, cw, step):
+            r, g, b = pix[x, y][:3]
+            if r + g + b < _CPA_THRESH:
+                continue
+            hits.append((x, y, _cpa_rgb_hex((r, g, b))))
+    if not hits:
+        return _cpa_glyph_hits(lines, size, pad_x, pad_y, line_h, cap, font), cw, ch
+    if len(hits) > cap:
+        n = len(hits)
+        hits = [hits[int(round(i * (n - 1) / (cap - 1)))] for i in range(cap)]
+    return hits, cw, ch
+
+
+def fs_code_particle_assemble(ctx: "TemplateCtx") -> Piece:
+    """Пыль собирается в глифы кода: каталог — Three.js Points.
+
+    Движок WebGL, ``onUpdate`` и ``Math.random`` не умеет. Пыль — span с
+    заранее посчитанным ``x``/``y``, PRNG — mulberry32 seed 23. Github-dark
+    и JetBrains Mono как в каталоге — это сам жест, не палитра канала.
+    Твины на ``#…-d*`` и ``#…-code``, не на ``.clip``.
+    """
+    params = ctx.params
+    code = str(params.get("code") or params.get("content") or params.get("text")
+               or "").replace("\r\n", "\n").strip("\n")
+    raw_tokens = params.get("tokens")
+    token_rows = _cd_rows_from_tokens(raw_tokens)
+    if token_rows is not None:
+        lines = token_rows
+        if not any(piece for line in lines for piece, _color in line):
+            return Piece()
+    else:
+        if not code.strip():
+            return Piece()
+        lines = _c3d_highlight(code)
+    if not lines:
+        return Piece()
+    node_id = ctx.target
+    frame_w = int(params.get("frame_w") or _CPA_FRAME_W)
+    frame_h = int(params.get("frame_h") or _CPA_FRAME_H)
+    available = float(params.get("available_px") or min(900, frame_w * 0.88))
+    size, line_h, pad_x, pad_y = _cpa_metrics(lines, available, frame_w, frame_h)
+    hits, cw, ch = _cpa_sample_hits(lines, size, pad_x, pad_y, line_h, _CPA_CAP)
+    if not hits:
+        return Piece()
+    t = _cpa_times(ctx.duration)
+    at = _enter_at(ctx)
+    rng = _cpa_rng(int(params.get("seed") or _CPA_SEED))
+    world_w = _CPA_WORLD_W
+    world_h = world_w * (ch / cw) if cw else world_w
+    code_left = (frame_w - cw) / 2.0
+    code_top = (frame_h - ch) / 2.0
+    radius = _CPA_DOT // 2
+    dust: list[str] = []
+    tweens: list[str] = []
+    for i, (px, py, color) in enumerate(hits):
+        sx = (rng() * 2 - 1) * world_w * 1.15
+        sy = (rng() * 2 - 1) * world_h * 1.7
+        sz = (rng() * 2 - 1) * 9.0 - 2.0
+        delay = rng()
+        ox = (sx / world_w + 0.5) * cw
+        oy = (-sy / world_h + 0.5) * ch
+        z_push = sz * (cw / world_w) * 0.08
+        scatter_x = ox + z_push - px
+        scatter_y = oy - py
+        start = at + delay * (1.0 - _CPA_SPAN) * t["assemble"]
+        land = start + t["move"]
+        did = f"{node_id}-d{i}"
+        left = int(round(code_left + px - radius))
+        top = int(round(code_top + py - radius))
+        dust.append(
+            f'<span id="{did}" class="pa-dot" style="'
+            f'left:{left}px;top:{top}px;width:{_CPA_DOT}px;height:{_CPA_DOT}px;'
+            f'background:{html.escape(color, quote=True)}"></span>')
+        bright = _cpa_brighten(color)
+        tweens.append(
+            f'tl.fromTo("#{did}",'
+            f'{{x:{_cpa_num(scatter_x)},y:{_cpa_num(scatter_y)},'
+            f'opacity:0.7,scale:0.45,backgroundColor:"{bright}"}},'
+            f'{{x:0,y:0,opacity:1,scale:1,backgroundColor:"{color}",'
+            f'duration:{_num(t["move"])},ease:"power2.out"}},'
+            f'{_num(start)});')
+        fade_at = land + 0.001
+        if fade_at + 0.05 < ctx.start + ctx.duration:
+            fade_dur = min(t["fade"], max(0.08, ctx.start + ctx.duration - fade_at - 0.01))
+            tweens.append(
+                f'tl.fromTo("#{did}",{{opacity:1}},{{opacity:0,'
+                f'duration:{_num(fade_dur)},ease:"power2.in",'
+                f'immediateRender:false}},{_num(fade_at)});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-code",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(t["code_dur"])},ease:"power1.out",'
+        f'immediateRender:false}},{_num(at + t["code_at"])});')
+    line_html: list[str] = []
+    for li, line in enumerate(lines):
+        toks = "".join(
+            f'<span class="pa-tok" style="color:{html.escape(color, quote=True)}">'
+            f'{_esc(text)}</span>'
+            for text, color in line
+        )
+        line_html.append(
+            f'<span class="pa-line" data-i="{li}" style="height:{line_h}px;'
+            f'line-height:{line_h}px">{toks}</span>')
+    invert = " invert" if params.get("invert") else ""
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text fs-code-pa'
+               f'{invert}" {_timing(ctx)}>'
+               f'<span id="{node_id}-stage" class="pa-stage">'
+               f'<span class="pa-dust">{"".join(dust)}</span>'
+               f'<span id="{node_id}-code" class="pa-code" '
+               f'style="width:{cw}px;height:{ch}px;padding:{pad_y}px {pad_x}px;'
+               f'font-size:{size}px">{"".join(line_html)}</span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -3441,6 +3757,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "shared_axis_z": fs_shared_axis_z,
     "code_3d_extrude": fs_code_3d_extrude,
     "code_diff": fs_code_diff,
+    "code_particle_assemble": fs_code_particle_assemble,
     "number_slam": fs_number_slam,
 }
 
@@ -3475,6 +3792,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_code_3d_extrude(ctx)
     if params.get("code_diff"):
         return fs_code_diff(ctx)
+    if params.get("code_particle_assemble"):
+        return fs_code_particle_assemble(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -4236,6 +4555,25 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .cd-del .cd-sign{color:#f85149}"
         ".fullscreen-text .cd-add .cd-sign{color:#3fb950}"
         ".fullscreen-text .cd-tok{font-weight:500}"
+        ".fullscreen-text.fs-code-pa{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:flex;"
+        "align-items:center;justify-content:center;background:#05070b;"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;font-weight:700;"
+        "text-transform:none;letter-spacing:0;color:#e1e4e8}"
+        ".fullscreen-text.fs-code-pa.invert{background:#05070b;color:#e1e4e8}"
+        ".fullscreen-text .pa-stage{position:relative;display:flex;"
+        "align-items:center;justify-content:center;width:100%;height:100%}"
+        ".fullscreen-text .pa-dust{position:absolute;inset:0;z-index:1;"
+        "pointer-events:none}"
+        ".fullscreen-text .pa-dot{position:absolute;display:block;"
+        "border-radius:50%;pointer-events:none;will-change:transform,opacity}"
+        ".fullscreen-text .pa-code{position:relative;z-index:2;display:flex;"
+        "flex-direction:column;align-items:flex-start;box-sizing:border-box;"
+        "opacity:0;white-space:pre;text-align:left;font-variant-ligatures:none;"
+        "pointer-events:none}"
+        ".fullscreen-text .pa-line{display:block;white-space:pre;font-weight:700;"
+        "letter-spacing:0}"
+        ".fullscreen-text .pa-tok{font-weight:700}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

@@ -54,7 +54,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (23, [
+    "text-fullscreen": (24, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -133,6 +133,12 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          [1.5, 6.0],
          {"code_diff": True},
          ["code", "code-animation", "diff", "developer"], "code_diff"),
+        ("code-particle-assemble",
+         "Пыль собирается в глифы кода — code-particle-assemble",
+         [1.5, 8.0],
+         {"code_particle_assemble": True},
+         ["code", "code-animation", "particles", "developer"],
+         "code_particle_assemble"),
         ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),

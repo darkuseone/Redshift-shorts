@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-116 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+117 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -20,6 +20,7 @@ from src.lib.render.hyperframes.templates import (
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
+    _cpa_times, _cpa_rng, _CPA_CAP,
     _sr_frame_table,
 )
 
@@ -1340,6 +1341,89 @@ def test_code_diff_css_keeps_github_diff_and_mono():
         "will-change:transform,opacity", "")
     assert "text-transform:none" in css
     assert ".fs-code-diff" in css
+
+
+_CPA_DEMO = (
+    "const app = pipe(\n"
+    "  parse,\n"
+    "  optimize,\n"
+    "  emit,\n"
+    ")"
+)
+
+
+def test_code_particle_assemble_flies_capped_dust_without_webgl():
+    """Каталог рисует GPU Points; здесь span с заранее x/y и mulberry32."""
+    piece = render_fullscreen(_fs_ctx(
+        content=_CPA_DEMO, renderer="code_particle_assemble",
+        code_particle_assemble=True, duration=8.0))
+    node = piece.nodes[0]
+    assert "fs-code-pa" in node
+    assert "pa-dust" in node and "pa-dot" in node and "pa-code" in node
+    assert "const" in node and "pipe" in node and "optimize" in node
+    assert "CONST" not in node
+    assert "THREE" not in node and "WebGL" not in node and "<canvas" not in node
+    assert "position:absolute" not in node.split("pa-dust", 1)[0]
+    assert node.count('id="shot-01"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    n_dots = node.count("pa-dot")
+    assert 1 <= n_dots <= _CPA_CAP
+    body = " ".join(piece.tweens)
+    assert "power2.out" in body
+    assert "THREE" not in body and "onUpdate" not in body
+    assert "Math.random" not in body
+    assert "visibility" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith("#shot-01-")
+    flagged = render_fullscreen(_fs_ctx(
+        content=_CPA_DEMO, code_particle_assemble=True, stagger_ms=55,
+        duration=8.0))
+    assert "fs-code-pa" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="code_particle_assemble", duration=8.0))
+    assert empty.nodes == []
+    again = render_fullscreen(_fs_ctx(
+        content=_CPA_DEMO, renderer="code_particle_assemble",
+        code_particle_assemble=True, duration=8.0))
+    assert piece.tweens == again.tweens
+    rng = _cpa_rng()
+    assert rng() == _cpa_rng()()
+    times = _cpa_times(8.0)
+    assert abs(times["assemble"] - 5.76) < 1e-9
+    assert times["code_at"] + times["code_dur"] <= 8.0 + 1e-9
+    short = _cpa_times(1.5)
+    assert short["code_at"] + short["code_dur"] <= 1.5 + 1e-9
+
+
+def test_code_particle_assemble_keeps_github_dark_and_mono():
+    from src.lib.config import load_config
+
+    piece = render_fullscreen(_fs_ctx(
+        content=_CPA_DEMO, renderer="code_particle_assemble", duration=8.0))
+    node = piece.nodes[0]
+    assert "#F97583" in node and "#B392F0" in node and "#79B8FF" in node
+    css = overlay_css(load_config().brandbook)
+    assert "JetBrains Mono" in css
+    assert "#05070b" in css
+    assert ".fs-code-pa" in css
+    assert "text-transform:none" in css
+    dot = re.search(r"\.pa-dot\{[^}]+\}", css).group(0)
+    assert "transform:" not in dot.replace("will-change:transform,opacity", "")
+    stage = re.search(r"\.pa-stage\{[^}]+\}", css).group(0)
+    assert "position:absolute" not in stage
+    invert = re.search(r"\.fullscreen-text\.fs-code-pa\.invert\{[^}]+\}", css).group(0)
+    assert "background:#05070b" in invert
+    assert "#C8453D" not in dot
 
 
 def test_number_slam_splits_the_caption():
