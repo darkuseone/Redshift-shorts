@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-112 шаблонов каталога — это не 112 реализаций, а набор рендереров с параметрами.
+113 шаблонов каталога — это не 113 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3241,12 +3241,143 @@ def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог lt-clean-bar: 4.8 с, clip-path wipe, tab scaleY, имя/роль ↑.
+_LT_CB_TAB_W = 12
+_LT_CB_PAD_L = 30
+_LT_CB_PAD_R = 40
+_LT_CB_PAD_T = 22
+_LT_CB_PAD_B = 24
+_LT_CB_GAP = 7
+_LT_CB_NAME_CEILING = 52
+_LT_CB_ROLE_SIZE = 26
+_LT_CB_NAME_LH = 1.06
+_LT_CB_ROLE_LH = 1.2
+_LT_CB_SLACK = 1.14
+_LT_CB_FROM_Y = 22
+_LT_CB_EXIT_Y = 18
+
+
+def _lt_cb_times(duration: float) -> dict[str, float]:
+    """Вход как в каталоге; выход прижат к концу, если окно короче 4.8 с."""
+    wipe_in_at, wipe_in_dur = 0.10, 0.55
+    tab_in_at, tab_in_dur = 0.28, 0.45
+    name_in_at, name_in_dur = 0.34, 0.50
+    role_in_at, role_in_dur = 0.44, 0.50
+    exit_dur, exit_lead = 0.35, 0.50
+    enter_end = role_in_at + role_in_dur
+    first_out = duration - exit_lead
+    if first_out < enter_end + 0.001:
+        room = max(0.35, first_out - 0.001)
+        scale = room / enter_end
+        wipe_in_at *= scale
+        wipe_in_dur *= scale
+        tab_in_at *= scale
+        tab_in_dur *= scale
+        name_in_at *= scale
+        name_in_dur *= scale
+        role_in_at *= scale
+        role_in_dur *= scale
+        enter_end = role_in_at + role_in_dur
+    exit_at = max(enter_end + 0.001, duration - exit_lead)
+    return {
+        "wipe_in_at": wipe_in_at, "wipe_in_dur": wipe_in_dur,
+        "tab_in_at": tab_in_at, "tab_in_dur": tab_in_dur,
+        "name_in_at": name_in_at, "name_in_dur": name_in_dur,
+        "role_in_at": role_in_at, "role_in_dur": role_in_dur,
+        "exit_at": exit_at, "exit_dur": exit_dur,
+    }
+
+
+def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
+    """Белая плашка с акцентной полоской: wipe слева, tab растёт, текст ↑.
+
+    Каталог твинит ``clip-path`` и прячет карточку через ``visibility``.
+    Движок этого не умеет: wipe — SVG-mask и ``scaleX`` на rect, как у
+    caption-clip-wipe. Оранжевый ``#ff5a36`` — чужой бренд, tab канала
+    ``#C8453D``. Montserrat как в каталоге. Твины на маске, tab и строках,
+    не на ``.clip``.
+    """
+    params = ctx.params
+    name = str(params.get("name") or params.get("content") or params.get("text")
+               or "").strip()
+    role = str(params.get("role") or params.get("kicker") or params.get("subtitle")
+               or "").strip()
+    if not name and not role:
+        return Piece()
+    node_id = ctx.target
+    available = float(params.get("available_px") or 740)
+    text_avail = max(80.0, available - _LT_CB_TAB_W - _LT_CB_PAD_L - _LT_CB_PAD_R)
+    fit_avail = text_avail / _LT_CB_SLACK
+    name_size = (fit_size(name, fit_avail, _LT_CB_NAME_CEILING)
+                 if name else _LT_CB_NAME_CEILING)
+    role_size = (min(_LT_CB_ROLE_SIZE, fit_size(role, fit_avail, _LT_CB_ROLE_SIZE))
+                 if role else _LT_CB_ROLE_SIZE)
+    name_w = text_width(name, name_size) * _LT_CB_SLACK if name else 0.0
+    role_w = text_width(role, role_size) * _LT_CB_SLACK if role else 0.0
+    inner_w = max(40, int(math.ceil(max(name_w, role_w))))
+    card_w = _LT_CB_TAB_W + _LT_CB_PAD_L + _LT_CB_PAD_R + inner_w
+    name_h = name_size * _LT_CB_NAME_LH if name else 0.0
+    role_h = role_size * _LT_CB_ROLE_LH if role else 0.0
+    gap = _LT_CB_GAP if name and role else 0
+    card_h = int(math.ceil(_LT_CB_PAD_T + _LT_CB_PAD_B + name_h + gap + role_h))
+    card_w = max(8, card_w)
+    card_h = max(8, card_h)
+    t = _lt_cb_times(ctx.duration)
+    at = ctx.start
+    rows: list[str] = []
+    tweens: list[str] = [
+        f'tl.fromTo("#{node_id}-wipe",{{scaleX:0}},'
+        f'{{scaleX:1,duration:{_num(t["wipe_in_dur"])},ease:"power3.out"}},'
+        f'{_num(at + t["wipe_in_at"])});',
+        f'tl.fromTo("#{node_id}-tab",{{scaleY:0}},'
+        f'{{scaleY:1,duration:{_num(t["tab_in_dur"])},ease:"power2.out"}},'
+        f'{_num(at + t["tab_in_at"])});',
+        f'tl.fromTo("#{node_id}-stage",{{y:0,opacity:1}},'
+        f'{{y:{_LT_CB_EXIT_Y},opacity:0,duration:{_num(t["exit_dur"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(at + t["exit_at"])});',
+    ]
+    if name:
+        rows.append(
+            f'<span id="{node_id}-name" class="lt-cb-name" '
+            f'style="font-size:{name_size}px">{_esc(name)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-name",{{y:{_LT_CB_FROM_Y},opacity:0}},'
+            f'{{y:0,opacity:1,duration:{_num(t["name_in_dur"])},'
+            f'ease:"power3.out"}},{_num(at + t["name_in_at"])});')
+    if role:
+        rows.append(
+            f'<span id="{node_id}-role" class="lt-cb-role" '
+            f'style="font-size:{role_size}px">{_esc(role)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-role",{{y:{_LT_CB_FROM_Y},opacity:0}},'
+            f'{{y:0,opacity:1,duration:{_num(t["role_in_dur"])},'
+            f'ease:"power3.out"}},{_num(at + t["role_in_at"])});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay lt-clean-bar" {_timing(ctx)}>'
+               f'<span id="{node_id}-stage" class="lt-cb-stage" '
+               f'style="width:{card_w}px;height:{card_h}px">'
+               f'<svg class="lt-cb-svg" width="{card_w}" height="{card_h}" '
+               f'viewBox="0 0 {card_w} {card_h}" aria-hidden="true">'
+               f'<defs><mask id="{node_id}-m" maskUnits="userSpaceOnUse" '
+               f'maskContentUnits="userSpaceOnUse">'
+               f'<rect id="{node_id}-wipe" class="lt-cb-wipe" x="0" y="0" '
+               f'width="{card_w}" height="{card_h}" fill="#fff"/></mask></defs>'
+               f'</svg>'
+               f'<span id="{node_id}-card" class="lt-cb-card" '
+               f'style="-webkit-mask:url(#{node_id}-m);mask:url(#{node_id}-m)">'
+               f'<span id="{node_id}-tab" class="lt-cb-tab"></span>'
+               f'<span class="lt-cb-body">{"".join(rows)}</span></span></span></div>'],
+        tweens=tweens)
+
+
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
     "chat_thread": ov_chat_thread,
     "article_scroll": ov_article_scroll,
     "paper_reveal": ov_paper_reveal,
     "lt_accent_underline": ov_lt_accent_underline,
+    "lt_clean_bar": ov_lt_clean_bar,
 }
 
 
@@ -3513,6 +3644,27 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "font-weight:400;color:#e7eaf0;line-height:1.2;letter-spacing:0.04em;"
         "white-space:nowrap;text-shadow:0 2px 16px rgba(0,0,0,0.45);"
         "will-change:transform,opacity}"
+        f".lt-clean-bar{{left:var(--safe-x-min);"
+        f"bottom:{height - int(safe['y_max']) + 60}px;"
+        "max-width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        "background:transparent}"
+        ".lt-cb-stage{display:block;position:relative;overflow:visible}"
+        ".lt-cb-svg{position:absolute;left:0;top:0;width:100%;height:100%;"
+        "pointer-events:none}"
+        ".lt-cb-wipe{transform-origin:0px 50%;transform-box:fill-box}"
+        ".lt-cb-card{display:flex;align-items:stretch;width:100%;height:100%;"
+        "border-radius:16px;overflow:hidden;"
+        "box-shadow:0 14px 44px rgba(15,17,21,0.18)}"
+        ".lt-cb-tab{display:block;width:12px;flex-shrink:0;background:#C8453D;"
+        "transform-origin:50% 0%;will-change:transform}"
+        ".lt-cb-body{display:flex;flex-direction:column;gap:7px;flex:1;"
+        "background:#ffffff;padding:22px 40px 24px 30px}"
+        ".lt-cb-name{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
+        "font-weight:700;color:#0f1115;line-height:1.06;letter-spacing:-0.015em;"
+        "white-space:nowrap;will-change:transform,opacity}"
+        ".lt-cb-role{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
+        "font-weight:400;color:#5a6170;line-height:1.2;letter-spacing:0.01em;"
+        "white-space:nowrap;will-change:transform,opacity}"
     )
 
 

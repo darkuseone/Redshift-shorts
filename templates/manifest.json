@@ -4,7 +4,7 @@
   "counts": {
     "intro-hooks": 8,
     "text-fullscreen": 21,
-    "lower-thirds": 9,
+    "lower-thirds": 10,
     "frames-cards": 7,
     "browser-ui": 8,
     "transitions": 13,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 112
+    "_total": 113
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -725,6 +725,29 @@
         "minimal"
       ],
       "renderer": "lt_accent_underline",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/clean-bar",
+      "name": "clean-bar",
+      "category": "lower-thirds",
+      "title": "Белая плашка с акцентной полоской",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "clean_bar": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "podcast"
+      ],
+      "renderer": "lt_clean_bar",
       "last_used_in": [],
       "added": "2026-09-03"
     },
