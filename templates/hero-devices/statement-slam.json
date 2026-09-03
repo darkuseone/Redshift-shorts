@@ -1,0 +1,20 @@
+{
+  "id": "hero-devices/statement-slam",
+  "name": "statement-slam",
+  "category": "hero-devices",
+  "title": "Плашка с фразой забирает кадр и уходит",
+  "duration_range": [
+    1.4,
+    2.2
+  ],
+  "params": {},
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "slam"
+  ],
+  "renderer": "hero-slam",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

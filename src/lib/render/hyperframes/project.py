@@ -101,9 +101,22 @@ class HyperFramesProject:
         for shot in plan.get("shots", []):
             if shot.get("file"):
                 sources.append(str(shot["file"]))
+            # Материал приёма — отдельный файл шота, и он тоже обязан переехать
+            # внутрь. В конвейере это скрывалось: приём берёт кадр у соседнего
+            # шота, а тот уже перенесён своей строкой выше. Проба отдаёт приёму
+            # файл, которого нет ни у одного шота, — и lint честно ловил
+            # `missing_local_asset`.
+            hero_file = (shot.get("hero") or {}).get("file")
+            if hero_file:
+                sources.append(str(hero_file))
         for seg in plan.get("avatar", []):
             if seg.get("file"):
                 sources.append(str(seg["file"]))
+        # Плита фона — такой же файл проекта, как футаж: она обязана переехать
+        # внутрь, иначе разметка сошлётся на путь, которого в проекте нет.
+        plate = (plan.get("backdrop") or {}).get("plate")
+        if plate:
+            sources.append(str(plate))
 
         for path_text in sources:
             if path_text in assets:

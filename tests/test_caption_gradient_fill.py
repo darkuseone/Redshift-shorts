@@ -109,7 +109,9 @@ def test_css_has_no_clip_path_or_filter(cfg):
     assert ".caption-grad{" in css
     full = build_css(cfg.brandbook, {"display": "Oswald-Bold.ttf"})
     assert ".caption-grad{" in full
-    assert ".word{" not in full
+    # glow-дефолт main живёт на `.word`; жесты caption — поверх него.
+    assert ".word{" in full
+    assert "text-shadow" in full
 
 
 def test_every_fill_tween_target_exists(cfg):

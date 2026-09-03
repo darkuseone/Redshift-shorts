@@ -28,7 +28,13 @@ from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
     prepare_split_shot,
 )
+from ..lib.render.text_rules import glue_short_cues
+from ..lib.backdrop import plate_name as _scene_plate_name
 from ..lib.brand_icons import load_library as load_brand_icons
+from ..lib.backdrop import describe as scene_why
+from ..lib.backdrop import pick_scene
+from ..lib.backdrop import tone as scene_tone
+from ..lib.glyphs import match_glyphs
 from ..lib.render.hyperframes.captions import pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
@@ -36,6 +42,17 @@ from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
 _log = get_logger("p11")
+
+
+def _load_yaml(path) -> dict:
+    """Каталог источников как есть. Отсутствие файла — не повод падать."""
+    import yaml
+
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return yaml.safe_load(fh) or {}
+    except FileNotFoundError:
+        return {}
 
 AVATAR_KINDS = ("avatar", "split")
 
@@ -62,6 +79,37 @@ def _alpha_slots(avatar_meta: dict[str, Any]) -> set[int]:
             for idx in seg.get("slot_indices", [])}
 
 
+def _backdrop_plate(cfg, scene: str) -> str:
+    """Путь к плите сцены — или пусто, если её нет на диске.
+
+    Проверка существования не формальность: имя плиты записано в
+    :mod:`src.lib.backdrop`, а сам файл живёт в ассетах, и разъехаться они
+    могут. Пустая строка честнее ссылки в никуда — сцена нарисуется
+    градиентами, как и задумано запасным путём.
+    """
+    name = _scene_plate_name(scene)
+    if not name:
+        return ""
+    path = cfg.path("paths.assets_dir", "assets") / "backdrops" / name
+    return str(path) if path.exists() else ""
+
+
+def _head_boxes(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int, int, int]]:
+    """Слот шота → коробка головы в кадре.
+
+    Приёмам, которые стоят **за** головой, нужен не центр, а макушка: от неё
+    считается, насколько голова перекроет низ строки.
+    """
+    out: dict[int, tuple[int, int, int, int]] = {}
+    for seg in avatar_meta.get("segments", []):
+        box = seg.get("face_bbox")
+        if not box or len(box) != 4:
+            continue
+        for slot in seg.get("slot_indices", []):
+            out[int(slot)] = (int(box[0]), int(box[1]), int(box[2]), int(box[3]))
+    return out
+
+
 def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
     """Слот шота → центр лица в кадре.
 
@@ -81,7 +129,8 @@ def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
 
 
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
-                  prepared: dict[int, dict[str, Any]]) -> dict[str, Any] | None:
+                  prepared: dict[int, dict[str, Any]],
+                  assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
     """Кадр для панели за спиной — ближайший футаж того же блока.
 
     Панель показывает картинку по теме блока, а не произвольный кадр: это тот
@@ -98,7 +147,13 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
         return None
     nearest = min(same_block, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
     prep = prepared[int(nearest["index"])]
-    return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0)}
+    # Кредит материала едет вместе с ним: приём «экспонат» ставит источник на
+    # экран (§1, правило 8), и брать его надо у того кадра, чью картинку он и
+    # показывает, а не у слота приёма.
+    asset = (assets or {}).get(int(nearest["index"])) or {}
+    credit = str(asset.get("attribution") or asset.get("source") or "").strip()
+    return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0),
+            "credit": credit, "ai_generated": bool(asset.get("ai_generated"))}
 
 
 # Что приёму нужно на входе. Без этого он рисует пустоту поверх ведущего, и
@@ -107,7 +162,7 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
 # попал бы в кадр. Список ведётся здесь, а не тегами в каталоге: тег описывает,
 # на что приём похож, а это — чем его кормить.
 _HERO_NEEDS: dict[str, tuple[str, ...]] = {
-    "hero-burst": (),
+    "hero-icons": ("icons",),
     "hero-plate": ("plate",),
     "hero-headline": ("word",),
     "hero-split": ("word",),
@@ -119,6 +174,18 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-phone-mock": ("lines",),
     "hero-type-slab": ("lines",),
     "hero-plate-pop": ("plate",),
+    "hero-script-stack": ("lines",),
+    "hero-chat-typing": ("ask",),
+    "hero-chat-generate": ("gen_prompt", "plate"),
+    "hero-title-behind": ("head", "tail"),
+    "hero-exhibit": ("plate", "title"),
+    "hero-slam": ("punch",),
+    "hero-log": ("entries",),
+    "hero-oversize": ("word",),
+    "hero-figure": ("figures",),
+    "hero-verdict": ("punch",),
+    "hero-paper": ("source", "quote"),
+    "hero-bubble-typed": ("entries",),
 }
 
 
@@ -145,8 +212,319 @@ def _wrap_lines(text: str, *, width: int = 13, limit: int = 4) -> list[str]:
     return lines
 
 
+def _sentence(text: str, index: int, *, limit: int) -> str:
+    """Фраза по счёту, ужатая до ``limit`` слов."""
+    parts = [p.strip() for p in re.split(r"(?<=[.!?…])\s+", text) if p.strip()]
+    if index >= len(parts):
+        return ""
+    return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
+
+
+def _caption(text: str, *, limit: int = 8) -> str:
+    """Подпись под экспонатом — целая фраза, а не первые ``limit`` слов.
+
+    Обрезка по счёту слов давала обрывок: на 0047 под материалом стояло
+    «Скважину закрыли в девяносто втором, и сегодня это» — подпись обрывалась
+    на «это». В музейной табличке это читается как сбой набора, а не как
+    подпись. То же правило уже записано у плашки-удара (см. ``ask``).
+
+    Не влезла фраза целиком — берётся её первая часть до запятой или тире,
+    если та сама по себе законченная. Не влезла и она — подписи не будет:
+    приём покажет имя и кредит, а выдумывать текст неоткуда.
+    """
+    first = _sentence(text, 0, limit=10_000)
+    if not first:
+        return ""
+    if len(first.split()) <= limit:
+        return first
+    for part in re.split(r"[,—–:;]", first):
+        words = part.split()
+        if 3 <= len(words) <= limit:
+            return " ".join(words).strip(".,!?;: ")
+    return ""
+
+
+def _question(text: str, *, limit: int = 8) -> str:
+    """Фраза-вопрос из реплики. Пусто, если блок ни о чём не спрашивает.
+
+    Приём с перепиской показывает запрос в поисковом окне. Он собирался из
+    первой фразы **любого** блока, и окно всплывало там, где никто ничего не
+    спрашивал. Заказчик просил ставить его по смыслу: окно уместно там, где в
+    кадре и правда вопрос.
+
+    Признак — знак вопроса, и только он. Первая версия добавляла к нему список
+    вопросительных слов в начале фразы, чтобы поймать вопрос без знака. На
+    шести сценариях репозитория список не поймал ни одного лишнего вопроса, но
+    выдумал один: «Когда звезда умирала, она раздувалась…» — здесь «когда»
+    значит «в то время как», а не «в какой момент». Знак вопроса нашёл все
+    шесть настоящих вопросов и ни одного ложного.
+
+    Ищется по всем фразам блока, а не только по первой: реплика часто подводит
+    к вопросу и задаёт его в конце — «Куда, по-твоему, копать дальше?».
+    """
+    for part in (p.strip() for p in re.split(r"(?<=[.!?…])\s+", text)):
+        if "?" in part:
+            return " ".join(part.split()[:limit]).strip(".,!?;:")
+    return ""
+
+
+# Слова, по которым видно, что реплика про генерацию, а не про что угодно.
+# Список короткий и предметный: «модель» сюда не входит — в науке это модель
+# Вселенной куда чаще, чем модель нейросети, и окно генерации всплыло бы в
+# ролике про чёрные дыры. Ровно так уже промахнулся список вопросительных слов
+# для окна переписки.
+_GEN_MARKERS = re.compile(
+    r"(нейросет|нейронк|сгенерир|генерир|генерац|промпт|prompt|chatgpt|"
+    r"midjourney|dall|sora|stable diffusion|диффузионн|искусственн\w+ интеллект|"
+    r"\bии\b|\bai\b|\bgpt\b)", re.IGNORECASE)
+
+
+def _gen_prompt(block: dict[str, Any], *, limit: int = 7) -> str:
+    """Короткий промпт для окна генерации — или пусто, если блок не про неё.
+
+    Заказчик просил показывать генерацию там, где о ней и речь: «новость про
+    искусственный интеллект, как будто делаешь короткий запрос, и там окно
+    генерации или уже сгенерированная картинка». Значит, приём включает не
+    длина реплики, а её предмет.
+
+    Промпт берётся клаузой с акцентным словом, а не первыми словами блока:
+    обрывок, начатый с середины чужой мысли, читается как сбой набора. Строчные
+    буквы — так и печатают в поле запроса; заглавная тут выдала бы заголовок.
+    """
+    text = str(block.get("text") or "").strip()
+    if not text or not _GEN_MARKERS.search(text):
+        return ""
+    clause = _accent_clause(block) or text
+    return " ".join(clause.split()[:limit]).strip(".,!?;:").lower()
+
+
+def _accent_clause(block: dict[str, Any]) -> str:
+    """Клауза реплики с акцентным словом — или первая, если его нет.
+
+    Клауза — то, что между запятыми, тире и двоеточиями: окно, перешагнувшее
+    такую границу, начинается с середины чужой мысли.
+    """
+    text = str(block.get("text") or "").strip()
+    word = str(block.get("emphasis_word") or "").strip()
+    clauses = [c.strip(" —–-") for c in re.split(r"[,;:—–]|(?<=[.!?])\s+", text) if c.strip()]
+    return next((c for c in clauses if word and word.lower() in c.lower()),
+                clauses[0] if clauses else "")
+
+
+def _punch(block: dict[str, Any]) -> list[str]:
+    """Фраза для плашки-удара: две короткие строки, акцент — во второй.
+
+    Если автор сценария сам написал полноэкранную строку для этого блока —
+    берём её: она короткая по определению. Иначе режем окно, кончающееся
+    акцентным словом, и не длиннее клаузы: плашка живёт полторы секунды и
+    закрывает кадр целиком, за это время читаются две строки, а не фраза.
+    """
+    overlay = block.get("overlay") or {}
+    if overlay.get("type") == "fullscreen_text" and str(overlay.get("content") or "").strip():
+        return _wrap_lines(str(overlay["content"]).strip(), width=13, limit=2)
+
+    word = str(block.get("emphasis_word") or "").strip()
+    words = [w for w in _accent_clause(block).split() if w]
+    if not words:
+        return []
+    end = next((i + 1 for i, w in enumerate(words) if word and word.lower() in w.lower()),
+               len(words))
+    window = words[max(0, end - 4):end]
+    return _wrap_lines(" ".join(window).strip(".,!?;:"), width=13, limit=2)
+
+
+# Служебные слова в конце подписи читаются как обрыв: «кубитов почти».
+_FILLER = {"и", "а", "но", "то", "уже", "ещё", "еще", "это", "как", "же",
+           "в", "на", "за", "по", "из", "с", "к", "у", "о", "от", "до",
+           "почти", "просто", "всего", "лишь", "даже", "тоже", "опять"}
+
+
+def _trim_filler(words: list[str]) -> str:
+    tail = list(words)
+    while tail and tail[-1].lower() in _FILLER:
+        tail.pop()
+    return " ".join(tail)
+
+
+_NUMBER = re.compile(
+    r"(?:[$₽]\s?)?\d+(?:[ \u00a0]\d{3})*(?:[.,]\d+)?\s*"
+    r"(?:%|₽|\$|тыс\.?|млн|млрд)?")
+
+
+def _figures(text: str) -> list[dict[str, Any]]:
+    """Числа реплики с короткой подписью под каждым.
+
+    Приём сравнивает значения, поэтому подпись у них общая по смыслу: берём
+    слова, идущие следом за числом. Если число замыкает фразу — берём то, что
+    стоит перед ним: «получает Google» и «84 года» одинаково подписаны словом
+    рядом, а не пересказом всей реплики.
+    """
+    words = text.split()
+    out: list[dict[str, Any]] = []
+    for i, word in enumerate(words):
+        match = _NUMBER.fullmatch(word.strip(".,!?;:()»«"))
+        if not match or not any(ch.isdigit() for ch in word):
+            continue
+        after = [w.strip(".,!?;:") for w in words[i + 1:i + 3]]
+        before = [w.strip(".,!?;:") for w in words[max(0, i - 2):i]]
+        note = _trim_filler(after) or _trim_filler(before)
+        out.append({"value": match.group(0).strip(), "note": note})
+        if len(out) >= 3:
+            break
+    return out
+
+
+def _log_entries(words: list[dict[str, Any]], start: float) -> list[dict[str, Any]]:
+    """Куски реплики с отметкой, когда каждый произносится.
+
+    Приём «список копится» держится на совпадении с речью: кусок обязан
+    появиться на своём слове, а не через ровный интервал. Границы — знаки
+    препинания, потолок в четыре слова — чтобы кусок читался за раз.
+    """
+    chunk: list[str] = []
+    out: list[dict[str, Any]] = []
+    at = 0.0
+    for word in words:
+        if not chunk:
+            at = max(0.0, float(word["start"]) - start)
+        chunk.append(str(word["display"]))
+        closed = str(word["display"]).rstrip().endswith((",", ".", "!", "?", ":", ";", "—"))
+        if closed or len(chunk) >= 4:
+            out.append({"text": " ".join(chunk), "at": round(at, 3)})
+            chunk = []
+    if chunk:
+        out.append({"text": " ".join(chunk), "at": round(at, 3)})
+    # Кусок из одной пунктуации — «—» отдельной строкой — читается как сбой
+    # вёрстки. Тире закрывает кусок так же, как запятая, и когда оно стоит
+    # отдельным словом, кусок из него одного и получается. Такой кусок
+    # прирастает к предыдущему, а первым — просто выбрасывается.
+    merged: list[dict[str, Any]] = []
+    for entry in out:
+        if any(ch.isalnum() for ch in entry["text"]):
+            merged.append(entry)
+        elif merged:
+            merged[-1]["text"] = f'{merged[-1]["text"]} {entry["text"]}'
+    out = merged[:5]
+    # Последний кусок обрывается там, где кончился кадр, — и часто это предлог:
+    # «ошибка падает вдвое на». В списке это читается как брак, а в набираемой
+    # карточке последний кусок ещё и выделен акцентом. Служебный хвост
+    # срезается; если от куска ничего не осталось, он выбрасывается целиком.
+    if out:
+        tail = _trim_filler(out[-1]["text"].split())
+        if tail:
+            out[-1]["text"] = tail
+        elif len(out) > 1:
+            out.pop()
+    return out
+
+
+_URL_HOST = re.compile(r"https?://([^/\s]+)")
+
+
+def _source_site(block: dict[str, Any]) -> str:
+    """Что написать в адресной строке страницы первоисточника.
+
+    Из ссылки берётся хост, всё остальное показывается как есть. Достраивать
+    домен по имени («Nature» → nature.org») нельзя: это уже не ссылка автора,
+    а выдумка сборки под видом источника.
+    """
+    ref = str(block.get("source_ref") or "").strip()
+    if not ref:
+        return ""
+    found = _URL_HOST.search(ref)
+    if found:
+        return found.group(1).lower().removeprefix("www.")
+    return ref
+
+
+def _quote(block: dict[str, Any]) -> str:
+    """Строка, которую страница подсвечивает маркером.
+
+    Первым делом — то, что автор сценария сам пометил как цитату из источника
+    (``overlay.highlight``): это единственный текст в сценарии, про который
+    известно, что он взят из статьи. Своей реплики хватает на замену, но
+    маркер по ней — уже пересказ, а не цитата, поэтому она идёт второй.
+    """
+    overlay = block.get("overlay") or {}
+    if overlay.get("type") == "highlight" and str(overlay.get("content") or "").strip():
+        return str(overlay["content"]).strip()
+    return _accent_clause(block)
+
+
+def _stem(word: str) -> str:
+    """Начало слова, по которому сравниваются формы одного корня.
+
+    Акцентное слово блока стоит в падеже реплики, а в полноэкранной фразе — в
+    своём: «воду» против «ВОДА». Сравнение целиком их не сводит, а полноценная
+    морфология здесь не нужна — достаточно общего начала. Длина растёт вместе
+    со словом: у короткого остаётся три буквы, у длинного почти всё.
+
+    Сравниваются начала целиком, а не «одно начинается с другого»: при
+    сравнении с вложением пятибуквенный «порыв» сжимался до «пор» и совпадал
+    с «породой». Равенство начал такого не допускает.
+    """
+    bare = word.strip(".,!?;:«»\"'—–").lower().replace("ё", "е")
+    return bare[:max(3, len(bare) - 2)]
+
+
+def _credit_line(asset: dict[str, Any], sources: dict[str, Any]) -> str:
+    """Подпись источника в кадр — там, где её требуют права.
+
+    Заказчик: «где надо по правам указывай источник мелким шрифтом». Требование
+    названо в `stock_sources.yaml` полем ``attribution_required`` и стоит у тех
+    источников, где оно и правда есть: ESA, Internet Archive, кадр со страницы
+    издания. У Pexels, Pixabay и NASA его нет, и лепить туда подпись значит
+    засорять кадр без причины.
+
+    Пустая строка — подписи не будет. Для сгенерированного материала подпись не
+    ставится вовсе: своё авторство в кадре не декларируют.
+    """
+    if not asset or asset.get("ai_generated"):
+        return ""
+    source = str(asset.get("source") or "").strip()
+    spec = (sources.get("sources") or {}).get(source) or {}
+    if not spec.get("attribution_required"):
+        return ""
+    name = str(asset.get("attribution") or "").strip()
+    domain = str(asset.get("meta", {}).get("domain") or "").strip()
+    if name and domain and domain.lower() not in name.lower():
+        return f"{name} · {domain}"
+    return name or domain or source
+
+
+def _fullscreen_accent(content: str, block: dict[str, Any]) -> str | None:
+    """Какое слово в полноэкранной фразе горит красным.
+
+    Красным выделяется одно слово, а не строка (§3.3.2), и выбирать его наугад
+    нельзя: акцент — это то, ради чего кадр и появился. Поэтому берётся
+    акцентное слово блока, если оно в этой фразе есть; иначе — число, потому
+    что фраза с числом всегда про число; иначе — самое длинное слово, самое
+    содержательное из оставшихся.
+
+    ``None`` только для фразы из одного слова: там выделять нечего, всё и так
+    выделено размером.
+    """
+    words = [w for w in content.split() if w.strip(".,!?;:«»\"'—–")]
+    if len(words) < 2:
+        return None
+    emphasis = _stem(str(block.get("emphasis_word") or ""))
+    if emphasis:
+        for word in words:
+            bare = word.strip(".,!?;:«»\"'—–")
+            if _stem(bare) == emphasis:
+                return bare
+    digits = [w.strip(".,!?;:«»\"'—–") for w in words
+              if any(ch.isdigit() for ch in w)]
+    if digits:
+        return digits[0]
+    return max((w.strip(".,!?;:«»\"'—–") for w in words), key=len)
+
+
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
-                  face: tuple[int, int] | None = None) -> dict[str, Any]:
+                  face: tuple[int, int] | None = None,
+                  title: str = "",
+                  words: list[dict[str, Any]] | None = None,
+                  head_box: tuple[int, int, int, int] | None = None) -> dict[str, Any]:
     """Собрать всё, чем можно накормить приёмы, из одного блока сценария."""
     text = str(block.get("text") or "").strip()
     word = str(block.get("emphasis_word") or "").strip()
@@ -154,15 +532,41 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     accent = [i for i, line in enumerate(lines)
               if word and word.lower() in line.lower()]
 
+    # Знак бренда ищет сама библиотека: она знает и русские написания, и
+    # падежи. Перебор слов реплики, который стоял здесь, сверял «Гугла» со
+    # слагом ``google`` и не находил ничего — за весь прогон 0047 в кадр не
+    # попал ни один логотип при библиотеке в сотню знаков.
     brand = None
     if icons is not None:
-        for candidate in sorted({w.strip(".,!?;:»«\"'()")
-                                 for w in text.split() if len(w) > 2},
-                                key=lambda w: (-len(w), w)):
-            found = icons.find(candidate)
-            if found:
-                brand = {"label": candidate, "icon": found[0].path}
-                break
+        match = icons.match_text(text)
+        if match:
+            brand = {"label": match.brand, "icon": match.path}
+
+    # Двухстрочная тема за головой: первая строка — подлежащее реплики, вторая
+    # — то, что с ним происходит, и она же берёт акцент. Делим по акцентному
+    # слову, если оно есть: на нём и держится смысл фразы.
+    # Не ``words``: так зовётся параметр с таймингами кадра, и локальный
+    # список слов текста затенял бы его — список копился бы по буквам.
+    text_words = [w for w in text.split() if w]
+    # За головой стоит тема ролика, а не обрывок текущей реплики: приём держит
+    # весь блок, и фраза из середины предложения читалась бы как оговорка.
+    # Обе строки идут через весь кадр без переноса, поэтому делим пополам по
+    # словам, а не по акценту: кегль подбирается под длинную из двух.
+    head = tail = ""
+    title_words = [w for w in str(title or "").split() if w]
+    if len(title_words) >= 2:
+        cut = (len(title_words) + 1) // 2
+        head = " ".join(title_words[:cut]).strip(".,!?;:")
+        tail = " ".join(title_words[cut:]).strip(".,!?;:")
+
+    # Знаки за головой: сначала логотип, если бренд в реплике назван — он
+    # конкретнее рисованного знака, — потом знаки по тексту. Реплика, в
+    # которой не названо ничего предметного, знаков не получает, и приём в
+    # таком кадре не показывается: иконки ни о чём — шум, а не монтаж.
+    icons: list[dict[str, Any]] = []
+    if brand and brand.get("icon"):
+        icons.append({"file": brand["icon"], "label": brand.get("label", "")})
+    icons += [{"glyph": name} for name in match_glyphs(text, limit=5)]
 
     return {
         "word": word,
@@ -171,9 +575,166 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         # Заголовок карточки — начало реплики, а не акцентное слово: одно слово
         # крупно уже занято выбивкой и заголовком над головой.
         "title": " ".join(text.split()[:3]).strip(".,!?;:").upper(),
+        # Запрос в переписке — только если реплика и правда спрашивает.
+        # Резать по счёту слов нельзя: обрывок «Это и» на месте вопроса
+        # читается как сбой набора, а не как реплика.
+        "ask": _question(text),
+        "answer": _sentence(text, 1, limit=6),
+        # Промпт для окна генерации — только если блок и правда про генерацию.
+        "gen_prompt": _gen_prompt(block),
+        "head": head,
+        "tail": tail,
+        # Фраза для плашки-удара: одна фраза реплики, разбитая на две короткие
+        # строки. Длиннее — и плашка перестаёт читаться за секунду, ради
+        # которой она и появляется.
+        "punch": _punch(block),
+        # Подпись под экспонатом: первая фраза реплики целиком. Поисковый
+        # запрос сюда не годится — он английский и написан для стока, а не
+        # для зрителя.
+        "caption": _caption(text),
+        # Куски для накопительного списка — по словам этого кадра, а не по
+        # тексту блока: список идёт за речью, а кадр покрывает её часть.
+        "entries": _log_entries(words or [], float(slot.get("start") or 0.0)),
+        # Числа реплики: приём ставит их одно за другим на одном месте.
+        "figures": _figures(text),
         "brand": brand,
+        # Меньше двух — не очередь, а одиночная мигалка, и приём на этом не
+        # держится. Отсечка стоит здесь, а не в рендерере: конвейер выбирает
+        # приём по наличию содержимого, и пустой Piece дал бы кадр без приёма
+        # молча — так уже было с двумя шаблонами.
+        "icons": icons[:5] if len(icons) >= 2 else [],
         "face": face,
+        # Не ``head``: так уже зовётся первая строка темы за головой, и коробка
+        # затёрла бы её — приём получил бы вместо текста кортеж координат.
+        # Проверено тестом, а не рассуждением.
+        "head_box": head_box,
+        # Страница первоисточника: домен из ссылки блока и та строка, которую
+        # сценарий взял из статьи. Без ссылки приём не показывается вовсе —
+        # страница без домена не источник, а просто белый лист.
+        "source": _source_site(block),
+        "quote": _quote(block),
     }
+
+
+# Приёмы, закрывающие кадр сплошной заливкой. Заливка живёт секунду-две и
+# глушит субтитр на своём окне: под ней его всё равно не видно.
+_FULL_FRAME_HEROES = ("hero-slam", "hero-knockout")
+
+# Приёмы, которые выкладывают реплику **не** строками, а подписью, и потому не
+# попадают под проверку по `_HERO_NEEDS`. Экспонат подписывает материал фразой
+# целиком (`detail`), и пословный субтитр ложился на неё поверх: на кадре
+# читалось «Модель обучили на|вятнадцать дней» — подпись и субтитр в одну
+# строку. Ловится только кадром: в разметке оба элемента корректны по
+# отдельности.
+_CAPTION_HEROES = ("hero-exhibit",)
+
+
+def hero_mutes_subtitle(renderer: str) -> dict[str, bool]:
+    """Отменяет ли приём пословный субтитр — и по какой из двух причин.
+
+    Отдельной функцией, а не двумя выражениями по месту: тем же правилом
+    живёт проба (`tools/build_test_clip.py`), и разъехавшись, она показала бы
+    кадр, которого конвейер не соберёт. Ровно так и вышло с выбивкой: в пробе
+    субтитр остался стоять на заливке.
+    """
+    return {
+        # Приём, который выкладывает реплику строками, сам и есть субтитр
+        # этого кадра. Пословное слово поверх той же фразы — дубль, и оно
+        # вдобавок ложится прямо на карточку: проверено кадром.
+        "carries_line": (bool({"lines", "punch", "entries"}
+                              & set(_HERO_NEEDS.get(renderer, ())))
+                         or renderer in _CAPTION_HEROES),
+        # Приём, закрывающий кадр сплошной заливкой, съедает и субтитр: белое
+        # слово на светлой заливке не читается, а чернильное на тёмной — тем
+        # более. Своё слово он в кадре уже показывает.
+        "covers_frame": renderer in _FULL_FRAME_HEROES,
+    }
+
+
+def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
+                slot: dict[str, Any]) -> dict[str, Any]:
+    """Наполнить пресет приёма содержимым блока.
+
+    Отдельной функцией, а не куском выбора: тем же отображением пользуется
+    витрина приёмов (``tools/build_showcase.py``), и разъехавшись, она начала
+    бы показывать не то, что собирает конвейер.
+    """
+    params: dict[str, Any] = {**base}
+    if "word" in _HERO_NEEDS.get(renderer, ()):
+        params["word"] = str(content["word"]).upper()
+    if renderer == "hero-headline":
+        params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
+    if "lines" in _HERO_NEEDS.get(renderer, ()):
+        upper = renderer in ("hero-text-column", "hero-type-slab")
+        params["lines"] = [l.upper() if upper else l for l in content["lines"]]
+        params["accent_lines"] = content["accent_lines"]
+    if content.get("head_box") and renderer in ("hero-headline", "hero-title-behind"):
+        # Приём стоит за головой, и от макушки зависит, где начнётся строка.
+        params["head_top"] = int(content["head_box"][1])
+    if renderer == "hero-icons" and content.get("head_box"):
+        # Дуга строится вокруг настоящей головы: её центр и полуразмер.
+        box = content["head_box"]
+        params["face_cx"] = (int(box[0]) + int(box[2])) // 2
+        params["face_cy"] = (int(box[1]) + int(box[3])) // 2
+        params["head_half"] = max(int(box[2]) - int(box[0]),
+                                  int(box[3]) - int(box[1])) // 2
+    if content.get("face"):
+        # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
+        # за ними светлее заливки.
+        if renderer in ("hero-bubble-card", "hero-bubble-typed"):
+            params["face_cx"], params["face_cy"] = content["face"]
+            if content.get("head_box"):
+                # Круг считается от коробки головы: по фиксированному диаметру
+                # он срезал щёки и подбородок. Центр — тоже её, а не лица:
+                # радиус описан вокруг головы, и если посадить его на середину
+                # лица, макушка вылезет ровно на разницу между ними.
+                box = content["head_box"]
+                params["head_w"] = int(box[2]) - int(box[0])
+                params["head_h"] = int(box[3]) - int(box[1])
+                params["face_cx"] = (int(box[0]) + int(box[2])) // 2
+                params["face_cy"] = (int(box[1]) + int(box[3])) // 2
+        if renderer == "hero-knockout":
+            params["face_cy"] = content["face"][1]
+            if content.get("head_box"):
+                # Выбивке нужна не точка лица, а его полоса: буквы вырезаны
+                # насквозь, и выше бровей за ними тёмные волосы — то же
+                # тёмное по тёмному, что и на торсе. Полосу приём считает
+                # сам, ему хватает макушки и высоты головы.
+                box = content["head_box"]
+                params["head_top"] = int(box[1])
+                params["head_h"] = int(box[3]) - int(box[1])
+    if renderer == "hero-brand-pill":
+        params.update(content["brand"])
+    if renderer in ("hero-card-stack", "hero-exhibit"):
+        params["title"] = content["title"]
+    if renderer == "hero-exhibit":
+        # Музейная подпись короткая: крупно — акцентное слово реплики, под ним
+        # фраза целиком, ещё ниже — источник материала (§1, правило 8).
+        params["title"] = str(content.get("word") or content["title"])
+        params["detail"] = content.get("caption", "")
+        if content.get("credit"):
+            params["credit"] = content["credit"]
+    if renderer == "hero-log":
+        # Список набирается чёрным, и одно слово в нём горит — акцентное слово
+        # реплики. Приёму нужен сам текст акцента, а не номера строк.
+        params["accent"] = content["word"]
+    if renderer == "hero-phone-mock":
+        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    # Текстовые нужды приёма переносятся один в один: имя ключа в
+    # ``_HERO_NEEDS`` и есть имя параметра рендерера. Правила выше — про те
+    # ключи, где содержимое ещё нужно причесать (регистр, лицо, иконка).
+    _SHAPED = ("word", "lines", "plate", "brand", "title")
+    for key in _HERO_NEEDS.get(renderer, ()):
+        if key not in _SHAPED and content.get(key):
+            params[key] = content[key]
+    if renderer == "hero-chat-typing":
+        # Ответ приёму не обязателен: без него он показывает ожидание, и это
+        # рабочий кадр. Но если реплика длинная — ответ есть, и он читается.
+        params["answer"] = content.get("answer", "")
+        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    if renderer == "hero-chat-generate":
+        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    return params
 
 
 def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
@@ -189,6 +750,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     """
     available = dict(content)
     available["plate"] = plate_src
+    if plate_src and plate_src.get("credit"):
+        content = {**content, "credit": plate_src["credit"]}
 
     blocked = list(exclude)
     for template in catalog.by_category("hero-devices"):
@@ -198,6 +761,14 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         needs = _HERO_NEEDS.get(template.renderer, ())
         if any(not available.get(key) for key in needs):
             blocked.append(template.id)
+            continue
+        # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
+        # вот кем она снята. Под сгенерированным пятном она подписывала
+        # «REDSHIFT / GENERATED» и тем самым объявляла зрителю ровно то, чего
+        # заказчик просил не показывать. Приём остаётся для настоящего кадра.
+        if (template.renderer in _CAPTION_HEROES
+                and (plate_src or {}).get("ai_generated")):
+            blocked.append(template.id)
 
     if not [t for t in catalog.by_category("hero-devices") if t.id not in blocked]:
         return None
@@ -206,44 +777,34 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                             recent_videos=recent_videos, exclude=blocked,
                             seed=seed + int(slot["index"]) * 7)
     renderer = template.renderer
-    params: dict[str, Any] = {**template.params}
-
-    if "word" in _HERO_NEEDS.get(renderer, ()):
-        params["word"] = str(content["word"]).upper()
-    if renderer == "hero-headline":
-        params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
-    if "lines" in _HERO_NEEDS.get(renderer, ()):
-        upper = renderer in ("hero-text-column", "hero-type-slab")
-        params["lines"] = [l.upper() if upper else l for l in content["lines"]]
-        params["accent_lines"] = content["accent_lines"]
-    if content.get("face"):
-        # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
-        # за ними светлее заливки.
-        if renderer == "hero-bubble-card":
-            params["face_cx"], params["face_cy"] = content["face"]
-        if renderer == "hero-knockout":
-            params["face_cy"] = content["face"][1]
-    if renderer == "hero-brand-pill":
-        params.update(content["brand"])
-    if renderer == "hero-card-stack":
-        params["title"] = content["title"]
-    if renderer == "hero-phone-mock":
-        params["app"] = str(slot.get("screen_template") or "ChatGPT")
+    params = hero_params(renderer, template.params, content, slot)
 
     entry: dict[str, Any] = {
         "template": template.id, "renderer": renderer, "params": params,
         "file": None, "duration": None,
-        # Приём, который выкладывает реплику строками, сам и есть субтитр этого
-        # кадра. Пословное слово поверх той же фразы — дубль, и оно вдобавок
-        # ложится прямо на карточку: проверено кадром.
-        "carries_line": "lines" in _HERO_NEEDS.get(renderer, ()),
+        **hero_mutes_subtitle(renderer),
     }
-    if plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-plate-pop"):
+    if plate_src and renderer == "hero-chat-generate":
+        # Окно живёт весь кадр, а внутри него результат приходит своим клипом:
+        # длину приёма материалом здесь ограничивать нельзя, иначе окно исчезнет
+        # вместе с картинкой, не досидев до конца реплики. Материал короче кадра
+        # укорачивает только сам результат — это один прямоугольник внутри окна,
+        # и приём это переживает.
+        entry["file"] = plate_src["file"]
+        if plate_src.get("duration_sec"):
+            params["media_sec"] = round(float(plate_src["duration_sec"]), 3)
+    elif plate_src and renderer in ("hero-plate", "hero-card-stack",
+                                    "hero-exhibit", "hero-plate-pop"):
         # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
         # и растянутая панель досидела бы кадр пустой.
         entry["file"] = plate_src["file"]
         entry["duration"] = round(min(float(slot["duration"]),
                                       plate_src["duration_sec"]), 3)
+    if renderer in _FULL_FRAME_HEROES:
+        # Заливка закрывает ведущего целиком и потому живёт секунду-две, а не
+        # весь кадр: дольше — и это уже не удар, а пауза в ролике.
+        entry["duration"] = round(min(float(slot["duration"]),
+                                      float(template.duration_range[1])), 3)
     return entry
 
 
@@ -258,11 +819,24 @@ def _asset_for_slot(slot: dict[str, Any], accepted: dict[str, Any],
 
 
 def _rotate_assets(slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]],
-                   shift: int) -> dict[int, dict[str, Any]]:
+                   shift: int, *, ai_budget_sec: float | None = None,
+                   ) -> dict[int, dict[str, Any]]:
     """Порядок вставок внутри блока — законное отличие версий (§4.5).
 
     Материал остаётся тот же, меняется только то, какой кадр в каком месте
     блока стоит. Это ровно «различаются монтажные решения, не материал».
+
+    Но экранное время у слотов разное, и перестановка меняет не только
+    порядок. P9 выдаёт генерацию под конкретные слоты и считает долю по их
+    длительности; ротация переносит тот же кадр на слот вдвое длиннее, и доля
+    растёт, хотя материала не прибавилось. Прогон CI 33607509470: P9
+    отчитался о 0.1995, вариант A собрался в 0.3420, вариант B — в 0.3971 при
+    потолке 0.35, и QC-14 не выдал ролик, за который уже заплачено всё.
+
+    ``ai_budget_sec`` — потолок экранного времени AI-материала. Ротация,
+    выводящая за него, откатывается по блокам: сначала тот блок, который
+    добавил больше всего AI-секунд. Различие версий при этом сохраняется
+    везде, где оно ничего не ломает.
     """
     if shift == 0:
         return dict(assets)
@@ -271,6 +845,8 @@ def _rotate_assets(slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]
     for slot in slots:
         if slot["index"] in assets:
             by_block.setdefault(slot["block_id"], []).append(slot["index"])
+
+    rotated_blocks: list[list[int]] = []
     for indices in by_block.values():
         if len(indices) < 2:
             continue
@@ -279,6 +855,25 @@ def _rotate_assets(slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]
         rotated = values[offset:] + values[:offset]
         for index, value in zip(indices, rotated):
             out[index] = value
+        rotated_blocks.append(indices)
+
+    if ai_budget_sec is None:
+        return out
+
+    seconds = {int(s["index"]): float(s.get("duration") or 0.0) for s in slots}
+
+    def ai_sec(mapping: dict[int, dict[str, Any]], indices=None) -> float:
+        keys = mapping if indices is None else indices
+        return sum(seconds.get(i, 0.0) for i in keys
+                   if (mapping.get(i) or {}).get("ai_generated"))
+
+    while ai_sec(out) > ai_budget_sec + 1e-6 and rotated_blocks:
+        # Откатываем блок, чья перестановка стоила больше всего AI-секунд.
+        worst = max(rotated_blocks,
+                    key=lambda idx: ai_sec(out, idx) - ai_sec(assets, idx))
+        for index in worst:
+            out[index] = assets[index]
+        rotated_blocks.remove(worst)
     return out
 
 
@@ -590,6 +1185,24 @@ def _stats_from_text(text: str) -> list[dict[str, Any]]:
     others = [n for n in found if n not in years]
     return others or found
 
+def _evidence_runs(slots: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """Куски доказательства: подряд идущие слоты одного блока — один кусок.
+
+    Карточка источника привязана к куску, а не к слоту: P5 режет длинный блок
+    на несколько слотов по лимиту длины кадра, и по слотам карточек вышло бы
+    три подряд на одной и той же статье.
+    """
+    runs: list[list[dict[str, Any]]] = []
+    for slot in slots:
+        if slot.get("asset_role") != "evidence" and slot.get("role") != "evidence":
+            continue
+        if (runs and runs[-1][-1]["block_id"] == slot["block_id"]
+                and abs(float(runs[-1][-1]["end"]) - float(slot["start"])) < 1e-6):
+            runs[-1].append(slot)
+        else:
+            runs.append([slot])
+    return runs
+
 
 def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
@@ -600,11 +1213,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     sources = plan.get("sources", [])
     on_screen = [s for s in sources if s.get("show_on_screen", True)]
 
-    evidence_slots = [s for s in plan["slots"]
-                      if s.get("asset_role") == "evidence" or s.get("role") == "evidence"]
-    if on_screen and evidence_slots:
-        source = on_screen[0]
-        anchor = evidence_slots[0]
+    for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
+        anchor = run[0]
         if variant == "A":
             card_category = "browser-ui"
             card_prefer = ["browser-ui/chat-thread", "browser-ui/article-highlight",
@@ -636,18 +1246,21 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         card_template = catalog.pick(
             card_category, duration=float(anchor["duration"]),
             recent_videos=recent_videos, exclude=used, prefer=card_prefer,
-            seed=seed)
+            seed=seed + i)
         used.append(card_template.id)
         card_start = float(anchor["start"])
-        card_end = min(card_start + 3.4, float(evidence_slots[-1]["end"]))
+        card_end = min(card_start + 3.4, float(run[-1]["end"]))
         renderer = _overlay_renderer(card_template)
         card_params = {
             "template": source.get("screen_template", "browser"),
             "domain": source.get("domain", ""),
+            "url": source.get("url", ""),
             "title": source.get("title", ""),
             "snippet": source.get("snippet", ""),
+            "published": source.get("published", ""),
             "prompt": source.get("title") or source.get("snippet", ""),
             "highlight_line": source.get("highlight_line", ""),
+            "highlight": source.get("highlight_line", ""),
             "typing": bool(card_template.params.get("typing")),
             "scroll": bool(card_template.params.get("scroll")),
         }
@@ -674,7 +1287,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         })
         plaque_template = catalog.pick("lower-thirds", duration=2.4,
                                        recent_videos=recent_videos, exclude=used,
-                                       prefer=["lower-thirds/source-domain"], seed=seed)
+                                       prefer=["lower-thirds/source-domain"],
+                                       seed=seed + i)
         used.append(plaque_template.id)
         domain = source.get("domain", "")
         overlays.append(_plaque_overlay(
@@ -1023,6 +1637,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   recent_videos: list[str], preferences: dict[str, Any] | None = None,
                   asset_rotation: int = 0) -> dict[str, Any]:
     seed = _variant_seed(plan["video_id"], variant)
+    # Какие источники требуют подписи в кадре — сказано в самом каталоге
+    # источников, а не в коде: право на кадр приходит вместе с ним.
+    sources_spec = _load_yaml(ctx.cfg.repo_root / "config" / "stock_sources.yaml")
     # Накопленные предпочтения влияют на версию A: она несёт «текущий дефолт»,
     # а B остаётся альтернативой, иначе обучение схлопнет обе версии в одну.
     prefs = (preferences or {}) if variant == "A" else {}
@@ -1036,6 +1653,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # на разных кадрах, а не один и тот же ролик с другими подписями.
     alpha_slots = _alpha_slots(avatar_meta)
     face_centres = _face_centres(avatar_meta)
+    head_boxes = _head_boxes(avatar_meta)
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
     # Библиотека иконок §14: пилюля бренда берёт логотип оттуда. Её отсутствие
     # не должно валить сборку — приём просто не выпадет.
@@ -1112,15 +1730,34 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                                     + [slot.get("template_hint", "")] + styles,
                                     seed=seed)
             used_templates.append(template.id)
+            content = slot.get("content", "")
             block = blocks_by_id.get(slot["block_id"], {})
+            # Фон под текстом — тот же футаж, что и у остальных кадров блока.
+            # Раньше слот его не просил, и кадр выходил белыми буквами на
+            # пустом чёрном: фраза вынесена крупно, а стоит она ни на чём.
+            prep = prepared.get(slot["index"])
+            asset = assets.get(slot["index"])
             entry.update({
                 "content": content,
                 "template": template.id,
                 "renderer": template.renderer,
                 "params": dict(template.params),
                 "invert": bool(template.params.get("invert")) or variant == "B",
-                "accent_word": block.get("emphasis_word") or slot.get("emphasis_word"),
+                "accent_word": _fullscreen_accent(content, block),
+                "file": prep["dst"] if prep is not None else None,
+                # Материал приходит со своим паспортом целиком. Без лицензии
+                # QC-12 валит ролик: кадр с asset_id без неё — это материал,
+                # право на который нечем подтвердить. Поймано мок-прогоном:
+                # asset_id я проставил, а остальное — нет.
+                "asset_id": (asset or {}).get("asset_id"),
+                "source": (asset or {}).get("source"),
+                "license": (asset or {}).get("license"),
+                "attribution": (asset or {}).get("attribution", ""),
+                "page_url": (asset or {}).get("page_url", ""),
+                "ai_generated": bool((asset or {}).get("ai_generated")),
             })
+            if prep is None:
+                entry["gap_reason"] = "фон под полноэкранный текст не найден"
             shots.append(entry)
             continue
 
@@ -1191,10 +1828,16 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 block = blocks_by_id.get(slot["block_id"], {})
                 hero_entry = _hero_device(
                     catalog, slot=slot,
-                    content=_hero_content(block, slot, brand_icons,
-                                          face_centres.get(int(slot["index"]))),
+                    content=_hero_content(
+                        block, slot, brand_icons,
+                        face_centres.get(int(slot["index"])),
+                        title=str(plan.get("title") or ""),
+                        words=[w for w in words_doc["words"]
+                               if float(w["end"]) > float(slot["start"])
+                               and float(w["start"]) < float(slot["end"])],
+                        head_box=head_boxes.get(int(slot["index"]))),
                     has_alpha=int(slot["index"]) in alpha_slots,
-                    plate_src=_plate_source(slot, slots, prepared),
+                    plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
                     seed=seed)
                 if hero_entry:
@@ -1208,6 +1851,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "license": ("HeyGen ToS (цифровой двойник заказчика)" if is_avatar
                         else asset.get("license")),
             "attribution": asset.get("attribution", ""),
+            "credit": _credit_line(asset, sources_spec),
             "page_url": asset.get("page_url", ""),
             "avatar_offset_sec": prep.get("avatar_offset_sec"),
             "matte": prep.get("matte"),
@@ -1234,8 +1878,16 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # Субтитры: весь ролик, кроме кадров с полноэкранным текстом (§5.1).
     fs_windows = [(float(s["start"]), float(s["end"])) for s in slots
                   if s["kind"] == "fullscreen_text"]
-    fs_windows += [(float(s["start"]), float(s["end"])) for s in shots
-                   if (s.get("hero") or {}).get("carries_line")]
+    for shot in shots:
+        hero = shot.get("hero") or {}
+        if not (hero.get("carries_line") or hero.get("covers_frame")):
+            continue
+        # Приём со своей длиной глушит субтитр только на своём окне: плашка на
+        # 1.8 сек внутри четырёхсекундного кадра забрала бы все четыре.
+        end = float(shot["end"])
+        if hero.get("duration"):
+            end = min(end, float(shot["start"]) + float(hero["duration"]))
+        fs_windows.append((float(shot["start"]), end))
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])
@@ -1248,6 +1900,15 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "display": word["display"], "start": start, "end": end,
             "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
         })
+    # Склейка — после отбраковки, а не до: слово, снятое полноэкранным текстом,
+    # не имеет права утащить с собой приклеенный к нему предлог.
+    subtitles = glue_short_cues(subtitles)
+
+    # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон
+    # держится весь ролик и посреди него не меняется.
+    scene = pick_scene(str(plan.get("title") or ""),
+                       " ".join(str(b.get("text") or "")
+                                for b in plan.get("blocks", [])))
 
     return {
         "video_id": plan["video_id"],
@@ -1261,6 +1922,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "shots": shots,
         "overlays": overlays,
         "subtitles": subtitles,
+        "backdrop": {"scene": scene, "tone": scene_tone(scene),
+                     "why": scene_why(scene),
+                     "plate": _backdrop_plate(ctx.cfg, scene)},
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
             "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 975),
@@ -1357,7 +2021,13 @@ def run_step(ctx) -> dict[str, Any]:
     variants = list(ctx.variants)
     plans: dict[str, dict[str, Any]] = {}
     for offset, variant in enumerate(variants):
-        assets = _rotate_assets(plan["slots"], base_assets, shift=offset)
+        # Потолок доли AI считается по экранному времени — там же, где его
+        # меряет QC-14. Иначе ротация версии B выносит за него ролик, за
+        # который уже заплачены и голос, и аватар, и генерация.
+        ai_budget = float(ctx.cfg.get("limits.ai_footage_share_max", 0.35)) * \
+            float(plan["duration_sec"])
+        assets = _rotate_assets(plan["slots"], base_assets, shift=offset,
+                                ai_budget_sec=ai_budget)
         prepared = _prepare_shots(ctx, plan["slots"], assets, pillarbox_limit,
                                   avatar_segments=avatar_meta.get("segments", []),
                                   matte_reports=matte_reports,

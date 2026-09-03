@@ -1,0 +1,20 @@
+{
+  "id": "hero-devices/verdict-card",
+  "name": "verdict-card",
+  "category": "hero-devices",
+  "title": "Светлая плашка: вторая строка темнеет",
+  "duration_range": [
+    1.8,
+    3.0
+  ],
+  "params": {},
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "slam"
+  ],
+  "renderer": "hero-verdict",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

@@ -158,6 +158,72 @@ def prepare_shot(spec: ShotSpec) -> dict[str, Any]:
     }
 
 
+def slim_video(src: Path, *, max_sec: float = 20.0, crf: int = 23,
+               max_short_side: int = 1080) -> dict[str, Any]:
+    """Ужать сток на приёме: столько, сколько ролик реально возьмёт.
+
+    Материал лежит внутри репозитория — так решил заказчик, и это правильно:
+    прогон идёт на чужом раннере, кэш Actions терялся уже трижды, а checkout
+    переживает всё. Но один прогон 0047 положил в git 27 клипов Pexels на
+    369 МБ, отдельные файлы по 35–45 МБ. Хранить их такими незачем ни по
+    одной оси:
+
+    * **длина.** Самый длинный слот ролика — 6.4 секунды, и футаж всегда
+      играет с нуля: ``prepare_shot`` для стока вызывается без ``start_sec``.
+      Клип на 65 секунд отдаёт ролику первые шесть.
+    * **звук.** Все три пути подготовки кадра идут с ``-an``: звук стока
+      не попадает в микс никогда.
+    * **поток.** 5.5 Мбит/с при 1080×1920 — запас для монтажа, которого у
+      нас нет: кадр всё равно кропается и жмётся ещё раз на выходе.
+
+    Замер на самом тяжёлом файле прогона (45.5 МБ, 65.6 с): 20 секунд, CRF 23,
+    без звука — 9.8 МБ при SSIM 0.980 к оригиналу. Разница 2 % по структуре
+    не переживёт ни кроп Ken Burns, ни финальный H.264.
+
+    Возвращает отчёт с байтами до и после; при неудаче ffmpeg исходник
+    остаётся нетронутым — ужать не удалось, но материал есть.
+    """
+    before = src.stat().st_size
+    report: dict[str, Any] = {"before": before, "after": before, "slimmed": False}
+    try:
+        info = probe(src)
+    except Exception:                       # noqa: BLE001 — не наше дело ронять приём
+        return report
+    if not info.has_video:
+        return report
+
+    short = min(info.width or 0, info.height or 0)
+    need_scale = bool(short and short > max_short_side)
+    need_trim = bool(info.duration_sec and info.duration_sec > max_sec + 0.5)
+    # Перекодировать заведомо лёгкий клип незачем: потеряем качество даром.
+    if not (need_scale or need_trim or before > 8 * 1024 * 1024):
+        return report
+
+    dst = src.with_name(f"{src.stem}_slim.mp4")
+    args = ["-y", "-i", str(src), "-t", f"{min(max_sec, info.duration_sec or max_sec):.3f}",
+            "-an"]
+    if need_scale:
+        args += ["-vf", f"scale='if(gt(iw,ih),-2,{max_short_side})':"
+                        f"'if(gt(iw,ih),{max_short_side},-2)'"]
+    args += ["-c:v", "libx264", "-preset", "veryfast", "-crf", str(crf),
+             "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(dst)]
+    try:
+        run(args, what=f"ужать сток {src.name}")
+    except Exception as exc:                # noqa: BLE001
+        _log.warning("не удалось ужать %s: %s", src.name, exc)
+        dst.unlink(missing_ok=True)
+        return report
+
+    after = dst.stat().st_size
+    # Ужимать в больший файл смысла нет: короткий клип с высоким потоком
+    # после перекодировки может вырасти.
+    if after >= before:
+        dst.unlink(missing_ok=True)
+        return report
+    dst.replace(src)
+    return {"before": before, "after": after, "slimmed": True}
+
+
 def choose_fit(info, *, pillarbox_used: int, pillarbox_limit: int) -> str:
     """Кроп по умолчанию; pillarbox — только когда кроп реально всё ломает."""
     if not info.width or not info.height:
@@ -256,10 +322,23 @@ def prepare_split_shot(*, top_src: Path, bottom_src: Path, dst: Path,
     args = ["-y"]
     for src, start, info in ((top_src, top_start_sec, top_info),
                              (bottom_src, bottom_start_sec, bottom_info)):
-        if start > 0:
-            args += ["-ss", f"{start:.3f}"]
-        if info.duration_sec and info.duration_sec < start + duration_sec:
-            args += ["-stream_loop", "-1"]
+        # Неподвижный кадр растягивается `-loop 1`, а не `-stream_loop -1`.
+        # Разница не косметическая: у одиночного JPEG `-stream_loop`
+        # бесконечно повторяет один и тот же пакет, метки времени не растут,
+        # и `-t` не наступает никогда. Мок-прогон встал на split-кадре с
+        # прессовым снимком наверху: 21 минута ffmpeg на 100 % процессора
+        # ради клипа в 2.8 секунды, и так до потолка задачи.
+        #
+        # В prepare_shot этот случай разведён с самого начала — здесь его
+        # просто забыли, и до вечнозелёной базы он почти не всплывал:
+        # снимков в верхней половине сплита раньше почти не бывало.
+        if not info.has_video or info.duration_sec < 0.05:
+            args += ["-loop", "1", "-t", f"{duration_sec:.3f}"]
+        else:
+            if start > 0:
+                args += ["-ss", f"{start:.3f}"]
+            if info.duration_sec and info.duration_sec < start + duration_sec:
+                args += ["-stream_loop", "-1"]
         args += ["-i", str(src)]
 
     args += ["-filter_complex", filter_complex, "-map", "[out]",
@@ -299,7 +378,13 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
     filters: list[str] = []
 
     if vfx_src is not None and Path(vfx_src).exists():
-        inputs += ["-stream_loop", "-1", "-i", str(vfx_src)]
+        # Тот же капкан, что в prepare_split: на неподвижном источнике
+        # `-stream_loop` не кончается.
+        vfx_info = probe(Path(vfx_src))
+        if not vfx_info.has_video or vfx_info.duration_sec < 0.05:
+            inputs += ["-loop", "1", "-t", f"{duration_sec:.3f}", "-i", str(vfx_src)]
+        else:
+            inputs += ["-stream_loop", "-1", "-i", str(vfx_src)]
         filters.append(f"[0:v]fps={fps},scale={width}:{height}:force_original_aspect_ratio=increase,"
                        f"crop={width}:{height},setsar=1[bg]")
     else:

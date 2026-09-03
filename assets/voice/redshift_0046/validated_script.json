@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "video_id": "redshift_0046",
+    "title": "Можно ли выжить внутри чёрной дыры",
+    "topic": "Что на самом деле происходит с телом за горизонтом событий и сколько времени остаётся",
+    "category": "space",
+    "language": "ru",
+    "target_duration_sec": 47,
+    "allow_memes": true,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-08-21"
+  },
+  "sources": [
+    {
+      "title": "No Way Back: Maximizing Survival Time Below the Schwarzschild Event Horizon",
+      "domain": "arxiv.org",
+      "url": "https://arxiv.org/abs/0705.1029",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "snippet": "Максимальное собственное время под горизонтом достигается в свободном падении: любой манёвр двигателем его сокращает.",
+      "highlight_line": "maximizing survival time below the event horizon"
+    },
+    {
+      "title": "First M87 Event Horizon Telescope Results I: The Shadow of the Supermassive Black Hole",
+      "domain": "iopscience.iop.org",
+      "url": "https://iopscience.iop.org/article/10.3847/2041-8213/ab0ec7",
+      "show_on_screen": false,
+      "screen_template": "search"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Падение в чёрную дыру ты переживёшь. Это и есть худшая часть.",
+      "emphasis_word": "переживёшь",
+      "avatar": "off",
+      "visual_intent": "Тёмный кадр, диск раскалённого газа, медленное приближение",
+      "broll_queries": [
+        "black hole accretion disk simulation",
+        "deep space dark nebula slow motion"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ПЕРЕЖИВЁШЬ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "sub_drop",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "_estimated_sec": 4.38,
+      "_words": 11
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Всё решает размер. Приливная сила растягивает тело в нить, но у горизонта она тем слабее, чем тяжелее дыра. Через горизонт сверхмассивной проходишь целым и не чувствуешь границы.",
+      "emphasis_word": "размер",
+      "avatar": "on",
+      "visual_intent": "Ведущий крупно, за головой — слово ГОРИЗОНТ",
+      "broll_queries": [
+        "gravitational lensing visualization space"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A",
+      "meme_allowed": true,
+      "_estimated_sec": 11.78,
+      "_words": 27
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Дальше работает жёсткий счётчик. Расчёт для метрики Шварцшильда даёт предел собственного времени: в Стрельце A звезда это около минуты, в дыре галактики M87 — почти сутки.",
+      "emphasis_word": "минуты",
+      "avatar": "auto",
+      "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
+      "broll_queries": [
+        "scientific paper on screen dark",
+        "observatory radio telescope night"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "maximizing survival time below the event horizon",
+        "template_hint": "browser/article-quote"
+      },
+      "sfx": "data_beep",
+      "source_ref": "arxiv.org",
+      "mode_hint": "B",
+      "meme_allowed": true,
+      "_estimated_sec": 10.67,
+      "_words": 25
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "И тут срабатывает главная ловушка. Включишь двигатель, чтобы оттянуть падение, — и умрёшь раньше, чем если бы просто летел молча. Спойлер: сопротивление здесь всегда стоит времени.",
+      "emphasis_word": "раньше",
+      "avatar": "auto",
+      "visual_intent": "Тревожный ритм, абстрактное искривление пространства",
+      "broll_queries": [
+        "abstract spacetime grid distortion",
+        "rocket engine burn dark background",
+        "warped light abstract macro"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ХУЖЕ",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "riser",
+      "meme_allowed": true,
+      "mode_hint": "C",
+      "_estimated_sec": 11.22,
+      "_words": 25
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "Поэтому выжить внутри нельзя. Можно только выбрать, сколько ты продержишься, — и лучшая из стратегий это не делать ничего.",
+      "emphasis_word": "ничего",
+      "avatar": "on",
+      "visual_intent": "Ведущий крупно, поворотный момент, акцентное слово",
+      "broll_queries": [
+        "astronaut helmet reflection dark"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Свободное падение — максимум времени",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "sfx": "hit_impact",
+      "answers_hook": true,
+      "mode_hint": "A",
+      "meme_allowed": true,
+      "_estimated_sec": 7.52,
+      "_words": 18
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Ты бы жал на газ или падал молча? Напиши в комментариях.",
+      "emphasis_word": "молча",
+      "avatar": "auto",
+      "visual_intent": "Финальный кадр, кнопка подписки",
+      "broll_queries": [
+        "abstract red gradient background"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "mode_hint": "A",
+      "meme_allowed": true,
+      "_estimated_sec": 3.82,
+      "_words": 11
+    }
+  ],
+  "cta": {
+    "text": "Ты бы жал на газ или падал молча?",
+    "type": "question"
+  },
+  "_validation": {
+    "ok": true,
+    "estimated_duration_sec": 49.9,
+    "duration_range": [
+      35,
+      70
+    ],
+    "warnings": [],
+    "fonts": [
+      {
+        "role": "display",
+        "family": "Oswald",
+        "file": "Oswald-Bold.ttf",
+        "glyphs": 850
+      },
+      {
+        "role": "subtitle",
+        "family": "Nunito ExtraBold",
+        "file": "Nunito-ExtraBold.ttf",
+        "glyphs": 938
+      },
+      {
+        "role": "mono",
+        "family": "JetBrains Mono",
+        "file": "JetBrainsMono-Bold.ttf",
+        "glyphs": 976
+      }
+    ],
+    "cost_estimate": {
+      "total_usd": 2.0511,
+      "limit_usd": 6.0,
+      "within_budget": true,
+      "by_service": {
+        "elevenlabs": 0.2811,
+        "heygen": 1.41,
+        "gemini": 0.072,
+        "grok": 0.048,
+        "magnific": 0.24
+      },
+      "assumptions": {
+        "tts_chars": 937,
+        "avatar_sec": 28.2,
+        "vision_items": 60,
+        "grok_calls": 8,
+        "generated_images": 3
+      }
+    },
+    "roles": [
+      "hook",
+      "setup",
+      "evidence",
+      "develop",
+      "twist",
+      "cta"
+    ]
+  }
+}

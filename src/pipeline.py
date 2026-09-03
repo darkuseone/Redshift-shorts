@@ -95,19 +95,49 @@ class Step:
     # брендбук, словарь произношений, накопленные предпочтения монтажа.
     # Не объявишь — шаг вернётся из кэша с результатом по старому файлу.
     config_inputs: tuple[str, ...] = ()
+    # Файлы, которые шаг кладёт не в рабочий каталог, а в выдачу. Кэш обязан
+    # проверять и их: рабочий каталог переживает прогон в кэше Actions, а
+    # `output/` — нет. P12 объявлял выходом только свой отчёт, и возобновление
+    # с него возвращалось «из кэша», не отрендерив ни одного ролика: прогон
+    # №33508293306 закончился за две минуты и оставил выдачу пустой.
+    # ``{video_id}`` и ``{variant}`` подставляются по контексту прогона.
+    deliverables: tuple[str, ...] = ()
+    # Что именно шаг читает из входного JSON. Без этого отпечаток меняется от
+    # любой правки файла: P2 переозвучивал ролик из-за поискового запроса
+    # футажа, лежащего в том же плане, — а речь от запроса не зависит никак.
+    # Цена промаха тут не в минутах: переозвучка сдвигает границы фраз, и клипы
+    # ведущего, сгенерированные под прежнюю речь, уходят в брак все разом.
+    input_slice: dict[str, Any] = field(default_factory=dict)
     version: str = "1"
     optional: bool = False          # шаг может быть пропущен по фиче-флагу
     cacheable: bool = True
+
+    def deliverable_paths(self, ctx: "RunContext") -> tuple[Path, ...]:
+        """Абсолютные пути к тому, что шаг обязан оставить в выдаче."""
+        out: list[Path] = []
+        for pattern in self.deliverables:
+            names = ([pattern.format(video_id=ctx.video_id, variant=v)
+                      for v in ctx.variants] if "{variant}" in pattern
+                     else [pattern.format(video_id=ctx.video_id)])
+            out += [ctx.output_dir / name for name in names]
+        return tuple(out)
 
     def fingerprint(self, ctx: RunContext) -> str:
         """Хеш входа: версия шага + код шага + входные артефакты + конфиг."""
         payload: dict[str, Any] = {"step": self.name, "version": self.version,
                                    "code": code_fingerprint(self.fn.__module__)}
+        # Шаг без входных файлов читает сам сценарий, и без него правка
+        # сценария не отменяла ничего: P0 при тёплом кэше считался свежим,
+        # выдавал прежний validated_script.json, и вся правка молча пропадала.
+        if not self.inputs:
+            payload["_script"] = hash_files([str(ctx.script_path)])
         for name in self.inputs:
             path = ctx.work_dir / name
             if path.exists():
                 if path.suffix == ".json":
-                    payload[name] = read_json_or(path, None)
+                    data = read_json_or(path, None)
+                    take = self.input_slice.get(name)
+                    payload[name] = take(data) if take and data is not None else data
                 else:
                     payload[name] = path.stat().st_size
         if self.config_inputs:
@@ -169,7 +199,8 @@ class Pipeline:
                 )
 
             fp = step.fingerprint(ctx)
-            if not force and step.cacheable and ctx.cache.is_fresh(step.name, fp, step.outputs):
+            expected = tuple(step.outputs) + step.deliverable_paths(ctx)
+            if not force and step.cacheable and ctx.cache.is_fresh(step.name, fp, expected):
                 _log.info("шаг из кэша", extra={"step": step.name})
                 entry.update({"status": "cached", "duration_sec": 0.0})
                 report["steps"].append(entry)

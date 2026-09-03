@@ -13,7 +13,8 @@ from PIL import Image
 
 from ..lib.render.canvas import SafeZones, accent_area_share, clamp01
 from ..lib.render.layers import (
-    Ctx, highlight, plaque, source_card, subscribe_button, text_behind_head,
+    Ctx, highlight, plaque, source_card, subscribe_button, subtitle, subtitle_baseline,
+    text_behind_head,
 )
 
 # Слои, идущие ниже субтитров
@@ -34,11 +35,15 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
                            check_safe_zones: bool = True) -> Callable:
     """Замыкание, которое композитор вызывает на каждом кадре."""
     overlays = plan.get("overlays", [])
+    subtitles = plan.get("subtitles", [])
+    style = plan.get("subtitle_style", {})
+    mode = str(style.get("mode", "stroke"))
     shots = plan.get("shots", [])
     accent = ctx.color("accent")
     safe: SafeZones = ctx.safe
 
     # Индексы для быстрого поиска активного элемента.
+    subtitle_index = 0
     card_bbox_cache: dict[int, tuple[int, int, int, int]] = {}
 
     def _shot_at(t: float) -> dict[str, Any]:
@@ -48,6 +53,7 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
         return shots[-1] if shots else {}
 
     def render(frame: Image.Image, t: float, frame_no: int, stats) -> Image.Image:
+        nonlocal subtitle_index
         canvas = frame.convert("RGBA")
         shot = _shot_at(t)
         drew = 0
@@ -106,6 +112,30 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
         # blend-difference). Покадровый композитор больше не кладёт
         # pop-in Nunito поверх кадра.
         if shot.get("kind") != "fullscreen_text":
+            while (subtitle_index < len(subtitles)
+                   and float(subtitles[subtitle_index]["end"]) <= t):
+                subtitle_index += 1
+            if subtitle_index < len(subtitles):
+                word = subtitles[subtitle_index]
+                if float(word["start"]) <= t < float(word["end"]):
+                    baseline = subtitle_baseline(
+                        ctx, face_bbox=(avatar_face_bbox or {}).get(shot.get("block_id"))
+                        if shot.get("kind") in ("avatar", "split") else None)
+                    elapsed = t - float(word["start"])
+                    # Приклеенное начало реплики (§5.1) рисуется вместе со
+                    # словом: этот движок кладёт слово одной строкой, и цвет
+                    # акцента здесь достаётся ей целиком. Разложить его на два
+                    # цвета умеет только композиция HyperFrames — она и рисует
+                    # готовый ролик, а этот путь остаётся для проб и QC.
+                    text = str(word["display"])
+                    if word.get("lead"):
+                        text = f'{word["lead"]} {text}'
+                    canvas.alpha_composite(subtitle(
+                        ctx, text, progress=clamp01(elapsed / 0.11),
+                        emphasis=bool(word.get("emphasis")),
+                        baseline_y=baseline, mode=mode))
+                    stats.subtitle_frames += 1
+                    drew += 1
             stats.speech_frames += 1
 
         for item in _active(overlays, t):

@@ -38,7 +38,12 @@ def run_step(ctx) -> dict[str, Any]:
     draft = ctx.read("draft_plan.json")
     provider = build_tts_provider(ctx.cfg, ctx.costs)
     sr = int(ctx.cfg.get("elevenlabs.sample_rate", SAMPLE_RATE))
-    desired_sec = float(draft["tts_target_sec"])
+    # Темп речи ведущего. Поднять один только множитель скорости недостаточно:
+    # коррекция длины тут же замедлит озвучку обратно, лишь бы попасть в
+    # плановую длительность. Поэтому вместе со скоростью сдвигается и сама цель
+    # — на ту же долю. Речь становится быстрее, а ролик соразмерно короче.
+    pace = max(0.7, min(1.4, float(ctx.cfg.get("elevenlabs.pace", 1.0))))
+    desired_sec = float(draft["tts_target_sec"]) / pace
     correct_length = bool(ctx.cfg.get("elevenlabs.length_correction", True))
 
     blocks_dir = ctx.wpath("tts_blocks", ".keep").parent
@@ -54,13 +59,15 @@ def run_step(ctx) -> dict[str, Any]:
         total += BLOCK_GAP_SEC * max(0, len(draft["blocks"]) - 1)
         return results, total
 
-    speed = 1.0
+    speed = pace
     results, raw_total = synth_all(speed)
     correction: dict[str, Any] | None = None
 
     if correct_length and raw_total > 0 and abs(raw_total - desired_sec) / desired_sec > LENGTH_TOLERANCE:
         # Скорость обратна длительности: чтобы удлинить, замедляем.
-        new_speed = max(0.65, min(1.35, speed * raw_total / desired_sec))
+        # Потолок коррекции тоже едет за темпом: при pace=1.1 прежний предел
+        # 1.35 срезал бы саму прибавку, ради которой темп и задан.
+        new_speed = max(0.65 * pace, min(1.35 * pace, speed * raw_total / desired_sec))
         _log.info("корректирующая переозвучка ради запаса длины",
                   extra={"raw_sec": round(raw_total, 2), "desired_sec": round(desired_sec, 2),
                          "speed": round(new_speed, 3)})

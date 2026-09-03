@@ -223,18 +223,36 @@ def measure_lufs_array(data: np.ndarray, sr: int = SAMPLE_RATE) -> float:
     return float(-0.691 + 10.0 * math.log10(powers[keep].mean() + EPS))
 
 
+def _oversample_bandlimited(channel: np.ndarray, factor: int) -> np.ndarray:
+    """Полосно-ограниченное восстановление сигнала между отсчётами.
+
+    Линейная интерполяция для этого не годится: хорда между соседними отсчётами
+    всегда проходит ниже настоящей огибающей, и оценка пика выходит заниженной.
+    Классический пример — синус на четверти частоты дискретизации со сдвигом
+    фазы: отсчёты стоят на ±0.707, а сигнал между ними доходит до 1.0.
+
+    Ценой этой ошибки был проваленный QC-8: лимитер по своей оценке считал, что
+    уложился ровно в −1 dBTP, а ffmpeg loudnorm мерил −0.77 и ролик не выдавался.
+    Дополнение спектра нулями — то самое восстановление фильтром, которого
+    требует BS.1770.
+    """
+    n = channel.shape[0]
+    spec = np.fft.rfft(channel)
+    padded = np.zeros(n * factor // 2 + 1, dtype=np.complex128)
+    padded[:spec.shape[0]] = spec
+    return np.fft.irfft(padded, n * factor) * factor
+
+
 def true_peak_dbtp(data: np.ndarray, oversample: int = 4) -> float:
-    """Оценка True Peak: 4-кратная передискретизация, как требует BS.1770."""
+    """Оценка True Peak: передискретизация с фильтром, как требует BS.1770."""
     arr = np.asarray(data, dtype=np.float64)
     if arr.ndim == 1:
         arr = arr[:, None]
     if arr.shape[0] < 2:
         return -math.inf
     peak = 0.0
-    x_old = np.arange(arr.shape[0], dtype=np.float64)
-    x_new = np.linspace(0.0, arr.shape[0] - 1, arr.shape[0] * oversample)
     for ch in range(arr.shape[1]):
-        up = np.interp(x_new, x_old, arr[:, ch])
+        up = _oversample_bandlimited(arr[:, ch], oversample)
         peak = max(peak, float(np.max(np.abs(up))))
     return 20.0 * math.log10(peak + EPS)
 
@@ -316,18 +334,170 @@ def normalize_to_lufs(data: np.ndarray, target_lufs: float, sr: int = SAMPLE_RAT
     return apply_gain_db(data, delta), delta
 
 
-def limit_true_peak(data: np.ndarray, max_dbtp: float = -1.0) -> np.ndarray:
-    """Мягкий лимитер: сначала гейн, затем tanh-клип на границе (§4.4, QC-8)."""
+def limit_true_peak(data: np.ndarray, max_dbtp: float = -1.0,
+                    headroom_db: float = 0.3) -> np.ndarray:
+    """Мягкий лимитер: сначала гейн, затем tanh-клип на границе (§4.4, QC-8).
+
+    Целимся не в сам потолок, а чуть ниже. Судит QC не нашей оценкой, а
+    измерением ffmpeg по отрендеренному файлу, и упереться ровно в границу
+    значит отдать исход на волю расхождения двух измерений — а оно всегда
+    найдётся: разные фильтры восстановления, разная длина окна, перекодировка.
+    Три десятых децибела запаса стоят дешевле невыданного ролика.
+    """
     arr = np.asarray(data, dtype=np.float32)
+    target = max_dbtp - max(0.0, headroom_db)
     tp = true_peak_dbtp(arr)
-    if tp <= max_dbtp or not math.isfinite(tp):
+    if tp <= target or not math.isfinite(tp):
         return arr
-    arr = apply_gain_db(arr, max_dbtp - tp)
-    ceiling = db_to_gain(max_dbtp)
+    arr = apply_gain_db(arr, target - tp)
+    ceiling = db_to_gain(target)
     over = np.abs(arr) > ceiling
     if over.any():
         arr = np.where(over, np.sign(arr) * ceiling * np.tanh(np.abs(arr) / ceiling), arr)
     return arr.astype(np.float32)
+
+
+# Канон громкости голоса (§4.4): −14 LUFS, True Peak ≤ −1 dBTP. Числа лежат
+# здесь, а не в каждом вызове по месту: проба брала звук из клипа HeyGen как
+# есть и отдавала −27.4 LUFS — тише канона на тринадцать децибел. Заказчик
+# услышал это раньше, чем кто-либо измерил.
+VOICE_LUFS = -14.0
+VOICE_TRUE_PEAK_DBTP = -1.0
+
+
+# Сжатие пиков. Порог задан **относительно целевой громкости**, а не в dBFS:
+# так он не зависит от того, насколько тихим пришёл исходник. Числа подобраны
+# измерением на живой дорожке от HeyGen — это наименьшее сжатие, при котором
+# канон −14 LUFS достигается с запасом по пику (получилось −2.2 dBTP).
+COMPRESS_ABOVE_TARGET_DB = 8.0
+COMPRESS_RATIO = 4.0
+
+
+# Ниже этой частоты динамик телефона почти ничего не отдаёт. Смысл звука,
+# который целиком лежит ниже, до зрителя не доходит: он слышит не удар, а
+# шорох. Ролики смотрят с телефона, поэтому это рабочая граница, а не придирка.
+PHONE_FLOOR_HZ = 400.0
+
+
+def speech_bandwidth_hz(data, sr: int = SAMPLE_RATE, share: float = 0.999) -> float:
+    """Частота, ниже которой лежит ``share`` энергии речи.
+
+    Показывает, где кончается полезная полоса. У несжатой речи это 15–20 кГц,
+    у сжатой в mp3 — стена на частоте среза кодека. На 0047 замер дал 11 кГц:
+    запрошен был ``pcm_44100``, а тариф отдал сжатый звук, и определить это по
+    самому ответу было нечем — формат сервис не сообщает.
+
+    Тишина в счёт не идёт: на паузах спектр — это шум дорожки, а не голос.
+    """
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.ndim > 1:
+        arr = arr.mean(axis=1)
+    n = 1 << 14
+    if arr.size < n:
+        return float(sr) / 2.0
+    acc = np.zeros(n // 2 + 1)
+    frames = 0
+    loud = float(np.sqrt(np.mean(arr ** 2))) * 0.5
+    for start in range(0, arr.size - n, n // 2):
+        seg = arr[start:start + n]
+        if float(np.sqrt(np.mean(seg ** 2))) < loud:
+            continue
+        acc += np.abs(np.fft.rfft(seg * np.hanning(n))) ** 2
+        frames += 1
+    if frames == 0:
+        return float(sr) / 2.0
+    cumulative = np.cumsum(acc)
+    if cumulative[-1] <= 0:
+        return float(sr) / 2.0      # тишина: полосу назвать нечем
+    cumulative /= cumulative[-1]
+    freqs = np.fft.rfftfreq(n, 1.0 / sr)
+    return float(freqs[int(np.searchsorted(cumulative, share))])
+
+
+def phone_speaker_loss_db(data, sr: int = SAMPLE_RATE,
+                          floor_hz: float = PHONE_FLOOR_HZ) -> float:
+    """На сколько дБ тише станет звук на динамике телефона.
+
+    Грубая, но честная модель: срез всего, что ниже ``floor_hz``, и сравнение
+    громкости до и после. Ноль — звук целиком в полосе телефона; −20 дБ — от
+    него на телефоне остаётся двадцатая часть.
+
+    Мерка появилась не из теории. У SFX «удар по факту» она показала −17 дБ:
+    звук был чистым синусом на 70 Гц, которого телефон не воспроизводит вовсе,
+    и в ролике от него оставался только слабый шорох. Заказчик услышал это как
+    «дешёвый звук» раньше, чем нашлась причина.
+    """
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.ndim > 1:
+        arr = arr.mean(axis=1)
+    if arr.size < 16:
+        return 0.0
+    spec = np.fft.rfft(arr)
+    freqs = np.fft.rfftfreq(arr.size, 1.0 / sr)
+    # Плавный скат, а не стена: у динамика спад, и резкий срез завысил бы потери.
+    keep = np.clip((freqs / max(floor_hz, 1.0)) ** 2, 0.0, 1.0)
+    filtered = np.fft.irfft(spec * keep, n=arr.size)
+    before = float(np.sqrt(np.mean(arr ** 2))) + 1e-12
+    after = float(np.sqrt(np.mean(filtered ** 2))) + 1e-12
+    return float(20.0 * np.log10(after / before))
+
+
+def compress_peaks(data: np.ndarray, *, threshold_dbfs: float,
+                   ratio: float = COMPRESS_RATIO) -> np.ndarray:
+    """Мягкое сжатие всего, что выше порога. Без атаки и восстановления.
+
+    Компрессор по огибающей звучал бы естественнее, но он вносит время, а
+    значит и зависимость результата от того, где начался буфер. Здесь сжатие
+    поотсчётное: одна и та же входная выборка всегда даёт один и тот же выход,
+    и рендер остаётся воспроизводимым. Для речи разница на слух невелика —
+    сжимаются доли миллисекунды на вершинах.
+    """
+    arr = np.asarray(data, dtype=np.float32)
+    thresh = db_to_gain(threshold_dbfs)
+    mag = np.abs(arr)
+    over = mag > thresh
+    if not over.any():
+        return arr
+    # Над порогом превышение делится на ratio: 8 дБ сверху станут двумя.
+    excess = mag[over] / thresh
+    out = arr.copy()
+    out[over] = np.sign(arr[over]) * thresh * excess ** (1.0 / ratio)
+    return out.astype(np.float32)
+
+
+def normalize_voice(data: np.ndarray, sr: int = SAMPLE_RATE, *,
+                    target_lufs: float = VOICE_LUFS,
+                    true_peak_max: float = VOICE_TRUE_PEAK_DBTP,
+                    compress: bool = True) -> tuple[np.ndarray, float]:
+    """Голос к канону громкости: поднять, придавить выбросы, поднять, закрыть.
+
+    Порядок выведен из измерения, а не из привычки. Дорожка от HeyGen приходит
+    с пик-фактором 18.9 дБ — редкие выбросы торчат высоко над телом фразы. Если
+    просто поднять её до −14 LUFS, пик уходит на +4.9 dBTP, и лимитер, чтобы
+    закрыть потолок, опускает **всю** дорожку обратно: получалось −20 LUFS,
+    то есть тише, чем просили, при формально соблюдённом потолке.
+
+    Поэтому: сначала подъём к цели, потом сжатие выбросов (порог считается от
+    цели, а не в абсолютных dBFS — иначе он зависел бы от громкости исходника
+    и на тихом входе не срабатывал вовсе, что и случилось в первой версии),
+    потом подъём ещё раз, потому что сжатие немного просадило интеграл, и лишь
+    затем лимитер. На живой дорожке это даёт ровно −14.0 LUFS при −2.2 dBTP.
+
+    ``compress=False`` оставлен для дорожек, где выбросы значимы сами по себе.
+
+    Возвращает (аудио, суммарный gain в dB) — по нему видно, насколько тихим
+    пришёл исходник.
+    """
+    arr = np.asarray(data, dtype=np.float32)
+    before = measure_loudness_buffer(arr, sr).integrated_lufs
+    arr, _ = normalize_to_lufs(arr, target_lufs, sr, measured=before)
+    if compress:
+        arr = compress_peaks(arr, threshold_dbfs=target_lufs + COMPRESS_ABOVE_TARGET_DB)
+        measured = measure_loudness_buffer(arr, sr).integrated_lufs
+        arr, _ = normalize_to_lufs(arr, target_lufs, sr, measured=measured)
+    arr = limit_true_peak(arr, true_peak_max)
+    after = measure_loudness_buffer(arr, sr).integrated_lufs
+    return arr, after - before
 
 
 # --- Монтажные операции ------------------------------------------------------

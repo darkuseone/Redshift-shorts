@@ -14,6 +14,7 @@ from typing import Any, Sequence
 from PIL import Image, ImageDraw, ImageFilter
 
 from ..logging import get_logger
+from .text_rules import subtitle_word
 from .canvas import (
     FontBook, RGBA, SafeZones, clamp01, cut_hole, dim_layer, draw_text, ease, measure,
     mix, new_layer, parse_color, rounded_rect, with_alpha,
@@ -115,7 +116,95 @@ def fit_block(ctx: Ctx, text: str, role: str, *, max_width: int, max_size: int,
 
 
 # --- субтитры (§5.1) ----------------------------------------------------------
-# Pop-in Nunito удалён. Жесты рисует HyperFrames: gradient-fill и clip-wipe.
+
+def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
+             baseline_y: int | None = None, mode: str = "stroke") -> Image.Image:
+    """Одно слово по центру кадра. Pop-in 90–120 мс, scale 0.92→1.0, без вращений."""
+    spec = ctx.brandbook["subtitles"]
+    layer = ctx.new()
+    display = subtitle_word(word, spec.get("case", "lower"))
+    if not display:
+        return layer
+
+    max_width = min(int(spec["max_block_width_px"]), ctx.centered_width)
+    size, lines = fit_block(ctx, display, "subtitle", max_width=max_width,
+                            max_size=int(spec["size_px"][1]),
+                            min_size=int(spec["size_px"][0]) - 24, max_lines=1)
+    font = ctx.fonts.font("subtitle", size)
+    text = lines[0]
+
+    # Цвет — единственное, что в потоке субтитров несёт смысл: белое слово идёт
+    # фоном речи, светло-красное отмечает то, на что стоит опереться. Обводка
+    # красила бы контуром каждое слово, и выделять смысловое стало бы нечем.
+    color = (ctx.color(spec.get("accent_color", "accent_soft")) if emphasis
+             else parse_color(spec["color"]))
+    glow_spec = spec.get("accent_glow" if emphasis else "glow", {}) or {}
+    stroke = int(glow_spec.get("rim_px", 0)) if mode == "glow" else 0
+    stroke_color = ctx.color(str(glow_spec.get("rim_color", "accent")))
+
+    y = baseline_y if baseline_y is not None else int(spec["baseline_y_default"])
+    x = ctx.center_x
+
+    pop = clamp01(progress)
+    scale = 0.92 + 0.08 * ctx.ease("ease_out_back", pop)
+    alpha = clamp01(pop * 2.2)
+
+    tw, th = measure(text, font)
+    if mode == "pill":
+        pad_x, pad_y = spec["pill_padding_px"]
+    elif mode == "glow":
+        # Место под самое широкое кольцо зарева: обрезанное гало видно краем
+        # прямоугольника, и наклейка перестаёт быть наклейкой.
+        widest = max((int(b["blur_px"]) for b in glow_spec.get("bloom", [])), default=20)
+        pad_x = pad_y = widest + stroke + 8
+    else:
+        pad_x, pad_y = stroke + 8, stroke + 8
+    tile_w, tile_h = int(tw + pad_x * 2 + 16), int(th + pad_y * 2 + 16)
+    tile = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
+    cx, cy = tile_w // 2, tile_h // 2
+
+    if mode == "pill":
+        rounded_rect(tile, (cx - tw / 2 - pad_x, cy - th / 2 - pad_y,
+                            cx + tw / 2 + pad_x, cy + th / 2 + pad_y),
+                     radius=int(spec["pill_radius_px"]),
+                     fill=with_alpha(parse_color(ctx.brandbook["colors"]["overlay_dim"]), alpha))
+        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha), anchor="mm")
+    elif mode == "glow":
+        # Красное зарево — слоями от широкого к узкому, каждый своим размытием.
+        # Так же оно собрано и в CSS композиции: движки разные, вид один.
+        for step in sorted(glow_spec.get("bloom", []),
+                           key=lambda b: -int(b["blur_px"])):
+            layer = Image.new("RGBA", (tile_w, tile_h), (0, 0, 0, 0))
+            draw_text(layer, (cx, cy), text, font,
+                      fill=with_alpha(ctx.color(str(step["color"])),
+                                      alpha * float(step["alpha"])),
+                      stroke_width=stroke, stroke_fill=with_alpha(
+                          ctx.color(str(step["color"])), alpha * float(step["alpha"])),
+                      anchor="mm")
+            tile.alpha_composite(
+                layer.filter(ImageFilter.GaussianBlur(int(step["blur_px"]) / 2.0)))
+        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha),
+                  stroke_width=stroke,
+                  stroke_fill=with_alpha(stroke_color,
+                                         alpha * float(glow_spec.get("rim_alpha", 0.9))),
+                  anchor="mm")
+    else:
+        draw_text(tile, (cx, cy), text, font, fill=with_alpha(color, alpha),
+                  stroke_width=stroke, stroke_fill=with_alpha(stroke_color, alpha),
+                  anchor="mm")
+
+    if abs(scale - 1.0) > 1e-3:
+        tile = tile.resize((max(1, int(tile_w * scale)), max(1, int(tile_h * scale))),
+                           Image.Resampling.LANCZOS)
+
+    # По горизонтали центруем по фактическим чернилам: у глифов разные боковые
+    # свесы, и центровка по ширине строки уводит слово на несколько пикселей.
+    # По вертикали — строго по метрикам шрифта: центровка по чернилам заставила
+    # бы слова с выносными («у», «р») прыгать вверх-вниз на каждой смене.
+    ink = tile.getbbox()
+    ink_cx = (ink[0] + ink[2]) / 2 if ink else tile.width / 2
+    layer.alpha_composite(tile, (round(x - ink_cx), round(y - tile.height / 2)))
+    return layer
 
 
 def subtitle_baseline(ctx: Ctx, *, face_bbox: tuple[int, int, int, int] | None) -> int:

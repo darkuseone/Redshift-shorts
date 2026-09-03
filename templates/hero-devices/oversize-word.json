@@ -1,0 +1,20 @@
+{
+  "id": "hero-devices/oversize-word",
+  "name": "oversize-word",
+  "category": "hero-devices",
+  "title": "Слово крупнее кадра, края обрезаны",
+  "duration_range": [
+    1.6,
+    3.2
+  ],
+  "params": {},
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "slam"
+  ],
+  "renderer": "hero-oversize",
+  "last_used_in": [],
+  "added": "2026-08-18"
+}

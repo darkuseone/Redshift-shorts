@@ -1,0 +1,24 @@
+{
+  "video_id": "redshift_0047",
+  "avatar_id": "99ccc74e764947c394cd4ef210960a6f",
+  "model_version": "avatar5",
+  "clips_dir": "/home/runner/work/Redshift-shorts/Redshift-shorts/assets/avatar_clips/redshift_0047",
+  "background": "transparent_if_available",
+  "resolution": [
+    1080,
+    1920
+  ],
+  "segments": [
+    {
+      "index": 1,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0047/avatar/seg_01.wav",
+      "duration_sec": 3.61,
+      "block_id": "b4",
+      "text": "При такой температуре порода перестаёт вести себя как камень. Она",
+      "expected_clip": "seg_01.mov",
+      "reason": "длительность не совпала",
+      "problem": "[AVATAR_CLIP_DURATION_MISMATCH] клип аватара seg_01.webm длиннее/короче своего куска речи на 0.35 сек — липсинк уедет | {'hint': 'ожидается 3.61 сек, в файле 3.96'}"
+    }
+  ],
+  "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы в clips_dir под именами expected_clip и возобновить прогон с шага P6."
+}

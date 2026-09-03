@@ -27,7 +27,37 @@
       "accent",
       "accent_soft"
     ],
-    "inverse_only_for_fullscreen_numbers": true
+    "inverse_only_for_fullscreen_numbers": true,
+    "footage_palette": {
+      "_comment": "Цвет футажа против палитры канала. Числа выведены из кадров живого прогона 0047: годные дали 0.00–0.03, негодные 0.40 и 0.93.",
+      "hue_deg": 3.5,
+      "hue_tolerance_deg": 20,
+      "_hue_comment": "Коридор вокруг красного несимметричен. К пурпуру узкий, 12°: там начинается розовое. Симметричные ±20° впускали розовую дымку с тоном 347° как «красную» — клип pexels_v15168370 набирал 0.026 при пороге 0.15 и уехал в ролик 0047, где заказчик его и назвал. К оранжевому 24°, а дальше до 45° пускается только ненасыщенное: земля прощается, золото нет. Различает их не оттенок, а насыщенность — песок карьера и порода стоят на 30–45° при 0.46–0.58, жёлто-оранжевая лава там же, но на 0.83.",
+      "hue_warm_deg": 24,
+      "hue_cool_deg": 12,
+      "saturation_min": 0.22,
+      "value_min": 0.4,
+      "off_share_max": 0.15,
+      "_press_comment": "Кадр со страницы источника сводится к палитре канала грейдом, а не берётся как есть: настоящая съёмка цветная. Числа сняты измерением на живом кадре — 0.83 постороннего цвета до грейда, 0.14 после. Порог ему всё равно прощается шире: он показывается как цитата вместе с доменом.",
+      "press_off_share_max": 0.35,
+      "press_grade": {
+        "saturation": 0.22,
+        "red_lift": 0.07,
+        "contrast": 1.08
+      },
+      "_dominant_comment": "Общая доля постороннего цвета не отличает розовое поле от живой сцены: рабочий стол с деревом, кожей и зелёными клавишами набрал 0.217 — больше, чем фиолетовые чернила. У съёмки цвет разный и каждого понемногу, у абстрактного поля один и сразу на пол-кадра. Замер по семи клипам 0047: розовые 0.118/0.177/0.191, годные 0.000/0.000/0.016.",
+      "dominant_off_share_max": 0.18,
+      "hue_bucket_deg": 30,
+      "_magenta_comment": "Пурпурно-розовая полоса судится строже прочих: синева стола или зелень листвы — случайный цвет живой сцены, а розовое поле случайным не бывает.",
+      "magenta_band_deg": [
+        300,
+        345
+      ],
+      "magenta_share_max": 0.1,
+      "hue_earth_deg": 45,
+      "earth_saturation_max": 0.62,
+      "_saturation_comment": "0.35 не считал бледную розовую дымку вовсе: у клипа pexels_v15168370 медиана насыщенности 0.25. Перебор по всей базе 0047: при 0.35 в браке 7 клипов, при 0.28 — 9 (добавились мятные чернила и гейзер с синим небом), при 0.22 — 10 (мятный фон с ретро-квадратами), и ниже набор не меняется. 0.22 стоит посреди этой ровной площадки. От серого цвет отделяет не насыщенность, а яркость: тёмная порода с холодным бликом стоит на 0.18 по яркости и остаётся серой при любом пороге насыщенности."
+    }
   },
   "safe_zones": {
     "bottom_px": 400,
@@ -53,13 +83,13 @@
         "uppercase": true
       },
       "subtitle": {
-        "primary": "Nunito ExtraBold",
+        "primary": "Montserrat Black",
         "fallbacks": [
-          "Manrope ExtraBold",
-          "Rubik Bold"
+          "Nunito ExtraBold",
+          "Manrope ExtraBold"
         ],
-        "letter_spacing": 0.0,
-        "line_height": 1.05,
+        "letter_spacing": -0.005,
+        "line_height": 1.02,
         "uppercase": false
       },
       "mono": {
@@ -94,7 +124,7 @@
   },
   "subtitles": {
     "granularity": "word",
-    "case": "lower",
+    "case": "upper",
     "position": "center",
     "baseline_y": [
       940,
@@ -105,18 +135,13 @@
     "face_bbox_shift_trigger_y": 800,
     "font_role": "subtitle",
     "size_px": [
-      88,
+      84,
       104
     ],
-    "size_px_default": 96,
+    "size_px_default": 92,
     "max_block_width_px": 900,
     "color": "#FFFFFF",
-    "readability_mode": "shadow",
-    "stroke_px": [
-      6,
-      8
-    ],
-    "stroke_color": "accent_deep",
+    "readability_mode": "glow",
     "pill_radius_px": 24,
     "pill_padding_px": [
       34,
@@ -131,12 +156,56 @@
       6,
       8
     ],
-    "shadow": {
-      "blur_px": 20,
-      "offset_y_px": 4,
-      "alpha": 0.5
-    },
     "accent_color": "accent_soft",
+    "glow": {
+      "rim_px": 2,
+      "rim_color": "accent",
+      "rim_alpha": 0.92,
+      "bloom": [
+        {
+          "blur_px": 8,
+          "color": "accent",
+          "alpha": 0.85
+        },
+        {
+          "blur_px": 22,
+          "color": "accent",
+          "alpha": 0.55
+        },
+        {
+          "blur_px": 48,
+          "color": "accent_deep",
+          "alpha": 0.45
+        },
+        {
+          "blur_px": 90,
+          "color": "accent_deep",
+          "alpha": 0.22
+        }
+      ]
+    },
+    "accent_glow": {
+      "rim_px": 2,
+      "rim_color": "bg_pure",
+      "rim_alpha": 0.85,
+      "bloom": [
+        {
+          "blur_px": 14,
+          "color": "accent",
+          "alpha": 0.75
+        },
+        {
+          "blur_px": 40,
+          "color": "accent_deep",
+          "alpha": 0.55
+        },
+        {
+          "blur_px": 84,
+          "color": "accent_deep",
+          "alpha": 0.28
+        }
+      ]
+    },
     "caption": "gradient-fill",
     "gradient_fill": {
       "base_px": 88,
@@ -214,7 +283,9 @@
     ],
     "scale_from": 1.0,
     "scale_to": 1.06,
-    "requires_sfx": true
+    "requires_sfx": true,
+    "_scrim_comment": "Затемнение футажа под полноэкранным текстом. 0.78 у overlay_dim делает кадр почти чёрным — ровно то, на что жаловался заказчик; 0.55 оставляет материал видимым и держит белые буквы читаемыми.",
+    "scrim_alpha": 0.55
   },
   "text_behind_head": {
     "font_role": "display",
@@ -227,7 +298,9 @@
       "accent_soft"
     ],
     "requires_matte": true,
-    "fallback_margin_pct": 0.15
+    "fallback_margin_pct": 0.15,
+    "center_y_pct": 0.27,
+    "_why_center_y": "Доля высоты кадра, где стоит середина слова. Было 0.34 — слово приходилось на подбородок, и голова закрывала его середину: в кадре торчали крайние буквы. Заказчик просил поднять так, чтобы слово заходило ЗА голову сверху, а не пряталось под ней."
   },
   "plaque": {
     "radius_px": [
@@ -310,7 +383,7 @@
     ],
     "appearances": [
       2,
-      5
+      7
     ],
     "appearance_sec": [
       3.0,

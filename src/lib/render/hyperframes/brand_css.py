@@ -14,6 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ...backdrop import backdrop_css
 from .captions import caption_css
 from .templates import dataviz_css, hero_css, overlay_css, split_css, transition_css
 
@@ -42,6 +43,33 @@ def _stack(role: dict[str, Any], css_family: str) -> str:
     if role.get("primary", "").startswith("JetBrains"):
         tail = "'Courier New', monospace"
     return f"'{css_family}', {tail}"
+
+
+def _text_rim(radius: int, color: str, *, rays: int = 12) -> str:
+    """Обводка текста кольцом теней.
+
+    ``-webkit-text-stroke`` рисует обводку **по центру** контура глифа и на
+    таком радиусе съедает просветы букв; ``paint-order`` это чинит, но за его
+    поддержку в продюсере поручиться нечем. Кольцо теней даёт тот же контур
+    гарантированно. Двенадцать лучей, а не восемь: на восьми между лучами
+    остаётся заметный зазор.
+    """
+    import math
+
+    steps = []
+    for i in range(rays):
+        angle = 2.0 * math.pi * i / rays
+        dx = round(math.cos(angle) * radius, 1)
+        dy = round(math.sin(angle) * radius, 1)
+        steps.append(f"{dx}px {dy}px 0 {color}")
+    return ",".join(steps)
+
+
+def _rgba(hex_color: str, alpha: float) -> str:
+    """#RRGGBB + прозрачность → rgba(). Цвет остаётся из брендбука."""
+    value = hex_color.lstrip("#")
+    r, g, b = (int(value[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r},{g},{b},{alpha:g})"
 
 
 def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
@@ -75,6 +103,17 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"--font-display: {_stack(typo['display'], 'RS Display')};",
         f"--font-subtitle: {_stack(typo['subtitle'], 'RS Subtitle')};",
         f"--font-mono: {_stack(typo['mono'], 'RS Mono')};",
+        # Цвет того, что рисуется **прямо на фоне**: заголовок за головой, тема
+        # за головой, знаки, накопительный список. На тёмной сцене чернильная
+        # надпись пропадает, и тон сцены эти две переменные переключает.
+        "--color-on-stage: var(--color-ink);",
+        "--stage-halo: rgba(247,245,243,0.9);",
+        # Заливка выбивки — противоположность сцене, а не постоянный цвет.
+        # Буквы там прорезаны насквозь, и видно сквозь них сцену: чернильная
+        # заливка на тёмной сцене превращает приём в чёрное по чёрному, и
+        # слово читается только там, где за ним оказалось лицо.
+        "--color-knockout: var(--color-ink);",
+        "--blend-mode: difference;",
     ]
     parts.append(":root{" + "".join(var_lines) + "}")
 
@@ -106,21 +145,124 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     )
 
     # --- слово за головой (§5.3) ---------------------------------------
+    #
+    # Кегль здесь — только запасной: настоящий приходит инлайном на каждом
+    # слове, потому что зависит от его ширины. Слово шире кадра иначе
+    # обрезается краями, а обрезок читается как поломка (см.
+    # ``CompositionBuilder._behind_head_size``).
+    #
+    # Стекло, а не заливка. Слово набиралось цветом ink с прозрачностью 0.55, и
+    # на тёмном кадре — а кадры у канала тёмные — тёмное по тёмному не читалось
+    # вовсе. Красить его в белое нельзя: сплошная белая надпись во весь кадр
+    # спорит с ведущим и с субтитром, у которых белый — рабочий цвет.
+    #
+    # Поэтому буквы стеклянные: сама заливка почти прозрачна и идёт градиентом
+    # (сверху светлее, к середине темнее, снизу отблеск), а форму держит
+    # светлый контур по краю. Читается силуэт и блик на грани, как у стекла,
+    # а не плашка. Тень взята через filter: у прозрачного текста text-shadow
+    # рисуется по прямоугольнику, а drop-shadow — по самим буквам.
     tbh = brandbook["text_behind_head"]
     parts.append(
-        f".behind-head{{position:absolute;left:0;right:0;top:{int(height * 0.34)}px;"
+        f".behind-head{{position:absolute;left:0;right:0;"
+        f"top:{int(height * float(tbh.get('center_y_pct', 0.27)))}px;"
         f"z-index:{Z_BEHIND_HEAD};text-align:center;"
         "font-family:var(--font-display);text-transform:uppercase;"
         f"font-size:{int(tbh['size_px'][1])}px;line-height:0.94;"
-        "color:var(--color-ink);opacity:0.55;transform:translateY(-50%)}"
+        "transform:translateY(-50%);color:transparent;"
+        "background:linear-gradient(180deg,"
+        "rgba(255,255,255,0.30) 0%,rgba(255,255,255,0.08) 52%,"
+        "rgba(255,255,255,0.20) 100%);"
+        "-webkit-background-clip:text;background-clip:text;"
+        "-webkit-text-stroke:2px rgba(255,255,255,0.34);"
+        "filter:drop-shadow(0 3px 22px rgba(0,0,0,0.5))}"
+        # На тёмной сцене стекло приходится делать плотнее. Заливка в 8-30 %
+        # белого поверх плиты в 19 единиц яркости даёт букву, которую видно
+        # только по контуру: на 0047 «ДВЕНАДЦАТЬ» за головой читалось с трудом.
+        # Числа подобраны замером кадра, а не на глаз: слово должно проступать
+        # сквозь фон, но не спорить с ведущим.
+        ".stage-dark .behind-head{background:linear-gradient(180deg,"
+        "rgba(255,255,255,0.46) 0%,rgba(255,255,255,0.17) 52%,"
+        "rgba(255,255,255,0.32) 100%);"
+        "-webkit-background-clip:text;background-clip:text;"
+        "-webkit-text-stroke:2px rgba(255,255,255,0.62);"
+        "filter:drop-shadow(0 3px 26px rgba(0,0,0,0.62))}"
     )
 
     # --- субтитры (§5.1) ------------------------------------------------
-    # Жесты живут в caption_css: pop-in Nunito больше не рисуется.
+    # Центр — оптический центр кадра, а не середина рабочей зоны: правое поле
+    # ужато под колонку лайк/коммент/шер и увело бы слово влево.
+    #
+    # Читаемость держит **красное гало**, а не чёрная тень и не обводка.
+    # Заказчик прислал эталонный кадр и сказал прямо: белое слово, вместо
+    # чёрной тени — тонкий красный градиент с размытием. Гало устроено двумя
+    # слоями и обе части нужны:
+    #
+    #   * узкий ободок в 2-3 px почти непрозрачного акцента — он и есть край
+    #     буквы. На светлом грунте белое слово держится только им;
+    #   * широкое размытое зарево из того же красного, гаснущее к краям, — оно
+    #     сажает слово в кадр и даёт ту самую «дорогую» подсветку.
+    #
+    # Чёрного в субтитре больше нет нигде: тень уводила слово в «дешёвый»
+    # ютуб-каптион, а обводка красила контуром каждое слово и тем убивала цвет
+    # как носитель смысла.
+    accent_var = str(subs.get("accent_color", "accent_soft")).replace("_", "-")
+
+    def _glow(spec: dict[str, Any]) -> str:
+        """Слои `text-shadow` из описания гало в брендбуке."""
+        rim = int(spec.get("rim_px", 3))
+        rim_rgba = _rgba(colors[str(spec.get("rim_color", "accent"))],
+                         float(spec.get("rim_alpha", 0.95)))
+        layers = [_text_rim(rim, rim_rgba)]
+        for step in spec.get("bloom", []):
+            rgba = _rgba(colors[str(step["color"])], float(step["alpha"]))
+            layers.append(f"0 0 {int(step['blur_px'])}px {rgba}")
+        return ",".join(layers)
+
+    glow = _glow(subs.get("glow", {}))
+    accent_glow = _glow(subs.get("accent_glow", subs.get("glow", {})))
+    parts.append(
+        f".word{{position:absolute;left:0;right:0;top:{int(subs['baseline_y_default'])}px;"
+        f"z-index:{Z_SUBTITLE};text-align:center;transform:translateY(-50%);"
+        "font-family:var(--font-subtitle);font-weight:900;"
+        f"font-size:{int(subs['size_px_default'])}px;"
+        f"line-height:{typo['subtitle']['line_height']};"
+        f"letter-spacing:{typo['subtitle']['letter_spacing']}em;"
+        f"color:{subs['color']};"
+        f"text-shadow:{glow}}}"
+        ".word > span{display:inline-block;will-change:transform}"
+        # Акцентное слово — та же наклейка наизнанку: красная заливка и светлое
+        # гало. Красным по красному гало слово потеряло бы край, а другого
+        # цвета в брендбуке нет и заводить его незачем.
+        f".word.emphasis{{color:var(--color-{accent_var});"
+        f"text-shadow:{accent_glow}}}"
+        # Приклеенный предлог живёт в цвете обычного слова даже внутри
+        # акцентной реплики: красный означает ударение, а не начало фразы.
+        f".word .lead{{font-style:normal;color:{subs['color']};"
+        f"text-shadow:{glow}}}"
+        # Над светлой стеной студии белый ободок акцентного слова пропадает
+        # вместе с фоном — там край держит тёмно-красный. Проверено рендером
+        # обеих сцен, а не рассуждением.
+        f".stage-light .word.emphasis{{text-shadow:"
+        f"{_glow({**subs.get('accent_glow', {}), 'rim_color': 'accent_deep', 'rim_alpha': 0.9})}}}"
+    )
+
+    # --- подпись источника (§1, правило 8) ------------------------------
+    # Мелко, у левого края рабочей зоны, над полосой субтитров. Тень мягкая:
+    # подпись обязана читаться и на светлом кадре, но не спорить с ним — это
+    # сноска, а не элемент композиции.
+    credit_bottom = height - int(subs["baseline_y_default"]) + int(subs["size_px"][1])
+    parts.append(
+        f".credit{{position:absolute;left:var(--safe-x-min);"
+        f"bottom:{credit_bottom}px;z-index:{Z_OVERLAY};"
+        "font-family:var(--font-mono);font-size:22px;letter-spacing:.08em;"
+        "text-transform:uppercase;color:rgba(255,255,255,0.62);"
+        "text-shadow:0 1px 6px rgba(0,0,0,0.7);pointer-events:none}"
+    )
     parts.append(caption_css(brandbook))
 
     # --- полноэкранный текст (§5.2) ------------------------------------
     fs = brandbook["fullscreen_text"]
+    scrim = float(fs.get("scrim_alpha", 0.55))
     parts.append(
         f".fullscreen-text{{position:absolute;inset:0;z-index:{Z_OVERLAY};"
         "display:flex;align-items:center;justify-content:center;"
@@ -130,6 +272,14 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"font-size:{int(fs['size_px'][1])}px;line-height:0.94}}"
         ".fullscreen-text.invert{background:var(--color-ink);color:var(--color-bg-pure)}"
         ".fullscreen-text .accent{color:var(--color-accent)}"
+        # Кадр с материалом за текстом: заливка уступает место футажу, а
+        # читаемость держит затемнение. Сплошной цвет здесь оставлял белые
+        # буквы на пустом чёрном — фраза вынесена крупно, а стоит она ни на чём.
+        f".fullscreen-text.over-media{{background:{_rgba(colors['ink'], scrim)};"
+        "color:var(--color-bg-pure)}"
+        ".fullscreen-text.over-media .accent{color:var(--color-accent-soft)}"
+        f".fs-bg{{position:absolute;inset:0;z-index:{Z_SHOT};"
+        "width:var(--frame-w);height:var(--frame-h);object-fit:cover}"
     )
 
     # --- мем ------------------------------------------------------------
@@ -167,16 +317,47 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:var(--color-bg-pure);color:var(--color-ink);"
         "box-shadow:0 18px 48px rgba(0,0,0,0.22)}"
         ".source-card .bar{display:flex;align-items:center;gap:10px;"
-        "padding:18px 22px;background:var(--color-bg-light)}"
-        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:var(--color-muted)}"
-        ".source-card .domain{margin-left:10px;font-family:var(--font-mono);"
-        "font-size:26px;color:var(--color-muted)}"
-        ".source-card .title{padding:22px 26px 6px;font-family:var(--font-display);"
-        "font-size:52px;line-height:1.04}"
-        ".source-card .snippet{padding:6px 26px 26px;font-size:30px;"
-        "line-height:1.3;color:var(--color-muted)}"
-        ".source-card .hl{background:var(--color-accent-soft);"
-        "box-shadow:0 0 0 6px var(--color-accent-soft)}"
+        "padding:16px 22px;background:#ECEAE7}"
+        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:#C9C6C2}"
+        # Строка адреса с настоящим путём статьи, а не одно имя домена: именно
+        # она и делает кадр страницей издания, а не «окном вообще».
+        ".source-card .url{flex:1;margin-left:12px;display:block;"
+        "padding:8px 18px;border-radius:16px;background:var(--color-bg-pure);"
+        "font-family:var(--font-mono);font-size:24px;color:var(--color-muted);"
+        "white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"
+        ".source-card .url b{color:var(--color-ink);font-weight:600}"
+        ".source-card .page{padding:22px 26px 26px}"
+        ".source-card .kicker{font-family:var(--font-mono);font-size:22px;"
+        "letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent)}"
+        # Интерлиньяж 1.04 — плакатный, а маркер рисуется по строчной коробке:
+        # на двух строках его блоки наезжали друг на друга и срезали верхнюю.
+        # 1.18 — обычный для заголовка на сайте, и маркеры встают раздельно.
+        ".source-card .title{padding:10px 0 0;font-family:var(--font-display);"
+        "font-size:52px;line-height:1.18}"
+        ".source-card .byline{display:flex;align-items:center;gap:12px;"
+        "padding:14px 0 0;font-size:24px;color:var(--color-muted)}"
+        ".source-card .favicon{width:34px;height:34px;border-radius:9px;"
+        "background:var(--color-accent);color:var(--color-bg-pure);"
+        "font-family:var(--font-display);font-size:22px;display:flex;"
+        "align-items:center;justify-content:center}"
+        ".source-card .snippet{padding:14px 0 0;font-size:30px;"
+        "line-height:1.3;color:#3A3D42}"
+        # Начало текста статьи серыми строками: страница продолжается за краем
+        # карточки, и это видно без единого лишнего слова в кадре.
+        ".source-card .lines{display:flex;flex-direction:column;gap:10px;"
+        "padding:20px 0 0}"
+        ".source-card .lines i{display:block;height:12px;border-radius:6px;"
+        "background:rgba(17,18,20,.09)}"
+        ".source-card .lines i:nth-child(2){width:88%}"
+        ".source-card .lines i:nth-child(3){width:62%}"
+        # Маркер красит фон самого фрагмента, а не лежит под ним полосой:
+        # фраза переносится, и абсолютная полоса внутри многострочного
+        # inline-элемента считалась по одной коробке — в кадре оставалась
+        # красная чёрточка на месте переноса. `box-decoration-break: clone`
+        # повторяет фон на каждой строке, как настоящий маркер.
+        ".source-card .hl{border-radius:6px;padding:0 .10em;"
+        "-webkit-box-decoration-break:clone;box-decoration-break:clone;"
+        "background-color:rgba(0,0,0,0)}"
     )
 
     # --- CTA (§5.7) ------------------------------------------------------
@@ -195,12 +376,19 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # Мягкий градиент бренда вместо видеофона: он не спорит с аватаром и
     # держит долю акцента ниже потолка §3.3.1.
     parts.append(
-        ".vfx{position:absolute;inset:0;"
-        "background:radial-gradient(120% 90% at 50% 18%,"
-        "var(--color-bg-pure) 0%,var(--color-bg-light) 46%,#EDE7E4 100%)}"
-        ".vfx::after{content:'';position:absolute;inset:0;"
-        "background:radial-gradient(70% 45% at 50% 78%,"
-        "var(--color-accent-soft) 0%,transparent 70%);opacity:0.5}"
+        backdrop_css()
+        +
+        # Тёмная сцена переворачивает цвет надписей на фоне и их ореол. Не
+        # `--color-ink` целиком: он же красит текст на белых карточках, и его
+        # переворот сделал бы их нечитаемыми.
+        #
+        # Селектор без `#root` намеренно: в ролике класс стоит на корне
+        # композиции, на витрине — на рамке карточки, и таблица стилей одна на
+        # обоих. Привязка к `#root` молча оставляла бы витрину со светлыми
+        # надписями на тёмной сцене.
+        ".stage-dark{--color-on-stage:var(--color-bg-light);"
+        "--color-knockout:var(--color-bg-light);"
+        "--stage-halo:rgba(6,8,12,0.85)}"
     )
 
     # Слои переходов (§4.3, §15) — отдельный модуль: их 9 рендереров,

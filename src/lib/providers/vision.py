@@ -84,9 +84,48 @@ PROMPT = """Ты — придирчивый видеоредактор кана�
 под вертикальный кроп, шум и артефакты сжатия."""
 
 
+# Тот же судья, но другой вопрос. §11.2 показывает ему кадр **готового** ролика,
+# а спрашивал его прежний промпт про «материал B-roll» — и судья честно снижал
+# оценку за наш собственный субтитр («крупный текст в центре портит B-roll») и
+# за самого ведущего («это говорящая голова, а не B-roll»). На 0047 из шести
+# проб так набралось четыре: доля расхождений вышла 67 % там, где картинка не
+# совпала с речью в лучшем случае дважды. Мерили не то, что хотели измерить.
+FINAL_FRAME_PROMPT = """Ты — придирчивый видеоредактор канала о науке и технологиях.
+Перед тобой кадр ГОТОВОГО вертикального ролика 9:16, а не материал для монтажа.
+
+Что в этом кадре по замыслу: {intent}
+Речь в этот момент: {query}
+Роль блока в ролике: {role}
+
+Оформление канала — субтитр (одно слово крупно по центру), слово за головой,
+плашка, карточка источника, кнопка подписки, ведущий в кадре — так задумано.
+Это НЕ дефект, оценку за это не снижай и текстом в кадре не считай.
+
+Верни СТРОГО JSON без пояснений:
+{{"score": 0.0-1.0, "summary": "что реально изображено, одной фразой",
+ "relevance": 0.0-1.0, "quality": 0.0-1.0, "composition_9x16": 0.0-1.0,
+ "has_text": bool, "has_logo": bool, "watermark": bool, "stocky": bool,
+ "reason": "коротко, почему такая оценка"}}
+
+score — насколько картинка соответствует тому, что произносится, и замыслу
+кадра. Снижай за: картинку не про то, о чём речь; обрезанные головы и битые
+маски; нечитаемую надпись (контраст, пёстрый фон); растяжение и артефакты.
+has_text — только ЧУЖОЙ текст: подпись стока, логотип, надпись, вшитая в
+исходный материал. Оформление канала сюда не входит.
+stocky — постановочный или «нейросетевой» вид самого материала."""
+
+PROMPTS = {"broll": PROMPT, "final_frame": FINAL_FRAME_PROMPT}
+
+
+def prompt_for(kind: str, *, intent: str, role: str, query: str) -> str:
+    """Текст запроса судье под задачу. Неизвестная задача — прежний вопрос."""
+    return PROMPTS.get(kind, PROMPT).format(intent=intent, role=role, query=query)
+
+
 class VisionProvider(Provider):
     def judge(self, frames: Sequence[Path], *, intent: str, role: str,
-              query: str) -> VisionVerdict:
+              query: str, kind: str = "broll") -> VisionVerdict:
+        """``kind`` выбирает вопрос: отбор материала или кадр готового ролика."""
         raise NotImplementedError
 
 
@@ -100,7 +139,7 @@ class MockVision(VisionProvider):
         self.judge_name = judge_name
 
     def judge(self, frames: Sequence[Path], *, intent: str, role: str,
-              query: str) -> VisionVerdict:
+              query: str, kind: str = "broll") -> VisionVerdict:
         if not frames:
             return VisionVerdict(score=0.0, reason="нет кадров для оценки",
                                  judge=f"{self.judge_name}-mock")
@@ -122,7 +161,12 @@ class MockVision(VisionProvider):
 
         score = min(1.0, max(0.0, 0.42 * relevance + 0.30 * quality + 0.28 * composition))
         stocky = bool(seed % 11 == 0)
-        has_text = bool(np.mean([s["edge_density"] for s in stats]) > 0.34 and seed % 5 == 0)
+        # Плотность краёв на кадре готового ролика поднимает наш собственный
+        # субтитр, а не чужая подпись. Спрашивают здесь про чужую — значит и
+        # мерить надо без оформления канала.
+        has_text = bool(kind != "final_frame"
+                        and np.mean([s["edge_density"] for s in stats]) > 0.34
+                        and seed % 5 == 0)
         if stocky:
             score *= 0.72
         if has_text:
@@ -210,7 +254,7 @@ class GeminiVision(VisionProvider):
         self.api_key = api_key
 
     def judge(self, frames: Sequence[Path], *, intent: str, role: str,
-              query: str) -> VisionVerdict:
+              query: str, kind: str = "broll") -> VisionVerdict:
         import requests
 
         model = str(self.cfg.get("vision.gemini_model", "gemini-2.5-flash"))
@@ -218,7 +262,7 @@ class GeminiVision(VisionProvider):
                                 "https://generativelanguage.googleapis.com"))
         url = f"{base}/v1beta/models/{model}:generateContent"
         parts: list[dict[str, Any]] = [
-            {"text": PROMPT.format(intent=intent, role=role, query=query)}]
+            {"text": prompt_for(kind, intent=intent, role=role, query=query)}]
         for frame in frames:
             parts.append({"inline_data": {
                 "mime_type": "image/jpeg",
@@ -262,13 +306,14 @@ class GrokVision(VisionProvider):
         self.api_key = api_key
 
     def judge(self, frames: Sequence[Path], *, intent: str, role: str,
-              query: str) -> VisionVerdict:
+              query: str, kind: str = "broll") -> VisionVerdict:
         import requests
 
         model = str(self.cfg.get("vision.grok_model", "grok-4-fast"))
         base = str(self.cfg.get("vision.grok_api_base", "https://api.x.ai"))
         content: list[dict[str, Any]] = [
-            {"type": "text", "text": PROMPT.format(intent=intent, role=role, query=query)}]
+            {"type": "text",
+             "text": prompt_for(kind, intent=intent, role=role, query=query)}]
         for frame in frames:
             b64 = base64.b64encode(frame.read_bytes()).decode("ascii")
             content.append({"type": "image_url",

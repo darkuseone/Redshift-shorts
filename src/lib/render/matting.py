@@ -62,16 +62,27 @@ class MatteReport:
 
 
 def _alpha_frames(clip: Path, out_dir: Path, count: int = 5) -> list[np.ndarray]:
-    """Достать альфа-канал нескольких кадров клипа."""
+    """Достать альфа-канал нескольких кадров клипа.
+
+    Декодер для webm называется явно. VP9 держит альфу отдельным блоком
+    контейнера, и штатный декодер ffmpeg по нему отдаёт ``yuv420p``, а
+    ``format=rgba`` дорисовывает к нему единицы. Канал при этом получается не
+    пустой, а **полностью непрозрачный**, и оценка маски читала его как
+    «маска покрывает почти весь кадр» — то есть как негодную. На 0047 из-за
+    этого молча отключились текст за головой и VFX-фон, хотя альфа в клипах
+    была настоящая: 32 % непрозрачных пикселей, силуэт ведущего. Ровно про эту
+    ловушку предупреждает ``ffmpeg.alpha_opacity``; здесь её просто не знали.
+    """
     info = probe(clip)
     duration = info.duration_sec or 1.0
     out_dir.mkdir(parents=True, exist_ok=True)
+    decoder = ["-c:v", "libvpx-vp9"] if clip.suffix.lower() == ".webm" else []
     alphas: list[np.ndarray] = []
     for i in range(count):
         ts = duration * (i + 0.5) / count
         frame = out_dir / f"alpha_{i:02d}.png"
         try:
-            run(["-y", "-ss", f"{ts:.3f}", "-i", str(clip), "-frames:v", "1",
+            run(["-y", "-ss", f"{ts:.3f}", *decoder, "-i", str(clip), "-frames:v", "1",
                  "-vf", "scale=192:-2,format=rgba", str(frame)], what="alpha frame")
         except Exception:  # noqa: BLE001 — отсутствие альфы не должно ронять прогон
             continue

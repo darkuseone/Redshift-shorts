@@ -30,9 +30,37 @@ SAMPLES = 6
 
 def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2) -> str:
     """Что произносится вокруг момента t — эталон для сверки с картинкой."""
-    words = [w["display"] for w in plan.get("subtitles", [])
-             if abs(float(w["start"]) - t) <= window]
+    words: list[str] = []
+    for cue in plan.get("subtitles", []):
+        if abs(float(cue["start"]) - t) > window:
+            continue
+        # Приклеенное начало реплики — тоже произнесённые слова, и без них
+        # эталон теряет отрицание: «не в бюджет» превращается в «бюджет».
+        if cue.get("lead"):
+            words.append(str(cue["lead"]))
+        words.append(str(cue["display"]))
     return " ".join(words)
+
+
+# Что в кадре по замыслу — по виду кадра. Судья без этого честно ставил 0.15
+# кадру с ведущим («это говорящая голова, а не B-roll»), хотя ведущий там и
+# должен быть: замысел кадра ему просто не сообщали.
+_EXPECTED = {
+    "avatar": "ведущий в кадре крупным планом — так и задумано",
+    "split": "сплит: ведущий и материал в одном кадре — так и задумано",
+    "fullscreen_text": "фраза во весь экран поверх фона — так и задумано",
+    "meme": "картинка-цитата целиком в кадре — так и задумано",
+    "footage": "материал по смыслу речи, ведущего в кадре нет",
+}
+
+
+def _expected(shot: dict[str, Any]) -> str:
+    kind = str(shot.get("kind") or "")
+    expected = _EXPECTED.get(kind, _EXPECTED["footage"])
+    hero = (shot.get("hero") or {}).get("device")
+    if hero:
+        expected += f"; поверх — приём «{hero}»"
+    return expected
 
 
 def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any]) -> dict[str, Any]:
@@ -53,12 +81,14 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any]) -> dict[str, A
                      if float(s["start"]) <= t < float(s["end"])), {})
         spoken = _spoken_at(plan, t)
         intent = shot.get("reason") or shot.get("kind", "")
-        verdict = provider.judge([frame], intent=f"{intent}. Речь в этот момент: {spoken}",
-                                 role=shot.get("role", ""), query=spoken or intent)
+        verdict = provider.judge([frame], kind="final_frame",
+                                 intent=f"{_expected(shot)}. Замысел кадра: {intent}",
+                                 role=str(shot.get("role", "")), query=spoken or intent)
         samples.append({
             "t": round(t, 2),
             "shot_index": shot.get("index"),
             "kind": shot.get("kind"),
+            "expected": _expected(shot),
             "spoken": spoken,
             "score": round(verdict.score, 3),
             "summary": verdict.summary,

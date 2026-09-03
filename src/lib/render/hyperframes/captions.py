@@ -298,10 +298,12 @@ def caption_css(brandbook: dict[str, Any]) -> str:
     subs = brandbook.get("subtitles") or {}
     spec = subs.get("camera_follow") or {}
     wipe = subs.get("clip_wipe") or {}
-    halo = subs.get("shadow") or {}
-    blur = int(halo.get("blur_px", 20))
-    offset = int(halo.get("offset_y_px", 4))
-    alpha = float(halo.get("alpha", 0.5))
+    glow = subs.get("glow") or {}
+    bloom = glow.get("bloom") or [{"blur_px": 20, "alpha": 0.5}]
+    widest = max(bloom, key=lambda b: int(b.get("blur_px", 0)))
+    blur = int(widest.get("blur_px", 20))
+    offset = int(glow.get("rim_px", 2))
+    alpha = float(widest.get("alpha", 0.5))
     tracking = float(spec.get("letter_spacing_em", 0.005))
     line_height = float(spec.get("line_height", 0.78))
     color = str(subs.get("color", "#FFFFFF"))
@@ -388,6 +390,8 @@ def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, 
             continue
         item = dict(word)
         item["display"] = display
+        lead = subtitle_word(str(word.get("lead") or ""), case_mode)
+        item["lead"] = lead
         visible.append(item)
     return visible
 
@@ -790,7 +794,10 @@ def build_gradient_fill(
         next_start = (
             float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
         )
-        texts = [w["display"] for w in phrase]
+        texts = [
+            f'{w["lead"]} {w["display"]}' if w.get("lead") else w["display"]
+            for w in phrase
+        ]
         size, widths = fit_wipe_group(
             texts,
             max_width=params["frame_w"],
@@ -818,13 +825,17 @@ def build_gradient_fill(
             wid = f"{clip_id}-w{i}"
             wpx = widths[i]
             margin = _px(gap_px) if i < n - 1 else "0"
+            lead = str(word.get("lead") or "")
+            lead_html = f'<i class="lead">{_esc(lead)}</i> ' if lead else ""
+            shown = word["display"]
             if i == accent_at:
                 word_nodes.append(
                     f'<div id="{wid}" class="gf-word gf-accent" '
                     f'style="width:{_px(wpx)}px;height:{size}px;'
                     f'margin-right:{margin}px">'
+                    f'{lead_html}'
                     f'<span class="gf-base" style="font-size:{size}px;'
-                    f'line-height:{size}px">{_esc(word["display"])}</span>'
+                    f'line-height:{size}px">{_esc(shown)}</span>'
                     f'<svg width="{_px(wpx)}" height="{size}" '
                     f'viewBox="0 0 {_px(wpx)} {size}">'
                     f'<defs>{_blood_gradient(f"{wid}-grad", params["accent"], params["accent_soft"])}'
@@ -844,7 +855,7 @@ def build_gradient_fill(
                     f'style="width:{_px(wpx)}px;height:{size}px;'
                     f'font-size:{size}px;line-height:{size}px;'
                     f'margin-right:{margin}px">'
-                    f"{_esc(word['display'])}</div>"
+                    f"{lead_html}{_esc(shown)}</div>"
                 )
             count += 1
 

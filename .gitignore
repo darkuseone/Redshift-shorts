@@ -28,6 +28,10 @@ render/remotion/.remotion/
 !/cache/.gitkeep
 !/cache/footage_index.json
 
+# Библиотека отобранного материала — наоборот, живёт в репозитории целиком:
+# раннер умирает вместе с задачей, кэш Actions привязан к ролику и терялся уже
+# трижды, а checkout переживает всё. См. assets/footage/README.md.
+
 # Локальные секреты
 .env
 .env.*
@@ -37,3 +41,6 @@ config/secrets.local.yaml
 # --- OS ---
 .DS_Store
 Thumbs.db
+
+# Витрина приёмов собирается из исходников — в репозиторий не кладём.
+build/

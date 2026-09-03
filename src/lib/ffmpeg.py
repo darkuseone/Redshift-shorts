@@ -210,15 +210,50 @@ def extract_frames(src: str | Path, out_dir: str | Path, positions: Iterable[flo
     out_dir.mkdir(parents=True, exist_ok=True)
     result: list[Path] = []
     duration = info.duration_sec or 0.0
-    for idx, rel in enumerate(positions):
+    # Неподвижная картинка — единственный кадр длиной в четыре сотых секунды.
+    # Перемотка по ней проматывает **за** него: ffmpeg возвращает 0 и пустой
+    # файл, а вызывающий получает пустой список и молча остаётся без замера.
+    # Так и вышло с кадром из статьи: ни палитры, ни дедупа — один и тот же
+    # кадр вставал в четыре слота подряд.
+    still = int(info.nb_frames or 0) == 1 and duration <= 0.2
+    for idx, rel in enumerate([0.0] if still else list(positions)):
         ts = max(0.0, min(duration * float(rel), max(duration - 0.05, 0.0))) if duration else 0.0
         out = out_dir / f"frame_{idx:02d}.jpg"
-        run(["-y", "-ss", f"{ts:.3f}", "-i", str(src), "-frames:v", "1",
+        seek = [] if still else ["-ss", f"{ts:.3f}"]
+        run(["-y", *seek, "-i", str(src), "-frames:v", "1",
              "-vf", f"scale={width}:-2", "-q:v", "4", str(out)],
             what="extract_frame")
         if out.exists():
             result.append(out)
     return result
+
+
+def grade_to_palette(src: str | Path, dst: str | Path, *, saturation: float = 0.22,
+                     red_lift: float = 0.07, contrast: float = 1.08) -> Path:
+    """Свести материал к палитре канала: почти монохром с красной подсветкой.
+
+    Нужно кадру из статьи (§3.1). Настоящая съёмка приходит цветной — дневное
+    небо, зелень, синие халаты, — и отбор по палитре её честно бракует: на
+    измерении бодрый кадр даёт 0.83 постороннего цвета при пороге 0.35. Грейд
+    решает то же самое правильным способом: цвет уводится, а кадр остаётся.
+    Проверено измерением на живом кадре: 0.83 → 0.14.
+
+    Числа не на глаз: при saturation 0.35 остаётся 0.65 постороннего цвета —
+    выше порога, при 0.18 кадр уже читается серым. 0.22 — нижняя точка, где
+    материал ещё цветной на вид и уже проходит отбор.
+    """
+    dst = Path(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    chain = (f"hue=s={saturation:.3f},"
+             f"colorbalance=rs={red_lift:.3f}:rm={red_lift:.3f}:rh={red_lift / 2:.3f},"
+             f"eq=contrast={contrast:.3f}:brightness=-0.02")
+    if dst.suffix.lower() in (".jpg", ".jpeg", ".png"):
+        run(["-y", "-i", str(src), "-vf", chain, "-frames:v", "1", "-q:v", "3", str(dst)],
+            what="grade photo")
+    else:
+        run(["-y", "-i", str(src), "-vf", chain, "-c:v", "libx264", "-preset", "veryfast",
+             "-crf", "20", "-pix_fmt", "yuv420p", "-an", str(dst)], what="grade video")
+    return dst
 
 
 def make_thumbnail(src: str | Path, out: str | Path, *, time_sec: float = 1.0,
@@ -228,6 +263,196 @@ def make_thumbnail(src: str | Path, out: str | Path, *, time_sec: float = 1.0,
     run(["-y", "-ss", f"{time_sec:.3f}", "-i", str(src), "-frames:v", "1",
          "-vf", f"scale={width}:-2", "-q:v", "2", str(out)], what="thumbnail")
     return out
+
+
+def alpha_opacity(src: str | Path, *, at_sec: float = 0.5) -> float | None:
+    """Доля непрозрачных пикселей кадра. ``None`` — альфы в файле нет.
+
+    Расширение о прозрачности не говорит **ничего**: HeyGen отдавал ``.webm``
+    и с рабочей альфой, и без неё, и назывались они одинаково. Один такой файл
+    ушёл в сборку как прозрачный, и приёмы за головой встали за непрозрачным
+    планом — в кадре их просто не было. Поэтому канал измеряется.
+
+    VP9 держит альфу отдельным блоком контейнера, и штатный декодер ffmpeg
+    отдаёт по нему ``yuv420p`` — альфы будто нет. Достаёт её только
+    ``libvpx-vp9``, поэтому для webm декодер называется явно.
+    """
+    src = Path(src)
+    decoder = ["-c:v", "libvpx-vp9"] if src.suffix.lower() == ".webm" else []
+
+    def _grab(seek: float) -> bytes:
+        args = [ffmpeg_bin(), "-v", "error", "-ss", f"{max(0.0, seek):.3f}",
+                *decoder, "-i", str(src), "-frames:v", "1",
+                "-vf", "alphaextract,scale=160:-1", "-f", "image2pipe",
+                "-vcodec", "png", "-"]
+        proc = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              timeout=120)
+        # «Requested planes not available» — в потоке нет альфа-плоскости.
+        return proc.stdout if proc.returncode == 0 else b""
+
+    raw = _grab(at_sec)
+    if not raw and at_sec > 0:
+        # Перемотка за конец короткого клипа кадра не даёт, и «кадра нет»
+        # прочиталось бы как «альфы нет». Второй заход — с начала.
+        raw = _grab(0.0)
+    if not raw:
+        return None
+    try:
+        import io
+
+        from PIL import Image
+
+        plane = Image.open(io.BytesIO(raw)).convert("L")
+    except Exception:                                        # noqa: BLE001
+        return None
+    data = list(plane.getdata())
+    if not data:
+        return None
+    return sum(data) / (255.0 * len(data))
+
+
+def has_alpha(src: str | Path, *, at_sec: float = 0.5,
+              max_opacity: float = 0.985) -> bool:
+    """Есть ли в клипе **работающая** прозрачность.
+
+    Непрозрачный кадр иногда приходит с формально существующей альфой,
+    залитой единицами. Такой канал бесполезен, и считать его альфой — то же
+    самое, что верить расширению.
+    """
+    opacity = alpha_opacity(src, at_sec=at_sec)
+    return opacity is not None and opacity < max_opacity
+
+
+# Отношение высоты головы (макушка → подбородок) к её ширине с волосами.
+# Антропометрическая пропорция, и мерка в паре с ней одна — ширина.
+HEAD_ASPECT = 1.35
+# Доля от самой широкой строки, начиная с которой строка считается плато
+# черепа: по этим строкам и меряется ширина головы.
+PLATEAU_SHARE = 0.95
+
+
+def head_box(src: str | Path, *, at_sec: float = 0.5,
+             width: int = 180) -> tuple[int, int, int, int] | None:
+    """Голова ведущего, измеренная по альфа-каналу. ``None`` — если альфы нет.
+
+    Раньше положение головы бралось константой из брендбука (полоса
+    ``avatar.face_band_y``), и приёмы ставились относительно догадки. На новом
+    аватаре догадка разъехалась с кадром: слово «за головой» пришлось ей ровно
+    поперёк, и «НЕЧЕМ» читалось как «НЕ⋯ЕМ». Догадка тут вообще лишняя — с
+    рабочей альфой силуэт известен точно.
+
+    **Ширина** читается силуэтом. Профиль у портрета начинается одинаково:
+    макушка (узко) → череп (плато), и плато — первый максимум профиля. Плечи
+    при этом не ищутся вовсе: «наибольший прирост ширины» одинаково хорошо
+    указывает и на них, и на разлёт причёски сразу под макушкой, а какой из
+    двух окажется круче — дело причёски. Проверено: на портрете плечи находились
+    четырьмя строками ниже темени.
+
+    Строка профиля — длина самого длинного сплошного отрезка, а не число
+    непрозрачных точек. Разница вся в реквизите: стойка микрофона входит в кадр
+    отдельной полосой, по сумме точек неотличимой от плеч, — отрезком она в
+    профиле просто не участвует. По размаху строки коробка получалась вдвое
+    шире головы (x1=1074 вместо 756).
+
+    **Подбородок силуэтом не читается** — и это не недоработка, а свойство
+    съёмки. В портретном плане шея закрыта плечами и воротником: ниже челюсти
+    ширина не проваливается, а сразу растёт. Прежний поиск «самого узкого места
+    между черепом и плечами» находил не подбородок, а скулы — коробка кончалась
+    на верхней губе, круг садился на 60 px выше головы, и в кадре голова
+    вылезала из круга снизу при пустоте сверху (видно на кадре).
+
+    Поэтому высота считается от ширины: у человека расстояние от макушки до
+    подбородка — около 1.35 ширины головы с волосами (:data:`HEAD_ASPECT`).
+    Мерка тут одна — ширина, измеренная по альфе; пропорция только переводит её
+    в высоту. Силуэт всё же имеет право оборвать коробку раньше: если ниже
+    черепа столбцы головы **пусты** (голова висит отдельно от тела — так устроен
+    синтетический фикстур), подбородок там, и пропорция не нужна.
+    """
+    try:
+        import io
+
+        import numpy as np
+        from PIL import Image
+    except Exception:                                        # noqa: BLE001
+        return None
+
+    src = Path(src)
+    decoder = ["-c:v", "libvpx-vp9"] if src.suffix.lower() == ".webm" else []
+    args = [ffmpeg_bin(), "-v", "error", "-ss", f"{max(0.0, at_sec):.3f}",
+            *decoder, "-i", str(src), "-frames:v", "1",
+            "-vf", f"alphaextract,scale={width}:-1", "-f", "image2pipe",
+            "-vcodec", "png", "-"]
+    proc = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          timeout=120)
+    if proc.returncode != 0 or not proc.stdout:
+        return None
+
+    info = probe(src)
+    mask = np.asarray(Image.open(io.BytesIO(proc.stdout)).convert("L")) > 16
+
+    def longest_run(row: "np.ndarray") -> tuple[int, int]:
+        """Самый длинный сплошной отрезок строки: (начало, конец]."""
+        idx = np.where(row)[0]
+        if idx.size == 0:
+            return (0, 0)
+        parts = np.split(idx, np.where(np.diff(idx) > 1)[0] + 1)
+        run = max(parts, key=len)
+        return (int(run[0]), int(run[-1]) + 1)
+
+    # Профиль строится по самому длинному отрезку строки, а не по числу
+    # непрозрачных точек в ней. Разница вся в реквизите: стойка микрофона
+    # входит в кадр отдельной полосой, и в сумме точек она неотличима от
+    # плеч — прежний профиль принимал её появление за начало плеч и обрывал
+    # голову на скулах. Отрезком она просто не участвует.
+    spans = [longest_run(row) for row in mask]
+    rows = np.array([b - a for a, b in spans])
+    filled = np.where(rows > 0)[0]
+    if filled.size < 8:
+        return None
+    top, bottom = int(filled[0]), int(filled[-1])
+
+    # Сглаживание обязательно: без него одиночная строка с волосами читается
+    # как перелом профиля.
+    window = max(3, mask.shape[0] // 60)
+    smooth = np.convolve(rows.astype(float), np.ones(window) / window, mode="same")
+
+    # Череп — первый максимум профиля под макушкой. Плечи здесь не ищутся
+    # вовсе, и это осознанно: «наибольший прирост ширины» с одинаковым
+    # успехом указывает и на плечи, и на разлёт причёски сразу под макушкой —
+    # он не менее крутой. На синтетическом портрете так и вышло: плечи
+    # находились на 4 строки ниже темени, и от головы оставалась макушка.
+    widest, skull = 0.0, top
+    plateau_end = bottom
+    for y in range(top, bottom + 1):
+        value = float(smooth[y])
+        if value > widest:
+            widest, skull = value, y
+        elif value < widest * PLATEAU_SHARE:
+            plateau_end = y
+            break
+    if widest <= 0:
+        return None
+
+    plateau = [y for y in range(top, max(top + 1, plateau_end))
+               if smooth[y] >= PLATEAU_SHARE * widest]
+    x0 = min(spans[y][0] for y in plateau)
+    x1 = max(spans[y][1] for y in plateau)
+
+    # Макушка пересчитывается по столбцам головы: первая непрозрачная строка
+    # кадра может принадлежать реквизиту, а не ведущему.
+    column = mask[:, x0:x1].any(axis=1)
+    crown = int(np.argmax(column)) if column.any() else top
+
+    # Подбородок ищется вниз по столбцам головы: голова кончается там, где под
+    # ней ничего нет. У портрета такой строки не бывает — шею закрывают плечи,
+    # и высота берётся пропорцией от измеренной ширины.
+    below = np.where(~column[skull:])[0]
+    ends = skull + int(below[0]) if below.size else bottom
+    chin = min(ends, crown + int(round(HEAD_ASPECT * (x1 - x0))), bottom)
+
+    scale = (info.width or width) / float(mask.shape[1])
+    return (int(x0 * scale), int(crown * scale),
+            int(x1 * scale), int(chin * scale))
 
 
 def has_encoder(name: str) -> bool:

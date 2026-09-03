@@ -12,8 +12,8 @@ description: Манифесты библиотек, лимиты 20/5/100, LRU-�
 
 | Библиотека | Лимит | Поведение при заполнении |
 |---|---|---|
-| `assets/sfx/` | 20 | заморожена, только переиспользование |
-| `assets/music/` | 5 | заморожена |
+| `assets/sfx/` | 20 | курируемая: кладёт заказчик, `fill-libraries` не синтезирует |
+| `assets/music/` | 15 | курируемая: кладёт заказчик через `add-music` |
 | `assets/memes/` | 100 | заморожена, пополнение вручную заказчиком |
 | кэш футажей | без лимита | LRU-вытеснение при переполнении storage |
 
@@ -44,7 +44,8 @@ git, а на уровне −32 LUFS под речью разница нераз
 
 ```bash
 python -m src.cli libraries                      # состояние и лимиты
-python -m src.cli fill-libraries --kind sfx      # долив до лимита
+python -m src.cli add-sfx --file x.wav --id whoosh --tag whoosh
+python -m src.cli fill-libraries --kind memes    # долив мемов-заглушек; SFX и музыка руками
 python -m src.cli maintenance --dry-run          # что вытеснит LRU
 ```
 

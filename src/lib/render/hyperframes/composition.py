@@ -26,6 +26,8 @@ from __future__ import annotations
 import html
 from typing import Any
 
+from ..text_rules import subtitle_word
+from ...backdrop import SCENES, pick_scene, tone as scene_tone
 from .captions import (
     TRACK_CAPTION_ACCENT_EVEN, TRACK_CAPTION_ACCENT_ODD,
     TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD,
@@ -33,9 +35,10 @@ from .captions import (
     build_gradient_fill, resolve_caption,
 )
 from .templates import (
-    OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, render_dataviz,
-    render_fullscreen, render_hero, render_motion, render_overlay,
-    render_transition,
+    OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, fit_size,
+    render_dataviz, render_fullscreen, render_hero, render_motion,
+    render_overlay, render_transition, text_width,
+    fit_size as fit_text_size,
 )
 
 TRACK_STAGE = 0
@@ -52,8 +55,20 @@ TRACK_HERO_ODD = 14
 # Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
 # там герой. 18/19 не пересекаются со звуком (20).
 assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
+# Совпадает с чётным треком фраз: пословный pop-in с main ушёл, субтитр
+# живёт жестами caption на 18/19. Тесты, которые смотрят TRACK_SUBTITLE,
+# видят фразы gradient-fill.
+TRACK_SUBTITLE = TRACK_CAPTION_EVEN
+# Фон под полноэкранным текстом. Свой трек, а не трек шота: сам текст уже
+# занимает трек шота, а видео внутри клипа с таймингом застывает первым кадром
+# (lint: video_nested_in_timed_element) — значит, фон обязан быть отдельным
+# клипом, и класть его на соседний трек нельзя, там встык стоят соседние шоты.
+TRACK_FS_BG = 15
 TRACK_AUDIO = 20
 assert TRACK_CAPTION_ACCENT_EVEN == 21 and TRACK_CAPTION_ACCENT_ODD == 22
+
+# Слово субтитра короче этого мигает, а не читается.
+MIN_WORD_SEC = 0.05
 
 COMPOSITION_ID = "redshift"
 
@@ -67,12 +82,64 @@ def _num(value: float) -> str:
     return f"{float(value):.3f}".rstrip("0").rstrip(".") or "0"
 
 
+def _timing(start: float, end: float, track: int) -> str:
+    """Атрибуты тайминга клипа. Границы округляются один раз — до вычитания.
+
+    Движок читает начало и длительность, а конец складывает сам. Пока начало и
+    длительность округлялись порознь, сумма могла перескочить настоящий конец:
+    начало 49.3568 печаталось как 49.357, длительность 0.4996 — как 0.5, и клип
+    заканчивался в 49.857 при следующем клипе с 49.856. Миллисекунда наезда, и
+    lint валит рендер целиком — на 0047 это случилось на 134 словах субтитра
+    после 804 секунд работы конвейера.
+
+    Округление к сетке монотонно: если конец не позже начала соседа, то и
+    округлённый конец не позже. Поэтому считаем длительность как разность уже
+    округлённых границ — тогда напечатанный конец совпадает с напечатанным
+    началом соседа и наезд невозможен в принципе, а не по везению. Пять
+    предыдущих роликов прошли именно по везению: перекрытий не было ни одного,
+    но и защиты от них тоже.
+    """
+    head = round(float(start), 3)
+    return (f'data-start="{_num(head)}" '
+            f'data-duration="{_num(round(float(end), 3) - head)}" '
+            f'data-track-index="{track}"')
+
+
+def _mark_phrase(text: str, phrase: str) -> str:
+    """Отметить в тексте ключевую строку источника маркером (§5.5).
+
+    Подсветка была объявлена в плане, но в кадре её не было: слой ``highlight``
+    рисовать нечем — у строки внутри абзаца нет координат снаружи. Маркер
+    поэтому лежит в самом тексте.
+
+    Полосой под текстом это не сделать: фраза переносится, а абсолютная полоса
+    внутри многострочного inline-элемента считается по одной коробке и в кадре
+    осталась красной чёрточкой на месте переноса — проверено кадром. Маркер
+    поэтому красит фон самого фрагмента, а ``box-decoration-break: clone``
+    повторяет его на каждой строке.
+
+    Совпадение ищется без учёта регистра и по первому вхождению: строка в
+    сценарии выписана из статьи и в ней же и стоит.
+    """
+    text = str(text or "")
+    phrase = str(phrase or "").strip()
+    if not phrase:
+        return _esc(text)
+    at = text.lower().find(phrase.lower())
+    if at < 0:
+        return _esc(text)
+    head, hit, tail = text[:at], text[at:at + len(phrase)], text[at + len(phrase):]
+    return f'{_esc(head)}<span class="hl">{_esc(hit)}</span>{_esc(tail)}'
+
+
 def _lay_out_tracks(items: list[dict[str, Any]], first_track: int) -> list[int]:
     """Разложить пересекающиеся во времени элементы по свободным трекам."""
     ends: list[float] = []
     tracks: list[int] = []
     for item in items:
-        start, end = float(item["start"]), float(item["end"])
+        # По округлённым границам: раскладка обязана судить о пересечении по
+        # тем же числам, которые прочитает движок, а не по исходным.
+        start, end = round(float(item["start"]), 3), round(float(item["end"]), 3)
         for track, busy_until in enumerate(ends):
             if start >= busy_until:
                 ends[track] = end
@@ -117,6 +184,39 @@ class CompositionBuilder:
             return "power2.out"
         return f"cubic-bezier({curve[0]},{curve[1]},{curve[2]},{curve[3]})"
 
+    @property
+    def scene(self) -> str:
+        """Сцена фона: из плана, иначе — по теме ролика.
+
+        Фон держится весь ролик и посреди него не меняется: это фон, а не
+        мигание. Поэтому сцена одна на композицию, а не на шот.
+        """
+        chosen = str((self.plan.get("backdrop") or {}).get("scene") or "")
+        if chosen in SCENES:
+            return chosen
+        return pick_scene(self.plan.get("title") or "",
+                          " ".join(str(b.get("text") or "")
+                                   for b in self.plan.get("_blocks", [])))
+
+    def _stage_class(self) -> str:
+        return "stage-dark" if scene_tone(self.scene) == "dark" else "stage-light"
+
+    def _plate(self) -> str:
+        """Разметка плиты сцены. Пусто — сцена рисуется одними градиентами.
+
+        Путь берётся из набора медиа проекта: в плане лежит путь на диске, а в
+        разметку обязан уйти путь внутри проекта.
+        """
+        plate = str((self.plan.get("backdrop") or {}).get("plate") or "")
+        src = self.assets.get(plate) if plate else ""
+        # Слой, а не <img>: картинка фона одна на весь ролик и повторяется в
+        # каждом шоте с альфой. Четыре одинаковых <img> продюсер считает
+        # четырьмя источниками с совпадающим временем и предупреждает о риске
+        # перепутать их при инжекте кадров. Фоном в стиле того же не случается —
+        # это не медиа плана, а оформление слоя.
+        return (f'<div class="vfx-plate" style="background-image:url(\'{src}\')">'
+                f'</div>') if src else ""
+
     # --- шоты -----------------------------------------------------------
     def _alpha_slots(self) -> set[int]:
         """Слоты, где аватар лёг альфой и под ним нужен собственный фон.
@@ -144,6 +244,22 @@ class CompositionBuilder:
                 out[int(slot)] = node_id
         return out
 
+    def _scene_backdrop(self, node_id: str, timing: str) -> str:
+        """Запасной фон слота: сцена ролика вместо дыры в кадре.
+
+        Дыра в кадре не чёрная, а светлая: ``.stage-bg`` заливает кадр
+        ``--color-bg-light`` (#F7F5F3), и слот без медиа показывает именно её.
+        На пересборке 0047 так вышло три кадра подряд — белое полотно с
+        одиноким субтитром посреди тёмного ролика («ГРАНИТ», «ТУНДРЫ»).
+
+        Слот остаётся пустым по законной причине: генерация вывела бы долю
+        AI-футажа за 35 %, и P9 честно отказался. Отказ от генерации не повод
+        показывать зрителю пустой лист — сцена ролика по теме, она тёмная и
+        она уже собрана.
+        """
+        return (f'<div id="{node_id}" class="clip shot-bg" {timing}>'
+                f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
+
     def _shot_nodes(self) -> list[str]:
         nodes: list[str] = []
         alpha_slots = self._alpha_slots()
@@ -155,8 +271,7 @@ class CompositionBuilder:
             start, duration = float(shot["start"]), float(shot["duration"])
             kind = shot.get("kind")
             node_id = f"shot-{index:02d}"
-            timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
-                      f'data-track-index="{track}"')
+            timing = _timing(start, start + duration, track)
             # Цель перехода: для аватар-слотов — сам аватар, иначе — шот.
             target = avatar_nodes.get(index, node_id)
             # Переход и Ken Burns тянут одни и те же свойства одного элемента.
@@ -166,16 +281,34 @@ class CompositionBuilder:
             tr_sec = self._transition_duration(shot)
 
             if kind == "fullscreen_text":
+                src = self._asset(shot.get("file"))
+                if src:
+                    nodes.append(self._media_node(
+                        f"{node_id}-bg", src,
+                        _timing(start, start + duration, TRACK_FS_BG), css="fs-bg"))
+                else:
+                    # Материала под кадр не нашлось — это бывает, и в отчёт это
+                    # уходит как gap_reason. Но фраза не имеет права вставать на
+                    # пустую заливку: на 0047 «180 ГРАДУСОВ» шло белыми буквами
+                    # по белому листу посреди тёмного ролика. Запасной фон —
+                    # сцена ролика, та же, что за ведущим: она по теме, она
+                    # тёмная и она уже есть.
+                    nodes.append(self._scene_backdrop(
+                        f"{node_id}-bg",
+                        _timing(start, start + duration, TRACK_FS_BG)))
                 piece = self._fullscreen_piece(node_id, shot, start, duration,
                                                track, tr_sec)
-                nodes.extend(piece.nodes)
+                nodes.extend(
+                    n.replace('class="clip fullscreen-text',
+                              'class="clip fullscreen-text over-media')
+                    for n in piece.nodes)
                 self.tweens.extend(piece.tweens)
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
                 nodes.append(
                     f'<div id="{node_id}" class="clip shot-bg" {timing}>'
-                    f'<div class="vfx"></div></div>')
+                    f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
             elif index in avatar_nodes or kind == "avatar":
                 # Аватар без альфы приходит со своим фоном и занимает кадр
                 # целиком: подкладывать под него нечего. Но переход ему нужен.
@@ -184,6 +317,8 @@ class CompositionBuilder:
                 src = self._asset(shot.get("file"))
                 if src:
                     nodes.append(self._media_node(node_id, src, timing, css="meme"))
+                else:
+                    nodes.append(self._scene_backdrop(node_id, timing))
             else:
                 src = self._asset(shot.get("file"))
                 if src:
@@ -191,6 +326,8 @@ class CompositionBuilder:
                                                   media_start=shot.get("avatar_offset_sec")))
                     self._add_kenburns(node_id, shot, start + tr_sec,
                                        max(0.1, duration - tr_sec))
+                else:
+                    nodes.append(self._scene_backdrop(node_id, timing))
             nodes += self._add_transition(target, shot, start)
             self.stats["shots"] += 1
         return nodes
@@ -274,9 +411,18 @@ class CompositionBuilder:
             node_id = f"avatar-{index:02d}"
             nodes.append(
                 f'<video id="{node_id}" class="avatar" src="{_esc(src)}" '
-                f'data-start="{_num(seg["start"])}" '
-                f'data-duration="{_num(seg["duration"])}" '
-                f'data-track-index="{TRACK_AVATAR}" muted playsinline></video>')
+                + _timing(float(seg["start"]),
+                          float(seg["start"]) + float(seg["duration"]), TRACK_AVATAR)
+                + ' muted playsinline></video>')
+            # Опора для перемотки. Переходы и приёмы двигают сам клип ведущего,
+            # и все их твины помечены `immediateRender:false`, чтобы начальное
+            # состояние не уходило назад по ленте. Но перемотка назад через уже
+            # отыгранный твин возвращает его в это самое начальное состояние, а
+            # кадр по seek обязан совпадать с кадром по проигрыванию. Явная
+            # установка в начале клипа делает исход одинаковым в обе стороны.
+            self.tweens.append(
+                f'tl.set("#{node_id}",{{scale:1,x:0,y:0}},'
+                f'{_num(float(seg["start"]))});')
             self.stats["avatar_clips"] += 1
         return nodes
 
@@ -300,10 +446,12 @@ class CompositionBuilder:
             index = int(shot["index"])
             node_id = f"behind-{index:02d}"
             nodes.append(
-                f'<div id="{node_id}" class="clip behind-head" '
-                f'data-start="{_num(shot["start"])}" '
-                f'data-duration="{_num(shot["duration"])}" '
-                f'data-track-index="{TRACK_BEHIND_HEAD}">{_esc(word)}</div>')
+                f'<div id="{node_id}" class="clip behind-head"'
+                f' style="font-size:{self._behind_head_size(word)}px" '
+                + _timing(float(shot["start"]),
+                          float(shot["start"]) + float(shot["duration"]),
+                          TRACK_BEHIND_HEAD)
+                + f'>{_esc(word)}</div>')
             # Слово за головой держится весь кадр, и без движения оно
             # превращается в надпись на обоях. Медленный наезд даёт ту самую
             # глубину: ведущий стоит, фон еле едет.
@@ -311,6 +459,27 @@ class CompositionBuilder:
                 node_id and f"#{node_id}", float(shot["start"]),
                 float(shot["duration"]), name="zoom-in"))
         return nodes
+
+    def _behind_head_size(self, word: str) -> int:
+        """Кегль слова за головой: наибольший, при котором слово влезает.
+
+        Кегль стоял константой — верхней границей ``size_px`` из брендбука, —
+        и слово шире кадра просто обрезалось краями. На 0047 «ДВЕНАДЦАТЬ» при
+        260 px занимает 1498 px в кадре шириной 1080: зритель видел «ДВ…АДЦ».
+        Обрезок читается как поломка, а не как приём: смысл слова за головой в
+        том, что его читают.
+
+        Поле по краям берётся из рабочей зоны брендбука (§3.2), а не выдумано.
+        Слово при этом остаётся во всю ширину кадра, а не в рабочей зоне:
+        оно фон, и заезжать под колонку интерфейса ему можно — за кромку кадра
+        нельзя. Нижняя граница ``size_px`` тут пожелание, а не предел: слово,
+        которому и её мало, лучше набрать мельче, чем обрезать.
+        """
+        spec = self.brandbook["text_behind_head"]
+        margin = int(self.brandbook["safe_zones"]["work_area"]["x_min"])
+        available = int(self.brandbook["canvas"]["width"]) - 2 * margin
+        return fit_text_size(word.upper(), available, int(spec["size_px"][1]),
+                             role=str(spec.get("font_role", "display")))
 
     # --- приёмы вокруг ведущего -----------------------------------------
     def _hero_nodes(self) -> list[str]:
@@ -369,8 +538,8 @@ class CompositionBuilder:
         nodes: list[str] = []
         for i, (ovl, track) in enumerate(zip(overlays, tracks)):
             start = float(ovl["start"])
-            duration = float(ovl["end"]) - start
             node_id = f"ovl-{i:02d}"
+            duration = float(ovl["end"]) - start
             piece = self._overlay_piece(node_id, ovl, start, duration, track)
             if piece is not None:
                 nodes += piece.nodes
@@ -378,8 +547,7 @@ class CompositionBuilder:
                 if piece.nodes:
                     self.stats["overlay_draws"] += 1
                 continue
-            timing = (f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
-                      f'data-track-index="{track}"')
+            timing = _timing(start, float(ovl["end"]), track)
             body = self._overlay_body(node_id, ovl)
             if not body:
                 continue
@@ -454,27 +622,69 @@ class CompositionBuilder:
         kind = ovl.get("type")
         params = ovl.get("params") or {}
         if kind == "source_card":
-            domain = _esc(params.get("domain"))
-            title = _esc(params.get("title"))
-            snippet = _esc(params.get("snippet"))
-            return (f'<div id="{node_id}" class="clip overlay source-card" __TIMING__>'
-                    f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
-                    f'<span class="dot"></span><span class="domain">{domain}</span></div>'
-                    f'<div class="title">{title}</div>'
-                    f'<div class="snippet">{snippet}</div></div>')
+            return self._source_card_body(node_id, params)
         if kind == "plaque":
-            content = _esc(params.get("content") or ovl.get("content"))
-            kicker = params.get("kicker") or params.get("domain")
+            # Ключи те, которыми плашку и заполняет P11: `text` и `subtitle`.
+            # Читались `content` и `kicker` — таких в плане нет ни одного, и
+            # плашка выходила пустой: в кадре белая полоса без единой буквы.
+            # Видно это только на кадре готового ролика, поэтому и прожило
+            # долго: разметка валидна, lint молчит, QC меряет не текст.
+            content = _esc(params.get("text") or params.get("content")
+                           or ovl.get("content"))
+            kicker = (params.get("subtitle") or params.get("kicker")
+                      or params.get("domain"))
             extra = f'<span class="kicker">{_esc(kicker)}</span>' if kicker else ""
             return (f'<div id="{node_id}" class="clip overlay plaque" __TIMING__>'
                     f'{content}{extra}</div>')
         if kind == "cta":
-            text = _esc(params.get("content") or ovl.get("content") or "Подпишись")
+            # Тот же разнобой ключей: план пишет `text`, и без него кнопка
+            # молча показывала запасное «Подпишись» вместо заказанного слова.
+            text = _esc(params.get("text") or params.get("content")
+                        or ovl.get("content") or "Подпишись")
             return (f'<div id="{node_id}" class="clip overlay cta" __TIMING__>'
                     f'<span id="{node_id}-pill" class="pill">{text}</span></div>')
         # highlight рисуется поверх карточки источника её же стилем — отдельный
         # слой не нужен, подсветку несёт .hl внутри карточки.
         return None
+
+    def _source_card_body(self, node_id: str, params: dict[str, Any]) -> str:
+        """Страница издания, а не карточка «сайт вообще».
+
+        Заказчик просил, чтобы контент выглядел живым и меньше походил на
+        AI-генерацию. Разница здесь в том, что на карточке стоит: строка адреса
+        с настоящим путём статьи, дата, знак издания, начало текста и маркер на
+        той строке, ради которой источник и показан (§5.5). Это и есть та самая
+        страница, с которой конвейер берёт кадр, — а не абстрактное окно.
+        """
+        domain = str(params.get("domain") or "")
+        url = str(params.get("url") or "")
+        # Путь берём от первой косой черты, а не отрезая домен: у ссылки почти
+        # всегда есть «www.», а в сценарии домен записан без него — вычитание
+        # промахивалось, и в адресной строке оставалось голое имя сайта.
+        rest = url.split("://", 1)[-1].removeprefix("www.") if url else ""
+        cut = rest.find("/")
+        path = rest[cut:] if cut >= 0 else ""
+        path = path[:34] + ("…" if len(path) > 34 else "")
+        published = str(params.get("published") or "").strip()
+        # Дата приходит как ISO-строка со страницы или из сценария; в кадре от
+        # неё нужен только день, время читать некому.
+        kicker = published.split("T")[0] if published else "источник"
+        mark = (domain[:1] or "·").upper()
+        highlight = str(params.get("highlight") or "")
+        title = _mark_phrase(str(params.get("title") or ""), highlight)
+        snippet = _mark_phrase(str(params.get("snippet") or ""), highlight)
+        return (f'<div id="{node_id}" class="clip overlay source-card" __TIMING__>'
+                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
+                f'<span class="dot"></span>'
+                f'<span class="url"><b>{_esc(domain)}</b>{_esc(path)}</span></div>'
+                f'<div class="page">'
+                f'<div class="kicker">{_esc(kicker)}</div>'
+                f'<div class="title">{title}</div>'
+                f'<div class="byline"><span class="favicon">{_esc(mark)}</span>'
+                f'{_esc(domain)}</div>'
+                f'<div class="snippet">{snippet}</div>'
+                f'<div class="lines"><i></i><i></i><i></i></div>'
+                f'</div></div>')
 
     def _add_overlay_entrance(self, node_id: str, ovl: dict[str, Any],
                               start: float) -> None:
@@ -485,19 +695,76 @@ class CompositionBuilder:
             hz = float(self.brandbook["cta"].get("button_pulse_hz", 1.6))
             period = 1.0 / hz
             duration = float(ovl["end"]) - start
-            repeats = max(0, int(duration / period) - 1)
+            # Пульс начинается ровно там, где кончается появление. Раньше он
+            # заходил на него сотней миллисекунд, и два твина сидели на scale
+            # одного элемента разом: чем это кончится, решает порядок
+            # перезаписи GSAP, а не разметка. Своё же правило — «два твина на
+            # одном свойстве одного элемента пересекаться не имеют права» —
+            # lint и ловил все прогоны подряд.
+            appear = 0.42
+            pulse_start = start + appear
+            repeats = max(0, int((duration - appear) / period) - 1)
             self.tweens.append(
                 f'tl.fromTo("#{node_id}-pill",{{scale:0.6}},'
-                f'{{scale:1,duration:0.32,ease:"back.out(1.7)"}},{_num(start)});')
+                f'{{scale:1,duration:{appear},ease:"power3.out"}},{_num(start)});')
             self.tweens.append(
                 f'tl.to("#{node_id}-pill",{{scale:1.035,duration:{period / 2:.3f},'
-                f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(start + 0.32)});')
+                f'yoyo:true,repeat:{repeats},ease:"sine.inOut"}},{_num(pulse_start)});')
             return
+        if kind == "source_card":
+            params = ovl.get("params") or {}
+            if params.get("highlight"):
+                # Маркер приходит после карточки, а не вместе с ней: §5.5 про
+                # фокус, а фокус — это отдельное движение глаза. Цвет задаётся
+                # литералом: var() GSAP в цвет не разворачивает.
+                # Полупрозрачный, как настоящий маркер: заголовок переносится,
+                # и непрозрачная плашка следующей строки срезала хвост буквы на
+                # предыдущей — «Quantum» читался как «Ouantum». Проверено кадром.
+                soft = str(self.brandbook["colors"].get("accent_soft", "#E4726A"))
+                rgb = ",".join(str(int(soft.lstrip("#")[i:i + 2], 16)) for i in (0, 2, 4))
+                self.tweens.append(
+                    f'tl.fromTo("#{node_id} .hl",'
+                    f'{{backgroundColor:"rgba({rgb},0)"}},'
+                    f'{{backgroundColor:"rgba({rgb},0.55)",duration:0.42,'
+                    f'ease:"power2.out"}},{_num(start + 0.6)});')
+            if params.get("scroll"):
+                # Страница едет вверх ровно столько, чтобы это читалось как
+                # прокрутка, а не как съезжающая вёрстка.
+                hold = max(0.4, float(ovl["end"]) - start - 0.9)
+                self.tweens.append(
+                    f'tl.to("#{node_id} .page",{{y:-46,duration:{_num(hold)},'
+                    f'ease:"none"}},{_num(start + 0.7)});')
+
         # Плашка всплывает и приближается, а не выезжает плоско: подъём без
         # масштаба читается как «панель подали снизу», с масштабом — как
         # «карточку поднесли». Дрейф на удержании не нужен: карточка стоит
         # рядом с движущимся словом субтитра и без него.
         self.tweens.extend(entrance_tweens(f"#{node_id}", start, name="rise"))
+
+    def _credit_nodes(self) -> list[str]:
+        """Подпись источника мелким шрифтом (§1, правило 8).
+
+        Ставится только там, где её требуют права: список источников с
+        ``attribution_required`` ведёт P11, сюда приходит уже готовая строка.
+        Место — левый нижний угол рабочей зоны, над полосой субтитров: правый
+        занят колонкой лайк/коммент/шер площадки, а верх — приёмами.
+        """
+        nodes: list[str] = []
+        for shot in self.plan["shots"]:
+            credit = str(shot.get("credit") or "").strip()
+            if not credit:
+                continue
+            index = int(shot["index"])
+            start = float(shot["start"])
+            # Подпись живёт вместе с кадром, но появляется чуть позже него:
+            # одновременный въезд читается как часть монтажа, а не как сноска.
+            nodes.append(
+                f'<div id="credit-{index:02d}" class="clip credit" '
+                + _timing(start + 0.25, start + float(shot["duration"]), TRACK_OVERLAY + 5)
+                + f'>{_esc(credit)}</div>')
+            self.tweens.extend(entrance_tweens(f"#credit-{index:02d}", start + 0.25,
+                                               name="dim"))
+        return nodes
 
     # --- субтитры -------------------------------------------------------
     def _subtitle_nodes(self) -> list[str]:
@@ -530,6 +797,7 @@ class CompositionBuilder:
             f'data-track-index="{TRACK_STAGE}"></div>'
         ]
         body += self._shot_nodes()
+        body += self._credit_nodes()
         body += self._behind_head_nodes()
         body += self._avatar_nodes()
         body += self._hero_nodes()
@@ -553,6 +821,7 @@ class CompositionBuilder:
   <body>
     <div
       id="root"
+      class="{self._stage_class()}"
       data-composition-id="{COMPOSITION_ID}"
       data-start="0"
       data-duration="{_num(self.duration)}"
