@@ -28,6 +28,7 @@ from typing import Any
 
 from ..text_rules import subtitle_word
 from .canvas_fx import canvas_js, canvas_node, canvas_tween
+from .templates import brand_marks_node
 from ...backdrop import SCENES, pick_scene, tone as scene_tone
 from .captions import (
     TRACK_CAPTION_ACCENT_EVEN, TRACK_CAPTION_ACCENT_ODD,
@@ -59,6 +60,9 @@ TRACK_HERO_ODD = 14
 # (lint: video_nested_in_timed_element) — значит, фон обязан быть отдельным
 # клипом, и класть его на соседний трек нельзя, там встык стоят соседние шоты.
 TRACK_FS_BG = 15
+# Графика брендбука: свой трек, иначе она встаёт на трек шота и пересекается
+# с ним по времени — движок считает это конфликтом клипов.
+TRACK_MARKS = 16
 # Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
 # там герой. 18/19 не пересекаются со звуком (20).
 assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
@@ -169,6 +173,8 @@ class CompositionBuilder:
         # Какие эффекты холста понадобились: их реестр пишется в страницу
         # только когда он и правда нужен.
         self.canvas_used: set[str] = set()
+        # Сколько раз графика брендбука уже вышла в кадр.
+        self.marks_placed = 0
         self.stats = {"shots": 0, "overlay_draws": 0, "subtitle_words": 0,
                       "avatar_clips": 0}
 
@@ -329,6 +335,12 @@ class CompositionBuilder:
                                                track, tr_sec)
                 nodes.extend(piece.nodes)
                 self.tweens.extend(piece.tweens)
+                # Графика брендбука (раздел 06) — на карточные моменты, и не
+                # больше потолка: рамка в каждом кадре перестаёт читаться
+                # приёмом и становится шумом.
+                marks = self._brand_marks(node_id, start, duration, TRACK_MARKS)
+                if marks:
+                    nodes.append(marks)
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
@@ -372,6 +384,26 @@ class CompositionBuilder:
             offset = f' data-media-start="{_num(media_start)}"'
         return (f'<video id="{node_id}" class="{css}" src="{_esc(src)}" '
                 f'{timing}{offset} muted playsinline></video>')
+
+    def _brand_marks(self, node_id: str, start: float, duration: float,
+                     track: int) -> str:
+        """Технические уголки брендбука поверх карточного кадра."""
+        spec = self.brandbook.get("brand_marks") or {}
+        limit = int(spec.get("per_video_max", 0))
+        if limit <= 0 or self.marks_placed >= limit:
+            return ""
+        self.marks_placed += 1
+        mark_id = f"{node_id}-marks"
+        svg = brand_marks_node(mark_id, spec, self.brandbook["safe_zones"]["work_area"],
+                               width=self.width, height=self.height)
+        enter = float(spec.get("enter_ms", 260)) / 1000.0
+        # Уголки приезжают из-за края рабочей зоны, а не проявляются: словарь
+        # появления §H7 — всё приближается, ничего не включается.
+        self.tweens.append(
+            f'tl.fromTo("#{mark_id}",{{scale:1.06}},{{scale:1,'
+            f'duration:{enter:.3f},ease:"power2.out"}},{_num(start)});')
+        timing = _timing(start, start + duration, track)
+        return f'<div class="clip" {timing}>{svg}</div>'
 
     def _fullscreen_piece(self, node_id: str, shot: dict[str, Any],
                           start: float, duration: float, track: int,

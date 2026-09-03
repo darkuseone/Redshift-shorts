@@ -16,7 +16,10 @@ from typing import Any
 
 from ...backdrop import backdrop_css
 from .captions import caption_css
-from .templates import dataviz_css, hero_css, overlay_css, split_css, transition_css
+from .templates import (
+    brand_marks_css, dataviz_css, hero_css, overlay_css, split_css,
+    transition_css,
+)
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
 # отвечает за пересечения во времени, а не за то, что лежит поверх чего.
@@ -298,6 +301,9 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "width:var(--frame-w);height:var(--frame-h);object-fit:contain;"
         "background:var(--color-space-deep)}"
     )
+
+    # --- графика брендбука (раздел 06) ----------------------------------
+    parts.append(brand_marks_css(brandbook))
 
     # --- холст поверх сцены (canvas_fx.py) ------------------------------
     # Холст лежит в клипе фона и растягивается на кадр. Видимостью управляет

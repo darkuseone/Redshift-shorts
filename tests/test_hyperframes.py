@@ -1203,3 +1203,54 @@ class TestChannelSurfacesAreDark:
         css = build_css(brandbook, {"display": "Oswald-Bold.ttf"})
         card = css.split(".fullscreen-text .fs-slam-card{")[1].split("}")[0]
         assert "var(--color-panel)" in card, card
+
+
+class TestTheBrandMarksFrameTheCard:
+    """Графика брендбука (раздел 06) — рамка прибора вокруг карточного кадра.
+
+    Угловые скобки, засечки и пунктирная линейка делают кадр узнаваемым за
+    полсекунды. Ставятся не везде: рамка в каждом кадре перестаёт читаться
+    приёмом и становится шумом, поэтому у неё потолок на ролик.
+    """
+
+    def _markup(self, plan, brandbook, assets):
+        return CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+    def test_the_marks_reach_the_card(self, plan, assets, brandbook):
+        out = self._markup(plan, brandbook, assets)
+        assert 'class="brand-marks"' in out
+        assert "bm-corner" in out and "bm-tick" in out and "bm-rule" in out
+
+    def test_the_ceiling_of_the_brandbook_holds(self, plan, assets, brandbook):
+        limit = int(brandbook["brand_marks"]["per_video_max"])
+        out = self._markup(plan, brandbook, assets)
+        assert out.count('class="brand-marks"') <= limit
+
+    def test_zero_in_the_brandbook_switches_them_off(self, plan, assets, brandbook):
+        book = {**brandbook, "brand_marks": {**brandbook["brand_marks"], "per_video_max": 0}}
+        assert 'class="brand-marks"' not in self._markup(plan, book, assets)
+
+    def test_the_marks_stay_inside_the_frame(self, brandbook):
+        import re
+
+        from src.lib.render.hyperframes.templates import brand_marks_node
+
+        svg = brand_marks_node("bm", brandbook["brand_marks"],
+                               brandbook["safe_zones"]["work_area"],
+                               width=1080, height=1920)
+        numbers = [float(n) for n in re.findall(r'[dxy]\d?="M?\s*([\-\d.]+)', svg)]
+        assert numbers, "в разметке нет координат"
+        assert min(numbers) >= 0, min(numbers)
+
+    def test_the_marks_arrive_by_moving_not_by_switching_on(self, plan, assets, brandbook):
+        """§H7: всё приближается, ничего не включается."""
+        out = self._markup(plan, brandbook, assets)
+        line = next(l for l in out.splitlines() if "-marks" in l and "tl." in l)
+        assert "scale" in line and "opacity" not in line, line
+
+    def test_the_colour_comes_from_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.templates import brand_marks_css
+
+        css = brand_marks_css(brandbook)
+        token = str(brandbook["brand_marks"]["color"]).replace("_", "-")
+        assert f"var(--color-{token})" in css
