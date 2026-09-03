@@ -1584,6 +1584,13 @@ def test_code_typing_reveals_glyphs_with_a_precomputed_caret():
     caret_tweens = [tw for tw in piece.tweens if "#shot-01-caret" in tw]
     assert len(caret_tweens) == n_chars
     assert all("x:" in tw and "y:" in tw for tw in caret_tweens)
+    prev_end = None
+    for tw in caret_tweens:
+        dur = float(re.search(r"duration:([\d.]+)", tw).group(1))
+        start = float(re.search(r"\},([\d.]+)\);$", tw).group(1))
+        if prev_end is not None:
+            assert start > prev_end + 1e-9, tw
+        prev_end = start + dur
     clip = "#shot-01"
     for tween in piece.tweens:
         selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
@@ -1598,9 +1605,11 @@ def test_code_typing_reveals_glyphs_with_a_precomputed_caret():
     assert empty.nodes == []
     times = _ct_times(5.0, n_chars)
     assert abs(times["per"] - 0.028) < 1e-9
+    assert times["caret_dur"] < times["per"] - 5e-4
     assert times["fade_at"] + times["fade"] <= times["type_at"] + 1e-9
     assert times["type_at"] + n_chars * times["per"] <= 5.0 + 1e-9
     short = _ct_times(1.5, n_chars)
+    assert short["caret_dur"] < short["per"] - 5e-4
     assert short["fade_at"] + short["fade"] <= short["type_at"] + 1e-9
     assert short["type_at"] + n_chars * short["per"] <= 1.5 + 1e-9
 

@@ -4065,6 +4065,11 @@ def _ct_times(duration: float, n_chars: int) -> dict[str, float]:
     ws_fade = round(max(0.008, ws_fade), 4)
     type_at = round(fade_at + fade, 4)
     last_at = type_at + max(0, n - 1) * per
+    # Линт считает стык твинов overlap; каретка короче слота на 2 мс,
+    # чтобы _num (3 знака) не схлопнул зазор.
+    caret_dur = round(max(0.004, per - 0.002), 5)
+    if caret_dur >= per - 5e-4:
+        caret_dur = round(max(0.003, per * 0.85), 5)
     end_limit = d - 0.01
     if last_at + char_fade > end_limit:
         char_fade = round(max(0.04, end_limit - last_at), 4)
@@ -4076,6 +4081,7 @@ def _ct_times(duration: float, n_chars: int) -> dict[str, float]:
         "fade": fade,
         "type_at": type_at,
         "per": per,
+        "caret_dur": caret_dur,
         "char_fade": char_fade,
         "ws_fade": ws_fade,
     }
@@ -4191,7 +4197,7 @@ def fs_code_typing(ctx: "TemplateCtx") -> Piece:
     prev_x, prev_y = xs[0], ys[0]
     type_at = at + t["type_at"]
     for i, (ch, _color, _li, ws) in enumerate(glyphs):
-        start = type_at + i * t["per"] + (0.001 if i else 0)
+        start = type_at + i * t["per"]
         fade = t["ws_fade"] if ws else t["char_fade"]
         tweens.append(
             f'tl.fromTo("#{node_id}-c{i}",{{opacity:0}},'
@@ -4202,7 +4208,7 @@ def fs_code_typing(ctx: "TemplateCtx") -> Piece:
         tweens.append(
             f'tl.fromTo("#{node_id}-caret",'
             f'{{x:{_ct_num(prev_x)},y:{_ct_num(prev_y)}}},'
-            f'{{x:{_ct_num(nx)},y:{_ct_num(ny)},duration:{_num(t["per"])},'
+            f'{{x:{_ct_num(nx)},y:{_ct_num(ny)},duration:{_num(t["caret_dur"])},'
             f'ease:"none"{extra}}},{_num(start)});')
         prev_x, prev_y = nx, ny
     gutter_html = "".join(
