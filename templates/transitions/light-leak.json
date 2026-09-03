@@ -1,0 +1,19 @@
+{
+  "id": "transitions/light-leak",
+  "name": "light-leak",
+  "category": "transitions",
+  "title": "Light leak: тёплый засвет, flare и ACES — light-leak",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "light",
+    "shader"
+  ],
+  "renderer": "light_leak",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

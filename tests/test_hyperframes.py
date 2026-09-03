@@ -386,6 +386,28 @@ def test_gravitational_lens_overlay_scales_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_light_leak_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только засвет, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "light_leak", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-light-leak" in out
+    assert "ll-from" in out and "ll-to" in out
+    assert "ll-blob" in out and "ll-flare" in out
+    assert 'class="clip tr-sweep"' not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

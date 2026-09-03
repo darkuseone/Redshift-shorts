@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 16,
+    "transitions": 17,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 125
+    "_total": 126
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1834,6 +1834,25 @@
         "shader"
       ],
       "renderer": "gravitational_lens",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/light-leak",
+      "name": "light-leak",
+      "category": "transitions",
+      "title": "Light leak: тёплый засвет, flare и ACES — light-leak",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "light",
+        "shader"
+      ],
+      "renderer": "light_leak",
       "last_used_in": [],
       "added": "2026-09-03"
     },

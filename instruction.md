@@ -216,3 +216,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Переход cinematic-zoom: radial zoom-blur и сдвиг каналов | каталог — WebGL onUpdate; здесь scale входящего, вуали #3d348b/#f7b801 и chroma |
 | 2026-09-03 | Переход glitch: scan lines, scramble и chroma | каталог — WebGL onUpdate; здесь полосы/клетки, вуали #293241/#ee6c4d; glitch-short не трогаем |
 | 2026-09-03 | Переход gravitational-lens: колодец, горизонт и chroma | каталог — WebGL onUpdate; здесь scale к центру, вуали #10002b/#f20089 |
+| 2026-09-03 | Переход light-leak: тёплый засвет, flare и ACES | каталог — WebGL onUpdate; здесь пятно/полоса, вуали #001524/#fb8b24; light-sweep не трогаем |

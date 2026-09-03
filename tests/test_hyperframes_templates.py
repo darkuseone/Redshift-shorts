@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-125 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+126 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _sr_frame_table,
+    _gw_times, _ll_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -163,7 +163,7 @@ def test_css_covers_every_layer_the_transitions_use():
     css = transition_css(load_config().brandbook)
     for cls in (".tr-flash", ".tr-blur", ".tr-mask-circle", ".tr-mask-diagonal",
                 ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom",
-                ".tr-glitch-shader", ".tr-gravitational-lens"):
+                ".tr-glitch-shader", ".tr-gravitational-lens", ".tr-light-leak"):
         assert cls in css, cls
 
 
@@ -2118,6 +2118,70 @@ def test_gravitational_lens_keeps_catalog_magenta():
     stripped = css.replace("transform-origin:50% 50%", "")
     assert "transform:" not in stripped.split(".tr-gravitational-lens", 1)[1]
     assert "backdrop-filter:blur(14px)" in css
+
+
+def test_light_leak_washes_in_without_webgl(ctx):
+    """Каталог крутит шейдер в onUpdate; здесь пятно, flare и вуали."""
+    piece = render_transition("light_leak", TemplateCtx(**ctx.__dict__))
+    node = piece.nodes[0]
+    assert "tr-light-leak" in node
+    assert "ll-stage" in node
+    assert "ll-from" in node and "ll-to" in node
+    assert "ll-blob" in node and "ll-flare" in node
+    assert "ll-hot" in node and "ll-sage" in node
+    assert node.count("ll-orb") == 2
+    assert "position:absolute" not in node.split("ll-stage", 1)[0]
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scale:0.38" in body
+    assert "x:240" in body
+    assert "power2.inOut" in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "text:" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    times = _ll_times(ctx.duration)
+    assert times["mid"] + times["to_out"] < ctx.duration + 1e-9
+    assert times["to_out_at"] > times["mid"]
+    short = _ll_times(0.22)
+    assert short["to_out_at"] + short["to_out"] <= 0.22 + 1e-9
+    sweep = render_transition("light_sweep", TemplateCtx(
+        index=1, start=0.0, duration=0.2, target="shot-01", track=11))
+    assert "tr-light-leak" not in sweep.nodes[0]
+    assert 'class="clip tr-sweep"' in sweep.nodes[0]
+
+
+def test_light_leak_keeps_catalog_navy_and_amber():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-light-leak" in css
+    frm = re.search(r"\.tr-light-leak \.ll-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-light-leak \.ll-to\{[^}]+\}", css).group(0)
+    assert "#001524" in frm
+    assert "#fb8b24" in too
+    assert "#C8453D" not in frm and "#C8453D" not in too
+    assert "#708d81" in css
+    stage = re.search(r"\.tr-light-leak \.ll-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".tr-light-leak", 1)[1]
 
 
 OVERLAY_PARAMS = {

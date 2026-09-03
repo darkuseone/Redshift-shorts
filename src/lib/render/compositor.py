@@ -256,6 +256,39 @@ def _tr_gravitational_lens(incoming, outgoing, progress, params, ctx):
     return mixed
 
 
+def _aces_tonemap(arr: np.ndarray) -> np.ndarray:
+    """ACES filmic, как в шейдере light-leak каталога."""
+    return np.clip(
+        (arr * (2.51 * arr + 0.03)) / (arr * (2.43 * arr + 0.59) + 0.14),
+        0.0, 1.0)
+
+
+def _tr_light_leak(incoming, outgoing, progress, params, ctx):
+    """Тёплый Beer-Lambert засвет сверху-справа и mix. Без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    a = np.asarray(incoming.convert("RGB"), dtype=np.float32) / 255.0
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = xx / max(w - 1, 1)
+    uv_y = yy / max(h - 1, 1)
+    dist = np.sqrt((uv_x - 1.3) ** 2 + (uv_y + 0.2) ** 2)
+    leak = np.clip(np.exp(-dist * 1.8) * eased * 4.0, 0.0, 1.0)
+    t = np.clip(dist * 0.7, 0.0, 1.0)[..., None]
+    warm = (np.array([1.0, 0.5, 0.15], dtype=np.float32) * (1.0 - t)
+            + np.array([1.0, 0.9, 0.75], dtype=np.float32) * t)
+    flare = np.exp(-np.abs(uv_y - (-0.2 + uv_x * 0.3)) * 15.0) * leak * 0.3
+    over = (a + warm * leak[..., None] * 3.0
+            + np.array([1.0, 0.8, 0.5], dtype=np.float32) * flare[..., None])
+    over = _aces_tonemap(over)
+    if outgoing is not None:
+        b = np.asarray(outgoing.convert("RGB"), dtype=np.float32) / 255.0
+        mix_t = 0.0 if eased < 0.15 else (
+            1.0 if eased > 0.85 else (eased - 0.15) / 0.70)
+        over = over * (1.0 - mix_t) + b * mix_t
+    return Image.fromarray(np.clip(over * 255.0, 0, 255).astype(np.uint8))
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -309,6 +342,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "glitch_shader": _tr_glitch_shader,
     "cinematic_zoom": _tr_cinematic_zoom,
     "gravitational_lens": _tr_gravitational_lens,
+    "light_leak": _tr_light_leak,
 }
 
 
