@@ -498,6 +498,28 @@ def test_mk_clone_wall_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_transitions_3d_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """rotationY каталога не вендорится: грани scaleX, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_3d", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-3d" in out
+    assert "t3-a" in out and "t3-b" in out
+    assert "t3-edge" in out and "ONE" in out
+    assert "rotationY" not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

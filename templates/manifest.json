@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 21,
+    "transitions": 22,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 131
+    "_total": 132
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1954,6 +1954,25 @@
         "wipe"
       ],
       "renderer": "mk_clone_wall",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-3d",
+      "name": "transitions-3d",
+      "category": "transitions",
+      "title": "3D card flip: SCENE A схлопывается, SCENE B раскрывается — transitions-3d",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "3d",
+        "flip"
+      ],
+      "renderer": "transitions_3d",
       "last_used_in": [],
       "added": "2026-09-03"
     },

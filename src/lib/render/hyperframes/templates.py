@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-131 шаблон каталога — это не 131 реализация, а набор рендереров с параметрами.
+132 шаблона каталога — это не 132 реализации, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -921,6 +921,104 @@ def tr_mk_clone_wall(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_T3_CATALOG_SEC = 2.4
+
+
+def _t3_times(duration: float) -> dict[str, float]:
+    """Окно 3D card flip: каталог крутит rotationY 0.6 с внутри 11 с демо.
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Доли 2.4 с окна
+    (удержание A → схлоп scaleX → раскрытие B) сохраняем, стыки +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _T3_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    a_at = t(0.5)
+    a_end = t(1.2)
+    a_dur = max(0.001, a_end - a_at)
+    b_at = t(1.21)
+    if a_at + a_dur + 0.001 > b_at:
+        a_dur = max(0.001, b_at - a_at - 0.001)
+    b_end = min(d - 0.001, t(1.9))
+    b_dur = max(0.001, b_end - b_at)
+    a_kill = min(d, max(a_at + a_dur, b_at))
+    edge_at = t(1.05)
+    edge_mid = min(d - 0.002, max(edge_at + 0.001, t(1.21)))
+    if edge_at + 0.001 > edge_mid:
+        edge_at = max(0.0, edge_mid - 0.001)
+    edge_in = max(0.001, edge_mid - edge_at)
+    if edge_at + edge_in + 0.001 > edge_mid:
+        edge_in = max(0.001, edge_mid - edge_at - 0.001)
+    edge_end = min(d - 0.001, t(1.4))
+    if edge_mid + 0.001 > edge_end:
+        edge_end = min(d - 0.001, edge_mid + 0.001)
+    edge_out = max(0.001, edge_end - edge_mid)
+    return {
+        "a_at": a_at,
+        "a_dur": a_dur,
+        "a_kill": a_kill,
+        "b_at": b_at,
+        "b_dur": b_dur,
+        "edge_at": edge_at,
+        "edge_in": edge_in,
+        "edge_mid": edge_mid,
+        "edge_out": edge_out,
+    }
+
+
+def tr_transitions_3d(ctx: "TemplateCtx") -> Piece:
+    """3D card flip: SCENE A схлопывается, SCENE B раскрывается.
+
+    Каталог твинит ``rotationY`` / ``filter`` / ``clipPath`` / ``zIndex``
+    на сценах. Здесь ``scaleX``/``opacity``, грани ``#1b263b``/``#e07a5f``.
+    Твины на гранях / ребре, не на ``.clip`` и не на входящем кадре.
+    Цвета SCENE A/B каталога — жест карточки, не палитра канала.
+    ``-apple-system`` не ставим. Inter как запас вместо системного стека.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _t3_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.set("#{node_id}-b",{{scaleX:0,opacity:0}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-a",{{scaleX:1}},'
+        f'{{scaleX:0,duration:{_num(times["a_dur"])},ease:"power2.inOut"}},'
+        f'{_num(start + times["a_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},'
+        f'{_num(start + times["a_kill"])});',
+        f'tl.set("#{node_id}-b",{{opacity:1}},'
+        f'{_num(start + times["b_at"])});',
+        f'tl.fromTo("#{node_id}-b",{{scaleX:0}},'
+        f'{{scaleX:1,duration:{_num(times["b_dur"])},ease:"power2.inOut",'
+        f'immediateRender:false}},'
+        f'{_num(start + times["b_at"])});',
+        f'tl.fromTo("#{node_id}-edge",{{opacity:0}},'
+        f'{{opacity:0.92,duration:{_num(times["edge_in"])},'
+        f'ease:"power2.out"}},{_num(start + times["edge_at"])});',
+        f'tl.to("#{node_id}-edge",{{opacity:0,duration:{_num(times["edge_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["edge_mid"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-edge",{{opacity:0}},{_num(start + d)});',
+    ]
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-transitions-3d" {_timing(ctx)}>'
+               f'<span class="t3-stage">'
+               f'<span id="{node_id}-a" class="t3-face t3-a">'
+               f'<span class="t3-big">ONE</span>'
+               f'<span class="t3-label">SCENE A</span></span>'
+               f'<span id="{node_id}-b" class="t3-face t3-b">'
+               f'<span class="t3-big">TWO</span>'
+               f'<span class="t3-label">SCENE B</span></span>'
+               f'<span id="{node_id}-edge" class="t3-edge"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -1191,6 +1289,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "thermal_distortion": tr_thermal_distortion,
     "whip_pan_shader": tr_whip_pan_shader,
     "mk_clone_wall": tr_mk_clone_wall,
+    "transitions_3d": tr_transitions_3d,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -1467,6 +1566,28 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "transform-origin:50% 50%;border-radius:0;overflow:hidden;"
         "background:linear-gradient(120deg,#fdfbfd 0%,#ff7ac8 38%,#45d6c8 100%);"
         "box-shadow:0 30px 80px rgba(0,0,0,0.22)}"
+        f".tr-transitions-3d{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-transitions-3d .t3-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-transitions-3d .t3-face{position:absolute;inset:0;display:flex;"
+        "flex-direction:column;align-items:center;justify-content:center;"
+        "transform-origin:50% 50%}"
+        ".tr-transitions-3d .t3-a{background:#1b263b}"
+        ".tr-transitions-3d .t3-b{background:#e07a5f}"
+        ".tr-transitions-3d .t3-big{font-family:Inter,system-ui,sans-serif;"
+        "font-size:280px;font-weight:900;line-height:1;letter-spacing:-0.04em;"
+        "user-select:none}"
+        ".tr-transitions-3d .t3-a .t3-big{color:rgba(255,255,255,0.08)}"
+        ".tr-transitions-3d .t3-b .t3-big{color:rgba(255,255,255,0.15)}"
+        ".tr-transitions-3d .t3-label{font-family:Inter,system-ui,sans-serif;"
+        "font-size:40px;font-weight:600;letter-spacing:6px;"
+        "margin-top:12px}"
+        ".tr-transitions-3d .t3-a .t3-label{color:#778da9}"
+        ".tr-transitions-3d .t3-b .t3-label{color:#ffffff}"
+        ".tr-transitions-3d .t3-edge{position:absolute;left:50%;top:0;"
+        "width:8px;height:100%;margin-left:-4px;display:block;opacity:0;"
+        "background:#778da9;transform-origin:50% 50%}"
     )
 
 

@@ -394,6 +394,24 @@ def _tr_mk_clone_wall(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
 
 
+def _tr_transitions_3d(incoming, outgoing, progress, params, ctx):
+    """Card flip stand-in: navy → terracotta через ребро. Без rotationY."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    if eased < 0.5:
+        t = eased / 0.5
+        mixed = a * (1.0 - t) + navy * t
+    else:
+        t = (eased - 0.5) / 0.5
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -440,6 +458,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "whip_pan": _tr_whip_pan,
     "whip_pan_shader": _tr_whip_pan_shader,
     "mk_clone_wall": _tr_mk_clone_wall,
+    "transitions_3d": _tr_transitions_3d,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,
     "blur_dip": _tr_blur_dip,
