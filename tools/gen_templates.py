@@ -372,7 +372,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (15, [
+    "data-viz": (16, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -445,6 +445,14 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Золотые звёзды заливаются слева направо, число считает в такт — star-rating-fill",
          [1.2, 4.0], {"rating": 4.8, "starCount": 5, "showValue": True},
          ["data", "stars", "rating"], "dataviz"),
+        ("us-map",
+         "Хороплет США: штаты вспыхивают, CA/NY/TX/FL/NJ подсветка — us-map",
+         [2.0, 12.0], {
+             "title": "Population Density by State",
+             "subtitle": "Residents per square mile, 2024 Census estimates",
+             "source": "Source: U.S. Census Bureau",
+             "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+         }, ["data", "map", "usa"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

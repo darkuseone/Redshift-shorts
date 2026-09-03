@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-145 шаблон каталога — это не 145 реализация, а набор рендереров с параметрами.
+146 шаблон каталога — это не 146 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .spm_shapes import SPM_SHAPES, SPM_VB
+from .usm_shapes import USM_SHAPES, USM_VB
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
 # вспышкой нельзя, оно и так короткое.
@@ -4532,8 +4533,8 @@ def dv_star_rating_fill(ctx: "TemplateCtx") -> Piece:
     попа ``scale`` 1→1.06→1, заранее span-ы. Сцена ``#090d16``, карточка
     ``#1a2230``, бренд ``#ffc83d``, чернила ``#f4f7fb`` как в каталоге —
     жест рейтинга, не палитра канала. Inter. ``-apple-system`` не ставим.
-    ``donut-fill`` / ``.dv-bar`` / ``conic-progress-ring`` / ``spain-map``
-    не трогаем.
+    ``donut-fill`` / ``.dv-bar`` / ``conic-progress-ring`` / ``spain-map`` /
+    ``us-map`` не трогаем.
     """
     spec = _srf_spec(ctx.params)
     if spec is None:
@@ -4686,6 +4687,366 @@ def dv_star_rating_fill(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_USM_CATALOG_DUR = 12.0
+_USM_HL_DUR = 1.0
+_USM_SUB_AT = 0.4
+_USM_SUB_DUR = 0.6
+_USM_REG_AT = 1.0
+_USM_REG_DUR = 0.4
+_USM_REG_STAGGER = 0.06
+_USM_LAB_AT = 3.5
+_USM_LAB_DUR = 0.3
+_USM_LAB_STAGGER = 0.04
+_USM_LEG_AT = 5.0
+_USM_LEG_DUR = 0.6
+_USM_LEG_Y = 12
+_USM_SRC_AT = 5.5
+_USM_SRC_DUR = 0.5
+_USM_HI_AT = 6.5
+_USM_HI_GAP = 0.8
+_USM_HI_DUR = 0.5
+_USM_OUT_LEAD = 0.5
+_USM_OUT_DUR = 0.4
+_USM_OUT_Y = -20
+_USM_HIGHLIGHTS = ("CA", "NY", "TX", "FL", "NJ")
+_USM_TITLE = "Population Density by State"
+_USM_SUBTITLE = "Residents per square mile, 2024 Census estimates"
+_USM_SOURCE = "Source: U.S. Census Bureau"
+_USM_C0 = "#1e3a5f"
+_USM_C1 = "#2563eb"
+_USM_C2 = "#7c3aed"
+_USM_C3 = "#ec4899"
+_USM_MAX = 500.0
+_USM_MAP_LEFT = 40
+_USM_MAP_TOP = 310
+_USM_MAP_W = 1000
+_USM_MAP_H = 586
+_USM_LAB_W = 52
+_USM_LAB_H = 24
+_USM_TINY = 8.0
+_USM_DOT_R = 10.0
+
+
+def _usm_play(duration: float) -> float:
+    return duration if duration <= 0.001 else max(0.001, duration - 0.001)
+
+
+def _usm_times(duration: float) -> dict[str, float]:
+    """Окно us-map: каталог 12 с, короче — те же доли."""
+    d = max(0.05, float(duration))
+    s = d / _USM_CATALOG_DUR if d < _USM_CATALOG_DUR else 1.0
+    out_dur = _USM_OUT_DUR * s
+    out_lead = _USM_OUT_LEAD * s
+    out_start = max(0.0, d - out_lead)
+    if out_start + out_dur + 0.001 > d:
+        out_dur = max(0.001, d - out_start - 0.001)
+    return {
+        "scale": s,
+        "hl_dur": max(0.001, _USM_HL_DUR * s),
+        "sub_at": _USM_SUB_AT * s,
+        "sub_dur": max(0.001, _USM_SUB_DUR * s),
+        "reg_at": _USM_REG_AT * s,
+        "reg_dur": max(0.05, _USM_REG_DUR * s),
+        "reg_stagger": _USM_REG_STAGGER * s,
+        "lab_at": _USM_LAB_AT * s,
+        "lab_dur": max(0.001, _USM_LAB_DUR * s),
+        "lab_stagger": _USM_LAB_STAGGER * s,
+        "leg_at": _USM_LEG_AT * s,
+        "leg_dur": max(0.001, _USM_LEG_DUR * s),
+        "src_at": _USM_SRC_AT * s,
+        "src_dur": max(0.001, _USM_SRC_DUR * s),
+        "hi_at": _USM_HI_AT * s,
+        "hi_gap": _USM_HI_GAP * s,
+        "hi_dur": max(0.05, _USM_HI_DUR * s),
+        "out_start": out_start,
+        "out_dur": out_dur,
+        "kill_at": d,
+    }
+
+
+def _usm_num(raw: Any, default: float | None = None) -> float | None:
+    if raw in (None, ""):
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _usm_floats(raw: Any) -> list[float]:
+    values: list[float] = []
+    if not isinstance(raw, (list, tuple)):
+        return values
+    for item in raw:
+        parsed = _usm_num(item.get("value") if isinstance(item, dict) else item)
+        if parsed is not None:
+            values.append(parsed)
+    return values
+
+
+def _usm_lerp_hex(start: str, end: str, t: float) -> str:
+    def rgb(token: str) -> tuple[int, int, int]:
+        h = token.lstrip("#")
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+    ar, ag, ab = rgb(start)
+    br, bg, bb = rgb(end)
+    t = min(max(t, 0.0), 1.0)
+    return (f"#{round(ar + (br - ar) * t):02x}"
+            f"{round(ag + (bg - ag) * t):02x}"
+            f"{round(ab + (bb - ab) * t):02x}")
+
+
+def _usm_color(value: float) -> str:
+    t = min(max(value / _USM_MAX, 0.0), 1.0)
+    if t < 0.33:
+        return _usm_lerp_hex(_USM_C0, _USM_C1, t / 0.33)
+    if t < 0.66:
+        return _usm_lerp_hex(_USM_C1, _USM_C2, (t - 0.33) / 0.33)
+    return _usm_lerp_hex(_USM_C2, _USM_C3, (t - 0.66) / 0.34)
+
+
+def _usm_xy(cx: float, cy: float) -> tuple[float, float]:
+    vb_x, vb_y, vb_w, vb_h = USM_VB
+    x = _USM_MAP_LEFT + (cx - vb_x) * _USM_MAP_W / vb_w
+    y = _USM_MAP_TOP + (cy - vb_y) * _USM_MAP_H / vb_h
+    return x, y
+
+
+def _usm_spec(params: dict[str, Any]
+              ) -> tuple[list[tuple[dict[str, Any], float]], str, str, str,
+                         list[str]] | None:
+    """Штаты (shape, density), заголовок, подзаголовок, источник, highlight."""
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("regions", "states", "values", "labels", "title",
+                         "headline", "subtitle")):
+        return None
+    by_abbr = {str(item["abbr"]): item for item in USM_SHAPES}
+    by_name = {str(item["name"]).lower(): item for item in USM_SHAPES}
+    items: list[tuple[dict[str, Any], float]] = []
+    raw = params.get("regions", params.get("states"))
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            abbr = str(item.get("abbr") or item.get("id") or "").upper()
+            shape = by_abbr.get(abbr)
+            if shape is None:
+                name = str(item.get("name") or "").lower()
+                shape = by_name.get(name)
+                if shape is None:
+                    for cand in USM_SHAPES:
+                        cname = str(cand["name"]).lower()
+                        if name and (name in cname or cname in name):
+                            shape = cand
+                            break
+            if shape is None:
+                continue
+            value = _usm_num(item.get("value", item.get("density")),
+                             float(shape["density"]))
+            if value is None:
+                continue
+            items.append((shape, value))
+    if not items:
+        values = _usm_floats(params.get("values"))
+        for index, shape in enumerate(USM_SHAPES):
+            value = (values[index] if index < len(values)
+                     else float(shape["density"]))
+            items.append((shape, value))
+    if not items:
+        return None
+    items.sort(key=lambda pair: pair[1])
+    title = str(params.get("title") or params.get("headline") or _USM_TITLE)
+    subtitle = str(params.get("subtitle") or _USM_SUBTITLE)
+    source = str(params.get("source") or _USM_SOURCE)
+    raw_hi = params.get("highlight") or params.get("highlights")
+    highlights: list[str] = []
+    if isinstance(raw_hi, (list, tuple)):
+        highlights = [str(item).upper() for item in raw_hi if str(item).strip()]
+    if not highlights:
+        highlights = list(_USM_HIGHLIGHTS)
+    return items, title, subtitle, source, highlights
+
+
+def dv_us_map(ctx: "TemplateCtx") -> Piece:
+    """Хороплет США: штаты вспыхивают от центра, CA/NY/TX/FL/NJ подсветка.
+
+    Каталог DEMO 1 тянет topojson с CDN, твинит ``clipPath`` заголовка и
+    ``filter`` подсветки. Здесь контуры запечены, вайп заголовка ``scaleX``,
+    подсветка белым оверлеем. Градиент ``#0f172a``/``#1e293b``, шкала
+    ``#1e3a5f``/``#2563eb``/``#7c3aed``/``#ec4899`` как в каталоге — жест
+    карты, не палитра канала. Inter. ``-apple-system`` не ставим.
+    ``spain-map`` / ``.dv-bar`` / ``star-rating-fill`` не трогаем.
+    """
+    spec = _usm_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    items, title, subtitle, source, highlights = spec
+    node_id = f"usm-{ctx.index:02d}"
+    times = _usm_times(ctx.duration)
+    start = ctx.start
+    sid = f"{node_id}-stage"
+    wid = f"{node_id}-wipe"
+    hid = f"{node_id}-hl"
+    uid = f"{node_id}-sub"
+    lid = f"{node_id}-leg"
+    xid = f"{node_id}-src"
+    count = len(items)
+    mid = (count - 1) / 2.0 if count else 0.0
+    tweens: list[str] = []
+    paths: list[str] = []
+    labels: list[str] = []
+    region_ids: list[str] = []
+    label_ids: list[str] = []
+    hi_ids: list[str] = []
+    hi_targets: dict[str, str] = {}
+    vb_x, vb_y, vb_w, vb_h = USM_VB
+
+    for index, (shape, value) in enumerate(items):
+        abbr = str(shape["abbr"])
+        color = _usm_color(value)
+        rid = f"{node_id}-r{index}"
+        region_ids.append(rid)
+        cx = float(shape["cx"])
+        cy = float(shape["cy"])
+        tiny = float(shape["w"]) < _USM_TINY or float(shape["h"]) < _USM_TINY
+        if tiny:
+            geom = (f'<circle id="{rid}" class="usm-region" '
+                    f'cx="{_num(cx)}" cy="{_num(cy)}" r="{_num(_USM_DOT_R)}" '
+                    f'fill="{_esc(color)}"></circle>')
+            hi_geom = (
+                f'<circle class="usm-hi" cx="{_num(cx)}" cy="{_num(cy)}" '
+                f'r="{_num(_USM_DOT_R)}" fill="#f8fafc"></circle>')
+        else:
+            geom = (f'<path id="{rid}" class="usm-region" '
+                    f'd="{_esc(shape["d"])}" fill="{_esc(color)}"></path>')
+            hi_geom = (f'<path class="usm-hi" d="{_esc(shape["d"])}" '
+                       f'fill="#f8fafc"></path>')
+        paths.append(geom)
+        if abbr in highlights:
+            hid_r = f"{node_id}-h{index}"
+            hi_ids.append(hid_r)
+            hi_targets[abbr] = hid_r
+            paths.append(hi_geom.replace('class="usm-hi"',
+                                         f'id="{hid_r}" class="usm-hi"', 1))
+        lx, ly = _usm_xy(cx, cy)
+        if tiny:
+            lx += 22
+        lab_id = f"{node_id}-l{index}"
+        label_ids.append(lab_id)
+        labels.append(
+            f'<div id="{lab_id}" class="usm-lab" data-layout-allow-overlap="" '
+            f'style="left:{lx - _USM_LAB_W / 2:.1f}px;'
+            f'top:{ly - _USM_LAB_H / 2:.1f}px">{_esc(abbr)}</div>')
+        delay = abs(index - mid) * times["reg_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{rid}",{{opacity:0,scale:0}},'
+            f'{{opacity:1,scale:1,duration:{_num(_usm_play(times["reg_dur"]))},'
+            f'ease:"back.out(1.4)",immediateRender:false}},'
+            f'{_num(start + times["reg_at"] + delay)});')
+        lab_delay = abs(index - mid) * times["lab_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{lab_id}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(_usm_play(times["lab_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["lab_at"] + lab_delay)});')
+
+    tweens.insert(0,
+        f'tl.fromTo("#{wid}",{{scaleX:1}},'
+        f'{{scaleX:0,duration:{_num(_usm_play(times["hl_dur"]))},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{uid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_usm_play(times["sub_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["sub_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{lid}",{{opacity:0,y:{_USM_LEG_Y}}},'
+        f'{{opacity:1,y:0,duration:{_num(_usm_play(times["leg_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["leg_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{xid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_usm_play(times["src_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["src_at"])});')
+
+    for hi_i, abbr in enumerate(highlights):
+        hid_r = hi_targets.get(abbr)
+        if not hid_r:
+            continue
+        t0 = times["hi_at"] + hi_i * times["hi_gap"]
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0}},'
+            f'{{opacity:0.45,duration:{_num(_usm_play(times["hi_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + t0)});')
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0.45}},'
+            f'{{opacity:0,duration:{_num(_usm_play(times["hi_dur"]))},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(start + t0 + times["hi_dur"])});')
+        for index, (shape, _value) in enumerate(items):
+            if str(shape["abbr"]) != abbr:
+                continue
+            rid = f"{node_id}-r{index}"
+            tweens.append(
+                f'tl.fromTo("#{rid}",{{scale:1}},'
+                f'{{scale:1.08,duration:{_num(_usm_play(times["hi_dur"]))},'
+                f'ease:"power2.out",immediateRender:false}},'
+                f'{_num(start + t0)});')
+            tweens.append(
+                f'tl.fromTo("#{rid}",{{scale:1.08}},'
+                f'{{scale:1,duration:{_num(_usm_play(times["hi_dur"]))},'
+                f'ease:"power2.in",immediateRender:false}},'
+                f'{_num(start + t0 + times["hi_dur"])});')
+            break
+
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:1,y:0}},'
+        f'{{opacity:0,y:{_USM_OUT_Y},duration:{_num(_usm_play(times["out_dur"]))},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["out_start"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(f'tl.set("#{sid}",{{y:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{wid}",{{scaleX:1}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{uid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{lid}",{{opacity:0,y:{_USM_LEG_Y}}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{xid}",{{opacity:0}},{_num(kill_at)});')
+    for rid in region_ids:
+        tweens.append(
+            f'tl.set("#{rid}",{{opacity:0,scale:0}},{_num(kill_at)});')
+    for lab_id in label_ids:
+        tweens.append(f'tl.set("#{lab_id}",{{opacity:0}},{_num(kill_at)});')
+    for hid_r in hi_ids:
+        tweens.append(f'tl.set("#{hid_r}",{{opacity:0}},{_num(kill_at)});')
+
+    view = f"{_num(vb_x)} {_num(vb_y)} {_num(vb_w)} {_num(vb_h)}"
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay usm-chart" {_timing(ctx)}>'
+               f'<div class="usm-bg"></div>'
+               f'<div id="{sid}" class="usm-stage">'
+               f'<div class="usm-hl-clip" data-layout-allow-overlap="">'
+               f'<div id="{hid}" class="usm-hl">{_esc(title)}</div>'
+               f'<div id="{wid}" class="usm-wipe"></div></div>'
+               f'<div id="{uid}" class="usm-sub" data-layout-allow-overlap="">'
+               f'{_esc(subtitle)}</div>'
+               f'<svg class="usm-svg" viewBox="{view}" '
+               f'preserveAspectRatio="xMidYMid meet" aria-hidden="true">'
+               f'{"".join(paths)}</svg>'
+               f'{"".join(labels)}'
+               f'<div id="{lid}" class="usm-legend" data-layout-allow-overlap="">'
+               f'<span class="usm-legend-lab">Low</span>'
+               f'<div class="usm-legend-bar"></div>'
+               f'<span class="usm-legend-lab">High</span></div>'
+               f'<div id="{xid}" class="usm-src" data-layout-allow-overlap="">'
+               f'{_esc(source)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -4702,6 +5063,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "mk-line-graph": dv_mk_line_graph,
     "spain-map": dv_spain_map,
     "star-rating-fill": dv_star_rating_fill,
+    "us-map": dv_us_map,
 }
 
 
@@ -5031,6 +5393,47 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "font-variant-numeric:tabular-nums;color:#f4f7fb}"
         ".srf-cv span{position:absolute;right:0;top:0;opacity:0;"
         "white-space:nowrap}"
+        ".usm-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0f172a;font-family:Inter,system-ui,sans-serif;"
+        "color:#e2e8f0}"
+        ".usm-bg{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%)}"
+        ".usm-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        ".usm-hl-clip{position:absolute;left:40px;top:140px;width:1000px;"
+        "overflow:hidden}"
+        ".usm-hl{font-weight:700;font-size:38px;letter-spacing:-0.02em;"
+        "color:#f8fafc;text-align:center;line-height:1.15}"
+        ".usm-wipe{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%);"
+        "transform-origin:100% 50%}"
+        ".usm-sub{position:absolute;left:40px;top:236px;width:1000px;"
+        "font-weight:300;font-size:22px;color:#94a3b8;text-align:center;"
+        "opacity:0}"
+        ".usm-svg{position:absolute;left:40px;top:310px;width:1000px;"
+        "height:586px;overflow:visible}"
+        ".usm-region{stroke:#1e293b;stroke-width:1.2;opacity:0;"
+        "transform-origin:50% 50%;transform-box:fill-box;"
+        "vector-effect:non-scaling-stroke}"
+        ".usm-hi{fill:#f8fafc;opacity:0;pointer-events:none;"
+        "transform-origin:50% 50%;transform-box:fill-box}"
+        f".usm-lab{{position:absolute;width:{_USM_LAB_W}px;"
+        f"height:{_USM_LAB_H}px;"
+        "font-weight:500;font-size:15px;color:#f8fafc;text-align:center;"
+        "line-height:24px;white-space:nowrap;opacity:0}"
+        ".usm-legend{position:absolute;left:40px;top:912px;width:1000px;"
+        "display:flex;justify-content:center;align-items:center;gap:14px;"
+        "opacity:0}"
+        ".usm-legend-bar{width:300px;height:14px;border-radius:7px;"
+        "background:linear-gradient(90deg,#1e3a5f,#2563eb,#7c3aed,#ec4899)}"
+        ".usm-legend-lab{font-weight:500;font-size:22px;color:#94a3b8}"
+        ".usm-src{position:absolute;left:40px;top:968px;width:1000px;"
+        "font-weight:400;font-size:18px;color:#475569;text-align:right;"
+        "opacity:0}"
     )
 
 

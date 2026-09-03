@@ -1475,6 +1475,7 @@ def test_spain_map_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "cpr-" not in node
     assert "dcl-" not in node
     assert "mlg-" not in node
+    assert "usm-" not in node
     assert "jsdelivr" not in node
 
 
@@ -1498,6 +1499,35 @@ def test_star_rating_fill_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "dcl-" not in node
     assert "mlg-" not in node
     assert "spm-" not in node
+    assert "usm-" not in node
+    assert "clip-path" not in node
+
+
+def test_us_map_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 12.2,
+        "template": "data-viz/us-map",
+        "params": {
+            "title": "Population Density by State",
+            "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "usm-chart" in out
+    assert "usm-bg" in out
+    assert "usm-region" in out
+    assert "Population Density" in out
+    node = next(line for line in out.splitlines() if "usm-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "srf-" not in node
+    assert "jsdelivr" not in node
     assert "clip-path" not in node
 
 

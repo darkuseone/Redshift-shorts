@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-145 шаблон каталога — это рендереры с параметрами. Проверяется то, что
+146 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _usm_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -234,6 +234,10 @@ def test_css_covers_every_layer_the_transitions_use():
         "starCount": 5,
         "showValue": True,
     }),
+    ("data-viz/us-map", {
+        "title": "Population Density by State",
+        "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -258,6 +262,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/mk-line-graph", ctx) == Piece()
     assert render_dataviz("data-viz/spain-map", ctx) == Piece()
     assert render_dataviz("data-viz/star-rating-fill", ctx) == Piece()
+    assert render_dataviz("data-viz/us-map", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -293,6 +298,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "mlg-" not in compare and "mlg-" not in race
     assert "spm-" not in compare and "spm-" not in race
     assert "srf-" not in compare and "srf-" not in race
+    assert "usm-" not in compare and "usm-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
@@ -303,6 +309,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "mlg-" not in donut
     assert "spm-" not in donut
     assert "srf-" not in donut
+    assert "usm-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -860,6 +867,8 @@ def test_spain_map_bakes_paths_not_fetch(ctx):
     assert "cpr-" not in node
     assert "dcl-" not in node
     assert "mlg-" not in node
+    assert "srf-" not in node
+    assert "usm-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -965,6 +974,7 @@ def test_star_rating_fill_wipes_mask_not_clip_path(ctx):
     assert "dcl-" not in node
     assert "mlg-" not in node
     assert "spm-" not in node
+    assert "usm-" not in node
     assert "stat-card" not in node
     assert "textContent" not in node
     assert "clipPath" not in node
@@ -1029,7 +1039,7 @@ def test_star_rating_fill_keeps_catalog_tokens():
     assert "transform-box:fill-box" in wipe
     assert "transform-origin:50% 50%" in cell
     assert "transform-box:fill-box" in fill
-    block = css.split(".srf-chart", 1)[1]
+    block = css.split(".srf-chart", 1)[1].split(".usm-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
@@ -1042,13 +1052,131 @@ def test_star_rating_fill_keeps_catalog_tokens():
                 .replace("transform-origin:100% 50%", "")
                 .replace("transform-box:fill-box", "")
                 .replace("text-transform:uppercase", ""))
-    assert "transform:" not in stripped.split(".srf-chart", 1)[1]
+    assert "transform:" not in stripped.split(".srf-chart", 1)[1].split(".usm-chart", 1)[0]
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "srf-" not in dv_bar
     donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
     assert "srf-" not in donut
     spm = re.search(r"\.spm-region\{[^}]+\}", css).group(0)
     assert "srf-" not in spm
+    usm = re.search(r"\.usm-region\{[^}]+\}", css).group(0)
+    assert "srf-" not in usm
+
+
+def test_us_map_bakes_paths_not_fetch(ctx):
+    """Каталог DEMO 1 тянет topojson и твинит clipPath/filter; здесь контуры и scaleX."""
+    piece = render_dataviz("data-viz/us-map", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=12.0, target=ctx.target,
+        track=6, params={
+            "title": "Population Density by State",
+            "subtitle": "Residents per square mile, 2024 Census estimates",
+            "source": "Source: U.S. Census Bureau",
+            "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+        }))
+    node = piece.nodes[0]
+    assert "usm-chart" in node
+    assert "usm-bg" in node and "usm-stage" in node and "usm-region" in node
+    assert "usm-wipe" in node and "usm-legend" in node and "usm-lab" in node
+    assert "Population Density" in node
+    assert "Low" in node and "High" in node
+    assert "Census Bureau" in node
+    assert "CA" in node and "NY" in node and "TX" in node and "FL" in node
+    assert "NJ" in node and "AK" in node and "HI" in node
+    assert "#1e3a5f" in node or "#2563eb" in node or "#ec4899" in node
+    assert "dv-bar" not in node
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "srf-" not in node
+    assert "stat-card" not in node
+    assert "jsdelivr" not in node
+    assert "topojson" not in node
+    assert "textContent" not in node
+    assert "clipPath" not in node
+    assert "clip-path" not in node
+    assert node.count(f'id="usm-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    assert f'id="usm-{ctx.index:02d}-stage"' in node
+    assert f'id="usm-{ctx.index:02d}-wipe"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scaleX:1" in body and "scaleX:0" in body
+    assert "back.out(1.4)" in body
+    assert "immediateRender:false" in body
+    assert "filter" not in body
+    assert "clipPath" not in body
+    assert "strokeWidth" not in body
+    assert "textContent" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#usm-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _usm_times(12.0)
+    assert abs(times["hl_dur"] - 1.0) < 1e-9
+    assert abs(times["reg_at"] - 1.0) < 1e-9
+    assert abs(times["lab_at"] - 3.5) < 1e-9
+    assert abs(times["leg_at"] - 5.0) < 1e-9
+    assert abs(times["hi_at"] - 6.5) < 1e-9
+    assert abs(times["out_start"] - 11.5) < 1e-9
+    short = _usm_times(0.22)
+    assert short["out_start"] + 0.001 <= 0.22 + 1e-9
+
+
+def test_us_map_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".usm-chart" in css
+    assert ".usm-region" in css
+    chart = re.search(r"\.usm-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.usm-bg\{[^}]+\}", css).group(0)
+    hl = re.search(r"\.usm-hl\{[^}]+\}", css).group(0)
+    wipe = re.search(r"\.usm-wipe\{[^}]+\}", css).group(0)
+    bar = re.search(r"\.usm-legend-bar\{[^}]+\}", css).group(0)
+    region = re.search(r"\.usm-region\{[^}]+\}", css).group(0)
+    assert "#0f172a" in chart and "#0f172a" in bg
+    assert "#1e293b" in bg
+    assert "#f8fafc" in hl
+    assert "#1e3a5f" in bar and "#2563eb" in bar
+    assert "#7c3aed" in bar and "#ec4899" in bar
+    assert "transform-origin:100% 50%" in wipe
+    assert "transform-origin:50% 50%" in region
+    assert "transform-box:fill-box" in region
+    block = css.split(".usm-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    stripped = (css.replace("transform-origin:left center", "")
+                .replace("transform-origin:50% 50%", "")
+                .replace("transform-origin:50% 100%", "")
+                .replace("transform-origin:0px 50%", "")
+                .replace("transform-origin:100% 50%", "")
+                .replace("transform-box:fill-box", "")
+                .replace("text-transform:uppercase", ""))
+    assert "transform:" not in stripped.split(".usm-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "usm-" not in dv_bar
+    donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
+    assert "usm-" not in donut
+    spm = re.search(r"\.spm-region\{[^}]+\}", css).group(0)
+    assert "usm-" not in spm
+    srf = re.search(r"\.srf-wipe\{[^}]+\}", css).group(0)
+    assert "usm-" not in srf
 
 
 def test_split_moves_both_halves_towards_the_seam():

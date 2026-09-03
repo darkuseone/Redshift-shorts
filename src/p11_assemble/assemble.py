@@ -31,6 +31,7 @@ from ..lib.render.shots import (
 from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.render.hyperframes.captions import pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
+from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
 _log = get_logger("p11")
@@ -787,6 +788,13 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "отзыв", "app store", "satisfaction"))):
             prefer = ["data-viz/star-rating-fill"] + [
                 item for item in prefer if item != "data-viz/star-rating-fill"]
+        if variant != "B" and any(key in blob for key in (
+                "united states", "u.s.", "сша", "америк", "census",
+                "population density", "per square mile", " by state",
+                "штат ", "калифорн", "нью-йорк", "нью йорк", "texas",
+                "california")):
+            prefer = ["data-viz/us-map"] + [
+                item for item in prefer if item != "data-viz/us-map"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -842,6 +850,24 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "source": "Fuente: Instituto Nacional de Estadística",
                 "regions": regions,
                 "highlight": ["MAD", "PVA", "NAV"],
+            }
+        elif name == "us-map":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            regions = [{
+                "abbr": str(shape["abbr"]),
+                "name": str(shape["name"]),
+                "value": float(shape["density"]),
+            } for shape in USM_SHAPES]
+            if nums:
+                ranked = sorted(regions, key=lambda row: -float(row["value"]))
+                for index, num in enumerate(nums[:len(ranked)]):
+                    ranked[index]["value"] = num["value"]
+            params = {
+                "title": heading or "Population Density by State",
+                "subtitle": "Residents per square mile, 2024 Census estimates",
+                "source": "Source: U.S. Census Bureau",
+                "regions": regions,
+                "highlight": ["CA", "NY", "TX", "FL", "NJ"],
             }
         elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
             suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""
