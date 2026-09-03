@@ -18,7 +18,7 @@ from src.lib.render.hyperframes.templates import (
     TRANSITIONS, Piece, TemplateCtx,
     enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_fullscreen,
     render_hero, render_motion, render_overlay, render_transition, transition_css,
-    _sr_frame_table,
+    _fs_size, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -1120,6 +1120,9 @@ def test_shared_axis_z_swells_words_on_scale():
     assert "saz-ink" in node
     assert node.count("saz-word") == 2
     assert "ПИШИ" in node and "КОД" in node
+    size = int(re.search(r'font-size:(\d+)px', node).group(1))
+    one = _fs_size(_fs_ctx(content="ПИШИ КОД"), "ПИШИ")
+    assert size < one, "два слова в один ряд, не кегль самого длинного"
     assert "--hf-" not in node
     assert "filter:" not in node
     body = " ".join(piece.tweens)

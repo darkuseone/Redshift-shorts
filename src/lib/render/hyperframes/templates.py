@@ -2865,6 +2865,22 @@ def _saz_start_scale(direction: str, depth: str) -> float:
     return 1.0 + (_SAZ_SCALE_FROM - 1.0) * (sign * reach)
 
 
+def _saz_size_and_gap(ctx: "TemplateCtx", words: list[str]) -> tuple[int, int]:
+    """Кегль и gap, чтобы слова остались в один ряд, как inline-flex каталога."""
+    ceiling = _fs_ceiling(ctx)
+    available = float(ctx.params.get("available_px") or 900) * 0.94
+    gap_ratio = _SAZ_GAP_PX / _SAZ_REF_SIZE
+    n = len(words)
+    size = ceiling
+    while size > 24:
+        gap = gap_ratio * size
+        total = sum(text_width(w, size) for w in words) + gap * max(0, n - 1)
+        if total <= available:
+            break
+        size -= 2
+    return size, max(1, int(round(gap_ratio * size)))
+
+
 def fs_shared_axis_z(ctx: "TemplateCtx") -> Piece:
     """Слова набухают по оси Z — shared-axis-z.
 
@@ -2892,8 +2908,7 @@ def fs_shared_axis_z(ctx: "TemplateCtx") -> Piece:
 
     start_scale = _saz_start_scale(direction, depth)
     node_id = ctx.target
-    size = _fs_size(ctx, content)
-    gap = max(1, int(round(_SAZ_GAP_PX / _SAZ_REF_SIZE * size)))
+    size, gap = _saz_size_and_gap(ctx, words)
     stagger = _SAZ_STAGGER
     at = _enter_at(ctx)
     end = ctx.start + ctx.duration
@@ -3306,8 +3321,9 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "letter-spacing:-0.04em;line-height:1}"
         ".fullscreen-text.fs-shared-axis-z.saz-paper{background:#18181b;color:#fafafa}"
         ".fullscreen-text.fs-shared-axis-z.saz-accent{color:#C8453D}"
-        ".fullscreen-text .saz-stack{display:inline-flex;flex-wrap:wrap;"
-        "justify-content:center;align-items:center;max-width:100%;line-height:1}"
+        ".fullscreen-text .saz-stack{display:inline-flex;flex-wrap:nowrap;"
+        "justify-content:center;align-items:center;max-width:100%;line-height:1;"
+        "white-space:nowrap}"
         ".fullscreen-text .saz-word{display:inline-block;"
         "will-change:transform,opacity}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
