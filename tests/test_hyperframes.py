@@ -1399,6 +1399,7 @@ def test_chart_story_overlay_reaches_the_markup(plan, assets, brandbook):
     })
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "cst-chart" in out
+    assert "cst-bg" in out
     assert "Q1" in out and "64%" in out
     node = next(line for line in out.splitlines() if "cst-chart" in line)
     assert "dv-bar" not in node

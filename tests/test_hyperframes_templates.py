@@ -389,6 +389,7 @@ def test_chart_story_grows_scaleY_not_height(ctx):
     node = piece.nodes[0]
     assert "cst-chart" in node
     assert "cst-bar" in node and "cst-stage" in node and "cst-call" in node
+    assert "cst-bg" in node
     assert "Q1" in node and "Q4" in node
     assert "12%" in node and "28%" in node and "45%" in node and "64%" in node
     assert "#71f5a7" in node
@@ -3409,10 +3410,12 @@ def test_chart_story_keeps_catalog_ink_paper_and_accent():
     assert ".cst-chart" in css
     assert ".cst-bar" in css
     chart = re.search(r"\.cst-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.cst-bg\{[^}]+\}", css).group(0)
     axis = re.search(r"\.cst-axis\{[^}]+\}", css).group(0)
     bar = re.search(r"\.cst-bar\{[^}]+\}", css).group(0)
     call = re.search(r"\.cst-call\{[^}]+\}", css).group(0)
     assert "#0a0a0a" in chart
+    assert "#0a0a0a" in bg
     assert "#f8fafc" in chart
     assert "#475569" in axis
     assert "transform-origin:left center" in axis

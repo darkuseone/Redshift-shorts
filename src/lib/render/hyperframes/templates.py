@@ -3229,6 +3229,7 @@ def dv_chart_story(ctx: "TemplateCtx") -> Piece:
 
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay cst-chart" {_timing(ctx)}>'
+               f'<div class="cst-bg"></div>'
                f'<div id="{sid}" class="cst-stage">{"".join(parts)}</div></div>'],
         tweens=tweens)
 
@@ -3381,6 +3382,7 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         f"height:{canvas_h}px;"
         "background:#0a0a0a;font-family:Inter,system-ui,sans-serif;"
         "color:#f8fafc}"
+        ".cst-bg{position:absolute;inset:0;background:#0a0a0a}"
         ".cst-stage{position:absolute;left:0;top:0;"
         f"width:{canvas_w}px;"
         f"height:{canvas_h}px;"
