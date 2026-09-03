@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-03",
-  "count": 51,
+  "count": 54,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1836,6 +1836,135 @@
       "extra": {
         "attribution": "Pexels / Nicola Narracci",
         "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v35288383",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/vibrant-abstract-particle-animation-35288383/",
+      "phash": "19d9662699992e66",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Abstract glowing particles bursting from bright center on black background",
+      "score": 0.88,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "19d9662699992e66",
+        "cccc33338c8c6e67",
+        "1bcc3633c9cc3233"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v35288383.mp4",
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v113383",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-113383/",
+      "phash": "c22f7da515e4c61c",
+      "tags": [
+        "connection",
+        "science",
+        "abstract",
+        "communication",
+        "plexus",
+        "background",
+        "futuristic",
+        "network",
+        "geometric",
+        "cybernetic",
+        "concept",
+        "design",
+        "digital",
+        "line",
+        "3d",
+        "biology",
+        "chaos",
+        "beautiful wallpaper",
+        "connect",
+        "data",
+        "galaxy",
+        "global",
+        "graphic",
+        "internet",
+        "molecular",
+        "particle"
+      ],
+      "vision_summary": "Abstract glowing particle network mesh on black background",
+      "score": 0.72,
+      "duration_sec": 19.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "c22f7da515e4c61c",
+        "116f53e47f586c02",
+        "16f66d65010c6bd3"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v113383.mp4",
+      "extra": {
+        "attribution": "Pixabay / Digital_View",
+        "author": "Digital_View",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v144678",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-144678/",
+      "phash": "f1e1d03f0fc8923a",
+      "tags": [
+        "volcano lava",
+        "explosion",
+        "volcano",
+        "lava",
+        "volcanic",
+        "hot",
+        "nature"
+      ],
+      "vision_summary": "Close-up of bright lava streams flowing slowly over dark volcanic rock",
+      "score": 0.82,
+      "duration_sec": 6.25,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "f1e1d03f0fc8923a",
+        "f1a1f00b47d192be",
+        "f1e1f403c7d1133a"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v144678.mp4",
+      "extra": {
+        "attribution": "Pixabay / 31906497",
+        "author": "31906497",
         "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
       }
     }
