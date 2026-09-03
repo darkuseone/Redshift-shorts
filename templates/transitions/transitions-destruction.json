@@ -1,0 +1,19 @@
+{
+  "id": "transitions/transitions-destruction",
+  "name": "transitions-destruction",
+  "category": "transitions",
+  "title": "Page burn: SCENE A сгорает кругом, SCENE B проявляется — transitions-destruction",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "burn",
+    "destruction"
+  ],
+  "renderer": "transitions_destruction",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

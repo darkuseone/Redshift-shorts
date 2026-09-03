@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-134 шаблона каталога — это не 134 реализации, а набор рендереров с параметрами.
+135 шаблонов каталога — это не 135 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1223,6 +1223,105 @@ def tr_transitions_cover(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_TDS_CATALOG_SEC = 2.4
+_TDS_HOLE_FROM = 1.0
+_TDS_HOLE_TO = 0.04
+_TDS_A_TO = _TDS_HOLE_FROM / _TDS_HOLE_TO
+_TDS_RINGS = ((1.02, 0.041), (1.08, 0.043), (1.16, 0.046))
+
+
+def _tds_times(duration: float) -> dict[str, float]:
+    """Окно page burn: каталог 3 с canvas ``onUpdate`` и ``clip-path``.
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Доли 2.4 с окна
+    (удержание A → burn → удержание B) сохраняем, стыки +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _TDS_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    def span(start_cat: float, end_cat: float,
+             after: float = 0.0) -> tuple[float, float]:
+        at = max(t(start_cat), after)
+        end = min(d, t(end_cat))
+        if at + 0.001 > end:
+            end = min(d, at + 0.001)
+        if at + 0.001 > end:
+            at = max(0.0, end - 0.001)
+        return at, max(0.001, end - at)
+
+    burn_at, burn_dur = span(1.00, 2.00)
+    b_at, b_dur = span(1.167, 1.833, after=burn_at + 0.001)
+    kill_at = min(d, max(burn_at + burn_dur, b_at + b_dur))
+    return {
+        "burn_at": burn_at,
+        "burn_dur": burn_dur,
+        "b_at": b_at,
+        "b_dur": b_dur,
+        "kill_at": kill_at,
+    }
+
+
+def tr_transitions_destruction(ctx: "TemplateCtx") -> Piece:
+    """Page burn: SCENE A сгорает кругом, SCENE B проявляется.
+
+    Каталог рисует canvas ``onUpdate``, ``clip-path`` и ``Math.sin``-шум.
+    Здесь круг ``overflow:hidden`` и ``scale``, кольца огня без canvas.
+    Твины на дыре / гранях / кольцах, не на ``.clip`` и не на входящем
+    кадре. Цвета SCENE A/B и огня каталога — жест карточки, не палитра
+    канала. ``-apple-system`` не ставим. Inter как запас вместо
+    системного стека. ``sdf-iris`` и ``mask-wipe-circle`` не трогаем.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _tds_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-hole",{{scale:{_num(_TDS_HOLE_FROM)},opacity:1}},'
+        f'{{scale:{_num(_TDS_HOLE_TO)},opacity:1,duration:{_num(times["burn_dur"])},'
+        f'ease:"power1.in",immediateRender:false}},'
+        f'{_num(start + times["burn_at"])});',
+        f'tl.fromTo("#{node_id}-a",{{scale:1,opacity:1}},'
+        f'{{scale:{_num(_TDS_A_TO)},opacity:1,duration:{_num(times["burn_dur"])},'
+        f'ease:"power1.in",immediateRender:false}},'
+        f'{_num(start + times["burn_at"])});',
+        f'tl.fromTo("#{node_id}-b",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(times["b_dur"])},'
+        f'ease:"power1.out",immediateRender:false}},'
+        f'{_num(start + times["b_at"])});',
+    ]
+    for i, (s0, s1) in enumerate(_TDS_RINGS):
+        tweens.append(
+            f'tl.fromTo("#{node_id}-r{i}",{{scale:{_num(s0)},opacity:1}},'
+            f'{{scale:{_num(s1)},opacity:1,duration:{_num(times["burn_dur"])},'
+            f'ease:"power1.in",immediateRender:false}},'
+            f'{_num(start + times["burn_at"])});')
+    for suffix in ("hole", "a", "r0", "r1", "r2"):
+        tweens.append(
+            f'tl.set("#{node_id}-{suffix}",{{opacity:0}},'
+            f'{_num(start + times["kill_at"])});')
+    for suffix in ("hole", "a", "b", "r0", "r1", "r2"):
+        tweens.append(
+            f'tl.set("#{node_id}-{suffix}",{{opacity:0}},{_num(start + d)});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-transitions-destruction" {_timing(ctx)}>'
+               f'<span class="tds-stage">'
+               f'<span id="{node_id}-b" class="tds-face tds-b">'
+               f'<span class="tds-big">TWO</span>'
+               f'<span class="tds-label">SCENE B</span></span>'
+               f'<span id="{node_id}-hole" class="tds-hole">'
+               f'<span id="{node_id}-a" class="tds-face tds-a">'
+               f'<span class="tds-big">ONE</span>'
+               f'<span class="tds-label">SCENE A</span></span></span>'
+               f'<span id="{node_id}-r2" class="tds-ring tds-r2"></span>'
+               f'<span id="{node_id}-r1" class="tds-ring tds-r1"></span>'
+               f'<span id="{node_id}-r0" class="tds-ring tds-r0"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -1496,6 +1595,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "transitions_3d": tr_transitions_3d,
     "transitions_blur": tr_transitions_blur,
     "transitions_cover": tr_transitions_cover,
+    "transitions_destruction": tr_transitions_destruction,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -1835,6 +1935,47 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "opacity:0}"
         ".tr-transitions-cover .tc-wb{background:#7209b7}"
         ".tr-transitions-cover .tc-wa{background:#f72585}"
+        f".tr-transitions-destruction{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-transitions-destruction .tds-stage{display:block;width:100%;height:100%;"
+        "position:relative;background:#000}"
+        ".tr-transitions-destruction .tds-face{display:flex;"
+        "flex-direction:column;align-items:center;justify-content:center;"
+        "transform-origin:50% 50%}"
+        ".tr-transitions-destruction .tds-b{position:absolute;inset:0;"
+        "background:#e07a5f;opacity:0}"
+        f".tr-transitions-destruction .tds-hole{{position:absolute;left:50%;top:50%;"
+        f"width:{diagonal}px;height:{diagonal}px;"
+        f"margin:-{diagonal // 2}px 0 0 -{diagonal // 2}px;"
+        "border-radius:50%;overflow:hidden;display:block;"
+        "transform-origin:50% 50%}"
+        f".tr-transitions-destruction .tds-hole .tds-a{{position:absolute;"
+        f"left:50%;top:50%;width:{width}px;height:{height}px;"
+        f"margin:-{height // 2}px 0 0 -{width // 2}px;background:#1b263b}}"
+        ".tr-transitions-destruction .tds-big{font-family:Inter,system-ui,sans-serif;"
+        "font-size:280px;font-weight:900;line-height:1;letter-spacing:-0.04em;"
+        "user-select:none}"
+        ".tr-transitions-destruction .tds-a .tds-big{color:rgba(255,255,255,0.08)}"
+        ".tr-transitions-destruction .tds-b .tds-big{color:rgba(255,255,255,0.15)}"
+        ".tr-transitions-destruction .tds-label{font-family:Inter,system-ui,sans-serif;"
+        "font-size:40px;font-weight:700;letter-spacing:6px;"
+        "margin-top:12px}"
+        ".tr-transitions-destruction .tds-a .tds-label{color:#778da9}"
+        ".tr-transitions-destruction .tds-b .tds-label{color:#ffffff}"
+        f".tr-transitions-destruction .tds-ring{{position:absolute;left:50%;top:50%;"
+        f"width:{diagonal}px;height:{diagonal}px;"
+        f"margin:-{diagonal // 2}px 0 0 -{diagonal // 2}px;"
+        "border-radius:50%;display:block;opacity:0;"
+        "transform-origin:50% 50%;mix-blend-mode:screen}"
+        ".tr-transitions-destruction .tds-r0{"
+        "background:radial-gradient(circle,transparent 44%,"
+        "rgba(255,100,0,0.9) 50%,transparent 56%)}"
+        ".tr-transitions-destruction .tds-r1{"
+        "background:radial-gradient(circle,transparent 40%,"
+        "rgba(255,50,0,0.8) 50%,transparent 60%)}"
+        ".tr-transitions-destruction .tds-r2{"
+        "background:radial-gradient(circle,transparent 36%,"
+        "rgba(200,30,0,0.5) 50%,transparent 64%)}"
     )
 
 

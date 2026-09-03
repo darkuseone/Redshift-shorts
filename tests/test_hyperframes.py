@@ -576,6 +576,38 @@ def test_transitions_cover_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_transitions_destruction_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """clip-path и canvas каталога не вендорятся: круг scale, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_destruction", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-destruction" in out
+    assert "tds-a" in out and "tds-b" in out
+    assert "tds-hole" in out and "tds-r0" in out and "ONE" in out
+    assert "tr-transitions-cover" not in out
+    assert "tr-transitions-blur" not in out
+    assert "tr-transitions-3d" not in out
+    assert "tr-sdf-iris" not in out
+    assert 'class="clip tr-mask-circle"' not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "clipPath" not in tween_body
+    assert "onUpdate" not in tween_body
+    assert "<canvas" not in out
+    assert "filter" not in tween_body
+    assert "innerHTML" not in tween_body
+    assert "textContent" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

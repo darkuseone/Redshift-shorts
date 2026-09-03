@@ -438,6 +438,35 @@ def _tr_transitions_cover(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
 
 
+def _tr_transitions_destruction(incoming, outgoing, progress, params, ctx):
+    """Page burn stand-in: navy shrinks as a circle, orange fire, terracotta. Без canvas/clip-path."""
+    p = clamp01(progress)
+    eased = p * p
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    fire = np.array([255.0, 100.0, 0.0], dtype=np.float32)
+    ember = np.array([255.0, 50.0, 0.0], dtype=np.float32)
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = (xx / max(w - 1, 1) - 0.5) * (w / max(h, 1))
+    uv_y = yy / max(h - 1, 1) - 0.5
+    dist = np.sqrt(uv_x ** 2 + uv_y ** 2)
+    radius = max(0.0, 1.15 * (1.0 - eased))
+    fw = 0.004
+    inside = _smoothstep(radius + fw, radius - fw, dist)
+    card_a = a * 0.25 + navy * 0.75
+    b_fade = 0.0 if eased < 0.17 else min(1.0, (eased - 0.17) / 0.55)
+    card_b = b * (1.0 - b_fade) * 0.25 + terra * b_fade + np.array(
+        [0.0, 0.0, 0.0], dtype=np.float32) * (1.0 - b_fade) * 0.75
+    mixed = card_a * inside[..., None] + card_b * (1.0 - inside[..., None])
+    ring = np.exp(-np.abs(dist - radius) * 22.0) * (1.0 - eased) * min(eased * 6.0, 1.0)
+    mixed = mixed + fire * ring[..., None] * 0.85 + ember * ring[..., None] * 0.35
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
 def _tr_transitions_blur(incoming, outgoing, progress, params, ctx):
     """Blur through stand-in: navy → terracotta через GaussianBlur. Без tween filter."""
     p = clamp01(progress)
@@ -511,6 +540,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "transitions_3d": _tr_transitions_3d,
     "transitions_blur": _tr_transitions_blur,
     "transitions_cover": _tr_transitions_cover,
+    "transitions_destruction": _tr_transitions_destruction,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,
     "blur_dip": _tr_blur_dip,

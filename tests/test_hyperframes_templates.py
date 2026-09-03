@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-134 шаблона каталога — это рендереры с параметрами. Проверяется то, что
+135 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -166,7 +166,7 @@ def test_css_covers_every_layer_the_transitions_use():
                 ".tr-glitch-shader", ".tr-gravitational-lens", ".tr-light-leak",
                 ".tr-sdf-iris", ".tr-thermal-distortion", ".tr-whip-pan",
                 ".tr-mk-clone-wall", ".tr-transitions-3d", ".tr-transitions-blur",
-                ".tr-transitions-cover"):
+                ".tr-transitions-cover", ".tr-transitions-destruction"):
         assert cls in css, cls
 
 
@@ -2804,6 +2804,111 @@ def test_transitions_cover_keeps_catalog_magenta_and_purple():
     assert "position:absolute" not in stage
     stripped = css.replace("transform-origin:50% 50%", "")
     assert "transform:" not in stripped.split(".tr-transitions-cover", 1)[1]
+
+
+def test_transitions_destruction_burns_a_circle_without_clip_path_or_canvas(ctx):
+    """Каталог рисует canvas и clip-path; здесь scale круга overflow:hidden."""
+    piece = render_transition("transitions_destruction", TemplateCtx(**ctx.__dict__))
+    node = piece.nodes[0]
+    assert "tr-transitions-destruction" in node
+    assert "tds-stage" in node
+    assert "tds-face" in node and "tds-a" in node and "tds-b" in node
+    assert "tds-hole" in node
+    assert "tds-ring" in node and "tds-r0" in node and "tds-r1" in node and "tds-r2" in node
+    assert "ONE" in node and "TWO" in node
+    assert "SCENE A" in node and "SCENE B" in node
+    assert "position:absolute" not in node.split("tds-stage", 1)[0]
+    assert "<canvas" not in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "power1.in" in body
+    assert "power1.out" in body
+    assert "immediateRender:false" in body
+    assert "scale:25" in body or "scale:25." in body
+    assert "filter" not in body
+    assert "skewX" not in body
+    assert "rotationY" not in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "visibility" not in body
+    assert "clipPath" not in body
+    assert "zIndex" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _tds_times(ctx.duration)
+    assert times["burn_at"] + times["burn_dur"] <= ctx.duration + 1e-9
+    assert times["b_at"] + times["b_dur"] <= ctx.duration + 1e-9
+    assert times["burn_at"] + 0.001 <= times["b_at"] + 1e-9
+    assert times["kill_at"] <= ctx.duration + 1e-9
+    short = _tds_times(0.22)
+    assert short["burn_at"] + short["burn_dur"] <= 0.22 + 1e-9
+    assert short["b_at"] + short["b_dur"] <= 0.22 + 1e-9
+    dip = render_transition("blur_dip", TemplateCtx(
+        index=1, start=0.0, duration=0.2, target="shot-01", track=11))
+    assert "tr-transitions-destruction" not in dip.nodes[0]
+    three = render_transition("transitions_3d", TemplateCtx(
+        index=2, start=0.0, duration=0.2, target="shot-02", track=11))
+    assert "tr-transitions-destruction" not in three.nodes[0]
+    blur = render_transition("transitions_blur", TemplateCtx(
+        index=4, start=0.0, duration=0.2, target="shot-04", track=11))
+    assert "tr-transitions-destruction" not in blur.nodes[0]
+    cover = render_transition("transitions_cover", TemplateCtx(
+        index=5, start=0.0, duration=0.2, target="shot-05", track=11))
+    assert "tr-transitions-destruction" not in cover.nodes[0]
+    iris = render_transition("sdf_iris", TemplateCtx(
+        index=6, start=0.0, duration=0.2, target="shot-06", track=11))
+    assert "tr-transitions-destruction" not in iris.nodes[0]
+    mask = render_transition("mask_wipe", TemplateCtx(
+        index=7, start=0.0, duration=0.2, target="shot-07", track=11,
+        params={"shape": "circle"}))
+    assert "tr-transitions-destruction" not in mask.nodes[0]
+
+
+def test_transitions_destruction_keeps_catalog_navy_terra_and_fire():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-transitions-destruction" in css
+    face_a = re.search(
+        r"\.tr-transitions-destruction \.tds-hole \.tds-a\{[^}]+\}", css).group(0)
+    face_b = re.search(r"\.tr-transitions-destruction \.tds-b\{[^}]+\}", css).group(0)
+    ring0 = re.search(r"\.tr-transitions-destruction \.tds-r0\{[^}]+\}", css).group(0)
+    ring1 = re.search(r"\.tr-transitions-destruction \.tds-r1\{[^}]+\}", css).group(0)
+    ring2 = re.search(r"\.tr-transitions-destruction \.tds-r2\{[^}]+\}", css).group(0)
+    assert "#1b263b" in face_a
+    assert "#e07a5f" in face_b
+    assert "255,100,0" in ring0
+    assert "255,50,0" in ring1
+    assert "200,30,0" in ring2
+    block = css.split(".tr-transitions-destruction", 1)[1]
+    assert "Inter" in block
+    assert "#778da9" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    assert "#ffc300" not in block
+    assert "text-transform" not in block
+    stage = re.search(r"\.tr-transitions-destruction \.tds-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".tr-transitions-destruction", 1)[1]
 
 
 OVERLAY_PARAMS = {

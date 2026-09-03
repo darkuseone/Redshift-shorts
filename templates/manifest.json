@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 24,
+    "transitions": 25,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 134
+    "_total": 135
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2011,6 +2011,25 @@
         "wipe"
       ],
       "renderer": "transitions_cover",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-destruction",
+      "name": "transitions-destruction",
+      "category": "transitions",
+      "title": "Page burn: SCENE A сгорает кругом, SCENE B проявляется — transitions-destruction",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "burn",
+        "destruction"
+      ],
+      "renderer": "transitions_destruction",
       "last_used_in": [],
       "added": "2026-09-03"
     },
