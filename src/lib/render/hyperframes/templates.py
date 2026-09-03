@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-121 шаблонов каталога — это не 121 реализаций, а набор рендереров с параметрами.
+122 шаблонов каталога — это не 122 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -4703,6 +4703,485 @@ def fs_apple_terminal_clear_dark(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог Dark+: VS Code workbench, getBoundingClientRect, rotateY/z,
+# classList и repeat:25 на каретке. Здесь заранее x/y, 2D rotation/x,
+# span-ы и конечные blink. Цвета Dark+ — жест темы, не палитра канала.
+_DP_TYPE_AT = 0.95
+_DP_CHAR_PER = 0.012
+_DP_LINE_MIN = 0.08
+_DP_LINE_GAP = 0.045
+_DP_HDR_DUR = 0.45
+_DP_WB_AT = 0.10
+_DP_WB_DUR = 0.58
+_DP_HL_AT = 0.74
+_DP_HL_DUR = 0.22
+_DP_TERM_AT = 7.55
+_DP_TERM_DUR = 0.56
+_DP_TB_AT = 8.05
+_DP_TB_DUR = 0.24
+_DP_TB_STAGGER = 0.16
+_DP_TILT_AT = 9.35
+_DP_TILT_DUR = 0.72
+_DP_UNTILT_AT = 10.08
+_DP_UNTILT_DUR = 0.62
+_DP_TILT_ROT = -5.5
+_DP_TILT_X = 22
+_DP_CATALOG_END = 10.70
+_DP_FRAME_W = 1080
+_DP_FRAME_H = 1920
+_DP_SIZE_FLOOR = 12
+_DP_SIZE_CEILING = 18
+_DP_LABEL = "Dark+"
+_DP_FILE = "functional_toolkit.py"
+_DP_KICKER = "Official VS Code built-in theme"
+_DP_TITLE = "functional-toolkit - Visual Studio Code"
+_DP_TERM_LINES = (
+    ("functional-toolkit %", "python -m pytest"),
+    ("", "collected 3 items"),
+    ("", "tests/test_toolkit.py ... passed"),
+)
+_DP_DEMO: tuple[tuple[tuple[str, str], ...], ...] = (
+    (("# A small functional toolkit", "comment"),),
+    (("def", "keyword"), (" ", "plain"), ("pluck_deep", "function"),
+     ("(", "punctuation"), ("key", "parameter"), ("):", "punctuation")),
+    (("    ", "plain"), ("return", "keyword"), (" ", "plain"),
+     ("lambda", "keyword"), (" ", "plain"), ("obj", "parameter"),
+     (": ", "punctuation"), ("reduce", "function"), ("(", "punctuation"),
+     ("lambda", "keyword"), (" ", "plain"), ("acc", "parameter"),
+     (", ", "punctuation"), ("k", "parameter"), (": ", "punctuation"),
+     ("acc", "variable"), ("[", "punctuation"), ("k", "variable"),
+     ("]", "punctuation"), (", ", "punctuation"), ("key", "variable"),
+     (".split", "function"), ("(", "punctuation"), ("'.'", "string"),
+     ("), ", "punctuation"), ("obj", "variable"), (")", "punctuation")),
+    (),
+    (("def", "keyword"), (" ", "plain"), ("compose", "function"),
+     ("(", "punctuation"), ("*", "operator"), ("fns", "parameter"),
+     ("):", "punctuation")),
+    (("    ", "plain"), ("return", "keyword"), (" ", "plain"),
+     ("lambda", "keyword"), (" ", "plain"), ("res", "parameter"),
+     (": ", "punctuation"), ("reduce", "function"), ("(", "punctuation"),
+     ("lambda", "keyword"), (" ", "plain"), ("acc", "parameter"),
+     (", ", "punctuation"), ("fn", "parameter"), (": ", "punctuation"),
+     ("fn", "function"), ("(", "punctuation"), ("acc", "variable"),
+     ("), ", "punctuation"), ("fns", "variable"), (", ", "punctuation"),
+     ("res", "variable"), (")", "punctuation")),
+    (),
+    (("def", "keyword"), (" ", "plain"), ("unfold", "function"),
+     ("(", "punctuation"), ("f", "parameter"), (", ", "punctuation"),
+     ("seed", "parameter"), ("):", "punctuation")),
+    (("    ", "plain"),
+     ('"""Build a list by repeatedly applying f to a seed."""', "string")),
+    (("    acc", "variable"), (" = ", "operator"), ("[]", "punctuation")),
+    (("    while", "keyword"), (" ", "plain"), ("True", "class-name"),
+     (":", "punctuation")),
+    (("        result", "variable"), (" = ", "operator"), ("f", "function"),
+     ("(", "punctuation"), ("seed", "variable"), (")", "punctuation")),
+    (("        if", "keyword"), (" ", "plain"), ("result", "variable"),
+     (" is ", "keyword"), ("None", "class-name"), (":", "punctuation")),
+    (("            return", "keyword"), (" ", "plain"),
+     ("acc", "variable")),
+    (("        acc", "variable"), (".append", "function"),
+     ("(", "punctuation"), ("result", "variable"), ("[", "punctuation"),
+     ("0", "number"), ("])", "punctuation")),
+    (("        seed", "variable"), (" = ", "operator"),
+     ("result", "variable"), ("[", "punctuation"), ("1", "number"),
+     ("]", "punctuation")),
+    (),
+)
+
+
+def _dp_kind(text: str, color: str) -> str:
+    if color == _C3D_KW_COLOR:
+        return "keyword"
+    if color == _C3D_FN_COLOR:
+        return "function"
+    if color == _C3D_STR_COLOR:
+        return "string"
+    if color == _C3D_CMT_COLOR:
+        return "comment"
+    if color == _C3D_PARAM_COLOR:
+        return "parameter"
+    if color == _C3D_VAR_COLOR:
+        stripped = text.strip()
+        if stripped[:1].isdigit():
+            return "number"
+        return "variable"
+    stripped = text.strip()
+    if stripped and not any(ch.isalnum() or ch == "_" for ch in stripped):
+        return "punctuation"
+    return "plain"
+
+
+def _dp_lines(params: dict[str, Any], code: str
+              ) -> tuple[list[list[tuple[str, str]]], str]:
+    text = code.strip("\n")
+    if not text.strip():
+        return [list(line) for line in _DP_DEMO], str(params.get("filename") or _DP_FILE)
+    rows = _c3d_highlight(text)
+    lines = [[(piece, _dp_kind(piece, color)) for piece, color in row]
+             for row in rows]
+    return lines, str(params.get("filename") or "snippet.py")
+
+
+def _dp_times(duration: float, line_ns: list[int]) -> dict[str, Any]:
+    """Каталог на 11 с: набор с 0.95, терминал 7.55, наклон 9.35."""
+    d = max(2.0, float(duration))
+    hdr_dur = _DP_HDR_DUR
+    wb_at = _DP_WB_AT
+    wb_dur = _DP_WB_DUR
+    hl_at = _DP_HL_AT
+    hl_dur = _DP_HL_DUR
+    type_at = _DP_TYPE_AT
+    char_per = _DP_CHAR_PER
+    line_min = _DP_LINE_MIN
+    line_gap = _DP_LINE_GAP
+    term_at = _DP_TERM_AT
+    term_dur = _DP_TERM_DUR
+    tb_at = _DP_TB_AT
+    tb_dur = _DP_TB_DUR
+    tb_stagger = _DP_TB_STAGGER
+    tilt_at = _DP_TILT_AT
+    tilt_dur = _DP_TILT_DUR
+    untilt_at = _DP_UNTILT_AT
+    untilt_dur = _DP_UNTILT_DUR
+    packed = _DP_CATALOG_END
+    if packed > d - 0.04:
+        fit = (d - 0.04) / packed
+        hdr_dur *= fit
+        wb_at *= fit
+        wb_dur *= fit
+        hl_at *= fit
+        hl_dur *= fit
+        type_at *= fit
+        char_per *= fit
+        line_min *= fit
+        line_gap *= fit
+        term_at *= fit
+        term_dur *= fit
+        tb_at *= fit
+        tb_dur *= fit
+        tb_stagger *= fit
+        tilt_at *= fit
+        tilt_dur *= fit
+        untilt_at *= fit
+        untilt_dur *= fit
+    char_per = max(0.004, char_per)
+    caret_dur = round(max(0.003, char_per - 0.002), 5)
+    if caret_dur >= char_per - 5e-4:
+        caret_dur = round(max(0.003, char_per * 0.7), 5)
+    char_fade = round(max(0.003, min(0.01, char_per * 0.6)), 5)
+    line_at: list[float] = []
+    char_at: list[float] = []
+    cursor = type_at
+    for n in line_ns:
+        line_at.append(round(cursor, 5))
+        for i in range(int(n)):
+            char_at.append(round(cursor + i * char_per, 5))
+        cursor += max(n * char_per, line_min) + line_gap
+    if untilt_at < tilt_at + tilt_dur + 0.001:
+        untilt_at = tilt_at + tilt_dur + 0.001
+    return {
+        "hdr_dur": round(hdr_dur, 4),
+        "wb_at": round(wb_at, 4),
+        "wb_dur": round(wb_dur, 4),
+        "hl_at": round(hl_at, 4),
+        "hl_dur": round(hl_dur, 4),
+        "type_at": round(type_at, 4),
+        "char_per": round(char_per, 5),
+        "caret_dur": caret_dur,
+        "char_fade": char_fade,
+        "line_at": line_at,
+        "char_at": char_at,
+        "term_at": round(term_at, 4),
+        "term_dur": round(term_dur, 4),
+        "tb_at": round(tb_at, 4),
+        "tb_dur": round(tb_dur, 4),
+        "tb_stagger": round(tb_stagger, 4),
+        "tilt_at": round(tilt_at, 4),
+        "tilt_dur": round(tilt_dur, 4),
+        "untilt_at": round(untilt_at, 4),
+        "untilt_dur": round(untilt_dur, 4),
+    }
+
+
+def _dp_metrics(raws: list[str], frame_w: int, frame_h: int) -> dict[str, int]:
+    pad_x = 24
+    pad_y = 28
+    header_h = 78
+    gap = 12
+    wb_w = max(640, frame_w - pad_x * 2)
+    wb_h = min(int(round(frame_h * 0.78)), frame_h - pad_y * 2 - header_h - gap)
+    activity = 44
+    sidebar = min(168, max(120, int(round(wb_w * 0.20))))
+    editor_w = max(280, wb_w - activity - sidebar)
+    title_h, status_h, tab_h, crumb_h, term_h = 32, 24, 32, 24, 96
+    longest = max((len(row) for row in raws), default=8)
+    n = max(1, len(raws))
+    inner = max(80, editor_w - 56)
+    size = _DP_SIZE_CEILING
+    lh = max(20, int(round(size * 1.52)))
+    gutter = max(40, int(round(size * 72 / 18)))
+    pad_top = max(10, int(round(size * 20 / 18)))
+    editor_h = wb_h - title_h - status_h - tab_h - crumb_h - term_h
+    while (longest * size * _C3D_MONO_EM > inner
+            or n * lh + pad_top + 8 > editor_h) and size > _DP_SIZE_FLOOR:
+        size -= 1
+        lh = max(18, int(round(size * 1.52)))
+        gutter = max(36, int(round(size * 72 / 18)))
+        pad_top = max(8, int(round(size * 20 / 18)))
+    caret_h = max(12, int(round(size * 22 / 18)))
+    return {
+        "wb_w": wb_w, "wb_h": wb_h, "activity": activity, "sidebar": sidebar,
+        "title_h": title_h, "status_h": status_h, "tab_h": tab_h,
+        "crumb_h": crumb_h, "term_h": term_h, "size": size, "lh": lh,
+        "gutter": gutter, "pad_top": pad_top, "caret_h": caret_h,
+        "header_h": header_h, "pad_x": pad_x, "pad_y": pad_y,
+    }
+
+
+def fs_dark_plus(ctx: "TemplateCtx") -> Piece:
+    """VS Code Dark+: каталог меряет DOM и крутит rotateY.
+
+    Здесь ширина глифа из JetBrains Mono, заранее x/y каретки, наклон —
+    ``rotation``/``x``. Твины на хроме / знаках / каретке, не на ``.clip``.
+    Цвета Dark+ и ``#0078d4`` как в каталоге — жест темы, не палитра канала.
+    """
+    params = ctx.params
+    code = str(params.get("code") or params.get("content") or params.get("text")
+               or "").replace("\r\n", "\n").replace("\t", "  ")
+    lines, filename = _dp_lines(params, code)
+    if not lines:
+        return Piece()
+    raws = ["".join(text for text, _kind in line) for line in lines]
+    glyphs: list[tuple[str, str, int]] = []
+    line_ns: list[int] = []
+    for li, line in enumerate(lines):
+        n = 0
+        for text, kind in line:
+            for ch in text:
+                glyphs.append((ch, kind, li))
+                n += 1
+        line_ns.append(n)
+    node_id = ctx.target
+    frame_w = int(params.get("frame_w") or _DP_FRAME_W)
+    frame_h = int(params.get("frame_h") or _DP_FRAME_H)
+    m = _dp_metrics(raws, frame_w, frame_h)
+    t = _dp_times(ctx.duration, line_ns)
+    at = _enter_at(ctx)
+    invert = " invert" if params.get("invert") else ""
+    font = _cpa_mono_font(m["size"])
+    em = m["size"] * _C3D_MONO_EM
+    if font is not None:
+        try:
+            measured = float(font.getlength("M"))
+            if measured > 0:
+                em = measured
+        except Exception:                                    # noqa: BLE001
+            pass
+    xs: list[float] = []
+    ys: list[float] = []
+    cursor_x = 0.0
+    prev_li = 0
+    for ch, _kind, li in glyphs:
+        if li != prev_li:
+            cursor_x = 0.0
+            prev_li = li
+        wide = _ct_advance(ch, font, em)
+        xs.append(m["gutter"] + cursor_x + 2)
+        ys.append(m["pad_top"] + li * m["lh"] + 3)
+        cursor_x += wide
+    origin_x = m["gutter"]
+    origin_y = m["pad_top"] + 3
+    tweens = [
+        f'tl.fromTo("#{node_id}-hdr",{{opacity:0,y:24}},'
+        f'{{opacity:1,y:0,duration:{_num(t["hdr_dur"])},'
+        f'ease:"power3.out"}},{_num(at)});',
+        f'tl.fromTo("#{node_id}-wb",'
+        f'{{opacity:0,y:42,scale:0.986}},'
+        f'{{opacity:1,y:0,scale:1,duration:{_num(t["wb_dur"])},'
+        f'ease:"power3.out"}},{_num(at + t["wb_at"])});',
+        f'tl.fromTo("#{node_id}-hl",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(t["hl_dur"])},ease:"power2.out"}},'
+        f'{_num(at + t["hl_at"])});',
+        f'tl.set("#{node_id}-caret",{{x:{_ct_num(origin_x)},'
+        f'y:{_ct_num(origin_y)}}},{_num(at)});',
+    ]
+    prev_y = 0
+    for i, when in enumerate(t["line_at"]):
+        dest = i * m["lh"]
+        if i == 0:
+            continue
+        tweens.append(
+            f'tl.fromTo("#{node_id}-hl",{{y:{_ct_num(prev_y)}}},'
+            f'{{y:{_ct_num(dest)},duration:0.03,ease:"none",'
+            f'immediateRender:false}},{_num(at + when)});')
+        prev_y = dest
+    prev_x = origin_x
+    prev_cy = origin_y
+    prev_li = 0
+    for i, ((ch, _kind, li), when) in enumerate(zip(glyphs, t["char_at"])):
+        if li != prev_li:
+            dest_x = origin_x
+            dest_y = m["pad_top"] + li * m["lh"] + 3
+            tweens.append(
+                f'tl.fromTo("#{node_id}-caret",'
+                f'{{x:{_ct_num(prev_x)},y:{_ct_num(prev_cy)}}},'
+                f'{{x:{_ct_num(dest_x)},y:{_ct_num(dest_y)},duration:0.001,'
+                f'ease:"none",immediateRender:false}},'
+                f'{_num(at + t["line_at"][li])});')
+            prev_x, prev_cy = dest_x, dest_y
+            prev_li = li
+        fade = t["char_fade"]
+        tweens.append(
+            f'tl.fromTo("#{node_id}-c{i}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_ct_num(fade)},ease:"none"}},'
+            f'{_num(at + when)});')
+        caret_start = at + when + 0.002
+        tweens.append(
+            f'tl.fromTo("#{node_id}-caret",'
+            f'{{x:{_ct_num(prev_x)},y:{_ct_num(prev_cy)}}},'
+            f'{{x:{_ct_num(xs[i])},y:{_ct_num(ys[i])},'
+            f'duration:{_ct_num(t["caret_dur"])},ease:"none",'
+            f'immediateRender:false}},{_num(caret_start)});')
+        prev_x, prev_cy = xs[i], ys[i]
+    last_char = (t["char_at"][-1] if t["char_at"] else t["type_at"])
+    blink0 = last_char + 0.08
+    blink_gap = 0.40
+    blink_dur = 0.05
+    hold_limit = ctx.duration - 0.04
+    if at + blink0 + 5 * blink_gap + blink_dur > ctx.start + hold_limit:
+        span = max(0.3, (ctx.start + hold_limit) - (at + blink0))
+        blink_gap = max(0.08, span / 6)
+        blink_dur = min(0.05, blink_gap - 0.002)
+    for i in range(6):
+        start = at + blink0 + i * blink_gap
+        going_off = i % 2 == 0
+        fr, to = (1, 0) if going_off else (0, 1)
+        extra = ",immediateRender:false" if i else ""
+        tweens.append(
+            f'tl.fromTo("#{node_id}-caret",{{opacity:{fr}}},'
+            f'{{opacity:{to},duration:{_ct_num(blink_dur)},ease:"none"'
+            f'{extra}}},{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-term",{{opacity:0,y:140}},'
+        f'{{opacity:1,y:0,duration:{_num(t["term_dur"])},'
+        f'ease:"power3.out"}},{_num(at + t["term_at"])});')
+    for i in range(3):
+        tweens.append(
+            f'tl.fromTo("#{node_id}-tb{i}",{{opacity:0,y:8}},'
+            f'{{opacity:1,y:0,duration:{_num(t["tb_dur"])},'
+            f'ease:"power2.out"}},{_num(at + t["tb_at"] + i * t["tb_stagger"])});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-wb",{{rotation:0,x:0}},'
+        f'{{rotation:{_num(_DP_TILT_ROT)},x:{_DP_TILT_X},'
+        f'duration:{_num(t["tilt_dur"])},ease:"power2.inOut",'
+        f'immediateRender:false}},{_num(at + t["tilt_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-wb",'
+        f'{{rotation:{_num(_DP_TILT_ROT)},x:{_DP_TILT_X}}},'
+        f'{{rotation:0,x:0,duration:{_num(t["untilt_dur"])},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(at + t["untilt_at"])});')
+    idx = 0
+    lines_html: list[str] = []
+    for li, line in enumerate(lines):
+        bits: list[str] = []
+        for text, kind in line:
+            cls = "" if kind in ("", "plain") else f" dp-tok-{kind}"
+            for ch in text:
+                bits.append(
+                    f'<span id="{node_id}-c{idx}" class="dp-ch{cls}">'
+                    f'{_esc(ch)}</span>')
+                idx += 1
+        if not bits:
+            bits.append(" ")
+        lines_html.append(
+            f'<span class="dp-line" style="height:{m["lh"]}px;'
+            f'grid-template-columns:{m["gutter"]}px 1fr">'
+            f'<span class="dp-ln">{li + 1}</span>'
+            f'<span class="dp-code">{"".join(bits)}</span></span>')
+    source = (
+        f'Typing `{_esc(filename)}` with workbench colors from '
+        f'<span class="dp-src">dark_plus.json</span>.')
+    term_rows = []
+    for i, (prompt, rest) in enumerate(_DP_TERM_LINES):
+        prompt_html = (f'<span class="dp-prompt">{_esc(prompt)}</span> '
+                       if prompt else "")
+        extra = ""
+        if "passed" in rest:
+            body, _, tail = rest.rpartition(" ")
+            extra = f'{_esc(body)} <span class="dp-tok-comment">{_esc(tail)}</span>'
+        else:
+            extra = _esc(rest)
+        term_rows.append(
+            f'<span id="{node_id}-tb{i}" class="dp-tb">{prompt_html}{extra}</span>')
+    icons = (
+        '<svg class="dp-icon dp-icon-on" viewBox="0 0 24 24" aria-hidden="true">'
+        '<path fill="currentColor" d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z"/>'
+        '</svg>'
+        '<svg class="dp-icon" viewBox="0 0 24 24" aria-hidden="true">'
+        '<path fill="none" stroke="currentColor" stroke-width="2" '
+        'd="m21 21-5.2-5.2M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/>'
+        '</svg>'
+        '<svg class="dp-icon" viewBox="0 0 24 24" aria-hidden="true">'
+        '<path fill="none" stroke="currentColor" stroke-width="2" '
+        'd="M8 18 3 12l5-6m8 12 5-6-5-6"/>'
+        '</svg>'
+        '<svg class="dp-icon" viewBox="0 0 24 24" aria-hidden="true">'
+        '<path fill="none" stroke="currentColor" stroke-width="2" '
+        'd="M12 3v18m0-18 6 6m-6-6L6 9m6 12 6-6m-6 6-6-6"/>'
+        '</svg>'
+    )
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text '
+               f'fs-dark-plus{invert}" {_timing(ctx)}>'
+               f'<span class="dp-stage" style="padding:{m["pad_y"]}px {m["pad_x"]}px">'
+               f'<span id="{node_id}-hdr" class="dp-header">'
+               f'<span class="dp-head-l"><span class="dp-kicker">{_esc(_DP_KICKER)}</span>'
+               f'<span class="dp-title">{_esc(_DP_LABEL)}</span></span>'
+               f'<span class="dp-note">{source}</span></span>'
+               f'<span id="{node_id}-wb" class="dp-wb" style="width:{m["wb_w"]}px;'
+               f'height:{m["wb_h"]}px;grid-template-columns:{m["activity"]}px '
+               f'{m["sidebar"]}px 1fr;grid-template-rows:{m["title_h"]}px 1fr '
+               f'{m["status_h"]}px">'
+               f'<span class="dp-titlebar">'
+               f'<span class="dp-traffic"><span></span><span></span><span></span></span>'
+               f'<span class="dp-wintitle">{_esc(_DP_TITLE)}</span>'
+               f'<span class="dp-search">Search</span></span>'
+               f'<span class="dp-activity">{icons}</span>'
+               f'<span class="dp-sidebar"><span class="dp-side-title">Explorer</span>'
+               f'<span class="dp-sec">⌄ Functional Toolkit</span>'
+               f'<span class="dp-tree">'
+               f'<span class="dp-row">⌄ src</span>'
+               f'<span class="dp-row dp-child dp-sel">◇ {_esc(filename)}</span>'
+               f'<span class="dp-row dp-child">◇ test_toolkit.py</span>'
+               f'<span class="dp-row">◇ pyproject.toml</span>'
+               f'<span class="dp-row">◇ README.md</span></span></span>'
+               f'<span class="dp-editor-area" style="grid-template-rows:{m["tab_h"]}px '
+               f'{m["crumb_h"]}px 1fr {m["term_h"]}px">'
+               f'<span class="dp-tabs"><span class="dp-tab">◇ {_esc(filename)}</span>'
+               f'<span class="dp-tab dp-tab-off">README.md</span></span>'
+               f'<span class="dp-crumbs">functional-toolkit › src › {_esc(filename)}</span>'
+               f'<span class="dp-editor" style="font-size:{m["size"]}px">'
+               f'<span id="{node_id}-hl" class="dp-hl" style="top:{m["pad_top"]}px;'
+               f'height:{m["lh"]}px"></span>'
+               f'<span class="dp-col" style="padding:{m["pad_top"]}px 12px 8px 0">'
+               f'{"".join(lines_html)}</span>'
+               f'<span id="{node_id}-caret" class="dp-caret" '
+               f'style="width:2px;height:{m["caret_h"]}px"></span></span>'
+               f'<span id="{node_id}-term" class="dp-term">'
+               f'<span class="dp-ptabs"><span class="dp-pon">Terminal</span>'
+               f'<span>Problems</span><span>Output</span></span>'
+               f'<span class="dp-tbody">{"".join(term_rows)}</span></span></span>'
+               f'<span class="dp-status"><span class="dp-stat-l">'
+               f'<span class="dp-remote">main</span><span>0 errors</span>'
+               f'<span>0 warnings</span></span>'
+               f'<span class="dp-stat-r"><span>Ln 17, Col 1</span>'
+               f'<span>Spaces: 4</span><span>UTF-8</span></span></span>'
+               f'</span></span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -4723,6 +5202,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "code_typing": fs_code_typing,
     "terminal_simulator": fs_terminal_simulator,
     "apple_terminal_clear_dark": fs_apple_terminal_clear_dark,
+    "dark_plus": fs_dark_plus,
     "number_slam": fs_number_slam,
 }
 
@@ -4767,6 +5247,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_terminal_simulator(ctx)
     if params.get("apple_terminal_clear_dark"):
         return fs_apple_terminal_clear_dark(ctx)
+    if params.get("dark_plus"):
+        return fs_dark_plus(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -5737,6 +6219,127 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .atcd-cursor{display:inline-block;flex:0 0 auto;"
         "background:#888888;margin-left:1px;vertical-align:text-bottom;"
         "will-change:opacity}"
+        ".fullscreen-text.fs-dark-plus{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:flex;"
+        "align-items:stretch;justify-content:center;"
+        "background:linear-gradient(180deg,rgba(0,0,0,0.16),rgba(0,0,0,0.32)),#0a0a0a;"
+        "color:#d4d4d4;font-family:Inter,system-ui,sans-serif;font-weight:400;"
+        "text-transform:none;letter-spacing:0}"
+        ".fullscreen-text.fs-dark-plus.invert{"
+        "background:linear-gradient(180deg,rgba(0,0,0,0.16),rgba(0,0,0,0.32)),#0a0a0a;"
+        "color:#d4d4d4}"
+        ".fullscreen-text .dp-stage{position:relative;display:flex;"
+        "flex-direction:column;gap:12px;width:100%;height:100%;box-sizing:border-box}"
+        ".fullscreen-text .dp-header{display:flex;align-items:flex-end;"
+        "justify-content:space-between;flex:0 0 auto;will-change:transform,opacity}"
+        ".fullscreen-text .dp-kicker{display:block;margin:0 0 7px;color:#6e7681;"
+        "font-size:13px;font-weight:650;text-transform:uppercase}"
+        ".fullscreen-text .dp-title{display:block;color:#cccccc;font-size:36px;"
+        "line-height:1;font-weight:760;text-transform:none}"
+        ".fullscreen-text .dp-note{width:42%;color:#6e7681;font-size:14px;"
+        "line-height:1.35;text-align:right;text-transform:none}"
+        ".fullscreen-text .dp-src{color:#9d9d9d}"
+        ".fullscreen-text .dp-wb{position:relative;display:grid;overflow:hidden;"
+        "border:1px solid #2b2b2b;border-radius:8px;background:#1e1e1e;"
+        "box-shadow:0 34px 90px rgba(0,0,0,0.42);transform-origin:82% 50%;"
+        "will-change:transform,opacity}"
+        ".fullscreen-text .dp-titlebar{grid-column:1/-1;display:grid;"
+        "grid-template-columns:110px 1fr 160px;align-items:center;"
+        "background:#181818;color:#cccccc;border-bottom:1px solid #2b2b2b;"
+        "font-size:12px}"
+        ".fullscreen-text .dp-traffic{display:flex;gap:8px;padding-left:16px}"
+        ".fullscreen-text .dp-traffic span{display:block;width:12px;height:12px;"
+        "border-radius:999px}"
+        ".fullscreen-text .dp-traffic span:nth-child(1){background:#ff5f57}"
+        ".fullscreen-text .dp-traffic span:nth-child(2){background:#ffbd2e}"
+        ".fullscreen-text .dp-traffic span:nth-child(3){background:#28c840}"
+        ".fullscreen-text .dp-wintitle{justify-self:center;opacity:0.84;"
+        "text-transform:none}"
+        ".fullscreen-text .dp-search{justify-self:end;width:140px;height:20px;"
+        "margin-right:12px;display:flex;align-items:center;justify-content:center;"
+        "border:1px solid rgba(204,204,204,0.22);border-radius:5px;color:#9d9d9d}"
+        ".fullscreen-text .dp-activity{grid-row:2/3;background:#181818;"
+        "border-right:1px solid #2b2b2b;display:flex;flex-direction:column;"
+        "align-items:center;padding:10px 0;gap:16px}"
+        ".fullscreen-text .dp-icon{display:block;width:22px;height:22px;"
+        "color:#868686}"
+        ".fullscreen-text .dp-icon-on{color:#d7d7d7;border-left:2px solid #0078d4;"
+        "padding-left:3px}"
+        ".fullscreen-text .dp-sidebar{grid-row:2/3;background:#181818;color:#cccccc;"
+        "border-right:1px solid #2b2b2b;display:flex;flex-direction:column;"
+        "min-width:0;text-transform:none}"
+        ".fullscreen-text .dp-side-title{height:32px;display:flex;align-items:center;"
+        "padding:0 16px;font-size:11px;text-transform:uppercase;color:#bbbbbb}"
+        ".fullscreen-text .dp-sec{height:22px;display:flex;align-items:center;"
+        "gap:6px;padding:0 12px;background:#1f1f1f;border-top:1px solid #2b2b2b;"
+        "border-bottom:1px solid #2b2b2b;font-size:11px;font-weight:700}"
+        ".fullscreen-text .dp-tree{padding:6px 0;font-size:12px;line-height:22px}"
+        ".fullscreen-text .dp-row{display:flex;align-items:center;height:22px;"
+        "padding:0 8px 0 14px;color:#cccccc;white-space:nowrap}"
+        ".fullscreen-text .dp-child{padding-left:28px}"
+        ".fullscreen-text .dp-sel{background:rgba(204,204,204,0.12)}"
+        ".fullscreen-text .dp-editor-area{grid-row:2/3;display:grid;min-width:0;"
+        "background:#1e1e1e}"
+        ".fullscreen-text .dp-tabs{display:flex;background:#181818;"
+        "border-bottom:1px solid #2b2b2b}"
+        ".fullscreen-text .dp-tab{height:32px;display:flex;align-items:center;"
+        "gap:8px;padding:0 12px;border-right:1px solid #2b2b2b;background:#1f1f1f;"
+        "color:#ffffff;border-top:2px solid #0078d4;font-size:12px;"
+        "text-transform:none}"
+        ".fullscreen-text .dp-tab-off{background:#181818;color:#9d9d9d;"
+        "border-top-color:transparent}"
+        ".fullscreen-text .dp-crumbs{display:flex;align-items:center;padding:0 14px;"
+        "color:#6e7681;border-bottom:1px solid #2b2b2b;font-size:11px;"
+        "text-transform:none}"
+        ".fullscreen-text .dp-editor{position:relative;overflow:hidden;"
+        "background:#1e1e1e;color:#d4d4d4;"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;"
+        "line-height:1.52;text-transform:none}"
+        ".fullscreen-text .dp-hl{position:absolute;left:0;right:0;"
+        "background:rgba(255,255,255,0.04);opacity:0;will-change:transform,opacity}"
+        ".fullscreen-text .dp-col{position:relative;display:block}"
+        ".fullscreen-text .dp-line{display:grid;grid-template-columns:48px 1fr;"
+        "align-items:center}"
+        ".fullscreen-text .dp-ln{padding-right:10px;color:#6e7681;text-align:right;"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace}"
+        ".fullscreen-text .dp-code{white-space:pre;text-align:left}"
+        ".fullscreen-text .dp-ch{display:inline;white-space:pre;opacity:0;"
+        "text-transform:none;will-change:opacity}"
+        ".fullscreen-text .dp-tok-comment{color:#6A9955}"
+        ".fullscreen-text .dp-tok-keyword{color:#d7ba7d}"
+        ".fullscreen-text .dp-tok-function{color:#DCDCAA}"
+        ".fullscreen-text .dp-tok-string{color:#d16969}"
+        ".fullscreen-text .dp-tok-number{color:#b5cea8}"
+        ".fullscreen-text .dp-tok-variable{color:#4FC1FF}"
+        ".fullscreen-text .dp-tok-parameter{color:#9CDCFE}"
+        ".fullscreen-text .dp-tok-operator{color:#d7ba7d}"
+        ".fullscreen-text .dp-tok-punctuation{color:#CE9178}"
+        ".fullscreen-text .dp-tok-class-name{color:#4EC9B0}"
+        ".fullscreen-text .dp-caret{position:absolute;left:0;top:0;z-index:3;"
+        "display:block;background:#d4d4d4;pointer-events:none;"
+        "will-change:transform,opacity}"
+        ".fullscreen-text .dp-term{display:grid;grid-template-rows:28px 1fr;"
+        "background:#181818;border-top:1px solid #2b2b2b;color:#d4d4d4;"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;font-size:12px;"
+        "opacity:0;text-transform:none;will-change:transform,opacity}"
+        ".fullscreen-text .dp-ptabs{display:flex;align-items:center;gap:18px;"
+        "padding:0 14px;border-bottom:1px solid #2b2b2b;color:#6e7681;"
+        "font-family:Inter,system-ui,sans-serif;font-size:11px;"
+        "text-transform:uppercase}"
+        ".fullscreen-text .dp-pon{color:#d4d4d4;border-bottom:1px solid #0078d4;"
+        "height:28px;display:flex;align-items:center}"
+        ".fullscreen-text .dp-tbody{padding:8px 16px;line-height:1.7}"
+        ".fullscreen-text .dp-tb{display:block;opacity:0;will-change:transform,opacity}"
+        ".fullscreen-text .dp-prompt{color:#DCDCAA}"
+        ".fullscreen-text .dp-status{grid-column:1/-1;display:flex;align-items:center;"
+        "justify-content:space-between;background:#181818;color:#cccccc;"
+        "border-top:1px solid #2b2b2b;font-size:11px}"
+        ".fullscreen-text .dp-stat-l,.fullscreen-text .dp-stat-r{display:flex;"
+        "align-items:center;gap:14px;padding:0 10px}"
+        ".fullscreen-text .dp-remote{align-self:stretch;display:flex;"
+        "align-items:center;padding:0 10px;margin-left:-10px;background:#16825D;"
+        "color:#ffffff}"
+        ".fullscreen-text .dp-stage svg{display:block}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

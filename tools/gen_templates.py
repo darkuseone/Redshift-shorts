@@ -54,7 +54,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (28, [
+    "text-fullscreen": (29, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -163,6 +163,12 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"apple_terminal_clear_dark": True},
          ["code", "developer", "showcase", "terminal", "apple", "apple-terminal"],
          "apple_terminal_clear_dark"),
+        ("dark-plus",
+         "VS Code Dark+: workbench и посимвольный набор — dark-plus",
+         [2.0, 11.0],
+         {"dark_plus": True},
+         ["code", "developer", "showcase", "vscode"],
+         "dark_plus"),
         ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),

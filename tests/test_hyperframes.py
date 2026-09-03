@@ -824,6 +824,31 @@ def test_apple_terminal_clear_dark_fullscreen_reaches_the_markup(
     assert ".atcd-window" in css
 
 
+def test_dark_plus_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = ""
+    plan["shots"][1]["duration"] = 8.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 8.0
+    plan["shots"][1]["params"] = {"dark_plus": True}
+    plan["shots"][1]["renderer"] = "dark_plus"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-dark-plus" in out
+    assert "dp-wb" in out and "dp-caret" in out
+    assert "Dark+" in out
+    plain = re.sub(r"<[^>]+>", "", out)
+    assert "pluck_deep" in plain
+    assert "PLUCK_DEEP" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "rotateY" not in tween_src
+    assert "getBoundingClientRect" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#0078d4" in css
+    assert ".dp-caret" in css
+    assert ".dp-wb" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

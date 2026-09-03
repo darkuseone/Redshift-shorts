@@ -1,17 +1,17 @@
 ---
 name: redshift-templates
-description: Каталог из 121 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
+description: Каталог из 122 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
 ---
 # redshift-templates
 
-121 шаблонов в 12 категориях (§15). Каталог генерируется
+122 шаблонов в 12 категориях (§15). Каталог генерируется
 `tools/gen_templates.py` — правь генератор, а не `templates/manifest.json`.
 У новых id есть поле `example_video` — референс-жест с examples HyperFrames.
 
 | Категория | Шт. | Назначение |
 |---|---|---|
 | `intro-hooks` | 8 | входы в ролик |
-| `text-fullscreen` | 28 | полноэкранный текст |
+| `text-fullscreen` | 29 | полноэкранный текст |
 | `lower-thirds` | 11 | плашки |
 | `frames-cards` | 7 | карточки источников |
 | `browser-ui` | 8 | окна интерфейсов |
@@ -29,7 +29,7 @@ description: Каталог из 121 шаблонов, ротация и раз�
    при наличии альтернативы.
 2. Наборы шаблонов версий A и B одного ролика **отличаются минимум на 3
    позиции**. Меньше — `AB_TOO_SIMILAR`, прогон останавливается.
-3. Редко используемые шаблоны получают приоритет: без этого каталог из 121
+3. Редко используемые шаблоны получают приоритет: без этого каталог из 122
    штук выродится в 5 любимых, и QC-17 начнёт стабильно падать.
 4. Новый шаблон добавляется с тегами и датой, обязателен тест-рендер 3 сек.
 
@@ -133,12 +133,16 @@ Mono, github-dark и прожектор `#58a6ff` как в каталоге —
 Каталог пишет `textContent` и `innerHTML`; здесь заранее span-ы и `opacity`.
 Сланец `#1a1a1a` и серый промпт `#888888` как в каталоге — профиль Clear Dark,
 не палитра канала. P11 ставит id первым на shell-командах `$`/`npx`/`npm`),
+`dark-plus` (VS Code workbench Dark+: набор кода и панель терминала.
+Каталог меряет DOM и крутит `rotateY`; здесь заранее `x`/`y` каретки и
+2D `rotation`/`x`. Цвета Dark+ и `#0078d4` как в каталоге — жест темы,
+не палитра канала. P11 ставит id первым на `def `),
 `number-slam-card`, лесенка, VS, swap, полоса, карточка факта. Версия A
 предпочитает кинетику, blur-out-up, буквы снизу, type-swap, line-slide,
 particle-dissolve, per-word-crossfade, scan-band, scramble-reveal,
 shared-axis-z, code-3d-extrude, code-diff, code-particle-assemble,
-code-scroll, code-typing, terminal-simulator, apple-terminal-clear-dark
-и цифру-удар.
+code-scroll, code-typing, terminal-simulator, apple-terminal-clear-dark,
+dark-plus и цифру-удар.
 
 `logo-brand-close` — identity close, не кнопка. Вордмарк каскадом по глифу,
 акцентная точка `accent`, слоган Nunito и URL моно с `scaleX`, затем HOLD
@@ -286,7 +290,7 @@ cut по-прежнему база ≥70 %.
 
 ## Каталог в терминах HTML/GSAP
 
-121 шаблонов — это **рендереры с параметрами**, а не 121 реализаций:
+122 шаблонов — это **рендереры с параметрами**, а не 122 реализаций:
 `fullscreen_text` и его варианты покрывают полноэкранные кадры, `source_card` /
 `chat_thread` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
 `lt_accent_underline` / `lt_clean_bar` / `lt_dark_card` — плашки, `kenburns` — проезд, `dataviz` — графики. Меняя шаблон, чаще всего

@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 28,
+    "text-fullscreen": 29,
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 121
+    "_total": 122
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -814,6 +814,28 @@
         "apple-terminal"
       ],
       "renderer": "apple_terminal_clear_dark",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/dark-plus",
+      "name": "dark-plus",
+      "category": "text-fullscreen",
+      "title": "VS Code Dark+: workbench и посимвольный набор — dark-plus",
+      "duration_range": [
+        2.0,
+        11.0
+      ],
+      "params": {
+        "dark_plus": true
+      },
+      "tags": [
+        "code",
+        "developer",
+        "showcase",
+        "vscode"
+      ],
+      "renderer": "dark_plus",
       "last_used_in": [],
       "added": "2026-09-03"
     },

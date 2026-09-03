@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-121 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+122 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -21,7 +21,7 @@ from src.lib.render.hyperframes.templates import (
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
-    _atcd_times, _sr_frame_table,
+    _atcd_times, _dp_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -1809,6 +1809,92 @@ def test_apple_terminal_clear_dark_keeps_clear_dark_slate():
         r"\.fullscreen-text\.fs-apple-terminal-clear-dark\.invert\{[^}]+\}",
         css).group(0)
     assert "#1a1a1a" in invert
+
+
+def test_dark_plus_types_code_inside_vscode_chrome():
+    """Каталог меряет DOM и крутит rotateY; здесь заранее x/y и 2D rotation."""
+    piece = render_fullscreen(_fs_ctx(
+        content="", renderer="dark_plus", dark_plus=True, duration=8.0))
+    node = piece.nodes[0]
+    assert "fs-dark-plus" in node
+    assert "dp-wb" in node and "dp-editor" in node and "dp-caret" in node
+    assert "Dark+" in node
+    assert "functional_toolkit.py" in node
+    plain = re.sub(r"<[^>]+>", "", node)
+    assert "pluck_deep" in plain
+    assert "compose" in plain
+    assert "unfold" in plain
+    assert "PLUCK_DEEP" not in node
+    assert "python -m pytest" in node
+    assert "position:absolute" not in node.split("dp-stage", 1)[0]
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    n_chars = node.count("dp-ch")
+    assert n_chars > 80
+    body = " ".join(piece.tweens)
+    assert "rotateY" not in body
+    assert "getBoundingClientRect" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "classList" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "onUpdate" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith("#shot-01-")
+    caret_xy = [tw for tw in piece.tweens
+                if "#shot-01-caret" in tw and "x:" in tw]
+    assert caret_xy
+    flagged = render_fullscreen(_fs_ctx(
+        content="", dark_plus=True, stagger_ms=55, duration=8.0))
+    assert "fs-dark-plus" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="dark_plus", duration=8.0))
+    assert "pluck_deep" in re.sub(r"<[^>]+>", "", empty.nodes[0])
+    times = _dp_times(11.0, [9] * 17)
+    assert abs(times["type_at"] - 0.95) < 1e-9
+    assert abs(times["term_at"] - 7.55) < 1e-9
+    assert abs(times["tilt_at"] - 9.35) < 1e-9
+    short = _dp_times(2.0, [9] * 17)
+    assert short["untilt_at"] + short["untilt_dur"] <= 2.0 + 1e-6
+    assert short["caret_dur"] < short["char_per"] - 5e-4
+
+
+def test_dark_plus_keeps_theme_tokens():
+    from src.lib.config import load_config
+
+    piece = render_fullscreen(_fs_ctx(
+        content="", renderer="dark_plus", duration=8.0))
+    node = piece.nodes[0]
+    assert "dp-traffic" in node and "dp-remote" in node
+    css = overlay_css(load_config().brandbook)
+    assert ".fs-dark-plus" in css
+    assert "JetBrains Mono" in css
+    assert "text-transform:none" in css
+    assert "#1E1E1E" in css or "#1e1e1e" in css
+    assert "#0078d4" in css
+    assert "#6A9955" in css or "#6a9955" in css
+    assert "#16825D" in css or "#16825d" in css
+    comment = re.search(r"\.dp-tok-comment\{[^}]+\}", css).group(0)
+    assert "#C8453D" not in comment
+    wb = re.search(r"\.dp-wb\{[^}]+\}", css).group(0)
+    assert "transform:" not in wb.replace("transform-origin:82% 50%", "").replace(
+        "will-change:transform,opacity", "")
+    stage = re.search(r"\.dp-stage\{[^}]+\}", css).group(0)
+    assert "position:absolute" not in stage
+    invert = re.search(
+        r"\.fullscreen-text\.fs-dark-plus\.invert\{[^}]+\}", css).group(0)
+    assert "#0a0a0a" in invert
 
 
 def test_number_slam_splits_the_caption():
