@@ -438,6 +438,32 @@ def _tr_transitions_cover(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
 
 
+def _tr_transitions_light(incoming, outgoing, progress, params, ctx):
+    """Light leak stand-in: navy → orange wash → terracotta. Без filter."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    warm = np.array([255.0, 165.0, 0.0], dtype=np.float32)
+    blob = np.array([255.0, 140.0, 0.0], dtype=np.float32)
+    if eased < 0.4:
+        t = eased / 0.4
+        mixed = a * (1.0 - t) + navy * t
+    elif eased < 0.55:
+        t = (eased - 0.4) / 0.15
+        mixed = navy * (1.0 - t) + warm * t
+    elif eased < 0.7:
+        t = (eased - 0.55) / 0.15
+        mixed = blob * (1.0 - t) + terra * t
+    else:
+        t = (eased - 0.7) / 0.3
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
 def _tr_transitions_destruction(incoming, outgoing, progress, params, ctx):
     """Page burn stand-in: navy shrinks as a circle, orange fire, terracotta. Без canvas/clip-path."""
     p = clamp01(progress)
@@ -540,6 +566,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "transitions_3d": _tr_transitions_3d,
     "transitions_blur": _tr_transitions_blur,
     "transitions_cover": _tr_transitions_cover,
+    "transitions_light": _tr_transitions_light,
     "transitions_destruction": _tr_transitions_destruction,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,

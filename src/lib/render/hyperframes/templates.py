@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-135 шаблонов каталога — это не 135 реализаций, а набор рендереров с параметрами.
+136 шаблонов каталога — это не 136 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1223,6 +1223,132 @@ def tr_transitions_cover(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_TLT_CATALOG_SEC = 2.4
+_TLT_L1_IN_X = 169
+_TLT_L1_OUT_X = 338
+_TLT_L2_IN_X = 112
+_TLT_L2_OUT_X = 225
+
+
+def _tlt_times(duration: float) -> dict[str, float]:
+    """Окно light leak: каталог едет ``x`` и твинит ``opacity`` бликов.
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Доли 2.4 с окна
+    (удержание A → leak → удержание B) сохраняем, стыки +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _TLT_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    def span(start_cat: float, end_cat: float,
+             after: float = 0.0) -> tuple[float, float]:
+        at = max(t(start_cat), after)
+        end = min(d, t(end_cat))
+        if at + 0.001 > end:
+            end = min(d, at + 0.001)
+        if at + 0.001 > end:
+            at = max(0.0, end - 0.001)
+        return at, max(0.001, end - at)
+
+    warm_in_at, warm_in_dur = span(1.00, 1.30)
+    l1_in_at, l1_in_dur = span(1.05, 1.55)
+    l2_in_at, l2_in_dur = span(1.10, 1.70)
+    warm_peak_at, warm_peak_dur = span(
+        1.35, 1.50, after=warm_in_at + warm_in_dur + 0.001)
+    warm_out_at, warm_out_dur = span(
+        1.50, 1.90, after=warm_peak_at + warm_peak_dur + 0.001)
+    l1_out_at, l1_out_dur = span(
+        1.50, 1.85, after=l1_in_at + l1_in_dur + 0.001)
+    l2_out_at, l2_out_dur = span(
+        1.55, 1.90, after=l2_in_at + l2_in_dur + 0.001)
+    swap_at = min(max(t(1.45), warm_in_at + 0.001), warm_out_at)
+    return {
+        "warm_in_at": warm_in_at,
+        "warm_in_dur": warm_in_dur,
+        "l1_in_at": l1_in_at,
+        "l1_in_dur": l1_in_dur,
+        "l2_in_at": l2_in_at,
+        "l2_in_dur": l2_in_dur,
+        "warm_peak_at": warm_peak_at,
+        "warm_peak_dur": warm_peak_dur,
+        "swap_at": swap_at,
+        "warm_out_at": warm_out_at,
+        "warm_out_dur": warm_out_dur,
+        "l1_out_at": l1_out_at,
+        "l1_out_dur": l1_out_dur,
+        "l2_out_at": l2_out_at,
+        "l2_out_dur": l2_out_dur,
+    }
+
+
+def tr_transitions_light(ctx: "TemplateCtx") -> Piece:
+    """Light leak: тёплые блики едут по кадру, SCENE B проявляется.
+
+    Каталог DEMO 1 твинит ``opacity``/``x`` трёх бликов. Здесь те же
+    ``x`` на 9:16 (300→169) без CSS ``transform`` и без ``filter``.
+    Твины на гранях / бликах, не на ``.clip`` и не на входящем кадре.
+    Цвета SCENE A/B и оранжевых leak каталога — жест карточки, не
+    палитра канала. ``-apple-system`` не ставим. Inter как запас
+    вместо системного стека. ``light-leak`` и ``light-sweep`` не
+    трогаем.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _tlt_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-warm",{{opacity:0}},'
+        f'{{opacity:0.4,duration:{_num(times["warm_in_dur"])},'
+        f'ease:"power1.in",immediateRender:false}},'
+        f'{_num(start + times["warm_in_at"])});',
+        f'tl.to("#{node_id}-warm",{{opacity:0.6,'
+        f'duration:{_num(times["warm_peak_dur"])},ease:"power2.in",'
+        f'immediateRender:false}},{_num(start + times["warm_peak_at"])});',
+        f'tl.to("#{node_id}-warm",{{opacity:0,'
+        f'duration:{_num(times["warm_out_dur"])},ease:"power2.out",'
+        f'immediateRender:false}},{_num(start + times["warm_out_at"])});',
+        f'tl.fromTo("#{node_id}-l1",{{x:0,opacity:0.9}},'
+        f'{{x:{_TLT_L1_IN_X},opacity:0.9,duration:{_num(times["l1_in_dur"])},'
+        f'ease:"sine.inOut",immediateRender:false}},'
+        f'{_num(start + times["l1_in_at"])});',
+        f'tl.to("#{node_id}-l1",{{x:{_TLT_L1_OUT_X},opacity:0,'
+        f'duration:{_num(times["l1_out_dur"])},ease:"power1.out",'
+        f'immediateRender:false}},{_num(start + times["l1_out_at"])});',
+        f'tl.fromTo("#{node_id}-l2",{{x:0,opacity:0.8}},'
+        f'{{x:{_TLT_L2_IN_X},opacity:0.8,duration:{_num(times["l2_in_dur"])},'
+        f'ease:"sine.inOut",immediateRender:false}},'
+        f'{_num(start + times["l2_in_at"])});',
+        f'tl.to("#{node_id}-l2",{{x:{_TLT_L2_OUT_X},opacity:0,'
+        f'duration:{_num(times["l2_out_dur"])},ease:"power1.out",'
+        f'immediateRender:false}},{_num(start + times["l2_out_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},'
+        f'{_num(start + times["swap_at"])});',
+        f'tl.set("#{node_id}-b",{{opacity:1}},'
+        f'{_num(start + times["swap_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-warm",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-l1",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-l2",{{opacity:0}},{_num(start + d)});',
+    ]
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-transitions-light" {_timing(ctx)}>'
+               f'<span class="tlt-stage">'
+               f'<span id="{node_id}-a" class="tlt-face tlt-a">'
+               f'<span class="tlt-big">ONE</span>'
+               f'<span class="tlt-label">SCENE A</span></span>'
+               f'<span id="{node_id}-b" class="tlt-face tlt-b">'
+               f'<span class="tlt-big">TWO</span>'
+               f'<span class="tlt-label">SCENE B</span></span>'
+               f'<span id="{node_id}-warm" class="tlt-warm"></span>'
+               f'<span id="{node_id}-l1" class="tlt-blob tlt-l1"></span>'
+               f'<span id="{node_id}-l2" class="tlt-blob tlt-l2"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 _TDS_CATALOG_SEC = 2.4
 _TDS_HOLE_FROM = 1.0
 _TDS_HOLE_TO = 0.04
@@ -1595,6 +1721,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "transitions_3d": tr_transitions_3d,
     "transitions_blur": tr_transitions_blur,
     "transitions_cover": tr_transitions_cover,
+    "transitions_light": tr_transitions_light,
     "transitions_destruction": tr_transitions_destruction,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
@@ -1976,6 +2103,37 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         ".tr-transitions-destruction .tds-r2{"
         "background:radial-gradient(circle,transparent 36%,"
         "rgba(200,30,0,0.5) 50%,transparent 64%)}"
+        f".tr-transitions-light{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-transitions-light .tlt-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-transitions-light .tlt-face{position:absolute;inset:0;display:flex;"
+        "flex-direction:column;align-items:center;justify-content:center;"
+        "transform-origin:50% 50%}"
+        ".tr-transitions-light .tlt-a{background:#1b263b}"
+        ".tr-transitions-light .tlt-b{background:#e07a5f;opacity:0}"
+        ".tr-transitions-light .tlt-big{font-family:Inter,system-ui,sans-serif;"
+        "font-size:280px;font-weight:900;line-height:1;letter-spacing:-0.04em;"
+        "user-select:none}"
+        ".tr-transitions-light .tlt-a .tlt-big{color:rgba(255,255,255,0.12)}"
+        ".tr-transitions-light .tlt-b .tlt-big{color:rgba(0,0,0,0.12)}"
+        ".tr-transitions-light .tlt-label{font-family:Inter,system-ui,sans-serif;"
+        "font-size:40px;font-weight:700;letter-spacing:6px;"
+        "margin-top:12px;color:#ffffff}"
+        ".tr-transitions-light .tlt-warm{position:absolute;inset:0;display:block;"
+        "opacity:0;pointer-events:none;"
+        "background:linear-gradient(135deg,rgba(255,165,0,0.6),transparent 60%);"
+        "transform-origin:50% 50%}"
+        ".tr-transitions-light .tlt-blob{position:absolute;display:block;"
+        "opacity:0;pointer-events:none;transform-origin:50% 50%}"
+        ".tr-transitions-light .tlt-l1{top:-356px;left:-225px;"
+        "width:1350px;height:2667px;"
+        "background:radial-gradient(ellipse at 30% 40%,"
+        "rgba(255,140,0,0.5),transparent 50%)}"
+        ".tr-transitions-light .tlt-l2{top:-178px;left:-112px;"
+        "width:1350px;height:2489px;"
+        "background:radial-gradient(ellipse at 60% 50%,"
+        "rgba(255,200,0,0.4),transparent 50%)}"
     )
 
 

@@ -243,7 +243,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          [2.0, 4.5], {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source", "highlight"], "article_scroll", _EX_WEBSITE),
     ]),
-    "transitions": (25, [
+    "transitions": (26, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
         ("whip-pan-l", "Резкий пан влево", [0.16, 0.28], {"direction": -1, "blur": 24},
          ["dynamic", "pan"], "whip_pan"),
@@ -317,6 +317,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Page burn: SCENE A сгорает кругом, SCENE B проявляется — transitions-destruction",
          [0.22, 0.42], {},
          ["dynamic", "burn", "destruction"], "transitions_destruction"),
+        ("transitions-light",
+         "Light leak: тёплые блики едут по кадру, SCENE B проявляется — transitions-light",
+         [0.22, 0.42], {},
+         ["dynamic", "light", "warm"], "transitions_light"),
     ]),
     "avatar-entry": (6, [
         ("hero-zoom-in", "Вход зумом на аватар", [0.2, 0.4], {"from_scale": 1.18},

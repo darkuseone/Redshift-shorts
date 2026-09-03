@@ -1,0 +1,19 @@
+{
+  "id": "transitions/transitions-light",
+  "name": "transitions-light",
+  "category": "transitions",
+  "title": "Light leak: тёплые блики едут по кадру, SCENE B проявляется — transitions-light",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "light",
+    "warm"
+  ],
+  "renderer": "transitions_light",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

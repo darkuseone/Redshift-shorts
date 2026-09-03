@@ -608,6 +608,37 @@ def test_transitions_destruction_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_transitions_light_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """filter и CSS transform каталога не вендорятся: GSAP x бликов, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_light", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-light" in out
+    assert "tlt-a" in out and "tlt-b" in out
+    assert "tlt-warm" in out and "tlt-l1" in out and "ONE" in out
+    assert "tr-light-leak" not in out
+    assert 'class="clip tr-sweep"' not in out
+    assert "tr-transitions-destruction" not in out
+    assert "tr-transitions-cover" not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "x:169" in tween_body
+    assert "x:338" in tween_body
+    assert "filter" not in tween_body
+    assert "innerHTML" not in tween_body
+    assert "textContent" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

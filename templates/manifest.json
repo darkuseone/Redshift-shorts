@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 25,
+    "transitions": 26,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 135
+    "_total": 136
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2030,6 +2030,25 @@
         "destruction"
       ],
       "renderer": "transitions_destruction",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-light",
+      "name": "transitions-light",
+      "category": "transitions",
+      "title": "Light leak: тёплые блики едут по кадру, SCENE B проявляется — transitions-light",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "light",
+        "warm"
+      ],
+      "renderer": "transitions_light",
       "last_used_in": [],
       "added": "2026-09-03"
     },
