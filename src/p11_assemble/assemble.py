@@ -529,6 +529,10 @@ _CODEISH = re.compile(
     r"(?m)(^\s*(async\s+)?function\b|^\s*def\s+\w+|^\s*const\s+\w+|^\s*class\s+\w+"
     r"|[{};]\s*$|=>|::|\breturn\s+\w|\bimport\s+\w)",
 )
+_DIFFISH = re.compile(
+    r"(?ms)(^\s*---\s*$)|(^\s*diff\s+--git\b)|"
+    r"(^\s*-[^-\n].*$.*?^\s*\+[^+\n])",
+)
 
 
 def _overlay_renderer(template: Template) -> str:
@@ -801,6 +805,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                           "text-fullscreen/scramble-reveal",
                           "text-fullscreen/shared-axis-z",
                           "text-fullscreen/code-3d-extrude",
+                          "text-fullscreen/code-diff",
                           "text-fullscreen/number-slam-card"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
@@ -822,6 +827,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                           "text-fullscreen/kinetic-stack"]
             if variant == "A" and _CODEISH.search(str(content)):
                 styles = ["text-fullscreen/code-3d-extrude"] + styles
+            if variant == "A" and _DIFFISH.search(str(content)):
+                styles = ["text-fullscreen/code-diff"] + styles
             template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
                                     recent_videos=recent_videos, exclude=used_templates,
                                     prefer=([preferred] if preferred else [])

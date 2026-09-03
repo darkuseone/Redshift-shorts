@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-115 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+116 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -19,7 +19,7 @@ from src.lib.render.hyperframes.templates import (
     enter_and_drift, entrance_tweens, hero_css, overlay_css, render_dataviz,
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
-    _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times, _c3d_times, _c3d_highlight,
+    _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _sr_frame_table,
 )
 
@@ -1260,6 +1260,86 @@ def test_code_3d_extrude_css_keeps_github_dark_and_mono():
     slab = re.search(r"\.c3d-slab\{[^}]+\}", css).group(0)
     assert "transform:" not in slab.replace("will-change:transform", "")
     assert "THREE" not in css
+
+
+_CD_BEFORE = (
+    "function greet(name) {\n"
+    "  console.log(\"hi \" + name)\n"
+    "}"
+)
+_CD_AFTER = (
+    "function greet(name, lang) {\n"
+    "  const msg = translate(\"hi\", lang)\n"
+    "  console.log(`${msg} ${name}`)\n"
+    "}"
+)
+
+
+def test_code_diff_collapses_minus_and_expands_plus_without_height():
+    """Каталог твинит height; здесь scaleY и заранее посчитанный y."""
+    piece = render_fullscreen(_fs_ctx(
+        before=_CD_BEFORE, after=_CD_AFTER, renderer="code_diff",
+        code_diff=True, duration=6.0, filename="greet.js"))
+    node = piece.nodes[0]
+    assert "fs-code-diff" in node
+    assert "cd-editor" in node and "cd-del" in node and "cd-add" in node
+    assert "greet.js" in node and "loadConfig" not in node
+    assert "translate" in node and "console" in node
+    assert "height:" not in " ".join(piece.tweens)
+    assert "width:" not in " ".join(piece.tweens)
+    assert "filter" not in " ".join(piece.tweens)
+    assert "visibility" not in " ".join(piece.tweens)
+    assert "onUpdate" not in " ".join(piece.tweens)
+    assert "Math.random" not in " ".join(piece.tweens)
+    assert "THREE" not in node
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    body = " ".join(piece.tweens)
+    assert "scaleY:0" in body and "scaleY:1" in body
+    assert "power2.inOut" in body and "power2.out" in body
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    ops = _cd_line_diff(_CD_BEFORE.split("\n"), _CD_AFTER.split("\n"))
+    assert [kind for kind, _text in ops] == [
+        "del", "del", "add", "add", "add", "same"]
+    flagged = render_fullscreen(_fs_ctx(
+        before=_CD_BEFORE, after=_CD_AFTER, code_diff=True, stagger_ms=55,
+        duration=6.0))
+    assert "fs-code-diff" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="code_diff", duration=6.0))
+    assert empty.nodes == []
+    split = render_fullscreen(_fs_ctx(
+        content=_CD_BEFORE + "\n---\n" + _CD_AFTER, code_diff=True,
+        duration=6.0))
+    assert "cd-del" in split.nodes[0] and "cd-add" in split.nodes[0]
+    times = _cd_times(6.0, 2, 3)
+    assert times["at_del"] + times["del_dur"] <= times["at_add"] + 1e-9
+    short = _cd_times(1.5, 2, 3)
+    assert short["at_add"] + short["add_dur"] <= 1.5 + 1e-9
+    parsed = _cd_parse_pair({"content": "-old\n+new"})
+    assert parsed == ("old", "new")
+
+
+def test_code_diff_css_keeps_github_diff_and_mono():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert "JetBrains Mono" in css
+    assert "#f85149" in css and "#3fb950" in css
+    assert "#C8453D" not in re.search(r"\.cd-del\{[^}]+\}", css).group(0)
+    assert "#C8453D" not in re.search(r"\.cd-add\{[^}]+\}", css).group(0)
+    editor = re.search(r"\.cd-editor\{[^}]+\}", css).group(0)
+    assert "transform:" not in editor.replace("will-change:transform,opacity", "")
+    line = re.search(r"\.cd-line\{[^}]+\}", css).group(0)
+    assert "transform-origin:50% 0%" in line
+    assert "transform:" not in line.replace("transform-origin:50% 0%", "").replace(
+        "will-change:transform,opacity", "")
+    assert "text-transform:none" in css
+    assert ".fs-code-diff" in css
 
 
 def test_number_slam_splits_the_caption():

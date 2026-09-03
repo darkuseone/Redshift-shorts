@@ -631,6 +631,34 @@ def test_code_3d_extrude_fullscreen_reaches_the_markup(plan, assets, brandbook):
     assert ".c3d-slab" in css
 
 
+def test_code_diff_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        "function greet(name) {\n"
+        "  console.log(\"hi \" + name)\n"
+        "}\n---\n"
+        "function greet(name, lang) {\n"
+        "  const msg = translate(\"hi\", lang)\n"
+        "  console.log(`${msg} ${name}`)\n"
+        "}"
+    )
+    plan["shots"][1]["duration"] = 6.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 6.0
+    plan["shots"][1]["params"] = {"code_diff": True}
+    plan["shots"][1]["renderer"] = "code_diff"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-diff" in out
+    assert "cd-editor" in out and "cd-del" in out and "cd-add" in out
+    assert "translate" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "height:" not in tween_src
+    assert "scaleY:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#f85149" in css and "#3fb950" in css
+    assert ".cd-editor" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-115 шаблонов каталога — это не 115 реализаций, а набор рендереров с параметрами.
+116 шаблонов каталога — это не 116 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3130,6 +3130,302 @@ def fs_code_3d_extrude(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог code-diff: unified view, height 46→0 на минусах и 0→46 на плюсах.
+# Движок height не твинит — scaleY и заранее посчитанный y, как у столбцов
+# data-viz (scaleX вместо width). Красный/зелёный github — сам жест.
+_CD_EDITOR_SCALE = 0.985
+_CD_LH_EM = 1.53
+_CD_SIZE_CEILING = 28
+_CD_TOP = 24
+_CD_PAD_X = 28
+_CD_TITLE_H = 52
+_CD_DEL_COLOR = "#f85149"
+_CD_ADD_COLOR = "#3fb950"
+
+
+def _cd_rows_from_tokens(raw_tokens: Any) -> list[list[tuple[str, str]]] | None:
+    if not isinstance(raw_tokens, list) or not raw_tokens:
+        return None
+    rows: list[list[tuple[str, str]]] = [[]]
+    for tok in raw_tokens:
+        if not isinstance(tok, dict):
+            continue
+        piece = str(tok.get("content") or "")
+        color = str(tok.get("color") or _C3D_FG_COLOR)
+        if piece == "\n":
+            rows.append([])
+            continue
+        rows[-1].append((piece, color))
+    while rows and not rows[-1]:
+        rows.pop()
+    return rows or None
+
+
+def _cd_text_from_rows(rows: list[list[tuple[str, str]]]) -> str:
+    return "\n".join("".join(text for text, _color in line) for line in rows)
+
+
+def _cd_parse_pair(params: dict[str, Any]) -> tuple[str, str]:
+    """before/after, разделитель ---, unified diff, иначе один сниппет дважды."""
+    before = str(params.get("code_before") or params.get("before") or "")
+    after = str(params.get("code_after") or params.get("after") or "")
+    before = before.replace("\r\n", "\n").strip("\n")
+    after = after.replace("\r\n", "\n").strip("\n")
+    if before.strip() or after.strip():
+        return before, after or before
+    content = str(params.get("code") or params.get("content") or params.get("text")
+                  or "").replace("\r\n", "\n").strip("\n")
+    if not content.strip():
+        return "", ""
+    parts = re.split(r"\n---+\n", content, maxsplit=1)
+    if len(parts) == 2:
+        return parts[0].strip("\n"), parts[1].strip("\n")
+    raw = content.split("\n")
+    plus = any(ln.startswith("+") and not ln.startswith("+++") for ln in raw)
+    minus = any(ln.startswith("-") and not ln.startswith("---") for ln in raw)
+    if plus and minus:
+        old: list[str] = []
+        new: list[str] = []
+        for ln in raw:
+            if ln.startswith("+++") or ln.startswith("---") or ln.startswith("@@"):
+                continue
+            if ln.startswith("+"):
+                new.append(ln[1:])
+            elif ln.startswith("-"):
+                old.append(ln[1:])
+            else:
+                body = ln[1:] if ln.startswith(" ") else ln
+                old.append(body)
+                new.append(body)
+        return "\n".join(old), "\n".join(new)
+    return content, content
+
+
+def _cd_line_diff(a: list[str], b: list[str]) -> list[tuple[str, str]]:
+    """LCS как в каталоге: same / del / add."""
+    n, m = len(a), len(b)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(n - 1, -1, -1):
+        for j in range(m - 1, -1, -1):
+            if a[i] == b[j]:
+                dp[i][j] = dp[i + 1][j + 1] + 1
+            else:
+                dp[i][j] = max(dp[i + 1][j], dp[i][j + 1])
+    ops: list[tuple[str, str]] = []
+    i = j = 0
+    while i < n and j < m:
+        if a[i] == b[j]:
+            ops.append(("same", b[j]))
+            i += 1
+            j += 1
+        elif dp[i + 1][j] >= dp[i][j + 1]:
+            ops.append(("del", a[i]))
+            i += 1
+        else:
+            ops.append(("add", b[j]))
+            j += 1
+    while i < n:
+        ops.append(("del", a[i]))
+        i += 1
+    while j < m:
+        ops.append(("add", b[j]))
+        j += 1
+    return ops
+
+
+def _cd_times(duration: float, n_del: int, n_add: int) -> dict[str, float]:
+    """Каталог на 6 с: editor 0.5, fade 0.45, del 0.55, add 0.6. Стык +1 мс не нужен:
+    scaleY и y на одной строке — разные свойства."""
+    s = duration / 6.0
+    editor_dur = max(0.18, 0.5 * s)
+    fade_dur = max(0.12, 0.45 * s)
+    fade_at = min(0.45 * s, editor_dur)
+    hold = max(0.06, 0.3 * s)
+    del_dur = max(0.16, 0.55 * s)
+    add_dur = max(0.18, 0.6 * s)
+    gap = max(0.04, 0.15 * s)
+    st_del = 0.08 * s
+    st_add = 0.12 * s
+    at_del = fade_at + fade_dur + hold
+    # Каталог: atAdd = atDel + DEL + 0.15 — после длительности первого минуса,
+    # не после всего стаггера. Хвост последнего минуса пересекается с плюсом.
+    at_add = at_del + (del_dur if n_del else 0.0) + (gap if n_add else 0.0)
+    add_span = (add_dur + max(0, n_add - 1) * st_add) if n_add else 0.0
+    end = max(at_add + add_span,
+              at_del + ((del_dur + max(0, n_del - 1) * st_del) if n_del else 0.0))
+    if end > duration - 0.04 and end > 1e-9:
+        fit = max(0.35, (duration - 0.04) / end)
+        editor_dur *= fit
+        fade_dur *= fit
+        fade_at *= fit
+        hold *= fit
+        del_dur *= fit
+        add_dur *= fit
+        gap *= fit
+        st_del *= fit
+        st_add *= fit
+        at_del = fade_at + fade_dur + hold
+        at_add = at_del + (del_dur if n_del else 0.0) + (gap if n_add else 0.0)
+        add_span = (add_dur + max(0, n_add - 1) * st_add) if n_add else 0.0
+    pack_end = max(
+        at_add + add_span,
+        at_del + ((del_dur + max(0, n_del - 1) * st_del) if n_del else 0.0),
+    )
+    pack_dur = max(0.05, pack_end - at_del) if (n_del or n_add) else 0.0
+    return {
+        "editor_dur": editor_dur,
+        "fade_at": fade_at,
+        "fade_dur": fade_dur,
+        "at_del": at_del,
+        "del_dur": del_dur,
+        "st_del": st_del,
+        "at_add": at_add,
+        "add_dur": add_dur,
+        "st_add": st_add,
+        "pack_at": at_del,
+        "pack_dur": pack_dur,
+    }
+
+
+def _cd_toks(line: list[tuple[str, str]]) -> str:
+    return "".join(
+        f'<span class="cd-tok" style="color:{html.escape(color, quote=True)}">'
+        f'{_esc(text)}</span>'
+        for text, color in line
+    )
+
+
+def fs_code_diff(ctx: "TemplateCtx") -> Piece:
+    """Правка как цветной diff: каталог твинит height.
+
+    Здесь минус схлопывается ``scaleY``, плюс раскрывается, пакет строк
+    едет заранее посчитанным ``y``. Твины на ``#…-editor`` / строках, не
+    на ``.clip``. JetBrains Mono и github-dark как в каталоге.
+    """
+    params = ctx.params
+    before_rows = _cd_rows_from_tokens(params.get("tokens_before"))
+    after_rows = _cd_rows_from_tokens(params.get("tokens_after"))
+    before, after = _cd_parse_pair(params)
+    if before_rows is not None:
+        before = _cd_text_from_rows(before_rows)
+    if after_rows is not None:
+        after = _cd_text_from_rows(after_rows)
+    if not before.strip() and not after.strip():
+        return Piece()
+    a_text = before.split("\n") if before.strip() else []
+    b_text = after.split("\n") if after.strip() else []
+    if not a_text and not b_text:
+        return Piece()
+    ops = _cd_line_diff(a_text, b_text)
+    if not ops:
+        return Piece()
+    a_hi = before_rows if before_rows is not None else _c3d_highlight(before)
+    b_hi = after_rows if after_rows is not None else _c3d_highlight(after)
+
+    def _cd_index(rows: list[list[tuple[str, str]]]) -> dict[str, list]:
+        out: dict[str, list] = {}
+        for row in rows:
+            key = "".join(piece for piece, _color in row)
+            out.setdefault(key, []).append(row)
+        return out
+
+    a_map = _cd_index(a_hi)
+    b_map = _cd_index(b_hi)
+    highlighted: list[list[tuple[str, str]]] = []
+    for kind, text in ops:
+        src = b_map if kind != "del" else a_map
+        bucket = src.get(text)
+        if bucket:
+            highlighted.append(bucket.pop(0))
+        else:
+            fallback = _c3d_highlight(text)
+            highlighted.append(fallback[0] if fallback else [("", _C3D_FG_COLOR)])
+    node_id = ctx.target
+    available = max(float(params.get("available_px") or 740), 820.0)
+    size = min(_CD_SIZE_CEILING, _c3d_fit(highlighted, available - _CD_PAD_X))
+    size = max(_C3D_SIZE_FLOOR, size)
+    lh = int(round(size * _CD_LH_EM))
+    n_del = sum(1 for kind, _t in ops if kind == "del")
+    n_add = sum(1 for kind, _t in ops if kind == "add")
+    t = _cd_times(ctx.duration, n_del, n_add)
+    at = _enter_at(ctx)
+    y_start: list[int] = []
+    cursor = _CD_TOP
+    for kind, _text in ops:
+        y_start.append(cursor)
+        if kind != "add":
+            cursor += lh
+    y_end: list[int] = []
+    cursor = _CD_TOP
+    for kind, _text in ops:
+        y_end.append(cursor)
+        if kind != "del":
+            cursor += lh
+    code_h = max(y_start[-1], y_end[-1]) + lh + 16
+    filename = str(params.get("filename") or "greet.js")
+    invert = " invert" if params.get("invert") else ""
+    tweens = [
+        f'tl.fromTo("#{node_id}-editor",'
+        f'{{opacity:0,scale:{_num(_CD_EDITOR_SCALE)}}},'
+        f'{{opacity:1,scale:1,duration:{_num(t["editor_dur"])},'
+        f'ease:"power2.out"}},{_num(at)});',
+        f'tl.fromTo("#{node_id}-code",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(t["fade_dur"])},ease:"power1.out"}},'
+        f'{_num(at + t["fade_at"])});',
+    ]
+    del_i = 0
+    add_i = 0
+    for i, (kind, _text) in enumerate(ops):
+        lid = f"{node_id}-ln{i}"
+        ys, ye = y_start[i], y_end[i]
+        if ys != ye:
+            tweens.append(
+                f'tl.fromTo("#{lid}",{{y:{ys}}},{{y:{ye},'
+                f'duration:{_num(t["pack_dur"])},ease:"power2.inOut"}},'
+                f'{_num(at + t["pack_at"])});')
+        else:
+            tweens.append(f'tl.set("#{lid}",{{y:{ys}}},{_num(at)});')
+        if kind == "del":
+            when = at + t["at_del"] + del_i * t["st_del"]
+            tweens.append(
+                f'tl.fromTo("#{lid}",{{scaleY:1,opacity:1}},'
+                f'{{scaleY:0,opacity:0,duration:{_num(t["del_dur"])},'
+                f'ease:"power2.inOut"}},{_num(when)});')
+            del_i += 1
+        elif kind == "add":
+            when = at + t["at_add"] + add_i * t["st_add"]
+            tweens.append(
+                f'tl.fromTo("#{lid}",{{scaleY:0,opacity:0}},'
+                f'{{scaleY:1,opacity:1,duration:{_num(t["add_dur"])},'
+                f'ease:"power2.out"}},{_num(when)});')
+            add_i += 1
+    lines_html: list[str] = []
+    for i, (kind, _text) in enumerate(ops):
+        sign = "-" if kind == "del" else "+" if kind == "add" else "\u00a0"
+        lines_html.append(
+            f'<span id="{node_id}-ln{i}" class="cd-line cd-{kind}" '
+            f'style="height:{lh}px;font-size:{size}px;line-height:{lh}px">'
+            f'<span class="cd-sign">{sign}</span>{_cd_toks(highlighted[i])}'
+            f'</span>')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text fs-code-diff'
+               f'{invert}" {_timing(ctx)}>'
+               f'<span id="{node_id}-stage" class="cd-stage">'
+               f'<span id="{node_id}-editor" class="cd-editor">'
+               f'<span class="cd-titlebar">'
+               f'<span class="cd-dots" aria-hidden="true">'
+               f'<i class="cd-dot cd-dot-r"></i>'
+               f'<i class="cd-dot cd-dot-y"></i>'
+               f'<i class="cd-dot cd-dot-g"></i></span>'
+               f'<span class="cd-filename"><span class="cd-file">'
+               f'{_esc(filename)}</span> — Code Diff</span></span>'
+               f'<span id="{node_id}-surface" class="cd-surface">'
+               f'<span id="{node_id}-code" class="cd-code" '
+               f'style="height:{code_h}px">'
+               f'{"".join(lines_html)}</span></span></span></span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -3144,6 +3440,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "scramble_reveal": fs_scramble_reveal,
     "shared_axis_z": fs_shared_axis_z,
     "code_3d_extrude": fs_code_3d_extrude,
+    "code_diff": fs_code_diff,
     "number_slam": fs_number_slam,
 }
 
@@ -3176,6 +3473,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_shared_axis_z(ctx)
     if params.get("code_3d_extrude"):
         return fs_code_3d_extrude(ctx)
+    if params.get("code_diff"):
+        return fs_code_diff(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -3895,6 +4194,48 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .c3d-line{display:block;white-space:pre;font-weight:600;"
         "letter-spacing:0}"
         ".fullscreen-text .c3d-tok{font-weight:600}"
+        ".fullscreen-text.fs-code-diff{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:flex;"
+        "align-items:center;justify-content:center;"
+        "background:radial-gradient(120% 70% at 50% 18%,#0e1726 0%,#05070b 72%);"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;font-weight:500;"
+        "text-transform:none;letter-spacing:0;color:#e6edf3}"
+        ".fullscreen-text.fs-code-diff.invert{background:#05070b;color:#e6edf3}"
+        ".fullscreen-text .cd-stage{display:flex;align-items:center;"
+        "justify-content:center;width:100%;height:100%}"
+        ".fullscreen-text .cd-editor{position:relative;display:flex;"
+        "flex-direction:column;width:92%;max-width:1000px;max-height:78%;"
+        "background:#0b0f17;border:1px solid #1d2733;border-radius:16px;"
+        "box-shadow:0 40px 120px rgba(0,0,0,0.6),0 2px 0 rgba(255,255,255,0.03) inset;"
+        "overflow:hidden;will-change:transform,opacity}"
+        ".fullscreen-text .cd-titlebar{display:flex;align-items:center;gap:14px;"
+        "flex:0 0 52px;height:52px;padding:0 20px;"
+        "background:linear-gradient(#11161f,#0c111a);border-bottom:1px solid #1b2430}"
+        ".fullscreen-text .cd-dots{display:flex;gap:8px}"
+        ".fullscreen-text .cd-dot{display:block;width:12px;height:12px;"
+        "border-radius:50%}"
+        ".fullscreen-text .cd-dot-r{background:#ff5f57}"
+        ".fullscreen-text .cd-dot-y{background:#febc2e}"
+        ".fullscreen-text .cd-dot-g{background:#28c840}"
+        ".fullscreen-text .cd-filename{font-size:16px;color:#8b98a9;"
+        "letter-spacing:0.2px;text-transform:none}"
+        ".fullscreen-text .cd-file{color:#d6e2f0}"
+        ".fullscreen-text .cd-surface{position:relative;flex:1 1 auto;"
+        "overflow:hidden}"
+        ".fullscreen-text .cd-code{position:relative;display:block;width:100%;"
+        "font-variant-ligatures:none}"
+        ".fullscreen-text .cd-line{position:absolute;left:0;right:0;"
+        "display:block;overflow:hidden;white-space:pre;padding-left:14px;"
+        "transform-origin:50% 0%;will-change:transform,opacity}"
+        ".fullscreen-text .cd-sign{display:inline-block;width:1.1em;"
+        "color:#415062}"
+        ".fullscreen-text .cd-del{background:rgba(248,81,73,0.12);"
+        "box-shadow:inset 3px 0 #f85149}"
+        ".fullscreen-text .cd-add{background:rgba(63,185,80,0.12);"
+        "box-shadow:inset 3px 0 #3fb950}"
+        ".fullscreen-text .cd-del .cd-sign{color:#f85149}"
+        ".fullscreen-text .cd-add .cd-sign{color:#3fb950}"
+        ".fullscreen-text .cd-tok{font-weight:500}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"
