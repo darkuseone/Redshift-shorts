@@ -605,6 +605,32 @@ def test_shared_axis_z_fullscreen_keeps_catalog_inter(plan, assets, brandbook):
     assert "#34d399" not in css
 
 
+def test_code_3d_extrude_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        "async function loadConfig(path) {\n"
+        "  const raw = await readFile(path, \"utf8\")\n"
+        "  return validate(config)\n"
+        "}"
+    )
+    plan["shots"][1]["duration"] = 8.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 8.0
+    plan["shots"][1]["params"] = {"code_3d_extrude": True}
+    plan["shots"][1]["renderer"] = "code_3d_extrude"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-3d" in out
+    assert "c3d-slab" in out and "c3d-edge" in out
+    assert "loadConfig" in out
+    assert "THREE" not in out and "<canvas" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "onUpdate" not in tween_src
+    assert "scale:0.72" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#05070b" in css and "#24292e" in css
+    assert ".c3d-slab" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

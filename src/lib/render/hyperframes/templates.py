@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-114 шаблонов каталога — это не 114 реализаций, а набор рендереров с параметрами.
+115 шаблонов каталога — это не 115 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -2939,6 +2939,197 @@ def fs_shared_axis_z(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог code-3d-extrude: WebGL-плита, rotY/rotX/camZ, canvas onUpdate.
+# Движок Three.js и onUpdate не умеет — 2D-посадка scale/x/y/rotation.
+_C3D_KW = frozenset({
+    "async", "await", "function", "const", "let", "var", "return", "if", "else",
+    "for", "while", "class", "new", "import", "from", "export", "default",
+    "true", "false", "null", "undefined", "def", "and", "or", "not", "in",
+    "try", "catch", "throw", "this", "typeof", "void", "yield", "of",
+})
+_C3D_KW_COLOR = "#F97583"
+_C3D_FN_COLOR = "#B392F0"
+_C3D_VAR_COLOR = "#79B8FF"
+_C3D_PARAM_COLOR = "#FFAB70"
+_C3D_STR_COLOR = "#9ECBFF"
+_C3D_FG_COLOR = "#E1E4E8"
+_C3D_CMT_COLOR = "#6A737D"
+_C3D_LEX = re.compile(
+    r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|`(?:\\.|[^`\\])*`)'
+    r"|(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/|//[^\n]*)"
+    r"|(\b\d+(?:\.\d+)?\b)"
+    r"|(\b[A-Za-z_]\w*\b)"
+    r"|(\s+)"
+    r"|([^\sA-Za-z0-9_]+)"
+)
+_C3D_SCALE_FROM = 0.72
+_C3D_FROM_X = 48
+_C3D_FROM_Y = 36
+_C3D_FROM_ROT = -9
+_C3D_DRIFT_SCALE = 1.02
+_C3D_DRIFT_X = 6
+_C3D_DRIFT_Y = -3
+_C3D_DRIFT_ROT = 2
+_C3D_SETTLE_FRAC = 0.6
+_C3D_PAD_X = 32
+_C3D_PAD_Y = 28
+_C3D_SIZE_CEILING = 34
+_C3D_SIZE_FLOOR = 18
+_C3D_MONO_EM = 0.62
+_C3D_LH = 1.47
+
+
+def _c3d_times(duration: float) -> dict[str, float]:
+    """Посадка 60 % длительности, как camZ в каталоге; дрейф после стыка +1 мс."""
+    settle_dur = max(0.2, duration * _C3D_SETTLE_FRAC)
+    if settle_dur > duration - 0.05:
+        settle_dur = max(0.2, duration - 0.05)
+    drift_at = settle_dur + 0.001
+    drift_dur = max(0.0, duration - drift_at)
+    return {"settle_dur": settle_dur, "drift_at": drift_at, "drift_dur": drift_dur}
+
+
+def _c3d_highlight(code: str) -> list[list[tuple[str, str]]]:
+    """Github-dark токены без Shiki: ключевые, функции, строки, параметры."""
+    rows: list[list[tuple[str, str]]] = []
+    for line in code.split("\n"):
+        raw: list[tuple[str, str]] = []
+        for match in _C3D_LEX.finditer(line):
+            string, comment, number, ident, space, punct = match.groups()
+            if string:
+                raw.append((string, _C3D_STR_COLOR))
+            elif comment:
+                raw.append((comment, _C3D_CMT_COLOR))
+            elif number:
+                raw.append((number, _C3D_VAR_COLOR))
+            elif ident:
+                color = _C3D_KW_COLOR if ident in _C3D_KW else _C3D_VAR_COLOR
+                raw.append((ident, color))
+            elif space:
+                raw.append((space, _C3D_FG_COLOR))
+            elif punct:
+                raw.append((punct, _C3D_FG_COLOR))
+        if not raw and line == "":
+            rows.append([("", _C3D_FG_COLOR)])
+            continue
+        colored: list[tuple[str, str]] = []
+        i = 0
+        while i < len(raw):
+            text, color = raw[i]
+            nxt = ""
+            for j in range(i + 1, len(raw)):
+                if raw[j][0].strip():
+                    nxt = raw[j][0]
+                    break
+            if (color == _C3D_VAR_COLOR and text.isidentifier()
+                    and nxt.startswith("(")):
+                colored.append((text, _C3D_FN_COLOR))
+            else:
+                colored.append((text, color))
+            i += 1
+        i = 0
+        while i < len(colored):
+            text, color = colored[i]
+            if color == _C3D_FN_COLOR:
+                depth = 0
+                j = i + 1
+                while j < len(colored):
+                    chunk = colored[j][0]
+                    if "(" in chunk:
+                        depth += chunk.count("(")
+                    if colored[j][1] == _C3D_VAR_COLOR and colored[j][0].isidentifier() and depth > 0:
+                        colored[j] = (colored[j][0], _C3D_PARAM_COLOR)
+                    if ")" in chunk:
+                        depth -= chunk.count(")")
+                        if depth <= 0:
+                            break
+                    j += 1
+            i += 1
+        rows.append(colored or [("", _C3D_FG_COLOR)])
+    if rows and rows[-1] == [("", _C3D_FG_COLOR)]:
+        rows.pop()
+    return rows
+
+
+def _c3d_fit(lines: list[list[tuple[str, str]]], available: float) -> int:
+    longest = max((sum(len(t[0]) for t in line) for line in lines), default=1)
+    text_avail = max(80.0, available - 2 * _C3D_PAD_X)
+    size = _C3D_SIZE_CEILING
+    while size > _C3D_SIZE_FLOOR and longest * size * _C3D_MONO_EM > text_avail:
+        size -= 1
+    return size
+
+
+def fs_code_3d_extrude(ctx: "TemplateCtx") -> Piece:
+    """Код на скошенной плите: каталог — Three.js ExtrudeGeometry.
+
+    Движок WebGL и ``onUpdate`` не умеет. Посадка — ``scale``/``x``/``y``/
+    ``rotation`` на плите, скос — статичный слой ``#141d2b``. Github-dark и
+    JetBrains Mono как в каталоге — это сам жест, не палитра канала. Твины
+    на ``#…-slab``, не на ``.clip``.
+    """
+    params = ctx.params
+    code = str(params.get("code") or params.get("content") or params.get("text")
+               or "").replace("\r\n", "\n").strip("\n")
+    if not code.strip():
+        return Piece()
+    raw_tokens = params.get("tokens")
+    if isinstance(raw_tokens, list) and raw_tokens:
+        rows: list[list[tuple[str, str]]] = [[]]
+        for tok in raw_tokens:
+            if not isinstance(tok, dict):
+                continue
+            piece = str(tok.get("content") or "")
+            color = str(tok.get("color") or _C3D_FG_COLOR)
+            if piece == "\n":
+                rows.append([])
+                continue
+            rows[-1].append((piece, color))
+        while rows and not rows[-1]:
+            rows.pop()
+        lines = rows or _c3d_highlight(code)
+    else:
+        lines = _c3d_highlight(code)
+    node_id = ctx.target
+    available = float(params.get("available_px") or 740)
+    size = _c3d_fit(lines, available)
+    t = _c3d_times(ctx.duration)
+    at = _enter_at(ctx)
+    tweens = [
+        f'tl.fromTo("#{node_id}-slab",'
+        f'{{scale:{_num(_C3D_SCALE_FROM)},x:{_C3D_FROM_X},y:{_C3D_FROM_Y},'
+        f'rotation:{_C3D_FROM_ROT}}},'
+        f'{{scale:1,x:0,y:0,rotation:0,duration:{_num(t["settle_dur"])},'
+        f'ease:"power3.out"}},{_num(at)});',
+    ]
+    if t["drift_dur"] >= 0.05:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-slab",'
+            f'{{scale:1,x:0,y:0,rotation:0}},'
+            f'{{scale:{_num(_C3D_DRIFT_SCALE)},x:{_C3D_DRIFT_X},y:{_C3D_DRIFT_Y},'
+            f'rotation:{_C3D_DRIFT_ROT},duration:{_num(t["drift_dur"])},'
+            f'ease:"sine.inOut",immediateRender:false}},'
+            f'{_num(at + t["drift_at"])});')
+    line_html: list[str] = []
+    for li, line in enumerate(lines):
+        toks = "".join(
+            f'<span class="c3d-tok" style="color:{html.escape(color, quote=True)}">'
+            f'{_esc(text)}</span>'
+            for text, color in line
+        )
+        line_html.append(f'<span class="c3d-line" data-i="{li}">{toks}</span>')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text fs-code-3d" '
+               f'{_timing(ctx)}>'
+               f'<span id="{node_id}-stage" class="c3d-stage">'
+               f'<span id="{node_id}-slab" class="c3d-slab">'
+               f'<span class="c3d-edge" aria-hidden="true"></span>'
+               f'<span class="c3d-face" style="font-size:{size}px;'
+               f'line-height:{_num(_C3D_LH)}">'
+               f'{"".join(line_html)}</span></span></span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -2952,6 +3143,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "scan_band": fs_scan_band,
     "scramble_reveal": fs_scramble_reveal,
     "shared_axis_z": fs_shared_axis_z,
+    "code_3d_extrude": fs_code_3d_extrude,
     "number_slam": fs_number_slam,
 }
 
@@ -2982,6 +3174,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_scramble_reveal(ctx)
     if params.get("shared_axis_z"):
         return fs_shared_axis_z(ctx)
+    if params.get("code_3d_extrude"):
+        return fs_code_3d_extrude(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -3681,6 +3875,25 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "white-space:nowrap}"
         ".fullscreen-text .saz-word{display:inline-block;"
         "will-change:transform,opacity}"
+        ".fullscreen-text.fs-code-3d{width:var(--frame-w);height:var(--frame-h);"
+        "padding:0;overflow:hidden;isolation:isolate;display:flex;"
+        "align-items:center;justify-content:center;background:#05070b;"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;font-weight:600}"
+        ".fullscreen-text.fs-code-3d.invert{background:#05070b;color:#e1e4e8}"
+        ".fullscreen-text .c3d-stage{display:flex;align-items:center;"
+        "justify-content:center;width:100%;height:100%}"
+        ".fullscreen-text .c3d-slab{position:relative;display:inline-block;"
+        "max-width:88%;will-change:transform}"
+        ".fullscreen-text .c3d-edge{position:absolute;inset:0;border-radius:14px;"
+        "background:#141d2b;transform:translate(14px,16px);z-index:0}"
+        ".fullscreen-text .c3d-face{position:relative;z-index:1;display:flex;"
+        "flex-direction:column;align-items:flex-start;gap:0;"
+        "padding:28px 32px;border-radius:14px;background:#24292e;color:#e1e4e8;"
+        "box-shadow:0 22px 54px rgba(0,0,0,0.55),-10px -8px 28px rgba(79,255,160,0.16),"
+        "12px 10px 32px rgba(188,212,255,0.14)}"
+        ".fullscreen-text .c3d-line{display:block;white-space:pre;font-weight:600;"
+        "letter-spacing:0}"
+        ".fullscreen-text .c3d-tok{font-weight:600}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

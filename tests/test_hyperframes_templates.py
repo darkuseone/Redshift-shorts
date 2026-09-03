@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-114 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+115 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -19,7 +19,8 @@ from src.lib.render.hyperframes.templates import (
     enter_and_drift, entrance_tweens, hero_css, overlay_css, render_dataviz,
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
-    _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times, _sr_frame_table,
+    _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times, _c3d_times, _c3d_highlight,
+    _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -1179,6 +1180,85 @@ def test_shared_axis_z_depth_direction_tone_and_empty():
         direction="sideways", depth="extreme", tone="neon", duration=1.4))
     assert "saz-ink" in unknown.nodes[0]
     assert "scale:0.72" in " ".join(unknown.tweens)
+
+
+_C3D_DEMO = (
+    "async function loadConfig(path) {\n"
+    "  const raw = await readFile(path, \"utf8\")\n"
+    "  const config = JSON.parse(raw)\n"
+    "  return validate(config)\n"
+    "}"
+)
+
+
+def test_code_3d_extrude_settles_a_slab_without_webgl():
+    """Каталог крутит Three.js; здесь 2D-посадка scale/x/y/rotation."""
+    piece = render_fullscreen(_fs_ctx(
+        content=_C3D_DEMO, renderer="code_3d_extrude", code_3d_extrude=True,
+        duration=8.0))
+    node = piece.nodes[0]
+    assert "fs-code-3d" in node
+    assert "c3d-slab" in node and "c3d-edge" in node and "c3d-face" in node
+    assert "loadConfig" in node and "utf8" in node
+    assert "THREE" not in node and "WebGL" not in node and "<canvas" not in node
+    assert "position:absolute" not in node.split("c3d-edge", 1)[0]
+    assert node.count('id="shot-01"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert "scale:0.72" in body and "rotation:-9" in body
+    assert "power3.out" in body and "sine.inOut" in body
+    assert "THREE" not in body and "onUpdate" not in body
+    assert "Math.random" not in body
+    assert "visibility" not in body
+    assert "width:" not in body
+    assert "filter" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector == "#shot-01-slab"
+    exits = [t for t in piece.tweens if "immediateRender:false" in t]
+    assert len(exits) == 1
+    times = _c3d_times(8.0)
+    assert abs(times["settle_dur"] - 4.8) < 1e-9
+    assert abs(times["drift_at"] - 4.801) < 1e-9
+    flagged = render_fullscreen(_fs_ctx(
+        content=_C3D_DEMO, code_3d_extrude=True, duration=8.0))
+    assert "fs-code-3d" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+
+
+def test_code_3d_extrude_highlights_github_dark_and_skips_empty():
+    tokens = {(text, color) for line in _c3d_highlight(_C3D_DEMO) for text, color in line}
+    assert ("async", "#F97583") in tokens
+    assert ("function", "#F97583") in tokens
+    assert ("loadConfig", "#B392F0") in tokens
+    assert ('"utf8"', "#9ECBFF") in tokens
+    assert ("path", "#FFAB70") in tokens
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="code_3d_extrude", duration=8.0))
+    assert empty.nodes == []
+    short = _c3d_times(1.5)
+    assert short["settle_dur"] + 0.001 <= short["drift_at"] + 1e-9
+    assert short["settle_dur"] < short["drift_at"] + short["drift_dur"]
+
+
+def test_code_3d_extrude_css_keeps_github_dark_and_mono():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert "JetBrains Mono" in css
+    assert "#05070b" in css and "#24292e" in css and "#141d2b" in css
+    assert "#F97583" not in css
+    edge = re.search(r"\.c3d-edge\{[^}]+\}", css).group(0)
+    assert "background:#141d2b" in edge
+    assert "transform:translate(14px,16px)" in edge
+    slab = re.search(r"\.c3d-slab\{[^}]+\}", css).group(0)
+    assert "transform:" not in slab.replace("will-change:transform", "")
+    assert "THREE" not in css
 
 
 def test_number_slam_splits_the_caption():

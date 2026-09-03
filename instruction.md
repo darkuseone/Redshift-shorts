@@ -205,3 +205,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Нижняя треть accent-underline: имя, черта, роль без карточки | каталог твинит scaleX и visibility, мятный #46e5b7; здесь fromTo без visibility, #C8453D; Oswald и Space Mono как в каталоге |
 | 2026-09-03 | Нижняя треть clean-bar: белая плашка с акцентной полоской | каталог твинит clip-path и visibility, оранжевый #ff5a36; здесь SVG-mask scaleX, #C8453D; Montserrat как в каталоге |
 | 2026-09-03 | Нижняя треть dark-card: угольная карточка на светлом футаже | каталог твинит scaleX и visibility, золото #f5b942; здесь fromTo без visibility, #C8453D; уголь #16181d и Montserrat как в каталоге |
+| 2026-09-03 | Полноэкранный жест code-3d-extrude: код на скошенной плите | каталог: Three.js ExtrudeGeometry и onUpdate; здесь 2D scale/x/y/rotation, github-dark и JetBrains Mono как в каталоге |
