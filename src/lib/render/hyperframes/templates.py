@@ -983,17 +983,13 @@ def tr_transitions_3d(ctx: "TemplateCtx") -> Piece:
     times = _t3_times(d)
     start = ctx.start
     tweens = [
-        f'tl.set("#{node_id}-b",{{scaleX:0,opacity:0}},{_num(start)});',
         f'tl.fromTo("#{node_id}-a",{{scaleX:1}},'
         f'{{scaleX:0,duration:{_num(times["a_dur"])},ease:"power2.inOut"}},'
         f'{_num(start + times["a_at"])});',
         f'tl.set("#{node_id}-a",{{opacity:0}},'
         f'{_num(start + times["a_kill"])});',
-        f'tl.set("#{node_id}-b",{{opacity:1}},'
-        f'{_num(start + times["b_at"])});',
-        f'tl.fromTo("#{node_id}-b",{{scaleX:0}},'
-        f'{{scaleX:1,duration:{_num(times["b_dur"])},ease:"power2.inOut",'
-        f'immediateRender:false}},'
+        f'tl.fromTo("#{node_id}-b",{{scaleX:0,opacity:1}},'
+        f'{{scaleX:1,duration:{_num(times["b_dur"])},ease:"power2.inOut"}},'
         f'{_num(start + times["b_at"])});',
         f'tl.fromTo("#{node_id}-edge",{{opacity:0}},'
         f'{{opacity:0.92,duration:{_num(times["edge_in"])},'
@@ -1574,7 +1570,7 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "flex-direction:column;align-items:center;justify-content:center;"
         "transform-origin:50% 50%}"
         ".tr-transitions-3d .t3-a{background:#1b263b}"
-        ".tr-transitions-3d .t3-b{background:#e07a5f}"
+        ".tr-transitions-3d .t3-b{background:#e07a5f;opacity:0}"
         ".tr-transitions-3d .t3-big{font-family:Inter,system-ui,sans-serif;"
         "font-size:280px;font-weight:900;line-height:1;letter-spacing:-0.04em;"
         "user-select:none}"
