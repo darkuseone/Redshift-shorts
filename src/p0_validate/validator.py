@@ -97,6 +97,112 @@ def _check_hook_answered(blocks: list[dict[str, Any]]) -> None:
     )
 
 
+# --- петля удержания (script_playbook.md) ------------------------------------
+# Ролик держат не «интересной темой», а незакрытым вопросом: он открывается в
+# первые секунды и закрывается ответом, которого зритель не предсказал. Ниже —
+# проверки формы этой петли. Все они предупреждения, а не отказы: сценарий
+# бывает намеренно устроен иначе, и решать это человеку. Но молча пропускать
+# ролик, где ответ стоит вторым блоком, значит собирать его без петли вовсе.
+
+# Доля хронометража, раньше которой ответ гасит интригу, не успев её раскачать.
+PAYOFF_EARLIEST_SHARE = 0.40
+# Доля, позже которой ответу негде осесть: за ним ещё перенос и CTA.
+PAYOFF_LATEST_SHARE = 0.88
+# Хук длиннее этого перестаёт быть ударом и становится вступлением.
+HOOK_MAX_SEC = 5.0
+# Сколько новых слов обязан принести ответ сверх уже сказанного.
+PAYOFF_MIN_NEW_WORDS = 2
+
+# Маркеры CTA, который открывает следующую петлю, а не закрывает эту.
+_NEXT_LOOP_MARKERS = (
+    "следующ", "дальше", "продолжен", "вторая часть", "второй части", "часть втор",
+    "ещё страннее", "еще страннее", "самое странное", "не рассказал", "не сказал",
+    "остал", "впереди",
+)
+
+
+def _answer_block_index(blocks: list[dict[str, Any]]) -> int | None:
+    """Где закрывается гештальт хука.
+
+    Явная пометка сценариста сильнее роли: ``answers_hook`` ставят там, где
+    ответ не совпал с ``twist``.
+    """
+    for i, block in enumerate(blocks):
+        if block.get("answers_hook"):
+            return i
+    for i, block in enumerate(blocks):
+        if block.get("role") == "twist":
+            return i
+    return None
+
+
+def _check_retention_loop(blocks: list[dict[str, Any]],
+                          cta: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Форма петли: удар — интрига — затяжка — ответ — CTA на следующую петлю."""
+    warnings: list[dict[str, Any]] = []
+    if not blocks:
+        return warnings
+
+    spans = [estimate_block_duration(b.get("text", "")) for b in blocks]
+    total = sum(spans)
+    starts = [sum(spans[:i]) for i in range(len(blocks))]
+
+    hook_i = next((i for i, b in enumerate(blocks) if b.get("role") == "hook"), None)
+    if hook_i is not None and spans[hook_i] > HOOK_MAX_SEC:
+        warnings.append({
+            "code": "HOOK_TOO_LONG",
+            "message": (f"хук длится ~{spans[hook_i]:.1f} сек (потолок {HOOK_MAX_SEC}): "
+                        "это уже вступление, а не удар — режьте до одного обещания"),
+        })
+
+    answer_i = _answer_block_index(blocks)
+    if answer_i is None:
+        warnings.append({
+            "code": "LOOP_NO_PAYOFF_BLOCK",
+            "message": ("нет ни блока twist, ни пометки answers_hook: непонятно, "
+                        "где ролик отдаёт обещанное — ответ размазан по тексту"),
+        })
+        return warnings
+
+    share = starts[answer_i] / total if total else 0.0
+    if share < PAYOFF_EARLIEST_SHARE:
+        warnings.append({
+            "code": "PAYOFF_TOO_EARLY",
+            "message": (f"ответ приходит на {share:.0%} хронометража (раньше "
+                        f"{PAYOFF_EARLIEST_SHARE:.0%}): интригу нечем держать, "
+                        "добавьте затяжку между хуком и ответом"),
+        })
+    elif share > PAYOFF_LATEST_SHARE:
+        warnings.append({
+            "code": "PAYOFF_TOO_LATE",
+            "message": (f"ответ приходит на {share:.0%} хронометража (позже "
+                        f"{PAYOFF_LATEST_SHARE:.0%}): ему негде осесть перед CTA"),
+        })
+
+    said = set()
+    for block in blocks[:answer_i]:
+        said |= _content_words(block.get("text", ""))
+    fresh = _content_words(blocks[answer_i].get("text", "")) - said
+    if len(fresh) < PAYOFF_MIN_NEW_WORDS:
+        warnings.append({
+            "code": "PAYOFF_RESTATES_SETUP",
+            "message": (f"блок {blocks[answer_i].get('id')} закрывает хук, но не приносит "
+                        "ничего нового: ответ пересказывает уже сказанное вместо того, "
+                        "чтобы разойтись с ожиданием"),
+        })
+
+    text = str((cta or {}).get("text") or "")
+    kind = str((cta or {}).get("type") or "")
+    opens_next = any(m in text.lower() for m in _NEXT_LOOP_MARKERS)
+    if kind == "statement" and not opens_next:
+        warnings.append({
+            "code": "CTA_CLOSES_EVERYTHING",
+            "message": ("CTA ничего не открывает: тип statement и ни слова о следующем "
+                        "ролике — подписка держится на новой петле, а не на просьбе"),
+        })
+    return warnings
+
+
 def _check_quotes(blocks: list[dict[str, Any]], max_words: int) -> None:
     for block in blocks:
         for quote in extract_quotes(block.get("text", "")):
@@ -156,6 +262,9 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
 
     # --- HOOK_UNANSWERED
     _check_hook_answered(blocks)
+
+    # --- форма петли удержания (предупреждения, не отказ)
+    warnings.extend(_check_retention_loop(blocks, script.get("cta")))
 
     # --- QUOTE_TOO_LONG
     _check_quotes(blocks, int(cfg.get("limits.quote_max_words", 15)))

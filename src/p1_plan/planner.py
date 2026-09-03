@@ -153,6 +153,9 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
             "spoken_text": spoken_text(tokens),
             "tokens": [t.to_dict() for t in tokens],
             "emphasis_word": raw.get("emphasis_word"),
+            # Кто закрывает хук — знает P0, а держать паузу перед ударом
+            # приходится P3: без этой пометки он ищет ответ по роли вслепую.
+            "answers_hook": bool(raw.get("answers_hook", False)),
             "avatar_directive": directive,
             "mode": _mode_for_block(raw, avatar_forced=directive),
             "mode_reason": "роль блока (§6)" if not raw.get("mode_hint") else "mode_hint из сценария",

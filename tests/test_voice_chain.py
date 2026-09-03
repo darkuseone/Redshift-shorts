@@ -821,3 +821,101 @@ class TestVoicePool:
         cfg.set("elevenlabs.voice_pool", [])
         cfg.set("elevenlabs.voice_id", "explicit-one")
         assert pick_voice(cfg, "redshift_0048") == "explicit-one"
+
+
+class TestThePauseBeforeThePunch:
+    """§6 `script_playbook.md` — одна пауза ролика живёт против общего правила.
+
+    Заказчик просил вырезать паузы, и они вырезаны все до 80-120 мс. Ровно от
+    этого ответ перестал звучать ответом: он идёт впритык к затяжке. Пауза
+    перед словом-ударом — не оставленный мусор, а приём.
+    """
+
+    def _track(self, sr=8000):
+        """Две реплики без единой паузы между ними: TTS так и отдаёт."""
+        audio = np.zeros(int(3.0 * sr), dtype=np.float32)
+        audio[int(0.2 * sr):int(1.2 * sr)] = 0.3
+        audio[int(1.2 * sr):int(2.4 * sr)] = 0.3
+        words = [{"start": 0.2, "end": 1.2}, {"start": 1.2, "end": 2.4}]
+        return audio, words, sr
+
+    def test_silence_appears_where_the_track_had_none(self):
+        from src.p3_speech_opt.optimizer import plan_segments as plan
+
+        audio, words, sr = self._track()
+        segments, cuts = plan(audio, sr, words, threshold_ms=150,
+                              pause_ms_range=(80.0, 120.0), ratio=0.0,
+                              hold_before_sec=1.2, hold_sec=0.32)
+        hold = next(c for c in cuts if c["kind"] == "punch_hold")
+        assert hold["added_sec"] == pytest.approx(0.32, abs=0.01)
+
+        plain_segments, _ = plan(audio, sr, words, threshold_ms=150,
+                                 pause_ms_range=(80.0, 120.0), ratio=0.0)
+        held = len(render_segments(audio, sr, segments)) / sr
+        plain = len(render_segments(audio, sr, plain_segments)) / sr
+        # Та же дорожка, та же обрезка лида и хвоста — длиннее ровно на паузу.
+        assert held - plain == pytest.approx(0.32, abs=0.02)
+
+    def test_the_punch_word_moves_later_by_the_hold(self):
+        from src.p3_speech_opt.optimizer import plan_segments as plan
+
+        audio, words, sr = self._track()
+        plain, _ = plan(audio, sr, words, threshold_ms=150,
+                        pause_ms_range=(80.0, 120.0), ratio=0.0)
+        held, _ = plan(audio, sr, words, threshold_ms=150,
+                       pause_ms_range=(80.0, 120.0), ratio=0.0,
+                       hold_before_sec=1.2, hold_sec=0.32)
+        assert remap_time(1.2, held) - remap_time(1.2, plain) == pytest.approx(0.32, abs=0.02)
+
+    def test_an_existing_pause_is_held_instead_of_cut(self):
+        from src.p3_speech_opt.optimizer import plan_segments as plan
+
+        sr = 8000
+        audio = np.zeros(int(3.0 * sr), dtype=np.float32)
+        audio[int(0.2 * sr):int(0.8 * sr)] = 0.3
+        audio[int(2.0 * sr):int(2.6 * sr)] = 0.3
+        words = [{"start": 0.2, "end": 0.8}, {"start": 2.0, "end": 2.6}]
+        _segments, cuts = plan(audio, sr, words, threshold_ms=150,
+                               pause_ms_range=(80.0, 120.0), ratio=0.0,
+                               hold_before_sec=2.0, hold_sec=0.32)
+        hold = next(c for c in cuts if c["kind"] == "punch_hold")
+        # Паузы в исходнике 1.2 сек — держим 320 мс, дорисовывать нечего.
+        assert hold["kept_sec"] == pytest.approx(0.32, abs=0.01)
+        assert hold["added_sec"] == 0.0
+        assert not [c for c in cuts if c["kind"] in ("pause", "breath")]
+
+    def test_the_punch_is_the_accent_word_of_the_answering_block(self):
+        from src.p3_speech_opt.optimizer import punch_moment
+
+        plan = {"blocks": [
+            {"id": "b1", "role": "hook", "emphasis_word": "двенадцать"},
+            {"id": "b4", "role": "twist", "emphasis_word": "воду"},
+        ]}
+        blocks = [
+            {"id": "b1", "words": [{"word": "Двенадцать", "start": 0.0, "end": 0.6}]},
+            {"id": "b4", "words": [{"word": "Нашли", "start": 4.0, "end": 4.4},
+                                   {"word": "воду.", "start": 4.4, "end": 4.9}]},
+        ]
+        punch = punch_moment(plan, blocks)
+        assert punch["block_id"] == "b4"
+        assert punch["src_sec"] == pytest.approx(4.4)
+        assert punch["matched_emphasis"] is True
+
+    def test_an_explicit_answers_hook_beats_the_role(self):
+        from src.p3_speech_opt.optimizer import punch_moment
+
+        plan = {"blocks": [
+            {"id": "b2", "role": "evidence", "answers_hook": True, "emphasis_word": "сто"},
+            {"id": "b5", "role": "twist", "emphasis_word": "закрыли"},
+        ]}
+        blocks = [
+            {"id": "b2", "words": [{"word": "сто", "start": 2.0, "end": 2.3}]},
+            {"id": "b5", "words": [{"word": "закрыли", "start": 9.0, "end": 9.5}]},
+        ]
+        assert punch_moment(plan, blocks)["block_id"] == "b2"
+
+    def test_without_an_answering_block_there_is_no_hold(self):
+        from src.p3_speech_opt.optimizer import punch_moment
+
+        plan = {"blocks": [{"id": "b1", "role": "hook"}, {"id": "b2", "role": "setup"}]}
+        assert punch_moment(plan, [{"id": "b1", "words": [{"word": "а", "start": 0.0, "end": 0.1}]}]) is None
