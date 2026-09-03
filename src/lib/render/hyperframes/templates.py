@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-141 шаблон каталога — это не 141 реализация, а набор рендереров с параметрами.
+142 шаблон каталога — это не 142 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3450,6 +3450,266 @@ def dv_conic_progress_ring(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_DCL_IN_BASE = 0.55
+_DCL_OUT_BASE = 0.45
+_DCL_DEFAULT_START = 82.0
+_DCL_DEFAULT_END = 34.0
+_DCL_DEFAULT_LABEL = "Retention"
+_DCL_PATH = (
+    "M 8 24 C 28 28, 44 43, 61 56 S 93 76, 112 92 "
+    "S 144 111, 163 134 S 193 159, 213 186 S 239 211, 252 222")
+_DCL_LINE = "#fb7185"
+_DCL_END = "#fecdd3"
+_DCL_FG = "#f8fafc"
+_DCL_GLOOM = "#030507"
+_DCL_ENTER_Y = 48
+_DCL_FPS = 30.0
+_DCL_GLOOM_PEAK = 0.46
+_DCL_EP_AT = 0.94
+_DCL_PAD_X = 97
+_DCL_PAD_TOP = 173
+_DCL_HEADER_H = 118
+_DCL_LABEL_SIZE = 38
+_DCL_VALUE_SIZE = 118
+_DCL_VALUE_W = 280
+_DCL_PLOT_LEFT = 97
+_DCL_PLOT_TOP = 387
+_DCL_PLOT_W = 886
+_DCL_PLOT_H = 1379
+_DCL_EP_D = 30
+_DCL_VB_W = 260.0
+_DCL_VB_H = 240.0
+_DCL_EP_X = 252.0
+_DCL_EP_Y = 222.0
+
+
+def _dcl_clamp(value: float, lo: float, hi: float) -> float:
+    return lo if value < lo else hi if value > hi else value
+
+
+def _dcl_power2_out(t: float) -> float:
+    u = 1.0 - _dcl_clamp(t, 0.0, 1.0)
+    return 1.0 - u * u
+
+
+def _dcl_times(duration: float) -> dict[str, float]:
+    """Окно decline-chart: IN 0.55 с, OUT 0.45 с, HOLD остаток.
+
+    Короче 1.0 с — IN и OUT сжимаются вместе. HOLD не трогаем.
+    """
+    d = max(0.05, float(duration))
+    min_io = _DCL_IN_BASE + _DCL_OUT_BASE
+    s = d / min_io if d < min_io else 1.0
+    inn = _DCL_IN_BASE * s
+    out = _DCL_OUT_BASE * s
+    if inn + out + 0.001 > d:
+        s = max(0.001, d - 0.001) / min_io
+        inn = _DCL_IN_BASE * s
+        out = max(0.001, d - inn - 0.001)
+    hold = max(0.0, d - inn - out)
+    out_start = inn + hold
+    return {
+        "in": inn,
+        "out": out,
+        "hold": hold,
+        "out_start": out_start,
+        "kill_at": d,
+    }
+
+
+def _dcl_num(raw: Any, default: float | None = None) -> float | None:
+    if raw in (None, ""):
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _dcl_spec(params: dict[str, Any]) -> tuple[float, float, str] | None:
+    """start, end, label. Пусто → None."""
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("start_value", "end_value", "values", "value", "label")):
+        return None
+    values: list[float] = []
+    raw_values = params.get("values")
+    if isinstance(raw_values, (list, tuple)):
+        for item in raw_values:
+            parsed = _dcl_num(item)
+            if parsed is not None:
+                values.append(parsed)
+    start = _dcl_num(params.get("start_value"))
+    end = _dcl_num(params.get("end_value"))
+    if start is None and values:
+        start = values[0]
+    if end is None and len(values) >= 2:
+        end = values[-1]
+    if start is None:
+        start = _dcl_num(params.get("value"), _DCL_DEFAULT_START)
+    if start is None:
+        start = _DCL_DEFAULT_START
+    if end is None:
+        end = _DCL_DEFAULT_END
+    raw_label = params.get("label")
+    if raw_label is None or str(raw_label) == "":
+        label = _DCL_DEFAULT_LABEL
+    else:
+        label = str(raw_label)
+    return start, end, label
+
+
+def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
+    """Линия рисуется вниз, число считает вниз, фон темнеет.
+
+    Каталог DEMO 1 твинит ``strokeDashoffset``, ``filter`` и пишет
+    ``textContent`` из ``onUpdate``. Здесь SVG-mask с ``scaleX`` на rect,
+    gloom ``opacity``, заранее span-ы. Сцена градиент ``#152f3c`` /
+    ``#101a25`` / ``#0c1118``, линия ``#fb7185``, точка ``#fecdd3``,
+    чернила ``#f8fafc`` как в каталоге — жест, не палитра канала. Inter.
+    ``-apple-system`` не ставим. ``line-rise`` / ``.dv-bar`` /
+    ``chart-story`` / ``conic-progress-ring`` не трогаем.
+    """
+    spec = _dcl_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    start_value, end_value, label = spec
+    node_id = f"dcl-{ctx.index:02d}"
+    times = _dcl_times(ctx.duration)
+    start = ctx.start
+    inn = times["in"]
+    hold = times["hold"]
+    out = times["out"]
+    out_start = times["out_start"]
+    sid = f"{node_id}-stage"
+    gid = f"{node_id}-gloom"
+    wid = f"{node_id}-wipe"
+    eid = f"{node_id}-ep"
+    vid = f"{node_id}-cv"
+    mid = f"{node_id}-m"
+    ep_cx = _DCL_PLOT_LEFT + (_DCL_EP_X / _DCL_VB_W) * _DCL_PLOT_W
+    ep_cy = _DCL_PLOT_TOP + (_DCL_EP_Y / _DCL_VB_H) * _DCL_PLOT_H
+    ep_r = _DCL_EP_D / 2.0
+    tweens: list[str] = []
+    spans: list[str] = []
+    texts: list[str] = []
+    frames = max(1, int(round(hold * _DCL_FPS))) if hold > 0 else 0
+    if frames:
+        for frame in range(frames + 1):
+            t = frame / frames
+            progress = _dcl_power2_out(t)
+            value = int(round(start_value + (end_value - start_value) * progress))
+            text = str(value)
+            texts.append(text)
+            spans.append(f'<span id="{vid}-{frame}">{_esc(text)}</span>')
+    else:
+        texts.append(str(int(round(start_value))))
+        spans.append(f'<span id="{vid}-0">{_esc(texts[0])}</span>')
+        texts.append(str(int(round(end_value))))
+        spans.append(f'<span id="{vid}-1">{_esc(texts[1])}</span>')
+
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:0,y:{_DCL_ENTER_Y}}},'
+        f'{{opacity:1,y:0,duration:{_num(inn)},'
+        f'ease:"power2.out",immediateRender:false}},{_num(start)});')
+    tweens.append(
+        f'tl.set("#{wid}",{{scaleX:0}},{_num(start)});')
+    tweens.append(
+        f'tl.set("#{eid}",{{scale:0.72,opacity:0}},{_num(start)});')
+    tweens.append(
+        f'tl.set("#{vid}-0",{{opacity:1}},{_num(start)});')
+
+    hold_at = start + inn
+    if hold > 0:
+        hold_play = hold if hold <= 0.001 else max(0.001, hold - 0.001)
+        tweens.append(
+            f'tl.fromTo("#{wid}",{{scaleX:0}},'
+            f'{{scaleX:1,duration:{_num(hold_play)},'
+            f'ease:"power2.out",immediateRender:false}},{_num(hold_at)});')
+        tweens.append(
+            f'tl.fromTo("#{gid}",{{opacity:0}},'
+            f'{{opacity:{_num(_DCL_GLOOM_PEAK)},duration:{_num(hold_play)},'
+            f'ease:"power2.out",immediateRender:false}},{_num(hold_at)});')
+        prev_shown = 0
+        for frame in range(1, frames + 1):
+            if texts[frame] == texts[prev_shown]:
+                continue
+            at = hold_at + hold * (frame / frames)
+            tweens.append(
+                f'tl.set("#{vid}-{prev_shown}",{{opacity:0}},{_num(at)});')
+            tweens.append(
+                f'tl.set("#{vid}-{frame}",{{opacity:1}},{_num(at)});')
+            prev_shown = frame
+        fade_t = 1.0 - math.sqrt(max(0.0, 1.0 - _DCL_EP_AT))
+        fade_at = hold_at + hold * fade_t
+        fade_dur = max(0.001, start + out_start - fade_at)
+        fade_play = fade_dur if fade_dur <= 0.001 else max(0.001, fade_dur - 0.001)
+        tweens.append(
+            f'tl.fromTo("#{eid}",{{opacity:0,scale:0.72}},'
+            f'{{opacity:1,scale:0.72,duration:{_num(fade_play)},'
+            f'ease:"power2.out",immediateRender:false}},{_num(fade_at)});')
+    else:
+        tweens.append(
+            f'tl.set("#{wid}",{{scaleX:1}},{_num(hold_at)});')
+        tweens.append(
+            f'tl.set("#{gid}",{{opacity:{_num(_DCL_GLOOM_PEAK)}}},'
+            f'{_num(hold_at)});')
+        tweens.append(
+            f'tl.set("#{vid}-0",{{opacity:0}},{_num(hold_at)});')
+        tweens.append(
+            f'tl.set("#{vid}-1",{{opacity:1}},{_num(hold_at)});')
+
+    out_play = out if out <= 0.001 else max(0.001, out - 0.001)
+    tweens.append(
+        f'tl.fromTo("#{eid}",{{scale:0.72,opacity:1}},'
+        f'{{scale:1,opacity:1,duration:{_num(out_play)},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + out_start)});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(
+        f'tl.set("#{sid}",{{y:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{gid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{wid}",{{scaleX:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{eid}",{{scale:0.72,opacity:0}},{_num(kill_at)});')
+    span_n = frames + 1 if frames else 2
+    for frame in range(span_n):
+        tweens.append(
+            f'tl.set("#{vid}-{frame}",{{opacity:0}},{_num(kill_at)});')
+
+    value_left = 1080 - _DCL_PAD_X - _DCL_VALUE_W
+    label_top = _DCL_PAD_TOP + _DCL_HEADER_H - _DCL_LABEL_SIZE
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay dcl-chart" {_timing(ctx)}>'
+               f'<div class="dcl-bg"></div>'
+               f'<div id="{gid}" class="dcl-gloom"></div>'
+               f'<div id="{sid}" class="dcl-stage">'
+               f'<div class="dcl-label" data-layout-allow-overlap="" '
+               f'style="left:{_DCL_PAD_X}px;top:{label_top}px">'
+               f'{_esc(label)}</div>'
+               f'<div id="{vid}" class="dcl-cv" data-layout-allow-overlap="" '
+               f'style="left:{value_left}px;top:{_DCL_PAD_TOP}px">'
+               f'{"".join(spans)}</div>'
+               f'<div class="dcl-plot">'
+               f'<svg viewBox="0 0 260 240" preserveAspectRatio="none" '
+               f'aria-hidden="true">'
+               f'<defs><mask id="{mid}" maskUnits="userSpaceOnUse" '
+               f'maskContentUnits="userSpaceOnUse">'
+               f'<rect id="{wid}" class="dcl-wipe" x="0" y="0" '
+               f'width="260" height="240" fill="#fff"/></mask></defs>'
+               f'<line class="dcl-grid" x1="8" y1="55" x2="252" y2="55"></line>'
+               f'<line class="dcl-grid" x1="8" y1="120" x2="252" y2="120"></line>'
+               f'<line class="dcl-grid" x1="8" y1="185" x2="252" y2="185"></line>'
+               f'<path class="dcl-line" mask="url(#{mid})" '
+               f'd="{_DCL_PATH}"></path></svg></div>'
+               f'<div id="{eid}" class="dcl-ep" data-layout-allow-overlap="" '
+               f'style="left:{ep_cx - ep_r:.1f}px;top:{ep_cy - ep_r:.1f}px">'
+               f'</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -3462,6 +3722,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-chart-race": dv_bar_chart_race,
     "chart-story": dv_chart_story,
     "conic-progress-ring": dv_conic_progress_ring,
+    "decline-chart": dv_decline_chart,
 }
 
 
@@ -3650,6 +3911,46 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "line-height:1;color:#f4f7fb;font-variant-numeric:tabular-nums}"
         ".cpr-cv span{position:absolute;left:0;top:0;right:0;bottom:0;"
         "display:flex;align-items:center;justify-content:center;opacity:0}"
+        ".dcl-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0c1118;font-family:Inter,system-ui,sans-serif;"
+        "color:#f8fafc}"
+        ".dcl-bg{position:absolute;inset:0;background:"
+        "radial-gradient(circle at 24% 16%,rgba(47,129,150,0.55),transparent 46%),"
+        "linear-gradient(145deg,#152f3c 0%,#101a25 48%,#0c1118 100%)}"
+        ".dcl-gloom{position:absolute;inset:0;background:#030507;opacity:0}"
+        ".dcl-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        ".dcl-label{position:absolute;width:580px;overflow:hidden;"
+        "color:rgba(226,232,240,0.72);font-size:38px;font-weight:600;"
+        "letter-spacing:0.05em;line-height:1.1;text-overflow:ellipsis;"
+        "text-transform:uppercase;white-space:nowrap}"
+        f".dcl-cv{{position:absolute;width:{_DCL_VALUE_W}px;"
+        f"height:{_DCL_HEADER_H}px;"
+        "color:#f8fafc;font-family:Inter,system-ui,sans-serif;"
+        f"font-size:{_DCL_VALUE_SIZE}px;font-weight:700;"
+        "font-variant-numeric:tabular-nums;letter-spacing:-0.07em;"
+        "line-height:0.8;text-align:right}"
+        ".dcl-cv span{position:absolute;left:0;top:0;right:0;bottom:0;"
+        "display:flex;align-items:flex-end;justify-content:flex-end;opacity:0}"
+        f".dcl-plot{{position:absolute;left:{_DCL_PLOT_LEFT}px;"
+        f"top:{_DCL_PLOT_TOP}px;width:{_DCL_PLOT_W}px;"
+        f"height:{_DCL_PLOT_H}px"
+        "}"
+        ".dcl-plot svg{position:absolute;inset:0;width:100%;height:100%;"
+        "overflow:visible}"
+        ".dcl-grid{stroke:rgba(148,163,184,0.18);stroke-width:1;"
+        "vector-effect:non-scaling-stroke}"
+        ".dcl-line{fill:none;stroke:#fb7185;stroke-linecap:round;"
+        "stroke-linejoin:round;stroke-width:4}"
+        ".dcl-wipe{transform-origin:0px 50%;transform-box:fill-box}"
+        f".dcl-ep{{position:absolute;width:{_DCL_EP_D}px;"
+        f"height:{_DCL_EP_D}px;"
+        "border-radius:50%;background:#fecdd3;opacity:0;"
+        "transform-origin:50% 50%}"
     )
 
 

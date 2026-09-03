@@ -372,7 +372,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (11, [
+    "data-viz": (12, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -399,6 +399,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("conic-progress-ring",
          "Кольцо заполняется от 12 часов, центр считает в такт — conic-progress-ring",
          [1.2, 4.0], {"percent": True}, ["data", "ring", "progress"], "dataviz"),
+        ("decline-chart",
+         "Линия падает вниз, число считает вниз, фон темнеет — decline-chart",
+         [1.2, 4.0], {"start_value": 82, "end_value": 34},
+         ["data", "line", "decline"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

@@ -740,6 +740,8 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
             continue
         pct = str(nums[0].get("suffix") or "").lstrip().startswith("%")
+        declining = (len(nums) >= 2
+                     and float(nums[1]["value"]) < float(nums[0]["value"]))
         prefer = (["data-viz/conic-progress-ring",
                    "data-viz/stat-countup-card"]
                   if len(nums) == 1 and pct and variant != "B"
@@ -749,9 +751,14 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                         "data-viz/animated-bar-chart",
                         "data-viz/compare-bars", "data-viz/bar-race-mini"]
                   if len(nums) >= 4
-                  else ["data-viz/chart-story",
-                        "data-viz/animated-bar-chart",
-                        "data-viz/compare-bars", "data-viz/bar-race-mini"])
+                  else (["data-viz/decline-chart",
+                         "data-viz/chart-story",
+                         "data-viz/animated-bar-chart",
+                         "data-viz/compare-bars", "data-viz/bar-race-mini"]
+                        if declining
+                        else ["data-viz/chart-story",
+                              "data-viz/animated-bar-chart",
+                              "data-viz/compare-bars", "data-viz/bar-race-mini"]))
         if variant == "B" and len(nums) >= 2:
             prefer = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
         template = catalog.pick("data-viz", duration=end - start,
@@ -759,7 +766,17 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                                 prefer=prefer, seed=seed + 11)
         used.append(template.id)
         name = template.name
-        if name == "conic-progress-ring":
+        if name == "decline-chart":
+            start_v = float(nums[0]["value"])
+            end_v = float(nums[1]["value"]) if len(nums) >= 2 else start_v
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params = {
+                "start_value": start_v,
+                "end_value": end_v,
+                "label": heading or "Retention",
+                "values": [start_v, end_v],
+            }
+        elif name == "conic-progress-ring":
             val = float(nums[0]["value"])
             suffix = str(nums[0]["suffix"]) if nums[0].get("suffix") else "%"
             token = (str(int(round(val))) if abs(val - round(val)) < 1e-9

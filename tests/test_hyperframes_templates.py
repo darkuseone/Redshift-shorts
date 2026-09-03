@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-141 шаблон каталога — это рендереры с параметрами. Проверяется то, что
+142 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -208,6 +208,11 @@ def test_css_covers_every_layer_the_transitions_use():
         "progress": 100,
         "label": "100",
     }),
+    ("data-viz/decline-chart", {
+        "start_value": 82,
+        "end_value": 34,
+        "label": "Retention",
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -228,6 +233,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/bar-chart-race", ctx) == Piece()
     assert render_dataviz("data-viz/chart-story", ctx) == Piece()
     assert render_dataviz("data-viz/conic-progress-ring", ctx) == Piece()
+    assert render_dataviz("data-viz/decline-chart", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -259,12 +265,14 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "bcr-" not in compare and "bcr-" not in race
     assert "cst-" not in compare and "cst-" not in race
     assert "cpr-" not in compare and "cpr-" not in race
+    assert "dcl-" not in compare and "dcl-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
     assert "dv-donut" in donut
     assert "cpr-" not in donut
     assert "cst-" not in donut
+    assert "dcl-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -466,6 +474,7 @@ def test_conic_progress_ring_rotates_halves_not_conic(ctx):
     assert "abc-" not in node
     assert "bcr-" not in node
     assert "cst-" not in node
+    assert "dcl-" not in node
     assert "stat-card" not in node
     assert "textContent" not in node
     assert "--ring-progress" not in node
@@ -529,7 +538,7 @@ def test_conic_progress_ring_keeps_catalog_brand_and_surface():
     assert "#f4f7fb" in chart
     assert "#f4f7fb" in label
     assert "transform-origin:50% 50%" in rot
-    block = css.split(".cpr-chart", 1)[1]
+    block = css.split(".cpr-chart", 1)[1].split(".dcl-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
@@ -538,12 +547,123 @@ def test_conic_progress_ring_keeps_catalog_brand_and_surface():
     assert "text-transform" not in block
     stripped = (css.replace("transform-origin:left center", "")
                 .replace("transform-origin:50% 50%", "")
-                .replace("transform-origin:50% 100%", ""))
-    assert "transform:" not in stripped.split(".cpr-chart", 1)[1]
+                .replace("transform-origin:50% 100%", "")
+                .replace("transform-origin:0px 50%", "")
+                .replace("transform-box:fill-box", ""))
+    assert "transform:" not in stripped.split(".cpr-chart", 1)[1].split(".dcl-chart", 1)[0]
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "cpr-" not in dv_bar
     donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
     assert "cpr-" not in donut
+
+
+def test_decline_chart_draws_mask_not_dash(ctx):
+    """Каталог DEMO 1 твинит strokeDashoffset и textContent; здесь scaleX и span-ы."""
+    piece = render_dataviz("data-viz/decline-chart", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=4.0, target=ctx.target,
+        track=6, params={
+            "start_value": 82,
+            "end_value": 34,
+            "label": "Retention",
+        }))
+    node = piece.nodes[0]
+    assert "dcl-chart" in node
+    assert "dcl-bg" in node and "dcl-stage" in node and "dcl-line" in node
+    assert "dcl-gloom" in node and "dcl-wipe" in node and "dcl-ep" in node
+    assert "Retention" in node
+    assert ">82<" in node and ">34<" in node
+    assert "dv-bar" not in node
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "stat-card" not in node
+    assert "textContent" not in node
+    assert "strokeDashoffset" not in node
+    assert "stroke-dashoffset" not in node
+    assert "conic-gradient" not in node
+    assert node.count(f'id="dcl-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    assert f'id="dcl-{ctx.index:02d}-stage"' in node
+    assert f'id="dcl-{ctx.index:02d}-wipe"' in node
+    assert f'id="dcl-{ctx.index:02d}-ep"' in node
+    assert f'id="dcl-{ctx.index:02d}-gloom"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scaleX:0" in body and "scaleX:1" in body
+    assert "power2.out" in body
+    assert "immediateRender:false" in body
+    assert "opacity:1" in body
+    assert "filter" not in body
+    assert "strokeDashoffset" not in body
+    assert "stroke-dashoffset" not in body
+    assert "attr:" not in body
+    assert "textContent" not in body
+    assert "saturate" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "clipPath" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#dcl-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _dcl_times(4.0)
+    assert abs(times["in"] - 0.55) < 1e-9
+    assert abs(times["out"] - 0.45) < 1e-9
+    assert abs(times["hold"] - 3.0) < 1e-9
+    assert abs(times["out_start"] - 3.55) < 1e-9
+    short = _dcl_times(0.22)
+    assert short["out_start"] + 0.001 <= 0.22 + 1e-9
+
+
+def test_decline_chart_keeps_catalog_line_and_ambient():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".dcl-chart" in css
+    assert ".dcl-line" in css
+    chart = re.search(r"\.dcl-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.dcl-bg\{[^}]+\}", css).group(0)
+    gloom = re.search(r"\.dcl-gloom\{[^}]+\}", css).group(0)
+    line = re.search(r"\.dcl-line\{[^}]+\}", css).group(0)
+    ep = re.search(r"\.dcl-ep\{[^}]+\}", css).group(0)
+    label = re.search(r"\.dcl-label\{[^}]+\}", css).group(0)
+    value = re.search(r"\.dcl-cv\{[^}]+\}", css).group(0)
+    wipe = re.search(r"\.dcl-wipe\{[^}]+\}", css).group(0)
+    assert "#0c1118" in chart
+    assert "#152f3c" in bg and "#101a25" in bg and "#0c1118" in bg
+    assert "#030507" in gloom
+    assert "#fb7185" in line
+    assert "#fecdd3" in ep
+    assert "#f8fafc" in chart and "#f8fafc" in value
+    assert "text-transform:uppercase" in label
+    assert "transform-origin:0px 50%" in wipe
+    assert "transform-box:fill-box" in wipe
+    assert "transform-origin:50% 50%" in ep
+    block = css.split(".dcl-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    stripped = (css.replace("transform-origin:left center", "")
+                .replace("transform-origin:50% 50%", "")
+                .replace("transform-origin:50% 100%", "")
+                .replace("transform-origin:0px 50%", "")
+                .replace("transform-box:fill-box", "")
+                .replace("text-transform:uppercase", ""))
+    assert "transform:" not in stripped.split(".dcl-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "dcl-" not in dv_bar
+    donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
+    assert "dcl-" not in donut
 
 
 def test_split_moves_both_halves_towards_the_seam():
@@ -3478,6 +3598,7 @@ def test_animated_bar_chart_keeps_catalog_ink_and_paper():
     assert "bcr-" not in dv_bar
     assert "cst-" not in dv_bar
     assert "cpr-" not in dv_bar
+    assert "dcl-" not in dv_bar
     assert "transform-origin:left center" in dv_bar
 
 
@@ -3511,6 +3632,7 @@ def test_bar_chart_race_keeps_catalog_ink_paper_and_accent():
     assert "bcr-" not in dv_bar
     assert "cst-" not in dv_bar
     assert "cpr-" not in dv_bar
+    assert "dcl-" not in dv_bar
 
 
 def test_chart_story_keeps_catalog_ink_paper_and_accent():
@@ -3546,6 +3668,7 @@ def test_chart_story_keeps_catalog_ink_paper_and_accent():
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "cst-" not in dv_bar
     assert "cpr-" not in dv_bar
+    assert "dcl-" not in dv_bar
 
 
 OVERLAY_PARAMS = {

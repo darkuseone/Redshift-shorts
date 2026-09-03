@@ -1422,9 +1422,26 @@ def test_conic_progress_ring_overlay_reaches_the_markup(plan, assets, brandbook)
     assert "abc-" not in node
     assert "bcr-" not in node
     assert "cst-" not in node
+    assert "dcl-" not in node
 
 
-def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):
+def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 4.2,
+        "template": "data-viz/decline-chart",
+        "params": {"start_value": 82, "end_value": 34, "label": "Retention"},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "dcl-chart" in out
+    assert "dcl-bg" in out
+    assert "dcl-line" in out
+    assert "Retention" in out
+    node = next(line for line in out.splitlines() if "dcl-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
     """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
 
     Поймано кадром готового MP4, а не разметкой: QC-7 меряет safe zones по
