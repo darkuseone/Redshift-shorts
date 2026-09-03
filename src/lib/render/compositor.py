@@ -412,6 +412,32 @@ def _tr_transitions_3d(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
 
 
+def _tr_transitions_cover(incoming, outgoing, progress, params, ctx):
+    """Cover stand-in: navy → magenta/purple → terracotta. Без CSS transform."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    magenta = np.array([247.0, 37.0, 133.0], dtype=np.float32)
+    purple = np.array([114.0, 9.0, 183.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    if eased < 0.4:
+        t = eased / 0.4
+        mixed = a * (1.0 - t) + navy * t
+    elif eased < 0.55:
+        t = (eased - 0.4) / 0.15
+        mixed = magenta * (1.0 - t) + purple * t
+    elif eased < 0.7:
+        t = (eased - 0.55) / 0.15
+        mixed = purple * (1.0 - t) + terra * t
+    else:
+        t = (eased - 0.7) / 0.3
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
 def _tr_transitions_blur(incoming, outgoing, progress, params, ctx):
     """Blur through stand-in: navy → terracotta через GaussianBlur. Без tween filter."""
     p = clamp01(progress)
@@ -484,6 +510,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "mk_clone_wall": _tr_mk_clone_wall,
     "transitions_3d": _tr_transitions_3d,
     "transitions_blur": _tr_transitions_blur,
+    "transitions_cover": _tr_transitions_cover,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,
     "blur_dip": _tr_blur_dip,

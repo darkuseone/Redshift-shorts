@@ -546,6 +546,36 @@ def test_transitions_blur_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_transitions_cover_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """translateX каталога не вендорится: вайпы GSAP x, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_cover", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-cover" in out
+    assert "tc-a" in out and "tc-b" in out
+    assert "tc-wa" in out and "tc-wb" in out and "ONE" in out
+    assert "tr-transitions-blur" not in out
+    assert "tr-transitions-3d" not in out
+    assert 'class="clip tr-blur"' not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "x:-1080" in tween_body
+    assert "x:1080" in tween_body
+    assert "filter" not in tween_body
+    assert "innerHTML" not in tween_body
+    assert "textContent" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

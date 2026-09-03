@@ -224,3 +224,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Переход mk-clone-wall-transition: плитка слов накрывает кадр и инвертируется | каталог твинит width/height и visibility; здесь scale/x/opacity, чернила #1d1d1f и бумага #ffffff |
 | 2026-09-03 | Переход transitions-3d: 3D card flip, SCENE A схлопывается и SCENE B раскрывается | каталог твинит rotationY; здесь scaleX/opacity, вуали #1b263b/#e07a5f |
 | 2026-09-03 | Переход transitions-blur: SCENE A уходит в размытие, SCENE B выходит из него | каталог твинит filter; здесь scale/opacity и призраки, вуали #1b263b/#e07a5f; blur-dip не трогаем |
+| 2026-09-03 | Переход transitions-cover: staggered blocks накрывают SCENE A и открывают SCENE B | каталог ставит translateX в CSS; здесь GSAP x на 1080 px, вайпы #f72585/#7209b7; blur/3d/paper-slide не трогаем |

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-133 шаблона каталога — это не 133 реализации, а набор рендереров с параметрами.
+134 шаблона каталога — это не 134 реализации, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1124,6 +1124,103 @@ def tr_transitions_blur(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_TC_CATALOG_SEC = 2.4
+
+
+def _tc_times(duration: float) -> dict[str, float]:
+    """Окно cover: каталог едет ``translateX`` 0.25 с со стаггером 0.06 с.
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Доли 2.4 с окна
+    (удержание A → staggered wipes → удержание B) сохраняем, стыки +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _TC_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    def span(start_cat: float, end_cat: float,
+             after: float = 0.0) -> tuple[float, float]:
+        at = max(t(start_cat), after)
+        end = min(d, t(end_cat))
+        if at + 0.001 > end:
+            end = min(d, at + 0.001)
+        if at + 0.001 > end:
+            at = max(0.0, end - 0.001)
+        return at, max(0.001, end - at)
+
+    wa_in_at, wa_in_dur = span(1.00, 1.25)
+    wb_in_at, wb_in_dur = span(1.06, 1.31, after=wa_in_at + 0.001)
+    wa_out_at, wa_out_dur = span(
+        1.28, 1.53, after=wa_in_at + wa_in_dur + 0.001)
+    wb_out_at, wb_out_dur = span(
+        1.34, 1.59,
+        after=max(wb_in_at + wb_in_dur + 0.001, wa_out_at + 0.001))
+    swap_at = min(max(t(1.20), wa_in_at + 0.001), wa_out_at)
+    return {
+        "wa_in_at": wa_in_at,
+        "wa_in_dur": wa_in_dur,
+        "wb_in_at": wb_in_at,
+        "wb_in_dur": wb_in_dur,
+        "swap_at": swap_at,
+        "wa_out_at": wa_out_at,
+        "wa_out_dur": wa_out_dur,
+        "wb_out_at": wb_out_at,
+        "wb_out_dur": wb_out_dur,
+    }
+
+
+def tr_transitions_cover(ctx: "TemplateCtx") -> Piece:
+    """Cover: staggered blocks накрывают SCENE A и открывают SCENE B.
+
+    Каталог ставит CSS ``transform: translateX(-1920px)`` и твинит ``x`` /
+    ``textContent`` / ``innerHTML`` / ``zIndex``. Здесь GSAP ``x`` на
+    1080 px без CSS ``transform``, вуали ``#f72585``/``#7209b7``. Твины
+    на гранях / вайпах, не на ``.clip`` и не на входящем кадре. Цвета
+    SCENE A/B и вайпов каталога — жест карточки, не палитра канала.
+    ``-apple-system`` не ставим. Inter как запас вместо системного стека.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _tc_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-wa",{{x:-1080,opacity:1}},'
+        f'{{x:0,duration:{_num(times["wa_in_dur"])},ease:"power3.inOut",'
+        f'immediateRender:false}},{_num(start + times["wa_in_at"])});',
+        f'tl.fromTo("#{node_id}-wb",{{x:-1080,opacity:1}},'
+        f'{{x:0,duration:{_num(times["wb_in_dur"])},ease:"power3.inOut",'
+        f'immediateRender:false}},{_num(start + times["wb_in_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},'
+        f'{_num(start + times["swap_at"])});',
+        f'tl.set("#{node_id}-b",{{opacity:1}},'
+        f'{_num(start + times["swap_at"])});',
+        f'tl.to("#{node_id}-wa",{{x:1080,duration:{_num(times["wa_out_dur"])},'
+        f'ease:"power3.inOut",immediateRender:false}},'
+        f'{_num(start + times["wa_out_at"])});',
+        f'tl.to("#{node_id}-wb",{{x:1080,duration:{_num(times["wb_out_dur"])},'
+        f'ease:"power3.inOut",immediateRender:false}},'
+        f'{_num(start + times["wb_out_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-wa",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-wb",{{opacity:0}},{_num(start + d)});',
+    ]
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-transitions-cover" {_timing(ctx)}>'
+               f'<span class="tc-stage">'
+               f'<span id="{node_id}-a" class="tc-face tc-a">'
+               f'<span class="tc-big">ONE</span>'
+               f'<span class="tc-label">SCENE A</span></span>'
+               f'<span id="{node_id}-b" class="tc-face tc-b">'
+               f'<span class="tc-big">TWO</span>'
+               f'<span class="tc-label">SCENE B</span></span>'
+               f'<span id="{node_id}-wb" class="tc-wipe tc-wb"></span>'
+               f'<span id="{node_id}-wa" class="tc-wipe tc-wa"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -1396,6 +1493,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "mk_clone_wall": tr_mk_clone_wall,
     "transitions_3d": tr_transitions_3d,
     "transitions_blur": tr_transitions_blur,
+    "transitions_cover": tr_transitions_cover,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -1714,6 +1812,27 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "margin-top:12px}"
         ".tr-transitions-blur .tb-a .tb-label{color:#778da9}"
         ".tr-transitions-blur .tb-b .tb-label{color:#ffffff}"
+        f".tr-transitions-cover{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-transitions-cover .tc-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-transitions-cover .tc-face{position:absolute;inset:0;display:flex;"
+        "flex-direction:column;align-items:center;justify-content:center;"
+        "transform-origin:50% 50%}"
+        ".tr-transitions-cover .tc-a{background:#1b263b}"
+        ".tr-transitions-cover .tc-b{background:#e07a5f;opacity:0}"
+        ".tr-transitions-cover .tc-big{font-family:Inter,system-ui,sans-serif;"
+        "font-size:280px;font-weight:900;line-height:1;letter-spacing:-0.04em;"
+        "user-select:none}"
+        ".tr-transitions-cover .tc-a .tc-big{color:rgba(255,255,255,0.12)}"
+        ".tr-transitions-cover .tc-b .tc-big{color:rgba(0,0,0,0.12)}"
+        ".tr-transitions-cover .tc-label{font-family:Inter,system-ui,sans-serif;"
+        "font-size:40px;font-weight:700;letter-spacing:6px;"
+        "margin-top:12px;color:#ffffff}"
+        ".tr-transitions-cover .tc-wipe{position:absolute;inset:0;display:block;"
+        "opacity:0}"
+        ".tr-transitions-cover .tc-wb{background:#7209b7}"
+        ".tr-transitions-cover .tc-wa{background:#f72585}"
     )
 
 

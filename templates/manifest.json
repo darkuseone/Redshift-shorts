@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 23,
+    "transitions": 24,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 133
+    "_total": 134
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1992,6 +1992,25 @@
         "through"
       ],
       "renderer": "transitions_blur",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-cover",
+      "name": "transitions-cover",
+      "category": "transitions",
+      "title": "Cover: staggered blocks накрывают SCENE A и открывают SCENE B — transitions-cover",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "cover",
+        "wipe"
+      ],
+      "renderer": "transitions_cover",
       "last_used_in": [],
       "added": "2026-09-03"
     },
