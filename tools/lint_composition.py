@@ -150,6 +150,11 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
                          "end": round(5.0 + i * 6.0, 3),
                          "params": {"domain": "nature.com", "title": "Заголовок",
                                     "snippet": "Выдержка", "content": "ПЛАШКА"}})
+    overlays.append({
+        "type": "dataviz", "start": 8.0, "end": 13.0,
+        "template": "data-viz/apple-money-count", "renderer": "dataviz",
+        "params": {"end_value": 10000, "prefix": "$"},
+    })
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

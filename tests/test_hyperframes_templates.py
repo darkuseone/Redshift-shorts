@@ -25,6 +25,7 @@ from src.lib.render.hyperframes.templates import (
     _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _usm_times, _umf_times, _wmp_times, _sr_frame_table,
     SS_STROKE, text_width,
 )
+from src.lib.render.hyperframes.apple_money import _amc_times
 
 # §7 контракта детерминизма: анимировать можно только это.
 ALLOWED_PROPS = {
@@ -298,6 +299,10 @@ def test_css_covers_every_layer_the_transitions_use():
         "source": "Source: International Monetary Fund",
         "highlight": ["756", "578", "840", "036", "752"],
     }),
+    ("data-viz/apple-money-count", {
+        "end_value": 10000,
+        "prefix": "$",
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -326,6 +331,10 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/us-map-flow", ctx) == Piece()
     assert render_dataviz("data-viz/us-map-hex", ctx) == Piece()
     assert render_dataviz("data-viz/world-map", ctx) == Piece()
+    assert render_dataviz("data-viz/apple-money-count",
+                         TemplateCtx(index=4, start=10.0, duration=3.0,
+                                     target="ovl-04", track=6,
+                                     params={"end_value": 0})) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -1553,7 +1562,58 @@ def test_world_map_keeps_catalog_tokens():
     assert "#1e293b" in bg
     assert "#064e3b" in legend_bar and "#0d9488" in legend_bar
     assert "#22d3ee" in legend_bar and "#f0fdfa" in legend_bar
-    block = css.split(".wmp-chart", 1)[1]
+    block = css.split(".wmp-chart", 1)[1].split(".amc-chart", 1)[0]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
+def test_apple_money_count_bakes_spans_not_textcontent(ctx):
+    """Catalog writes textContent and tweens filter; here spans and opacity."""
+    piece = render_dataviz("data-viz/apple-money-count", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=5.0, target=ctx.target,
+        track=6, params={"end_value": 10000, "prefix": "$"}))
+    node = piece.nodes[0]
+    assert "amc-chart" in node
+    assert "amc-stage" in node and "amc-flash" in node and "amc-hit" in node
+    assert "$10,000" in node
+    assert "$0" in node
+    assert node.count('class="amc-icon') == 62
+    assert "textContent" not in node
+    assert "onUpdate" not in node
+    assert "clip-path" not in node
+    assert "filter:" not in "".join(piece.tweens)
+    assert "textContent" not in "".join(piece.tweens)
+    assert "strokeDashoffset" not in "".join(piece.tweens)
+    body = " ".join(piece.tweens)
+    assert "opacity:1" in body and "opacity:0" in body
+    assert "power4.out" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#amc-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _amc_times(5.0)
+    assert abs(times["hit"] - 3.16) < 1e-9
+    assert abs(times["burst_at"] - 3.28) < 1e-9
+
+
+def test_apple_money_count_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".amc-chart" in css
+    assert ".amc-icon.bill" in css
+    assert ".amc-icon.coin" in css
+    chart = re.search(r"\.amc-chart\{[^}]+\}", css).group(0)
+    flash = re.search(r"\.amc-flash\{[^}]+\}", css).group(0)
+    hit = re.search(r"\.amc-hit\{[^}]+\}", css).group(0)
+    assert "#fdfefe" in chart
+    assert "#111315" in chart
+    assert "#30d158" in flash and "#30d158" in hit
+    assert "#ffd54f" in css
+    block = css.split(".amc-chart", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
 

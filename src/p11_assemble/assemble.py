@@ -1461,6 +1461,11 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "ввп на душу")):
             prefer = ["data-viz/world-map"] + [
                 item for item in prefer if item != "data-viz/world-map"]
+        if variant != "B" and (re.search(r"\$\s*\d", blob) or any(key in blob for key in (
+                "usd", "dollar", "revenue", "valuation", "market cap",
+                "выручк", "капитализац", "доллар"))):
+            prefer = ["data-viz/apple-money-count"] + [
+                item for item in prefer if item != "data-viz/apple-money-count"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -1551,6 +1556,9 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "source": "Source: International Monetary Fund",
                 "highlight": ["756", "578", "840", "036", "752"],
             }
+        elif name == "apple-money-count":
+            val = float(nums[0]["value"]) if nums else 10000.0
+            params = {"end_value": val, "prefix": "$"}
         elif name == "us-map-flow":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
             cities = [{

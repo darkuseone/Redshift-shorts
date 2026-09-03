@@ -380,7 +380,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (19, [
+    "data-viz": (20, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -484,6 +484,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "source": "Source: International Monetary Fund",
              "highlight": ["756", "578", "840", "036", "752"],
          }, ["data", "map", "world"], "dataviz"),
+        ("apple-money-count",
+         "Счёт $0→$10 000, затем веер купюр и монет — apple-money-count",
+         [2.0, 5.0], {"end_value": 10000, "prefix": "$"},
+         ["data", "number", "money", "count"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],
