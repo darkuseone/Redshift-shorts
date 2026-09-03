@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-142 шаблон каталога — это рендереры с параметрами. Проверяется то, что
+143 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -213,6 +213,13 @@ def test_css_covers_every_layer_the_transitions_use():
         "end_value": 34,
         "label": "Retention",
     }),
+    ("data-viz/mk-line-graph", {
+        "series": [
+            {"name": "Renders", "values": [12, 26, 22, 38, 44, 58]},
+            {"name": "Projects", "values": [8, 14, 18, 16, 28, 36]},
+        ],
+        "xLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -234,6 +241,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/chart-story", ctx) == Piece()
     assert render_dataviz("data-viz/conic-progress-ring", ctx) == Piece()
     assert render_dataviz("data-viz/decline-chart", ctx) == Piece()
+    assert render_dataviz("data-viz/mk-line-graph", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -266,6 +274,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "cst-" not in compare and "cst-" not in race
     assert "cpr-" not in compare and "cpr-" not in race
     assert "dcl-" not in compare and "dcl-" not in race
+    assert "mlg-" not in compare and "mlg-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
@@ -273,6 +282,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "cpr-" not in donut
     assert "cst-" not in donut
     assert "dcl-" not in donut
+    assert "mlg-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -578,6 +588,7 @@ def test_decline_chart_draws_mask_not_dash(ctx):
     assert "bcr-" not in node
     assert "cst-" not in node
     assert "cpr-" not in node
+    assert "mlg-" not in node
     assert "stat-card" not in node
     assert "textContent" not in node
     assert "strokeDashoffset" not in node
@@ -647,7 +658,7 @@ def test_decline_chart_keeps_catalog_line_and_ambient():
     assert "transform-origin:0px 50%" in wipe
     assert "transform-box:fill-box" in wipe
     assert "transform-origin:50% 50%" in ep
-    block = css.split(".dcl-chart", 1)[1]
+    block = css.split(".dcl-chart", 1)[1].split(".mlg-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
@@ -659,11 +670,125 @@ def test_decline_chart_keeps_catalog_line_and_ambient():
                 .replace("transform-origin:0px 50%", "")
                 .replace("transform-box:fill-box", "")
                 .replace("text-transform:uppercase", ""))
-    assert "transform:" not in stripped.split(".dcl-chart", 1)[1]
+    assert "transform:" not in stripped.split(".dcl-chart", 1)[1].split(".mlg-chart", 1)[0]
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "dcl-" not in dv_bar
     donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
     assert "dcl-" not in donut
+
+
+def test_mk_line_graph_draws_mask_not_dash(ctx):
+    """Каталог DEMO 1 твинит strokeDashoffset; здесь scaleX на SVG-mask."""
+    piece = render_dataviz("data-viz/mk-line-graph", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=7.0, target=ctx.target,
+        track=6, params={
+            "series": [
+                {"name": "Renders", "values": [12, 26, 22, 38, 44, 58]},
+                {"name": "Projects", "values": [8, 14, 18, 16, 28, 36]},
+            ],
+            "xLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        }))
+    node = piece.nodes[0]
+    assert "mlg-chart" in node
+    assert "mlg-bg" in node and "mlg-stage" in node and "mlg-line" in node
+    assert "mlg-wipe" in node and "mlg-dot" in node and "mlg-legend" in node
+    assert "Renders" in node and "Projects" in node
+    assert "Jan" in node and "Jun" in node
+    assert ">12<" in node and ">58<" in node and ">8<" in node and ">36<" in node
+    assert "#0071e3" in node and "#45d6c8" in node
+    assert "dv-bar" not in node
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "stat-card" not in node
+    assert "textContent" not in node
+    assert "strokeDashoffset" not in node
+    assert "stroke-dashoffset" not in node
+    assert "mk-lg-" not in node
+    assert node.count(f'id="mlg-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    assert f'id="mlg-{ctx.index:02d}-stage"' in node
+    assert f'id="mlg-{ctx.index:02d}-w0"' in node
+    assert f'id="mlg-{ctx.index:02d}-w1"' in node
+    assert f'id="mlg-{ctx.index:02d}-d0-0"' in node
+    assert f'id="mlg-{ctx.index:02d}-d1-5"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scaleX:0" in body and "scaleX:1" in body
+    assert "power2.inOut" in body
+    assert "back.out(1.2)" in body
+    assert "immediateRender:false" in body
+    assert "opacity:1" in body
+    assert "filter" not in body
+    assert "strokeDashoffset" not in body
+    assert "stroke-dashoffset" not in body
+    assert "attr:" not in body
+    assert "textContent" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "clipPath" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#mlg-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _mlg_times(7.0)
+    assert abs(times["axis_at"] - 0.2) < 1e-9
+    assert abs(times["draw"] - 1.3) < 1e-9
+    assert abs(times["legend_at"] - 2.3) < 1e-9
+    assert abs(times["out_start"] - 6.5) < 1e-9
+    assert abs(times["out_dur"] - 0.4) < 1e-9
+    short = _mlg_times(0.22)
+    assert short["out_start"] + 0.001 <= 0.22 + 1e-9
+
+
+def test_mk_line_graph_keeps_catalog_mk_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".mlg-chart" in css
+    assert ".mlg-line" in css
+    chart = re.search(r"\.mlg-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.mlg-bg\{[^}]+\}", css).group(0)
+    axis = re.search(r"\.mlg-axis\{[^}]+\}", css).group(0)
+    val = re.search(r"\.mlg-val\{[^}]+\}", css).group(0)
+    xl = re.search(r"\.mlg-xl\{[^}]+\}", css).group(0)
+    wipe = re.search(r"\.mlg-wipe\{[^}]+\}", css).group(0)
+    dot = re.search(r"\.mlg-dot\{[^}]+\}", css).group(0)
+    assert "#ffffff" in chart and "#ffffff" in bg
+    assert "#1d1d1f" in chart and "#1d1d1f" in val
+    assert "#6e6e73" in xl
+    assert "rgba(29,29,31,0.22)" in axis
+    assert "transform-origin:0px 50%" in wipe
+    assert "transform-box:fill-box" in wipe
+    assert "transform-origin:50% 50%" in dot
+    block = css.split(".mlg-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    stripped = (css.replace("transform-origin:left center", "")
+                .replace("transform-origin:50% 50%", "")
+                .replace("transform-origin:50% 100%", "")
+                .replace("transform-origin:0px 50%", "")
+                .replace("transform-box:fill-box", "")
+                .replace("text-transform:uppercase", ""))
+    assert "transform:" not in stripped.split(".mlg-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "mlg-" not in dv_bar
+    donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
+    assert "mlg-" not in donut
+    dcl = re.search(r"\.dcl-line\{[^}]+\}", css).group(0)
+    assert "mlg-" not in dcl
 
 
 def test_split_moves_both_halves_towards_the_seam():

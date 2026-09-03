@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-142 шаблон каталога — это не 142 реализация, а набор рендереров с параметрами.
+143 шаблон каталога — это не 143 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3567,7 +3567,7 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
     ``#101a25`` / ``#0c1118``, линия ``#fb7185``, точка ``#fecdd3``,
     чернила ``#f8fafc`` как в каталоге — жест, не палитра канала. Inter.
     ``-apple-system`` не ставим. ``line-rise`` / ``.dv-bar`` /
-    ``chart-story`` / ``conic-progress-ring`` не трогаем.
+    ``chart-story`` / ``conic-progress-ring`` / ``mk-line-graph`` не трогаем.
     """
     spec = _dcl_spec(ctx.params)
     if spec is None:
@@ -3710,6 +3710,356 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_MLG_CATALOG_DUR = 7.0
+_MLG_DRAW = 1.3
+_MLG_AXIS_AT = 0.2
+_MLG_AXIS_DUR = 0.5
+_MLG_XL_AT = 0.25
+_MLG_XL_STAGGER = 0.05
+_MLG_XL_DUR = 0.4
+_MLG_SERIES0_AT = 0.5
+_MLG_SERIES_STAGGER = 0.35
+_MLG_DOT_DUR = 0.35
+_MLG_VAL_DELAY = 0.06
+_MLG_VAL_DUR = 0.35
+_MLG_LEGEND_AT = 2.3
+_MLG_LEGEND_DUR = 0.5
+_MLG_OUT_LEAD = 0.5
+_MLG_OUT_DUR = 0.4
+_MLG_OUT_Y = -36
+_MLG_XL_Y = 18
+_MLG_VAL_Y = 14
+_MLG_ACCENT = "#0071e3"
+_MLG_BLOB = "#45d6c8"
+_MLG_COLORS = (_MLG_ACCENT, _MLG_BLOB)
+_MLG_NAMES = ("Renders", "Projects")
+_MLG_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+_MLG_PLOT_LEFT = 90
+_MLG_PLOT_W = 740
+_MLG_PLOT_TOP = 427
+_MLG_PLOT_H = 889
+_MLG_AXIS_PAD = 15
+_MLG_DOT = 22
+_MLG_VAL_W = 100
+_MLG_VAL_H = 46
+_MLG_XL_W = 100
+_MLG_GAP = 28
+_MLG_XL_BELOW = 36
+_MLG_LEGEND_BELOW = 90
+_MLG_MASK_PAD_X = 6
+_MLG_MASK_PAD_Y = 20
+
+
+def _mlg_play(duration: float) -> float:
+    return duration if duration <= 0.001 else max(0.001, duration - 0.001)
+
+
+def _mlg_times(duration: float) -> dict[str, float]:
+    """Окно mk-line-graph: каталог 7 с, короче — те же доли."""
+    d = max(0.05, float(duration))
+    s = d / _MLG_CATALOG_DUR if d < _MLG_CATALOG_DUR else 1.0
+    out_dur = _MLG_OUT_DUR * s
+    out_lead = _MLG_OUT_LEAD * s
+    out_start = max(0.0, d - out_lead)
+    if out_start + out_dur + 0.001 > d:
+        out_dur = max(0.001, d - out_start - 0.001)
+    return {
+        "scale": s,
+        "axis_at": _MLG_AXIS_AT * s,
+        "axis_dur": max(0.001, _MLG_AXIS_DUR * s),
+        "xl_at": _MLG_XL_AT * s,
+        "xl_stagger": _MLG_XL_STAGGER * s,
+        "xl_dur": max(0.001, _MLG_XL_DUR * s),
+        "series0_at": _MLG_SERIES0_AT * s,
+        "series_stagger": _MLG_SERIES_STAGGER * s,
+        "draw": max(0.001, _MLG_DRAW * s),
+        "dot_dur": max(0.05, _MLG_DOT_DUR * s),
+        "val_delay": _MLG_VAL_DELAY * s,
+        "val_dur": max(0.05, _MLG_VAL_DUR * s),
+        "legend_at": _MLG_LEGEND_AT * s,
+        "legend_dur": max(0.001, _MLG_LEGEND_DUR * s),
+        "out_start": out_start,
+        "out_dur": out_dur,
+        "kill_at": d,
+    }
+
+
+def _mlg_num(raw: Any, default: float | None = None) -> float | None:
+    if raw in (None, ""):
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _mlg_floats(raw: Any) -> list[float]:
+    values: list[float] = []
+    if not isinstance(raw, (list, tuple)):
+        return values
+    for item in raw:
+        parsed = _mlg_num(item.get("value") if isinstance(item, dict) else item)
+        if parsed is not None:
+            values.append(parsed)
+    return values
+
+
+def _mlg_token(value: float) -> str:
+    if abs(value - round(value)) < 1e-9:
+        return str(int(round(value)))
+    return f"{value:g}"
+
+
+def _mlg_color(raw: Any, index: int) -> str:
+    text = str(raw or "").strip()
+    if text.startswith("#") and len(text) in (4, 7):
+        return text
+    return _MLG_COLORS[index % len(_MLG_COLORS)]
+
+
+def _mlg_spec(params: dict[str, Any]
+              ) -> tuple[list[tuple[str, list[float], str]], list[str], bool] | None:
+    """series (name, values, color), x-labels, showValues. Пусто → None."""
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("series", "values", "xLabels", "labels")):
+        return None
+    series: list[tuple[str, list[float], str]] = []
+    raw_series = params.get("series")
+    if isinstance(raw_series, (list, tuple)):
+        for index, item in enumerate(raw_series):
+            if not isinstance(item, dict):
+                vals = _mlg_floats([item])
+                if len(vals) >= 2:
+                    series.append((_MLG_NAMES[index % 2], vals,
+                                   _MLG_COLORS[index % 2]))
+                continue
+            vals = _mlg_floats(item.get("values") or item.get("data"))
+            if len(vals) < 2:
+                continue
+            name = str(item.get("name") or item.get("label")
+                       or _MLG_NAMES[index % 2])
+            series.append((name, vals, _mlg_color(item.get("color"), index)))
+    if not series:
+        vals = _mlg_floats(params.get("values"))
+        extra = _mlg_floats(params.get("values_b"))
+        if len(vals) >= 2:
+            name = str(params.get("label") or params.get("name") or _MLG_NAMES[0])
+            series.append((name, vals, _mlg_color(params.get("color"), 0)))
+        if len(extra) >= 2:
+            series.append((_MLG_NAMES[1], extra, _mlg_color(params.get("color_b"), 1)))
+    if not series:
+        return None
+    count = min(len(item[1]) for item in series)
+    if count < 2:
+        return None
+    series = [(name, values[:count], color) for name, values, color in series]
+    raw_labels = params.get("xLabels", params.get("labels"))
+    labels: list[str] = []
+    if isinstance(raw_labels, (list, tuple)):
+        labels = [str(item) for item in raw_labels[:count]]
+    while len(labels) < count:
+        labels.append(_MLG_MONTHS[len(labels) % 12])
+    show_values = params.get("showValues")
+    if show_values is None:
+        show_values = True
+    return series, labels, bool(show_values)
+
+
+def dv_mk_line_graph(ctx: "TemplateCtx") -> Piece:
+    """Две линии рисуются слева направо, точки и числа садятся на фронт.
+
+    Каталог DEMO 1 твинит ``strokeDashoffset`` и ``scale`` кругов. Здесь
+    SVG-mask с ``scaleX`` на rect и HTML-точки. Бумага ``#ffffff``, чернила
+    ``#1d1d1f``, акцент ``#0071e3``, вторая серия ``#45d6c8`` как в каталоге
+    — жест MK, не палитра канала. Inter. ``-apple-system`` не ставим.
+    ``line-rise`` / ``.dv-bar`` / ``decline-chart`` / ``chart-story`` не
+    трогаем.
+    """
+    spec = _mlg_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    series, xlabels, show_values = spec
+    node_id = f"mlg-{ctx.index:02d}"
+    times = _mlg_times(ctx.duration)
+    start = ctx.start
+    sid = f"{node_id}-stage"
+    aid = f"{node_id}-axis"
+    lid = f"{node_id}-leg"
+    count = len(series[0][1])
+    peak = max(value for _name, values, _color in series for value in values)
+    peak = peak * 1.15 if peak > 0 else 1.0
+    plot_bottom = _MLG_PLOT_TOP + _MLG_PLOT_H
+
+    def px(index: int) -> float:
+        return _MLG_PLOT_LEFT + (index / (count - 1)) * _MLG_PLOT_W
+
+    def py(value: float) -> float:
+        return _MLG_PLOT_TOP + _MLG_PLOT_H - (value / peak) * _MLG_PLOT_H
+
+    tweens: list[str] = []
+    defs: list[str] = []
+    paths: list[str] = []
+    dots: list[str] = []
+    values_html: list[str] = []
+    xl_html: list[str] = []
+    legend_html: list[str] = []
+    wipe_ids: list[str] = []
+    dot_ids: list[str] = []
+    val_ids: list[str] = []
+    xl_ids: list[str] = []
+
+    mask_x = _MLG_PLOT_LEFT - _MLG_MASK_PAD_X
+    mask_y = _MLG_PLOT_TOP - _MLG_MASK_PAD_Y
+    mask_w = _MLG_PLOT_W + _MLG_MASK_PAD_X * 2
+    mask_h = _MLG_PLOT_H + _MLG_MASK_PAD_Y * 2
+
+    for si, (name, values, color) in enumerate(series):
+        parts = []
+        for index, value in enumerate(values):
+            cmd = "M" if index == 0 else "L"
+            parts.append(f"{cmd}{_num(px(index))} {_num(py(value))}")
+        d_attr = " ".join(parts)
+        mid = f"{node_id}-m{si}"
+        wid = f"{node_id}-w{si}"
+        pid = f"{node_id}-p{si}"
+        wipe_ids.append(wid)
+        defs.append(
+            f'<mask id="{mid}" maskUnits="userSpaceOnUse" '
+            f'maskContentUnits="userSpaceOnUse">'
+            f'<rect id="{wid}" class="mlg-wipe" x="{_num(mask_x)}" '
+            f'y="{_num(mask_y)}" width="{_num(mask_w)}" '
+            f'height="{_num(mask_h)}" fill="#fff"/></mask>')
+        paths.append(
+            f'<path id="{pid}" class="mlg-line" mask="url(#{mid})" '
+            f'd="{d_attr}" stroke="{_esc(color)}"></path>')
+        below = si > 0
+        legend_html.append(
+            f'<div class="mlg-legend-item">'
+            f'<span class="mlg-legend-dot" style="background:{_esc(color)}">'
+            f'</span>{_esc(name)}</div>')
+        for index, value in enumerate(values):
+            x = px(index)
+            y = py(value)
+            did = f"{node_id}-d{si}-{index}"
+            dot_ids.append(did)
+            dots.append(
+                f'<div id="{did}" class="mlg-dot" data-layout-allow-overlap="" '
+                f'style="left:{x - _MLG_DOT / 2:.1f}px;'
+                f'top:{y - _MLG_DOT / 2:.1f}px;border-color:{_esc(color)}">'
+                f'</div>')
+            if show_values:
+                vid = f"{node_id}-v{si}-{index}"
+                val_ids.append(vid)
+                top = y + _MLG_GAP if below else y - _MLG_GAP - _MLG_VAL_H
+                values_html.append(
+                    f'<div id="{vid}" class="mlg-val" '
+                    f'data-layout-allow-overlap="" '
+                    f'style="left:{x - _MLG_VAL_W / 2:.1f}px;top:{top:.1f}px">'
+                    f'{_esc(_mlg_token(value))}</div>')
+
+    for index, label in enumerate(xlabels):
+        xid = f"{node_id}-x{index}"
+        xl_ids.append(xid)
+        xl_html.append(
+            f'<div id="{xid}" class="mlg-xl" data-layout-allow-overlap="" '
+            f'style="left:{px(index) - _MLG_XL_W / 2:.1f}px;'
+            f'top:{plot_bottom + _MLG_XL_BELOW:.1f}px">{_esc(label)}</div>')
+
+    axis_y = plot_bottom
+    axis = (
+        f'<line id="{aid}" class="mlg-axis" '
+        f'x1="{_num(_MLG_PLOT_LEFT - _MLG_AXIS_PAD)}" y1="{_num(axis_y)}" '
+        f'x2="{_num(_MLG_PLOT_LEFT + _MLG_PLOT_W + _MLG_AXIS_PAD)}" '
+        f'y2="{_num(axis_y)}"></line>')
+
+    tweens.append(
+        f'tl.fromTo("#{aid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_mlg_play(times["axis_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["axis_at"])});')
+    for index, xid in enumerate(xl_ids):
+        tweens.append(
+            f'tl.fromTo("#{xid}",{{opacity:0,y:{_MLG_XL_Y}}},'
+            f'{{opacity:1,y:0,duration:{_num(_mlg_play(times["xl_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["xl_at"] + index * times["xl_stagger"])});')
+    for wid in wipe_ids:
+        tweens.append(
+            f'tl.set("#{wid}",{{scaleX:0}},{_num(start)});')
+    for did in dot_ids:
+        tweens.append(
+            f'tl.set("#{did}",{{scale:0}},{_num(start)});')
+    for si, (_name, values, _color) in enumerate(series):
+        t0 = times["series0_at"] + si * times["series_stagger"]
+        wid = wipe_ids[si]
+        tweens.append(
+            f'tl.fromTo("#{wid}",{{scaleX:0}},'
+            f'{{scaleX:1,duration:{_num(_mlg_play(times["draw"]))},'
+            f'ease:"power2.inOut",immediateRender:false}},'
+            f'{_num(start + t0)});')
+        span = times["draw"] * 0.92
+        for index in range(count):
+            td = t0 + (index / (count - 1)) * span
+            did = f"{node_id}-d{si}-{index}"
+            tweens.append(
+                f'tl.fromTo("#{did}",{{scale:0}},'
+                f'{{scale:1,duration:{_num(_mlg_play(times["dot_dur"]))},'
+                f'ease:"back.out(1.2)",immediateRender:false}},'
+                f'{_num(start + td)});')
+            if show_values:
+                vid = f"{node_id}-v{si}-{index}"
+                tweens.append(
+                    f'tl.fromTo("#{vid}",{{opacity:0,y:{_MLG_VAL_Y}}},'
+                    f'{{opacity:1,y:0,duration:{_num(_mlg_play(times["val_dur"]))},'
+                    f'ease:"power2.out",immediateRender:false}},'
+                    f'{_num(start + td + times["val_delay"])});')
+    tweens.append(
+        f'tl.fromTo("#{lid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_mlg_play(times["legend_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["legend_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:1,y:0}},'
+        f'{{opacity:0,y:{_MLG_OUT_Y},duration:{_num(_mlg_play(times["out_dur"]))},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["out_start"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(
+        f'tl.set("#{sid}",{{y:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{aid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{lid}",{{opacity:0}},{_num(kill_at)});')
+    for wid in wipe_ids:
+        tweens.append(
+            f'tl.set("#{wid}",{{scaleX:0}},{_num(kill_at)});')
+    for did in dot_ids:
+        tweens.append(
+            f'tl.set("#{did}",{{scale:0}},{_num(kill_at)});')
+    for vid in val_ids:
+        tweens.append(
+            f'tl.set("#{vid}",{{opacity:0,y:{_MLG_VAL_Y}}},{_num(kill_at)});')
+    for xid in xl_ids:
+        tweens.append(
+            f'tl.set("#{xid}",{{opacity:0,y:{_MLG_XL_Y}}},{_num(kill_at)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay mlg-chart" {_timing(ctx)}>'
+               f'<div class="mlg-bg"></div>'
+               f'<div id="{sid}" class="mlg-stage">'
+               f'<svg class="mlg-svg" viewBox="0 0 1080 1920" '
+               f'preserveAspectRatio="none" aria-hidden="true">'
+               f'<defs>{"".join(defs)}</defs>{axis}{"".join(paths)}</svg>'
+               f'{"".join(dots)}{"".join(values_html)}{"".join(xl_html)}'
+               f'<div id="{lid}" class="mlg-legend" data-layout-allow-overlap="" '
+               f'style="left:{_MLG_PLOT_LEFT}px;'
+               f'top:{plot_bottom + _MLG_LEGEND_BELOW}px">'
+               f'{"".join(legend_html)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -3723,6 +4073,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "chart-story": dv_chart_story,
     "conic-progress-ring": dv_conic_progress_ring,
     "decline-chart": dv_decline_chart,
+    "mk-line-graph": dv_mk_line_graph,
 }
 
 
@@ -3951,6 +4302,39 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         f"height:{_DCL_EP_D}px;"
         "border-radius:50%;background:#fecdd3;opacity:0;"
         "transform-origin:50% 50%}"
+        ".mlg-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#ffffff;font-family:Inter,system-ui,sans-serif;"
+        "color:#1d1d1f}"
+        ".mlg-bg{position:absolute;inset:0;background:#ffffff}"
+        ".mlg-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        ".mlg-svg{position:absolute;inset:0;width:100%;height:100%;"
+        "overflow:visible}"
+        ".mlg-axis{stroke:rgba(29,29,31,0.22);stroke-width:2;opacity:0}"
+        ".mlg-line{fill:none;stroke-width:5;stroke-linecap:round;"
+        "stroke-linejoin:round}"
+        ".mlg-wipe{transform-origin:0px 50%;transform-box:fill-box}"
+        f".mlg-dot{{position:absolute;width:{_MLG_DOT}px;"
+        f"height:{_MLG_DOT}px;"
+        "border-radius:50%;background:#ffffff;box-sizing:border-box;"
+        "border-style:solid;border-width:4px;transform-origin:50% 50%}"
+        f".mlg-val{{position:absolute;width:{_MLG_VAL_W}px;"
+        f"height:{_MLG_VAL_H}px;"
+        "font-weight:600;font-size:38px;letter-spacing:-0.01em;"
+        "color:#1d1d1f;font-variant-numeric:tabular-nums;line-height:46px;"
+        "text-align:center;white-space:nowrap;opacity:0}"
+        f".mlg-xl{{position:absolute;width:{_MLG_XL_W}px;"
+        "font-weight:400;font-size:32px;color:#6e6e73;text-align:center;"
+        "white-space:nowrap;opacity:0}"
+        ".mlg-legend{position:absolute;display:flex;gap:32px;opacity:0}"
+        ".mlg-legend-item{display:flex;align-items:center;gap:12px;"
+        "font-weight:500;font-size:36px;color:#6e6e73}"
+        ".mlg-legend-dot{width:14px;height:14px;border-radius:50%;"
+        "flex-shrink:0}"
     )
 
 

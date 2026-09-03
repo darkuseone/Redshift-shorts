@@ -748,15 +748,18 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                   else ["data-viz/stat-countup-card"] if len(nums) == 1
                   else ["data-viz/bar-chart-race",
                         "data-viz/chart-story",
+                        "data-viz/mk-line-graph",
                         "data-viz/animated-bar-chart",
                         "data-viz/compare-bars", "data-viz/bar-race-mini"]
                   if len(nums) >= 4
                   else (["data-viz/decline-chart",
                          "data-viz/chart-story",
+                         "data-viz/mk-line-graph",
                          "data-viz/animated-bar-chart",
                          "data-viz/compare-bars", "data-viz/bar-race-mini"]
                         if declining
                         else ["data-viz/chart-story",
+                              "data-viz/mk-line-graph",
                               "data-viz/animated-bar-chart",
                               "data-viz/compare-bars", "data-viz/bar-race-mini"]))
         if variant == "B" and len(nums) >= 2:
@@ -798,6 +801,7 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             }
         else:
             n_take = (8 if name == "bar-chart-race"
+                      else 6 if name == "mk-line-graph"
                       else 4 if name == "chart-story"
                       else 7 if name == "animated-bar-chart" else 4)
             params = {
@@ -817,6 +821,22 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 params["unit"] = (
                     str(nums[0]["suffix"]) if nums[0].get("suffix") else "%")
                 params["emphasize"] = len(params["values"]) - 1
+            if name == "mk-line-graph":
+                heading = str(blocks.get(slot["block_id"], {}).get("heading")
+                              or "")
+                series = [{
+                    "name": heading or "Renders",
+                    "values": [n["value"] for n in nums[:n_take]],
+                }]
+                rest = nums[n_take:n_take * 2]
+                if len(rest) >= 2:
+                    series.append({
+                        "name": "Projects",
+                        "values": [n["value"] for n in rest],
+                    })
+                params["series"] = series
+                params["xLabels"] = [n["raw"] for n in nums[:n_take]]
+                params["showValues"] = True
         overlays.append({
             "type": "dataviz", "start": start, "end": end,
             "template": template.id, "renderer": template.renderer,

@@ -372,7 +372,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (12, [
+    "data-viz": (13, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -403,6 +403,15 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Линия падает вниз, число считает вниз, фон темнеет — decline-chart",
          [1.2, 4.0], {"start_value": 82, "end_value": 34},
          ["data", "line", "decline"], "dataviz"),
+        ("mk-line-graph",
+         "Две линии рисуются слева направо, точки и числа на фронте — mk-line-graph",
+         [1.5, 7.0], {
+             "series": [
+                 {"name": "Renders", "values": [12, 26, 22, 38, 44, 58]},
+                 {"name": "Projects", "values": [8, 14, 18, 16, 28, 36]},
+             ],
+             "xLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+         }, ["data", "line", "series"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],
