@@ -1704,6 +1704,7 @@ def test_terminal_simulator_keeps_catalog_slate_and_green():
     css = overlay_css(load_config().brandbook)
     assert ".fs-terminal-simulator" in css
     assert "text-transform:none" in css
+    assert "JetBrains Mono" in css
     assert "#0f172a" in css
     assert "#f7f7f8" in css
     term = re.search(r"\.ts-term\{[^}]+\}", css).group(0)

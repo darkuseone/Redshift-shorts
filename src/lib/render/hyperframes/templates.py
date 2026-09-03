@@ -5389,7 +5389,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "height:var(--frame-h);padding:0;overflow:hidden;isolation:isolate;"
         "display:flex;align-items:center;justify-content:center;"
         "background:#f7f7f8;color:#e4e4e7;"
-        "font-family:ui-monospace,SFMono-Regular,Menlo,'JetBrains Mono',monospace;"
+        "font-family:'JetBrains Mono',var(--font-mono),monospace;"
         "font-weight:500;text-transform:none;letter-spacing:0}"
         ".fullscreen-text.fs-terminal-simulator.invert{background:#f7f7f8;"
         "color:#e4e4e7}"
