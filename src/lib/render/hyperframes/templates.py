@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-130 шаблонов каталога — это не 130 реализаций, а набор рендереров с параметрами.
+131 шаблон каталога — это не 131 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -774,6 +774,153 @@ def tr_whip_pan_shader(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_CW_CATALOG_SEC = 2.4
+_CW_FRAME_W = 1080
+_CW_FRAME_H = 1920
+_CW_CARD_SCALE = 0.38
+
+
+def _cw_times(duration: float) -> dict[str, float]:
+    """Окно clone-wall: каталог держит 2.4 с (карточка → invert → уход стенки).
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Доли каталога сохраняем,
+    стыки +1 мс, чтобы scale карточки и opacity стенки не наложились.
+    """
+    d = max(0.05, float(duration))
+    s = d / _CW_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    card_at = t(0.2)
+    card_dur = max(0.001, t(0.95) - card_at)
+    card_out_at = t(1.35)
+    if card_at + card_dur + 0.001 > card_out_at:
+        card_dur = max(0.001, card_out_at - card_at - 0.001)
+    card_out_end = t(1.75)
+    card_out_dur = max(0.001, card_out_end - card_out_at)
+    wall_out_at = t(1.9)
+    if card_out_at + card_out_dur + 0.001 > wall_out_at:
+        card_out_dur = max(0.001, wall_out_at - card_out_at - 0.001)
+    wall_out_end = min(d - 0.001, t(2.35))
+    wall_out_dur = max(0.001, wall_out_end - wall_out_at)
+    invert_at = t(0.85)
+    invert_end = t(1.5)
+    invert_dur = max(0.001, invert_end - invert_at)
+    drift_at = t(0.3)
+    drift_end = min(wall_out_at - 0.001, t(0.3 + 1.8))
+    drift_dur = max(0.001, drift_end - drift_at)
+    card_kill = min(d, max(card_out_at + card_out_dur, t(1.76)))
+    wall_kill = min(d, max(wall_out_at + wall_out_dur, t(2.36)))
+    return {
+        "card_at": card_at,
+        "card_dur": card_dur,
+        "card_out_at": card_out_at,
+        "card_out_dur": card_out_dur,
+        "card_kill": card_kill,
+        "invert_at": invert_at,
+        "invert_dur": invert_dur,
+        "drift_at": drift_at,
+        "drift_dur": drift_dur,
+        "wall_out_at": wall_out_at,
+        "wall_out_dur": wall_out_dur,
+        "wall_kill": wall_kill,
+    }
+
+
+def _cw_wall(word: str, font_size: int, spread_x: int, spread_y: int,
+             brick: bool) -> tuple[int, list[tuple[float, float]]]:
+    """Ряды клонов: сколько плиток в ряду и (top, left) каждого ряда."""
+    row_h = font_size + spread_y
+    rows = min(16, math.ceil(_CW_FRAME_H / row_h) + 1)
+    tile_w = max(1.0, len(word) * font_size * 0.58 + spread_x)
+    per_row = math.ceil(_CW_FRAME_W / tile_w) + 2
+    layout: list[tuple[float, float]] = []
+    for r in range(rows):
+        offset = -round(tile_w / 2) if brick and r % 2 else 0
+        layout.append((r * row_h - font_size * 0.35, offset - tile_w))
+    return per_row, layout
+
+
+def tr_mk_clone_wall(ctx: "TemplateCtx") -> Piece:
+    """Clone wall: плитка слов накрывает кадр, инвертируется и уходит.
+
+    Каталог твинит ``width``/``height`` карточки, ``visibility`` и собирает
+    ряды в JS. Здесь ``scale``/``x``/``opacity``/``borderRadius``, ряды заранее
+    в Python. Твины на карточке / плитке / invert / стенке, не на ``.clip``
+    и не на входящем кадре. Чернила ``#1d1d1f`` и бумага ``#ffffff`` как в
+    каталоге — жест MK, не палитра канала. ``-apple-system`` не ставим.
+    """
+    params = ctx.params
+    word = str(params.get("word") or "HyperFrames").strip() or "HyperFrames"
+    font_size = int(params.get("fontSize") or params.get("font_size") or 240)
+    spread_x = int(params.get("spreadX") or params.get("spread_x") or 90)
+    spread_y = int(params.get("spreadY") or params.get("spread_y") or 60)
+    brick_raw = params.get("brickOffset", params.get("brick_offset", True))
+    if isinstance(brick_raw, bool):
+        brick = brick_raw
+    else:
+        brick = str(brick_raw).strip().lower() not in ("0", "false", "no")
+    drift_x = int(params.get("driftX") or params.get("drift_x") or -46)
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _cw_times(d)
+    start = ctx.start
+    per_row, layout = _cw_wall(word, font_size, spread_x, spread_y, brick)
+    tile = (f'<span class="cw-tile" style="margin-right:{spread_x}px">'
+            f"{_esc(word)}</span>")
+    rows = []
+    for i, (top, left) in enumerate(layout):
+        rows.append(
+            f'<span id="{node_id}-r{i}" class="cw-row" '
+            f'style="top:{_num(top)}px;left:{_num(left)}px;'
+            f'font-size:{font_size}px">{tile * (per_row + 1)}</span>')
+    card_to = _CW_CARD_SCALE
+    card_out = round(card_to * 0.6, 3)
+    tweens = [
+        f'tl.set("#{node_id}-invert",{{x:{-_CW_FRAME_W}}},'
+        f'{_num(start)});',
+        f'tl.fromTo("#{node_id}-card",{{scale:1,borderRadius:0}},'
+        f'{{scale:{_num(card_to)},borderRadius:40,'
+        f'duration:{_num(times["card_dur"])},ease:"power3.inOut"}},'
+        f'{_num(start + times["card_at"])});',
+        f'tl.to("#{node_id}-card",{{scale:{_num(card_out)},opacity:0,'
+        f'duration:{_num(times["card_out_dur"])},ease:"power2.in",'
+        f'immediateRender:false}},'
+        f'{_num(start + times["card_out_at"])});',
+        f'tl.set("#{node_id}-card",{{opacity:0}},'
+        f'{_num(start + times["card_kill"])});',
+        f'tl.fromTo("#{node_id}-tiles",{{x:0}},'
+        f'{{x:{drift_x},duration:{_num(times["drift_dur"])},'
+        f'ease:"sine.inOut"}},{_num(start + times["drift_at"])});',
+        f'tl.fromTo("#{node_id}-invert",{{x:{-_CW_FRAME_W}}},'
+        f'{{x:0,duration:{_num(times["invert_dur"])},ease:"power3.inOut",'
+        f'immediateRender:false}},'
+        f'{_num(start + times["invert_at"])});',
+        f'tl.fromTo("#{node_id}-wall",{{opacity:1}},'
+        f'{{opacity:0,duration:{_num(times["wall_out_dur"])},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(start + times["wall_out_at"])});',
+        f'tl.set("#{node_id}-wall",{{opacity:0}},'
+        f'{_num(start + times["wall_kill"])});',
+        f'tl.set("#{node_id}-invert",{{opacity:0}},'
+        f'{_num(start + d)});',
+        f'tl.set("#{node_id}-tiles",{{opacity:0}},'
+        f'{_num(start + d)});',
+    ]
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-mk-clone-wall" {_timing(ctx)}>'
+               f'<span class="cw-stage">'
+               f'<span id="{node_id}-wall" class="cw-wall">'
+               f'<span id="{node_id}-tiles" class="cw-tiles">'
+               f'{"".join(rows)}</span>'
+               f'<span id="{node_id}-invert" class="cw-invert"></span>'
+               f'</span>'
+               f'<span id="{node_id}-card" class="cw-card"></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -1043,6 +1190,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "sdf_iris": tr_sdf_iris,
     "thermal_distortion": tr_thermal_distortion,
     "whip_pan_shader": tr_whip_pan_shader,
+    "mk_clone_wall": tr_mk_clone_wall,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -1301,6 +1449,24 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         ".tr-whip-pan .wp-s3{top:980px}"
         ".tr-whip-pan .wp-s4{top:1280px}"
         ".tr-whip-pan .wp-s5{top:1580px}"
+        f".tr-mk-clone-wall{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-mk-clone-wall .cw-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-mk-clone-wall .cw-wall,.tr-mk-clone-wall .cw-tiles{"
+        "position:absolute;inset:0;display:block;transform-origin:50% 50%}"
+        ".tr-mk-clone-wall .cw-wall{background:#ffffff;isolation:isolate}"
+        ".tr-mk-clone-wall .cw-row{position:absolute;white-space:nowrap;"
+        "font-family:Inter,system-ui,sans-serif;font-weight:600;"
+        "letter-spacing:-0.02em;color:#1d1d1f;line-height:1}"
+        ".tr-mk-clone-wall .cw-tile{display:inline-block}"
+        ".tr-mk-clone-wall .cw-invert{position:absolute;inset:0;display:block;"
+        "transform-origin:50% 50%;background:#ffffff;"
+        "mix-blend-mode:difference}"
+        ".tr-mk-clone-wall .cw-card{position:absolute;inset:0;display:block;"
+        "transform-origin:50% 50%;border-radius:0;overflow:hidden;"
+        "background:linear-gradient(120deg,#fdfbfd 0%,#ff7ac8 38%,#45d6c8 100%);"
+        "box-shadow:0 30px 80px rgba(0,0,0,0.22)}"
     )
 
 

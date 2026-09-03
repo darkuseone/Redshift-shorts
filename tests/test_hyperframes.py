@@ -474,6 +474,30 @@ def test_whip_pan_shader_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_mk_clone_wall_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Каталог не вендорится: плитка и invert, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "mk_clone_wall", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-mk-clone-wall" in out
+    assert "cw-wall" in out and "cw-invert" in out
+    assert "cw-card" in out and "HyperFrames" in out
+    assert 'class="clip tr-blur"' not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    assert "visibility" not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl."))
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

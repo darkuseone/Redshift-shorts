@@ -373,6 +373,27 @@ def _tr_whip_pan_shader(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
 
 
+def _tr_mk_clone_wall(incoming, outgoing, progress, params, ctx):
+    """Бумага и инверсия: стенка слов в HTML; здесь paper wipe без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    paper = np.array([255.0, 255.0, 255.0], dtype=np.float32)
+    ink = np.array([29.0, 29.0, 31.0], dtype=np.float32)
+    if eased < 0.4:
+        t = eased / 0.4
+        mixed = a * (1.0 - t) + paper * t
+    elif eased < 0.7:
+        t = (eased - 0.4) / 0.3
+        mixed = paper * (1.0 - t) + ink * t
+    else:
+        t = (eased - 0.7) / 0.3
+        mixed = ink * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -418,6 +439,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "zoom_punch": _tr_zoom_punch,
     "whip_pan": _tr_whip_pan,
     "whip_pan_shader": _tr_whip_pan_shader,
+    "mk_clone_wall": _tr_mk_clone_wall,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,
     "blur_dip": _tr_blur_dip,

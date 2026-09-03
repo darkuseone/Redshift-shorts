@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-130 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+131 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -164,7 +164,8 @@ def test_css_covers_every_layer_the_transitions_use():
     for cls in (".tr-flash", ".tr-blur", ".tr-mask-circle", ".tr-mask-diagonal",
                 ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom",
                 ".tr-glitch-shader", ".tr-gravitational-lens", ".tr-light-leak",
-                ".tr-sdf-iris", ".tr-thermal-distortion", ".tr-whip-pan"):
+                ".tr-sdf-iris", ".tr-thermal-distortion", ".tr-whip-pan",
+                ".tr-mk-clone-wall"):
         assert cls in css, cls
 
 
@@ -2472,6 +2473,86 @@ def test_whip_pan_shader_keeps_catalog_navy_and_cyan():
     stripped = css.replace("transform-origin:50% 50%", "")
     assert "transform:" not in stripped.split(".tr-whip-pan", 1)[1]
     assert "backdrop-filter:blur(10px)" in css
+
+
+def test_mk_clone_wall_tiles_then_inverts_without_webgl(ctx):
+    """Каталог твинит width/height и visibility; здесь scale/x/opacity и плитка."""
+    piece = render_transition("mk_clone_wall", TemplateCtx(**ctx.__dict__))
+    node = piece.nodes[0]
+    assert "tr-mk-clone-wall" in node
+    assert "cw-stage" in node
+    assert "cw-wall" in node and "cw-tiles" in node
+    assert "cw-invert" in node and "cw-card" in node
+    assert "HyperFrames" in node
+    assert "cw-row" in node and "cw-tile" in node
+    assert node.count("cw-row") >= 6
+    assert "position:absolute" not in node.split("cw-stage", 1)[0]
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scale:0.38" in body
+    assert "borderRadius:40" in body
+    assert "x:-1080" in body
+    assert "x:0" in body
+    assert "power3.inOut" in body
+    assert "sine.inOut" in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _cw_times(ctx.duration)
+    assert times["card_at"] + times["card_dur"] <= times["card_out_at"] + 1e-9
+    assert times["wall_out_at"] + times["wall_out_dur"] <= ctx.duration + 1e-9
+    assert times["card_kill"] <= ctx.duration + 1e-9
+    short = _cw_times(0.22)
+    assert short["wall_out_at"] + short["wall_out_dur"] <= 0.22 + 1e-9
+    renamed = render_transition("mk_clone_wall", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=ctx.duration,
+        target=ctx.target, track=ctx.track, params={"word": "РЕДШИФТ"}))
+    assert "РЕДШИФТ" in renamed.nodes[0]
+    assert "HyperFrames" not in renamed.nodes[0]
+
+
+def test_mk_clone_wall_keeps_catalog_ink_paper_and_blobs():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-mk-clone-wall" in css
+    wall = re.search(r"\.tr-mk-clone-wall \.cw-wall\{[^}]+\}", css).group(0)
+    invert = re.search(r"\.tr-mk-clone-wall \.cw-invert\{[^}]+\}", css).group(0)
+    card = re.search(r"\.tr-mk-clone-wall \.cw-card\{[^}]+\}", css).group(0)
+    row = re.search(r"\.tr-mk-clone-wall \.cw-row\{[^}]+\}", css).group(0)
+    assert "#ffffff" in wall
+    assert "isolation:isolate" in wall
+    assert "#ffffff" in invert
+    assert "mix-blend-mode:difference" in invert
+    assert "#ff7ac8" in card and "#45d6c8" in card
+    assert "#1d1d1f" in row
+    assert "Inter" in row
+    assert "-apple-system" not in css.split(".tr-mk-clone-wall", 1)[1]
+    assert "#C8453D" not in css.split(".tr-mk-clone-wall", 1)[1].split(".fullscreen-text", 1)[0]
+    assert "#00E5C7" not in css.split(".tr-mk-clone-wall", 1)[1]
+    stage = re.search(r"\.tr-mk-clone-wall \.cw-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".tr-mk-clone-wall", 1)[1]
 
 
 OVERLAY_PARAMS = {

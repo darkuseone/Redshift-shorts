@@ -221,3 +221,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Переход thermal-distortion: heat shimmer снизу и haze | каталог — WebGL onUpdate; здесь полосы/пятно, вуали #3d405b/#e07a5f |
 | 2026-09-03 | Переход whip-pan: оба кадра едут вбок с направленным смазом | каталог — WebGL onUpdate; здесь полосы/вуали #0b132b/#48bfe3; whip-pan-l/r не трогаем |
 | 2026-09-03 | Полноэкранный жест beat-freeze-cut: рамп, фриз DROP и hard-cut | каталог твинит filter/visibility; здесь scale/x/y/opacity, #E63946/#0B132B со скриншотов вместо мяты #00E5C7 |
+| 2026-09-03 | Переход mk-clone-wall-transition: плитка слов накрывает кадр и инвертируется | каталог твинит width/height и visibility; здесь scale/x/opacity, чернила #1d1d1f и бумага #ffffff |
