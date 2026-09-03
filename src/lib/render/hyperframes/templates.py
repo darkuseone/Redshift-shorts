@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-113 шаблонов каталога — это не 113 реализаций, а набор рендереров с параметрами.
+114 шаблонов каталога — это не 114 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -3371,6 +3371,117 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог lt-dark-card: 4.8 с, угольная карточка, имя, черта scaleX, роль.
+_LT_DC_PAD_L = 32
+_LT_DC_PAD_R = 38
+_LT_DC_NAME_CEILING = 48
+_LT_DC_ROLE_SIZE = 25
+_LT_DC_SLACK = 1.14
+_LT_DC_CARD_FROM_Y = 60
+_LT_DC_NAME_FROM_Y = 14
+_LT_DC_EXIT_Y = 24
+
+
+def _lt_dc_times(duration: float) -> dict[str, float]:
+    """Вход как в каталоге; выход прижат к концу, если окно короче 4.8 с."""
+    card_in_at, card_in_dur = 0.10, 0.50
+    name_in_at, name_in_dur = 0.26, 0.45
+    rule_in_at, rule_in_dur = 0.42, 0.50
+    role_in_at, role_in_dur = 0.56, 0.45
+    exit_dur, exit_lead = 0.35, 0.50
+    enter_end = role_in_at + role_in_dur
+    first_out = duration - exit_lead
+    if first_out < enter_end + 0.001:
+        room = max(0.35, first_out - 0.001)
+        scale = room / enter_end
+        card_in_at *= scale
+        card_in_dur *= scale
+        name_in_at *= scale
+        name_in_dur *= scale
+        rule_in_at *= scale
+        rule_in_dur *= scale
+        role_in_at *= scale
+        role_in_dur *= scale
+        enter_end = role_in_at + role_in_dur
+    exit_at = max(enter_end + 0.001, duration - exit_lead)
+    return {
+        "card_in_at": card_in_at, "card_in_dur": card_in_dur,
+        "name_in_at": name_in_at, "name_in_dur": name_in_dur,
+        "rule_in_at": rule_in_at, "rule_in_dur": rule_in_dur,
+        "role_in_at": role_in_at, "role_in_dur": role_in_dur,
+        "exit_at": exit_at, "exit_dur": exit_dur,
+    }
+
+
+def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
+    """Угольная карточка на светлом футаже: имя, черта left→right, роль.
+
+    Каталог твинит ``tl.to`` после ``gsap.set`` и прячет обёртку через
+    ``visibility``. Движок требует ``fromTo`` на вложенных узлах; ``visibility``
+    вне списка. Золото ``#f5b942`` — чужой бренд, черта канала ``#C8453D``.
+    Уголь ``#16181d`` и Montserrat как в каталоге — это сам жест. Твины на
+    карточке, имени, черте и роли, не на ``.clip``. Клип в потоке: абсолютный
+    единственный ребёнок обнуляет paint-box.
+    """
+    params = ctx.params
+    name = str(params.get("name") or params.get("content") or params.get("text")
+               or "").strip()
+    role = str(params.get("role") or params.get("kicker") or params.get("subtitle")
+               or "").strip()
+    if not name and not role:
+        return Piece()
+    node_id = ctx.target
+    available = float(params.get("available_px") or 740)
+    text_avail = max(80.0, available - _LT_DC_PAD_L - _LT_DC_PAD_R)
+    fit_avail = text_avail / _LT_DC_SLACK
+    name_size = (fit_size(name, fit_avail, _LT_DC_NAME_CEILING)
+                 if name else _LT_DC_NAME_CEILING)
+    role_size = (min(_LT_DC_ROLE_SIZE, fit_size(role, fit_avail, _LT_DC_ROLE_SIZE))
+                 if role else _LT_DC_ROLE_SIZE)
+    name_w = text_width(name, name_size) * _LT_DC_SLACK if name else 0.0
+    role_w = text_width(role, role_size) * _LT_DC_SLACK if role else 0.0
+    rule_w = max(40, int(math.ceil(max(name_w, role_w))))
+    t = _lt_dc_times(ctx.duration)
+    at = ctx.start
+    rows: list[str] = []
+    tweens: list[str] = [
+        f'tl.fromTo("#{node_id}-card",{{y:{_LT_DC_CARD_FROM_Y},opacity:0}},'
+        f'{{y:0,opacity:1,duration:{_num(t["card_in_dur"])},ease:"power3.out"}},'
+        f'{_num(at + t["card_in_at"])});',
+        f'tl.fromTo("#{node_id}-card",{{y:0,opacity:1}},'
+        f'{{y:{_LT_DC_EXIT_Y},opacity:0,duration:{_num(t["exit_dur"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(at + t["exit_at"])});',
+        f'tl.fromTo("#{node_id}-rule",{{scaleX:0}},'
+        f'{{scaleX:1,duration:{_num(t["rule_in_dur"])},ease:"power4.out"}},'
+        f'{_num(at + t["rule_in_at"])});',
+    ]
+    if name:
+        rows.append(
+            f'<span id="{node_id}-name" class="lt-dc-name" '
+            f'style="font-size:{name_size}px">{_esc(name)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-name",{{y:{_LT_DC_NAME_FROM_Y},opacity:0}},'
+            f'{{y:0,opacity:1,duration:{_num(t["name_in_dur"])},'
+            f'ease:"power3.out"}},{_num(at + t["name_in_at"])});')
+    rows.append(
+        f'<span id="{node_id}-rule" class="lt-dc-rule" '
+        f'style="width:{rule_w}px"></span>')
+    if role:
+        rows.append(
+            f'<span id="{node_id}-role" class="lt-dc-role" '
+            f'style="font-size:{role_size}px">{_esc(role)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-role",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(t["role_in_dur"])},ease:"power2.out"}},'
+            f'{_num(at + t["role_in_at"])});')
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay lt-dark-card" {_timing(ctx)}>'
+               f'<span id="{node_id}-card" class="lt-dc-card">'
+               f'{"".join(rows)}</span></div>'],
+        tweens=tweens)
+
+
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
     "chat_thread": ov_chat_thread,
@@ -3378,6 +3489,7 @@ OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "paper_reveal": ov_paper_reveal,
     "lt_accent_underline": ov_lt_accent_underline,
     "lt_clean_bar": ov_lt_clean_bar,
+    "lt_dark_card": ov_lt_dark_card,
 }
 
 
@@ -3665,6 +3777,21 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".lt-cb-role{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
         "font-weight:400;color:#5a6170;line-height:1.2;letter-spacing:0.01em;"
         "white-space:nowrap;will-change:transform,opacity}"
+        f".lt-dark-card{{left:var(--safe-x-min);"
+        f"bottom:{height - int(safe['y_max']) + 60}px;"
+        "max-width:calc(var(--safe-x-max) - var(--safe-x-min));"
+        "background:transparent}"
+        ".lt-dc-card{display:flex;flex-direction:column;gap:12px;"
+        "background:#16181d;border-radius:14px;padding:24px 38px 26px 32px;"
+        "box-shadow:0 18px 50px rgba(0,0,0,0.4);will-change:transform,opacity}"
+        ".lt-dc-name{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
+        "font-weight:700;color:#ffffff;line-height:1.02;letter-spacing:-0.015em;"
+        "white-space:nowrap;will-change:transform,opacity}"
+        ".lt-dc-rule{display:block;height:4px;border-radius:2px;background:#C8453D;"
+        "transform-origin:0% 50%;will-change:transform}"
+        ".lt-dc-role{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
+        "font-weight:400;color:#aeb6c2;line-height:1.2;letter-spacing:0.02em;"
+        "white-space:nowrap;will-change:opacity}"
     )
 
 

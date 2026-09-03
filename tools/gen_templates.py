@@ -127,7 +127,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),
     ]),
-    "lower-thirds": (10, [
+    "lower-thirds": (11, [
         ("name-title", "Имя и должность", [1.5, 4.0],
          {"position": "bottom", "direction": "left"}, ["person"], "plaque"),
         ("accent-underline", "Имя и роль с акцентной чертой", [1.5, 4.8],
@@ -136,6 +136,9 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("clean-bar", "Белая плашка с акцентной полоской", [1.5, 4.8],
          {"clean_bar": True, "position": "bottom"},
          ["person", "lower-third", "overlay", "podcast"], "lt_clean_bar"),
+        ("dark-card", "Угольная карточка на светлом футаже", [1.5, 4.8],
+         {"dark_card": True, "position": "bottom"},
+         ["person", "lower-third", "overlay", "dark"], "lt_dark_card"),
         ("source-domain", "Домен источника", [1.5, 3.0],
          {"position": "bottom", "direction": "left", "icon": "link"}, ["source"], "plaque"),
         ("metric-badge", "Значение метрики", [1.5, 3.0],

@@ -431,6 +431,15 @@ class CompositionBuilder:
                               params=params)
             piece = render_overlay("lt_clean_bar", ctx)
             return piece if piece.nodes else None
+        if (renderer == "lt_dark_card" or params.get("dark_card")
+                or template_id.endswith("dark-card")):
+            work = self.brandbook["safe_zones"]["work_area"]
+            params.setdefault("available_px", int(work["x_max"]) - int(work["x_min"]))
+            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
+                              duration=duration, target=node_id, track=track,
+                              params=params)
+            piece = render_overlay("lt_dark_card", ctx)
+            return piece if piece.nodes else None
         overlay_name = renderer if renderer in OVERLAYS else ""
         if not overlay_name and kind in OVERLAYS:
             overlay_name = kind

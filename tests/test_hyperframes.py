@@ -675,6 +675,30 @@ def test_lt_clean_bar_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "#ff5a36" not in css
 
 
+def test_lt_dark_card_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][1] = {
+        "type": "plaque", "start": 0.2, "end": 5.0,
+        "template": "lower-thirds/dark-card",
+        "params": {"name": "Майя Чен", "role": "Ведущая · нейрофизиолог",
+                   "dark_card": True},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lt-dark-card" in out
+    assert "lt-dc-rule" in out
+    assert "Майя Чен" in out
+    assert "#ovl-01-card" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "visibility" not in tween_src
+    assert "scaleX:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "Montserrat" in css
+    assert "#C8453D" in css
+    assert "#f5b942" not in css
+    assert "#16181d" in css
+
+
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
     plan["overlays"][0]["renderer"] = "chat_thread"
     plan["overlays"][0]["params"] = {

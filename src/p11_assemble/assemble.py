@@ -540,7 +540,7 @@ def _overlay_renderer(template: Template) -> str:
 
 def _plaque_overlay(*, template: Template, start: float, end: float,
                     params: dict[str, Any], why: str) -> dict[str, Any]:
-    """Плашка: кастомный рендерер (accent-underline, clean-bar), иначе generic plaque."""
+    """Плашка: кастомный рендерер (accent-underline, clean-bar, dark-card), иначе generic plaque."""
     ovl: dict[str, Any] = {
         "type": "plaque", "start": start, "end": end,
         "template": template.id, "params": params, "why": why,
@@ -634,7 +634,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     "name": domain, "role": "источник",
                     **{k: v for k, v in plaque_template.params.items()
                        if k in ("position", "direction", "accent_underline",
-                                "clean_bar")}},
+                                "clean_bar", "dark_card")}},
             why="§5.4: плашка с доменом источника",
         ))
 
@@ -650,7 +650,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         if not block_slots:
             continue
         hint = overlay.get("template_hint") or ""
-        lockups = ["lower-thirds/accent-underline", "lower-thirds/clean-bar"]
+        lockups = ["lower-thirds/accent-underline", "lower-thirds/clean-bar",
+                   "lower-thirds/dark-card"]
         prefer = ([hint] + lockups) if hint else lockups
         template = catalog.pick("lower-thirds", duration=2.4, recent_videos=recent_videos,
                                 exclude=used, prefer=prefer, seed=seed + 7)
@@ -667,7 +668,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     "role": role,
                     **{k: v for k, v in template.params.items()
                        if k in ("position", "direction", "accent_underline",
-                                "clean_bar")}},
+                                "clean_bar", "dark_card")}},
             why=f"плашка из сценария, блок {block['id']}",
         ))
 

@@ -252,6 +252,13 @@ def test_plaque_overlay_attaches_custom_renderer():
     bar_ovl = _plaque_overlay(template=bar, start=1.0, end=3.6,
                               params={"name": "Майя Чен"}, why="test")
     assert bar_ovl["renderer"] == "lt_clean_bar"
+    dark = Template(id="lower-thirds/dark-card", name="dark-card",
+                    category="lower-thirds", title="", duration_range=[1.5, 4.8],
+                    params={"dark_card": True}, tags=["person"],
+                    renderer="lt_dark_card")
+    dark_ovl = _plaque_overlay(template=dark, start=1.0, end=3.6,
+                               params={"name": "Майя Чен"}, why="test")
+    assert dark_ovl["renderer"] == "lt_dark_card"
     generic = Template(id="lower-thirds/name-title", name="name-title",
                        category="lower-thirds", title="", duration_range=[1.5, 4.0],
                        params={}, tags=["person"], renderer="plaque")
@@ -264,11 +271,11 @@ def test_catalog_matches_spec_counts(cfg):
     catalog = TemplateCatalog.load(cfg)
     counts = catalog.counts()
     assert counts == {
-        "intro-hooks": 8, "text-fullscreen": 21, "lower-thirds": 10, "frames-cards": 7,
+        "intro-hooks": 8, "text-fullscreen": 21, "lower-thirds": 11, "frames-cards": 7,
         "browser-ui": 8, "transitions": 13, "avatar-entry": 6, "kenburns": 10,
         "parallax": 4, "data-viz": 7, "outro-cta": 6, "hero-devices": 13,
     }
-    assert len(catalog.all()) == 113
+    assert len(catalog.all()) == 114
 
 
 def test_catalog_rotation_avoids_recent(cfg):

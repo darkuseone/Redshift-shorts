@@ -4,7 +4,7 @@
   "counts": {
     "intro-hooks": 8,
     "text-fullscreen": 21,
-    "lower-thirds": 10,
+    "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
     "transitions": 13,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 113
+    "_total": 114
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -748,6 +748,29 @@
         "podcast"
       ],
       "renderer": "lt_clean_bar",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/dark-card",
+      "name": "dark-card",
+      "category": "lower-thirds",
+      "title": "Угольная карточка на светлом футаже",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "dark_card": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "dark"
+      ],
+      "renderer": "lt_dark_card",
       "last_used_in": [],
       "added": "2026-09-03"
     },

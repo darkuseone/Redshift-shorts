@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-113 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+114 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -19,7 +19,7 @@ from src.lib.render.hyperframes.templates import (
     enter_and_drift, entrance_tweens, hero_css, overlay_css, render_dataviz,
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
-    _fs_size, _lt_au_times, _lt_cb_times, _sr_frame_table,
+    _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -1211,6 +1211,8 @@ OVERLAY_PARAMS = {
                             "role": "ВЕДУЩАЯ · НЕЙРОФИЗИОЛОГ"},
     "lt_clean_bar": {"name": "Майя Чен",
                      "role": "Ведущая · нейрофизиолог"},
+    "lt_dark_card": {"name": "Майя Чен",
+                     "role": "Ведущая · нейрофизиолог"},
 }
 
 
@@ -1350,6 +1352,70 @@ def test_lt_clean_bar_css_keeps_montserrat_and_remaps_orange():
     assert "transform-origin:0px 50%" in wipe
     assert "Montserrat" in css
     assert "#0f1115" in css and "#5a6170" in css
+
+
+def test_lt_dark_card_draws_the_rule_with_scalex():
+    ctx = TemplateCtx(index=0, start=0.0, duration=4.8, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["lt_dark_card"])
+    piece = render_overlay("lt_dark_card", ctx)
+    node = piece.nodes[0]
+    assert "lt-dark-card" in node
+    assert 'id="ovl-00-card"' in node
+    assert 'id="ovl-00-name"' in node and "Майя Чен" in node
+    assert 'id="ovl-00-rule"' in node
+    assert 'id="ovl-00-role"' in node and "нейрофизиолог" in node
+    assert node.count('id="ovl-00"') == 1
+    assert "position:absolute" not in node
+    body = " ".join(piece.tweens)
+    assert "scaleX:0" in body and "scaleX:1" in body
+    assert "power4.out" in body and "power3.out" in body and "power2.out" in body
+    assert "visibility" not in body
+    assert "width:" not in body
+    assert "#f5b942" not in node and "#f5b942" not in body
+    assert "y:60" in body and "y:14" in body and "y:24" in body
+    exits = [t for t in piece.tweens if "power2.in" in t]
+    assert len(exits) == 1
+    assert "immediateRender:false" in exits[0]
+    assert "#ovl-00-card" in exits[0]
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+    times = _lt_dc_times(4.8)
+    assert abs(times["card_in_at"] - 0.10) < 1e-9
+    assert abs(times["exit_at"] - 4.3) < 1e-9
+
+
+def test_lt_dark_card_short_window_keeps_enter_before_exit():
+    times = _lt_dc_times(2.6)
+    assert times["role_in_at"] + times["role_in_dur"] < times["exit_at"]
+    assert times["card_in_at"] + times["card_in_dur"] < times["exit_at"]
+    squeezed = _lt_dc_times(1.5)
+    assert squeezed["role_in_at"] + squeezed["role_in_dur"] < squeezed["exit_at"]
+
+
+def test_lt_dark_card_reads_text_and_skips_empty():
+    ctx = TemplateCtx(index=0, start=0.0, duration=2.6, target="ovl-01",
+                      track=5, params={"text": "Майя Чен"})
+    piece = render_overlay("lt_dark_card", ctx)
+    assert "Майя Чен" in piece.nodes[0]
+    assert "ovl-01-role" not in piece.nodes[0]
+    empty = render_overlay("lt_dark_card", TemplateCtx(
+        index=0, start=0.0, duration=2.6, target="ovl-02", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_lt_dark_card_css_keeps_charcoal_montserrat_and_remaps_gold():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert "#f5b942" not in css
+    assert "#16181d" in css
+    rule = re.search(r"\.lt-dc-rule\{[^}]+\}", css).group(0)
+    assert "background:#C8453D" in rule
+    assert "transform-origin:0% 50%" in rule
+    assert "transform:" not in rule.replace("transform-origin:0% 50%", "")
+    assert "Montserrat" in css
+    assert "#ffffff" in css and "#aeb6c2" in css
 
 
 def test_chat_thread_puts_the_user_on_the_left():
