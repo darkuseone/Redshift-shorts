@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-138 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+139 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -185,6 +185,19 @@ def test_css_covers_every_layer_the_transitions_use():
         "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
         "kpi": "+42%",
     }),
+    ("data-viz/bar-chart-race", {
+        "periods": ["2019", "2020", "2021", "2022", "2023", "2024"],
+        "series": [
+            {"label": "Northwind", "values": [42, 58, 71, 96, 118, 131]},
+            {"label": "Cobalt", "values": [30, 46, 68, 92, 126, 168]},
+            {"label": "Ferry", "values": [55, 62, 66, 70, 74, 79]},
+            {"label": "Marlow", "values": [18, 33, 52, 61, 88, 104]},
+            {"label": "Aster", "values": [25, 28, 44, 58, 63, 72]},
+            {"label": "Pell", "values": [12, 20, 39, 47, 55, 90]},
+            {"label": "Quill", "values": [8, 11, 15, 24, 40, 66]},
+            {"label": "Dunmore", "values": [35, 37, 38, 40, 42, 44]},
+        ],
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -202,6 +215,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/bar-race-mini", ctx) == Piece()
     assert render_dataviz("data-viz/timeline-dots", ctx) == Piece()
     assert render_dataviz("data-viz/animated-bar-chart", ctx) == Piece()
+    assert render_dataviz("data-viz/bar-chart-race", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -230,6 +244,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     race = render_dataviz("data-viz/bar-race-mini", ctx).nodes[0]
     assert "dv-bar" in compare and "dv-bar" in race
     assert "abc-" not in compare and "abc-" not in race
+    assert "bcr-" not in compare and "bcr-" not in race
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -285,6 +300,70 @@ def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
     assert abs(times["grow_dur"] - 1.2) < 1e-9
     short = _abc_times(0.22)
     assert short["grow_at"] + short["grow_dur"] + 0.001 <= 0.22 + 1e-9
+
+
+def test_bar_chart_race_uses_scalex_not_width(ctx):
+    """Каталог DEMO 1 твинит width и textContent; здесь scaleX/x/y и span-ы."""
+    piece = render_dataviz("data-viz/bar-chart-race", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=12.0, target=ctx.target,
+        track=6, params={
+            "title": "Streaming Subscribers by Service",
+            "subtitle": "Ranked by reported subscribers",
+            "periods": ["2019", "2020", "2021", "2022", "2023", "2024"],
+            "series": [
+                {"label": "Northwind", "values": [42, 58, 71, 96, 118, 131]},
+                {"label": "Cobalt", "values": [30, 46, 68, 92, 126, 168]},
+                {"label": "Ferry", "values": [55, 62, 66, 70, 74, 79]},
+                {"label": "Marlow", "values": [18, 33, 52, 61, 88, 104]},
+                {"label": "Aster", "values": [25, 28, 44, 58, 63, 72]},
+                {"label": "Pell", "values": [12, 20, 39, 47, 55, 90]},
+                {"label": "Quill", "values": [8, 11, 15, 24, 40, 66]},
+                {"label": "Dunmore", "values": [35, 37, 38, 40, 42, 44]},
+            ],
+        }))
+    node = piece.nodes[0]
+    assert "bcr-chart" in node
+    assert "bcr-bar" in node and "bcr-row" in node and "bcr-period" in node
+    assert "Streaming Subscribers by Service" in node
+    assert "Northwind" in node and "Cobalt" in node and "Ferry" in node
+    assert "2019" in node and "2024" in node
+    assert "$168M" in node and "$42M" in node
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "stat-card" not in node
+    assert "textContent" not in node
+    assert node.count(f'id="bcr-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    for i in range(8):
+        assert f'id="bcr-{ctx.index:02d}-b{i}"' in node
+        assert f'id="bcr-{ctx.index:02d}-r{i}"' in node
+        assert f'id="bcr-{ctx.index:02d}-v{i}"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scaleX:" in body
+    assert "ease:\"none\"" in body or "ease:\"none\"" in "".join(piece.tweens)
+    assert "immediateRender:false" in body
+    assert "#c8452d" in body
+    assert "#1f1d1b" in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "clipPath" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#bcr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _bcr_times(12.0)
+    assert abs(times["race_end"] - 10.0) < 1e-9
+    assert abs(times["period"] - 2.0) < 1e-9
+    short = _bcr_times(0.22)
+    assert short["race_end"] + 0.001 <= 0.22 + 1e-9
 
 
 def test_split_moves_both_halves_towards_the_seam():
@@ -3202,7 +3281,7 @@ def test_animated_bar_chart_keeps_catalog_ink_and_paper():
     assert "#111827" in title
     assert "#111827" in kpi
     assert "transform-origin:50% 50%" in grow
-    block = css.split(".abc-chart", 1)[1]
+    block = css.split(".abc-chart", 1)[1].split(".bcr-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
@@ -3212,10 +3291,41 @@ def test_animated_bar_chart_keeps_catalog_ink_and_paper():
     assert "--hf-grow" not in block
     assert "--hf-dash" not in block
     stripped = css.replace("transform-origin:50% 50%", "")
-    assert "transform:" not in stripped.split(".abc-chart", 1)[1]
+    abc_only = stripped.split(".abc-chart", 1)[1].split(".bcr-chart", 1)[0]
+    assert "transform:" not in abc_only
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "abc-" not in dv_bar
+    assert "bcr-" not in dv_bar
     assert "transform-origin:left center" in dv_bar
+
+
+def test_bar_chart_race_keeps_catalog_ink_paper_and_accent():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".bcr-chart" in css
+    assert ".bcr-bar" in css
+    chart = re.search(r"\.bcr-chart\{[^}]+\}", css).group(0)
+    bar = re.search(r"\.bcr-bar\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.bcr-bg\{[^}]+\}", css).group(0)
+    title = re.search(r"\.bcr-title\{[^}]+\}", css).group(0)
+    caption = re.search(r"\.bcr-period-caption\{[^}]+\}", css).group(0)
+    assert "#f5f3ef" in chart and "#f5f3ef" in bg
+    assert "#1f1d1b" in chart and "#1f1d1b" in bar and "#1f1d1b" in title
+    assert "transform-origin:left center" in bar
+    assert "text-transform:uppercase" in caption
+    block = css.split(".bcr-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    stripped = (css.replace("transform-origin:left center", "")
+                .replace("transform-origin:50% 50%", "")
+                .replace("text-transform:uppercase", ""))
+    assert "transform:" not in stripped.split(".bcr-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "bcr-" not in dv_bar
 
 
 OVERLAY_PARAMS = {

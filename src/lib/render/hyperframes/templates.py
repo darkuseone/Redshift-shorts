@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-138 шаблонов каталога — это не 138 реализаций, а набор рендереров с параметрами.
+139 шаблонов каталога — это не 139 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -2501,6 +2501,444 @@ def dv_animated_bar_chart(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_BCR_CATALOG_SEC = 12.0
+_BCR_RACE_SEC = 10.0
+_BCR_PERIOD_SEC = 2.0
+_BCR_K = 5
+_BCR_MAX_SERIES = 8
+_BCR_BAR_COUNT = 6
+_BCR_TRACK_X = 248
+_BCR_TRACK_W = 600
+_BCR_PLOT_TOP = 280
+_BCR_PLOT_H = 1404
+_BCR_TICK_POOL = 5
+_BCR_TICK_LABEL_W = 80
+_BCR_INK = "#1f1d1b"
+_BCR_ACCENT = "#c8452d"
+_BCR_DEMO_PERIODS = ["2019", "2020", "2021", "2022", "2023", "2024"]
+_BCR_DEMO_SERIES: tuple[tuple[str, tuple[float, ...]], ...] = (
+    ("Northwind", (42, 58, 71, 96, 118, 131)),
+    ("Cobalt", (30, 46, 68, 92, 126, 168)),
+    ("Ferry", (55, 62, 66, 70, 74, 79)),
+    ("Marlow", (18, 33, 52, 61, 88, 104)),
+    ("Aster", (25, 28, 44, 58, 63, 72)),
+    ("Pell", (12, 20, 39, 47, 55, 90)),
+    ("Quill", (8, 11, 15, 24, 40, 66)),
+    ("Dunmore", (35, 37, 38, 40, 42, 44)),
+)
+
+
+def _bcr_times(duration: float) -> dict[str, float]:
+    """Окно bar chart race: каталог 12 с, гонка 10 с, период 2 с.
+
+    На шорте это ``ctx.duration``. Доли 12 с окна сохраняем, стык +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _BCR_CATALOG_SEC
+    race_end = min(d, _BCR_RACE_SEC * s)
+    if race_end + 0.001 > d:
+        race_end = max(0.001, d - 0.001)
+    period = max(0.001, _BCR_PERIOD_SEC * s)
+    return {"scale": s, "race_end": race_end, "kill_at": d, "period": period}
+
+
+def _bcr_clamp(value: float, lo: float, hi: float) -> float:
+    return lo if value < lo else hi if value > hi else value
+
+
+def _bcr_fmt(value: float, prefix: str, suffix: str, decimals: int = 0) -> str:
+    if decimals <= 0:
+        body = f"{int(round(value)):,}"
+    else:
+        body = f"{value:,.{decimals}f}"
+    return f"{prefix}{body}{suffix}"
+
+
+def _bcr_nice_step(x: float) -> float:
+    x = max(float(x), 1e-9)
+    exp = 10 ** math.floor(math.log10(x))
+    frac = x / exp
+    if frac <= 1:
+        nice = 1
+    elif frac <= 2:
+        nice = 2
+    elif frac <= 5:
+        nice = 5
+    else:
+        nice = 10
+    return exp * nice
+
+
+def _bcr_parse_periods(raw: Any) -> list[str]:
+    if isinstance(raw, str):
+        return [part.strip() for part in raw.split(",") if part.strip()]
+    if isinstance(raw, (list, tuple)):
+        return [str(part).strip() for part in raw if str(part).strip()]
+    return []
+
+
+def _bcr_pad_values(values: list[float], count: int) -> list[float]:
+    if not values:
+        return [0.0] * count
+    out = list(values)
+    while len(out) < count:
+        out.append(out[-1])
+    return out[:count]
+
+
+def _bcr_parse_series(raw: Any, period_count: int) -> list[tuple[str, list[float]]]:
+    out: list[tuple[str, list[float]]] = []
+    rows: list[Any]
+    if isinstance(raw, str):
+        rows = [line.strip() for line in re.split(r"[\n;]+", raw) if line.strip()]
+    elif isinstance(raw, (list, tuple)):
+        rows = list(raw)
+    else:
+        return []
+    for item in rows:
+        label = ""
+        values: list[float] = []
+        if isinstance(item, str):
+            split = item.find(":")
+            if split < 0:
+                continue
+            label = item[:split].strip()
+            values = []
+            for part in item[split + 1:].split(","):
+                try:
+                    values.append(float(part.strip()))
+                except ValueError:
+                    continue
+        elif isinstance(item, dict):
+            label = str(item.get("label") or "").strip()
+            raw_vals = item.get("values") or []
+            values = [float(v) for v in raw_vals if isinstance(v, (int, float))]
+        if not label or not values:
+            continue
+        out.append((label, _bcr_pad_values(values, period_count)))
+        if len(out) >= _BCR_MAX_SERIES:
+            break
+    return out
+
+
+def _bcr_synthesize(values: list[float], labels: list[str],
+                    periods: list[str]) -> list[tuple[str, list[float]]]:
+    t_count = max(2, len(periods))
+    series: list[tuple[str, list[float]]] = []
+    for i, value in enumerate(values[:_BCR_MAX_SERIES]):
+        power = 0.65 + 0.12 * ((i * 3) % 5)
+        start = 0.22 + 0.07 * ((i * 2) % 6)
+        row: list[float] = []
+        for step in range(t_count):
+            u = step / (t_count - 1) if t_count > 1 else 1.0
+            row.append(max(0.0, float(value) * (start + (1.0 - start) * (u ** power))))
+        series.append((labels[i] or f"S{i + 1}", row))
+    return series
+
+
+def _bcr_table(ctx: "TemplateCtx") -> tuple[list[str], list[tuple[str, list[float]]]] | None:
+    """Таблица гонки: явный series, иначе 1D values, иначе DEMO 1 каталога."""
+    periods = _bcr_parse_periods(ctx.params.get("periods"))
+    n_periods = max(1, len(periods) or len(_BCR_DEMO_PERIODS))
+    series = _bcr_parse_series(ctx.params.get("series"), n_periods)
+    if series:
+        n_periods = len(series[0][1])
+        if not periods:
+            periods = [str(2019 + i) for i in range(n_periods)]
+        periods = (periods + [str(i + 1) for i in range(n_periods)])[:n_periods]
+        return periods, [(lab, _bcr_pad_values(vals, n_periods)) for lab, vals in series]
+    values = _values(ctx)
+    if values:
+        t_count = max(2, len(periods) or 6)
+        if not periods:
+            periods = [str(2019 + i) for i in range(t_count)]
+        periods = (periods + [str(i + 1) for i in range(t_count)])[:t_count]
+        labels = _labels(ctx, len(values))
+        return periods, _bcr_synthesize(values, labels, periods)
+    if ctx.params.get("demo") is False:
+        return None
+    # DEMO 1 каталога: без данных в плане всё равно показываем namesake-жест.
+    if not ctx.params:
+        return None
+    return list(_BCR_DEMO_PERIODS), [(n, list(v)) for n, v in _BCR_DEMO_SERIES]
+
+
+def _bcr_value_at(t: float, values: list[float], period_dur: float) -> float:
+    t_count = len(values)
+    if t_count < 2:
+        return values[0]
+    u = t / period_dur
+    i = int(_bcr_clamp(math.floor(u), 0, t_count - 2))
+    frac = _bcr_clamp(u - i, 0.0, 1.0)
+    return values[i] + (values[i + 1] - values[i]) * frac
+
+
+def _bcr_rank_pos(t: float, index: int, ranks: list[list[int]], kf_dur: float) -> float:
+    if len(ranks) < 2:
+        return float(ranks[0][index])
+    m = t / kf_dur
+    m0 = int(_bcr_clamp(math.floor(m), 0, len(ranks) - 2))
+    x = _bcr_clamp(m - m0, 0.0, 1.0)
+    ease = x * x * (3.0 - 2.0 * x)
+    a = ranks[m0][index]
+    b = ranks[m0 + 1][index]
+    return a + (b - a) * ease
+
+
+def _bcr_frame(t: float, series: list[tuple[str, list[float]]],
+               ranks: list[list[int]], kf_dur: float, bar_count: int
+               ) -> tuple[list[float], list[float], list[float], int, float]:
+    values = [_bcr_value_at(t, row[1], _BCR_PERIOD_SEC) for row in series]
+    leader = min(range(len(values)), key=lambda j: (-values[j], j))
+    scale_max = max(values[leader] * 1.06, 1e-6)
+    ys = [_bcr_rank_pos(t, j, ranks, kf_dur) for j in range(len(series))]
+    opacities = [_bcr_clamp(bar_count - y, 0.0, 1.0) for y in ys]
+    return values, ys, opacities, leader, scale_max
+
+
+def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
+    """Гонка столбиков: ряды меняются местами, лидер красный.
+
+    Каталог DEMO 1 твинит ``width`` и пишет ``textContent`` из ``onUpdate``.
+    Здесь GSAP ``scaleX`` / ``x`` / ``y`` / ``opacity``, числа заранее
+    span-ами. Цвета бумаги ``#f5f3ef``, чернил ``#1f1d1b`` и акцента
+    ``#c8452d`` как в каталоге — жест, не палитра канала. Inter как в
+    каталоге. ``-apple-system`` не ставим. ``bar-race-mini`` /
+    ``animated-bar-chart`` / ``.dv-bar`` не трогаем.
+    """
+    table = _bcr_table(ctx)
+    if table is None:
+        return Piece()
+    periods, series = table
+    t_count = len(periods)
+    n_series = len(series)
+    if t_count < 1 or n_series < 1:
+        return Piece()
+    bar_count = int(round(float(ctx.params.get("bar_count",
+                    ctx.params.get("barCount", _BCR_BAR_COUNT)))))
+    bar_count = int(_bcr_clamp(bar_count, 3, 12))
+    prefix = str(ctx.params.get("value_prefix",
+                 ctx.params.get("valuePrefix", "$")))
+    suffix = str(ctx.params.get("value_suffix",
+                 ctx.params.get("valueSuffix", "M")))
+    decimals = int(round(float(ctx.params.get("value_decimals",
+                   ctx.params.get("valueDecimals", 0)))))
+    decimals = int(_bcr_clamp(decimals, 0, 3))
+    title = str(ctx.params.get("title") or "Streaming Subscribers by Service").strip()
+    subtitle = str(ctx.params.get("subtitle") or "Ranked by reported subscribers").strip()
+    source = str(ctx.params.get("source") or "Placeholder data").strip()
+    node_id = f"bcr-{ctx.index:02d}"
+    times = _bcr_times(ctx.duration)
+    start = ctx.start
+    pitch = _BCR_PLOT_H / bar_count
+    bar_h = max(12.0, pitch * 0.62)
+    bar_top = (pitch - bar_h) / 2.0
+    kf_dur = _BCR_PERIOD_SEC / _BCR_K
+    kf_count = (t_count - 1) * _BCR_K + 1 if t_count > 1 else 1
+    ranks: list[list[int]] = []
+    for m in range(kf_count):
+        tm = m * kf_dur
+        order = sorted(range(n_series),
+                       key=lambda j: (-_bcr_value_at(tm, series[j][1], _BCR_PERIOD_SEC), j))
+        row = [0] * n_series
+        for rank, j in enumerate(order):
+            row[j] = rank
+        ranks.append(row)
+
+    frames: list[tuple[float, list[float], list[float], list[float], int, float]] = []
+    for m in range(kf_count):
+        catalog_t = m * kf_dur
+        packed_t = min(times["kill_at"], catalog_t * times["scale"])
+        values, ys, opacities, leader, scale_max = _bcr_frame(
+            catalog_t, series, ranks, kf_dur, bar_count)
+        frames.append((packed_t, values, ys, opacities, leader, scale_max))
+
+    rows_html: list[str] = []
+    tweens: list[str] = []
+    _, val0, y0, o0, lead0, scale0 = frames[0]
+    for j, (label, values) in enumerate(series):
+        rid, bid, vid = f"{node_id}-r{j}", f"{node_id}-b{j}", f"{node_id}-v{j}"
+        spans = []
+        for p, period_val in enumerate(values):
+            spans.append(
+                f'<span id="{vid}-p{p}">{_esc(_bcr_fmt(period_val, prefix, suffix, decimals))}</span>')
+        rows_html.append(
+            f'<div id="{rid}" class="bcr-row" style="height:{pitch:.2f}px">'
+            f'<div class="bcr-name" data-layout-allow-overlap="">{_esc(label)}</div>'
+            f'<div id="{bid}" class="bcr-bar" style="height:{bar_h:.2f}px;'
+            f'top:{bar_top:.2f}px;width:{_BCR_TRACK_W}px"></div>'
+            f'<div id="{vid}" class="bcr-value" data-layout-allow-overlap="">'
+            f'{"".join(spans)}</div></div>')
+        sx0 = _bcr_clamp(val0[j] / scale0, 0.0, 1.0)
+        x0 = sx0 * _BCR_TRACK_W
+        y_px = y0[j] * pitch
+        color0 = _BCR_ACCENT if j == lead0 else _BCR_INK
+        tweens.append(
+            f'tl.set("#{rid}",{{y:{_num(y_px)},opacity:{_num(o0[j])}}},'
+            f'{_num(start)});')
+        tweens.append(
+            f'tl.set("#{bid}",{{scaleX:{_num(sx0)},opacity:1,'
+            f'backgroundColor:"{color0}"}},{_num(start)});')
+        tweens.append(
+            f'tl.set("#{vid}",{{x:{_num(x0)}}},{_num(start)});')
+        tweens.append(
+            f'tl.set("#{vid}-p0",{{opacity:1}},{_num(start)});')
+        for p in range(1, t_count):
+            tweens.append(
+                f'tl.set("#{vid}-p{p}",{{opacity:0}},{_num(start)});')
+
+    ticks_html: list[str] = []
+    for k in range(_BCR_TICK_POOL):
+        zero = " bcr-tick-zero" if k == 0 else ""
+        kid, lid = f"{node_id}-k{k}", f"{node_id}-l{k}"
+        lab_spans = []
+        for p in range(t_count):
+            t_p = min(_BCR_RACE_SEC, p * _BCR_PERIOD_SEC)
+            _vals, _ys, _op, _lead, scale_p = _bcr_frame(
+                t_p, series, ranks, kf_dur, bar_count)
+            step = _bcr_nice_step(scale_p / 4)
+            tv = k * step
+            text = _bcr_fmt(tv, prefix, suffix, decimals) if tv <= scale_p + 1e-6 else ""
+            lab_spans.append(f'<span id="{lid}-p{p}">{_esc(text)}</span>')
+        ticks_html.append(
+            f'<div id="{kid}" class="bcr-tick-line{zero}"></div>'
+            f'<div id="{lid}" class="bcr-tick-label">{"".join(lab_spans)}</div>')
+
+    def _tick_state(scale_max: float) -> list[tuple[float, float, float]]:
+        step = _bcr_nice_step(scale_max / 4)
+        out: list[tuple[float, float, float]] = []
+        for k in range(_BCR_TICK_POOL):
+            tv = k * step
+            visible = 1.0 if tv <= scale_max + 1e-6 else 0.0
+            tx = _BCR_TRACK_X + (tv / scale_max) * _BCR_TRACK_W
+            out.append((tx, tx - _BCR_TICK_LABEL_W / 2, visible))
+        return out
+
+    tick0 = _tick_state(frames[0][5])
+    for k in range(_BCR_TICK_POOL):
+        tx, lx, vis = tick0[k]
+        tweens.append(
+            f'tl.set("#{node_id}-k{k}",{{x:{_num(tx)},opacity:{_num(vis)}}},'
+            f'{_num(start)});')
+        tweens.append(
+            f'tl.set("#{node_id}-l{k}",{{x:{_num(lx)},opacity:{_num(vis)}}},'
+            f'{_num(start)});')
+        tweens.append(
+            f'tl.set("#{node_id}-l{k}-p0",{{opacity:1}},{_num(start)});')
+        for p in range(1, t_count):
+            tweens.append(
+                f'tl.set("#{node_id}-l{k}-p{p}",{{opacity:0}},{_num(start)});')
+
+    period_spans = []
+    for p, label in enumerate(periods):
+        period_spans.append(f'<span id="{node_id}-p{p}">{_esc(label)}</span>')
+    tweens.append(f'tl.set("#{node_id}-p0",{{opacity:1}},{_num(start)});')
+    for p in range(1, t_count):
+        tweens.append(f'tl.set("#{node_id}-p{p}",{{opacity:0}},{_num(start)});')
+
+    prev_lead = lead0
+    prev_period = 0
+    for m in range(1, kf_count):
+        t_at, vals, ys, ops, leader, scale_max = frames[m]
+        t_prev, pvals, pys, pops, _plead, pscale = frames[m - 1]
+        dur = max(0.001, t_at - t_prev)
+        at = start + t_prev
+        for j in range(n_series):
+            rid, bid, vid = f"{node_id}-r{j}", f"{node_id}-b{j}", f"{node_id}-v{j}"
+            sx_a = _bcr_clamp(pvals[j] / pscale, 0.0, 1.0)
+            sx_b = _bcr_clamp(vals[j] / scale_max, 0.0, 1.0)
+            tweens.append(
+                f'tl.fromTo("#{rid}",{{y:{_num(pys[j] * pitch)},'
+                f'opacity:{_num(pops[j])}}},{{y:{_num(ys[j] * pitch)},'
+                f'opacity:{_num(ops[j])},duration:{_num(dur)},ease:"none",'
+                f'immediateRender:false}},{_num(at)});')
+            tweens.append(
+                f'tl.fromTo("#{bid}",{{scaleX:{_num(sx_a)},opacity:1}},'
+                f'{{scaleX:{_num(sx_b)},opacity:1,duration:{_num(dur)},'
+                f'ease:"none",immediateRender:false}},{_num(at)});')
+            tweens.append(
+                f'tl.fromTo("#{vid}",{{x:{_num(sx_a * _BCR_TRACK_W)}}},'
+                f'{{x:{_num(sx_b * _BCR_TRACK_W)},duration:{_num(dur)},'
+                f'ease:"none",immediateRender:false}},{_num(at)});')
+        ticks_a = _tick_state(pscale)
+        ticks_b = _tick_state(scale_max)
+        for k in range(_BCR_TICK_POOL):
+            ax, alx, av = ticks_a[k]
+            bx, blx, bv = ticks_b[k]
+            tweens.append(
+                f'tl.fromTo("#{node_id}-k{k}",{{x:{_num(ax)},opacity:{_num(av)}}},'
+                f'{{x:{_num(bx)},opacity:{_num(bv)},duration:{_num(dur)},'
+                f'ease:"none",immediateRender:false}},{_num(at)});')
+            tweens.append(
+                f'tl.fromTo("#{node_id}-l{k}",{{x:{_num(alx)},opacity:{_num(av)}}},'
+                f'{{x:{_num(blx)},opacity:{_num(bv)},duration:{_num(dur)},'
+                f'ease:"none",immediateRender:false}},{_num(at)});')
+        catalog_t = m * kf_dur
+        period_i = int(_bcr_clamp(math.floor(catalog_t / _BCR_PERIOD_SEC), 0, t_count - 1))
+        if period_i != prev_period:
+            swap_at = start + t_at
+            tweens.append(
+                f'tl.set("#{node_id}-p{prev_period}",{{opacity:0}},{_num(swap_at)});')
+            tweens.append(
+                f'tl.set("#{node_id}-p{period_i}",{{opacity:1}},{_num(swap_at)});')
+            for j in range(n_series):
+                tweens.append(
+                    f'tl.set("#{node_id}-v{j}-p{prev_period}",{{opacity:0}},'
+                    f'{_num(swap_at)});')
+                tweens.append(
+                    f'tl.set("#{node_id}-v{j}-p{period_i}",{{opacity:1}},'
+                    f'{_num(swap_at)});')
+            for k in range(_BCR_TICK_POOL):
+                tweens.append(
+                    f'tl.set("#{node_id}-l{k}-p{prev_period}",{{opacity:0}},'
+                    f'{_num(swap_at)});')
+                tweens.append(
+                    f'tl.set("#{node_id}-l{k}-p{period_i}",{{opacity:1}},'
+                    f'{_num(swap_at)});')
+            prev_period = period_i
+        if leader != prev_lead:
+            swap_at = start + t_at
+            tweens.append(
+                f'tl.set("#{node_id}-b{prev_lead}",{{backgroundColor:"{_BCR_INK}"}},'
+                f'{_num(swap_at)});')
+            tweens.append(
+                f'tl.set("#{node_id}-b{leader}",{{backgroundColor:"{_BCR_ACCENT}"}},'
+                f'{_num(swap_at)});')
+            prev_lead = leader
+
+    kill_at = start + times["kill_at"]
+    for j in range(n_series):
+        tweens.append(
+            f'tl.set("#{node_id}-r{j}",{{y:0,opacity:0}},{_num(kill_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-b{j}",{{scaleX:0,opacity:0}},{_num(kill_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-v{j}",{{x:0,opacity:0}},{_num(kill_at)});')
+    for k in range(_BCR_TICK_POOL):
+        tweens.append(
+            f'tl.set("#{node_id}-k{k}",{{x:0,opacity:0}},{_num(kill_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-l{k}",{{x:0,opacity:0}},{_num(kill_at)});')
+    for p in range(t_count):
+        tweens.append(
+            f'tl.set("#{node_id}-p{p}",{{opacity:0}},{_num(kill_at)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay bcr-chart" {_timing(ctx)}>'
+               f'<div class="bcr-bg"></div>'
+               f'<div class="bcr-head">'
+               f'<div class="bcr-head-left">'
+               f'<h1 class="bcr-title">{_esc(title)}</h1>'
+               f'<p class="bcr-subtitle">{_esc(subtitle)}</p></div>'
+               f'<div class="bcr-head-right">'
+               f'<span class="bcr-period-caption">Period</span>'
+               f'<span class="bcr-period">{"".join(period_spans)}</span></div></div>'
+               f'<div class="bcr-plot">{"".join(rows_html)}</div>'
+               f'<div class="bcr-axis">{"".join(ticks_html)}</div>'
+               f'<p class="bcr-source">{_esc(source)}</p></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -2510,6 +2948,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "timeline-dots": dv_dots,
     "stat-countup-card": dv_stat_card,
     "animated-bar-chart": dv_animated_bar_chart,
+    "bar-chart-race": dv_bar_chart_race,
 }
 
 
@@ -2595,6 +3034,53 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         ".abc-lbl{display:block;text-align:center;"
         "font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;"
         "color:#9ca3af}"
+        ".bcr-chart{left:0;top:0;"
+        f"width:{canvas_w}px;height:{canvas_h}px;"
+        "background:#f5f3ef;font-family:Inter,sans-serif;color:#1f1d1b}"
+        ".bcr-bg{position:absolute;inset:0;background:#f5f3ef}"
+        ".bcr-head{position:absolute;top:56px;left:48px;"
+        f"width:{canvas_w - 96}px;"
+        "height:200px}"
+        ".bcr-head-left{position:absolute;left:0;top:0;width:640px}"
+        ".bcr-head-right{position:absolute;right:0;top:0;text-align:right}"
+        ".bcr-title{margin:0;font-size:34px;font-weight:700;"
+        "letter-spacing:-0.015em;line-height:1.1;color:#1f1d1b}"
+        ".bcr-subtitle{margin:10px 0 0;font-size:16px;font-weight:400;"
+        "color:#6b6560}"
+        ".bcr-period-caption{display:block;font-size:13px;font-weight:600;"
+        "letter-spacing:0.18em;text-transform:uppercase;color:#6b6560}"
+        ".bcr-period{position:relative;display:block;height:56px;margin-top:4px;"
+        "font-size:52px;font-weight:700;line-height:1;"
+        "font-variant-numeric:tabular-nums;letter-spacing:-0.02em}"
+        ".bcr-period span{position:absolute;right:0;top:0;opacity:0;"
+        "white-space:nowrap}"
+        f".bcr-plot{{position:absolute;left:0;top:{_BCR_PLOT_TOP}px;"
+        f"width:{canvas_w}px;height:{_BCR_PLOT_H}px;overflow:hidden}}"
+        f".bcr-row{{position:absolute;left:0;top:0;width:{canvas_w}px}}"
+        ".bcr-name{position:absolute;left:32px;width:204px;top:0;height:100%;"
+        "display:flex;align-items:center;justify-content:flex-end;"
+        "text-align:right;font-size:20px;font-weight:600;line-height:1.2;"
+        "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+        "background-color:#f5f3ef}"
+        f".bcr-bar{{position:absolute;left:{_BCR_TRACK_X}px;"
+        "border-radius:3px;background-color:#1f1d1b;"
+        "transform-origin:left center}"
+        f".bcr-value{{position:absolute;left:{_BCR_TRACK_X + 4}px;top:0;height:100%}}"
+        ".bcr-value span{position:absolute;left:0;top:0;height:100%;opacity:0;"
+        "display:flex;align-items:center;padding:0 10px;font-size:20px;"
+        "font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;"
+        "background-color:#f5f3ef}"
+        ".bcr-axis{position:absolute;inset:0;z-index:5000;pointer-events:none}"
+        f".bcr-tick-line{{position:absolute;top:{_BCR_PLOT_TOP}px;left:0;width:1px;"
+        f"height:{_BCR_PLOT_H}px;background-color:rgba(31,29,27,0.11)}}"
+        ".bcr-tick-line.bcr-tick-zero{background-color:rgba(31,29,27,0.5)}"
+        f".bcr-tick-label{{position:absolute;top:{_BCR_PLOT_TOP - 32}px;left:0;"
+        f"width:{_BCR_TICK_LABEL_W}px;font-size:15px;font-weight:500;"
+        "font-variant-numeric:tabular-nums;color:#6b6560}"
+        f".bcr-tick-label span{{position:absolute;left:0;top:0;width:{_BCR_TICK_LABEL_W}px;"
+        "text-align:center;opacity:0;white-space:nowrap}"
+        ".bcr-source{position:absolute;left:48px;top:1748px;margin:0;"
+        "font-size:14px;color:#6b6560}"
     )
 
 

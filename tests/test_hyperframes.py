@@ -1364,6 +1364,28 @@ def test_animated_bar_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "stat-card" not in node
 
 
+def test_bar_chart_race_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 6.0,
+        "template": "data-viz/bar-chart-race",
+        "params": {
+            "title": "Streaming Subscribers by Service",
+            "periods": ["2019", "2020", "2021", "2022", "2023", "2024"],
+            "series": [
+                {"label": "Northwind", "values": [42, 58, 71, 96, 118, 131]},
+                {"label": "Cobalt", "values": [30, 46, 68, 92, 126, 168]},
+                {"label": "Ferry", "values": [55, 62, 66, 70, 74, 79]},
+            ],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bcr-chart" in out
+    assert "Northwind" in out and "Cobalt" in out
+    node = next(line for line in out.splitlines() if "bcr-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+
+
 def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):
     """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
 
