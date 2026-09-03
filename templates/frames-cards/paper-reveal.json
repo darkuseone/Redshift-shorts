@@ -1,0 +1,22 @@
+{
+  "id": "frames-cards/paper-reveal",
+  "name": "paper-reveal",
+  "category": "frames-cards",
+  "title": "Строки статьи проявляются, одна вспыхивает",
+  "duration_range": [
+    1.5,
+    4.0
+  ],
+  "params": {
+    "template": "arxiv_card"
+  },
+  "tags": [
+    "source",
+    "science",
+    "reveal"
+  ],
+  "renderer": "paper_reveal",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
+}

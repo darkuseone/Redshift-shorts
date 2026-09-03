@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Генератор каталога шаблонов §15.
 
-Каталог описан в ТЗ списками имён; держать их в коде удобнее, чем править 81
-JSON вручную — генератор гарантирует, что состав и счётчики категорий совпадают
+Каталог описан в ТЗ списками имён; держать их в коде удобнее, чем править JSON
+вручную — генератор гарантирует, что состав и счётчики категорий совпадают
 с §15.1–15.11, а параметры каждого пресета остаются машиночитаемыми.
 
 Запуск: python tools/gen_templates.py
@@ -17,13 +17,30 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "templates"
 
-# (id, описание, duration_range, params, tags, renderer)
+# Референсы с examples HyperFrames: жесты, не готовые 16:9-фильмы.
+_EX_TEXTURE = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
+               "launch-texture-launch-video-v1-s.mp4")
+_EX_K3 = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
+          "launch-k3-promo-v1-s.mp4")
+_EX_SPACEX = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
+              "launch-spacex-launch-v1-s.mp4")
+_EX_WEBSITE = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
+               "launch-website-to-hyperframes-v1-s.mp4")
+_EX_PR = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
+          "launch-pr-to-video-launch-v1-s.mp4")
+_EX_SRINIKA = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
+               "reverse-srinika-replica.mp4")
+_EX_STRIPE = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
+              "launch-HF-heygen-stripe-v1-s.mp4")
+
+# (id, описание, duration_range, params, tags, renderer[, example_video])
 CATALOG: dict[str, tuple[int, list[tuple]]] = {
     "intro-hooks": (8, [
         ("hook-question-flash", "Вопрос вспышкой на однотонном фоне", [0.8, 2.0],
          {"flash_ms": 120, "bg": "bg_pure"}, ["hook", "text", "flash"], "fullscreen_text"),
         ("hook-number-slam", "Цифра-удар с ударным SFX", [0.8, 1.6],
-         {"scale_from": 1.35, "sfx": "hit_impact"}, ["hook", "number"], "fullscreen_text"),
+         {"scale_from": 1.35, "sfx": "hit_impact", "slam": True},
+         ["hook", "number"], "fullscreen_text"),
         ("hook-blackout-word", "Одно слово на чёрном", [0.6, 1.4],
          {"invert": True}, ["hook", "text", "dark"], "fullscreen_text"),
         ("hook-footage-cold-open", "Холодный вход футажом без текста", [1.0, 3.0],
@@ -37,9 +54,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (10, [
+    "text-fullscreen": (20, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
-         {"size_px": [260, 420], "uppercase": True}, ["number", "impact"], "fullscreen_text"),
+         {"size_px": [260, 420], "uppercase": True, "slam": True},
+         ["number", "impact"], "fullscreen_text"),
         ("impact-02", "Слово с подчёркиванием accent", [0.8, 2.0],
          {"underline": True}, ["word", "impact"], "fullscreen_text"),
         ("stack-3lines", "Три строки лесенкой", [1.2, 2.0],
@@ -58,6 +76,50 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"mask": True}, ["text", "footage", "mask"], "fullscreen_text"),
         ("fact-card", "Карточка факта", [1.2, 2.0],
          {"card": True}, ["fact", "card"], "fullscreen_text"),
+        ("kinetic-stack", "Слова входят rise со стаггером — Texture / OBLIST",
+         [0.8, 2.0], {"stagger_ms": 55, "kinetic": True},
+         ["text", "kinetic"], "kinetic_stack", _EX_TEXTURE),
+        ("blur-out-up", "Слова выходят из размытия и уходят вверх — blur-out-up",
+         [0.8, 2.0], {"stagger_ms": 55, "blur_out": True, "direction": "up",
+                      "distance": "standard", "blur": "standard"},
+         ["text", "kinetic", "blur"], "blur_out_up"),
+        ("bottom-up-letters", "Буквы поднимаются снизу со стаггером — bottom-up-letters",
+         [0.8, 2.0], {"stagger_ms": 25, "bottom_up": True, "unit": "letter",
+                      "direction": "up", "travel": "standard"},
+         ["text", "kinetic", "letters"], "bottom_up_letters"),
+        ("kinetic-type-swap", "Фраза стоит, в маске катится слово — kinetic-type-swap",
+         [0.8, 4.0], {"kinetic_swap": True, "exit": "none"},
+         ["text", "kinetic", "swap"], "kinetic_type_swap"),
+        ("line-by-line-slide", "Строки заезжают слева со стаггером — line-by-line-slide",
+         [0.8, 2.4], {"line_slide": True, "direction": "left", "size": "standard",
+                      "density": "standard", "tone": "ink"},
+         ["text", "kinetic", "stack"], "line_by_line_slide"),
+        ("particle-text-dissolve",
+         "Строка собирается из облака пыли — particle-text-dissolve",
+         [0.8, 4.0],
+         {"particle_dissolve": True, "direction": "in", "density": "med",
+          "exit": "none"},
+         ["text", "kinetic", "particles"], "particle_text_dissolve"),
+        ("per-word-crossfade",
+         "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
+         [0.8, 2.4],
+         {"word_crossfade": True, "drift": "standard", "blur": "standard",
+          "tone": "ink", "exit": "none"},
+         ["text", "kinetic", "blur"], "per_word_crossfade"),
+        ("scan-band",
+         "Диагональная полоса с RGB-сдвигом по вордмарку — scan-band",
+         [0.8, 4.0],
+         {"scan_band": True, "band_angle": 12},
+         ["text", "kinetic", "scan", "chromatic"], "scan_band"),
+        ("scramble-reveal",
+         "Строка собирается из детерминированного шума — scramble-reveal",
+         [0.8, 4.0],
+         {"scramble_reveal": True, "accent": "green", "style": "terminal",
+          "exit": "none"},
+         ["text", "kinetic", "scramble", "reveal"], "scramble_reveal"),
+        ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
+         {"slam": True, "scale_from": 1.35, "uppercase": True},
+         ["number", "impact", "card"], "number_slam", _EX_K3),
     ]),
     "lower-thirds": (8, [
         ("name-title", "Имя и должность", [1.5, 4.0],
@@ -77,11 +139,11 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("timestamp-marker", "Отметка времени", [1.5, 2.5],
          {"position": "top", "mono": True}, ["time"], "plaque"),
     ]),
-    "frames-cards": (6, [
+    "frames-cards": (7, [
         ("article-card", "Карточка статьи", [1.5, 4.0], {"template": "browser"},
          ["source", "article"], "source_card"),
         ("arxiv-card", "Карточка arXiv", [1.5, 4.0], {"template": "arxiv_card"},
-         ["source", "science"], "source_card"),
+         ["source", "science"], "paper_reveal"),
         ("patent-card", "Карточка патента", [1.5, 4.0], {"template": "patent_card"},
          ["source", "patent"], "source_card"),
         ("profile-card", "Карточка персоны", [1.5, 3.5], {"template": "notepad"},
@@ -90,23 +152,31 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          ["product"], "source_card"),
         ("chart-card", "Карточка с графиком", [1.5, 4.0], {"template": "notepad",
          "chart": True}, ["data"], "source_card"),
+        ("paper-reveal", "Строки статьи проявляются, одна вспыхивает", [1.5, 4.0],
+         {"template": "arxiv_card"}, ["source", "science", "reveal"],
+         "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (6, [
+    "browser-ui": (8, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
-         ["ui", "source"], "source_card"),
+         ["ui", "source"], "article_scroll"),
         ("google-typing", "Печать в поисковой строке", [1.5, 3.5],
          {"template": "search", "typing": True}, ["ui", "typing"], "source_card"),
         ("chat-ai-typing", "Запрос в нейросеть с курсором", [1.5, 3.5],
-         {"template": "chat_ai", "typing": True}, ["ui", "ai"], "source_card"),
+         {"template": "chat_ai", "typing": True}, ["ui", "ai"], "chat_thread"),
         ("notepad-typing", "Печать в блокноте", [1.5, 3.5],
          {"template": "notepad", "typing": True}, ["ui", "typing"], "source_card"),
         ("terminal-lines", "Строки терминала", [1.5, 3.5],
          {"template": "notepad", "mono": True}, ["ui", "code"], "source_card"),
         ("phone-notification", "Уведомление на телефоне", [1.2, 2.5],
          {"template": "notepad", "compact": True}, ["ui", "notification"], "plaque"),
+        ("chat-thread", "Окно чата: запрос слева, ответ справа", [1.5, 4.0],
+         {"template": "chat_ai"}, ["ui", "ai", "chat"], "chat_thread", _EX_SPACEX),
+        ("article-highlight", "Статья в браузере со скроллом и вырезом цитаты",
+         [2.0, 4.5], {"template": "browser", "scroll": True, "highlight": True},
+         ["ui", "source", "highlight"], "article_scroll", _EX_WEBSITE),
     ]),
-    "transitions": (12, [
+    "transitions": (13, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
         ("whip-pan-l", "Резкий пан влево", [0.16, 0.28], {"direction": -1, "blur": 24},
          ["dynamic", "pan"], "whip_pan"),
@@ -130,6 +200,8 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          ["dynamic", "blur"], "blur_dip"),
         ("white-flash", "Вспышка в белое", [0.14, 0.24], {"peak": 0.85},
          ["dynamic", "flash"], "white_flash"),
+        ("zoom-through", "Наезд в деталь на склейке — жест SpaceX", [0.18, 0.30],
+         {"from_scale": 1.22}, ["dynamic", "zoom"], "zoom_through", _EX_SPACEX),
     ]),
     "avatar-entry": (6, [
         ("hero-zoom-in", "Вход зумом на аватар", [0.2, 0.4], {"from_scale": 1.18},
@@ -177,7 +249,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (6, [
+    "data-viz": (7, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -190,8 +262,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          ["data", "timeline"], "dataviz"),
         ("compare-bars", "Сравнение двух столбиков", [1.5, 3.0], {"bars": 2},
          ["data", "compare"], "dataviz"),
+        ("stat-countup-card", "Набегающая метрика на карточке", [1.2, 3.0],
+         {"steps": 12}, ["data", "number", "card"], "dataviz", _EX_SPACEX),
     ]),
-    "outro-cta": (5, [
+    "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],
          {"pulse_hz": 1.6}, ["cta", "subscribe"], "cta_button"),
         ("question-card", "Вопрос в карточке", [1.5, 2.5], {"card": True},
@@ -202,13 +276,18 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          ["cta", "teaser"], "plaque"),
         ("logo-stamp", "Штамп логотипа", [1.0, 2.0], {"stamp": True},
          ["cta", "brand"], "fullscreen_text"),
+        ("logo-brand-close", "Вордмарк каскадом и точка бренда — logo-brand-close",
+         [1.5, 4.5],
+         {"logo_close": True, "exit": "none", "wordmark": "РЕДШИФТ",
+          "tagline": "Пиши код. Шли на орбиту.", "url": "redshift.shorts"},
+         ["cta", "brand", "logo", "end-card"], "logo_brand_close"),
     ]),
     # Приёмы вокруг ведущего. Категория заведена по референсам заказчика:
     # ведущий за столом, а кадр вокруг него живёт — картинка за спиной, текст
     # над головой, панель сбоку, выбивка. Тег ``alpha`` помечает приёмы, для
     # которых аватар обязан прийти с прозрачным фоном: они рисуются ПОД ним, и
     # без альфы зритель их не увидит.
-    "hero-devices": (23, [
+    "hero-devices": (25, [
         ("plate-behind-back", "Кадр появляется за спиной ведущего", [1.4, 4.0],
          {"top": 300}, ["hero", "avatar", "alpha", "footage"], "hero-plate"),
         ("headline-over-head", "Заголовок вырастает над головой", [1.2, 3.4],
@@ -268,6 +347,12 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("bubble-typed", "Ведущий в круге, реплика набирается в карточке",
          [2.6, 6.0], {}, ["hero", "avatar", "text", "lines", "sync"],
          "hero-bubble-typed"),
+        ("type-slab", "Плита типа слева от ведущего — Srinika × Mercury",
+         [1.4, 4.0], {"top": 420}, ["hero", "avatar", "text", "lines"],
+         "hero-type-slab", _EX_SRINIKA),
+        ("footage-plate-pop", "Футаж в рамке въезжает поверх кадра", [1.4, 4.0],
+         {"width": 920, "height": 580, "top": 210},
+         ["hero", "avatar", "footage"], "hero-plate-pop", _EX_STRIPE),
     ]),
 }
 
@@ -291,16 +376,20 @@ def main() -> int:
     # манифест «с нуля» значит обнулить ротацию §15.12 и заставить каталог
     # заново сойтись на первых попавшихся шаблонах.
     history: dict[str, list[str]] = {}
+    added_on: dict[str, str] = {}
     existing = TEMPLATES / "manifest.json"
     if existing.exists():
         for entry in json.loads(existing.read_text(encoding="utf-8"))["templates"]:
             history[entry["id"]] = entry.get("last_used_in", [])
+            added_on[entry["id"]] = entry.get("added", "2026-08-18")
 
     total = 0
     for category, (expected, items) in CATALOG.items():
         assert len(items) == expected, f"{category}: {len(items)} != {expected} из §15"
         (TEMPLATES / category).mkdir(parents=True, exist_ok=True)
-        for tid, title, duration, params, tags, renderer in items:
+        for item in items:
+            tid, title, duration, params, tags, renderer, *rest = item
+            example_video = rest[0] if rest else ""
             entry = {
                 "id": f"{category}/{tid}",
                 "name": tid,
@@ -311,8 +400,10 @@ def main() -> int:
                 "tags": tags,
                 "renderer": renderer,
                 "last_used_in": history.get(f"{category}/{tid}", []),
-                "added": "2026-08-18",
+                "added": added_on.get(f"{category}/{tid}") or "2026-09-02",
             }
+            if example_video:
+                entry["example_video"] = example_video
             manifest["templates"].append(entry)
             preset_path = TEMPLATES / category / f"{tid}.json"
             preset_path.write_text(

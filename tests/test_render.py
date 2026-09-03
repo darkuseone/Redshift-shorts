@@ -11,7 +11,8 @@ from PIL import Image
 from src.lib.render.canvas import (
     FontBook, SafeZones, accent_area_share, cubic_bezier, ease, mix, parse_color, with_alpha,
 )
-from src.lib.render.layers import Ctx, fit_block, fullscreen_text, plaque, source_card, subtitle, subscribe_button
+from src.lib.render.layers import Ctx, fit_block, fullscreen_text, plaque, source_card, subscribe_button
+from src.lib.render.text_rules import apply_case
 from src.lib.render.shots import ShotSpec, build_filter, choose_fit, kenburns_window, apply_kenburns
 from src.lib.templates import TemplateCatalog, diff_count, overlap_share
 
@@ -98,49 +99,12 @@ def test_fit_block_wraps_long_text(render_ctx):
 
 # --- слои ----------------------------------------------------------------------
 
-def test_subtitle_is_centered_and_in_safe_zone(render_ctx):
-    layer = subtitle(render_ctx, "кубитов", progress=1.0)
-    bbox = layer.getbbox()
-    assert bbox is not None
-    center_x = (bbox[0] + bbox[2]) / 2
-    # §5.1 «по центру» — это центр кадра, а не центр рабочей зоны: правое поле
-    # ужато под колонку лайк/коммент/шер и уводит середину зоны на 80 px влево.
-    assert abs(center_x - render_ctx.width / 2) <= 1
-    assert render_ctx.safe.y_min <= bbox[1] and bbox[3] <= render_ctx.safe.y_max
-
-
-def test_subtitle_centering_does_not_depend_on_glyph_bearings(render_ctx):
-    # Разные боковые свесы не должны смещать слово: центруем по чернилам.
-    for word in ("тьма", "уже", "力", "ага", "www"):
-        bbox = subtitle(render_ctx, word, progress=1.0).getbbox()
-        if bbox is None:
-            continue
-        assert abs((bbox[0] + bbox[2]) / 2 - render_ctx.width / 2) <= 1, word
-
-
-def test_subtitle_has_no_leading_capital(render_ctx):
-    from src.lib.render.layers import apply_case
-
+def test_subtitle_has_no_leading_capital():
     assert apply_case("Твой", "lower") == "твой"
     assert apply_case("НАМЕРЕННО", "lower") == "НАМЕРЕННО"   # аббревиатуры целы
     assert apply_case("ОТО", "lower") == "ОТО"
     assert apply_case("105", "lower") == "105"
     assert apply_case("Я", "lower") == "я"                   # одна буква — не аббревиатура
-
-
-def test_subtitle_lowercase_changes_pixels(render_ctx):
-    # Регистр действительно доезжает до кадра, а не только до хелпера.
-    capital = subtitle(render_ctx, "Твой", progress=1.0)
-    lower = subtitle(render_ctx, "твой", progress=1.0)
-    assert list(capital.getdata()) == list(lower.getdata())
-
-
-def test_subtitle_baseline_is_in_center_band(render_ctx):
-    layer = subtitle(render_ctx, "слово", progress=1.0)
-    bbox = layer.getbbox()
-    center_y = (bbox[1] + bbox[3]) / 2
-    lo, hi = render_ctx.brandbook["subtitles"]["baseline_y"]
-    assert lo - 60 <= center_y <= hi + 60
 
 
 def test_subtitle_shifts_down_when_face_low(render_ctx):
@@ -149,16 +113,6 @@ def test_subtitle_shifts_down_when_face_low(render_ctx):
     default = subtitle_baseline(render_ctx, face_bbox=None)
     shifted = subtitle_baseline(render_ctx, face_bbox=(300, 400, 700, 900))
     assert shifted > default
-
-
-def test_subtitle_emphasis_uses_accent(render_ctx):
-    plain = subtitle(render_ctx, "слово", progress=1.0)
-    accent = subtitle(render_ctx, "слово", progress=1.0, emphasis=True)
-    assert list(plain.getdata()) != list(accent.getdata())
-
-
-def test_subtitle_empty_word_is_noop(render_ctx):
-    assert subtitle(render_ctx, "  ,  ", progress=1.0).getbbox() is None
 
 
 def test_fullscreen_text_fills_frame(render_ctx):
@@ -197,7 +151,6 @@ def test_cta_button_visible_and_in_safe_zone(render_ctx):
 def test_accent_share_within_brandbook_limit(render_ctx):
     """§3.3.1 — акцент занимает не более 10–12 % площади кадра."""
     frame = Image.new("RGBA", render_ctx.size, (247, 245, 243, 255))
-    frame.alpha_composite(subtitle(render_ctx, "невозможно", progress=1.0, emphasis=True))
     frame.alpha_composite(subscribe_button(render_ctx, progress=1.0))
     share = accent_area_share(frame, render_ctx.color("accent"))
     assert share <= float(render_ctx.brandbook["color_rules"]["accent_max_frame_share"])
@@ -257,15 +210,37 @@ def test_apply_kenburns_keeps_size():
 
 # --- каталог шаблонов (§15) ----------------------------------------------------
 
+def test_stats_from_text_skips_years_when_other_numbers_exist():
+    from src.p11_assemble.assemble import _stats_from_text
+
+    nums = _stats_from_text("В 2024 году чип набрал 105 кубитов и 12 %")
+    values = [n["value"] for n in nums]
+    assert 2024 not in values
+    assert 105 in values
+    assert 12 in values
+
+
+def test_overlay_renderer_maps_chat_and_paper():
+    from src.lib.templates import Template
+    from src.p11_assemble.assemble import _overlay_renderer
+
+    chat = Template(id="browser-ui/chat-thread", name="chat-thread",
+                    category="browser-ui", title="", duration_range=[1, 4],
+                    params={}, tags=[], renderer="chat_thread")
+    assert _overlay_renderer(chat) == "chat_thread"
+    old = Template(id="browser-ui/chat-ai-typing", name="chat-ai-typing",
+                   category="browser-ui", title="", duration_range=[1, 4],
+                   params={}, tags=[], renderer="source_card")
+    assert _overlay_renderer(old) == "chat_thread"
+
+
 def test_catalog_matches_spec_counts(cfg):
     catalog = TemplateCatalog.load(cfg)
     counts = catalog.counts()
     assert counts == {
-        "intro-hooks": 8, "text-fullscreen": 10, "lower-thirds": 8, "frames-cards": 6,
-        "browser-ui": 6, "transitions": 12, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 6, "outro-cta": 5, "hero-devices": 23,
+        "avatar-entry": 6, "browser-ui": 8, "data-viz": 7, "frames-cards": 7, "hero-devices": 25, "intro-hooks": 8, "kenburns": 10, "lower-thirds": 8, "outro-cta": 6, "parallax": 4, "text-fullscreen": 20, "transitions": 13,
     }
-    assert len(catalog.all()) == 104
+    assert len(catalog.all()) == 122
 
 
 def test_catalog_rotation_avoids_recent(cfg):

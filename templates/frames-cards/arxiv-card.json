@@ -14,7 +14,7 @@
     "source",
     "science"
   ],
-  "renderer": "source_card",
+  "renderer": "paper_reveal",
   "last_used_in": [
     "redshift_0042",
     "redshift_0043",

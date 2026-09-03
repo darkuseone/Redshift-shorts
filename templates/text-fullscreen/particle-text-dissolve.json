@@ -1,0 +1,24 @@
+{
+  "id": "text-fullscreen/particle-text-dissolve",
+  "name": "particle-text-dissolve",
+  "category": "text-fullscreen",
+  "title": "Строка собирается из облака пыли — particle-text-dissolve",
+  "duration_range": [
+    0.8,
+    4.0
+  ],
+  "params": {
+    "particle_dissolve": true,
+    "direction": "in",
+    "density": "med",
+    "exit": "none"
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "particles"
+  ],
+  "renderer": "particle_text_dissolve",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

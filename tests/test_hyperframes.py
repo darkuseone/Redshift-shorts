@@ -166,14 +166,47 @@ def test_cta_pulse_is_finite(markup):
     assert re.search(r"repeat:\d+", pulse.replace(" ", ""))
 
 
-def test_subtitle_popin_animates_inner_span(markup):
-    """Видимостью клипа управляет фреймворк — анимируем вложенный span."""
-    assert 'tl.fromTo("#w-0000-t"' in markup
-    assert 'tl.fromTo("#w-0000"' not in markup
+def _gradient_markup(plan, assets, brandbook):
+    """Разметка того же плана, но жестом gradient-fill.
+
+    Умолчание канала — «glow»: белое слово с красным гало со скриншота
+    заказчика. Жест курсора остаётся альтернативой, и проверять его надо,
+    выбрав явно, а не полагаясь на то, каким он был умолчанием в его ветке.
+    """
+    plan = {**plan, "subtitle_style": {**plan.get("subtitle_style", {}),
+                                       "caption": "gradient-fill"}}
+    return CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
 
 
-def test_emphasis_word_marked_in_markup(markup):
-    assert 'id="w-0001" class="clip word emphasis"' in markup
+def test_subtitle_gradient_fill_animates_inner_word(plan, assets, brandbook):
+    """Видимостью клипа управляет движок — bounce и заливка на вложенном слове."""
+    markup = _gradient_markup(plan, assets, brandbook)
+    assert 'class="clip caption-grad"' in markup
+    assert 'fromTo("#gf-00"' not in markup
+    assert 'tl.set("#gf-00-w' in markup
+    assert "backgroundPosition" not in markup
+    assert "clip-path" not in markup
+    assert 'id="w-0000"' not in markup
+
+
+def test_emphasis_word_gets_blood_gradient(plan, assets, brandbook):
+    markup = _gradient_markup(plan, assets, brandbook)
+    assert "gf-accent" in markup
+    # Цвет берётся из брендбука, а не стоит числом: акцент канала сменился с
+    # #C8453D на #E63946, и тест, знающий цвет наизусть, сломался бы на правке
+    # палитры вместо правки кода.
+    assert brandbook["colors"]["accent"] in markup
+    assert brandbook["colors"]["accent_soft"] in markup
+    # Золота и жёлтого в палитре канала нет — ни в одном жесте.
+    assert "#FFD700" not in markup
+    assert "#fe9f1b" not in markup.lower()
+
+
+def test_the_default_caption_is_the_glow_of_the_brandbook(markup, brandbook):
+    """Лицо канала — белое слово с красным гало, а не жест по теме ролика."""
+    assert brandbook["subtitles"]["caption"] == "glow"
+    assert 'class="clip word' in markup
+    assert "caption-grad" not in markup
 
 
 def test_text_behind_head_taken_from_block(markup):
@@ -206,11 +239,11 @@ def test_css_takes_colors_from_brandbook(brandbook):
     assert "@font-face" in css and "fonts/Nunito-ExtraBold.ttf" in css
 
 
-def test_subtitle_is_centered_on_the_frame(brandbook):
-    """Центр кадра, а не середина рабочей зоны (правое поле ужато под UI)."""
+def test_subtitle_group_is_centered_on_the_work_area(brandbook):
+    """Фраза центрируется в рабочей зоне, не в оптическом центре кадра."""
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
-    rule = re.search(r"\.word\{([^}]*)\}", css).group(1)
-    assert "left:0" in rule and "right:0" in rule and "text-align:center" in rule
+    rule = re.search(r"\.gf-group\{([^}]*)\}", css).group(1)
+    assert "justify-content:center" in rule
 
 
 # --- статистика для отчёта ----------------------------------------------------
@@ -449,6 +482,202 @@ def test_hero_devices_do_not_share_a_track_with_the_shots(plan, assets, brandboo
     node = next(l for l in out.splitlines() if 'class="clip hero-headline"' in l)
     track = int(re.search(r'data-track-index="(\d+)"', node).group(1))
     assert track >= 13
+
+
+def test_kinetic_fullscreen_uses_word_stack(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "раз два три"
+    plan["shots"][1]["accent_word"] = "два"
+    plan["shots"][1]["params"] = {"stagger_ms": 55, "kinetic": True}
+    plan["shots"][1]["renderer"] = "kinetic_stack"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ks-word" in out
+    assert "ks-stack" in out
+
+
+def test_blur_out_up_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "сигнал с орбиты"
+    plan["shots"][1]["accent_word"] = "орбиты"
+    plan["shots"][1]["params"] = {
+        "stagger_ms": 55, "blur_out": True, "direction": "up",
+        "distance": "standard", "blur": "standard",
+    }
+    plan["shots"][1]["renderer"] = "blur_out_up"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bou-ghost" in out
+    assert "filter:blur(5px)" in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+
+
+def test_bottom_up_letters_fullscreen_splits_glyphs(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "код живёт"
+    plan["shots"][1]["accent_word"] = "код"
+    plan["shots"][1]["params"] = {
+        "stagger_ms": 25, "bottom_up": True, "unit": "letter",
+        "direction": "up", "travel": "standard",
+    }
+    plan["shots"][1]["renderer"] = "bottom_up_letters"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bul-ch" in out
+    assert "back.out(1.7)" in out
+    assert 'id="shot-01-c0"' in out
+
+
+def test_kinetic_type_swap_fullscreen_masks_the_slot(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ|КОД|HTML|ОРБИТЫ"
+    plan["shots"][1]["params"] = {"kinetic_swap": True, "exit": "none"}
+    plan["shots"][1]["renderer"] = "kinetic_type_swap"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "kts-slot" in out
+    assert "kts-word" in out
+    assert 'class="kts-slot"' in out
+    assert "yPercent" not in out
+    assert "back.out(1.7)" in out
+
+
+def test_line_by_line_slide_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД|СОБИРАЙ ОРБИТЫ|ШЛИ НА ПРОД"
+    plan["shots"][1]["accent_word"] = "ОРБИТЫ"
+    plan["shots"][1]["params"] = {
+        "line_slide": True, "direction": "left", "size": "standard",
+        "density": "standard", "tone": "ink",
+    }
+    plan["shots"][1]["renderer"] = "line_by_line_slide"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lbls-ghost" in out
+    assert "lbls-stack" in out
+    assert "filter:blur(" in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+
+
+def test_particle_text_dissolve_fullscreen_has_no_canvas(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СОБЕРИ ОРБИТУ"
+    plan["shots"][1]["accent_word"] = "ОРБИТУ"
+    plan["shots"][1]["params"] = {
+        "particle_dissolve": True, "direction": "in", "density": "med",
+        "exit": "none",
+    }
+    plan["shots"][1]["renderer"] = "particle_text_dissolve"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ptd-wipe" in out
+    assert "ptd-dot" in out
+    assert "<svg" in out
+    assert "<canvas" not in out
+    assert "clipPath" not in out
+    assert "Math.random" not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".ptd-wipe" in css
+    assert ".ptd-dot" in css
+
+
+def test_per_word_crossfade_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД НА ОРБИТЕ"
+    plan["shots"][1]["accent_word"] = "ОРБИТЕ"
+    plan["shots"][1]["params"] = {
+        "word_crossfade": True, "drift": "standard", "blur": "standard",
+        "tone": "ink", "exit": "none",
+    }
+    plan["shots"][1]["renderer"] = "per_word_crossfade"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "pwc-ghost" in out
+    assert "filter:blur(5px)" in out
+    assert "--hf-word" not in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".pwc-stack" in css
+    assert ".pwc-ghost" in css
+
+
+def test_scan_band_fullscreen_keeps_catalog_chromatic(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СИГНАЛ"
+    plan["shots"][1]["duration"] = 3.5
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 3.5
+    plan["shots"][1]["params"] = {"scan_band": True, "band_angle": 12}
+    plan["shots"][1]["renderer"] = "scan_band"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-scan-band" in out
+    assert "sb-clone-red" in out and "sb-clone-cyan" in out
+    assert "--sb-band" not in out
+    assert "clip-path" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "clip-path" not in tween_src
+    assert "--sb-" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    # Гарнитура канала, а не Inter: Inter в проект не поставлен, шрифт падал в
+    # system-ui и строка выходила шире расчёта на 18 %.
+    assert "Inter" not in css
+    assert ".fs-scan-band" in css and "font-family:var(--font-display)" in css
+    assert "#ff3158" in css and "#36efff" in css
+    assert "#0b0c0e" in css
+    assert ".sb-band" in css
+
+
+def test_scramble_reveal_fullscreen_keeps_catalog_terminal(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СИГНАЛ"
+    plan["shots"][1]["duration"] = 3.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 3.0
+    plan["shots"][1]["params"] = {
+        "scramble_reveal": True, "accent": "green", "style": "terminal",
+        "exit": "none"}
+    plan["shots"][1]["renderer"] = "scramble_reveal"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-scramble-reveal" in out
+    assert "sr-green" in out and "sr-prefix" in out
+    assert "textContent" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "clip-path" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#71f5a7" in css
+    assert ".sr-shell" in css
+    assert "var(--font-mono)" in css
+
+
+def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
+    """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
+    plan["overlays"][2] = {
+        "type": "cta", "start": 8.0, "end": 10.0,
+        "template": "outro-cta/logo-brand-close",
+        "renderer": "logo_brand_close",
+        "params": {"logo_close": True, "exit": "none", "wordmark": "РЕДШИФТ",
+                   "tagline": "Пиши код. Шли на орбиту.", "url": "redshift.shorts"},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lbc-mark" in out
+    assert "lbc-dot" in out
+    assert out.count("lbc-ch") == len("РЕДШИФТ")
+    assert "redshift.shorts" in out
+    assert 'class="pill"' not in out
+    assert 'id="ovl-02-pill"' not in out
+    assert "cqw" not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".lbc-mark" in css
+    assert ".lbc-dot" in css
+
+
+def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
+    plan["overlays"][0]["renderer"] = "chat_thread"
+    plan["overlays"][0]["params"] = {
+        "prompt": "что внутри", "snippet": "Квантовый чип. Сто кубит.",
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "chat-thread" in out
+    assert "ct-row" in out
+
+
+def test_dataviz_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 2.4,
+        "template": "data-viz/compare-bars",
+        "params": {"values": [66, 28], "labels": ["A", "B"]},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "dv-bar" in out
 
 
 def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):

@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from ...backdrop import backdrop_css
-from .templates import dataviz_css, hero_css, split_css, transition_css
+from .captions import caption_css
+from .templates import dataviz_css, hero_css, overlay_css, split_css, transition_css
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
 # отвечает за пересечения во времени, а не за то, что лежит поверх чего.
@@ -124,7 +125,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # Заливка кадра живёт на full-bleed ребёнке: фон самого корня продюсер
         # при компоновке кадра теряет, и рендер уходит в чёрное.
         f"#root{{position:relative;width:var(--frame-w);height:var(--frame-h);"
-        f"overflow:hidden;font-family:var(--font-subtitle)}}"
+        f"overflow:hidden;font-family:var(--font-subtitle);"
+        "isolation:isolate}"
         f".stage-bg{{position:absolute;inset:0;z-index:{Z_STAGE};"
         "background:var(--color-bg-light)}"
     )
@@ -257,6 +259,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "text-transform:uppercase;color:rgba(255,255,255,0.62);"
         "text-shadow:0 1px 6px rgba(0,0,0,0.7);pointer-events:none}"
     )
+    # Жесты живут в caption_css: pop-in Nunito больше не рисуется.
+    parts.append(caption_css(brandbook))
 
     # --- полноэкранный текст (§5.2) ------------------------------------
     fs = brandbook["fullscreen_text"]
@@ -399,6 +403,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # и геометрия у них считается от кадра, а не от рабочей зоны.
     parts.append(transition_css(brandbook))
     parts.append(dataviz_css(brandbook))
+    parts.append(overlay_css(brandbook))
     parts.append(split_css(brandbook))
     parts.append(hero_css(brandbook))
 

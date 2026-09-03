@@ -1,0 +1,22 @@
+{
+  "id": "text-fullscreen/kinetic-type-swap",
+  "name": "kinetic-type-swap",
+  "category": "text-fullscreen",
+  "title": "Фраза стоит, в маске катится слово — kinetic-type-swap",
+  "duration_range": [
+    0.8,
+    4.0
+  ],
+  "params": {
+    "kinetic_swap": true,
+    "exit": "none"
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "swap"
+  ],
+  "renderer": "kinetic_type_swap",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

@@ -156,11 +156,6 @@
       250,
       450
     ],
-    "pop_in_ms": [
-      90,
-      120
-    ],
-    "pop_scale_from": 0.92,
     "accent_word_ratio": [
       6,
       8
@@ -214,7 +209,64 @@
           "alpha": 0.28
         }
       ]
-    }
+    },
+    "gradient_fill": {
+      "base_px": 88,
+      "max_words": 4,
+      "pause_break_sec": 0.45,
+      "letter_spacing_em": 0.04,
+      "gap_em": 0.22,
+      "case": "upper",
+      "bounce_scale": 1.04,
+      "bounce_out_sec": 0.15,
+      "fade_sec": 0.25
+    },
+    "blend_difference": {
+      "enter_sec": 0.6,
+      "rise_em": 0.42,
+      "fade_sec": 0.25,
+      "max_words": 4,
+      "mode": "difference"
+    },
+    "camera_follow": {
+      "framing": "standard",
+      "ratio": 0.72,
+      "margin": 1.36,
+      "close_margin": 1.2,
+      "move_sec": 0.4,
+      "ink_sec": 0.16,
+      "close_sec": 0.94,
+      "max_words": 12,
+      "pause_break_sec": 0.45,
+      "line_height": 0.78,
+      "font_size_base": 0.16,
+      "letter_spacing_em": 0.005,
+      "gap_em": 0.07,
+      "case": "upper"
+    },
+    "clip_wipe": {
+      "base_px": 88,
+      "wipe_sec": 0.3,
+      "exit_sec": 0.25,
+      "stagger_sec": 0.04,
+      "flash_delay_sec": 0.1,
+      "flash_sec": 0.05,
+      "dim_sec": 0.2,
+      "hold_sec": 0.5,
+      "max_words": 6,
+      "pause_break_sec": 0.45,
+      "letter_spacing_em": 0.04,
+      "gap_em": 0.22,
+      "case": "upper",
+      "dim_color": "rgba(255,255,255,0.4)"
+    },
+    "caption": "glow",
+    "_caption_comment": "Умолчание — glow: белое слово Montserrat Black с красным гало, тот самый вид со скриншота заказчика. gradient-fill, clip-wipe, blend-difference и camera-follow лежат рядом как альтернативы для рандомизации, а не вместо него.",
+    "pop_in_ms": [
+      90,
+      120
+    ],
+    "pop_scale_from": 0.92
   },
   "fullscreen_text": {
     "font_role": "display",
@@ -435,6 +487,24 @@
       0.0,
       0.0,
       1.0,
+      1.0
+    ],
+    "caption_camera_step": [
+      0.31,
+      0.0,
+      0.11,
+      1.0
+    ],
+    "caption_camera_wide": [
+      0.42,
+      0.0,
+      0.14,
+      1.0
+    ],
+    "caption_camera_ink": [
+      0.2,
+      0.7,
+      0.3,
       1.0
     ]
   }

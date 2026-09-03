@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-92 шаблона каталога — это 30 рендереров с параметрами. Проверяется то, что
+110 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -14,9 +14,11 @@ from pathlib import Path
 import pytest
 
 from src.lib.render.hyperframes.templates import (
-    DATAVIZ, DRIFT_SCALE, ENTRANCES, HERO, MOTION, TRANSITIONS, Piece, TemplateCtx,
-    SS_STROKE, enter_and_drift, entrance_tweens, hero_css, render_dataviz,
-    render_hero, render_motion, render_transition, text_width, transition_css,
+    DATAVIZ, DRIFT_SCALE, ENTRANCES, FULLSCREEN, HERO, MOTION, OVERLAYS,
+    TRANSITIONS, Piece, TemplateCtx, SS_STROKE,
+    enter_and_drift, entrance_tweens, hero_css, render_dataviz, render_fullscreen,
+    render_hero, render_motion, render_overlay, render_transition, text_width,
+    transition_css, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -187,7 +189,8 @@ def test_every_renderer_of_the_catalog_is_implemented():
     # оверлей, без параметров каталога.
     built_in = {"fullscreen_text", "source_card", "plaque", "footage", "avatar",
                 "cta_button"}
-    implemented = set(TRANSITIONS) | set(MOTION) | set(HERO) | built_in | {"dataviz"}
+    implemented = (set(TRANSITIONS) | set(MOTION) | set(HERO) | set(OVERLAYS)
+                   | set(FULLSCREEN) | built_in | {"dataviz"})
     missing = renderers - implemented
     assert not missing, f"рендереры каталога без реализации: {sorted(missing)}"
 
@@ -209,6 +212,7 @@ def test_css_covers_every_layer_the_transitions_use():
     ("data-viz/counter-roll", {"value": 27000, "suffix": " ч"}),
     ("data-viz/donut-fill", {"value": 73}),
     ("data-viz/timeline-dots", {"labels": ["1916", "1971", "2019"]}),
+    ("data-viz/stat-countup-card", {"value": 105, "suffix": " кубит", "label": "105"}),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -337,6 +341,8 @@ HERO_PARAMS = {
                                       {"text": "ни рубля", "at": 1.8}]},
     "hero-paper": {"source": "arxiv.org",
                    "quote": "maximizing survival time below the event horizon"},
+    "hero-type-slab": {"lines": ["ГОРИЗОНТ", "СОБЫТИЙ"], "accent_lines": [0]},
+    "hero-plate-pop": {"src": "assets/m000_shot.mp4"},
 }
 
 
@@ -530,7 +536,10 @@ def test_every_css_variable_is_defined():
     root = re.search(r":root\{(.*?)\}", css, re.S)
     assert root, "в таблице стилей нет блока :root с переменными брендбука"
     defined = {m.group(1) for m in re.finditer(r"(--[\w-]+)\s*:", root.group(1))}
-    used = {m.group(1) for m in re.finditer(r"var\((--[\w-]+)", css)}
+    # Переменная со своим запасным значением — `var(--x, difference)` — не
+    # опечатка, а намеренная настройка: её ставит класс-модификатор, и без
+    # него работает запасное. Ищем только обращения без запасного значения.
+    used = {m.group(1) for m in re.finditer(r"var\((--[\w-]+)\s*\)", css)}
     # Эти две ставит сам шаблон в атрибуте style каждого луча.
     inline = {"--a", "--len"}
     assert not (used - defined - inline), sorted(used - defined - inline)
@@ -1158,3 +1167,664 @@ def test_a_generated_picture_gets_no_museum_label():
                 picked.add(entry["renderer"])
     # И обратное: на настоящем материале приём из каталога не исчез.
     assert "hero-exhibit" in picked
+def _fs_ctx(**params):
+    duration = float(params.pop("duration", 1.4))
+    return TemplateCtx(index=1, start=3.0, duration=duration, target="shot-01",
+                       track=1, params={"available_px": 900, "size_px": 420,
+                                        **params})
+
+
+def test_kinetic_stack_staggers_words():
+    piece = render_fullscreen(_fs_ctx(content="раз два три", accent_word="два",
+                                     stagger_ms=55, kinetic=True))
+    assert "ks-word" in piece.nodes[0]
+    assert piece.nodes[0].count("ks-word") == 3
+    assert " accent" in piece.nodes[0]
+    assert len(piece.tweens) >= 3
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+
+
+def test_blur_out_up_staggers_words_from_a_static_ghost():
+    """Каталог тянет filter; здесь призрак со статическим blur и смена opacity."""
+    piece = render_fullscreen(_fs_ctx(
+        content="сигнал с орбиты", accent_word="орбиты",
+        renderer="blur_out_up", blur_out=True, stagger_ms=55,
+        direction="up", duration=1.8))
+    node = piece.nodes[0]
+    assert "bou-word" in node
+    assert node.count("bou-word") == 3
+    assert node.count("bou-ghost") == 3
+    assert "filter:blur(5px)" in node
+    assert " accent" in node
+    body = " ".join(piece.tweens)
+    assert "filter" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    w0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w0"' in t][:1]
+    w1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w1"' in t][:1]
+    assert w0 and w1 and w1[0] - w0[0] == pytest.approx(0.055)
+    assert re.search(r"scale:0.92,y:[0-9.]+", body)
+    assert re.search(r"y:-[0-9.]+", body)
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+
+
+def test_blur_out_up_direction_flips_the_axis():
+    left = render_fullscreen(_fs_ctx(
+        content="код", renderer="blur_out_up", direction="left", duration=1.8))
+    body = " ".join(left.tweens)
+    assert re.search(r"scale:0.92,x:-", body)
+    assert re.search(r"scale:0.96,x:[0-9.]+", body)
+    assert "{y:" not in body and ",y:" not in body
+    std = render_fullscreen(_fs_ctx(
+        content="код", renderer="blur_out_up", duration=1.8))
+    far = render_fullscreen(_fs_ctx(
+        content="код", renderer="blur_out_up", direction="up",
+        distance="far", blur="heavy", duration=1.8))
+    assert "filter:blur(11px)" in far.nodes[0]
+
+    def enter_y(piece):
+        return float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(piece.tweens)).group(1))
+
+    assert enter_y(far) == pytest.approx(enter_y(std) * 1.85)
+
+
+def test_bottom_up_letters_staggers_glyphs():
+    """Каталог: буква из 0.85em ниже, back.out, стаггер 25 мс. Не CSS-transform."""
+    piece = render_fullscreen(_fs_ctx(
+        content="код живёт", accent_word="код",
+        renderer="bottom_up_letters", bottom_up=True, unit="letter",
+        direction="up", travel="standard", stagger_ms=25, duration=1.8))
+    node = piece.nodes[0]
+    assert node.count("bul-ch") == 8
+    assert node.count("bul-word") == 2
+    assert " accent" in node
+    body = " ".join(piece.tweens)
+    assert "back.out(1.7)" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    t0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if '-c0"' in t][0]
+    t1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if '-c1"' in t][0]
+    assert t1 - t0 == pytest.approx(0.025)
+    assert "opacity:0" in body and "y:0" in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+
+
+def test_bottom_up_letters_direction_and_unit():
+    down = render_fullscreen(_fs_ctx(
+        content="код", renderer="bottom_up_letters", direction="down",
+        duration=1.8))
+    assert re.search(r"opacity:0,y:-", " ".join(down.tweens))
+    words = render_fullscreen(_fs_ctx(
+        content="код живёт", renderer="bottom_up_letters", unit="word",
+        duration=1.8))
+    assert words.nodes[0].count("bul-ch") == 0
+    assert words.nodes[0].count("bul-unit") == 2
+    std = render_fullscreen(_fs_ctx(
+        content="код", renderer="bottom_up_letters", travel="standard",
+        duration=1.8))
+    far = render_fullscreen(_fs_ctx(
+        content="код", renderer="bottom_up_letters", travel="far",
+        duration=1.8))
+
+    def enter_y(piece):
+        return abs(float(re.search(r"opacity:0,y:(-?[0-9.]+)",
+                                   " ".join(piece.tweens)).group(1)))
+
+    assert enter_y(far) == pytest.approx(enter_y(std) * 1.5 / 0.85)
+
+
+def test_kinetic_type_swap_rolls_the_slot_without_reflow():
+    """Каталог: yPercent/cqw. Здесь px, слот = самое широкое слово, не .clip."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ПИШИ|КОД|HTML|ОРБИТЫ", renderer="kinetic_type_swap",
+        kinetic_swap=True, exit="none", duration=4.0))
+    node = piece.nodes[0]
+    assert "kts-slot" in node
+    assert "kts-prefix" in node and "ПИШИ" in node
+    assert node.count("kts-word") == 3
+    assert "КОД" in node and "HTML" in node and "ОРБИТЫ" in node
+    body = " ".join(piece.tweens)
+    assert "yPercent" not in body
+    assert "cqw" not in node and "cqh" not in node
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert "back.out(1.7)" in body
+    assert "power4.in" in body
+    assert "immediateRender:false" in body
+    assert re.search(r'style="width:\d+px;height:\d+px"', node)
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    from src.lib.render.hyperframes.templates import _kts_sentence
+    prefix, options, suffix = _kts_sentence({"content": "ПИШИ|КОД|HTML|ОРБИТЫ"})
+    assert (prefix, options, suffix) == ("ПИШИ", ["КОД", "HTML", "ОРБИТЫ"], "")
+
+
+def test_kinetic_type_swap_exit_and_cues():
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД,HTML", renderer="kinetic_type_swap",
+        kinetic_swap=True, exit="fade", duration=4.0))
+    assert 'fromTo("#shot-01-stage",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        content="КОД,HTML", renderer="kinetic_type_swap",
+        kinetic_swap=True, exit="up", duration=4.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    cued = render_fullscreen(_fs_ctx(
+        content="А|Б|В", renderer="kinetic_type_swap",
+        kinetic_swap=True, cues="0.4,1.2", duration=4.0))
+    starts = [float(t.rstrip(");").rsplit(",", 1)[1])
+              for t in cued.tweens if "fromTo" in t and '-w0"' in t]
+    assert starts and any(abs(at - 3.4) < 1e-6 or abs(at - 0.4) < 1e-6
+                          for at in starts)
+    comma = render_fullscreen(_fs_ctx(
+        prefix="ПИШИ", options="КОД,HTML", suffix="СЕЙЧАС",
+        renderer="kinetic_type_swap", duration=4.0))
+    assert "ПИШИ" in comma.nodes[0] and "СЕЙЧАС" in comma.nodes[0]
+
+
+def test_line_by_line_slide_staggers_from_the_left():
+    """Каталог твинит CSS-var и filter; здесь px + призрак со статическим blur."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД|СОБИРАЙ ОРБИТЫ|ШЛИ НА ПРОД",
+        accent_word="ОРБИТЫ", renderer="line_by_line_slide",
+        line_slide=True, direction="left", duration=1.8))
+    node = piece.nodes[0]
+    assert node.count("lbls-line") == 3
+    assert node.count("lbls-ghost") == 3
+    assert "filter:blur(" in node
+    assert "accent" in node
+    body = " ".join(piece.tweens)
+    assert "filter" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    t0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-l0"' in t][:1]
+    t1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-l1"' in t][:1]
+    assert t0 and t1 and t1[0] - t0[0] == pytest.approx(0.08)
+    assert re.search(r"x:-[0-9.]+,y:[0-9.]+", body)
+    assert "power3.out" in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    from src.lib.render.hyperframes.templates import _lbls_lines
+    assert _lbls_lines("А|Б|В", {}) == ["А", "Б", "В"]
+
+
+def test_line_by_line_slide_direction_and_tone():
+    right = render_fullscreen(_fs_ctx(
+        content="КОД|HTML", renderer="line_by_line_slide",
+        line_slide=True, direction="right", duration=1.8))
+    body = " ".join(right.tweens)
+    assert re.search(r"x:[0-9.]+,y:[0-9.]+", body)
+    paper = render_fullscreen(_fs_ctx(
+        content="КОД|HTML", renderer="line_by_line_slide",
+        line_slide=True, tone="paper", duration=1.8))
+    assert "invert" in paper.nodes[0]
+    packed = render_fullscreen(_fs_ctx(
+        content="один два три четыре пять шесть",
+        renderer="line_by_line_slide", line_slide=True, duration=1.8))
+    assert packed.nodes[0].count("lbls-line") == 3
+
+
+def test_logo_brand_close_cascades_letters_and_keeps_the_period_accent():
+    """Каталог: cqw/em и measure. Здесь px, точка accent, HOLD без дрейфа."""
+    piece = render_fullscreen(_fs_ctx(
+        wordmark="РЕДШИФТ", tagline="Пиши код. Шли на орбиту.",
+        url="redshift.shorts", renderer="logo_brand_close",
+        logo_close=True, exit="none", duration=4.0))
+    node = piece.nodes[0]
+    assert "lbc-mark" in node
+    assert "lbc-dot" in node
+    assert "lbc-tag" in node and "Пиши код" in node
+    assert "lbc-url" in node and "redshift.shorts" in node
+    assert node.count("lbc-ch") == len("РЕДШИФТ")
+    assert "lbc-dot" in node
+    body = " ".join(piece.tweens)
+    assert "cqw" not in node and "cqh" not in node
+    assert "yPercent" not in body
+    assert "letterSpacing" not in body
+    assert "0.62em" not in body and "0.08em" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert "back.out(1.8)" in body
+    assert "expo.out" in body
+    assert "scaleX:1.06" in body
+    assert "DRIFT" not in body and "1.035" not in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    from src.lib.render.hyperframes.templates import _lbc_copy, _lbc_body_and_dot
+    assert _lbc_copy({})[0] == "РЕДШИФТ"
+    assert _lbc_body_and_dot("РЕДШИФТ.") == ("РЕДШИФТ", ".")
+    doubled = render_fullscreen(_fs_ctx(
+        wordmark="РЕДШИФТ.", renderer="logo_brand_close", duration=4.0))
+    assert doubled.nodes[0].count("lbc-dot") == 1
+    assert doubled.nodes[0].count("lbc-ch") == len("РЕДШИФТ")
+
+
+def test_logo_brand_close_exit_and_hidden_lines():
+    fade = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close",
+        logo_close=True, exit="fade", duration=4.0))
+    assert 'fromTo("#shot-01-lock",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close",
+        logo_close=True, exit="up", duration=4.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    hidden = render_fullscreen(_fs_ctx(
+        wordmark="КОД", tagline="", url="",
+        renderer="logo_brand_close", duration=4.0))
+    assert "lbc-tag" not in hidden.nodes[0]
+    assert "lbc-url" not in hidden.nodes[0]
+    short = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close", duration=2.0))
+    starts = [float(t.rstrip(");").rsplit(",", 1)[1])
+              for t in short.tweens if "-dot\"" in t and "fromTo" in t]
+    assert starts and starts[0] < 3.0 + 0.95 - 0.01
+    piped = render_fullscreen(_fs_ctx(
+        content="ОРБИТА|Пиши HTML.|orbit.lab",
+        renderer="logo_brand_close", duration=4.0))
+    assert piped.nodes[0].count("lbc-ch") == len("ОРБИТА")
+    assert "Пиши HTML." in piped.nodes[0]
+    assert "orbit.lab" in piped.nodes[0]
+    paper = render_fullscreen(_fs_ctx(
+        wordmark="КОД", renderer="logo_brand_close", tone="paper", duration=4.0))
+    assert "invert" in paper.nodes[0]
+
+
+def test_particle_text_dissolve_wipes_with_scale_and_precomputed_dust():
+    """Каталог: canvas onUpdate и clip-path. Здесь scaleX и span с x/y, LCG."""
+    piece = render_fullscreen(_fs_ctx(
+        content="СОБЕРИ ОРБИТУ", accent_word="ОРБИТУ",
+        renderer="particle_text_dissolve", particle_dissolve=True,
+        direction="in", density="med", exit="none", duration=4.0))
+    node = piece.nodes[0]
+    assert "ptd-wipe" in node
+    assert "ptd-dot" in node
+    assert "ptd-ch" in node
+    assert " accent" in node
+    assert "<svg" in node
+    assert "mask=" in node
+    assert "<canvas" not in node
+    body = " ".join(piece.tweens)
+    assert "clipPath" not in body and "clip-path" not in body
+    assert "Math.random" not in body
+    assert "onUpdate" not in body
+    assert "cqh" not in body and "yPercent" not in body
+    assert "scaleX:0" in body and "scaleX:1" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    again = render_fullscreen(_fs_ctx(
+        content="СОБЕРИ ОРБИТУ", accent_word="ОРБИТУ",
+        renderer="particle_text_dissolve", particle_dissolve=True,
+        direction="in", density="med", duration=4.0))
+    assert piece.tweens == again.tweens
+    from src.lib.render.hyperframes.templates import _PtdRng
+    rng = _PtdRng()
+    assert rng() == _PtdRng()()
+
+
+def test_particle_text_dissolve_direction_density_and_exit():
+    outgoing = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        particle_dissolve=True, direction="out", duration=4.0))
+    assert "ptd-out" in outgoing.nodes[0]
+    assert "scaleX:1" in " ".join(outgoing.tweens)
+    low = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve", density="low",
+        duration=4.0))
+    high = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve", density="high",
+        duration=4.0))
+    assert low.nodes[0].count("ptd-dot") < high.nodes[0].count("ptd-dot")
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        exit="fade", duration=4.0))
+    assert 'fromTo("#shot-01-stage",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        exit="up", duration=4.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    paper = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        tone="paper", duration=4.0))
+    assert "invert" in paper.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="particle_text_dissolve", duration=4.0))
+    assert empty.nodes == []
+
+
+def test_per_word_crossfade_rises_from_a_static_ghost():
+    """Каталог твинит CSS-var и filter. Здесь y/scale и призрак, HOLD без ухода."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД НА ОРБИТЕ", accent_word="ОРБИТЕ",
+        renderer="per_word_crossfade", word_crossfade=True,
+        drift="standard", blur="standard", tone="ink", exit="none",
+        duration=2.0))
+    node = piece.nodes[0]
+    assert "pwc-word" in node
+    assert node.count("pwc-word") == 4
+    assert node.count("pwc-ghost") == 4
+    assert "filter:blur(5px)" in node
+    assert " accent" in node
+    body = " ".join(piece.tweens)
+    assert "filter" not in body
+    assert "--hf-word" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    w0 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w0"' in t][:1]
+    w1 = [float(t.rstrip(");").rsplit(",", 1)[1])
+          for t in piece.tweens if "fromTo" in t and '-w1"' in t][:1]
+    assert w0 and w1 and w1[0] - w0[0] == pytest.approx(0.055)
+    assert re.search(r"scale:0.92,y:[0-9.]+", body)
+    assert "y:-" not in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    flagged = render_fullscreen(_fs_ctx(
+        content="ПИШИ КОД", word_crossfade=True, duration=2.0))
+    assert "pwc-word" in flagged.nodes[0]
+
+
+def test_per_word_crossfade_drift_tone_and_exit():
+    close = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", drift="close",
+        duration=2.0))
+    far = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", drift="far",
+        duration=2.0))
+    cy = float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(close.tweens)).group(1))
+    fy = float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(far.tweens)).group(1))
+    assert fy > cy
+    heavy = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", blur="heavy",
+        duration=2.0))
+    assert "filter:blur(11px)" in heavy.nodes[0]
+    paper = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", tone="paper",
+        duration=2.0))
+    assert "invert" in paper.nodes[0]
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", exit="fade",
+        duration=2.0))
+    assert 'fromTo("#shot-01-inner",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="per_word_crossfade", exit="up",
+        duration=2.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="per_word_crossfade", duration=2.0))
+    assert empty.nodes == []
+
+
+def test_scan_band_sweeps_a_static_clip_on_x():
+    """Каталог твинит CSS-var и clip-path. Здесь overflow-окно и x / -x."""
+    piece = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", renderer="scan_band", scan_band=True,
+        band_angle=12, duration=3.5))
+    node = piece.nodes[0]
+    assert "fs-scan-band" in node
+    assert "sb-wordmark" in node
+    assert node.count('class="sb-clone') == 3
+    assert "sb-clone-red" in node and "sb-clone-cyan" in node
+    assert "СИГНАЛ" in node
+    assert "clip-path" not in node
+    assert "skewX(-12deg)" in node and "skewX(12deg)" in node
+    assert "transform-origin:0 0" in node
+    assert "overflow" not in " ".join(piece.tweens)
+    body = " ".join(piece.tweens)
+    assert "--sb-band" not in body
+    assert "clip-path" not in body
+    assert "filter" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    assert "Math.random" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert f'fromTo("{clip}-band",{{x:0}}' in body
+    assert f'fromTo("{clip}-inner",{{x:0}}' in body
+    assert "x:1080" in body
+    assert "x:-1080" in body
+    assert f'fromTo("{clip}-stage",{{opacity:0}}' in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    flagged = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", scan_band=True, duration=3.5))
+    assert "fs-scan-band" in flagged.nodes[0]
+
+
+def test_scan_band_angle_envelope_and_empty():
+    steep = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scan_band", band_angle=30, duration=3.5))
+    flat = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scan_band", band_angle=0, duration=3.5))
+    assert 'data-band-angle="30"' in steep.nodes[0]
+    assert 'data-band-angle="0"' in flat.nodes[0]
+    assert "skewX(-30deg)" in steep.nodes[0]
+    short = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scan_band", duration=0.8))
+    assert "-band" not in " ".join(short.tweens)
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="scan_band", duration=3.5))
+    assert empty.nodes == []
+
+
+def test_scramble_reveal_locks_left_to_right():
+    """Каталог пишет textContent. Здесь LCG-таблица и opacity по кадрам."""
+    table = _sr_frame_table("ABCD", last_frame=20, scale=1.0)
+    assert table[-1] == "ABCD"
+    assert table[0] != "ABCD"
+    locked = [False] * 4
+    for row in table:
+        for col, ch in enumerate("ABCD"):
+            if locked[col]:
+                assert row[col] == ch
+            if row[col] == ch:
+                locked[col] = True
+    assert all(locked)
+    piece = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", renderer="scramble_reveal", scramble_reveal=True,
+        accent="green", style="terminal", exit="none", duration=3.0))
+    node = piece.nodes[0]
+    assert "fs-scramble-reveal" in node
+    assert "sr-green" in node
+    assert "sr-prefix" in node
+    assert "СИГНАЛ" in node
+    assert node.count('class="sr-row') >= 2
+    assert "textContent" not in " ".join(piece.tweens)
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    assert f'fromTo("{clip}-stage",{{opacity:0}}' in body
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    flagged = render_fullscreen(_fs_ctx(
+        content="СИГНАЛ", scramble_reveal=True, duration=3.0))
+    assert "fs-scramble-reveal" in flagged.nodes[0]
+
+
+def test_scramble_reveal_envelope_style_and_empty():
+    clean = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", style="clean",
+        accent="blue", duration=3.0))
+    assert "sr-clean" in clean.nodes[0]
+    assert 'data-sr-accent="blue"' in clean.nodes[0]
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", exit="fade", duration=3.0))
+    up = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", exit="up", duration=3.0))
+    none = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="scramble_reveal", exit="none", duration=3.0))
+    fade_body = " ".join(fade.tweens)
+    up_body = " ".join(up.tweens)
+    none_body = " ".join(none.tweens)
+    assert 'ease:"power2.in"' in fade_body
+    assert "x:" in up_body and "y:" in up_body
+    assert none_body.count("power2.in") == 0
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="scramble_reveal", duration=3.0))
+    assert empty.nodes == []
+
+
+def test_number_slam_splits_the_caption():
+    piece = render_fullscreen(_fs_ctx(content="105 кубитов", slam=True))
+    assert "fs-num" in piece.nodes[0]
+    assert "fs-cap" in piece.nodes[0]
+    assert "105" in piece.nodes[0] and "кубитов" in piece.nodes[0]
+
+
+def test_stack_lines_read_max_lines_param():
+    piece = render_fullscreen(_fs_ctx(content="один два три четыре", max_lines=2))
+    assert "fs-line" in piece.nodes[0]
+    assert piece.nodes[0].count('class="fs-line"') == 2
+
+
+def test_zoom_through_enters_from_a_stronger_scale(ctx):
+    piece = render_transition("zoom_through", ctx)
+    assert "scale:1.22" in piece.tweens[0]
+
+
+OVERLAY_PARAMS = {
+    "source_card": {"domain": "arxiv.org", "title": "Paper",
+                    "snippet": "Hello world", "highlight_line": "Hello"},
+    "chat_thread": {"prompt": "что внутри", "snippet": "Квантовый чип. Сто кубит."},
+    "article_scroll": {"domain": "nature.com", "title": "Title",
+                       "snippet": "long quoted line here", "highlight_line": "quoted"},
+    "paper_reveal": {"domain": "arxiv.org", "title": "Nature",
+                     "snippet": "One. Two. Three.", "highlight_line": "Two"},
+}
+
+
+@pytest.mark.parametrize("name", sorted(OVERLAYS))
+def test_overlay_animates_only_allowed_properties(name):
+    ctx = TemplateCtx(index=0, start=1.0, duration=3.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS[name])
+    piece = render_overlay(name, ctx)
+    assert piece.nodes, name
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra, f"{name}: {extra}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", f"{name} тянет сам клип: {tween}"
+
+
+def test_chat_thread_puts_the_user_on_the_left():
+    ctx = TemplateCtx(index=0, start=1.0, duration=3.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["chat_thread"])
+    node = render_overlay("chat_thread", ctx).nodes[0]
+    assert 'ct-row in' in node
+    assert node.index("ct-row in") < node.index("ct-row out")
+
+
+def test_hero_plate_pop_media_is_the_clip_itself():
+    piece = render_hero("hero-plate-pop", _hero_ctx("hero-plate-pop"))
+    assert piece.nodes[0].startswith("<video "), piece.nodes[0][:80]
+    assert "opacity" not in piece.tweens[0]
+
+
+def test_new_catalog_ids_carry_example_video():
+    manifest = json.loads(Path("templates/manifest.json").read_text(encoding="utf-8"))
+    needed = {
+        "text-fullscreen/kinetic-stack", "text-fullscreen/number-slam-card",
+        "browser-ui/chat-thread", "browser-ui/article-highlight",
+        "frames-cards/paper-reveal", "data-viz/stat-countup-card",
+        "hero-devices/type-slab", "hero-devices/footage-plate-pop",
+        "transitions/zoom-through",
+    }
+    by_id = {t["id"]: t for t in manifest["templates"]}
+    for tid in needed:
+        assert by_id[tid].get("example_video"), tid
+
+
+
+class TestTemplatesUseOnlyTheFontsOfTheProject:
+    """Гарнитура берётся из брендбука, а не называется в шаблоне по имени.
+
+    `scan-band` просил Inter. Inter в проекте нет: §14 пропускает только те
+    гарнитуры, что лежат в `assets/fonts` с кириллицей и лицензией. Шрифт
+    падал в system-ui, строка выходила шире расчёта на 18 %, и «180 ГРАДУСОВ»
+    уезжало под обрез с обеих сторон — чернила от 27-го до 1057-го пикселя
+    при ширине кадра 1080.
+    """
+
+    def _css(self):
+        from src.lib.config import load_config
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        return build_css(load_config().brandbook,
+                         {"display": "Oswald-Bold.ttf", "subtitle": "Montserrat-Black.ttf",
+                          "mono": "JetBrainsMono-Bold.ttf"})
+
+    def test_no_template_names_a_font_the_project_does_not_ship(self):
+        allowed = {"var(--font-display)", "var(--font-subtitle)", "var(--font-mono)"}
+        families = set(re.findall(r"font-family:([^;}]+)", self._css()))
+        outside = set()
+        for family in families:
+            first = family.split(",")[0].strip()
+            if first.startswith("var(--font-"):
+                continue
+            if first in ("system-ui", "sans-serif", "monospace", "serif", "inherit"):
+                continue
+            # `RS Display`, `RS Subtitle`, `RS Mono` — сами объявления @font-face
+            # из fonts_manifest: это и есть гарнитуры проекта.
+            if first.strip("'\"").startswith("RS "):
+                continue
+            outside.add(first)
+        assert not outside, f"шаблон просит гарнитуру вне проекта: {sorted(outside)}"
+        assert allowed & {f.split(',')[0].strip() for f in families}
+
+    def test_scan_band_fits_the_phrase_into_the_frame(self):
+        from src.lib.render.hyperframes.templates import render_fullscreen, text_width
+
+        ctx = TemplateCtx(index=0, start=0.0, duration=1.2, target="shot-00", track=1,
+                          params={"renderer": "scan_band", "scan_band": True,
+                                  "content": "180 ГРАДУСОВ", "available_px": 900})
+        node = render_fullscreen(ctx).nodes[0]
+        size = int(re.search(r"font-size:(\d+)px", node).group(1))
+        assert text_width("180 ГРАДУСОВ", size) <= 900, (
+            f"кегль {size} px не влезает в рабочую ширину")

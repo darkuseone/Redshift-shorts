@@ -28,9 +28,16 @@ from typing import Any
 
 from ..text_rules import subtitle_word
 from ...backdrop import SCENES, pick_scene, tone as scene_tone
+from .captions import (
+    TRACK_CAPTION_ACCENT_EVEN, TRACK_CAPTION_ACCENT_ODD,
+    TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD,
+    build_blend_difference, build_camera_follow, build_clip_wipe,
+    build_gradient_fill, resolve_caption,
+)
 from .templates import (
-    TemplateCtx, enter_and_drift, entrance_tweens, fit_size, render_hero,
-    fit_size as fit_text_size, render_motion, render_transition, text_width,
+    OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, fit_size,
+    fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
+    render_motion, render_overlay, render_transition, text_width,
 )
 
 TRACK_STAGE = 0
@@ -40,6 +47,7 @@ TRACK_AVATAR = 3
 TRACK_BEHIND_HEAD = 4
 TRACK_OVERLAY = 5      # и следующие, если плашки пересекаются во времени
 TRACK_TRANSITION = 11
+# Слово субтитра в жесте «glow»: свой трек, слова идут встык.
 TRACK_SUBTITLE = 12
 # Приёмы вокруг ведущего чередуют треки по той же причине, что и шоты: соседние
 # кадры стыкуются встык, а окно видимости клипа включает оба конца.
@@ -50,7 +58,11 @@ TRACK_HERO_ODD = 14
 # (lint: video_nested_in_timed_element) — значит, фон обязан быть отдельным
 # клипом, и класть его на соседний трек нельзя, там встык стоят соседние шоты.
 TRACK_FS_BG = 15
+# Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
+# там герой. 18/19 не пересекаются со звуком (20).
+assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
 TRACK_AUDIO = 20
+assert TRACK_CAPTION_ACCENT_EVEN == 21 and TRACK_CAPTION_ACCENT_ODD == 22
 
 # Слово субтитра короче этого мигает, а не читается.
 MIN_WORD_SEC = 0.05
@@ -266,29 +278,25 @@ class CompositionBuilder:
             tr_sec = self._transition_duration(shot)
 
             if kind == "fullscreen_text":
+                # Фон под полноэкранным текстом кладётся всегда: без него
+                # фраза встаёт на сплошную заливку, и на 0047 «180 ГРАДУСОВ»
+                # шло белыми буквами по белому листу посреди тёмного ролика.
+                # Материала нет — берётся сцена ролика, та же, что за ведущим.
                 src = self._asset(shot.get("file"))
                 if src:
                     nodes.append(self._media_node(
                         f"{node_id}-bg", src,
                         _timing(start, start + duration, TRACK_FS_BG), css="fs-bg"))
                 else:
-                    # Материала под кадр не нашлось — это бывает, и в отчёт это
-                    # уходит как gap_reason. Но фраза не имеет права вставать на
-                    # пустую заливку: на 0047 «180 ГРАДУСОВ» шло белыми буквами
-                    # по белому листу посреди тёмного ролика. Запасной фон —
-                    # сцена ролика, та же, что за ведущим: она по теме, она
-                    # тёмная и она уже есть.
                     nodes.append(self._scene_backdrop(
                         f"{node_id}-bg",
                         _timing(start, start + duration, TRACK_FS_BG)))
-                nodes.append(self._fullscreen_text_node(node_id, shot, timing,
-                                                        over_media=True))
-                # Раньше полноэкранный текст просто включался: клип открывался,
-                # и надпись стояла. На фоне пословных субтитров, которые всё
-                # время движутся, это читалось как подвисший кадр.
-                self.tweens.extend(enter_and_drift(
-                    f"#{node_id}-inner", start + tr_sec,
-                    max(0.2, duration - tr_sec), name="zoom-in"))
+                # Сам кадр рисует приём шаблона: renderer и params, а не одна
+                # заготовка на все девятнадцать `text-fullscreen`.
+                piece = self._fullscreen_piece(node_id, shot, start, duration,
+                                               track, tr_sec)
+                nodes.extend(piece.nodes)
+                self.tweens.extend(piece.tweens)
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
@@ -328,36 +336,37 @@ class CompositionBuilder:
         return (f'<video id="{node_id}" class="{css}" src="{_esc(src)}" '
                 f'{timing}{offset} muted playsinline></video>')
 
-    def _fullscreen_text_node(self, node_id: str, shot: dict[str, Any],
-                              timing: str, *, over_media: bool = False) -> str:
-        content = str(shot.get("content") or "").strip()
-        accent = str(shot.get("accent_word") or "").strip()
-        invert = " invert" if shot.get("invert") else ""
-        markup = _esc(content)
-        # Акцент, совпавший со всей фразой, красит не слово, а строку — и
-        # §3.3.2 перестаёт что-либо значить: выделять внутри фразы становится
-        # нечем. Фраза из одного слова и так выделена размером.
-        whole_line = accent.strip().upper() == content.strip().upper()
-        if accent and not whole_line and accent.upper() in content.upper():
-            # §3.3.2: красным выделяется одно слово, не строка.
-            idx = content.upper().index(accent.upper())
-            markup = (_esc(content[:idx])
-                      + f'<span class="accent">{_esc(content[idx:idx + len(accent)])}</span>'
-                      + _esc(content[idx + len(accent):]))
-        # Кегль подбирается под самое длинное слово, а не берётся потолком из
-        # брендбука. С фиксированными 420 px «ПЕРЕЖИВЁШЬ» занимало 2400 px и
-        # уезжало за оба края кадра — видно было «ЕЖИВЁ». Поймано кадром
-        # готового MP4, а не разметкой: QC меряет safe zones по оверлеям, а
-        # полноэкранный текст оверлеем не является.
+    def _fullscreen_piece(self, node_id: str, shot: dict[str, Any],
+                          start: float, duration: float, track: int,
+                          tr_sec: float):
+        """Полноэкранный кадр читает renderer и params шаблона, не одну заготовку."""
         fs = self.brandbook["fullscreen_text"]
         safe_x = int(self.brandbook["safe_zones"]["work_area"]["x_min"])
         available = self.width - 2 * safe_x
-        longest = max(content.upper().split(), key=len, default="")
-        size = fit_size(longest, available, int(fs["size_px"][1]))
-        over = " over-media" if over_media else ""
-        return (f'<div id="{node_id}" class="clip fullscreen-text{invert}{over}" {timing}>'
-                f'<span id="{node_id}-inner" style="font-size:{size}px">'
-                f'{markup}</span></div>')
+        params = dict(shot.get("params") or {})
+        params.update({
+            "content": shot.get("content") or "",
+            "accent_word": shot.get("accent_word") or "",
+            "invert": bool(shot.get("invert")),
+            "renderer": shot.get("renderer") or params.get("renderer") or "",
+            "available_px": available,
+            "enter_delay": tr_sec,
+        })
+        if "size_px" not in params:
+            params["size_px"] = int(fs["size_px"][1])
+        piece = render_fullscreen(TemplateCtx(
+            index=int(shot["index"]), start=start, duration=duration,
+            target=node_id, track=track, params=params))
+        # Под кадром всегда лежит материал или сцена, поэтому сплошная заливка
+        # `.fullscreen-text` обязана уступить место затемнению: класс
+        # `over-media` гасит фон и оставляет скрим. Ставится здесь, а не в
+        # каждом из десяти рендереров, — иначе первый же новый приём про него
+        # забудет и вернёт белую плиту.
+        if piece.nodes:
+            piece.nodes[0] = piece.nodes[0].replace(
+                'class="clip fullscreen-text', 'class="clip fullscreen-text over-media', 1)
+        return piece
+
 
     def _add_kenburns(self, node_id: str, shot: dict[str, Any],
                       start: float, duration: float) -> None:
@@ -533,7 +542,15 @@ class CompositionBuilder:
         nodes: list[str] = []
         for i, (ovl, track) in enumerate(zip(overlays, tracks)):
             start = float(ovl["start"])
+            duration = max(0.0, float(ovl["end"]) - start)
             node_id = f"ovl-{i:02d}"
+            piece = self._overlay_piece(node_id, ovl, start, duration, track)
+            if piece is not None:
+                nodes += piece.nodes
+                self.tweens.extend(piece.tweens)
+                if piece.nodes:
+                    self.stats["overlay_draws"] += 1
+                continue
             timing = _timing(start, float(ovl["end"]), track)
             body = self._overlay_body(node_id, ovl)
             if not body:
@@ -542,6 +559,41 @@ class CompositionBuilder:
             self.stats["overlay_draws"] += 1
             self._add_overlay_entrance(node_id, ovl, start)
         return nodes
+
+    def _overlay_piece(self, node_id: str, ovl: dict[str, Any],
+                       start: float, duration: float, track: int):
+        """Карточки источника, чат, статья и data-viz идут в рендереры каталога."""
+        from .templates import Piece
+
+        kind = ovl.get("type") or ""
+        template_id = str(ovl.get("template") or ovl.get("id") or "")
+        renderer = str(ovl.get("renderer") or "")
+        params = dict(ovl.get("params") or {})
+        ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
+                          duration=duration, target=node_id, track=track,
+                          params=params)
+        if kind == "dataviz" or template_id.startswith("data-viz/"):
+            piece = render_dataviz(template_id or renderer, ctx)
+            return piece if piece.nodes else Piece()
+        if (renderer == "logo_brand_close" or params.get("logo_close")
+                or template_id.endswith("logo-brand-close")):
+            safe_x = int(self.brandbook["safe_zones"]["work_area"]["x_min"])
+            params.setdefault("available_px", self.width - 2 * safe_x)
+            params["renderer"] = "logo_brand_close"
+            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
+                              duration=duration, target=node_id, track=track,
+                              params=params)
+            piece = render_fullscreen(ctx)
+            return piece if piece.nodes else Piece()
+        overlay_name = renderer if renderer in OVERLAYS else ""
+        if not overlay_name and kind in OVERLAYS:
+            overlay_name = kind
+        if not overlay_name and kind == "source_card":
+            overlay_name = "source_card"
+        if overlay_name:
+            piece = render_overlay(overlay_name, ctx)
+            return piece if piece.nodes else None
+        return None
 
     def _overlay_body(self, node_id: str, ovl: dict[str, Any]) -> str | None:
         kind = ovl.get("type")
@@ -693,6 +745,27 @@ class CompositionBuilder:
 
     # --- субтитры -------------------------------------------------------
     def _subtitle_nodes(self) -> list[str]:
+        # Стиль подписи выбирается планом, а умолчание — брендбуком. «glow» —
+        # белое слово Montserrat Black с красным гало: тот самый вид, который
+        # заказчик прислал скриншотом. Жесты курсора (gradient-fill, clip-wipe,
+        # camera-follow, blend-difference) лежат рядом как альтернативы для
+        # рандомизации роликов, а не вместо него.
+        wanted = str(self.plan.get("subtitle_style", {}).get("caption")
+                     or self.brandbook["subtitles"].get("caption") or "glow")
+        builders = {
+            "clip-wipe": build_clip_wipe,
+            "camera-follow": build_camera_follow,
+            "gradient-fill": build_gradient_fill,
+            "blend-difference": build_blend_difference,
+        }
+        if wanted != "glow":
+            builder = builders.get(resolve_caption(wanted), build_gradient_fill)
+            nodes, tweens, count = builder(
+                self.plan, self.brandbook, duration=self.duration)
+            self.tweens.extend(tweens)
+            self.stats["subtitle_words"] += count
+            return nodes
+
         spec = self.brandbook["subtitles"]
         # Верхняя граница диапазона, а не нижняя: слово, всплывающее за 90 мс,
         # читается как щелчок. Заказчик просил плавнее — «в стиле эпл».

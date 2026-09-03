@@ -1,0 +1,25 @@
+{
+  "id": "text-fullscreen/per-word-crossfade",
+  "name": "per-word-crossfade",
+  "category": "text-fullscreen",
+  "title": "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
+  "duration_range": [
+    0.8,
+    2.4
+  ],
+  "params": {
+    "word_crossfade": true,
+    "drift": "standard",
+    "blur": "standard",
+    "tone": "ink",
+    "exit": "none"
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "blur"
+  ],
+  "renderer": "per_word_crossfade",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

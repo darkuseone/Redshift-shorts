@@ -1,8 +1,8 @@
-"""Слои графики: субтитры, полноэкранный текст, плашки, подсветка, карточки.
+"""Слои графики: полноэкранный текст, плашки, подсветка, карточки.
 
 Каждая функция возвращает RGBA-слой размером с кадр, который композитор кладёт
 поверх видеоряда. Вся геометрия считается от safe zones брендбука (§3.2), все
-анимационные константы — из ``brandbook.json`` (§5).
+анимационные константы — из ``brandbook.json`` (§5). Субтитры рисует HyperFrames (gradient-fill / clip-wipe / blend-difference).
 """
 
 from __future__ import annotations
@@ -18,8 +18,6 @@ from .canvas import (
     FontBook, RGBA, SafeZones, clamp01, cut_hole, dim_layer, draw_text, ease, measure,
     mix, new_layer, parse_color, rounded_rect, with_alpha,
 )
-# Правило регистра общее для обоих движков рендера — см. text_rules.
-from .text_rules import apply_case, subtitle_word
 
 _log = get_logger("layers")
 

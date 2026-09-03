@@ -1,0 +1,24 @@
+{
+  "id": "hero-devices/footage-plate-pop",
+  "name": "footage-plate-pop",
+  "category": "hero-devices",
+  "title": "Футаж в рамке въезжает поверх кадра",
+  "duration_range": [
+    1.4,
+    4.0
+  ],
+  "params": {
+    "width": 920,
+    "height": 580,
+    "top": 210
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "footage"
+  ],
+  "renderer": "hero-plate-pop",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
+}
