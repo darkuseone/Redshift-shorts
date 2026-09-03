@@ -167,3 +167,30 @@ def palette_verdict(frames: Sequence[Image.Image | Path | str],
             "; ".join(reasons)
             + ": палитра канала — чёрный, белый и красный (§3.1)"),
     }
+
+def frame_light(frames: Sequence[Image.Image | Path | str],
+                *, floor: float = 0.15) -> dict[str, Any]:
+    """Сколько в кадре вообще видно: доля пикселей ярче ``floor``.
+
+    Мера нужна не всем кадрам, а перебивке. Перебивка живёт 1.4 секунды и
+    существует ровно затем, чтобы в кадре что-то произошло; если материал в
+    этот момент почти чёрный, зритель видит субтитр на пустоте. Именно так
+    вышло в пересобранном 0047 на 40.5 и 50.0 секунде: средняя яркость 17.7 и
+    20.1 из 255, восемь пикселей из десяти темнее 20.
+
+    Судит **худший** кадр: перебивка показывает один момент, а не среднее по
+    клипу. Замер по базе: медиана 55 % видимого, у клипа, давшего ту самую
+    чёрную перебивку, — 16 %.
+    """
+    live = [f for f in frames if isinstance(f, Image.Image) or Path(f).exists()]
+    if not live:
+        return {"measured": False, "visible_share": 1.0, "mean": 1.0}
+    shares, means = [], []
+    for frame in live:
+        image = frame if isinstance(frame, Image.Image) else Image.open(frame)
+        grey = np.asarray(image.convert("L").resize(SAMPLE), dtype=np.float32) / 255.0
+        shares.append(float((grey > floor).mean()))
+        means.append(float(grey.mean()))
+    return {"measured": True,
+            "visible_share": round(min(shares), 4),
+            "mean": round(min(means), 4)}

@@ -636,7 +636,7 @@ def _insert_avatar_interstitials(slots: list[Slot], min_shot: float, appearance_
                     index=0, start=inter_start, end=slot.start, kind="footage",
                     block_id=prev.block_id, role=prev.role, mode="C",
                     visual_intent=prev.visual_intent, queries=list(prev.queries),
-                    needs_asset=True, asset_role="broll",
+                    needs_asset=True, asset_role="interstitial",
                     reason="перебивка между аватар-сегментами (§7.4.3, R-3)",
                 ))
                 notes.append(
@@ -648,7 +648,7 @@ def _insert_avatar_interstitials(slots: list[Slot], min_shot: float, appearance_
                     index=0, start=slot.start, end=inter_end, kind="footage",
                     block_id=slot.block_id, role=slot.role, mode="C",
                     visual_intent=slot.visual_intent, queries=list(slot.queries),
-                    needs_asset=True, asset_role="broll",
+                    needs_asset=True, asset_role="interstitial",
                     reason="перебивка между аватар-сегментами (§7.4.3, R-3)",
                 ))
                 slot.start = inter_end

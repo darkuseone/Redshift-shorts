@@ -22,7 +22,8 @@
       "score": 0.0,
       "duration_sec": 1.1,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "last_used": "2026-09-03",
       "added": "2026-09-02",
@@ -57,7 +58,8 @@
       "score": 0.0,
       "duration_sec": 1.1,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "last_used": "2026-09-03",
       "added": "2026-09-02",
@@ -92,7 +94,8 @@
       "score": 0.0,
       "duration_sec": 0.73,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "last_used": "2026-09-03",
       "added": "2026-09-02",
@@ -127,7 +130,8 @@
       "score": 0.0,
       "duration_sec": 2.0,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "last_used": "2026-09-03",
       "added": "2026-09-02",
@@ -262,7 +266,8 @@
       "score": 0.0,
       "duration_sec": 0.5,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "last_used": "2026-09-03",
       "added": "2026-09-02",
@@ -594,7 +599,8 @@
       "score": 0.0,
       "duration_sec": 1.2,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "last_used": "2026-09-03",
       "added": "2026-09-02",

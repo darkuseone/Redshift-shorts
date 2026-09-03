@@ -533,7 +533,9 @@
       ],
       "needs": [],
       "renderer": "bottom_up_letters",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -719,7 +721,8 @@
       ],
       "renderer": "number_slam",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
@@ -1131,7 +1134,8 @@
       "renderer": "source_card",
       "last_used_in": [
         "redshift_0044",
-        "redshift_0045"
+        "redshift_0045",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -1624,7 +1628,8 @@
       "needs": [],
       "renderer": "zoom_through",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
@@ -2524,7 +2529,8 @@
       "needs": [],
       "renderer": "logo_brand_close",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-09-02"
     },
@@ -2782,7 +2788,8 @@
       "needs": [],
       "renderer": "hero-card-stack",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -2831,7 +2838,8 @@
       "needs": [],
       "renderer": "hero-script-stack",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -3034,7 +3042,9 @@
         "number"
       ],
       "renderer": "hero-figure",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-08-18"
     },
     {

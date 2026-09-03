@@ -175,8 +175,10 @@
       "vision_summary": "данные в звуке: струнные с нажимом",
       "score": 0.0,
       "duration_sec": 70.016,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "file": "data_sonification_strings.m4a",
       "mood": "strings",

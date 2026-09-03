@@ -128,7 +128,10 @@ def run_step(ctx) -> dict[str, Any]:
     # Материал из последних 5 роликов не переиспользуем при наличии альтернативы.
     recent_videos = _recent_video_ids(ctx, limit=5)
 
-    slots = [s for s in plan["slots"] if s["needs_asset"] and s["asset_role"] in ("broll", "evidence")]
+    # Перебивка — тот же b-roll, только с отдельной ролью: она живёт 1.4
+    # секунды и обязана быть событием, поэтому судится строже по светлоте.
+    slots = [s for s in plan["slots"]
+             if s["needs_asset"] and s["asset_role"] in ("broll", "evidence", "interstitial")]
     downloads = 0
     researched = 0
     press_used = 0
