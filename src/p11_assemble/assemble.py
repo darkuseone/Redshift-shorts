@@ -775,6 +775,18 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "comunidad autónoma", "pib per")):
             prefer = ["data-viz/spain-map"] + [item for item in prefer
                                               if item != "data-viz/spain-map"]
+        rating_like = (
+            len(nums) == 1
+            and not pct
+            and 0.0 < float(nums[0]["value"]) <= 5.0
+            and abs(float(nums[0]["value"])
+                    - round(float(nums[0]["value"]))) > 1e-9
+        )
+        if variant != "B" and (rating_like or any(key in blob for key in (
+                "stars", "star rating", "звезд", "рейтинг", "оценк",
+                "отзыв", "app store", "satisfaction"))):
+            prefer = ["data-viz/star-rating-fill"] + [
+                item for item in prefer if item != "data-viz/star-rating-fill"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -801,6 +813,17 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "value": val,
                 "label": f"{token}{suffix}",
                 "thickness": 12,
+            }
+        elif name == "star-rating-fill":
+            rating = 4.8
+            if nums:
+                val = float(nums[0]["value"])
+                if 0.0 <= val <= 5.0:
+                    rating = val
+            params = {
+                "rating": rating,
+                "starCount": 5,
+                "showValue": True,
             }
         elif name == "spain-map":
             heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")

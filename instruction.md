@@ -235,3 +235,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Data-viz decline-chart: линия падает scaleX, число 82→34 | каталог твинит strokeDashoffset/filter/textContent; здесь SVG-mask scaleX, gloom opacity, Inter/#fb7185/#152f3c; line-rise не трогаем |
 | 2026-09-03 | Data-viz mk-line-graph: две линии scaleX, точки back.out | каталог твинит strokeDashoffset; здесь SVG-mask scaleX и HTML-точки, Inter/#1d1d1f/#0071e3/#45d6c8; line-rise и decline-chart не трогаем |
 | 2026-09-03 | Data-viz spain-map: хороплет регионов scale, MAD/PVA/NAV подсветка | каталог тянет topojson и твинит clipPath/filter; здесь запечённые контуры и scaleX-вайп, Inter/#0f172a/#7f1d1d/#fbbf24; mk-line-graph не трогаем |
+| 2026-09-03 | Data-viz star-rating-fill: звёзды заливаются scaleX, число 0.0→4.8 | каталог твинит clip-path/textContent; здесь SVG-mask scaleX и попа scale, Inter/#090d16/#ffc83d/#1a2230; conic-progress-ring не трогаем |

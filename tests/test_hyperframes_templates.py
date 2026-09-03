@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-144 шаблон каталога — это рендереры с параметрами. Проверяется то, что
+145 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -229,6 +229,11 @@ def test_css_covers_every_layer_the_transitions_use():
             {"abbr": "EXT", "value": 19200},
         ],
     }),
+    ("data-viz/star-rating-fill", {
+        "rating": 4.8,
+        "starCount": 5,
+        "showValue": True,
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -252,6 +257,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/decline-chart", ctx) == Piece()
     assert render_dataviz("data-viz/mk-line-graph", ctx) == Piece()
     assert render_dataviz("data-viz/spain-map", ctx) == Piece()
+    assert render_dataviz("data-viz/star-rating-fill", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -286,6 +292,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "dcl-" not in compare and "dcl-" not in race
     assert "mlg-" not in compare and "mlg-" not in race
     assert "spm-" not in compare and "spm-" not in race
+    assert "srf-" not in compare and "srf-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
@@ -295,6 +302,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "dcl-" not in donut
     assert "mlg-" not in donut
     assert "spm-" not in donut
+    assert "srf-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -913,7 +921,7 @@ def test_spain_map_keeps_catalog_tokens():
     assert "transform-origin:100% 50%" in wipe
     assert "transform-origin:50% 50%" in region
     assert "transform-box:fill-box" in region
-    block = css.split(".spm-chart", 1)[1]
+    block = css.split(".spm-chart", 1)[1].split(".srf-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
@@ -926,13 +934,121 @@ def test_spain_map_keeps_catalog_tokens():
                 .replace("transform-origin:100% 50%", "")
                 .replace("transform-box:fill-box", "")
                 .replace("text-transform:uppercase", ""))
-    assert "transform:" not in stripped.split(".spm-chart", 1)[1]
+    assert "transform:" not in stripped.split(".spm-chart", 1)[1].split(".srf-chart", 1)[0]
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "spm-" not in dv_bar
     donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
     assert "spm-" not in donut
     mlg = re.search(r"\.mlg-line\{[^}]+\}", css).group(0)
     assert "spm-" not in mlg
+
+
+def test_star_rating_fill_wipes_mask_not_clip_path(ctx):
+    """Каталог DEMO 1 твинит clip-path и textContent; здесь SVG-mask scaleX."""
+    piece = render_dataviz("data-viz/star-rating-fill", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=4.0, target=ctx.target,
+        track=6, params={"rating": 4.8, "starCount": 5, "showValue": True}))
+    node = piece.nodes[0]
+    assert "srf-chart" in node
+    assert "srf-bg" in node and "srf-stage" in node and "srf-card" in node
+    assert "srf-wipe" in node and "srf-cell" in node and "srf-fill-star" in node
+    assert "4.8" in node
+    assert "M50 0" in node
+    assert "#ffc83d" in node
+    assert "#626d7e" in node
+    assert "dv-bar" not in node
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "stat-card" not in node
+    assert "textContent" not in node
+    assert "clipPath" not in node
+    assert "clip-path" not in node
+    assert "--ring-progress" not in node
+    assert node.count(f'id="srf-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    assert f'id="srf-{ctx.index:02d}-stage"' in node
+    assert f'id="srf-{ctx.index:02d}-wipe"' in node
+    assert f'id="srf-{ctx.index:02d}-b0"' in node
+    assert f'id="srf-{ctx.index:02d}-f4"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scaleX:0" in body and "scaleX:0.96" in body
+    assert "scale:1.06" in body
+    assert "power2.out" in body
+    assert "immediateRender:false" in body
+    assert "filter" not in body
+    assert "clipPath" not in body
+    assert "clip-path" not in body
+    assert "textContent" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#srf-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _srf_times(4.0)
+    assert abs(times["in"] - 1.5) < 1e-9
+    assert abs(times["out"] - 0.4) < 1e-9
+    assert abs(times["fill_start"] - 0.2) < 1e-9
+    assert abs(times["fill_dur"] - 1.1) < 1e-9
+    assert abs(times["out_start"] - 3.6) < 1e-9
+    short = _srf_times(0.22)
+    assert short["out_start"] + 0.001 <= 0.22 + 1e-9
+
+
+def test_star_rating_fill_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".srf-chart" in css
+    assert ".srf-wipe" in css
+    chart = re.search(r"\.srf-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.srf-bg\{[^}]+\}", css).group(0)
+    card = re.search(r"\.srf-card\{[^}]+\}", css).group(0)
+    wipe = re.search(r"\.srf-wipe\{[^}]+\}", css).group(0)
+    cell = re.search(r"\.srf-cell\{[^}]+\}", css).group(0)
+    fill = re.search(r"\.srf-fill-star\{[^}]+\}", css).group(0)
+    cv = re.search(r"\.srf-cv\{[^}]+\}", css).group(0)
+    assert "#090d16" in chart and "#090d16" in bg
+    assert "#f4f7fb" in chart and "#f4f7fb" in cv
+    assert "#1a2230" in card
+    assert "rgba(244,247,251,0.14)" in card
+    assert "transform-origin:0px 50%" in wipe
+    assert "transform-box:fill-box" in wipe
+    assert "transform-origin:50% 50%" in cell
+    assert "transform-box:fill-box" in fill
+    block = css.split(".srf-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    stripped = (css.replace("transform-origin:left center", "")
+                .replace("transform-origin:50% 50%", "")
+                .replace("transform-origin:50% 100%", "")
+                .replace("transform-origin:0px 50%", "")
+                .replace("transform-origin:100% 50%", "")
+                .replace("transform-box:fill-box", "")
+                .replace("text-transform:uppercase", ""))
+    assert "transform:" not in stripped.split(".srf-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "srf-" not in dv_bar
+    donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
+    assert "srf-" not in donut
+    spm = re.search(r"\.spm-region\{[^}]+\}", css).group(0)
+    assert "srf-" not in spm
 
 
 def test_split_moves_both_halves_towards_the_seam():

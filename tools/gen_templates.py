@@ -372,7 +372,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (14, [
+    "data-viz": (15, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -441,6 +441,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
                  {"abbr": "MEL", "name": "Melilla", "value": 19500},
              ],
          }, ["data", "map", "spain"], "dataviz"),
+        ("star-rating-fill",
+         "Золотые звёзды заливаются слева направо, число считает в такт — star-rating-fill",
+         [1.2, 4.0], {"rating": 4.8, "starCount": 5, "showValue": True},
+         ["data", "stars", "rating"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

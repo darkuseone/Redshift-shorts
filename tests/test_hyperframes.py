@@ -1478,6 +1478,29 @@ def test_spain_map_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "jsdelivr" not in node
 
 
+def test_star_rating_fill_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 4.2,
+        "template": "data-viz/star-rating-fill",
+        "params": {"rating": 4.8, "starCount": 5, "showValue": True},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "srf-chart" in out
+    assert "srf-bg" in out
+    assert "srf-wipe" in out
+    assert "4.8" in out
+    node = next(line for line in out.splitlines() if "srf-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "clip-path" not in node
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-144 шаблон каталога — это не 144 реализация, а набор рендереров с параметрами.
+145 шаблон каталога — это не 145 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -4418,6 +4418,274 @@ def dv_spain_map(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_SRF_IN_BASE = 1.5
+_SRF_OUT_BASE = 0.4
+_SRF_FILL_START_BASE = 0.2
+_SRF_FILL_DURATION_BASE = 1.1
+_SRF_POP_DURATION_BASE = 0.2
+_SRF_FPS = 30.0
+_SRF_DEFAULT_RATING = 4.8
+_SRF_DEFAULT_COUNT = 5
+_SRF_CARD_LEFT = 40
+_SRF_CARD_W = 1000
+_SRF_CARD_TOP = 750
+_SRF_CARD_H = 420
+_SRF_PAD = 32.0
+_SRF_GAP = 28.0
+_SRF_VALUE_W = 210.0
+_SRF_VALUE_SIZE = 92.0
+_SRF_STAR_MAX = 148.0
+_SRF_MUTED = "#626d7e"
+_SRF_BRAND = "#ffc83d"
+_SRF_PATH = (
+    "M50 0 61.8 36.2 100 36.2 69.1 58.6 80.9 95 50 72.4 "
+    "19.1 95 30.9 58.6 0 36.2 38.2 36.2Z"
+)
+
+
+def _srf_clamp(value: float, lo: float, hi: float) -> float:
+    return lo if value < lo else hi if value > hi else value
+
+
+def _srf_power2_out(t: float) -> float:
+    u = 1.0 - _srf_clamp(t, 0.0, 1.0)
+    return 1.0 - u * u
+
+
+def _srf_play(duration: float) -> float:
+    return duration if duration <= 0.001 else max(0.001, duration - 0.001)
+
+
+def _srf_num(raw: Any, default: float | None = None) -> float | None:
+    if raw in (None, ""):
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _srf_times(duration: float) -> dict[str, float]:
+    """Окно star-rating-fill: IN 1.50 с, OUT 0.40 с, HOLD остаток.
+
+    Короче 1.90 с — IN и OUT сжимаются вместе. HOLD не трогаем.
+    """
+    d = max(0.05, float(duration))
+    min_io = _SRF_IN_BASE + _SRF_OUT_BASE
+    s = d / min_io if d < min_io else 1.0
+    inn = _SRF_IN_BASE * s
+    out = _SRF_OUT_BASE * s
+    if inn + out + 0.001 > d:
+        s = max(0.001, d - 0.001) / min_io
+        inn = _SRF_IN_BASE * s
+        out = max(0.001, d - inn - 0.001)
+    hold = max(0.0, d - inn - out)
+    out_start = inn + hold
+    return {
+        "in": inn,
+        "out": out,
+        "hold": hold,
+        "out_start": out_start,
+        "kill_at": d,
+        "fill_start": _SRF_FILL_START_BASE * s,
+        "fill_dur": max(0.001, _SRF_FILL_DURATION_BASE * s),
+        "pop_dur": max(0.05, _SRF_POP_DURATION_BASE * s),
+    }
+
+
+def _srf_spec(params: dict[str, Any]) -> tuple[float, int, bool] | None:
+    """rating, star_count, show_value. Пусто → None."""
+    keys = ("rating", "starCount", "star_count", "stars",
+            "showValue", "show_value", "value")
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in keys):
+        return None
+    rating = _srf_num(params.get("rating"))
+    if rating is None:
+        rating = _srf_num(params.get("value"), _SRF_DEFAULT_RATING)
+    if rating is None:
+        rating = _SRF_DEFAULT_RATING
+    count = _srf_num(params.get("starCount"))
+    if count is None:
+        count = _srf_num(params.get("star_count"))
+    if count is None:
+        count = _srf_num(params.get("stars"), float(_SRF_DEFAULT_COUNT))
+    if count is None:
+        count = float(_SRF_DEFAULT_COUNT)
+    star_count = int(round(count))
+    star_count = max(1, min(10, star_count))
+    rating = _srf_clamp(rating, 0.0, 5.0)
+    rating = min(rating, float(star_count))
+    raw_show = params.get("showValue", params.get("show_value", "yes"))
+    if isinstance(raw_show, bool):
+        show_value = raw_show
+    else:
+        show_value = str(raw_show).strip().lower() not in ("no", "false", "0")
+    return rating, star_count, show_value
+
+
+def dv_star_rating_fill(ctx: "TemplateCtx") -> Piece:
+    """Золотые звёзды заливаются слева направо, число считает в такт.
+
+    Каталог DEMO 1 твинит ``clip-path`` на слое заливки и пишет
+    ``textContent`` из ``onUpdate``. Здесь SVG-mask с ``scaleX`` на rect,
+    попа ``scale`` 1→1.06→1, заранее span-ы. Сцена ``#090d16``, карточка
+    ``#1a2230``, бренд ``#ffc83d``, чернила ``#f4f7fb`` как в каталоге —
+    жест рейтинга, не палитра канала. Inter. ``-apple-system`` не ставим.
+    ``donut-fill`` / ``.dv-bar`` / ``conic-progress-ring`` / ``spain-map``
+    не трогаем.
+    """
+    spec = _srf_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    rating, star_count, show_value = spec
+    node_id = f"srf-{ctx.index:02d}"
+    times = _srf_times(ctx.duration)
+    start = ctx.start
+    sid = f"{node_id}-stage"
+    wid = f"{node_id}-wipe"
+    mid = f"{node_id}-m"
+    vid = f"{node_id}-cv"
+    fill_ratio = rating / float(star_count) if star_count else 0.0
+    show_w = _SRF_VALUE_W if show_value else 0.0
+    gap = _SRF_GAP if show_value else 0.0
+    avail = _SRF_CARD_W - _SRF_PAD * 2.0 - show_w - gap
+    star = min(_SRF_STAR_MAX, avail / float(star_count))
+    stars_w = star * star_count
+    row_w = stars_w + gap + show_w
+    row_left = _SRF_CARD_LEFT + (_SRF_CARD_W - row_w) / 2.0
+    stars_top = _SRF_CARD_TOP + (_SRF_CARD_H - star) / 2.0
+    value_top = stars_top + (star - _SRF_VALUE_SIZE) / 2.0
+    value_left = row_left + stars_w + gap
+    scale = star / 100.0
+    fill_start = times["fill_start"]
+    fill_dur = times["fill_dur"]
+    pop_dur = times["pop_dur"]
+    frames = max(1, int(round(fill_dur * _SRF_FPS)))
+    tweens: list[str] = []
+    base_html: list[str] = []
+    fill_html: list[str] = []
+    base_ids: list[str] = []
+    fill_ids: list[str] = []
+    spans: list[str] = []
+    texts: list[str] = []
+
+    for index in range(star_count):
+        bid = f"{node_id}-b{index}"
+        fid = f"{node_id}-f{index}"
+        base_ids.append(bid)
+        fill_ids.append(fid)
+        left = index * star
+        base_html.append(
+            f'<svg id="{bid}" class="srf-cell" data-layout-allow-overlap="" '
+            f'style="left:{left:.1f}px;width:{star:.1f}px;height:{star:.1f}px" '
+            f'viewBox="0 0 100 100" aria-hidden="true">'
+            f'<path d="{_SRF_PATH}" fill="{_SRF_MUTED}"></path></svg>')
+        fill_html.append(
+            f'<g id="{fid}" class="srf-fill-star">'
+            f'<g transform="translate({_num(left)} 0) scale({_num(scale)})">'
+            f'<path d="{_SRF_PATH}" fill="{_SRF_BRAND}"></path></g></g>')
+
+    if show_value:
+        for frame in range(frames + 1):
+            if frame == frames:
+                text = f"{rating:.1f}"
+            else:
+                t = frame / frames
+                text = f"{rating * _srf_power2_out(t):.1f}"
+            texts.append(text)
+            spans.append(f'<span id="{vid}-{frame}">{_esc(text)}</span>')
+
+    tweens.append(f'tl.set("#{wid}",{{scaleX:0}},{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{wid}",{{scaleX:0}},'
+        f'{{scaleX:{_num(fill_ratio)},duration:{_num(_srf_play(fill_dur))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + fill_start)});')
+
+    if show_value:
+        tweens.append(
+            f'tl.set("#{vid}-0",{{opacity:1}},{_num(start)});')
+        prev_shown = 0
+        for frame in range(1, frames + 1):
+            if texts[frame] == texts[prev_shown]:
+                continue
+            at = start + fill_start + fill_dur * (frame / frames)
+            tweens.append(
+                f'tl.set("#{vid}-{prev_shown}",{{opacity:0}},{_num(at)});')
+            tweens.append(
+                f'tl.set("#{vid}-{frame}",{{opacity:1}},{_num(at)});')
+            prev_shown = frame
+
+    pop_count = math.ceil(rating)
+    denom = max(1.0, rating)
+    pop_up = pop_dur * 0.45
+    pop_down = pop_dur * 0.55
+    for pop_index in range(pop_count):
+        if pop_index >= star_count:
+            break
+        pop_at = fill_start + fill_dur * (pop_index / denom) * 0.82
+        for tid in (base_ids[pop_index], fill_ids[pop_index]):
+            tweens.append(
+                f'tl.fromTo("#{tid}",{{scale:1}},'
+                f'{{scale:1.06,duration:{_num(_srf_play(pop_up))},'
+                f'ease:"power2.out",immediateRender:false}},'
+                f'{_num(start + pop_at)});')
+            tweens.append(
+                f'tl.fromTo("#{tid}",{{scale:1.06}},'
+                f'{{scale:1,duration:{_num(_srf_play(pop_down))},'
+                f'ease:"power2.out",immediateRender:false}},'
+                f'{_num(start + pop_at + pop_up)});')
+
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:1}},'
+        f'{{opacity:0,duration:{_num(_srf_play(times["out"]))},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["out_start"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(f'tl.set("#{sid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{wid}",{{scaleX:0}},{_num(kill_at)});')
+    for bid in base_ids:
+        tweens.append(f'tl.set("#{bid}",{{scale:1}},{_num(kill_at)});')
+    for fid in fill_ids:
+        tweens.append(f'tl.set("#{fid}",{{scale:1}},{_num(kill_at)});')
+    if show_value:
+        for frame in range(frames + 1):
+            tweens.append(
+                f'tl.set("#{vid}-{frame}",{{opacity:0}},{_num(kill_at)});')
+
+    value_html = ""
+    if show_value:
+        value_html = (
+            f'<div id="{vid}" class="srf-cv" data-layout-allow-overlap="" '
+            f'style="left:{value_left:.1f}px;top:{value_top:.1f}px;'
+            f'width:{_SRF_VALUE_W:.1f}px;height:{_SRF_VALUE_SIZE:.1f}px;'
+            f'font-size:{_SRF_VALUE_SIZE:.1f}px">'
+            f'{"".join(spans)}</div>')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay srf-chart" {_timing(ctx)}>'
+               f'<div class="srf-bg"></div>'
+               f'<div id="{sid}" class="srf-stage">'
+               f'<div class="srf-card" data-layout-allow-overlap=""></div>'
+               f'<div class="srf-stars" data-layout-allow-overlap="" '
+               f'style="left:{row_left:.1f}px;top:{stars_top:.1f}px;'
+               f'width:{stars_w:.1f}px;height:{star:.1f}px">'
+               f'{"".join(base_html)}'
+               f'<svg class="srf-fill-svg" viewBox="0 0 {_num(stars_w)} {_num(star)}" '
+               f'width="{_num(stars_w)}" height="{_num(star)}" '
+               f'preserveAspectRatio="none" aria-hidden="true">'
+               f'<defs><mask id="{mid}" maskUnits="userSpaceOnUse" '
+               f'maskContentUnits="userSpaceOnUse">'
+               f'<rect id="{wid}" class="srf-wipe" x="0" y="0" '
+               f'width="{_num(stars_w)}" height="{_num(star)}" '
+               f'fill="#fff"/></mask></defs>'
+               f'<g mask="url(#{mid})">{"".join(fill_html)}</g></svg></div>'
+               f'{value_html}</div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -4433,6 +4701,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "decline-chart": dv_decline_chart,
     "mk-line-graph": dv_mk_line_graph,
     "spain-map": dv_spain_map,
+    "star-rating-fill": dv_star_rating_fill,
 }
 
 
@@ -4735,6 +5004,33 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         ".spm-src{position:absolute;left:90px;top:1048px;width:740px;"
         "font-weight:400;font-size:18px;color:#475569;text-align:right;"
         "opacity:0}"
+        ".srf-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#090d16;font-family:Inter,system-ui,sans-serif;"
+        "color:#f4f7fb}"
+        ".srf-bg{position:absolute;inset:0;background:#090d16}"
+        ".srf-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        f".srf-card{{position:absolute;left:{_SRF_CARD_LEFT}px;"
+        f"top:{_SRF_CARD_TOP}px;width:{_SRF_CARD_W}px;"
+        f"height:{_SRF_CARD_H}px;"
+        "border-radius:32px;background:#1a2230;"
+        "border:2px solid rgba(244,247,251,0.14);"
+        "box-shadow:0 43px 108px rgba(244,247,251,0.12)}"
+        ".srf-stars{position:absolute}"
+        ".srf-fill-svg{position:absolute;left:0;top:0;overflow:visible}"
+        ".srf-cell{position:absolute;top:0;overflow:visible;"
+        "transform-origin:50% 50%}"
+        ".srf-fill-star{transform-origin:50% 50%;transform-box:fill-box}"
+        ".srf-wipe{transform-origin:0px 50%;transform-box:fill-box}"
+        ".srf-cv{position:absolute;line-height:1;text-align:right;"
+        "font-weight:720;letter-spacing:-0.04em;"
+        "font-variant-numeric:tabular-nums;color:#f4f7fb}"
+        ".srf-cv span{position:absolute;right:0;top:0;opacity:0;"
+        "white-space:nowrap}"
     )
 
 
