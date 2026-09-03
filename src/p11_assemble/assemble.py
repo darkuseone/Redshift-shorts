@@ -740,7 +740,8 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
             continue
         prefer = (["data-viz/stat-countup-card"] if len(nums) == 1
-                  else ["data-viz/compare-bars", "data-viz/bar-race-mini"])
+                  else ["data-viz/animated-bar-chart",
+                        "data-viz/compare-bars", "data-viz/bar-race-mini"])
         if variant == "B" and len(nums) >= 2:
             prefer = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
         template = catalog.pick("data-viz", duration=end - start,
@@ -757,10 +758,12 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "labels": [n["raw"] for n in nums[:4]],
             }
         else:
+            n_take = 7 if name == "animated-bar-chart" else 4
             params = {
-                "values": [n["value"] for n in nums[:4]],
-                "labels": [n["raw"] for n in nums[:4]],
+                "values": [n["value"] for n in nums[:n_take]],
+                "labels": [n["raw"] for n in nums[:n_take]],
                 "value": nums[0]["value"],
+                "kpi": nums[0]["raw"],
             }
         overlays.append({
             "type": "dataviz", "start": start, "end": end,

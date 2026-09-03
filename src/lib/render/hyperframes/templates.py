@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-137 шаблонов каталога — это не 137 реализаций, а набор рендереров с параметрами.
+138 шаблонов каталога — это не 138 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -2406,6 +2406,101 @@ def dv_stat_card(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_ABC_CATALOG_SEC = 5.0
+_ABC_BARS_PX = 210
+_ABC_MAX_BARS = 7
+
+
+def _abc_times(duration: float) -> dict[str, float]:
+    """Окно animated bar chart: каталог 0.5 с пауза, 1.2 с рост power3.out.
+
+    На шорте это ``ctx.duration`` (2–4 с). Доли 5 с окна сохраняем, стык +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _ABC_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    grow_at = t(0.5)
+    grow_end = t(1.7)
+    if grow_at + 0.001 > grow_end:
+        grow_end = min(d, grow_at + 0.001)
+    if grow_at + 0.001 > grow_end:
+        grow_at = max(0.0, grow_end - 0.001)
+    if grow_end + 0.001 > d:
+        grow_end = max(0.001, d - 0.001)
+        if grow_at + 0.001 > grow_end:
+            grow_at = max(0.0, grow_end - 0.001)
+    grow_dur = max(0.001, grow_end - grow_at)
+    return {"grow_at": grow_at, "grow_dur": grow_dur, "kill_at": d}
+
+
+def dv_animated_bar_chart(ctx: "TemplateCtx") -> Piece:
+    """Карточка: столбики растут снизу (scaleY), KPI +42%.
+
+    Каталог твинит CSS-var ``--hf-grow`` / ``--hf-dash``. Здесь GSAP
+    ``scaleY`` от нижней кромки, без ``height``/``width`` и без dash.
+    Твины на столбиках, не на ``.clip``. Цвета карточки каталога —
+    жест, не палитра канала. ``-apple-system`` не ставим. Inter как
+    в каталоге. ``bar-race-mini`` / ``compare-bars`` не трогаем.
+    """
+    values = _values(ctx)
+    if not values:
+        return Piece()
+    values = values[:_ABC_MAX_BARS]
+    peak = max(values) or 1.0
+    # Каталог задаёт высоту столбика в процентах контейнера (max 95 %).
+    # Крупные числа из сценария нормируем к максимуму.
+    if peak <= 100.0:
+        fracs = [max(0.04, v / 100.0) for v in values]
+    else:
+        fracs = [max(0.04, v / peak) for v in values]
+    labels = _labels(ctx, len(values))
+    title = str(ctx.params.get("title") or "Animated Bar Chart").strip()
+    subtitle = str(ctx.params.get("subtitle") or (
+        "A compact data card with deterministic bar growth "
+        "and value callouts.")).strip()
+    kpi = str(ctx.params.get("kpi") or ctx.params.get("callout") or "").strip()
+    node_id = f"abc-{ctx.index:02d}"
+    times = _abc_times(ctx.duration)
+    start = ctx.start
+    cols: list[str] = []
+    tweens: list[str] = []
+    for i, frac in enumerate(fracs):
+        h_px = frac * _ABC_BARS_PX
+        bid = f"{node_id}-b{i}"
+        cols.append(
+            f'<div class="abc-col">'
+            f'<div class="abc-slot" style="height:{h_px:.1f}px">'
+            f'<span id="{bid}" class="abc-grow">'
+            f'<span class="abc-fill"></span></span></div>'
+            f'<span class="abc-lbl">{_esc(labels[i])}</span></div>')
+        if times["grow_at"] >= 0.001:
+            tweens.append(
+                f'tl.set("#{bid}",{{scaleY:0,opacity:1}},{_num(start)});')
+        tweens.append(
+            f'tl.fromTo("#{bid}",{{scaleY:0,opacity:1}},'
+            f'{{scaleY:1,opacity:1,duration:{_num(times["grow_dur"])},'
+            f'ease:"power3.out",immediateRender:false}},'
+            f'{_num(start + times["grow_at"])});')
+        tweens.append(
+            f'tl.set("#{bid}",{{scaleY:0,opacity:0}},'
+            f'{_num(start + times["kill_at"])});')
+    kpi_html = (f'<strong class="abc-kpi">{_esc(kpi)}</strong>' if kpi else "")
+    n = len(values)
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay abc-chart" {_timing(ctx)}>'
+               f'<div class="abc-card">'
+               f'<div class="abc-head">'
+               f'<h3 class="abc-title">{_esc(title)}</h3>'
+               f'<p class="abc-sub">{_esc(subtitle)}</p>'
+               f'{kpi_html}</div>'
+               f'<div class="abc-bars" style="grid-template-columns:repeat({n},1fr)">'
+               f'{"".join(cols)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -2414,6 +2509,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "donut-fill": dv_donut,
     "timeline-dots": dv_dots,
     "stat-countup-card": dv_stat_card,
+    "animated-bar-chart": dv_animated_bar_chart,
 }
 
 
@@ -2428,7 +2524,10 @@ def render_dataviz(template_id: str, ctx: "TemplateCtx") -> Piece:
 
 def dataviz_css(brandbook: dict[str, Any]) -> str:
     safe = brandbook["safe_zones"]["work_area"]
-    width = int(safe["x_max"]) - int(safe["x_min"])
+    left = int(safe["x_min"])
+    width = int(safe["x_max"]) - left
+    canvas_w = int(brandbook["canvas"]["width"])
+    canvas_h = int(brandbook["canvas"]["height"])
     return (
         ".dv,.dv-counter,.dv-donut,.dv-dots{left:var(--safe-x-min);"
         f"width:{width}px;top:38%;font-family:var(--font-subtitle);"
@@ -2467,6 +2566,35 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-display);font-size:168px;line-height:1.05;"
         "color:var(--color-ink)}"
         ".stat-card .sc-num span{position:absolute;left:0;right:0;opacity:0}"
+        ".abc-chart{left:0;top:0;"
+        f"width:{canvas_w}px;height:{canvas_h}px;"
+        "background:#f7f7f8}"
+        ".abc-card{position:absolute;"
+        f"left:{left}px;width:{width}px;top:420px;"
+        "padding:34px;border-radius:28px;background:#ffffff;"
+        "box-shadow:0 28px 80px rgba(15,23,42,0.16);"
+        "display:grid;gap:22px}"
+        ".abc-head{display:grid;gap:8px}"
+        ".abc-title{margin:0;font-family:Inter,system-ui,sans-serif;"
+        "font-size:34px;font-weight:700;line-height:1.1;letter-spacing:-0.04em;"
+        "color:#111827}"
+        ".abc-sub{margin:0;font-family:Inter,system-ui,sans-serif;"
+        "font-size:16px;font-weight:400;line-height:1.45;color:#6b7280}"
+        ".abc-kpi{display:block;font-family:Inter,system-ui,sans-serif;"
+        "font-size:54px;font-weight:700;line-height:1;letter-spacing:-0.06em;"
+        "color:#111827}"
+        ".abc-bars{display:grid;align-items:end;gap:14px;height:210px}"
+        ".abc-col{display:flex;flex-direction:column;justify-content:flex-end;"
+        "align-items:stretch;height:100%;gap:10px}"
+        ".abc-slot{position:relative;width:100%;overflow:hidden;"
+        "border-radius:14px 14px 5px 5px}"
+        ".abc-grow{position:absolute;left:0;width:100%;height:200%;bottom:-100%;"
+        "display:block;transform-origin:50% 50%}"
+        ".abc-fill{position:absolute;left:0;top:0;width:100%;height:50%;"
+        "background:rgba(17,24,39,0.72);border-radius:14px 14px 5px 5px}"
+        ".abc-lbl{display:block;text-align:center;"
+        "font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;"
+        "color:#9ca3af}"
     )
 
 

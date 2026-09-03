@@ -372,7 +372,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (7, [
+    "data-viz": (8, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -387,6 +387,9 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          ["data", "compare"], "dataviz"),
         ("stat-countup-card", "Набегающая метрика на карточке", [1.2, 3.0],
          {"steps": 12}, ["data", "number", "card"], "dataviz", _EX_SPACEX),
+        ("animated-bar-chart",
+         "Карточка: столбики растут снизу (scaleY), KPI +42%.",
+         [2.0, 4.0], {"bars": 7}, ["data", "bars", "card"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

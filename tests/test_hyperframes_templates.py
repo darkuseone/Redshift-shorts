@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-137 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+138 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -16,13 +16,13 @@ import pytest
 from src.lib.render.hyperframes.templates import (
     DATAVIZ, DRIFT_SCALE, ENTRANCES, FULLSCREEN, HERO, MOTION, OVERLAYS,
     TRANSITIONS, Piece, TemplateCtx,
-    enter_and_drift, entrance_tweens, hero_css, overlay_css, render_dataviz,
+    enter_and_drift, entrance_tweens, dataviz_css, hero_css, overlay_css, render_dataviz,
     render_fullscreen, render_hero, render_motion, render_overlay,
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -180,6 +180,11 @@ def test_css_covers_every_layer_the_transitions_use():
     ("data-viz/donut-fill", {"value": 73}),
     ("data-viz/timeline-dots", {"labels": ["1916", "1971", "2019"]}),
     ("data-viz/stat-countup-card", {"value": 105, "suffix": " кубит", "label": "105"}),
+    ("data-viz/animated-bar-chart", {
+        "values": [42, 72, 56, 88, 64, 95, 78],
+        "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+        "kpi": "+42%",
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -196,6 +201,7 @@ def test_dataviz_without_data_draws_nothing():
                       track=6, params={})
     assert render_dataviz("data-viz/bar-race-mini", ctx) == Piece()
     assert render_dataviz("data-viz/timeline-dots", ctx) == Piece()
+    assert render_dataviz("data-viz/animated-bar-chart", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -215,6 +221,70 @@ def test_counter_steps_are_frames_not_a_timer():
     assert "setTimeout" not in " ".join(piece.tweens)
     assert piece.nodes[0].count("<span>") == 5      # 0..100 включительно
     assert ">100<" in piece.nodes[0]
+
+
+def test_existing_bars_do_not_use_animated_bar_chart_classes():
+    ctx = TemplateCtx(index=0, start=0.0, duration=3.0, target="ovl-00",
+                      track=6, params={"values": [50, 100], "labels": ["A", "B"]})
+    compare = render_dataviz("data-viz/compare-bars", ctx).nodes[0]
+    race = render_dataviz("data-viz/bar-race-mini", ctx).nodes[0]
+    assert "dv-bar" in compare and "dv-bar" in race
+    assert "abc-" not in compare and "abc-" not in race
+
+
+def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
+    """Каталог DEMO 1 твинит --hf-grow; здесь scaleY, без height/width/dash."""
+    piece = render_dataviz("data-viz/animated-bar-chart", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=5.0, target=ctx.target,
+        track=6, params={
+            "values": [42, 72, 56, 88, 64, 95, 78],
+            "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+            "kpi": "+42%",
+        }))
+    node = piece.nodes[0]
+    assert "abc-chart" in node
+    assert "abc-card" in node and "abc-grow" in node and "abc-fill" in node
+    assert "abc-kpi" in node and "+42%" in node
+    assert "Animated Bar Chart" in node
+    assert "Jan" in node and "Jul" in node
+    assert "dv-bar" not in node
+    assert "stat-card" not in node
+    assert "--hf-grow" not in node
+    assert "--hf-dash" not in node
+    assert node.count(f'id="abc-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    for i in range(7):
+        assert f'id="abc-{ctx.index:02d}-b{i}"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "power3.out" in body
+    assert "immediateRender:false" in body
+    assert "scaleY:0" in body and "scaleY:1" in body
+    assert "opacity:1" in body
+    assert "filter" not in body
+    assert "strokeDashoffset" not in body
+    assert "stroke-dashoffset" not in body
+    assert "--hf-grow" not in body
+    assert "--hf-dash" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "clipPath" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#abc-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _abc_times(5.0)
+    assert times["grow_at"] + times["grow_dur"] + 0.001 <= times["kill_at"] + 1e-9
+    assert abs(times["grow_at"] - 0.5) < 1e-9
+    assert abs(times["grow_dur"] - 1.2) < 1e-9
+    short = _abc_times(0.22)
+    assert short["grow_at"] + short["grow_dur"] + 0.001 <= 0.22 + 1e-9
 
 
 def test_split_moves_both_halves_towards_the_seam():
@@ -3112,6 +3182,40 @@ def test_transitions_other_keeps_catalog_navy_terra_and_white_flash():
     assert "position:absolute" not in stage
     stripped = css.replace("transform-origin:50% 50%", "")
     assert "transform:" not in stripped.split(".tr-transitions-other", 1)[1]
+
+
+def test_animated_bar_chart_keeps_catalog_ink_and_paper():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".abc-chart" in css
+    assert ".abc-card" in css
+    chart = re.search(r"\.abc-chart\{[^}]+\}", css).group(0)
+    card = re.search(r"\.abc-card\{[^}]+\}", css).group(0)
+    fill = re.search(r"\.abc-fill\{[^}]+\}", css).group(0)
+    grow = re.search(r"\.abc-grow\{[^}]+\}", css).group(0)
+    title = re.search(r"\.abc-title\{[^}]+\}", css).group(0)
+    kpi = re.search(r"\.abc-kpi\{[^}]+\}", css).group(0)
+    assert "#f7f7f8" in chart
+    assert "#ffffff" in card
+    assert "17,24,39" in fill
+    assert "#111827" in title
+    assert "#111827" in kpi
+    assert "transform-origin:50% 50%" in grow
+    block = css.split(".abc-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    assert "text-transform" not in block
+    assert "--hf-grow" not in block
+    assert "--hf-dash" not in block
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".abc-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "abc-" not in dv_bar
+    assert "transform-origin:left center" in dv_bar
 
 
 OVERLAY_PARAMS = {

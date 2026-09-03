@@ -1345,6 +1345,25 @@ def test_dataviz_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "dv-bar" in out
 
 
+def test_animated_bar_chart_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 2.4,
+        "template": "data-viz/animated-bar-chart",
+        "params": {
+            "values": [42, 72, 56, 88, 64, 95, 78],
+            "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+            "kpi": "+42%",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "abc-chart" in out
+    assert "abc-grow" in out
+    assert "+42%" in out
+    node = next(line for line in out.splitlines() if "abc-chart" in line)
+    assert "dv-bar" not in node
+    assert "stat-card" not in node
+
+
 def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):
     """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
 

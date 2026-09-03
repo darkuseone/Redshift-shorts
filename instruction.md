@@ -228,3 +228,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Переход transitions-destruction: page burn, SCENE A сгорает кругом и SCENE B проявляется | каталог рисует canvas и clip-path; здесь scale круга overflow:hidden, огонь #ff6400/#ff3200/#c81e00; sdf-iris и mask-wipe-circle не трогаем |
 | 2026-09-03 | Переход transitions-light: тёплые блики едут по кадру, SCENE B проявляется | каталог DEMO 1 твинит opacity/x; здесь GSAP x на 9:16, блики #ffa500/#ff8c00/#ffc800; light-leak и light-sweep не трогаем |
 | 2026-09-03 | Переход transitions-other: белая вспышка на склейке, SCENE B проявляется | каталог DEMO 1 твинит opacity 0.03 с / 0.1 с; здесь те же твины, вспышка #ffffff; white_flash не трогаем |
+| 2026-09-03 | Data-viz animated-bar-chart: столбики растут scaleY, карточка +42% | каталог твинит --hf-grow/--hf-dash; здесь GSAP scaleY, 7 столбиков 42…95%, Inter/#111827; bar-race-mini не трогаем |
