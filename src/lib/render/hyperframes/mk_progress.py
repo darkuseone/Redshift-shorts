@@ -168,7 +168,7 @@ def mps_css() -> str:
         ".mps-track{position:relative;margin-top:28px;width:720px;height:6px;"
         f"border-radius:3px;background:{_MPS_TRACK};overflow:hidden}}"
         ".mps-fill{position:absolute;inset:0;border-radius:3px;"
-        f"background:{_MPS_ACCENT};transform-origin:0% 50%;transform:scaleX(0)}}"
+        f"background:{_MPS_ACCENT};transform-origin:0% 50%}}"
         f".mps-cap{{margin-top:22px;font-weight:400;font-size:30px;"
         f"color:{_MPS_DIM}}}"
     )

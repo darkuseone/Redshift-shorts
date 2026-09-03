@@ -1412,13 +1412,13 @@ def test_us_map_flow_keeps_catalog_tokens():
     assert "transform-origin:50% 50%" in city
     assert "transform-box:fill-box" in city
     assert "transform-box:view-box" in arc
-    block = css.split(".umf-chart", 1)[1]
+    block = css.split(".umf-chart", 1)[1].split(".wmp-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
-    stripped = (css.replace("transform-origin:left center", "")
+    stripped = (block.replace("transform-origin:left center", "")
                 .replace("transform-origin:50% 50%", "")
                 .replace("transform-origin:50% 100%", "")
                 .replace("transform-origin:0px 50%", "")
@@ -1426,7 +1426,7 @@ def test_us_map_flow_keeps_catalog_tokens():
                 .replace("transform-box:fill-box", "")
                 .replace("transform-box:view-box", "")
                 .replace("text-transform:uppercase", ""))
-    assert "transform:" not in stripped.split(".umf-chart", 1)[1]
+    assert "transform:" not in stripped
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "umf-" not in dv_bar
     donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
