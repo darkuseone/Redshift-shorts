@@ -520,6 +520,32 @@ def test_transitions_3d_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_transitions_blur_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """filter каталога не вендорится: грани scale и призраки, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_blur", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-blur" in out
+    assert "tb-a" in out and "tb-b" in out
+    assert "tb-ghost" in out and "ONE" in out
+    assert "tr-transitions-3d" not in out
+    assert 'class="clip tr-blur"' not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "filter" not in tween_body
+    assert "skewX" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

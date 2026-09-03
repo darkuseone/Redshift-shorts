@@ -223,3 +223,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Полноэкранный жест beat-freeze-cut: рамп, фриз DROP и hard-cut | каталог твинит filter/visibility; здесь scale/x/y/opacity, #E63946/#0B132B со скриншотов вместо мяты #00E5C7 |
 | 2026-09-03 | Переход mk-clone-wall-transition: плитка слов накрывает кадр и инвертируется | каталог твинит width/height и visibility; здесь scale/x/opacity, чернила #1d1d1f и бумага #ffffff |
 | 2026-09-03 | Переход transitions-3d: 3D card flip, SCENE A схлопывается и SCENE B раскрывается | каталог твинит rotationY; здесь scaleX/opacity, вуали #1b263b/#e07a5f |
+| 2026-09-03 | Переход transitions-blur: SCENE A уходит в размытие, SCENE B выходит из него | каталог твинит filter; здесь scale/opacity и призраки, вуали #1b263b/#e07a5f; blur-dip не трогаем |

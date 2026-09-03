@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-132 шаблона каталога — это не 132 реализации, а набор рендереров с параметрами.
+133 шаблона каталога — это не 133 реализации, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -1015,6 +1015,113 @@ def tr_transitions_3d(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_TB_CATALOG_SEC = 2.4
+
+
+def _tb_times(duration: float) -> dict[str, float]:
+    """Окно blur through: каталог твинит ``filter`` 0.4 с с перекрытием 0.2 с.
+
+    На склейке шорта это ``ctx.duration`` (~0.3 с). Доли 2.4 с окна
+    (удержание A → blur-out → blur-in B) сохраняем, стыки +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _TB_CATALOG_SEC
+
+    def t(catalog: float) -> float:
+        return max(0.0, min(d, catalog * s))
+
+    a_at = t(1.0)
+    a_end = t(1.4)
+    a_dur = max(0.001, a_end - a_at)
+    b_at = t(1.2)
+    b_end = min(d - 0.001, t(1.6))
+    if b_at + 0.001 > b_end:
+        b_at = max(0.0, b_end - 0.001)
+    b_dur = max(0.001, b_end - b_at)
+    ag_at = a_at
+    ag_mid = min(d - 0.002, max(ag_at + 0.001, a_at + a_dur * 0.5))
+    if ag_at + 0.001 > ag_mid:
+        ag_at = max(0.0, ag_mid - 0.001)
+    ag_in = max(0.001, ag_mid - ag_at)
+    if ag_at + ag_in + 0.001 > ag_mid:
+        ag_in = max(0.001, ag_mid - ag_at - 0.001)
+    ag_end = min(d - 0.001, max(ag_mid + 0.001, a_at + a_dur))
+    if ag_mid + 0.001 > ag_end:
+        ag_end = min(d - 0.001, ag_mid + 0.001)
+    ag_out = max(0.001, ag_end - ag_mid)
+    a_kill = min(d, max(a_at + a_dur, ag_end, b_at))
+    return {
+        "a_at": a_at,
+        "a_dur": a_dur,
+        "a_kill": a_kill,
+        "ag_at": ag_at,
+        "ag_in": ag_in,
+        "ag_mid": ag_mid,
+        "ag_out": ag_out,
+        "b_at": b_at,
+        "b_dur": b_dur,
+    }
+
+
+def tr_transitions_blur(ctx: "TemplateCtx") -> Piece:
+    """Blur through: SCENE A уходит в размытие, SCENE B выходит из него.
+
+    Каталог твинит ``filter`` / ``skewX`` / ``clipPath`` / ``zIndex`` на
+    сценах. Здесь ``scale``/``opacity`` и призраки со статическим
+    ``filter:blur(15px)``. Твины на гранях / призраках, не на ``.clip``
+    и не на входящем кадре. Цвета SCENE A/B каталога — жест карточки,
+    не палитра канала. ``-apple-system`` не ставим. Inter как запас
+    вместо системного стека. ``blur-dip`` остаётся провалом
+    ``backdrop-filter``.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _tb_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-a",{{scale:1,opacity:1}},'
+        f'{{scale:1.05,opacity:0,duration:{_num(times["a_dur"])},'
+        f'ease:"power2.in"}},{_num(start + times["a_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},'
+        f'{_num(start + times["a_kill"])});',
+        f'tl.fromTo("#{node_id}-ag",{{scale:1,opacity:0}},'
+        f'{{scale:1.03,opacity:0.8,duration:{_num(times["ag_in"])},'
+        f'ease:"power2.in"}},{_num(start + times["ag_at"])});',
+        f'tl.to("#{node_id}-ag",{{scale:1.05,opacity:0,'
+        f'duration:{_num(times["ag_out"])},ease:"power2.in",'
+        f'immediateRender:false}},{_num(start + times["ag_mid"])});',
+        f'tl.set("#{node_id}-ag",{{opacity:0}},'
+        f'{_num(start + times["a_kill"])});',
+        f'tl.fromTo("#{node_id}-bg",{{scale:0.95,opacity:0.85}},'
+        f'{{scale:1,opacity:0,duration:{_num(times["b_dur"])},'
+        f'ease:"power2.out"}},{_num(start + times["b_at"])});',
+        f'tl.fromTo("#{node_id}-b",{{scale:0.95,opacity:0}},'
+        f'{{scale:1,opacity:1,duration:{_num(times["b_dur"])},'
+        f'ease:"power2.out"}},{_num(start + times["b_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-ag",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-bg",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
+    ]
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-transitions-blur" {_timing(ctx)}>'
+               f'<span class="tb-stage">'
+               f'<span id="{node_id}-a" class="tb-face tb-a">'
+               f'<span class="tb-big">ONE</span>'
+               f'<span class="tb-label">SCENE A</span></span>'
+               f'<span id="{node_id}-ag" class="tb-face tb-a tb-ghost">'
+               f'<span class="tb-big">ONE</span>'
+               f'<span class="tb-label">SCENE A</span></span>'
+               f'<span id="{node_id}-bg" class="tb-face tb-b tb-ghost">'
+               f'<span class="tb-big">TWO</span>'
+               f'<span class="tb-label">SCENE B</span></span>'
+               f'<span id="{node_id}-b" class="tb-face tb-b">'
+               f'<span class="tb-big">TWO</span>'
+               f'<span class="tb-label">SCENE B</span></span>'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -1286,6 +1393,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "whip_pan_shader": tr_whip_pan_shader,
     "mk_clone_wall": tr_mk_clone_wall,
     "transitions_3d": tr_transitions_3d,
+    "transitions_blur": tr_transitions_blur,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -1584,6 +1692,26 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         ".tr-transitions-3d .t3-edge{position:absolute;left:50%;top:0;"
         "width:8px;height:100%;margin-left:-4px;display:block;opacity:0;"
         "background:#778da9;transform-origin:50% 50%}"
+        f".tr-transitions-blur{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-transitions-blur .tb-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-transitions-blur .tb-face{position:absolute;inset:0;display:flex;"
+        "flex-direction:column;align-items:center;justify-content:center;"
+        "transform-origin:50% 50%}"
+        ".tr-transitions-blur .tb-a{background:#1b263b}"
+        ".tr-transitions-blur .tb-b{background:#e07a5f;opacity:0}"
+        ".tr-transitions-blur .tb-ghost{filter:blur(15px);opacity:0}"
+        ".tr-transitions-blur .tb-big{font-family:Inter,system-ui,sans-serif;"
+        "font-size:280px;font-weight:900;line-height:1;letter-spacing:-0.04em;"
+        "user-select:none}"
+        ".tr-transitions-blur .tb-a .tb-big{color:rgba(255,255,255,0.08)}"
+        ".tr-transitions-blur .tb-b .tb-big{color:rgba(255,255,255,0.15)}"
+        ".tr-transitions-blur .tb-label{font-family:Inter,system-ui,sans-serif;"
+        "font-size:40px;font-weight:600;letter-spacing:6px;"
+        "margin-top:12px}"
+        ".tr-transitions-blur .tb-a .tb-label{color:#778da9}"
+        ".tr-transitions-blur .tb-b .tb-label{color:#ffffff}"
     )
 
 

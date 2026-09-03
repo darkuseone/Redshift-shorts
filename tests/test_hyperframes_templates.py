@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-132 шаблона каталога — это рендереры с параметрами. Проверяется то, что
+133 шаблона каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -165,7 +165,7 @@ def test_css_covers_every_layer_the_transitions_use():
                 ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom",
                 ".tr-glitch-shader", ".tr-gravitational-lens", ".tr-light-leak",
                 ".tr-sdf-iris", ".tr-thermal-distortion", ".tr-whip-pan",
-                ".tr-mk-clone-wall", ".tr-transitions-3d"):
+                ".tr-mk-clone-wall", ".tr-transitions-3d", ".tr-transitions-blur"):
         assert cls in css, cls
 
 
@@ -2628,6 +2628,88 @@ def test_transitions_3d_keeps_catalog_navy_and_terracotta():
     assert "position:absolute" not in stage
     stripped = css.replace("transform-origin:50% 50%", "")
     assert "transform:" not in stripped.split(".tr-transitions-3d", 1)[1]
+
+
+def test_transitions_blur_crossfades_with_scale_without_filter_tween(ctx):
+    """Каталог твинит filter; здесь scale граней и призраки со статическим blur."""
+    piece = render_transition("transitions_blur", TemplateCtx(**ctx.__dict__))
+    node = piece.nodes[0]
+    assert "tr-transitions-blur" in node
+    assert "tb-stage" in node
+    assert "tb-face" in node and "tb-a" in node and "tb-b" in node
+    assert "tb-ghost" in node
+    assert "ONE" in node and "TWO" in node
+    assert "SCENE A" in node and "SCENE B" in node
+    assert "position:absolute" not in node.split("tb-stage", 1)[0]
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scale:1.05" in body
+    assert "scale:0.95" in body
+    assert "power2.in" in body
+    assert "power2.out" in body
+    assert "filter" not in body
+    assert "skewX" not in body
+    assert "rotationY" not in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "visibility" not in body
+    assert "clipPath" not in body
+    assert "zIndex" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _tb_times(ctx.duration)
+    assert times["ag_at"] + times["ag_in"] <= times["ag_mid"] + 1e-9
+    assert times["ag_mid"] + times["ag_out"] <= ctx.duration + 1e-9
+    assert times["a_at"] + times["a_dur"] <= ctx.duration + 1e-9
+    assert times["b_at"] + times["b_dur"] <= ctx.duration + 1e-9
+    assert times["a_kill"] <= ctx.duration + 1e-9
+    short = _tb_times(0.22)
+    assert short["b_at"] + short["b_dur"] <= 0.22 + 1e-9
+    dip = render_transition("blur_dip", TemplateCtx(
+        index=1, start=0.0, duration=0.2, target="shot-01", track=11))
+    assert "tr-transitions-blur" not in dip.nodes[0]
+    three = render_transition("transitions_3d", TemplateCtx(
+        index=2, start=0.0, duration=0.2, target="shot-02", track=11))
+    assert "tr-transitions-blur" not in three.nodes[0]
+
+
+def test_transitions_blur_keeps_catalog_navy_and_terracotta():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-transitions-blur" in css
+    face_a = re.search(r"\.tr-transitions-blur \.tb-a\{[^}]+\}", css).group(0)
+    face_b = re.search(r"\.tr-transitions-blur \.tb-b\{[^}]+\}", css).group(0)
+    ghost = re.search(r"\.tr-transitions-blur \.tb-ghost\{[^}]+\}", css).group(0)
+    assert "#1b263b" in face_a
+    assert "#e07a5f" in face_b
+    assert "filter:blur(15px)" in ghost
+    assert "#778da9" in css.split(".tr-transitions-blur", 1)[1]
+    assert "Inter" in css.split(".tr-transitions-blur", 1)[1]
+    assert "-apple-system" not in css.split(".tr-transitions-blur", 1)[1]
+    assert "#C8453D" not in css.split(".tr-transitions-blur", 1)[1]
+    assert "#00E5C7" not in css.split(".tr-transitions-blur", 1)[1]
+    assert "#00E5FF" not in css.split(".tr-transitions-blur", 1)[1]
+    stage = re.search(r"\.tr-transitions-blur \.tb-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".tr-transitions-blur", 1)[1]
 
 
 OVERLAY_PARAMS = {

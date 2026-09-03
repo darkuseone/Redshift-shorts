@@ -412,6 +412,30 @@ def _tr_transitions_3d(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
 
 
+def _tr_transitions_blur(incoming, outgoing, progress, params, ctx):
+    """Blur through stand-in: navy → terracotta через GaussianBlur. Без tween filter."""
+    p = clamp01(progress)
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    if p < 0.5:
+        t = p / 0.5
+        eased = t * t
+        mixed = a * (1.0 - eased) + navy * eased
+        blur = 7.5 * eased
+    else:
+        t = (p - 0.5) / 0.5
+        eased = 1 - (1 - t) * (1 - t)
+        mixed = terra * (1.0 - eased) + b * eased
+        blur = 7.5 * (1.0 - eased)
+    img = Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+    if blur > 0.6:
+        img = img.filter(ImageFilter.GaussianBlur(blur))
+    return img
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -459,6 +483,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "whip_pan_shader": _tr_whip_pan_shader,
     "mk_clone_wall": _tr_mk_clone_wall,
     "transitions_3d": _tr_transitions_3d,
+    "transitions_blur": _tr_transitions_blur,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,
     "blur_dip": _tr_blur_dip,
