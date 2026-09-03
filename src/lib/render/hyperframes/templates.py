@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-106 шаблонов каталога — это не 106 реализаций, а набор рендереров с параметрами.
+107 шаблонов каталога — это не 107 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -2280,6 +2281,197 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Particle Text Dissolve: каталог семплирует bitmap на canvas и твинит
+# clip-path + onUpdate. Движок этого не умеет: wipe — SVG-mask, scaleX на
+# rect (как caption-clip-wipe), пыль — span с x/y. LCG в Python.
+# Зелёный/синий/фиолетовый → ink, одно слово accent. HOLD без дрейфа.
+_PTD_IN_BASE = 2.8
+_PTD_OUT_BASE = 0.45
+_PTD_CEILING = 576
+_PTD_FRAME_W = 1080
+_PTD_FRAME_H = 1920
+_PTD_EXIT_Y = 76
+_PTD_SEED = 0x9D1550F7
+_PTD_DUST = {"low": 1, "med": 2, "high": 3}
+_PTD_DUST_CAP = {"low": 24, "med": 36, "high": 48}
+
+
+class _PtdRng:
+    """LCG каталога (seed 0x9d1550f7): один прогон — одна таблица пыли."""
+
+    __slots__ = ("state",)
+
+    def __init__(self, seed: int = _PTD_SEED) -> None:
+        self.state = seed & 0xFFFFFFFF
+
+    def __call__(self) -> float:
+        self.state = (1664525 * self.state + 1013904223) & 0xFFFFFFFF
+        return self.state / 4294967296.0
+
+
+def fs_particle_text_dissolve(ctx: "TemplateCtx") -> Piece:
+    """Строка собирается из облака пыли (или растворяется в него).
+
+    Каталог: ``getImageData``, ``onUpdate`` на canvas, твин ``clip-path``.
+    Здесь фронт — SVG-mask, ``scaleX`` на rect, пыль — span с заранее
+    посчитанным ``x``/``y``. Inter/зелёный → Oswald, ``ink`` на ``bg_pure``,
+    одно слово ``accent``. Твины на сцене, не на ``.clip``. HOLD стоит.
+    """
+    content = str(ctx.params.get("text") or ctx.params.get("content") or "").strip()
+    accent = str(ctx.params.get("accent_word") or "").strip()
+    invert = bool(ctx.params.get("invert"))
+    if str(ctx.params.get("tone") or "").lower() == "paper":
+        invert = True
+    if not content:
+        return Piece()
+    direction = str(ctx.params.get("direction") or "in").lower()
+    if direction not in ("in", "out"):
+        direction = "in"
+    density = str(ctx.params.get("density") or "med").lower()
+    if density not in _PTD_DUST:
+        density = "med"
+    exit_mode = str(ctx.params.get("exit") or "none").lower()
+    if exit_mode not in ("none", "fade", "up"):
+        exit_mode = "none"
+
+    visual = content.upper()
+    node_id = ctx.target
+    available = float(ctx.params.get("available_px") or 900)
+    size = fit_size(visual, available, _PTD_CEILING)
+    frame_w = int(ctx.params.get("frame_w") or _PTD_FRAME_W)
+    frame_h = int(ctx.params.get("frame_h") or _PTD_FRAME_H)
+    line_w = text_width(visual, size)
+    x0 = (frame_w - line_w) / 2.0
+    cy = frame_h / 2.0
+
+    accent_range: tuple[int, int] | None = None
+    if accent and accent.upper() in visual:
+        start = visual.index(accent.upper())
+        accent_range = (start, start + len(accent))
+
+    t0 = _enter_at(ctx)
+    end = ctx.start + ctx.duration
+    duration = max(0.001, end - t0)
+    out_base = 0.0 if exit_mode == "none" else _PTD_OUT_BASE
+    total_base = max(0.001, _PTD_IN_BASE + out_base)
+    scale = duration / total_base if duration < total_base else 1.0
+    inn = _PTD_IN_BASE * scale
+    out = out_base * scale
+    out_at = t0 + max(inn, duration - out)
+    wipe_at = t0 + inn * 0.18
+    wipe_dur = inn * 0.76
+
+    letters: list[str] = []
+    dust: list[str] = []
+    tweens: list[str] = []
+    rng = _PtdRng()
+    glyphs = [(i, ch) for i, ch in enumerate(visual) if not ch.isspace()]
+    n_glyphs = len(glyphs)
+    per = _PTD_DUST[density]
+    cap = _PTD_DUST_CAP[density]
+    if n_glyphs * per > cap:
+        per = max(1, cap // max(1, n_glyphs))
+
+    prefix = 0.0
+    glyph_i = 0
+    for i, ch in enumerate(visual):
+        wide = text_width(ch if not ch.isspace() else " ", size)
+        if ch.isspace():
+            letters.append(f'<tspan class="ptd-space">{_esc(ch)}</tspan>')
+            prefix += wide or 0.28 * size
+            continue
+        marked = ""
+        if accent_range and accent_range[0] <= i < accent_range[1]:
+            marked = " accent"
+        letters.append(f'<tspan class="ptd-ch{marked}">{_esc(ch)}</tspan>')
+        cx = x0 + prefix + wide / 2.0
+        prefix += wide
+        key = glyph_i / max(1, n_glyphs - 1)
+        glyph_i += 1
+        for d in range(per):
+            at = min(0.9, 0.2 + 0.62 * key + 0.05 * rng())
+            travel = 0.18 + 0.1 * rng()
+            fade = 0.05 + 0.04 * rng()
+            angle = rng() * math.pi * 2
+            offset = (0.1 + 0.22 * rng()) * min(frame_w, frame_h)
+            ox = math.cos(angle)
+            oy = math.sin(angle)
+            radius = max(3, int(round((0.26 + 0.5 * rng()) * 8)))
+            did = f"{node_id}-d{i}-{d}"
+            acc = " accent" if marked else ""
+            dust.append(
+                f'<span id="{did}" class="ptd-dot{acc}" style="'
+                f'left:{_num(cx - radius)}px;top:{_num(cy - radius)}px;'
+                f'width:{radius * 2}px;height:{radius * 2}px"></span>'
+            )
+            scatter_x = round(ox * offset, 2)
+            scatter_y = round(oy * offset, 2)
+            birth_p = max(0.0, at - travel)
+            birth = t0 + birth_p * inn
+            settle = t0 + at * inn
+            move_s = max(0.001, settle - birth)
+            fade_s = max(0.04, fade * inn)
+            if direction == "in":
+                tweens.append(
+                    f'tl.fromTo("#{did}",{{x:{_num(scatter_x)},y:{_num(scatter_y)},'
+                    f'opacity:0}},{{x:0,y:0,opacity:0.82,duration:{_num(move_s)},'
+                    f'ease:"power3.out"}},{_num(birth)});'
+                )
+                # Уход пыли стыкуется с settle, без перекрытия opacity.
+                tweens.append(
+                    f'tl.fromTo("#{did}",{{opacity:0.82}},{{opacity:0,'
+                    f'duration:{_num(fade_s)},ease:"power2.in",'
+                    f'immediateRender:false}},{_num(settle)});'
+                )
+            else:
+                tweens.append(
+                    f'tl.fromTo("#{did}",{{x:0,y:0,opacity:0.82}},'
+                    f'{{x:{_num(scatter_x)},y:{_num(scatter_y)},opacity:0,'
+                    f'duration:{_num(max(0.04, travel * inn))},ease:"power3.in",'
+                    f'immediateRender:false}},{_num(settle)});'
+                )
+
+    going_in = direction == "in"
+    wipe_from, wipe_to = ("0", "1") if going_in else ("1", "0")
+    tweens.append(
+        f'tl.fromTo("#{node_id}-wipe",{{scaleX:{wipe_from}}},{{scaleX:{wipe_to},'
+        f'duration:{_num(wipe_dur)},ease:"power1.inOut"}},{_num(wipe_at)});'
+    )
+
+    if exit_mode == "fade" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{opacity:1}},{{opacity:0,'
+            f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
+            f'{_num(out_at)});')
+    elif exit_mode == "up" and out > 0:
+        tweens.append(
+            f'tl.fromTo("#{node_id}-stage",{{opacity:1,y:0}},'
+            f'{{opacity:0,y:{_num(-_PTD_EXIT_Y)},duration:{_num(out)},'
+            f'ease:"power2.in",immediateRender:false}},{_num(out_at)});')
+
+    cls = ("clip fullscreen-text fs-ptd ptd-" + direction
+           + (" invert" if invert else ""))
+    box_h = max(8, int(round(size * 1.12)))
+    svg_w = max(8, int(math.ceil(line_w)))
+    baseline = size * 0.82
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+               f'<div id="{node_id}-stage" class="ptd-stage">'
+               f'<div class="ptd-dust">{"".join(dust)}</div>'
+               f'<div id="{node_id}-line" class="ptd-line">'
+               f'<svg class="ptd-svg" width="{svg_w}" height="{box_h}" '
+               f'viewBox="0 0 {svg_w} {box_h}" aria-hidden="true">'
+               f'<defs><mask id="{node_id}-m" maskUnits="userSpaceOnUse" '
+               f'maskContentUnits="userSpaceOnUse">'
+               f'<rect id="{node_id}-wipe" class="ptd-wipe" x="0" y="0" '
+               f'width="{svg_w}" height="{box_h}" fill="#fff"/></mask></defs>'
+               f'<text id="{node_id}-ink" class="ptd-ink" mask="url(#{node_id}-m)" '
+               f'x="0" y="{_num(baseline)}" font-size="{_num(size)}px" '
+               f'xml:space="preserve">{"".join(letters)}</text></svg>'
+               f'</div></div></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -2288,6 +2480,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "kinetic_type_swap": fs_kinetic_type_swap,
     "line_by_line_slide": fs_line_by_line_slide,
     "logo_brand_close": fs_logo_brand_close,
+    "particle_text_dissolve": fs_particle_text_dissolve,
     "number_slam": fs_number_slam,
 }
 
@@ -2308,6 +2501,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_line_by_line_slide(ctx)
     if params.get("logo_close"):
         return fs_logo_brand_close(ctx)
+    if params.get("particle_dissolve"):
+        return fs_particle_text_dissolve(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -2555,6 +2750,23 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .lbc-url{display:block;font-family:var(--font-mono);"
         "text-transform:none;letter-spacing:0.28em;color:var(--color-muted);"
         "opacity:0;will-change:transform}"
+        ".fullscreen-text.fs-ptd{width:var(--frame-w);height:var(--frame-h);"
+        "overflow:hidden}"
+        ".fullscreen-text .ptd-stage{position:absolute;inset:0;"
+        "will-change:transform}"
+        ".fullscreen-text .ptd-dust{position:absolute;inset:0;pointer-events:none}"
+        ".fullscreen-text .ptd-dot{position:absolute;display:block;opacity:0;"
+        "border-radius:50%;background:var(--color-ink);will-change:transform}"
+        ".fullscreen-text.invert .ptd-dot{background:var(--color-bg-pure)}"
+        ".fullscreen-text .ptd-dot.accent{background:var(--color-accent)}"
+        ".fullscreen-text .ptd-line{position:absolute;inset:0;display:flex;"
+        "align-items:center;justify-content:center}"
+        ".fullscreen-text .ptd-svg{display:block;overflow:visible}"
+        ".fullscreen-text .ptd-wipe{transform-origin:0px 50%;transform-box:fill-box}"
+        ".fullscreen-text.ptd-out .ptd-wipe{transform-origin:100% 50%}"
+        ".fullscreen-text .ptd-ink{fill:currentColor;"
+        "font-family:var(--font-display);font-weight:700;letter-spacing:-0.02em}"
+        ".fullscreen-text .ptd-ink .accent{fill:var(--color-accent)}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

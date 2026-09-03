@@ -197,4 +197,4 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-02 | Полноэкранный жест kinetic-type-swap: слот катит слова в маске | каталог тянет yPercent/cqw; здесь px, слот = max ширины, края ink, слот accent |
 | 2026-09-02 | Полноэкранный жест line-by-line-slide: строки заезжают слева | каталог твинит CSS-var и filter; здесь px и призрак, уход вправо, одно слово accent |
 | 2026-09-02 | Субтитры blend-difference: белые слова инвертируются о футаж; акцент остаётся кровью | mix-blend-mode статический; твин blend-mode движок не умеет; opt-in, прод не меняет |
-| 2026-09-02 | Identity close logo-brand-close: вордмарк каскадом и точка accent | каталог мерит DOM и твинит cqw/em; здесь px и fit_size, HOLD без дрейфа, не кнопка |
+| 2026-09-03 | Полноэкранный жест particle-text-dissolve: строка из облака пыли | каталог: canvas onUpdate и clip-path; здесь SVG-mask scaleX и span, LCG, одно слово accent |

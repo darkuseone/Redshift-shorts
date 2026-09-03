@@ -495,6 +495,26 @@ def test_line_by_line_slide_fullscreen_uses_a_static_ghost(plan, assets, brandbo
         line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
 
 
+def test_particle_text_dissolve_fullscreen_has_no_canvas(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СОБЕРИ ОРБИТУ"
+    plan["shots"][1]["accent_word"] = "ОРБИТУ"
+    plan["shots"][1]["params"] = {
+        "particle_dissolve": True, "direction": "in", "density": "med",
+        "exit": "none",
+    }
+    plan["shots"][1]["renderer"] = "particle_text_dissolve"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ptd-wipe" in out
+    assert "ptd-dot" in out
+    assert "<svg" in out
+    assert "<canvas" not in out
+    assert "clipPath" not in out
+    assert "Math.random" not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".ptd-wipe" in css
+    assert ".ptd-dot" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

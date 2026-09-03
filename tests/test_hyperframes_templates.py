@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-106 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+107 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -853,6 +853,74 @@ def test_logo_brand_close_exit_and_hidden_lines():
     paper = render_fullscreen(_fs_ctx(
         wordmark="КОД", renderer="logo_brand_close", tone="paper", duration=4.0))
     assert "invert" in paper.nodes[0]
+
+
+def test_particle_text_dissolve_wipes_with_scale_and_precomputed_dust():
+    """Каталог: canvas onUpdate и clip-path. Здесь scaleX и span с x/y, LCG."""
+    piece = render_fullscreen(_fs_ctx(
+        content="СОБЕРИ ОРБИТУ", accent_word="ОРБИТУ",
+        renderer="particle_text_dissolve", particle_dissolve=True,
+        direction="in", density="med", exit="none", duration=4.0))
+    node = piece.nodes[0]
+    assert "ptd-wipe" in node
+    assert "ptd-dot" in node
+    assert "ptd-ch" in node
+    assert " accent" in node
+    assert "<svg" in node
+    assert "mask=" in node
+    assert "<canvas" not in node
+    body = " ".join(piece.tweens)
+    assert "clipPath" not in body and "clip-path" not in body
+    assert "Math.random" not in body
+    assert "onUpdate" not in body
+    assert "cqh" not in body and "yPercent" not in body
+    assert "scaleX:0" in body and "scaleX:1" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#{_fs_ctx().target}"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    again = render_fullscreen(_fs_ctx(
+        content="СОБЕРИ ОРБИТУ", accent_word="ОРБИТУ",
+        renderer="particle_text_dissolve", particle_dissolve=True,
+        direction="in", density="med", duration=4.0))
+    assert piece.tweens == again.tweens
+    from src.lib.render.hyperframes.templates import _PtdRng
+    rng = _PtdRng()
+    assert rng() == _PtdRng()()
+
+
+def test_particle_text_dissolve_direction_density_and_exit():
+    outgoing = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        particle_dissolve=True, direction="out", duration=4.0))
+    assert "ptd-out" in outgoing.nodes[0]
+    assert "scaleX:1" in " ".join(outgoing.tweens)
+    low = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve", density="low",
+        duration=4.0))
+    high = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve", density="high",
+        duration=4.0))
+    assert low.nodes[0].count("ptd-dot") < high.nodes[0].count("ptd-dot")
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        exit="fade", duration=4.0))
+    assert 'fromTo("#shot-01-stage",{opacity:1}' in " ".join(fade.tweens)
+    up = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        exit="up", duration=4.0))
+    assert re.search(r"opacity:0,y:-", " ".join(up.tweens))
+    paper = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        tone="paper", duration=4.0))
+    assert "invert" in paper.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="particle_text_dissolve", duration=4.0))
+    assert empty.nodes == []
 
 
 def test_number_slam_splits_the_caption():

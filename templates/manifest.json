@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 16,
+    "text-fullscreen": 17,
     "lower-thirds": 8,
     "frames-cards": 7,
     "browser-ui": 8,
@@ -14,7 +14,7 @@
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 106
+    "_total": 107
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -537,6 +537,30 @@
         "stack"
       ],
       "renderer": "line_by_line_slide",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/particle-text-dissolve",
+      "name": "particle-text-dissolve",
+      "category": "text-fullscreen",
+      "title": "Строка собирается из облака пыли — particle-text-dissolve",
+      "duration_range": [
+        0.8,
+        4.0
+      ],
+      "params": {
+        "particle_dissolve": true,
+        "direction": "in",
+        "density": "med",
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "particles"
+      ],
+      "renderer": "particle_text_dissolve",
       "last_used_in": [],
       "added": "2026-09-02"
     },
