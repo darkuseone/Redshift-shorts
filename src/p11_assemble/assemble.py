@@ -741,10 +741,12 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             continue
         prefer = (["data-viz/stat-countup-card"] if len(nums) == 1
                   else ["data-viz/bar-chart-race",
+                        "data-viz/chart-story",
                         "data-viz/animated-bar-chart",
                         "data-viz/compare-bars", "data-viz/bar-race-mini"]
                   if len(nums) >= 4
-                  else ["data-viz/animated-bar-chart",
+                  else ["data-viz/chart-story",
+                        "data-viz/animated-bar-chart",
                         "data-viz/compare-bars", "data-viz/bar-race-mini"])
         if variant == "B" and len(nums) >= 2:
             prefer = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
@@ -763,6 +765,7 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             }
         else:
             n_take = (8 if name == "bar-chart-race"
+                      else 4 if name == "chart-story"
                       else 7 if name == "animated-bar-chart" else 4)
             params = {
                 "values": [n["value"] for n in nums[:n_take]],
@@ -777,6 +780,10 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 params["title"] = str(
                     blocks.get(slot["block_id"], {}).get("heading")
                     or "Streaming Subscribers by Service")
+            if name == "chart-story":
+                params["unit"] = (
+                    str(nums[0]["suffix"]) if nums[0].get("suffix") else "%")
+                params["emphasize"] = len(params["values"]) - 1
         overlays.append({
             "type": "dataviz", "start": start, "end": end,
             "template": template.id, "renderer": template.renderer,

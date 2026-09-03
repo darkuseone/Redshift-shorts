@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-139 шаблонов каталога — это не 139 реализаций, а набор рендереров с параметрами.
+140 шаблонов каталога — это не 140 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -2942,6 +2942,297 @@ def dv_bar_chart_race(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_CST_IN_BASE = 3.3
+_CST_STILLNESS = 0.3
+_CST_MAX = 8
+_CST_LEFT = 100
+_CST_RIGHT = 980
+_CST_BASE = 1280
+_CST_TOP = 460
+_CST_ENTER_Y = 46
+_CST_DRIFT_Y = -10
+_CST_INK = "#f8fafc"
+_CST_MUTED = "#c6ceda"
+_CST_BORDER = "#475569"
+_CST_SERIES = "#767a80"
+_CST_BG = "#0a0a0a"
+_CST_CALLOUT_FG = "#05070b"
+_CST_ACCENTS = {
+    "green": "#71f5a7",
+    "blue": "#61a8ff",
+    "violet": "#c5a3ff",
+}
+
+
+def _cst_times(duration: float) -> dict[str, float]:
+    """Окно chart-story: каталог IN 3.3 с на 5 с, exit none.
+
+    На шорте это ``ctx.duration``. Короче 3.3 с — IN сжимается, стык +1 мс.
+    """
+    d = max(0.05, float(duration))
+    s = d / _CST_IN_BASE if d < _CST_IN_BASE else 1.0
+    inn = _CST_IN_BASE * s
+    if inn + 0.001 > d:
+        inn = max(0.001, d - 0.001)
+        s = inn / _CST_IN_BASE
+    hold = max(0.0, d - inn)
+    callout_at = min(max(0.0, 2.35 * s), max(0.0, d - 0.002))
+    return {
+        "s": s,
+        "kill_at": d,
+        "enter_dur": max(0.001, 0.5 * s),
+        "axis_at": 0.15 * s,
+        "axis_dur": max(0.001, 0.5 * s),
+        "build_at": 0.55 * s,
+        "build_dur": 1.6 * s,
+        "bar_dur": max(0.001, 0.85 * s),
+        "labels_at": 0.85 * s,
+        "label_stagger": 0.12 * s,
+        "fade_dur": max(0.001, 0.4 * s),
+        "value_lag": 0.65 * s,
+        "callout_at": callout_at,
+        "pop_dur": max(0.001, 0.45 * s),
+        "roll_dur": max(0.001, 0.7 * s),
+        "hold_start": inn,
+        "hold": hold,
+    }
+
+
+def _cst_token(value: float) -> str:
+    if abs(value - round(value)) < 1e-9:
+        return str(int(round(value)))
+    return f"{value:.6f}".rstrip("0").rstrip(".")
+
+
+def _cst_parse_csv(raw: Any) -> list[str]:
+    if isinstance(raw, str):
+        return [part.strip() for part in raw.split(",") if part.strip()]
+    if isinstance(raw, (list, tuple)):
+        return [str(part).strip() for part in raw if str(part).strip()]
+    return []
+
+
+def _cst_table(ctx: "TemplateCtx") -> tuple[list[float], list[str], list[str]] | None:
+    """Числа и подписи DEMO 1: 12, 28, 45, 64 / Q1–Q4. Без данных — пусто."""
+    values = _values(ctx)
+    tokens: list[str]
+    if values:
+        tokens = [_cst_token(v) for v in values]
+    else:
+        values = []
+        tokens = []
+        for token in _cst_parse_csv(ctx.params.get("data")):
+            try:
+                values.append(float(token))
+                tokens.append(token)
+            except ValueError:
+                continue
+    if not values:
+        return None
+    values = values[:_CST_MAX]
+    tokens = tokens[:_CST_MAX]
+    n = len(values)
+    labels = _cst_parse_csv(ctx.params.get("labels"))
+    if not labels:
+        labels = _labels(ctx, n)
+    if not any(labels):
+        labels = [f"Q{i + 1}" for i in range(n)]
+    labels = (labels + [""] * n)[:n]
+    return values, tokens, labels
+
+
+def _cst_power2_out(t: float) -> float:
+    u = 1.0 - t
+    return 1.0 - u * u
+
+
+def _cst_clamp(value: float, lo: float, hi: float) -> float:
+    return lo if value < lo else hi if value > hi else value
+
+
+def dv_chart_story(ctx: "TemplateCtx") -> Piece:
+    """Столбики растут снизу по очереди, коллаут на акценте.
+
+    Каталог DEMO 1 твинит ``attr.height`` / ``y`` и пишет ``textContent``
+    из покадрового набора. Здесь GSAP ``scaleY`` / ``scaleX`` / ``y`` /
+    ``opacity`` / ``scale``, числа заранее span-ами. Сцена ``#0a0a0a``,
+    чернила ``#f8fafc``, акцент ``#71f5a7`` как в каталоге — жест, не
+    палитра канала. Inter / JetBrains Mono. ``-apple-system`` не ставим.
+    ``bar-race-mini`` / ``animated-bar-chart`` / ``bar-chart-race`` /
+    ``.dv-bar`` не трогаем.
+    """
+    table = _cst_table(ctx)
+    if table is None:
+        return Piece()
+    values, tokens, labels = table
+    n = len(values)
+    peak = max(values) or 1.0
+    unit = str(ctx.params["unit"]) if "unit" in ctx.params else "%"
+    raw_emp = ctx.params.get("emphasize")
+    if raw_emp is None or raw_emp == "":
+        emp = n - 1
+    else:
+        try:
+            emp = int(round(float(raw_emp)))
+        except (TypeError, ValueError):
+            emp = n - 1
+    emp = int(_cst_clamp(emp, 0, n - 1))
+    accent_key = str(ctx.params.get("accent") or "green").strip().lower()
+    accent = _CST_ACCENTS.get(accent_key, _CST_ACCENTS["green"])
+    node_id = f"cst-{ctx.index:02d}"
+    times = _cst_times(ctx.duration)
+    start = ctx.start
+    plot_w = float(_CST_RIGHT - _CST_LEFT)
+    plot_h = float(_CST_BASE - _CST_TOP)
+    band = plot_w / n
+    bar_w = min(band * 0.62, 157.0)
+    scale = plot_w / 840.0
+    stagger = ((times["build_dur"] - times["bar_dur"]) / (n - 1)
+               if n > 1 else 0.0)
+    sid = f"{node_id}-stage"
+    aid = f"{node_id}-axis"
+    cid = f"{node_id}-call"
+    vid = f"{node_id}-cv"
+    tweens: list[str] = []
+    parts: list[str] = [
+        f'<div id="{aid}" class="cst-axis" style="left:{_CST_LEFT}px;'
+        f'top:{_CST_BASE}px;width:{plot_w:.1f}px"></div>']
+    tweens.append(
+        f'tl.set("#{aid}",{{scaleX:0,opacity:1}},{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{aid}",{{scaleX:0,opacity:1}},'
+        f'{{scaleX:1,opacity:1,duration:{_num(times["axis_dur"])},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(start + times["axis_at"])});')
+
+    emp_h = max((values[emp] / peak) * plot_h, 3.0)
+    for i, value in enumerate(values):
+        height = max((value / peak) * plot_h, 3.0)
+        cx = _CST_LEFT + band * (i + 0.5)
+        x = cx - bar_w / 2.0
+        y = _CST_BASE - height
+        color = accent if i == emp else _CST_SERIES
+        rx = min(10.0, bar_w * 0.18, height / 2.0)
+        bid = f"{node_id}-b{i}"
+        lid = f"{node_id}-al{i}"
+        parts.append(
+            f'<div id="{bid}" class="cst-bar" style="left:{x:.1f}px;top:{y:.1f}px;'
+            f'width:{bar_w:.1f}px;height:{height:.1f}px;background:{color};'
+            f'border-radius:{rx:.1f}px"></div>')
+        parts.append(
+            f'<div id="{lid}" class="cst-al" data-layout-allow-overlap="" '
+            f'style="left:{cx - 90:.1f}px;top:{_CST_BASE + 18}px">'
+            f'{_esc(labels[i])}</div>')
+        at = times["build_at"] + stagger * i
+        if at >= 0.001:
+            tweens.append(
+                f'tl.set("#{bid}",{{scaleY:0,opacity:1}},{_num(start)});')
+        tweens.append(
+            f'tl.fromTo("#{bid}",{{scaleY:0,opacity:1}},'
+            f'{{scaleY:1,opacity:1,duration:{_num(times["bar_dur"])},'
+            f'ease:"power3.out",immediateRender:false}},'
+            f'{_num(start + at)});')
+        label_at = times["labels_at"] + times["label_stagger"] * i
+        tweens.append(
+            f'tl.fromTo("#{lid}",{{opacity:0,y:8}},'
+            f'{{opacity:1,y:0,duration:{_num(times["fade_dur"])},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + label_at)});')
+        if i != emp:
+            display = f"{tokens[i]}{unit}"
+            nid = f"{node_id}-vl{i}"
+            parts.append(
+                f'<div id="{nid}" class="cst-vl" data-layout-allow-overlap="" '
+                f'style="left:{cx - 90:.1f}px;top:{y - 40:.1f}px">'
+                f'{_esc(display)}</div>')
+            value_at = at + times["value_lag"]
+            tweens.append(
+                f'tl.fromTo("#{nid}",{{opacity:0,y:8}},'
+                f'{{opacity:1,y:0,duration:{_num(times["fade_dur"])},'
+                f'ease:"power2.out",immediateRender:false}},'
+                f'{_num(start + value_at)});')
+
+    display_emp = f"{tokens[emp]}{unit}"
+    chip_w = max(96.0 * scale, len(display_emp) * 17.0 * scale + 44.0 * scale)
+    chip_h = 52.0 * scale
+    emp_cx = _CST_LEFT + band * (emp + 0.5)
+    chip_cx = _cst_clamp(emp_cx, chip_w / 2 + 8, 1080 - chip_w / 2 - 8)
+    chip_bottom = _CST_BASE - emp_h - 20.0 * scale
+    chip_top = chip_bottom - chip_h
+    chip_left = chip_cx - chip_w / 2
+    dec = len(tokens[emp].split(".", 1)[1]) if "." in tokens[emp] else 0
+    frames = max(1, int(round(times["roll_dur"] * 30)))
+    spans: list[str] = []
+    for frame in range(frames + 1):
+        if frame == frames:
+            text = display_emp
+        else:
+            t = frame / frames
+            text = f"{values[emp] * _cst_power2_out(t):.{dec}f}{unit}"
+        spans.append(f'<span id="{vid}-{frame}">{_esc(text)}</span>')
+    parts.append(
+        f'<div id="{cid}" class="cst-call" data-layout-allow-overlap="" '
+        f'style="left:{chip_left:.1f}px;top:{chip_top:.1f}px;'
+        f'width:{chip_w:.1f}px;height:{chip_h:.1f}px;background:{accent}">'
+        f'<div id="{vid}" class="cst-cv">{"".join(spans)}</div></div>')
+
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:0,y:{_CST_ENTER_Y}}},'
+        f'{{opacity:1,y:0,duration:{_num(times["enter_dur"])},'
+        f'ease:"power3.out",immediateRender:false}},{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{cid}",{{opacity:0,scale:0.6}},'
+        f'{{opacity:1,scale:1,duration:{_num(times["pop_dur"])},'
+        f'ease:"back.out(1.7)",immediateRender:false}},'
+        f'{_num(start + times["callout_at"])});')
+    for frame in range(frames + 1):
+        at = start + times["callout_at"] + times["roll_dur"] * (frame / frames)
+        if frame:
+            tweens.append(
+                f'tl.set("#{vid}-{frame - 1}",{{opacity:0}},{_num(at)});')
+        tweens.append(
+            f'tl.set("#{vid}-{frame}",{{opacity:1}},{_num(at)});')
+
+    drift = times["hold"] - _CST_STILLNESS
+    if drift > 0.1:
+        half = drift / 2.0
+        play = half if half <= 0.001 else max(0.001, half - 0.001)
+        hold_at = start + times["hold_start"]
+        tweens.append(
+            f'tl.fromTo("#{sid}",{{y:0,opacity:1}},'
+            f'{{y:{_CST_DRIFT_Y},opacity:1,duration:{_num(play)},'
+            f'ease:"sine.inOut",immediateRender:false}},{_num(hold_at)});')
+        tweens.append(
+            f'tl.fromTo("#{sid}",{{y:{_CST_DRIFT_Y},opacity:1}},'
+            f'{{y:0,opacity:1,duration:{_num(play)},'
+            f'ease:"sine.inOut",immediateRender:false}},'
+            f'{_num(hold_at + half)});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(
+        f'tl.set("#{sid}",{{y:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{aid}",{{scaleX:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{cid}",{{scale:1,opacity:0}},{_num(kill_at)});')
+    for i in range(n):
+        tweens.append(
+            f'tl.set("#{node_id}-b{i}",{{scaleY:0,opacity:0}},{_num(kill_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-al{i}",{{y:0,opacity:0}},{_num(kill_at)});')
+        if i != emp:
+            tweens.append(
+                f'tl.set("#{node_id}-vl{i}",{{y:0,opacity:0}},{_num(kill_at)});')
+    for frame in range(frames + 1):
+        tweens.append(
+            f'tl.set("#{vid}-{frame}",{{opacity:0}},{_num(kill_at)});')
+
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay cst-chart" {_timing(ctx)}>'
+               f'<div id="{sid}" class="cst-stage">{"".join(parts)}</div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -2952,6 +3243,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "stat-countup-card": dv_stat_card,
     "animated-bar-chart": dv_animated_bar_chart,
     "bar-chart-race": dv_bar_chart_race,
+    "chart-story": dv_chart_story,
 }
 
 
@@ -3084,6 +3376,31 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "text-align:center;opacity:0;white-space:nowrap}"
         ".bcr-source{position:absolute;left:48px;top:1748px;margin:0;"
         "font-size:14px;color:#6b6560}"
+        ".cst-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0a0a0a;font-family:Inter,system-ui,sans-serif;"
+        "color:#f8fafc}"
+        ".cst-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "opacity:0}"
+        ".cst-axis{position:absolute;height:3px;background:#475569;"
+        "border-radius:2px;transform-origin:left center}"
+        ".cst-bar{position:absolute;transform-origin:50% 100%}"
+        ".cst-al,.cst-vl{position:absolute;width:180px;text-align:center;"
+        'font-family:"JetBrains Mono",ui-monospace,monospace;'
+        "letter-spacing:0.03em;opacity:0;white-space:nowrap}"
+        ".cst-al{font-size:26px;font-weight:500;color:#c6ceda}"
+        ".cst-vl{font-size:27px;font-weight:600;color:#f8fafc}"
+        ".cst-call{position:absolute;border-radius:12px;opacity:0;"
+        "transform-origin:50% 100%;overflow:hidden}"
+        ".cst-cv{position:absolute;left:0;right:0;top:0;bottom:0;"
+        'font-family:"JetBrains Mono",ui-monospace,monospace;'
+        "font-size:29px;font-weight:600;color:#05070b;"
+        "letter-spacing:0.03em}"
+        ".cst-cv span{position:absolute;left:0;right:0;top:0;bottom:0;"
+        "display:flex;align-items:center;justify-content:center;opacity:0}"
     )
 
 
