@@ -27,6 +27,7 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
+from .canvas_fx import canvas_js, canvas_node, canvas_tween
 from ...backdrop import SCENES, pick_scene, tone as scene_tone
 from .captions import (
     TRACK_CAPTION_ACCENT_EVEN, TRACK_CAPTION_ACCENT_ODD,
@@ -165,6 +166,9 @@ class CompositionBuilder:
         self.duration = float(plan["duration_sec"])
         self.fps = int(plan["fps"])
         self.tweens: list[str] = []
+        # Какие эффекты холста понадобились: их реестр пишется в страницу
+        # только когда он и правда нужен.
+        self.canvas_used: set[str] = set()
         self.stats = {"shots": 0, "overlay_draws": 0, "subtitle_words": 0,
                       "avatar_clips": 0}
 
@@ -241,7 +245,18 @@ class CompositionBuilder:
                 out[int(slot)] = node_id
         return out
 
-    def _scene_backdrop(self, node_id: str, timing: str) -> str:
+    # Какой холст живёт под какой сценой. Комната остаётся без него: там за
+    # ведущим студия, и звёзды в ней читались бы декорацией.
+    SCENE_FX: dict[str, str] = {
+        "space": "starfield",
+        "grid": "scan-grid",
+        "horizon": "orbit",
+        "depth": "dust",
+    }
+
+    def _scene_backdrop(self, node_id: str, timing: str, *,
+                        start: float | None = None,
+                        duration: float | None = None) -> str:
         """Запасной фон слота: сцена ролика вместо дыры в кадре.
 
         Дыра в кадре не чёрная, а светлая: ``.stage-bg`` заливает кадр
@@ -254,8 +269,24 @@ class CompositionBuilder:
         показывать зрителю пустой лист — сцена ролика по теме, она тёмная и
         она уже собрана.
         """
+        # Поверх градиента сцены — холст: звёздное поле, орбиты, пыль или
+        # сетка. Это рисование, а не прямоугольники: CSS даёт фиксированный
+        # узор, который виден повтором, а линию по кривой не проводит вовсе.
+        effect = self.SCENE_FX.get(self.scene, "")
+        canvas = ""
+        if effect and start is not None and duration is not None and duration > 0:
+            fx_id = f"{node_id}-fx"
+            canvas = canvas_node(fx_id, timing="", css=f"fx-{effect}",
+                                 width=self.width, height=self.height)
+            # Зерно от места на ленте: два фона одного ролика не повторяют
+            # друг друга, но каждый повторяем сам по себе.
+            seed = int(round(float(start) * 1000)) % 9973 + 7
+            self.tweens.append(canvas_tween(
+                fx_id, effect, start=float(start), duration=float(duration),
+                params={"seed": seed}))
+            self.canvas_used.add(effect)
         return (f'<div id="{node_id}" class="clip shot-bg" {timing}>'
-                f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
+                f'<div class="vfx scene-{self.scene}">{self._plate()}{canvas}</div></div>')
 
     def _shot_nodes(self) -> list[str]:
         nodes: list[str] = []
@@ -290,7 +321,8 @@ class CompositionBuilder:
                 else:
                     nodes.append(self._scene_backdrop(
                         f"{node_id}-bg",
-                        _timing(start, start + duration, TRACK_FS_BG)))
+                        _timing(start, start + duration, TRACK_FS_BG),
+                        start=start, duration=duration))
                 # Сам кадр рисует приём шаблона: renderer и params, а не одна
                 # заготовка на все девятнадцать `text-fullscreen`.
                 piece = self._fullscreen_piece(node_id, shot, start, duration,
@@ -300,9 +332,12 @@ class CompositionBuilder:
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
-                nodes.append(
-                    f'<div id="{node_id}" class="clip shot-bg" {timing}>'
-                    f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
+                # Тот же запасной фон, что и у пустого слота: сцена ролика с
+                # холстом поверх. Раньше здесь стояла своя копия разметки — и
+                # звёздное поле не доходило до самого частого кадра ролика,
+                # хотя ведущий занимает 35-60 % хронометража.
+                nodes.append(self._scene_backdrop(node_id, timing,
+                                                  start=start, duration=duration))
             elif index in avatar_nodes or kind == "avatar":
                 # Аватар без альфы приходит со своим фоном и занимает кадр
                 # целиком: подкладывать под него нечего. Но переход ему нужен.
@@ -312,7 +347,8 @@ class CompositionBuilder:
                 if src:
                     nodes.append(self._media_node(node_id, src, timing, css="meme"))
                 else:
-                    nodes.append(self._scene_backdrop(node_id, timing))
+                    nodes.append(self._scene_backdrop(node_id, timing,
+                                                      start=start, duration=duration))
             else:
                 src = self._asset(shot.get("file"))
                 if src:
@@ -321,7 +357,8 @@ class CompositionBuilder:
                     self._add_kenburns(node_id, shot, start + tr_sec,
                                        max(0.1, duration - tr_sec))
                 else:
-                    nodes.append(self._scene_backdrop(node_id, timing))
+                    nodes.append(self._scene_backdrop(node_id, timing,
+                                                      start=start, duration=duration))
             nodes += self._add_transition(target, shot, start)
             self.stats["shots"] += 1
         return nodes
@@ -833,6 +870,10 @@ class CompositionBuilder:
 
         indented = "\n      ".join(body)
         tweens = "\n      ".join(self.tweens)
+        # Реестр эффектов холста пишется только тогда, когда холст в кадре
+        # есть: страница без него не носит лишнего килобайта скрипта.
+        canvas_registry = (canvas_js(self.brandbook.get("colors", {}))
+                           if self.canvas_used else "")
         title = f'{self.plan["video_id"]} {self.plan["variant"]}'
 
         return f"""<!doctype html>
@@ -858,6 +899,7 @@ class CompositionBuilder:
       {indented}
     </div>
     <script>
+      {canvas_registry}
       window.__timelines = window.__timelines || {{}};
       const tl = gsap.timeline({{ paused: true }});
       {tweens}

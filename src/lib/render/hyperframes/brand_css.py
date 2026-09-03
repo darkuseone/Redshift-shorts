@@ -291,6 +291,14 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:var(--color-bg-light)}"
     )
 
+    # --- холст поверх сцены (canvas_fx.py) ------------------------------
+    # Холст лежит в клипе фона и растягивается на кадр. Видимостью управляет
+    # движок через `data-*` на самом клипе, поэтому здесь только геометрия.
+    parts.append(
+        ".fx-canvas{position:absolute;inset:0;width:100%;height:100%;"
+        "display:block;pointer-events:none;z-index:2}"
+    )
+
     # --- плашки и карточки (§5.4, §5.6) ---------------------------------
     plaque = brandbook["plaque"]
     shadow = plaque["shadow"]

@@ -1092,3 +1092,55 @@ class TestThePaletteComesFromTheBrandbook:
         accent = book["colors"]["accent"].lstrip("#")
         r, g, b = (int(accent[i:i + 2], 16) for i in (0, 2, 4))
         assert f"rgba({r},{g},{b}," in css      # гало субтитра — акцентом канала
+
+
+class TestTheCanvasLayerObeysTheEngine:
+    """Холст рисуется по времени ленты, а не по времени браузера.
+
+    Рендер идёт перемоткой: движок ставит время и снимает кадр. Кадр обязан
+    быть чистой функцией времени, иначе перемотка и проигрывание разойдутся,
+    а два прогона одного ролика перестанут совпадать.
+    """
+
+    def _markup(self, plan, brandbook, assets, scene="space"):
+        plan = {**plan, "backdrop": {**(plan.get("backdrop") or {}), "scene": scene}}
+        for shot in plan["shots"]:
+            if shot.get("kind") == "fullscreen_text":
+                shot["file"] = None            # пустой слот → запасной фон со сценой
+        return CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+    def test_the_canvas_is_drawn_from_the_timeline(self, plan, assets, brandbook):
+        out = self._markup(plan, brandbook, assets)
+        assert 'class="clip fx-canvas' in out
+        assert "__RSFX" in out
+        # Твин ведёт число, а не сам холст: клип анимировать запрещено.
+        assert "onUpdate" in out
+        assert 'tl.to(s,' in out
+
+    def test_nothing_in_the_canvas_depends_on_wall_clock_or_luck(self, plan, assets, brandbook):
+        out = self._markup(plan, brandbook, assets)
+        for forbidden in ("Math.random", "requestAnimationFrame", "Date.now",
+                          "performance.now", "setInterval", "setTimeout"):
+            assert forbidden not in out, forbidden
+
+    def test_the_same_plan_gives_the_same_page(self, plan, assets, brandbook):
+        first = self._markup(plan, brandbook, assets)
+        second = self._markup(plan, brandbook, assets)
+        assert first == second
+
+    def test_the_registry_is_written_only_when_the_canvas_is_used(self, plan, assets, brandbook):
+        """Сцена комнаты холста не просит — и скрипт в страницу не едет."""
+        assert "__RSFX" not in self._markup(plan, brandbook, assets, scene="room")
+
+    def test_every_scene_effect_exists_in_the_registry(self):
+        from src.lib.render.hyperframes.canvas_fx import EFFECTS
+        from src.lib.render.hyperframes.composition import CompositionBuilder as CB
+
+        assert set(CB.SCENE_FX.values()) <= set(EFFECTS)
+
+    def test_the_colours_come_from_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.canvas_fx import canvas_js
+
+        js = canvas_js(brandbook["colors"])
+        assert brandbook["colors"]["accent"] in js
+        assert brandbook["colors"]["space_deep"] in js
