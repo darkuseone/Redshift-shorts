@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-02",
-  "count": 49,
+  "updated": "2026-09-03",
+  "count": 51,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1252,7 +1252,7 @@
       "used_in": [
         "redshift_0047"
       ],
-      "last_used": "2026-09-02",
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "phashes": [
         "123c2de173878ecc"
@@ -1624,7 +1624,7 @@
       "used_in": [
         "redshift_0047"
       ],
-      "last_used": "2026-09-02",
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "phashes": [
         "cebc818b44d9c8fc",
@@ -1755,7 +1755,7 @@
       "used_in": [
         "redshift_0047"
       ],
-      "last_used": null,
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "phashes": [
         "e93f253b27bf0018",
@@ -1768,6 +1768,74 @@
       "extra": {
         "attribution": "Pixabay / clst5",
         "author": "clst5",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v34550739",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-purple-waves-and-particles-animation-34550739/",
+      "phash": "048655cba7373ba8",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Abstract glowing purple particles on a dark wavy grid surface",
+      "score": 0.87,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "048655cba7373ba8",
+        "15c69ba41b6e51a5",
+        "178313e4b52432bf"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34550739.mp4",
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v34912823",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-floating-blue-particles-on-black-background-34912823/",
+      "phash": "1c731c3200ee73dd",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Glowing abstract particles with tendrils on black background",
+      "score": 0.92,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "1c731c3200ee73dd",
+        "fc74191bc9f24827",
+        "10235dd61b2fa81f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34912823.mp4",
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
         "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
       }
     }

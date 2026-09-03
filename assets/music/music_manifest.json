@@ -4,7 +4,7 @@
   "max_items": 15,
   "count": 9,
   "frozen": false,
-  "updated": "2026-09-02",
+  "updated": "2026-09-03",
   "items": [
     {
       "id": "music_interstellar_distance",
@@ -25,8 +25,10 @@
       "vision_summary": "межзвёздная даль: почти без движения",
       "score": 0.0,
       "duration_sec": 70.016,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "file": "interstellar_distance.m4a",
       "mood": "ambient",
