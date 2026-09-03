@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _usm_times, _umf_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _usm_times, _umf_times, _wmp_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -249,6 +249,12 @@ def test_css_covers_every_layer_the_transitions_use():
         "source": "Source: U.S. Census Bureau",
         "highlight": ["MD", "NJ", "MA", "CT", "HI"],
     }),
+    ("data-viz/world-map", {
+        "title": "Global GDP per Capita",
+        "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+        "source": "Source: International Monetary Fund",
+        "highlight": ["756", "578", "840", "036", "752"],
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -276,6 +282,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/us-map", ctx) == Piece()
     assert render_dataviz("data-viz/us-map-flow", ctx) == Piece()
     assert render_dataviz("data-viz/us-map-hex", ctx) == Piece()
+    assert render_dataviz("data-viz/world-map", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -314,6 +321,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "usm-" not in compare and "usm-" not in race
     assert "umf-" not in compare and "umf-" not in race
     assert "umh-" not in compare and "umh-" not in race
+    assert "wmp-" not in compare and "wmp-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
@@ -327,6 +335,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "usm-" not in donut
     assert "umf-" not in donut
     assert "umh-" not in donut
+    assert "wmp-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -888,6 +897,7 @@ def test_spain_map_bakes_paths_not_fetch(ctx):
     assert "usm-" not in node
     assert "umf-" not in node
     assert "umh-" not in node
+    assert "wmp-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -996,6 +1006,7 @@ def test_star_rating_fill_wipes_mask_not_clip_path(ctx):
     assert "usm-" not in node
     assert "umf-" not in node
     assert "umh-" not in node
+    assert "wmp-" not in node
     assert "stat-card" not in node
     assert "textContent" not in node
     assert "clipPath" not in node
@@ -1116,6 +1127,7 @@ def test_us_map_bakes_paths_not_fetch(ctx):
     assert "srf-" not in node
     assert "umf-" not in node
     assert "umh-" not in node
+    assert "wmp-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -1239,6 +1251,7 @@ def test_us_map_flow_bakes_paths_not_fetch(ctx):
     assert "srf-" not in node
     assert "usm-" not in node
     assert "umh-" not in node
+    assert "wmp-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -1381,6 +1394,7 @@ def test_us_map_hex_bakes_hexes_not_fetch(ctx):
     assert "umf-" not in node
     assert "spm-" not in node
     assert "srf-" not in node
+    assert "wmp-" not in node
     assert "stat-card" not in node
     assert "jsdelivr" not in node
     assert "topojson" not in node
@@ -1421,7 +1435,82 @@ def test_us_map_hex_keeps_catalog_tokens():
     assert "#1e293b" in bg
     assert "#0f172a" in poly
     assert "#451a03" in legend_bar and "#f59e0b" in legend_bar and "#fef3c7" in legend_bar
-    block = css.split(".umh-chart", 1)[1]
+    block = css.split(".umh-chart", 1)[1].split(".wmp-chart", 1)[0]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
+def test_world_map_bakes_paths_not_fetch(ctx):
+    """Catalog fetches world-atlas and tweens clipPath/filter; here baked paths."""
+    piece = render_dataviz("data-viz/world-map", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=14.0, target=ctx.target,
+        track=6, params={
+            "title": "Global GDP per Capita",
+            "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+            "source": "Source: International Monetary Fund",
+            "highlight": ["756", "578", "840", "036", "752"],
+        }))
+    node = piece.nodes[0]
+    assert "wmp-chart" in node
+    assert "wmp-bg" in node and "wmp-stage" in node and "wmp-region" in node
+    assert "wmp-wipe" in node and "wmp-grat" in node
+    assert "Global GDP" in node
+    assert "International Monetary Fund" in node
+    assert node.count('class="wmp-region"') == 177
+    assert node.count('class="wmp-hi"') == 5
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "umh-" not in node
+    assert "spm-" not in node
+    assert "stat-card" not in node
+    assert "jsdelivr" not in node
+    assert "topojson" not in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert node.count(f'id="wmp-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert "scaleX:1" in body and "scaleX:0" in body
+    assert "power1.out" in body
+    assert "immediateRender:false" in body
+    assert "filter" not in body
+    assert "clipPath" not in body
+    assert "brightness" not in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#wmp-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _wmp_times(14.0)
+    assert abs(times["hl_dur"] - 1.0) < 1e-9
+    assert abs(times["sub_at"] - 0.4) < 1e-9
+    assert abs(times["reg_at"] - 1.0) < 1e-9
+    assert abs(times["leg_at"] - 4.0) < 1e-9
+    assert abs(times["src_at"] - 4.5) < 1e-9
+    assert abs(times["hi_at"] - 5.0) < 1e-9
+
+
+def test_world_map_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".wmp-chart" in css
+    assert ".wmp-region" in css
+    assert ".wmp-grat" in css
+    chart = re.search(r"\.wmp-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.wmp-bg\{[^}]+\}", css).group(0)
+    legend_bar = re.search(r"\.wmp-legend-bar\{[^}]+\}", css).group(0)
+    assert "#0f172a" in chart and "#0f172a" in bg
+    assert "#1e293b" in bg
+    assert "#064e3b" in legend_bar and "#0d9488" in legend_bar
+    assert "#22d3ee" in legend_bar and "#f0fdfa" in legend_bar
+    block = css.split(".wmp-chart", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
 

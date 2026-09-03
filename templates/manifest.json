@@ -11,10 +11,10 @@
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 18,
+    "data-viz": 19,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 148
+    "_total": 149
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -3156,6 +3156,36 @@
         "data",
         "map",
         "hex"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/world-map",
+      "name": "world-map",
+      "category": "data-viz",
+      "title": "Хороплет мира: страны от центра, CH/NO/US/AU/SE пульс — world-map",
+      "duration_range": [
+        2.0,
+        14.0
+      ],
+      "params": {
+        "title": "Global GDP per Capita",
+        "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+        "source": "Source: International Monetary Fund",
+        "highlight": [
+          "756",
+          "578",
+          "840",
+          "036",
+          "752"
+        ]
+      },
+      "tags": [
+        "data",
+        "map",
+        "world"
       ],
       "renderer": "dataviz",
       "last_used_in": [],

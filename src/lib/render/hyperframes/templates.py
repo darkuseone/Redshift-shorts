@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-148 шаблон каталога — это не 148 реализация, а набор рендереров с параметрами.
+149 шаблон каталога — это не 149 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -34,6 +34,10 @@ from .umh_shapes import (
     UMH_INCOME,
 )
 from .usm_shapes import USM_SHAPES, USM_VB
+from .wmp_shapes import (
+    WMP_GRATICULE, WMP_SHAPES, WMP_TOP5, WMP_TITLE, WMP_SUBTITLE, WMP_SOURCE,
+    WMP_VB,
+)
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
 # вспышкой нельзя, оно и так короткое.
@@ -5614,6 +5618,253 @@ def dv_us_map_hex(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# ---------- world-map constants ----------
+_WMP_CATALOG_DUR = 14.0
+_WMP_HL_DUR = 1.0
+_WMP_SUB_AT = 0.4
+_WMP_SUB_DUR = 0.6
+_WMP_REG_AT = 1.0
+_WMP_REG_DUR = 0.3
+_WMP_REG_STAGGER = 0.02
+_WMP_LEG_AT = 4.0
+_WMP_LEG_DUR = 0.6
+_WMP_SRC_AT = 4.5
+_WMP_SRC_DUR = 0.5
+_WMP_HI_AT = 5.0
+_WMP_HI_DUR = 0.4
+_WMP_HI_BACK = 0.6
+_WMP_HI_GAP = 0.15
+_WMP_OUT_Y = 60
+_WMP_DEFAULT = "#1e293b"
+_WMP_STOPS = ("#064e3b", "#0d9488", "#22d3ee", "#f0fdfa")
+
+
+def _wmp_play(duration: float) -> float:
+    return duration if duration <= 0.001 else max(0.001, duration - 0.001)
+
+
+def _wmp_times(duration: float) -> dict[str, float]:
+    """Window world-map: catalog 14 s, shorter — same ratios."""
+    d = max(0.05, float(duration))
+    s = d / _WMP_CATALOG_DUR if d < _WMP_CATALOG_DUR else 1.0
+    return {
+        "scale": s,
+        "hl_dur": max(0.001, _WMP_HL_DUR * s),
+        "sub_at": _WMP_SUB_AT * s,
+        "sub_dur": max(0.001, _WMP_SUB_DUR * s),
+        "reg_at": _WMP_REG_AT * s,
+        "reg_dur": max(0.001, _WMP_REG_DUR * s),
+        "reg_stagger": _WMP_REG_STAGGER * s,
+        "leg_at": _WMP_LEG_AT * s,
+        "leg_dur": max(0.001, _WMP_LEG_DUR * s),
+        "src_at": _WMP_SRC_AT * s,
+        "src_dur": max(0.001, _WMP_SRC_DUR * s),
+        "hi_at": _WMP_HI_AT * s,
+        "hi_dur": max(0.001, _WMP_HI_DUR * s),
+        "hi_back": max(0.001, _WMP_HI_BACK * s),
+        "hi_gap": _WMP_HI_GAP * s,
+        "out_start": max(0.001, d - 0.8),
+        "out_dur": max(0.001, 0.6 * s),
+        "kill_at": max(0.001, d - 0.05),
+    }
+
+
+def _wmp_color(value: float, lo: float, hi: float) -> str:
+    span = hi - lo if hi > lo else 1.0
+    t = min(max((value - lo) / span, 0.0), 1.0)
+    scaled = t * (len(_WMP_STOPS) - 1)
+    idx = min(int(scaled), len(_WMP_STOPS) - 2)
+    return _usm_lerp_hex(_WMP_STOPS[idx], _WMP_STOPS[idx + 1], scaled - idx)
+
+
+def _wmp_num(raw: Any, fallback: float | None) -> float | None:
+    if raw is None or raw == "":
+        return fallback
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _wmp_spec(params: dict[str, Any]
+              ) -> tuple[list[tuple[dict[str, Any], float | None]], str, str,
+                         str, list[str]] | None:
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("regions", "countries", "values", "labels", "title",
+                         "headline", "subtitle")):
+        return None
+    by_code = {str(item["code"]): item for item in WMP_SHAPES}
+    by_name = {str(item["name"]).lower(): item for item in WMP_SHAPES}
+    overrides: dict[str, float] = {}
+    raw = params.get("regions", params.get("countries"))
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            code = str(item.get("code") or item.get("id") or "").zfill(3)
+            shape = by_code.get(code)
+            if shape is None:
+                name = str(item.get("name") or "").lower()
+                shape = by_name.get(name)
+            if shape is None:
+                continue
+            value = _wmp_num(item.get("value", item.get("gdp")),
+                             float(shape["gdp"]) if shape["gdp"] is not None
+                             else None)
+            if value is not None:
+                overrides[str(shape["code"])] = value
+    items: list[tuple[dict[str, Any], float | None]] = []
+    for shape in WMP_SHAPES:
+        code = str(shape["code"])
+        if code in overrides:
+            items.append((shape, overrides[code]))
+        elif shape["gdp"] is not None:
+            items.append((shape, float(shape["gdp"])))
+        else:
+            items.append((shape, None))
+    title = str(params.get("title") or params.get("headline") or WMP_TITLE)
+    subtitle = str(params.get("subtitle") or WMP_SUBTITLE)
+    source = str(params.get("source") or WMP_SOURCE)
+    raw_hi = params.get("highlight") or params.get("highlights")
+    highlights: list[str] = []
+    if isinstance(raw_hi, (list, tuple)):
+        highlights = [str(item).zfill(3) for item in raw_hi if str(item).strip()]
+    if not highlights:
+        highlights = list(WMP_TOP5)
+    return items, title, subtitle, source, highlights
+
+
+def dv_world_map(ctx: "TemplateCtx") -> Piece:
+    """World choropleth: countries fade from center, top-5 pulse.
+
+    Catalog DEMO 1 fetches world-atlas topojson and tweens ``clipPath`` /
+    ``filter:brightness``. Here paths are pre-baked Natural Earth,
+    wipe is ``scaleX``, highlights use white overlay ``opacity``.
+    Gradient ``#0f172a``/``#1e293b``, scale ``#064e3b``→``#0d9488``→
+    ``#22d3ee``→``#f0fdfa``. Inter.
+    """
+    spec = _wmp_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    items, title, subtitle, source, highlights = spec
+    numbered = [value for _shape, value in items if value is not None]
+    lo = min(numbered) if numbered else 0.0
+    hi = max(numbered) if numbered else 1.0
+    node_id = f"wmp-{ctx.index:02d}"
+    times = _wmp_times(ctx.duration)
+    start = ctx.start
+    sid = f"{node_id}-stage"
+    wid = f"{node_id}-wipe"
+    uid = f"{node_id}-sub"
+    lid = f"{node_id}-leg"
+    xid = f"{node_id}-src"
+    tweens: list[str] = []
+    paths: list[str] = []
+    region_ids: list[str] = []
+    hi_ids: list[str] = []
+    hi_targets: dict[str, str] = {}
+    vb_x, vb_y, vb_w, vb_h = WMP_VB
+
+    for index, (shape, value) in enumerate(items):
+        code = str(shape["code"])
+        color = (_wmp_color(value, lo, hi) if value is not None
+                 else _WMP_DEFAULT)
+        rid = f"{node_id}-r{index}"
+        region_ids.append(rid)
+        paths.append(
+            f'<path id="{rid}" class="wmp-region" '
+            f'd="{_esc(shape["d"])}" fill="{_esc(color)}"></path>')
+        if code in highlights:
+            hid_r = f"{node_id}-h{index}"
+            hi_ids.append(hid_r)
+            hi_targets[code] = hid_r
+            paths.append(
+                f'<path id="{hid_r}" class="wmp-hi" '
+                f'd="{_esc(shape["d"])}" fill="#f8fafc"></path>')
+        delay = index * times["reg_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{rid}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(_wmp_play(times["reg_dur"]))},'
+            f'ease:"power1.out",immediateRender:false}},'
+            f'{_num(start + times["reg_at"] + delay)});')
+
+    tweens.insert(0,
+        f'tl.fromTo("#{wid}",{{scaleX:1}},'
+        f'{{scaleX:0,duration:{_num(_wmp_play(times["hl_dur"]))},'
+        f'ease:"power3.inOut",immediateRender:false}},'
+        f'{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{uid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_wmp_play(times["sub_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["sub_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{lid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_wmp_play(times["leg_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["leg_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{xid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_wmp_play(times["src_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["src_at"])});')
+
+    for hi_i, code in enumerate(highlights):
+        hid_r = hi_targets.get(code)
+        if not hid_r:
+            continue
+        t0 = times["hi_at"] + hi_i * times["hi_gap"]
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0}},'
+            f'{{opacity:0.4,duration:{_num(_wmp_play(times["hi_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + t0)});')
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0.4}},'
+            f'{{opacity:0,duration:{_num(_wmp_play(times["hi_back"]))},'
+            f'ease:"power2.inOut",immediateRender:false}},'
+            f'{_num(start + t0 + times["hi_dur"])});')
+
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:1,y:0}},'
+        f'{{opacity:0,y:{_WMP_OUT_Y},duration:{_num(_wmp_play(times["out_dur"]))},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["out_start"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(f'tl.set("#{sid}",{{y:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{wid}",{{scaleX:1}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{uid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{lid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{xid}",{{opacity:0}},{_num(kill_at)});')
+    for rid in region_ids:
+        tweens.append(f'tl.set("#{rid}",{{opacity:0}},{_num(kill_at)});')
+    for hid_r in hi_ids:
+        tweens.append(f'tl.set("#{hid_r}",{{opacity:0}},{_num(kill_at)});')
+
+    view = f"{_num(vb_x)} {_num(vb_y)} {_num(vb_w)} {_num(vb_h)}"
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay wmp-chart" {_timing(ctx)}>'
+               f'<div class="wmp-bg"></div>'
+               f'<div id="{sid}" class="wmp-stage">'
+               f'<div class="wmp-hl-clip" data-layout-allow-overlap="">'
+               f'<div class="wmp-hl">{_esc(title)}</div>'
+               f'<div id="{wid}" class="wmp-wipe"></div></div>'
+               f'<div id="{uid}" class="wmp-sub" data-layout-allow-overlap="">'
+               f'{_esc(subtitle)}</div>'
+               f'<svg class="wmp-svg" viewBox="{view}" '
+               f'preserveAspectRatio="xMidYMid meet" aria-hidden="true">'
+               f'<path class="wmp-grat" d="{_esc(WMP_GRATICULE)}"></path>'
+               f'{"".join(paths)}</svg>'
+               f'<div id="{lid}" class="wmp-legend" data-layout-allow-overlap="">'
+               f'<div class="wmp-legend-bar"></div>'
+               f'<div class="wmp-legend-labs">'
+               f'<span>Low</span><span>High</span></div></div>'
+               f'<div id="{xid}" class="wmp-src" data-layout-allow-overlap="">'
+               f'{_esc(source)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -5633,6 +5884,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "us-map": dv_us_map,
     "us-map-flow": dv_us_map_flow,
     "us-map-hex": dv_us_map_hex,
+    "world-map": dv_world_map,
 }
 
 
@@ -6078,6 +6330,42 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "background:linear-gradient(90deg,#451a03,#f59e0b,#fef3c7)}"
         ".umh-legend-lab{font-weight:500;font-size:18px;color:#94a3b8}"
         ".umh-src{position:absolute;left:40px;top:968px;width:1000px;"
+        "font-weight:400;font-size:16px;color:#475569;text-align:right;"
+        "opacity:0}"
+        ".wmp-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0f172a;font-family:Inter,system-ui,sans-serif;"
+        "color:#f0fdfa}"
+        ".wmp-bg{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%)}"
+        ".wmp-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        ".wmp-hl-clip{position:absolute;left:40px;top:140px;width:1000px;"
+        "overflow:hidden}"
+        ".wmp-hl{font-weight:700;font-size:38px;letter-spacing:-0.02em;"
+        "color:#f0fdfa;line-height:1.15}"
+        ".wmp-wipe{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%);"
+        "transform-origin:100% 50%}"
+        ".wmp-sub{position:absolute;left:40px;top:236px;width:1000px;"
+        "font-weight:300;font-size:22px;color:#94a3b8;opacity:0}"
+        ".wmp-svg{position:absolute;left:40px;top:310px;width:1000px;"
+        "height:560px;overflow:visible}"
+        ".wmp-grat{fill:none;stroke:#1e293b;stroke-width:0.6;stroke-opacity:0.5}"
+        ".wmp-region{stroke:#1e293b;stroke-width:0.6;opacity:0;"
+        "vector-effect:non-scaling-stroke}"
+        ".wmp-hi{fill:#f8fafc;opacity:0;pointer-events:none}"
+        ".wmp-legend{position:absolute;left:40px;top:900px;width:1000px;"
+        "display:flex;flex-direction:column;align-items:center;gap:8px;"
+        "opacity:0}"
+        ".wmp-legend-bar{width:280px;height:14px;border-radius:7px;"
+        "background:linear-gradient(90deg,#064e3b,#0d9488,#22d3ee,#f0fdfa)}"
+        ".wmp-legend-labs{display:flex;justify-content:space-between;"
+        "width:280px;font-weight:500;font-size:16px;color:#94a3b8}"
+        ".wmp-src{position:absolute;left:40px;top:968px;width:1000px;"
         "font-weight:400;font-size:16px;color:#475569;text-align:right;"
         "opacity:0}"
     )

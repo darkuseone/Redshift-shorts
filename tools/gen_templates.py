@@ -372,7 +372,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (18, [
+    "data-viz": (19, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -468,6 +468,14 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "source": "Source: U.S. Census Bureau, American Community Survey 2024",
              "highlight": ["MD", "NJ", "MA", "CT", "HI"],
          }, ["data", "map", "hex"], "dataviz"),
+        ("world-map",
+         "Хороплет мира: страны от центра, CH/NO/US/AU/SE пульс — world-map",
+         [2.0, 14.0], {
+             "title": "Global GDP per Capita",
+             "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+             "source": "Source: International Monetary Fund",
+             "highlight": ["756", "578", "840", "036", "752"],
+         }, ["data", "map", "world"], "dataviz"),
     ]),
     "outro-cta": (6, [
         ("subscribe-pulse", "Пульсирующая кнопка подписки", [1.5, 2.5],

@@ -1595,6 +1595,33 @@ def test_us_map_hex_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "jsdelivr" not in node
 
 
+def test_world_map_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 14.2,
+        "template": "data-viz/world-map",
+        "params": {
+            "title": "Global GDP per Capita",
+            "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+            "source": "Source: International Monetary Fund",
+            "highlight": ["756", "578", "840", "036", "752"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "wmp-chart" in out
+    assert "wmp-bg" in out
+    assert "wmp-region" in out
+    assert "Global GDP" in out
+    node = next(line for line in out.splitlines() if "wmp-chart" in line)
+    assert "dv-bar" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "umh-" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "topojson" not in node.lower()
+    assert "jsdelivr" not in node
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,
