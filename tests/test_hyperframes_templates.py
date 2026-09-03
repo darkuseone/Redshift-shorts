@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-143 шаблон каталога — это рендереры с параметрами. Проверяется то, что
+144 шаблон каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -220,6 +220,15 @@ def test_css_covers_every_layer_the_transitions_use():
         ],
         "xLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     }),
+    ("data-viz/spain-map", {
+        "title": "PIB per cápita por Comunidad Autónoma",
+        "regions": [
+            {"abbr": "MAD", "value": 38100},
+            {"abbr": "PVA", "value": 36800},
+            {"abbr": "NAV", "value": 35200},
+            {"abbr": "EXT", "value": 19200},
+        ],
+    }),
 ])
 def test_dataviz_animates_only_allowed_properties(template_id, params):
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -242,6 +251,7 @@ def test_dataviz_without_data_draws_nothing():
     assert render_dataviz("data-viz/conic-progress-ring", ctx) == Piece()
     assert render_dataviz("data-viz/decline-chart", ctx) == Piece()
     assert render_dataviz("data-viz/mk-line-graph", ctx) == Piece()
+    assert render_dataviz("data-viz/spain-map", ctx) == Piece()
 
 
 def test_bars_scale_relative_to_the_largest_value():
@@ -275,6 +285,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "cpr-" not in compare and "cpr-" not in race
     assert "dcl-" not in compare and "dcl-" not in race
     assert "mlg-" not in compare and "mlg-" not in race
+    assert "spm-" not in compare and "spm-" not in race
     donut = render_dataviz("data-viz/donut-fill", TemplateCtx(
         index=0, start=0.0, duration=3.0, target="ovl-00",
         track=6, params={"value": 73})).nodes[0]
@@ -283,6 +294,7 @@ def test_existing_bars_do_not_use_animated_bar_chart_classes():
     assert "cst-" not in donut
     assert "dcl-" not in donut
     assert "mlg-" not in donut
+    assert "spm-" not in donut
 
 
 def test_animated_bar_chart_grows_scaleY_without_css_transform(ctx):
@@ -770,7 +782,7 @@ def test_mk_line_graph_keeps_catalog_mk_tokens():
     assert "transform-origin:0px 50%" in wipe
     assert "transform-box:fill-box" in wipe
     assert "transform-origin:50% 50%" in dot
-    block = css.split(".mlg-chart", 1)[1]
+    block = css.split(".mlg-chart", 1)[1].split(".spm-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
     assert "#C8453D" not in block
@@ -780,15 +792,147 @@ def test_mk_line_graph_keeps_catalog_mk_tokens():
                 .replace("transform-origin:50% 50%", "")
                 .replace("transform-origin:50% 100%", "")
                 .replace("transform-origin:0px 50%", "")
+                .replace("transform-origin:100% 50%", "")
                 .replace("transform-box:fill-box", "")
                 .replace("text-transform:uppercase", ""))
-    assert "transform:" not in stripped.split(".mlg-chart", 1)[1]
+    assert "transform:" not in stripped.split(".mlg-chart", 1)[1].split(".spm-chart", 1)[0]
     dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
     assert "mlg-" not in dv_bar
     donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
     assert "mlg-" not in donut
     dcl = re.search(r"\.dcl-line\{[^}]+\}", css).group(0)
     assert "mlg-" not in dcl
+
+
+def test_spain_map_bakes_paths_not_fetch(ctx):
+    """Каталог DEMO 1 тянет topojson и твинит clipPath/filter; здесь контуры и scaleX."""
+    piece = render_dataviz("data-viz/spain-map", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=12.0, target=ctx.target,
+        track=6, params={
+            "title": "PIB per cápita por Comunidad Autónoma",
+            "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
+            "source": "Fuente: Instituto Nacional de Estadística",
+            "highlight": ["MAD", "PVA", "NAV"],
+            "regions": [
+                {"abbr": "AND", "value": 20200},
+                {"abbr": "ARA", "value": 30500},
+                {"abbr": "AST", "value": 24100},
+                {"abbr": "BAL", "value": 28900},
+                {"abbr": "CAN", "value": 21500},
+                {"abbr": "CNT", "value": 25200},
+                {"abbr": "CYL", "value": 25800},
+                {"abbr": "CLM", "value": 21400},
+                {"abbr": "CAT", "value": 33700},
+                {"abbr": "VAL", "value": 23800},
+                {"abbr": "EXT", "value": 19200},
+                {"abbr": "GAL", "value": 24500},
+                {"abbr": "MAD", "value": 38100},
+                {"abbr": "MUR", "value": 22100},
+                {"abbr": "NAV", "value": 35200},
+                {"abbr": "PVA", "value": 36800},
+                {"abbr": "RIO", "value": 29800},
+                {"abbr": "CEU", "value": 21000},
+                {"abbr": "MEL", "value": 19500},
+            ],
+        }))
+    node = piece.nodes[0]
+    assert "spm-chart" in node
+    assert "spm-bg" in node and "spm-stage" in node and "spm-region" in node
+    assert "spm-wipe" in node and "spm-legend" in node and "spm-lab" in node
+    assert "PIB per c" in node
+    assert "Bajo" in node and "Alto" in node
+    assert "Fuente" in node
+    assert "MAD" in node and "PVA" in node and "NAV" in node and "EXT" in node
+    assert "#7f1d1d" in node or "#dc2626" in node or "#fbbf24" in node
+    assert "dv-bar" not in node
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "stat-card" not in node
+    assert "jsdelivr" not in node
+    assert "topojson" not in node
+    assert "textContent" not in node
+    assert "clipPath" not in node
+    assert "clip-path" not in node
+    assert node.count(f'id="spm-{ctx.index:02d}"') == 1
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    assert f'id="spm-{ctx.index:02d}-stage"' in node
+    assert f'id="spm-{ctx.index:02d}-wipe"' in node
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "scaleX:1" in body and "scaleX:0" in body
+    assert "back.out(1.4)" in body
+    assert "immediateRender:false" in body
+    assert "filter" not in body
+    assert "clipPath" not in body
+    assert "strokeWidth" not in body
+    assert "textContent" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#spm-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith(clip + "-")
+    times = _spm_times(12.0)
+    assert abs(times["hl_dur"] - 1.0) < 1e-9
+    assert abs(times["reg_at"] - 1.0) < 1e-9
+    assert abs(times["lab_at"] - 4.0) < 1e-9
+    assert abs(times["leg_at"] - 5.5) < 1e-9
+    assert abs(times["hi_at"] - 6.5) < 1e-9
+    assert abs(times["out_start"] - 11.5) < 1e-9
+    short = _spm_times(0.22)
+    assert short["out_start"] + 0.001 <= 0.22 + 1e-9
+
+
+def test_spain_map_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = dataviz_css(load_config().brandbook)
+    assert ".spm-chart" in css
+    assert ".spm-region" in css
+    chart = re.search(r"\.spm-chart\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.spm-bg\{[^}]+\}", css).group(0)
+    hl = re.search(r"\.spm-hl\{[^}]+\}", css).group(0)
+    wipe = re.search(r"\.spm-wipe\{[^}]+\}", css).group(0)
+    bar = re.search(r"\.spm-legend-bar\{[^}]+\}", css).group(0)
+    region = re.search(r"\.spm-region\{[^}]+\}", css).group(0)
+    assert "#0f172a" in chart and "#0f172a" in bg
+    assert "#1e293b" in bg
+    assert "#f8fafc" in hl
+    assert "#7f1d1d" in bar and "#dc2626" in bar and "#fbbf24" in bar
+    assert "transform-origin:100% 50%" in wipe
+    assert "transform-origin:50% 50%" in region
+    assert "transform-box:fill-box" in region
+    block = css.split(".spm-chart", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+    assert "#C8453D" not in block
+    assert "#00E5C7" not in block
+    assert "#00E5FF" not in block
+    stripped = (css.replace("transform-origin:left center", "")
+                .replace("transform-origin:50% 50%", "")
+                .replace("transform-origin:50% 100%", "")
+                .replace("transform-origin:0px 50%", "")
+                .replace("transform-origin:100% 50%", "")
+                .replace("transform-box:fill-box", "")
+                .replace("text-transform:uppercase", ""))
+    assert "transform:" not in stripped.split(".spm-chart", 1)[1]
+    dv_bar = re.search(r"\.dv-bar\{[^}]+\}", css).group(0)
+    assert "spm-" not in dv_bar
+    donut = re.search(r"\.dv-donut\{[^}]+\}", css).group(0)
+    assert "spm-" not in donut
+    mlg = re.search(r"\.mlg-line\{[^}]+\}", css).group(0)
+    assert "spm-" not in mlg
 
 
 def test_split_moves_both_halves_towards_the_seam():

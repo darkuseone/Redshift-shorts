@@ -1450,6 +1450,32 @@ def test_mk_line_graph_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "cpr-" not in node
     assert "dcl-" not in node
     assert "mk-lg-" not in node
+    assert "spm-" not in node
+
+
+def test_spain_map_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 12.2,
+        "template": "data-viz/spain-map",
+        "params": {
+            "title": "PIB per cápita por Comunidad Autónoma",
+            "highlight": ["MAD", "PVA", "NAV"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "spm-chart" in out
+    assert "spm-bg" in out
+    assert "spm-region" in out
+    assert "PIB per c" in out
+    node = next(line for line in out.splitlines() if "spm-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "jsdelivr" not in node
 
 
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
@@ -1470,6 +1496,7 @@ def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "cst-" not in node
     assert "cpr-" not in node
     assert "mlg-" not in node
+    assert "spm-" not in node
     """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
 
     Поймано кадром готового MP4, а не разметкой: QC-7 меряет safe zones по

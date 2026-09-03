@@ -30,6 +30,7 @@ from ..lib.render.shots import (
 )
 from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.render.hyperframes.captions import pick_caption_style
+from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
 
 _log = get_logger("p11")
@@ -764,6 +765,16 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                               "data-viz/compare-bars", "data-viz/bar-race-mini"]))
         if variant == "B" and len(nums) >= 2:
             prefer = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
+        block = blocks.get(slot["block_id"], {})
+        blob = " ".join([
+            str(block.get("text") or ""),
+            str(block.get("heading") or ""),
+        ]).lower()
+        if variant != "B" and any(key in blob for key in (
+                "spain", "españa", "espan", "испан", "madrid", "catalun",
+                "comunidad autónoma", "pib per")):
+            prefer = ["data-viz/spain-map"] + [item for item in prefer
+                                              if item != "data-viz/spain-map"]
         template = catalog.pick("data-viz", duration=end - start,
                                 recent_videos=recent_videos, exclude=used,
                                 prefer=prefer, seed=seed + 11)
@@ -790,6 +801,24 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                 "value": val,
                 "label": f"{token}{suffix}",
                 "thickness": 12,
+            }
+        elif name == "spain-map":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            regions = [{
+                "abbr": str(shape["abbr"]),
+                "name": str(shape["name"]),
+                "value": float(shape["gdp"]),
+            } for shape in SPM_SHAPES]
+            if nums:
+                ranked = sorted(regions, key=lambda row: -float(row["value"]))
+                for index, num in enumerate(nums[:len(ranked)]):
+                    ranked[index]["value"] = num["value"]
+            params = {
+                "title": heading or "PIB per cápita por Comunidad Autónoma",
+                "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
+                "source": "Fuente: Instituto Nacional de Estadística",
+                "regions": regions,
+                "highlight": ["MAD", "PVA", "NAV"],
             }
         elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
             suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""

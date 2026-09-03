@@ -11,10 +11,10 @@
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 13,
+    "data-viz": 14,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 143
+    "_total": 144
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2925,6 +2925,131 @@
         "data",
         "line",
         "series"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/spain-map",
+      "name": "spain-map",
+      "category": "data-viz",
+      "title": "Хороплет Испании: регионы вспыхивают, MAD/PVA/NAV подсветка — spain-map",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "title": "PIB per cápita por Comunidad Autónoma",
+        "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
+        "source": "Fuente: Instituto Nacional de Estadística",
+        "highlight": [
+          "MAD",
+          "PVA",
+          "NAV"
+        ],
+        "regions": [
+          {
+            "abbr": "AND",
+            "name": "Andalucía",
+            "value": 20200
+          },
+          {
+            "abbr": "ARA",
+            "name": "Aragón",
+            "value": 30500
+          },
+          {
+            "abbr": "AST",
+            "name": "Asturias",
+            "value": 24100
+          },
+          {
+            "abbr": "BAL",
+            "name": "Illes Balears",
+            "value": 28900
+          },
+          {
+            "abbr": "CAN",
+            "name": "Canarias",
+            "value": 21500
+          },
+          {
+            "abbr": "CNT",
+            "name": "Cantabria",
+            "value": 25200
+          },
+          {
+            "abbr": "CYL",
+            "name": "Castilla y León",
+            "value": 25800
+          },
+          {
+            "abbr": "CLM",
+            "name": "Castilla-La Mancha",
+            "value": 21400
+          },
+          {
+            "abbr": "CAT",
+            "name": "Catalunya",
+            "value": 33700
+          },
+          {
+            "abbr": "VAL",
+            "name": "Comunitat Valenciana",
+            "value": 23800
+          },
+          {
+            "abbr": "EXT",
+            "name": "Extremadura",
+            "value": 19200
+          },
+          {
+            "abbr": "GAL",
+            "name": "Galicia",
+            "value": 24500
+          },
+          {
+            "abbr": "MAD",
+            "name": "Comunidad de Madrid",
+            "value": 38100
+          },
+          {
+            "abbr": "MUR",
+            "name": "Región de Murcia",
+            "value": 22100
+          },
+          {
+            "abbr": "NAV",
+            "name": "Navarra",
+            "value": 35200
+          },
+          {
+            "abbr": "PVA",
+            "name": "País Vasco",
+            "value": 36800
+          },
+          {
+            "abbr": "RIO",
+            "name": "La Rioja",
+            "value": 29800
+          },
+          {
+            "abbr": "CEU",
+            "name": "Ceuta",
+            "value": 21000
+          },
+          {
+            "abbr": "MEL",
+            "name": "Melilla",
+            "value": 19500
+          }
+        ]
+      },
+      "tags": [
+        "data",
+        "map",
+        "spain"
       ],
       "renderer": "dataviz",
       "last_used_in": [],

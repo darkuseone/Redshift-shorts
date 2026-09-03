@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-143 шаблон каталога — это не 143 реализация, а набор рендереров с параметрами.
+144 шаблон каталога — это не 144 реализация, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -25,6 +25,8 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
+
+from .spm_shapes import SPM_SHAPES, SPM_VB
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
 # вспышкой нельзя, оно и так короткое.
@@ -4060,6 +4062,362 @@ def dv_mk_line_graph(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_SPM_CATALOG_DUR = 12.0
+_SPM_HL_DUR = 1.0
+_SPM_SUB_AT = 0.4
+_SPM_SUB_DUR = 0.6
+_SPM_REG_AT = 1.0
+_SPM_REG_DUR = 0.4
+_SPM_REG_STAGGER = 0.08
+_SPM_LAB_AT = 4.0
+_SPM_LAB_DUR = 0.3
+_SPM_LAB_STAGGER = 0.05
+_SPM_LEG_AT = 5.5
+_SPM_LEG_DUR = 0.6
+_SPM_LEG_Y = 12
+_SPM_SRC_AT = 6.0
+_SPM_SRC_DUR = 0.5
+_SPM_HI_AT = 6.5
+_SPM_HI_GAP = 0.8
+_SPM_HI_DUR = 0.5
+_SPM_OUT_LEAD = 0.5
+_SPM_OUT_DUR = 0.4
+_SPM_OUT_Y = -20
+_SPM_HIGHLIGHTS = ("MAD", "PVA", "NAV")
+_SPM_TITLE = "PIB per cápita por Comunidad Autónoma"
+_SPM_SUBTITLE = "Producto Interior Bruto per cápita, estimación 2024"
+_SPM_SOURCE = "Fuente: Instituto Nacional de Estadística"
+_SPM_LOW = "#7f1d1d"
+_SPM_MID = "#dc2626"
+_SPM_HIGH = "#fbbf24"
+_SPM_MAP_LEFT = 90
+_SPM_MAP_TOP = 340
+_SPM_MAP_W = 740
+_SPM_MAP_H = 610
+_SPM_LAB_W = 88
+_SPM_LAB_H = 32
+_SPM_TINY = 8.0
+_SPM_DOT_R = 14.0
+
+
+def _spm_play(duration: float) -> float:
+    return duration if duration <= 0.001 else max(0.001, duration - 0.001)
+
+
+def _spm_times(duration: float) -> dict[str, float]:
+    """Окно spain-map: каталог 12 с, короче — те же доли."""
+    d = max(0.05, float(duration))
+    s = d / _SPM_CATALOG_DUR if d < _SPM_CATALOG_DUR else 1.0
+    out_dur = _SPM_OUT_DUR * s
+    out_lead = _SPM_OUT_LEAD * s
+    out_start = max(0.0, d - out_lead)
+    if out_start + out_dur + 0.001 > d:
+        out_dur = max(0.001, d - out_start - 0.001)
+    return {
+        "scale": s,
+        "hl_dur": max(0.001, _SPM_HL_DUR * s),
+        "sub_at": _SPM_SUB_AT * s,
+        "sub_dur": max(0.001, _SPM_SUB_DUR * s),
+        "reg_at": _SPM_REG_AT * s,
+        "reg_dur": max(0.05, _SPM_REG_DUR * s),
+        "reg_stagger": _SPM_REG_STAGGER * s,
+        "lab_at": _SPM_LAB_AT * s,
+        "lab_dur": max(0.001, _SPM_LAB_DUR * s),
+        "lab_stagger": _SPM_LAB_STAGGER * s,
+        "leg_at": _SPM_LEG_AT * s,
+        "leg_dur": max(0.001, _SPM_LEG_DUR * s),
+        "src_at": _SPM_SRC_AT * s,
+        "src_dur": max(0.001, _SPM_SRC_DUR * s),
+        "hi_at": _SPM_HI_AT * s,
+        "hi_gap": _SPM_HI_GAP * s,
+        "hi_dur": max(0.05, _SPM_HI_DUR * s),
+        "out_start": out_start,
+        "out_dur": out_dur,
+        "kill_at": d,
+    }
+
+
+def _spm_num(raw: Any, default: float | None = None) -> float | None:
+    if raw in (None, ""):
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _spm_floats(raw: Any) -> list[float]:
+    values: list[float] = []
+    if not isinstance(raw, (list, tuple)):
+        return values
+    for item in raw:
+        parsed = _spm_num(item.get("value") if isinstance(item, dict) else item)
+        if parsed is not None:
+            values.append(parsed)
+    return values
+
+
+def _spm_lerp_hex(start: str, end: str, t: float) -> str:
+    def rgb(token: str) -> tuple[int, int, int]:
+        h = token.lstrip("#")
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+    ar, ag, ab = rgb(start)
+    br, bg, bb = rgb(end)
+    t = min(max(t, 0.0), 1.0)
+    return (f"#{round(ar + (br - ar) * t):02x}"
+            f"{round(ag + (bg - ag) * t):02x}"
+            f"{round(ab + (bb - ab) * t):02x}")
+
+
+def _spm_color(value: float, lo: float, hi: float) -> str:
+    span = hi - lo if hi > lo else 1.0
+    t = min(max((value - lo) / span, 0.0), 1.0)
+    if t < 0.5:
+        return _spm_lerp_hex(_SPM_LOW, _SPM_MID, t / 0.5)
+    return _spm_lerp_hex(_SPM_MID, _SPM_HIGH, (t - 0.5) / 0.5)
+
+
+def _spm_xy(cx: float, cy: float) -> tuple[float, float]:
+    vb_x, vb_y, vb_w, vb_h = SPM_VB
+    x = _SPM_MAP_LEFT + (cx - vb_x) * _SPM_MAP_W / vb_w
+    y = _SPM_MAP_TOP + (cy - vb_y) * _SPM_MAP_H / vb_h
+    return x, y
+
+
+def _spm_spec(params: dict[str, Any]
+              ) -> tuple[list[tuple[dict[str, Any], float]], str, str, str,
+                         list[str]] | None:
+    """Регионы (shape, value), заголовок, подзаголовок, источник, highlight."""
+    if not any(k in params and params[k] not in (None, "", [], ())
+               for k in ("regions", "values", "labels", "title",
+                         "headline", "subtitle")):
+        return None
+    by_abbr = {str(item["abbr"]): item for item in SPM_SHAPES}
+    items: list[tuple[dict[str, Any], float]] = []
+    raw = params.get("regions")
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            abbr = str(item.get("abbr") or item.get("id") or "").upper()
+            shape = by_abbr.get(abbr)
+            if shape is None:
+                name = str(item.get("name") or "").lower()
+                for cand in SPM_SHAPES:
+                    cname = str(cand["name"]).lower()
+                    if name and (name in cname or cname in name):
+                        shape = cand
+                        break
+            if shape is None:
+                continue
+            value = _spm_num(item.get("value", item.get("gdp")),
+                             float(shape["gdp"]))
+            if value is None:
+                continue
+            items.append((shape, value))
+    if not items:
+        values = _spm_floats(params.get("values"))
+        for index, shape in enumerate(SPM_SHAPES):
+            value = values[index] if index < len(values) else float(shape["gdp"])
+            items.append((shape, value))
+    if not items:
+        return None
+    items.sort(key=lambda pair: pair[1])
+    title = str(params.get("title") or params.get("headline") or _SPM_TITLE)
+    subtitle = str(params.get("subtitle") or _SPM_SUBTITLE)
+    source = str(params.get("source") or _SPM_SOURCE)
+    raw_hi = params.get("highlight") or params.get("highlights")
+    highlights: list[str] = []
+    if isinstance(raw_hi, (list, tuple)):
+        highlights = [str(item).upper() for item in raw_hi if str(item).strip()]
+    if not highlights:
+        highlights = list(_SPM_HIGHLIGHTS)
+    return items, title, subtitle, source, highlights
+
+
+def dv_spain_map(ctx: "TemplateCtx") -> Piece:
+    """Хороплет Испании: регионы вспыхивают от центра, MAD/PVA/NAV подсветка.
+
+    Каталог DEMO 1 тянет topojson с CDN, твинит ``clipPath`` заголовка и
+    ``filter`` подсветки. Здесь контуры запечены, вайп заголовка ``scaleX``,
+    подсветка белым оверлеем. Градиент ``#0f172a``/``#1e293b``, шкала
+    ``#7f1d1d``/``#dc2626``/``#fbbf24`` как в каталоге — жест карты, не
+    палитра канала. Inter. ``-apple-system`` не ставим. ``mk-line-graph`` /
+    ``.dv-bar`` / ``chart-story`` не трогаем.
+    """
+    spec = _spm_spec(ctx.params)
+    if spec is None:
+        return Piece()
+    items, title, subtitle, source, highlights = spec
+    node_id = f"spm-{ctx.index:02d}"
+    times = _spm_times(ctx.duration)
+    start = ctx.start
+    sid = f"{node_id}-stage"
+    wid = f"{node_id}-wipe"
+    hid = f"{node_id}-hl"
+    uid = f"{node_id}-sub"
+    lid = f"{node_id}-leg"
+    xid = f"{node_id}-src"
+    lo = min(value for _shape, value in items)
+    hi = max(value for _shape, value in items)
+    count = len(items)
+    mid = (count - 1) / 2.0 if count else 0.0
+    tweens: list[str] = []
+    paths: list[str] = []
+    labels: list[str] = []
+    region_ids: list[str] = []
+    label_ids: list[str] = []
+    hi_ids: list[str] = []
+    hi_targets: dict[str, str] = {}
+    vb_x, vb_y, vb_w, vb_h = SPM_VB
+
+    for index, (shape, value) in enumerate(items):
+        abbr = str(shape["abbr"])
+        color = _spm_color(value, lo, hi)
+        rid = f"{node_id}-r{index}"
+        region_ids.append(rid)
+        cx = float(shape["cx"])
+        cy = float(shape["cy"])
+        tiny = float(shape["w"]) < _SPM_TINY or float(shape["h"]) < _SPM_TINY
+        if tiny:
+            geom = (f'<circle id="{rid}" class="spm-region" '
+                    f'cx="{_num(cx)}" cy="{_num(cy)}" r="{_num(_SPM_DOT_R)}" '
+                    f'fill="{_esc(color)}"></circle>')
+            hi_geom = (
+                f'<circle class="spm-hi" cx="{_num(cx)}" cy="{_num(cy)}" '
+                f'r="{_num(_SPM_DOT_R)}" fill="#f8fafc"></circle>')
+        else:
+            geom = (f'<path id="{rid}" class="spm-region" '
+                    f'd="{_esc(shape["d"])}" fill="{_esc(color)}"></path>')
+            hi_geom = (f'<path class="spm-hi" d="{_esc(shape["d"])}" '
+                       f'fill="#f8fafc"></path>')
+        paths.append(geom)
+        if abbr in highlights:
+            hid_r = f"{node_id}-h{index}"
+            hi_ids.append(hid_r)
+            hi_targets[abbr] = hid_r
+            paths.append(hi_geom.replace('class="spm-hi"',
+                                         f'id="{hid_r}" class="spm-hi"', 1))
+        lx, ly = _spm_xy(cx, cy)
+        if tiny:
+            lx += 28
+        lab_id = f"{node_id}-l{index}"
+        label_ids.append(lab_id)
+        labels.append(
+            f'<div id="{lab_id}" class="spm-lab" data-layout-allow-overlap="" '
+            f'style="left:{lx - _SPM_LAB_W / 2:.1f}px;'
+            f'top:{ly - _SPM_LAB_H / 2:.1f}px">{_esc(abbr)}</div>')
+        delay = abs(index - mid) * times["reg_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{rid}",{{opacity:0,scale:0}},'
+            f'{{opacity:1,scale:1,duration:{_num(_spm_play(times["reg_dur"]))},'
+            f'ease:"back.out(1.4)",immediateRender:false}},'
+            f'{_num(start + times["reg_at"] + delay)});')
+        lab_delay = abs(index - mid) * times["lab_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{lab_id}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(_spm_play(times["lab_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + times["lab_at"] + lab_delay)});')
+
+    tweens.insert(0,
+        f'tl.fromTo("#{wid}",{{scaleX:1}},'
+        f'{{scaleX:0,duration:{_num(_spm_play(times["hl_dur"]))},'
+        f'ease:"power2.inOut",immediateRender:false}},'
+        f'{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{uid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_spm_play(times["sub_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["sub_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{lid}",{{opacity:0,y:{_SPM_LEG_Y}}},'
+        f'{{opacity:1,y:0,duration:{_num(_spm_play(times["leg_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["leg_at"])});')
+    tweens.append(
+        f'tl.fromTo("#{xid}",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(_spm_play(times["src_dur"]))},'
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["src_at"])});')
+
+    for hi_i, abbr in enumerate(highlights):
+        hid_r = hi_targets.get(abbr)
+        if not hid_r:
+            continue
+        t0 = times["hi_at"] + hi_i * times["hi_gap"]
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0}},'
+            f'{{opacity:0.45,duration:{_num(_spm_play(times["hi_dur"]))},'
+            f'ease:"power2.out",immediateRender:false}},'
+            f'{_num(start + t0)});')
+        tweens.append(
+            f'tl.fromTo("#{hid_r}",{{opacity:0.45}},'
+            f'{{opacity:0,duration:{_num(_spm_play(times["hi_dur"]))},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(start + t0 + times["hi_dur"])});')
+        # scale the matching region slightly during the pulse
+        for index, (shape, _value) in enumerate(items):
+            if str(shape["abbr"]) != abbr:
+                continue
+            rid = f"{node_id}-r{index}"
+            tweens.append(
+                f'tl.fromTo("#{rid}",{{scale:1}},'
+                f'{{scale:1.08,duration:{_num(_spm_play(times["hi_dur"]))},'
+                f'ease:"power2.out",immediateRender:false}},'
+                f'{_num(start + t0)});')
+            tweens.append(
+                f'tl.fromTo("#{rid}",{{scale:1.08}},'
+                f'{{scale:1,duration:{_num(_spm_play(times["hi_dur"]))},'
+                f'ease:"power2.in",immediateRender:false}},'
+                f'{_num(start + t0 + times["hi_dur"])});')
+            break
+
+    tweens.append(
+        f'tl.fromTo("#{sid}",{{opacity:1,y:0}},'
+        f'{{opacity:0,y:{_SPM_OUT_Y},duration:{_num(_spm_play(times["out_dur"]))},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["out_start"])});')
+
+    kill_at = start + times["kill_at"]
+    tweens.append(f'tl.set("#{sid}",{{y:0,opacity:0}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{wid}",{{scaleX:1}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{uid}",{{opacity:0}},{_num(kill_at)});')
+    tweens.append(
+        f'tl.set("#{lid}",{{opacity:0,y:{_SPM_LEG_Y}}},{_num(kill_at)});')
+    tweens.append(f'tl.set("#{xid}",{{opacity:0}},{_num(kill_at)});')
+    for rid in region_ids:
+        tweens.append(
+            f'tl.set("#{rid}",{{opacity:0,scale:0}},{_num(kill_at)});')
+    for lab_id in label_ids:
+        tweens.append(f'tl.set("#{lab_id}",{{opacity:0}},{_num(kill_at)});')
+    for hid_r in hi_ids:
+        tweens.append(f'tl.set("#{hid_r}",{{opacity:0}},{_num(kill_at)});')
+
+    view = f"{_num(vb_x)} {_num(vb_y)} {_num(vb_w)} {_num(vb_h)}"
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip overlay spm-chart" {_timing(ctx)}>'
+               f'<div class="spm-bg"></div>'
+               f'<div id="{sid}" class="spm-stage">'
+               f'<div class="spm-hl-clip" data-layout-allow-overlap="">'
+               f'<div id="{hid}" class="spm-hl">{_esc(title)}</div>'
+               f'<div id="{wid}" class="spm-wipe"></div></div>'
+               f'<div id="{uid}" class="spm-sub" data-layout-allow-overlap="">'
+               f'{_esc(subtitle)}</div>'
+               f'<svg class="spm-svg" viewBox="{view}" '
+               f'preserveAspectRatio="xMidYMid meet" aria-hidden="true">'
+               f'{"".join(paths)}</svg>'
+               f'{"".join(labels)}'
+               f'<div id="{lid}" class="spm-legend" data-layout-allow-overlap="">'
+               f'<span class="spm-legend-lab">Bajo</span>'
+               f'<div class="spm-legend-bar"></div>'
+               f'<span class="spm-legend-lab">Alto</span></div>'
+               f'<div id="{xid}" class="spm-src" data-layout-allow-overlap="">'
+               f'{_esc(source)}</div></div></div>'],
+        tweens=tweens)
+
+
 DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "bar-race-mini": dv_bars,
     "compare-bars": dv_bars,
@@ -4074,6 +4432,7 @@ DATAVIZ: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "conic-progress-ring": dv_conic_progress_ring,
     "decline-chart": dv_decline_chart,
     "mk-line-graph": dv_mk_line_graph,
+    "spain-map": dv_spain_map,
 }
 
 
@@ -4335,6 +4694,47 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "font-weight:500;font-size:36px;color:#6e6e73}"
         ".mlg-legend-dot{width:14px;height:14px;border-radius:50%;"
         "flex-shrink:0}"
+        ".spm-chart{left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px;"
+        "background:#0f172a;font-family:Inter,system-ui,sans-serif;"
+        "color:#e2e8f0}"
+        ".spm-bg{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%)}"
+        ".spm-stage{position:absolute;left:0;top:0;"
+        f"width:{canvas_w}px;"
+        f"height:{canvas_h}px"
+        "}"
+        ".spm-hl-clip{position:absolute;left:90px;top:168px;width:740px;"
+        "overflow:hidden}"
+        ".spm-hl{font-weight:700;font-size:36px;letter-spacing:-0.02em;"
+        "color:#f8fafc;text-align:center;line-height:1.15}"
+        ".spm-wipe{position:absolute;inset:0;"
+        "background:linear-gradient(145deg,#0f172a 0%,#1e293b 100%);"
+        "transform-origin:100% 50%}"
+        ".spm-sub{position:absolute;left:90px;top:268px;width:740px;"
+        "font-weight:300;font-size:22px;color:#94a3b8;text-align:center;"
+        "opacity:0}"
+        ".spm-svg{position:absolute;left:90px;top:340px;width:740px;"
+        "height:610px;overflow:visible}"
+        ".spm-region{stroke:#1e293b;stroke-width:1.2;opacity:0;"
+        "transform-origin:50% 50%;transform-box:fill-box;"
+        "vector-effect:non-scaling-stroke}"
+        ".spm-hi{fill:#f8fafc;opacity:0;pointer-events:none;"
+        "transform-origin:50% 50%;transform-box:fill-box}"
+        f".spm-lab{{position:absolute;width:{_SPM_LAB_W}px;"
+        f"height:{_SPM_LAB_H}px;"
+        "font-weight:500;font-size:20px;color:#f8fafc;text-align:center;"
+        "line-height:32px;white-space:nowrap;opacity:0}"
+        ".spm-legend{position:absolute;left:90px;top:972px;width:740px;"
+        "display:flex;justify-content:center;align-items:center;gap:14px;"
+        "opacity:0}"
+        ".spm-legend-bar{width:280px;height:14px;border-radius:7px;"
+        "background:linear-gradient(90deg,#7f1d1d,#dc2626,#fbbf24)}"
+        ".spm-legend-lab{font-weight:500;font-size:22px;color:#94a3b8}"
+        ".spm-src{position:absolute;left:90px;top:1048px;width:740px;"
+        "font-weight:400;font-size:18px;color:#475569;text-align:right;"
+        "opacity:0}"
     )
 
 
