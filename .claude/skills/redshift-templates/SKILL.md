@@ -139,9 +139,10 @@ Mono, github-dark и прожектор `#58a6ff` как в каталоге —
 не палитра канала. P11 ставит id первым на `def `),
 `beat-freeze-cut` (music-promo: рамп → freeze DROP → hard-cut. Каталог
 твинит `filter`/`visibility` и WebGL нет; здесь `scale`/`x`/`y`/`opacity`
-и статичный `backdrop-filter`. Мята `#00E5C7` → акцент канала `#C8453D`,
-сцена `#111214`. Inter как в каталоге. P11 ставит id первым на drop/beat/
-freeze),
+и статичный `backdrop-filter`. Мята `#00E5C7` → акцент `#E63946`, сцена
+`#0B132B`, панели `#1A1F2E`, текст `#ffffff`/`#C7C9D1` со скриншотов.
+Циан `#00E5FF` не берём — слишком близко к мяте. Inter как в каталоге.
+P11 ставит id первым на drop/beat/freeze),
 `number-slam-card`, лесенка, VS, swap, полоса, карточка факта. Версия A
 предпочитает кинетику, blur-out-up, буквы снизу, type-swap, line-slide,
 particle-dissolve, per-word-crossfade, scan-band, scramble-reveal,

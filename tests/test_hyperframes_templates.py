@@ -1953,7 +1953,7 @@ def test_beat_freeze_cut_ramps_then_freezes_without_webgl():
     assert short["freeze"] < times["freeze"]
 
 
-def test_beat_freeze_cut_keeps_channel_accent_not_catalog_mint():
+def test_beat_freeze_cut_keeps_it_kosmos_palette_not_catalog_mint():
     from src.lib.config import load_config
 
     piece = render_fullscreen(_fs_ctx(
@@ -1963,29 +1963,35 @@ def test_beat_freeze_cut_keeps_channel_accent_not_catalog_mint():
     css = overlay_css(load_config().brandbook)
     assert ".fs-beat-freeze-cut" in css
     block = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
-    assert "#C8453D" in block
+    assert "#E63946" in block
+    assert "#0B132B" in block
+    assert "#1A1F2E" in block
+    assert "#C7C9D1" in block
+    assert "#C8453D" not in block
+    assert "#111214" not in block
+    assert "#F7F5F3" not in block
+    assert "#7A7D82" not in block
     assert "#00E5C7" not in block and "#00e5c7" not in block
-    assert "#111214" in block
-    assert "#F7F5F3" in block
-    assert "#7A7D82" in block
+    assert "#00E5FF" not in block and "#00e5ff" not in block
     assert "-apple-system" not in block
     bar = re.search(r"\.bfc-bar\{[^}]+\}", css).group(0)
-    assert "#C8453D" in bar
+    assert "#E63946" in bar
     assert "transform-origin:50% 100%" in bar
     assert "transform:" not in bar.replace("transform-origin:50% 100%", "").replace(
         "will-change:transform", "")
     wave = re.search(r"\.bfc-wave-path\{[^}]+\}", css).group(0)
-    assert "stroke:#C8453D" in wave
+    assert "stroke:#E63946" in wave
     eyebrow = re.search(r"\.bfc-eyebrow\{[^}]+\}", css).group(0)
-    assert "color:#C8453D" in eyebrow
+    assert "color:#E63946" in eyebrow
     pill = re.search(r"\.bfc-pill\{[^}]+\}", css).group(0)
-    assert "background:#C8453D" in pill
+    assert "background:#E63946" in pill
     assert "color:#ffffff" in pill
     stage = re.search(r"\.bfc-stage\{[^}]+\}", css).group(0)
     assert "position:absolute" not in stage
     invert = re.search(
         r"\.fullscreen-text\.fs-beat-freeze-cut\.invert\{[^}]+\}", css).group(0)
-    assert "#111214" in invert
+    assert "#0B132B" in invert
+    assert "#111214" not in invert
 
 
 def test_number_slam_splits_the_caption():
