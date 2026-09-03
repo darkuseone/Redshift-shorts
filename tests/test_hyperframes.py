@@ -1360,6 +1360,31 @@ def test_ai_chat_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "visibility" not in tween_src
 
 
+def test_app_showcase_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][0]["renderer"] = "app_showcase"
+    plan["overlays"][0]["params"] = {
+        "tagline": "Unleash Full Potential",
+        "name": "James Medrano",
+        "cta": "START NOW",
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "app-showcase" in out
+    assert "aps-phone" in out
+    assert "Unleash Full Potential" in out
+    assert "START NOW" in out
+    node = next(line for line in out.splitlines() if "app-showcase" in line)
+    assert "acr-keyboard" not in node
+    assert "chat-thread" not in node
+    assert "pm-body" not in node
+    assert "strokeDashoffset" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "strokeDashoffset" not in tween_src
+    assert "width:" not in tween_src
+    assert "visibility" not in tween_src
+
+
 def test_dataviz_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 2.4,

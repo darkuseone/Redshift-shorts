@@ -4546,6 +4546,12 @@ OVERLAY_PARAMS = {
         "ecCta": "Try REDSHIFT",
         "ecFooter": "REDSHIFT.SHORTS",
     },
+    "app_showcase": {
+        "tagline": "Unleash Full Potential",
+        "cta": "START NOW",
+        "name": "James Medrano",
+        "subtitle": "Premium Member",
+    },
 }
 
 
@@ -4830,6 +4836,80 @@ def test_ai_chat_reveal_keeps_catalog_tokens():
         index=0, start=1.0, duration=3.0, target="ovl-00",
         track=5, params=OVERLAY_PARAMS["chat_thread"])).nodes[0]
     assert "acr-" not in chat
+    assert "aps-" not in chat
+    assert "app-showcase" not in chat
+
+
+def test_app_showcase_fans_phones_without_width_or_dash():
+    """Catalog tweens width / strokeDashoffset; here scaleX / rotation / mask."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=5.5, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["app_showcase"])
+    piece = render_overlay("app_showcase", ctx)
+    node = piece.nodes[0]
+    assert "app-showcase" in node
+    assert "aps-phone" in node and "aps-side-c" in node
+    assert "Unleash Full Potential" in node
+    assert "START NOW" in node
+    assert "James Medrano" in node
+    assert "Weekly Goal" in node and "Burned Calories" in node
+    assert "Running" in node and "Cycling" in node and "Strength" in node
+    assert "acr-" not in node
+    assert "chat-thread" not in node
+    assert "pm-body" not in node
+    assert "strokeDashoffset" not in node
+    assert "textContent" not in node
+    assert "Math.random" not in node
+    assert "-apple-system" not in node
+    assert "DM Sans" not in node
+    body = " ".join(piece.tweens)
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    assert "scaleX:0" in body and "scaleX:1" in body
+    assert "rotation:-180" in body
+    assert "back.out(1.4)" in body and "expo.out" in body and "circ.out" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    custom = render_overlay("app_showcase", TemplateCtx(
+        index=0, start=0.0, duration=5.5, target="ovl-01", track=5,
+        params={"tagline": "Train every morning", "name": "Maya Chen"}))
+    assert "Train every morning" in custom.nodes[0]
+    assert "Maya Chen" in custom.nodes[0]
+    assert "MC" in custom.nodes[0]
+
+
+def test_app_showcase_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".app-showcase" in css
+    assert ".aps-phone" in css
+    root = re.search(r"\.app-showcase\{[^}]+\}", css).group(0)
+    cta = re.search(r"\.app-showcase \.aps-cta\{[^}]+\}", css).group(0)
+    bg = re.search(r"\.app-showcase \.aps-bg\{[^}]+\}", css).group(0)
+    assert "Inter" in root
+    assert "-apple-system" not in css.split(".app-showcase", 1)[1]
+    assert "DM Sans" not in css.split(".app-showcase", 1)[1]
+    assert "#e4fa72" in cta
+    assert "#f1f2ec" in bg
+    assert "#271f15" in css.split(".app-showcase", 1)[1]
+    phone = render_overlay("source_card", TemplateCtx(
+        index=0, start=1.0, duration=3.0, target="ovl-00",
+        track=5, params=OVERLAY_PARAMS["source_card"])).nodes[0]
+    assert "aps-" not in phone
+    assert "app-showcase" not in phone
+    mock = render_hero("hero-phone-mock", _hero_ctx("hero-phone-mock")).nodes[0]
+    assert "aps-" not in mock
+    assert "app-showcase" not in mock
 
 
 def test_hero_plate_pop_media_is_the_clip_itself():
