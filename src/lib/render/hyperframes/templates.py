@@ -1094,10 +1094,12 @@ def tr_transitions_blur(ctx: "TemplateCtx") -> Piece:
         f'{_num(start + times["a_kill"])});',
         f'tl.fromTo("#{node_id}-bg",{{scale:0.95,opacity:0.85}},'
         f'{{scale:1,opacity:0,duration:{_num(times["b_dur"])},'
-        f'ease:"power2.out"}},{_num(start + times["b_at"])});',
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["b_at"])});',
         f'tl.fromTo("#{node_id}-b",{{scale:0.95,opacity:0}},'
         f'{{scale:1,opacity:1,duration:{_num(times["b_dur"])},'
-        f'ease:"power2.out"}},{_num(start + times["b_at"])});',
+        f'ease:"power2.out",immediateRender:false}},'
+        f'{_num(start + times["b_at"])});',
         f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-ag",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-bg",{{opacity:0}},{_num(start + d)});',

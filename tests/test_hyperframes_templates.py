@@ -2650,6 +2650,7 @@ def test_transitions_blur_crossfades_with_scale_without_filter_tween(ctx):
     assert "scale:0.95" in body
     assert "power2.in" in body
     assert "power2.out" in body
+    assert "immediateRender:false" in body
     assert "filter" not in body
     assert "skewX" not in body
     assert "rotationY" not in body
