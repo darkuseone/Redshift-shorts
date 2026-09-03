@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-126 шаблонов каталога — это не 126 реализаций, а набор рендереров с параметрами.
+127 шаблонов каталога — это не 127 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -548,6 +548,72 @@ def tr_light_leak(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def _si_times(duration: float) -> dict[str, float]:
+    """Окно sdf-iris: каталог держит 2 с шейдера внутри 4 с демо."""
+    return _cz_times(duration)
+
+
+def tr_sdf_iris(ctx: "TemplateCtx") -> Piece:
+    """SDF iris: круг из центра, три кольца glow.
+
+    Каталог рисует WebGL ``onUpdate``: aspect-corrected SDF, onion rings.
+    Здесь золотой диск ``#ffc300`` растёт ``scale``, три кольца и вуаль
+    ``#003049``. Без canvas и без ``clip-path``. Цвета SCENE A/B каталога —
+    жест шейдера, не палитра канала. ``mask-wipe-circle`` остаётся белой маской.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _si_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-from",{{opacity:0.5}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-steel",{{opacity:0.2}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-iris",{{scale:0.06}},'
+        f'{{scale:1.18,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-iris",{{opacity:0}},'
+        f'{{opacity:0.46,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-iris",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+    ]
+    rings = []
+    for i in range(3):
+        s0 = 0.08 + i * 0.03
+        s1 = 1.12 + i * 0.05
+        op = 0.72 - i * 0.16
+        rings.append(f'<span id="{node_id}-r{i}" class="si-ring"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-r{i}",{{scale:{_num(s0)}}},'
+            f'{{scale:{_num(s1)},duration:{_num(times["dur"])},'
+            f'ease:"power2.inOut"}},{_num(start)});')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-r{i}",{{opacity:0}},'
+            f'{{opacity:{_num(op)},duration:{_num(times["mid"])},'
+            f'ease:"power2.out"}},{_num(start)});')
+        tweens.append(
+            f'tl.to("#{node_id}-r{i}",{{opacity:0,duration:{_num(times["to_out"])},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(start + times["to_out_at"])});')
+        tweens.append(
+            f'tl.set("#{node_id}-r{i}",{{opacity:0}},{_num(start + d)});')
+    tweens.extend([
+        f'tl.set("#{node_id}-from",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-steel",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-iris",{{opacity:0}},{_num(start + d)});',
+    ])
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-sdf-iris" {_timing(ctx)}>'
+               f'<span class="si-stage">'
+               f'<span id="{node_id}-from" class="si-from"></span>'
+               f'<span id="{node_id}-steel" class="si-steel"></span>'
+               f'<span id="{node_id}-iris" class="si-iris"></span>'
+               f'{"".join(rings)}'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -814,6 +880,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "cinematic_zoom": tr_cinematic_zoom,
     "gravitational_lens": tr_gravitational_lens,
     "light_leak": tr_light_leak,
+    "sdf_iris": tr_sdf_iris,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -997,6 +1064,24 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         "mix-blend-mode:screen}"
         ".tr-light-leak .ll-o1{inset:-22% -8% 38% 8%;border-radius:50%;"
         "background:radial-gradient(circle,rgba(255,230,191,0.32) 0%,transparent 70%);"
+        "mix-blend-mode:screen}"
+        f".tr-sdf-iris{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-sdf-iris .si-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-sdf-iris .si-from,.tr-sdf-iris .si-steel{"
+        "position:absolute;inset:0;display:block;opacity:0;"
+        "transform-origin:50% 50%}"
+        ".tr-sdf-iris .si-from{background:#003049;mix-blend-mode:overlay}"
+        ".tr-sdf-iris .si-steel{background:#7a9ab0;mix-blend-mode:overlay}"
+        ".tr-sdf-iris .si-iris,.tr-sdf-iris .si-ring{"
+        "position:absolute;left:50%;top:50%;width:2400px;height:2400px;"
+        "margin:-1200px 0 0 -1200px;border-radius:50%;display:block;opacity:0;"
+        "transform-origin:50% 50%}"
+        ".tr-sdf-iris .si-iris{background:#ffc300;mix-blend-mode:overlay}"
+        ".tr-sdf-iris .si-ring{"
+        "background:radial-gradient(circle,transparent 46%,"
+        "rgba(255,217,153,0.92) 50%,transparent 54%);"
         "mix-blend-mode:screen}"
     )
 

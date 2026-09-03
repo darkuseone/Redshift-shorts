@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 17,
+    "transitions": 18,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 126
+    "_total": 127
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1853,6 +1853,25 @@
         "shader"
       ],
       "renderer": "light_leak",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/sdf-iris",
+      "name": "sdf-iris",
+      "category": "transitions",
+      "title": "SDF iris: круг из центра и onion rings — sdf-iris",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "iris",
+        "shader"
+      ],
+      "renderer": "sdf_iris",
       "last_used_in": [],
       "added": "2026-09-03"
     },

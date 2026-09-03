@@ -408,6 +408,28 @@ def test_light_leak_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_sdf_iris_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только диск и кольца, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "sdf_iris", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-sdf-iris" in out
+    assert "si-from" in out and "si-iris" in out
+    assert "si-ring" in out
+    assert "tr-mask-circle" not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

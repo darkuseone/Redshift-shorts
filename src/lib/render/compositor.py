@@ -289,6 +289,38 @@ def _tr_light_leak(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(over * 255.0, 0, 255).astype(np.uint8))
 
 
+def _smoothstep(edge0: float, edge1: float, x: np.ndarray) -> np.ndarray:
+    t = np.clip((x - edge0) / (edge1 - edge0 + 1e-12), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def _tr_sdf_iris(incoming, outgoing, progress, params, ctx):
+    """Круг SDF из центра, три кольца glow. Без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    a = np.asarray(incoming.convert("RGB"), dtype=np.float32) / 255.0
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = (xx / max(w - 1, 1) - 0.5) * (w / max(h, 1))
+    uv_y = yy / max(h - 1, 1) - 0.5
+    dist = np.sqrt(uv_x ** 2 + uv_y ** 2)
+    radius = eased * 1.2
+    fw = 0.003
+    edge = _smoothstep(radius + fw, radius - fw, dist)
+    if outgoing is not None:
+        b = np.asarray(outgoing.convert("RGB"), dtype=np.float32) / 255.0
+        mixed = a * (1.0 - edge[..., None]) + b * edge[..., None]
+    else:
+        mixed = a
+    ring1 = np.exp(-np.abs(dist - radius) * 25.0)
+    ring2 = np.exp(-np.abs(dist - radius + 0.04) * 20.0) * 0.5
+    ring3 = np.exp(-np.abs(dist - radius + 0.08) * 15.0) * 0.25
+    glow = (ring1 + ring2 + ring3) * eased * (1.0 - eased) * 4.0
+    warm = np.array([1.0, 0.85, 0.6], dtype=np.float32)
+    mixed = mixed + warm * glow[..., None] * 0.6
+    return Image.fromarray(np.clip(mixed * 255.0, 0, 255).astype(np.uint8))
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -343,6 +375,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "cinematic_zoom": _tr_cinematic_zoom,
     "gravitational_lens": _tr_gravitational_lens,
     "light_leak": _tr_light_leak,
+    "sdf_iris": _tr_sdf_iris,
 }
 
 
