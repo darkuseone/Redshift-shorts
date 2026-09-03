@@ -1197,16 +1197,29 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # это один кусок доказательства, и вторая карточка встык читалась бы сбоем.
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
         anchor = run[0]
+        # Карточка источника — про цитату: приёмы категории просят признак
+        # `quote`, и блок доказательства его как раз несёт.
+        card_block = next((b for b in plan.get("blocks", [])
+                           if b.get("id") == anchor.get("block_id")), {})
+        card_traits = block_traits(str(card_block.get("text") or ""))
         card_template = catalog.pick(
             "browser-ui" if variant == "A" else "frames-cards",
             duration=float(anchor["duration"]), recent_videos=recent_videos,
-            exclude=used, seed=seed + i)
+            exclude=used, seed=seed + i, traits=card_traits)
         used.append(card_template.id)
+        # Рендерер карточки: у новых приёмов свой (окно переписки, разворот
+        # статьи), у прежних — общая заготовка source_card.
+        renderer = _overlay_renderer(card_template)
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(run[-1]["end"]))
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
-            "template": card_template.id, "renderer": renderer, "params": {
+            "template": card_template.id, "renderer": renderer,
+            "grounded_on": sorted(matched(card_template.needs, card_traits)),
+            "why": (f"карточка источника: {explain(matched(card_template.needs, card_traits))}"
+                    if matched(card_template.needs, card_traits)
+                    else "карточка источника: §5.6 требует показать источник"),
+            "params": {
                 "template": source.get("screen_template", "browser"),
                 "domain": source.get("domain", ""),
                 "url": source.get("url", ""),

@@ -134,3 +134,53 @@ class TestThePlanSaysWhyEachDeviceIsThere:
                 reasons.add(entry["why"])
         assert reasons, "приём не выбрался ни разу"
         assert any("задан вопрос" in r for r in reasons), sorted(reasons)
+
+
+class TestTheSourceCardSurvivesTheMerge:
+    """Карточка источника собирается — и с признаком, и без него.
+
+    Слияние ветки шаблонов оставило в этом месте обращение к переменной,
+    которую объявляла только та сторона: `NameError: name 'renderer' is not
+    defined` на шаге P11. Локально не ловилось — у сценария 0047 источников
+    нет вовсе, и ветка кода не выполнялась ни разу. CI собирает 0042, где
+    источника два, и падал там.
+    """
+
+    def _plan(self):
+        return {
+            "video_id": "redshift_0001",
+            "duration_sec": 40.0,
+            "sources": [{"title": "Кольская скважина", "domain": "nature.com",
+                         "url": "https://nature.com/kola", "show_on_screen": True,
+                         "snippet": "по словам геологов, границы не оказалось",
+                         "highlight_line": "границы не оказалось"}],
+            "blocks": [{"id": "b3", "role": "evidence",
+                        "text": "По словам геологов, «границы не оказалось»."}],
+            "slots": [{"index": 2, "block_id": "b3", "role": "evidence",
+                       "asset_role": "evidence", "kind": "footage",
+                       "start": 8.0, "end": 12.0, "duration": 4.0}],
+        }
+
+    def _overlays(self, variant):
+        from pathlib import Path
+        import json as _json
+
+        from src.p11_assemble.assemble import _build_overlays
+
+        path = Path(__file__).resolve().parents[1] / "templates" / "manifest.json"
+        cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+        return _build_overlays(None, self._plan(), [], cat, variant=variant,
+                               seed=1, recent_videos=[], used=[])
+
+    @pytest.mark.parametrize("variant", ["A", "B"])
+    def test_the_card_is_built_and_names_its_renderer(self, variant):
+        cards = [o for o in self._overlays(variant) if o["type"] == "source_card"]
+        assert cards, "карточка источника не собралась"
+        card = cards[0]
+        assert card["renderer"], "у карточки нет рендерера"
+        assert card["template"]
+        assert card["why"]
+
+    def test_a_quote_in_the_block_grounds_the_card(self):
+        card = next(o for o in self._overlays("A") if o["type"] == "source_card")
+        assert "quote" in card["grounded_on"], card["why"]
