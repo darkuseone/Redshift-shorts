@@ -998,7 +998,7 @@ def test_scan_band_sweeps_a_static_clip_on_x():
     node = piece.nodes[0]
     assert "fs-scan-band" in node
     assert "sb-wordmark" in node
-    assert node.count("sb-clone") == 3
+    assert node.count('class="sb-clone') == 3
     assert "sb-clone-red" in node and "sb-clone-cyan" in node
     assert "СИГНАЛ" in node
     assert "clip-path:polygon(" in node
@@ -1014,11 +1014,11 @@ def test_scan_band_sweeps_a_static_clip_on_x():
     for tween in piece.tweens:
         selector = re.search(r'"(#[^"]+)"', tween).group(1)
         assert selector != clip, tween
-    assert f'fromTo("#{clip}-band",{{x:0}}' in body
-    assert f'fromTo("#{clip}-inner",{{x:0}}' in body
+    assert f'fromTo("{clip}-band",{{x:0}}' in body
+    assert f'fromTo("{clip}-inner",{{x:0}}' in body
     assert "x:2376" in body
     assert "x:-2376" in body
-    assert f'fromTo("#{clip}-stage",{{opacity:0}}' in body
+    assert f'fromTo("{clip}-stage",{{opacity:0}}' in body
     ids = re.findall(r'id="([^"]+)"', node)
     assert len(ids) == len(set(ids))
     flagged = render_fullscreen(_fs_ctx(
