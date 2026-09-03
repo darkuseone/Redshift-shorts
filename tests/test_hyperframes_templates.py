@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-128 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+129 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -22,7 +22,7 @@ from src.lib.render.hyperframes.templates import (
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
     _atcd_times, _dp_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
-    _gw_times, _ll_times, _si_times, _td_times, _sr_frame_table,
+    _gw_times, _ll_times, _si_times, _td_times, _wp_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -164,7 +164,7 @@ def test_css_covers_every_layer_the_transitions_use():
     for cls in (".tr-flash", ".tr-blur", ".tr-mask-circle", ".tr-mask-diagonal",
                 ".tr-sweep", ".tr-glitch", ".tr-cinematic-zoom",
                 ".tr-glitch-shader", ".tr-gravitational-lens", ".tr-light-leak",
-                ".tr-sdf-iris", ".tr-thermal-distortion"):
+                ".tr-sdf-iris", ".tr-thermal-distortion", ".tr-whip-pan"):
         assert cls in css, cls
 
 
@@ -2311,6 +2311,72 @@ def test_thermal_distortion_keeps_catalog_slate_and_terracotta():
     assert "position:absolute" not in stage
     stripped = css.replace("transform-origin:50% 50%", "")
     assert "transform:" not in stripped.split(".tr-thermal-distortion", 1)[1]
+    assert "backdrop-filter:blur(10px)" in css
+
+
+def test_whip_pan_shader_slides_with_streaks_without_webgl(ctx):
+    """Каталог крутит шейдер в onUpdate; здесь вуали, полосы смаза и x."""
+    piece = render_transition("whip_pan_shader", TemplateCtx(**ctx.__dict__))
+    node = piece.nodes[0]
+    assert "tr-whip-pan" in node
+    assert "wp-stage" in node
+    assert "wp-from" in node and "wp-to" in node
+    assert "wp-steel" in node and "wp-blur" in node
+    assert node.count("wp-streak") == 6
+    assert "position:absolute" not in node.split("wp-stage", 1)[0]
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert f'"#{ctx.target}"' not in body
+    assert "x:0" in body
+    assert "x:-360" in body
+    assert "power2.inOut" in body
+    assert "webgl" not in body.lower()
+    assert "onUpdate" not in body
+    assert "text:" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = f"#tr-{ctx.index:02d}"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+    times = _wp_times(ctx.duration)
+    assert times["mid"] + times["to_out"] < ctx.duration + 1e-9
+    assert times["to_out_at"] > times["mid"]
+    short = _wp_times(0.22)
+    assert short["to_out_at"] + short["to_out"] <= 0.22 + 1e-9
+    legacy = render_transition("whip_pan", TemplateCtx(
+        index=1, start=0.0, duration=0.2, target="shot-01", track=11,
+        params={"direction": 1, "blur": 24}))
+    assert "tr-whip-pan" not in legacy.nodes[0]
+    assert "tr-blur" in legacy.nodes[0]
+
+
+def test_whip_pan_shader_keeps_catalog_navy_and_cyan():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-whip-pan" in css
+    frm = re.search(r"\.tr-whip-pan \.wp-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-whip-pan \.wp-to\{[^}]+\}", css).group(0)
+    assert "#0b132b" in frm
+    assert "#48bfe3" in too
+    assert "#C8453D" not in frm and "#C8453D" not in too
+    assert "#7a9ab0" in css
+    assert "rgba(72,191,227" in css
+    stage = re.search(r"\.tr-whip-pan \.wp-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    stripped = css.replace("transform-origin:50% 50%", "")
+    assert "transform:" not in stripped.split(".tr-whip-pan", 1)[1]
     assert "backdrop-filter:blur(10px)" in css
 
 

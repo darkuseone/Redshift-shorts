@@ -452,6 +452,28 @@ def test_thermal_distortion_overlay_does_not_tween_the_incoming_shot(
         assert selector in ids, line
 
 
+def test_whip_pan_shader_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только смаз и вуали, без x входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "whip_pan_shader", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-whip-pan" in out
+    assert "wp-from" in out and "wp-to" in out
+    assert "wp-streak" in out
+    assert 'class="clip tr-blur"' not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 

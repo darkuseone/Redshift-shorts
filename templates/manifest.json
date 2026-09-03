@@ -7,14 +7,14 @@
     "lower-thirds": 11,
     "frames-cards": 7,
     "browser-ui": 8,
-    "transitions": 19,
+    "transitions": 20,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 7,
     "outro-cta": 6,
     "hero-devices": 13,
-    "_total": 128
+    "_total": 129
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1891,6 +1891,25 @@
         "shader"
       ],
       "renderer": "thermal_distortion",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/whip-pan",
+      "name": "whip-pan",
+      "category": "transitions",
+      "title": "Whip pan: оба кадра едут вбок с направленным смазом — whip-pan",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "pan",
+        "shader"
+      ],
+      "renderer": "whip_pan_shader",
       "last_used_in": [],
       "added": "2026-09-03"
     },

@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-128 шаблонов каталога — это не 128 реализаций, а набор рендереров с параметрами.
+129 шаблонов каталога — это не 129 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -701,6 +701,79 @@ def tr_thermal_distortion(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def _wp_times(duration: float) -> dict[str, float]:
+    """Окно whip-pan шейдера: каталог держит 2 с внутри 4 с демо."""
+    return _cz_times(duration)
+
+
+def tr_whip_pan_shader(ctx: "TemplateCtx") -> Piece:
+    """Whip pan: оба кадра едут вбок с направленным смазом.
+
+    Каталог рисует WebGL ``onUpdate``: 10 семплов, fromOff/toOff.
+    Здесь вуали ``#0b132b``/``#48bfe3``, стальной слой и полосы смаза, ``x``.
+    Без canvas. Цвета SCENE A/B каталога — жест шейдера, не палитра канала.
+    ``whip-pan-l``/``whip-pan-r`` остаются рывком кадра ``tr-blur``.
+    """
+    node_id = f"tr-{ctx.index:02d}"
+    d = ctx.duration
+    times = _wp_times(d)
+    start = ctx.start
+    tweens = [
+        f'tl.fromTo("#{node_id}-from",{{x:0}},'
+        f'{{x:-360,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-from",{{opacity:0.5}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{x:280}},'
+        f'{{x:0,duration:{_num(times["dur"])},ease:"power2.inOut"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-to",{{opacity:0}},'
+        f'{{opacity:0.4,duration:{_num(times["mid"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.to("#{node_id}-to",{{opacity:0,duration:{_num(times["to_out"])},'
+        f'ease:"power2.in",immediateRender:false}},'
+        f'{_num(start + times["to_out_at"])});',
+        f'tl.fromTo("#{node_id}-steel",{{opacity:0.22}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+        f'tl.fromTo("#{node_id}-blur",{{opacity:0.7}},'
+        f'{{opacity:0,duration:{_num(times["dur"])},ease:"power2.out"}},{_num(start)});',
+    ]
+    streaks = []
+    for i in range(6):
+        x0 = 48 - i * 8
+        x1 = -220 - i * 40
+        op = 0.72 - i * 0.08
+        streaks.append(
+            f'<span id="{node_id}-s{i}" class="wp-streak wp-s{i}"></span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-s{i}",{{x:{x0}}},'
+            f'{{x:{x1},duration:{_num(times["dur"])},'
+            f'ease:"power2.inOut"}},{_num(start)});')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-s{i}",{{opacity:0}},'
+            f'{{opacity:{_num(op)},duration:{_num(times["mid"])},'
+            f'ease:"power2.out"}},{_num(start)});')
+        tweens.append(
+            f'tl.to("#{node_id}-s{i}",{{opacity:0,duration:{_num(times["to_out"])},'
+            f'ease:"power2.in",immediateRender:false}},'
+            f'{_num(start + times["to_out_at"])});')
+        tweens.append(
+            f'tl.set("#{node_id}-s{i}",{{opacity:0}},{_num(start + d)});')
+    tweens.extend([
+        f'tl.set("#{node_id}-from",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-to",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-steel",{{opacity:0}},{_num(start + d)});',
+        f'tl.set("#{node_id}-blur",{{opacity:0}},{_num(start + d)});',
+    ])
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip tr-whip-pan" {_timing(ctx)}>'
+               f'<span class="wp-stage">'
+               f'<span id="{node_id}-blur" class="wp-blur"></span>'
+               f'<span id="{node_id}-from" class="wp-from"></span>'
+               f'<span id="{node_id}-to" class="wp-to"></span>'
+               f'<span id="{node_id}-steel" class="wp-steel"></span>'
+               f'{"".join(streaks)}'
+               f'</span></div>'],
+        tweens=tweens)
+
+
 def tr_blur_dip(ctx: "TemplateCtx") -> Piece:
     """Провал в размытие.
 
@@ -969,6 +1042,7 @@ TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "light_leak": tr_light_leak,
     "sdf_iris": tr_sdf_iris,
     "thermal_distortion": tr_thermal_distortion,
+    "whip_pan_shader": tr_whip_pan_shader,
     "blur_dip": tr_blur_dip,
     "whip_pan": tr_whip_pan,
     "paper_slide": tr_paper_slide,
@@ -1203,6 +1277,30 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         ".tr-thermal-distortion .td-b2{top:1400px}"
         ".tr-thermal-distortion .td-b3{top:1560px}"
         ".tr-thermal-distortion .td-b4{top:1720px}"
+        f".tr-whip-pan{{position:absolute;inset:0;z-index:{Z_TRANSITION};"
+        "overflow:hidden;pointer-events:none}"
+        ".tr-whip-pan .wp-stage{display:block;width:100%;height:100%;"
+        "position:relative}"
+        ".tr-whip-pan .wp-from,.tr-whip-pan .wp-to,"
+        ".tr-whip-pan .wp-steel,.tr-whip-pan .wp-blur{"
+        "position:absolute;inset:0;display:block;opacity:0;"
+        "transform-origin:50% 50%}"
+        ".tr-whip-pan .wp-from{background:#0b132b;mix-blend-mode:overlay}"
+        ".tr-whip-pan .wp-to{background:#48bfe3;mix-blend-mode:overlay}"
+        ".tr-whip-pan .wp-steel{background:#7a9ab0;mix-blend-mode:overlay}"
+        ".tr-whip-pan .wp-blur{backdrop-filter:blur(10px)}"
+        ".tr-whip-pan .wp-streak{position:absolute;left:-18%;width:136%;"
+        "height:88px;display:block;opacity:0;"
+        "background:linear-gradient(90deg,transparent 0%,"
+        "rgba(72,191,227,0) 12%,rgba(72,191,227,0.88) 48%,"
+        "rgba(11,19,43,0.45) 78%,transparent 100%);"
+        "mix-blend-mode:screen;transform-origin:50% 50%}"
+        ".tr-whip-pan .wp-s0{top:80px}"
+        ".tr-whip-pan .wp-s1{top:380px}"
+        ".tr-whip-pan .wp-s2{top:680px}"
+        ".tr-whip-pan .wp-s3{top:980px}"
+        ".tr-whip-pan .wp-s4{top:1280px}"
+        ".tr-whip-pan .wp-s5{top:1580px}"
     )
 
 

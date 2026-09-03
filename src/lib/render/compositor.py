@@ -349,6 +349,30 @@ def _tr_thermal_distortion(incoming, outgoing, progress, params, ctx):
     return Image.fromarray(np.clip(mixed * 255.0, 0, 255).astype(np.uint8))
 
 
+def _tr_whip_pan_shader(incoming, outgoing, progress, params, ctx):
+    """Горизонтальный whip с 10 семплами направленного смаза. Без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    _h, w = a.shape[:2]
+    n = 10
+    from_off = eased * 1.5
+    to_off = (1.0 - eased) * 1.5
+    cols = np.arange(w)
+    from_acc = np.zeros_like(a)
+    to_acc = np.zeros_like(b)
+    for i in range(n):
+        f = float(i)
+        from_shift = int(round((from_off + eased * 0.08 * f) * w))
+        to_shift = int(round((to_off + (1.0 - eased) * 0.08 * f) * w))
+        from_acc += a[:, np.clip(cols + from_shift, 0, w - 1)]
+        to_acc += b[:, np.clip(cols - to_shift, 0, w - 1)]
+    mixed = from_acc / n * (1.0 - eased) + to_acc / n * eased
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -393,6 +417,7 @@ TRANSITIONS: dict[str, TransitionFn] = {
     "cut": _tr_cut,
     "zoom_punch": _tr_zoom_punch,
     "whip_pan": _tr_whip_pan,
+    "whip_pan_shader": _tr_whip_pan_shader,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,
     "blur_dip": _tr_blur_dip,
