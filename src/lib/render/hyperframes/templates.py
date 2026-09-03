@@ -1,6 +1,6 @@
 """Каталог шаблонов (§15) в терминах HTML/CSS/GSAP.
 
-120 шаблонов каталога — это не 120 реализаций, а набор рендереров с параметрами.
+121 шаблонов каталога — это не 121 реализаций, а набор рендереров с параметрами.
 Здесь живут именно рендереры; какой из них и с какими числами вызвать, решает
 P11 и кладёт в edit-план.
 
@@ -4438,6 +4438,271 @@ def fs_terminal_simulator(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+# Каталог Apple Terminal Clear Dark: textContent, innerHTML и мигание
+# каретки через колбэки. Здесь заранее span-ы, opacity, без DOM-мутаций.
+_ATCD_TYPE_AT = 0.50
+_ATCD_TYPE_SPAN = 1.50
+_ATCD_CURSOR_OFF = 2.20
+_ATCD_FIRST_OUT = 2.30
+_ATCD_CLEAR_AT = 2.50
+_ATCD_OUT_BASE = 2.80
+_ATCD_OUT_STAGGER = 0.10
+_ATCD_PROMPT2 = 4.20
+_ATCD_BLINK0 = 4.40
+_ATCD_BLINK_GAP = 0.40
+_ATCD_N_BLINKS = 6
+_ATCD_HOLD = 6.80
+_ATCD_BLINK_DUR = 0.05
+_ATCD_CHAR_FADE = 0.04
+_ATCD_DEFAULT_CMD = "npm audit"
+_ATCD_DEFAULT_PROMPT = "user@Mac ~ % "
+_ATCD_DEFAULT_TITLE = "bash — 80×24"
+_ATCD_OUTPUT: tuple[tuple[str, str], ...] = (
+    ("Last login: Mon Jun 2 09:14:22 on ttys002", "dim"),
+    ("Scanning dependencies...", ""),
+    ("Found 3 vulnerabilities (1 moderate, 2 low)", ""),
+    (" package: lodash@4.17.20", "dim"),
+    (" severity: moderate", "dim"),
+    (" fix: lodash@4.17.21", "dim"),
+    (" package: minimist@1.2.5", "dim"),
+    (" severity: low", "dim"),
+    (" fix: minimist@1.2.6", "dim"),
+    ("Run `npm audit fix` to fix them.", "bold"),
+)
+_ATCD_FRAME_W = 1080
+_ATCD_FRAME_H = 1920
+_ATCD_SIZE_FLOOR = 16
+_ATCD_SIZE_CEILING = 22
+_ATCD_LH_EM = 1.60
+_ATCD_TITLE_H = 42
+_ATCD_PAD_Y = 18
+_ATCD_PAD_X = 20
+_ATCD_RADIUS = 10
+
+
+def _atcd_times(duration: float, n_chars: int) -> dict[str, float]:
+    """Каталог на ~7 с: набор с 0.50, вывод с 2.3, новый промпт с 4.2."""
+    d = max(2.0, float(duration))
+    type_at = _ATCD_TYPE_AT
+    type_span = _ATCD_TYPE_SPAN
+    cursor_off = _ATCD_CURSOR_OFF
+    first_out = _ATCD_FIRST_OUT
+    clear_at = _ATCD_CLEAR_AT
+    out_base = _ATCD_OUT_BASE
+    out_stagger = _ATCD_OUT_STAGGER
+    prompt2 = _ATCD_PROMPT2
+    blink0 = _ATCD_BLINK0
+    blink_gap = _ATCD_BLINK_GAP
+    blink_dur = _ATCD_BLINK_DUR
+    hold = _ATCD_HOLD
+    packed = hold
+    if packed > d - 0.04:
+        fit = (d - 0.04) / packed
+        type_at *= fit
+        type_span *= fit
+        cursor_off *= fit
+        first_out *= fit
+        clear_at *= fit
+        out_base *= fit
+        out_stagger *= fit
+        prompt2 *= fit
+        blink0 *= fit
+        blink_gap *= fit
+        hold *= fit
+    n = max(1, int(n_chars))
+    per = type_span / n
+    blink_dur = min(blink_dur, max(0.02, blink_gap - 0.002))
+    return {
+        "type_at": round(type_at, 4),
+        "per": round(per, 5),
+        "char_fade": round(min(_ATCD_CHAR_FADE, max(0.02, per * 0.4)), 4),
+        "cursor_off": round(cursor_off, 4),
+        "first_out": round(first_out, 4),
+        "clear_at": round(clear_at, 4),
+        "out_base": round(out_base, 4),
+        "out_stagger": round(out_stagger, 4),
+        "prompt2": round(prompt2, 4),
+        "blink0": round(blink0, 4),
+        "blink_gap": round(blink_gap, 4),
+        "blink_dur": round(blink_dur, 4),
+        "hold": round(hold, 4),
+    }
+
+
+def _atcd_metrics(n_out: int, frame_w: int, frame_h: int) -> dict[str, int]:
+    window_w = min(int(round(frame_w * 0.90)), 980)
+    max_h = int(round(frame_h * 0.62))
+    size = _ATCD_SIZE_CEILING
+    rows = max(3, int(n_out) + 2)
+    lh = max(22, int(round(size * _ATCD_LH_EM)))
+    canvas_h = rows * lh + _ATCD_PAD_Y * 2
+    window_h = _ATCD_TITLE_H + canvas_h
+    while window_h > max_h and size > _ATCD_SIZE_FLOOR:
+        size -= 1
+        lh = max(22, int(round(size * _ATCD_LH_EM)))
+        canvas_h = rows * lh + _ATCD_PAD_Y * 2
+        window_h = _ATCD_TITLE_H + canvas_h
+    if window_h > max_h:
+        canvas_h = max(120, max_h - _ATCD_TITLE_H)
+        window_h = _ATCD_TITLE_H + canvas_h
+    caret_w = max(6, int(round(size * 9 / 14)))
+    caret_h = max(12, int(round(size * 16 / 14)))
+    return {
+        "window_w": window_w,
+        "window_h": window_h,
+        "canvas_h": canvas_h,
+        "size": size,
+        "lh": lh,
+        "caret_w": caret_w,
+        "caret_h": caret_h,
+        "radius": max(8, int(round(_ATCD_RADIUS * window_w / 1400))),
+    }
+
+
+def _atcd_session(params: dict[str, Any], code: str
+                  ) -> tuple[str, str, str, list[tuple[str, str]]]:
+    command = str(params.get("command") or "").strip()
+    prompt = str(params.get("prompt") or _ATCD_DEFAULT_PROMPT)
+    title = str(params.get("title") or _ATCD_DEFAULT_TITLE)
+    raw_out = params.get("output") if "output" in params else params.get("lines")
+    rows: list[str] = []
+    if isinstance(raw_out, str):
+        rows = raw_out.replace("\r\n", "\n").split("\n")
+    elif isinstance(raw_out, (list, tuple)):
+        rows = [str(item) for item in raw_out]
+    if not command:
+        text = code.strip()
+        if text:
+            parts = text.replace("\r\n", "\n").split("\n")
+            first = parts[0].strip()
+            if first.startswith("$"):
+                first = first[1:].strip()
+            command = first
+            if not rows:
+                rows = parts[1:]
+    if not command:
+        command = _ATCD_DEFAULT_CMD
+    if not any(line.strip() for line in rows):
+        return command, prompt, title, [tuple(item) for item in _ATCD_OUTPUT]
+    styled: list[tuple[str, str]] = []
+    for line in rows:
+        kind = ""
+        if line.startswith(" "):
+            kind = "dim"
+        if line.startswith("Run ") or line.startswith("error:") or line.startswith("fatal:"):
+            kind = "bold"
+        styled.append((line, kind))
+    return command, prompt, title, styled
+
+
+def fs_apple_terminal_clear_dark(ctx: "TemplateCtx") -> Piece:
+    """Terminal.app Clear Dark: каталог пишет textContent и innerHTML.
+
+    Здесь глифы команды и второй промпт заранее, показ — ``opacity``.
+    Сланец ``#1a1a1a``, белый текст и серый промпт ``#888888`` как в
+    каталоге — профиль Clear Dark, не палитра канала.
+    """
+    params = ctx.params
+    code = str(params.get("code") or params.get("content") or params.get("text")
+               or "").replace("\r\n", "\n").replace("\t", "  ")
+    command, prompt, title, output = _atcd_session(params, code)
+    if not command:
+        return Piece()
+    glyphs = list(command)
+    node_id = ctx.target
+    frame_w = int(params.get("frame_w") or _ATCD_FRAME_W)
+    frame_h = int(params.get("frame_h") or _ATCD_FRAME_H)
+    m = _atcd_metrics(len(output), frame_w, frame_h)
+    t = _atcd_times(ctx.duration, len(glyphs))
+    at = _enter_at(ctx)
+    invert = " invert" if params.get("invert") else ""
+    tweens: list[str] = []
+    for i, _ch in enumerate(glyphs):
+        start = at + t["type_at"] + i * t["per"]
+        tweens.append(
+            f'tl.fromTo("#{node_id}-c{i}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(t["char_fade"])},ease:"none"}},'
+            f'{_num(start)});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-cur1",{{opacity:1}},'
+        f'{{opacity:0,duration:{_num(t["blink_dur"])},ease:"none"}},'
+        f'{_num(at + t["cursor_off"])});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-cmd",{{opacity:1}},'
+        f'{{opacity:0,duration:{_num(t["blink_dur"])},ease:"none",'
+        f'immediateRender:false}},{_num(at + t["clear_at"])});')
+    for i, (_line, _kind) in enumerate(output):
+        if i == 0:
+            when = at + t["first_out"]
+        else:
+            when = at + t["out_base"] + i * t["out_stagger"]
+        tweens.append(
+            f'tl.fromTo("#{node_id}-o{i}",{{opacity:0}},'
+            f'{{opacity:1,duration:{_num(t["blink_dur"])},ease:"none"}},'
+            f'{_num(when)});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-in1",{{opacity:1}},'
+        f'{{opacity:0,duration:{_num(t["blink_dur"])},ease:"none",'
+        f'immediateRender:false}},{_num(at + t["prompt2"])});')
+    tweens.append(
+        f'tl.fromTo("#{node_id}-in2",{{opacity:0}},'
+        f'{{opacity:1,duration:{_num(t["blink_dur"])},ease:"none"}},'
+        f'{_num(at + t["prompt2"])});')
+    for i in range(_ATCD_N_BLINKS):
+        start = at + t["blink0"] + i * t["blink_gap"]
+        going_off = i % 2 == 0
+        fr, to = (1, 0) if going_off else (0, 1)
+        extra = ",immediateRender:false" if i else ""
+        tweens.append(
+            f'tl.fromTo("#{node_id}-cur2",{{opacity:{fr}}},'
+            f'{{opacity:{to},duration:{_num(t["blink_dur"])},ease:"none"'
+            f'{extra}}},{_num(start)});')
+    chars_html = "".join(
+        f'<span id="{node_id}-c{i}" class="atcd-ch">{_esc(ch)}</span>'
+        for i, ch in enumerate(glyphs)
+    )
+    out_html = "".join(
+        f'<span id="{node_id}-o{i}" class="atcd-line'
+        f'{" atcd-dim" if kind == "dim" else ""}'
+        f'{" atcd-bold" if kind == "bold" else ""}"'
+        f' style="min-height:{m["lh"]}px;line-height:{m["lh"]}px">'
+        f'{_esc(line) if line else " "}</span>'
+        for i, (line, kind) in enumerate(output)
+    )
+    prompt_html = f'<span class="atcd-prompt">{_esc(prompt)}</span>'
+    return Piece(
+        nodes=[f'<div id="{node_id}" class="clip fullscreen-text '
+               f'fs-apple-terminal-clear-dark{invert}" {_timing(ctx)}>'
+               f'<span class="atcd-stage">'
+               f'<span class="atcd-window" style="width:{m["window_w"]}px;'
+               f'height:{m["window_h"]}px;border-radius:{m["radius"]}px">'
+               f'<span class="atcd-bar">'
+               f'<span class="atcd-lights">'
+               f'<span class="atcd-dot atcd-close"></span>'
+               f'<span class="atcd-dot atcd-min"></span>'
+               f'<span class="atcd-dot atcd-full"></span></span>'
+               f'<span class="atcd-title">{_esc(title)}</span></span>'
+               f'<span class="atcd-canvas" style="height:{m["canvas_h"]}px;'
+               f'font-size:{m["size"]}px;padding:{_ATCD_PAD_Y}px {_ATCD_PAD_X}px">'
+               f'<span class="atcd-out">{out_html}</span>'
+               f'<span class="atcd-slot" style="min-height:{m["lh"]}px">'
+               f'<span id="{node_id}-in1" class="atcd-input" '
+               f'style="min-height:{m["lh"]}px;line-height:{m["lh"]}px">'
+               f'{prompt_html}'
+               f'<span id="{node_id}-cmd" class="atcd-cmd">{chars_html}</span>'
+               f'<span id="{node_id}-cur1" class="atcd-cursor" '
+               f'style="width:{m["caret_w"]}px;height:{m["caret_h"]}px">'
+               f'</span></span>'
+               f'<span id="{node_id}-in2" class="atcd-input atcd-input-next" '
+               f'style="min-height:{m["lh"]}px;line-height:{m["lh"]}px">'
+               f'{prompt_html}'
+               f'<span id="{node_id}-cur2" class="atcd-cursor" '
+               f'style="width:{m["caret_w"]}px;height:{m["caret_h"]}px">'
+               f'</span></span></span>'
+               f'</span></span></span></div>'],
+        tweens=tweens)
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -4457,6 +4722,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "code_scroll": fs_code_scroll,
     "code_typing": fs_code_typing,
     "terminal_simulator": fs_terminal_simulator,
+    "apple_terminal_clear_dark": fs_apple_terminal_clear_dark,
     "number_slam": fs_number_slam,
 }
 
@@ -4499,6 +4765,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_code_typing(ctx)
     if params.get("terminal_simulator"):
         return fs_terminal_simulator(ctx)
+    if params.get("apple_terminal_clear_dark"):
+        return fs_apple_terminal_clear_dark(ctx)
     if params.get("kinetic") or params.get("stagger_ms"):
         return fs_kinetic_stack(ctx)
     if params.get("slam") or params.get("scale_from"):
@@ -5420,6 +5688,55 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "border-top:1px solid rgba(148,163,184,0.18);color:#86efac;"
         "text-align:left;text-transform:none;opacity:0;"
         "will-change:transform,opacity}"
+        ".fullscreen-text.fs-apple-terminal-clear-dark{width:var(--frame-w);"
+        "height:var(--frame-h);padding:0;overflow:hidden;isolation:isolate;"
+        "display:flex;align-items:center;justify-content:center;"
+        "background:linear-gradient(135deg,#1a1a1a 0%,#111111 100%);"
+        "color:#ffffff;font-family:'JetBrains Mono',var(--font-mono),monospace;"
+        "font-weight:400;text-transform:none;letter-spacing:0}"
+        ".fullscreen-text.fs-apple-terminal-clear-dark.invert{"
+        "background:linear-gradient(135deg,#1a1a1a 0%,#111111 100%);color:#ffffff}"
+        ".fullscreen-text .atcd-stage{position:relative;display:flex;"
+        "align-items:center;justify-content:center;width:100%;height:100%}"
+        ".fullscreen-text .atcd-window{position:relative;z-index:1;display:flex;"
+        "flex-direction:column;box-sizing:border-box;overflow:hidden;"
+        "box-shadow:0 30px 80px rgba(0,0,0,0.7),0 10px 30px rgba(0,0,0,0.5)}"
+        ".fullscreen-text .atcd-bar{position:relative;display:flex;"
+        "align-items:center;flex:0 0 42px;height:42px;padding:0 14px;"
+        "background:rgba(0,0,0,0.4);border-bottom:1px solid rgba(255,255,255,0.08)}"
+        ".fullscreen-text .atcd-lights{display:flex;align-items:center;gap:8px;"
+        "z-index:1}"
+        ".fullscreen-text .atcd-dot{display:block;width:13px;height:13px;"
+        "border-radius:50%}"
+        ".fullscreen-text .atcd-close{background:#ff5f57;border:1px solid #e0443e}"
+        ".fullscreen-text .atcd-min{background:#ffbd2e;border:1px solid #dfa123}"
+        ".fullscreen-text .atcd-full{background:#28c840;border:1px solid #1aab29}"
+        ".fullscreen-text .atcd-title{position:absolute;left:0;right:0;"
+        "text-align:center;font-family:Inter,system-ui,sans-serif;font-size:13px;"
+        "font-weight:500;color:#ffffff;letter-spacing:-0.1px;"
+        "text-transform:none;pointer-events:none}"
+        ".fullscreen-text .atcd-canvas{flex:1;box-sizing:border-box;"
+        "background:rgba(0,0,0,0.7);color:#ffffff;text-align:left;"
+        "text-transform:none;overflow:hidden;line-height:1.6}"
+        ".fullscreen-text .atcd-out{display:block;margin-bottom:4px}"
+        ".fullscreen-text .atcd-line{display:block;white-space:pre;opacity:0;"
+        "color:#ffffff;text-transform:none;will-change:opacity}"
+        ".fullscreen-text .atcd-dim{color:rgba(255,255,255,0.6)}"
+        ".fullscreen-text .atcd-bold{font-weight:700;color:#ffffff}"
+        ".fullscreen-text .atcd-slot{position:relative;display:block}"
+        ".fullscreen-text .atcd-input{display:flex;align-items:center;"
+        "white-space:pre;text-transform:none;will-change:opacity}"
+        ".fullscreen-text .atcd-input-next{position:absolute;left:0;top:0;"
+        "opacity:0}"
+        ".fullscreen-text .atcd-prompt{color:#888888;font-weight:700;"
+        "text-transform:none}"
+        ".fullscreen-text .atcd-cmd{display:inline;color:#ffffff;"
+        "will-change:opacity}"
+        ".fullscreen-text .atcd-ch{display:inline;white-space:pre;opacity:0;"
+        "color:#ffffff;text-transform:none;will-change:opacity}"
+        ".fullscreen-text .atcd-cursor{display:inline-block;flex:0 0 auto;"
+        "background:#888888;margin-left:1px;vertical-align:text-bottom;"
+        "will-change:opacity}"
         ".fullscreen-text .fs-swap-box{position:relative;display:block;"
         "min-height:1.1em}"
         ".fullscreen-text .fs-swap-word{position:absolute;left:0;right:0;opacity:0}"

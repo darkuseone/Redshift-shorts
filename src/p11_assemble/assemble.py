@@ -813,6 +813,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                           "text-fullscreen/code-scroll",
                           "text-fullscreen/code-typing",
                           "text-fullscreen/terminal-simulator",
+                          "text-fullscreen/apple-terminal-clear-dark",
                           "text-fullscreen/number-slam-card"]
                          if variant == "A" else
                          ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
@@ -837,7 +838,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                           "text-fullscreen/code-particle-assemble",
                           "text-fullscreen/code-scroll",
                           "text-fullscreen/code-typing",
-                          "text-fullscreen/terminal-simulator"] + styles
+                          "text-fullscreen/terminal-simulator",
+                          "text-fullscreen/apple-terminal-clear-dark"] + styles
             if (variant == "A" and _CODEISH.search(str(content))
                     and str(content).count("\n") < 7):
                 styles = ["text-fullscreen/code-typing"] + styles
@@ -846,7 +848,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             if variant == "A" and _DIFFISH.search(str(content)):
                 styles = ["text-fullscreen/code-diff"] + styles
             if variant == "A" and _SHELLISH.search(str(content)):
-                styles = ["text-fullscreen/terminal-simulator"] + styles
+                styles = ["text-fullscreen/apple-terminal-clear-dark",
+                          "text-fullscreen/terminal-simulator"] + styles
             template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
                                     recent_videos=recent_videos, exclude=used_templates,
                                     prefer=([preferred] if preferred else [])

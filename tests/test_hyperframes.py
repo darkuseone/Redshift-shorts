@@ -797,6 +797,33 @@ def test_terminal_simulator_fullscreen_reaches_the_markup(plan, assets, brandboo
     assert ".ts-card" in css
 
 
+def test_apple_terminal_clear_dark_fullscreen_reaches_the_markup(
+        plan, assets, brandbook):
+    plan["shots"][1]["content"] = "npm audit"
+    plan["shots"][1]["duration"] = 8.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 8.0
+    plan["shots"][1]["params"] = {"apple_terminal_clear_dark": True}
+    plan["shots"][1]["renderer"] = "apple_terminal_clear_dark"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-apple-terminal-clear-dark" in out
+    assert "atcd-window" in out and "atcd-prompt" in out
+    assert "bash — 80×24" in out
+    plain = re.sub(r"<[^>]+>", "", out)
+    assert "npm audit" in plain
+    assert "lodash" in plain
+    assert "NPM AUDIT" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "textContent" not in tween_src
+    assert "innerHTML" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#888888" in css
+    assert ".atcd-cursor" in css
+    assert ".atcd-window" in css
+
+
 def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
     """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
     plan["overlays"][2] = {

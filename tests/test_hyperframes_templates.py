@@ -1,6 +1,6 @@
 """Каталог шаблонов в HTML/GSAP.
 
-120 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
+121 шаблонов каталога — это рендереры с параметрами. Проверяется то, что
 движок карает молча: анимация свойства вне разрешённого списка, случайность в
 рендере и бесконечные повторы.
 """
@@ -21,7 +21,7 @@ from src.lib.render.hyperframes.templates import (
     render_transition, transition_css,
     _fs_size, _lt_au_times, _lt_cb_times, _lt_dc_times,     _c3d_times, _c3d_highlight, _cd_times, _cd_line_diff, _cd_parse_pair,
     _cpa_times, _cpa_rng, _CPA_CAP, _cs_times, _ct_times, _ts_times,
-    _sr_frame_table,
+    _atcd_times, _sr_frame_table,
 )
 
 # §7 контракта детерминизма: анимировать можно только это.
@@ -1721,6 +1721,94 @@ def test_terminal_simulator_keeps_catalog_slate_and_green():
     invert = re.search(
         r"\.fullscreen-text\.fs-terminal-simulator\.invert\{[^}]+\}", css).group(0)
     assert "background:#f7f7f8" in invert
+
+
+def test_apple_terminal_clear_dark_types_then_prints_output():
+    """Каталог пишет textContent и innerHTML; здесь span-ы и opacity."""
+    piece = render_fullscreen(_fs_ctx(
+        content="", renderer="apple_terminal_clear_dark",
+        apple_terminal_clear_dark=True, duration=8.0))
+    node = piece.nodes[0]
+    assert "fs-apple-terminal-clear-dark" in node
+    assert "atcd-window" in node and "atcd-prompt" in node
+    assert "atcd-slot" in node and "atcd-input-next" in node
+    assert "bash — 80×24" in node
+    assert "user@Mac ~ % " in node
+    plain = re.sub(r"<[^>]+>", "", node)
+    assert "npm audit" in plain
+    assert "lodash" in plain
+    assert "Run `npm audit fix` to fix them." in plain
+    assert "NPM AUDIT" not in node
+    assert "USER@MAC" not in node
+    assert node.count("atcd-ch") == 9
+    assert node.count("atcd-line") == 10
+    assert "position:absolute" not in node.split("atcd-stage", 1)[0]
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    body = " ".join(piece.tweens)
+    assert "text:" not in body
+    assert "textContent" not in body
+    assert "innerHTML" not in body
+    assert "getBoundingClientRect" not in body
+    assert "display:none" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "onUpdate" not in body
+    assert "Math.random" not in body
+    assert "repeat:-1" not in body.replace(" ", "")
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+        assert selector.startswith("#shot-01-")
+    flagged = render_fullscreen(_fs_ctx(
+        content="", apple_terminal_clear_dark=True, stagger_ms=55, duration=8.0))
+    assert "fs-apple-terminal-clear-dark" in flagged.nodes[0]
+    assert "ks-word" not in flagged.nodes[0]
+    empty = render_fullscreen(_fs_ctx(
+        content="", renderer="apple_terminal_clear_dark", duration=8.0))
+    assert "npm audit" in re.sub(r"<[^>]+>", "", empty.nodes[0])
+    times = _atcd_times(8.0, 9)
+    assert abs(times["type_at"] - 0.50) < 1e-9
+    assert abs(times["clear_at"] - 2.50) < 1e-9
+    assert abs(times["prompt2"] - 4.20) < 1e-9
+    short = _atcd_times(2.0, 9)
+    assert short["hold"] <= 2.0 + 1e-9
+    assert short["blink_dur"] < short["blink_gap"]
+
+
+def test_apple_terminal_clear_dark_keeps_clear_dark_slate():
+    from src.lib.config import load_config
+
+    piece = render_fullscreen(_fs_ctx(
+        content="", renderer="apple_terminal_clear_dark", duration=8.0))
+    node = piece.nodes[0]
+    assert "atcd-close" in node and "atcd-min" in node and "atcd-full" in node
+    css = overlay_css(load_config().brandbook)
+    assert ".fs-apple-terminal-clear-dark" in css
+    assert "text-transform:none" in css
+    assert "JetBrains Mono" in css
+    assert "#1a1a1a" in css
+    assert "#888888" in css
+    assert "#ff5f57" in css
+    prompt = re.search(r"\.atcd-prompt\{[^}]+\}", css).group(0)
+    assert "#888888" in prompt
+    assert "#C8453D" not in prompt
+    cursor = re.search(r"\.atcd-cursor\{[^}]+\}", css).group(0)
+    assert "#888888" in cursor
+    assert "#C8453D" not in cursor
+    title = re.search(r"\.atcd-title\{[^}]+\}", css).group(0)
+    assert "transform:" not in title.replace("text-transform:none", "")
+    stage = re.search(r"\.atcd-stage\{[^}]+\}", css).group(0)
+    assert "position:absolute" not in stage
+    invert = re.search(
+        r"\.fullscreen-text\.fs-apple-terminal-clear-dark\.invert\{[^}]+\}",
+        css).group(0)
+    assert "#1a1a1a" in invert
 
 
 def test_number_slam_splits_the_caption():
