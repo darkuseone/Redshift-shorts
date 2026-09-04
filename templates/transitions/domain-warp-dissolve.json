@@ -1,0 +1,20 @@
+{
+  "id": "transitions/domain-warp-dissolve",
+  "name": "domain-warp-dissolve",
+  "category": "transitions",
+  "title": "Domain warp dissolve: каскадный ворп и радужное свечение кромок — domain-warp-dissolve",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "warp",
+    "dissolve",
+    "shader"
+  ],
+  "renderer": "domain_warp_dissolve",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

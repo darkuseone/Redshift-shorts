@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 29,
+    "transitions": 30,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 190
+    "_total": 191
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2633,6 +2633,26 @@
         "shader"
       ],
       "renderer": "cross_warp_morph",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/domain-warp-dissolve",
+      "name": "domain-warp-dissolve",
+      "category": "transitions",
+      "title": "Domain warp dissolve: каскадный ворп и радужное свечение кромок — domain-warp-dissolve",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "warp",
+        "dissolve",
+        "shader"
+      ],
+      "renderer": "domain_warp_dissolve",
       "last_used_in": [],
       "added": "2026-09-03"
     },

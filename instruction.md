@@ -395,6 +395,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Browser-ui macos-notification: системное уведомление macOS в верхнем правом углу, аватарка HF, бейдж времени | каталог твинил x/opacity; здесь Inter/dark glass/#1c1c1e/brand gradient/#C8453D, x, opacity; spotify-card не трогаем |
 | 2026-09-04 | Transitions chromatic-radial-split: радиальный разлёт RGB-каналов на склейке | каталог крутит WebGL в onUpdate; здесь radial color split/opacity и статичный blur, #22223b/#7678ed; macos-notification не трогаем |
 | 2026-09-04 | Transitions cross-warp-morph: шумовое смещение и морфинг склейки в противоположных направлениях | каталог крутит WebGL в onUpdate; здесь opposing coordinate drift, dual crossfade, warp-градиенты и soft blur, #283618/#a7c957; chromatic-radial-split не трогаем |
+| 2026-09-04 | Transitions domain-warp-dissolve: каскадный ворп и радужное свечение кромок | каталог крутит WebGL в onUpdate; здесь cascaded warp crossfade, iridescent glow и soft blur, #0d1b2a/#00f5d4; cross-warp-morph не трогаем |
 
 
 

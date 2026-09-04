@@ -4202,6 +4202,39 @@ def test_cross_warp_morph_keeps_catalog_tokens():
     assert "backdrop-filter:blur(14px)" in css
 
 
+def test_domain_warp_dissolve_animates_without_webgl(ctx):
+    """Каталог крутит WebGL в onUpdate; здесь cascaded warp crossfade, iridescent glow и blur."""
+    piece = render_transition("domain_warp_dissolve", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.14}}))
+    node = piece.nodes[0]
+    assert "tr-domain-warp-dissolve" in node
+    assert "dwd-stage" in node
+    assert "dwd-from" in node and "dwd-to" in node
+    assert "dwd-glow" in node
+    assert "dwd-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.14" in body
+    assert f'"#{ctx.target}"' in body
+    assert "power2.inOut" in body
+    assert "webgl" not in body.lower()
+
+
+def test_domain_warp_dissolve_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-domain-warp-dissolve" in css
+    frm = re.search(r"\.tr-domain-warp-dissolve \.dwd-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-domain-warp-dissolve \.dwd-to\{[^}]+\}", css).group(0)
+    assert "#0d1b2a" in frm
+    assert "#00f5d4" in too
+    stage = re.search(r"\.tr-domain-warp-dissolve \.dwd-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "backdrop-filter:blur(14px)" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9
