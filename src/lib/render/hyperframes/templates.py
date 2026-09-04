@@ -12828,6 +12828,7 @@ from .notes_reveal import nr_overlay_css, ov_notes_reveal
 from .notification_cascade import nc_overlay_css, ov_notification_cascade
 from .instagram_follow import if_overlay_css, ov_instagram_follow
 from .tiktok_follow import tf_overlay_css, ov_tiktok_follow
+from .yt_lower_third import ylt_overlay_css, ov_yt_lower_third
 
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
@@ -12848,6 +12849,7 @@ OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "notification_cascade": ov_notification_cascade,
     "instagram_follow": ov_instagram_follow,
     "tiktok_follow": ov_tiktok_follow,
+    "yt_lower_third": ov_yt_lower_third,
 }
 
 def render_overlay(name: str, ctx: "TemplateCtx") -> Piece:
@@ -13670,6 +13672,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         + nc_overlay_css()
         + if_overlay_css()
         + tf_overlay_css()
+        + ylt_overlay_css()
         + sfb_css()
         + wv_css()
     )

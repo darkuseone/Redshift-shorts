@@ -5367,6 +5367,12 @@ OVERLAY_PARAMS = {
         "buttonText": "Follow",
         "followingText": "Following",
     },
+    "yt_lower_third": {
+        "channelName": "HeyGen",
+        "subscriberCount": "82.2K subscribers",
+        "buttonText": "Subscribe",
+        "subscribedText": "Subscribed",
+    },
 }
 
 
@@ -6004,7 +6010,58 @@ def test_tiktok_follow_keeps_catalog_tokens():
     assert ".tiktok-follow" in css
     assert ".tf-card" in css
     assert ".tf-follow-btn" in css
-    block = css.split(".tiktok-follow", 1)[1].split(".sfb-board", 1)[0]
+    block = css.split(".tiktok-follow", 1)[1].split(".yt-lower-third", 1)[0]
+    assert "Inter" in block
+
+
+def test_yt_lower_third_animates_without_forbidden_properties():
+    """Catalog bounces button and crossfades text; here y/scale/opacity/backgroundColor, no forbidden props."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=4.5, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["yt_lower_third"])
+    piece = render_overlay("yt_lower_third", ctx)
+    node = piece.nodes[0]
+    assert "yt-lower-third" in node
+    assert "ylt-card" in node and "ylt-subscribe-btn" in node
+    assert "HeyGen" in node
+    assert "82.2K subscribers" in node
+    assert "Subscribe" in node
+    assert "Subscribed" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "DM Sans" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body
+    assert "opacity:" in body
+    assert "y:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("yt_lower_third", TemplateCtx(
+        index=0, start=0.0, duration=4.5, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_yt_lower_third_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".yt-lower-third" in css
+    assert ".ylt-card" in css
+    assert ".ylt-subscribe-btn" in css
+    block = css.split(".yt-lower-third", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
 
 

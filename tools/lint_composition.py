@@ -281,6 +281,16 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "followingText": "Following",
         },
     })
+    overlays.append({
+        "type": "plaque", "start": 131.0, "end": 135.5,
+        "template": "lower-thirds/yt-lower-third", "renderer": "yt_lower_third",
+        "params": {
+            "channelName": "HeyGen",
+            "subscriberCount": "82.2K subscribers",
+            "buttonText": "Subscribe",
+            "subscribedText": "Subscribed",
+        },
+    })
 
 
 

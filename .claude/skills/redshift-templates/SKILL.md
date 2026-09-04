@@ -1,10 +1,10 @@
 ---
 name: redshift-templates
-description: Каталог из 183 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
+description: Каталог из 184 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
 ---
 # redshift-templates
 
-183 шаблона в 12 категориях (§15). Каталог генерируется
+184 шаблона в 12 категориях (§15). Каталог генерируется
 `tools/gen_templates.py` — правь генератор, а не `templates/manifest.json`.
 У новых id есть поле `example_video` — референс-жест с examples HyperFrames.
 
@@ -12,7 +12,7 @@ description: Каталог из 183 шаблонов, ротация и раз�
 |---|---|---|
 | `intro-hooks` | 8 | входы в ролик |
 | `text-fullscreen` | 32 | полноэкранный текст |
-| `lower-thirds` | 13 | плашки |
+| `lower-thirds` | 14 | плашки |
 | `frames-cards` | 7 | карточки источников |
 | `browser-ui` | 17 | окна интерфейсов |
 | `transitions` | 27 | переходы |
@@ -734,10 +734,10 @@ x=119 и x=961, кадр показал на x=118 и x=960 с перепадо�
 
 ## Каталог в терминах HTML/GSAP
 
-183 шаблона — это **рендереры с параметрами**, а не 147 реализация:
+184 шаблона — это **рендереры с параметрами**, а не 147 реализация:
 `fullscreen_text` и его варианты покрывают полноэкранные кадры, `source_card` /
 `chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `notes_reveal` / `notification_cascade` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
-`lt_accent_underline` / `lt_clean_bar` / `lt_dark_card` / `instagram_follow` / `tiktok_follow` — плашки, `kenburns` — проезд, `dataviz` — графики. Меняя шаблон, чаще всего
+`lt_accent_underline` / `lt_clean_bar` / `lt_dark_card` / `instagram_follow` / `tiktok_follow` / `yt_lower_third` — плашки, `kenburns` — проезд, `dataviz` — графики. Меняя шаблон, чаще всего
 меняешь параметры, а не код.
 
 Реализации живут в `src/lib/render/hyperframes/templates.py`. Тест

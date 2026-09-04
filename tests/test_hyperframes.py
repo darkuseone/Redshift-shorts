@@ -2001,6 +2001,33 @@ def test_tiktok_follow_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_yt_lower_third_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "plaque", "start": 0.2, "end": 4.5,
+        "template": "lower-thirds/yt-lower-third",
+        "renderer": "yt_lower_third",
+        "params": {
+            "channelName": "HeyGen",
+            "subscriberCount": "82.2K subscribers",
+            "buttonText": "Subscribe",
+            "subscribedText": "Subscribed",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "yt-lower-third" in out
+    assert "HeyGen" in out
+    assert "82.2K subscribers" in out
+    assert "Subscribe" in out
+    assert "Subscribed" in out
+    node = next(line for line in out.splitlines() if "yt-lower-third" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 
 
 
