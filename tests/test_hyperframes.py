@@ -2028,6 +2028,40 @@ def test_yt_lower_third_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_x_post_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 5.0,
+        "template": "browser-ui/x-post",
+        "renderer": "x_post",
+        "params": {
+            "displayName": "Hyperframes",
+            "handle": "@hyperframes",
+            "text": "Write HTML, render pixel-perfect video. #HyperFrames",
+            "timestamp": "1:10 PM · Apr 7, 2026",
+            "replies": "34",
+            "reposts": "2.3K",
+            "likes": "10.9K",
+            "likesActive": "11.0K",
+            "views": "150K",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "x-post" in out
+    assert "Hyperframes" in out
+    assert "@hyperframes" in out
+    assert "Write HTML" in out
+    assert "#HyperFrames" in out
+    assert "10.9K" in out
+    assert "11.0K" in out
+    node = next(line for line in out.splitlines() if "x-post" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 
 
 

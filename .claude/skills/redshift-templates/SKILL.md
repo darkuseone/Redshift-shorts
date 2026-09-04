@@ -1,10 +1,10 @@
 ---
 name: redshift-templates
-description: Каталог из 184 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
+description: Каталог из 185 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
 ---
 # redshift-templates
 
-184 шаблона в 12 категориях (§15). Каталог генерируется
+185 шаблона в 12 категориях (§15). Каталог генерируется
 `tools/gen_templates.py` — правь генератор, а не `templates/manifest.json`.
 У новых id есть поле `example_video` — референс-жест с examples HyperFrames.
 
@@ -14,7 +14,7 @@ description: Каталог из 184 шаблонов, ротация и раз�
 | `text-fullscreen` | 32 | полноэкранный текст |
 | `lower-thirds` | 14 | плашки |
 | `frames-cards` | 7 | карточки источников |
-| `browser-ui` | 17 | окна интерфейсов |
+| `browser-ui` | 18 | окна интерфейсов |
 | `transitions` | 27 | переходы |
 | `avatar-entry` | 6 | входы аватара |
 | `kenburns` | 10 | движение по статике |
@@ -734,9 +734,9 @@ x=119 и x=961, кадр показал на x=118 и x=960 с перепадо�
 
 ## Каталог в терминах HTML/GSAP
 
-184 шаблона — это **рендереры с параметрами**, а не 147 реализация:
+185 шаблона — это **рендереры с параметрами**, а не 147 реализация:
 `fullscreen_text` и его варианты покрывают полноэкранные кадры, `source_card` /
-`chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `notes_reveal` / `notification_cascade` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
+`chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `notes_reveal` / `notification_cascade` / `x_post` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
 `lt_accent_underline` / `lt_clean_bar` / `lt_dark_card` / `instagram_follow` / `tiktok_follow` / `yt_lower_third` — плашки, `kenburns` — проезд, `dataviz` — графики. Меняя шаблон, чаще всего
 меняешь параметры, а не код.
 

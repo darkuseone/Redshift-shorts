@@ -6,7 +6,7 @@
     "text-fullscreen": 32,
     "lower-thirds": 14,
     "frames-cards": 7,
-    "browser-ui": 17,
+    "browser-ui": 18,
     "transitions": 27,
     "avatar-entry": 6,
     "kenburns": 10,
@@ -14,7 +14,7 @@
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 184
+    "_total": 185
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1883,6 +1883,37 @@
         "ios"
       ],
       "renderer": "notification_cascade",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/x-post",
+      "name": "x-post",
+      "category": "browser-ui",
+      "title": "X (Twitter): карточка твита с реакцией лайка и счетчиками — x-post",
+      "duration_range": [
+        2.5,
+        6.5
+      ],
+      "params": {
+        "displayName": "Hyperframes",
+        "handle": "@hyperframes",
+        "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
+        "timestamp": "1:10 PM · Apr 7, 2026",
+        "replies": "34",
+        "reposts": "2.3K",
+        "likes": "10.9K",
+        "likesActive": "11.0K",
+        "views": "150K"
+      },
+      "tags": [
+        "ui",
+        "social",
+        "x",
+        "twitter",
+        "post"
+      ],
+      "renderer": "x_post",
       "last_used_in": [],
       "added": "2026-09-03"
     },

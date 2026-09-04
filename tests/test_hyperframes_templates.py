@@ -5373,6 +5373,17 @@ OVERLAY_PARAMS = {
         "buttonText": "Subscribe",
         "subscribedText": "Subscribed",
     },
+    "x_post": {
+        "displayName": "Hyperframes",
+        "handle": "@hyperframes",
+        "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
+        "timestamp": "1:10 PM · Apr 7, 2026",
+        "replies": "34",
+        "reposts": "2.3K",
+        "likes": "10.9K",
+        "likesActive": "11.0K",
+        "views": "150K",
+    },
 }
 
 
@@ -6061,7 +6072,58 @@ def test_yt_lower_third_keeps_catalog_tokens():
     assert ".yt-lower-third" in css
     assert ".ylt-card" in css
     assert ".ylt-subscribe-btn" in css
-    block = css.split(".yt-lower-third", 1)[1].split(".sfb-board", 1)[0]
+    block = css.split(".yt-lower-third", 1)[1].split(".x-post", 1)[0]
+    assert "Inter" in block
+
+
+def test_x_post_animates_without_forbidden_properties():
+    """Catalog bounces heart and updates text via opacity; here y/scale/opacity, no forbidden props."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=5.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["x_post"])
+    piece = render_overlay("x_post", ctx)
+    node = piece.nodes[0]
+    assert "x-post" in node
+    assert "xp-card" in node and "xp-like-btn" in node
+    assert "Hyperframes" in node
+    assert "@hyperframes" in node
+    assert "Write HTML" in node
+    assert "10.9K" in node
+    assert "11.0K" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body
+    assert "opacity:" in body
+    assert "y:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("x_post", TemplateCtx(
+        index=0, start=0.0, duration=5.0, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_x_post_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".x-post" in css
+    assert ".xp-card" in css
+    assert ".xp-like-btn" in css
+    block = css.split(".x-post", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
 
 

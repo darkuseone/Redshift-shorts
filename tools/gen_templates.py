@@ -257,7 +257,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (17, [
+    "browser-ui": (18, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -406,6 +406,19 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "headlineAccent": "FROM HTML",
              "footerText": "hyperframes.heygen.com",
          }, ["ui", "notifications", "mobile", "ios"], "notification_cascade"),
+        ("x-post",
+         "X (Twitter): карточка твита с реакцией лайка и счетчиками — x-post",
+         [2.5, 6.5], {
+             "displayName": "Hyperframes",
+             "handle": "@hyperframes",
+             "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
+             "timestamp": "1:10 PM · Apr 7, 2026",
+             "replies": "34",
+             "reposts": "2.3K",
+             "likes": "10.9K",
+             "likesActive": "11.0K",
+             "views": "150K",
+         }, ["ui", "social", "x", "twitter", "post"], "x_post"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

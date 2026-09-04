@@ -291,6 +291,21 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "subscribedText": "Subscribed",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 136.0, "end": 141.0,
+        "template": "browser-ui/x-post", "renderer": "x_post",
+        "params": {
+            "displayName": "Hyperframes",
+            "handle": "@hyperframes",
+            "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
+            "timestamp": "1:10 PM · Apr 7, 2026",
+            "replies": "34",
+            "reposts": "2.3K",
+            "likes": "10.9K",
+            "likesActive": "11.0K",
+            "views": "150K",
+        },
+    })
 
 
 
