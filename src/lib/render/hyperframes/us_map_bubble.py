@@ -86,10 +86,10 @@ def dv_us_map_bubble(ctx: "TemplateCtx") -> Piece:
 
 def umb_css() -> str:
     return (
-        ".umb-overlay{position:absolute;inset:0;font-family:Inter,sans-serif;background:#0f172a}"
-        ".umb-map{position:absolute;left:50px;top:400px;width:980px;height:700px;background:#1e293b;border-radius:40px;mask-image:url('assets/us-map-mask.svg');-webkit-mask-image:url('assets/us-map-mask.svg');mask-size:contain;mask-repeat:no-repeat}"
-        ".umb-bubble{position:absolute;background:radial-gradient(circle at 30% 30%, #60a5fa, #2563eb);border-radius:50%;box-shadow:0 0 20px rgba(37,99,235,0.5);mix-blend-mode:screen}"
+        ".umb-overlay{position:absolute;inset:0;font-family:Inter,sans-serif;background:#111214}"
+        ".umb-map{position:absolute;left:50px;top:400px;width:980px;height:700px;background:rgba(255,255,255,0.08);border-radius:40px;mask-image:url('assets/us-map-mask.svg');-webkit-mask-image:url('assets/us-map-mask.svg');mask-size:contain;mask-repeat:no-repeat}"
+        ".umb-bubble{position:absolute;background:radial-gradient(circle at 30% 30%, #E4726A, #C8453D);border-radius:50%;box-shadow:0 0 20px rgba(200,69,61,0.5);mix-blend-mode:screen}"
         ".umb-header{position:absolute;left:80px;top:150px;width:920px;display:flex;flex-direction:column;gap:16px;z-index:10}"
-        ".umb-title{color:#fff;font-size:72px;font-weight:800;letter-spacing:-0.02em}"
-        ".umb-sub{color:#94a3b8;font-size:36px;font-weight:500}"
+        ".umb-title{color:#ffffff;font-size:72px;font-weight:800;letter-spacing:-0.02em}"
+        ".umb-sub{color:#7A7D82;font-size:36px;font-weight:500}"
     )

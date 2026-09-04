@@ -82,8 +82,8 @@ def dv_flowchart(ctx: "TemplateCtx") -> Piece:
 def flc_css() -> str:
     return (
         ".flc-overlay{position:absolute;inset:0;font-family:Inter,sans-serif}"
-        ".flc-bg{position:absolute;inset:0;background:#0d1117}"
-        ".flc-node{position:absolute;left:340px;width:400px;height:100px;background:#161b22;border:2px solid #30363d;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#c9d1d9;font-size:36px;font-weight:600;box-shadow:0 12px 24px rgba(0,0,0,0.4);z-index:10}"
-        ".flc-line{position:absolute;left:538px;width:4px;background:#21262d;z-index:5}"
-        ".flc-line-fill{width:100%;height:100%;background:#58a6ff;transform-origin:50% 0}"
+        ".flc-bg{position:absolute;inset:0;background:#111214}"
+        ".flc-node{position:absolute;left:340px;width:400px;height:100px;background:#111214;border:2px solid #7A7D82;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:36px;font-weight:600;box-shadow:0 12px 24px rgba(0,0,0,0.4);z-index:10}"
+        ".flc-line{position:absolute;left:538px;width:4px;background:#7A7D82;z-index:5}"
+        ".flc-line-fill{width:100%;height:100%;background:#C8453D;transform-origin:50% 0}"
     )

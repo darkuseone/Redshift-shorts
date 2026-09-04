@@ -14035,7 +14035,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "color:var(--color-ink)}"
         ".hero-exhibit .ex-detail{display:block;margin-top:14px;"
         "font-family:var(--font-subtitle);font-weight:700;font-size:38px;"
-        "color:#4A4D52}"
+        "color:var(--color-muted)}"
         ".hero-exhibit .ex-credit{display:block;margin-top:14px;"
         "font-family:var(--font-mono);font-size:24px;letter-spacing:0.10em;"
         "text-transform:uppercase;color:var(--color-muted)}"
@@ -14088,7 +14088,7 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "text-shadow:0 4px 20px var(--stage-halo)}"
         ".hero-figure .fg-item.accent .fg-value{color:var(--color-accent)}"
         ".hero-figure .fg-note{display:block;font-family:var(--font-subtitle);"
-        "font-weight:800;font-size:36px;color:#4A4D52;"
+        "font-weight:800;font-size:36px;color:var(--color-muted);"
         "text-shadow:0 2px 14px rgba(247,245,243,0.9)}"
         # --- приговор на светлой плашке ---
         f".hero-verdict{{position:absolute;inset:0;z-index:{Z_AVATAR + 3};"

@@ -86,7 +86,7 @@ def ov_blue_sweater(ctx: "TemplateCtx") -> Piece:
       
       <!-- Cursor -->
       <svg id="{node_id}-cursor" class="bs-cursor" width="48" height="48" viewBox="0 0 24 24">
-        <path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2 1-3.2-7.4-4.4 4.8z" fill="#fff" stroke="#000" stroke-width="1.5"/>
+        <path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2 1-3.2-7.4-4.4 4.8z" fill="#ffffff" stroke="#111214" stroke-width="1.5"/>
       </svg>
     </div>
     """
@@ -94,22 +94,22 @@ def ov_blue_sweater(ctx: "TemplateCtx") -> Piece:
 
 def bs_overlay_css() -> str:
     return (
-        ".bs-overlay{position:absolute;inset:0;font-family:Inter,sans-serif;background:rgba(0,0,0,0.4)}"
-        ".bs-panel{position:absolute;left:140px;top:700px;width:800px;background:#1e1e1e;border-radius:24px;padding:40px;box-shadow:0 24px 48px rgba(0,0,0,0.5);border:1px solid #333}"
-        ".bs-header{color:#fff;font-size:36px;font-weight:600;margin-bottom:24px}"
-        ".bs-prompt{color:#ddd;font-size:42px;line-height:1.4;background:#2a2a2a;padding:24px;border-radius:16px;min-height:160px;display:flex;flex-wrap:wrap}"
-        ".bs-btn{margin-top:32px;background:#007aff;color:#fff;font-size:28px;font-weight:600;padding:20px 40px;border-radius:16px;text-align:center;width:fit-content;float:right}"
+        ".bs-overlay{position:absolute;inset:0;font-family:Inter,sans-serif;background:rgba(10,10,12,0.78)}"
+        ".bs-panel{position:absolute;left:140px;top:700px;width:800px;background:#111214;border-radius:24px;padding:40px;box-shadow:0 24px 48px rgba(0,0,0,0.5);border:1px solid #7A7D82}"
+        ".bs-header{color:#ffffff;font-size:36px;font-weight:600;margin-bottom:24px}"
+        ".bs-prompt{color:#F7F5F3;font-size:42px;line-height:1.4;background:#111214;border:1px solid #7A7D82;padding:24px;border-radius:16px;min-height:160px;display:flex;flex-wrap:wrap}"
+        ".bs-btn{margin-top:32px;background:#C8453D;color:#ffffff;font-size:28px;font-weight:600;padding:20px 40px;border-radius:16px;text-align:center;width:fit-content;float:right}"
         
         ".bs-generating{display:flex;flex-direction:column;align-items:center;padding:80px 40px}"
-        ".bs-spinner{width:80px;height:80px;border:8px solid #333;border-top-color:#007aff;border-radius:50%;animation:bs-spin 1s linear infinite}"
+        ".bs-spinner{width:80px;height:80px;border:8px solid #7A7D82;border-top-color:#C8453D;border-radius:50%;animation:bs-spin 1s linear infinite}"
         "@keyframes bs-spin{to{transform:rotate(360deg)}}"
-        ".bs-loading-text{color:#fff;font-size:32px;margin-top:32px;margin-bottom:32px}"
-        ".bs-load-bar{width:100%;height:16px;background:#333;border-radius:8px;overflow:hidden}"
-        ".bs-load-fill{width:100%;height:100%;background:#007aff;transform-origin:0 50%}"
+        ".bs-loading-text{color:#ffffff;font-size:32px;margin-top:32px;margin-bottom:32px}"
+        ".bs-load-bar{width:100%;height:16px;background:rgba(122,125,130,0.25);border-radius:8px;overflow:hidden}"
+        ".bs-load-fill{width:100%;height:100%;background:#C8453D;transform-origin:0 50%}"
         
-        ".bs-result{position:absolute;left:140px;top:400px;width:800px;height:1000px;background:#111;border-radius:32px;overflow:hidden;box-shadow:0 32px 64px rgba(0,0,0,0.6);border:2px solid #333;display:flex;align-items:center;justify-content:center}"
+        ".bs-result{position:absolute;left:140px;top:400px;width:800px;height:1000px;background:#111214;border-radius:32px;overflow:hidden;box-shadow:0 32px 64px rgba(0,0,0,0.6);border:2px solid #7A7D82;display:flex;align-items:center;justify-content:center}"
         ".bs-avatar-img{position:absolute;inset:0;background:url('assets/joe-sai-avatar.png') center/cover}"
-        ".bs-play-btn{width:120px;height:120px;background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:48px;padding-left:8px;z-index:2}"
+        ".bs-play-btn{width:120px;height:120px;background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:48px;padding-left:8px;z-index:2}"
         
         ".bs-cursor{position:absolute;z-index:100}"
     )

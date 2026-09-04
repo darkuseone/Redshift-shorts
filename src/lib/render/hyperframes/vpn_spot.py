@@ -132,8 +132,8 @@ def vys_overlay_css() -> str:
         ".vys-overlay{position:absolute;inset:0;font-family:Inter,sans-serif}"
         ".vys-headline{position:absolute;left:100px;top:200px;display:flex;flex-direction:column;gap:4px;z-index:2}"
         ".vys-headline span{font-size:110px;line-height:0.92;font-weight:900;color:#111214}"
-        ".vys-headline .vys-blue{color:#007aff}"
-        ".vys-sub{margin-top:24px;font-size:32px;color:#6e6e73;font-weight:700}"
+        ".vys-headline .vys-blue{color:#C8453D}"
+        ".vys-sub{margin-top:24px;font-size:32px;color:#7A7D82;font-weight:700}"
         
         ".vys-phone{position:absolute;left:309px;top:700px;width:462px;height:952px;border-radius:72px;"
         "background:linear-gradient(145deg, #1f2025 0%, #07070a 100%);padding:16px;z-index:4;"

@@ -282,7 +282,7 @@ def fcv_css() -> str:
         ".fcv-connectors{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}"
         f".fcv-conn-line{{fill:none;stroke:{_FCV_INK};stroke-width:4;stroke-linecap:round;stroke-linejoin:round}}"
         f".fcv-label{{position:absolute;font-size:18px;font-weight:600;color:{_FCV_INK};background:{_FCV_CANVAS};"
-        "padding:4px 10px;border-radius:6px;border:1px solid #e5e7eb;opacity:0;z-index:8;"
+        "padding:4px 10px;border-radius:6px;border:1px solid #7A7D82;opacity:0;z-index:8;"
         "transform:translate(-50%, -50%)}"
         f".fcv-node{{position:absolute;transform:translate(-50%, -50%) scale(0);padding:16px 18px;"
         f"border-radius:14px;font-size:18px;font-weight:600;line-height:1.25;color:{_FCV_INK};box-shadow:0 6px 16px rgba(0,0,0,0.08);"

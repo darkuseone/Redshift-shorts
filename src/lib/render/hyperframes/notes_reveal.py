@@ -199,7 +199,7 @@ def ov_notes_reveal(ctx: TemplateCtx) -> Piece:
         f'</div>'
         f'<div class="nr-header">'
         f'<div class="nr-hdr-back">‹ Notes</div>'
-        f'<div class="nr-hdr-tools"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#e4a824" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="#e4a824" stroke-width="2" stroke-linecap="round"/></svg></div>'
+        f'<div class="nr-hdr-tools"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#C8453D" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="#C8453D" stroke-width="2" stroke-linecap="round"/></svg></div>'
         f'</div>'
         f'<div class="nr-note-view">'
         f'<div id="{node_id}-notebody" class="nr-notebody">'
@@ -228,7 +228,7 @@ def nr_overlay_css() -> str:
         "justify-content:space-between;padding:0 50px;font-size:28px;font-weight:600}"
         ".notes-reveal .nr-header{height:90px;display:flex;align-items:center;"
         "justify-content:space-between;padding:0 40px;border-bottom:1px solid rgba(0,0,0,0.06)}"
-        ".notes-reveal .nr-hdr-back{font-size:32px;font-weight:500;color:#e4a824}"
+        ".notes-reveal .nr-hdr-back{font-size:32px;font-weight:500;color:#C8453D}"
         ".notes-reveal .nr-note-view{position:relative;flex:1;overflow:hidden;padding:0 50px}"
         ".notes-reveal .nr-notebody{position:relative;padding-top:40px;will-change:transform}"
         ".notes-reveal .nr-title-l1{font-size:60px;font-weight:800;color:#111214;line-height:1.15}"
