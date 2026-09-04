@@ -4136,6 +4136,39 @@ def test_cinematic_zoom_keeps_catalog_indigo_and_gold():
     assert "backdrop-filter:blur(16px)" in css
 
 
+def test_chromatic_radial_split_animates_without_webgl(ctx):
+    """Каталог крутит WebGL в onUpdate; здесь radial color split/opacity и статичный blur."""
+    piece = render_transition("chromatic_radial_split", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.14}}))
+    node = piece.nodes[0]
+    assert "tr-chromatic-radial-split" in node
+    assert "crs-stage" in node
+    assert "crs-from" in node and "crs-to" in node
+    assert "crs-r" in node and "crs-b" in node
+    assert "crs-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.14" in body
+    assert f'"#{ctx.target}"' in body
+    assert "power2.inOut" in body
+    assert "webgl" not in body.lower()
+
+
+def test_chromatic_radial_split_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-chromatic-radial-split" in css
+    frm = re.search(r"\.tr-chromatic-radial-split \.crs-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-chromatic-radial-split \.crs-to\{[^}]+\}", css).group(0)
+    assert "#22223b" in frm
+    assert "#7678ed" in too
+    stage = re.search(r"\.tr-chromatic-radial-split \.crs-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "backdrop-filter:blur(14px)" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9

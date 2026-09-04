@@ -393,6 +393,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Browser-ui reddit-post: карточка поста Reddit, аватарка сабреддита, реакция апвоута с отскоком и смена счетчика | каталог делал onStart textContent; здесь dual-span opacity, transform y, scale/opacity, Inter/#1a1a2e/#d7dadc/#FF4500; x-post не трогаем |
 | 2026-09-04 | Browser-ui spotify-card: стеклянная карточка трека Spotify, обложка, исполнитель, дыхание арта и логотип | каталог твинил y/scale/opacity; здесь Inter/gradient/emerald/#1db954, power3.out вход, дыхание обложки; reddit-post не трогаем |
 | 2026-09-04 | Browser-ui macos-notification: системное уведомление macOS в верхнем правом углу, аватарка HF, бейдж времени | каталог твинил x/opacity; здесь Inter/dark glass/#1c1c1e/brand gradient/#C8453D, x, opacity; spotify-card не трогаем |
+| 2026-09-04 | Transitions chromatic-radial-split: радиальный разлёт RGB-каналов на склейке | каталог крутит WebGL в onUpdate; здесь radial color split/opacity и статичный blur, #22223b/#7678ed; macos-notification не трогаем |
 
 
 

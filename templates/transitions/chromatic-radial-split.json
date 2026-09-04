@@ -1,0 +1,20 @@
+{
+  "id": "transitions/chromatic-radial-split",
+  "name": "chromatic-radial-split",
+  "category": "transitions",
+  "title": "Chromatic radial split: радиальный разлёт RGB-каналов — chromatic-radial-split",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "radial",
+    "chromatic",
+    "shader"
+  ],
+  "renderer": "chromatic_radial_split",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

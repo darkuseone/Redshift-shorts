@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 27,
+    "transitions": 28,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 188
+    "_total": 189
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2593,6 +2593,26 @@
         "cut"
       ],
       "renderer": "transitions_other",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/chromatic-radial-split",
+      "name": "chromatic-radial-split",
+      "category": "transitions",
+      "title": "Chromatic radial split: радиальный разлёт RGB-каналов — chromatic-radial-split",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "radial",
+        "chromatic",
+        "shader"
+      ],
+      "renderer": "chromatic_radial_split",
       "last_used_in": [],
       "added": "2026-09-03"
     },

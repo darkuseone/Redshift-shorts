@@ -1935,33 +1935,6 @@ def r_parallax(ctx: "TemplateCtx") -> Piece:
     ])
 
 
-TRANSITIONS: dict[str, Callable[["TemplateCtx"], Piece]] = {
-    "cut": tr_cut,
-    "white_flash": tr_white_flash,
-    "zoom_punch": tr_zoom_punch,
-    "zoom_through": tr_zoom_through,
-    "cinematic_zoom": tr_cinematic_zoom,
-    "gravitational_lens": tr_gravitational_lens,
-    "light_leak": tr_light_leak,
-    "sdf_iris": tr_sdf_iris,
-    "thermal_distortion": tr_thermal_distortion,
-    "whip_pan_shader": tr_whip_pan_shader,
-    "mk_clone_wall": tr_mk_clone_wall,
-    "transitions_3d": tr_transitions_3d,
-    "transitions_blur": tr_transitions_blur,
-    "transitions_cover": tr_transitions_cover,
-    "transitions_light": tr_transitions_light,
-    "transitions_other": tr_transitions_other,
-    "transitions_destruction": tr_transitions_destruction,
-    "blur_dip": tr_blur_dip,
-    "whip_pan": tr_whip_pan,
-    "paper_slide": tr_paper_slide,
-    "mask_wipe": tr_mask_wipe,
-    "light_sweep": tr_light_sweep,
-    "glitch": tr_glitch,
-    "glitch_shader": tr_glitch_shader,
-}
-
 MOTION: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "kenburns": r_kenburns,
     "parallax": r_parallax,
@@ -1992,6 +1965,37 @@ class TemplateCtx:
     @property
     def track_alt(self) -> int:
         return self.alt_track(1)
+
+
+from .chromatic_radial_split import crs_transition_css, tr_chromatic_radial_split
+
+TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
+    "cut": tr_cut,
+    "white_flash": tr_white_flash,
+    "zoom_punch": tr_zoom_punch,
+    "zoom_through": tr_zoom_through,
+    "cinematic_zoom": tr_cinematic_zoom,
+    "gravitational_lens": tr_gravitational_lens,
+    "light_leak": tr_light_leak,
+    "sdf_iris": tr_sdf_iris,
+    "thermal_distortion": tr_thermal_distortion,
+    "whip_pan_shader": tr_whip_pan_shader,
+    "mk_clone_wall": tr_mk_clone_wall,
+    "transitions_3d": tr_transitions_3d,
+    "transitions_blur": tr_transitions_blur,
+    "transitions_cover": tr_transitions_cover,
+    "transitions_light": tr_transitions_light,
+    "transitions_other": tr_transitions_other,
+    "transitions_destruction": tr_transitions_destruction,
+    "blur_dip": tr_blur_dip,
+    "whip_pan": tr_whip_pan,
+    "paper_slide": tr_paper_slide,
+    "mask_wipe": tr_mask_wipe,
+    "light_sweep": tr_light_sweep,
+    "glitch": tr_glitch,
+    "glitch_shader": tr_glitch_shader,
+    "chromatic_radial_split": tr_chromatic_radial_split,
+}
 
 
 def render_transition(name: str, ctx: TemplateCtx) -> Piece:
@@ -2384,6 +2388,7 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         ".tr-transitions-other .tto-flash{position:absolute;inset:0;display:block;"
         "opacity:0;pointer-events:none;background:#ffffff;"
         "transform-origin:50% 50%}"
+        + crs_transition_css()
     )
 
 
