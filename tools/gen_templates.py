@@ -447,7 +447,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "iconText": "HF",
          }, ["ui", "desktop", "macos", "notification", "system"], "macos_notification"),
     ]),
-    "transitions": (38, [
+    "transitions": (39, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
         ("whip-pan-l", "Резкий пан влево", [0.16, 0.28], {"direction": -1, "blur": 24},
          ["dynamic", "pan"], "whip_pan"),
@@ -573,6 +573,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Mechanical: индастриал захлопывание шторок со снопом искр на стыке — transitions-mechanical",
          [0.22, 0.42], {},
          ["dynamic", "mechanical", "shutter", "metal"], "transitions_mechanical"),
+        ("transitions-push",
+         "Push: направленное выталкивание сцен со слайдом — transitions-push",
+         [0.22, 0.42], {},
+         ["dynamic", "push", "slide", "directional"], "transitions_push"),
     ]),
     "avatar-entry": (6, [
         ("hero-zoom-in", "Вход зумом на аватар", [0.2, 0.4], {"from_scale": 1.18},

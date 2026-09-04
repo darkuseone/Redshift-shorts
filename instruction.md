@@ -404,6 +404,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Transitions transitions-distortion: глитч и хроматическое расщепление на склейке | каталог крутит глитч и сдвиги; здесь chromatic RGB slices, jitter и soft blur, #1b263b/#e07a5f; transitions-dissolve не трогаем |
 | 2026-09-04 | Transitions transitions-grid: мозаичный распад на тайлы и каскадное проявление | каталог крутит grid dissolve; здесь 3x4 мозаичные ячейки с центростремительным рипплом, #1b263b/#e07a5f; transitions-distortion не трогаем |
 | 2026-09-04 | Transitions transitions-mechanical: индастриал захлопывание шторок со снопом искр на стыке | каталог крутит mechanical shutter; здесь встречные створки со швом искр, #1b263b/#e07a5f/#111214/#C8453D; transitions-grid не трогаем |
+| 2026-09-04 | Transitions transitions-push: направленное выталкивание сцен со слайдом | каталог крутит push slide; здесь синхронный слайд сцен со сдвигом по осям и blur wash, #1b263b/#e07a5f; transitions-mechanical не трогаем |
 
 
 
