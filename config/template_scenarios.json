@@ -863,14 +863,7 @@
       "categories": [
         "frames-cards"
       ],
-      "keywords": [
-        "arxiv",
-        "paper",
-        "препринт",
-        "исследован",
-        "научн",
-        "стать"
-      ],
+      "keywords": [],
       "patterns": [],
       "needs": [],
       "templates": [
@@ -888,16 +881,7 @@
       "categories": [
         "browser-ui"
       ],
-      "keywords": [
-        "источник",
-        "статья",
-        "новост",
-        "source",
-        "article",
-        "browser",
-        "веб-страниц",
-        "сайт"
-      ],
+      "keywords": [],
       "patterns": [],
       "needs": [],
       "templates": [

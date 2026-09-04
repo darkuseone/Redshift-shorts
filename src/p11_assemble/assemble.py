@@ -40,6 +40,7 @@ from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
 from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
+from ..lib.template_picker import ScenarioIndex, TemplatePicker, build_blob
 
 _log = get_logger("p11")
 
@@ -1137,21 +1138,6 @@ _NUM_IN_TEXT = re.compile(
     r"(?<![\d.])(\d+(?:[.,]\d+)?)(?:\s*(%|млрд|млн|тыс\.?|кубит(?:ов|а)?|[Tт]))?",
     re.IGNORECASE,
 )
-_CODEISH = re.compile(
-    r"(?m)(^\s*(async\s+)?function\b|^\s*def\s+\w+|^\s*const\s+\w+|^\s*class\s+\w+"
-    r"|[{};]\s*$|=>|::|\breturn\s+\w|\bimport\s+\w)",
-)
-_SHELLISH = re.compile(
-    r"(?m)(^\s*\$\s|\b(?:npx|npm|pip3?|cargo|hyperframes|brew|apt-get)\s)",
-)
-_DIFFISH = re.compile(
-    r"(?ms)(^\s*---\s*$)|(^\s*diff\s+--git\b)|"
-    r"(^\s*-[^-\n].*$.*?^\s*\+[^+\n])",
-)
-_BEATISH = re.compile(
-    r"(drop|freeze|beat|hard\s*cut|on the beat|дроп|бит|замороз)",
-    re.I,
-)
 
 
 def _overlay_renderer(template: Template) -> str:
@@ -1224,8 +1210,12 @@ def _evidence_runs(slots: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
 
 def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
-                    recent_videos: list[str], used: list[str]) -> list[dict[str, Any]]:
+                    recent_videos: list[str], used: list[str],
+                    picker: TemplatePicker | None = None) -> list[dict[str, Any]]:
     """Плашки, карточки источников, подсветка, data-viz и CTA (§5.4–5.6, §6)."""
+    if picker is None:
+        cfg = getattr(ctx, "cfg", None)
+        picker = TemplatePicker(catalog, ScenarioIndex.load(cfg, catalog=catalog))
     overlays: list[dict[str, Any]] = []
     duration = float(plan["duration_sec"])
     sources = plan.get("sources", [])
@@ -1233,64 +1223,22 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
 
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
         anchor = run[0]
-        if variant == "A":
-            card_category = "browser-ui"
-            card_prefer = ["browser-ui/chat-thread", "browser-ui/article-highlight",
-                           "browser-ui/browser-scroll"]
-            blob = " ".join([
-                str(source.get("title") or ""),
-                str(source.get("snippet") or ""),
-                str(source.get("domain") or ""),
-                str(source.get("screen_template") or ""),
-            ]).lower()
-            if any(key in blob for key in (
-                    "ai chat", "ai-chat", "ask anything", "chatgpt",
-                    "chat gpt", "нейросет", "ии-чат", "чат-бот", "chatbot",
-                    "gpt-4", "gpt4", "claude.ai")):
-                card_prefer = ["browser-ui/ai-chat-reveal"] + [
-                    item for item in card_prefer
-                    if item != "browser-ui/ai-chat-reveal"]
-            elif any(key in blob for key in (
-                    "app showcase", "fitness app", "weekly goal",
-                    "burned calories", "app store", "фитнес", "калори",
-                    "дашборд", "dashboard app", "workout app",
-                    "smartphone screens")):
-                card_prefer = ["browser-ui/app-showcase"] + [
-                    item for item in card_prefer
-                    if item != "browser-ui/app-showcase"]
-            elif any(key in blob for key in (
-                    "chatgpt exchange", "avatar ranking", "сравнение ии",
-                    "таблица моделей", "ranking")):
-                card_prefer = ["browser-ui/chatgpt-exchange"] + [
-                    item for item in card_prefer
-                    if item != "browser-ui/chatgpt-exchange"]
-            elif any(key in blob for key in (
-                    "claude", "anthropic", "opus", "claude exchange")):
-                card_prefer = ["browser-ui/claude-exchange"] + [
-                    item for item in card_prefer
-                    if item != "browser-ui/claude-exchange"]
-            elif any(key in blob for key in (
-                    "imessage", "message thread", "смс", "сообщения", "переписка")):
-                card_prefer = ["browser-ui/message-thread-reveal"] + [
-                    item for item in card_prefer
-                    if item != "browser-ui/message-thread-reveal"]
-            elif any(key in blob for key in (
-                    "notes", "apple notes", "заметки", "список", "notes reveal")):
-                card_prefer = ["browser-ui/notes-reveal"] + [
-                    item for item in card_prefer
-                    if item != "browser-ui/notes-reveal"]
-            elif any(key in blob for key in (
-                    "notification", "cascade", "уведомлен", "alert", "push")):
-                card_prefer = ["browser-ui/notification-cascade"] + [
-                    item for item in card_prefer
-                    if item != "browser-ui/notification-cascade"]
-        else:
-            card_category = "frames-cards"
-            card_prefer = ["frames-cards/paper-reveal", "frames-cards/arxiv-card"]
-        card_template = catalog.pick(
-            card_category, duration=float(anchor["duration"]),
-            recent_videos=recent_videos, exclude=used, prefer=card_prefer,
-            seed=seed + i)
+        card_category = "browser-ui" if variant == "A" else "frames-cards"
+        blob = build_blob(
+            source.get("title"),
+            source.get("snippet"),
+            source.get("domain"),
+            source.get("screen_template"),
+        )
+        card_template, _ = picker.pick(
+            card_category,
+            blob=blob,
+            variant=variant,
+            duration=float(anchor["duration"]),
+            recent_videos=recent_videos,
+            exclude=used,
+            seed=seed + i,
+        )
         used.append(card_template.id)
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(run[-1]["end"]))
@@ -1419,7 +1367,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         ))
 
     _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
-                    recent_videos=recent_videos, used=used)
+                    recent_videos=recent_videos, used=used, picker=picker)
 
     # Плашки из overlay-указаний сценария (lower_third).
     for block in plan.get("blocks", []):
@@ -1483,8 +1431,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
 
 def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
-                    recent_videos: list[str], used: list[str]) -> None:
+                    recent_videos: list[str], used: list[str],
+                    picker: TemplatePicker | None = None) -> None:
     """Оверлей с числом на evidence/develop — не чаще одного на ролик."""
+    if picker is None:
+        picker = TemplatePicker(catalog, ScenarioIndex.empty())
     duration = float(plan["duration_sec"])
     cta_start = float((plan.get("cta_window") or [duration - 2.0, duration])[0])
     occupied = [(float(o["start"]), float(o["end"])) for o in overlays
@@ -1507,7 +1458,7 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         pct = str(nums[0].get("suffix") or "").lstrip().startswith("%")
         declining = (len(nums) >= 2
                      and float(nums[1]["value"]) < float(nums[0]["value"]))
-        prefer = (["data-viz/conic-progress-ring",
+        base = (["data-viz/conic-progress-ring",
                    "data-viz/stat-countup-card"]
                   if len(nums) == 1 and pct and variant != "B"
                   else ["data-viz/stat-countup-card"] if len(nums) == 1
@@ -1528,17 +1479,8 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                               "data-viz/animated-bar-chart",
                               "data-viz/compare-bars", "data-viz/bar-race-mini"]))
         if variant == "B" and len(nums) >= 2:
-            prefer = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
-        block = blocks.get(slot["block_id"], {})
-        blob = " ".join([
-            str(block.get("text") or ""),
-            str(block.get("heading") or ""),
-        ]).lower()
-        if variant != "B" and any(key in blob for key in (
-                "spain", "españa", "espan", "испан", "madrid", "catalun",
-                "comunidad autónoma", "pib per")):
-            prefer = ["data-viz/spain-map"] + [item for item in prefer
-                                              if item != "data-viz/spain-map"]
+            base = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
+
         rating_like = (
             len(nums) == 1
             and not pct
@@ -1546,67 +1488,32 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             and abs(float(nums[0]["value"])
                     - round(float(nums[0]["value"]))) > 1e-9
         )
-        if variant != "B" and (rating_like or any(key in blob for key in (
-                "stars", "star rating", "звезд", "рейтинг", "оценк",
-                "отзыв", "app store", "satisfaction"))):
-            prefer = ["data-viz/star-rating-fill"] + [
-                item for item in prefer if item != "data-viz/star-rating-fill"]
-        if variant != "B" and any(key in blob for key in (
-                "united states", "u.s.", "сша", "америк", "census",
-                "population density", "per square mile", " by state",
-                "штат ", "калифорн", "нью-йорк", "нью йорк", "texas",
-                "california")):
-            prefer = ["data-viz/us-map"] + [
-                item for item in prefer if item != "data-viz/us-map"]
-        if variant != "B" and any(key in blob for key in (
-                "interstate flow", "flow connection", "city-to-city",
-                "city to city", "corridor", "миграционн", "поток между",
-                "рейс между", "между городами")):
-            prefer = ["data-viz/us-map-flow"] + [
-                item for item in prefer if item != "data-viz/us-map-flow"]
-        if variant != "B" and any(key in blob for key in (
-                "hex grid", "hex map", "hexagonal", "hexagon",
-                "гексагон", "гекс-карт", "income by state",
-                "household income")):
-            prefer = ["data-viz/us-map-hex"] + [
-                item for item in prefer if item != "data-viz/us-map-hex"]
-        if variant != "B" and any(key in blob for key in (
-                "world map", "global gdp", "gdp per capita",
-                "world atlas", "imf", "миров", "карта мира",
-                "ввп на душу")):
-            prefer = ["data-viz/world-map"] + [
-                item for item in prefer if item != "data-viz/world-map"]
-        if variant != "B" and (re.search(r"\$\s*\d", blob) or any(key in blob for key in (
-                "usd", "dollar", "revenue", "valuation", "market cap",
-                "выручк", "капитализац", "доллар"))):
-            prefer = ["data-viz/apple-money-count"] + [
-                item for item in prefer if item != "data-viz/apple-money-count"]
-        if variant != "B" and any(key in blob for key in (
-                "north korea", "northkorea", "кндр", "северной коре",
-                "северная коре", "locked down", "изоляц", "санкци",
-                "пхеньян", "pyongyang", "закрыт")):
-            prefer = ["data-viz/north-korea-locked-down"] + [
-                item for item in prefer
-                if item != "data-viz/north-korea-locked-down"]
-        if variant != "B" and any(key in blob for key in (
-                "transatlantic", "jfk", "cdg", "new york to paris",
-                "нью-йорк", "нью йорк", "париж", "рейс ", "самолёт",
-                "самолет", "перелёт", "перелет", "flight to")):
-            prefer = ["data-viz/nyc-paris-flight"] + [
-                item for item in prefer if item != "data-viz/nyc-paris-flight"]
-        if variant != "B" and any(key in blob for key in (
-                "goals reached", "progress track", "great job",
-                "целей достиг", "прогресс", "достигнут")):
-            prefer = ["data-viz/mk-progress-stat"] + [
-                item for item in prefer if item != "data-viz/mk-progress-stat"]
-        if variant != "B" and any(key in blob for key in (
-                "flowchart", "блок-схем", "блок схем", "дерево решен",
-                "decision tree", "алгоритм", "разветвл")):
-            prefer = ["data-viz/flowchart-vertical"] + [
-                item for item in prefer if item != "data-viz/flowchart-vertical"]
-        template = catalog.pick("data-viz", duration=end - start,
-                                recent_videos=recent_videos, exclude=used,
-                                prefer=prefer, seed=seed + 11)
+
+        signals = {"numbers"}
+        if len(nums) >= 2:
+            signals.add("two_numbers")
+        if len(nums) >= 4:
+            signals.add("four_numbers")
+        if pct:
+            signals.add("pct")
+        if declining:
+            signals.add("declining")
+        if rating_like:
+            signals.add("rating_like")
+
+        block = blocks.get(slot["block_id"], {})
+        blob = build_blob(block.get("text"), block.get("heading"))
+        template, _ = picker.pick(
+            "data-viz",
+            blob=blob,
+            signals=signals,
+            variant=variant,
+            duration=end - start,
+            recent_videos=recent_videos,
+            exclude=used,
+            seed=seed + 11,
+            prefer_base=base,
+        )
         used.append(template.id)
         name = template.name
         if name == "decline-chart":
@@ -1809,7 +1716,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   catalog: TemplateCatalog, avatar_meta: dict[str, Any],
                   sfx_map: dict[str, Any], *, variant: str,
                   recent_videos: list[str], preferences: dict[str, Any] | None = None,
-                  asset_rotation: int = 0) -> dict[str, Any]:
+                  asset_rotation: int = 0,
+                  picker: TemplatePicker | None = None) -> dict[str, Any]:
+    if picker is None:
+        cfg = getattr(ctx, "cfg", None)
+        picker = TemplatePicker(catalog, ScenarioIndex.load(cfg, catalog=catalog))
     seed = _variant_seed(plan["video_id"], variant)
     # Какие источники требуют подписи в кадре — сказано в самом каталоге
     # источников, а не в коде: право на кадр приходит вместе с ним.
@@ -1838,29 +1749,6 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     hero_offset = seed % 2
     hero_eligible = 0
 
-    fullscreen_styles = (["text-fullscreen/beat-freeze-cut",
-                          "text-fullscreen/kinetic-stack",
-                          "text-fullscreen/blur-out-up",
-                          "text-fullscreen/bottom-up-letters",
-                          "text-fullscreen/kinetic-type-swap",
-                          "text-fullscreen/line-by-line-slide",
-                          "text-fullscreen/particle-text-dissolve",
-                          "text-fullscreen/per-word-crossfade",
-                          "text-fullscreen/scan-band",
-                          "text-fullscreen/scramble-reveal",
-                          "text-fullscreen/shared-axis-z",
-                          "text-fullscreen/code-3d-extrude",
-                          "text-fullscreen/code-diff",
-                          "text-fullscreen/code-particle-assemble",
-                          "text-fullscreen/code-scroll",
-                          "text-fullscreen/code-typing",
-                          "text-fullscreen/terminal-simulator",
-                          "text-fullscreen/apple-terminal-clear-dark",
-                          "text-fullscreen/dark-plus",
-                          "text-fullscreen/number-slam-card"]
-                         if variant == "A" else
-                         ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
-
     for slot in slots:
         entry: dict[str, Any] = {
             "index": slot["index"], "start": slot["start"], "end": slot["end"],
@@ -1872,37 +1760,20 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         if slot["kind"] == "fullscreen_text":
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")
             content = slot.get("content", "")
-            styles = list(fullscreen_styles)
-            if variant == "A" and re.search(r"\d", str(content)):
-                styles = ["text-fullscreen/number-slam-card",
-                          "text-fullscreen/kinetic-stack"]
-            if variant == "A" and _CODEISH.search(str(content)):
-                styles = ["text-fullscreen/code-3d-extrude",
-                          "text-fullscreen/code-particle-assemble",
-                          "text-fullscreen/code-scroll",
-                          "text-fullscreen/code-typing",
-                          "text-fullscreen/terminal-simulator",
-                          "text-fullscreen/apple-terminal-clear-dark",
-                          "text-fullscreen/dark-plus"] + styles
-            if (variant == "A" and _CODEISH.search(str(content))
-                    and str(content).count("\n") < 7):
-                styles = ["text-fullscreen/code-typing"] + styles
-            if variant == "A" and str(content).count("\n") >= 7:
-                styles = ["text-fullscreen/code-scroll"] + styles
-            if variant == "A" and _DIFFISH.search(str(content)):
-                styles = ["text-fullscreen/code-diff"] + styles
-            if variant == "A" and re.search(r"(?m)^\s*def\s+", str(content)):
-                styles = ["text-fullscreen/dark-plus"] + styles
-            if variant == "A" and _SHELLISH.search(str(content)):
-                styles = ["text-fullscreen/apple-terminal-clear-dark",
-                          "text-fullscreen/terminal-simulator"] + styles
-            if variant == "A" and _BEATISH.search(str(content)):
-                styles = ["text-fullscreen/beat-freeze-cut"] + styles
-            template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
-                                    recent_videos=recent_videos, exclude=used_templates,
-                                    prefer=([preferred] if preferred else [])
-                                    + [slot.get("template_hint", "")] + styles,
-                                    seed=seed)
+            s_content = str(content or "")
+            signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
+            head = [p for p in (preferred, slot.get("template_hint")) if p]
+            template, _ = picker.pick(
+                "text-fullscreen",
+                blob=s_content,
+                signals=signals,
+                variant=variant,
+                duration=float(slot["duration"]),
+                recent_videos=recent_videos,
+                exclude=used_templates,
+                seed=seed,
+                prefer_head=head,
+            )
             used_templates.append(template.id)
             content = slot.get("content", "")
             block = blocks_by_id.get(slot["block_id"], {})
@@ -1958,27 +1829,17 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         if slot.get("transition_in") == "dynamic":
             category = "avatar-entry" if slot["kind"] in AVATAR_KINDS else "transitions"
             preferred = prefs.get(f"transition@{slot['role']}")
-            tr_prefer = [preferred] if preferred else []
-            if variant == "A" and category == "transitions":
-                tr_prefer.append("transitions/transitions-other")
-                tr_prefer.append("transitions/transitions-light")
-                tr_prefer.append("transitions/transitions-destruction")
-                tr_prefer.append("transitions/transitions-cover")
-                tr_prefer.append("transitions/transitions-blur")
-                tr_prefer.append("transitions/transitions-3d")
-                tr_prefer.append("transitions/mk-clone-wall-transition")
-                tr_prefer.append("transitions/whip-pan")
-                tr_prefer.append("transitions/thermal-distortion")
-                tr_prefer.append("transitions/sdf-iris")
-                tr_prefer.append("transitions/light-leak")
-                tr_prefer.append("transitions/gravitational-lens")
-                tr_prefer.append("transitions/glitch")
-                tr_prefer.append("transitions/cinematic-zoom")
-                tr_prefer.append("transitions/zoom-through")
-            tr = catalog.pick(category, duration=0.24, recent_videos=recent_videos,
-                              exclude=used_templates + ["transitions/cut"],
-                              prefer=tr_prefer,
-                              tags={"dynamic", "entry"}, seed=seed + slot["index"] * 3)
+            head = [preferred] if preferred else []
+            tr, _ = picker.pick(
+                category,
+                variant=variant,
+                duration=0.24,
+                recent_videos=recent_videos,
+                exclude=used_templates + ["transitions/cut"],
+                prefer_head=head,
+                tags={"dynamic", "entry"},
+                seed=seed + slot["index"] * 3,
+            )
             used_templates.append(tr.id)
             transition_entry = {
                 "template": tr.id, "renderer": tr.renderer,
@@ -2047,7 +1908,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         shots.append(entry)
 
     overlays = _build_overlays(ctx, plan, words_doc["words"], catalog, variant=variant,
-                               seed=seed, recent_videos=recent_videos, used=used_templates)
+                               seed=seed, recent_videos=recent_videos, used=used_templates,
+                               picker=picker)
 
     # Субтитры: весь ролик, кроме кадров с полноэкранным текстом (§5.1).
     fs_windows = [(float(s["start"]), float(s["end"])) for s in slots
@@ -2177,6 +2039,7 @@ def run_step(ctx) -> dict[str, Any]:
     avatar_meta = ctx.read_or("avatar_meta.json", {"segments": []})
     sfx_map = ctx.read_or("sfx_map.json", {})
     catalog = TemplateCatalog.load(ctx.cfg)
+    picker = TemplatePicker(catalog, ScenarioIndex.load(ctx.cfg, catalog=catalog))
 
     accepted = accepted_doc.get("accepted", {})
     generated = generated_doc.get("generated", {})
@@ -2210,7 +2073,7 @@ def run_step(ctx) -> dict[str, Any]:
         plans[variant] = build_variant(
             ctx, plan, words_doc, assets, prepared, catalog, avatar_meta, sfx_map,
             variant=variant, recent_videos=recent_videos,
-            preferences=preferences, asset_rotation=offset)
+            preferences=preferences, asset_rotation=offset, picker=picker)
         plans[variant]["matting"] = matte_summary
         ctx.write(f"edit_plan_{variant}.json", plans[variant])
 
