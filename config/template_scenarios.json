@@ -671,9 +671,7 @@
       "patterns": [
         "\\d+"
       ],
-      "needs": [
-        "numbers"
-      ],
+      "needs": [],
       "templates": [
         "text-fullscreen/number-slam-card",
         "text-fullscreen/kinetic-stack"
@@ -681,6 +679,61 @@
       "weight": 20,
       "variants": [
         "A"
+      ],
+      "replaces_default": true
+    },
+    {
+      "id": "text-fullscreen-default-a",
+      "title": "базовый набор полноэкранного текста варианта A",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "weight": 10,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-fullscreen-default-b",
+      "title": "базовый набор полноэкранного текста варианта B",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "weight": 10,
+      "variants": [
+        "B"
       ]
     },
     {
