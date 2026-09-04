@@ -1,0 +1,4983 @@
+{
+  "_comment": "Каталог шаблонов §15. Генерируется tools/gen_templates.py — правьте генератор, а не этот файл. Поле last_used_in обновляет P11 после каждого прогона и служит основой ротации §15.12.",
+  "version": 2,
+  "counts": {
+    "intro-hooks": 8,
+    "text-fullscreen": 34,
+    "lower-thirds": 14,
+    "frames-cards": 7,
+    "browser-ui": 21,
+    "transitions": 41,
+    "avatar-entry": 6,
+    "kenburns": 10,
+    "parallax": 4,
+    "data-viz": 28,
+    "outro-cta": 6,
+    "hero-devices": 25,
+    "_total": 204
+  },
+  "rotation_rules": {
+    "avoid_if_used_in_last_n_videos_same_role": 3,
+    "ab_min_difference": 3,
+    "prefer_least_recently_used": true
+  },
+  "templates": [
+    {
+      "id": "intro-hooks/hook-question-flash",
+      "name": "hook-question-flash",
+      "category": "intro-hooks",
+      "title": "Вопрос вспышкой на однотонном фоне",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "flash_ms": 120,
+        "bg": "bg_pure"
+      },
+      "tags": [
+        "hook",
+        "text",
+        "flash"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "intro-hooks/hook-number-slam",
+      "name": "hook-number-slam",
+      "category": "intro-hooks",
+      "title": "Цифра-удар с ударным SFX",
+      "duration_range": [
+        0.8,
+        1.6
+      ],
+      "params": {
+        "scale_from": 1.35,
+        "sfx": "hit_impact",
+        "slam": true
+      },
+      "tags": [
+        "hook",
+        "number"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "intro-hooks/hook-blackout-word",
+      "name": "hook-blackout-word",
+      "category": "intro-hooks",
+      "title": "Одно слово на чёрном",
+      "duration_range": [
+        0.6,
+        1.4
+      ],
+      "params": {
+        "invert": true
+      },
+      "tags": [
+        "hook",
+        "text",
+        "dark"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "intro-hooks/hook-footage-cold-open",
+      "name": "hook-footage-cold-open",
+      "category": "intro-hooks",
+      "title": "Холодный вход футажом без текста",
+      "duration_range": [
+        1.0,
+        3.0
+      ],
+      "params": {
+        "kenburns": "zoom-in-center"
+      },
+      "tags": [
+        "hook",
+        "footage"
+      ],
+      "renderer": "footage",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "intro-hooks/hook-split-reveal",
+      "name": "hook-split-reveal",
+      "category": "intro-hooks",
+      "title": "Сплит раскрывается сверху",
+      "duration_range": [
+        1.2,
+        2.6
+      ],
+      "params": {
+        "enter_ms": 260
+      },
+      "tags": [
+        "hook",
+        "split"
+      ],
+      "renderer": "split",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "intro-hooks/hook-typing-search",
+      "name": "hook-typing-search",
+      "category": "intro-hooks",
+      "title": "Печать запроса в поисковой строке",
+      "duration_range": [
+        1.4,
+        3.0
+      ],
+      "params": {
+        "cps": 18,
+        "template": "search"
+      },
+      "tags": [
+        "hook",
+        "ui",
+        "typing"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "intro-hooks/hook-countdown-3",
+      "name": "hook-countdown-3",
+      "category": "intro-hooks",
+      "title": "Отсчёт 3-2-1",
+      "duration_range": [
+        1.2,
+        2.0
+      ],
+      "params": {
+        "steps": 3
+      },
+      "tags": [
+        "hook",
+        "number"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "intro-hooks/hook-avatar-direct",
+      "name": "hook-avatar-direct",
+      "category": "intro-hooks",
+      "title": "Аватар говорит в камеру сразу",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "entry": "hero-zoom-in"
+      },
+      "tags": [
+        "hook",
+        "avatar"
+      ],
+      "renderer": "avatar",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/impact-01",
+      "name": "impact-01",
+      "category": "text-fullscreen",
+      "title": "Гигантская цифра",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "size_px": [
+          260,
+          420
+        ],
+        "uppercase": true,
+        "slam": true
+      },
+      "tags": [
+        "number",
+        "impact"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/impact-02",
+      "name": "impact-02",
+      "category": "text-fullscreen",
+      "title": "Слово с подчёркиванием accent",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "underline": true
+      },
+      "tags": [
+        "word",
+        "impact"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/stack-3lines",
+      "name": "stack-3lines",
+      "category": "text-fullscreen",
+      "title": "Три строки лесенкой",
+      "duration_range": [
+        1.2,
+        2.0
+      ],
+      "params": {
+        "max_lines": 3,
+        "align": "left"
+      },
+      "tags": [
+        "text",
+        "stack"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/word-swap",
+      "name": "word-swap",
+      "category": "text-fullscreen",
+      "title": "Слова сменяются на месте",
+      "duration_range": [
+        1.0,
+        2.0
+      ],
+      "params": {
+        "swap_ms": 260
+      },
+      "tags": [
+        "text",
+        "swap"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/quote-frame",
+      "name": "quote-frame",
+      "category": "text-fullscreen",
+      "title": "Цитата в рамке",
+      "duration_range": [
+        1.2,
+        2.0
+      ],
+      "params": {
+        "quotes": true,
+        "max_words": 15
+      },
+      "tags": [
+        "quote",
+        "text"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/date-marker",
+      "name": "date-marker",
+      "category": "text-fullscreen",
+      "title": "Дата крупно",
+      "duration_range": [
+        0.8,
+        1.4
+      ],
+      "params": {
+        "mono": true
+      },
+      "tags": [
+        "date",
+        "mono"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/vs-compare",
+      "name": "vs-compare",
+      "category": "text-fullscreen",
+      "title": "Два значения через VS",
+      "duration_range": [
+        1.2,
+        2.0
+      ],
+      "params": {
+        "split": true
+      },
+      "tags": [
+        "compare"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [
+        "redshift_0044"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/label-strip",
+      "name": "label-strip",
+      "category": "text-fullscreen",
+      "title": "Полоса-ярлык поперёк кадра",
+      "duration_range": [
+        0.8,
+        1.6
+      ],
+      "params": {
+        "strip_height": 220
+      },
+      "tags": [
+        "label"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/bigtext-mask-footage",
+      "name": "bigtext-mask-footage",
+      "category": "text-fullscreen",
+      "title": "Текст-маска с футажом внутри",
+      "duration_range": [
+        1.0,
+        2.0
+      ],
+      "params": {
+        "mask": true
+      },
+      "tags": [
+        "text",
+        "footage",
+        "mask"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/fact-card",
+      "name": "fact-card",
+      "category": "text-fullscreen",
+      "title": "Карточка факта",
+      "duration_range": [
+        1.2,
+        2.0
+      ],
+      "params": {
+        "card": true
+      },
+      "tags": [
+        "fact",
+        "card"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "text-fullscreen/kinetic-stack",
+      "name": "kinetic-stack",
+      "category": "text-fullscreen",
+      "title": "Слова входят rise со стаггером — Texture / OBLIST",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "stagger_ms": 55,
+        "kinetic": true
+      },
+      "tags": [
+        "text",
+        "kinetic"
+      ],
+      "renderer": "kinetic_stack",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
+    },
+    {
+      "id": "text-fullscreen/blur-out-up",
+      "name": "blur-out-up",
+      "category": "text-fullscreen",
+      "title": "Слова выходят из размытия и уходят вверх — blur-out-up",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "stagger_ms": 55,
+        "blur_out": true,
+        "direction": "up",
+        "distance": "standard",
+        "blur": "standard"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "blur"
+      ],
+      "renderer": "blur_out_up",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/bottom-up-letters",
+      "name": "bottom-up-letters",
+      "category": "text-fullscreen",
+      "title": "Буквы поднимаются снизу со стаггером — bottom-up-letters",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "stagger_ms": 25,
+        "bottom_up": true,
+        "unit": "letter",
+        "direction": "up",
+        "travel": "standard"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "letters"
+      ],
+      "renderer": "bottom_up_letters",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/kinetic-type-swap",
+      "name": "kinetic-type-swap",
+      "category": "text-fullscreen",
+      "title": "Фраза стоит, в маске катится слово — kinetic-type-swap",
+      "duration_range": [
+        0.8,
+        4.0
+      ],
+      "params": {
+        "kinetic_swap": true,
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "swap"
+      ],
+      "renderer": "kinetic_type_swap",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/line-by-line-slide",
+      "name": "line-by-line-slide",
+      "category": "text-fullscreen",
+      "title": "Строки заезжают слева со стаггером — line-by-line-slide",
+      "duration_range": [
+        0.8,
+        2.4
+      ],
+      "params": {
+        "line_slide": true,
+        "direction": "left",
+        "size": "standard",
+        "density": "standard",
+        "tone": "ink"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "stack"
+      ],
+      "renderer": "line_by_line_slide",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/particle-text-dissolve",
+      "name": "particle-text-dissolve",
+      "category": "text-fullscreen",
+      "title": "Строка собирается из облака пыли — particle-text-dissolve",
+      "duration_range": [
+        0.8,
+        4.0
+      ],
+      "params": {
+        "particle_dissolve": true,
+        "direction": "in",
+        "density": "med",
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "particles"
+      ],
+      "renderer": "particle_text_dissolve",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/per-word-crossfade",
+      "name": "per-word-crossfade",
+      "category": "text-fullscreen",
+      "title": "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
+      "duration_range": [
+        0.8,
+        2.4
+      ],
+      "params": {
+        "word_crossfade": true,
+        "drift": "standard",
+        "blur": "standard",
+        "tone": "ink",
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "blur"
+      ],
+      "renderer": "per_word_crossfade",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/scan-band",
+      "name": "scan-band",
+      "category": "text-fullscreen",
+      "title": "Диагональная полоса с RGB-сдвигом по вордмарку — scan-band",
+      "duration_range": [
+        0.8,
+        4.0
+      ],
+      "params": {
+        "scan_band": true,
+        "band_angle": 12
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "scan",
+        "chromatic"
+      ],
+      "renderer": "scan_band",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/scramble-reveal",
+      "name": "scramble-reveal",
+      "category": "text-fullscreen",
+      "title": "Строка собирается из детерминированного шума — scramble-reveal",
+      "duration_range": [
+        0.8,
+        4.0
+      ],
+      "params": {
+        "scramble_reveal": true,
+        "accent": "green",
+        "style": "terminal",
+        "exit": "none"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "scramble",
+        "reveal"
+      ],
+      "renderer": "scramble_reveal",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "text-fullscreen/shared-axis-z",
+      "name": "shared-axis-z",
+      "category": "text-fullscreen",
+      "title": "Слова набухают по оси Z со стаггером — shared-axis-z",
+      "duration_range": [
+        0.8,
+        2.4
+      ],
+      "params": {
+        "shared_axis_z": true,
+        "direction": "in",
+        "depth": "standard",
+        "tone": "ink"
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "scale"
+      ],
+      "renderer": "shared_axis_z",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-3d-extrude",
+      "name": "code-3d-extrude",
+      "category": "text-fullscreen",
+      "title": "Код на скошенной плите, посадка из глубины — code-3d-extrude",
+      "duration_range": [
+        1.5,
+        8.0
+      ],
+      "params": {
+        "code_3d_extrude": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "3d",
+        "developer"
+      ],
+      "renderer": "code_3d_extrude",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-diff",
+      "name": "code-diff",
+      "category": "text-fullscreen",
+      "title": "Правка как цветной diff: минус схлопывается, плюс раскрывается — code-diff",
+      "duration_range": [
+        1.5,
+        6.0
+      ],
+      "params": {
+        "code_diff": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "diff",
+        "developer"
+      ],
+      "renderer": "code_diff",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-particle-assemble",
+      "name": "code-particle-assemble",
+      "category": "text-fullscreen",
+      "title": "Пыль собирается в глифы кода — code-particle-assemble",
+      "duration_range": [
+        1.5,
+        8.0
+      ],
+      "params": {
+        "code_particle_assemble": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "particles",
+        "developer"
+      ],
+      "renderer": "code_particle_assemble",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-scroll",
+      "name": "code-scroll",
+      "category": "text-fullscreen",
+      "title": "Камера скроллит файл к целевой строке — code-scroll",
+      "duration_range": [
+        1.5,
+        6.0
+      ],
+      "params": {
+        "code_scroll": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "scroll",
+        "developer"
+      ],
+      "renderer": "code_scroll",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-highlight",
+      "name": "code-highlight",
+      "category": "text-fullscreen",
+      "title": "Синтаксическая подсветка строки кода с горизонтальной световой плашкой — code-highlight",
+      "duration_range": [
+        1.5,
+        6.0
+      ],
+      "params": {
+        "code_highlight": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "highlight",
+        "developer"
+      ],
+      "renderer": "code_highlight",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-morph",
+      "name": "code-morph",
+      "category": "text-fullscreen",
+      "title": "FLIP-морфинг между состояниями кода — code-morph",
+      "duration_range": [
+        1.5,
+        7.0
+      ],
+      "params": {
+        "code_morph": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "morph",
+        "developer"
+      ],
+      "renderer": "code_morph",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-typing",
+      "name": "code-typing",
+      "category": "text-fullscreen",
+      "title": "Посимвольный набор с кареткой — code-typing",
+      "duration_range": [
+        1.5,
+        5.0
+      ],
+      "params": {
+        "code_typing": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "typing",
+        "developer"
+      ],
+      "renderer": "code_typing",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/terminal-simulator",
+      "name": "terminal-simulator",
+      "category": "text-fullscreen",
+      "title": "Окно IDE: скелет строк и команда в терминале — terminal-simulator",
+      "duration_range": [
+        1.5,
+        5.0
+      ],
+      "params": {
+        "terminal_simulator": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "terminal",
+        "developer"
+      ],
+      "renderer": "terminal_simulator",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/apple-terminal-clear-dark",
+      "name": "apple-terminal-clear-dark",
+      "category": "text-fullscreen",
+      "title": "Terminal.app Clear Dark: набор команды и вывод — apple-terminal-clear-dark",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "apple_terminal_clear_dark": true
+      },
+      "tags": [
+        "code",
+        "developer",
+        "showcase",
+        "terminal",
+        "apple",
+        "apple-terminal"
+      ],
+      "renderer": "apple_terminal_clear_dark",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/dark-plus",
+      "name": "dark-plus",
+      "category": "text-fullscreen",
+      "title": "VS Code Dark+: workbench и посимвольный набор — dark-plus",
+      "duration_range": [
+        2.0,
+        11.0
+      ],
+      "params": {
+        "dark_plus": true
+      },
+      "tags": [
+        "code",
+        "developer",
+        "showcase",
+        "vscode"
+      ],
+      "renderer": "dark_plus",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/beat-freeze-cut",
+      "name": "beat-freeze-cut",
+      "category": "text-fullscreen",
+      "title": "Beat freeze cut: рамп, фриз DROP и hard-cut — beat-freeze-cut",
+      "duration_range": [
+        2.0,
+        6.5
+      ],
+      "params": {
+        "beat_freeze_cut": true
+      },
+      "tags": [
+        "text",
+        "kinetic",
+        "beat",
+        "freeze",
+        "music"
+      ],
+      "renderer": "beat_freeze_cut",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/number-slam-card",
+      "name": "number-slam-card",
+      "category": "text-fullscreen",
+      "title": "Цифра-удар на карточке — K3 promo",
+      "duration_range": [
+        0.8,
+        2.0
+      ],
+      "params": {
+        "slam": true,
+        "scale_from": 1.35,
+        "uppercase": true
+      },
+      "tags": [
+        "number",
+        "impact",
+        "card"
+      ],
+      "renderer": "number_slam",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
+    },
+    {
+      "id": "text-fullscreen/split-flap-board",
+      "name": "split-flap-board",
+      "category": "text-fullscreen",
+      "title": "Табло аэропорта (split-flap) перелистывает буквы — split-flap-board",
+      "duration_range": [
+        2.0,
+        6.0
+      ],
+      "params": {
+        "word": "FLIGHT"
+      },
+      "tags": [
+        "text",
+        "board",
+        "airport",
+        "flip"
+      ],
+      "renderer": "split_flap_board",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/news-ticker",
+      "name": "news-ticker",
+      "category": "text-fullscreen",
+      "title": "Бегущая строка новостей — news-ticker",
+      "duration_range": [
+        2.0,
+        10.0
+      ],
+      "params": {
+        "text": "BREAKING NEWS: SOMETHING HAPPENED"
+      },
+      "tags": [
+        "text",
+        "news",
+        "ticker",
+        "scroll"
+      ],
+      "renderer": "news_ticker",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/name-title",
+      "name": "name-title",
+      "category": "lower-thirds",
+      "title": "Имя и должность",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "position": "bottom",
+        "direction": "left"
+      },
+      "tags": [
+        "person"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/accent-underline",
+      "name": "accent-underline",
+      "category": "lower-thirds",
+      "title": "Имя и роль с акцентной чертой",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "accent_underline": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "minimal"
+      ],
+      "renderer": "lt_accent_underline",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/clean-bar",
+      "name": "clean-bar",
+      "category": "lower-thirds",
+      "title": "Белая плашка с акцентной полоской",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "clean_bar": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "podcast"
+      ],
+      "renderer": "lt_clean_bar",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/dark-card",
+      "name": "dark-card",
+      "category": "lower-thirds",
+      "title": "Угольная карточка на светлом футаже",
+      "duration_range": [
+        1.5,
+        4.8
+      ],
+      "params": {
+        "dark_card": true,
+        "position": "bottom"
+      },
+      "tags": [
+        "person",
+        "lower-third",
+        "overlay",
+        "dark"
+      ],
+      "renderer": "lt_dark_card",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/source-domain",
+      "name": "source-domain",
+      "category": "lower-thirds",
+      "title": "Домен источника",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "position": "bottom",
+        "direction": "left",
+        "icon": "link"
+      },
+      "tags": [
+        "source"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/metric-badge",
+      "name": "metric-badge",
+      "category": "lower-thirds",
+      "title": "Значение метрики",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "position": "top",
+        "direction": "up",
+        "mono": true
+      },
+      "tags": [
+        "metric"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/note-pin",
+      "name": "note-pin",
+      "category": "lower-thirds",
+      "title": "Короткая ремарка",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "position": "middle",
+        "direction": "right"
+      },
+      "tags": [
+        "note"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045",
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/warning-strip",
+      "name": "warning-strip",
+      "category": "lower-thirds",
+      "title": "Предупреждающая полоса",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "position": "top",
+        "accent": true
+      },
+      "tags": [
+        "warning"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [
+        "redshift_0044"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/progress-step",
+      "name": "progress-step",
+      "category": "lower-thirds",
+      "title": "Шаг N из M",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "position": "top",
+        "mono": true
+      },
+      "tags": [
+        "progress"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/tag-chips",
+      "name": "tag-chips",
+      "category": "lower-thirds",
+      "title": "Ряд тегов",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "position": "bottom",
+        "chips": true
+      },
+      "tags": [
+        "tags"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/timestamp-marker",
+      "name": "timestamp-marker",
+      "category": "lower-thirds",
+      "title": "Отметка времени",
+      "duration_range": [
+        1.5,
+        2.5
+      ],
+      "params": {
+        "position": "top",
+        "mono": true
+      },
+      "tags": [
+        "time"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "lower-thirds/instagram-follow",
+      "name": "instagram-follow",
+      "category": "lower-thirds",
+      "title": "Instagram: плашка профиля с кнопкой Follow/Following — instagram-follow",
+      "duration_range": [
+        2.5,
+        6.0
+      ],
+      "params": {
+        "displayName": "HeyGen",
+        "handle": "@heygen_official",
+        "followers": "47.5K followers",
+        "buttonText": "Follow",
+        "followingText": "Following"
+      },
+      "tags": [
+        "social",
+        "instagram",
+        "follow",
+        "profile",
+        "lower-third"
+      ],
+      "renderer": "instagram_follow",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/tiktok-follow",
+      "name": "tiktok-follow",
+      "category": "lower-thirds",
+      "title": "TikTok: плашка профиля с кнопкой Follow/Following — tiktok-follow",
+      "duration_range": [
+        2.5,
+        6.0
+      ],
+      "params": {
+        "displayName": "HeyGen",
+        "handle": "@heygen.com",
+        "followers": "1,999 followers",
+        "buttonText": "Follow",
+        "followingText": "Following"
+      },
+      "tags": [
+        "social",
+        "tiktok",
+        "follow",
+        "profile",
+        "lower-third"
+      ],
+      "renderer": "tiktok_follow",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "lower-thirds/yt-lower-third",
+      "name": "yt-lower-third",
+      "category": "lower-thirds",
+      "title": "YouTube: плашка профиля с кнопкой Subscribe/Subscribed — yt-lower-third",
+      "duration_range": [
+        2.5,
+        6.0
+      ],
+      "params": {
+        "channelName": "HeyGen",
+        "subscriberCount": "82.2K subscribers",
+        "buttonText": "Subscribe",
+        "subscribedText": "Subscribed"
+      },
+      "tags": [
+        "social",
+        "youtube",
+        "subscribe",
+        "channel",
+        "lower-third"
+      ],
+      "renderer": "yt_lower_third",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "frames-cards/article-card",
+      "name": "article-card",
+      "category": "frames-cards",
+      "title": "Карточка статьи",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "browser"
+      },
+      "tags": [
+        "source",
+        "article"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0044",
+        "redshift_0045"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "frames-cards/arxiv-card",
+      "name": "arxiv-card",
+      "category": "frames-cards",
+      "title": "Карточка arXiv",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "arxiv_card"
+      },
+      "tags": [
+        "source",
+        "science"
+      ],
+      "renderer": "paper_reveal",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "frames-cards/patent-card",
+      "name": "patent-card",
+      "category": "frames-cards",
+      "title": "Карточка патента",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "patent_card"
+      },
+      "tags": [
+        "source",
+        "patent"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "frames-cards/profile-card",
+      "name": "profile-card",
+      "category": "frames-cards",
+      "title": "Карточка персоны",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "template": "notepad"
+      },
+      "tags": [
+        "person"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0044",
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "frames-cards/product-card",
+      "name": "product-card",
+      "category": "frames-cards",
+      "title": "Карточка продукта",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "template": "browser"
+      },
+      "tags": [
+        "product"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0044",
+        "redshift_0043"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "frames-cards/chart-card",
+      "name": "chart-card",
+      "category": "frames-cards",
+      "title": "Карточка с графиком",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "notepad",
+        "chart": true
+      },
+      "tags": [
+        "data"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "frames-cards/paper-reveal",
+      "name": "paper-reveal",
+      "category": "frames-cards",
+      "title": "Строки статьи проявляются, одна вспыхивает",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "arxiv_card"
+      },
+      "tags": [
+        "source",
+        "science",
+        "reveal"
+      ],
+      "renderer": "paper_reveal",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
+    },
+    {
+      "id": "browser-ui/browser-scroll",
+      "name": "browser-scroll",
+      "category": "browser-ui",
+      "title": "Скролл статьи с подсветкой строки",
+      "duration_range": [
+        2.0,
+        4.5
+      ],
+      "params": {
+        "template": "browser",
+        "scroll": true,
+        "highlight": true
+      },
+      "tags": [
+        "ui",
+        "source"
+      ],
+      "renderer": "article_scroll",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "browser-ui/google-typing",
+      "name": "google-typing",
+      "category": "browser-ui",
+      "title": "Печать в поисковой строке",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "template": "search",
+        "typing": true
+      },
+      "tags": [
+        "ui",
+        "typing"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0044",
+        "redshift_0045"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "browser-ui/chat-ai-typing",
+      "name": "chat-ai-typing",
+      "category": "browser-ui",
+      "title": "Запрос в нейросеть с курсором",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "template": "chat_ai",
+        "typing": true
+      },
+      "tags": [
+        "ui",
+        "ai"
+      ],
+      "renderer": "chat_thread",
+      "last_used_in": [
+        "redshift_0044",
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "browser-ui/notepad-typing",
+      "name": "notepad-typing",
+      "category": "browser-ui",
+      "title": "Печать в блокноте",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "template": "notepad",
+        "typing": true
+      },
+      "tags": [
+        "ui",
+        "typing"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0044",
+        "redshift_0045"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "browser-ui/terminal-lines",
+      "name": "terminal-lines",
+      "category": "browser-ui",
+      "title": "Строки терминала",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "template": "notepad",
+        "mono": true
+      },
+      "tags": [
+        "ui",
+        "code"
+      ],
+      "renderer": "source_card",
+      "last_used_in": [
+        "redshift_0044",
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "browser-ui/phone-notification",
+      "name": "phone-notification",
+      "category": "browser-ui",
+      "title": "Уведомление на телефоне",
+      "duration_range": [
+        1.2,
+        2.5
+      ],
+      "params": {
+        "template": "notepad",
+        "compact": true
+      },
+      "tags": [
+        "ui",
+        "notification"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [
+        "redshift_0043"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "browser-ui/chat-thread",
+      "name": "chat-thread",
+      "category": "browser-ui",
+      "title": "Окно чата: запрос слева, ответ справа",
+      "duration_range": [
+        1.5,
+        4.0
+      ],
+      "params": {
+        "template": "chat_ai"
+      },
+      "tags": [
+        "ui",
+        "ai",
+        "chat"
+      ],
+      "renderer": "chat_thread",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
+      "id": "browser-ui/article-highlight",
+      "name": "article-highlight",
+      "category": "browser-ui",
+      "title": "Статья в браузере со скроллом и вырезом цитаты",
+      "duration_range": [
+        2.0,
+        4.5
+      ],
+      "params": {
+        "template": "browser",
+        "scroll": true,
+        "highlight": true
+      },
+      "tags": [
+        "ui",
+        "source",
+        "highlight"
+      ],
+      "renderer": "article_scroll",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
+    },
+    {
+      "id": "browser-ui/ai-chat-reveal",
+      "name": "ai-chat-reveal",
+      "category": "browser-ui",
+      "title": "iPhone-чат: набор, стрим ответа и end card — ai-chat-reveal",
+      "duration_range": [
+        2.0,
+        19.4
+      ],
+      "params": {
+        "template": "chat_ai",
+        "typing": true,
+        "stream": true
+      },
+      "tags": [
+        "ui",
+        "ai",
+        "chat",
+        "reveal"
+      ],
+      "renderer": "ai_chat_reveal",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/app-showcase",
+      "name": "app-showcase",
+      "category": "browser-ui",
+      "title": "Три телефона веером: дашборд, кольцо, график — app-showcase",
+      "duration_range": [
+        2.0,
+        5.5
+      ],
+      "params": {
+        "template": "phone",
+        "showcase": true
+      },
+      "tags": [
+        "ui",
+        "app",
+        "showcase",
+        "device"
+      ],
+      "renderer": "app_showcase",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/vpn-youtube-spot",
+      "name": "vpn-youtube-spot",
+      "category": "browser-ui",
+      "title": "App Store: скролл, установка и открытие приложения — vpn-youtube-spot",
+      "duration_range": [
+        2.0,
+        8.0
+      ],
+      "params": {
+        "template": "phone"
+      },
+      "tags": [
+        "ui",
+        "app",
+        "store",
+        "vpn"
+      ],
+      "renderer": "vpn_youtube_spot",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/blue-sweater-intro-video",
+      "name": "blue-sweater-intro-video",
+      "category": "browser-ui",
+      "title": "AI генерирует видео: ввод промпта, загрузка, результат — blue-sweater-intro-video",
+      "duration_range": [
+        4.0,
+        12.0
+      ],
+      "params": {
+        "template": "browser"
+      },
+      "tags": [
+        "ui",
+        "ai",
+        "video",
+        "generate"
+      ],
+      "renderer": "blue_sweater",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/chatgpt-exchange",
+      "name": "chatgpt-exchange",
+      "category": "browser-ui",
+      "title": "ChatGPT: ввод промпта, поток ответа и сравнительная таблица — chatgpt-exchange",
+      "duration_range": [
+        3.0,
+        15.0
+      ],
+      "params": {
+        "prompt": "Hey what's the best tool for ai avatars",
+        "intro1": "It really depends on what you're trying to do, because “AI avatars” has split into a few different categories.",
+        "intro2": "For **most creators and marketers**, here's how I'd rank them today:",
+        "tableHeadUse": "Use case",
+        "tableHeadTool": "Best tool",
+        "tableHeadWhy": "Why",
+        "row1Use": "Overall realism",
+        "row1Tool": "HeyGen",
+        "row1Why": "Most natural facial expressions, lip sync, gestures, voice cloning and localization. Benchmark for talking head videos.",
+        "row1Chip": "Official A.I Ranking",
+        "row2Use": "Enterprise/training",
+        "row2Tool": "Synthesia",
+        "row2Why": "Better collaboration, SCORM, compliance, team workflows; less creator-focused.",
+        "row2Chip": "Official A.I Ranking",
+        "row3Use": "Mobile UGC",
+        "row3Tool": "Captions",
+        "row3Why": "Extremely fast mobile workflow and social editing. Great for Reels creators.",
+        "row3Chip": "Creator Stack",
+        "row4Use": "Real-time conversations",
+        "row4Tool": "Tavus",
+        "row4Why": "Interactive avatars that can hold live conversations.",
+        "row4Chip": "Creator Stack"
+      },
+      "tags": [
+        "ui",
+        "ai",
+        "chat",
+        "table"
+      ],
+      "renderer": "chatgpt_exchange",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/claude-exchange",
+      "name": "claude-exchange",
+      "category": "browser-ui",
+      "title": "Claude: ввод промпта, поиск в веб, стрим ответа и цитаты — claude-exchange",
+      "duration_range": [
+        3.0,
+        21.4
+      ],
+      "params": {
+        "prompt": "What's the best tool for ai avatars?",
+        "thinking": "Weighing accuracy against current market…",
+        "lead": "I'll search for the current state of this space since AI avatar tools move fast.",
+        "search": "best AI avatar video generator 2026",
+        "answer1": "It depends on what you're making, but the field has consolidated fast and one platform now covers most of it.",
+        "answer2": "**HeyGen** is where most teams land. Independent testing, not just vendor blogs, puts **Avatar IV** highest for talking-head realism, with facial micro-expressions and gesture control that hold up at a full-screen crop {HeyGen}.",
+        "answer3": "By use case, the pieces shake out roughly like this:",
+        "answer4": "**Marketing / hyper-realistic talking heads** → Avatar IV",
+        "answer5": "**Enterprise training** → Video Translate for every locale",
+        "answer6": "**UGC-style performance ads** → Instant Avatar from one selfie, then batch the variants",
+        "answer7": "**Real-time conversational / interactive** → Interactive Avatar",
+        "answer8": "**Custom digital twin from a selfie** → Instant Avatar in about five minutes"
+      },
+      "tags": [
+        "ui",
+        "ai",
+        "chat",
+        "claude"
+      ],
+      "renderer": "claude_exchange",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/message-thread-reveal",
+      "name": "message-thread-reveal",
+      "category": "browser-ui",
+      "title": "iMessage-диалог: ветка сообщений, карточка ссылки и финальная карточка — message-thread-reveal",
+      "duration_range": [
+        3.0,
+        25.8
+      ],
+      "params": {
+        "contactName": "Rachel",
+        "questionMessage": "what r u using for the launch video??",
+        "teaserMessage": "wait look 👀",
+        "cardTitle": "HyperFrames | Write HTML, render pixel-perfect video",
+        "cardDomain": "hyperframes.heygen.com",
+        "reactionMessage": "OMG IT'S HTML",
+        "reactionEmoji": "🤯🤯🤯",
+        "benefitMessage": "renders in 4K. no editor",
+        "discoveryMessage": "where did u find this",
+        "sourceMessage": "on heygen",
+        "workflowMessage": "u just write plain html tags",
+        "ownershipMessage": "the code is yours forever",
+        "installMessage": "installing rn",
+        "thanksMessage": "ty bestie 💚",
+        "ecProof": "12,000+ creators",
+        "ecCta": "Start rendering free"
+      },
+      "tags": [
+        "ui",
+        "chat",
+        "imessage",
+        "mobile"
+      ],
+      "renderer": "message_thread_reveal",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/notes-reveal",
+      "name": "notes-reveal",
+      "category": "browser-ui",
+      "title": "Apple Notes: печать строк заметки, скролл и карточка с маркером — notes-reveal",
+      "duration_range": [
+        3.0,
+        24.9
+      ],
+      "params": {
+        "titleL1": "Things nobody told me",
+        "titleL2": "about video.",
+        "noteLine1": "my videos sucked",
+        "noteLine2": "my tools cost $$$",
+        "noteLine3": "and re-edits never end.",
+        "noteLine4": "then i tried writing html only",
+        "noteLine5": "started HyperFrames three weeks ago",
+        "noteLine6": "the grind is gone, but more than that —",
+        "noteLine7": "I ship videos weekly.",
+        "cardTop": "THE POWER",
+        "cardMid": "OF",
+        "cardBottom": "ONE FILE",
+        "check1Label": "WRITE",
+        "check1Value": "HTML",
+        "check2Label": "RENDER",
+        "check2Value": "IN 4K",
+        "check3Label": "SHIP",
+        "check3Value": "TODAY",
+        "brandDomain": "hyperframes.heygen.com"
+      },
+      "tags": [
+        "ui",
+        "notes",
+        "typing",
+        "paper"
+      ],
+      "renderer": "notes_reveal",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/notification-cascade",
+      "name": "notification-cascade",
+      "category": "browser-ui",
+      "title": "Каскад входящих push-уведомлений и финальная карточка — notification-cascade",
+      "duration_range": [
+        3.0,
+        16.0
+      ],
+      "params": {
+        "notifTitle": "New render",
+        "message1": "Launch video is ready.",
+        "message2": "All checks passed.",
+        "message3": "4K render done in 92s.",
+        "message4": "Published to the catalog.",
+        "appName": "HyperFrames",
+        "headlineTop": "SHIP VIDEO",
+        "headlineAccent": "FROM HTML",
+        "footerText": "hyperframes.heygen.com"
+      },
+      "tags": [
+        "ui",
+        "notifications",
+        "mobile",
+        "ios"
+      ],
+      "renderer": "notification_cascade",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/x-post",
+      "name": "x-post",
+      "category": "browser-ui",
+      "title": "X (Twitter): карточка твита с реакцией лайка и счетчиками — x-post",
+      "duration_range": [
+        2.5,
+        6.5
+      ],
+      "params": {
+        "displayName": "Hyperframes",
+        "handle": "@hyperframes",
+        "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
+        "timestamp": "1:10 PM · Apr 7, 2026",
+        "replies": "34",
+        "reposts": "2.3K",
+        "likes": "10.9K",
+        "likesActive": "11.0K",
+        "views": "150K"
+      },
+      "tags": [
+        "ui",
+        "social",
+        "x",
+        "twitter",
+        "post"
+      ],
+      "renderer": "x_post",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/reddit-post",
+      "name": "reddit-post",
+      "category": "browser-ui",
+      "title": "Reddit: карточка поста с реакцией апвоута и счетчиками — reddit-post",
+      "duration_range": [
+        2.5,
+        6.5
+      ],
+      "params": {
+        "subreddit": "r/hyperframes",
+        "author": "u/developer · 3h",
+        "title": "Writing HTML to render video changed everything for our pipeline",
+        "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds. The whole workflow runs headlessly.",
+        "votes": "4.2k",
+        "votesActive": "4.3k",
+        "comments": "328"
+      },
+      "tags": [
+        "ui",
+        "social",
+        "reddit",
+        "post",
+        "community"
+      ],
+      "renderer": "reddit_post",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/spotify-card",
+      "name": "spotify-card",
+      "category": "browser-ui",
+      "title": "Spotify: карточка трека с обложкой и брендом — spotify-card",
+      "duration_range": [
+        2.5,
+        6.5
+      ],
+      "params": {
+        "trackName": "HyperFrames",
+        "artistName": "HeyGen",
+        "brandText": "Spotify"
+      },
+      "tags": [
+        "ui",
+        "audio",
+        "spotify",
+        "music",
+        "card"
+      ],
+      "renderer": "spotify_card",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/macos-notification",
+      "name": "macos-notification",
+      "category": "browser-ui",
+      "title": "macOS: всплывающее системное уведомление в углу экрана — macos-notification",
+      "duration_range": [
+        2.0,
+        5.5
+      ],
+      "params": {
+        "appName": "HyperFrames",
+        "time": "now",
+        "title": "Build complete",
+        "body": "Video rendered in 1.4s with zero frame drops.",
+        "iconText": "HF"
+      },
+      "tags": [
+        "ui",
+        "desktop",
+        "macos",
+        "notification",
+        "system"
+      ],
+      "renderer": "macos_notification",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/cut",
+      "name": "cut",
+      "category": "transitions",
+      "title": "Прямая склейка — база ≥70 %",
+      "duration_range": [
+        0.0,
+        0.0
+      ],
+      "params": {},
+      "tags": [
+        "cut",
+        "base"
+      ],
+      "renderer": "cut",
+      "last_used_in": [
+        "redshift_0044"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/whip-pan-l",
+      "name": "whip-pan-l",
+      "category": "transitions",
+      "title": "Резкий пан влево",
+      "duration_range": [
+        0.16,
+        0.28
+      ],
+      "params": {
+        "direction": -1,
+        "blur": 24
+      },
+      "tags": [
+        "dynamic",
+        "pan"
+      ],
+      "renderer": "whip_pan",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/whip-pan-r",
+      "name": "whip-pan-r",
+      "category": "transitions",
+      "title": "Резкий пан вправо",
+      "duration_range": [
+        0.16,
+        0.28
+      ],
+      "params": {
+        "direction": 1,
+        "blur": 24
+      },
+      "tags": [
+        "dynamic",
+        "pan"
+      ],
+      "renderer": "whip_pan",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/zoom-punch-in",
+      "name": "zoom-punch-in",
+      "category": "transitions",
+      "title": "Удар зумом внутрь",
+      "duration_range": [
+        0.16,
+        0.26
+      ],
+      "params": {
+        "from_scale": 1.35
+      },
+      "tags": [
+        "dynamic",
+        "zoom"
+      ],
+      "renderer": "zoom_punch",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/zoom-punch-out",
+      "name": "zoom-punch-out",
+      "category": "transitions",
+      "title": "Удар зумом наружу",
+      "duration_range": [
+        0.16,
+        0.26
+      ],
+      "params": {
+        "from_scale": 0.72
+      },
+      "tags": [
+        "dynamic",
+        "zoom"
+      ],
+      "renderer": "zoom_punch",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/mask-wipe-circle",
+      "name": "mask-wipe-circle",
+      "category": "transitions",
+      "title": "Круговая маска",
+      "duration_range": [
+        0.2,
+        0.32
+      ],
+      "params": {
+        "shape": "circle"
+      },
+      "tags": [
+        "dynamic",
+        "mask"
+      ],
+      "renderer": "mask_wipe",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/mask-wipe-diagonal",
+      "name": "mask-wipe-diagonal",
+      "category": "transitions",
+      "title": "Диагональная маска",
+      "duration_range": [
+        0.2,
+        0.32
+      ],
+      "params": {
+        "shape": "diagonal"
+      },
+      "tags": [
+        "dynamic",
+        "mask"
+      ],
+      "renderer": "mask_wipe",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/light-sweep",
+      "name": "light-sweep",
+      "category": "transitions",
+      "title": "Световой блик поперёк кадра",
+      "duration_range": [
+        0.24,
+        0.36
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "light"
+      ],
+      "renderer": "light_sweep",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/glitch-short",
+      "name": "glitch-short",
+      "category": "transitions",
+      "title": "Короткий глитч",
+      "duration_range": [
+        0.16,
+        0.26
+      ],
+      "params": {
+        "bars": 7
+      },
+      "tags": [
+        "dynamic",
+        "glitch"
+      ],
+      "renderer": "glitch",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/paper-slide",
+      "name": "paper-slide",
+      "category": "transitions",
+      "title": "Сдвиг «листом»",
+      "duration_range": [
+        0.2,
+        0.3
+      ],
+      "params": {
+        "direction": 1
+      },
+      "tags": [
+        "dynamic",
+        "slide"
+      ],
+      "renderer": "paper_slide",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/blur-dip",
+      "name": "blur-dip",
+      "category": "transitions",
+      "title": "Провал в размытие",
+      "duration_range": [
+        0.18,
+        0.28
+      ],
+      "params": {
+        "max_blur": 18
+      },
+      "tags": [
+        "dynamic",
+        "blur"
+      ],
+      "renderer": "blur_dip",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/white-flash",
+      "name": "white-flash",
+      "category": "transitions",
+      "title": "Вспышка в белое",
+      "duration_range": [
+        0.14,
+        0.24
+      ],
+      "params": {
+        "peak": 0.85
+      },
+      "tags": [
+        "dynamic",
+        "flash"
+      ],
+      "renderer": "white_flash",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "transitions/zoom-through",
+      "name": "zoom-through",
+      "category": "transitions",
+      "title": "Наезд в деталь на склейке — жест SpaceX",
+      "duration_range": [
+        0.18,
+        0.3
+      ],
+      "params": {
+        "from_scale": 1.22
+      },
+      "tags": [
+        "dynamic",
+        "zoom"
+      ],
+      "renderer": "zoom_through",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
+      "id": "transitions/cinematic-zoom",
+      "name": "cinematic-zoom",
+      "category": "transitions",
+      "title": "Cinematic zoom: radial blur и сдвиг каналов — cinematic-zoom",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {
+        "from_scale": 1.16
+      },
+      "tags": [
+        "dynamic",
+        "zoom",
+        "shader"
+      ],
+      "renderer": "cinematic_zoom",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/glitch",
+      "name": "glitch",
+      "category": "transitions",
+      "title": "Glitch: scan lines, scramble и chroma — glitch",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "glitch",
+        "shader"
+      ],
+      "renderer": "glitch_shader",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/gravitational-lens",
+      "name": "gravitational-lens",
+      "category": "transitions",
+      "title": "Gravitational lens: колодец, горизонт и chroma — gravitational-lens",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {
+        "from_scale": 1.14
+      },
+      "tags": [
+        "dynamic",
+        "lens",
+        "shader"
+      ],
+      "renderer": "gravitational_lens",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/light-leak",
+      "name": "light-leak",
+      "category": "transitions",
+      "title": "Light leak: тёплый засвет, flare и ACES — light-leak",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "light",
+        "shader"
+      ],
+      "renderer": "light_leak",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/sdf-iris",
+      "name": "sdf-iris",
+      "category": "transitions",
+      "title": "SDF iris: круг из центра и onion rings — sdf-iris",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "iris",
+        "shader"
+      ],
+      "renderer": "sdf_iris",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/thermal-distortion",
+      "name": "thermal-distortion",
+      "category": "transitions",
+      "title": "Thermal distortion: heat shimmer снизу и haze — thermal-distortion",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "thermal",
+        "shader"
+      ],
+      "renderer": "thermal_distortion",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/whip-pan",
+      "name": "whip-pan",
+      "category": "transitions",
+      "title": "Whip pan: оба кадра едут вбок с направленным смазом — whip-pan",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "pan",
+        "shader"
+      ],
+      "renderer": "whip_pan_shader",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/mk-clone-wall-transition",
+      "name": "mk-clone-wall-transition",
+      "category": "transitions",
+      "title": "Clone wall: плитка слов накрывает кадр и инвертируется — mk-clone-wall-transition",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {
+        "word": "HyperFrames"
+      },
+      "tags": [
+        "dynamic",
+        "typography",
+        "wipe"
+      ],
+      "renderer": "mk_clone_wall",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-3d",
+      "name": "transitions-3d",
+      "category": "transitions",
+      "title": "3D card flip: SCENE A схлопывается, SCENE B раскрывается — transitions-3d",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "3d",
+        "flip"
+      ],
+      "renderer": "transitions_3d",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-blur",
+      "name": "transitions-blur",
+      "category": "transitions",
+      "title": "Blur through: SCENE A уходит в размытие, SCENE B выходит из него — transitions-blur",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "blur",
+        "through"
+      ],
+      "renderer": "transitions_blur",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-cover",
+      "name": "transitions-cover",
+      "category": "transitions",
+      "title": "Cover: staggered blocks накрывают SCENE A и открывают SCENE B — transitions-cover",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "cover",
+        "wipe"
+      ],
+      "renderer": "transitions_cover",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-destruction",
+      "name": "transitions-destruction",
+      "category": "transitions",
+      "title": "Page burn: SCENE A сгорает кругом, SCENE B проявляется — transitions-destruction",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "burn",
+        "destruction"
+      ],
+      "renderer": "transitions_destruction",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-light",
+      "name": "transitions-light",
+      "category": "transitions",
+      "title": "Light leak: тёплые блики едут по кадру, SCENE B проявляется — transitions-light",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "light",
+        "warm"
+      ],
+      "renderer": "transitions_light",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-other",
+      "name": "transitions-other",
+      "category": "transitions",
+      "title": "Flash cut: белая вспышка на склейке, SCENE B проявляется — transitions-other",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "flash",
+        "cut"
+      ],
+      "renderer": "transitions_other",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/chromatic-radial-split",
+      "name": "chromatic-radial-split",
+      "category": "transitions",
+      "title": "Chromatic radial split: радиальный разлёт RGB-каналов — chromatic-radial-split",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "radial",
+        "chromatic",
+        "shader"
+      ],
+      "renderer": "chromatic_radial_split",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/cross-warp-morph",
+      "name": "cross-warp-morph",
+      "category": "transitions",
+      "title": "Cross-warp morph: шумовое смещение и морфинг склейки — cross-warp-morph",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "morph",
+        "warp",
+        "shader"
+      ],
+      "renderer": "cross_warp_morph",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/domain-warp-dissolve",
+      "name": "domain-warp-dissolve",
+      "category": "transitions",
+      "title": "Domain warp dissolve: каскадный ворп и радужное свечение кромок — domain-warp-dissolve",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "warp",
+        "dissolve",
+        "shader"
+      ],
+      "renderer": "domain_warp_dissolve",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/flash-through-white",
+      "name": "flash-through-white",
+      "category": "transitions",
+      "title": "Flash through white: переход через белую вспышку на тёмных сценах — flash-through-white",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "flash",
+        "white",
+        "shader"
+      ],
+      "renderer": "flash_through_white",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/ridged-burn",
+      "name": "ridged-burn",
+      "category": "transitions",
+      "title": "Ridged burn: пламенный прожиг с искрами и острыми кромками — ridged-burn",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "burn",
+        "fire",
+        "shader"
+      ],
+      "renderer": "ridged_burn",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/ripple-waves",
+      "name": "ripple-waves",
+      "category": "transitions",
+      "title": "Ripple waves: концентрические волны ряби с противофазой — ripple-waves",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "wave",
+        "ripple",
+        "shader"
+      ],
+      "renderer": "ripple_waves",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/swirl-vortex",
+      "name": "swirl-vortex",
+      "category": "transitions",
+      "title": "Swirl vortex: органическое вихревое вращение и закрутка склейки — swirl-vortex",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "swirl",
+        "vortex",
+        "shader"
+      ],
+      "renderer": "swirl_vortex",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-dissolve",
+      "name": "transitions-dissolve",
+      "category": "transitions",
+      "title": "Dissolve: мягкое растворение SCENE A и проявление SCENE B — transitions-dissolve",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "dissolve",
+        "crossfade"
+      ],
+      "renderer": "transitions_dissolve",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-distortion",
+      "name": "transitions-distortion",
+      "category": "transitions",
+      "title": "Distortion: глитч и хроматическое расщепление на склейке — transitions-distortion",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "glitch",
+        "distortion",
+        "chromatic"
+      ],
+      "renderer": "transitions_distortion",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-grid",
+      "name": "transitions-grid",
+      "category": "transitions",
+      "title": "Grid: мозаичный распад на тайлы и каскадное проявление — transitions-grid",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "grid",
+        "mosaic",
+        "dissolve"
+      ],
+      "renderer": "transitions_grid",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-mechanical",
+      "name": "transitions-mechanical",
+      "category": "transitions",
+      "title": "Mechanical: индастриал захлопывание шторок со снопом искр на стыке — transitions-mechanical",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "mechanical",
+        "shutter",
+        "metal"
+      ],
+      "renderer": "transitions_mechanical",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-push",
+      "name": "transitions-push",
+      "category": "transitions",
+      "title": "Push: направленное выталкивание сцен со слайдом — transitions-push",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "push",
+        "slide",
+        "directional"
+      ],
+      "renderer": "transitions_push",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-radial",
+      "name": "transitions-radial",
+      "category": "transitions",
+      "title": "Radial: круговое диафрагменное раскрытие склейки с кольцом свечения — transitions-radial",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "radial",
+        "iris",
+        "circle"
+      ],
+      "renderer": "transitions_radial",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-scale",
+      "name": "transitions-scale",
+      "category": "transitions",
+      "title": "Scale: сквозной наезд через кадр или стягивание в центр — transitions-scale",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "scale",
+        "zoom",
+        "through"
+      ],
+      "renderer": "transitions_scale",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "avatar-entry/hero-zoom-in",
+      "name": "hero-zoom-in",
+      "category": "avatar-entry",
+      "title": "Вход зумом на аватар",
+      "duration_range": [
+        0.2,
+        0.4
+      ],
+      "params": {
+        "from_scale": 1.18
+      },
+      "tags": [
+        "avatar",
+        "entry"
+      ],
+      "renderer": "zoom_punch",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "avatar-entry/slide-from-bottom",
+      "name": "slide-from-bottom",
+      "category": "avatar-entry",
+      "title": "Выезд снизу",
+      "duration_range": [
+        0.22,
+        0.36
+      ],
+      "params": {
+        "axis": "y",
+        "direction": 1
+      },
+      "tags": [
+        "avatar",
+        "entry"
+      ],
+      "renderer": "paper_slide",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "avatar-entry/circle-mask-grow",
+      "name": "circle-mask-grow",
+      "category": "avatar-entry",
+      "title": "Круг раскрывается",
+      "duration_range": [
+        0.24,
+        0.4
+      ],
+      "params": {
+        "shape": "circle"
+      },
+      "tags": [
+        "avatar",
+        "entry"
+      ],
+      "renderer": "mask_wipe",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "avatar-entry/split-slide-up",
+      "name": "split-slide-up",
+      "category": "avatar-entry",
+      "title": "Половина кадра уезжает вверх",
+      "duration_range": [
+        0.24,
+        0.4
+      ],
+      "params": {
+        "axis": "y",
+        "direction": -1
+      },
+      "tags": [
+        "avatar",
+        "entry",
+        "split"
+      ],
+      "renderer": "paper_slide",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "avatar-entry/flash-cut-in",
+      "name": "flash-cut-in",
+      "category": "avatar-entry",
+      "title": "Вход через вспышку",
+      "duration_range": [
+        0.14,
+        0.24
+      ],
+      "params": {
+        "peak": 0.7
+      },
+      "tags": [
+        "avatar",
+        "entry",
+        "flash"
+      ],
+      "renderer": "white_flash",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "avatar-entry/scale-pop",
+      "name": "scale-pop",
+      "category": "avatar-entry",
+      "title": "Пружинистое появление",
+      "duration_range": [
+        0.2,
+        0.34
+      ],
+      "params": {
+        "overshoot": 0.08
+      },
+      "tags": [
+        "avatar",
+        "entry"
+      ],
+      "renderer": "zoom_punch",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/zoom-in-center",
+      "name": "zoom-in-center",
+      "category": "kenburns",
+      "title": "Наезд в центр",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.0,
+          1.12
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "zoom"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/zoom-in-subject",
+      "name": "zoom-in-subject",
+      "category": "kenburns",
+      "title": "Наезд на субъект",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.0,
+          1.15
+        ],
+        "anchor": "subject"
+      },
+      "tags": [
+        "kenburns",
+        "zoom"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/zoom-out-reveal",
+      "name": "zoom-out-reveal",
+      "category": "kenburns",
+      "title": "Отъезд с раскрытием",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.15,
+          1.0
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "zoom"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/pan-left",
+      "name": "pan-left",
+      "category": "kenburns",
+      "title": "Панорама влево",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.1,
+          1.1
+        ],
+        "pan": [
+          -1,
+          0
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "pan"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/pan-right",
+      "name": "pan-right",
+      "category": "kenburns",
+      "title": "Панорама вправо",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.1,
+          1.1
+        ],
+        "pan": [
+          1,
+          0
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "pan"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/pan-up",
+      "name": "pan-up",
+      "category": "kenburns",
+      "title": "Панорама вверх",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.1,
+          1.1
+        ],
+        "pan": [
+          0,
+          -1
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "pan"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/pan-down",
+      "name": "pan-down",
+      "category": "kenburns",
+      "title": "Панорама вниз",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.1,
+          1.1
+        ],
+        "pan": [
+          0,
+          1
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "pan"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/diag-drift",
+      "name": "diag-drift",
+      "category": "kenburns",
+      "title": "Диагональный дрейф",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.05,
+          1.14
+        ],
+        "pan": [
+          0.7,
+          0.7
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "drift"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/push-tilt",
+      "name": "push-tilt",
+      "category": "kenburns",
+      "title": "Наезд с наклоном",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.0,
+          1.13
+        ],
+        "pan": [
+          0,
+          -0.5
+        ]
+      },
+      "tags": [
+        "kenburns",
+        "push"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "kenburns/micro-parallax",
+      "name": "micro-parallax",
+      "category": "kenburns",
+      "title": "Микро-параллакс слоёв",
+      "duration_range": [
+        2.5,
+        5.0
+      ],
+      "params": {
+        "zoom": [
+          1.02,
+          1.08
+        ],
+        "layers": 2
+      },
+      "tags": [
+        "kenburns",
+        "parallax"
+      ],
+      "renderer": "kenburns",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "parallax/text-behind-object",
+      "name": "text-behind-object",
+      "category": "parallax",
+      "title": "Текст за объектом переднего плана",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "layers": 2,
+        "shift_pct": 0.04
+      },
+      "tags": [
+        "parallax",
+        "text"
+      ],
+      "renderer": "parallax",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "parallax/two-layer-drift",
+      "name": "two-layer-drift",
+      "category": "parallax",
+      "title": "Два слоя расходятся",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "layers": 2,
+        "shift_pct": 0.03
+      },
+      "tags": [
+        "parallax"
+      ],
+      "renderer": "parallax",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "parallax/depth-push",
+      "name": "depth-push",
+      "category": "parallax",
+      "title": "Наезд с разной скоростью слоёв",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "layers": 2,
+        "shift_pct": 0.05
+      },
+      "tags": [
+        "parallax",
+        "push"
+      ],
+      "renderer": "parallax",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "parallax/foreground-sweep",
+      "name": "foreground-sweep",
+      "category": "parallax",
+      "title": "Передний план проходит по кадру",
+      "duration_range": [
+        1.0,
+        2.5
+      ],
+      "params": {
+        "layers": 2,
+        "shift_pct": 0.05
+      },
+      "tags": [
+        "parallax",
+        "sweep"
+      ],
+      "renderer": "parallax",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "data-viz/bar-race-mini",
+      "name": "bar-race-mini",
+      "category": "data-viz",
+      "title": "Мини-гонка столбиков",
+      "duration_range": [
+        2.0,
+        4.0
+      ],
+      "params": {
+        "bars": 4
+      },
+      "tags": [
+        "data",
+        "bars"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "data-viz/line-rise",
+      "name": "line-rise",
+      "category": "data-viz",
+      "title": "Линия идёт вверх",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "points": 8
+      },
+      "tags": [
+        "data",
+        "line"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "data-viz/counter-roll",
+      "name": "counter-roll",
+      "category": "data-viz",
+      "title": "Цифра прокручивается",
+      "duration_range": [
+        1.0,
+        2.5
+      ],
+      "params": {
+        "digits": 6
+      },
+      "tags": [
+        "data",
+        "number"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "data-viz/donut-fill",
+      "name": "donut-fill",
+      "category": "data-viz",
+      "title": "Кольцо заполняется",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "percent": true
+      },
+      "tags": [
+        "data",
+        "donut"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "data-viz/timeline-dots",
+      "name": "timeline-dots",
+      "category": "data-viz",
+      "title": "Точки на таймлайне",
+      "duration_range": [
+        1.5,
+        3.5
+      ],
+      "params": {
+        "dots": 5
+      },
+      "tags": [
+        "data",
+        "timeline"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "data-viz/compare-bars",
+      "name": "compare-bars",
+      "category": "data-viz",
+      "title": "Сравнение двух столбиков",
+      "duration_range": [
+        1.5,
+        3.0
+      ],
+      "params": {
+        "bars": 2
+      },
+      "tags": [
+        "data",
+        "compare"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "data-viz/stat-countup-card",
+      "name": "stat-countup-card",
+      "category": "data-viz",
+      "title": "Набегающая метрика на карточке",
+      "duration_range": [
+        1.2,
+        3.0
+      ],
+      "params": {
+        "steps": 12
+      },
+      "tags": [
+        "data",
+        "number",
+        "card"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+    },
+    {
+      "id": "data-viz/animated-bar-chart",
+      "name": "animated-bar-chart",
+      "category": "data-viz",
+      "title": "Карточка: столбики растут снизу (scaleY), KPI +42%.",
+      "duration_range": [
+        2.0,
+        4.0
+      ],
+      "params": {
+        "bars": 7
+      },
+      "tags": [
+        "data",
+        "bars",
+        "card"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/bar-chart-race",
+      "name": "bar-chart-race",
+      "category": "data-viz",
+      "title": "Гонка столбиков: ряды меняются местами, лидер красный — bar-chart-race",
+      "duration_range": [
+        2.0,
+        8.0
+      ],
+      "params": {
+        "bars": 6
+      },
+      "tags": [
+        "data",
+        "bars",
+        "race"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/chart-story",
+      "name": "chart-story",
+      "category": "data-viz",
+      "title": "Столбики растут по очереди, акцент и коллаут на последнем значении — chart-story",
+      "duration_range": [
+        2.0,
+        5.0
+      ],
+      "params": {
+        "bars": 4
+      },
+      "tags": [
+        "data",
+        "bars",
+        "story"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/conic-progress-ring",
+      "name": "conic-progress-ring",
+      "category": "data-viz",
+      "title": "Кольцо заполняется от 12 часов, центр считает в такт — conic-progress-ring",
+      "duration_range": [
+        1.2,
+        4.0
+      ],
+      "params": {
+        "percent": true
+      },
+      "tags": [
+        "data",
+        "ring",
+        "progress"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/decline-chart",
+      "name": "decline-chart",
+      "category": "data-viz",
+      "title": "Линия падает вниз, число считает вниз, фон темнеет — decline-chart",
+      "duration_range": [
+        1.2,
+        4.0
+      ],
+      "params": {
+        "start_value": 82,
+        "end_value": 34
+      },
+      "tags": [
+        "data",
+        "line",
+        "decline"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/mk-line-graph",
+      "name": "mk-line-graph",
+      "category": "data-viz",
+      "title": "Две линии рисуются слева направо, точки и числа на фронте — mk-line-graph",
+      "duration_range": [
+        1.5,
+        7.0
+      ],
+      "params": {
+        "series": [
+          {
+            "name": "Renders",
+            "values": [
+              12,
+              26,
+              22,
+              38,
+              44,
+              58
+            ]
+          },
+          {
+            "name": "Projects",
+            "values": [
+              8,
+              14,
+              18,
+              16,
+              28,
+              36
+            ]
+          }
+        ],
+        "xLabels": [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun"
+        ]
+      },
+      "tags": [
+        "data",
+        "line",
+        "series"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/spain-map",
+      "name": "spain-map",
+      "category": "data-viz",
+      "title": "Хороплет Испании: регионы вспыхивают, MAD/PVA/NAV подсветка — spain-map",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "title": "PIB per cápita por Comunidad Autónoma",
+        "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
+        "source": "Fuente: Instituto Nacional de Estadística",
+        "highlight": [
+          "MAD",
+          "PVA",
+          "NAV"
+        ],
+        "regions": [
+          {
+            "abbr": "AND",
+            "name": "Andalucía",
+            "value": 20200
+          },
+          {
+            "abbr": "ARA",
+            "name": "Aragón",
+            "value": 30500
+          },
+          {
+            "abbr": "AST",
+            "name": "Asturias",
+            "value": 24100
+          },
+          {
+            "abbr": "BAL",
+            "name": "Illes Balears",
+            "value": 28900
+          },
+          {
+            "abbr": "CAN",
+            "name": "Canarias",
+            "value": 21500
+          },
+          {
+            "abbr": "CNT",
+            "name": "Cantabria",
+            "value": 25200
+          },
+          {
+            "abbr": "CYL",
+            "name": "Castilla y León",
+            "value": 25800
+          },
+          {
+            "abbr": "CLM",
+            "name": "Castilla-La Mancha",
+            "value": 21400
+          },
+          {
+            "abbr": "CAT",
+            "name": "Catalunya",
+            "value": 33700
+          },
+          {
+            "abbr": "VAL",
+            "name": "Comunitat Valenciana",
+            "value": 23800
+          },
+          {
+            "abbr": "EXT",
+            "name": "Extremadura",
+            "value": 19200
+          },
+          {
+            "abbr": "GAL",
+            "name": "Galicia",
+            "value": 24500
+          },
+          {
+            "abbr": "MAD",
+            "name": "Comunidad de Madrid",
+            "value": 38100
+          },
+          {
+            "abbr": "MUR",
+            "name": "Región de Murcia",
+            "value": 22100
+          },
+          {
+            "abbr": "NAV",
+            "name": "Navarra",
+            "value": 35200
+          },
+          {
+            "abbr": "PVA",
+            "name": "País Vasco",
+            "value": 36800
+          },
+          {
+            "abbr": "RIO",
+            "name": "La Rioja",
+            "value": 29800
+          },
+          {
+            "abbr": "CEU",
+            "name": "Ceuta",
+            "value": 21000
+          },
+          {
+            "abbr": "MEL",
+            "name": "Melilla",
+            "value": 19500
+          }
+        ]
+      },
+      "tags": [
+        "data",
+        "map",
+        "spain"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/star-rating-fill",
+      "name": "star-rating-fill",
+      "category": "data-viz",
+      "title": "Золотые звёзды заливаются слева направо, число считает в такт — star-rating-fill",
+      "duration_range": [
+        1.2,
+        4.0
+      ],
+      "params": {
+        "rating": 4.8,
+        "starCount": 5,
+        "showValue": true
+      },
+      "tags": [
+        "data",
+        "stars",
+        "rating"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/us-map",
+      "name": "us-map",
+      "category": "data-viz",
+      "title": "Хороплет США: штаты вспыхивают, CA/NY/TX/FL/NJ подсветка — us-map",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "title": "Population Density by State",
+        "subtitle": "Residents per square mile, 2024 Census estimates",
+        "source": "Source: U.S. Census Bureau",
+        "highlight": [
+          "CA",
+          "NY",
+          "TX",
+          "FL",
+          "NJ"
+        ]
+      },
+      "tags": [
+        "data",
+        "map",
+        "usa"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/us-map-flow",
+      "name": "us-map-flow",
+      "category": "data-viz",
+      "title": "Дуги коридоров между городами, точки бегут по дуге — us-map-flow",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "title": "Interstate Flow Connections",
+        "subtitle": "Relative volume of major city-to-city corridors",
+        "source": "Source: Illustrative data"
+      },
+      "tags": [
+        "data",
+        "map",
+        "flow"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/us-map-hex",
+      "name": "us-map-hex",
+      "category": "data-viz",
+      "title": "Hex grid map США: гексагоны от центра, top-5 пульс — us-map-hex",
+      "duration_range": [
+        2.0,
+        10.0
+      ],
+      "params": {
+        "title": "Median Household Income by State",
+        "subtitle": "American Community Survey, 2024",
+        "source": "Source: U.S. Census Bureau, American Community Survey 2024",
+        "highlight": [
+          "MD",
+          "NJ",
+          "MA",
+          "CT",
+          "HI"
+        ]
+      },
+      "tags": [
+        "data",
+        "map",
+        "hex"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/us-map-bubble",
+      "name": "us-map-bubble",
+      "category": "data-viz",
+      "title": "Карта США с бабблами по городам — us-map-bubble",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "title": "Major Tech Hubs",
+        "subtitle": "Tech employment by city, 2024",
+        "source": "Source: Tech.co"
+      },
+      "tags": [
+        "data",
+        "map",
+        "bubble"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/flowchart",
+      "name": "flowchart",
+      "category": "data-viz",
+      "title": "Блок-схема с узлами и связями — flowchart",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "nodes": [
+          "Start",
+          "Process",
+          "Decision",
+          "End"
+        ]
+      },
+      "tags": [
+        "data",
+        "flowchart"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/oscilloscope-trace",
+      "name": "oscilloscope-trace",
+      "category": "data-viz",
+      "title": "Осциллограф: линия рисует форму волны — oscilloscope-trace",
+      "duration_range": [
+        2.0,
+        10.0
+      ],
+      "params": {},
+      "tags": [
+        "data",
+        "wave",
+        "oscilloscope"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/weight-wave",
+      "name": "weight-wave",
+      "category": "data-viz",
+      "title": "Волна весов (weight-wave) — weight-wave",
+      "duration_range": [
+        2.0,
+        10.0
+      ],
+      "params": {},
+      "tags": [
+        "data",
+        "wave",
+        "weight"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/world-map",
+      "name": "world-map",
+      "category": "data-viz",
+      "title": "Хороплет мира: страны от центра, CH/NO/US/AU/SE пульс — world-map",
+      "duration_range": [
+        2.0,
+        14.0
+      ],
+      "params": {
+        "title": "Global GDP per Capita",
+        "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+        "source": "Source: International Monetary Fund",
+        "highlight": [
+          "756",
+          "578",
+          "840",
+          "036",
+          "752"
+        ]
+      },
+      "tags": [
+        "data",
+        "map",
+        "world"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/apple-money-count",
+      "name": "apple-money-count",
+      "category": "data-viz",
+      "title": "Счёт $0→$10 000, затем веер купюр и монет — apple-money-count",
+      "duration_range": [
+        2.0,
+        5.0
+      ],
+      "params": {
+        "end_value": 10000,
+        "prefix": "$"
+      },
+      "tags": [
+        "data",
+        "number",
+        "money",
+        "count"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/north-korea-locked-down",
+      "name": "north-korea-locked-down",
+      "category": "data-viz",
+      "title": "Наезд на КНДР, красный scribble и LOCKED DOWN — north-korea-locked-down",
+      "duration_range": [
+        2.0,
+        7.0
+      ],
+      "params": {
+        "label": "LOCKED DOWN"
+      },
+      "tags": [
+        "data",
+        "map",
+        "korea",
+        "lock"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/nyc-paris-flight",
+      "name": "nyc-paris-flight",
+      "category": "data-viz",
+      "title": "Самолёт Нью-Йорк→Париж, doodle посадки и ARRIVED — nyc-paris-flight",
+      "duration_range": [
+        2.0,
+        6.0
+      ],
+      "params": {
+        "origin": "New York",
+        "dest": "Paris",
+        "origin_code": "JFK / NYC",
+        "dest_code": "CDG / FR",
+        "km": "5,837"
+      },
+      "tags": [
+        "data",
+        "map",
+        "flight",
+        "travel"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/mk-progress-stat",
+      "name": "mk-progress-stat",
+      "category": "data-viz",
+      "title": "Крупная цифра считает вверх, полоса заполняется scaleX — mk-progress-stat",
+      "duration_range": [
+        2.0,
+        7.0
+      ],
+      "params": {
+        "value": 22,
+        "max": 30,
+        "suffix": "",
+        "label": "Goals reached",
+        "caption": "Great job, we are getting closer!"
+      },
+      "tags": [
+        "data",
+        "number",
+        "progress"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "data-viz/flowchart-vertical",
+      "name": "flowchart-vertical",
+      "category": "data-viz",
+      "title": "Вертикальная блок-схема с узлами, связями и выбором — flowchart-vertical",
+      "duration_range": [
+        2.0,
+        12.0
+      ],
+      "params": {
+        "root": "Should I learn to code?",
+        "branches": [
+          "Yes",
+          "Not sure"
+        ],
+        "leaves": [
+          "Start with Python",
+          "Try no-code first",
+          "Build a personal website",
+          "Take a free intro course"
+        ]
+      },
+      "tags": [
+        "data",
+        "flowchart",
+        "vertical"
+      ],
+      "renderer": "dataviz",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "outro-cta/subscribe-pulse",
+      "name": "subscribe-pulse",
+      "category": "outro-cta",
+      "title": "Пульсирующая кнопка подписки",
+      "duration_range": [
+        1.5,
+        2.5
+      ],
+      "params": {
+        "pulse_hz": 1.6
+      },
+      "tags": [
+        "cta",
+        "subscribe"
+      ],
+      "renderer": "cta_button",
+      "last_used_in": [
+        "redshift_0042",
+        "redshift_0043",
+        "redshift_0044",
+        "redshift_0045",
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "outro-cta/question-card",
+      "name": "question-card",
+      "category": "outro-cta",
+      "title": "Вопрос в карточке",
+      "duration_range": [
+        1.5,
+        2.5
+      ],
+      "params": {
+        "card": true
+      },
+      "tags": [
+        "cta",
+        "question"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "outro-cta/loop-back",
+      "name": "loop-back",
+      "category": "outro-cta",
+      "title": "Замыкание на первый кадр",
+      "duration_range": [
+        1.0,
+        2.0
+      ],
+      "params": {
+        "loop": true
+      },
+      "tags": [
+        "cta",
+        "loop"
+      ],
+      "renderer": "footage",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "outro-cta/next-teaser",
+      "name": "next-teaser",
+      "category": "outro-cta",
+      "title": "Тизер следующего ролика",
+      "duration_range": [
+        1.5,
+        2.5
+      ],
+      "params": {
+        "teaser": true
+      },
+      "tags": [
+        "cta",
+        "teaser"
+      ],
+      "renderer": "plaque",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "outro-cta/logo-stamp",
+      "name": "logo-stamp",
+      "category": "outro-cta",
+      "title": "Штамп логотипа",
+      "duration_range": [
+        1.0,
+        2.0
+      ],
+      "params": {
+        "stamp": true
+      },
+      "tags": [
+        "cta",
+        "brand"
+      ],
+      "renderer": "fullscreen_text",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "outro-cta/logo-brand-close",
+      "name": "logo-brand-close",
+      "category": "outro-cta",
+      "title": "Вордмарк каскадом и точка бренда — logo-brand-close",
+      "duration_range": [
+        1.5,
+        4.5
+      ],
+      "params": {
+        "logo_close": true,
+        "exit": "none",
+        "wordmark": "РЕДШИФТ",
+        "tagline": "Пиши код. Шли на орбиту.",
+        "url": "redshift.shorts"
+      },
+      "tags": [
+        "cta",
+        "brand",
+        "logo",
+        "end-card"
+      ],
+      "renderer": "logo_brand_close",
+      "last_used_in": [],
+      "added": "2026-09-02"
+    },
+    {
+      "id": "hero-devices/plate-behind-back",
+      "name": "plate-behind-back",
+      "category": "hero-devices",
+      "title": "Кадр появляется за спиной ведущего",
+      "duration_range": [
+        1.4,
+        4.0
+      ],
+      "params": {
+        "top": 300
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "footage"
+      ],
+      "renderer": "hero-plate",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/headline-over-head",
+      "name": "headline-over-head",
+      "category": "hero-devices",
+      "title": "Заголовок вырастает над головой",
+      "duration_range": [
+        1.2,
+        3.4
+      ],
+      "params": {
+        "top": 190
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "text"
+      ],
+      "renderer": "hero-headline",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/headline-behind-head",
+      "name": "headline-behind-head",
+      "category": "hero-devices",
+      "title": "Крупный заголовок из-за головы",
+      "duration_range": [
+        1.2,
+        3.4
+      ],
+      "params": {
+        "top": 300,
+        "size": 232
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "text"
+      ],
+      "renderer": "hero-headline",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/icons-behind-head",
+      "name": "icons-behind-head",
+      "category": "hero-devices",
+      "title": "Знаки о предмете речи вспыхивают за головой",
+      "duration_range": [
+        1.4,
+        3.4
+      ],
+      "params": {
+        "spread_deg": 170
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "icons"
+      ],
+      "renderer": "hero-icons",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/split-panel-right",
+      "name": "split-panel-right",
+      "category": "hero-devices",
+      "title": "Кадр делится: ведущий слева, слово справа",
+      "duration_range": [
+        1.4,
+        4.0
+      ],
+      "params": {
+        "subject_shift": -210,
+        "subject_zoom": 1.14
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "split",
+        "text"
+      ],
+      "renderer": "hero-split",
+      "last_used_in": [
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/knockout-negative",
+      "name": "knockout-negative",
+      "category": "hero-devices",
+      "title": "Негатив: слово прорезано в заливке",
+      "duration_range": [
+        1.2,
+        3.0
+      ],
+      "params": {
+        "size": 300,
+        "margin": 60
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text"
+      ],
+      "renderer": "hero-knockout",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/text-column-left",
+      "name": "text-column-left",
+      "category": "hero-devices",
+      "title": "Строки колонкой слева от ведущего",
+      "duration_range": [
+        1.6,
+        4.5
+      ],
+      "params": {
+        "top": 700
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines"
+      ],
+      "renderer": "hero-text-column",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/bubble-card",
+      "name": "bubble-card",
+      "category": "hero-devices",
+      "title": "Ведущий в круге, реплика карточкой под ним",
+      "duration_range": [
+        1.6,
+        4.5
+      ],
+      "params": {
+        "accent_last": true
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines"
+      ],
+      "renderer": "hero-bubble-card",
+      "last_used_in": [
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/brand-pill",
+      "name": "brand-pill",
+      "category": "hero-devices",
+      "title": "Пилюля с логотипом бренда у плеча",
+      "duration_range": [
+        1.0,
+        3.0
+      ],
+      "params": {
+        "top": 1180
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "brand"
+      ],
+      "renderer": "hero-brand-pill",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/card-stack-top",
+      "name": "card-stack-top",
+      "category": "hero-devices",
+      "title": "Карточка с заголовком сверху, ведущий снизу",
+      "duration_range": [
+        1.6,
+        4.5
+      ],
+      "params": {
+        "height": 860
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "footage"
+      ],
+      "renderer": "hero-card-stack",
+      "last_used_in": [
+        "redshift_0046"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/phone-mock",
+      "name": "phone-mock",
+      "category": "hero-devices",
+      "title": "Экран приложения поверх расфокуса",
+      "duration_range": [
+        1.8,
+        4.5
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "ui"
+      ],
+      "renderer": "hero-phone-mock",
+      "last_used_in": [
+        "redshift_0046",
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/type-slab",
+      "name": "type-slab",
+      "category": "hero-devices",
+      "title": "Плита типа слева от ведущего — Srinika × Mercury",
+      "duration_range": [
+        1.4,
+        4.0
+      ],
+      "params": {
+        "top": 420
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines"
+      ],
+      "renderer": "hero-type-slab",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
+    },
+    {
+      "id": "hero-devices/footage-plate-pop",
+      "name": "footage-plate-pop",
+      "category": "hero-devices",
+      "title": "Футаж в рамке въезжает поверх кадра",
+      "duration_range": [
+        1.4,
+        4.0
+      ],
+      "params": {
+        "width": 920,
+        "height": 580,
+        "top": 210
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "footage"
+      ],
+      "renderer": "hero-plate-pop",
+      "last_used_in": [],
+      "added": "2026-09-02",
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
+    },
+    {
+      "id": "hero-devices/script-stack",
+      "name": "script-stack",
+      "category": "hero-devices",
+      "title": "Реплика строками с толстой обводкой",
+      "duration_range": [
+        1.6,
+        4.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "stroke"
+      ],
+      "renderer": "hero-script-stack",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/chat-typing",
+      "name": "chat-typing",
+      "category": "hero-devices",
+      "title": "Переписка: запрос набирается, ответ ждёт",
+      "duration_range": [
+        2.4,
+        5.0
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "ui",
+        "chat"
+      ],
+      "renderer": "hero-chat-typing",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/chat-generate",
+      "name": "chat-generate",
+      "category": "hero-devices",
+      "title": "Окно нейросети: промпт, отсчёт и готовый кадр",
+      "duration_range": [
+        3.4,
+        9.0
+      ],
+      "params": {
+        "generate_sec": 1.1
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "ui",
+        "chat",
+        "ai",
+        "footage"
+      ],
+      "renderer": "hero-chat-generate",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/title-behind-head",
+      "name": "title-behind-head",
+      "category": "hero-devices",
+      "title": "Двухстрочная тема за головой",
+      "duration_range": [
+        2.0,
+        5.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "behind"
+      ],
+      "renderer": "hero-title-behind",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/exhibit-card",
+      "name": "exhibit-card",
+      "category": "hero-devices",
+      "title": "Экспонат в раме с музейной подписью",
+      "duration_range": [
+        2.4,
+        5.5
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "alpha",
+        "footage",
+        "source"
+      ],
+      "renderer": "hero-exhibit",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/statement-slam",
+      "name": "statement-slam",
+      "category": "hero-devices",
+      "title": "Плашка с фразой забирает кадр и уходит",
+      "duration_range": [
+        1.4,
+        2.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "slam"
+      ],
+      "renderer": "hero-slam",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/phrase-log",
+      "name": "phrase-log",
+      "category": "hero-devices",
+      "title": "Список фраз копится слева по ходу речи",
+      "duration_range": [
+        2.6,
+        6.0
+      ],
+      "params": {
+        "top": 150
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "sync"
+      ],
+      "renderer": "hero-log",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/oversize-word",
+      "name": "oversize-word",
+      "category": "hero-devices",
+      "title": "Слово крупнее кадра, края обрезаны",
+      "duration_range": [
+        1.6,
+        3.2
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "slam"
+      ],
+      "renderer": "hero-oversize",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/figure-swap",
+      "name": "figure-swap",
+      "category": "hero-devices",
+      "title": "Числа сменяются на одном месте",
+      "duration_range": [
+        2.2,
+        5.0
+      ],
+      "params": {
+        "top": 170
+      },
+      "tags": [
+        "hero",
+        "avatar",
+        "number",
+        "data"
+      ],
+      "renderer": "hero-figure",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/verdict-card",
+      "name": "verdict-card",
+      "category": "hero-devices",
+      "title": "Светлая плашка: вторая строка темнеет",
+      "duration_range": [
+        1.8,
+        3.0
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "slam"
+      ],
+      "renderer": "hero-verdict",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/source-paper",
+      "name": "source-paper",
+      "category": "hero-devices",
+      "title": "Страница первоисточника, по строке идёт маркер",
+      "duration_range": [
+        2.4,
+        5.5
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "source",
+        "ui"
+      ],
+      "renderer": "hero-paper",
+      "last_used_in": [],
+      "added": "2026-08-18"
+    },
+    {
+      "id": "hero-devices/bubble-typed",
+      "name": "bubble-typed",
+      "category": "hero-devices",
+      "title": "Ведущий в круге, реплика набирается в карточке",
+      "duration_range": [
+        2.6,
+        6.0
+      ],
+      "params": {},
+      "tags": [
+        "hero",
+        "avatar",
+        "text",
+        "lines",
+        "sync"
+      ],
+      "renderer": "hero-bubble-typed",
+      "last_used_in": [
+        "redshift_0047"
+      ],
+      "added": "2026-08-18"
+    }
+  ]
+}
