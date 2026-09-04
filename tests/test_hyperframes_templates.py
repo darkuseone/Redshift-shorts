@@ -4124,9 +4124,8 @@ def test_cinematic_zoom_keeps_catalog_indigo_and_gold():
     assert ".tr-cinematic-zoom" in css
     frm = re.search(r"\.tr-cinematic-zoom \.cz-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-cinematic-zoom \.cz-to\{[^}]+\}", css).group(0)
-    assert "#3d348b" in frm
-    assert "#f7b801" in too
-    assert "#C8453D" not in frm and "#C8453D" not in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-cinematic-zoom \.cz-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4161,8 +4160,8 @@ def test_chromatic_radial_split_keeps_catalog_tokens():
     assert ".tr-chromatic-radial-split" in css
     frm = re.search(r"\.tr-chromatic-radial-split \.crs-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-chromatic-radial-split \.crs-to\{[^}]+\}", css).group(0)
-    assert "#22223b" in frm
-    assert "#7678ed" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-chromatic-radial-split \.crs-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4194,8 +4193,8 @@ def test_cross_warp_morph_keeps_catalog_tokens():
     assert ".tr-cross-warp-morph" in css
     frm = re.search(r"\.tr-cross-warp-morph \.cwm-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-cross-warp-morph \.cwm-to\{[^}]+\}", css).group(0)
-    assert "#283618" in frm
-    assert "#a7c957" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-cross-warp-morph \.cwm-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4227,8 +4226,8 @@ def test_domain_warp_dissolve_keeps_catalog_tokens():
     assert ".tr-domain-warp-dissolve" in css
     frm = re.search(r"\.tr-domain-warp-dissolve \.dwd-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-domain-warp-dissolve \.dwd-to\{[^}]+\}", css).group(0)
-    assert "#0d1b2a" in frm
-    assert "#00f5d4" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-domain-warp-dissolve \.dwd-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4259,8 +4258,8 @@ def test_flash_through_white_keeps_catalog_tokens():
     assert ".tr-flash-through-white" in css
     frm = re.search(r"\.tr-flash-through-white \.ftw-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-flash-through-white \.ftw-to\{[^}]+\}", css).group(0)
-    assert "#03071e" in frm
-    assert "#ffba08" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-flash-through-white \.ftw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4292,8 +4291,8 @@ def test_ridged_burn_keeps_catalog_tokens():
     assert ".tr-ridged-burn" in css
     frm = re.search(r"\.tr-ridged-burn \.rb-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-ridged-burn \.rb-to\{[^}]+\}", css).group(0)
-    assert "#0b090a" in frm
-    assert "#e5383b" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-ridged-burn \.rb-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4325,8 +4324,8 @@ def test_ripple_waves_keeps_catalog_tokens():
     assert ".tr-ripple-waves" in css
     frm = re.search(r"\.tr-ripple-waves \.rw-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-ripple-waves \.rw-to\{[^}]+\}", css).group(0)
-    assert "#264653" in frm
-    assert "#e9c46a" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-ripple-waves \.rw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4358,8 +4357,8 @@ def test_swirl_vortex_keeps_catalog_tokens():
     assert ".tr-swirl-vortex" in css
     frm = re.search(r"\.tr-swirl-vortex \.sv-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-swirl-vortex \.sv-to\{[^}]+\}", css).group(0)
-    assert "#073b4c" in frm
-    assert "#06d6a0" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-swirl-vortex \.sv-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4390,8 +4389,8 @@ def test_transitions_dissolve_keeps_catalog_tokens():
     assert ".tr-transitions-dissolve" in css
     frm = re.search(r"\.tr-transitions-dissolve \.td-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-dissolve \.td-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in frm
-    assert "#e07a5f" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-transitions-dissolve \.td-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4423,13 +4422,13 @@ def test_transitions_distortion_keeps_catalog_tokens():
     assert ".tr-transitions-distortion" in css
     frm = re.search(r"\.tr-transitions-distortion \.tdist-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-distortion \.tdist-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in frm
-    assert "#e07a5f" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-transitions-distortion \.tdist-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
-    assert "rgba(229,56,59,0.35)" in css
-    assert "rgba(72,191,227,0.35)" in css
+    assert "rgba(200,69,61,0.35)" in css
+    assert "rgba(228,114,106,0.35)" in css
 
 
 def test_transitions_grid_animates_without_webgl(ctx):
@@ -4458,8 +4457,8 @@ def test_transitions_grid_keeps_catalog_tokens():
     assert ".tr-transitions-grid" in css
     frm = re.search(r"\.tr-transitions-grid \.tg-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-grid \.tg-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in frm
-    assert "#e07a5f" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-transitions-grid \.tg-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4493,15 +4492,15 @@ def test_transitions_mechanical_keeps_catalog_tokens():
     assert ".tr-transitions-mechanical" in css
     frm = re.search(r"\.tr-transitions-mechanical \.tm-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-mechanical \.tm-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in frm
-    assert "#e07a5f" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-transitions-mechanical \.tm-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
     shut = re.search(r"\.tr-transitions-mechanical \.tm-shutter\{[^}]+\}", css).group(0)
     assert "height:50%" in shut
     assert "#111214" in shut
-    assert "#e07a5f" in css
+    assert "#C8453D" in css
     block = css.split(".tr-transitions-mechanical", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
@@ -4531,8 +4530,8 @@ def test_transitions_push_keeps_catalog_tokens():
     assert ".tr-transitions-push" in css
     frm = re.search(r"\.tr-transitions-push \.tpush-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-push \.tpush-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in frm
-    assert "#e07a5f" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-transitions-push \.tpush-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4568,15 +4567,15 @@ def test_transitions_radial_keeps_catalog_tokens():
     assert ".tr-transitions-radial" in css
     frm = re.search(r"\.tr-transitions-radial \.trad-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-radial \.trad-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in frm
-    assert "#e07a5f" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-transitions-radial \.trad-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
     iris = re.search(r"\.tr-transitions-radial \.trad-iris\{[^}]+\}", css).group(0)
     assert "border-radius:50%" in iris
     ring = re.search(r"\.tr-transitions-radial \.trad-ring\{[^}]+\}", css).group(0)
-    assert "#e07a5f" in ring
+    assert "#C8453D" in ring
     block = css.split(".tr-transitions-radial", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
@@ -4607,8 +4606,8 @@ def test_transitions_scale_keeps_catalog_tokens():
     assert ".tr-transitions-scale" in css
     frm = re.search(r"\.tr-transitions-scale \.tscale-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-scale \.tscale-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in frm
-    assert "#e07a5f" in too
+    assert "#111214" in frm
+    assert "#C8453D" in too
     stage = re.search(r"\.tr-transitions-scale \.tscale-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4681,10 +4680,9 @@ def test_glitch_shader_keeps_catalog_slate_and_coral():
     assert ".tr-glitch-shader" in css
     frm = re.search(r"\.tr-glitch-shader \.gs-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-glitch-shader \.gs-to\{[^}]+\}", css).group(0)
-    assert "#293241" in frm
-    assert "#ee6c4d" in too
-    assert "#C8453D" not in frm and "#C8453D" not in too
-    assert "#98c1d9" in css
+    assert "#111214" in frm
+    assert "#C8453D" in too
+    assert "#E4726A" in css
     stage = re.search(r"\.tr-glitch-shader \.gs-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4748,10 +4746,9 @@ def test_gravitational_lens_keeps_catalog_magenta():
     assert ".tr-gravitational-lens" in css
     frm = re.search(r"\.tr-gravitational-lens \.gw-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-gravitational-lens \.gw-to\{[^}]+\}", css).group(0)
-    assert "#10002b" in frm
-    assert "#f20089" in too
-    assert "#C8453D" not in frm and "#C8453D" not in too
-    assert "#a080a0" in css or "160,128,160" in css
+    assert "#111214" in frm
+    assert "#C8453D" in too
+    assert "142,47,42" in css
     stage = re.search(r"\.tr-gravitational-lens \.gw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4813,10 +4810,9 @@ def test_light_leak_keeps_catalog_navy_and_amber():
     assert ".tr-light-leak" in css
     frm = re.search(r"\.tr-light-leak \.ll-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-light-leak \.ll-to\{[^}]+\}", css).group(0)
-    assert "#001524" in frm
-    assert "#fb8b24" in too
-    assert "#C8453D" not in frm and "#C8453D" not in too
-    assert "#708d81" in css
+    assert "#111214" in frm
+    assert "#C8453D" in too
+    assert "#8E2F2A" in css
     stage = re.search(r"\.tr-light-leak \.ll-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4876,10 +4872,9 @@ def test_sdf_iris_keeps_catalog_teal_and_gold():
     assert ".tr-sdf-iris" in css
     frm = re.search(r"\.tr-sdf-iris \.si-from\{[^}]+\}", css).group(0)
     iris = re.search(r"\.tr-sdf-iris \.si-iris\{[^}]+\}", css).group(0)
-    assert "#003049" in frm
-    assert "#ffc300" in iris
-    assert "#C8453D" not in frm and "#C8453D" not in iris
-    assert "#7a9ab0" in css
+    assert "#111214" in frm
+    assert "#C8453D" in iris
+    assert "#7A7D82" in css
     stage = re.search(r"\.tr-sdf-iris \.si-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4940,11 +4935,10 @@ def test_thermal_distortion_keeps_catalog_slate_and_terracotta():
     assert ".tr-thermal-distortion" in css
     frm = re.search(r"\.tr-thermal-distortion \.td-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-thermal-distortion \.td-to\{[^}]+\}", css).group(0)
-    assert "#3d405b" in frm
-    assert "#e07a5f" in too
-    assert "#C8453D" not in frm and "#C8453D" not in too
-    assert "#a0a0b0" in css
-    assert "rgba(255,230,179" in css
+    assert "#111214" in frm
+    assert "#C8453D" in too
+    assert "#7A7D82" in css
+    assert "rgba(228,114,106" in css
     stage = re.search(r"\.tr-thermal-distortion \.td-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5006,11 +5000,10 @@ def test_whip_pan_shader_keeps_catalog_navy_and_cyan():
     assert ".tr-whip-pan" in css
     frm = re.search(r"\.tr-whip-pan \.wp-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-whip-pan \.wp-to\{[^}]+\}", css).group(0)
-    assert "#0b132b" in frm
-    assert "#48bfe3" in too
-    assert "#C8453D" not in frm and "#C8453D" not in too
-    assert "#7a9ab0" in css
-    assert "rgba(72,191,227" in css
+    assert "#111214" in frm
+    assert "#C8453D" in too
+    assert "#7A7D82" in css
+    assert "rgba(228,114,106" in css
     stage = re.search(r"\.tr-whip-pan \.wp-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5086,11 +5079,11 @@ def test_mk_clone_wall_keeps_catalog_ink_paper_and_blobs():
     assert "isolation:isolate" in wall
     assert "#ffffff" in invert
     assert "mix-blend-mode:difference" in invert
-    assert "#ff7ac8" in card and "#45d6c8" in card
-    assert "#1d1d1f" in row
+    assert "#C8453D" in card and "#E4726A" in card
+    assert "#111214" in row
     assert "Inter" in row
     assert "-apple-system" not in css.split(".tr-mk-clone-wall", 1)[1]
-    assert "#C8453D" not in css.split(".tr-mk-clone-wall", 1)[1].split(".fullscreen-text", 1)[0]
+    assert "#C8453D" in css.split(".tr-mk-clone-wall", 1)[1].split(".fullscreen-text", 1)[0]
     assert "#00E5C7" not in css.split(".tr-mk-clone-wall", 1)[1]
     stage = re.search(r"\.tr-mk-clone-wall \.cw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
@@ -5159,12 +5152,12 @@ def test_transitions_3d_keeps_catalog_navy_and_terracotta():
     assert ".tr-transitions-3d" in css
     face_a = re.search(r"\.tr-transitions-3d \.t3-a\{[^}]+\}", css).group(0)
     face_b = re.search(r"\.tr-transitions-3d \.t3-b\{[^}]+\}", css).group(0)
-    assert "#1b263b" in face_a
-    assert "#e07a5f" in face_b
-    assert "#778da9" in css
+    assert "#111214" in face_a
+    assert "#C8453D" in face_b
+    assert "#7A7D82" in css
     assert "Inter" in css.split(".tr-transitions-3d", 1)[1]
     assert "-apple-system" not in css.split(".tr-transitions-3d", 1)[1]
-    assert "#C8453D" not in css.split(".tr-transitions-3d", 1)[1]
+    assert "#C8453D" in css.split(".tr-transitions-3d", 1)[1]
     assert "#00E5C7" not in css.split(".tr-transitions-3d", 1)[1]
     assert "#00E5FF" not in css.split(".tr-transitions-3d", 1)[1]
     stage = re.search(r"\.tr-transitions-3d \.t3-stage\{[^}]+\}", css).group(0)
@@ -5241,13 +5234,13 @@ def test_transitions_blur_keeps_catalog_navy_and_terracotta():
     face_a = re.search(r"\.tr-transitions-blur \.tb-a\{[^}]+\}", css).group(0)
     face_b = re.search(r"\.tr-transitions-blur \.tb-b\{[^}]+\}", css).group(0)
     ghost = re.search(r"\.tr-transitions-blur \.tb-ghost\{[^}]+\}", css).group(0)
-    assert "#1b263b" in face_a
-    assert "#e07a5f" in face_b
+    assert "#111214" in face_a
+    assert "#C8453D" in face_b
     assert "filter:blur(15px)" in ghost
-    assert "#778da9" in css.split(".tr-transitions-blur", 1)[1]
+    assert "#7A7D82" in css.split(".tr-transitions-blur", 1)[1]
     assert "Inter" in css.split(".tr-transitions-blur", 1)[1]
     assert "-apple-system" not in css.split(".tr-transitions-blur", 1)[1]
-    assert "#C8453D" not in css.split(".tr-transitions-blur", 1)[1]
+    assert "#C8453D" in css.split(".tr-transitions-blur", 1)[1]
     assert "#00E5C7" not in css.split(".tr-transitions-blur", 1)[1]
     assert "#00E5FF" not in css.split(".tr-transitions-blur", 1)[1]
     stage = re.search(r"\.tr-transitions-blur \.tb-stage\{[^}]+\}", css).group(0)
@@ -5331,14 +5324,14 @@ def test_transitions_cover_keeps_catalog_magenta_and_purple():
     face_b = re.search(r"\.tr-transitions-cover \.tc-b\{[^}]+\}", css).group(0)
     wipe_a = re.search(r"\.tr-transitions-cover \.tc-wa\{[^}]+\}", css).group(0)
     wipe_b = re.search(r"\.tr-transitions-cover \.tc-wb\{[^}]+\}", css).group(0)
-    assert "#1b263b" in face_a
-    assert "#e07a5f" in face_b
-    assert "#f72585" in wipe_a
-    assert "#7209b7" in wipe_b
+    assert "#111214" in face_a
+    assert "#C8453D" in face_b
+    assert "#C8453D" in wipe_a
+    assert "#8E2F2A" in wipe_b
     block = css.split(".tr-transitions-cover", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#C8453D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -5433,16 +5426,16 @@ def test_transitions_destruction_keeps_catalog_navy_terra_and_fire():
     ring0 = re.search(r"\.tr-transitions-destruction \.tds-r0\{[^}]+\}", css).group(0)
     ring1 = re.search(r"\.tr-transitions-destruction \.tds-r1\{[^}]+\}", css).group(0)
     ring2 = re.search(r"\.tr-transitions-destruction \.tds-r2\{[^}]+\}", css).group(0)
-    assert "#1b263b" in face_a
-    assert "#e07a5f" in face_b
-    assert "255,100,0" in ring0
-    assert "255,50,0" in ring1
-    assert "200,30,0" in ring2
+    assert "#111214" in face_a
+    assert "#C8453D" in face_b
+    assert "200,69,61" in ring0
+    assert "228,114,106" in ring1
+    assert "142,47,42" in ring2
     block = css.split(".tr-transitions-destruction", 1)[1]
     assert "Inter" in block
-    assert "#778da9" in block
+    assert "#7A7D82" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#C8453D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "#ffc300" not in block
@@ -5544,15 +5537,15 @@ def test_transitions_light_keeps_catalog_orange_leaks():
     warm = re.search(r"\.tr-transitions-light \.tlt-warm\{[^}]+\}", css).group(0)
     blob1 = re.search(r"\.tr-transitions-light \.tlt-l1\{[^}]+\}", css).group(0)
     blob2 = re.search(r"\.tr-transitions-light \.tlt-l2\{[^}]+\}", css).group(0)
-    assert "#1b263b" in face_a
-    assert "#e07a5f" in face_b
-    assert "255,165,0" in warm
-    assert "255,140,0" in blob1
-    assert "255,200,0" in blob2
+    assert "#111214" in face_a
+    assert "#C8453D" in face_b
+    assert "200,69,61" in warm
+    assert "200,69,61" in blob1
+    assert "228,114,106" in blob2
     block = css.split(".tr-transitions-light", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#C8453D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -5639,13 +5632,13 @@ def test_transitions_other_keeps_catalog_navy_terra_and_white_flash():
     face_a = re.search(r"\.tr-transitions-other \.tto-a\{[^}]+\}", css).group(0)
     face_b = re.search(r"\.tr-transitions-other \.tto-b\{[^}]+\}", css).group(0)
     flash = re.search(r"\.tr-transitions-other \.tto-flash\{[^}]+\}", css).group(0)
-    assert "#1b263b" in face_a
-    assert "#e07a5f" in face_b
+    assert "#111214" in face_a
+    assert "#C8453D" in face_b
     assert "#ffffff" in flash
     block = css.split(".tr-transitions-other", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#C8453D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block

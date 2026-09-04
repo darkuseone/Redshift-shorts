@@ -17,16 +17,16 @@ from .templates import Piece, TemplateCtx, _num, _timing, HOLD, Z_TRANSITION
 _GRID_COLORS = (
     "#C8453D",
     "#E4726A",
-    "#7209B7",
-    "#3A0CA3",
-    "#4361EE",
-    "#4CC9F0",
-    "#F72585",
+    "#8E2F2A",
+    "#111214",
+    "#7A7D82",
+    "#F7F5F3",
     "#C8453D",
     "#E4726A",
-    "#7209B7",
-    "#4361EE",
-    "#4CC9F0",
+    "#8E2F2A",
+    "#111214",
+    "#7A7D82",
+    "#FFFFFF",
 )
 
 _CELL_ORDER = sorted(
@@ -127,15 +127,15 @@ def tg_transition_css() -> str:
         "position:absolute;inset:0;display:flex;flex-direction:column;"
         "align-items:center;justify-content:center;transform-origin:50% 50%}"
         ".tr-transitions-grid .tg-blur{backdrop-filter:blur(14px);opacity:0}"
-        ".tr-transitions-grid .tg-a{background:#1b263b;opacity:0}"
-        ".tr-transitions-grid .tg-b{background:#e07a5f;opacity:0}"
+        ".tr-transitions-grid .tg-a{background:#111214;opacity:0}"
+        ".tr-transitions-grid .tg-b{background:#C8453D;opacity:0}"
         ".tr-transitions-grid .tg-big{font-family:Inter,system-ui,sans-serif;font-size:220px;"
         "font-weight:900;line-height:1;letter-spacing:-0.04em;user-select:none}"
         ".tr-transitions-grid .tg-a .tg-big{color:rgba(255,255,255,0.08)}"
         ".tr-transitions-grid .tg-b .tg-big{color:rgba(255,255,255,0.15)}"
         ".tr-transitions-grid .tg-label{font-family:Inter,system-ui,sans-serif;font-size:36px;"
         "font-weight:700;letter-spacing:6px;margin-top:10px}"
-        ".tr-transitions-grid .tg-a .tg-label{color:#778da9}"
+        ".tr-transitions-grid .tg-a .tg-label{color:#7A7D82}"
         ".tr-transitions-grid .tg-b .tg-label{color:#ffffff}"
         ".tr-transitions-grid .tg-grid{position:absolute;inset:0;display:grid;"
         "grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:4px;padding:4px}"
