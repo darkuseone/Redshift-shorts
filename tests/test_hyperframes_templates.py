@@ -24,6 +24,7 @@ from src.lib.render.hyperframes.templates import (
     _atcd_times, _dp_times, _bfc_times, _cz_times, _gs_times, _gs_blocks, _GS_SCANS,
     _gw_times, _ll_times, _si_times, _td_times, _wp_times, _cw_times, _t3_times, _tb_times, _tc_times, _tds_times, _tlt_times, _tto_times, _abc_times, _bcr_times, _cst_times, _cpr_times, _dcl_times, _mlg_times, _spm_times, _srf_times, _usm_times, _umf_times, _wmp_times, _sr_frame_table,
     SS_STROKE, text_width,
+    ensure_opacity_exit_hard_kills, opacity_hard_kill, HARD_KILL_EPS,
 )
 from src.lib.render.hyperframes.apple_money import _amc_times
 from src.lib.render.hyperframes.north_korea import _nkl_times
@@ -7287,6 +7288,69 @@ def test_code_morph_animates_without_webgl():
         duration=4.0,
     ))
     assert empty_piece.nodes == []
+
+
+
+def test_code_morph_scene_gutter_exits_get_hard_kill():
+    """Dual scene-a / gutter-a fades need tl.set at fade end (±0.05s).
+
+    0042 P12 lint: #shot-15-scene-a / #shot-15-gutter-a @30.50s — code_morph
+    faded the before-state layers without a hard kill on the clip boundary.
+    """
+    piece = render_fullscreen(TemplateCtx(
+        index=15, start=28.0, duration=5.0, target="shot-15",
+        track=1, params={"renderer": "code_morph", "code_morph": True,
+                         "available_px": 900, "size_px": 420}))
+    eps = HARD_KILL_EPS
+    kills: list[tuple[str, float]] = []
+    for t in piece.tweens:
+        if not t.startswith("tl.set("):
+            continue
+        if not re.search(r"opacity:0(?![.\d])", t):
+            continue
+        sel = re.search(r'"([^"]+)"', t).group(1)
+        tm = re.search(r",([0-9.]+)\);\s*$", t)
+        if tm:
+            kills.append((sel, float(tm.group(1))))
+    for sel_suffix in ("-scene-a", "-gutter-a"):
+        target = f"#shot-15{sel_suffix}"
+        exits = []
+        for tween in piece.tweens:
+            if tween.startswith("tl.set("):
+                continue
+            if f'"{target}"' not in tween:
+                continue
+            braces = re.findall(r"\{[^{}]*\}", tween)
+            if not braces or not re.search(r"opacity:0(?![.\d])", braces[-1]):
+                continue
+            start_m = re.search(r",([0-9.]+)\);\s*$", tween)
+            dur_m = re.search(r"duration:([0-9.]+)", tween)
+            assert start_m and dur_m, tween
+            exits.append(float(start_m.group(1)) + float(dur_m.group(1)))
+        assert exits, f"no opacity exit for {target}"
+        for end_t in exits:
+            ok = any(sel == target and abs(tm - end_t) <= eps for sel, tm in kills)
+            assert ok, (
+                f"{target}: exit end {end_t} without hard kill ±{eps}s — "
+                f"kills={[t for s, t in kills if s == target]}"
+            )
+
+
+def test_ensure_opacity_exit_hard_kills_fills_gaps():
+    """Composition safety net appends kills for bare opacity→0 exits."""
+    from src.lib.render.hyperframes.templates import (
+        ensure_opacity_exit_hard_kills, HARD_KILL_EPS,
+    )
+    bare = [
+        'tl.fromTo("#x",{opacity:1},{opacity:0,duration:0.5,ease:"power1.in"},10);',
+        'tl.fromTo("#y",{opacity:1},{opacity:0,duration:0.4,ease:"power1.in"},11);',
+        'tl.set("#y",{opacity:0},11.4);',
+    ]
+    out = ensure_opacity_exit_hard_kills(bare)
+    assert 'tl.set("#x",{opacity:0},10.5);' in out
+    # existing kill for y within eps — no duplicate
+    assert sum(1 for t in out if 'tl.set("#y"' in t) == 1
+    assert abs(HARD_KILL_EPS - 0.05) < 1e-9
 
 
 def test_code_morph_css_keeps_tokens():

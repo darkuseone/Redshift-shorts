@@ -372,6 +372,59 @@ def enter_and_drift(target: str, start: float, duration: float, *,
     return tweens
 
 
+# HyperFrames SCENE_BOUNDARY_EPSILON_SECONDS — hard kill must land within this
+# of a clip-start boundary when an opacity exit ends there.
+HARD_KILL_EPS = 0.05
+
+
+def opacity_hard_kill(target: str, at: float) -> str:
+    """``tl.set`` hide at exit end — satisfies ``gsap_exit_missing_hard_kill``."""
+    return f'tl.set("{target}",{{opacity:0}},{_num(at)});'
+
+
+def ensure_opacity_exit_hard_kills(tweens: list[str], *,
+                                   eps: float = HARD_KILL_EPS) -> list[str]:
+    """Append missing ``tl.set`` hard kills for every opacity→0 exit.
+
+    Lint only errors when an exit ends on a clip-start boundary, but emitting
+    kills for *all* opacity exits is safe and stops template-by-template
+    whack-a-mole (transitions → dust digits → scan-band → code-morph scene/gutter).
+    """
+    kills: list[tuple[str, float]] = []
+    for t in tweens:
+        if not t.startswith("tl.set("):
+            continue
+        if not re.search(r"opacity:0(?![.\d])", t):
+            continue
+        sel_m = re.search(r'"([^"]+)"', t)
+        tm_m = re.search(r",([0-9.]+)\);\s*$", t)
+        if sel_m and tm_m:
+            kills.append((sel_m.group(1), float(tm_m.group(1))))
+
+    extras: list[str] = []
+    for t in tweens:
+        if t.startswith("tl.set("):
+            continue
+        braces = re.findall(r"\{[^{}]*\}", t)
+        if not braces:
+            continue
+        to_state = braces[-1]
+        if not re.search(r"opacity:0(?![.\d])", to_state):
+            continue
+        target_m = re.search(r'"([^"]+)"', t)
+        start_m = re.search(r",([0-9.]+)\);\s*$", t)
+        dur_m = re.search(r"duration:([0-9.]+)", t)
+        if not (target_m and start_m and dur_m):
+            continue
+        target = target_m.group(1)
+        end_t = float(start_m.group(1)) + float(dur_m.group(1))
+        if any(sel == target and abs(tm - end_t) <= eps for sel, tm in kills):
+            continue
+        extras.append(opacity_hard_kill(target, end_t))
+        kills.append((target, end_t))
+    return list(tweens) + extras
+
+
 # --- переходы (§4.3) ----------------------------------------------------------
 #
 # Переход относится к началу шота: он показывает, как кадр входит. Поэтому все

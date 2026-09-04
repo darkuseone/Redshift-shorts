@@ -37,7 +37,8 @@ from .captions import (
     build_gradient_fill, resolve_caption,
 )
 from .templates import (
-    OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, fit_size,
+    OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens,
+    ensure_opacity_exit_hard_kills, fit_size,
     fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
     render_motion, render_overlay, render_transition, text_width,
 )
@@ -923,7 +924,9 @@ class CompositionBuilder:
         body.append(self._audio_node(mix_name))
 
         indented = "\n      ".join(body)
-        tweens = "\n      ".join(self.tweens)
+        # Safety net: any opacity→0 exit missing a tl.set hard kill gets one.
+        # Stops gsap_exit_missing_hard_kill whack-a-mole across templates.
+        tweens = "\n      ".join(ensure_opacity_exit_hard_kills(self.tweens))
         # Реестр эффектов холста пишется только тогда, когда холст в кадре
         # есть: страница без него не носит лишнего килобайта скрипта.
         canvas_registry = (canvas_js(self.brandbook.get("colors", {}))

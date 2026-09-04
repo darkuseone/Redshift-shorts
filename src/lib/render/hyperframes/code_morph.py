@@ -30,6 +30,7 @@ from .templates import (
     _CS_PAD_X,
     _CS_GUTTER,
     _C3D_MONO_EM,
+    opacity_hard_kill,
 )
 
 _DEFAULT_BEFORE = (
@@ -180,6 +181,7 @@ def fs_code_morph(ctx: TemplateCtx) -> Piece:
             matched_b[tb["id"]] = chosen
             matched_a_ids.add(chosen["id"])
 
+    fade_out_end = at + t["morph_at"] + t["fade_out_dur"]
     tweens = [
         f'tl.fromTo("#{node_id}-editor",'
         f'{{opacity:0,scale:0.985}},'
@@ -190,6 +192,11 @@ def fs_code_morph(ctx: TemplateCtx) -> Piece:
         f'{{opacity:0,duration:{_num(t["fade_out_dur"])},ease:"power1.in"}},{_num(at + t["morph_at"])});',
         f'tl.fromTo("#{node_id}-gutter-a",{{opacity:1}},'
         f'{{opacity:0,duration:{_num(t["fade_out_dur"])},ease:"power1.in"}},{_num(at + t["morph_at"])});',
+        # Hard kills at scene-a / gutter-a exit ends — HyperFrames lint
+        # gsap_exit_missing_hard_kill when fade lands on a clip-start boundary
+        # (0042: #shot-15-scene-a / #shot-15-gutter-a @30.50s).
+        opacity_hard_kill(f"#{node_id}-scene-a", fade_out_end),
+        opacity_hard_kill(f"#{node_id}-gutter-a", fade_out_end),
         f'tl.fromTo("#{node_id}-gutter-b",{{opacity:0}},'
         f'{{opacity:1,duration:{_num(t["fade_in_dur"])},ease:"power1.out"}},{_num(at + t["morph_at"] + t["enter_delay"])});',
     ]
