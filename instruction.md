@@ -385,6 +385,8 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Browser-ui claude-exchange: Claude iPhone-интерфейс, приветствие со звездой, набор промпта, цепочка шагов, стрим ответа и цитаты | каталог твинит height/textContent; здесь span-ы и opacity, y/scale/rotation, Inter/#20201f/#1c1c1b/#d97757; chatgpt-exchange не трогаем |
 | 2026-09-04 | Browser-ui message-thread-reveal: iMessage-чат, баблы, карточка ссылки, эмодзи и end card | каталог скакал координатами; здесь transform y, scale/opacity, Inter/#23262b/#0a80f8/#C8453D; ai-chat-reveal не трогаем |
 | 2026-09-04 | Browser-ui notes-reveal: Apple Notes печать строк, скролл листа, бумажная карточка с маркером и чеклистом | каталог считал координаты букв; здесь span-ы и opacity, transform y, scale/scaleX, Inter/#fcfbf8/#ece1d5/#C8453D; paper-reveal не трогаем |
+| 2026-09-04 | Browser-ui notification-cascade: каскад push-уведомлений, restack вверх, пилюля с крестиком и брендовый end card | каталог использовал autoAlpha; здесь transform y, scale, opacity, Inter/#251004/#111214/#C8453D; phone-notification не трогаем |
+
 
 
 

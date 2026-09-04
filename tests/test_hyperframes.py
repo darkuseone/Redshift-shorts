@@ -1914,6 +1914,36 @@ def test_notes_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_notification_cascade_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 14.0,
+        "template": "browser-ui/notification-cascade",
+        "renderer": "notification_cascade",
+        "params": {
+            "notifTitle": "New render",
+            "message1": "Launch video is ready.",
+            "appName": "HyperFrames",
+            "headlineTop": "SHIP VIDEO",
+            "headlineAccent": "FROM HTML",
+            "footerText": "hyperframes.heygen.com",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "notification-cascade" in out
+    assert "New render" in out
+    assert "Launch video is ready." in out
+    assert "SHIP VIDEO" in out
+    assert "FROM HTML" in out
+    node = next(line for line in out.splitlines() if "notification-cascade" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+
 
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {

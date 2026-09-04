@@ -6,7 +6,7 @@
     "text-fullscreen": 32,
     "lower-thirds": 11,
     "frames-cards": 7,
-    "browser-ui": 16,
+    "browser-ui": 17,
     "transitions": 27,
     "avatar-entry": 6,
     "kenburns": 10,
@@ -14,7 +14,7 @@
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 180
+    "_total": 181
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1773,6 +1773,36 @@
         "paper"
       ],
       "renderer": "notes_reveal",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/notification-cascade",
+      "name": "notification-cascade",
+      "category": "browser-ui",
+      "title": "Каскад входящих push-уведомлений и финальная карточка — notification-cascade",
+      "duration_range": [
+        3.0,
+        16.0
+      ],
+      "params": {
+        "notifTitle": "New render",
+        "message1": "Launch video is ready.",
+        "message2": "All checks passed.",
+        "message3": "4K render done in 92s.",
+        "message4": "Published to the catalog.",
+        "appName": "HyperFrames",
+        "headlineTop": "SHIP VIDEO",
+        "headlineAccent": "FROM HTML",
+        "footerText": "hyperframes.heygen.com"
+      },
+      "tags": [
+        "ui",
+        "notifications",
+        "mobile",
+        "ios"
+      ],
+      "renderer": "notification_cascade",
       "last_used_in": [],
       "added": "2026-09-03"
     },

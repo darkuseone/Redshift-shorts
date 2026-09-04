@@ -1123,6 +1123,7 @@ _OVERLAY_BY_NAME = {
     "claude-exchange": "claude_exchange",
     "message-thread-reveal": "message_thread_reveal",
     "notes-reveal": "notes_reveal",
+    "notification-cascade": "notification_cascade",
 }
 
 _NUM_IN_TEXT = re.compile(
@@ -1154,7 +1155,8 @@ def _overlay_renderer(template: Template) -> str:
     if template.renderer in ("chat_thread", "article_scroll", "paper_reveal",
                              "source_card", "ai_chat_reveal", "app_showcase",
                              "chatgpt_exchange", "claude_exchange",
-                             "message_thread_reveal", "notes_reveal"):
+                             "message_thread_reveal", "notes_reveal",
+                             "notification_cascade"):
         return template.renderer
     return "source_card"
 
@@ -1267,6 +1269,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_prefer = ["browser-ui/notes-reveal"] + [
                     item for item in card_prefer
                     if item != "browser-ui/notes-reveal"]
+            elif any(key in blob for key in (
+                    "notification", "cascade", "уведомлен", "alert", "push")):
+                card_prefer = ["browser-ui/notification-cascade"] + [
+                    item for item in card_prefer
+                    if item != "browser-ui/notification-cascade"]
         else:
             card_category = "frames-cards"
             card_prefer = ["frames-cards/paper-reveal", "frames-cards/arxiv-card"]
@@ -1319,6 +1326,14 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_params["titleL1"] = source.get("title")
             if source.get("domain"):
                 card_params["brandDomain"] = source.get("domain")
+        if renderer == "notification_cascade":
+            if source.get("title"):
+                card_params["notifTitle"] = source.get("title")
+            if source.get("snippet"):
+                card_params["message1"] = source.get("snippet")
+            if source.get("domain"):
+                card_params["footerText"] = source.get("domain")
+                card_params["appName"] = source.get("domain")
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
             "template": card_template.id, "renderer": renderer,

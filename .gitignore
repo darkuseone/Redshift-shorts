@@ -61,8 +61,8 @@ assets/fonts/inter-*
 assets/*.woff2
 assets/**/*.woff2
 assets/fonts/*-LICENSE.txt
-assets/card-image.jpg
-assets/hyperframes-logo-black.svg
+assets/*.jpg
+assets/hyperframes-logo-*.svg
 /*.json
 !package.json
 !package-lock.json

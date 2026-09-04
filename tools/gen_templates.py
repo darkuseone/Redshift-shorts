@@ -231,7 +231,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (16, [
+    "browser-ui": (17, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -367,6 +367,19 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "check3Value": "TODAY",
              "brandDomain": "hyperframes.heygen.com",
          }, ["ui", "notes", "typing", "paper"], "notes_reveal"),
+        ("notification-cascade",
+         "Каскад входящих push-уведомлений и финальная карточка — notification-cascade",
+         [3.0, 16.0], {
+             "notifTitle": "New render",
+             "message1": "Launch video is ready.",
+             "message2": "All checks passed.",
+             "message3": "4K render done in 92s.",
+             "message4": "Published to the catalog.",
+             "appName": "HyperFrames",
+             "headlineTop": "SHIP VIDEO",
+             "headlineAccent": "FROM HTML",
+             "footerText": "hyperframes.heygen.com",
+         }, ["ui", "notifications", "mobile", "ios"], "notification_cascade"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

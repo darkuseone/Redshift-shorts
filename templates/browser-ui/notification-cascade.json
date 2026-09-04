@@ -1,0 +1,30 @@
+{
+  "id": "browser-ui/notification-cascade",
+  "name": "notification-cascade",
+  "category": "browser-ui",
+  "title": "Каскад входящих push-уведомлений и финальная карточка — notification-cascade",
+  "duration_range": [
+    3.0,
+    16.0
+  ],
+  "params": {
+    "notifTitle": "New render",
+    "message1": "Launch video is ready.",
+    "message2": "All checks passed.",
+    "message3": "4K render done in 92s.",
+    "message4": "Published to the catalog.",
+    "appName": "HyperFrames",
+    "headlineTop": "SHIP VIDEO",
+    "headlineAccent": "FROM HTML",
+    "footerText": "hyperframes.heygen.com"
+  },
+  "tags": [
+    "ui",
+    "notifications",
+    "mobile",
+    "ios"
+  ],
+  "renderer": "notification_cascade",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

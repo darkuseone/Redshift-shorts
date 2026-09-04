@@ -247,6 +247,19 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "cardBottom": "ONE FILE",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 107.0, "end": 120.0,
+        "template": "browser-ui/notification-cascade", "renderer": "notification_cascade",
+        "params": {
+            "notifTitle": "New render",
+            "message1": "Launch video is ready.",
+            "appName": "HyperFrames",
+            "headlineTop": "SHIP VIDEO",
+            "headlineAccent": "FROM HTML",
+            "footerText": "hyperframes.heygen.com",
+        },
+    })
+
 
 
     plan = {

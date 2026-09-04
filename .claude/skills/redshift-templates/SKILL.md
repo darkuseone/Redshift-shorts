@@ -1,10 +1,10 @@
 ---
 name: redshift-templates
-description: Каталог из 180 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
+description: Каталог из 181 шаблона, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
 ---
 # redshift-templates
 
-180 шаблонов в 12 категориях (§15). Каталог генерируется
+181 шаблон в 12 категориях (§15). Каталог генерируется
 `tools/gen_templates.py` — правь генератор, а не `templates/manifest.json`.
 У новых id есть поле `example_video` — референс-жест с examples HyperFrames.
 
@@ -14,7 +14,7 @@ description: Каталог из 180 шаблонов, ротация и раз�
 | `text-fullscreen` | 32 | полноэкранный текст |
 | `lower-thirds` | 11 | плашки |
 | `frames-cards` | 7 | карточки источников |
-| `browser-ui` | 16 | окна интерфейсов |
+| `browser-ui` | 17 | окна интерфейсов |
 | `transitions` | 27 | переходы |
 | `avatar-entry` | 6 | входы аватара |
 | `kenburns` | 10 | движение по статике |
@@ -345,6 +345,7 @@ end-card с логотипом, рейтингом и CTA-кнопкой в цв
 скакал абсолютными координатами; здесь вертикальный сдвиг через transform y, pop баблов
 через scale и opacity. P11 предпочитает id, если в блоке imessage / переписка / смс.
 `notes-reveal` — Apple Notes: заголовок заметки, последовательная печать строк с имитацией набора слов, плавный вертикальный скролл листа при заполнении, переход в финальную бумажную карточку с маркером, кругом акцента (#C8453D) и чеклистом. Каталог считал координаты букв; здесь запечённые слова, opacity и transform y/scale/scaleX без запрещённых твинов. P11 предпочитает id, если в блоке notes / заметки / apple notes.
+`notification-cascade` — каскад входящих push-уведомлений в мобильном стиле: 4 баннера со смещением вверх по шагу (pitch 214px), плашка «Show less» с кнопкой закрытия, затемнение фона и переход в элегантный end-card с крупным заголовком, акцентом (#C8453D) и доменом. Каталог использовал автоальфу; здесь строгие transform y, scale и opacity без твинов запрещённых свойств. P11 предпочитает id, если в блоке notification / уведомлен / alert / push.
 
 Динамический переход `zoom-through` — наезд из масштаба 1.22 на смене блока;
 cut по-прежнему база ≥70 %. `cinematic-zoom` — radial zoom-blur со сдвигом
@@ -731,9 +732,9 @@ x=119 и x=961, кадр показал на x=118 и x=960 с перепадо�
 
 ## Каталог в терминах HTML/GSAP
 
-180 шаблонов — это **рендереры с параметрами**, а не 147 реализация:
+181 шаблон — это **рендереры с параметрами**, а не 147 реализация:
 `fullscreen_text` и его варианты покрывают полноэкранные кадры, `source_card` /
-`chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `notes_reveal` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
+`chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `notes_reveal` / `notification_cascade` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
 `lt_accent_underline` / `lt_clean_bar` / `lt_dark_card` — плашки, `kenburns` — проезд, `dataviz` — графики. Меняя шаблон, чаще всего
 меняешь параметры, а не код.
 
