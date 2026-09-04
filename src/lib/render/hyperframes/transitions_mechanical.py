@@ -62,6 +62,11 @@ def tr_transitions_mechanical(ctx: TemplateCtx) -> Piece:
         f'{_num(start + times["open_start"])});',
         f'tl.to("#{node_id}-b",{{opacity:0,duration:{_num(times["to_out"])},ease:"power2.in",immediateRender:false}},'
         f'{_num(start + times["open_start"])});',
+        # Hard kill at exact exit ends (lint epsilon 0.05s). Final clip-end
+        # kills below are not enough when another clip starts mid-transition.
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + times["close"])});',
+        f'tl.set("#{node_id}-b",{{opacity:0}},'
+        f'{_num(start + times["open_start"] + times["to_out"])});',
         f'tl.set("#{node_id}-top",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-bot",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-seam",{{opacity:0}},{_num(start + d)});',

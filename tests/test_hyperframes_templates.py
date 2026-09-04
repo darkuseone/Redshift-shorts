@@ -1894,18 +1894,44 @@ def test_fade_to_nothing_is_followed_by_a_hard_kill(name, ctx):
     перемотке обязан совпадать с кадром по проигрыванию, и lint движка держит
     это правилом gsap_exit_missing_hard_kill. На живом прогоне 0047 оно
     остановило рендер по всем четырём полосам перехода tr-19.
+
+    Важно: kill обязан стоять у конца затухания (±0.05 с — epsilon lint
+    HyperFrames), а не только у конца клипа. Иначе mid-exit вроде
+    ``#tr-*-b`` на ``transitions_mechanical`` падает на стыке со следующим
+    клипом (0042 variant B: gsap_exit_missing_hard_kill на #tr-19-b @41.04s).
     """
     piece = render_transition(name, ctx)
-    kills = {re.search(r'"([^"]+)"', t).group(1)
-             for t in piece.tweens if t.startswith("tl.set(")}
+    # HyperFrames SCENE_BOUNDARY_EPSILON_SECONDS
+    eps = 0.05
+    kills = []
+    for t in piece.tweens:
+        if not t.startswith("tl.set("):
+            continue
+        if not re.search(r"opacity:0(?![.\d])", t):
+            continue
+        sel = re.search(r'"([^"]+)"', t).group(1)
+        tm = re.search(r",([0-9.]+)\);\s*$", t)
+        if tm:
+            kills.append((sel, float(tm.group(1))))
     for tween in piece.tweens:
         if tween.startswith("tl.set("):
             continue
-        to_state = re.findall(r"\{[^{}]*\}", tween)[-1]
+        braces = re.findall(r"\{[^{}]*\}", tween)
+        if not braces:
+            continue
+        to_state = braces[-1]
         if not re.search(r"opacity:0(?![.\d])", to_state):
             continue
         target = re.search(r'"([^"]+)"', tween).group(1)
-        assert target in kills, f"{name}: затухание без гашения — {tween}"
+        start_m = re.search(r",([0-9.]+)\);\s*$", tween)
+        dur_m = re.search(r"duration:([0-9.]+)", tween)
+        assert start_m and dur_m, f"{name}: не разобрали время — {tween}"
+        end_t = float(start_m.group(1)) + float(dur_m.group(1))
+        ok = any(sel == target and abs(tm - end_t) <= eps for sel, tm in kills)
+        assert ok, (
+            f"{name}: затухание без hard kill у конца (±{eps}s) — "
+            f"{target} ends@{end_t:.4f}; kills={[t for s, t in kills if s == target]} — {tween}"
+        )
 
 
 # --- приёмы вокруг ведущего ---------------------------------------------------

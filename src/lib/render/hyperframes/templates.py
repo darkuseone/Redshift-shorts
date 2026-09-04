@@ -1130,6 +1130,8 @@ def tr_transitions_3d(ctx: "TemplateCtx") -> Piece:
         f'tl.to("#{node_id}-edge",{{opacity:0,duration:{_num(times["edge_out"])},'
         f'ease:"power2.in",immediateRender:false}},'
         f'{_num(start + times["edge_mid"])});',
+        f'tl.set("#{node_id}-edge",{{opacity:0}},'
+        f'{_num(start + times["edge_mid"] + times["edge_out"])});',
         f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-b",{{opacity:0}},{_num(start + d)});',
         f'tl.set("#{node_id}-edge",{{opacity:0}},{_num(start + d)});',
@@ -1229,6 +1231,8 @@ def tr_transitions_blur(ctx: "TemplateCtx") -> Piece:
         f'{{scale:1,opacity:0,duration:{_num(times["b_dur"])},'
         f'ease:"power2.out",immediateRender:false}},'
         f'{_num(start + times["b_at"])});',
+        f'tl.set("#{node_id}-bg",{{opacity:0}},'
+        f'{_num(start + times["b_at"] + times["b_dur"])});',
         f'tl.fromTo("#{node_id}-b",{{scale:0.95,opacity:0}},'
         f'{{scale:1,opacity:1,duration:{_num(times["b_dur"])},'
         f'ease:"power2.out",immediateRender:false}},'
@@ -1442,6 +1446,8 @@ def tr_transitions_light(ctx: "TemplateCtx") -> Piece:
         f'tl.to("#{node_id}-warm",{{opacity:0,'
         f'duration:{_num(times["warm_out_dur"])},ease:"power2.out",'
         f'immediateRender:false}},{_num(start + times["warm_out_at"])});',
+        f'tl.set("#{node_id}-warm",{{opacity:0}},'
+        f'{_num(start + times["warm_out_at"] + times["warm_out_dur"])});',
         f'tl.fromTo("#{node_id}-l1",{{x:0,opacity:0.9}},'
         f'{{x:{_TLT_L1_IN_X},opacity:0.9,duration:{_num(times["l1_in_dur"])},'
         f'ease:"sine.inOut",immediateRender:false}},'
@@ -1449,6 +1455,8 @@ def tr_transitions_light(ctx: "TemplateCtx") -> Piece:
         f'tl.to("#{node_id}-l1",{{x:{_TLT_L1_OUT_X},opacity:0,'
         f'duration:{_num(times["l1_out_dur"])},ease:"power1.out",'
         f'immediateRender:false}},{_num(start + times["l1_out_at"])});',
+        f'tl.set("#{node_id}-l1",{{opacity:0}},'
+        f'{_num(start + times["l1_out_at"] + times["l1_out_dur"])});',
         f'tl.fromTo("#{node_id}-l2",{{x:0,opacity:0.8}},'
         f'{{x:{_TLT_L2_IN_X},opacity:0.8,duration:{_num(times["l2_in_dur"])},'
         f'ease:"sine.inOut",immediateRender:false}},'
@@ -1456,6 +1464,8 @@ def tr_transitions_light(ctx: "TemplateCtx") -> Piece:
         f'tl.to("#{node_id}-l2",{{x:{_TLT_L2_OUT_X},opacity:0,'
         f'duration:{_num(times["l2_out_dur"])},ease:"power1.out",'
         f'immediateRender:false}},{_num(start + times["l2_out_at"])});',
+        f'tl.set("#{node_id}-l2",{{opacity:0}},'
+        f'{_num(start + times["l2_out_at"] + times["l2_out_dur"])});',
         f'tl.set("#{node_id}-a",{{opacity:0}},'
         f'{_num(start + times["swap_at"])});',
         f'tl.set("#{node_id}-b",{{opacity:1}},'
@@ -1543,9 +1553,13 @@ def tr_transitions_other(ctx: "TemplateCtx") -> Piece:
         f'{{opacity:0,duration:{_num(times["flash_out_dur"])},'
         f'ease:"power2.out",immediateRender:false}},'
         f'{_num(start + times["flash_out_at"])});',
+        f'tl.set("#{node_id}-flash",{{opacity:0}},'
+        f'{_num(start + times["flash_out_at"] + times["flash_out_dur"])});',
         f'tl.fromTo("#{node_id}-a",{{opacity:1}},'
         f'{{opacity:0,duration:0.001,ease:"none",immediateRender:false}},'
         f'{_num(start + times["swap_at"])});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},'
+        f'{_num(start + times["swap_at"] + 0.001)});',
         f'tl.fromTo("#{node_id}-b",{{opacity:0}},'
         f'{{opacity:1,duration:0.001,ease:"none",immediateRender:false}},'
         f'{_num(start + times["swap_at"])});',

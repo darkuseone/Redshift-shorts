@@ -52,6 +52,7 @@ def tr_transitions_scale(ctx: TemplateCtx) -> Piece:
         f'tl.set("#{node_id}-a",{{opacity:1}},{_num(start)});',
         f'tl.fromTo("#{node_id}-a",{{scale:1}},'
         f'{{scale:{_num(a_scale_to)},opacity:0,duration:{_num(half)},ease:"power3.in"}},{_num(start)});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + half)});',
         f'tl.fromTo("#{node_id}-b",{{scale:{_num(b_scale_from)},opacity:0}},'
         f'{{scale:1,opacity:1,duration:{_num(half)},ease:"power3.out"}},{_num(b_start)});',
         f'tl.to("#{node_id}-b",{{opacity:0,duration:{_num(times["to_out"])},'

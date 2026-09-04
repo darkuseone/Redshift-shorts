@@ -45,6 +45,7 @@ def tr_flash_through_white(ctx: TemplateCtx) -> Piece:
         f'tl.fromTo("#{node_id}-from",{{scale:1,opacity:1}},'
         f'{{scale:1.06,opacity:0,duration:{_num(times["mid"])},'
         f'ease:"power1.in"}},{_num(start)});',
+        f'tl.set("#{node_id}-from",{{opacity:0}},{_num(start + times["mid"])});',
         f'tl.fromTo("#{node_id}-flash",{{opacity:0}},'
         f'{{opacity:1,duration:{_num(times["flash_in"])},'
         f'ease:"power2.in"}},{_num(start)});',

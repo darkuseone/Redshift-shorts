@@ -66,6 +66,7 @@ def tr_transitions_grid(ctx: TemplateCtx) -> Piece:
         f'tl.fromTo("#{node_id}-a",{{scale:1,opacity:1}},'
         f'{{scale:1.05,opacity:0,duration:{_num(times["mid"] * 0.9)},'
         f'ease:"power2.in"}},{_num(start)});',
+        f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + times["mid"] * 0.9)});',
         f'tl.fromTo("#{node_id}-b",{{scale:0.96,opacity:0}},'
         f'{{scale:1,opacity:1,duration:{_num(times["mid"] * 0.9)},'
         f'ease:"power2.out"}},{_num(start + times["swap_at"] * 0.5)});',
@@ -86,6 +87,9 @@ def tr_transitions_grid(ctx: TemplateCtx) -> Piece:
         tweens.append(
             f'tl.to("#{node_id}-c{cell_idx}",{{scale:0.85,opacity:0,duration:{_num(cell_out)},'
             f'ease:"power2.in",immediateRender:false}},{_num(t_out)});'
+        )
+        tweens.append(
+            f'tl.set("#{node_id}-c{cell_idx}",{{opacity:0}},{_num(t_out + cell_out)});'
         )
 
     tweens.append(f'tl.set("#{node_id}-a",{{opacity:0}},{_num(start + d)});')
