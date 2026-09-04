@@ -506,7 +506,9 @@
         "blur"
       ],
       "renderer": "blur_out_up",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "needs": []
     },
@@ -1845,7 +1847,9 @@
         "reveal"
       ],
       "renderer": "ai_chat_reveal",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2915,7 +2919,9 @@
         "shader"
       ],
       "renderer": "chromatic_radial_split",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -3119,7 +3125,9 @@
         "dissolve"
       ],
       "renderer": "transitions_grid",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
