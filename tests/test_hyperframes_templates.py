@@ -4333,6 +4333,39 @@ def test_ripple_waves_keeps_catalog_tokens():
     assert "backdrop-filter:blur(14px)" in css
 
 
+def test_swirl_vortex_animates_without_webgl(ctx):
+    """Каталог крутит WebGL в onUpdate; здесь counter-rotating swirl crossfade, vortex glow и blur."""
+    piece = render_transition("swirl_vortex", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.12}}))
+    node = piece.nodes[0]
+    assert "tr-swirl-vortex" in node
+    assert "sv-stage" in node
+    assert "sv-from" in node and "sv-to" in node
+    assert "sv-vortex" in node
+    assert "sv-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.12" in body
+    assert f'"#{ctx.target}"' in body
+    assert "rotation:28" in body and "rotation:-28" in body
+    assert "webgl" not in body.lower()
+
+
+def test_swirl_vortex_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-swirl-vortex" in css
+    frm = re.search(r"\.tr-swirl-vortex \.sv-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-swirl-vortex \.sv-to\{[^}]+\}", css).group(0)
+    assert "#073b4c" in frm
+    assert "#06d6a0" in too
+    stage = re.search(r"\.tr-swirl-vortex \.sv-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "backdrop-filter:blur(14px)" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9

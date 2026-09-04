@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 33,
+    "transitions": 34,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 194
+    "_total": 195
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2713,6 +2713,26 @@
         "shader"
       ],
       "renderer": "ripple_waves",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/swirl-vortex",
+      "name": "swirl-vortex",
+      "category": "transitions",
+      "title": "Swirl vortex: органическое вихревое вращение и закрутка склейки — swirl-vortex",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "swirl",
+        "vortex",
+        "shader"
+      ],
+      "renderer": "swirl_vortex",
       "last_used_in": [],
       "added": "2026-09-03"
     },
