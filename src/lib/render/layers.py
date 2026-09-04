@@ -472,7 +472,7 @@ def source_card(ctx: Ctx, *, template: str, domain: str, title: str, snippet: st
 
 # --- CTA (§6, §11.1 QC-16) ----------------------------------------------------
 
-def subscribe_button(ctx: Ctx, *, progress: float, text: str = "ПОДПИСАТЬСЯ") -> Image.Image:
+def subscribe_button(ctx: Ctx, *, progress: float, text: str = "SUBSCRIBE") -> Image.Image:
     """Анимированная кнопка подписки — обязательна в последние 2 сек."""
     layer = ctx.new()
     font = ctx.fonts.font("display", 62)

@@ -147,7 +147,7 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
                     continue
                 canvas.alpha_composite(subscribe_button(
                     ctx, progress=t - float(item["start"]),
-                    text=str(params.get("text", "ПОДПИСАТЬСЯ"))))
+                    text=str(params.get("text", "SUBSCRIBE"))))
                 drew += 1
 
         stats.overlay_draws += drew

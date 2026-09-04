@@ -1455,7 +1455,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         overlays.append({
             "type": "cta", "start": float(cta_start), "end": float(cta_end),
             "template": cta_template.id,
-            "params": {"text": "ПОДПИСАТЬСЯ"},
+            "params": {"text": "SUBSCRIBE"},
             "why": "§6: кнопка подписки в последние 2 сек",
         })
     return overlays

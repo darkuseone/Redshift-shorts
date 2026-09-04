@@ -9043,8 +9043,8 @@ _LBC_MARK_FROM = 1.04
 _LBC_CEILING = 768
 _LBC_WIDTH = 760
 _LBC_EXIT_Y = 48
-_LBC_DEFAULT_MARK = "РЕДШИФТ"
-_LBC_DEFAULT_TAG = "Пиши код. Шли на орбиту."
+_LBC_DEFAULT_MARK = "REDSHIFT"
+_LBC_DEFAULT_TAG = "Write code. Ship to orbit."
 _LBC_DEFAULT_URL = "redshift.shorts"
 
 
