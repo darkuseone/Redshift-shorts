@@ -1832,3 +1832,46 @@ class TestTemplatesUseOnlyTheFontsOfTheProject:
         size = int(re.search(r"font-size:(\d+)px", node).group(1))
         assert text_width("180 ГРАДУСОВ", size) <= 900, (
             f"кегль {size} px не влезает в рабочую ширину")
+
+
+class TestAPortedExitAlwaysCarriesItsHardKill:
+    """Перенесённый приём гасит каждый выход в ноль — без условий.
+
+    Правило движка (`gsap_exit_missing_hard_kill`): затухание, кончающееся
+    ровно на границе клипа, при перемотке назад через уже отыгранный участок
+    возвращает элемент в начальное состояние — он остаётся видимым в кадре,
+    куда не входил.
+
+    Граница — начало **любого** клипа композиции, а не конец своего. Проверить
+    это по одному приёму нельзя: соседей он не знает. Поэтому проверка не
+    условная — гасится каждый выход, и совпадение времён перестаёт что-либо
+    значить. Наш `particle-text-dissolve` под правило не подводится намеренно:
+    он ездит с первых прогонов, линтер его пропускает, и переписывать
+    работающее ради симметрии — лишний риск.
+
+    Поймано живым CI: перенесённый `beat-freeze-cut` встал в пустой слот,
+    его выход пришёлся на 43.00 — начало соседнего клипа, — и сборка упала
+    на четырёх элементах разом. Воспроизведено локально настоящим линтером
+    движка: без гашения он валит композицию на `-smear` и `-blur`, с
+    гашением проходит (0 ошибок).
+    """
+
+    PORTED = ("beat_freeze_cut", "apple_terminal_clear_dark")
+
+    @pytest.mark.parametrize("name", PORTED)
+    def test_every_exit_to_zero_is_killed(self, name):
+        ctx = TemplateCtx(index=3, start=10.0, duration=2.4, target="shot-03",
+                          track=15, params={"renderer": name,
+                                            "text": "180 ГРАДУСОВ"})
+        piece = FULLSCREEN[name](ctx)
+        killed = {m.group(1) for tween in piece.tweens
+                  for m in re.finditer(r'tl\.set\("([^"]+)"', tween)}
+        exits = set()
+        for tween in piece.tweens:
+            for match in re.finditer(
+                    r'tl\.fromTo\("([^"]+)",\{[^}]*\},\{([^}]*)\}', tween):
+                # Ноль, а не `opacity:0.85`: приглушение выходом не считается.
+                if re.search(r"opacity:0(?![.0-9])", match.group(2)):
+                    exits.add(match.group(1))
+        assert exits, f"{name}: ни одного выхода — проверять нечего"
+        assert not exits - killed, f"{name}: без гашения {sorted(exits - killed)}"

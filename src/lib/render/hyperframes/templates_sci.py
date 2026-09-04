@@ -2722,6 +2722,17 @@ def fs_apple_terminal_clear_dark(ctx: "TemplateCtx") -> Piece:
             f'tl.fromTo("#{node_id}-cur2",{{opacity:{fr}}},'
             f'{{opacity:{to},duration:{_num(t["blink_dur"])},ease:"none"'
             f'{extra}}},{_num(start)});')
+    # То же правило, что и у `beat-freeze-cut`: каждый выход в ноль гасится
+    # жёстко. Курсор терминала мигает туда-сюда, и гашение в конце «погасания»
+    # безопасно — следующее «зажигание» стоит позже по ленте.
+    for done in list(tweens):
+        made = re.search(r'tl\.fromTo\("([^"]+)",\{[^}]*\},\{([^}]*)\},([0-9.]+)\);', done)
+        if not made or not re.search(r"opacity:0(?![.0-9])", made.group(2)):
+            continue
+        span = re.search(r"duration:([0-9.]+)", made.group(2))
+        tweens.append(
+            f'tl.set("{made.group(1)}",{{opacity:0}},'
+            f'{_num(float(made.group(3)) + float(span.group(1)))});')
     chars_html = "".join(
         f'<span id="{node_id}-c{i}" class="atcd-ch">{_esc(ch)}</span>'
         for i, ch in enumerate(glyphs)
@@ -2877,9 +2888,13 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
     def ft(sel: str, frm: str, too: str, dur: float, ease: str, start: float,
            *, ir: bool = False) -> str:
         flag = ",immediateRender:false" if ir else ""
-        return (
+        tween = (
             f'tl.fromTo("{sel}",{{{frm}}},{{{too},duration:{_bfc_n(dur)},'
             f'ease:"{ease}"{flag}}},{_bfc_n(start)});')
+        # Ноль, а не `opacity:0.85`: гасится только настоящий выход.
+        if re.search(r"opacity:0(?![.0-9])", too):
+            tween += f'tl.set("{sel}",{{opacity:0}},{_bfc_n(start + dur)});'
+        return tween
 
     zoom = f"#{node_id}-zoom"
     crop = f"#{node_id}-crop"

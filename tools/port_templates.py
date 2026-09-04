@@ -468,12 +468,46 @@ SURFACE_FIXES: tuple[tuple[str, str], ...] = (
 )
 
 
+
+# Правки, которые проще записать текстом, чем выражением: место одно, текст
+# точный, и регулярка тут только мешала бы читать.
+LITERAL_FIXES: tuple[tuple[str, str], ...] = (
+    # Выход без жёсткого гашения. Линтер движка: «GSAP exit ends at the clip
+    # start boundary without a matching tl.set hard kill» — перемотка может
+    # попасть за твин, и элемент останется видимым от прошлого кадра. Поймано
+    # живым CI: приём `beat-freeze-cut` встал в слот, конец которого совпал с
+    # началом следующего клипа, и композиция не собралась.
+    (
+        """        flag = ",immediateRender:false" if ir else ""
+        return (
+            f'tl.fromTo("{sel}",{{{frm}}},{{{too},duration:{_bfc_n(dur)},'
+            f'ease:"{ease}"{flag}}},{_bfc_n(start)});')""",
+        """        flag = ",immediateRender:false" if ir else ""
+        tween = (
+            f'tl.fromTo("{sel}",{{{frm}}},{{{too},duration:{_bfc_n(dur)},'
+            f'ease:"{ease}"{flag}}},{_bfc_n(start)});')
+        # Ноль, а не `opacity:0.85`: гасится только настоящий выход.
+        if re.search(r"opacity:0(?![.0-9])", too):
+            tween += f'tl.set("{sel}",{{opacity:0}},{_bfc_n(start + dur)});'
+        return tween""",
+    ),
+    (
+        '            f\'{extra}}},{_num(start)});\')\n    chars_html = "".join(',
+        '            f\'{extra}}},{_num(start)});\')\n    # То же правило, что и у `beat-freeze-cut`: каждый выход в ноль гасится\n    # жёстко. Курсор терминала мигает туда-сюда, и гашение в конце «погасания»\n    # безопасно — следующее «зажигание» стоит позже по ленте.\n    for done in list(tweens):\n        made = re.search(r\'tl\\.fromTo\\("([^"]+)",\\{[^}]*\\},\\{([^}]*)\\},([0-9.]+)\\);\', done)\n        if not made or not re.search(r"opacity:0(?![.0-9])", made.group(2)):\n            continue\n        span = re.search(r"duration:([0-9.]+)", made.group(2))\n        tweens.append(\n            f\'tl.set("{made.group(1)}",{{opacity:0}},\'\n            f\'{_num(float(made.group(3)) + float(span.group(1)))});\')\n    chars_html = "".join(',
+    ),
+)
+
+
 def fix_surfaces(path: Path) -> int:
     text = path.read_text(encoding="utf-8")
     hits = 0
     for pattern, replacement in SURFACE_FIXES:
         text, done = re.subn(pattern, replacement, text)
         hits += done
+    for old, new in LITERAL_FIXES:
+        if old in text:
+            text = text.replace(old, new, 1)
+            hits += 1
     path.write_text(text, encoding="utf-8")
     return hits
 
