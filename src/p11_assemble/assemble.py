@@ -132,12 +132,11 @@ def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]],
                   assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
-    """Кадр для панели за спиной — ближайший футаж того же блока.
+    """Nearest real (non-AI) footage in the same block for hero/fullscreen plates.
 
-    Панель показывает картинку по теме блока, а не произвольный кадр: это тот
-    же материал, который блок и без того выносит на весь экран, просто
-    появившийся за спиной раньше. Своего материала у приёма нет — заводить под
-    него отдельную закупку значит удорожать ролик ради одного слоя.
+    Prefer downloaded stock/press over generated fills so TemplatePicker media
+    slots show real NASA/news plates. AI-only blocks return None — plate-needing
+    heroes then fall back to non-plate templates instead of an empty panel.
     """
     index = int(slot["index"])
     same_block = [s for s in slots
@@ -146,12 +145,19 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   and int(s["index"]) in prepared]
     if not same_block:
         return None
-    nearest = min(same_block, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
+    assets = assets or {}
+
+    def _is_ai(s: dict[str, Any]) -> bool:
+        return bool((assets.get(int(s["index"])) or {}).get("ai_generated"))
+
+    real = [s for s in same_block if not _is_ai(s)]
+    pool = real or []  # AI-only → no plate (fall back to non-plate hero)
+    if not pool:
+        return None
+    nearest = min(pool, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
     prep = prepared[int(nearest["index"])]
-    # Кредит материала едет вместе с ним: приём «экспонат» ставит источник на
-    # экран (§1, правило 8), и брать его надо у того кадра, чью картинку он и
-    # показывает, а не у слота приёма.
-    asset = (assets or {}).get(int(nearest["index"])) or {}
+    # Credit travels with the plate asset so exhibit/BL caption name the frame shown.
+    asset = assets.get(int(nearest["index"])) or {}
     credit = str(asset.get("attribution") or asset.get("source") or "").strip()
     return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0),
             "credit": credit, "ai_generated": bool(asset.get("ai_generated"))}
@@ -469,25 +475,23 @@ def _stem(word: str) -> str:
 
 
 def _credit_line(asset: dict[str, Any], sources: dict[str, Any]) -> str:
-    """Подпись источника в кадр — там, где её требуют права.
+    """Small bottom-left source line for real photo/video (not AI).
 
-    Заказчик: «где надо по правам указывай источник мелким шрифтом». Требование
-    названо в `stock_sources.yaml` полем ``attribution_required`` и стоит у тех
-    источников, где оно и правда есть: ESA, Internet Archive, кадр со страницы
-    издания. У Pexels, Pixabay и NASA его нет, и лепить туда подпись значит
-    засорять кадр без причины.
-
-    Пустая строка — подписи не будет. Для сгенерированного материала подпись не
-    ставится вовсе: своё авторство в кадре не декларируют.
+    Show domain/source for all non-AI stock and press so viewers see where the
+    frame came from. ``attribution_required`` sources still prefer the formal
+    attribution string; others fall back to attribution, domain, or source id.
+    Empty string = no caption. Generated assets never get a credit.
     """
     if not asset or asset.get("ai_generated"):
         return ""
     source = str(asset.get("source") or "").strip()
-    spec = (sources.get("sources") or {}).get(source) or {}
-    if not spec.get("attribution_required"):
+    if not source and not asset.get("attribution"):
         return ""
+    # ``sources`` kept for callers / future license hooks; name resolution below.
+    _ = (sources.get("sources") or {}).get(source) or {}
     name = str(asset.get("attribution") or "").strip()
-    domain = str(asset.get("meta", {}).get("domain") or "").strip()
+    meta = asset.get("meta") or {}
+    domain = str(meta.get("domain") or "").strip()
     if name and domain and domain.lower() not in name.lower():
         return f"{name} · {domain}"
     return name or domain or source
@@ -709,12 +713,10 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
     if renderer in ("hero-card-stack", "hero-exhibit"):
         params["title"] = content["title"]
     if renderer == "hero-exhibit":
-        # Музейная подпись короткая: крупно — акцентное слово реплики, под ним
-        # фраза целиком, ещё ниже — источник материала (§1, правило 8).
+        # Title + detail on the plaque; source goes to thin BL `.credit` only
+        # so we do not stack a giant ex-credit with the on-screen caption.
         params["title"] = str(content.get("word") or content["title"])
         params["detail"] = content.get("caption", "")
-        if content.get("credit"):
-            params["credit"] = content["credit"]
     if renderer == "hero-log":
         # Список набирается чёрным, и одно слово в нём горит — акцентное слово
         # реплики. Приёму нужен сам текст акцента, а не номера строк.
@@ -754,9 +756,12 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     if picker is None:
         picker = TemplatePicker(catalog, ScenarioIndex.load(catalog=catalog))
     available = dict(content)
-    available["plate"] = plate_src
-    if plate_src and plate_src.get("credit"):
-        content = {**content, "credit": plate_src["credit"]}
+    # Plate-needing heroes require a real (non-AI) plate; otherwise fall back
+    # to non-plate templates rather than an empty or generated panel.
+    real_plate = plate_src if plate_src and not plate_src.get("ai_generated") else None
+    available["plate"] = real_plate
+    if real_plate and real_plate.get("credit"):
+        content = {**content, "credit": real_plate["credit"]}
 
     blocked = list(exclude)
     for template in catalog.by_category("hero-devices"):
@@ -771,8 +776,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # вот кем она снята. Под сгенерированным пятном она подписывала
         # «REDSHIFT / GENERATED» и тем самым объявляла зрителю ровно то, чего
         # заказчик просил не показывать. Приём остаётся для настоящего кадра.
-        if (template.renderer in _CAPTION_HEROES
-                and (plate_src or {}).get("ai_generated")):
+        if template.renderer in _CAPTION_HEROES and not real_plate:
             blocked.append(template.id)
 
     if not [t for t in catalog.by_category("hero-devices") if t.id not in blocked]:
@@ -802,22 +806,17 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         "file": None, "duration": None,
         **hero_mutes_subtitle(renderer),
     }
-    if plate_src and renderer == "hero-chat-generate":
-        # Окно живёт весь кадр, а внутри него результат приходит своим клипом:
-        # длину приёма материалом здесь ограничивать нельзя, иначе окно исчезнет
-        # вместе с картинкой, не досидев до конца реплики. Материал короче кадра
-        # укорачивает только сам результат — это один прямоугольник внутри окна,
-        # и приём это переживает.
-        entry["file"] = plate_src["file"]
-        if plate_src.get("duration_sec"):
-            params["media_sec"] = round(float(plate_src["duration_sec"]), 3)
-    elif plate_src and renderer in ("hero-plate", "hero-card-stack",
+    if real_plate and renderer == "hero-chat-generate":
+        # Window lasts the whole shot; media inside may be shorter than the avatar plan.
+        entry["file"] = real_plate["file"]
+        if real_plate.get("duration_sec"):
+            params["media_sec"] = round(float(real_plate["duration_sec"]), 3)
+    elif real_plate and renderer in ("hero-plate", "hero-card-stack",
                                     "hero-exhibit", "hero-plate-pop"):
-        # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
-        # и растянутая панель досидела бы кадр пустой.
-        entry["file"] = plate_src["file"]
+        # Plate heroes follow the plate length so the panel does not hang empty.
+        entry["file"] = real_plate["file"]
         entry["duration"] = round(min(float(slot["duration"]),
-                                      plate_src["duration_sec"]), 3)
+                                      real_plate["duration_sec"]), 3)
     if renderer in _FULL_FRAME_HEROES:
         # Заливка закрывает ведущего целиком и потому живёт секунду-две, а не
         # весь кадр: дольше — и это уже не удар, а пауза в ролике.
@@ -1236,7 +1235,12 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     overlays: list[dict[str, Any]] = []
     duration = float(plan["duration_sec"])
     sources = plan.get("sources", [])
-    on_screen = [s for s in sources if s.get("show_on_screen", True)]
+    # Bulky browser/source_card overlays are opt-in proof beats only.
+    # Routine real footage uses the thin BL `.credit` from `_credit_line`.
+    # Require both show_on_screen and proof_card so legacy scripts that only
+    # set show_on_screen:true no longer spawn full-frame source badges.
+    on_screen = [s for s in sources
+                 if s.get("show_on_screen") and s.get("proof_card")]
 
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
         anchor = run[0]
@@ -1822,16 +1826,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "invert": bool(template.params.get("invert")) or variant == "B",
                 "accent_word": _fullscreen_accent(content, block),
                 "file": prep["dst"] if prep is not None else None,
-                # Материал приходит со своим паспортом целиком. Без лицензии
-                # QC-12 валит ролик: кадр с asset_id без неё — это материал,
-                # право на который нечем подтвердить. Поймано мок-прогоном:
-                # asset_id я проставил, а остальное — нет.
+                # Full passport for QC-12; credit feeds thin BL caption over media.
                 "asset_id": (asset or {}).get("asset_id"),
                 "source": (asset or {}).get("source"),
                 "license": (asset or {}).get("license"),
                 "attribution": (asset or {}).get("attribution", ""),
                 "page_url": (asset or {}).get("page_url", ""),
                 "ai_generated": bool((asset or {}).get("ai_generated")),
+                "credit": _credit_line(asset or {}, sources_spec),
             })
             if prep is None:
                 entry["gap_reason"] = "фон под полноэкранный текст не найден"
