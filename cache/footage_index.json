@@ -1,7 +1,7 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-03",
+  "updated": "2026-09-04",
   "count": 54,
   "items": [
     {
@@ -1569,42 +1569,6 @@
       }
     },
     {
-      "id": "pexels_v14171674",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/snowflakes-falling-on-a-flowing-creek-14171674/",
-      "phash": "1c4c7b4ca966196e",
-      "tags": [
-        "viscous",
-        "flow",
-        "slow",
-        "motion",
-        "dark"
-      ],
-      "vision_summary": "тёмная вязкая жидкость с пузырьками и медленными складками",
-      "score": 0.92,
-      "duration_sec": 48.725,
-      "used_in": [
-        "redshift_0047"
-      ],
-      "last_used": null,
-      "added": "2026-09-02",
-      "phashes": [
-        "1c4c7b4ca966196e",
-        "f64d70544de2914f",
-        "0c9a71596723994f"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v14171674.mp4",
-      "extra": {
-        "attribution": "Pexels / binary Ego",
-        "author": "binary Ego",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
-      }
-    },
-    {
       "id": "pexels_v15168379",
       "type": "video",
       "source": "pexels",
@@ -1658,9 +1622,10 @@
       "score": 0.93,
       "duration_sec": 20.0,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "phashes": [
         "0787617195cf6c34",
@@ -1787,9 +1752,10 @@
       "score": 0.87,
       "duration_sec": 10.0,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-04",
       "added": "2026-09-03",
       "phashes": [
         "048655cba7373ba8",
@@ -1912,9 +1878,10 @@
       "score": 0.72,
       "duration_sec": 19.0,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-04",
       "added": "2026-09-03",
       "phashes": [
         "c22f7da515e4c61c",
@@ -1966,6 +1933,39 @@
         "attribution": "Pixabay / 31906497",
         "author": "31906497",
         "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v18069803",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/an-artist-s-animation-of-artificial-intelligence-ai-this-piece-explores-the-prediction-method-used-in-large-language-models-it-was-created-by-wes-cockx-as-part-of-the-visualising-ai-pr-18069803/",
+      "phash": "ed68d273298fc6a0",
+      "tags": [
+        "quantum",
+        "processor"
+      ],
+      "vision_summary": "Стилизованный 3D-рендер квантового чипа в прозрачном криостате",
+      "score": 0.78,
+      "duration_sec": 18.042,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-04",
+      "phashes": [
+        "ed68d273298fc6a0",
+        "ec932cd2957a4cb8",
+        "e5d89fe4892335c8"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v18069803.mp4",
+      "extra": {
+        "attribution": "Pexels / Google DeepMind",
+        "author": "Google DeepMind",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
       }
     }
   ]

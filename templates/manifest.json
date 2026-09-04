@@ -642,7 +642,9 @@
         "blur"
       ],
       "renderer": "per_word_crossfade",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "needs": []
     },
@@ -666,7 +668,9 @@
         "chromatic"
       ],
       "renderer": "scan_band",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "needs": []
     },
@@ -772,7 +776,9 @@
         "developer"
       ],
       "renderer": "code_diff",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": [
         "device",
@@ -851,7 +857,9 @@
         "developer"
       ],
       "renderer": "code_highlight",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -1058,7 +1066,9 @@
         "flip"
       ],
       "renderer": "split_flap_board",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -1081,7 +1091,9 @@
         "scroll"
       ],
       "renderer": "news_ticker",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -1853,7 +1865,9 @@
         "device"
       ],
       "renderer": "app_showcase",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2795,7 +2809,9 @@
         "wipe"
       ],
       "renderer": "transitions_cover",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2815,7 +2831,9 @@
         "destruction"
       ],
       "renderer": "transitions_destruction",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": [
         "danger",
@@ -2838,7 +2856,9 @@
         "warm"
       ],
       "renderer": "transitions_light",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2942,7 +2962,9 @@
         "shader"
       ],
       "renderer": "flash_through_white",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
