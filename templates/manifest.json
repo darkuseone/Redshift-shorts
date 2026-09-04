@@ -2474,7 +2474,9 @@
         "shader"
       ],
       "renderer": "sdf_iris",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2533,7 +2535,9 @@
         "wipe"
       ],
       "renderer": "mk_clone_wall",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2767,7 +2771,9 @@
         "shader"
       ],
       "renderer": "ripple_waves",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2868,7 +2874,9 @@
         "metal"
       ],
       "renderer": "transitions_mechanical",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -4652,7 +4660,8 @@
       ],
       "renderer": "hero-card-stack",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -4725,7 +4734,9 @@
         "footage"
       ],
       "renderer": "hero-plate-pop",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
     },
@@ -4932,7 +4943,9 @@
         "data"
       ],
       "renderer": "hero-figure",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-08-18"
     },
     {
