@@ -394,6 +394,91 @@ def cmd_templates(args) -> int:
 
     cfg = _load_cfg(args)
     setup_logging(level="INFO", json_output=False)
+
+    if args.explain is not None:
+        if not args.category:
+            raise RedshiftError(
+                "--category обязателен при использовании --explain",
+                code="CATEGORY_REQUIRED",
+            )
+        from .lib.template_picker import SCENARIO_CFG_KEY, TemplatePicker, build_blob
+
+        scenarios_path = cfg.path(SCENARIO_CFG_KEY, "config/template_scenarios.json")
+        if not scenarios_path.exists():
+            raise RedshiftError(
+                f"Файл сценарного индекса не найден: {scenarios_path}",
+                code="SCENARIO_INDEX_NOT_FOUND",
+                path=str(scenarios_path),
+            )
+
+        picker = TemplatePicker.create(cfg)
+
+        blob = build_blob(args.explain)
+        signals: set[str] = set()
+        if args.category == "text-fullscreen":
+            s_content = str(args.explain or "")
+            signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
+
+        chosen, trace = picker.pick(
+            args.category,
+            blob=blob,
+            signals=signals,
+            variant=getattr(args, "variant", "A") or "A",
+        )
+
+        print("Explain template choice:")
+        print(f"  Category: {args.category}")
+        print(f"  Input text: {args.explain!r}")
+        print(f"  Blob: {blob!r}")
+        print(f"  Chosen template: {chosen.id}")
+        print()
+
+        print(f"Fired intents ({len(trace.fired)}):")
+        if trace.fired:
+            for iid, weight in trace.fired:
+                print(f"  - {iid} ({weight})")
+        else:
+            print("  (none)")
+        print()
+
+        print("Channels:")
+        for ch_name in ("head", "specific", "base", "default", "generic"):
+            ch_items = trace.channels.get(ch_name, ())
+            if ch_items:
+                print(f"  {ch_name}: {', '.join(ch_items)}")
+            else:
+                print(f"  {ch_name}: (empty)")
+        print()
+
+        print(f"Walk ({len(trace.walk)}):")
+        if trace.walk:
+            for idx, tid in enumerate(trace.walk):
+                marker = " <- WINNER" if idx == trace.won_at else ""
+                print(f"  walk[{idx}] = {tid}{marker}")
+        else:
+            print("  (empty)")
+        print()
+
+        print(f"Fallback ({len(trace.fallback)}):")
+        if trace.fallback:
+            print(f"  {', '.join(trace.fallback)}")
+        else:
+            print("  (empty)")
+        print()
+
+        print("Result:")
+        print(f"  won_at: {trace.won_at}")
+        print(f"  won_at = {trace.won_at}")
+        print(f"  tie_class: {trace.tie_class}")
+        print(f"  tie_class = {trace.tie_class}")
+        if trace.replaced_default_by:
+            print(f"  replaced_default_by: {trace.replaced_default_by}")
+        else:
+            print(f"  replaced_default_by: none")
+        first_walk = trace.walk[0] if trace.walk else "none"
+        print(f"  summary: won_at={trace.won_at}, tie_class={trace.tie_class}, walk[0]={first_walk}")
+        return 0
+
     catalog = TemplateCatalog.load(cfg)
     if args.category:
         items = catalog.by_category(args.category)
@@ -500,8 +585,10 @@ def build_parser() -> argparse.ArgumentParser:
     learn.set_defaults(func=cmd_learn)
 
     tpl = sub.add_parser("templates", help="каталог шаблонов")
-    tpl.add_argument("--category", default=None)
-    tpl.add_argument("--verbose", action="store_true")
+    tpl.add_argument("--category", default=None, help="фильтр по категории")
+    tpl.add_argument("--verbose", action="store_true", help="полная информация о шаблонах")
+    tpl.add_argument("--explain", default=None, metavar="TEXT", help="объяснить сценарный выбор шаблона для текста")
+    tpl.add_argument("--variant", default="A", choices=["A", "B"], help="версия сборки (A или B)")
     tpl.set_defaults(func=cmd_templates)
 
     st = sub.add_parser("steps", help="контракты шагов пайплайна")

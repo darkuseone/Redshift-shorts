@@ -484,3 +484,84 @@ class TestStability:
         assert t.id == "data-viz/nyc-paris-flight"
         assert trace.won_at == 0
         assert trace.tie_class == 1
+
+
+class TestCliExplain:
+    def test_cli_templates_explain_guided_hit(self, capsys):
+        from src.cli import main
+
+        ret = main(["templates", "--explain", "рейс Нью-Йорк — Париж", "--category", "data-viz"])
+        assert ret == 0
+
+        captured = capsys.readouterr()
+        out = captured.out
+
+        # Fired intents with weight
+        assert "geo-flight (29)" in out
+
+        # All 5 channels
+        assert "head:" in out
+        assert "specific:" in out
+        assert "base:" in out
+        assert "default:" in out
+        assert "generic:" in out
+
+        # Walk with winner
+        assert "walk[0] = data-viz/nyc-paris-flight" in out
+        assert "data-viz/nyc-paris-flight" in out
+
+        # Won at and tie class
+        assert "won_at = 0" in out or "won_at: 0" in out
+        assert "tie_class = 1" in out or "tie_class: 1" in out
+
+    def test_cli_templates_explain_replaces_default(self, capsys):
+        from src.cli import main
+
+        ret = main(["templates", "--explain", "def calc(): return 42", "--category", "text-fullscreen"])
+        assert ret == 0
+
+        captured = capsys.readouterr()
+        out = captured.out
+
+        assert "replaced_default_by: text-number-slam" in out
+        assert "text-fullscreen/number-slam-card" in out
+        assert "won_at = 0" in out or "won_at: 0" in out
+
+    def test_cli_templates_explain_requires_category(self, capsys):
+        from src.cli import main
+
+        ret = main(["templates", "--explain", "рейс Нью-Йорк — Париж"])
+        assert ret == 2
+
+        captured = capsys.readouterr()
+        err_data = json.loads(captured.err)
+        assert err_data["code"] == "CATEGORY_REQUIRED"
+
+    def test_cli_templates_explain_missing_scenarios_file(self, capsys, tmp_path):
+        from src.cli import main
+
+        missing_file = tmp_path / "nonexistent.json"
+        ret = main([
+            "--set", f"paths.template_scenarios={missing_file}",
+            "templates", "--explain", "рейс", "--category", "data-viz",
+        ])
+        assert ret == 2
+
+        captured = capsys.readouterr()
+        err_data = json.loads(captured.err)
+        assert err_data["code"] == "SCENARIO_INDEX_NOT_FOUND"
+
+    def test_cli_templates_without_explain_prints_json(self, capsys):
+        from src.cli import main
+
+        ret = main(["templates", "--category", "data-viz"])
+        assert ret == 0
+
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert "count" in data
+        assert "by_category" in data
+        assert "templates" in data
+        assert data["count"] == 28
+        assert "data-viz/nyc-paris-flight" in data["templates"]
+
