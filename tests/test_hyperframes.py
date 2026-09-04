@@ -1859,6 +1859,34 @@ def test_claude_exchange_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_message_thread_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 20.0,
+        "template": "browser-ui/message-thread-reveal",
+        "renderer": "message_thread_reveal",
+        "params": {
+            "contactName": "Rachel",
+            "questionMessage": "what r u using for the launch video",
+            "teaserMessage": "wait look",
+            "cardTitle": "HyperFrames | Write HTML",
+            "cardDomain": "hyperframes.heygen.com",
+            "reactionMessage": "OMG IT IS HTML",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "message-thread-reveal" in out
+    assert "what r u using for the launch video" in out
+    assert "Rachel" in out
+    node = next(line for line in out.splitlines() if "message-thread-reveal" in line)
+    assert "textContent" not in node
+    assert "cle-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

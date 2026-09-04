@@ -6,7 +6,7 @@
     "text-fullscreen": 32,
     "lower-thirds": 11,
     "frames-cards": 7,
-    "browser-ui": 14,
+    "browser-ui": 15,
     "transitions": 27,
     "avatar-entry": 6,
     "kenburns": 10,
@@ -14,7 +14,7 @@
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 178
+    "_total": 179
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1696,6 +1696,43 @@
         "claude"
       ],
       "renderer": "claude_exchange",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/message-thread-reveal",
+      "name": "message-thread-reveal",
+      "category": "browser-ui",
+      "title": "iMessage-диалог: ветка сообщений, карточка ссылки и финальная карточка — message-thread-reveal",
+      "duration_range": [
+        3.0,
+        25.8
+      ],
+      "params": {
+        "contactName": "Rachel",
+        "questionMessage": "what r u using for the launch video??",
+        "teaserMessage": "wait look 👀",
+        "cardTitle": "HyperFrames | Write HTML, render pixel-perfect video",
+        "cardDomain": "hyperframes.heygen.com",
+        "reactionMessage": "OMG IT'S HTML",
+        "reactionEmoji": "🤯🤯🤯",
+        "benefitMessage": "renders in 4K. no editor",
+        "discoveryMessage": "where did u find this",
+        "sourceMessage": "on heygen",
+        "workflowMessage": "u just write plain html tags",
+        "ownershipMessage": "the code is yours forever",
+        "installMessage": "installing rn",
+        "thanksMessage": "ty bestie 💚",
+        "ecProof": "12,000+ creators",
+        "ecCta": "Start rendering free"
+      },
+      "tags": [
+        "ui",
+        "chat",
+        "imessage",
+        "mobile"
+      ],
+      "renderer": "message_thread_reveal",
       "last_used_in": [],
       "added": "2026-09-03"
     },

@@ -5330,6 +5330,14 @@ OVERLAY_PARAMS = {
         "answer1": "It depends on what you are making.",
         "answer2": "HeyGen is where most teams land.",
     },
+    "message_thread_reveal": {
+        "contactName": "Rachel",
+        "questionMessage": "what r u using for the launch video",
+        "teaserMessage": "wait look",
+        "cardTitle": "HyperFrames | Write HTML",
+        "cardDomain": "hyperframes.heygen.com",
+        "reactionMessage": "OMG IT IS HTML",
+    },
 }
 
 
@@ -5720,6 +5728,53 @@ def test_claude_exchange_keeps_catalog_tokens():
     block = css.split(".claude-exchange", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
+
+
+def test_message_thread_reveal_bakes_spans_not_textcontent():
+    """Catalog writes textContent and animates heights; here baked spans, opacity and scale."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=25.8, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["message_thread_reveal"])
+    piece = render_overlay("message_thread_reveal", ctx)
+    node = piece.nodes[0]
+    assert "message-thread-reveal" in node
+    assert "mtr-chatview" in node and "mtr-composer" in node
+    assert "what r u using for the launch video" in node
+    assert "Rachel" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body or "scaleX:" in body
+    assert "opacity:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("message_thread_reveal", TemplateCtx(
+        index=0, start=0.0, duration=25.8, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_message_thread_reveal_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".message-thread-reveal" in css
+    assert ".mtr-chatview" in css
+    assert ".mtr-composer" in css
+    block = css.split(".message-thread-reveal", 1)[1].split(".sfb-board", 1)[0]
+    assert "Inter" in block
 
 
 def test_app_showcase_fans_phones_without_width_or_dash():

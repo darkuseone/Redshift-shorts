@@ -223,6 +223,18 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "answer2": "**HeyGen** is where most teams land {HeyGen}.",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 79.0, "end": 92.0,
+        "template": "browser-ui/message-thread-reveal", "renderer": "message_thread_reveal",
+        "params": {
+            "contactName": "Rachel",
+            "questionMessage": "what r u using for the launch video??",
+            "teaserMessage": "wait look 👀",
+            "cardTitle": "HyperFrames | Write HTML, render pixel-perfect video",
+            "cardDomain": "hyperframes.heygen.com",
+            "reactionMessage": "OMG IT'S HTML",
+        },
+    })
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

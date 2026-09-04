@@ -383,4 +383,6 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-03 | Data-viz flowchart-vertical: вертикальная блок-схема, ветви scaleY-маска, курсор x/y, исправление опечатки | каталог твинит strokeDashoffset и innerHTML; здесь SVG-маска scaleY, слои опечатки opacity, курсор x/y, Inter/#ffffff/#111214; flowchart не трогаем |
 | 2026-09-04 | Browser-ui chatgpt-exchange: ChatGPT iPhone-интерфейс, подсказки, набор промпта, стрим ответа и таблица | каталог твинит height/textContent; здесь span-ы и opacity, y/scale, Inter/#000/#212121/#48aaff; ai-chat-reveal не трогаем |
 | 2026-09-04 | Browser-ui claude-exchange: Claude iPhone-интерфейс, приветствие со звездой, набор промпта, цепочка шагов, стрим ответа и цитаты | каталог твинит height/textContent; здесь span-ы и opacity, y/scale/rotation, Inter/#20201f/#1c1c1b/#d97757; chatgpt-exchange не трогаем |
+| 2026-09-04 | Browser-ui message-thread-reveal: iMessage-чат, баблы, карточка ссылки, эмодзи и end card | каталог скакал координатами; здесь transform y, scale/opacity, Inter/#23262b/#0a80f8/#C8453D; ai-chat-reveal не трогаем |
+
 
