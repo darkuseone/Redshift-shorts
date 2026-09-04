@@ -142,7 +142,7 @@ def ov_yt_lower_third(ctx: TemplateCtx) -> Piece:
 
     node = (
         f'<div id="{node_id}" class="clip overlay yt-lower-third" {_timing(ctx)}>'
-        f'<div id="{node_id}-card" class="ylt-card" style="opacity:0;transform:translateY(280px)">'
+        f'<div id="{node_id}-card" class="ylt-card" style="opacity:0">'
         f'<div class="ylt-avatar">'
         f'<svg width="110" height="110" viewBox="0 0 110 110">'
         f'<defs>'

@@ -127,7 +127,7 @@ def ov_tiktok_follow(ctx: TemplateCtx) -> Piece:
 
     node = (
         f'<div id="{node_id}" class="clip overlay tiktok-follow" {_timing(ctx)}>'
-        f'<div id="{node_id}-card" class="tf-card" style="opacity:0;transform:translateY(280px)">'
+        f'<div id="{node_id}-card" class="tf-card" style="opacity:0">'
         f'<div class="tf-avatar">'
         f'<svg width="120" height="120" viewBox="0 0 120 120">'
         f'<defs>'
