@@ -5398,6 +5398,13 @@ OVERLAY_PARAMS = {
         "artistName": "HeyGen",
         "brandText": "Spotify",
     },
+    "macos_notification": {
+        "appName": "HyperFrames",
+        "time": "now",
+        "title": "Build complete",
+        "body": "Video rendered in 1.4s with zero frame drops.",
+        "iconText": "HF",
+    },
 }
 
 
@@ -6237,7 +6244,55 @@ def test_spotify_card_keeps_catalog_tokens():
     assert ".spotify-card" in css
     assert ".sc-card" in css
     assert ".sc-album-art" in css
-    block = css.split(".spotify-card", 1)[1].split(".sfb-board", 1)[0]
+    block = css.split(".spotify-card", 1)[1].split(".macos-notification", 1)[0]
+    assert "Inter" in block
+
+
+def test_macos_notification_animates_without_forbidden_properties():
+    """Catalog slides from right; here x/opacity, no forbidden props."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=5.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["macos_notification"])
+    piece = render_overlay("macos_notification", ctx)
+    node = piece.nodes[0]
+    assert "macos-notification" in node
+    assert "mn-card" in node and "mn-app-icon" in node
+    assert "HyperFrames" in node
+    assert "Build complete" in node
+    assert "Video rendered" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "opacity:" in body
+    assert "x:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("macos_notification", TemplateCtx(
+        index=0, start=0.0, duration=5.0, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_macos_notification_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".macos-notification" in css
+    assert ".mn-card" in css
+    assert ".mn-app-icon" in css
+    block = css.split(".macos-notification", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
 
 

@@ -328,6 +328,17 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "brandText": "Spotify",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 153.0, "end": 157.5,
+        "template": "browser-ui/macos-notification", "renderer": "macos_notification",
+        "params": {
+            "appName": "HyperFrames",
+            "time": "now",
+            "title": "Build complete",
+            "body": "Video rendered in 1.4s with zero frame drops.",
+            "iconText": "HF",
+        },
+    })
 
 
 

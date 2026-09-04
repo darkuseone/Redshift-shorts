@@ -2118,6 +2118,33 @@ def test_spotify_card_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_macos_notification_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 5.0,
+        "template": "browser-ui/macos-notification",
+        "renderer": "macos_notification",
+        "params": {
+            "appName": "HyperFrames",
+            "time": "now",
+            "title": "Build complete",
+            "body": "Video rendered in 1.4s with zero frame drops.",
+            "iconText": "HF",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "macos-notification" in out
+    assert "HyperFrames" in out
+    assert "Build complete" in out
+    assert "Video rendered" in out
+    node = next(line for line in out.splitlines() if "macos-notification" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 
 
 

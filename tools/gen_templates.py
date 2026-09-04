@@ -257,7 +257,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (20, [
+    "browser-ui": (21, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -437,6 +437,15 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "artistName": "HeyGen",
              "brandText": "Spotify",
          }, ["ui", "audio", "spotify", "music", "card"], "spotify_card"),
+        ("macos-notification",
+         "macOS: всплывающее системное уведомление в углу экрана — macos-notification",
+         [2.0, 5.5], {
+             "appName": "HyperFrames",
+             "time": "now",
+             "title": "Build complete",
+             "body": "Video rendered in 1.4s with zero frame drops.",
+             "iconText": "HF",
+         }, ["ui", "desktop", "macos", "notification", "system"], "macos_notification"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

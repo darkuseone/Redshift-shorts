@@ -12832,6 +12832,7 @@ from .yt_lower_third import ylt_overlay_css, ov_yt_lower_third
 from .x_post import xp_overlay_css, ov_x_post
 from .reddit_post import rp_overlay_css, ov_reddit_post
 from .spotify_card import sc_overlay_css, ov_spotify_card
+from .macos_notification import mn_overlay_css, ov_macos_notification
 
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
@@ -12856,6 +12857,7 @@ OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "x_post": ov_x_post,
     "reddit_post": ov_reddit_post,
     "spotify_card": ov_spotify_card,
+    "macos_notification": ov_macos_notification,
 }
 
 def render_overlay(name: str, ctx: "TemplateCtx") -> Piece:
@@ -13682,6 +13684,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         + xp_overlay_css()
         + rp_overlay_css()
         + sc_overlay_css()
+        + mn_overlay_css()
         + sfb_css()
         + wv_css()
     )
