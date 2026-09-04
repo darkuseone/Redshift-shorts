@@ -317,8 +317,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:var(--color-bg-pure);color:var(--color-ink);"
         "box-shadow:0 18px 48px rgba(0,0,0,0.22)}"
         ".source-card .bar{display:flex;align-items:center;gap:10px;"
-        "padding:16px 22px;background:#ECEAE7}"
-        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:#C9C6C2}"
+        "padding:16px 22px;background:var(--color-bg-light)}"
+        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:var(--color-muted)}"
         # Строка адреса с настоящим путём статьи, а не одно имя домена: именно
         # она и делает кадр страницей издания, а не «окном вообще».
         ".source-card .url{flex:1;margin-left:12px;display:block;"
@@ -341,7 +341,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "font-family:var(--font-display);font-size:22px;display:flex;"
         "align-items:center;justify-content:center}"
         ".source-card .snippet{padding:14px 0 0;font-size:30px;"
-        "line-height:1.3;color:#3A3D42}"
+        "line-height:1.3;color:var(--color-muted)}"
         # Начало текста статьи серыми строками: страница продолжается за краем
         # карточки, и это видно без единого лишнего слова в кадре.
         ".source-card .lines{display:flex;flex-direction:column;gap:10px;"

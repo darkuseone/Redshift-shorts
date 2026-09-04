@@ -64,11 +64,11 @@ def txt_news_ticker(ctx: "TemplateCtx") -> Piece:
 
 def sfb_css() -> str:
     return (
-        ".sfb-overlay{position:absolute;inset:0;font-family:monospace;display:flex;align-items:center;justify-content:center;background:#111}"
+        ".sfb-overlay{position:absolute;inset:0;font-family:monospace;display:flex;align-items:center;justify-content:center;background:#111214}"
         ".sfb-board{display:flex;gap:12px}"
-        ".sfb-char{width:100px;height:140px;background:#222;border:2px solid #444;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:80px;font-weight:bold;transform-origin:50% 50%;box-shadow:inset 0 -2px 10px rgba(0,0,0,0.8)}"
+        ".sfb-char{width:100px;height:140px;background:#111214;border:2px solid #7A7D82;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:80px;font-weight:bold;transform-origin:50% 50%;box-shadow:inset 0 -2px 10px rgba(0,0,0,0.8)}"
         ".ntk-overlay{position:absolute;left:0;right:0;bottom:100px;height:120px;font-family:Inter,sans-serif}"
-        ".ntk-bar{position:absolute;inset:0;background:#c8453d;display:flex;align-items:center;overflow:hidden}"
-        ".ntk-label{position:absolute;left:0;top:0;bottom:0;width:200px;background:#111214;color:#fff;font-size:48px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:10}"
-        ".ntk-scroll{position:absolute;left:240px;white-space:nowrap;color:#fff;font-size:48px;font-weight:700}"
+        ".ntk-bar{position:absolute;inset:0;background:#C8453D;display:flex;align-items:center;overflow:hidden}"
+        ".ntk-label{position:absolute;left:0;top:0;bottom:0;width:200px;background:#111214;color:#ffffff;font-size:48px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:10}"
+        ".ntk-scroll{position:absolute;left:240px;white-space:nowrap;color:#ffffff;font-size:48px;font-weight:700}"
     )

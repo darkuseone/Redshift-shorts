@@ -984,9 +984,9 @@ def test_shared_axis_z_fullscreen_keeps_catalog_inter(plan, assets, brandbook):
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
     assert ".saz-stack" in css and ".saz-word" in css
     assert "Inter,system-ui,sans-serif" in css
-    assert "#18181b" in css
+    assert "#111214" in css
     assert ".fullscreen-text.fs-shared-axis-z.saz-accent{color:#C8453D}" in css
-    assert "#fafafa" in css
+    assert "#F7F5F3" in css
     assert "#34d399" not in css
 
 
@@ -1256,11 +1256,12 @@ def test_beat_freeze_cut_fullscreen_reaches_the_markup(plan, assets, brandbook):
     assert ".bfc-card" in css
     assert ".bfc-bar" in css
     bfc = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
-    assert "#E63946" in bfc
-    assert "#0B132B" in bfc
-    assert "#1A1F2E" in bfc
-    assert "#C7C9D1" in bfc
-    assert "#C8453D" not in bfc
+    assert "#C8453D" in bfc
+    assert "#111214" in bfc
+    assert "#7A7D82" in bfc
+    assert "#0B132B" not in bfc
+    assert "#1A1F2E" not in bfc
+    assert "#E63946" not in bfc
     assert "#00E5C7" not in bfc and "#00e5c7" not in bfc
     assert "#00E5FF" not in bfc and "#00e5ff" not in bfc
 
@@ -1356,7 +1357,7 @@ def test_lt_dark_card_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "Montserrat" in css
     assert "#C8453D" in css
     assert "#f5b942" not in css
-    assert "#16181d" in css
+    assert "#111214" in css
 
 
 def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):

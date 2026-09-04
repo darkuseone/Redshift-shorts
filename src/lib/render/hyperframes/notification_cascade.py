@@ -236,13 +236,13 @@ def ov_notification_cascade(ctx: TemplateCtx) -> Piece:
         f'<div id="{node_id}-pill-row" class="nc-pill-row">'
         f'<div class="nc-pill">'
         f'<svg width="24" height="24" viewBox="0 0 24 24" fill="none">'
-        f'<path d="M6 9l6 6 6-6" stroke="#3f3a38" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+        f'<path d="M6 9l6 6 6-6" stroke="#7A7D82" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
         f'</svg>'
         f'<span>Show less</span>'
         f'</div>'
         f'<div class="nc-pill-x">'
         f'<svg width="24" height="24" viewBox="0 0 24 24" fill="none">'
-        f'<path d="M6 6l12 12M18 6L6 18" stroke="#3f3a38" stroke-width="3" stroke-linecap="round"/>'
+        f'<path d="M6 6l12 12M18 6L6 18" stroke="#7A7D82" stroke-width="3" stroke-linecap="round"/>'
         f'</svg>'
         f'</div>'
         f'</div>'
@@ -271,44 +271,44 @@ def nc_overlay_css() -> str:
     """CSS for Notification Cascade template."""
     return (
         ".notification-cascade{position:absolute;inset:0;width:1080px;height:1920px;"
-        "overflow:hidden;background:#0d0b0a;font-family:Inter,system-ui,sans-serif;"
+        "overflow:hidden;background:#111214;font-family:Inter,system-ui,sans-serif;"
         "-webkit-font-smoothing:antialiased;color:#111214}"
         ".notification-cascade .nc-backdrop{position:absolute;inset:-40px;"
-        "background:radial-gradient(circle at 50% 38%,#2d2420 0%,#181412 55%,#0d0b0a 100%);"
+        "background:radial-gradient(circle at 50% 38%,#111214 0%,#0a0a0c 100%);"
         "will-change:transform}"
         ".notification-cascade .nc-vignette{position:absolute;inset:0;"
         "background:radial-gradient(ellipse 120% 90% at 50% 42%,transparent 55%,rgba(20,10,5,0.45) 100%)}"
         ".notification-cascade .nc-stack-inner{position:absolute;inset:0;will-change:transform,opacity}"
         ".notification-cascade .nc-pill-row{position:absolute;left:0;top:1164px;width:1080px;height:72px;"
         "display:flex;justify-content:flex-end;padding-right:135px;gap:18px;will-change:transform,opacity}"
-        ".notification-cascade .nc-pill{height:72px;border-radius:36px;background:rgba(250,246,242,0.88);"
+        ".notification-cascade .nc-pill{height:72px;border-radius:36px;background:rgba(247,245,243,0.92);"
         "display:flex;align-items:center;padding:0 24px;gap:10px;font-size:27px;font-weight:600;"
-        "color:#3f3a38;box-shadow:0 8px 24px rgba(30,15,5,0.18);backdrop-filter:blur(16px)}"
+        "color:#111214;box-shadow:0 8px 24px rgba(30,15,5,0.18);backdrop-filter:blur(16px)}"
         ".notification-cascade .nc-pill-x{width:72px;height:72px;border-radius:36px;"
-        "background:rgba(250,246,242,0.88);display:flex;align-items:center;justify-content:center;"
+        "background:rgba(247,245,243,0.92);display:flex;align-items:center;justify-content:center;"
         "box-shadow:0 8px 24px rgba(30,15,5,0.18);backdrop-filter:blur(16px)}"
         ".notification-cascade .nc-banner{position:absolute;left:135px;width:810px;height:176px;"
-        "border-radius:26px;background:rgba(252,249,245,0.92);box-shadow:0 14px 32px rgba(25,12,4,0.22);"
+        "border-radius:26px;background:rgba(247,245,243,0.95);box-shadow:0 14px 32px rgba(25,12,4,0.22);"
         "border:1px solid rgba(255,255,255,0.45);will-change:transform,opacity}"
         ".notification-cascade .nc-icon{position:absolute;left:23px;top:38px;width:100px;height:100px;"
         "border-radius:24px;background:linear-gradient(135deg,#C8453D 0%,#E4726A 100%);"
         "display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(200,69,61,0.3)}"
         ".notification-cascade .nc-title{position:absolute;left:148px;top:38px;font-size:35px;"
-        "font-weight:700;color:#1c1c1e;letter-spacing:0.25px}"
+        "font-weight:700;color:#111214;letter-spacing:0.25px}"
         ".notification-cascade .nc-subtitle{position:absolute;left:148px;top:88px;font-size:32px;"
-        "font-weight:400;color:#464040;letter-spacing:-0.5px;max-width:630px;white-space:nowrap;"
+        "font-weight:400;color:#7A7D82;letter-spacing:-0.5px;max-width:630px;white-space:nowrap;"
         "overflow:hidden;text-overflow:ellipsis}"
         ".notification-cascade .nc-now{position:absolute;right:26px;top:32px;font-size:22px;"
-        "font-weight:600;color:#8a827c;letter-spacing:1px}"
+        "font-weight:600;color:#7A7D82;letter-spacing:1px}"
         ".notification-cascade .nc-credit{position:absolute;right:26px;bottom:14px;font-size:24px;"
-        "font-style:italic;color:#8a827c}"
+        "font-style:italic;color:#7A7D82}"
         ".notification-cascade .nc-endcard{position:absolute;inset:0;z-index:10;will-change:transform,opacity}"
         ".notification-cascade .nc-endcard-scrim{position:absolute;inset:0;"
-        "background:linear-gradient(180deg,#111214 0%,#1e1814 100%)}"
+        "background:#111214}"
         ".notification-cascade .nc-endcard-inner{position:absolute;inset:0;display:flex;"
         "flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 60px}"
         ".notification-cascade .nc-ec-top{font-size:86px;font-weight:900;letter-spacing:3px;"
-        "color:#f7ece5;margin-bottom:12px;text-transform:uppercase}"
+        "color:#F7F5F3;margin-bottom:12px;text-transform:uppercase}"
         ".notification-cascade .nc-ec-accent{font-size:72px;font-weight:900;letter-spacing:2px;"
         "color:#C8453D;margin-bottom:44px;text-transform:uppercase}"
         ".notification-cascade .nc-ec-mark{margin-bottom:48px}"

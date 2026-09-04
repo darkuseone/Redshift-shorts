@@ -4026,35 +4026,33 @@ def test_beat_freeze_cut_keeps_it_kosmos_palette_not_catalog_mint():
     css = overlay_css(load_config().brandbook)
     assert ".fs-beat-freeze-cut" in css
     block = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
-    assert "#E63946" in block
-    assert "#0B132B" in block
-    assert "#1A1F2E" in block
-    assert "#C7C9D1" in block
-    assert "#C8453D" not in block
-    assert "#111214" not in block
-    assert "#F7F5F3" not in block
-    assert "#7A7D82" not in block
+    assert "#C8453D" in block
+    assert "#111214" in block
+    assert "#7A7D82" in block
+    assert "#0B132B" not in block
+    assert "#1A1F2E" not in block
+    assert "#E63946" not in block
     assert "#00E5C7" not in block and "#00e5c7" not in block
     assert "#00E5FF" not in block and "#00e5ff" not in block
     assert "-apple-system" not in block
     bar = re.search(r"\.bfc-bar\{[^}]+\}", css).group(0)
-    assert "#E63946" in bar
+    assert "#C8453D" in bar
     assert "transform-origin:50% 100%" in bar
     assert "transform:" not in bar.replace("transform-origin:50% 100%", "").replace(
         "will-change:transform", "")
     wave = re.search(r"\.bfc-wave-path\{[^}]+\}", css).group(0)
-    assert "stroke:#E63946" in wave
+    assert "stroke:#C8453D" in wave
     eyebrow = re.search(r"\.bfc-eyebrow\{[^}]+\}", css).group(0)
-    assert "color:#E63946" in eyebrow
+    assert "color:#C8453D" in eyebrow
     pill = re.search(r"\.bfc-pill\{[^}]+\}", css).group(0)
-    assert "background:#E63946" in pill
+    assert "background:#C8453D" in pill
     assert "color:#ffffff" in pill
     stage = re.search(r"\.bfc-stage\{[^}]+\}", css).group(0)
     assert "position:absolute" not in stage
     invert = re.search(
         r"\.fullscreen-text\.fs-beat-freeze-cut\.invert\{[^}]+\}", css).group(0)
-    assert "#0B132B" in invert
-    assert "#111214" not in invert
+    assert "#111214" in invert
+    assert "#0B132B" not in invert
 
 
 def test_number_slam_splits_the_caption():
@@ -5956,7 +5954,7 @@ def test_lt_accent_underline_css_keeps_oswald_and_remaps_mint():
     assert "transform:" not in rule.replace("transform-origin:0% 50%", "")
     assert "Oswald" in css
     assert "Space Mono" in css
-    assert "#ffffff" in css and "#e7eaf0" in css
+    assert "#ffffff" in css and "#7A7D82" in css
 
 
 def test_lt_clean_bar_wipes_with_scalex_mask_not_clip_path():
@@ -6018,7 +6016,7 @@ def test_lt_clean_bar_css_keeps_montserrat_and_remaps_orange():
     wipe = re.search(r"\.lt-cb-wipe\{[^}]+\}", css).group(0)
     assert "transform-origin:0px 50%" in wipe
     assert "Montserrat" in css
-    assert "#0f1115" in css and "#5a6170" in css
+    assert "#111214" in css and "#7A7D82" in css
 
 
 def test_lt_dark_card_draws_the_rule_with_scalex():
@@ -6076,13 +6074,13 @@ def test_lt_dark_card_css_keeps_charcoal_montserrat_and_remaps_gold():
 
     css = overlay_css(load_config().brandbook)
     assert "#f5b942" not in css
-    assert "#16181d" in css
+    assert "#111214" in css
     rule = re.search(r"\.lt-dc-rule\{[^}]+\}", css).group(0)
     assert "background:#C8453D" in rule
     assert "transform-origin:0% 50%" in rule
     assert "transform:" not in rule.replace("transform-origin:0% 50%", "")
     assert "Montserrat" in css
-    assert "#ffffff" in css and "#aeb6c2" in css
+    assert "#ffffff" in css and "#7A7D82" in css
 
 
 def test_chat_thread_puts_the_user_on_the_left():
@@ -6156,8 +6154,8 @@ def test_ai_chat_reveal_keeps_catalog_tokens():
     assert "Inter" in root
     assert "-apple-system" not in css.split(".ai-chat-reveal", 1)[1]
     assert "#d2d5e0" in kbd
-    assert "#3ce6ac" in cta
-    assert "#14110e" in inner and "#221b13" in inner
+    assert "#C8453D" in cta
+    assert "#111214" in inner
     block = css.split(".ai-chat-reveal", 1)[1]
     assert "HyperFrames" not in block
     chat = render_overlay("chat_thread", TemplateCtx(
