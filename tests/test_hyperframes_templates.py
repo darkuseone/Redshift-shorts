@@ -4267,6 +4267,39 @@ def test_flash_through_white_keeps_catalog_tokens():
     assert "#ffffff" in css
 
 
+def test_ridged_burn_animates_without_webgl(ctx):
+    """Каталог крутит WebGL в onUpdate; здесь fiery blackbody burn, ember sparks и crossfade."""
+    piece = render_transition("ridged_burn", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.14}}))
+    node = piece.nodes[0]
+    assert "tr-ridged-burn" in node
+    assert "rb-stage" in node
+    assert "rb-from" in node and "rb-to" in node
+    assert "rb-ember" in node and "rb-sparks" in node
+    assert "rb-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.14" in body
+    assert f'"#{ctx.target}"' in body
+    assert "power2.in" in body or "power2.out" in body
+    assert "webgl" not in body.lower()
+
+
+def test_ridged_burn_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-ridged-burn" in css
+    frm = re.search(r"\.tr-ridged-burn \.rb-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-ridged-burn \.rb-to\{[^}]+\}", css).group(0)
+    assert "#0b090a" in frm
+    assert "#e5383b" in too
+    stage = re.search(r"\.tr-ridged-burn \.rb-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "backdrop-filter:blur(14px)" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9

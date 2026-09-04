@@ -1,0 +1,20 @@
+{
+  "id": "transitions/ridged-burn",
+  "name": "ridged-burn",
+  "category": "transitions",
+  "title": "Ridged burn: пламенный прожиг с искрами и острыми кромками — ridged-burn",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "burn",
+    "fire",
+    "shader"
+  ],
+  "renderer": "ridged_burn",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

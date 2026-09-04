@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 31,
+    "transitions": 32,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 192
+    "_total": 193
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2673,6 +2673,26 @@
         "shader"
       ],
       "renderer": "flash_through_white",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/ridged-burn",
+      "name": "ridged-burn",
+      "category": "transitions",
+      "title": "Ridged burn: пламенный прожиг с искрами и острыми кромками — ridged-burn",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "burn",
+        "fire",
+        "shader"
+      ],
+      "renderer": "ridged_burn",
       "last_used_in": [],
       "added": "2026-09-03"
     },
