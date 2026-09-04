@@ -54,3 +54,7 @@ build/
 /flowchart-vertical.json
 /us-map.json
 /split-flap-board.json
+/chatgpt-exchange.json
+/TEMPLATE.md
+*.json.log
+assets/fonts/inter-*

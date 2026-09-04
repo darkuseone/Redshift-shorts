@@ -189,6 +189,28 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             ],
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 50.0, "end": 64.0,
+        "template": "browser-ui/chatgpt-exchange", "renderer": "chatgpt_exchange",
+        "params": {
+            "prompt": "Hey what is the best tool for ai avatars",
+            "intro1": "It really depends on what you are trying to do.",
+            "intro2": "For most creators and marketers, here is how I rank them:",
+            "tableHeadUse": "Use case", "tableHeadTool": "Best tool", "tableHeadWhy": "Why",
+            "row1Use": "Overall realism", "row1Tool": "HeyGen",
+            "row1Why": "Most natural facial expressions and lip sync.",
+            "row1Chip": "Official A.I Ranking",
+            "row2Use": "Enterprise", "row2Tool": "Synthesia",
+            "row2Why": "Better collaboration and workflows.",
+            "row2Chip": "Official A.I Ranking",
+            "row3Use": "Mobile UGC", "row3Tool": "Captions",
+            "row3Why": "Fast mobile workflow and social editing.",
+            "row3Chip": "Creator Stack",
+            "row4Use": "Real-time", "row4Tool": "Tavus",
+            "row4Why": "Interactive avatars that hold live conversations.",
+            "row4Chip": "Creator Stack",
+        },
+    })
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

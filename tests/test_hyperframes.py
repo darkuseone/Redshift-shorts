@@ -1807,6 +1807,30 @@ def test_flowchart_vertical_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_chatgpt_exchange_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 14.2,
+        "template": "browser-ui/chatgpt-exchange",
+        "renderer": "chatgpt_exchange",
+        "params": {
+            "prompt": "Hey what is the best tool for ai avatars",
+            "intro1": "It depends on what you are trying to do.",
+            "intro2": "Here is how I rank them today:",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "chatgpt-exchange" in out
+    assert "Hey what is the best tool for ai avatars" in out
+    node = next(line for line in out.splitlines() if "chatgpt-exchange" in line)
+    assert "textContent" not in node
+    assert "amc-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

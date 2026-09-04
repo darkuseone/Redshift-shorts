@@ -231,7 +231,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (12, [
+    "browser-ui": (13, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -266,6 +266,44 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "AI генерирует видео: ввод промпта, загрузка, результат — blue-sweater-intro-video",
          [4.0, 12.0], {"template": "browser"},
          ["ui", "ai", "video", "generate"], "blue_sweater"),
+        ("chatgpt-exchange",
+         "ChatGPT: ввод промпта, поток ответа и сравнительная таблица — chatgpt-exchange",
+         [3.0, 15.0], {
+             "prompt": "Hey what's the best tool for ai avatars",
+             "intro1": (
+                 "It really depends on what you're trying to do, because “AI avatars” "
+                 "has split into a few different categories."
+             ),
+             "intro2": "For **most creators and marketers**, here's how I'd rank them today:",
+             "tableHeadUse": "Use case",
+             "tableHeadTool": "Best tool",
+             "tableHeadWhy": "Why",
+             "row1Use": "Overall realism",
+             "row1Tool": "HeyGen",
+             "row1Why": (
+                 "Most natural facial expressions, lip sync, gestures, voice cloning "
+                 "and localization. Benchmark for talking head videos."
+             ),
+             "row1Chip": "Official A.I Ranking",
+             "row2Use": "Enterprise/training",
+             "row2Tool": "Synthesia",
+             "row2Why": (
+                 "Better collaboration, SCORM, compliance, team workflows; "
+                 "less creator-focused."
+             ),
+             "row2Chip": "Official A.I Ranking",
+             "row3Use": "Mobile UGC",
+             "row3Tool": "Captions",
+             "row3Why": (
+                 "Extremely fast mobile workflow and social editing. "
+                 "Great for Reels creators."
+             ),
+             "row3Chip": "Creator Stack",
+             "row4Use": "Real-time conversations",
+             "row4Tool": "Tavus",
+             "row4Why": "Interactive avatars that can hold live conversations.",
+             "row4Chip": "Creator Stack",
+         }, ["ui", "ai", "chat", "table"], "chatgpt_exchange"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

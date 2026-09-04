@@ -1119,6 +1119,7 @@ _OVERLAY_BY_NAME = {
     "arxiv-card": "paper_reveal",
     "ai-chat-reveal": "ai_chat_reveal",
     "app-showcase": "app_showcase",
+    "chatgpt-exchange": "chatgpt_exchange",
 }
 
 _NUM_IN_TEXT = re.compile(
@@ -1148,7 +1149,8 @@ def _overlay_renderer(template: Template) -> str:
     if mapped:
         return mapped
     if template.renderer in ("chat_thread", "article_scroll", "paper_reveal",
-                             "source_card", "ai_chat_reveal", "app_showcase"):
+                             "source_card", "ai_chat_reveal", "app_showcase",
+                             "chatgpt_exchange"):
         return template.renderer
     return "source_card"
 
@@ -1240,6 +1242,12 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_prefer = ["browser-ui/app-showcase"] + [
                     item for item in card_prefer
                     if item != "browser-ui/app-showcase"]
+            elif any(key in blob for key in (
+                    "chatgpt exchange", "avatar ranking", "сравнение ии",
+                    "таблица моделей", "ranking")):
+                card_prefer = ["browser-ui/chatgpt-exchange"] + [
+                    item for item in card_prefer
+                    if item != "browser-ui/chatgpt-exchange"]
         else:
             card_category = "frames-cards"
             card_prefer = ["frames-cards/paper-reveal", "frames-cards/arxiv-card"]
@@ -1272,6 +1280,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             card_params["tagline"] = (
                 source.get("title") or source.get("snippet") or "")
             card_params["name"] = source.get("domain") or ""
+        if renderer == "chatgpt_exchange":
+            card_params["prompt"] = (
+                source.get("title") or source.get("snippet") or "")
+            if source.get("domain"):
+                card_params["row1Tool"] = source.get("domain")
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
             "template": card_template.id, "renderer": renderer,

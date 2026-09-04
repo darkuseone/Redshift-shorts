@@ -5316,6 +5316,12 @@ OVERLAY_PARAMS = {
     },
     "vpn_youtube_spot": {},
     "blue_sweater": {},
+    "chatgpt_exchange": {
+        "prompt": "Hey what is the best tool for ai avatars",
+        "intro1": "It depends on what you do.",
+        "intro2": "Here is how I rank them today:",
+        "row1Tool": "HeyGen",
+    },
 }
 
 
@@ -5602,6 +5608,58 @@ def test_ai_chat_reveal_keeps_catalog_tokens():
     assert "acr-" not in chat
     assert "aps-" not in chat
     assert "app-showcase" not in chat
+
+
+def test_chatgpt_exchange_bakes_spans_not_textcontent():
+    """Catalog writes textContent and animates heights; here baked spans, opacity and scale."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=14.9, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["chatgpt_exchange"])
+    piece = render_overlay("chatgpt_exchange", ctx)
+    node = piece.nodes[0]
+    assert "chatgpt-exchange" in node
+    assert "cge-keyboard" in node and "cge-composer" in node
+    assert "cge-bubble" in node and "Hey what is the best tool for ai avatars" in node
+    assert "Ask ChatGPT" in node
+    assert "cge-key" in node and ">Q<" in node and ">P<" in node
+    assert "HeyGen" in node and "Synthesia" in node
+    assert "cge-w" in node and "cge-ch" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "-apple-system" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body or "scaleX:" in body
+    assert "opacity:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("chatgpt_exchange", TemplateCtx(
+        index=0, start=0.0, duration=14.9, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_chatgpt_exchange_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".chatgpt-exchange" in css
+    assert ".cge-composer" in css
+    assert ".cge-keyboard" in css
+    block = css.split(".chatgpt-exchange", 1)[1].split(".sfb-board", 1)[0]
+    assert "Inter" in block
+    assert "-apple-system" not in block
 
 
 def test_app_showcase_fans_phones_without_width_or_dash():
