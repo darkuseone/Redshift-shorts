@@ -270,6 +270,18 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "followingText": "Following",
         },
     })
+    overlays.append({
+        "type": "plaque", "start": 126.0, "end": 130.5,
+        "template": "lower-thirds/tiktok-follow", "renderer": "tiktok_follow",
+        "params": {
+            "displayName": "HeyGen",
+            "handle": "@heygen.com",
+            "followers": "1,999 followers",
+            "buttonText": "Follow",
+            "followingText": "Following",
+        },
+    })
+
 
 
 

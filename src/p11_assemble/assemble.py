@@ -1125,6 +1125,7 @@ _OVERLAY_BY_NAME = {
     "notes-reveal": "notes_reveal",
     "notification-cascade": "notification_cascade",
     "instagram-follow": "instagram_follow",
+    "tiktok-follow": "tiktok_follow",
 }
 
 _NUM_IN_TEXT = re.compile(
@@ -1157,7 +1158,8 @@ def _overlay_renderer(template: Template) -> str:
                              "source_card", "ai_chat_reveal", "app_showcase",
                              "chatgpt_exchange", "claude_exchange",
                              "message_thread_reveal", "notes_reveal",
-                             "notification_cascade", "instagram_follow"):
+                             "notification_cascade", "instagram_follow",
+                             "tiktok_follow"):
         return template.renderer
     return "source_card"
 
@@ -1336,6 +1338,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_params["footerText"] = source.get("domain")
                 card_params["appName"] = source.get("domain")
         if renderer == "instagram_follow":
+            if source.get("title"):
+                card_params["displayName"] = source.get("title")
+            if source.get("domain"):
+                card_params["handle"] = source.get("domain")
+        if renderer == "tiktok_follow":
             if source.get("title"):
                 card_params["displayName"] = source.get("title")
             if source.get("domain"):

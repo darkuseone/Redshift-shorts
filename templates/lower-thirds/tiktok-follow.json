@@ -1,0 +1,27 @@
+{
+  "id": "lower-thirds/tiktok-follow",
+  "name": "tiktok-follow",
+  "category": "lower-thirds",
+  "title": "TikTok: плашка профиля с кнопкой Follow/Following — tiktok-follow",
+  "duration_range": [
+    2.5,
+    6.0
+  ],
+  "params": {
+    "displayName": "HeyGen",
+    "handle": "@heygen.com",
+    "followers": "1,999 followers",
+    "buttonText": "Follow",
+    "followingText": "Following"
+  },
+  "tags": [
+    "social",
+    "tiktok",
+    "follow",
+    "profile",
+    "lower-third"
+  ],
+  "renderer": "tiktok_follow",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}
