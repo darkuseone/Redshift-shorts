@@ -25,10 +25,12 @@ _FCV_PEACH = "#f5c5a3"
 _FCV_LAVENDER = "#d4c5f9"
 _FCV_BLUE = "#a8d8f0"
 _FCV_PINK = "#f8b4c8"
-_FCV_TAG_PURPLE = "#9747ff"
-_FCV_BORDER_BLUE = "#0b84f3"
-_FCV_SQUIGGLE_RED = "#e53935"
-_FCV_HIGHLIGHT = "#d0e4ff"
+# These three tokens were off-palette; aligned to brandbook accent (§3.3).
+# Pastel node fills above (_FCV_YELLOW … _FCV_PINK) are catalog gestures — intentional.
+_FCV_TAG_PURPLE = "#C8453D"   # was #9747ff → accent
+_FCV_BORDER_BLUE = "#C8453D"  # was #0b84f3 → accent (selection ring)
+_FCV_SQUIGGLE_RED = "#C8453D" # was #e53935 → accent (typo underline)
+_FCV_HIGHLIGHT = "#d0e4ff"    # light-blue highlight fill — catalog gesture, keep
 
 
 def _fcv_play(dur: float) -> float:

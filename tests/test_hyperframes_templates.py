@@ -1851,8 +1851,11 @@ def test_flowchart_vertical_keeps_catalog_tokens():
     assert "#c2e8a0" in css
     assert "#f5c5a3" in css
     assert "#d4c5f9" in css
-    assert "#9747ff" in css
-    assert "#0b84f3" in css
+    # Phase B: tag-badge, selection-border, and typo-squiggle unified to brandbook
+    # accent (#C8453D) — off-palette #9747ff and #0b84f3 removed.
+    assert "#C8453D" in css  # accent replaces ex-purple tag and ex-blue selection border
+    assert "#9747ff" not in css
+    assert "#0b84f3" not in css
     block = css.split(".fcv-chart", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
