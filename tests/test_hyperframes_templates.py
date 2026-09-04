@@ -4542,6 +4542,46 @@ def test_transitions_push_keeps_catalog_tokens():
     assert "-apple-system" not in block
 
 
+def test_transitions_radial_animates_without_webgl(ctx):
+    """Каталог демонстрирует radial переходы; здесь круговое диафрагменное раскрытие."""
+    piece = render_transition("transitions_radial", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.10}}))
+    node = piece.nodes[0]
+    assert "tr-transitions-radial" in node
+    assert "trad-stage" in node
+    assert "trad-a" in node and "trad-b" in node
+    assert "trad-iris" in node
+    assert "trad-ring" in node
+    assert "trad-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.1" in body or "scale:1.10" in body
+    assert f'"#{ctx.target}"' in body
+    assert "iris" in body
+    assert "webgl" not in body.lower()
+
+
+def test_transitions_radial_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-transitions-radial" in css
+    frm = re.search(r"\.tr-transitions-radial \.trad-a\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-transitions-radial \.trad-b\{[^}]+\}", css).group(0)
+    assert "#1b263b" in frm
+    assert "#e07a5f" in too
+    stage = re.search(r"\.tr-transitions-radial \.trad-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    iris = re.search(r"\.tr-transitions-radial \.trad-iris\{[^}]+\}", css).group(0)
+    assert "border-radius:50%" in iris
+    ring = re.search(r"\.tr-transitions-radial \.trad-ring\{[^}]+\}", css).group(0)
+    assert "#e07a5f" in ring
+    block = css.split(".tr-transitions-radial", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9

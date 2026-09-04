@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-radial",
+  "name": "transitions-radial",
+  "category": "transitions",
+  "title": "Radial: круговое диафрагменное раскрытие склейки с кольцом свечения — transitions-radial",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "radial",
+    "iris",
+    "circle"
+  ],
+  "renderer": "transitions_radial",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

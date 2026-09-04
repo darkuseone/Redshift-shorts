@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 39,
+    "transitions": 40,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 200
+    "_total": 201
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2832,6 +2832,26 @@
         "directional"
       ],
       "renderer": "transitions_push",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-radial",
+      "name": "transitions-radial",
+      "category": "transitions",
+      "title": "Radial: круговое диафрагменное раскрытие склейки с кольцом свечения — transitions-radial",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "radial",
+        "iris",
+        "circle"
+      ],
+      "renderer": "transitions_radial",
       "last_used_in": [],
       "added": "2026-09-03"
     },
