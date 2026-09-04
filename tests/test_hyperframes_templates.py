@@ -3022,6 +3022,68 @@ def test_particle_text_dissolve_direction_density_and_exit():
     assert empty.nodes == []
 
 
+
+def test_particle_text_dissolve_dust_exits_get_hard_kill():
+    """Shot-layer dust digits (#shot-*-dN-*) need tl.set at fade end.
+
+    HyperFrames lint gsap_exit_missing_hard_kill fires when an opacity exit
+    ends within ±0.05s of another clip start. 0042 variant failed on
+    #shot-15-d6-0 / #shot-15-d7-0 @30.50s — PTD dust faded out with no matching
+    hard kill (only transitions_mechanical mid-exits were covered by a4ac4b6).
+    """
+    eps = 0.05
+    for direction in ("in", "out"):
+        piece = render_fullscreen(_fs_ctx(
+            content="КОД", renderer="particle_text_dissolve",
+            particle_dissolve=True, direction=direction, density="low",
+            duration=4.0))
+        kills = []
+        for t in piece.tweens:
+            if not t.startswith("tl.set("):
+                continue
+            if not re.search(r"opacity:0(?![.\d])", t):
+                continue
+            sel = re.search(r'"([^"]+)"', t).group(1)
+            tm = re.search(r",([0-9.]+)\);\s*$", t)
+            if tm:
+                kills.append((sel, float(tm.group(1))))
+        dust_exits = 0
+        for tween in piece.tweens:
+            if tween.startswith("tl.set("):
+                continue
+            if "-d" not in tween:
+                continue
+            braces = re.findall(r"\{[^{}]*\}", tween)
+            if not braces:
+                continue
+            to_state = braces[-1]
+            if not re.search(r"opacity:0(?![.\d])", to_state):
+                continue
+            target = re.search(r'"([^"]+)"', tween).group(1)
+            if not re.search(r"#shot-\d+-d\d+", target):
+                continue
+            start_m = re.search(r",([0-9.]+)\);\s*$", tween)
+            dur_m = re.search(r"duration:([0-9.]+)", tween)
+            assert start_m and dur_m, f"unparsed dust exit: {tween}"
+            end_t = float(start_m.group(1)) + float(dur_m.group(1))
+            ok = any(sel == target and abs(tm - end_t) <= eps
+                     for sel, tm in kills)
+            assert ok, (
+                f"direction={direction}: dust exit without hard kill ±{eps}s — "
+                f"{target} ends@{end_t:.4f}; "
+                f"kills={[t for s, t in kills if s == target]} — {tween}"
+            )
+            dust_exits += 1
+        assert dust_exits >= 1, f"direction={direction}: no dust exits found"
+
+    fade = render_fullscreen(_fs_ctx(
+        content="КОД", renderer="particle_text_dissolve",
+        exit="fade", duration=4.0))
+    body = " ".join(fade.tweens)
+    assert 'tl.set("#shot-01-stage",{opacity:0}' in body
+
+
+
 def test_per_word_crossfade_rises_from_a_static_ghost():
     """Каталог твинит CSS-var и filter. Здесь y/scale и призрак, HOLD без ухода."""
     piece = render_fullscreen(_fs_ctx(

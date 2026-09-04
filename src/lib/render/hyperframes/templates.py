@@ -5519,11 +5519,16 @@ def dv_us_map_flow(ctx: "TemplateCtx") -> Piece:
             f'duration:{_num(_umf_play(seg))},'
             f'ease:"power1.out",immediateRender:false}},'
             f'{_num(t0 + seg)});')
+        fade_end = t0 + times["td_dur"] + times["td_fade"]
         tweens.append(
             f'tl.fromTo("#{did}",{{opacity:0.9}},'
             f'{{opacity:0,duration:{_num(_umf_play(times["td_fade"]))},'
             f'ease:"power2.out",immediateRender:false}},'
             f'{_num(t0 + times["td_dur"])});')
+        # Hard kill at travel-dot exit end (lint ±0.05s); final kill_at alone
+        # is not enough when another clip starts on the fade boundary.
+        tweens.append(
+            f'tl.set("#{did}",{{opacity:0}},{_num(fade_end)});')
 
     tweens.insert(0,
         f'tl.fromTo("#{wid}",{{scaleX:1}},'
@@ -9354,17 +9359,28 @@ def fs_particle_text_dissolve(ctx: "TemplateCtx") -> Piece:
                     f'ease:"power3.out"}},{_num(birth)});'
                 )
                 # Стык в одной точке lint считает перекрытием opacity.
+                fade_at = settle + 0.001
                 tweens.append(
                     f'tl.fromTo("#{did}",{{opacity:0.82}},{{opacity:0,'
                     f'duration:{_num(fade_s)},ease:"power2.in",'
-                    f'immediateRender:false}},{_num(settle + 0.001)});'
+                    f'immediateRender:false}},{_num(fade_at)});'
+                )
+                # Hard kill at exact dust exit (±0.05s epsilon). Clip-end
+                # kills alone miss when another clip starts at the fade end
+                # (0042: #shot-15-d6-0 / #shot-15-d7-0 @30.50s).
+                tweens.append(
+                    f'tl.set("#{did}",{{opacity:0}},{_num(fade_at + fade_s)});'
                 )
             else:
+                out_dur = max(0.04, travel * inn)
                 tweens.append(
                     f'tl.fromTo("#{did}",{{x:0,y:0,opacity:0.82}},'
                     f'{{x:{_num(scatter_x)},y:{_num(scatter_y)},opacity:0,'
-                    f'duration:{_num(max(0.04, travel * inn))},ease:"power3.in",'
+                    f'duration:{_num(out_dur)},ease:"power3.in",'
                     f'immediateRender:false}},{_num(settle)});'
+                )
+                tweens.append(
+                    f'tl.set("#{did}",{{opacity:0}},{_num(settle + out_dur)});'
                 )
 
     going_in = direction == "in"
@@ -9379,11 +9395,16 @@ def fs_particle_text_dissolve(ctx: "TemplateCtx") -> Piece:
             f'tl.fromTo("#{node_id}-stage",{{opacity:1}},{{opacity:0,'
             f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
             f'{_num(out_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-stage",{{opacity:0}},{_num(out_at + out)});')
     elif exit_mode == "up" and out > 0:
         tweens.append(
             f'tl.fromTo("#{node_id}-stage",{{opacity:1,y:0}},'
             f'{{opacity:0,y:{_num(-_PTD_EXIT_Y)},duration:{_num(out)},'
             f'ease:"power2.in",immediateRender:false}},{_num(out_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-stage",{{opacity:0,y:{_num(-_PTD_EXIT_Y)}}},'
+            f'{_num(out_at + out)});')
 
     cls = ("clip fullscreen-text fs-ptd ptd-" + direction
            + (" invert" if invert else ""))
@@ -10591,6 +10612,9 @@ def fs_code_particle_assemble(ctx: "TemplateCtx") -> Piece:
                 f'tl.fromTo("#{did}",{{opacity:1}},{{opacity:0,'
                 f'duration:{_num(t["fade"])},ease:"power2.in",'
                 f'immediateRender:false}},{_num(fade_at)});')
+            # Hard kill at dust exit end — same boundary rule as PTD shot digits.
+            tweens.append(
+                f'tl.set("#{did}",{{opacity:0}},{_num(fade_at + t["fade"])});')
     tweens.append(
         f'tl.fromTo("#{node_id}-code",{{opacity:0}},'
         f'{{opacity:1,duration:{_num(t["code_dur"])},ease:"power1.out",'
