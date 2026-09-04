@@ -1,0 +1,20 @@
+{
+  "id": "transitions/flash-through-white",
+  "name": "flash-through-white",
+  "category": "transitions",
+  "title": "Flash through white: переход через белую вспышку на тёмных сценах — flash-through-white",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "flash",
+    "white",
+    "shader"
+  ],
+  "renderer": "flash_through_white",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

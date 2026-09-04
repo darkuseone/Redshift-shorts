@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 30,
+    "transitions": 31,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 191
+    "_total": 192
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2653,6 +2653,26 @@
         "shader"
       ],
       "renderer": "domain_warp_dissolve",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/flash-through-white",
+      "name": "flash-through-white",
+      "category": "transitions",
+      "title": "Flash through white: переход через белую вспышку на тёмных сценах — flash-through-white",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "flash",
+        "white",
+        "shader"
+      ],
+      "renderer": "flash_through_white",
       "last_used_in": [],
       "added": "2026-09-03"
     },

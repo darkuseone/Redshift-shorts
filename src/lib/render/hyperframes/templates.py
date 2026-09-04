@@ -1970,6 +1970,7 @@ class TemplateCtx:
 from .chromatic_radial_split import crs_transition_css, tr_chromatic_radial_split
 from .cross_warp_morph import cwm_transition_css, tr_cross_warp_morph
 from .domain_warp_dissolve import dwd_transition_css, tr_domain_warp_dissolve
+from .flash_through_white import ftw_transition_css, tr_flash_through_white
 
 TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "cut": tr_cut,
@@ -1999,6 +2000,7 @@ TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "chromatic_radial_split": tr_chromatic_radial_split,
     "cross_warp_morph": tr_cross_warp_morph,
     "domain_warp_dissolve": tr_domain_warp_dissolve,
+    "flash_through_white": tr_flash_through_white,
 }
 
 
@@ -2395,6 +2397,7 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         + crs_transition_css()
         + cwm_transition_css()
         + dwd_transition_css()
+        + ftw_transition_css()
     )
 
 

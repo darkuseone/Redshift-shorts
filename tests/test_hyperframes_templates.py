@@ -4235,6 +4235,38 @@ def test_domain_warp_dissolve_keeps_catalog_tokens():
     assert "backdrop-filter:blur(14px)" in css
 
 
+def test_flash_through_white_animates_without_webgl(ctx):
+    """Каталог крутит WebGL в onUpdate; здесь white flare midpoint, amber glow и crossfade."""
+    piece = render_transition("flash_through_white", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.12}}))
+    node = piece.nodes[0]
+    assert "tr-flash-through-white" in node
+    assert "ftw-stage" in node
+    assert "ftw-from" in node and "ftw-to" in node
+    assert "ftw-flash" in node and "ftw-glow" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.12" in body
+    assert f'"#{ctx.target}"' in body
+    assert "power2.in" in body or "power2.out" in body
+    assert "webgl" not in body.lower()
+
+
+def test_flash_through_white_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-flash-through-white" in css
+    frm = re.search(r"\.tr-flash-through-white \.ftw-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-flash-through-white \.ftw-to\{[^}]+\}", css).group(0)
+    assert "#03071e" in frm
+    assert "#ffba08" in too
+    stage = re.search(r"\.tr-flash-through-white \.ftw-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "#ffffff" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9

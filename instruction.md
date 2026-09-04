@@ -396,6 +396,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Transitions chromatic-radial-split: радиальный разлёт RGB-каналов на склейке | каталог крутит WebGL в onUpdate; здесь radial color split/opacity и статичный blur, #22223b/#7678ed; macos-notification не трогаем |
 | 2026-09-04 | Transitions cross-warp-morph: шумовое смещение и морфинг склейки в противоположных направлениях | каталог крутит WebGL в onUpdate; здесь opposing coordinate drift, dual crossfade, warp-градиенты и soft blur, #283618/#a7c957; chromatic-radial-split не трогаем |
 | 2026-09-04 | Transitions domain-warp-dissolve: каскадный ворп и радужное свечение кромок | каталог крутит WebGL в onUpdate; здесь cascaded warp crossfade, iridescent glow и soft blur, #0d1b2a/#00f5d4; cross-warp-morph не трогаем |
+| 2026-09-04 | Transitions flash-through-white: переход через белую вспышку на тёмных сценах | каталог крутит WebGL в onUpdate; здесь white flare midpoint, amber glow и crossfade, #03071e/#ffba08/#ffffff; domain-warp-dissolve не трогаем |
 
 
 

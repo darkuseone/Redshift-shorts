@@ -447,7 +447,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "iconText": "HF",
          }, ["ui", "desktop", "macos", "notification", "system"], "macos_notification"),
     ]),
-    "transitions": (30, [
+    "transitions": (31, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
         ("whip-pan-l", "Резкий пан влево", [0.16, 0.28], {"direction": -1, "blur": 24},
          ["dynamic", "pan"], "whip_pan"),
@@ -541,6 +541,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Domain warp dissolve: каскадный ворп и радужное свечение кромок — domain-warp-dissolve",
          [0.22, 0.42], {},
          ["dynamic", "warp", "dissolve", "shader"], "domain_warp_dissolve"),
+        ("flash-through-white",
+         "Flash through white: переход через белую вспышку на тёмных сценах — flash-through-white",
+         [0.22, 0.42], {},
+         ["dynamic", "flash", "white", "shader"], "flash_through_white"),
     ]),
     "avatar-entry": (6, [
         ("hero-zoom-in", "Вход зумом на аватар", [0.2, 0.4], {"from_scale": 1.18},
