@@ -306,6 +306,19 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "views": "150K",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 142.0, "end": 147.0,
+        "template": "browser-ui/reddit-post", "renderer": "reddit_post",
+        "params": {
+            "subreddit": "r/hyperframes",
+            "author": "u/developer · 3h",
+            "title": "Writing HTML to render video changed everything for our pipeline",
+            "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds. The whole workflow runs headlessly.",
+            "votes": "4.2k",
+            "votesActive": "4.3k",
+            "comments": "328",
+        },
+    })
 
 
 

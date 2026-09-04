@@ -2062,6 +2062,37 @@ def test_x_post_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_reddit_post_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 5.0,
+        "template": "browser-ui/reddit-post",
+        "renderer": "reddit_post",
+        "params": {
+            "subreddit": "r/hyperframes",
+            "author": "u/developer · 3h",
+            "title": "Writing HTML to render video changed everything for our pipeline",
+            "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds.",
+            "votes": "4.2k",
+            "votesActive": "4.3k",
+            "comments": "328",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "reddit-post" in out
+    assert "r/hyperframes" in out
+    assert "u/developer" in out
+    assert "Writing HTML" in out
+    assert "4.2k" in out
+    assert "4.3k" in out
+    node = next(line for line in out.splitlines() if "reddit-post" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 
 
 

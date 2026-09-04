@@ -390,6 +390,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Lower-thirds tiktok-follow: плашка профиля TikTok, аватарка cyan/crimson, кнопка Follow -> Following | каталог использовал -apple-system; здесь Inter/#1a1a1a/#fe2c55/#2f2f2f, y, scale, opacity, backgroundColor; instagram-follow не трогаем |
 | 2026-09-04 | Lower-thirds yt-lower-third: плашка профиля YouTube, аватарка red gradient/play, кнопка Subscribe -> Subscribed | каталог использовал DM Sans; здесь Inter/#ffffff/#0f0f0f/#272727, y, scale, opacity, backgroundColor; tiktok-follow не трогаем |
 | 2026-09-04 | Browser-ui x-post: карточка твита X, бейдж верификации, реакция лайка с отскоком и смена счетчика | каталог делал onStart textContent; здесь dual-span opacity, transform y, scale/opacity, Inter/#15202b/#e7e9ea/#f91880; notification-cascade не трогаем |
+| 2026-09-04 | Browser-ui reddit-post: карточка поста Reddit, аватарка сабреддита, реакция апвоута с отскоком и смена счетчика | каталог делал onStart textContent; здесь dual-span opacity, transform y, scale/opacity, Inter/#1a1a2e/#d7dadc/#FF4500; x-post не трогаем |
 
 
 

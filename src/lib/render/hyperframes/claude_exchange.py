@@ -771,7 +771,7 @@ def cle_overlay_css() -> str:
         ".claude-exchange .cle-stage{position:absolute;inset:0;background:#20201f}"
         ".claude-exchange .cle-screen{position:absolute;top:0;left:50%;width:402px;height:874px;"
         "margin-left:-201px;background:#20201f;overflow:hidden;transform-origin:top center;"
-        f"transform:scale({_CLE_STAGE_SCALE})"
+        f"transform:scale({_CLE_STAGE_SCALE})}}"
         ".claude-exchange .cle-statusbar{position:absolute;top:0;left:0;right:0;height:65px;"
         "z-index:40;display:flex;align-items:center;padding:0 34px 0 16px;color:#fff}"
         ".claude-exchange .cle-sb-left{display:flex;align-items:center;margin-left:32px}"

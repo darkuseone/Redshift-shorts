@@ -257,7 +257,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (18, [
+    "browser-ui": (19, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -419,6 +419,17 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "likesActive": "11.0K",
              "views": "150K",
          }, ["ui", "social", "x", "twitter", "post"], "x_post"),
+        ("reddit-post",
+         "Reddit: карточка поста с реакцией апвоута и счетчиками — reddit-post",
+         [2.5, 6.5], {
+             "subreddit": "r/hyperframes",
+             "author": "u/developer · 3h",
+             "title": "Writing HTML to render video changed everything for our pipeline",
+             "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds. The whole workflow runs headlessly.",
+             "votes": "4.2k",
+             "votesActive": "4.3k",
+             "comments": "328",
+         }, ["ui", "social", "reddit", "post", "community"], "reddit_post"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

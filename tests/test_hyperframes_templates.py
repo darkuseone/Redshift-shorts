@@ -5384,6 +5384,15 @@ OVERLAY_PARAMS = {
         "likesActive": "11.0K",
         "views": "150K",
     },
+    "reddit_post": {
+        "subreddit": "r/hyperframes",
+        "author": "u/developer · 3h",
+        "title": "Writing HTML to render video changed everything for our pipeline",
+        "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds. The whole workflow runs headlessly.",
+        "votes": "4.2k",
+        "votesActive": "4.3k",
+        "comments": "328",
+    },
 }
 
 
@@ -6123,7 +6132,58 @@ def test_x_post_keeps_catalog_tokens():
     assert ".x-post" in css
     assert ".xp-card" in css
     assert ".xp-like-btn" in css
-    block = css.split(".x-post", 1)[1].split(".sfb-board", 1)[0]
+    block = css.split(".x-post", 1)[1].split(".reddit-post", 1)[0]
+    assert "Inter" in block
+
+
+def test_reddit_post_animates_without_forbidden_properties():
+    """Catalog bounces arrow and updates text via opacity; here y/scale/opacity, no forbidden props."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=5.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["reddit_post"])
+    piece = render_overlay("reddit_post", ctx)
+    node = piece.nodes[0]
+    assert "reddit-post" in node
+    assert "rp-card" in node and "rp-vote-btn" in node
+    assert "r/hyperframes" in node
+    assert "u/developer" in node
+    assert "Writing HTML" in node
+    assert "4.2k" in node
+    assert "4.3k" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body
+    assert "opacity:" in body
+    assert "y:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("reddit_post", TemplateCtx(
+        index=0, start=0.0, duration=5.0, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_reddit_post_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".reddit-post" in css
+    assert ".rp-card" in css
+    assert ".rp-vote-btn" in css
+    block = css.split(".reddit-post", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
 
 

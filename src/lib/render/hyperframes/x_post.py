@@ -168,7 +168,7 @@ def ov_x_post(ctx: TemplateCtx) -> Piece:
 
     node = (
         f'<div id="{node_id}" class="clip overlay x-post" {_timing(ctx)}>'
-        f'<div id="{node_id}-card" class="xp-card" style="opacity:0;transform:translate(-50%,400px)">'
+        f'<div id="{node_id}-card" class="xp-card" style="opacity:0">'
         f'<div class="xp-glow"></div>'
         f'<div class="xp-header">'
         f'<div class="xp-avatar">'
@@ -265,8 +265,8 @@ def xp_overlay_css() -> str:
     return (
         ".x-post{position:absolute;inset:0;width:1080px;height:1920px;"
         "pointer-events:none;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}"
-        ".x-post .xp-card{position:absolute;top:50%;left:50%;"
-        "transform:translate(-50%,-50%);width:920px;background:#15202b;"
+        ".x-post .xp-card{position:absolute;top:620px;left:80px;"
+        "width:920px;background:#15202b;"
         "border-radius:28px;padding:42px 42px 34px;"
         "box-shadow:0 16px 56px rgba(0,0,0,0.6);border:1px solid #38444d;"
         "overflow:hidden;box-sizing:border-box;will-change:transform,opacity}"
