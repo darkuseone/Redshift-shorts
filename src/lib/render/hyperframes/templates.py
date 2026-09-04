@@ -1977,6 +1977,7 @@ from .swirl_vortex import sv_transition_css, tr_swirl_vortex
 from .transitions_dissolve import td_transition_css, tr_transitions_dissolve
 from .transitions_distortion import tdist_transition_css, tr_transitions_distortion
 from .transitions_grid import tg_transition_css, tr_transitions_grid
+from .transitions_mechanical import tm_transition_css, tr_transitions_mechanical
 
 TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "cut": tr_cut,
@@ -2013,6 +2014,7 @@ TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "transitions_dissolve": tr_transitions_dissolve,
     "transitions_distortion": tr_transitions_distortion,
     "transitions_grid": tr_transitions_grid,
+    "transitions_mechanical": tr_transitions_mechanical,
 }
 
 
@@ -2416,6 +2418,7 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         + td_transition_css()
         + tdist_transition_css()
         + tg_transition_css()
+        + tm_transition_css()
     )
 
 

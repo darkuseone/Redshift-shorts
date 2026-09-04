@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-mechanical",
+  "name": "transitions-mechanical",
+  "category": "transitions",
+  "title": "Mechanical: индастриал захлопывание шторок со снопом искр на стыке — transitions-mechanical",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "mechanical",
+    "shutter",
+    "metal"
+  ],
+  "renderer": "transitions_mechanical",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

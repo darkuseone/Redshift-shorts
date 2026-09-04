@@ -4468,6 +4468,45 @@ def test_transitions_grid_keeps_catalog_tokens():
     assert "grid-template-rows:repeat(4,1fr)" in grid
 
 
+def test_transitions_mechanical_animates_without_webgl(ctx):
+    """Каталог демонстрирует mechanical shutter; здесь встречные створки со снопом искр."""
+    piece = render_transition("transitions_mechanical", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.10}}))
+    node = piece.nodes[0]
+    assert "tr-transitions-mechanical" in node
+    assert "tm-stage" in node
+    assert "tm-a" in node and "tm-b" in node
+    assert "tm-shutter-top" in node and "tm-shutter-bot" in node
+    assert "tm-seam" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.1" in body or "scale:1.10" in body
+    assert f'"#{ctx.target}"' in body
+    assert "y:-960" in body and "y:960" in body
+    assert "webgl" not in body.lower()
+
+
+def test_transitions_mechanical_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-transitions-mechanical" in css
+    frm = re.search(r"\.tr-transitions-mechanical \.tm-a\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-transitions-mechanical \.tm-b\{[^}]+\}", css).group(0)
+    assert "#1b263b" in frm
+    assert "#e07a5f" in too
+    stage = re.search(r"\.tr-transitions-mechanical \.tm-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    shut = re.search(r"\.tr-transitions-mechanical \.tm-shutter\{[^}]+\}", css).group(0)
+    assert "height:50%" in shut
+    assert "#111214" in shut
+    assert "#e07a5f" in css
+    block = css.split(".tr-transitions-mechanical", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9
