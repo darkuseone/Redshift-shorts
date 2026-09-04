@@ -2495,7 +2495,9 @@
         "shader"
       ],
       "renderer": "thermal_distortion",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2556,7 +2558,9 @@
         "flip"
       ],
       "renderer": "transitions_3d",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2936,7 +2940,9 @@
         "through"
       ],
       "renderer": "transitions_scale",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -4443,7 +4449,8 @@
       ],
       "renderer": "hero-plate",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -4829,7 +4836,8 @@
       ],
       "renderer": "hero-title-behind",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -4852,7 +4860,8 @@
       ],
       "renderer": "hero-exhibit",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
