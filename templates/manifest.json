@@ -2165,7 +2165,9 @@
         "community"
       ],
       "renderer": "reddit_post",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2559,7 +2561,9 @@
         "zoom"
       ],
       "renderer": "zoom_through",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
       "needs": []
@@ -3084,7 +3088,9 @@
         "chromatic"
       ],
       "renderer": "transitions_distortion",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -3149,7 +3155,9 @@
         "directional"
       ],
       "renderer": "transitions_push",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },

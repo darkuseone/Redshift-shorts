@@ -4,7 +4,7 @@
   "variants": {
     "A": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_A.mp4",
-      "size_bytes": 14326803,
+      "size_bytes": 27288081,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -17,16 +17,16 @@
         "frames": 1336,
         "duration_sec": 44.511,
         "shots": 20,
-        "overlay_draws": 2,
+        "overlay_draws": 4,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 963,
-        "speech_frames": 963
+        "subtitle_frames": 884,
+        "speech_frames": 884
       }
     },
     "B": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_B.mp4",
-      "size_bytes": 11969201,
+      "size_bytes": 25514710,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -39,11 +39,11 @@
         "frames": 1336,
         "duration_sec": 44.511,
         "shots": 20,
-        "overlay_draws": 2,
+        "overlay_draws": 4,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 926,
-        "speech_frames": 926
+        "subtitle_frames": 963,
+        "speech_frames": 963
       }
     }
   },
@@ -138,7 +138,7 @@
           "passed": true,
           "value": {
             "lufs": -14.0,
-            "true_peak_dbtp": -3.32
+            "true_peak_dbtp": -4.26
           },
           "threshold": {
             "lufs": [
@@ -155,12 +155,12 @@
           "id": "QC-9",
           "name": "Уровень музыкальной подложки",
           "passed": true,
-          "value": -24.0,
+          "value": -37.13,
           "threshold": [
-            -26,
-            -22
+            -38.6,
+            -35.6
           ],
-          "detail": "",
+          "detail": "7.0 % от голоса (цель -37.1 LUFS)",
           "timecode_sec": null,
           "blocking": true
         },
@@ -285,11 +285,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "Это квантовый чип. Внутри 105 кубитов",
-            "score": 0.78,
-            "summary": "Ведущий в кадре на звёздном фоне с крупными текстовыми оверлеями про квантовый чип",
+            "score": 0.92,
+            "summary": "Host gesturing at desk with starry background and large '105 кубитов' overlay",
             "has_text": false,
             "watermark": false,
-            "reason": "Тема совпадает, кадр соответствует замыслу аватара, но чипа в кадре нет, а речь начинается с «это квантовый чип»",
+            "reason": "Matches speech and avatar mode; clean vertical framing, channel text only",
             "judge": "grok"
           },
           {
@@ -298,11 +298,11 @@
             "kind": "split",
             "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
             "spoken": "логический кубит прожил дольше,",
-            "score": 0.35,
-            "summary": "Ведущий с крупным белым текстом на тёмном фоне, нижняя половина кадра пустая",
+            "score": 0.9,
+            "summary": "Reddit-пост Nature о логическом кубите + руки ведущего снизу",
             "has_text": true,
             "watermark": false,
-            "reason": "Нет сплита 50/50 с доказательством сверху, нижняя половина пустая, текст лежит на ведущем",
+            "reason": "идеально попадает в речь и замысел evidence, сплит читается, текст источника не мешает",
             "judge": "grok"
           },
           {
@@ -311,24 +311,24 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "Здесь",
-            "score": 0.35,
-            "summary": "Centered white rounded card with overlaid text on dark abstract background",
+            "score": 0.65,
+            "summary": "White rounded card with '3 ДЕСЯТЬ МИНУТ' over blue crystal shards on dark floor, red viewfinder corners",
             "has_text": false,
             "watermark": false,
-            "reason": "Title card mismatches spoken 'Здесь'; abstract stock background, text overlaps card",
+            "reason": "Central white box with timer text dominates; background decorative but speech 'Здесь' and 'develop' role not clearly supported",
             "judge": "grok"
           },
           {
             "t": 25.96,
             "shot_index": 13,
-            "kind": "footage",
-            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "kind": "fullscreen_text",
+            "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "шаге. Задача, на которую суперкомпьютеру",
-            "score": 0.82,
-            "summary": "Abstract dark space background with red and blue nebulae and large white text 'ЗАДАЧА'",
+            "score": 0.25,
+            "summary": "Black screen with heavily overlapped white Russian text in center",
             "has_text": false,
             "watermark": false,
-            "reason": "Directly matches spoken 'ЗАДАЧА', full-frame abstract visual fits mode C, but soft stock/AI look and off-center text placement lower scores slightly",
+            "reason": "text unreadable due to overlap, solid black instead of footage, no match to supercomputer topic",
             "judge": "grok"
           },
           {
@@ -338,10 +338,10 @@
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "ответ на вопрос. Проверить этот результат",
             "score": 0.65,
-            "summary": "Ведущий с микрофоном и крупным полупрозрачным словом ВЕРИМ по центру",
+            "summary": "ведущий на тёмном звёздном фоне с крупным словом «ВЕРИМ» за головой и обрезанной надписью поверх него",
             "has_text": true,
             "watermark": false,
-            "reason": "Гарблированный текст на груди ведущего, остальное соответствует замыслу twist",
+            "reason": "текст на ведущем обрезан и нечитаем, остальное соответствует замыслу",
             "judge": "grok"
           },
           {
@@ -349,24 +349,23 @@
             "shot_index": 19,
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
-            "spoken": "в физику. Доверил бы ты такому ответу",
-            "score": 0.1,
-            "summary": "Чёрный экран с полупрозрачным текстом ONE SCENE A и красной надписью ДОЕ",
+            "spoken": "Доверил бы ты такому ответу",
+            "score": 0.3,
+            "summary": "абстрактный красный фон с сетью линий и текстом «ДОЛ»",
             "has_text": true,
-            "watermark": true,
-            "reason": "Кадр — чёрная заглушка с плейсхолдером, не имеет отношения к физике и CTA",
+            "watermark": false,
+            "reason": "фон не связан с речью про доверие ответу, есть чужой текст",
             "judge": "grok"
           }
         ],
         "sample_count": 6,
-        "mismatch_share": 0.5,
+        "mismatch_share": 0.333,
         "mismatch_limit": 0.1,
         "picture_matches_speech": false,
-        "watermarks_found": 1,
+        "watermarks_found": 0,
         "blocking": false,
         "notes": [
-          "картинка расходится с речью на 50% проб (предел 10%, §11.2.1)",
-          "подозрение на водяные знаки в 1 пробах"
+          "картинка расходится с речью на 33% проб (предел 10%, §11.2.1)"
         ]
       }
     },
@@ -376,7 +375,7 @@
       "passed": true,
       "passed_count": 19,
       "total": 19,
-      "ai_share": 0.3278,
+      "ai_share": 0.3241,
       "checks": [
         {
           "id": "QC-1",
@@ -460,7 +459,7 @@
           "passed": true,
           "value": {
             "lufs": -14.0,
-            "true_peak_dbtp": -3.32
+            "true_peak_dbtp": -4.26
           },
           "threshold": {
             "lufs": [
@@ -477,12 +476,12 @@
           "id": "QC-9",
           "name": "Уровень музыкальной подложки",
           "passed": true,
-          "value": -24.0,
+          "value": -37.13,
           "threshold": [
-            -26,
-            -22
+            -38.6,
+            -35.6
           ],
-          "detail": "",
+          "detail": "7.0 % от голоса (цель -37.1 LUFS)",
           "timecode_sec": null,
           "blocking": true
         },
@@ -530,7 +529,7 @@
           "id": "QC-14",
           "name": "Доля AI-generated футажа",
           "passed": true,
-          "value": 0.3278,
+          "value": 0.3241,
           "threshold": 0.35,
           "detail": "",
           "timecode_sec": null,
@@ -607,11 +606,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "Это квантовый чип. Внутри 105 кубитов",
-            "score": 0.88,
-            "summary": "Ведущий в кадре с жестом и субтитром «ЭТО КВАНТОВЫИ» на звёздном фоне",
+            "score": 0.65,
+            "summary": "Ведущий на фоне звёздного неба с микрофоном, субтитр за головой",
             "has_text": false,
             "watermark": false,
-            "reason": "Тема и текст совпадают с речью, кадр по замыслу, без артефактов и обрезок",
+            "reason": "Соответствует аватару, но нет визуала чипа; фон и освещение выглядят постановочно/нейросетевыми, нижняя часть кадра с красным градиентом выглядит лишней",
             "judge": "grok"
           },
           {
@@ -620,11 +619,11 @@
             "kind": "split",
             "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
             "spoken": "логический кубит прожил дольше,",
-            "score": 0.35,
-            "summary": "ведущий в верхней половине на звёздном фоне, нижняя половина пустая градиентная, текст о Nature поверх",
-            "has_text": false,
+            "score": 0.9,
+            "summary": "Сплит: скриншот статьи Nature сверху, ведущий снизу с микрофоном",
+            "has_text": true,
             "watermark": false,
-            "reason": "нижняя половина пустая, нет материала доказательства; сплит не выполнен",
+            "reason": "идеально соответствует замыслу evidence, текст статьи прямо по речи",
             "judge": "grok"
           },
           {
@@ -633,24 +632,24 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "Здесь",
-            "score": 0.92,
-            "summary": "Large 'ЗДЕСЬ' subtitle over dark '5 минут' graphic",
+            "score": 0.9,
+            "summary": "Крупная цифра 5 с «МИНУТ» на пурпурном фоне с волнами и частицами",
             "has_text": false,
             "watermark": false,
-            "reason": "Direct match to spoken 'Здесь', clean centered subtitle as intended, good contrast and vertical composition",
+            "reason": "Полностью соответствует замыслу и речи «Здесь», текст — оформление канала, фон типично стоковый",
             "judge": "grok"
           },
           {
             "t": 25.96,
             "shot_index": 13,
-            "kind": "footage",
-            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "kind": "fullscreen_text",
+            "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "шаге. Задача, на которую суперкомпьютеру",
             "score": 0.82,
-            "summary": "Dark space background with red-blue glowing orbs and large white text 'ЗАДАЧА'",
+            "summary": "тёмный кадр с белым абстрактным объектом сверху и крупным словом «ЗАДАЧА» по центру",
             "has_text": false,
             "watermark": false,
-            "reason": "Matches 'Задача' in speech with intended subtitle; abstract cosmic background fits supercomputer theme but looks generic/neural and text placement is off-center",
+            "reason": "текст совпадает с речью про задачу, но кадр пустой, объект размыт, много мёртвого пространства",
             "judge": "grok"
           },
           {
@@ -658,12 +657,12 @@
             "shot_index": 16,
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
-            "spoken": "Проверить этот результат",
-            "score": 0.55,
-            "summary": "ведущий в кадре с микрофоном и субтитром «Проверить нечем»",
+            "spoken": "ответ на вопрос. Проверить этот результат",
+            "score": 0.85,
+            "summary": "Ведущий в кадре на звёздном фоне с крупным заголовком про квантовый чип и кнопкой внизу",
             "has_text": false,
             "watermark": false,
-            "reason": "текст не совпадает с речью, обрезанное слово слева, пустая чёрная область сверху",
+            "reason": "Кадр точно соответствует замыслу twist и ответу на вопрос, оформление канала не считается дефектом, текст читаем, композиция вертикальная без обрезок",
             "judge": "grok"
           },
           {
@@ -673,34 +672,244 @@
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "в физику. Доверил бы ты такому ответу",
             "score": 0.1,
-            "summary": "чёрный экран с едва заметным текстом ONE SCENE A и ДОЕ",
+            "summary": "Almost black screen with low-contrast text 'ONE SCENE A' and red 'DOE'",
             "has_text": true,
             "watermark": false,
-            "reason": "полностью чёрный кадр без физического футажа, не соответствует CTA и речи про физику",
+            "reason": "Black placeholder instead of physics footage or CTA; irrelevant text, no visual content",
             "judge": "grok"
           }
         ],
         "sample_count": 6,
-        "mismatch_share": 0.333,
+        "mismatch_share": 0.167,
         "mismatch_limit": 0.1,
         "picture_matches_speech": false,
         "watermarks_found": 0,
         "blocking": false,
         "notes": [
-          "картинка расходится с речью на 33% проб (предел 10%, §11.2.1)"
+          "картинка расходится с речью на 17% проб (предел 10%, §11.2.1)"
         ]
       }
     }
   },
   "assets": {
-    "count": 22,
+    "count": 23,
     "unlicensed": [],
     "mock_count": 0
   },
   "warnings": [
-    "смысловой QC: картинка расходится с речью на 50% проб (предел 10%, §11.2.1)",
-    "смысловой QC: подозрение на водяные знаки в 1 пробах",
-    "смысловой QC: картинка расходится с речью на 33% проб (предел 10%, §11.2.1)"
+    "смысловой QC: картинка расходится с речью на 33% проб (предел 10%, §11.2.1)",
+    "смысловой QC: картинка расходится с речью на 17% проб (предел 10%, §11.2.1)"
   ],
+  "devices": {
+    "A": {
+      "count": 14,
+      "grounded": 2,
+      "ungrounded": 12,
+      "placed": [
+        {
+          "at": 0.47,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/impact-02",
+          "grounded_on": [],
+          "why": ""
+        },
+        {
+          "at": 3.08,
+          "kind": "приём вокруг ведущего",
+          "template": "hero-devices/figure-swap",
+          "grounded_on": [
+            "number"
+          ],
+          "why": "приём оправдан: названо число"
+        },
+        {
+          "at": 8.0,
+          "kind": "source_card",
+          "template": "browser-ui/reddit-post",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 8.6,
+          "kind": "highlight",
+          "template": "",
+          "grounded_on": [],
+          "why": "§5.5: фокусная подсветка ключевой строки источника"
+        },
+        {
+          "at": 11.2,
+          "kind": "plaque",
+          "template": "lower-thirds/source-domain",
+          "grounded_on": [],
+          "why": "§5.4: плашка с доменом источника"
+        },
+        {
+          "at": 18.42,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/impact-01",
+          "grounded_on": [],
+          "why": ""
+        },
+        {
+          "at": 19.62,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/code-diff",
+          "grounded_on": [
+            "comparison"
+          ],
+          "why": "приём оправдан: сравниваются две величины"
+        },
+        {
+          "at": 21.86,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/kinetic-type-swap",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 24.39,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/shared-axis-z",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 26.74,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/beat-freeze-cut",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 29.32,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/scan-band",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 32.24,
+          "kind": "plaque",
+          "template": "lower-thirds/note-pin",
+          "grounded_on": [],
+          "why": "плашка из сценария, блок b5"
+        },
+        {
+          "at": 37.61,
+          "kind": "приём вокруг ведущего",
+          "template": "hero-devices/type-slab",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 42.51,
+          "kind": "cta",
+          "template": "outro-cta/subscribe-pulse",
+          "grounded_on": [],
+          "why": "§6: кнопка подписки в последние 2 сек"
+        }
+      ]
+    },
+    "B": {
+      "count": 13,
+      "grounded": 1,
+      "ungrounded": 12,
+      "placed": [
+        {
+          "at": 0.47,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/impact-02",
+          "grounded_on": [],
+          "why": ""
+        },
+        {
+          "at": 8.0,
+          "kind": "source_card",
+          "template": "frames-cards/product-card",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 8.6,
+          "kind": "highlight",
+          "template": "",
+          "grounded_on": [],
+          "why": "§5.5: фокусная подсветка ключевой строки источника"
+        },
+        {
+          "at": 11.2,
+          "kind": "plaque",
+          "template": "lower-thirds/source-domain",
+          "grounded_on": [],
+          "why": "§5.4: плашка с доменом источника"
+        },
+        {
+          "at": 18.42,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/impact-01",
+          "grounded_on": [],
+          "why": ""
+        },
+        {
+          "at": 19.62,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/code-diff",
+          "grounded_on": [
+            "comparison"
+          ],
+          "why": "приём оправдан: сравниваются две величины"
+        },
+        {
+          "at": 21.86,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/split-flap-board",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 24.39,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/news-ticker",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 26.74,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/scan-band",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 29.32,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/code-highlight",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 31.84,
+          "kind": "приём вокруг ведущего",
+          "template": "hero-devices/title-behind-head",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 32.24,
+          "kind": "plaque",
+          "template": "lower-thirds/note-pin",
+          "grounded_on": [],
+          "why": "плашка из сценария, блок b5"
+        },
+        {
+          "at": 42.51,
+          "kind": "cta",
+          "template": "outro-cta/logo-brand-close",
+          "grounded_on": [],
+          "why": "§6: identity close — вордмарк, не кнопка подписки"
+        }
+      ]
+    }
+  },
   "cost_usd": 0.084
 }
