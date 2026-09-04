@@ -1887,6 +1887,34 @@ def test_message_thread_reveal_overlay_reaches_the_markup(plan, assets, brandboo
     assert "strokeDashoffset" not in tween_src
 
 
+def test_notes_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 20.0,
+        "template": "browser-ui/notes-reveal",
+        "renderer": "notes_reveal",
+        "params": {
+            "titleL1": "Things nobody told me",
+            "titleL2": "about video",
+            "noteLine1": "my videos sucked",
+            "cardTop": "THE POWER",
+            "brandDomain": "hyperframes.heygen.com",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "notes-reveal" in out
+    assert "Things nobody told me" in out
+    assert ">my<" in out and ">videos<" in out
+    assert "THE POWER" in out
+    node = next(line for line in out.splitlines() if "notes-reveal" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

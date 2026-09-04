@@ -12824,6 +12824,7 @@ from .blue_sweater import bs_overlay_css, ov_blue_sweater
 from .chatgpt_exchange import cge_overlay_css, ov_chatgpt_exchange
 from .claude_exchange import cle_overlay_css, ov_claude_exchange
 from .message_thread_reveal import mtr_overlay_css, ov_message_thread_reveal
+from .notes_reveal import nr_overlay_css, ov_notes_reveal
 
 OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "source_card": ov_source_card,
@@ -12840,6 +12841,7 @@ OVERLAYS: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "chatgpt_exchange": ov_chatgpt_exchange,
     "claude_exchange": ov_claude_exchange,
     "message_thread_reveal": ov_message_thread_reveal,
+    "notes_reveal": ov_notes_reveal,
 }
 
 def render_overlay(name: str, ctx: "TemplateCtx") -> Piece:
@@ -13658,6 +13660,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         + cge_overlay_css()
         + cle_overlay_css()
         + mtr_overlay_css()
+        + nr_overlay_css()
         + sfb_css()
         + wv_css()
     )

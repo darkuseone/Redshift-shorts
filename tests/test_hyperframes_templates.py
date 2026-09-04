@@ -5338,6 +5338,13 @@ OVERLAY_PARAMS = {
         "cardDomain": "hyperframes.heygen.com",
         "reactionMessage": "OMG IT IS HTML",
     },
+    "notes_reveal": {
+        "titleL1": "Things nobody told me",
+        "titleL2": "about video",
+        "noteLine1": "my videos sucked",
+        "cardTop": "THE POWER",
+        "brandDomain": "hyperframes.heygen.com",
+    },
 }
 
 
@@ -5775,6 +5782,54 @@ def test_message_thread_reveal_keeps_catalog_tokens():
     assert ".mtr-composer" in css
     block = css.split(".message-thread-reveal", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
+
+
+def test_notes_reveal_bakes_spans_not_textcontent():
+    """Catalog writes textContent and animates heights; here baked spans, opacity and transform."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=24.9, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["notes_reveal"])
+    piece = render_overlay("notes_reveal", ctx)
+    node = piece.nodes[0]
+    assert "notes-reveal" in node
+    assert "nr-notescene" in node and "nr-cardscene" in node
+    assert "Things nobody told me" in node
+    assert ">my<" in node and ">videos<" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body or "scaleX:" in body
+    assert "opacity:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("notes_reveal", TemplateCtx(
+        index=0, start=0.0, duration=24.9, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_notes_reveal_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".notes-reveal" in css
+    assert ".nr-notescene" in css
+    assert ".nr-cardscene" in css
+    block = css.split(".notes-reveal", 1)[1].split(".sfb-board", 1)[0]
+    assert "Inter" in block
+
 
 
 def test_app_showcase_fans_phones_without_width_or_dash():

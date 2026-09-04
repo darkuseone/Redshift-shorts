@@ -235,6 +235,19 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "reactionMessage": "OMG IT'S HTML",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 93.0, "end": 106.0,
+        "template": "browser-ui/notes-reveal", "renderer": "notes_reveal",
+        "params": {
+            "titleL1": "Things nobody told me",
+            "titleL2": "about video.",
+            "noteLine1": "my videos sucked",
+            "cardTop": "THE POWER",
+            "cardMid": "OF",
+            "cardBottom": "ONE FILE",
+        },
+    })
+
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

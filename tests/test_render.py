@@ -280,10 +280,10 @@ def test_catalog_matches_spec_counts(cfg):
     counts = catalog.counts()
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 32, "lower-thirds": 11, "frames-cards": 7,
-        "browser-ui": 15, "transitions": 27, "avatar-entry": 6, "kenburns": 10,
+        "browser-ui": 16, "transitions": 27, "avatar-entry": 6, "kenburns": 10,
         "parallax": 4, "data-viz": 28, "outro-cta": 6, "hero-devices": 25,
     }
-    assert len(catalog.all()) == 179
+    assert len(catalog.all()) == 180
 
 
 def test_catalog_rotation_avoids_recent(cfg):

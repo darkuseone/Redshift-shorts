@@ -6,7 +6,7 @@
     "text-fullscreen": 32,
     "lower-thirds": 11,
     "frames-cards": 7,
-    "browser-ui": 15,
+    "browser-ui": 16,
     "transitions": 27,
     "avatar-entry": 6,
     "kenburns": 10,
@@ -14,7 +14,7 @@
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 179
+    "_total": 180
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -1733,6 +1733,46 @@
         "mobile"
       ],
       "renderer": "message_thread_reveal",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "browser-ui/notes-reveal",
+      "name": "notes-reveal",
+      "category": "browser-ui",
+      "title": "Apple Notes: печать строк заметки, скролл и карточка с маркером — notes-reveal",
+      "duration_range": [
+        3.0,
+        24.9
+      ],
+      "params": {
+        "titleL1": "Things nobody told me",
+        "titleL2": "about video.",
+        "noteLine1": "my videos sucked",
+        "noteLine2": "my tools cost $$$",
+        "noteLine3": "and re-edits never end.",
+        "noteLine4": "then i tried writing html only",
+        "noteLine5": "started HyperFrames three weeks ago",
+        "noteLine6": "the grind is gone, but more than that —",
+        "noteLine7": "I ship videos weekly.",
+        "cardTop": "THE POWER",
+        "cardMid": "OF",
+        "cardBottom": "ONE FILE",
+        "check1Label": "WRITE",
+        "check1Value": "HTML",
+        "check2Label": "RENDER",
+        "check2Value": "IN 4K",
+        "check3Label": "SHIP",
+        "check3Value": "TODAY",
+        "brandDomain": "hyperframes.heygen.com"
+      },
+      "tags": [
+        "ui",
+        "notes",
+        "typing",
+        "paper"
+      ],
+      "renderer": "notes_reveal",
       "last_used_in": [],
       "added": "2026-09-03"
     },

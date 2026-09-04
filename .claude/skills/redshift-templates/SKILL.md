@@ -1,10 +1,10 @@
 ---
 name: redshift-templates
-description: Каталог из 179 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
+description: Каталог из 180 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
 ---
 # redshift-templates
 
-179 шаблонов в 12 категориях (§15). Каталог генерируется
+180 шаблонов в 12 категориях (§15). Каталог генерируется
 `tools/gen_templates.py` — правь генератор, а не `templates/manifest.json`.
 У новых id есть поле `example_video` — референс-жест с examples HyperFrames.
 
@@ -14,7 +14,7 @@ description: Каталог из 179 шаблонов, ротация и раз�
 | `text-fullscreen` | 32 | полноэкранный текст |
 | `lower-thirds` | 11 | плашки |
 | `frames-cards` | 7 | карточки источников |
-| `browser-ui` | 15 | окна интерфейсов |
+| `browser-ui` | 16 | окна интерфейсов |
 | `transitions` | 27 | переходы |
 | `avatar-entry` | 6 | входы аватара |
 | `kenburns` | 10 | движение по статике |
@@ -344,6 +344,7 @@ opacity, scale, rotation и y, без твинов запрещённых сво
 end-card с логотипом, рейтингом и CTA-кнопкой в цветах бренда (#C8453D). Каталог
 скакал абсолютными координатами; здесь вертикальный сдвиг через transform y, pop баблов
 через scale и opacity. P11 предпочитает id, если в блоке imessage / переписка / смс.
+`notes-reveal` — Apple Notes: заголовок заметки, последовательная печать строк с имитацией набора слов, плавный вертикальный скролл листа при заполнении, переход в финальную бумажную карточку с маркером, кругом акцента (#C8453D) и чеклистом. Каталог считал координаты букв; здесь запечённые слова, opacity и transform y/scale/scaleX без запрещённых твинов. P11 предпочитает id, если в блоке notes / заметки / apple notes.
 
 Динамический переход `zoom-through` — наезд из масштаба 1.22 на смене блока;
 cut по-прежнему база ≥70 %. `cinematic-zoom` — radial zoom-blur со сдвигом
@@ -730,9 +731,9 @@ x=119 и x=961, кадр показал на x=118 и x=960 с перепадо�
 
 ## Каталог в терминах HTML/GSAP
 
-179 шаблонов — это **рендереры с параметрами**, а не 147 реализация:
+180 шаблонов — это **рендереры с параметрами**, а не 147 реализация:
 `fullscreen_text` и его варианты покрывают полноэкранные кадры, `source_card` /
-`chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
+`chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `notes_reveal` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
 `lt_accent_underline` / `lt_clean_bar` / `lt_dark_card` — плашки, `kenburns` — проезд, `dataviz` — графики. Меняя шаблон, чаще всего
 меняешь параметры, а не код.
 
