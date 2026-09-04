@@ -1831,6 +1831,34 @@ def test_chatgpt_exchange_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "strokeDashoffset" not in tween_src
 
 
+def test_claude_exchange_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 20.0,
+        "template": "browser-ui/claude-exchange",
+        "renderer": "claude_exchange",
+        "params": {
+            "prompt": "What is the best tool for ai avatars",
+            "thinking": "Weighing accuracy against market…",
+            "lead": "I will search for the current state.",
+            "search": "best AI avatar video generator 2026",
+            "answer1": "It depends on what you are making.",
+            "answer2": "HeyGen is where most teams land.",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "claude-exchange" in out
+    assert "What is the best tool for ai avatars" in out
+    assert "Weighing accuracy against market" in out
+    node = next(line for line in out.splitlines() if "claude-exchange" in line)
+    assert "textContent" not in node
+    assert "cge-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
     plan["overlays"].insert(0, {
         "type": "dataviz", "start": 0.2, "end": 4.2,

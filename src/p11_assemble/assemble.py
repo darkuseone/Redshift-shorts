@@ -1120,6 +1120,7 @@ _OVERLAY_BY_NAME = {
     "ai-chat-reveal": "ai_chat_reveal",
     "app-showcase": "app_showcase",
     "chatgpt-exchange": "chatgpt_exchange",
+    "claude-exchange": "claude_exchange",
 }
 
 _NUM_IN_TEXT = re.compile(
@@ -1150,7 +1151,7 @@ def _overlay_renderer(template: Template) -> str:
         return mapped
     if template.renderer in ("chat_thread", "article_scroll", "paper_reveal",
                              "source_card", "ai_chat_reveal", "app_showcase",
-                             "chatgpt_exchange"):
+                             "chatgpt_exchange", "claude_exchange"):
         return template.renderer
     return "source_card"
 
@@ -1248,6 +1249,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_prefer = ["browser-ui/chatgpt-exchange"] + [
                     item for item in card_prefer
                     if item != "browser-ui/chatgpt-exchange"]
+            elif any(key in blob for key in (
+                    "claude", "anthropic", "opus", "claude exchange")):
+                card_prefer = ["browser-ui/claude-exchange"] + [
+                    item for item in card_prefer
+                    if item != "browser-ui/claude-exchange"]
         else:
             card_category = "frames-cards"
             card_prefer = ["frames-cards/paper-reveal", "frames-cards/arxiv-card"]
@@ -1285,6 +1291,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 source.get("title") or source.get("snippet") or "")
             if source.get("domain"):
                 card_params["row1Tool"] = source.get("domain")
+        if renderer == "claude_exchange":
+            card_params["prompt"] = (
+                source.get("title") or source.get("snippet") or "")
+            if source.get("domain"):
+                card_params["domain"] = source.get("domain")
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
             "template": card_template.id, "renderer": renderer,

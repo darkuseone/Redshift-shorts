@@ -5322,6 +5322,14 @@ OVERLAY_PARAMS = {
         "intro2": "Here is how I rank them today:",
         "row1Tool": "HeyGen",
     },
+    "claude_exchange": {
+        "prompt": "What is the best tool for ai avatars",
+        "thinking": "Weighing accuracy against market…",
+        "lead": "I will search for the current state.",
+        "search": "best AI avatar video generator 2026",
+        "answer1": "It depends on what you are making.",
+        "answer2": "HeyGen is where most teams land.",
+    },
 }
 
 
@@ -5658,6 +5666,58 @@ def test_chatgpt_exchange_keeps_catalog_tokens():
     assert ".cge-composer" in css
     assert ".cge-keyboard" in css
     block = css.split(".chatgpt-exchange", 1)[1].split(".sfb-board", 1)[0]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
+def test_claude_exchange_bakes_spans_not_textcontent():
+    """Catalog writes textContent and animates heights; here baked spans, opacity and scale."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=21.4, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["claude_exchange"])
+    piece = render_overlay("claude_exchange", ctx)
+    node = piece.nodes[0]
+    assert "claude-exchange" in node
+    assert "cle-keyboard" in node and "cle-composer" in node
+    assert "cle-bubble" in node and "What is the best tool for ai avatars" in node
+    assert "Chat with Claude" in node
+    assert "cle-key" in node and ">Q<" in node and ">P<" in node
+    assert "HeyGen" in node
+    assert "cle-w" in node and "cle-ch" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "-apple-system" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body or "scaleX:" in body
+    assert "opacity:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("claude_exchange", TemplateCtx(
+        index=0, start=0.0, duration=21.4, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_claude_exchange_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".claude-exchange" in css
+    assert ".cle-composer" in css
+    assert ".cle-keyboard" in css
+    block = css.split(".claude-exchange", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
 

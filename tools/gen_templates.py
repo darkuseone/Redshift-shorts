@@ -231,7 +231,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (13, [
+    "browser-ui": (14, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -304,6 +304,26 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "row4Why": "Interactive avatars that can hold live conversations.",
              "row4Chip": "Creator Stack",
          }, ["ui", "ai", "chat", "table"], "chatgpt_exchange"),
+        ("claude-exchange",
+         "Claude: ввод промпта, поиск в веб, стрим ответа и цитаты — claude-exchange",
+         [3.0, 21.4], {
+             "prompt": "What's the best tool for ai avatars?",
+             "thinking": "Weighing accuracy against current market…",
+             "lead": "I'll search for the current state of this space since AI avatar tools move fast.",
+             "search": "best AI avatar video generator 2026",
+             "answer1": "It depends on what you're making, but the field has consolidated fast and one platform now covers most of it.",
+             "answer2": (
+                 "**HeyGen** is where most teams land. Independent testing, not just vendor blogs, "
+                 "puts **Avatar IV** highest for talking-head realism, with facial micro-expressions "
+                 "and gesture control that hold up at a full-screen crop {HeyGen}."
+             ),
+             "answer3": "By use case, the pieces shake out roughly like this:",
+             "answer4": "**Marketing / hyper-realistic talking heads** → Avatar IV",
+             "answer5": "**Enterprise training** → Video Translate for every locale",
+             "answer6": "**UGC-style performance ads** → Instant Avatar from one selfie, then batch the variants",
+             "answer7": "**Real-time conversational / interactive** → Interactive Avatar",
+             "answer8": "**Custom digital twin from a selfie** → Instant Avatar in about five minutes",
+         }, ["ui", "ai", "chat", "claude"], "claude_exchange"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

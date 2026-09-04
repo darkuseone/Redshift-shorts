@@ -58,3 +58,9 @@ build/
 /TEMPLATE.md
 *.json.log
 assets/fonts/inter-*
+assets/fonts/*.woff2
+assets/fonts/*-LICENSE.txt
+/*.json
+!package.json
+!package-lock.json
+

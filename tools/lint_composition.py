@@ -211,6 +211,18 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "row4Chip": "Creator Stack",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 65.0, "end": 78.0,
+        "template": "browser-ui/claude-exchange", "renderer": "claude_exchange",
+        "params": {
+            "prompt": "What's the best tool for ai avatars?",
+            "thinking": "Weighing accuracy against market…",
+            "lead": "I'll search for the current state.",
+            "search": "best AI avatar video generator 2026",
+            "answer1": "It depends on what you are making.",
+            "answer2": "**HeyGen** is where most teams land {HeyGen}.",
+        },
+    })
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,
