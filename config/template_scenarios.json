@@ -1,5 +1,12 @@
 {
   "version": 1,
+  "specific_weight_min": 20,
+  "default_weight_min": 10,
+  "unreachable_categories": [
+    "intro-hooks",
+    "parallax"
+  ],
+  "reason": "Категории intro-hooks (8 шаблонов, 7 интентов) и parallax (4 шаблона, 2 интента) не выбираются из каталога нигде в src/; подключение вне scope Phase C.",
   "intents": [
     {
       "id": "browser-ai-chat",
@@ -226,7 +233,7 @@
     },
     {
       "id": "geo-flight",
-      "title": "перелёт, авиамаршрут между городами",
+      "title": "перелёт, авиамаршрут между городами (расширение)",
       "categories": [
         "data-viz"
       ],
@@ -450,6 +457,9 @@
       "weight": 22,
       "variants": [
         "A"
+      ],
+      "signals_any": [
+        "rating_like"
       ]
     },
     {
@@ -479,31 +489,6 @@
       ]
     },
     {
-      "id": "text-code-diff",
-      "title": "дифф кода, изменения, патч",
-      "categories": [
-        "text-fullscreen"
-      ],
-      "keywords": [
-        "git diff",
-        "diff --git",
-        "diff",
-        "патч",
-        "изменен"
-      ],
-      "patterns": [
-        "(?ms)(^\\s*---\\s*$)|(^\\s*diff\\s+--git\\b)|(^\\s*-[^-\\n].*$.*?^\\s*\\+[^+\\n])"
-      ],
-      "needs": [],
-      "templates": [
-        "text-fullscreen/code-diff"
-      ],
-      "weight": 25,
-      "variants": [
-        "A"
-      ]
-    },
-    {
       "id": "text-beat-freeze",
       "title": "бит-дроп, стоп-кадр, динамический акцент",
       "categories": [
@@ -526,7 +511,7 @@
       "templates": [
         "text-fullscreen/beat-freeze-cut"
       ],
-      "weight": 24,
+      "weight": 27,
       "variants": [
         "A"
       ]
@@ -554,6 +539,90 @@
       "templates": [
         "text-fullscreen/apple-terminal-clear-dark",
         "text-fullscreen/terminal-simulator"
+      ],
+      "weight": 26,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-dark-plus",
+      "title": "Python-функция def, dark plus подсветка кода",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [
+        "(?m)^\\s*def\\s+"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/dark-plus"
+      ],
+      "weight": 25,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-code-diff",
+      "title": "дифф кода, изменения, патч",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "git diff",
+        "diff --git",
+        "diff",
+        "патч",
+        "изменен"
+      ],
+      "patterns": [
+        "(?ms)(^\\s*---\\s*$)|(^\\s*diff\\s+--git\\b)|(^\\s*-[^-\\n].*$.*?^\\s*\\+[^+\\n])"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/code-diff"
+      ],
+      "weight": 24,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-code-scroll-long",
+      "title": "длинный блок кода (от 7 строк), вертикальный скролл",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [
+        "lines_ge_7"
+      ],
+      "templates": [
+        "text-fullscreen/code-scroll"
+      ],
+      "weight": 23,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-code-typing-short",
+      "title": "короткий фрагмент кода (до 7 строк), печать символов",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [
+        "(?m)(^\\s*(async\\s+)?function\\b|^\\s*def\\s+\\w+|^\\s*const\\s+\\w+|^\\s*class\\s+\\w+|[{};]\\s*$|=>|::|\\breturn\\s+\\w|\\bimport\\s+\\w)"
+      ],
+      "needs": [
+        "lines_lt_7"
+      ],
+      "templates": [
+        "text-fullscreen/code-typing"
       ],
       "weight": 22,
       "variants": [
@@ -587,7 +656,7 @@
         "text-fullscreen/apple-terminal-clear-dark",
         "text-fullscreen/dark-plus"
       ],
-      "weight": 20,
+      "weight": 21,
       "variants": [
         "A"
       ]
@@ -609,7 +678,7 @@
         "text-fullscreen/number-slam-card",
         "text-fullscreen/kinetic-stack"
       ],
-      "weight": 15,
+      "weight": 20,
       "variants": [
         "A"
       ]
@@ -658,7 +727,7 @@
         "lower-thirds/clean-bar",
         "lower-thirds/dark-card"
       ],
-      "weight": 5,
+      "weight": 10,
       "variants": [
         "A",
         "B"
@@ -707,7 +776,7 @@
         "outro-cta/logo-brand-close",
         "outro-cta/subscribe-pulse"
       ],
-      "weight": 10,
+      "weight": 11,
       "variants": [
         "B"
       ]
@@ -783,7 +852,7 @@
         "browser-ui/article-highlight",
         "browser-ui/browser-scroll"
       ],
-      "weight": 5,
+      "weight": 10,
       "variants": [
         "A"
       ]
@@ -2276,6 +2345,37 @@
       "variants": [
         "A",
         "B"
+      ]
+    },
+    {
+      "id": "transitions-variant-a-order",
+      "title": "базовый порядок переходов варианта A",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/transitions-other",
+        "transitions/transitions-light",
+        "transitions/transitions-destruction",
+        "transitions/transitions-cover",
+        "transitions/transitions-blur",
+        "transitions/transitions-3d",
+        "transitions/mk-clone-wall-transition",
+        "transitions/whip-pan",
+        "transitions/thermal-distortion",
+        "transitions/sdf-iris",
+        "transitions/light-leak",
+        "transitions/gravitational-lens",
+        "transitions/glitch",
+        "transitions/cinematic-zoom",
+        "transitions/zoom-through"
+      ],
+      "weight": 10,
+      "variants": [
+        "A"
       ]
     },
     {
