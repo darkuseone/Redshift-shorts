@@ -335,6 +335,7 @@ paths:
   assets_dir: "assets"
   cache_dir: "cache"
   logs_subdir: "logs"
+  template_scenarios: "config/template_scenarios.json"
 
 logging:
   level: INFO
