@@ -183,8 +183,8 @@ stock:
   pixabay_api_key_env: PIXABAY_API_KEY
   # NASA images-api и Internet Archive отдают материал анонимно — ключа нет
   # и не требуется, проверено запросом к images-api.nasa.gov.
-  max_candidates_per_query: 8      # §7.2.3: 5–10 кандидатов на запрос
-  queries_per_slot: 4              # §7.2.2: 3–5 запросов разной абстракции
+  max_candidates_per_query: 10     # §7.2.3: 5–10 кандидатов на запрос
+  queries_per_slot: 5              # §7.2.2: 3–5 запросов разной абстракции
   target_pool_size: [30, 60]       # §7.2.3: итоговый пул на ролик
   max_download_height: 1080        # §3.6.1: строго до 1080p, выше не брать
   # Вес принимаемого материала. Хранилище лежит в репозитории, и клип на 45 МБ
