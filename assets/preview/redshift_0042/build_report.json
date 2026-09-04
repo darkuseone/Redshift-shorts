@@ -1,0 +1,726 @@
+{
+  "video_id": "redshift_0042",
+  "status": "ok",
+  "variants": {
+    "A": {
+      "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_A.mp4",
+      "size_bytes": 14491484,
+      "duration_sec": 44.533,
+      "fps": 30.0,
+      "resolution": [
+        1080,
+        1920
+      ],
+      "thumbnail": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/thumbnail.jpg",
+      "qc_passed": true,
+      "render_stats": {
+        "frames": 1336,
+        "duration_sec": 44.511,
+        "shots": 20,
+        "overlay_draws": 4,
+        "safe_zone_violations": [],
+        "accent_share_max": 0.0,
+        "subtitle_frames": 872,
+        "speech_frames": 872
+      }
+    },
+    "B": {
+      "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_B.mp4",
+      "size_bytes": 12192808,
+      "duration_sec": 44.533,
+      "fps": 30.0,
+      "resolution": [
+        1080,
+        1920
+      ],
+      "thumbnail": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/thumbnail_B.jpg",
+      "qc_passed": true,
+      "render_stats": {
+        "frames": 1336,
+        "duration_sec": 44.511,
+        "shots": 20,
+        "overlay_draws": 4,
+        "safe_zone_violations": [],
+        "accent_share_max": 0.0,
+        "subtitle_frames": 862,
+        "speech_frames": 862
+      }
+    }
+  },
+  "qc": {
+    "A": {
+      "video_id": "redshift_0042",
+      "variant": "A",
+      "passed": true,
+      "passed_count": 19,
+      "total": 19,
+      "ai_share": 0.3278,
+      "checks": [
+        {
+          "id": "QC-1",
+          "name": "Длительность",
+          "passed": true,
+          "value": 44.53,
+          "threshold": [
+            35,
+            70
+          ],
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-2",
+          "name": "Доля аватара",
+          "passed": true,
+          "value": 0.476,
+          "threshold": [
+            0.35,
+            0.6
+          ],
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-3",
+          "name": "Интервал без визуального события",
+          "passed": true,
+          "value": 2.37,
+          "threshold": 2.5,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-4",
+          "name": "Длительность одного плана",
+          "passed": true,
+          "value": 4.37,
+          "threshold": 7.0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-5",
+          "name": "Визуальные дубли в ролике",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-6",
+          "name": "Пересечение материала с последними 5 роликами",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 0.2,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-7",
+          "name": "Элементы вне safe zones",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-8",
+          "name": "Громкость финального микса",
+          "passed": true,
+          "value": {
+            "lufs": -14.0,
+            "true_peak_dbtp": -3.32
+          },
+          "threshold": {
+            "lufs": [
+              -15.0,
+              -13.0
+            ],
+            "tp_max": -1.0
+          },
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-9",
+          "name": "Уровень музыкальной подложки",
+          "passed": true,
+          "value": -24.0,
+          "threshold": [
+            -26,
+            -22
+          ],
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-10",
+          "name": "Рассинхрон субтитров",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 80,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-11",
+          "name": "Рассинхрон липсинка",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 60,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-12",
+          "name": "Материалы без подтверждённой лицензии",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-13",
+          "name": "Тишина в конце",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 300,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-14",
+          "name": "Доля AI-generated футажа",
+          "passed": true,
+          "value": 0.3278,
+          "threshold": 0.35,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-15",
+          "name": "Мемы в medicine",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-16",
+          "name": "Кнопка подписки в последние 2 сек",
+          "passed": true,
+          "value": 1,
+          "threshold": 1,
+          "detail": "",
+          "timecode_sec": 42.53,
+          "blocking": true
+        },
+        {
+          "id": "QC-17",
+          "name": "Набор шаблонов не повторяет предыдущий ролик",
+          "passed": true,
+          "value": 0.0,
+          "threshold": "< 1.0",
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-18",
+          "name": "Два аватар-сегмента подряд без перебивки",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-19",
+          "name": "Субтитры по центру на кадрах с речью",
+          "passed": true,
+          "value": {
+            "baseline_y": 975.0,
+            "coverage": 1.0
+          },
+          "threshold": {
+            "baseline_y": [
+              940,
+              1050
+            ],
+            "coverage": 0.9
+          },
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        }
+      ],
+      "failed": [],
+      "vision": {
+        "enabled": true,
+        "variant": "A",
+        "samples": [
+          {
+            "t": 3.71,
+            "shot_index": 3,
+            "kind": "avatar",
+            "expected": "ведущий в кадре крупным планом — так и задумано",
+            "spoken": "",
+            "score": 0.85,
+            "summary": "Ведущий в кадре на звёздном фоне с крупным текстом о квантовом чипе",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Кадр соответствует замыслу и теме речи, текст уместен, композиция вертикальная, без артефактов",
+            "judge": "grok"
+          },
+          {
+            "t": 11.13,
+            "shot_index": 6,
+            "kind": "split",
+            "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
+            "spoken": "логический кубит прожил дольше,",
+            "score": 0.82,
+            "summary": "Nature paper card with highlighted qubit text over partially visible host, empty dark bottom half",
+            "has_text": true,
+            "watermark": false,
+            "reason": "Тема совпадает с речью, но бумага перекрывает ведущего, низ пустой",
+            "judge": "grok"
+          },
+          {
+            "t": 18.55,
+            "shot_index": 10,
+            "kind": "fullscreen_text",
+            "expected": "фраза во весь экран поверх фона — так и задумано",
+            "spoken": "Здесь",
+            "score": 0.85,
+            "summary": "Centered white rounded rectangle with faint text on dark blurred background",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Matches intended full-screen text block; clean vertical composition, no defects or foreign elements",
+            "judge": "grok"
+          },
+          {
+            "t": 25.96,
+            "shot_index": 13,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "шаге. Задача, на которую суперкомпьютеру",
+            "score": 0.85,
+            "summary": "Abstract dark space with red and blue glowing orbs and large white text 'ЗАДАЧА'",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Matches 'task' theme perfectly as full-frame abstract footage; text is channel subtitle, not foreign; slightly off-center placement and generic stock look",
+            "judge": "grok"
+          },
+          {
+            "t": 33.38,
+            "shot_index": 16,
+            "kind": "avatar",
+            "expected": "ведущий в кадре крупным планом — так и задумано",
+            "spoken": "ответ на вопрос. Проверить этот результат",
+            "score": 0.55,
+            "summary": "ведущий в кадре с крупным словом «ВЕРИМ» за головой и наложенным битым текстом",
+            "has_text": true,
+            "watermark": false,
+            "reason": "перекрывающий лицо нечитаемый текст и артефакты снижают качество",
+            "judge": "grok"
+          },
+          {
+            "t": 40.8,
+            "shot_index": 19,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "в физику. Доверил бы ты такому ответу",
+            "score": 0.55,
+            "summary": "вертикальный абстрактный фон с чёрной сотовидной сеткой и красным свечением по центру",
+            "has_text": true,
+            "watermark": false,
+            "reason": "тема vaguely физическая, но красная плашка и текст DOE мешают, кадр выглядит как сток",
+            "judge": "grok"
+          }
+        ],
+        "sample_count": 6,
+        "mismatch_share": 0.0,
+        "mismatch_limit": 0.1,
+        "picture_matches_speech": true,
+        "watermarks_found": 0,
+        "blocking": false,
+        "notes": []
+      }
+    },
+    "B": {
+      "video_id": "redshift_0042",
+      "variant": "B",
+      "passed": true,
+      "passed_count": 19,
+      "total": 19,
+      "ai_share": 0.3278,
+      "checks": [
+        {
+          "id": "QC-1",
+          "name": "Длительность",
+          "passed": true,
+          "value": 44.53,
+          "threshold": [
+            35,
+            70
+          ],
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-2",
+          "name": "Доля аватара",
+          "passed": true,
+          "value": 0.476,
+          "threshold": [
+            0.35,
+            0.6
+          ],
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-3",
+          "name": "Интервал без визуального события",
+          "passed": true,
+          "value": 2.37,
+          "threshold": 2.5,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-4",
+          "name": "Длительность одного плана",
+          "passed": true,
+          "value": 4.37,
+          "threshold": 7.0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-5",
+          "name": "Визуальные дубли в ролике",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-6",
+          "name": "Пересечение материала с последними 5 роликами",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 0.2,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-7",
+          "name": "Элементы вне safe zones",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-8",
+          "name": "Громкость финального микса",
+          "passed": true,
+          "value": {
+            "lufs": -14.0,
+            "true_peak_dbtp": -3.32
+          },
+          "threshold": {
+            "lufs": [
+              -15.0,
+              -13.0
+            ],
+            "tp_max": -1.0
+          },
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-9",
+          "name": "Уровень музыкальной подложки",
+          "passed": true,
+          "value": -24.0,
+          "threshold": [
+            -26,
+            -22
+          ],
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-10",
+          "name": "Рассинхрон субтитров",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 80,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-11",
+          "name": "Рассинхрон липсинка",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 60,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-12",
+          "name": "Материалы без подтверждённой лицензии",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-13",
+          "name": "Тишина в конце",
+          "passed": true,
+          "value": 0.0,
+          "threshold": 300,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-14",
+          "name": "Доля AI-generated футажа",
+          "passed": true,
+          "value": 0.3278,
+          "threshold": 0.35,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-15",
+          "name": "Мемы в medicine",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-16",
+          "name": "Кнопка подписки в последние 2 сек",
+          "passed": true,
+          "value": 1,
+          "threshold": 1,
+          "detail": "",
+          "timecode_sec": 42.53,
+          "blocking": true
+        },
+        {
+          "id": "QC-17",
+          "name": "Набор шаблонов не повторяет предыдущий ролик",
+          "passed": true,
+          "value": 0.0,
+          "threshold": "< 1.0",
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-18",
+          "name": "Два аватар-сегмента подряд без перебивки",
+          "passed": true,
+          "value": 0,
+          "threshold": 0,
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        },
+        {
+          "id": "QC-19",
+          "name": "Субтитры по центру на кадрах с речью",
+          "passed": true,
+          "value": {
+            "baseline_y": 975.0,
+            "coverage": 1.0
+          },
+          "threshold": {
+            "baseline_y": [
+              940,
+              1050
+            ],
+            "coverage": 0.9
+          },
+          "detail": "",
+          "timecode_sec": null,
+          "blocking": true
+        }
+      ],
+      "failed": [],
+      "vision": {
+        "enabled": true,
+        "variant": "B",
+        "samples": [
+          {
+            "t": 3.71,
+            "shot_index": 3,
+            "kind": "avatar",
+            "expected": "ведущий в кадре крупным планом — так и задумано",
+            "spoken": "Это квантовый чип. Внутри 105 кубитов",
+            "score": 0.45,
+            "summary": "Ведущий в кадре с микрофоном на градиентном фоне",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Кадр соответствует аватару, но визуально не показывает квантовый чип и не иллюстрирует речь",
+            "judge": "grok"
+          },
+          {
+            "t": 11.13,
+            "shot_index": 6,
+            "kind": "split",
+            "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
+            "spoken": "логический кубит прожил дольше,",
+            "score": 0.82,
+            "summary": "Host below Nature paper card on quantum error correction, semi-transparent overlay text across torso",
+            "has_text": true,
+            "watermark": true,
+            "reason": "matches speech and evidence role, but large overlay reduces clarity",
+            "judge": "grok"
+          },
+          {
+            "t": 18.55,
+            "shot_index": 10,
+            "kind": "fullscreen_text",
+            "expected": "фраза во весь экран поверх фона — так и задумано",
+            "spoken": "Здесь",
+            "score": 0.9,
+            "summary": "Тёмный вертикальный кадр с крупной цифрой 5 и полупрозрачным текстом «ЗДЕСЬ» по центру",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Текст «ЗДЕСЬ» точно совпадает с речью и замыслом; чистый графический кадр без дефектов",
+            "judge": "grok"
+          },
+          {
+            "t": 25.96,
+            "shot_index": 13,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "шаге. Задача, на которую суперкомпьютеру",
+            "score": 0.9,
+            "summary": "тёмный космический фон с красной и синей размытыми засветками и крупным словом «ЗАДАЧА»",
+            "has_text": false,
+            "watermark": false,
+            "reason": "полностью соответствует замыслу: футаж во весь кадр + субтитр «ЗАДАЧА» под речь про задачу суперкомпьютеру",
+            "judge": "grok"
+          },
+          {
+            "t": 33.38,
+            "shot_index": 16,
+            "kind": "avatar",
+            "expected": "ведущий в кадре крупным планом — так и задумано",
+            "spoken": "",
+            "score": 0.85,
+            "summary": "Ведущий в кадре на тёмном звёздном фоне с крупным текстом сверху и кнопкой снизу",
+            "has_text": false,
+            "watermark": false,
+            "reason": "Соответствует замыслу твиста и аватара, оформление канала не в счёт",
+            "judge": "grok"
+          },
+          {
+            "t": 40.8,
+            "shot_index": 19,
+            "kind": "footage",
+            "expected": "материал по смыслу речи, ведущего в кадре нет",
+            "spoken": "в физику. Доверил бы ты такому ответу",
+            "score": 0.35,
+            "summary": "тёмный фон с гексагональной сеткой и крупным текстом ONE SCENE A + DOE",
+            "has_text": true,
+            "watermark": false,
+            "reason": "кадр выглядит как титульная заставка/плейсхолдер, а не footage по физике; крупный чужой текст и постановочный вид сильно снижают соответствие замыслу",
+            "judge": "grok"
+          }
+        ],
+        "sample_count": 6,
+        "mismatch_share": 0.167,
+        "mismatch_limit": 0.1,
+        "picture_matches_speech": false,
+        "watermarks_found": 1,
+        "blocking": false,
+        "notes": [
+          "картинка расходится с речью на 17% проб (предел 10%, §11.2.1)",
+          "подозрение на водяные знаки в 1 пробах"
+        ]
+      }
+    }
+  },
+  "assets": {
+    "count": 21,
+    "unlicensed": [],
+    "mock_count": 0
+  },
+  "warnings": [
+    "слот 8: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 8 (b3) не получил ни одного кандидата",
+    "слот 10: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 10 (b4) не получил ни одного кандидата",
+    "слот 11: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 11 (b4) не получил ни одного кандидата",
+    "слот 12: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 12 (b4) не получил ни одного кандидата",
+    "слот 13: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 13 (b4) не получил ни одного кандидата",
+    "слот 14: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 14 (b4) не получил ни одного кандидата",
+    "слот 15: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 15 (b4) не получил ни одного кандидата",
+    "пул кандидатов 23 меньше рекомендованных 30 (§7.2.3)",
+    "15 слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
+    "слот 10 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 1.0 сек, нужно 1.2 сек",
+    "слот 11 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 1.0 сек, нужно 2.2 сек",
+    "слот 12 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 1.0 сек, нужно 2.5 сек",
+    "слот 13 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 1.0 сек, нужно 2.4 сек",
+    "слот 14 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 1.0 сек, нужно 2.6 сек",
+    "слот 15 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 1.0 сек, нужно 2.5 сек",
+    "слот 17 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 1.0 сек, нужно 1.4 сек",
+    "смысловой QC: картинка расходится с речью на 17% проб (предел 10%, §11.2.1)",
+    "смысловой QC: подозрение на водяные знаки в 1 пробах"
+  ],
+  "cost_usd": 0.654
+}

@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-02",
-  "count": 49,
+  "updated": "2026-09-04",
+  "count": 48,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1569,42 +1569,6 @@
       }
     },
     {
-      "id": "pexels_v14171674",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/snowflakes-falling-on-a-flowing-creek-14171674/",
-      "phash": "1c4c7b4ca966196e",
-      "tags": [
-        "viscous",
-        "flow",
-        "slow",
-        "motion",
-        "dark"
-      ],
-      "vision_summary": "тёмная вязкая жидкость с пузырьками и медленными складками",
-      "score": 0.92,
-      "duration_sec": 48.725,
-      "used_in": [
-        "redshift_0047"
-      ],
-      "last_used": null,
-      "added": "2026-09-02",
-      "phashes": [
-        "1c4c7b4ca966196e",
-        "f64d70544de2914f",
-        "0c9a71596723994f"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v14171674.mp4",
-      "extra": {
-        "attribution": "Pexels / binary Ego",
-        "author": "binary Ego",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
-      }
-    },
-    {
       "id": "pexels_v15168379",
       "type": "video",
       "source": "pexels",
@@ -1715,9 +1679,10 @@
       "score": 0.78,
       "duration_sec": 19.0,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "phashes": [
         "05ed77764c468a61",
@@ -1753,9 +1718,10 @@
       "score": 0.55,
       "duration_sec": 10.047,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "phashes": [
         "e93f253b27bf0018",

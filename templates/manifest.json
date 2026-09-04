@@ -1462,7 +1462,9 @@
         "reveal"
       ],
       "renderer": "paper_reveal",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
     },
@@ -1652,7 +1654,9 @@
         "highlight"
       ],
       "renderer": "article_scroll",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
     },
@@ -2405,7 +2409,9 @@
         "shader"
       ],
       "renderer": "glitch_shader",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2426,7 +2432,9 @@
         "shader"
       ],
       "renderer": "gravitational_lens",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2445,7 +2453,9 @@
         "shader"
       ],
       "renderer": "light_leak",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2796,7 +2806,9 @@
         "crossfade"
       ],
       "renderer": "transitions_dissolve",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -4398,7 +4410,9 @@
         "end-card"
       ],
       "renderer": "logo_brand_close",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -4685,7 +4699,9 @@
         "lines"
       ],
       "renderer": "hero-type-slab",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
     },
@@ -4870,7 +4886,8 @@
       ],
       "renderer": "hero-log",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -4891,7 +4908,9 @@
         "slam"
       ],
       "renderer": "hero-oversize",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-08-18"
     },
     {

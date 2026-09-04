@@ -4,7 +4,7 @@
   "max_items": 20,
   "count": 18,
   "frozen": false,
-  "updated": "2026-09-02",
+  "updated": "2026-09-04",
   "items": [
     {
       "id": "sfx_whoosh_sharp",
@@ -21,8 +21,10 @@
       "vision_summary": "острый вжух воздуха",
       "score": 0.0,
       "duration_sec": 1.1,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "file": "whoosh_sharp.wav",
       "role": "whoosh_in",
@@ -54,8 +56,10 @@
       "vision_summary": "мягкий басовый вжух",
       "score": 0.0,
       "duration_sec": 1.1,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "file": "whoosh_soft.wav",
       "role": "whoosh_out",
@@ -87,8 +91,10 @@
       "vision_summary": "двойной вжух-свайп",
       "score": 0.0,
       "duration_sec": 0.73,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "file": "whoosh_double.wav",
       "role": "swipe",
@@ -120,8 +126,10 @@
       "vision_summary": "широкий кинематографический вжух",
       "score": 0.0,
       "duration_sec": 2.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "file": "whoosh_cinematic.wav",
       "role": "boom",
@@ -253,8 +261,10 @@
       "vision_summary": "короткий удар",
       "score": 0.0,
       "duration_sec": 0.5,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "file": "hit_punch.wav",
       "role": "hit_impact",
@@ -581,8 +591,10 @@
       "vision_summary": "звон награды, кнопка подписки",
       "score": 0.0,
       "duration_sec": 1.2,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "file": "coin_pickup.wav",
       "role": "subscribe_ping",
