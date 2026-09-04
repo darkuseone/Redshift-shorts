@@ -1,0 +1,46 @@
+{
+  "video_id": "redshift_0042",
+  "avatar_id": "99ccc74e764947c394cd4ef210960a6f",
+  "model_version": "avatar5",
+  "clips_dir": "/home/runner/work/Redshift-shorts/Redshift-shorts/assets/avatar_clips/redshift_0042",
+  "background": "transparent_if_available",
+  "resolution": [
+    1080,
+    1920
+  ],
+  "segments": [
+    {
+      "index": 0,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0042/avatar/seg_00.wav",
+      "duration_sec": 3.52,
+      "block_id": "b2",
+      "text": "Это квантовый чип. Внутри 105 кубитов почти при",
+      "expected_clip": "seg_00.mov"
+    },
+    {
+      "index": 1,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0042/avatar/seg_01.wav",
+      "duration_sec": 10.12,
+      "block_id": "b3",
+      "text": "Работа опубликована в Nature. Впервые логический кубит прожил дольше, чем каждый физический кубит внутри него. Раньше добавление кубитов только множило ошибки.",
+      "expected_clip": "seg_01.mov"
+    },
+    {
+      "index": 2,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0042/avatar/seg_02.wav",
+      "duration_sec": 4.373,
+      "block_id": "b5",
+      "text": "И вот ответ на вопрос. Проверить этот результат классическим компьютером мы",
+      "expected_clip": "seg_02.mov"
+    },
+    {
+      "index": 3,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0042/avatar/seg_03.wav",
+      "duration_sec": 3.174,
+      "block_id": "b5",
+      "text": "Мы верим ему, потому что верим в физику.",
+      "expected_clip": "seg_03.mov"
+    }
+  ],
+  "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы в clips_dir под именами expected_clip и возобновить прогон с шага P6."
+}

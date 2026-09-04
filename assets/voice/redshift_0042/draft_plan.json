@@ -1,0 +1,1158 @@
+{
+  "video_id": "redshift_0042",
+  "title": "Квантовый чип, который обогнал время",
+  "category": "ai",
+  "language": "ru",
+  "target_duration_sec": 50.0,
+  "estimated_speech_sec": 44.899,
+  "tts_length_buffer_pct": 22.0,
+  "tts_target_sec": 54.777,
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Этот ответ невозможно проверить. Вообще ничем.",
+      "spoken_text": "Этот ответ невозможно проверить. Вообще ничем.",
+      "tokens": [
+        {
+          "display": "Этот",
+          "spoken": [
+            "Этот"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "ответ",
+          "spoken": [
+            "ответ"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "невозможно",
+          "spoken": [
+            "невозможно"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": true
+        },
+        {
+          "display": "проверить.",
+          "spoken": [
+            "проверить",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "Вообще",
+          "spoken": [
+            "Вообще"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "ничем.",
+          "spoken": [
+            "ничем",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "невозможно",
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Холодный кадр квантового процессора в криостате, крупно",
+      "broll_queries": [
+        "quantum processor macro shot",
+        "cryostat golden chandelier laboratory"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "НЕЧЕМ",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "source_ref": null,
+      "_estimated_sec": 3.083,
+      "planned_start_sec": 0.0,
+      "planned_end_sec": 3.083
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Это квантовый чип. Внутри 105 кубитов почти при абсолютном нуле.",
+      "spoken_text": "Это ква́нтовый чи́п. Внутри сто пять куби́тов почти при абсолютном нуле.",
+      "tokens": [
+        {
+          "display": "Это",
+          "spoken": [
+            "Это"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "квантовый",
+          "spoken": [
+            "ква́нтовый"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "чип.",
+          "spoken": [
+            "чи́п",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Внутри",
+          "spoken": [
+            "Внутри"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "105",
+          "spoken": [
+            "сто",
+            "пять"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "кубитов",
+          "spoken": [
+            "куби́тов"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": true
+        },
+        {
+          "display": "почти",
+          "spoken": [
+            "почти"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "при",
+          "spoken": [
+            "при"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "абсолютном",
+          "spoken": [
+            "абсолютном"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "нуле.",
+          "spoken": [
+            "нуле",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "кубитов",
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Ведущий представляет тему, за головой — крупное слово",
+      "broll_queries": [
+        "quantum computer laboratory wide"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 3.824,
+      "planned_start_sec": 3.083,
+      "planned_end_sec": 6.907
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Работа опубликована в Nature. Впервые логический кубит прожил дольше, чем каждый физический кубит внутри него. Раньше добавление кубитов только множило ошибки.",
+      "spoken_text": "Работа опубликована в Nature. Впервые логический куби́т прожил дольше, чем каждый физический куби́т внутри него. Раньше добавление куби́тов только множило ошибки.",
+      "tokens": [
+        {
+          "display": "Работа",
+          "spoken": [
+            "Работа"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "опубликована",
+          "spoken": [
+            "опубликована"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Nature.",
+          "spoken": [
+            "Nature",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": true
+        },
+        {
+          "display": "Впервые",
+          "spoken": [
+            "Впервые"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "логический",
+          "spoken": [
+            "логический"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "кубит",
+          "spoken": [
+            "куби́т"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "прожил",
+          "spoken": [
+            "прожил"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "дольше,",
+          "spoken": [
+            "дольше",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "чем",
+          "spoken": [
+            "чем"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "каждый",
+          "spoken": [
+            "каждый"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "физический",
+          "spoken": [
+            "физический"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "кубит",
+          "spoken": [
+            "куби́т"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "внутри",
+          "spoken": [
+            "внутри"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "него.",
+          "spoken": [
+            "него",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Раньше",
+          "spoken": [
+            "Раньше"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "добавление",
+          "spoken": [
+            "добавление"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "кубитов",
+          "spoken": [
+            "куби́тов"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "только",
+          "spoken": [
+            "только"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "множило",
+          "spoken": [
+            "множило"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "ошибки.",
+          "spoken": [
+            "ошибки",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "Nature",
+      "avatar_directive": "auto",
+      "mode": "B",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
+      "broll_queries": [
+        "scientific paper on screen",
+        "researcher reading article laptop"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "below the surface code threshold",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "meme_allowed": true,
+      "source_ref": "nature.com",
+      "_estimated_sec": 10.796,
+      "planned_start_sec": 6.907,
+      "planned_end_sec": 17.703
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Здесь всё наоборот. Чем больше кубитов в связке, тем чище считает система: ошибка падает вдвое на каждом шаге. Задача, на которую суперкомпьютеру нужно больше времени, чем существует вселенная, решена за пять минут.",
+      "spoken_text": "Здесь всё наоборот. Чем больше куби́тов в связке, тем чище считает система: ошибка падает вдвое на каждом шаге. Задача, на которую суперкомпьютеру нужно больше времени, чем существует вселенная, решена за пять минут.",
+      "tokens": [
+        {
+          "display": "Здесь",
+          "spoken": [
+            "Здесь"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "всё",
+          "spoken": [
+            "всё"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "наоборот.",
+          "spoken": [
+            "наоборот",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Чем",
+          "spoken": [
+            "Чем"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "больше",
+          "spoken": [
+            "больше"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "кубитов",
+          "spoken": [
+            "куби́тов"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "связке,",
+          "spoken": [
+            "связке",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "тем",
+          "spoken": [
+            "тем"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "чище",
+          "spoken": [
+            "чище"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "считает",
+          "spoken": [
+            "считает"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "система:",
+          "spoken": [
+            "система",
+            ":"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "ошибка",
+          "spoken": [
+            "ошибка"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "падает",
+          "spoken": [
+            "падает"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "вдвое",
+          "spoken": [
+            "вдвое"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": true
+        },
+        {
+          "display": "на",
+          "spoken": [
+            "на"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "каждом",
+          "spoken": [
+            "каждом"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "шаге.",
+          "spoken": [
+            "шаге",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Задача,",
+          "spoken": [
+            "Задача",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "на",
+          "spoken": [
+            "на"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "которую",
+          "spoken": [
+            "которую"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "суперкомпьютеру",
+          "spoken": [
+            "суперкомпьютеру"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "нужно",
+          "spoken": [
+            "нужно"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "больше",
+          "spoken": [
+            "больше"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "времени,",
+          "spoken": [
+            "времени",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "чем",
+          "spoken": [
+            "чем"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "существует",
+          "spoken": [
+            "существует"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "вселенная,",
+          "spoken": [
+            "вселенная",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "решена",
+          "spoken": [
+            "решена"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "за",
+          "spoken": [
+            "за"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "пять",
+          "spoken": [
+            "пять"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "минут.",
+          "spoken": [
+            "минут",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "вдвое",
+      "avatar_directive": "auto",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "График падения ошибки, абстрактная визуализация данных",
+      "broll_queries": [
+        "data visualization error rate chart",
+        "abstract blue data particles",
+        "server room blue light"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "5 МИНУТ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "data_beep",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 14.184,
+      "planned_start_sec": 17.703,
+      "planned_end_sec": 31.887
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "И вот ответ на вопрос. Проверить этот результат классическим компьютером мы не можем — нечем. Мы верим ему, потому что верим в физику.",
+      "spoken_text": "И вот ответ на вопрос. Проверить этот результат классическим компьютером мы не можем — нечем. Мы верим ему, потому что верим в физику.",
+      "tokens": [
+        {
+          "display": "И",
+          "spoken": [
+            "И"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "вот",
+          "spoken": [
+            "вот"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "ответ",
+          "spoken": [
+            "ответ"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "на",
+          "spoken": [
+            "на"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "вопрос.",
+          "spoken": [
+            "вопрос",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Проверить",
+          "spoken": [
+            "Проверить"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "этот",
+          "spoken": [
+            "этот"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "результат",
+          "spoken": [
+            "результат"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "классическим",
+          "spoken": [
+            "классическим"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "компьютером",
+          "spoken": [
+            "компьютером"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "мы",
+          "spoken": [
+            "мы"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "можем —",
+          "spoken": [
+            "можем",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "нечем.",
+          "spoken": [
+            "нечем",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Мы",
+          "spoken": [
+            "Мы"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "верим",
+          "spoken": [
+            "верим"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": true
+        },
+        {
+          "display": "ему,",
+          "spoken": [
+            "ему",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "потому",
+          "spoken": [
+            "потому"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "что",
+          "spoken": [
+            "что"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "верим",
+          "spoken": [
+            "верим"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "физику.",
+          "spoken": [
+            "физику",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "верим",
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Ведущий крупно, поворотный момент, акцентное слово",
+      "broll_queries": [
+        "thoughtful scientist portrait dark"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Проверить нечем",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "sfx": "sub_drop",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 8.448,
+      "planned_start_sec": 31.887,
+      "planned_end_sec": 40.335
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Доверил бы ты такому ответу свои деньги? Напиши в комментариях.",
+      "spoken_text": "Доверил бы ты такому ответу свои деньги? Напиши в комментариях.",
+      "tokens": [
+        {
+          "display": "Доверил",
+          "spoken": [
+            "Доверил"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": true
+        },
+        {
+          "display": "бы",
+          "spoken": [
+            "бы"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "ты",
+          "spoken": [
+            "ты"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "такому",
+          "spoken": [
+            "такому"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "ответу",
+          "spoken": [
+            "ответу"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "свои",
+          "spoken": [
+            "свои"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "деньги?",
+          "spoken": [
+            "деньги",
+            "?"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "Напиши",
+          "spoken": [
+            "Напиши"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "комментариях.",
+          "spoken": [
+            "комментариях",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "доверил",
+      "avatar_directive": "auto",
+      "mode": "C",
+      "mode_reason": "снятие доли аватара до верхней границы 60 %",
+      "visual_intent": "Финальный кадр, кнопка подписки",
+      "broll_queries": [
+        "abstract red gradient background"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "meme_allowed": true,
+      "source_ref": null,
+      "_estimated_sec": 4.564,
+      "planned_start_sec": 40.335,
+      "planned_end_sec": 44.899
+    }
+  ],
+  "avatar": {
+    "planned_share": 0.5138,
+    "planned_sec": 23.068,
+    "appearances": 3,
+    "avatar_id": "99ccc74e764947c394cd4ef210960a6f"
+  },
+  "planned_counts": {
+    "fullscreen_text": 2,
+    "fullscreen_text_scripted": 2,
+    "highlight": 1,
+    "highlight_scripted": 1,
+    "memes": 1,
+    "bg_vfx": 2
+  },
+  "music_mood": "",
+  "music_tags": [
+    "tense",
+    "driving",
+    "strings"
+  ],
+  "sources": [
+    {
+      "title": "Quantum error correction below the surface code threshold",
+      "domain": "nature.com",
+      "url": "https://www.nature.com/articles/s41586-024-08449-y",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "snippet": "Логический кубит впервые живёт дольше, чем составляющие его физические кубиты.",
+      "highlight_line": "below the surface code threshold"
+    },
+    {
+      "title": "Willow processor announcement",
+      "domain": "blog.google",
+      "url": "https://blog.google/technology/research/google-willow-quantum-chip/",
+      "show_on_screen": false,
+      "screen_template": "search"
+    }
+  ],
+  "cta": {
+    "text": "Доверил бы ты такому ответу свои деньги?",
+    "type": "question"
+  },
+  "modes_by_block": {
+    "b1": "C",
+    "b2": "A",
+    "b3": "B",
+    "b4": "C",
+    "b5": "A",
+    "b6": "C"
+  },
+  "conflicts": []
+}

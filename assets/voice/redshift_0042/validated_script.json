@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "video_id": "redshift_0042",
+    "title": "Квантовый чип, который обогнал время",
+    "topic": "Квантовый чип Google и проверка вычислений",
+    "category": "ai",
+    "language": "ru",
+    "target_duration_sec": 50,
+    "allow_memes": true,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-08-19"
+  },
+  "sources": [
+    {
+      "title": "Quantum error correction below the surface code threshold",
+      "domain": "nature.com",
+      "url": "https://www.nature.com/articles/s41586-024-08449-y",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "snippet": "Логический кубит впервые живёт дольше, чем составляющие его физические кубиты.",
+      "highlight_line": "below the surface code threshold"
+    },
+    {
+      "title": "Willow processor announcement",
+      "domain": "blog.google",
+      "url": "https://blog.google/technology/research/google-willow-quantum-chip/",
+      "show_on_screen": false,
+      "screen_template": "search"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Этот ответ невозможно проверить. Вообще ничем.",
+      "emphasis_word": "невозможно",
+      "avatar": "off",
+      "visual_intent": "Холодный кадр квантового процессора в криостате, крупно",
+      "broll_queries": [
+        "quantum processor macro shot",
+        "cryostat golden chandelier laboratory"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "НЕЧЕМ",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "_estimated_sec": 3.08,
+      "_words": 6
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Это квантовый чип. Внутри 105 кубитов почти при абсолютном нуле.",
+      "emphasis_word": "кубитов",
+      "avatar": "on",
+      "visual_intent": "Ведущий представляет тему, за головой — крупное слово",
+      "broll_queries": [
+        "quantum computer laboratory wide"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A",
+      "meme_allowed": true,
+      "_estimated_sec": 3.82,
+      "_words": 10
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Работа опубликована в Nature. Впервые логический кубит прожил дольше, чем каждый физический кубит внутри него. Раньше добавление кубитов только множило ошибки.",
+      "emphasis_word": "Nature",
+      "avatar": "auto",
+      "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
+      "broll_queries": [
+        "scientific paper on screen",
+        "researcher reading article laptop"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "below the surface code threshold",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "source_ref": "nature.com",
+      "mode_hint": "B",
+      "meme_allowed": true,
+      "_estimated_sec": 10.8,
+      "_words": 21
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Здесь всё наоборот. Чем больше кубитов в связке, тем чище считает система: ошибка падает вдвое на каждом шаге. Задача, на которую суперкомпьютеру нужно больше времени, чем существует вселенная, решена за пять минут.",
+      "emphasis_word": "вдвое",
+      "avatar": "auto",
+      "visual_intent": "График падения ошибки, абстрактная визуализация данных",
+      "broll_queries": [
+        "data visualization error rate chart",
+        "abstract blue data particles",
+        "server room blue light"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "5 МИНУТ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "data_beep",
+      "mode_hint": "C",
+      "meme_allowed": true,
+      "_estimated_sec": 14.18,
+      "_words": 32
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "И вот ответ на вопрос. Проверить этот результат классическим компьютером мы не можем — нечем. Мы верим ему, потому что верим в физику.",
+      "emphasis_word": "верим",
+      "avatar": "on",
+      "visual_intent": "Ведущий крупно, поворотный момент, акцентное слово",
+      "broll_queries": [
+        "thoughtful scientist portrait dark"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Проверить нечем",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "sfx": "sub_drop",
+      "answers_hook": true,
+      "mode_hint": "A",
+      "meme_allowed": true,
+      "_estimated_sec": 8.45,
+      "_words": 22
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Доверил бы ты такому ответу свои деньги? Напиши в комментариях.",
+      "emphasis_word": "доверил",
+      "avatar": "auto",
+      "visual_intent": "Финальный кадр, кнопка подписки",
+      "broll_queries": [
+        "abstract red gradient background"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "mode_hint": "A",
+      "meme_allowed": true,
+      "_estimated_sec": 4.56,
+      "_words": 10
+    }
+  ],
+  "cta": {
+    "text": "Доверил бы ты такому ответу свои деньги?",
+    "type": "question"
+  },
+  "_validation": {
+    "ok": true,
+    "estimated_duration_sec": 45.4,
+    "duration_range": [
+      35,
+      70
+    ],
+    "warnings": [],
+    "fonts": [
+      {
+        "role": "subtitle",
+        "family": "Montserrat Black",
+        "file": "Montserrat-Black.ttf",
+        "glyphs": 1312
+      },
+      {
+        "role": "display",
+        "family": "Oswald",
+        "file": "Oswald-Bold.ttf",
+        "glyphs": 850
+      },
+      {
+        "role": "subtitle_fallback",
+        "family": "Nunito ExtraBold",
+        "file": "Nunito-ExtraBold.ttf",
+        "glyphs": 938
+      },
+      {
+        "role": "mono",
+        "family": "JetBrains Mono",
+        "file": "JetBrainsMono-Bold.ttf",
+        "glyphs": 976
+      }
+    ],
+    "cost_estimate": {
+      "total_usd": 2.1092,
+      "limit_usd": 6.0,
+      "within_budget": true,
+      "by_service": {
+        "elevenlabs": 0.2492,
+        "heygen": 1.5,
+        "gemini": 0.072,
+        "grok": 0.048,
+        "magnific": 0.24
+      },
+      "assumptions": {
+        "tts_chars": 831,
+        "avatar_sec": 30.0,
+        "vision_items": 60,
+        "grok_calls": 8,
+        "generated_images": 3
+      }
+    },
+    "roles": [
+      "hook",
+      "setup",
+      "evidence",
+      "develop",
+      "twist",
+      "cta"
+    ]
+  }
+}

@@ -1,0 +1,865 @@
+{
+  "video_id": "redshift_0042",
+  "sample_rate": 48000,
+  "source_duration_sec": 46.54,
+  "duration_sec": 44.511,
+  "removed_sec": 2.029,
+  "target_duration_sec": 50.0,
+  "pause_threshold_ms": 150.0,
+  "pause_target_ms_range": [
+    80,
+    120
+  ],
+  "pause_ratio": 1.0,
+  "gain_applied_db": 5.18,
+  "loudness": {
+    "integrated_lufs": -14.0,
+    "true_peak_dbtp": -3.16,
+    "trailing_silence_ms": 0.0
+  },
+  "cuts": [
+    {
+      "kind": "pause",
+      "src_start": 2.96,
+      "src_end": 3.18,
+      "kept_sec": 0.12,
+      "removed_sec": 0.1
+    },
+    {
+      "kind": "pause",
+      "src_start": 7.98,
+      "src_end": 8.2,
+      "kept_sec": 0.12,
+      "removed_sec": 0.1
+    },
+    {
+      "kind": "breath",
+      "src_start": 9.88,
+      "src_end": 10.32,
+      "kept_sec": 0.12,
+      "removed_sec": 0.32
+    },
+    {
+      "kind": "breath",
+      "src_start": 15.24,
+      "src_end": 15.6,
+      "kept_sec": 0.12,
+      "removed_sec": 0.24
+    },
+    {
+      "kind": "pause",
+      "src_start": 18.76,
+      "src_end": 18.98,
+      "kept_sec": 0.12,
+      "removed_sec": 0.1
+    },
+    {
+      "kind": "breath",
+      "src_start": 26.26,
+      "src_end": 26.62,
+      "kept_sec": 0.12,
+      "removed_sec": 0.24
+    },
+    {
+      "kind": "pause",
+      "src_start": 32.82,
+      "src_end": 33.04,
+      "kept_sec": 0.12,
+      "removed_sec": 0.1
+    },
+    {
+      "kind": "breath",
+      "src_start": 34.4,
+      "src_end": 34.6,
+      "kept_sec": 0.12,
+      "removed_sec": 0.08
+    },
+    {
+      "kind": "breath",
+      "src_start": 38.0,
+      "src_end": 38.4,
+      "kept_sec": 0.12,
+      "removed_sec": 0.28
+    },
+    {
+      "kind": "pause",
+      "src_start": 38.96,
+      "src_end": 39.173,
+      "kept_sec": 0.12,
+      "removed_sec": 0.093
+    },
+    {
+      "kind": "breath",
+      "src_start": 41.36,
+      "src_end": 41.56,
+      "kept_sec": 0.12,
+      "removed_sec": 0.08
+    },
+    {
+      "kind": "pause",
+      "src_start": 42.4,
+      "src_end": 42.62,
+      "kept_sec": 0.12,
+      "removed_sec": 0.1
+    },
+    {
+      "kind": "breath",
+      "src_start": 44.86,
+      "src_end": 45.02,
+      "kept_sec": 0.12,
+      "removed_sec": 0.04
+    }
+  ],
+  "segments": [
+    {
+      "src_start": 0.0,
+      "src_end": 2.96,
+      "dst_start": 0.0,
+      "dst_end": 2.96,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 2.965,
+      "src_end": 3.085,
+      "dst_start": 2.96,
+      "dst_end": 3.08,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 3.18,
+      "src_end": 7.98,
+      "dst_start": 3.08,
+      "dst_end": 7.88,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 7.985,
+      "src_end": 8.105,
+      "dst_start": 7.88,
+      "dst_end": 8.0,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 8.2,
+      "src_end": 9.88,
+      "dst_start": 8.0,
+      "dst_end": 9.68,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 9.954,
+      "src_end": 10.074,
+      "dst_start": 9.68,
+      "dst_end": 9.8,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 10.32,
+      "src_end": 15.24,
+      "dst_start": 9.8,
+      "dst_end": 14.72,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 15.2677,
+      "src_end": 15.3877,
+      "dst_start": 14.72,
+      "dst_end": 14.84,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 15.6,
+      "src_end": 18.76,
+      "dst_start": 14.84,
+      "dst_end": 18.0,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 18.765,
+      "src_end": 18.885,
+      "dst_start": 18.0,
+      "dst_end": 18.12,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 18.98,
+      "src_end": 26.26,
+      "dst_start": 18.12,
+      "dst_end": 25.4,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 26.3357,
+      "src_end": 26.4557,
+      "dst_start": 25.4,
+      "dst_end": 25.52,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 26.62,
+      "src_end": 32.82,
+      "dst_start": 25.52,
+      "dst_end": 31.72,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 32.825,
+      "src_end": 32.945,
+      "dst_start": 31.72,
+      "dst_end": 31.84,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 33.04,
+      "src_end": 34.4,
+      "dst_start": 31.84,
+      "dst_end": 33.2,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 34.48,
+      "src_end": 34.6,
+      "dst_start": 33.2,
+      "dst_end": 33.32,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 34.6,
+      "src_end": 38.0,
+      "dst_start": 33.32,
+      "dst_end": 36.72,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 38.2295,
+      "src_end": 38.3495,
+      "dst_start": 36.72,
+      "dst_end": 36.84,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 38.4,
+      "src_end": 38.96,
+      "dst_start": 36.84,
+      "dst_end": 37.4,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 38.96,
+      "src_end": 39.08,
+      "dst_start": 37.4,
+      "dst_end": 37.52,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 39.173,
+      "src_end": 41.36,
+      "dst_start": 37.52,
+      "dst_end": 39.707,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 41.44,
+      "src_end": 41.56,
+      "dst_start": 39.707,
+      "dst_end": 39.827,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 41.56,
+      "src_end": 42.4,
+      "dst_start": 39.827,
+      "dst_end": 40.667,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 42.405,
+      "src_end": 42.525,
+      "dst_start": 40.667,
+      "dst_end": 40.787,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 42.62,
+      "src_end": 44.86,
+      "dst_start": 40.787,
+      "dst_end": 43.027,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 44.9,
+      "src_end": 45.02,
+      "dst_start": 43.027,
+      "dst_end": 43.147,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 45.02,
+      "src_end": 46.54,
+      "dst_start": 43.147,
+      "dst_end": 44.667,
+      "attenuate_db": 0.0
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "start": 0.0,
+      "end": 2.96,
+      "words": [
+        {
+          "word": "Этот",
+          "start": 0.0,
+          "end": 0.24
+        },
+        {
+          "word": "ответ",
+          "start": 0.293,
+          "end": 0.56
+        },
+        {
+          "word": "невозможно",
+          "start": 0.618,
+          "end": 1.2
+        },
+        {
+          "word": "проверить",
+          "start": 1.246,
+          "end": 1.96
+        },
+        {
+          "word": "Вообще",
+          "start": 2.027,
+          "end": 2.4
+        },
+        {
+          "word": "ничем",
+          "start": 2.48,
+          "end": 2.96
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "start": 3.08,
+      "end": 7.88,
+      "words": [
+        {
+          "word": "Это",
+          "start": 3.08,
+          "end": 3.32
+        },
+        {
+          "word": "ква́нтовый",
+          "start": 3.36,
+          "end": 3.88
+        },
+        {
+          "word": "чи́п",
+          "start": 3.96,
+          "end": 4.44
+        },
+        {
+          "word": "Внутри",
+          "start": 4.48,
+          "end": 4.84
+        },
+        {
+          "word": "сто",
+          "start": 4.9,
+          "end": 5.08
+        },
+        {
+          "word": "пять",
+          "start": 5.128,
+          "end": 5.32
+        },
+        {
+          "word": "куби́тов",
+          "start": 5.42,
+          "end": 6.04
+        },
+        {
+          "word": "почти",
+          "start": 6.107,
+          "end": 6.44
+        },
+        {
+          "word": "при",
+          "start": 6.5,
+          "end": 6.68
+        },
+        {
+          "word": "абсолютном",
+          "start": 6.74,
+          "end": 7.24
+        },
+        {
+          "word": "нуле",
+          "start": 7.32,
+          "end": 7.88
+        }
+      ]
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "start": 8.0,
+      "end": 18.0,
+      "words": [
+        {
+          "word": "Работа",
+          "start": 8.0,
+          "end": 8.4
+        },
+        {
+          "word": "опубликована",
+          "start": 8.427,
+          "end": 8.96
+        },
+        {
+          "word": "в",
+          "start": 9.0,
+          "end": 9.04
+        },
+        {
+          "word": "Nature",
+          "start": 9.12,
+          "end": 9.68
+        },
+        {
+          "word": "Впервые",
+          "start": 9.8,
+          "end": 10.56
+        },
+        {
+          "word": "логический",
+          "start": 10.62,
+          "end": 11.12
+        },
+        {
+          "word": "куби́т",
+          "start": 11.18,
+          "end": 11.52
+        },
+        {
+          "word": "прожил",
+          "start": 11.552,
+          "end": 11.84
+        },
+        {
+          "word": "дольше",
+          "start": 11.88,
+          "end": 12.32
+        },
+        {
+          "word": "чем",
+          "start": 12.38,
+          "end": 12.56
+        },
+        {
+          "word": "каждый",
+          "start": 12.629,
+          "end": 13.04
+        },
+        {
+          "word": "физический",
+          "start": 13.08,
+          "end": 13.6
+        },
+        {
+          "word": "куби́т",
+          "start": 13.64,
+          "end": 13.92
+        },
+        {
+          "word": "внутри",
+          "start": 13.966,
+          "end": 14.24
+        },
+        {
+          "word": "него",
+          "start": 14.304,
+          "end": 14.72
+        },
+        {
+          "word": "Раньше",
+          "start": 14.84,
+          "end": 15.52
+        },
+        {
+          "word": "добавление",
+          "start": 15.56,
+          "end": 16.0
+        },
+        {
+          "word": "куби́тов",
+          "start": 16.06,
+          "end": 16.48
+        },
+        {
+          "word": "только",
+          "start": 16.526,
+          "end": 16.8
+        },
+        {
+          "word": "множило",
+          "start": 16.853,
+          "end": 17.2
+        },
+        {
+          "word": "ошибки",
+          "start": 17.28,
+          "end": 18.0
+        }
+      ]
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "start": 18.12,
+      "end": 31.72,
+      "words": [
+        {
+          "word": "Здесь",
+          "start": 18.12,
+          "end": 18.28
+        },
+        {
+          "word": "всё",
+          "start": 18.34,
+          "end": 18.52
+        },
+        {
+          "word": "наоборот",
+          "start": 18.573,
+          "end": 19.24
+        },
+        {
+          "word": "Чем",
+          "start": 19.38,
+          "end": 19.8
+        },
+        {
+          "word": "больше",
+          "start": 19.846,
+          "end": 20.12
+        },
+        {
+          "word": "куби́тов",
+          "start": 20.18,
+          "end": 20.6
+        },
+        {
+          "word": "в",
+          "start": 20.7,
+          "end": 20.8
+        },
+        {
+          "word": "связке",
+          "start": 20.84,
+          "end": 21.16
+        },
+        {
+          "word": "тем",
+          "start": 21.2,
+          "end": 21.32
+        },
+        {
+          "word": "чище",
+          "start": 21.427,
+          "end": 21.8
+        },
+        {
+          "word": "считает",
+          "start": 21.864,
+          "end": 22.28
+        },
+        {
+          "word": "система",
+          "start": 22.36,
+          "end": 23.16
+        },
+        {
+          "word": "ошибка",
+          "start": 23.24,
+          "end": 23.64
+        },
+        {
+          "word": "падает",
+          "start": 23.7,
+          "end": 23.96
+        },
+        {
+          "word": "вдвое",
+          "start": 24.013,
+          "end": 24.36
+        },
+        {
+          "word": "на",
+          "start": 24.387,
+          "end": 24.44
+        },
+        {
+          "word": "каждом",
+          "start": 24.504,
+          "end": 24.84
+        },
+        {
+          "word": "шаге",
+          "start": 24.92,
+          "end": 25.4
+        },
+        {
+          "word": "Задача",
+          "start": 25.52,
+          "end": 26.24
+        },
+        {
+          "word": "на",
+          "start": 26.253,
+          "end": 26.28
+        },
+        {
+          "word": "которую",
+          "start": 26.33,
+          "end": 26.68
+        },
+        {
+          "word": "суперкомпьютеру",
+          "start": 26.74,
+          "end": 27.56
+        },
+        {
+          "word": "нужно",
+          "start": 27.6,
+          "end": 27.8
+        },
+        {
+          "word": "больше",
+          "start": 27.857,
+          "end": 28.2
+        },
+        {
+          "word": "времени",
+          "start": 28.25,
+          "end": 28.68
+        },
+        {
+          "word": "чем",
+          "start": 28.72,
+          "end": 28.84
+        },
+        {
+          "word": "существует",
+          "start": 28.884,
+          "end": 29.32
+        },
+        {
+          "word": "вселенная",
+          "start": 29.4,
+          "end": 30.44
+        },
+        {
+          "word": "решена",
+          "start": 30.5,
+          "end": 30.84
+        },
+        {
+          "word": "за",
+          "start": 30.893,
+          "end": 31.0
+        },
+        {
+          "word": "пять",
+          "start": 31.032,
+          "end": 31.16
+        },
+        {
+          "word": "минут",
+          "start": 31.227,
+          "end": 31.72
+        }
+      ]
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "start": 31.84,
+      "end": 40.667,
+      "words": [
+        {
+          "word": "И",
+          "start": 31.84,
+          "end": 31.92
+        },
+        {
+          "word": "вот",
+          "start": 31.98,
+          "end": 32.16
+        },
+        {
+          "word": "ответ",
+          "start": 32.213,
+          "end": 32.48
+        },
+        {
+          "word": "на",
+          "start": 32.507,
+          "end": 32.56
+        },
+        {
+          "word": "вопрос",
+          "start": 32.64,
+          "end": 33.2
+        },
+        {
+          "word": "Проверить",
+          "start": 33.32,
+          "end": 34.0
+        },
+        {
+          "word": "этот",
+          "start": 34.048,
+          "end": 34.24
+        },
+        {
+          "word": "результат",
+          "start": 34.296,
+          "end": 34.8
+        },
+        {
+          "word": "классическим",
+          "start": 34.853,
+          "end": 35.44
+        },
+        {
+          "word": "компьютером",
+          "start": 35.488,
+          "end": 36.08
+        },
+        {
+          "word": "мы",
+          "start": 36.107,
+          "end": 36.16
+        },
+        {
+          "word": "не",
+          "start": 36.213,
+          "end": 36.32
+        },
+        {
+          "word": "можем",
+          "start": 36.38,
+          "end": 36.72
+        },
+        {
+          "word": "нечем",
+          "start": 36.84,
+          "end": 37.4
+        },
+        {
+          "word": "Мы",
+          "start": 37.52,
+          "end": 37.947
+        },
+        {
+          "word": "верим",
+          "start": 37.987,
+          "end": 38.187
+        },
+        {
+          "word": "ему",
+          "start": 38.287,
+          "end": 38.827
+        },
+        {
+          "word": "потому",
+          "start": 38.873,
+          "end": 39.147
+        },
+        {
+          "word": "что",
+          "start": 39.207,
+          "end": 39.387
+        },
+        {
+          "word": "верим",
+          "start": 39.427,
+          "end": 39.707
+        },
+        {
+          "word": "в",
+          "start": 39.827,
+          "end": 40.027
+        },
+        {
+          "word": "физику",
+          "start": 40.087,
+          "end": 40.667
+        }
+      ]
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "start": 40.787,
+      "end": 44.667,
+      "words": [
+        {
+          "word": "Доверил",
+          "start": 40.787,
+          "end": 41.267
+        },
+        {
+          "word": "бы",
+          "start": 41.294,
+          "end": 41.347
+        },
+        {
+          "word": "ты",
+          "start": 41.4,
+          "end": 41.507
+        },
+        {
+          "word": "такому",
+          "start": 41.547,
+          "end": 41.827
+        },
+        {
+          "word": "ответу",
+          "start": 41.88,
+          "end": 42.227
+        },
+        {
+          "word": "свои",
+          "start": 42.291,
+          "end": 42.547
+        },
+        {
+          "word": "деньги",
+          "start": 42.604,
+          "end": 43.027
+        },
+        {
+          "word": "Напиши",
+          "start": 43.147,
+          "end": 43.627
+        },
+        {
+          "word": "в",
+          "start": 43.667,
+          "end": 43.707
+        },
+        {
+          "word": "комментариях",
+          "start": 43.727,
+          "end": 44.667
+        }
+      ]
+    }
+  ],
+  "provider_mode": "live"
+}
