@@ -317,7 +317,7 @@
       28
     ],
     "radius_px_default": 24,
-    "bg": "bg_light",
+    "bg": "panel",
     "bg_alpha": 0.92,
     "border_px": 2,
     "border_color": "accent",

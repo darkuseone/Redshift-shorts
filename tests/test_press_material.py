@@ -260,11 +260,11 @@ def test_card_marks_nothing_when_there_is_nothing_to_mark(phrase):
 # --- подпись источника (§1, правило 8) ----------------------------------------
 
 def test_credit_is_printed_only_where_the_licence_asks_for_it():
-    """Заказчик: «где надо по правам указывай источник мелким шрифтом».
+    """MAIN: BL-подпись для любого не-AI стока/пресса; AI — без подписи.
 
-    Где надо — сказано в каталоге источников, а не выдумано: ESA, Internet
-    Archive и кадр со страницы издания требуют подписи, Pexels и NASA — нет.
-    Лишняя подпись — это мусор в кадре, отсутствующая — нарушение права.
+    Раньше подпись включалась только при attribution_required. После BL-credits
+    на main кадр показывает источник и для Pexels/NASA — зритель видит, откуда
+    кадр. Сгенерированное по-прежнему без подписи.
     """
     from src.p11_assemble.assemble import _credit_line
 
@@ -274,7 +274,7 @@ def test_credit_is_printed_only_where_the_licence_asks_for_it():
     press = {"source": "press", "attribution": "Nature",
              "meta": {"domain": "nature.com"}}
     assert _credit_line(press, spec) == "Nature · nature.com"
-    assert _credit_line({"source": "pexels", "attribution": "Иван Петров"}, spec) == ""
+    assert _credit_line({"source": "pexels", "attribution": "Иван Петров"}, spec) == "Иван Петров"
     # Своё авторство в кадре не декларируют.
     assert _credit_line({**press, "ai_generated": True}, spec) == ""
     # Домен не дублируется, если он уже в имени.

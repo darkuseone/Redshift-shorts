@@ -136,8 +136,8 @@ def test_wipe_scale_tweens_on_a_word_do_not_overlap(cfg):
             assert prev[1] <= nxt[0] + 1e-6, f"{target}: {windows}"
 
 
-def test_default_caption_is_the_glow_of_the_channel(cfg):
-    """Умолчание брендбука — гало канала; жесты лежат рядом альтернативами."""
-    assert cfg.brand("subtitles.caption") == "glow"
+def test_default_caption_is_gradient_fill(cfg):
+    """MAIN: прод-умолчание gradient-fill; жесты лежат рядом альтернативами."""
+    assert cfg.brand("subtitles.caption") == "gradient-fill"
     for gesture in ("gradient_fill", "clip_wipe", "camera_follow", "blend_difference"):
         assert cfg.brand(f"subtitles.{gesture}"), f"жест {gesture} пропал из брендбука"
