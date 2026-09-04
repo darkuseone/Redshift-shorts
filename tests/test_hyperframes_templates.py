@@ -7079,3 +7079,83 @@ def test_code_highlight_css_keeps_tokens():
     assert ".fullscreen-text.fs-code-highlight .cs-hl" in css
     assert "rgba(88,166,255,0.18)" in css
 
+
+def test_code_morph_animates_without_webgl():
+    """Проверяем FLIP-морфинг токенов кода и отсутствие запрещённых свойств."""
+    before_code = (
+        'function sum(arr) {\n'
+        '  let res = 0;\n'
+        '  for (const n of arr) {\n'
+        '    res += n;\n'
+        '  }\n'
+        '  return res;\n'
+        '}'
+    )
+    after_code = (
+        'function sum(arr) {\n'
+        '  return arr.reduce((a, b) => a + b, 0);\n'
+        '}'
+    )
+    piece = render_fullscreen(_fs_ctx(
+        before=before_code,
+        after=after_code,
+        renderer="code_morph",
+        code_morph=True,
+        filename="sum.js",
+        duration=5.0,
+    ))
+    assert piece.nodes
+    node = piece.nodes[0]
+    assert "fs-code-morph" in node
+    assert "cm-editor" in node
+    assert "cm-surface" in node
+    assert "cm-scene-a" in node and "cm-scene-b" in node
+    assert "cm-gutter-a" in node and "cm-gutter-b" in node
+    assert "sum.js" in node
+    assert "sum" in node and "reduce" in node
+
+    body = " ".join(piece.tweens)
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "onUpdate" not in body
+
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra, f"Forbidden tween props: {extra}"
+
+    clip = "#shot-01"
+    for tween in piece.tweens:
+        selector = re.search(r'"(#[^"]+)"', tween).group(1)
+        assert selector != clip, tween
+
+    # Default fallback
+    default_piece = render_fullscreen(_fs_ctx(
+        renderer="code_morph",
+        code_morph=True,
+        duration=4.0,
+    ))
+    assert default_piece.nodes
+    assert "refactor.js" in default_piece.nodes[0]
+    assert "activeNames" in default_piece.nodes[0]
+
+    # Explicit empty content
+    empty_piece = render_fullscreen(_fs_ctx(
+        content="",
+        renderer="code_morph",
+        code_morph=True,
+        duration=4.0,
+    ))
+    assert empty_piece.nodes == []
+
+
+def test_code_morph_css_keeps_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".fullscreen-text.fs-code-morph" in css
+    assert "JetBrains Mono" in css
+    assert ".fullscreen-text.fs-code-morph .cm-editor" in css
+    assert ".fullscreen-text.fs-code-morph .cm-glow" in css
+
+

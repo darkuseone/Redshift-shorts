@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 33,
+    "text-fullscreen": 34,
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
@@ -14,7 +14,7 @@
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 203
+    "_total": 204
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -772,6 +772,28 @@
         "developer"
       ],
       "renderer": "code_highlight",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-morph",
+      "name": "code-morph",
+      "category": "text-fullscreen",
+      "title": "FLIP-морфинг между состояниями кода — code-morph",
+      "duration_range": [
+        1.5,
+        7.0
+      ],
+      "params": {
+        "code_morph": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "morph",
+        "developer"
+      ],
+      "renderer": "code_morph",
       "last_used_in": [],
       "added": "2026-09-03"
     },
