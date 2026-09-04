@@ -51,6 +51,7 @@ class ShotSpec:
         return {"src": str(self.src), "dst": str(self.dst),
                 "duration_sec": round(self.duration_sec, 3), "fit": self.fit,
                 "focus_x": round(self.focus_x, 3), "focus_y": round(self.focus_y, 3),
+                "compose_zoom": round(float(self.compose_zoom or 1.0), 3),
                 "start_sec": round(self.start_sec, 3), "loop": self.loop}
 
 
