@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-04",
-  "count": 48,
+  "updated": "2026-09-03",
+  "count": 54,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1252,7 +1252,7 @@
       "used_in": [
         "redshift_0047"
       ],
-      "last_used": "2026-09-02",
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "phashes": [
         "123c2de173878ecc"
@@ -1569,6 +1569,42 @@
       }
     },
     {
+      "id": "pexels_v14171674",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/snowflakes-falling-on-a-flowing-creek-14171674/",
+      "phash": "1c4c7b4ca966196e",
+      "tags": [
+        "viscous",
+        "flow",
+        "slow",
+        "motion",
+        "dark"
+      ],
+      "vision_summary": "тёмная вязкая жидкость с пузырьками и медленными складками",
+      "score": 0.92,
+      "duration_sec": 48.725,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "1c4c7b4ca966196e",
+        "f64d70544de2914f",
+        "0c9a71596723994f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v14171674.mp4",
+      "extra": {
+        "attribution": "Pexels / binary Ego",
+        "author": "binary Ego",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
       "id": "pexels_v15168379",
       "type": "video",
       "source": "pexels",
@@ -1586,10 +1622,9 @@
       "score": 0.93,
       "duration_sec": 19.585,
       "used_in": [
-        "redshift_0047",
-        "redshift_0042"
+        "redshift_0047"
       ],
-      "last_used": "2026-09-04",
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "phashes": [
         "cebc818b44d9c8fc",
@@ -1623,10 +1658,9 @@
       "score": 0.93,
       "duration_sec": 20.0,
       "used_in": [
-        "redshift_0047",
-        "redshift_0042"
+        "redshift_0047"
       ],
-      "last_used": "2026-09-04",
+      "last_used": null,
       "added": "2026-09-02",
       "phashes": [
         "0787617195cf6c34",
@@ -1681,10 +1715,9 @@
       "score": 0.78,
       "duration_sec": 19.0,
       "used_in": [
-        "redshift_0047",
-        "redshift_0042"
+        "redshift_0047"
       ],
-      "last_used": "2026-09-04",
+      "last_used": null,
       "added": "2026-09-02",
       "phashes": [
         "05ed77764c468a61",
@@ -1720,10 +1753,9 @@
       "score": 0.55,
       "duration_sec": 10.047,
       "used_in": [
-        "redshift_0047",
-        "redshift_0042"
+        "redshift_0047"
       ],
-      "last_used": "2026-09-04",
+      "last_used": "2026-09-03",
       "added": "2026-09-02",
       "phashes": [
         "e93f253b27bf0018",
@@ -1736,6 +1768,203 @@
       "extra": {
         "attribution": "Pixabay / clst5",
         "author": "clst5",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v34550739",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-purple-waves-and-particles-animation-34550739/",
+      "phash": "048655cba7373ba8",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Abstract glowing purple particles on a dark wavy grid surface",
+      "score": 0.87,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "048655cba7373ba8",
+        "15c69ba41b6e51a5",
+        "178313e4b52432bf"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34550739.mp4",
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v34912823",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-floating-blue-particles-on-black-background-34912823/",
+      "phash": "1c731c3200ee73dd",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Glowing abstract particles with tendrils on black background",
+      "score": 0.92,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "1c731c3200ee73dd",
+        "fc74191bc9f24827",
+        "10235dd61b2fa81f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34912823.mp4",
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v35288383",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/vibrant-abstract-particle-animation-35288383/",
+      "phash": "19d9662699992e66",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Abstract glowing particles bursting from bright center on black background",
+      "score": 0.88,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "19d9662699992e66",
+        "cccc33338c8c6e67",
+        "1bcc3633c9cc3233"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v35288383.mp4",
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v113383",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-113383/",
+      "phash": "c22f7da515e4c61c",
+      "tags": [
+        "connection",
+        "science",
+        "abstract",
+        "communication",
+        "plexus",
+        "background",
+        "futuristic",
+        "network",
+        "geometric",
+        "cybernetic",
+        "concept",
+        "design",
+        "digital",
+        "line",
+        "3d",
+        "biology",
+        "chaos",
+        "beautiful wallpaper",
+        "connect",
+        "data",
+        "galaxy",
+        "global",
+        "graphic",
+        "internet",
+        "molecular",
+        "particle"
+      ],
+      "vision_summary": "Abstract glowing particle network mesh on black background",
+      "score": 0.72,
+      "duration_sec": 19.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "c22f7da515e4c61c",
+        "116f53e47f586c02",
+        "16f66d65010c6bd3"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v113383.mp4",
+      "extra": {
+        "attribution": "Pixabay / Digital_View",
+        "author": "Digital_View",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v144678",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-144678/",
+      "phash": "f1e1d03f0fc8923a",
+      "tags": [
+        "volcano lava",
+        "explosion",
+        "volcano",
+        "lava",
+        "volcanic",
+        "hot",
+        "nature"
+      ],
+      "vision_summary": "Close-up of bright lava streams flowing slowly over dark volcanic rock",
+      "score": 0.82,
+      "duration_sec": 6.25,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": null,
+      "added": "2026-09-03",
+      "phashes": [
+        "f1e1d03f0fc8923a",
+        "f1a1f00b47d192be",
+        "f1e1f403c7d1133a"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v144678.mp4",
+      "extra": {
+        "attribution": "Pixabay / 31906497",
+        "author": "31906497",
         "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
       }
     }

@@ -19,6 +19,7 @@
     "kinetic",
     "blur"
   ],
+  "needs": [],
   "renderer": "blur_out_up",
   "last_used_in": [],
   "added": "2026-09-02"

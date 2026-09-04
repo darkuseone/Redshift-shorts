@@ -13,6 +13,7 @@
     "3d",
     "flip"
   ],
+  "needs": [],
   "renderer": "transitions_3d",
   "last_used_in": [],
   "added": "2026-09-03"

@@ -16,6 +16,7 @@
     "kinetic",
     "swap"
   ],
+  "needs": [],
   "renderer": "kinetic_type_swap",
   "last_used_in": [],
   "added": "2026-09-02"

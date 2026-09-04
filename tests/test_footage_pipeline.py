@@ -976,3 +976,61 @@ def test_no_step_calls_something_the_context_does_not_have():
     assert not offenders, (
         "шаг просит у контекста то, чего в RunContext нет:\n  "
         + "\n  ".join(offenders))
+
+
+class TestAnInterstitialIsNeverABlackScreen:
+    """Перебивка живёт 1.4 секунды ради того, чтобы в кадре что-то произошло.
+
+    В пересобранном 0047 на 40.5 и 50.0 секунде там оказался субтитр на
+    пустоте: средняя яркость 17.7 и 20.1 из 255, восемь пикселей из десяти
+    темнее 20. Клип, который это дал, показывает 16 % видимого кадра при
+    медиане базы 55 %.
+
+    Порог держится только для перебивки. Общий зарезал бы ночную эстетику
+    канала: восемь клипов базы из сорока четырёх темнее 15 % видимого, и в
+    длинном кадре под речь они законны.
+    """
+
+    def _frames(self, tmp_path, level, count=2):
+        import numpy as np
+        from PIL import Image
+
+        paths = []
+        for i in range(count):
+            path = tmp_path / f"f{i}.png"
+            Image.fromarray(
+                (np.ones((120, 68, 3)) * level).astype("uint8")).save(path)
+            paths.append(str(path))
+        return paths
+
+    def test_the_measure_judges_the_worst_frame(self, tmp_path):
+        from src.lib.palette import frame_light
+
+        dark = self._frames(tmp_path / "d", 10) if (tmp_path / "d").mkdir() is None else None
+        assert frame_light(dark)["visible_share"] == 0.0
+        bright = self._frames(tmp_path / "b", 200) if (tmp_path / "b").mkdir() is None else None
+        assert frame_light(bright)["visible_share"] == 1.0
+        mixed = dark[:1] + bright[:1]
+        assert frame_light(mixed)["visible_share"] == 0.0, "судить надо худший кадр"
+
+    def test_the_role_of_an_interstitial_reaches_the_search(self):
+        """Своя роль не должна выключить перебивку из поиска материала."""
+        import re
+        from pathlib import Path
+
+        search = Path("src/p7_broll_search/search.py").read_text(encoding="utf-8")
+        judge = Path("src/p8_broll_judge/judge.py").read_text(encoding="utf-8")
+        for name, text in (("P7", search), ("P8", judge)):
+            roles = re.findall(r'asset_role"?\]?\s+in\s+\(([^)]*)\)', text)
+            assert roles, f"{name}: не найден отбор слотов по роли"
+            assert any("interstitial" in r for r in roles), f"{name}: перебивка выпала из отбора"
+
+    def test_the_pipeline_marks_interstitials_with_their_own_role(self):
+        from pathlib import Path
+
+        code = Path("src/p5_replan/replanner.py").read_text(encoding="utf-8")
+        blocks = code.split("перебивка между аватар-сегментами")
+        assert len(blocks) >= 3, "перебивка вставляется не в двух местах?"
+        for chunk in blocks[1:]:
+            head = blocks[blocks.index(chunk) - 1][-400:]
+            assert 'asset_role="interstitial"' in head, head[-160:]

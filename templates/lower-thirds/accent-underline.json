@@ -17,6 +17,7 @@
     "overlay",
     "minimal"
   ],
+  "needs": [],
   "renderer": "lt_accent_underline",
   "last_used_in": [],
   "added": "2026-09-03"

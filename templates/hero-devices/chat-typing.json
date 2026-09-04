@@ -15,6 +15,9 @@
     "ui",
     "chat"
   ],
+  "needs": [
+    "question"
+  ],
   "renderer": "hero-chat-typing",
   "last_used_in": [
     "redshift_0047"

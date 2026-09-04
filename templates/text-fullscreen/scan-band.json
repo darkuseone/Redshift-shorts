@@ -17,6 +17,7 @@
     "scan",
     "chromatic"
   ],
+  "needs": [],
   "renderer": "scan_band",
   "last_used_in": [],
   "added": "2026-09-02"

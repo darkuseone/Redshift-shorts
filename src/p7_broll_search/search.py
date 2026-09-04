@@ -128,6 +128,8 @@ def run_step(ctx) -> dict[str, Any]:
     # Материал из последних 5 роликов не переиспользуем при наличии альтернативы.
     recent_videos = _recent_video_ids(ctx, limit=5)
 
+    # Перебивка — тот же b-roll, только с отдельной ролью: она живёт 1.4
+    # секунды и обязана быть событием, поэтому судится строже по светлоте.
     slots = [s for s in plan["slots"]
              if s["needs_asset"] and s["asset_role"] in ("broll", "evidence", "interstitial")]
     downloads = 0
@@ -371,15 +373,20 @@ def run_step(ctx) -> dict[str, Any]:
                 if accept(providers[source], candidate, query):
                     taken += 1
 
-        # --- 2. Press/news from scripted article URLs (before stock) ---------
-        # Always attempt when the draft cites a URL: evidence slots should prefer
-        # the real page frame over generic stock, even if local cache already
-        # filled something thematic.
+        # --- 2. кадр из самой статьи (§7.2, «реальный материал») -------------
+        # Заказчик просил брать материал прямо со страницы, на которую ролик и
+        # ссылается. Это идёт до стоков: слот доказательства лучше закрыть той
+        # самой статьей, чем «чем-нибудь по теме», и уж точно лучше, чем
+        # генерацией. Палитра здесь мягче: пресс-кадр — цитата в рамке
+        # источника, и требовать от него палитру канала значит не брать его
+        # никогда.
         article = _article_for(slot, plan)
-        if press is not None and article:
+        if press is not None and article and not slot_candidates:
             try:
+                # Просим не один кадр, а сколько есть: у страницы og:image один,
+                # но брать надо первый **прошедший** отбор, а не первый по счёту.
                 found = press.search(article["url"], kind="photo", limit=3)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001 — страница не должна ронять прогон
                 ctx.warn(f"страница источника недоступна: {exc}",
                          slot=slot["index"], url=article["url"][:120])
                 found = []
@@ -395,7 +402,7 @@ def run_step(ctx) -> dict[str, Any]:
                     press_used += 1
                     break
 
-        # --- 3. External stock harvest ---------------------------------------
+        # --- 3. внешние стоки -------------------------------------------------
         harvest(queries)
 
         # Второй заход. Пустой слот уходит в генерацию (§7.3), а генерация

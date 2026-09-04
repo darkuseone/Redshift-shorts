@@ -16,9 +16,11 @@
     "text",
     "footage"
   ],
+  "needs": [],
   "renderer": "hero-card-stack",
   "last_used_in": [
-    "redshift_0046"
+    "redshift_0046",
+    "redshift_0042"
   ],
   "added": "2026-08-18"
 }

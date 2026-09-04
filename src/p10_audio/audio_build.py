@@ -16,6 +16,8 @@ SFX берутся **только** из курируемой библиотек
 
 from __future__ import annotations
 
+import math
+
 from typing import Any, Sequence
 
 import numpy as np
@@ -33,6 +35,26 @@ AVATAR_KINDS = ("avatar", "split")
 WHOOSH_SCRIPT_ROLES = frozenset({
     "whoosh_in", "whoosh_out", "swipe", "riser", "none", "",
 })
+
+
+def music_target_lufs(cfg) -> float:
+    """Уровень подложки: доля от голоса, переведённая в LUFS.
+
+    Заказчик задаёт его долей — «5-7% громкости от моего голоса», — и так
+    честнее: подложка существует только относительно речи, а не сама по себе.
+    Переводить долю в LUFS руками при каждой правке значит однажды перевести
+    неверно.
+
+    Доля амплитудная: 0.06 → 20·lg(0.06) = −24.4 дБ от голоса, при
+    ``voice_lufs`` −14 это −38.4 LUFS.
+    """
+    ratio = cfg.get("audio.music_voice_ratio", None)
+    if ratio:
+        lo, hi = float(ratio[0]), float(ratio[-1])
+        mid = (lo + hi) / 2.0
+        return round(float(cfg.get("audio.voice_lufs", -14)) + 20.0 * math.log10(mid), 2)
+    lufs = cfg.get("audio.music_lufs", [-40, -37])
+    return (float(lufs[0]) + float(lufs[-1])) / 2.0
 
 
 def choose_bed(cfg, plan: dict[str, Any]):
@@ -270,8 +292,7 @@ def run_step(ctx) -> dict[str, Any]:
     music_lib = open_library(cfg, "music")
     record = choose_bed(cfg, plan)
     tags = plan.get("music_tags") or []
-    music_lufs_lo, music_lufs_hi = cfg.get("audio.music_lufs", [-34, -30])
-    music_target = (float(music_lufs_lo) + float(music_lufs_hi)) / 2
+    music_target = music_target_lufs(cfg)
     ducking_db = float(cfg.get("audio.ducking_db", -7))
 
     if record is not None and music_lib.file_path(record).exists():

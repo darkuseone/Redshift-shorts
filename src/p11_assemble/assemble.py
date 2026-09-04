@@ -16,7 +16,7 @@ from __future__ import annotations
 import hashlib
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from ..errors import RedshiftError
 from ..lib.ffmpeg import probe
@@ -35,6 +35,7 @@ from ..lib.backdrop import describe as scene_why
 from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
 from ..lib.glyphs import match_glyphs
+from ..lib.meaning import block_traits, explain, matched
 from ..lib.render.hyperframes.captions import pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
@@ -750,10 +751,12 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
 
 def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
                block: dict[str, Any]) -> str:
-    """Spoken words to put on screen when a slot has no media (Claude 1ff38b2).
+    """Что вынести на экран, когда материала под кадр нет.
 
-    Three–four words from the speech window — not a invented headline — so the
-    frame finishes what the voice is saying instead of showing a dark empty card.
+    Не выдумка и не заголовок: ровно те слова, которые звучат в это мгновение.
+    Экран договаривает речь, а не спорит с ней, и зритель видит то же, что
+    слышит. Берётся три-четыре слова — больше в кегль полноэкранного текста
+    не встанет.
     """
     start, end = float(slot["start"]), float(slot["end"])
     said = [str(w.get("word") or "") for w in words
@@ -764,13 +767,27 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
     return " ".join(said[:4]).upper().strip(" ,.;:—-")
 
 
+def explain_choice(template: Any, traits: Iterable[str]) -> str:
+    """Почему именно этот приём здесь — словами, а не «роль блока».
+
+    Одна формулировка на все категории: строка уходит в edit-план и в отчёт
+    сборки, и читать её будет человек, а не разбор.
+    """
+    hit = matched(template.needs, traits)
+    if hit:
+        return f"приём оправдан: {explain(hit)}"
+    return "приём без смысловых требований: держит кадр, не спорит с речью"
+
+
+
 def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  content: dict[str, Any], has_alpha: bool,
                  plate_src: dict[str, Any] | None,
                  recent_videos: list[str], exclude: list[str],
                  seed: int,
                  picker: TemplatePicker | None = None,
-                 variant: str = "A") -> dict[str, Any] | None:
+                 variant: str = "A",
+                 block: dict[str, Any] | None = None) -> dict[str, Any] | None:
     """Выбрать приём вокруг ведущего под конкретный кадр.
 
     Приём отбрасывается, если кадр не может его показать: без альфы всё, что
@@ -809,6 +826,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     signals = {k for k, v in available.items() if v and k in ("plate", "icons", "word", "lines", "brand", "title")}
     if has_alpha:
         signals.add("alpha")
+    # Meaning traits stay separate from structural signals (plate/alpha/word).
+    traits = None if block is None else block_traits(str((block.get("text") if isinstance(block, dict) else block) or ""))
     if content.get("figures"):
         signals.add("numbers")
     blob = build_blob(content.get("title"), content.get("caption"), " ".join(content.get("lines") or []), content.get("word"))
@@ -816,6 +835,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         "hero-devices",
         blob=blob,
         signals=signals,
+        traits=traits,
         variant=variant,
         duration=float(slot["duration"]),
         recent_videos=recent_videos,
@@ -828,6 +848,9 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     entry: dict[str, Any] = {
         "template": template.id, "renderer": renderer, "params": params,
         "file": None, "duration": None,
+        "traits": sorted(traits or ()),
+        "grounded_on": sorted(matched(template.needs, traits or ())),
+        "why": explain_choice(template, traits or ()),
         **hero_mutes_subtitle(renderer),
     }
     if real_plate and renderer == "hero-chat-generate":
@@ -1268,11 +1291,14 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # Require both show_on_screen and proof_card so legacy scripts that only
     # set show_on_screen:true no longer spawn full-frame source badges.
     on_screen = [s for s in sources
-                 if s.get("show_on_screen") and s.get("proof_card")]
+                 if s.get("show_on_screen") and (s.get("proof_card") or s.get("snippet") or s.get("highlight_line"))]
 
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
         anchor = run[0]
         card_category = "browser-ui" if variant == "A" else "frames-cards"
+        ev_block = next((b for b in (plan.get("blocks") or [])
+                         if b.get("id") == anchor.get("block_id")), {})
+        card_traits = block_traits(str(ev_block.get("text") or source.get("snippet") or ""))
         blob = build_blob(
             source.get("title"),
             source.get("snippet"),
@@ -1282,6 +1308,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         card_template, _ = picker.pick(
             card_category,
             blob=blob,
+            signals=set(card_traits),
+            traits=card_traits,
             variant=variant,
             duration=float(anchor["duration"]),
             recent_videos=recent_videos,
@@ -1388,7 +1416,10 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             "type": "source_card", "start": card_start, "end": card_end,
             "template": card_template.id, "renderer": renderer,
             "params": card_params,
-            "why": "§5.6: источник обязан появиться на экране",
+            "traits": sorted(card_traits),
+            "grounded_on": sorted(matched(card_template.needs, card_traits)),
+            "why": explain_choice(card_template, card_traits)
+                   or "§5.6: источник обязан появиться на экране",
         })
         # §5.5: подсветка обязательна при показе скриншота статьи.
         overlays.append({
@@ -1877,6 +1908,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # P9 hit the 35% AI ceiling; Claude 1ff38b2 closed those with text.
             gap_block = blocks_by_id.get(slot["block_id"], {})
             content = gap_phrase(words_doc["words"], slot, gap_block)
+            gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
+
             s_content = str(content or "")
             signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")
@@ -1885,6 +1918,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "text-fullscreen",
                 blob=s_content or str(gap_block.get("text") or ""),
                 signals=signals,
+                traits=gap_traits,
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
@@ -1904,6 +1938,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "params": dict(template.params),
                 "invert": bool(template.params.get("invert")) or variant == "B",
                 "accent_word": _fullscreen_accent(content, gap_block),
+                "traits": sorted(gap_traits) if gap_traits else [],
+                "grounded_on": sorted(matched(template.needs, gap_traits)) if gap_traits else [],
+                "why_template": explain_choice(template, gap_traits) if gap_traits else "",
                 "file": bg_file,
                 "asset_id": None,
                 "gap_reason": "материал не найден: кадр закрыт словом блока",
@@ -1979,7 +2016,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
-                    seed=seed, picker=picker, variant=variant)
+                    seed=seed, picker=picker, variant=variant, block=block)
                 if hero_entry:
                     used_templates.append(hero_entry["template"])
 

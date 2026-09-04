@@ -85,9 +85,20 @@ def is_space_theme(plan: dict[str, Any]) -> bool:
 
 def pick_caption_style(plan: dict[str, Any],
                        brandbook: dict[str, Any] | None = None) -> str:
-    """Прод: gradient-fill; космос — clip-wipe. Blend только явным caption."""
+    """Какой жест подписи ставить ролику.
+
+    Умолчание задаёт брендбук, а не тема. «glow» — белое слово Montserrat
+    Black с красным гало со скриншота заказчика; это лицо канала, и менять
+    его по признаку «в тексте встретилось слово про космос» нельзя — иначе
+    каждый второй ролик канала про космос выходил бы другим шрифтом.
+
+    Тема влияет только там, где брендбук сам просит альтернативу: если в нём
+    стоит не «glow», космический ролик получает clip-wipe.
+    """
     spec = (brandbook or {}).get("subtitles") or {}
-    name = str(spec.get("caption") or "gradient-fill").strip()
+    name = str(spec.get("caption") or "glow").strip()
+    if name == "glow":
+        return "glow"
     if name in _BLEND_NAMES:
         return "blend-difference"
     if is_space_theme(plan):

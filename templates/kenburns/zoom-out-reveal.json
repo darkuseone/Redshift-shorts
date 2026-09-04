@@ -17,6 +17,7 @@
     "kenburns",
     "zoom"
   ],
+  "needs": [],
   "renderer": "kenburns",
   "last_used_in": [
     "redshift_0042",

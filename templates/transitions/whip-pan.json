@@ -13,6 +13,7 @@
     "pan",
     "shader"
   ],
+  "needs": [],
   "renderer": "whip_pan_shader",
   "last_used_in": [],
   "added": "2026-09-03"

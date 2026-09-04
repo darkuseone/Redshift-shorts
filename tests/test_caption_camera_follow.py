@@ -170,7 +170,9 @@ def test_gold_maps_to_brand_accent(cfg):
     assert "var(--color-accent)" in css
     assert "#ffd84d" not in css
     full = build_css(cfg.brandbook, {"display": "Oswald-Bold.ttf"})
-    assert "--color-accent: #C8453D;" in full
+    # Цвет читается из брендбука: акцент канала сменился на #E63946, и тест,
+    # знающий его наизусть, ломался бы на правке палитры, а не кода.
+    assert f"--color-accent: {cfg.brandbook['colors']['accent']};" in full
     assert ".caption-camera{" in full
 
 
@@ -194,5 +196,5 @@ def test_adjacent_phrases_use_two_tracks(cfg):
     assert {t for _, t in tracks} <= {"18", "19"}
 
 
-def test_brandbook_default_caption_is_gradient_fill(cfg):
-    assert cfg.brand("subtitles.caption") == "gradient-fill"
+def test_brandbook_default_caption_is_the_glow_of_the_channel(cfg):
+    assert cfg.brand("subtitles.caption") == "glow"

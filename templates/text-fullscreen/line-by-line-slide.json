@@ -19,6 +19,9 @@
     "kinetic",
     "stack"
   ],
+  "needs": [
+    "list"
+  ],
   "renderer": "line_by_line_slide",
   "last_used_in": [],
   "added": "2026-09-02"

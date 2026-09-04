@@ -13,6 +13,9 @@
     "thermal",
     "shader"
   ],
+  "needs": [
+    "danger"
+  ],
   "renderer": "thermal_distortion",
   "last_used_in": [],
   "added": "2026-09-03"

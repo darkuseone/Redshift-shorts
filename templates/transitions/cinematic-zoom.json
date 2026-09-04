@@ -15,6 +15,7 @@
     "zoom",
     "shader"
   ],
+  "needs": [],
   "renderer": "cinematic_zoom",
   "last_used_in": [],
   "added": "2026-09-03"

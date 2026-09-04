@@ -16,6 +16,10 @@
     "particles",
     "developer"
   ],
+  "needs": [
+    "device",
+    "discovery"
+  ],
   "renderer": "code_particle_assemble",
   "last_used_in": [],
   "added": "2026-09-03"

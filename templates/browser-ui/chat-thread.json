@@ -15,6 +15,9 @@
     "ai",
     "chat"
   ],
+  "needs": [
+    "question"
+  ],
   "renderer": "chat_thread",
   "last_used_in": [],
   "added": "2026-09-02",

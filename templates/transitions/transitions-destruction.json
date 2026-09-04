@@ -13,6 +13,10 @@
     "burn",
     "destruction"
   ],
+  "needs": [
+    "danger",
+    "negation"
+  ],
   "renderer": "transitions_destruction",
   "last_used_in": [],
   "added": "2026-09-03"

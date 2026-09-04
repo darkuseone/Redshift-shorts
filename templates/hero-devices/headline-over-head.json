@@ -16,6 +16,7 @@
     "alpha",
     "text"
   ],
+  "needs": [],
   "renderer": "hero-headline",
   "last_used_in": [
     "redshift_0046"

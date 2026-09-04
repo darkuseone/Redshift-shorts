@@ -17,6 +17,7 @@
     "overlay",
     "podcast"
   ],
+  "needs": [],
   "renderer": "lt_clean_bar",
   "last_used_in": [],
   "added": "2026-09-03"

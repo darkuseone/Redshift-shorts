@@ -79,7 +79,7 @@ class TestIntakeMeasuresBeforeItAccepts:
                          bed_id="live_one", tags=["strings", "space", "wide"],
                          title="живые струнные")
         assert report["warnings"] == []
-        assert report["measured"]["duration_sec"] == pytest.approx(60.0, abs=0.3)
+        assert report["measured"]["duration_sec"] == pytest.approx(70.0, abs=0.3)
         assert [b["id"] for b in library_status(cfg)["beds"]] == ["music_live_one"]
 
     def test_the_interesting_part_is_cut_not_the_intro(self, cfg, tmp_path):
@@ -285,3 +285,76 @@ class TestThePlanReachesTheMix:
 
         assert choose_bed(cfg, {"video_id": "redshift_0047",
                                 "music_tags": ["space"]}) is None
+
+
+class TestTheBedIsAShareOfTheVoice:
+    """Уровень подложки задан долей от голоса, а не абсолютным LUFS.
+
+    Заказчик думает именно так — «5-7% громкости от моего голоса», — и
+    переводить это в LUFS руками при каждой правке значит однажды перевести
+    неверно. Доля амплитудная: 0.06 → −24.4 дБ от голоса.
+    """
+
+    def test_the_target_matches_the_requested_share(self):
+        import math
+
+        from src.lib.config import load_config
+        from src.p10_audio.audio_build import music_target_lufs
+
+        cfg = load_config()
+        ratio = cfg.get("audio.music_voice_ratio")
+        assert ratio, "доля не задана — уровень снова абсолютный"
+        voice = float(cfg.get("audio.voice_lufs", -14))
+        share = 10 ** ((music_target_lufs(cfg) - voice) / 20)
+        # Цель округлена до сотых децибела, поэтому доля попадает в коридор с
+        # точностью до 0.01 дБ — на границе коридора это ±0.02 % громкости.
+        slack = 0.0002
+        assert float(ratio[0]) - slack <= share <= float(ratio[-1]) + slack, \
+            f"{share:.3f} вне коридора {ratio}"
+
+    def test_qc_measures_the_same_corridor_the_mix_aims_at(self):
+        """Два места с одним смыслом обязаны считать одинаково.
+
+        Иначе QC однажды забракует ровно то, что конвейер сам и собрал.
+        """
+        import math
+
+        from src.lib.config import load_config
+        from src.p10_audio.audio_build import music_target_lufs
+
+        cfg = load_config()
+        ratio = cfg.get("audio.music_voice_ratio")
+        voice = float(cfg.get("audio.voice_lufs", -14))
+        lo = voice + 20 * math.log10(float(ratio[0])) - 1.5
+        hi = voice + 20 * math.log10(float(ratio[-1])) + 1.5
+        assert lo < music_target_lufs(cfg) < hi
+
+    def test_an_absolute_corridor_still_works_without_a_share(self):
+        """Запасной путь: доля не задана — берём абсолютные числа."""
+        from src.lib.config import load_config
+        from src.p10_audio.audio_build import music_target_lufs
+
+        cfg = load_config()
+        cfg.set("audio.music_voice_ratio", None)
+        cfg.set("audio.music_lufs", [-40, -36])
+        assert music_target_lufs(cfg) == pytest.approx(-38.0)
+
+
+def test_every_bed_is_cut_to_the_length_of_a_whole_video():
+    """70 секунд — потолок длины ролика: подложка не повторится ни разу.
+
+    Заказчик назвал это число прямо. До него резали по 60, и в самом длинном
+    ролике петля успевала прозвучать дважды.
+    """
+    import json
+    from pathlib import Path
+
+    manifest = Path("assets/music/music_manifest.json")
+    if not manifest.exists():
+        pytest.skip("манифеста нет")
+    items = json.loads(manifest.read_text("utf-8"))["items"]
+    if not items:
+        pytest.skip("библиотека пуста")
+    for item in items:
+        assert item["duration_sec"] == pytest.approx(70.0, abs=0.5), \
+            f"{item['id']}: {item['duration_sec']} сек"

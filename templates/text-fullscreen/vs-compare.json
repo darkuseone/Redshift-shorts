@@ -13,6 +13,9 @@
   "tags": [
     "compare"
   ],
+  "needs": [
+    "comparison"
+  ],
   "renderer": "fullscreen_text",
   "last_used_in": [
     "redshift_0044"

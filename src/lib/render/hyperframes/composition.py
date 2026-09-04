@@ -27,6 +27,8 @@ import html
 from typing import Any
 
 from ..text_rules import subtitle_word
+from .canvas_fx import canvas_js, canvas_node, canvas_tween
+from .templates import brand_marks_node
 from ...backdrop import SCENES, pick_scene, tone as scene_tone
 from .captions import (
     TRACK_CAPTION_ACCENT_EVEN, TRACK_CAPTION_ACCENT_ODD,
@@ -36,9 +38,8 @@ from .captions import (
 )
 from .templates import (
     OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens, fit_size,
-    render_dataviz, render_fullscreen, render_hero, render_motion,
-    render_overlay, render_transition, text_width,
-    fit_size as fit_text_size,
+    fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
+    render_motion, render_overlay, render_transition, text_width,
 )
 
 TRACK_STAGE = 0
@@ -48,22 +49,25 @@ TRACK_AVATAR = 3
 TRACK_BEHIND_HEAD = 4
 TRACK_OVERLAY = 5      # и следующие, если плашки пересекаются во времени
 TRACK_TRANSITION = 11
+# Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
+# там герой. 18/19 не пересекаются со звуком (20).
+# TRACK_SUBTITLE — алиас на чётный caption-трек для старых тестов.
+TRACK_SUBTITLE = TRACK_CAPTION_EVEN
 # Приёмы вокруг ведущего чередуют треки по той же причине, что и шоты: соседние
 # кадры стыкуются встык, а окно видимости клипа включает оба конца.
 TRACK_HERO_EVEN = 13
 TRACK_HERO_ODD = 14
-# Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
-# там герой. 18/19 не пересекаются со звуком (20).
-assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
-# Совпадает с чётным треком фраз: пословный pop-in с main ушёл, субтитр
-# живёт жестами caption на 18/19. Тесты, которые смотрят TRACK_SUBTITLE,
-# видят фразы gradient-fill.
-TRACK_SUBTITLE = TRACK_CAPTION_EVEN
 # Фон под полноэкранным текстом. Свой трек, а не трек шота: сам текст уже
 # занимает трек шота, а видео внутри клипа с таймингом застывает первым кадром
 # (lint: video_nested_in_timed_element) — значит, фон обязан быть отдельным
 # клипом, и класть его на соседний трек нельзя, там встык стоят соседние шоты.
 TRACK_FS_BG = 15
+# Графика брендбука: свой трек, иначе она встаёт на трек шота и пересекается
+# с ним по времени — движок считает это конфликтом клипов.
+TRACK_MARKS = 16
+# Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
+# там герой. 18/19 не пересекаются со звуком (20).
+assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
 TRACK_AUDIO = 20
 assert TRACK_CAPTION_ACCENT_EVEN == 21 and TRACK_CAPTION_ACCENT_ODD == 22
 
@@ -168,6 +172,11 @@ class CompositionBuilder:
         self.duration = float(plan["duration_sec"])
         self.fps = int(plan["fps"])
         self.tweens: list[str] = []
+        # Какие эффекты холста понадобились: их реестр пишется в страницу
+        # только когда он и правда нужен.
+        self.canvas_used: set[str] = set()
+        # Сколько раз графика брендбука уже вышла в кадр.
+        self.marks_placed = 0
         self.stats = {"shots": 0, "overlay_draws": 0, "subtitle_words": 0,
                       "avatar_clips": 0}
 
@@ -244,7 +253,18 @@ class CompositionBuilder:
                 out[int(slot)] = node_id
         return out
 
-    def _scene_backdrop(self, node_id: str, timing: str) -> str:
+    # Какой холст живёт под какой сценой. Комната остаётся без него: там за
+    # ведущим студия, и звёзды в ней читались бы декорацией.
+    SCENE_FX: dict[str, str] = {
+        "space": "starfield",
+        "grid": "scan-grid",
+        "horizon": "orbit",
+        "depth": "dust",
+    }
+
+    def _scene_backdrop(self, node_id: str, timing: str, *,
+                        start: float | None = None,
+                        duration: float | None = None) -> str:
         """Запасной фон слота: сцена ролика вместо дыры в кадре.
 
         Дыра в кадре не чёрная, а светлая: ``.stage-bg`` заливает кадр
@@ -257,8 +277,24 @@ class CompositionBuilder:
         показывать зрителю пустой лист — сцена ролика по теме, она тёмная и
         она уже собрана.
         """
+        # Поверх градиента сцены — холст: звёздное поле, орбиты, пыль или
+        # сетка. Это рисование, а не прямоугольники: CSS даёт фиксированный
+        # узор, который виден повтором, а линию по кривой не проводит вовсе.
+        effect = self.SCENE_FX.get(self.scene, "")
+        canvas = ""
+        if effect and start is not None and duration is not None and duration > 0:
+            fx_id = f"{node_id}-fx"
+            canvas = canvas_node(fx_id, timing="", css=f"fx-{effect}",
+                                 width=self.width, height=self.height)
+            # Зерно от места на ленте: два фона одного ролика не повторяют
+            # друг друга, но каждый повторяем сам по себе.
+            seed = int(round(float(start) * 1000)) % 9973 + 7
+            self.tweens.append(canvas_tween(
+                fx_id, effect, start=float(start), duration=float(duration),
+                params={"seed": seed}))
+            self.canvas_used.add(effect)
         return (f'<div id="{node_id}" class="clip shot-bg" {timing}>'
-                f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
+                f'<div class="vfx scene-{self.scene}">{self._plate()}{canvas}</div></div>')
 
     def _shot_nodes(self) -> list[str]:
         nodes: list[str] = []
@@ -281,34 +317,41 @@ class CompositionBuilder:
             tr_sec = self._transition_duration(shot)
 
             if kind == "fullscreen_text":
+                # Фон под полноэкранным текстом кладётся всегда: без него
+                # фраза встаёт на сплошную заливку, и на 0047 «180 ГРАДУСОВ»
+                # шло белыми буквами по белому листу посреди тёмного ролика.
+                # Материала нет — берётся сцена ролика, та же, что за ведущим.
                 src = self._asset(shot.get("file"))
                 if src:
                     nodes.append(self._media_node(
                         f"{node_id}-bg", src,
                         _timing(start, start + duration, TRACK_FS_BG), css="fs-bg"))
                 else:
-                    # Материала под кадр не нашлось — это бывает, и в отчёт это
-                    # уходит как gap_reason. Но фраза не имеет права вставать на
-                    # пустую заливку: на 0047 «180 ГРАДУСОВ» шло белыми буквами
-                    # по белому листу посреди тёмного ролика. Запасной фон —
-                    # сцена ролика, та же, что за ведущим: она по теме, она
-                    # тёмная и она уже есть.
                     nodes.append(self._scene_backdrop(
                         f"{node_id}-bg",
-                        _timing(start, start + duration, TRACK_FS_BG)))
+                        _timing(start, start + duration, TRACK_FS_BG),
+                        start=start, duration=duration))
+                # Сам кадр рисует приём шаблона: renderer и params, а не одна
+                # заготовка на все девятнадцать `text-fullscreen`.
                 piece = self._fullscreen_piece(node_id, shot, start, duration,
                                                track, tr_sec)
-                nodes.extend(
-                    n.replace('class="clip fullscreen-text',
-                              'class="clip fullscreen-text over-media')
-                    for n in piece.nodes)
+                nodes.extend(piece.nodes)
                 self.tweens.extend(piece.tweens)
+                # Графика брендбука (раздел 06) — на карточные моменты, и не
+                # больше потолка: рамка в каждом кадре перестаёт читаться
+                # приёмом и становится шумом.
+                marks = self._brand_marks(node_id, start, duration, TRACK_MARKS)
+                if marks:
+                    nodes.append(marks)
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
-                nodes.append(
-                    f'<div id="{node_id}" class="clip shot-bg" {timing}>'
-                    f'<div class="vfx scene-{self.scene}">{self._plate()}</div></div>')
+                # Тот же запасной фон, что и у пустого слота: сцена ролика с
+                # холстом поверх. Раньше здесь стояла своя копия разметки — и
+                # звёздное поле не доходило до самого частого кадра ролика,
+                # хотя ведущий занимает 35-60 % хронометража.
+                nodes.append(self._scene_backdrop(node_id, timing,
+                                                  start=start, duration=duration))
             elif index in avatar_nodes or kind == "avatar":
                 # Аватар без альфы приходит со своим фоном и занимает кадр
                 # целиком: подкладывать под него нечего. Но переход ему нужен.
@@ -318,7 +361,8 @@ class CompositionBuilder:
                 if src:
                     nodes.append(self._media_node(node_id, src, timing, css="meme"))
                 else:
-                    nodes.append(self._scene_backdrop(node_id, timing))
+                    nodes.append(self._scene_backdrop(node_id, timing,
+                                                      start=start, duration=duration))
             else:
                 src = self._asset(shot.get("file"))
                 if src:
@@ -327,7 +371,8 @@ class CompositionBuilder:
                     self._add_kenburns(node_id, shot, start + tr_sec,
                                        max(0.1, duration - tr_sec))
                 else:
-                    nodes.append(self._scene_backdrop(node_id, timing))
+                    nodes.append(self._scene_backdrop(node_id, timing,
+                                                      start=start, duration=duration))
             nodes += self._add_transition(target, shot, start)
             self.stats["shots"] += 1
         return nodes
@@ -341,6 +386,26 @@ class CompositionBuilder:
             offset = f' data-media-start="{_num(media_start)}"'
         return (f'<video id="{node_id}" class="{css}" src="{_esc(src)}" '
                 f'{timing}{offset} muted playsinline></video>')
+
+    def _brand_marks(self, node_id: str, start: float, duration: float,
+                     track: int) -> str:
+        """Технические уголки брендбука поверх карточного кадра."""
+        spec = self.brandbook.get("brand_marks") or {}
+        limit = int(spec.get("per_video_max", 0))
+        if limit <= 0 or self.marks_placed >= limit:
+            return ""
+        self.marks_placed += 1
+        mark_id = f"{node_id}-marks"
+        svg = brand_marks_node(mark_id, spec, self.brandbook["safe_zones"]["work_area"],
+                               width=self.width, height=self.height)
+        enter = float(spec.get("enter_ms", 260)) / 1000.0
+        # Уголки приезжают из-за края рабочей зоны, а не проявляются: словарь
+        # появления §H7 — всё приближается, ничего не включается.
+        self.tweens.append(
+            f'tl.fromTo("#{mark_id}",{{scale:1.06}},{{scale:1,'
+            f'duration:{enter:.3f},ease:"power2.out"}},{_num(start)});')
+        timing = _timing(start, start + duration, track)
+        return f'<div class="clip" {timing}>{svg}</div>'
 
     def _fullscreen_piece(self, node_id: str, shot: dict[str, Any],
                           start: float, duration: float, track: int,
@@ -360,9 +425,19 @@ class CompositionBuilder:
         })
         if "size_px" not in params:
             params["size_px"] = int(fs["size_px"][1])
-        return render_fullscreen(TemplateCtx(
+        piece = render_fullscreen(TemplateCtx(
             index=int(shot["index"]), start=start, duration=duration,
             target=node_id, track=track, params=params))
+        # Под кадром всегда лежит материал или сцена, поэтому сплошная заливка
+        # `.fullscreen-text` обязана уступить место затемнению: класс
+        # `over-media` гасит фон и оставляет скрим. Ставится здесь, а не в
+        # каждом из десяти рендереров, — иначе первый же новый приём про него
+        # забудет и вернёт белую плиту.
+        if piece.nodes:
+            piece.nodes[0] = piece.nodes[0].replace(
+                'class="clip fullscreen-text', 'class="clip fullscreen-text over-media', 1)
+        return piece
+
 
     def _add_kenburns(self, node_id: str, shot: dict[str, Any],
                       start: float, duration: float) -> None:
@@ -538,8 +613,8 @@ class CompositionBuilder:
         nodes: list[str] = []
         for i, (ovl, track) in enumerate(zip(overlays, tracks)):
             start = float(ovl["start"])
+            duration = max(0.0, float(ovl["end"]) - start)
             node_id = f"ovl-{i:02d}"
-            duration = float(ovl["end"]) - start
             piece = self._overlay_piece(node_id, ovl, start, duration, track)
             if piece is not None:
                 nodes += piece.nodes
@@ -581,33 +656,6 @@ class CompositionBuilder:
                               params=params)
             piece = render_fullscreen(ctx)
             return piece if piece.nodes else Piece()
-        if (renderer == "lt_accent_underline" or params.get("accent_underline")
-                or template_id.endswith("accent-underline")):
-            work = self.brandbook["safe_zones"]["work_area"]
-            params.setdefault("available_px", int(work["x_max"]) - int(work["x_min"]))
-            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
-                              duration=duration, target=node_id, track=track,
-                              params=params)
-            piece = render_overlay("lt_accent_underline", ctx)
-            return piece if piece.nodes else None
-        if (renderer == "lt_clean_bar" or params.get("clean_bar")
-                or template_id.endswith("clean-bar")):
-            work = self.brandbook["safe_zones"]["work_area"]
-            params.setdefault("available_px", int(work["x_max"]) - int(work["x_min"]))
-            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
-                              duration=duration, target=node_id, track=track,
-                              params=params)
-            piece = render_overlay("lt_clean_bar", ctx)
-            return piece if piece.nodes else None
-        if (renderer == "lt_dark_card" or params.get("dark_card")
-                or template_id.endswith("dark-card")):
-            work = self.brandbook["safe_zones"]["work_area"]
-            params.setdefault("available_px", int(work["x_max"]) - int(work["x_min"]))
-            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
-                              duration=duration, target=node_id, track=track,
-                              params=params)
-            piece = render_overlay("lt_dark_card", ctx)
-            return piece if piece.nodes else None
         overlay_name = renderer if renderer in OVERLAYS else ""
         if not overlay_name and kind in OVERLAYS:
             overlay_name = kind
@@ -807,6 +855,10 @@ class CompositionBuilder:
 
         indented = "\n      ".join(body)
         tweens = "\n      ".join(self.tweens)
+        # Реестр эффектов холста пишется только тогда, когда холст в кадре
+        # есть: страница без него не носит лишнего килобайта скрипта.
+        canvas_registry = (canvas_js(self.brandbook.get("colors", {}))
+                           if self.canvas_used else "")
         title = f'{self.plan["video_id"]} {self.plan["variant"]}'
 
         return f"""<!doctype html>
@@ -832,6 +884,7 @@ class CompositionBuilder:
       {indented}
     </div>
     <script>
+      {canvas_registry}
       window.__timelines = window.__timelines || {{}};
       const tl = gsap.timeline({{ paused: true }});
       {tweens}

@@ -13,6 +13,10 @@
     "glitch",
     "shader"
   ],
+  "needs": [
+    "danger",
+    "negation"
+  ],
   "renderer": "glitch_shader",
   "last_used_in": [],
   "added": "2026-09-03"

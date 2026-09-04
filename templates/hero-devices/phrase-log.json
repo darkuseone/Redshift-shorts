@@ -17,6 +17,9 @@
     "lines",
     "sync"
   ],
+  "needs": [
+    "list"
+  ],
   "renderer": "hero-log",
   "last_used_in": [
     "redshift_0047"

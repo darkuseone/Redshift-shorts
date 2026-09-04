@@ -14,6 +14,9 @@
     "hook",
     "number"
   ],
+  "needs": [
+    "number"
+  ],
   "renderer": "fullscreen_text",
   "last_used_in": [],
   "added": "2026-08-18"

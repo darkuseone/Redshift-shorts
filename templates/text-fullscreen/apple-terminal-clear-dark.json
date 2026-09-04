@@ -18,6 +18,9 @@
     "apple",
     "apple-terminal"
   ],
+  "needs": [
+    "device"
+  ],
   "renderer": "apple_terminal_clear_dark",
   "last_used_in": [],
   "added": "2026-09-03"

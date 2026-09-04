@@ -15,10 +15,12 @@
     "ui",
     "typing"
   ],
+  "needs": [],
   "renderer": "source_card",
   "last_used_in": [
     "redshift_0044",
-    "redshift_0045"
+    "redshift_0045",
+    "redshift_0042"
   ],
   "added": "2026-08-18"
 }

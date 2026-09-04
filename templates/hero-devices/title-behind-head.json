@@ -14,6 +14,7 @@
     "text",
     "behind"
   ],
+  "needs": [],
   "renderer": "hero-title-behind",
   "last_used_in": [
     "redshift_0047"

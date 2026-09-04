@@ -13,6 +13,7 @@
     "flash",
     "cut"
   ],
+  "needs": [],
   "renderer": "transitions_other",
   "last_used_in": [],
   "added": "2026-09-03"

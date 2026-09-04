@@ -13,6 +13,7 @@
     "iris",
     "shader"
   ],
+  "needs": [],
   "renderer": "sdf_iris",
   "last_used_in": [],
   "added": "2026-09-03"

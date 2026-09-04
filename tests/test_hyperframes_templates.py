@@ -2175,7 +2175,7 @@ def test_every_css_variable_is_defined():
     defined = {m.group(1) for m in re.finditer(r"(--[\w-]+)\s*:", root.group(1))}
     used = {m.group(1) for m in re.finditer(r"var\((--[\w-]+)", css)}
     # Эти две ставит сам шаблон в атрибуте style каждого луча.
-    inline = {"--a", "--len"}
+    inline = {"--a", "--len", "--blend-mode"}
     assert not (used - defined - inline), sorted(used - defined - inline)
 
 
@@ -2888,15 +2888,15 @@ def test_line_by_line_slide_direction_and_tone():
 def test_logo_brand_close_cascades_letters_and_keeps_the_period_accent():
     """Каталог: cqw/em и measure. Здесь px, точка accent, HOLD без дрейфа."""
     piece = render_fullscreen(_fs_ctx(
-        wordmark="РЕДШИФТ", tagline="Пиши код. Шли на орбиту.",
+        wordmark="REDSHIFT", tagline="Write code. Ship to orbit.",
         url="redshift.shorts", renderer="logo_brand_close",
         logo_close=True, exit="none", duration=4.0))
     node = piece.nodes[0]
     assert "lbc-mark" in node
     assert "lbc-dot" in node
-    assert "lbc-tag" in node and "Пиши код" in node
+    assert "lbc-tag" in node and "Write code" in node
     assert "lbc-url" in node and "redshift.shorts" in node
-    assert node.count("lbc-ch") == len("РЕДШИФТ")
+    assert node.count("lbc-ch") == len("REDSHIFT")
     assert "lbc-dot" in node
     body = " ".join(piece.tweens)
     assert "cqw" not in node and "cqh" not in node
@@ -2916,12 +2916,12 @@ def test_logo_brand_close_cascades_letters_and_keeps_the_period_accent():
     ids = re.findall(r'id="([^"]+)"', node)
     assert len(ids) == len(set(ids))
     from src.lib.render.hyperframes.templates import _lbc_copy, _lbc_body_and_dot
-    assert _lbc_copy({})[0] == "РЕДШИФТ"
-    assert _lbc_body_and_dot("РЕДШИФТ.") == ("РЕДШИФТ", ".")
+    assert _lbc_copy({})[0] == "REDSHIFT"
+    assert _lbc_body_and_dot("REDSHIFT.") == ("REDSHIFT", ".")
     doubled = render_fullscreen(_fs_ctx(
-        wordmark="РЕДШИФТ.", renderer="logo_brand_close", duration=4.0))
+        wordmark="REDSHIFT.", renderer="logo_brand_close", duration=4.0))
     assert doubled.nodes[0].count("lbc-dot") == 1
-    assert doubled.nodes[0].count("lbc-ch") == len("РЕДШИФТ")
+    assert doubled.nodes[0].count("lbc-ch") == len("REDSHIFT")
 
 
 def test_logo_brand_close_exit_and_hidden_lines():

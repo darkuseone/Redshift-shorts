@@ -14,6 +14,7 @@
     "dynamic",
     "blur"
   ],
+  "needs": [],
   "renderer": "blur_dip",
   "last_used_in": [
     "redshift_0042",

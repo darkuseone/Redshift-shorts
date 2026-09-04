@@ -16,7 +16,10 @@ from typing import Any
 
 from ...backdrop import backdrop_css
 from .captions import caption_css
-from .templates import dataviz_css, hero_css, overlay_css, split_css, transition_css
+from .templates import (
+    brand_marks_css, dataviz_css, hero_css, overlay_css, split_css,
+    transition_css,
+)
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
 # отвечает за пересечения во времени, а не за то, что лежит поверх чего.
@@ -91,8 +94,10 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     for role, file_name in fonts.items():
         parts.append(_font_face(f"RS {role.title()}", file_name))
 
+    # Ключи с подчёркиванием в начале — комментарии брендбука, а не цвета:
+    # без этой отсечки в CSS уезжала переменная --color--comment с текстом.
     var_lines = [f"--color-{name.replace('_', '-')}: {value};"
-                 for name, value in colors.items()]
+                 for name, value in colors.items() if not name.startswith("_")]
     var_lines += [
         f"--frame-w: {width}px;",
         f"--frame-h: {height}px;",
@@ -113,7 +118,6 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # заливка на тёмной сцене превращает приём в чёрное по чёрному, и
         # слово читается только там, где за ним оказалось лицо.
         "--color-knockout: var(--color-ink);",
-        "--blend-mode: difference;",
     ]
     parts.append(":root{" + "".join(var_lines) + "}")
 
@@ -126,8 +130,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"#root{{position:relative;width:var(--frame-w);height:var(--frame-h);"
         f"overflow:hidden;font-family:var(--font-subtitle);"
         "isolation:isolate}"
+        # Основание кадра — космос брендбука. Светлым оно осталось от старой
+        # палитры, и всякая дыра в раскладке показывала белый лист посреди
+        # тёмного ролика: на пересборке 0047 так вышло три кадра подряд.
         f".stage-bg{{position:absolute;inset:0;z-index:{Z_STAGE};"
-        "background:var(--color-bg-light)}"
+        "background:var(--color-space-deep)}"
     )
 
     # --- шоты -----------------------------------------------------------
@@ -254,10 +261,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     parts.append(
         f".credit{{position:absolute;left:var(--safe-x-min);"
         f"bottom:{credit_bottom}px;z-index:{Z_OVERLAY};"
-        "font-family:var(--font-mono);font-size:18px;letter-spacing:.08em;"
-        "text-transform:uppercase;color:rgba(255,255,255,0.55);"
+        "font-family:var(--font-mono);font-size:22px;letter-spacing:.08em;"
+        "text-transform:uppercase;color:rgba(255,255,255,0.62);"
         "text-shadow:0 1px 6px rgba(0,0,0,0.7);pointer-events:none}"
     )
+    # Жесты живут в caption_css: pop-in Nunito больше не рисуется.
     parts.append(caption_css(brandbook))
 
     # --- полноэкранный текст (§5.2) ------------------------------------
@@ -267,10 +275,15 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f".fullscreen-text{{position:absolute;inset:0;z-index:{Z_OVERLAY};"
         "display:flex;align-items:center;justify-content:center;"
         "padding:0 var(--safe-x-min);text-align:center;"
-        "background:var(--color-bg-pure);color:var(--color-ink);"
+        # Заливки нет: под фразой всегда лежит материал или сцена ролика, а
+        # сплошная плита — то, на что заказчик жаловался прямо. Кто хочет
+        # плиту, берёт `.solid`.
+        "background:transparent;color:var(--color-bg-pure);"
         "font-family:var(--font-display);text-transform:uppercase;"
         f"font-size:{int(fs['size_px'][1])}px;line-height:0.94}}"
-        ".fullscreen-text.invert{background:var(--color-ink);color:var(--color-bg-pure)}"
+        ".fullscreen-text.invert{background:var(--color-space-deep);"
+        "color:var(--color-bg-pure)}"
+        ".fullscreen-text.solid{background:var(--color-space-deep)}"
         ".fullscreen-text .accent{color:var(--color-accent)}"
         # Кадр с материалом за текстом: заливка уступает место футажу, а
         # читаемость держит затемнение. Сплошной цвет здесь оставлял белые
@@ -286,7 +299,18 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     parts.append(
         f".meme{{position:absolute;inset:0;z-index:{Z_SHOT};"
         "width:var(--frame-w);height:var(--frame-h);object-fit:contain;"
-        "background:var(--color-bg-light)}"
+        "background:var(--color-space-deep)}"
+    )
+
+    # --- графика брендбука (раздел 06) ----------------------------------
+    parts.append(brand_marks_css(brandbook))
+
+    # --- холст поверх сцены (canvas_fx.py) ------------------------------
+    # Холст лежит в клипе фона и растягивается на кадр. Видимостью управляет
+    # движок через `data-*` на самом клипе, поэтому здесь только геометрия.
+    parts.append(
+        ".fx-canvas{position:absolute;inset:0;width:100%;height:100%;"
+        "display:block;pointer-events:none;z-index:2}"
     )
 
     # --- плашки и карточки (§5.4, §5.6) ---------------------------------
@@ -297,12 +321,18 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".plaque{left:var(--safe-x-min);right:calc(var(--frame-w) - var(--safe-x-max));"
         f"bottom:{height - int(safe['y_max']) + 60}px;padding:26px 34px;"
         f"border-radius:{int(plaque['radius_px_default'])}px;"
-        f"background:{_rgba(colors['bg_light'], plaque['bg_alpha'])};color:var(--color-ink);"
-        f"border:{int(plaque['border_px'])}px solid {_rgba(colors['accent'], plaque['border_alpha'])};"
+        # Цвета плашки берутся из брендбука, а не стоят числами. Стояли: фон
+        # 247,245,243 и рамка 192,57,43 — второй такой краски в палитре уже не
+        # было вовсе, и смена акцента её не трогала.
+        f"background:{_rgba(colors[str(plaque.get('bg', 'panel'))], float(plaque['bg_alpha']))};"
+        f"color:var(--color-{str(plaque.get('text', 'bg_pure')).replace('_', '-')});"
+        f"border:{int(plaque['border_px'])}px solid "
+        f"{_rgba(colors[str(plaque.get('border_color', 'accent'))], float(plaque['border_alpha']))};"
         "font-family:var(--font-subtitle);font-weight:800;font-size:44px;"
         f"box-shadow:0 {int(shadow['offset_y_px'])}px {int(shadow['blur_px'])}px "
         f"rgba(0,0,0,{shadow['alpha']})}}"
-        ".plaque .kicker{display:block;font-size:28px;color:var(--color-muted);"
+        ".plaque .kicker{display:block;font-size:28px;"
+        f"color:var(--color-{str(plaque.get('kicker', 'muted')).replace('_', '-')});"
         "margin-top:8px;font-weight:700}"
     )
     # Карточка источника прижимается снизу к полосе субтитров, а не ставится по
@@ -341,7 +371,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "font-family:var(--font-display);font-size:22px;display:flex;"
         "align-items:center;justify-content:center}"
         ".source-card .snippet{padding:14px 0 0;font-size:30px;"
-        "line-height:1.3;color:var(--color-muted)}"
+        "line-height:1.3;color:#3A3D42}"
         # Начало текста статьи серыми строками: страница продолжается за краем
         # карточки, и это видно без единого лишнего слова в кадре.
         ".source-card .lines{display:flex;flex-direction:column;gap:10px;"
@@ -388,7 +418,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # надписями на тёмной сцене.
         ".stage-dark{--color-on-stage:var(--color-bg-light);"
         "--color-knockout:var(--color-bg-light);"
-        "--stage-halo:rgba(10,10,12,0.85)}"
+        "--stage-halo:rgba(6,8,12,0.85)}"
     )
 
     # Слои переходов (§4.3, §15) — отдельный модуль: их 9 рендереров,
@@ -398,6 +428,9 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     parts.append(overlay_css(brandbook))
     parts.append(split_css(brandbook))
     parts.append(hero_css(brandbook))
+    # Стиль перенесённых приёмов идёт последним: у него свои классы, и он
+    # ничего не переопределяет — но если когда-нибудь начнёт, спор решится
+    # в пользу нашего, а не чужого.
 
     return "\n".join(parts) + "\n"
 

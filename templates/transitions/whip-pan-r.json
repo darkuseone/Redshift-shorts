@@ -15,6 +15,7 @@
     "dynamic",
     "pan"
   ],
+  "needs": [],
   "renderer": "whip_pan",
   "last_used_in": [
     "redshift_0042",

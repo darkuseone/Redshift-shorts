@@ -4,7 +4,7 @@
   "variants": {
     "A": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0047/redshift_0047_A.mp4",
-      "size_bytes": 37929350,
+      "size_bytes": 40081017,
       "duration_sec": 60.2,
       "fps": 30.0,
       "resolution": [
@@ -26,7 +26,7 @@
     },
     "B": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0047/redshift_0047_B.mp4",
-      "size_bytes": 39137655,
+      "size_bytes": 40767353,
       "duration_sec": 60.2,
       "fps": 30.0,
       "resolution": [
@@ -42,8 +42,8 @@
         "overlay_draws": 1,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 1162,
-        "speech_frames": 1162
+        "subtitle_frames": 1348,
+        "speech_frames": 1348
       }
     }
   },
@@ -54,7 +54,7 @@
       "passed": true,
       "passed_count": 19,
       "total": 19,
-      "ai_share": 0.3376,
+      "ai_share": 0.339,
       "checks": [
         {
           "id": "QC-1",
@@ -137,8 +137,8 @@
           "name": "Громкость финального микса",
           "passed": true,
           "value": {
-            "lufs": -14.0,
-            "true_peak_dbtp": -4.46
+            "lufs": -14.01,
+            "true_peak_dbtp": -4.36
           },
           "threshold": {
             "lufs": [
@@ -155,12 +155,12 @@
           "id": "QC-9",
           "name": "Уровень музыкальной подложки",
           "passed": true,
-          "value": null,
+          "value": -37.11,
           "threshold": [
-            -26,
-            -22
+            -38.6,
+            -35.6
           ],
-          "detail": "подложка отсутствует",
+          "detail": "7.0 % от голоса (цель -37.1 LUFS)",
           "timecode_sec": null,
           "blocking": true
         },
@@ -198,7 +198,7 @@
           "id": "QC-13",
           "name": "Тишина в конце",
           "passed": true,
-          "value": 8.0,
+          "value": 0.0,
           "threshold": 300,
           "detail": "",
           "timecode_sec": null,
@@ -208,7 +208,7 @@
           "id": "QC-14",
           "name": "Доля AI-generated футажа",
           "passed": true,
-          "value": 0.3376,
+          "value": 0.339,
           "threshold": 0.35,
           "detail": "",
           "timecode_sec": null,
@@ -285,11 +285,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "не из-за денег и не из-за политики.",
-            "score": 0.78,
-            "summary": "ведущий крупным планом с микрофоном и наложенным текстом",
+            "score": 0.85,
+            "summary": "Ведущий крупно говорит и жестикулирует, текст «ДЕНЕГ» на груди",
             "has_text": false,
             "watermark": false,
-            "reason": "соответствует аватару, но текст ДЕНЕГ конфликтует с фразой «не из-за денег»",
+            "reason": "соответствует хуку и речи про деньги, текст — оформление канала, кадр чистый",
             "judge": "grok"
           },
           {
@@ -299,10 +299,10 @@
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "мировой рекорд, и это всего одна треть",
             "score": 0.85,
-            "summary": "Vertical rock wall with layered strata and depth markers (1000m/1500m)",
+            "summary": "Vertical rock strata with depth markings (-500m, -1200m)",
             "has_text": true,
             "watermark": false,
-            "reason": "Matches world-record depth setup, full-frame vertical footage, real geological material with embedded markings",
+            "reason": "Fits depth/record theme, full-frame vertical footage, real photo with embedded markings",
             "judge": "grok"
           },
           {
@@ -311,11 +311,11 @@
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "неё шёл трещиноватый гранит, а расчёты",
-            "score": 0.85,
-            "summary": "крупный план раскалённой трещиноватой лавы с красным свечением",
+            "score": 0.82,
+            "summary": "Треснувшая тёмная порода с ярко-красными раскалёнными трещинами, крупный текст по центру",
             "has_text": false,
             "watermark": false,
-            "reason": "идеально иллюстрирует «трещиноватый», но материал выглядит стоковым/нейросетевым, а не гранитом",
+            "reason": "Отлично соответствует слову «трещиноватый» и речи, но материал выглядит нейросетевым, текст — каналный субтитр",
             "judge": "grok"
           },
           {
@@ -324,11 +324,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "сам,",
-            "score": 0.95,
-            "summary": "полноэкранный текст «ОНА ТЕЧЁТ» на чёрном фоне",
-            "has_text": false,
+            "score": 0.45,
+            "summary": "Centered terminal prompt with garbled text on black background",
+            "has_text": true,
             "watermark": false,
-            "reason": "точно соответствует замыслу полноэкранного текста, чистый контраст, без артефактов",
+            "reason": "Text inside box is incomplete and unreadable, small centered element instead of full-screen text",
             "judge": "grok"
           },
           {
@@ -337,11 +337,11 @@
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "выдавило из самих",
-            "score": 0.15,
-            "summary": "Тёмный фон с горизонтальными полосами и красным свечением снизу",
+            "score": 0.3,
+            "summary": "Macro shot of a water droplet on a dark misty rock",
             "has_text": false,
             "watermark": false,
-            "reason": "Абстрактный пустой кадр не иллюстрирует речь и замысел твиста, выглядит как неудачный сток/генерация",
+            "reason": "Visual metaphor too vague for 'выдавило из самих', generic stock aesthetic, no direct science/tech link",
             "judge": "grok"
           },
           {
@@ -350,11 +350,11 @@
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "заваренный люк посреди тундры. Мы упёрлись",
-            "score": 0.75,
-            "summary": "тёмный фон с горизонтальными линиями и крупным красным текстом «ПОСРЕДИ» по центру",
+            "score": 0.85,
+            "summary": "Тёмный фон с горизонтальными линиями, красными частицами и крупным словом «ПОСРЕДИ» по центру",
             "has_text": false,
             "watermark": false,
-            "reason": "текст точно соответствует ключевому слову речи, кадр минималистичный и чистый, подходит под перебивку/cta",
+            "reason": "точно попадает в ключевое слово речи, чистая графика, но выглядит синтетически",
             "judge": "grok"
           }
         ],
@@ -375,7 +375,7 @@
       "passed": true,
       "passed_count": 19,
       "total": 19,
-      "ai_share": 0.3157,
+      "ai_share": 0.339,
       "checks": [
         {
           "id": "QC-1",
@@ -458,8 +458,8 @@
           "name": "Громкость финального микса",
           "passed": true,
           "value": {
-            "lufs": -14.0,
-            "true_peak_dbtp": -4.46
+            "lufs": -14.01,
+            "true_peak_dbtp": -4.36
           },
           "threshold": {
             "lufs": [
@@ -476,12 +476,12 @@
           "id": "QC-9",
           "name": "Уровень музыкальной подложки",
           "passed": true,
-          "value": null,
+          "value": -37.11,
           "threshold": [
-            -26,
-            -22
+            -38.6,
+            -35.6
           ],
-          "detail": "подложка отсутствует",
+          "detail": "7.0 % от голоса (цель -37.1 LUFS)",
           "timecode_sec": null,
           "blocking": true
         },
@@ -519,7 +519,7 @@
           "id": "QC-13",
           "name": "Тишина в конце",
           "passed": true,
-          "value": 8.0,
+          "value": 0.0,
           "threshold": 300,
           "detail": "",
           "timecode_sec": null,
@@ -529,7 +529,7 @@
           "id": "QC-14",
           "name": "Доля AI-generated футажа",
           "passed": true,
-          "value": 0.3157,
+          "value": 0.339,
           "threshold": 0.35,
           "detail": "",
           "timecode_sec": null,
@@ -606,11 +606,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "не из-за денег и не из-за политики.",
-            "score": 0.85,
-            "summary": "Man in green shirt speaking with red text ДЕНЕГ over chest and mic visible",
+            "score": 0.9,
+            "summary": "Ведущий крупным планом с наложенным словом ДЕНЕГ",
             "has_text": false,
             "watermark": false,
-            "reason": "text matches speech topic, clean close-up, no defects or artifacts",
+            "reason": "Точно соответствует хуку про деньги, чистый кадр без артефактов",
             "judge": "grok"
           },
           {
@@ -620,10 +620,10 @@
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "мировой рекорд, и это всего одна треть",
             "score": 0.82,
-            "summary": "Вертикальный кадр геологического разреза с маркировкой возраста слоёв",
+            "summary": "vertical geological strata diagram with layer labels",
             "has_text": true,
             "watermark": false,
-            "reason": "Полнокадровый футаж по теме, текст — часть исходного материала, соответствует setup о рекорде",
+            "reason": "matches setup for 'world record' geology topic, but diagram text and rendered look lower score slightly",
             "judge": "grok"
           },
           {
@@ -632,11 +632,11 @@
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "неё шёл трещиноватый гранит, а расчёты",
-            "score": 0.95,
-            "summary": "Крупный план тёмной скалы с ярко-красными раскалёнными трещинами и наложенным словом «ТРЕЩИНОВАТЫЙ»",
+            "score": 0.82,
+            "summary": "Раскалённый треснувший камень с красным свечением на песке",
             "has_text": false,
             "watermark": false,
-            "reason": "идеально иллюстрирует «трещиноватый гранит», текст — оформление канала",
+            "reason": "Кадр точно иллюстрирует «трещиноватый», но свечение делает его больше лавовым, чем гранитом; оформление канала не считается",
             "judge": "grok"
           },
           {
@@ -645,11 +645,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "сам,",
-            "score": 0.85,
-            "summary": "полноэкранный текст «ОНА ТЕЧЁТ» на тёмном фоне с сетью линий",
+            "score": 0.55,
+            "summary": "текст «ОНА ТЕЧЁТ» по центру на тёмном фоне из зелёных линий сети с красными уголками",
             "has_text": false,
             "watermark": false,
-            "reason": "соответствует замыслу крупного текста, фон стоковый, но оформление чистое и читаемое",
+            "reason": "текст по замыслу, но речь «сам» не соответствует; красные метки в углах; фон выглядит стоковым",
             "judge": "grok"
           },
           {
@@ -657,12 +657,12 @@
             "shot_index": 17,
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
-            "spoken": "выдавило из самих",
-            "score": 0.15,
-            "summary": "dark abstract background with horizontal stripes and faint red glow at bottom",
+            "spoken": "воду. Её выдавило из самих",
+            "score": 0.9,
+            "summary": "Капля воды на тёмном мокром камне с крупной надписью",
             "has_text": false,
             "watermark": false,
-            "reason": "completely unrelated to speech about being squeezed out; empty dark frame fails as twist cutaway",
+            "reason": "Прямо иллюстрирует «воду выдавило», идеально по смыслу и замыслу твиста",
             "judge": "grok"
           },
           {
@@ -670,49 +670,144 @@
             "shot_index": 21,
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
-            "spoken": "люк посреди тундры. Мы упёрлись",
-            "score": 0.88,
-            "summary": "Тёмный фон с горизонтальными полосами и крупным красным текстом «ПОСРЕДИ» по центру",
+            "spoken": "заваренный люк посреди тундры. Мы упёрлись",
+            "score": 0.85,
+            "summary": "тёмный фон с горизонтальными линиями, красными частицами и крупным словом «ПОСРЕДИ» по центру",
             "has_text": false,
             "watermark": false,
-            "reason": "Точно передаёт ключевое слово из речи, чистый субтитр-перебивка, фон абстрактный/стилизованный",
+            "reason": "текст напрямую отсылает к «посреди тундры», подходит под перебивку/CTA, оформление канала",
             "judge": "grok"
           }
         ],
         "sample_count": 6,
-        "mismatch_share": 0.167,
+        "mismatch_share": 0.0,
         "mismatch_limit": 0.1,
-        "picture_matches_speech": false,
+        "picture_matches_speech": true,
         "watermarks_found": 0,
         "blocking": false,
-        "notes": [
-          "картинка расходится с речью на 17% проб (предел 10%, §11.2.1)"
-        ]
+        "notes": []
       }
     }
   },
   "assets": {
-    "count": 25,
+    "count": 28,
     "unlicensed": [],
     "mock_count": 0
   },
   "warnings": [
-    "37 слов держатся на экране меньше 250 мс — темп речи очень плотный",
     "P5: вставлена перебивка 40.00–41.40 сек между аватар-сегментами блоков b4/b5",
     "P5: вставлена перебивка 44.93–46.33 сек между аватар-сегментами блоков b5/b5",
     "P5: вставлена перебивка 49.85–51.25 сек между аватар-сегментами блоков b5/b6",
     "P5: вставлена перебивка 54.50–55.90 сек между аватар-сегментами блоков b6/b6",
     "P5: в первый план добавлено событие до 0.8 сек (§4.1)",
+    "слот 17: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 17 (b5) не получил ни одного кандидата",
     "слот 19: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
     "слот 19 (b5) не получил ни одного кандидата",
-    "13 слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
-    "слот 11 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 0.7 сек, нужно 2.6 сек",
-    "слот 17 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 0.7 сек, нужно 1.4 сек",
+    "слот 21: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
+    "слот 21 (b6) не получил ни одного кандидата",
+    "14 слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
+    "слот 10 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 2.1 сек, нужно 2.4 сек",
+    "слот 11 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 2.1 сек, нужно 2.6 сек",
     "слот 19 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 0.7 сек, нужно 1.4 сек",
     "слот 21 остался пустым: генерация вывела бы долю AI-футажа за 35% (§7.2.6): остаток бюджета 0.7 сек, нужно 1.4 сек",
-    "музыкальная подложка отсутствует: библиотека пуста (§14.2)",
-    "смысловой QC: картинка расходится с речью на 17% проб (предел 10%, §11.2.1)",
     "смысловой QC: картинка расходится с речью на 17% проб (предел 10%, §11.2.1)"
   ],
-  "cost_usd": 1.074
+  "devices": {
+    "A": {
+      "count": 5,
+      "grounded": 3,
+      "ungrounded": 2,
+      "placed": [
+        {
+          "at": 19.5,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/number-slam-card",
+          "grounded_on": [
+            "number"
+          ],
+          "why": "приём оправдан: названо число"
+        },
+        {
+          "at": 33.99,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/scramble-reveal",
+          "grounded_on": [
+            "device"
+          ],
+          "why": "приём оправдан: речь об устройстве или технике"
+        },
+        {
+          "at": 41.4,
+          "kind": "приём вокруг ведущего",
+          "template": "hero-devices/type-slab",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 51.25,
+          "kind": "приём вокруг ведущего",
+          "template": "hero-devices/chat-typing",
+          "grounded_on": [
+            "question"
+          ],
+          "why": "приём оправдан: задан вопрос"
+        },
+        {
+          "at": 58.19,
+          "kind": "cta",
+          "template": "outro-cta/subscribe-pulse",
+          "grounded_on": [],
+          "why": "§6: кнопка подписки в последние 2 сек"
+        }
+      ]
+    },
+    "B": {
+      "count": 5,
+      "grounded": 2,
+      "ungrounded": 3,
+      "placed": [
+        {
+          "at": 19.5,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/impact-01",
+          "grounded_on": [
+            "number"
+          ],
+          "why": "приём оправдан: названо число"
+        },
+        {
+          "at": 33.99,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/fact-card",
+          "grounded_on": [],
+          "why": "приём без смысловых требований"
+        },
+        {
+          "at": 41.4,
+          "kind": "приём вокруг ведущего",
+          "template": "hero-devices/footage-plate-pop",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 51.25,
+          "kind": "приём вокруг ведущего",
+          "template": "hero-devices/chat-typing",
+          "grounded_on": [
+            "question"
+          ],
+          "why": "приём оправдан: задан вопрос"
+        },
+        {
+          "at": 58.19,
+          "kind": "cta",
+          "template": "outro-cta/logo-brand-close",
+          "grounded_on": [],
+          "why": "§6: identity close — вордмарк, не кнопка подписки"
+        }
+      ]
+    }
+  },
+  "cost_usd": 1.05
 }

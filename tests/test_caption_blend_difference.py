@@ -73,7 +73,11 @@ def test_empty_and_pop_in_stay_gradient_fill() -> None:
 
 def test_space_still_clip_wipe_unless_explicit_blend(cfg) -> None:
     plan = {"category": "space", "title": "Чип"}
-    assert pick_caption_style(plan, cfg.brandbook) == "clip-wipe"
+    # Умолчание канала — гало: тема его не перебивает.
+    assert pick_caption_style(plan, cfg.brandbook) == "glow"
+    gestures = copy.deepcopy(cfg.brandbook)
+    gestures["subtitles"]["caption"] = "gradient-fill"
+    assert pick_caption_style(plan, gestures) == "clip-wipe"
     brand = copy.deepcopy(cfg.brandbook)
     brand["subtitles"]["caption"] = "blend-difference"
     assert pick_caption_style(plan, brand) == "blend-difference"
@@ -87,15 +91,19 @@ def test_pick_does_not_auto_select_blend(cfg) -> None:
         "title": "Квантовый чип",
         "blocks": [{"text": "Логический кубит прожил дольше."}],
     }
-    assert pick_caption_style(plan, cfg.brandbook) == "gradient-fill"
-    assert pick_caption_style(plan, {}) == "gradient-fill"
+    assert pick_caption_style(plan, cfg.brandbook) == "glow"
+    gestures = copy.deepcopy(cfg.brandbook)
+    gestures["subtitles"]["caption"] = "gradient-fill"
+    assert pick_caption_style(plan, gestures) == "gradient-fill"
+    # Без брендбука вовсе жест остаётся прежним умолчанием библиотеки.
+    assert pick_caption_style(plan, {}) == "glow"
 
 
 def test_missing_caption_key_does_not_emit_blend(cfg) -> None:
     plan = _plan(_words("пиши", "html"))
     del plan["subtitle_style"]["caption"]
     out = CompositionBuilder(plan, cfg.brandbook, {}).build("assets/mix.wav")
-    assert 'class="clip caption-grad"' in out
+    assert 'class="clip word' in out
     assert 'class="clip caption-blend"' not in out
 
 

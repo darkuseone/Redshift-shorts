@@ -15,6 +15,7 @@
     "entry",
     "flash"
   ],
+  "needs": [],
   "renderer": "white_flash",
   "last_used_in": [
     "redshift_0042",

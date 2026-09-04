@@ -14178,3 +14178,63 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-knockout .hk-text{fill:#000;font-family:var(--font-display);"
         "font-weight:700;letter-spacing:-0.01em}"
     )
+
+
+
+# --- графика брендбука: угловые скобки, линейка, засечки ---------------------
+
+def brand_marks_node(node_id: str, spec: dict[str, Any], safe: dict[str, Any],
+                     *, width: int, height: int) -> str:
+    """Технические уголки по углам рабочей зоны и пунктирная линейка.
+
+    Раздел 06 брендбука: угловые скобки, пунктир, засечки, точки. В кадре они
+    работают как рамка прибора — кадр читается измерением, а не просто
+    надписью. Ставятся не везде: рамка в каждом кадре перестаёт быть приёмом.
+
+    Рисуется одним SVG, а не четырьмя блоками: скобка — это две линии под
+    прямым углом, и в разметке ей место одной фигурой.
+    """
+    x0, y0 = int(safe["x_min"]), int(safe["y_min"])
+    x1, y1 = int(safe["x_max"]), int(safe["y_max"])
+    arm = int(spec.get("corner_px", 64))
+    inset = int(spec.get("inset_px", 26))
+    stroke = int(spec.get("stroke_px", 3))
+    ticks = int(spec.get("tick_count", 4))
+    lx0, ly0, lx1, ly1 = x0 - inset, y0 - inset, x1 + inset, y1 + inset
+
+    corners = [
+        f"M{lx0} {ly0 + arm} L{lx0} {ly0} L{lx0 + arm} {ly0}",
+        f"M{lx1 - arm} {ly0} L{lx1} {ly0} L{lx1} {ly0 + arm}",
+        f"M{lx1} {ly1 - arm} L{lx1} {ly1} L{lx1 - arm} {ly1}",
+        f"M{lx0 + arm} {ly1} L{lx0} {ly1} L{lx0} {ly1 - arm}",
+    ]
+    paths = "".join(f'<path d="{d}" />' for d in corners)
+    # Засечки по верхней линейке: шкала прибора, а не украшение.
+    step = (lx1 - lx0) / (ticks + 1)
+    marks = "".join(
+        f'<line x1="{lx0 + step * (i + 1):.0f}" y1="{ly0 - 14}" '
+        f'x2="{lx0 + step * (i + 1):.0f}" y2="{ly0 - 2}" />'
+        for i in range(ticks))
+    return (f'<svg id="{node_id}" class="brand-marks" width="{width}" height="{height}" '
+            f'viewBox="0 0 {width} {height}" aria-hidden="true">'
+            f'<g class="bm-corner" stroke-width="{stroke}">{paths}</g>'
+            f'<g class="bm-tick" stroke-width="{max(2, stroke - 1)}">{marks}</g>'
+            f'<line class="bm-rule" x1="{lx0}" y1="{ly1 + 26}" x2="{lx1}" y2="{ly1 + 26}" '
+            f'stroke-width="{max(2, stroke - 1)}" />'
+            f'</svg>')
+
+
+def brand_marks_css(brandbook: dict[str, Any]) -> str:
+    """Стили графики брендбука. Цвет и прозрачность — из брендбука."""
+    spec = brandbook.get("brand_marks", {}) or {}
+    color = str(spec.get("color", "accent")).replace("_", "-")
+    opacity = float(spec.get("opacity", 0.55))
+    return (
+        ".brand-marks{position:absolute;inset:0;z-index:26;pointer-events:none;"
+        f"opacity:{opacity:g}}}"
+        f".brand-marks g,.brand-marks line{{stroke:var(--color-{color});fill:none;"
+        "stroke-linecap:square}"
+        ".brand-marks .bm-rule{stroke-dasharray:18 14}"
+        ".brand-marks .bm-tick{opacity:0.8}"
+    )
+

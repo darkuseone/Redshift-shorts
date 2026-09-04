@@ -51,7 +51,8 @@ SUFFIX = ".m4a"
 # Границы приёма. Выведены из того, как бед используется: P10 зацикливает его
 # на длину ролика (35–70 сек), поэтому слишком короткий даст слышимый повтор,
 # а слишком длинный — лишние мегабайты в git при том, что дальше 70 секунд
-# ролик не идёт.
+# ролик не идёт. Отрезок по умолчанию — 70 секунд, ровно потолок ролика:
+# так подложка ни разу не повторится даже в самом длинном.
 MIN_DURATION_SEC = 20.0
 MAX_DURATION_SEC = 180.0
 # Клиппованный исходник в миксе станет только хуже: P10 добавит к нему голос.
@@ -103,7 +104,7 @@ def unknown_tags(tags: Iterable[str]) -> list[str]:
     return [t for t in tags if t not in TAGS]
 
 
-def find_segment(path: Path, *, length_sec: float = 60.0,
+def find_segment(path: Path, *, length_sec: float = 70.0,
                  skip_head_sec: float = 10.0, skip_tail_sec: float = 8.0) -> float:
     """Найти интересный отрезок: где играть, а не где вступление.
 
@@ -154,7 +155,7 @@ def find_segment(path: Path, *, length_sec: float = 60.0,
 
 
 def cut_segment(source: Path, dst: Path, *, start_sec: float,
-                length_sec: float = 60.0) -> Path:
+                length_sec: float = 70.0) -> Path:
     """Вырезать отрезок, вернуть запас по пику и привести к формату хранения.
 
     Запас нужен не «на всякий случай»: присланные мастера клиппованы — пики
@@ -224,7 +225,7 @@ def check_bed(report: dict[str, Any]) -> list[str]:
 
 def add_bed(cfg, *, source: Path, bed_id: str, tags: Sequence[str],
             title: str = "", start_sec: float | None = None,
-            length_sec: float = 60.0, force: bool = False) -> dict[str, Any]:
+            length_sec: float = 70.0, force: bool = False) -> dict[str, Any]:
     """Принять живую запись в библиотеку подложек.
 
     ``start_sec`` — начало интересного отрезка. Не задан — отрезок ищется сам:

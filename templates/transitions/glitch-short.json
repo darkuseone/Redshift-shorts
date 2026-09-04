@@ -14,6 +14,7 @@
     "dynamic",
     "glitch"
   ],
+  "needs": [],
   "renderer": "glitch",
   "last_used_in": [
     "redshift_0042",

@@ -17,6 +17,7 @@
     "overlay",
     "dark"
   ],
+  "needs": [],
   "renderer": "lt_dark_card",
   "last_used_in": [],
   "added": "2026-09-03"

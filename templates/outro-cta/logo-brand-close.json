@@ -20,7 +20,11 @@
     "logo",
     "end-card"
   ],
+  "needs": [],
   "renderer": "logo_brand_close",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0047",
+    "redshift_0042"
+  ],
   "added": "2026-09-02"
 }

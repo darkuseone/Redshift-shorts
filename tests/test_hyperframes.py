@@ -169,8 +169,21 @@ def test_cta_pulse_is_finite(markup):
     assert re.search(r"repeat:\d+", pulse.replace(" ", ""))
 
 
-def test_subtitle_gradient_fill_animates_inner_word(markup):
+def _gradient_markup(plan, assets, brandbook):
+    """Разметка того же плана, но жестом gradient-fill.
+
+    Умолчание канала — «glow»: белое слово с красным гало со скриншота
+    заказчика. Жест курсора остаётся альтернативой, и проверять его надо,
+    выбрав явно, а не полагаясь на то, каким он был умолчанием в его ветке.
+    """
+    plan = {**plan, "subtitle_style": {**plan.get("subtitle_style", {}),
+                                       "caption": "gradient-fill"}}
+    return CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+
+def test_subtitle_gradient_fill_animates_inner_word(plan, assets, brandbook):
     """Видимостью клипа управляет движок — bounce и заливка на вложенном слове."""
+    markup = _gradient_markup(plan, assets, brandbook)
     assert 'class="clip caption-grad"' in markup
     assert 'fromTo("#gf-00"' not in markup
     assert 'tl.set("#gf-00-w' in markup
@@ -179,12 +192,24 @@ def test_subtitle_gradient_fill_animates_inner_word(markup):
     assert 'id="w-0000"' not in markup
 
 
-def test_emphasis_word_gets_blood_gradient(markup):
+def test_emphasis_word_gets_blood_gradient(plan, assets, brandbook):
+    markup = _gradient_markup(plan, assets, brandbook)
     assert "gf-accent" in markup
-    assert "#C8453D" in markup
-    assert "#E4726A" in markup
+    # Цвет берётся из брендбука, а не стоит числом: акцент канала сменился с
+    # #C8453D на #E63946, и тест, знающий цвет наизусть, сломался бы на правке
+    # палитры вместо правки кода.
+    assert brandbook["colors"]["accent"] in markup
+    assert brandbook["colors"]["accent_soft"] in markup
+    # Золота и жёлтого в палитре канала нет — ни в одном жесте.
     assert "#FFD700" not in markup
     assert "#fe9f1b" not in markup.lower()
+
+
+def test_the_default_caption_is_the_glow_of_the_brandbook(markup, brandbook):
+    """Лицо канала — белое слово с красным гало, а не жест по теме ролика."""
+    assert brandbook["subtitles"]["caption"] == "glow"
+    assert 'class="clip word' in markup
+    assert "caption-grad" not in markup
 
 
 def test_text_behind_head_taken_from_block(markup):
@@ -935,7 +960,10 @@ def test_scan_band_fullscreen_keeps_catalog_chromatic(plan, assets, brandbook):
     assert "clip-path" not in tween_src
     assert "--sb-" not in tween_src
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
-    assert "Inter,system-ui,sans-serif" in css
+    # Гарнитура канала, а не Inter: Inter в проект не поставлен, шрифт падал в
+    # system-ui и строка выходила шире расчёта на 18 %.
+    assert "Inter" not in css
+    assert ".fs-scan-band" in css and "font-family:var(--font-display)" in css
     assert "#ff3158" in css and "#36efff" in css
     assert "#0b0c0e" in css
     assert ".sb-band" in css
@@ -2550,3 +2578,311 @@ class TestAnEmptySlotNeverShowsAHole:
         assert "assets/m000_a.mp4" in markup
         node = re.search(r'<[^>]*id="shot-00"[^>]*>', markup)
         assert node and "shot-bg" not in node.group(0), node.group(0)
+
+
+class TestThePaletteComesFromTheBrandbook:
+    """Цвета канала живут в брендбуке, а не числами в генераторе CSS.
+
+    Плашка красилась `rgba(247,245,243)` и рамкой `rgba(192,57,43)` — краски,
+    которой в палитре уже не было вовсе. Смена акцента её не трогала, и
+    брендбук расходился с кадром молча.
+    """
+
+    def _css(self):
+        import json
+        from pathlib import Path
+
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        root = Path(__file__).resolve().parents[1]
+        book = json.loads((root / "config" / "brandbook.json").read_text(encoding="utf-8"))
+        fonts = {"subtitle": "Montserrat-Black.ttf", "display": "Oswald-Bold.ttf",
+                 "mono": "JetBrainsMono-Bold.ttf"}
+        return build_css(book, fonts), book
+
+    def test_the_plaque_is_painted_by_its_tokens(self):
+        css, book = self._css()
+        plaque = book["plaque"]
+        panel = book["colors"][plaque["bg"]].lstrip("#")
+        r, g, b = (int(panel[i:i + 2], 16) for i in (0, 2, 4))
+        assert f"rgba({r},{g},{b},{plaque['bg_alpha']:g})" in css
+        assert "rgba(247,245,243," not in css.split(".plaque{")[1].split("}")[0]
+        assert "rgba(192,57,43," not in css
+
+    def test_comments_of_the_brandbook_do_not_become_colours(self):
+        css, _book = self._css()
+        assert "--color--comment" not in css
+
+    def test_the_accent_of_the_channel_reaches_the_subtitle(self):
+        css, book = self._css()
+        accent = book["colors"]["accent"].lstrip("#")
+        r, g, b = (int(accent[i:i + 2], 16) for i in (0, 2, 4))
+        assert f"rgba({r},{g},{b}," in css      # гало субтитра — акцентом канала
+
+
+class TestTheCanvasLayerObeysTheEngine:
+    """Холст рисуется по времени ленты, а не по времени браузера.
+
+    Рендер идёт перемоткой: движок ставит время и снимает кадр. Кадр обязан
+    быть чистой функцией времени, иначе перемотка и проигрывание разойдутся,
+    а два прогона одного ролика перестанут совпадать.
+    """
+
+    def _markup(self, plan, brandbook, assets, scene="space"):
+        plan = {**plan, "backdrop": {**(plan.get("backdrop") or {}), "scene": scene}}
+        for shot in plan["shots"]:
+            if shot.get("kind") == "fullscreen_text":
+                shot["file"] = None            # пустой слот → запасной фон со сценой
+        return CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+    def test_the_canvas_is_drawn_from_the_timeline(self, plan, assets, brandbook):
+        out = self._markup(plan, brandbook, assets)
+        assert 'class="clip fx-canvas' in out
+        assert "__RSFX" in out
+        # Твин ведёт число, а не сам холст: клип анимировать запрещено.
+        assert "onUpdate" in out
+        assert 'tl.to(s,' in out
+
+    def test_nothing_in_the_canvas_depends_on_wall_clock_or_luck(self, plan, assets, brandbook):
+        out = self._markup(plan, brandbook, assets)
+        for forbidden in ("Math.random", "requestAnimationFrame", "Date.now",
+                          "performance.now", "setInterval", "setTimeout"):
+            assert forbidden not in out, forbidden
+
+    def test_the_same_plan_gives_the_same_page(self, plan, assets, brandbook):
+        first = self._markup(plan, brandbook, assets)
+        second = self._markup(plan, brandbook, assets)
+        assert first == second
+
+    def test_the_registry_is_written_only_when_the_canvas_is_used(self, plan, assets, brandbook):
+        """Сцена комнаты холста не просит — и скрипт в страницу не едет."""
+        assert "__RSFX" not in self._markup(plan, brandbook, assets, scene="room")
+
+    def test_every_scene_effect_exists_in_the_registry(self):
+        from src.lib.render.hyperframes.canvas_fx import EFFECTS
+        from src.lib.render.hyperframes.composition import CompositionBuilder as CB
+
+        assert set(CB.SCENE_FX.values()) <= set(EFFECTS)
+
+    def test_the_colours_come_from_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.canvas_fx import canvas_js
+
+        js = canvas_js(brandbook["colors"])
+        assert brandbook["colors"]["accent"] in js
+        assert brandbook["colors"]["space_deep"] in js
+
+
+class TestChannelSurfacesAreDark:
+    """Светлым остаётся только чужой интерфейс, всё наше — панель канала.
+
+    Палитра брендбука тёмная: космос #0B132B, панель #1A1F2E. Белая плита
+    посреди тёмного ролика читается дырой — заказчик назвал это прямо, увидев
+    «180 ГРАДУСОВ» белыми буквами по белой карточке.
+
+    Чужой интерфейс — исключение и остаётся светлым намеренно: окно браузера,
+    карточка статьи, пузырь мессенджера, отпечаток в раме и экран телефона
+    обязаны выглядеть собой, а не панелью канала.
+    """
+
+    # Поверхности, которым белое к лицу: они изображают не нас.
+    FOREIGN = (
+        "source-card", "chat-thread", "article-scroll", "paper-reveal",
+        "hero-phone-mock", "hero-chat-typing", "hero-chat-generate", "hero-paper",
+        "hero-bubble-card", "hero-bubble-typed", "ex-frame", "hero-plate",
+        "hero-verdict", "tr-flash", "tr-mask-circle", "tr-mask-diagonal",
+        "pm-row", "ct-skeleton", "ct-answer", "cg-canvas", "url", "bar",
+        # Не плита, а чернила: пылинка приёма «текст рассыпается» на тёмном
+        # фоне обязана быть светлой — это точка, а не поверхность.
+        "ptd-dot",
+        # То же и у точки на линии графика: маркер 22 пикселя, не плита.
+        "mlg-dot",
+        # Экран телефона с перепиской — такой же чужой интерфейс, как окно
+        # браузера: белым он и обязан быть.
+        "acr-",
+        # Не поверхность, а операция: `mix-blend-mode` считает разницу с
+        # белым операндом, и другого цвета вспышка просто не даст.
+        "gs-flick", "cw-invert", "tto-flash", "bfc-flash",
+        # Каретка редактора — чернила, а не плита: прямоугольник в две буквы
+        # шириной, которым текст показывает, где он сейчас пишется.
+        "dp-caret",
+    )
+
+    def test_no_surface_of_the_channel_paints_itself_light(self, brandbook):
+        import re
+
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "Oswald-Bold.ttf",
+                                    "subtitle": "Montserrat-Black.ttf",
+                                    "mono": "JetBrainsMono-Bold.ttf"})
+        light = re.compile(r"background:\s*(var\(--color-bg-(pure|light)\)|#F7F5F3|#FFFFFF|#F0EEEB)")
+        offenders = []
+        for match in re.finditer(r"(\.[a-zA-Z0-9_.\- >]+)\{([^}]*)\}", css):
+            selector, body = match.group(1).strip(), match.group(2)
+            if not light.search(body):
+                continue
+            if any(name in selector for name in self.FOREIGN):
+                continue
+            offenders.append(selector)
+        assert not offenders, f"светлая заливка у поверхности канала: {offenders}"
+
+    def test_the_floor_of_the_frame_is_the_space_of_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "Oswald-Bold.ttf"})
+        assert ".stage-bg{" in css
+        floor = css.split(".stage-bg{")[1].split("}")[0]
+        assert "var(--color-space-deep)" in floor, floor
+
+    def test_the_number_card_is_the_panel_of_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "Oswald-Bold.ttf"})
+        card = css.split(".fullscreen-text .fs-slam-card{")[1].split("}")[0]
+        assert "var(--color-panel)" in card, card
+
+
+class TestTheBrandMarksFrameTheCard:
+    """Графика брендбука (раздел 06) — рамка прибора вокруг карточного кадра.
+
+    Угловые скобки, засечки и пунктирная линейка делают кадр узнаваемым за
+    полсекунды. Ставятся не везде: рамка в каждом кадре перестаёт читаться
+    приёмом и становится шумом, поэтому у неё потолок на ролик.
+    """
+
+    def _markup(self, plan, brandbook, assets):
+        return CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+
+    def test_the_marks_reach_the_card(self, plan, assets, brandbook):
+        out = self._markup(plan, brandbook, assets)
+        assert 'class="brand-marks"' in out
+        assert "bm-corner" in out and "bm-tick" in out and "bm-rule" in out
+
+    def test_the_ceiling_of_the_brandbook_holds(self, plan, assets, brandbook):
+        limit = int(brandbook["brand_marks"]["per_video_max"])
+        out = self._markup(plan, brandbook, assets)
+        assert out.count('class="brand-marks"') <= limit
+
+    def test_zero_in_the_brandbook_switches_them_off(self, plan, assets, brandbook):
+        book = {**brandbook, "brand_marks": {**brandbook["brand_marks"], "per_video_max": 0}}
+        assert 'class="brand-marks"' not in self._markup(plan, book, assets)
+
+    def test_the_marks_stay_inside_the_frame(self, brandbook):
+        import re
+
+        from src.lib.render.hyperframes.templates import brand_marks_node
+
+        svg = brand_marks_node("bm", brandbook["brand_marks"],
+                               brandbook["safe_zones"]["work_area"],
+                               width=1080, height=1920)
+        numbers = [float(n) for n in re.findall(r'[dxy]\d?="M?\s*([\-\d.]+)', svg)]
+        assert numbers, "в разметке нет координат"
+        assert min(numbers) >= 0, min(numbers)
+
+    def test_the_marks_arrive_by_moving_not_by_switching_on(self, plan, assets, brandbook):
+        """§H7: всё приближается, ничего не включается."""
+        out = self._markup(plan, brandbook, assets)
+        line = next(l for l in out.splitlines() if "-marks" in l and "tl." in l)
+        assert "scale" in line and "opacity" not in line, line
+
+    def test_the_colour_comes_from_the_brandbook(self, brandbook):
+        from src.lib.render.hyperframes.templates import brand_marks_css
+
+        css = brand_marks_css(brandbook)
+        token = str(brandbook["brand_marks"]["color"]).replace("_", "-")
+        assert f"var(--color-{token})" in css
+
+
+class TestThePortedDevicesSpeakTheChannelLanguage:
+    """Перенос из соседней ветки приходит со своим каналом — и не должен.
+
+    Ветка шаблонов писалась под другой канал: 81 цветное значение по всему
+    кругу оттенков (бирюза, охра, маджента) и `font-family:Inter`, которого
+    в проекте нет. Цвет — узнаваемость, а незнакомый шрифт молча подменяется
+    системным, который шире модели ширины на восемнадцать процентов: подпись
+    вылезает за рабочую зону. Приведение делает `tools/port_templates.py`;
+    тест сторожит, что следующий перенос не привезёт чужое снова.
+    """
+
+    def _sources(self):
+        from pathlib import Path
+
+        pkg = Path(__file__).resolve().parents[1] / "src/lib/render/hyperframes"
+        return [(path.name, path.read_text(encoding="utf-8"))
+                for path in (pkg / "templates_sci.py", pkg / "acr_chat.py")
+                if path.exists()]
+
+    def test_no_literal_colour_survives_the_port(self, brandbook):
+        """Чужого цвета не остаётся: либо переменная, либо цвет брендбука.
+
+        Второе — не поблажка. Карта мира смешивает два цвета шкалы
+        арифметикой (`int(h[0:2], 16)`), и переменную CSS там не посчитать:
+        приём падал на `int('va', 16)`. Такому месту достаётся число самого
+        брендбука, а не чужой цвет.
+        """
+        import re
+
+        ours = {v.upper() for v in brandbook["colors"].values()
+                if isinstance(v, str) and v.startswith("#")}
+        for name, source in self._sources():
+            found = {c.upper() for c in
+                     re.findall(r"#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b", source)}
+            assert not (found - ours), \
+                f"{name}: цвет мимо брендбука — {sorted(found - ours)[:6]}"
+
+    def test_no_saturated_rgba_survives_the_port(self, brandbook):
+        """Полупрозрачный цвет — либо вуаль, либо цвет брендбука.
+
+        Переменную CSS в `rgba()` не подставить, поэтому насыщенное значение
+        приводится к числам самого брендбука; всё прочее насыщенное — чужое.
+        """
+        import colorsys
+        import re
+
+        ours = set()
+        for value in brandbook["colors"].values():
+            if isinstance(value, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+                ours.add(tuple(int(value[i:i + 2], 16) for i in (1, 3, 5)))
+        for name, source in self._sources():
+            for red, green, blue, _alpha in re.findall(
+                    r"rgba\((\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\)", source):
+                channels = (int(red), int(green), int(blue))
+                if channels in ours:
+                    continue
+                _hue, _light, sat = colorsys.rgb_to_hls(*(c / 255 for c in channels))
+                # Ненасыщенное — вуали и тени, им цвет канала не нужен.
+                assert sat < 0.18, f"{name}: цветная rgba{channels}"
+
+    def test_every_family_is_a_font_of_the_project(self):
+        import re
+
+        for name, source in self._sources():
+            families = re.findall(r"font-family:([^;\"'}]*)", source)
+            for family in families:
+                assert family.startswith("var(--font-"), f"{name}: {family!r}"
+
+    def test_no_ported_chart_fills_the_frame_with_one_colour(self, brandbook):
+        """Плита остаётся плитой, даже если перекрасить её в цвет канала.
+
+        Гонка столбиков приехала с белым холстом во весь кадр; приведение
+        цвета сделало его лососевым — и полтора экрана залило одним тоном.
+        Кадр во весь рост заливается только «космосом» или чернилами: это
+        сцена, а не заливка.
+        """
+        import re
+
+        from src.lib.render.hyperframes.brand_css import build_css
+
+        css = build_css(brandbook, {"display": "a.ttf", "subtitle": "b.ttf",
+                                    "mono": "c.ttf"})
+        allowed = {"var(--color-space-deep)", "var(--color-ink)",
+                   "var(--color-panel)", "transparent", "none"}
+        offenders = []
+        for match in re.finditer(r"(\.[a-zA-Z0-9_.\- >]+)\{([^}]*)\}", css):
+            body = match.group(2)
+            if "width:1080px" not in body or "height:1920px" not in body:
+                continue
+            fill = re.search(r"background(?:-color)?:\s*([^;}]+)", body)
+            if fill and fill.group(1).strip() not in allowed:
+                offenders.append(f"{match.group(1).strip()} → {fill.group(1).strip()}")
+        assert not offenders, f"кадр залит не сценой: {offenders}"

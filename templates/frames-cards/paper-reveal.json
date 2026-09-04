@@ -15,6 +15,9 @@
     "science",
     "reveal"
   ],
+  "needs": [
+    "quote"
+  ],
   "renderer": "paper_reveal",
   "last_used_in": [],
   "added": "2026-09-02",

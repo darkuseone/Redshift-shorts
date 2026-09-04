@@ -15,6 +15,9 @@
     "number",
     "card"
   ],
+  "needs": [
+    "number"
+  ],
   "renderer": "dataviz",
   "last_used_in": [],
   "added": "2026-09-02",

@@ -42,7 +42,10 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "question"
+      ]
     },
     {
       "id": "intro-hooks/hook-number-slam",
@@ -64,7 +67,10 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "intro-hooks/hook-blackout-word",
@@ -85,7 +91,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "intro-hooks/hook-footage-cold-open",
@@ -105,7 +112,8 @@
       ],
       "renderer": "footage",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "intro-hooks/hook-split-reveal",
@@ -125,7 +133,8 @@
       ],
       "renderer": "split",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "intro-hooks/hook-typing-search",
@@ -147,7 +156,10 @@
       ],
       "renderer": "source_card",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "question"
+      ]
     },
     {
       "id": "intro-hooks/hook-countdown-3",
@@ -167,7 +179,10 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "intro-hooks/hook-avatar-direct",
@@ -187,7 +202,8 @@
       ],
       "renderer": "avatar",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "text-fullscreen/impact-01",
@@ -219,7 +235,10 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "text-fullscreen/impact-02",
@@ -246,7 +265,10 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "text-fullscreen/stack-3lines",
@@ -274,7 +296,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "text-fullscreen/word-swap",
@@ -294,7 +317,10 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "comparison"
+      ]
     },
     {
       "id": "text-fullscreen/quote-frame",
@@ -315,7 +341,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "text-fullscreen/date-marker",
@@ -335,7 +362,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "text-fullscreen/vs-compare",
@@ -356,7 +384,10 @@
       "last_used_in": [
         "redshift_0044"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "comparison"
+      ]
     },
     {
       "id": "text-fullscreen/label-strip",
@@ -375,7 +406,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "text-fullscreen/bigtext-mask-footage",
@@ -396,7 +428,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "text-fullscreen/fact-card",
@@ -423,7 +456,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "text-fullscreen/kinetic-stack",
@@ -445,7 +479,10 @@
       "renderer": "kinetic_stack",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4",
+      "needs": [
+        "list"
+      ]
     },
     {
       "id": "text-fullscreen/blur-out-up",
@@ -470,7 +507,8 @@
       ],
       "renderer": "blur_out_up",
       "last_used_in": [],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": []
     },
     {
       "id": "text-fullscreen/bottom-up-letters",
@@ -495,7 +533,8 @@
       ],
       "renderer": "bottom_up_letters",
       "last_used_in": [],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": []
     },
     {
       "id": "text-fullscreen/kinetic-type-swap",
@@ -519,7 +558,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": []
     },
     {
       "id": "text-fullscreen/line-by-line-slide",
@@ -546,7 +586,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": [
+        "list"
+      ]
     },
     {
       "id": "text-fullscreen/particle-text-dissolve",
@@ -572,7 +615,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": [
+        "discovery"
+      ]
     },
     {
       "id": "text-fullscreen/per-word-crossfade",
@@ -597,7 +643,8 @@
       ],
       "renderer": "per_word_crossfade",
       "last_used_in": [],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": []
     },
     {
       "id": "text-fullscreen/scan-band",
@@ -620,7 +667,8 @@
       ],
       "renderer": "scan_band",
       "last_used_in": [],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": []
     },
     {
       "id": "text-fullscreen/scramble-reveal",
@@ -647,7 +695,11 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": [
+        "discovery",
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/shared-axis-z",
@@ -673,7 +725,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "text-fullscreen/code-3d-extrude",
@@ -695,7 +748,10 @@
       ],
       "renderer": "code_3d_extrude",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/code-diff",
@@ -717,7 +773,11 @@
       ],
       "renderer": "code_diff",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device",
+        "comparison"
+      ]
     },
     {
       "id": "text-fullscreen/code-particle-assemble",
@@ -741,7 +801,11 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device",
+        "discovery"
+      ]
     },
     {
       "id": "text-fullscreen/code-scroll",
@@ -763,7 +827,10 @@
       ],
       "renderer": "code_scroll",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/code-highlight",
@@ -785,7 +852,8 @@
       ],
       "renderer": "code_highlight",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "text-fullscreen/code-morph",
@@ -807,7 +875,8 @@
       ],
       "renderer": "code_morph",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "text-fullscreen/code-typing",
@@ -831,7 +900,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/terminal-simulator",
@@ -853,7 +925,10 @@
       ],
       "renderer": "terminal_simulator",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/apple-terminal-clear-dark",
@@ -879,7 +954,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/dark-plus",
@@ -903,7 +981,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/beat-freeze-cut",
@@ -928,7 +1009,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "text-fullscreen/number-slam-card",
@@ -952,7 +1034,10 @@
       "renderer": "number_slam",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "text-fullscreen/split-flap-board",
@@ -974,7 +1059,8 @@
       ],
       "renderer": "split_flap_board",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "text-fullscreen/news-ticker",
@@ -996,7 +1082,8 @@
       ],
       "renderer": "news_ticker",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "lower-thirds/name-title",
@@ -1016,7 +1103,8 @@
       ],
       "renderer": "plaque",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/accent-underline",
@@ -1039,7 +1127,8 @@
       ],
       "renderer": "lt_accent_underline",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "lower-thirds/clean-bar",
@@ -1062,7 +1151,8 @@
       ],
       "renderer": "lt_clean_bar",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "lower-thirds/dark-card",
@@ -1085,7 +1175,8 @@
       ],
       "renderer": "lt_dark_card",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "lower-thirds/source-domain",
@@ -1112,7 +1203,8 @@
         "redshift_0045",
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/metric-badge",
@@ -1133,7 +1225,8 @@
       ],
       "renderer": "plaque",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/note-pin",
@@ -1158,7 +1251,8 @@
         "redshift_0045",
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/warning-strip",
@@ -1180,7 +1274,8 @@
       "last_used_in": [
         "redshift_0044"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/progress-step",
@@ -1200,7 +1295,8 @@
       ],
       "renderer": "plaque",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/tag-chips",
@@ -1220,7 +1316,8 @@
       ],
       "renderer": "plaque",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/timestamp-marker",
@@ -1240,7 +1337,8 @@
       ],
       "renderer": "plaque",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "lower-thirds/instagram-follow",
@@ -1267,7 +1365,8 @@
       ],
       "renderer": "instagram_follow",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "lower-thirds/tiktok-follow",
@@ -1294,7 +1393,8 @@
       ],
       "renderer": "tiktok_follow",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "lower-thirds/yt-lower-third",
@@ -1320,7 +1420,8 @@
       ],
       "renderer": "yt_lower_third",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "frames-cards/article-card",
@@ -1344,7 +1445,8 @@
         "redshift_0044",
         "redshift_0045"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "frames-cards/arxiv-card",
@@ -1368,7 +1470,10 @@
         "redshift_0043",
         "redshift_0045"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "quote"
+      ]
     },
     {
       "id": "frames-cards/patent-card",
@@ -1392,7 +1497,8 @@
         "redshift_0043",
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "frames-cards/profile-card",
@@ -1415,7 +1521,8 @@
         "redshift_0044",
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "frames-cards/product-card",
@@ -1438,7 +1545,8 @@
         "redshift_0044",
         "redshift_0043"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "frames-cards/chart-card",
@@ -1462,7 +1570,8 @@
         "redshift_0043",
         "redshift_0044"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "frames-cards/paper-reveal",
@@ -1486,7 +1595,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4",
+      "needs": [
+        "quote"
+      ]
     },
     {
       "id": "browser-ui/browser-scroll",
@@ -1511,7 +1623,10 @@
         "redshift_0042",
         "redshift_0043"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "quote"
+      ]
     },
     {
       "id": "browser-ui/google-typing",
@@ -1535,7 +1650,8 @@
         "redshift_0044",
         "redshift_0045"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "browser-ui/chat-ai-typing",
@@ -1559,7 +1675,10 @@
         "redshift_0044",
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "question"
+      ]
     },
     {
       "id": "browser-ui/notepad-typing",
@@ -1583,7 +1702,8 @@
         "redshift_0044",
         "redshift_0045"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "browser-ui/terminal-lines",
@@ -1607,7 +1727,8 @@
         "redshift_0044",
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "browser-ui/phone-notification",
@@ -1630,7 +1751,8 @@
       "last_used_in": [
         "redshift_0043"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "browser-ui/chat-thread",
@@ -1652,7 +1774,10 @@
       "renderer": "chat_thread",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
+      "needs": [
+        "question"
+      ]
     },
     {
       "id": "browser-ui/article-highlight",
@@ -1678,7 +1803,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4",
+      "needs": [
+        "quote"
+      ]
     },
     {
       "id": "browser-ui/ai-chat-reveal",
@@ -1702,7 +1830,8 @@
       ],
       "renderer": "ai_chat_reveal",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/app-showcase",
@@ -1725,7 +1854,8 @@
       ],
       "renderer": "app_showcase",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/vpn-youtube-spot",
@@ -1747,7 +1877,8 @@
       ],
       "renderer": "vpn_youtube_spot",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/blue-sweater-intro-video",
@@ -1769,7 +1900,8 @@
       ],
       "renderer": "blue_sweater",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/chatgpt-exchange",
@@ -1812,7 +1944,8 @@
       ],
       "renderer": "chatgpt_exchange",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/claude-exchange",
@@ -1845,7 +1978,8 @@
       ],
       "renderer": "claude_exchange",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/message-thread-reveal",
@@ -1882,7 +2016,8 @@
       ],
       "renderer": "message_thread_reveal",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/notes-reveal",
@@ -1922,7 +2057,8 @@
       ],
       "renderer": "notes_reveal",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/notification-cascade",
@@ -1952,7 +2088,8 @@
       ],
       "renderer": "notification_cascade",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/x-post",
@@ -1983,7 +2120,8 @@
       ],
       "renderer": "x_post",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/reddit-post",
@@ -2012,7 +2150,8 @@
       ],
       "renderer": "reddit_post",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/spotify-card",
@@ -2037,7 +2176,8 @@
       ],
       "renderer": "spotify_card",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "browser-ui/macos-notification",
@@ -2064,7 +2204,8 @@
       ],
       "renderer": "macos_notification",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/cut",
@@ -2084,7 +2225,8 @@
       "last_used_in": [
         "redshift_0044"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/whip-pan-l",
@@ -2111,7 +2253,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/whip-pan-r",
@@ -2138,7 +2281,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/zoom-punch-in",
@@ -2164,7 +2308,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/zoom-punch-out",
@@ -2190,7 +2335,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/mask-wipe-circle",
@@ -2216,7 +2362,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/mask-wipe-diagonal",
@@ -2242,7 +2389,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/light-sweep",
@@ -2265,7 +2413,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/glitch-short",
@@ -2291,7 +2440,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/paper-slide",
@@ -2317,7 +2467,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/blur-dip",
@@ -2343,7 +2494,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/white-flash",
@@ -2369,7 +2521,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "transitions/zoom-through",
@@ -2390,7 +2543,8 @@
       "renderer": "zoom_through",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
+      "needs": []
     },
     {
       "id": "transitions/cinematic-zoom",
@@ -2413,7 +2567,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/glitch",
@@ -2434,7 +2589,11 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "danger",
+        "negation"
+      ]
     },
     {
       "id": "transitions/gravitational-lens",
@@ -2457,7 +2616,12 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "discovery",
+        "place",
+        "superlative"
+      ]
     },
     {
       "id": "transitions/light-leak",
@@ -2478,7 +2642,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/sdf-iris",
@@ -2499,7 +2664,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/thermal-distortion",
@@ -2520,7 +2686,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "danger"
+      ]
     },
     {
       "id": "transitions/whip-pan",
@@ -2539,7 +2708,8 @@
       ],
       "renderer": "whip_pan_shader",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/mk-clone-wall-transition",
@@ -2562,7 +2732,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-3d",
@@ -2583,7 +2754,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-blur",
@@ -2604,7 +2776,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-cover",
@@ -2623,7 +2796,8 @@
       ],
       "renderer": "transitions_cover",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-destruction",
@@ -2642,7 +2816,11 @@
       ],
       "renderer": "transitions_destruction",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "danger",
+        "negation"
+      ]
     },
     {
       "id": "transitions/transitions-light",
@@ -2661,7 +2839,8 @@
       ],
       "renderer": "transitions_light",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-other",
@@ -2680,7 +2859,8 @@
       ],
       "renderer": "transitions_other",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/chromatic-radial-split",
@@ -2700,7 +2880,8 @@
       ],
       "renderer": "chromatic_radial_split",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/cross-warp-morph",
@@ -2720,7 +2901,8 @@
       ],
       "renderer": "cross_warp_morph",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/domain-warp-dissolve",
@@ -2740,7 +2922,8 @@
       ],
       "renderer": "domain_warp_dissolve",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/flash-through-white",
@@ -2760,7 +2943,8 @@
       ],
       "renderer": "flash_through_white",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/ridged-burn",
@@ -2782,7 +2966,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/ripple-waves",
@@ -2804,7 +2989,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/swirl-vortex",
@@ -2824,7 +3010,8 @@
       ],
       "renderer": "swirl_vortex",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-dissolve",
@@ -2845,7 +3032,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-distortion",
@@ -2865,7 +3053,8 @@
       ],
       "renderer": "transitions_distortion",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-grid",
@@ -2885,7 +3074,8 @@
       ],
       "renderer": "transitions_grid",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-mechanical",
@@ -2907,7 +3097,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-push",
@@ -2927,7 +3118,8 @@
       ],
       "renderer": "transitions_push",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-radial",
@@ -2947,7 +3139,8 @@
       ],
       "renderer": "transitions_radial",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "transitions/transitions-scale",
@@ -2969,7 +3162,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": []
     },
     {
       "id": "avatar-entry/hero-zoom-in",
@@ -2996,7 +3190,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "avatar-entry/slide-from-bottom",
@@ -3024,7 +3219,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "avatar-entry/circle-mask-grow",
@@ -3051,7 +3247,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "avatar-entry/split-slide-up",
@@ -3080,7 +3277,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "avatar-entry/flash-cut-in",
@@ -3108,7 +3306,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "avatar-entry/scale-pop",
@@ -3135,7 +3334,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/zoom-in-center",
@@ -3165,7 +3365,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/zoom-in-subject",
@@ -3196,7 +3397,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/zoom-out-reveal",
@@ -3226,7 +3428,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/pan-left",
@@ -3260,7 +3463,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/pan-right",
@@ -3294,7 +3498,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/pan-up",
@@ -3328,7 +3533,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/pan-down",
@@ -3362,7 +3568,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/diag-drift",
@@ -3396,7 +3603,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/push-tilt",
@@ -3430,7 +3638,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "kenburns/micro-parallax",
@@ -3461,7 +3670,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "parallax/text-behind-object",
@@ -3482,7 +3692,8 @@
       ],
       "renderer": "parallax",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "parallax/two-layer-drift",
@@ -3502,7 +3713,8 @@
       ],
       "renderer": "parallax",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "parallax/depth-push",
@@ -3523,7 +3735,8 @@
       ],
       "renderer": "parallax",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "parallax/foreground-sweep",
@@ -3544,7 +3757,8 @@
       ],
       "renderer": "parallax",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "data-viz/bar-race-mini",
@@ -3564,7 +3778,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/line-rise",
@@ -3584,7 +3801,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/counter-roll",
@@ -3604,7 +3824,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/donut-fill",
@@ -3624,7 +3847,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/timeline-dots",
@@ -3644,7 +3870,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/compare-bars",
@@ -3664,7 +3893,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/stat-countup-card",
@@ -3686,7 +3918,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/animated-bar-chart",
@@ -3707,7 +3942,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/bar-chart-race",
@@ -3728,7 +3966,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/chart-story",
@@ -3749,7 +3990,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/conic-progress-ring",
@@ -3770,7 +4014,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/decline-chart",
@@ -3792,7 +4039,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/mk-line-graph",
@@ -3844,7 +4094,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/spain-map",
@@ -3969,7 +4222,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/star-rating-fill",
@@ -3992,7 +4248,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/us-map",
@@ -4022,7 +4281,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/us-map-flow",
@@ -4045,7 +4307,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/us-map-hex",
@@ -4075,7 +4340,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/us-map-bubble",
@@ -4098,7 +4366,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/flowchart",
@@ -4123,7 +4394,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/oscilloscope-trace",
@@ -4142,7 +4416,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/weight-wave",
@@ -4161,7 +4438,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/world-map",
@@ -4191,7 +4471,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/apple-money-count",
@@ -4214,7 +4497,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/north-korea-locked-down",
@@ -4236,7 +4522,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/nyc-paris-flight",
@@ -4262,7 +4551,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "place"
+      ]
     },
     {
       "id": "data-viz/mk-progress-stat",
@@ -4287,7 +4579,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "data-viz/flowchart-vertical",
@@ -4318,7 +4613,10 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [],
-      "added": "2026-09-03"
+      "added": "2026-09-03",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "outro-cta/subscribe-pulse",
@@ -4345,7 +4643,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "outro-cta/question-card",
@@ -4365,7 +4664,8 @@
       ],
       "renderer": "plaque",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "outro-cta/loop-back",
@@ -4385,7 +4685,8 @@
       ],
       "renderer": "footage",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "outro-cta/next-teaser",
@@ -4405,7 +4706,8 @@
       ],
       "renderer": "plaque",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "outro-cta/logo-stamp",
@@ -4425,7 +4727,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "outro-cta/logo-brand-close",
@@ -4453,7 +4756,8 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-09-02"
+      "added": "2026-09-02",
+      "needs": []
     },
     {
       "id": "hero-devices/plate-behind-back",
@@ -4478,7 +4782,8 @@
         "redshift_0046",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/headline-over-head",
@@ -4503,7 +4808,8 @@
         "redshift_0046",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/headline-behind-head",
@@ -4528,7 +4834,8 @@
       "last_used_in": [
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/icons-behind-head",
@@ -4552,7 +4859,8 @@
       "last_used_in": [
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/split-panel-right",
@@ -4578,7 +4886,10 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "comparison"
+      ]
     },
     {
       "id": "hero-devices/knockout-negative",
@@ -4602,7 +4913,11 @@
       "last_used_in": [
         "redshift_0046"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "superlative",
+        "negation"
+      ]
     },
     {
       "id": "hero-devices/text-column-left",
@@ -4627,7 +4942,8 @@
         "redshift_0046",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/bubble-card",
@@ -4652,7 +4968,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/brand-pill",
@@ -4673,7 +4990,10 @@
       ],
       "renderer": "hero-brand-pill",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "brand"
+      ]
     },
     {
       "id": "hero-devices/card-stack-top",
@@ -4698,7 +5018,8 @@
         "redshift_0046",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/phone-mock",
@@ -4722,7 +5043,8 @@
         "redshift_0046",
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/type-slab",
@@ -4747,7 +5069,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4",
+      "needs": []
     },
     {
       "id": "hero-devices/footage-plate-pop",
@@ -4773,7 +5096,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4",
+      "needs": []
     },
     {
       "id": "hero-devices/script-stack",
@@ -4796,7 +5120,8 @@
       "last_used_in": [
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/chat-typing",
@@ -4819,7 +5144,10 @@
       "last_used_in": [
         "redshift_0047"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "question"
+      ]
     },
     {
       "id": "hero-devices/chat-generate",
@@ -4844,7 +5172,8 @@
       ],
       "renderer": "hero-chat-generate",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/title-behind-head",
@@ -4867,7 +5196,8 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     },
     {
       "id": "hero-devices/exhibit-card",
@@ -4891,7 +5221,10 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "hero-devices/statement-slam",
@@ -4911,7 +5244,12 @@
       ],
       "renderer": "hero-slam",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "negation",
+        "superlative",
+        "discovery"
+      ]
     },
     {
       "id": "hero-devices/phrase-log",
@@ -4937,7 +5275,10 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "list"
+      ]
     },
     {
       "id": "hero-devices/oversize-word",
@@ -4959,7 +5300,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "superlative"
+      ]
     },
     {
       "id": "hero-devices/figure-swap",
@@ -4983,7 +5327,10 @@
       "last_used_in": [
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "number"
+      ]
     },
     {
       "id": "hero-devices/verdict-card",
@@ -5003,7 +5350,12 @@
       ],
       "renderer": "hero-verdict",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "negation",
+        "superlative",
+        "discovery"
+      ]
     },
     {
       "id": "hero-devices/source-paper",
@@ -5023,7 +5375,10 @@
       ],
       "renderer": "hero-paper",
       "last_used_in": [],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": [
+        "quote"
+      ]
     },
     {
       "id": "hero-devices/bubble-typed",
@@ -5047,7 +5402,8 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "added": "2026-08-18"
+      "added": "2026-08-18",
+      "needs": []
     }
   ]
 }

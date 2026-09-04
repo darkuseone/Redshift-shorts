@@ -144,6 +144,49 @@ def _metadata(plan: dict[str, Any], script: dict[str, Any], qc: dict[str, Any],
     }
 
 
+def _devices_report(plans: dict[str, dict]) -> dict:
+    """Какие приёмы поставлены и чем каждый оправдан.
+
+    Заказчик просил «понимать смысл, когда и какой шаблон использовать».
+    Отчёт отвечает на это списком: приём, таймкод, признак блока. Приём без
+    основания не запрещён — говорящая голова законно стоит и без него, — но
+    он виден: строкой «без основания» и счётчиком внизу.
+    """
+    out: dict[str, dict] = {}
+    for variant, plan in plans.items():
+        placed: list[dict] = []
+        for shot in plan.get("shots", []):
+            hero = shot.get("hero") or {}
+            if hero.get("renderer"):
+                placed.append({"at": round(float(shot["start"]), 2),
+                               "kind": "приём вокруг ведущего",
+                               "template": hero.get("template", ""),
+                               "grounded_on": hero.get("grounded_on", []),
+                               "why": hero.get("why", "")})
+            if shot.get("kind") == "fullscreen_text":
+                placed.append({"at": round(float(shot["start"]), 2),
+                               "kind": "полноэкранный текст",
+                               "template": shot.get("template", ""),
+                               "grounded_on": shot.get("grounded_on", []),
+                               "why": shot.get("why_template", "")})
+        for overlay in plan.get("overlays", []):
+            placed.append({"at": round(float(overlay["start"]), 2),
+                           "kind": str(overlay.get("type") or "оверлей"),
+                           "template": overlay.get("template", ""),
+                           "grounded_on": overlay.get("grounded_on", []),
+                           "why": overlay.get("why", "")})
+        placed.sort(key=lambda item: item["at"])
+        grounded = sum(1 for item in placed if item["grounded_on"])
+        out[variant] = {
+            "count": len(placed),
+            "grounded": grounded,
+            "ungrounded": len(placed) - grounded,
+            "placed": placed,
+        }
+    return out
+
+
+
 def run_step(ctx) -> dict[str, Any]:
     cfg = ctx.cfg
     script = ctx.read("validated_script.json")
@@ -242,6 +285,7 @@ def run_step(ctx) -> dict[str, Any]:
         "assets": {"count": manifest["count"], "unlicensed": manifest["unlicensed"],
                    "mock_count": manifest["mock_count"]},
         "warnings": list(ctx.warnings),
+        "devices": _devices_report({v: ctx.read(f"edit_plan_{v}.json") for v in variants}),
         "cost_usd": ctx.costs.total_usd,
     }
     ctx.write("build_report.json", report)

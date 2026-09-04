@@ -389,6 +389,7 @@ class TemplatePicker:
         *,
         blob: str = "",
         signals: frozenset[str] | set[str] = frozenset(),
+        traits: Iterable[str] | None = None,
         variant: str = "A",
         duration: float | None = None,
         recent_videos: Sequence[str] = (),
@@ -468,6 +469,7 @@ class TemplatePicker:
                 exclude=exclude,
                 seed=seed,
                 tags=tags,
+                traits=traits,
             )
             if t.id == tid:
                 won_at = idx
@@ -485,6 +487,7 @@ class TemplatePicker:
                 exclude=exclude,
                 seed=seed,
                 tags=tags,
+                traits=traits,
             )
             won_at = None
             active = self._active_candidates(

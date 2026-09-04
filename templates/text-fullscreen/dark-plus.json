@@ -16,6 +16,9 @@
     "showcase",
     "vscode"
   ],
+  "needs": [
+    "device"
+  ],
   "renderer": "dark_plus",
   "last_used_in": [],
   "added": "2026-09-03"

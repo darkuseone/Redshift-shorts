@@ -15,6 +15,11 @@
     "lens",
     "shader"
   ],
+  "needs": [
+    "discovery",
+    "place",
+    "superlative"
+  ],
   "renderer": "gravitational_lens",
   "last_used_in": [],
   "added": "2026-09-03"
