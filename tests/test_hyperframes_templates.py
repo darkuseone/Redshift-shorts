@@ -4169,6 +4169,39 @@ def test_chromatic_radial_split_keeps_catalog_tokens():
     assert "backdrop-filter:blur(14px)" in css
 
 
+def test_cross_warp_morph_animates_without_webgl(ctx):
+    """Каталог крутит WebGL в onUpdate; здесь opposing coordinate drift, dual crossfade и soft blur."""
+    piece = render_transition("cross_warp_morph", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.12}}))
+    node = piece.nodes[0]
+    assert "tr-cross-warp-morph" in node
+    assert "cwm-stage" in node
+    assert "cwm-from" in node and "cwm-to" in node
+    assert "cwm-warp-a" in node and "cwm-warp-b" in node
+    assert "cwm-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.12" in body
+    assert f'"#{ctx.target}"' in body
+    assert "power2.inOut" in body
+    assert "webgl" not in body.lower()
+
+
+def test_cross_warp_morph_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-cross-warp-morph" in css
+    frm = re.search(r"\.tr-cross-warp-morph \.cwm-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-cross-warp-morph \.cwm-to\{[^}]+\}", css).group(0)
+    assert "#283618" in frm
+    assert "#a7c957" in too
+    stage = re.search(r"\.tr-cross-warp-morph \.cwm-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "backdrop-filter:blur(14px)" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9
