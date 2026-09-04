@@ -882,7 +882,9 @@
         "developer"
       ],
       "renderer": "code_morph",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2217,7 +2219,9 @@
         "system"
       ],
       "renderer": "macos_notification",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2721,7 +2725,9 @@
         "shader"
       ],
       "renderer": "whip_pan_shader",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -2878,7 +2884,9 @@
         "cut"
       ],
       "renderer": "transitions_other",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -3031,7 +3039,9 @@
         "shader"
       ],
       "renderer": "swirl_vortex",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
