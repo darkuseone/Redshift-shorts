@@ -26,6 +26,10 @@ on:
         required: false
         default: false
         type: boolean
+      heygen_source:
+        description: "Источник аватара: auto|api|prepared (пусто = из config.yaml)"
+        required: false
+        default: ""
       voice_probe:
         description: "Только проба голоса: что TTS отдаёт на этом тарифе (цент вместо прогона)"
         required: false
@@ -302,6 +306,7 @@ jobs:
           mkdir -p output
           python -m src.cli \
             --set providers.mode=${{ github.event.inputs.providers_mode }} \
+            ${{ github.event.inputs.heygen_source != '' && format('--set heygen.source={0}', github.event.inputs.heygen_source) || '' }} \
             run --script "${{ github.event.inputs.script }}" \
             ${{ github.event.inputs.from_step != '' && format('--from {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
