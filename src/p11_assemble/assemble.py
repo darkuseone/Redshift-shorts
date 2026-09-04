@@ -132,26 +132,34 @@ def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]],
                   assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
-    """Nearest real (non-AI) footage in the same block for hero/fullscreen plates.
+    """Nearest real (non-AI) footage for hero/fullscreen plates.
 
-    Prefer downloaded stock/press over generated fills so TemplatePicker media
-    slots show real NASA/news plates. AI-only blocks return None — plate-needing
-    heroes then fall back to non-plate templates instead of an empty panel.
+    Prefer same-block stock/press; if that block has no real media (empty P7/P9
+    gaps), fall back to the nearest real prepared footage anywhere in the cut
+    so plate-needing heroes still show NASA/news instead of an empty panel.
+    AI-only pools return None — heroes then skip plate templates.
     """
     index = int(slot["index"])
-    same_block = [s for s in slots
-                  if s["block_id"] == slot["block_id"]
-                  and s["kind"] in ("footage", "meme")
-                  and int(s["index"]) in prepared]
-    if not same_block:
-        return None
     assets = assets or {}
 
     def _is_ai(s: dict[str, Any]) -> bool:
         return bool((assets.get(int(s["index"])) or {}).get("ai_generated"))
 
-    real = [s for s in same_block if not _is_ai(s)]
-    pool = real or []  # AI-only → no plate (fall back to non-plate hero)
+    def _pool(same_block_only: bool) -> list[dict[str, Any]]:
+        out = []
+        for s in slots:
+            if s["kind"] not in ("footage", "meme"):
+                continue
+            if int(s["index"]) not in prepared:
+                continue
+            if same_block_only and s["block_id"] != slot["block_id"]:
+                continue
+            if _is_ai(s):
+                continue
+            out.append(s)
+        return out
+
+    pool = _pool(True) or _pool(False)
     if not pool:
         return None
     nearest = min(pool, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
@@ -740,6 +748,22 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
     return params
 
 
+def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
+               block: dict[str, Any]) -> str:
+    """Spoken words to put on screen when a slot has no media (Claude 1ff38b2).
+
+    Three–four words from the speech window — not a invented headline — so the
+    frame finishes what the voice is saying instead of showing a dark empty card.
+    """
+    start, end = float(slot["start"]), float(slot["end"])
+    said = [str(w.get("word") or "") for w in words
+            if float(w["end"]) > start and float(w["start"]) < end]
+    said = [w for w in said if w.strip()]
+    if not said:
+        said = str(block.get("text") or "").split()[:4]
+    return " ".join(said[:4]).upper().strip(" ,.;:—-")
+
+
 def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  content: dict[str, Any], has_alpha: bool,
                  plate_src: dict[str, Any] | None,
@@ -987,10 +1011,12 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
                     compose_zoom=float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0))
             else:
                 # Opaque fallback: same compose_zoom via ShotSpec (source already 9:16).
+                # focus_y ~0.55 matches prepare_avatar_shot strong-zoom crop bias
+                # so opaque Avatar V plates also trim the black void above the head.
                 result = prepare_shot(ShotSpec(
                     src=avatar_src, dst=dst, duration_sec=duration,
                     width=width, height=height, fps=fps, fit="crop",
-                    focus_x=0.5, focus_y=0.35, start_sec=offset,
+                    focus_x=0.5, focus_y=0.55, start_sec=offset,
                     compose_zoom=float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)))
             result["avatar_offset_sec"] = round(offset, 3)
             result["avatar_segment"] = segment["index"]
@@ -1846,10 +1872,44 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         prep = prepared.get(slot["index"])
         asset = assets.get(slot["index"])
         if prep is None or (asset is None and slot["kind"] not in AVATAR_KINDS):
-            # Пустой слот закрывается фирменной заливкой, но это дефект плана,
-            # и он обязан быть виден в отчёте, а не «раствориться» в кадре.
-            entry.update({"file": None, "asset_id": None,
-                          "gap_reason": "материал не найден"})
+            # Empty slot → spoken-word fullscreen, not a dark brand fill.
+            # Live 0042/0047 left multi-second black cards when P7 missed and
+            # P9 hit the 35% AI ceiling; Claude 1ff38b2 closed those with text.
+            gap_block = blocks_by_id.get(slot["block_id"], {})
+            content = gap_phrase(words_doc["words"], slot, gap_block)
+            s_content = str(content or "")
+            signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
+            preferred = prefs.get(f"fullscreen_text@{slot['role']}")
+            head = [p for p in (preferred, slot.get("template_hint")) if p]
+            template, _ = picker.pick(
+                "text-fullscreen",
+                blob=s_content or str(gap_block.get("text") or ""),
+                signals=signals,
+                variant=variant,
+                duration=float(slot["duration"]),
+                recent_videos=recent_videos,
+                exclude=used_templates,
+                seed=seed + int(slot["index"]),
+                prefer_head=head,
+            )
+            used_templates.append(template.id)
+            # Borrow nearest real plate as bg when any footage exists in the cut.
+            plate = _plate_source(slot, slots, prepared, assets)
+            bg_file = (plate or {}).get("file") if plate else None
+            entry.update({
+                "kind": "fullscreen_text",
+                "content": content,
+                "template": template.id,
+                "renderer": template.renderer,
+                "params": dict(template.params),
+                "invert": bool(template.params.get("invert")) or variant == "B",
+                "accent_word": _fullscreen_accent(content, gap_block),
+                "file": bg_file,
+                "asset_id": None,
+                "gap_reason": "материал не найден: кадр закрыт словом блока",
+            })
+            if bg_file is None:
+                entry["gap_reason"] += "; фон — сцена ролика"
             shots.append(entry)
             continue
 

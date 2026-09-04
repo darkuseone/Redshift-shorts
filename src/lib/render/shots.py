@@ -416,12 +416,15 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
         stage = "withtext"
     zoom = max(float(compose_zoom or 1.0), 1.0)
     if zoom > 1.001:
-        # Scale up then head-weighted crop: Avatar V often leaves subject ~30% tall.
+        # Scale up then head-weighted crop: Avatar V often leaves subject ~23–30% tall
+        # with a huge black void above the head. Mild zoom (≤1.6) keeps a light bias;
+        # stronger zoom must shift the window down harder or the void just scales up
+        # (measured: z=2.85 @ bias 0.32 → still ~40% fill; bias 0.55 → ~72%).
         sw = math.ceil(width * zoom / 2) * 2
         sh = math.ceil(height * zoom / 2) * 2
         crop_x = max(0, (sw - width) // 2)
-        # Bias crop upward so head stays in frame; trim empty desk/floor below.
-        crop_y = max(0, int(round((sh - height) * 0.32)))
+        crop_bias = 0.32 if zoom < 1.8 else min(0.62, 0.28 + 0.10 * zoom)
+        crop_y = max(0, int(round((sh - height) * crop_bias)))
         filters.append(
             f"[{avatar_index}:v]fps={fps},scale={sw}:{sh}:flags=lanczos,"
             f"crop={width}:{height}:{crop_x}:{crop_y},setsar=1[av]")

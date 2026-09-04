@@ -69,9 +69,9 @@ heygen:
   output: "1080x1920"
   # In-compose zoom for prepared Avatar V plates where the subject sits
   # small in 9:16 (desk-wide look). Applied only at shot prepare; does not
-  # rewrite assets/avatar_clips. 1.0 = off. Measured ~30% subject height on
-  # redshift_0042 → 1.55 targets ~45% without extreme mic/hand crop.
-  compose_zoom: 1.55
+  # rewrite assets/avatar_clips. 1.0 = off. Measured ~23% subject height on
+  # redshift_0042 → 2.85 targets ~65% (1.55 was still ~36%, visually unchanged).
+  compose_zoom: 2.85
   max_seconds_per_video: 42
   api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"

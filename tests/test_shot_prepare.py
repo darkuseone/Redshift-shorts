@@ -136,3 +136,26 @@ class TestStockIsSlimmedOnIntake:
         report = slim_video(src)
         assert not report["slimmed"]
         assert src.exists()
+
+
+def test_gap_phrase_uses_spoken_window():
+    from src.p11_assemble.assemble import gap_phrase
+
+    words = [
+        {"word": "квантовый", "start": 1.0, "end": 1.4},
+        {"word": "чип", "start": 1.4, "end": 1.7},
+        {"word": "внутри", "start": 1.7, "end": 2.1},
+        {"word": "кубитов", "start": 2.1, "end": 2.6},
+    ]
+    slot = {"start": 1.0, "end": 2.5, "index": 3}
+    block = {"text": "Это квантовый чип."}
+    assert gap_phrase(words, slot, block) == "КВАНТОВЫЙ ЧИП ВНУТРИ КУБИТОВ"
+
+
+def test_compose_zoom_strong_bias_formula():
+    """Strong zoom must bias crop down; mild zoom keeps legacy 0.32."""
+    def bias(zoom: float) -> float:
+        return 0.32 if zoom < 1.8 else min(0.62, 0.28 + 0.10 * zoom)
+
+    assert bias(1.55) == 0.32
+    assert 0.54 <= bias(2.85) <= 0.58
