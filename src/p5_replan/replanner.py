@@ -59,7 +59,7 @@ class Slot:
     transition_in: str = "cut"
     events: list[dict[str, Any]] = field(default_factory=list)
     needs_asset: bool = False
-    asset_role: str = ""            # broll | evidence | meme | generated
+    asset_role: str = ""            # broll | evidence | meme | interstitial | generated
     template_hint: str = ""
     meme_emotion: str = ""          # эмоция мема (§14.3): по ней он и берётся из базы
     reason: str = ""
@@ -636,7 +636,7 @@ def _insert_avatar_interstitials(slots: list[Slot], min_shot: float, appearance_
                     index=0, start=inter_start, end=slot.start, kind="footage",
                     block_id=prev.block_id, role=prev.role, mode="C",
                     visual_intent=prev.visual_intent, queries=list(prev.queries),
-                    needs_asset=True, asset_role="broll",
+                    needs_asset=True, asset_role="interstitial",
                     reason="перебивка между аватар-сегментами (§7.4.3, R-3)",
                 ))
                 notes.append(
@@ -648,7 +648,7 @@ def _insert_avatar_interstitials(slots: list[Slot], min_shot: float, appearance_
                     index=0, start=slot.start, end=inter_end, kind="footage",
                     block_id=slot.block_id, role=slot.role, mode="C",
                     visual_intent=slot.visual_intent, queries=list(slot.queries),
-                    needs_asset=True, asset_role="broll",
+                    needs_asset=True, asset_role="interstitial",
                     reason="перебивка между аватар-сегментами (§7.4.3, R-3)",
                 ))
                 slot.start = inter_end
@@ -840,7 +840,7 @@ def _assign_queries(slots: list[Slot], draft: dict[str, Any]) -> None:
     """Раздать поисковые запросы блока по его футажным слотам (по кругу)."""
     by_block: dict[str, list[Slot]] = {}
     for slot in slots:
-        if slot.needs_asset and slot.asset_role in ("broll", "evidence"):
+        if slot.needs_asset and slot.asset_role in ("broll", "evidence", "interstitial"):
             by_block.setdefault(slot.block_id, []).append(slot)
     for block in draft["blocks"]:
         block_slots = by_block.get(block["id"], [])

@@ -118,6 +118,7 @@ sources:
 routing:
   space:      [nasa, esa, internet_archive, freepik, magnific]
   astro:      [nasa, esa, internet_archive, freepik, magnific]
+  news:       [pexels, freepik, internet_archive, magnific]
   lab:        [freepik, pexels, pixabay, magnific]
   biotech:    [freepik, pexels, pixabay, magnific]
   medicine:   [freepik, pexels, pixabay, magnific]
