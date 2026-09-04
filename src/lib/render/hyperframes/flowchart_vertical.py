@@ -180,6 +180,7 @@ def dv_flowchart_vertical(ctx: "TemplateCtx") -> Piece:
         f'{_num(start + times["fix_at"])});',
         f'tl.to("#{node_id}-squiggle",{{opacity:0,duration:{_num(_fcv_dur(0.12, duration))},ease:"power2.out",immediateRender:false}},'
         f'{_num(start + times["fix_at"])});',
+        f'tl.set("#{node_id}-squiggle",{{opacity:0}},{_num(start + times["fix_at"] + _fcv_dur(0.12, duration))});',
 
         # Deselect: cursor moves away, border fades out
         f'tl.to("#{node_id}-cur",{{x:60,y:40,duration:{_num(_fcv_dur(0.3, duration))},ease:"power1.out",immediateRender:false}},'

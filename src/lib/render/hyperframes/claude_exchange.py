@@ -468,6 +468,9 @@ def ov_claude_exchange(ctx: TemplateCtx) -> Piece:
         f'tl.to("#{node_id}-notice",{{opacity:0,duration:{_num(dur(0.16))}}},'
         f'{_num(tw)});'
     )
+    tweens.append(
+        f'tl.set("#{node_id}-notice",{{opacity:0}},{_num(tw + dur(0.16))});'
+    )
     tw += dur(0.25)
 
     # 5. Answer stream

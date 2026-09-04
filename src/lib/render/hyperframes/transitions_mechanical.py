@@ -55,6 +55,7 @@ def tr_transitions_mechanical(ctx: TemplateCtx) -> Piece:
         f'tl.fromTo("#{node_id}-seam",{{opacity:1,scaleX:1.05}},'
         f'{{opacity:0,scaleX:1,duration:{_num(min(0.12, d * 0.2))},ease:"power2.out"}},'
         f'{_num(start + times["mid"])});',
+        f'tl.set("#{node_id}-seam",{{opacity:0}},{_num(start + times["mid"] + min(0.12, d * 0.2))});',
         f'tl.to("#{node_id}-top",{{y:-960,duration:{_num(times["open"])},ease:"power3.out"}},'
         f'{_num(start + times["open_start"])});',
         f'tl.to("#{node_id}-bot",{{y:960,duration:{_num(times["open"])},ease:"power3.out"}},'
