@@ -114,7 +114,7 @@ SS_STROKE = 14
 
 # Цвета для твина «серое темнеет до чёрного»: GSAP тянет цвет по
 # значению, а не по переменной CSS — var() он в цвет не разворачивает.
-_INK, _MUTED_INK = "#111214", "#9A9CA1"
+_INK, _MUTED_INK = "#111214", "#7A7D82"
 
 
 @lru_cache(maxsize=4)
@@ -13697,7 +13697,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".lt-cb-wipe{transform-origin:0px 50%;transform-box:fill-box}"
         ".lt-cb-card{display:flex;align-items:stretch;width:100%;height:100%;"
         "border-radius:16px;overflow:hidden;"
-        "box-shadow:0 14px 44px rgba(15,17,21,0.18)}"
+        "box-shadow:0 14px 44px rgba(17,18,20,0.18)}"
         ".lt-cb-tab{display:block;width:12px;flex-shrink:0;background:#C8453D;"
         "transform-origin:50% 0%;will-change:transform}"
         ".lt-cb-body{display:flex;flex-direction:column;gap:7px;flex:1;"

@@ -278,7 +278,7 @@ def fcv_css() -> str:
         ".fcv-chart{position:absolute;left:0;top:0;width:var(--frame-w);height:var(--frame-h);"
         "overflow:hidden;font-family:Inter,var(--font-subtitle),sans-serif;"
         f"color:{_FCV_INK};background-color:{_FCV_CANVAS};"
-        "background-image:radial-gradient(#e5e5e5 1.5px, transparent 1.5px);"
+        "background-image:radial-gradient(rgba(122,125,130,0.22) 1.5px, transparent 1.5px);"
         "background-size:24px 24px}"
         ".fcv-stage{position:absolute;inset:0;transform-origin:50% 50%;will-change:transform,opacity}"
         ".fcv-connectors{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}"

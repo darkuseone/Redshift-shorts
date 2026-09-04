@@ -297,8 +297,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".plaque{left:var(--safe-x-min);right:calc(var(--frame-w) - var(--safe-x-max));"
         f"bottom:{height - int(safe['y_max']) + 60}px;padding:26px 34px;"
         f"border-radius:{int(plaque['radius_px_default'])}px;"
-        f"background:rgba(247,245,243,{plaque['bg_alpha']});color:var(--color-ink);"
-        f"border:{int(plaque['border_px'])}px solid rgba(192,57,43,{plaque['border_alpha']});"
+        f"background:{_rgba(colors['bg_light'], plaque['bg_alpha'])};color:var(--color-ink);"
+        f"border:{int(plaque['border_px'])}px solid {_rgba(colors['accent'], plaque['border_alpha'])};"
         "font-family:var(--font-subtitle);font-weight:800;font-size:44px;"
         f"box-shadow:0 {int(shadow['offset_y_px'])}px {int(shadow['blur_px'])}px "
         f"rgba(0,0,0,{shadow['alpha']})}}"
@@ -388,7 +388,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # надписями на тёмной сцене.
         ".stage-dark{--color-on-stage:var(--color-bg-light);"
         "--color-knockout:var(--color-bg-light);"
-        "--stage-halo:rgba(6,8,12,0.85)}"
+        "--stage-halo:rgba(10,10,12,0.85)}"
     )
 
     # Слои переходов (§4.3, §15) — отдельный модуль: их 9 рендереров,
