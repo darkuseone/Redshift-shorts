@@ -130,7 +130,8 @@ jobs:
       HYPERFRAMES_VERSION: "0.8.26"
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
-      HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+      HEYGEN_API: ${{ secrets.HEYGEN_API }}
+      HEYGEN_AVATAR_ID: ${{ secrets.HEYGEN_AVATAR_ID }}
       # Vision обеих ступеней §7.3 — Grok по этому ключу. NASA и Internet
       # Archive работают анонимно, Gemini из рабочего набора выведен.
       XAI_API_KEY: ${{ secrets.XAI_API_KEY }}

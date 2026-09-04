@@ -39,11 +39,16 @@ heygen:
   #
   # Движок — только Avatar V (`avatar_v`), как просил заказчик.
   avatar_id: "99ccc74e764947c394cd4ef210960a6f"
+  # Опциональный оверрайд лука из секрета HEYGEN_AVATAR_ID (Avatar 5 look id).
+  # Пусто/нет секрета → берём avatar_id выше (зелёная рубашка / тату).
+  avatar_id_env: HEYGEN_AVATAR_ID
+  # Движок Avatar V — иначе API молча уходит в Avatar IV.
+  engine: "avatar_v"
   model_version: "avatar5"                         # §7.4: вынесено в конфиг, не хардкод
   # Источник клипов: api — по ключу, prepared — готовые файлы из репозитория,
   # auto — ключ есть → api, нет ключа но есть клипы → prepared, иначе заглушка.
-  # Ключа HeyGen в секретах нет: аватар приходит из MCP-коннектора в чате,
-  # поэтому рабочий режим здесь — prepared через auto.
+  # Ключ в GitHub Secrets: HEYGEN_API. Режим auto: есть ключ → live API,
+  # нет ключа но есть клипы → prepared, иначе заглушка.
   source: auto
   prepared_dir: assets/avatar_clips
   # Ключевание не нужно: аватар 5 отдаёт настоящую прозрачность. Проверено
@@ -63,7 +68,7 @@ heygen:
   background: "transparent_if_available"
   output: "1080x1920"
   max_seconds_per_video: 42
-  api_key_env: HEYGEN_API_KEY
+  api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"
   poll_interval_sec: 10
   poll_timeout_sec: 900

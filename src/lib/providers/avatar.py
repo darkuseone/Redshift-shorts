@@ -224,17 +224,29 @@ class HeyGenAvatar(AvatarProvider):
         width, height = self.cfg.resolution
         audio_url = self._upload_audio(audio_path)
 
+        # Look id: secret HEYGEN_AVATAR_ID overrides config (same pattern as voice_id_env).
+        avatar_id = str(
+            self.cfg.secret_for("heygen.avatar_id_env", purpose="HeyGen avatar look")
+            or self.cfg.get("heygen.avatar_id")
+            or ""
+        )
+        if not avatar_id:
+            raise ProviderError("HeyGen avatar_id пуст (config + HEYGEN_AVATAR_ID)")
+
         payload: dict[str, Any] = {
             "video_inputs": [{
                 "character": {
                     "type": "avatar",
-                    "avatar_id": str(self.cfg.get("heygen.avatar_id")),
+                    "avatar_id": avatar_id,
                     "avatar_style": "normal",
                 },
                 "voice": {"type": "audio", "audio_url": audio_url},
             }],
             "dimension": {"width": width, "height": height},
         }
+        engine = self.cfg.get("heygen.engine", None)
+        if engine:
+            payload["video_inputs"][0]["character"]["engine"] = str(engine)
         model_version = self.cfg.get("heygen.model_version", None)
         if model_version:
             payload["video_inputs"][0]["character"]["model_version"] = model_version
