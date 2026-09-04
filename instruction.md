@@ -386,6 +386,8 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Browser-ui message-thread-reveal: iMessage-чат, баблы, карточка ссылки, эмодзи и end card | каталог скакал координатами; здесь transform y, scale/opacity, Inter/#23262b/#0a80f8/#C8453D; ai-chat-reveal не трогаем |
 | 2026-09-04 | Browser-ui notes-reveal: Apple Notes печать строк, скролл листа, бумажная карточка с маркером и чеклистом | каталог считал координаты букв; здесь span-ы и opacity, transform y, scale/scaleX, Inter/#fcfbf8/#ece1d5/#C8453D; paper-reveal не трогаем |
 | 2026-09-04 | Browser-ui notification-cascade: каскад push-уведомлений, restack вверх, пилюля с крестиком и брендовый end card | каталог использовал autoAlpha; здесь transform y, scale, opacity, Inter/#251004/#111214/#C8453D; phone-notification не трогаем |
+| 2026-09-04 | Lower-thirds instagram-follow: плашка профиля Instagram, бейдж верификации, кнопка Follow -> Following с отскоком | каталог использовал -apple-system; здесь Inter/#1a1a1a/#0095f6/#2f2f2f, y, scale, opacity, backgroundColor; name-title не трогаем |
+
 
 
 

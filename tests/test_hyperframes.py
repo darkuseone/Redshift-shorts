@@ -1943,6 +1943,36 @@ def test_notification_cascade_overlay_reaches_the_markup(plan, assets, brandbook
     assert "strokeDashoffset" not in tween_src
 
 
+def test_instagram_follow_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "plaque", "start": 0.2, "end": 4.5,
+        "template": "lower-thirds/instagram-follow",
+        "renderer": "instagram_follow",
+        "params": {
+            "displayName": "HeyGen",
+            "handle": "@heygen_official",
+            "followers": "47.5K followers",
+            "buttonText": "Follow",
+            "followingText": "Following",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "instagram-follow" in out
+    assert "HeyGen" in out
+    assert "@heygen_official" in out
+    assert "47.5K followers" in out
+    assert "Follow" in out
+    assert "Following" in out
+    node = next(line for line in out.splitlines() if "instagram-follow" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+
 
 
 def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):

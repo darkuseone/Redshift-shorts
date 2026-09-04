@@ -259,6 +259,18 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "footerText": "hyperframes.heygen.com",
         },
     })
+    overlays.append({
+        "type": "plaque", "start": 121.0, "end": 125.5,
+        "template": "lower-thirds/instagram-follow", "renderer": "instagram_follow",
+        "params": {
+            "displayName": "HeyGen",
+            "handle": "@heygen_official",
+            "followers": "47.5K followers",
+            "buttonText": "Follow",
+            "followingText": "Following",
+        },
+    })
+
 
 
 

@@ -5353,6 +5353,13 @@ OVERLAY_PARAMS = {
         "headlineAccent": "FROM HTML",
         "footerText": "hyperframes.heygen.com",
     },
+    "instagram_follow": {
+        "displayName": "HeyGen",
+        "handle": "@heygen_official",
+        "followers": "47.5K followers",
+        "buttonText": "Follow",
+        "followingText": "Following",
+    },
 }
 
 
@@ -5886,8 +5893,61 @@ def test_notification_cascade_keeps_catalog_tokens():
     assert ".notification-cascade" in css
     assert ".nc-banner" in css
     assert ".nc-endcard" in css
-    block = css.split(".notification-cascade", 1)[1].split(".sfb-board", 1)[0]
+    block = css.split(".notification-cascade", 1)[1].split(".instagram-follow", 1)[0]
     assert "Inter" in block
+
+
+def test_instagram_follow_animates_without_forbidden_properties():
+    """Catalog bounces button and crossfades text; here y/scale/opacity/backgroundColor, no forbidden props."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=4.5, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["instagram_follow"])
+    piece = render_overlay("instagram_follow", ctx)
+    node = piece.nodes[0]
+    assert "instagram-follow" in node
+    assert "if-card" in node and "if-follow-btn" in node
+    assert "HeyGen" in node
+    assert "@heygen_official" in node
+    assert "47.5K followers" in node
+    assert "Follow" in node
+    assert "Following" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "-apple-system" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body
+    assert "opacity:" in body
+    assert "y:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("instagram_follow", TemplateCtx(
+        index=0, start=0.0, duration=4.5, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_instagram_follow_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".instagram-follow" in css
+    assert ".if-card" in css
+    assert ".if-follow-btn" in css
+    block = css.split(".instagram-follow", 1)[1].split(".sfb-board", 1)[0]
+    assert "Inter" in block
+
 
 
 

@@ -187,7 +187,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          [2.0, 10.0], {"text": "BREAKING NEWS: SOMETHING HAPPENED"},
          ["text", "news", "ticker", "scroll"], "news_ticker"),
     ]),
-    "lower-thirds": (11, [
+    "lower-thirds": (12, [
         ("name-title", "Имя и должность", [1.5, 4.0],
          {"position": "bottom", "direction": "left"}, ["person"], "plaque"),
         ("accent-underline", "Имя и роль с акцентной чертой", [1.5, 4.8],
@@ -213,6 +213,15 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"position": "bottom", "chips": True}, ["tags"], "plaque"),
         ("timestamp-marker", "Отметка времени", [1.5, 2.5],
          {"position": "top", "mono": True}, ["time"], "plaque"),
+        ("instagram-follow",
+         "Instagram: плашка профиля с кнопкой Follow/Following — instagram-follow",
+         [2.5, 6.0], {
+             "displayName": "HeyGen",
+             "handle": "@heygen_official",
+             "followers": "47.5K followers",
+             "buttonText": "Follow",
+             "followingText": "Following",
+         }, ["social", "instagram", "follow", "profile", "lower-third"], "instagram_follow"),
     ]),
     "frames-cards": (7, [
         ("article-card", "Карточка статьи", [1.5, 4.0], {"template": "browser"},
