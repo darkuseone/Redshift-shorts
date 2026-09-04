@@ -1,0 +1,19 @@
+{
+  "id": "transitions/transitions-dissolve",
+  "name": "transitions-dissolve",
+  "category": "transitions",
+  "title": "Dissolve: мягкое растворение SCENE A и проявление SCENE B — transitions-dissolve",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "dissolve",
+    "crossfade"
+  ],
+  "renderer": "transitions_dissolve",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

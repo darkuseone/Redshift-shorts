@@ -400,6 +400,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Transitions ridged-burn: пламенный прожиг с искрами и острыми кромками | каталог крутит WebGL в onUpdate; здесь fiery blackbody burn, ember sparks и crossfade, #0b090a/#e5383b; flash-through-white не трогаем |
 | 2026-09-04 | Transitions ripple-waves: концентрические волны ряби с противофазой | каталог крутит WebGL в onUpdate; здесь concentric wave rings in counter-phase, ripple highlights и soft blur, #264653/#e9c46a; ridged-burn не трогаем |
 | 2026-09-04 | Transitions swirl-vortex: органическое вихревое вращение и закрутка склейки | каталог крутит WebGL в onUpdate; здесь counter-rotating swirl crossfade, vortex glow и soft blur, #073b4c/#06d6a0; ripple-waves не трогаем |
+| 2026-09-04 | Transitions transitions-dissolve: мягкое растворение SCENE A и проявление SCENE B | каталог крутит набор растворений; здесь smooth crossfade с scale drift и blur, #1b263b/#e07a5f; swirl-vortex не трогаем |
 
 
 
