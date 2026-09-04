@@ -516,7 +516,9 @@
         "swap"
       ],
       "renderer": "kinetic_type_swap",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -541,7 +543,9 @@
         "stack"
       ],
       "renderer": "line_by_line_slide",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -565,7 +569,9 @@
         "particles"
       ],
       "renderer": "particle_text_dissolve",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -638,7 +644,9 @@
         "reveal"
       ],
       "renderer": "scramble_reveal",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02"
     },
     {
@@ -662,7 +670,9 @@
         "scale"
       ],
       "renderer": "shared_axis_z",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -728,7 +738,9 @@
         "developer"
       ],
       "renderer": "code_particle_assemble",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -816,7 +828,9 @@
         "developer"
       ],
       "renderer": "code_typing",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -862,7 +876,9 @@
         "apple-terminal"
       ],
       "renderer": "apple_terminal_clear_dark",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -884,7 +900,9 @@
         "vscode"
       ],
       "renderer": "dark_plus",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -907,7 +925,9 @@
         "music"
       ],
       "renderer": "beat_freeze_cut",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2390,7 +2410,9 @@
         "shader"
       ],
       "renderer": "cinematic_zoom",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2579,7 +2601,9 @@
         "through"
       ],
       "renderer": "transitions_blur",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -2755,7 +2779,9 @@
         "shader"
       ],
       "renderer": "ridged_burn",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03"
     },
     {
@@ -4474,7 +4500,8 @@
       ],
       "renderer": "hero-headline",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -4597,7 +4624,8 @@
       ],
       "renderer": "hero-text-column",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     },
@@ -5016,7 +5044,8 @@
       ],
       "renderer": "hero-bubble-typed",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-08-18"
     }

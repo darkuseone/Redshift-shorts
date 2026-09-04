@@ -1586,9 +1586,10 @@
       "score": 0.93,
       "duration_sec": 19.585,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": "2026-09-02",
+      "last_used": "2026-09-04",
       "added": "2026-09-02",
       "phashes": [
         "cebc818b44d9c8fc",
