@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 32,
+    "transitions": 33,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 193
+    "_total": 194
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2693,6 +2693,26 @@
         "shader"
       ],
       "renderer": "ridged_burn",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/ripple-waves",
+      "name": "ripple-waves",
+      "category": "transitions",
+      "title": "Ripple waves: концентрические волны ряби с противофазой — ripple-waves",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "wave",
+        "ripple",
+        "shader"
+      ],
+      "renderer": "ripple_waves",
       "last_used_in": [],
       "added": "2026-09-03"
     },

@@ -398,6 +398,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Transitions domain-warp-dissolve: каскадный ворп и радужное свечение кромок | каталог крутит WebGL в onUpdate; здесь cascaded warp crossfade, iridescent glow и soft blur, #0d1b2a/#00f5d4; cross-warp-morph не трогаем |
 | 2026-09-04 | Transitions flash-through-white: переход через белую вспышку на тёмных сценах | каталог крутит WebGL в onUpdate; здесь white flare midpoint, amber glow и crossfade, #03071e/#ffba08/#ffffff; domain-warp-dissolve не трогаем |
 | 2026-09-04 | Transitions ridged-burn: пламенный прожиг с искрами и острыми кромками | каталог крутит WebGL в onUpdate; здесь fiery blackbody burn, ember sparks и crossfade, #0b090a/#e5383b; flash-through-white не трогаем |
+| 2026-09-04 | Transitions ripple-waves: концентрические волны ряби с противофазой | каталог крутит WebGL в onUpdate; здесь concentric wave rings in counter-phase, ripple highlights и soft blur, #264653/#e9c46a; ridged-burn не трогаем |
 
 
 

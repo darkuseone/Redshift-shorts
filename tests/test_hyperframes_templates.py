@@ -4300,6 +4300,39 @@ def test_ridged_burn_keeps_catalog_tokens():
     assert "backdrop-filter:blur(14px)" in css
 
 
+def test_ripple_waves_animates_without_webgl(ctx):
+    """Каталог крутит WebGL в onUpdate; здесь concentric wave rings in counter-phase, ripple highlights и blur."""
+    piece = render_transition("ripple_waves", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.12}}))
+    node = piece.nodes[0]
+    assert "tr-ripple-waves" in node
+    assert "rw-stage" in node
+    assert "rw-from" in node and "rw-to" in node
+    assert "rw-w1" in node and "rw-w2" in node
+    assert "rw-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.12" in body
+    assert f'"#{ctx.target}"' in body
+    assert "power2.inOut" in body or "power2.out" in body
+    assert "webgl" not in body.lower()
+
+
+def test_ripple_waves_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-ripple-waves" in css
+    frm = re.search(r"\.tr-ripple-waves \.rw-from\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-ripple-waves \.rw-to\{[^}]+\}", css).group(0)
+    assert "#264653" in frm
+    assert "#e9c46a" in too
+    stage = re.search(r"\.tr-ripple-waves \.rw-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "backdrop-filter:blur(14px)" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9

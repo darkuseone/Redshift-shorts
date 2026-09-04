@@ -447,7 +447,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "iconText": "HF",
          }, ["ui", "desktop", "macos", "notification", "system"], "macos_notification"),
     ]),
-    "transitions": (32, [
+    "transitions": (33, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
         ("whip-pan-l", "Резкий пан влево", [0.16, 0.28], {"direction": -1, "blur": 24},
          ["dynamic", "pan"], "whip_pan"),
@@ -549,6 +549,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Ridged burn: пламенный прожиг с искрами и острыми кромками — ridged-burn",
          [0.22, 0.42], {},
          ["dynamic", "burn", "fire", "shader"], "ridged_burn"),
+        ("ripple-waves",
+         "Ripple waves: концентрические волны ряби с противофазой — ripple-waves",
+         [0.22, 0.42], {},
+         ["dynamic", "wave", "ripple", "shader"], "ripple_waves"),
     ]),
     "avatar-entry": (6, [
         ("hero-zoom-in", "Вход зумом на аватар", [0.2, 0.4], {"from_scale": 1.18},

@@ -1972,6 +1972,7 @@ from .cross_warp_morph import cwm_transition_css, tr_cross_warp_morph
 from .domain_warp_dissolve import dwd_transition_css, tr_domain_warp_dissolve
 from .flash_through_white import ftw_transition_css, tr_flash_through_white
 from .ridged_burn import rb_transition_css, tr_ridged_burn
+from .ripple_waves import rw_transition_css, tr_ripple_waves
 
 TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "cut": tr_cut,
@@ -2003,6 +2004,7 @@ TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "domain_warp_dissolve": tr_domain_warp_dissolve,
     "flash_through_white": tr_flash_through_white,
     "ridged_burn": tr_ridged_burn,
+    "ripple_waves": tr_ripple_waves,
 }
 
 
@@ -2401,6 +2403,7 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         + dwd_transition_css()
         + ftw_transition_css()
         + rb_transition_css()
+        + rw_transition_css()
     )
 
 

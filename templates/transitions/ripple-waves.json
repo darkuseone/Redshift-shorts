@@ -1,0 +1,20 @@
+{
+  "id": "transitions/ripple-waves",
+  "name": "ripple-waves",
+  "category": "transitions",
+  "title": "Ripple waves: концентрические волны ряби с противофазой — ripple-waves",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "wave",
+    "ripple",
+    "shader"
+  ],
+  "renderer": "ripple_waves",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}
