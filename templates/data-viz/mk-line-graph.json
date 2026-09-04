@@ -1,0 +1,52 @@
+{
+  "id": "data-viz/mk-line-graph",
+  "name": "mk-line-graph",
+  "category": "data-viz",
+  "title": "Две линии рисуются слева направо, точки и числа на фронте — mk-line-graph",
+  "duration_range": [
+    1.5,
+    7.0
+  ],
+  "params": {
+    "series": [
+      {
+        "name": "Renders",
+        "values": [
+          12,
+          26,
+          22,
+          38,
+          44,
+          58
+        ]
+      },
+      {
+        "name": "Projects",
+        "values": [
+          8,
+          14,
+          18,
+          16,
+          28,
+          36
+        ]
+      }
+    ],
+    "xLabels": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun"
+    ]
+  },
+  "tags": [
+    "data",
+    "line",
+    "series"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

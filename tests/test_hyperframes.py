@@ -12,9 +12,12 @@ import re
 import pytest
 
 from src.lib.render.hyperframes.brand_css import build_css
+from src.lib.render.hyperframes.captions import TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD
 from src.lib.render.hyperframes.composition import (
     TRACK_SUBTITLE, CompositionBuilder, _lay_out_tracks, _num,
 )
+
+_CAPTION_TRACKS = {TRACK_CAPTION_EVEN, TRACK_CAPTION_ODD, TRACK_SUBTITLE}
 
 
 @pytest.fixture
@@ -166,14 +169,22 @@ def test_cta_pulse_is_finite(markup):
     assert re.search(r"repeat:\d+", pulse.replace(" ", ""))
 
 
-def test_subtitle_popin_animates_inner_span(markup):
-    """Видимостью клипа управляет фреймворк — анимируем вложенный span."""
-    assert 'tl.fromTo("#w-0000-t"' in markup
-    assert 'tl.fromTo("#w-0000"' not in markup
+def test_subtitle_gradient_fill_animates_inner_word(markup):
+    """Видимостью клипа управляет движок — bounce и заливка на вложенном слове."""
+    assert 'class="clip caption-grad"' in markup
+    assert 'fromTo("#gf-00"' not in markup
+    assert 'tl.set("#gf-00-w' in markup
+    assert "backgroundPosition" not in markup
+    assert "clip-path" not in markup
+    assert 'id="w-0000"' not in markup
 
 
-def test_emphasis_word_marked_in_markup(markup):
-    assert 'id="w-0001" class="clip word emphasis"' in markup
+def test_emphasis_word_gets_blood_gradient(markup):
+    assert "gf-accent" in markup
+    assert "#C8453D" in markup
+    assert "#E4726A" in markup
+    assert "#FFD700" not in markup
+    assert "#fe9f1b" not in markup.lower()
 
 
 def test_text_behind_head_taken_from_block(markup):
@@ -206,11 +217,11 @@ def test_css_takes_colors_from_brandbook(brandbook):
     assert "@font-face" in css and "fonts/Nunito-ExtraBold.ttf" in css
 
 
-def test_subtitle_is_centered_on_the_frame(brandbook):
-    """Центр кадра, а не середина рабочей зоны (правое поле ужато под UI)."""
+def test_subtitle_group_is_centered_on_the_work_area(brandbook):
+    """Фраза центрируется в рабочей зоне, не в оптическом центре кадра."""
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
-    rule = re.search(r"\.word\{([^}]*)\}", css).group(1)
-    assert "left:0" in rule and "right:0" in rule and "text-align:center" in rule
+    rule = re.search(r"\.gf-group\{([^}]*)\}", css).group(1)
+    assert "justify-content:center" in rule
 
 
 # --- статистика для отчёта ----------------------------------------------------
@@ -334,6 +345,357 @@ def test_every_tween_target_exists_in_the_markup(plan, assets, brandbook):
         assert selector in ids, f"твин целится в несуществующий {selector}: {tween}"
 
 
+def test_glitch_shader_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только оверлей, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "glitch_shader", "duration": 0.4,
+        "params": {"seed": 9}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-glitch-shader" in out
+    assert "gs-from" in out and "gs-to" in out
+    assert "gs-scan" in out and "gs-block" in out
+    assert "gs-r" in out and "gs-b" in out
+    assert 'class="clip tr-glitch"' not in out
+    assert "scale:1.16" not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_cinematic_zoom_overlay_scales_the_incoming_shot(plan, assets, brandbook):
+    """Шейдер каталога не вендорится: оверлей + scale входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "cinematic_zoom", "duration": 0.4,
+        "params": {"from_scale": 1.16}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-cinematic-zoom" in out
+    assert "cz-from" in out and "cz-to" in out
+    assert "cz-r" in out and "cz-b" in out
+    tween = next(l for l in out.splitlines() if "scale:1.16" in l)
+    assert '"#shot-00"' in tween
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and ("tr-00" in l or "scale:1.16" in l)]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_gravitational_lens_overlay_scales_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: оверлей + scale входящего из well."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "gravitational_lens", "duration": 0.4,
+        "params": {"from_scale": 1.14}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-gravitational-lens" in out
+    assert "gw-from" in out and "gw-to" in out
+    assert "gw-well" in out
+    assert "gw-r" in out and "gw-b" in out
+    tween = next(l for l in out.splitlines() if "scale:1.14" in l)
+    assert '"#shot-00"' in tween
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and ("tr-00" in l or "scale:1.14" in l)]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_light_leak_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только засвет, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "light_leak", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-light-leak" in out
+    assert "ll-from" in out and "ll-to" in out
+    assert "ll-blob" in out and "ll-flare" in out
+    assert 'class="clip tr-sweep"' not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_sdf_iris_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только диск и кольца, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "sdf_iris", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-sdf-iris" in out
+    assert "si-from" in out and "si-iris" in out
+    assert "si-ring" in out
+    assert "tr-mask-circle" not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_thermal_distortion_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только haze и полосы, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "thermal_distortion", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-thermal-distortion" in out
+    assert "td-from" in out and "td-to" in out
+    assert "td-haze" in out and "td-band" in out
+    assert 'class="clip tr-sweep"' not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_whip_pan_shader_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Шейдер каталога не вендорится: только смаз и вуали, без x входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "whip_pan_shader", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-whip-pan" in out
+    assert "wp-from" in out and "wp-to" in out
+    assert "wp-streak" in out
+    assert 'class="clip tr-blur"' not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_mk_clone_wall_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Каталог не вендорится: плитка и invert, без scale входящего."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "mk_clone_wall", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-mk-clone-wall" in out
+    assert "cw-wall" in out and "cw-invert" in out
+    assert "cw-card" in out and "HyperFrames" in out
+    assert 'class="clip tr-blur"' not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    assert "visibility" not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl."))
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_transitions_3d_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """rotationY каталога не вендорится: грани scaleX, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_3d", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-3d" in out
+    assert "t3-a" in out and "t3-b" in out
+    assert "t3-edge" in out and "ONE" in out
+    assert "rotationY" not in out
+    assert '"#shot-00"' not in "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_transitions_blur_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """filter каталога не вендорится: грани scale и призраки, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_blur", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-blur" in out
+    assert "tb-a" in out and "tb-b" in out
+    assert "tb-ghost" in out and "ONE" in out
+    assert "tr-transitions-3d" not in out
+    assert 'class="clip tr-blur"' not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "filter" not in tween_body
+    assert "skewX" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_transitions_cover_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """translateX каталога не вендорится: вайпы GSAP x, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_cover", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-cover" in out
+    assert "tc-a" in out and "tc-b" in out
+    assert "tc-wa" in out and "tc-wb" in out and "ONE" in out
+    assert "tr-transitions-blur" not in out
+    assert "tr-transitions-3d" not in out
+    assert 'class="clip tr-blur"' not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "x:-1080" in tween_body
+    assert "x:1080" in tween_body
+    assert "filter" not in tween_body
+    assert "innerHTML" not in tween_body
+    assert "textContent" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_transitions_destruction_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """clip-path и canvas каталога не вендорятся: круг scale, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_destruction", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-destruction" in out
+    assert "tds-a" in out and "tds-b" in out
+    assert "tds-hole" in out and "tds-r0" in out and "ONE" in out
+    assert "tr-transitions-cover" not in out
+    assert "tr-transitions-blur" not in out
+    assert "tr-transitions-3d" not in out
+    assert "tr-sdf-iris" not in out
+    assert 'class="clip tr-mask-circle"' not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "clipPath" not in tween_body
+    assert "onUpdate" not in tween_body
+    assert "<canvas" not in out
+    assert "filter" not in tween_body
+    assert "innerHTML" not in tween_body
+    assert "textContent" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_transitions_light_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """filter и CSS transform каталога не вендорятся: GSAP x бликов, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_light", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-light" in out
+    assert "tlt-a" in out and "tlt-b" in out
+    assert "tlt-warm" in out and "tlt-l1" in out and "ONE" in out
+    assert "tr-light-leak" not in out
+    assert 'class="clip tr-sweep"' not in out
+    assert "tr-transitions-destruction" not in out
+    assert "tr-transitions-cover" not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "x:169" in tween_body
+    assert "x:338" in tween_body
+    assert "filter" not in tween_body
+    assert "innerHTML" not in tween_body
+    assert "textContent" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
+def test_transitions_other_overlay_does_not_tween_the_incoming_shot(
+        plan, assets, brandbook):
+    """Flash cut каталога не вендорится на .clip: opacity вспышки, без входящего кадра."""
+    plan["shots"][0]["transition"] = {
+        "renderer": "transitions_other", "duration": 0.4, "params": {}}
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tr-transitions-other" in out
+    assert "tto-a" in out and "tto-b" in out
+    assert "tto-flash" in out and "ONE" in out
+    assert 'class="clip tr-flash"' not in out
+    assert "tr-transitions-light" not in out
+    assert "tr-transitions-destruction" not in out
+    assert "tr-transitions-cover" not in out
+    tween_body = "\n".join(
+        l for l in out.splitlines() if l.strip().startswith("tl.")
+        and "tr-00" in l)
+    assert "power4.out" in tween_body
+    assert "power2.out" in tween_body
+    assert "filter" not in tween_body
+    assert "innerHTML" not in tween_body
+    assert "textContent" not in tween_body
+    assert '"#shot-00"' not in tween_body
+    assert "webgl" not in out.lower()
+    assert "onUpdate" not in out
+    ids = set(re.findall(r'\sid="([^"]+)"', out))
+    for line in [l for l in out.splitlines() if l.strip().startswith("tl.")
+                 and "tr-00" in l]:
+        selector = re.search(r'"#([^" ]+)', line).group(1)
+        assert selector in ids, line
+
+
 def test_kenburns_starts_after_the_transition(plan, assets, brandbook):
     """Вход и медленный проезд не имеют права тянуть одно свойство разом.
 
@@ -451,7 +813,1362 @@ def test_hero_devices_do_not_share_a_track_with_the_shots(plan, assets, brandboo
     assert track >= 13
 
 
-def test_fullscreen_word_never_leaves_the_frame(plan, assets, brandbook):
+def test_kinetic_fullscreen_uses_word_stack(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "раз два три"
+    plan["shots"][1]["accent_word"] = "два"
+    plan["shots"][1]["params"] = {"stagger_ms": 55, "kinetic": True}
+    plan["shots"][1]["renderer"] = "kinetic_stack"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ks-word" in out
+    assert "ks-stack" in out
+
+
+def test_blur_out_up_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "сигнал с орбиты"
+    plan["shots"][1]["accent_word"] = "орбиты"
+    plan["shots"][1]["params"] = {
+        "stagger_ms": 55, "blur_out": True, "direction": "up",
+        "distance": "standard", "blur": "standard",
+    }
+    plan["shots"][1]["renderer"] = "blur_out_up"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bou-ghost" in out
+    assert "filter:blur(5px)" in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+
+
+def test_bottom_up_letters_fullscreen_splits_glyphs(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "код живёт"
+    plan["shots"][1]["accent_word"] = "код"
+    plan["shots"][1]["params"] = {
+        "stagger_ms": 25, "bottom_up": True, "unit": "letter",
+        "direction": "up", "travel": "standard",
+    }
+    plan["shots"][1]["renderer"] = "bottom_up_letters"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bul-ch" in out
+    assert "back.out(1.7)" in out
+    assert 'id="shot-01-c0"' in out
+
+
+def test_kinetic_type_swap_fullscreen_masks_the_slot(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ|КОД|HTML|ОРБИТЫ"
+    plan["shots"][1]["params"] = {"kinetic_swap": True, "exit": "none"}
+    plan["shots"][1]["renderer"] = "kinetic_type_swap"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "kts-slot" in out
+    assert "kts-word" in out
+    assert 'class="kts-slot"' in out
+    assert "yPercent" not in out
+    assert "back.out(1.7)" in out
+
+
+def test_line_by_line_slide_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД|СОБИРАЙ ОРБИТЫ|ШЛИ НА ПРОД"
+    plan["shots"][1]["accent_word"] = "ОРБИТЫ"
+    plan["shots"][1]["params"] = {
+        "line_slide": True, "direction": "left", "size": "standard",
+        "density": "standard", "tone": "ink",
+    }
+    plan["shots"][1]["renderer"] = "line_by_line_slide"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lbls-ghost" in out
+    assert "lbls-stack" in out
+    assert "filter:blur(" in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+
+
+def test_particle_text_dissolve_fullscreen_has_no_canvas(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СОБЕРИ ОРБИТУ"
+    plan["shots"][1]["accent_word"] = "ОРБИТУ"
+    plan["shots"][1]["params"] = {
+        "particle_dissolve": True, "direction": "in", "density": "med",
+        "exit": "none",
+    }
+    plan["shots"][1]["renderer"] = "particle_text_dissolve"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ptd-wipe" in out
+    assert "ptd-dot" in out
+    assert "<svg" in out
+    assert "<canvas" not in out
+    assert "clipPath" not in out
+    assert "Math.random" not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".ptd-wipe" in css
+    assert ".ptd-dot" in css
+
+
+def test_per_word_crossfade_fullscreen_uses_a_static_ghost(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД НА ОРБИТЕ"
+    plan["shots"][1]["accent_word"] = "ОРБИТЕ"
+    plan["shots"][1]["params"] = {
+        "word_crossfade": True, "drift": "standard", "blur": "standard",
+        "tone": "ink", "exit": "none",
+    }
+    plan["shots"][1]["renderer"] = "per_word_crossfade"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "pwc-ghost" in out
+    assert "filter:blur(5px)" in out
+    assert "--hf-word" not in out
+    assert "filter:" not in "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".pwc-stack" in css
+    assert ".pwc-ghost" in css
+
+
+def test_scan_band_fullscreen_keeps_catalog_chromatic(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СИГНАЛ"
+    plan["shots"][1]["duration"] = 3.5
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 3.5
+    plan["shots"][1]["params"] = {"scan_band": True, "band_angle": 12}
+    plan["shots"][1]["renderer"] = "scan_band"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-scan-band" in out
+    assert "sb-clone-red" in out and "sb-clone-cyan" in out
+    assert "--sb-band" not in out
+    assert "clip-path" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "clip-path" not in tween_src
+    assert "--sb-" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "Inter,system-ui,sans-serif" in css
+    assert "#ff3158" in css and "#36efff" in css
+    assert "#0b0c0e" in css
+    assert ".sb-band" in css
+
+
+def test_scramble_reveal_fullscreen_keeps_catalog_terminal(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "СИГНАЛ"
+    plan["shots"][1]["duration"] = 3.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 3.0
+    plan["shots"][1]["params"] = {
+        "scramble_reveal": True, "accent": "green", "style": "terminal",
+        "exit": "none"}
+    plan["shots"][1]["renderer"] = "scramble_reveal"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-scramble-reveal" in out
+    assert "sr-green" in out and "sr-prefix" in out
+    assert "textContent" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "clip-path" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#71f5a7" in css
+    assert ".sr-shell" in css
+    assert "var(--font-mono)" in css
+
+
+def test_shared_axis_z_fullscreen_keeps_catalog_inter(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "ПИШИ КОД"
+    plan["shots"][1]["duration"] = 1.4
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 1.4
+    plan["shots"][1]["params"] = {
+        "shared_axis_z": True, "direction": "in", "depth": "standard",
+        "tone": "ink"}
+    plan["shots"][1]["renderer"] = "shared_axis_z"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-shared-axis-z" in out
+    assert "saz-word" in out and "saz-ink" in out
+    assert "--hf-word" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "--hf-" not in tween_src
+    assert "filter" not in tween_src
+    assert "back.out(1.8)" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".saz-stack" in css and ".saz-word" in css
+    assert "Inter,system-ui,sans-serif" in css
+    assert "#111214" in css
+    assert ".fullscreen-text.fs-shared-axis-z.saz-accent{color:#C8453D}" in css
+    assert "#F7F5F3" in css
+    assert "#34d399" not in css
+
+
+def test_code_3d_extrude_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        "async function loadConfig(path) {\n"
+        "  const raw = await readFile(path, \"utf8\")\n"
+        "  return validate(config)\n"
+        "}"
+    )
+    plan["shots"][1]["duration"] = 8.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 8.0
+    plan["shots"][1]["params"] = {"code_3d_extrude": True}
+    plan["shots"][1]["renderer"] = "code_3d_extrude"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-3d" in out
+    assert "c3d-slab" in out and "c3d-edge" in out
+    assert "loadConfig" in out
+    assert "THREE" not in out and "<canvas" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "onUpdate" not in tween_src
+    assert "scale:0.72" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#05070b" in css and "#24292e" in css
+    assert ".c3d-slab" in css
+
+
+def test_code_diff_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        "function greet(name) {\n"
+        "  console.log(\"hi \" + name)\n"
+        "}\n---\n"
+        "function greet(name, lang) {\n"
+        "  const msg = translate(\"hi\", lang)\n"
+        "  console.log(`${msg} ${name}`)\n"
+        "}"
+    )
+    plan["shots"][1]["duration"] = 6.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 6.0
+    plan["shots"][1]["params"] = {"code_diff": True}
+    plan["shots"][1]["renderer"] = "code_diff"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-diff" in out
+    assert "cd-editor" in out and "cd-del" in out and "cd-add" in out
+    assert "translate" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "height:" not in tween_src
+    assert "scaleY:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#f85149" in css and "#3fb950" in css
+    assert ".cd-editor" in css
+
+
+def test_code_particle_assemble_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        "const app = pipe(\n"
+        "  parse,\n"
+        "  optimize,\n"
+        "  emit,\n"
+        ")"
+    )
+    plan["shots"][1]["duration"] = 8.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 8.0
+    plan["shots"][1]["params"] = {"code_particle_assemble": True}
+    plan["shots"][1]["renderer"] = "code_particle_assemble"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-pa" in out
+    assert "pa-dot" in out and "pa-code" in out
+    assert "const" in out and "pipe" in out
+    assert "THREE" not in out and "<canvas" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "onUpdate" not in tween_src
+    assert "Math.random" not in tween_src
+    assert "width:" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#05070b" in css
+    assert ".pa-dot" in css
+
+
+def test_code_scroll_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        'import { createClient } from "./client"\n'
+        'import { logger } from "./logger"\n'
+        "\n"
+        "const RETRIES = 3\n"
+        "\n"
+        "export async function fetchWithRetry(url, opts = {}) {\n"
+        "  const client = createClient(opts)\n"
+        "  let lastError = null\n"
+        "\n"
+        "  for (let attempt = 1; attempt <= RETRIES; attempt++) {\n"
+        "    try {\n"
+        "      const res = await client.get(url)\n"
+        "      if (res.ok) return res.body\n"
+        "      lastError = new Error(\"bad status \" + res.status)\n"
+        "    } catch (err) {\n"
+        "      lastError = err\n"
+        "      logger.warn(\"attempt \" + attempt + \" failed\")\n"
+        "    }\n"
+        "    await sleep(attempt * 250)\n"
+        "  }\n"
+        "\n"
+        "  throw lastError\n"
+        "}"
+    )
+    plan["shots"][1]["duration"] = 6.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 6.0
+    plan["shots"][1]["params"] = {"code_scroll": True, "filename": "fetchWithRetry.js",
+                                  "line": 12}
+    plan["shots"][1]["renderer"] = "code_scroll"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-scroll" in out
+    assert "cs-editor" in out and "cs-hl" in out and "cs-scroll" in out
+    assert "fetchWithRetry" in out and "createClient" in out
+    assert "lastError" in out and "FETCHWITHRETRY" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "onUpdate" not in tween_src
+    assert "getBoundingClientRect" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    assert "y:" in tween_src
+    assert "opacity:0.35" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#58a6ff" in css
+    assert ".cs-hl" in css
+    assert ".cs-editor" in css
+
+
+def test_code_typing_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = (
+        "async function loadConfig(path) {\n"
+        "  const raw = await readFile(path, \"utf8\")\n"
+        "  const config = JSON.parse(raw)\n"
+        "  return validate(config)\n"
+        "}"
+    )
+    plan["shots"][1]["duration"] = 5.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 5.0
+    plan["shots"][1]["params"] = {"code_typing": True, "filename": "loadConfig.js"}
+    plan["shots"][1]["renderer"] = "code_typing"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-code-typing" in out
+    assert "ct-editor" in out and "ct-caret" in out and "ct-ch" in out
+    assert "loadConfig.js" in out
+    plain = re.sub(r"<[^>]+>", "", out)
+    assert "readFile" in plain and "loadConfig" in plain
+    assert "LOADCONFIG" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "onUpdate" not in tween_src
+    assert "getBoundingClientRect" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    assert "x:" in tween_src and "y:" in tween_src
+    assert 'ease:"none"' in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "JetBrains Mono" in css
+    assert "#58a6ff" in css
+    assert ".ct-caret" in css
+    assert ".ct-editor" in css
+
+
+def test_terminal_simulator_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "$ hyperframes render --skill=terminal-simulator"
+    plan["shots"][1]["duration"] = 5.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 5.0
+    plan["shots"][1]["params"] = {"terminal_simulator": True}
+    plan["shots"][1]["renderer"] = "terminal_simulator"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-terminal-simulator" in out
+    assert "ts-card" in out and "ts-term" in out and "ts-line" in out
+    assert "Terminal Simulator" in out
+    assert "index.html" in out
+    assert "$ hyperframes render --skill=terminal-simulator" in out
+    assert "HYPERFRAMES RENDER" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "--hf-line" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    assert "scaleX:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#86efac" in css
+    assert ".ts-term" in css
+    assert ".ts-card" in css
+
+
+def test_apple_terminal_clear_dark_fullscreen_reaches_the_markup(
+        plan, assets, brandbook):
+    plan["shots"][1]["content"] = "npm audit"
+    plan["shots"][1]["duration"] = 8.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 8.0
+    plan["shots"][1]["params"] = {"apple_terminal_clear_dark": True}
+    plan["shots"][1]["renderer"] = "apple_terminal_clear_dark"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-apple-terminal-clear-dark" in out
+    assert "atcd-window" in out and "atcd-prompt" in out
+    assert "bash — 80×24" in out
+    plain = re.sub(r"<[^>]+>", "", out)
+    assert "npm audit" in plain
+    assert "lodash" in plain
+    assert "NPM AUDIT" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "textContent" not in tween_src
+    assert "innerHTML" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#888888" in css
+    assert ".atcd-cursor" in css
+    assert ".atcd-window" in css
+
+
+def test_dark_plus_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = ""
+    plan["shots"][1]["duration"] = 8.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 8.0
+    plan["shots"][1]["params"] = {"dark_plus": True}
+    plan["shots"][1]["renderer"] = "dark_plus"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-dark-plus" in out
+    assert "dp-wb" in out and "dp-caret" in out
+    assert "Dark+" in out
+    plain = re.sub(r"<[^>]+>", "", out)
+    assert "pluck_deep" in plain
+    assert "PLUCK_DEEP" not in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "rotateY" not in tween_src
+    assert "getBoundingClientRect" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#0078d4" in css
+    assert ".dp-caret" in css
+    assert ".dp-wb" in css
+
+
+def test_beat_freeze_cut_fullscreen_reaches_the_markup(plan, assets, brandbook):
+    plan["shots"][1]["content"] = "DROP"
+    plan["shots"][1]["duration"] = 6.0
+    plan["shots"][1]["end"] = plan["shots"][1]["start"] + 6.0
+    plan["shots"][1]["params"] = {"beat_freeze_cut": True}
+    plan["shots"][1]["renderer"] = "beat_freeze_cut"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fs-beat-freeze-cut" in out
+    assert "bfc-card" in out and "bfc-hit" in out
+    assert "DROP" in out and "FREEZE" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
+    assert "visibility" not in tween_src
+    assert "filter" not in tween_src
+    assert "width:" not in tween_src
+    assert "height:" not in tween_src
+    assert 'tl.fromTo("#shot-01",' not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "#C8453D" in css
+    assert ".bfc-card" in css
+    assert ".bfc-bar" in css
+    bfc = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
+    assert "#C8453D" in bfc
+    assert "#111214" in bfc
+    assert "#7A7D82" in bfc
+    assert "#0B132B" not in bfc
+    assert "#1A1F2E" not in bfc
+    assert "#E63946" not in bfc
+    assert "#00E5C7" not in bfc and "#00e5c7" not in bfc
+    assert "#00E5FF" not in bfc and "#00e5ff" not in bfc
+
+
+def test_logo_brand_close_overlay_is_a_lockup_not_a_pill(plan, assets, brandbook):
+    """Identity close занимает окно CTA: вордмарк, не пилюля подписки."""
+    plan["overlays"][2] = {
+        "type": "cta", "start": 8.0, "end": 10.0,
+        "template": "outro-cta/logo-brand-close",
+        "renderer": "logo_brand_close",
+        "params": {"logo_close": True, "exit": "none", "wordmark": "РЕДШИФТ",
+                   "tagline": "Пиши код. Шли на орбиту.", "url": "redshift.shorts"},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lbc-mark" in out
+    assert "lbc-dot" in out
+    assert out.count("lbc-ch") == len("РЕДШИФТ")
+    assert "redshift.shorts" in out
+    assert 'class="pill"' not in out
+    assert 'id="ovl-02-pill"' not in out
+    assert "cqw" not in out
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert ".lbc-mark" in css
+    assert ".lbc-dot" in css
+
+
+def test_lt_accent_underline_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][1] = {
+        "type": "plaque", "start": 0.2, "end": 5.0,
+        "template": "lower-thirds/accent-underline",
+        "params": {"name": "МАЙЯ ЧЕН", "role": "ВЕДУЩАЯ · НЕЙРОФИЗИОЛОГ",
+                   "accent_underline": True},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lt-accent-underline" in out
+    assert "lt-au-rule" in out
+    assert "МАЙЯ ЧЕН" in out
+    assert "#ovl-01-name" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "visibility" not in tween_src
+    assert "scaleX:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "Space Mono" in css
+    assert "#C8453D" in css
+    assert "#46e5b7" not in css
+    assert "Oswald" in css
+
+
+def test_lt_clean_bar_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][1] = {
+        "type": "plaque", "start": 0.2, "end": 5.0,
+        "template": "lower-thirds/clean-bar",
+        "params": {"name": "Майя Чен", "role": "Ведущая · нейрофизиолог",
+                   "clean_bar": True},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lt-clean-bar" in out
+    assert "lt-cb-tab" in out and "lt-cb-wipe" in out
+    assert "Майя Чен" in out
+    assert "#ovl-01-wipe" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "visibility" not in tween_src
+    assert "clip-path" not in tween_src and "clipPath" not in tween_src
+    assert "scaleX:0" in tween_src and "scaleY:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "Montserrat" in css
+    assert "#C8453D" in css
+    assert "#ff5a36" not in css
+
+
+def test_lt_dark_card_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][1] = {
+        "type": "plaque", "start": 0.2, "end": 5.0,
+        "template": "lower-thirds/dark-card",
+        "params": {"name": "Майя Чен", "role": "Ведущая · нейрофизиолог",
+                   "dark_card": True},
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "lt-dark-card" in out
+    assert "lt-dc-rule" in out
+    assert "Майя Чен" in out
+    assert "#ovl-01-card" in out
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "visibility" not in tween_src
+    assert "scaleX:0" in tween_src
+    css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
+    assert "Montserrat" in css
+    assert "#C8453D" in css
+    assert "#f5b942" not in css
+    assert "#111214" in css
+
+
+def test_source_card_overlay_uses_the_renderer(plan, assets, brandbook):
+    plan["overlays"][0]["renderer"] = "chat_thread"
+    plan["overlays"][0]["params"] = {
+        "prompt": "что внутри", "snippet": "Квантовый чип. Сто кубит.",
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "chat-thread" in out
+    assert "ct-row" in out
+
+
+def test_ai_chat_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][0]["renderer"] = "ai_chat_reveal"
+    plan["overlays"][0]["params"] = {
+        "userMessage": "How do I turn my HTML into real video?",
+        "answer1": "You do not need an editor. REDSHIFT renders HTML.",
+        "ecCta": "Try REDSHIFT",
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "ai-chat-reveal" in out
+    assert "acr-keyboard" in out
+    assert "How do I turn my HTML" in out
+    assert "Try REDSHIFT" in out
+    node = next(line for line in out.splitlines() if "ai-chat-reveal" in line)
+    assert "ct-row" not in node
+    assert "chat-thread" not in node
+    assert "textContent" not in node
+    assert "autoAlpha" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "autoAlpha" not in tween_src
+    assert "visibility" not in tween_src
+
+
+def test_app_showcase_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"][0]["renderer"] = "app_showcase"
+    plan["overlays"][0]["params"] = {
+        "tagline": "Unleash Full Potential",
+        "name": "James Medrano",
+        "cta": "START NOW",
+    }
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "app-showcase" in out
+    assert "aps-phone" in out
+    assert "Unleash Full Potential" in out
+    assert "START NOW" in out
+    node = next(line for line in out.splitlines() if "app-showcase" in line)
+    assert "acr-keyboard" not in node
+    assert "chat-thread" not in node
+    assert "pm-body" not in node
+    assert "strokeDashoffset" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "strokeDashoffset" not in tween_src
+    assert "width:" not in tween_src
+    assert "visibility" not in tween_src
+
+
+def test_dataviz_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 2.4,
+        "template": "data-viz/compare-bars",
+        "params": {"values": [66, 28], "labels": ["A", "B"]},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "dv-bar" in out
+
+
+def test_animated_bar_chart_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 2.4,
+        "template": "data-viz/animated-bar-chart",
+        "params": {
+            "values": [42, 72, 56, 88, 64, 95, 78],
+            "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+            "kpi": "+42%",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "abc-chart" in out
+    assert "abc-grow" in out
+    assert "+42%" in out
+    node = next(line for line in out.splitlines() if "abc-chart" in line)
+    assert "dv-bar" not in node
+    assert "stat-card" not in node
+
+
+def test_bar_chart_race_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 6.0,
+        "template": "data-viz/bar-chart-race",
+        "params": {
+            "title": "Streaming Subscribers by Service",
+            "periods": ["2019", "2020", "2021", "2022", "2023", "2024"],
+            "series": [
+                {"label": "Northwind", "values": [42, 58, 71, 96, 118, 131]},
+                {"label": "Cobalt", "values": [30, 46, 68, 92, 126, 168]},
+                {"label": "Ferry", "values": [55, 62, 66, 70, 74, 79]},
+            ],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "bcr-chart" in out
+    assert "Northwind" in out and "Cobalt" in out
+    node = next(line for line in out.splitlines() if "bcr-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+
+
+def test_chart_story_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 5.0,
+        "template": "data-viz/chart-story",
+        "params": {
+            "values": [12, 28, 45, 64],
+            "labels": ["Q1", "Q2", "Q3", "Q4"],
+            "emphasize": 3,
+            "unit": "%",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "cst-chart" in out
+    assert "cst-bg" in out
+    assert "Q1" in out and "64%" in out
+    node = next(line for line in out.splitlines() if "cst-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+
+
+def test_conic_progress_ring_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 4.2,
+        "template": "data-viz/conic-progress-ring",
+        "params": {"progress": 100, "label": "100", "thickness": 12},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "cpr-chart" in out
+    assert "cpr-bg" in out
+    assert "cpr-paint" in out
+    node = next(line for line in out.splitlines() if "cpr-chart" in line)
+    assert "dv-donut" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "dcl-" not in node
+
+
+def test_mk_line_graph_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 7.2,
+        "template": "data-viz/mk-line-graph",
+        "params": {
+            "series": [
+                {"name": "Renders", "values": [12, 26, 22, 38, 44, 58]},
+                {"name": "Projects", "values": [8, 14, 18, 16, 28, 36]},
+            ],
+            "xLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "mlg-chart" in out
+    assert "mlg-bg" in out
+    assert "mlg-line" in out
+    assert "Renders" in out and "Projects" in out
+    node = next(line for line in out.splitlines() if "mlg-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mk-lg-" not in node
+    assert "spm-" not in node
+
+
+def test_spain_map_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 12.2,
+        "template": "data-viz/spain-map",
+        "params": {
+            "title": "PIB per cápita por Comunidad Autónoma",
+            "highlight": ["MAD", "PVA", "NAV"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "spm-chart" in out
+    assert "spm-bg" in out
+    assert "spm-region" in out
+    assert "PIB per c" in out
+    node = next(line for line in out.splitlines() if "spm-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "jsdelivr" not in node
+
+
+def test_star_rating_fill_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 4.2,
+        "template": "data-viz/star-rating-fill",
+        "params": {"rating": 4.8, "starCount": 5, "showValue": True},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "srf-chart" in out
+    assert "srf-bg" in out
+    assert "srf-wipe" in out
+    assert "4.8" in out
+    node = next(line for line in out.splitlines() if "srf-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "clip-path" not in node
+
+
+def test_us_map_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 12.2,
+        "template": "data-viz/us-map",
+        "params": {
+            "title": "Population Density by State",
+            "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "usm-chart" in out
+    assert "usm-bg" in out
+    assert "usm-region" in out
+    assert "Population Density" in out
+    node = next(line for line in out.splitlines() if "usm-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "srf-" not in node
+    assert "umf-" not in node
+    assert "jsdelivr" not in node
+    assert "clip-path" not in node
+
+
+def test_us_map_flow_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 12.2,
+        "template": "data-viz/us-map-flow",
+        "params": {
+            "title": "Interstate Flow Connections",
+            "subtitle": "Relative volume of major city-to-city corridors",
+            "source": "Source: Illustrative data",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "umf-chart" in out
+    assert "umf-bg" in out
+    assert "umf-arc" in out
+    assert "Interstate Flow" in out
+    node = next(line for line in out.splitlines() if "umf-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "dcl-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
+    assert "srf-" not in node
+    assert "usm-" not in node
+    assert "jsdelivr" not in node
+    assert "clip-path" not in node
+    assert "strokeDashoffset" not in node
+    assert "getPointAtLength" not in node
+
+
+def test_us_map_hex_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 10.2,
+        "template": "data-viz/us-map-hex",
+        "params": {
+            "title": "Median Household Income by State",
+            "subtitle": "American Community Survey, 2024",
+            "source": "Source: U.S. Census Bureau",
+            "highlight": ["MD", "NJ", "MA", "CT", "HI"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "umh-chart" in out
+    assert "umh-bg" in out
+    assert "umh-poly" in out
+    assert "Median Household" in out
+    node = next(line for line in out.splitlines() if "umh-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "spm-" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "topojson" not in node.lower()
+    assert "jsdelivr" not in node
+
+
+def test_world_map_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 14.2,
+        "template": "data-viz/world-map",
+        "params": {
+            "title": "Global GDP per Capita",
+            "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+            "source": "Source: International Monetary Fund",
+            "highlight": ["756", "578", "840", "036", "752"],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "wmp-chart" in out
+    assert "wmp-bg" in out
+    assert "wmp-region" in out
+    assert "Global GDP" in out
+    node = next(line for line in out.splitlines() if "wmp-chart" in line)
+    assert "dv-bar" not in node
+    assert "usm-" not in node
+    assert "umf-" not in node
+    assert "umh-" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "topojson" not in node.lower()
+    assert "jsdelivr" not in node
+
+
+def test_north_korea_locked_down_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 7.2,
+        "template": "data-viz/north-korea-locked-down",
+        "params": {"label": "LOCKED DOWN"},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "nkl-chart" in out
+    assert "nkl-cam" in out
+    assert "LOCKED" in out
+    node = next(line for line in out.splitlines() if "nkl-chart" in line)
+    assert "dv-bar" not in node
+    assert "amc-" not in node
+    assert "wmp-" not in node
+    assert "korea-map.png" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    assert "strokeDashoffset" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "strokeDashoffset" not in tween_src
+    assert "filter:" not in tween_src
+
+
+def test_nyc_paris_flight_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 6.2,
+        "template": "data-viz/nyc-paris-flight",
+        "params": {
+            "origin": "New York", "dest": "Paris",
+            "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+            "km": "5,837",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "npf-chart" in out
+    assert "npf-plane" in out
+    assert "New York" in out and "Paris" in out
+    node = next(line for line in out.splitlines() if "npf-chart" in line)
+    assert "dv-bar" not in node
+    assert "umf-" not in node
+    assert "nkl-" not in node
+    assert "map-nyc-paris.png" not in node
+    assert "offsetDistance" not in node
+    assert "strokeDashoffset" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "offsetDistance" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_mk_progress_stat_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 7.2,
+        "template": "data-viz/mk-progress-stat",
+        "params": {
+            "value": 22, "max": 30, "label": "Goals reached",
+            "caption": "Great job, we are getting closer!",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "mps-chart" in out
+    assert "Goals reached" in out
+    node = next(line for line in out.splitlines() if "mps-chart" in line)
+    assert "textContent" not in node
+    assert "amc-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "visibility" not in tween_src
+
+
+def test_flowchart_vertical_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 12.2,
+        "template": "data-viz/flowchart-vertical",
+        "params": {
+            "root": "Should I learn to code?",
+            "branches": ["Yes", "Not sure"],
+            "leaves": [
+                "Start with Python", "Try no-code first",
+                "Build a personal website", "Take a free intro course",
+            ],
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "fcv-chart" in out
+    assert "Should I learn to code?" in out
+    node = next(line for line in out.splitlines() if "fcv-chart" in line)
+    assert "textContent" not in node
+    assert "amc-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_chatgpt_exchange_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 14.2,
+        "template": "browser-ui/chatgpt-exchange",
+        "renderer": "chatgpt_exchange",
+        "params": {
+            "prompt": "Hey what is the best tool for ai avatars",
+            "intro1": "It depends on what you are trying to do.",
+            "intro2": "Here is how I rank them today:",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "chatgpt-exchange" in out
+    assert "Hey what is the best tool for ai avatars" in out
+    node = next(line for line in out.splitlines() if "chatgpt-exchange" in line)
+    assert "textContent" not in node
+    assert "amc-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_claude_exchange_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 20.0,
+        "template": "browser-ui/claude-exchange",
+        "renderer": "claude_exchange",
+        "params": {
+            "prompt": "What is the best tool for ai avatars",
+            "thinking": "Weighing accuracy against market…",
+            "lead": "I will search for the current state.",
+            "search": "best AI avatar video generator 2026",
+            "answer1": "It depends on what you are making.",
+            "answer2": "HeyGen is where most teams land.",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "claude-exchange" in out
+    assert "What is the best tool for ai avatars" in out
+    assert "Weighing accuracy against market" in out
+    node = next(line for line in out.splitlines() if "claude-exchange" in line)
+    assert "textContent" not in node
+    assert "cge-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_message_thread_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 20.0,
+        "template": "browser-ui/message-thread-reveal",
+        "renderer": "message_thread_reveal",
+        "params": {
+            "contactName": "Rachel",
+            "questionMessage": "what r u using for the launch video",
+            "teaserMessage": "wait look",
+            "cardTitle": "HyperFrames | Write HTML",
+            "cardDomain": "hyperframes.heygen.com",
+            "reactionMessage": "OMG IT IS HTML",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "message-thread-reveal" in out
+    assert "what r u using for the launch video" in out
+    assert "Rachel" in out
+    node = next(line for line in out.splitlines() if "message-thread-reveal" in line)
+    assert "textContent" not in node
+    assert "cle-" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_notes_reveal_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 20.0,
+        "template": "browser-ui/notes-reveal",
+        "renderer": "notes_reveal",
+        "params": {
+            "titleL1": "Things nobody told me",
+            "titleL2": "about video",
+            "noteLine1": "my videos sucked",
+            "cardTop": "THE POWER",
+            "brandDomain": "hyperframes.heygen.com",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "notes-reveal" in out
+    assert "Things nobody told me" in out
+    assert ">my<" in out and ">videos<" in out
+    assert "THE POWER" in out
+    node = next(line for line in out.splitlines() if "notes-reveal" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_notification_cascade_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 14.0,
+        "template": "browser-ui/notification-cascade",
+        "renderer": "notification_cascade",
+        "params": {
+            "notifTitle": "New render",
+            "message1": "Launch video is ready.",
+            "appName": "HyperFrames",
+            "headlineTop": "SHIP VIDEO",
+            "headlineAccent": "FROM HTML",
+            "footerText": "hyperframes.heygen.com",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "notification-cascade" in out
+    assert "New render" in out
+    assert "Launch video is ready." in out
+    assert "SHIP VIDEO" in out
+    assert "FROM HTML" in out
+    node = next(line for line in out.splitlines() if "notification-cascade" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_instagram_follow_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "plaque", "start": 0.2, "end": 4.5,
+        "template": "lower-thirds/instagram-follow",
+        "renderer": "instagram_follow",
+        "params": {
+            "displayName": "HeyGen",
+            "handle": "@heygen_official",
+            "followers": "47.5K followers",
+            "buttonText": "Follow",
+            "followingText": "Following",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "instagram-follow" in out
+    assert "HeyGen" in out
+    assert "@heygen_official" in out
+    assert "47.5K followers" in out
+    assert "Follow" in out
+    assert "Following" in out
+    node = next(line for line in out.splitlines() if "instagram-follow" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_tiktok_follow_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "plaque", "start": 0.2, "end": 4.5,
+        "template": "lower-thirds/tiktok-follow",
+        "renderer": "tiktok_follow",
+        "params": {
+            "displayName": "HeyGen",
+            "handle": "@heygen.com",
+            "followers": "1,999 followers",
+            "buttonText": "Follow",
+            "followingText": "Following",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "tiktok-follow" in out
+    assert "HeyGen" in out
+    assert "@heygen.com" in out
+    assert "1,999 followers" in out
+    assert "Follow" in out
+    assert "Following" in out
+    node = next(line for line in out.splitlines() if "tiktok-follow" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_yt_lower_third_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "plaque", "start": 0.2, "end": 4.5,
+        "template": "lower-thirds/yt-lower-third",
+        "renderer": "yt_lower_third",
+        "params": {
+            "channelName": "HeyGen",
+            "subscriberCount": "82.2K subscribers",
+            "buttonText": "Subscribe",
+            "subscribedText": "Subscribed",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "yt-lower-third" in out
+    assert "HeyGen" in out
+    assert "82.2K subscribers" in out
+    assert "Subscribe" in out
+    assert "Subscribed" in out
+    node = next(line for line in out.splitlines() if "yt-lower-third" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_x_post_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 5.0,
+        "template": "browser-ui/x-post",
+        "renderer": "x_post",
+        "params": {
+            "displayName": "Hyperframes",
+            "handle": "@hyperframes",
+            "text": "Write HTML, render pixel-perfect video. #HyperFrames",
+            "timestamp": "1:10 PM · Apr 7, 2026",
+            "replies": "34",
+            "reposts": "2.3K",
+            "likes": "10.9K",
+            "likesActive": "11.0K",
+            "views": "150K",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "x-post" in out
+    assert "Hyperframes" in out
+    assert "@hyperframes" in out
+    assert "Write HTML" in out
+    assert "#HyperFrames" in out
+    assert "10.9K" in out
+    assert "11.0K" in out
+    node = next(line for line in out.splitlines() if "x-post" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_reddit_post_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 5.0,
+        "template": "browser-ui/reddit-post",
+        "renderer": "reddit_post",
+        "params": {
+            "subreddit": "r/hyperframes",
+            "author": "u/developer · 3h",
+            "title": "Writing HTML to render video changed everything for our pipeline",
+            "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds.",
+            "votes": "4.2k",
+            "votesActive": "4.3k",
+            "comments": "328",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "reddit-post" in out
+    assert "r/hyperframes" in out
+    assert "u/developer" in out
+    assert "Writing HTML" in out
+    assert "4.2k" in out
+    assert "4.3k" in out
+    node = next(line for line in out.splitlines() if "reddit-post" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_spotify_card_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 5.0,
+        "template": "browser-ui/spotify-card",
+        "renderer": "spotify_card",
+        "params": {
+            "trackName": "HyperFrames",
+            "artistName": "HeyGen",
+            "brandText": "Spotify",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "spotify-card" in out
+    assert "HyperFrames" in out
+    assert "HeyGen" in out
+    assert "Spotify" in out
+    node = next(line for line in out.splitlines() if "spotify-card" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+def test_macos_notification_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "source_card", "start": 0.2, "end": 5.0,
+        "template": "browser-ui/macos-notification",
+        "renderer": "macos_notification",
+        "params": {
+            "appName": "HyperFrames",
+            "time": "now",
+            "title": "Build complete",
+            "body": "Video rendered in 1.4s with zero frame drops.",
+            "iconText": "HF",
+        },
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "macos-notification" in out
+    assert "HyperFrames" in out
+    assert "Build complete" in out
+    assert "Video rendered" in out
+    node = next(line for line in out.splitlines() if "macos-notification" in line)
+    assert "textContent" not in node
+    tween_src = "".join(
+        line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line
+        or "tl.set" in line)
+    assert "textContent" not in tween_src
+    assert "strokeDashoffset" not in tween_src
+
+
+
+
+
+
+def test_decline_chart_overlay_reaches_the_markup(plan, assets, brandbook):
+    plan["overlays"].insert(0, {
+        "type": "dataviz", "start": 0.2, "end": 4.2,
+        "template": "data-viz/decline-chart",
+        "params": {"start_value": 82, "end_value": 34, "label": "Retention"},
+    })
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "dcl-chart" in out
+    assert "dcl-bg" in out
+    assert "dcl-line" in out
+    assert "Retention" in out
+    node = next(line for line in out.splitlines() if "dcl-chart" in line)
+    assert "dv-bar" not in node
+    assert "abc-" not in node
+    assert "bcr-" not in node
+    assert "cst-" not in node
+    assert "cpr-" not in node
+    assert "mlg-" not in node
+    assert "spm-" not in node
     """С фиксированным кеглем «ПЕРЕЖИВЁШЬ» занимало 2400 px при кадре 1080.
 
     Поймано кадром готового MP4, а не разметкой: QC-7 меряет safe zones по
@@ -563,9 +2280,16 @@ def test_rounding_never_pushes_a_word_onto_its_neighbour(plan, assets, brandbook
         {"display": "второе", "start": 49.8564, "end": 50.3, "emphasis": False},
     ]
     markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    words = [c for c in _clips(markup) if c[0] == TRACK_SUBTITLE]
-    assert len(words) == 2
-    assert words[0][2] <= words[1][1] + 1e-9, "наезд субтитра на соседа"
+    words = [c for c in _clips(markup) if c[0] in _CAPTION_TRACKS]
+    assert words, "субтитры не попали на треки caption"
+    by_track: dict[int, list[tuple[float, float]]] = {}
+    for track, start, end in words:
+        by_track.setdefault(track, []).append((start, end))
+    for track, spans in by_track.items():
+        spans.sort()
+        for i in range(len(spans) - 1):
+            assert spans[i][1] <= spans[i + 1][0] + 1e-9, (
+                f"трек {track}: наезд субтитра на соседа")
 
 
 def test_short_word_is_stretched_but_not_into_its_neighbour(plan, assets, brandbook):
@@ -575,9 +2299,12 @@ def test_short_word_is_stretched_but_not_into_its_neighbour(plan, assets, brandb
         {"display": "вот", "start": 1.02, "end": 1.4, "emphasis": False},
     ]
     markup = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    words = sorted(c for c in _clips(markup) if c[0] == TRACK_SUBTITLE)
-    assert words[0][2] == pytest.approx(1.02, abs=1e-9), "слово растянуто до соседа"
-    assert words[0][2] <= words[1][1] + 1e-9
+    words = sorted(c for c in _clips(markup) if c[0] in _CAPTION_TRACKS)
+    assert words, "субтитры не попали на треки caption"
+    for i in range(len(words) - 1):
+        if words[i][0] != words[i + 1][0]:
+            continue
+        assert words[i][2] <= words[i + 1][1] + 1e-9
 
 
 # --- настоящий lint движка ----------------------------------------------------

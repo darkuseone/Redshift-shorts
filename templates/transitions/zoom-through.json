@@ -1,0 +1,21 @@
+{
+  "id": "transitions/zoom-through",
+  "name": "zoom-through",
+  "category": "transitions",
+  "title": "Наезд в деталь на склейке — жест SpaceX",
+  "duration_range": [
+    0.18,
+    0.3
+  ],
+  "params": {
+    "from_scale": 1.22
+  },
+  "tags": [
+    "dynamic",
+    "zoom"
+  ],
+  "renderer": "zoom_through",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+}

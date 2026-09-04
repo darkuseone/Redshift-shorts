@@ -1,8 +1,8 @@
 """Наложение графики поверх видеоряда на каждом кадре.
 
 Порядок слоёв задан смыслом, а не случайностью: карточка источника лежит под
-подсветкой (подсветка затемняет всё, кроме цели), плашки — над ними, субтитры —
-поверх всего, кроме кнопки подписки, которая обязана быть видна всегда (§6).
+подсветкой (подсветка затемняет всё, кроме цели), плашки — над ними. Субтитры
+рисует HyperFrames. Кнопка подписки обязана быть видна всегда (§6).
 """
 
 from __future__ import annotations
@@ -108,7 +108,9 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
                     ctx, str(params.get("text", "")), progress=progress))
                 drew += 1
 
-        # Субтитры: одно слово по центру, кроме кадров с full-screen text (§5.1).
+        # Субтитры рисует HyperFrames (gradient-fill / clip-wipe /
+        # blend-difference). Покадровый композитор больше не кладёт
+        # pop-in Nunito поверх кадра.
         if shot.get("kind") != "fullscreen_text":
             while (subtitle_index < len(subtitles)
                    and float(subtitles[subtitle_index]["end"]) <= t):
@@ -138,9 +140,14 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
 
         for item in _active(overlays, t):
             if item["type"] == "cta":
+                params = item.get("params") or {}
+                if (item.get("renderer") == "logo_brand_close"
+                        or params.get("logo_close")):
+                    # Локуп рисует HyperFrames; пилюля поверх вордмарка не нужна.
+                    continue
                 canvas.alpha_composite(subscribe_button(
                     ctx, progress=t - float(item["start"]),
-                    text=str(item.get("params", {}).get("text", "ПОДПИСАТЬСЯ"))))
+                    text=str(params.get("text", "ПОДПИСАТЬСЯ"))))
                 drew += 1
 
         stats.overlay_draws += drew

@@ -1,26 +1,27 @@
 ---
 name: redshift-templates
-description: Каталог из 104 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
+description: Каталог из 204 шаблонов, ротация и различия версий A/B. Используй при работе с templates/, выборе шаблона, приёмах вокруг ведущего, ошибке AB_TOO_SIMILAR и проверке QC-17.
 ---
 # redshift-templates
 
-104 шаблона в 12 категориях (§15). Каталог генерируется
+204 шаблона в 12 категориях (§15). Каталог генерируется
 `tools/gen_templates.py` — правь генератор, а не `templates/manifest.json`.
+У новых id есть поле `example_video` — референс-жест с examples HyperFrames.
 
 | Категория | Шт. | Назначение |
 |---|---|---|
 | `intro-hooks` | 8 | входы в ролик |
-| `text-fullscreen` | 10 | полноэкранный текст |
-| `lower-thirds` | 8 | плашки |
-| `frames-cards` | 6 | карточки источников |
-| `browser-ui` | 6 | окна интерфейсов |
-| `transitions` | 12 | переходы |
+| `text-fullscreen` | 34 | полноэкранный текст |
+| `lower-thirds` | 14 | плашки |
+| `frames-cards` | 7 | карточки источников |
+| `browser-ui` | 21 | окна интерфейсов |
+| `transitions` | 41 | переходы |
 | `avatar-entry` | 6 | входы аватара |
 | `kenburns` | 10 | движение по статике |
 | `parallax` | 4 | слоистые кадры |
-| `data-viz` | 6 | графика данных |
-| `outro-cta` | 5 | финал и подписка |
-| `hero-devices` | 23 | приёмы вокруг ведущего |
+| `data-viz` | 28 | графика данных |
+| `outro-cta` | 6 | финал, подписка, identity close |
+| `hero-devices` | 25 | приёмы вокруг ведущего |
 
 ## Каталог — не чек-лист (§3.1)
 
@@ -46,7 +47,7 @@ description: Каталог из 104 шаблонов, ротация и раз�
    при наличии альтернативы.
 2. Наборы шаблонов версий A и B одного ролика **отличаются минимум на 3
    позиции**. Меньше — `AB_TOO_SIMILAR`, прогон останавливается.
-3. Редко используемые шаблоны получают приоритет: без этого каталог из 92
+3. Редко используемые шаблоны получают приоритет: без этого каталог из 179
    штук выродится в 5 любимых, и QC-17 начнёт стабильно падать.
 4. Новый шаблон добавляется с тегами и датой, обязателен тест-рендер 3 сек.
 
@@ -63,6 +64,84 @@ description: Каталог из 104 шаблонов, ротация и раз�
 шаблоны Ken Burns и переходов, оформление полноэкранного текста, наличие мема.
 Один и тот же набор материалов, две сборки. Стоимость: ×1 на HeyGen и
 ElevenLabs, ×2 на рендер.
+
+## Сценарный индекс (`config/template_scenarios.json`)
+
+Сценарный индекс связывает текстовое содержание сцены, булевы сигналы и структуру кадра с выбором шаблонов. Выбор выполняет `TemplatePicker` поверх каталога `TemplateCatalog`, сохраняя все правила ротации §15.12.
+
+### Полосы весов (Weight Bands)
+
+Вес интента определяет его приоритет при сопоставлении и канал, в который попадают шаблоны:
+* **`specific` (`weight >= 20`)** — специфичные правила наведения по ключевым словам (`keywords`), регулярным выражениям (`patterns`) или сигналам (`signals_any`, `needs`). Имеют наивысший приоритет среди сценариев.
+* **`default` (`10 <= weight < 20`)** — статическая база call-site'ов, перенесённая в данные (например, `fullscreen_styles` из 20 ID, `tr_prefer` из 15 ID, `browser-source-generic` из 3 ID).
+* **`generic` (`weight < 10`)** — фоновая заливка для категорий без статической базы (hero-devices, kenburns) и обеспечение достижимости всех шаблонов каталога.
+
+### Две группы каналов (D4.1)
+
+Шаблоны собираются по 5 каналам (`head` → `specific` → `base` → `default` → `generic`), но исполняются двумя принципиально разными группами:
+
+1. **Группа наведения (`head`, `specific`, `base`):**
+   * Объединяется с дедупликацией в упорядоченный список `walk` с ограничением длины `MAX_WALK = 24`.
+   * Выполняется через **singleton-walk (D1)**: пикер поочерёдно опрашивает `catalog.pick(category, prefer=[tid], ...)`.
+   * Первый кандидат, прошедший фильтры кадра (`exclude`, `duration`, `tags`), немедленно побеждает с `tie_class == 1` и детерминированным результатом.
+   * Ротация каталога здесь не вмешивается — интент явно наводит на цель.
+
+2. **Группа ротации (`default`, `generic`):**
+   * Формирует единое множество `fallback` и передаётся **одним множеством** в финальный вызов `catalog.pick(category, prefer=fallback, ...)`.
+   * **Cap длины на ротацию не применяется** (множество передаётся целиком, исключая вырезание шаблонов из ротации).
+   * Решение принимает ротация §15.12 (`used_recently` → `usage` → `id` → `seed`).
+   * Канал `generic` подключается только тогда, когда `default` пуст изначально (на call-site'ах hero-devices и kenburns), предотвращая размывание статических списков.
+   * Каналы `default` и `generic` никогда не попадают в `walk` — статические списки не пинятся на первый элемент.
+
+### Разрешение ничьих внутри полосы
+
+Если несколько сработавших интентов имеют одинаковый вес, ничьи разрешаются детерминированно по кортежу `(-weight, id)` (по убыванию веса, затем по алфавиту `id` интента). Это документированное поведение, обеспечивающее полную повторяемость выбора.
+
+### Субтрактивное правило `replaces_default`
+
+Флаг `"replaces_default": true` (например, у `text-number-slam`) воспроизводит правила, которые в исходном коде заменяли весь список стилей (правило `\d` в `assemble.py:1876` заменяло 20 стилей варианта A на 2 числовых):
+* Если сработал хотя бы один интент с `replaces_default: true`, канал `default` полностью заменяется на `templates` **старшего по весу** такого сработавшего интента.
+* Прочие default-интенты в финальное множество ротации не попадают.
+* Сам интент остаётся в канале `specific` и участвует в `walk`.
+
+### Метаданные `tag_intents`
+
+Словарь `tag_intents` («тег манифеста → список id интентов») в файле индекса:
+* Является **исключительно метаданными**;
+* **НЕ исполняется** во время работы `TemplatePicker.pick()`;
+* Используется только для авторинга, анализа достижимости шаблонов тестами и отладки через `--explain`.
+
+### Как добавить интент
+
+1. Открыть `config/template_scenarios.json`.
+2. Добавить новый объект в массив `"intents"`:
+   ```json
+   {
+     "id": "my-category-topic",
+     "title": "краткое описание назначения",
+     "categories": ["my-category"],
+     "keywords": ["слово1", "фраза два"],
+     "patterns": ["\\bпаттерн\\b"],
+     "needs": [],
+     "signals_any": [],
+     "templates": [
+       "my-category/template-id-1",
+       "my-category/template-id-2"
+     ],
+     "weight": 25,
+     "variants": ["A", "B"]
+   }
+   ```
+3. Выбрать весовую полосу:
+   * `weight >= 20` для сценариев наведения по тексту или сигналам;
+   * `10 <= weight < 20` для базовых списков вариантов;
+   * `weight < 10` для общих фоновых шаблонов.
+4. При необходимости субтрактивной замены дефолтной базы выставить `"replaces_default": true`.
+5. Убедиться, что все ID шаблонов существуют в `templates/manifest.json` и их категории совпадают.
+6. Проверить сопоставление через CLI:
+   ```bash
+   python -m src.cli templates --explain "фраза два в кадре" --category my-category
+   ```
 
 ## Приёмы вокруг ведущего (`hero-devices`)
 
@@ -85,6 +164,9 @@ ElevenLabs, ×2 на рендер.
 | `chat-typing` | `hero-chat-typing` | над аватаром | `ask` |
 | `title-behind-head` | `hero-title-behind` | под аватаром | `head`, `tail` |
 | `knockout-negative` | `hero-knockout` | над аватаром | `word` |
+| `type-slab` | `hero-type-slab` | над аватаром | `lines` (субтитры гасятся) |
+| `footage-plate-pop` | `hero-plate-pop` | над аватаром | кадр блока |
+| `chat-generate` | `hero-chat-generate` | над аватаром | `gen_prompt`, кадр блока |
 | `exhibit-card` | `hero-exhibit` | над аватаром | альфу, `title`, кадр блока |
 | `statement-slam` | `hero-slam` | поверх всего | `punch` |
 | `phrase-log` | `hero-log` | над аватаром | `entries` (тайминги слов) |
@@ -93,6 +175,319 @@ ElevenLabs, ×2 на рендер.
 | `verdict-card` | `hero-verdict` | поверх всего | `punch` |
 | `source-paper` | `hero-paper` | над аватаром | `source_ref` блока, `quote` |
 | `bubble-typed` | `hero-bubble-typed` | над аватаром | `entries` (тайминги слов) |
+
+Полноэкранный текст читает params шаблона: `kinetic-stack` (слова `rise` со
+стаггером 45–70 мс), `blur-out-up` (выход из размытия: острый слой и призрак
+со статическим `filter:blur()`, без твина `filter`; уход продолжает ось вверх),
+`bottom-up-letters` (глифы поднимаются из 0.85em, `back.out(1.7)`, стаггер
+25 мс; Inter/крем каталога → Oswald/`ink`, одно слово accent),
+`kinetic-type-swap` (фраза стоит, в маске катится слот шириной в самое длинное
+слово; `yPercent`/`cqw` каталога → px и `fit_size`; слот `accent`, края `ink`;
+выход `none`/`fade`/`up`),
+`line-by-line-slide` (строки заезжают слева: каталог твинит CSS-var и `filter`;
+здесь px и призрак со статическим blur, уход вправо; Inter/изумруд → Oswald/`ink`,
+одно слово accent),
+`particle-text-dissolve` (строка собирается из облака: каталог семплирует
+bitmap на canvas, твинит `clip-path` и рисует `onUpdate`; здесь wipe — SVG-mask
+и `scaleX` на rect, как у caption-clip-wipe, пыль — span с заранее посчитанным
+`x`/`y`, LCG в Python; Inter/зелёный → Oswald/`ink`, одно слово accent;
+`direction` in/out),
+`per-word-crossfade` (слова входят из блюра с коротким подъёмом: каталог твинит
+CSS-var и `filter`; здесь px, призрак со статическим blur, `scale` 0.92→1,
+HOLD без ухода; Inter/`#18181b`/зелёный → Oswald/`ink`, одно слово accent),
+`scan-band` (диагональная полоса с RGB-сдвигом по вордмарку: каталог твинит
+`--sb-band-position` на `clip-path`; здесь статический параллелограмм и `x`
+полосы / `-x` мира. Inter, `#0b0c0e`/`#f7f8fa`, красный `#ff3158` и циан
+`#36efff` как в каталоге — аберрация, не чужой бренд. Цвета канала не
+подмешиваются),
+`scramble-reveal` (строка из детерминированного шума слева направо: каталог
+пишет `textContent` из LCG; здесь таблица в Python, показ — `opacity`.
+JetBrains Mono, зелёный `#71f5a7` / синий / фиолет каталога — терминальный
+жест, не палитра канала. `exit` none/fade/up),
+`shared-axis-z` (слова набухают по оси Z: каталог твинит `--hf-word-scale`;
+здесь заранее `scale` `1+(0.72-1)*sign*reach`, стаггер 60 мс в Python.
+Inter 900, `#18181b` / paper `#fafafa` как в каталоге; `tone=accent` →
+`#C8453D`, не изумруд `#34d399`. HOLD без ухода),
+`code-3d-extrude` (код на скошенной плите: каталог крутит Three.js ExtrudeGeometry
+и `onUpdate`; здесь 2D `scale`/`x`/`y`/`rotation` и статичный скос `#141d2b`.
+JetBrains Mono и github-dark `#F97583`/`#B392F0`/`#79B8FF` как в каталоге —
+подсветка кода, не палитра канала. P11 предпочитает id, если в тексте слота
+есть `function`/`const`/`def`),
+`code-diff` (правка как цветной diff: каталог твинит `height` 46→0 на минусах;
+здесь `scaleY` и заранее посчитанный `y`. JetBrains Mono, github-dark и
+красный `#f85149` / зелёный `#3fb950` как в каталоге — цвета diff, не
+палитра канала. P11 предпочитает id, если в тексте есть `---` или пары
+`+`/`-`),
+`code-particle-assemble` (пыль собирается в глифы кода: каталог рисует
+тысячи GPU Points и твинит `uProgress` на шейдере; здесь capped span с
+заранее `x`/`y`, mulberry32 seed 23. JetBrains Mono и github-dark как в
+каталоге — подсветка кода, не палитра канала. P11 кладёт id в prefer
+версии A рядом с code-3d-extrude, если в тексте слота есть
+`function`/`const`/`def`),
+`code-scroll` (камера скроллит длинный файл к целевой строке: каталог
+мерит `getBoundingClientRect` после `fonts.ready` и твинит `y`; здесь
+заранее `y` и окно ~14 строк, чтобы на 9:16 сдвиг был виден. JetBrains
+Mono, github-dark и прожектор `#58a6ff` как в каталоге — это жест, не
+палитра канала. P11 предпочитает id на длинных сниппетах ≥8 строк),
+`code-typing` (посимвольный набор с кареткой: каталог меряет DOM и твинит
+`x`/`y` каретки; здесь ширина глифа из JetBrains Mono, заранее `x`/`y`.
+Каретка `#58a6ff` как в каталоге — это жест, не палитра канала. P11
+предпочитает id на коротких сниппетах кода <8 строк),
+`terminal-simulator` (окно IDE: скелет строк растёт `scaleX`, снизу команда.
+Каталог твинит CSS-var `--hf-line`; здесь `scaleX`/`opacity` и `y` терминала.
+Сланец `#0f172a` и зелёный `#86efac` как в каталоге — жест терминала, не
+палитра канала. P11 предпочитает id на shell-командах `$`/`npx`/`npm`),
+`apple-terminal-clear-dark` (Terminal.app Clear Dark: набор команды и вывод.
+Каталог пишет `textContent` и `innerHTML`; здесь заранее span-ы и `opacity`.
+Сланец `#1a1a1a` и серый промпт `#888888` как в каталоге — профиль Clear Dark,
+не палитра канала. P11 ставит id первым на shell-командах `$`/`npx`/`npm`),
+`dark-plus` (VS Code workbench Dark+: набор кода и панель терминала.
+Каталог меряет DOM и крутит `rotateY`; здесь заранее `x`/`y` каретки и
+2D `rotation`/`x`. Цвета Dark+ и `#0078d4` как в каталоге — жест темы,
+не палитра канала. P11 ставит id первым на `def `),
+`beat-freeze-cut` (music-promo: рамп → freeze DROP → hard-cut. Каталог
+твинит `filter`/`visibility` и WebGL нет; здесь `scale`/`x`/`y`/`opacity`
+и статичный `backdrop-filter`. Мята `#00E5C7` → акцент `#E63946`, сцена
+`#0B132B`, панели `#1A1F2E`, текст `#ffffff`/`#C7C9D1` со скриншотов.
+Циан `#00E5FF` не берём — слишком близко к мяте. Inter как в каталоге.
+P11 ставит id первым на drop/beat/freeze),
+`number-slam-card`, лесенка, VS, swap, полоса, карточка факта. Версия A
+предпочитает кинетику, blur-out-up, буквы снизу, type-swap, line-slide,
+particle-dissolve, per-word-crossfade, scan-band, scramble-reveal,
+shared-axis-z, code-3d-extrude, code-diff, code-particle-assemble,
+code-scroll, code-typing, terminal-simulator, apple-terminal-clear-dark,
+dark-plus, beat-freeze-cut и цифру-удар.
+
+`logo-brand-close` — identity close, не кнопка. Вордмарк каскадом по глифу,
+акцентная точка `accent`, слоган Nunito и URL моно с `scaleX`, затем HOLD
+без дрейфа. Каталог мерит DOM и твинит `cqw`/`em`; здесь `fit_size` и px.
+Inter/зелёная точка → Oswald/`ink` на `bg_pure`. Версия B предпочитает его
+в окне CTA вместо пилюли `subscribe-pulse`. `logo-stamp` остаётся старым штампом.
+
+Карточка источника — не одна HTML-заготовка: `chat-thread` (пузырь пользователя
+   слева, ответ справа), `ai-chat-reveal` (iPhone-чат: набор на клавиатуре,
+   стрим ответа серыми словами и тёмная end card; каталог пишет `textContent`
+   и `autoAlpha`; здесь span-ы и `opacity`. Бумага `#fdfdfd`, клавиатура
+   `#d2d5e0`, мята `#3ce6ac` как в каталоге. Inter. `chat-thread` не трогаем.
+   P11 предпочитает id, если в источнике ask anything / chatgpt / нейросет),
+   `app-showcase` (три телефона веером: дашборд, кольцо, график калорий.
+   Каталог твинит `width` / `strokeDashoffset`; здесь `scaleX` / `rotation` /
+   SVG-mask. Лайм `#e4fa72`, чернила `#271f15`, крем `#f1f2ec` как в каталоге.
+   Inter. `phone-notification` / `hero-phone-mock` не трогаем. P11 предпочитает
+   id, если в источнике fitness / weekly goal / calories / фитнес),
+   `article-highlight` / `browser-scroll` (скролл и
+подсветка строки), `paper-reveal` (строки статьи, одна вспыхивает).
+
+Нижняя треть `accent-underline` — без карточки: имя Oswald поднимается,
+акцентная черта рисуется `scaleX` слева направо (`#C8453D`, не мятный
+`#46e5b7` каталога), роль Space Mono проявляется снизу; уход в обратном
+порядке. Твины на имени/черте/роли, не на `.clip`.
+
+Нижняя треть `clean-bar` — белая карточка с акцентной полоской слева:
+каталог твинит `clip-path`; здесь SVG-mask и `scaleX` на rect, tab растёт
+`scaleY`, имя и роль поднимаются. Montserrat как в каталоге; оранжевый
+`#ff5a36` → `#C8453D`.
+
+Нижняя треть `dark-card` — угольная карточка на светлом футаже: карточка
+поднимается, имя проявляется, акцентная черта рисуется `scaleX` слева
+направо (`#C8453D`, не золото `#f5b942` каталога), роль проявляется
+прозрачностью. Montserrat и уголь `#16181d` как в каталоге. Твины на
+карточке/имени/черте/роли, не на `.clip`.
+
+P11 предпочитает `accent-underline`, `clean-bar` и `dark-card` для
+`lower_third` из сценария; плашка домена источника по-прежнему
+`source-domain`.
+
+`data-viz` ставится на evidence/develop, если в тексте блока есть число
+(годы 1900–2100 отбрасываются, когда есть другие цифры). Одно число —
+`stat-countup-card`; если это процент (`%`) — `conic-progress-ring`
+(кольцо от 12 часов, бренд `#35d6a0`). Дробь 0–5 или слова про звёзды /
+рейтинг — `star-rating-fill` (заливка слева направо, `#ffc83d`). Два числа, второе меньше первого —
+`decline-chart` (линия падает, число считает вниз). Четыре и больше — `bar-chart-race` (гонка рядов,
+лидер `#c8452d`) с запасными `chart-story` / `mk-line-graph` / `animated-bar-chart` /
+`compare-bars` / `bar-race-mini`. Два–три числа без спада — `chart-story`, запасной
+`mk-line-graph`. Если в блоке Испания / Madrid / PIB — `spain-map`. Если
+в блоке interstate / city-to-city / corridor / поток между городами —
+`us-map-flow`. Если в блоке United States / Census / штат / California —
+`us-map`. Не пересекается
+с CTA последних 2 сек.
+`animated-bar-chart` — карточка каталога: семь столбиков растут снизу
+(`scaleY`), KPI `+42%`. Каталог твинит `--hf-grow`/`--hf-dash`; здесь
+GSAP `scaleY`, SVG-dash пропускаем. Чернила `#111827` и бумага
+`#ffffff` / сцена `#f7f7f8` как в каталоге. Inter как в каталоге.
+`bar-chart-race` — гонка каталога: горизонтальные ряды едут `scaleX`,
+меняются местами по рангу, год справа, лидер `#c8452d`. Каталог твинит
+`width` и пишет `textContent` из `onUpdate`; здесь GSAP `scaleX`/`x`/`y`
+и заранее span-ы. Бумага `#f5f3ef`, чернила `#1f1d1b` как в каталоге.
+Inter как в каталоге. `bar-race-mini` / `compare-bars` /
+`animated-bar-chart` не трогаем.
+`chart-story` — proof-график каталога: столбики растут снизу по очереди
+(`scaleY`), ось `scaleX`, коллаут на акценте `64%`. Каталог твинит
+`attr.height`/`y` и пишет `textContent`; здесь GSAP `scaleY`/`scaleX`/
+`scale` и заранее span-ы. Сцена `#0a0a0a`, чернила `#f8fafc`, акцент
+`#71f5a7` как в каталоге. Inter / JetBrains Mono. `bar-race-mini` /
+`animated-bar-chart` / `bar-chart-race` не трогаем.
+`conic-progress-ring` — кольцо каталога: заполнение от 12 часов, центр
+считает в такт. Каталог твинит `--ring-progress` на conic-gradient и
+пишет `textContent`; здесь GSAP `rotation` двух половинок и заранее
+span-ы. Сцена `#0a0a0a`, бренд `#35d6a0`, дорожка `#1b2938`, чернила
+`#f4f7fb` как в каталоге. Inter. `donut-fill` / `.dv-donut` не трогаем.
+`decline-chart` — спад каталога: линия рисуется вниз, число считает
+вниз, фон темнеет. Каталог твинит `strokeDashoffset` / `filter` и пишет
+`textContent`; здесь SVG-mask `scaleX`, gloom `opacity` и заранее span-ы.
+Градиент `#152f3c` / `#101a25` / `#0c1118`, линия `#fb7185`, точка
+`#fecdd3`, чернила `#f8fafc` как в каталоге. Inter. `line-rise` /
+`.dv-bar` / `chart-story` / `conic-progress-ring` не трогаем.
+`mk-line-graph` — линейный график MK: две серии рисуются слева направо
+(SVG-mask `scaleX`), точки `scale` с `back.out`, числа садятся на фронт.
+Каталог твинит `strokeDashoffset`; здесь маска, HTML-точки. Бумага
+`#ffffff`, чернила `#1d1d1f`, акцент `#0071e3`, вторая серия `#45d6c8`
+как в каталоге. Inter. `line-rise` / `.dv-bar` / `decline-chart` не трогаем.
+`spain-map` — хороплет каталога: автономные сообщества вспыхивают от
+центра (`scale`/`opacity`, `back.out`), подписи, легенда Bajo/Alto,
+подсветка MAD/PVA/NAV белым оверлеем. Каталог тянет topojson с CDN и
+твинит `clipPath`/`filter`; здесь запечённые контуры и `scaleX`-вайп
+заголовка. Градиент `#0f172a`/`#1e293b`, шкала `#7f1d1d`/`#dc2626`/
+`#fbbf24` как в каталоге. Inter. `mk-line-graph` / `.dv-bar` не трогаем.
+`star-rating-fill` — рейтинг каталога: золотой слой заливается слева
+направо (`scaleX` на SVG-mask), попа звёзд `scale` 1.06, число считает
+в такт. Каталог твинит `clip-path` и пишет `textContent`; здесь маска и
+заранее span-ы. Сцена `#090d16`, карточка `#1a2230`, бренд `#ffc83d`
+как в каталоге. Inter. `conic-progress-ring` / `.dv-bar` не трогаем.
+`us-map` — хороплет каталога: штаты вспыхивают от центра
+(`scale`/`opacity`, `back.out`), подписи, легенда Low/High,
+подсветка CA/NY/TX/FL/NJ белым оверлеем. Каталог тянет topojson с CDN и
+твинит `clipPath`/`filter`; здесь запечённые контуры и `scaleX`-вайп
+заголовка. Градиент `#0f172a`/`#1e293b`, шкала `#1e3a5f`/`#2563eb`/
+`#7c3aed`/`#ec4899` как в каталоге. Inter. `spain-map` / `.dv-bar` не трогаем.
+`us-map-flow` — карта коридоров каталога: штаты как подложка, дуги между
+городами растут `scale` от источника, точки бегут GSAP `x`/`y` по квадратике.
+Каталог тянет topojson, твинит `clipPath` / `strokeDashoffset` /
+`getPointAtLength`; здесь запечённые контуры и `scaleX`-вайп заголовка.
+Градиент `#0f172a`/`#1e293b`, дуги `#3b82f6`, точки `#60a5fa` как в каталоге.
+Inter. `us-map` / `spain-map` / `.dv-bar` не трогаем.
+`apple-money-count` — счёт каталога: `$0` → `$10,000`, зелёная вспышка,
+веер купюр и монет. Каталог пишет `textContent` из `onUpdate` и твинит
+`filter` / `textShadow`; здесь заранее span-ы и `opacity`, burst —
+`x`/`y`/`rotation`/`scale`. Бумага `#fdfefe`, чернила `#111315`, зелёный
+`#30d158`, золото монеты `#ffd54f` как в каталоге. Inter.
+`stat-countup-card` / `counter-roll` / `number-slam-card` не трогаем.
+P11 предпочитает id, если в блоке `$` / dollar / revenue / выручка.
+`north-korea-locked-down` — наезд на КНДР: камера `scale`/`x`/`y`, красный
+scribble через SVG-mask `scaleX`, плашка LOCKED DOWN, красная вуаль.
+Каталог твинит `filter` / `strokeDashoffset` и тянет PNG; здесь запечённые
+Natural Earth контуры. Inter, бумага `#eef3f4`, scribble `#e21d2f` как в
+каталоге. `world-map` / `us-map` не трогаем. P11 предпочитает id, если в
+блоке north korea / кндр / locked down / пхеньян.
+`nyc-paris-flight` — самолёт Нью-Йорк→Париж: маршрут SVG-mask `scaleX`,
+самолёт `x`/`y`/`rotation` по кубике, doodle посадки `scaleX`, ARRIVED.
+Каталог твинит `strokeDashoffset` / `offsetDistance` / `filter` и тянет PNG;
+здесь запечённые контуры. Inter, бумага `#f5f5f7`, маршрут `#0071e3`,
+doodle `#ff3b30` как в каталоге. `us-map-flow` / `world-map` не трогаем.
+P11 предпочитает id, если в блоке jfk / cdg / transatlantic / рейс / самолёт.
+`mk-progress-stat` — крупная цифра считает вверх, тонкая полоса
+заполняется `scaleX` до value/max. Каталог пишет `textContent` и прячет
+`visibility`; здесь span-ы и `opacity`. Inter, чернила `#1d1d1f`, акцент
+`#0071e3`, бумага `#f5f5f7` как в каталоге. `stat-countup-card` /
+`apple-money-count` не трогаем. P11 предпочитает id, если в блоке
+goals reached / прогресс / целей.
+`flowchart-vertical` — вертикальная интерактивная блок-схема (дерево решений):
+вопрос, ветвление «Yes» / «Not sure», 4 листа, появление курсора, клик и
+исправление опечатки («Pythom» → «Python» со скетчевой волной ошибки) и эмодзи 👍.
+Каталог твинит strokeDashoffset и innerHTML; здесь запечённые SVG-контуры с
+маской scaleY, слои опечатки/исправления через opacity, курсор x/y. Бумага #ffffff,
+узлы #e8d44d/#c2e8a0/#f5c5a3/#d4c5f9/#a8d8f0/#f8b4c8, чернила #111214, Inter.
+`flowchart` не трогаем. P11 предпочитает id, если в блоке flowchart / блок-схема /
+дерево решений.
+`chatgpt-exchange` — мобильный интерфейс ChatGPT: каскад карточек подсказок,
+набор пользовательского промпта на экранной клавиатуре с мерцающим курсором,
+отправка тапом по синей кнопке, анимация вылета бабла сообщения, стриминг
+двух абзацев ответа с жирным выделением и постепенное появление сравнительной
+таблицы с эмодзи, колонками и бейджами источников, а также финальный скролл
+к началу. Каталог твинил height параграфов/строк/композера и textContent; здесь
+запечённые спаны слов и символов с управлением через opacity, scale и y, без
+твинов запрещённых свойств. Тёмная тема OLED (#000, #212121, #141414, #48aaff), Inter.
+`ai-chat-reveal` не трогаем. P11 предпочитает id, если в блоке chatgpt / chat gpt /
+сравнение ии / ranking.
+`claude-exchange` — мобильный интерфейс Claude: стартовое приветствие со звездой,
+набор пользовательского промпта на экранной клавиатуре, отправка, появление бабла
+сообщения, спиннер рассуждений, цепочка шагов (thinking + search) с последующим
+схлопыванием в «2 steps», стриминг ответа с выделением ключевого сервиса {HeyGen}
+и маркированного списка, панель действий и дисклеймер. Каталог твинил height
+блоков и textContent; здесь запечённые спаны слов и символов с управлением через
+opacity, scale, rotation и y, без твинов запрещённых свойств. Тёмная тема (#20201f, #1c1c1b,
+#131313, #d97757), Inter. P11 предпочитает id, если в блоке claude / anthropic / opus.
+`message-thread-reveal` — iMessage-переписка: всплывающие баблы собеседника и автора,
+карточка предпросмотра ссылки с доменом и заголовком, эмодзи-реакции и финальный
+end-card с логотипом, рейтингом и CTA-кнопкой в цветах бренда (#C8453D). Каталог
+скакал абсолютными координатами; здесь вертикальный сдвиг через transform y, pop баблов
+через scale и opacity. P11 предпочитает id, если в блоке imessage / переписка / смс.
+`notes-reveal` — Apple Notes: заголовок заметки, последовательная печать строк с имитацией набора слов, плавный вертикальный скролл листа при заполнении, переход в финальную бумажную карточку с маркером, кругом акцента (#C8453D) и чеклистом. Каталог считал координаты букв; здесь запечённые слова, opacity и transform y/scale/scaleX без запрещённых твинов. P11 предпочитает id, если в блоке notes / заметки / apple notes.
+`notification-cascade` — каскад входящих push-уведомлений в мобильном стиле: 4 баннера со смещением вверх по шагу (pitch 214px), плашка «Show less» с кнопкой закрытия, затемнение фона и переход в элегантный end-card с крупным заголовком, акцентом (#C8453D) и доменом. Каталог использовал автоальфу; здесь строгие transform y, scale и opacity без твинов запрещённых свойств. P11 предпочитает id, если в блоке notification / уведомлен / alert / push.
+`instagram-follow` — Instagram-плашка профиля: аватарка/монограмма, имя с синим бейджем верификации, хэндл, счётчик подписчиков, анимированная кнопка с нажатием и отскоком Follow → Following с переключением цвета фона (#0095f6 → #2f2f2f) и иконкой шеврона. Чистый выезд снизу и уход по y/opacity без запрещённых твинов. P11 предпочитает id, если в блоке instagram / инстаграм / инста.
+`tiktok-follow` — TikTok-плашка профиля: аватарка/монограмма в градиенте cyan/crimson, имя, хэндл, счётчик подписчиков, анимированная кнопка с нажатием и отскоком Follow → Following с переключением фирменного цвета (#fe2c55 → #2f2f2f) и иконкой галочки. Чистый выезд снизу и уход по y/opacity без запрещённых твинов. P11 предпочитает id, если в блоке tiktok / тикток.
+
+Динамический переход `zoom-through` — наезд из масштаба 1.22 на смене блока;
+cut по-прежнему база ≥70 %. `cinematic-zoom` — radial zoom-blur со сдвигом
+каналов: каталог рисует WebGL `onUpdate`; здесь `scale` входящего кадра,
+вуали `#3d348b`/`#f7b801` и chroma. Цвета SCENE A/B каталога, не палитра канала.
+`glitch` (не `glitch-short`) — scan lines, scramble и chroma: каталог рисует
+WebGL `onUpdate`; здесь заранее полосы и клетки, вуали `#293241`/`#ee6c4d` и
+лёд `#98c1d9`. `glitch-short` остаётся короткими полосами `accent-soft`.
+`gravitational-lens` — колодец, горизонт и chroma: каталог рисует WebGL
+`onUpdate`; здесь `scale` к центру, вуали `#10002b`/`#f20089` и mauve
+`#a080a0`. Цвета SCENE A/B каталога, не палитра канала.
+`light-leak` — тёплый засвет и flare: каталог рисует WebGL `onUpdate`;
+здесь пятно сверху-справа, полоса и вуали `#001524`/`#fb8b24` и sage
+`#708d81`. Цвета SCENE A/B каталога, не палитра канала. `light-sweep`
+остаётся диагональным бликом.
+`sdf-iris` — круг из центра и onion rings: каталог рисует WebGL `onUpdate`;
+здесь золотой диск `#ffc300`, три кольца и вуаль `#003049` / steel `#7a9ab0`.
+Цвета SCENE A/B каталога, не палитра канала. `mask-wipe-circle` остаётся
+белой маской.
+`thermal-distortion` — heat shimmer снизу и тёплый haze: каталог рисует
+WebGL `onUpdate`; здесь пятно снизу, полосы и вуали `#3d405b` / `#e07a5f`
+и mist `#a0a0b0`. Цвета SCENE A/B каталога, не палитра канала.
+`whip-pan` (не `whip-pan-l`/`whip-pan-r`) — оба кадра едут вбок с направленным
+смазом: каталог рисует WebGL `onUpdate`; здесь полосы смаза и вуали
+`#0b132b` / `#48bfe3` и steel `#7a9ab0`. Цвета SCENE A/B каталога, не палитра
+канала. `whip-pan-l`/`whip-pan-r` остаются рывком кадра `tr-blur`.
+`mk-clone-wall-transition` — плитка слов накрывает кадр, инвертируется
+`difference` и уходит: каталог твинит `width`/`height` и `visibility`; здесь
+`scale`/`x`/`opacity`/`borderRadius`, ряды заранее. Чернила `#1d1d1f` и бумага
+`#ffffff` как в каталоге — жест MK, не палитра канала. Inter как в каталоге.
+`transitions-3d` — 3D card flip: SCENE A схлопывается, SCENE B раскрывается.
+Каталог твинит `rotationY`; здесь `scaleX`/`opacity` и ребро. Вуали
+`#1b263b`/`#e07a5f` и сталь `#778da9` как в каталоге — жест карточки, не
+палитра канала. Inter вместо `-apple-system`.
+`transitions-cover` — cover: staggered blocks накрывают SCENE A и открывают
+SCENE B. Каталог ставит CSS `translateX` и твинит `x`; здесь GSAP `x` на
+1080 px без CSS `transform`. Вайпы `#f72585`/`#7209b7`, грани `#1b263b`/
+`#e07a5f` как в каталоге — жест карточки, не палитра канала. Inter вместо
+`-apple-system`. `transitions-blur`, `transitions-3d` и `paper-slide` не
+трогаем.
+`transitions-light` — light leak: тёплые блики едут по кадру, SCENE B
+проявляется. Каталог DEMO 1 твинит `opacity`/`x` трёх бликов; здесь GSAP `x`
+на 9:16 (300→169) без CSS `transform` и без `filter`. Блики
+`rgba(255,165,0)`/`rgba(255,140,0)`/`rgba(255,200,0)`, грани `#1b263b`/
+`#e07a5f` как в каталоге — жест карточки, не палитра канала. Inter вместо
+`-apple-system`. `light-leak` и `light-sweep` не трогаем.
+`transitions-other` — flash cut: белая вспышка на склейке, SCENE B
+проявляется. Каталог DEMO 1 твинит `opacity` оверлея 0.03 с вверх и 0.1 с
+вниз; здесь те же твины без CSS `transform` и без `filter`. Вспышка
+`#ffffff`, грани `#1b263b`/`#e07a5f` как в каталоге — жест карточки, не
+палитра канала. Inter вместо `-apple-system`. `white_flash` не трогаем.
+`transitions-destruction` — page burn: SCENE A сгорает кругом из центра,
+огонь на кромке, SCENE B проявляется. Каталог рисует canvas `onUpdate` и
+твинит `clip-path`; здесь круг `overflow:hidden` и `scale`, кольца
+`#ff6400`/`#ff3200`/`#c81e00`. Грани `#1b263b`/`#e07a5f` как в каталоге —
+жест карточки, не палитра канала. Inter вместо `-apple-system`.
+`sdf-iris` и `mask-wipe-circle` не трогаем.
+`transitions-blur` — blur through: SCENE A уходит в размытие, SCENE B выходит
+из него. Каталог твинит `filter`; здесь `scale`/`opacity` и призраки со
+статическим `filter:blur(15px)`. Вуали `#1b263b`/`#e07a5f` как в каталоге —
+жест карточки, не палитра канала. Inter вместо `-apple-system`. `blur-dip`
+остаётся провалом `backdrop-filter`.
 
 Приём ставится **через один** подходящий аватар-кадр; с какого начинать, решает
 сид варианта, поэтому A и B получают разные приёмы на разных кадрах.
@@ -417,9 +812,11 @@ x=119 и x=961, кадр показал на x=118 и x=960 с перепадо�
 
 ## Каталог в терминах HTML/GSAP
 
-92 шаблона — это **30 рендереров** с параметрами, а не 92 реализации:
-`fullscreen_text` покрывает 15 шаблонов, `source_card` 12, `plaque` 11,
-`kenburns` 10. Меняя шаблон, чаще всего меняешь параметры, а не код.
+204 шаблона — это **рендереры с параметрами**, а не 147 реализация:
+`fullscreen_text` и его варианты покрывают полноэкранные кадры, `source_card` /
+`chat_thread` / `ai_chat_reveal` / `chatgpt_exchange` / `claude_exchange` / `message_thread_reveal` / `notes_reveal` / `notification_cascade` / `x_post` / `reddit_post` / `spotify_card` / `macos_notification` / `app_showcase` / `article_scroll` / `paper_reveal` — окна источника, `plaque` /
+`lt_accent_underline` / `lt_clean_bar` / `lt_dark_card` / `instagram_follow` / `tiktok_follow` / `yt_lower_third` — плашки, `kenburns` — проезд, `dataviz` — графики. Меняя шаблон, чаще всего
+меняешь параметры, а не код.
 
 Реализации живут в `src/lib/render/hyperframes/templates.py`. Тест
 `test_every_renderer_of_the_catalog_is_implemented` сверяет `manifest.json` с
@@ -432,7 +829,8 @@ x=119 и x=961, кадр показал на x=118 и x=960 с перепадо�
 эффекты сделаны не «в лоб»:
 
 * **`filter: blur()` вне списка.** Размытие — статический слой с
-  `backdrop-filter`, у которого гасится прозрачность.
+  `backdrop-filter` (переход blur-dip) или призрак со статическим
+  `filter:blur()`, у которого гасится прозрачность (`blur-out-up`).
 * **`clip-path` вне списка.** Маска раскрытия — элемент с `border-radius` и
   `overflow:hidden`, которому тянут `scale`.
 * **`width` вне списка** и вдобавок пересчитывает раскладку на каждом кадре.
@@ -451,3 +849,25 @@ x=119 и x=961, кадр показал на x=118 и x=960 с перепадо�
 Рисунок глитча считается от индекса шота, а не от `Math.random`: рендер
 сэмплирует кадры не по порядку и параллельно, любая случайность рассыпет
 картинку между кадрами.
+
+## Жесты субтитров (не каталог §15)
+
+`caption-gradient-fill` — прод по умолчанию. P11 кладёт
+`subtitle_style.caption` через `pick_caption_style`. Каталог анимирует
+`backgroundPosition`; движок этого не умеет, поэтому SVG-маска и сдвиг `x`
+у градиентного rect. Siri-радуга → `accent → accent_soft` на одном слове
+фразы. Bounce 1.04 на каждом слове, не на `.clip`.
+
+`caption-clip-wipe` — космос (`category: space` или космические слова в
+теме/заголовке). Каталог тянет `clip-path: inset`; маска с `scaleX` на
+белом SVG-rect. Золото → `accent`.
+
+`caption-camera-follow` остаётся доступен явным `caption` в плане. Pop-in
+Nunito удалён.
+
+`caption-blend-difference` — opt-in (`blend-difference` /
+`caption-blend-difference`). Каталог вешает `mix-blend-mode: difference`
+на белый текст; движок blend-mode не твинит. Difference стоит на клипе
+(соседе видео): на слове внутри transform invert не видит футаж. Акцент —
+второй клип без difference, иначе `#C8453D` уходит в циан.
+`#root { isolation: isolate }` обязателен.

@@ -1,0 +1,26 @@
+{
+  "id": "outro-cta/logo-brand-close",
+  "name": "logo-brand-close",
+  "category": "outro-cta",
+  "title": "Вордмарк каскадом и точка бренда — logo-brand-close",
+  "duration_range": [
+    1.5,
+    4.5
+  ],
+  "params": {
+    "logo_close": true,
+    "exit": "none",
+    "wordmark": "РЕДШИФТ",
+    "tagline": "Пиши код. Шли на орбиту.",
+    "url": "redshift.shorts"
+  },
+  "tags": [
+    "cta",
+    "brand",
+    "logo",
+    "end-card"
+  ],
+  "renderer": "logo_brand_close",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

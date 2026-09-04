@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-grid",
+  "name": "transitions-grid",
+  "category": "transitions",
+  "title": "Grid: мозаичный распад на тайлы и каскадное проявление — transitions-grid",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "grid",
+    "mosaic",
+    "dissolve"
+  ],
+  "renderer": "transitions_grid",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

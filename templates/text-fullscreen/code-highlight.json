@@ -1,0 +1,22 @@
+{
+  "id": "text-fullscreen/code-highlight",
+  "name": "code-highlight",
+  "category": "text-fullscreen",
+  "title": "Синтаксическая подсветка строки кода с горизонтальной световой плашкой — code-highlight",
+  "duration_range": [
+    1.5,
+    6.0
+  ],
+  "params": {
+    "code_highlight": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "highlight",
+    "developer"
+  ],
+  "renderer": "code_highlight",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

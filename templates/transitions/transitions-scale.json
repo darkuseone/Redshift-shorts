@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-scale",
+  "name": "transitions-scale",
+  "category": "transitions",
+  "title": "Scale: сквозной наезд через кадр или стягивание в центр — transitions-scale",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "scale",
+    "zoom",
+    "through"
+  ],
+  "renderer": "transitions_scale",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

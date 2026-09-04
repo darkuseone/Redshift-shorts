@@ -1,0 +1,22 @@
+{
+  "id": "text-fullscreen/code-3d-extrude",
+  "name": "code-3d-extrude",
+  "category": "text-fullscreen",
+  "title": "Код на скошенной плите, посадка из глубины — code-3d-extrude",
+  "duration_range": [
+    1.5,
+    8.0
+  ],
+  "params": {
+    "code_3d_extrude": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "3d",
+    "developer"
+  ],
+  "renderer": "code_3d_extrude",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

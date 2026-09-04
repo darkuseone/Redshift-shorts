@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-push",
+  "name": "transitions-push",
+  "category": "transitions",
+  "title": "Push: направленное выталкивание сцен со слайдом — transitions-push",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "push",
+    "slide",
+    "directional"
+  ],
+  "renderer": "transitions_push",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

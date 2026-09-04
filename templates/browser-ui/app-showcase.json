@@ -1,0 +1,23 @@
+{
+  "id": "browser-ui/app-showcase",
+  "name": "app-showcase",
+  "category": "browser-ui",
+  "title": "Три телефона веером: дашборд, кольцо, график — app-showcase",
+  "duration_range": [
+    2.0,
+    5.5
+  ],
+  "params": {
+    "template": "phone",
+    "showcase": true
+  },
+  "tags": [
+    "ui",
+    "app",
+    "showcase",
+    "device"
+  ],
+  "renderer": "app_showcase",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

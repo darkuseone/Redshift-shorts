@@ -150,6 +150,199 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
                          "end": round(5.0 + i * 6.0, 3),
                          "params": {"domain": "nature.com", "title": "Заголовок",
                                     "snippet": "Выдержка", "content": "ПЛАШКА"}})
+    overlays.append({
+        "type": "dataviz", "start": 8.0, "end": 13.0,
+        "template": "data-viz/apple-money-count", "renderer": "dataviz",
+        "params": {"end_value": 10000, "prefix": "$"},
+    })
+    overlays.append({
+        "type": "dataviz", "start": 14.0, "end": 21.0,
+        "template": "data-viz/north-korea-locked-down", "renderer": "dataviz",
+        "params": {"label": "LOCKED DOWN"},
+    })
+    overlays.append({
+        "type": "dataviz", "start": 22.0, "end": 28.0,
+        "template": "data-viz/nyc-paris-flight", "renderer": "dataviz",
+        "params": {
+            "origin": "New York", "dest": "Paris",
+            "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+            "km": "5,837",
+        },
+    })
+    overlays.append({
+        "type": "dataviz", "start": 29.0, "end": 36.0,
+        "template": "data-viz/mk-progress-stat", "renderer": "dataviz",
+        "params": {
+            "value": 22, "max": 30, "label": "Goals reached",
+            "caption": "Great job, we are getting closer!",
+        },
+    })
+    overlays.append({
+        "type": "dataviz", "start": 37.0, "end": 49.0,
+        "template": "data-viz/flowchart-vertical", "renderer": "dataviz",
+        "params": {
+            "root": "Should I learn to code?",
+            "branches": ["Yes", "Not sure"],
+            "leaves": [
+                "Start with Python", "Try no-code first",
+                "Build a personal website", "Take a free intro course",
+            ],
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 50.0, "end": 64.0,
+        "template": "browser-ui/chatgpt-exchange", "renderer": "chatgpt_exchange",
+        "params": {
+            "prompt": "Hey what is the best tool for ai avatars",
+            "intro1": "It really depends on what you are trying to do.",
+            "intro2": "For most creators and marketers, here is how I rank them:",
+            "tableHeadUse": "Use case", "tableHeadTool": "Best tool", "tableHeadWhy": "Why",
+            "row1Use": "Overall realism", "row1Tool": "HeyGen",
+            "row1Why": "Most natural facial expressions and lip sync.",
+            "row1Chip": "Official A.I Ranking",
+            "row2Use": "Enterprise", "row2Tool": "Synthesia",
+            "row2Why": "Better collaboration and workflows.",
+            "row2Chip": "Official A.I Ranking",
+            "row3Use": "Mobile UGC", "row3Tool": "Captions",
+            "row3Why": "Fast mobile workflow and social editing.",
+            "row3Chip": "Creator Stack",
+            "row4Use": "Real-time", "row4Tool": "Tavus",
+            "row4Why": "Interactive avatars that hold live conversations.",
+            "row4Chip": "Creator Stack",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 65.0, "end": 78.0,
+        "template": "browser-ui/claude-exchange", "renderer": "claude_exchange",
+        "params": {
+            "prompt": "What's the best tool for ai avatars?",
+            "thinking": "Weighing accuracy against market…",
+            "lead": "I'll search for the current state.",
+            "search": "best AI avatar video generator 2026",
+            "answer1": "It depends on what you are making.",
+            "answer2": "**HeyGen** is where most teams land {HeyGen}.",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 79.0, "end": 92.0,
+        "template": "browser-ui/message-thread-reveal", "renderer": "message_thread_reveal",
+        "params": {
+            "contactName": "Rachel",
+            "questionMessage": "what r u using for the launch video??",
+            "teaserMessage": "wait look 👀",
+            "cardTitle": "HyperFrames | Write HTML, render pixel-perfect video",
+            "cardDomain": "hyperframes.heygen.com",
+            "reactionMessage": "OMG IT'S HTML",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 93.0, "end": 106.0,
+        "template": "browser-ui/notes-reveal", "renderer": "notes_reveal",
+        "params": {
+            "titleL1": "Things nobody told me",
+            "titleL2": "about video.",
+            "noteLine1": "my videos sucked",
+            "cardTop": "THE POWER",
+            "cardMid": "OF",
+            "cardBottom": "ONE FILE",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 107.0, "end": 120.0,
+        "template": "browser-ui/notification-cascade", "renderer": "notification_cascade",
+        "params": {
+            "notifTitle": "New render",
+            "message1": "Launch video is ready.",
+            "appName": "HyperFrames",
+            "headlineTop": "SHIP VIDEO",
+            "headlineAccent": "FROM HTML",
+            "footerText": "hyperframes.heygen.com",
+        },
+    })
+    overlays.append({
+        "type": "plaque", "start": 121.0, "end": 125.5,
+        "template": "lower-thirds/instagram-follow", "renderer": "instagram_follow",
+        "params": {
+            "displayName": "HeyGen",
+            "handle": "@heygen_official",
+            "followers": "47.5K followers",
+            "buttonText": "Follow",
+            "followingText": "Following",
+        },
+    })
+    overlays.append({
+        "type": "plaque", "start": 126.0, "end": 130.5,
+        "template": "lower-thirds/tiktok-follow", "renderer": "tiktok_follow",
+        "params": {
+            "displayName": "HeyGen",
+            "handle": "@heygen.com",
+            "followers": "1,999 followers",
+            "buttonText": "Follow",
+            "followingText": "Following",
+        },
+    })
+    overlays.append({
+        "type": "plaque", "start": 131.0, "end": 135.5,
+        "template": "lower-thirds/yt-lower-third", "renderer": "yt_lower_third",
+        "params": {
+            "channelName": "HeyGen",
+            "subscriberCount": "82.2K subscribers",
+            "buttonText": "Subscribe",
+            "subscribedText": "Subscribed",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 136.0, "end": 141.0,
+        "template": "browser-ui/x-post", "renderer": "x_post",
+        "params": {
+            "displayName": "Hyperframes",
+            "handle": "@hyperframes",
+            "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
+            "timestamp": "1:10 PM · Apr 7, 2026",
+            "replies": "34",
+            "reposts": "2.3K",
+            "likes": "10.9K",
+            "likesActive": "11.0K",
+            "views": "150K",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 142.0, "end": 147.0,
+        "template": "browser-ui/reddit-post", "renderer": "reddit_post",
+        "params": {
+            "subreddit": "r/hyperframes",
+            "author": "u/developer · 3h",
+            "title": "Writing HTML to render video changed everything for our pipeline",
+            "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds. The whole workflow runs headlessly.",
+            "votes": "4.2k",
+            "votesActive": "4.3k",
+            "comments": "328",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 147.5, "end": 152.5,
+        "template": "browser-ui/spotify-card", "renderer": "spotify_card",
+        "params": {
+            "trackName": "HyperFrames",
+            "artistName": "HeyGen",
+            "brandText": "Spotify",
+        },
+    })
+    overlays.append({
+        "type": "source_card", "start": 153.0, "end": 157.5,
+        "template": "browser-ui/macos-notification", "renderer": "macos_notification",
+        "params": {
+            "appName": "HyperFrames",
+            "time": "now",
+            "title": "Build complete",
+            "body": "Video rendered in 1.4s with zero frame drops.",
+            "iconText": "HF",
+        },
+    })
+
+
+
+
 
     plan = {
         "video_id": "lintcheck", "variant": "A", "fps": 30,

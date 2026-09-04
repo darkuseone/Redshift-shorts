@@ -35,7 +35,12 @@ from ..lib.backdrop import describe as scene_why
 from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
 from ..lib.glyphs import match_glyphs
+from ..lib.render.hyperframes.captions import pick_caption_style
+from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
+from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
+from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
+from ..lib.template_picker import ScenarioIndex, TemplatePicker, build_blob
 
 _log = get_logger("p11")
 
@@ -168,6 +173,8 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-brand-pill": ("brand",),
     "hero-card-stack": ("title", "plate"),
     "hero-phone-mock": ("lines",),
+    "hero-type-slab": ("lines",),
+    "hero-plate-pop": ("plate",),
     "hero-script-stack": ("lines",),
     "hero-chat-typing": ("ask",),
     "hero-chat-generate": ("gen_prompt", "plate"),
@@ -659,7 +666,7 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
     if renderer == "hero-headline":
         params["kicker"] = _HERO_KICKERS.get(str(slot.get("role") or ""), "")
     if "lines" in _HERO_NEEDS.get(renderer, ()):
-        upper = renderer == "hero-text-column"
+        upper = renderer in ("hero-text-column", "hero-type-slab")
         params["lines"] = [l.upper() if upper else l for l in content["lines"]]
         params["accent_lines"] = content["accent_lines"]
     if content.get("head_box") and renderer in ("hero-headline", "hero-title-behind"):
@@ -735,13 +742,17 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  content: dict[str, Any], has_alpha: bool,
                  plate_src: dict[str, Any] | None,
                  recent_videos: list[str], exclude: list[str],
-                 seed: int) -> dict[str, Any] | None:
+                 seed: int,
+                 picker: TemplatePicker | None = None,
+                 variant: str = "A") -> dict[str, Any] | None:
     """Выбрать приём вокруг ведущего под конкретный кадр.
 
     Приём отбрасывается, если кадр не может его показать: без альфы всё, что
     рисуется под аватаром, окажется за непрозрачным видео, а остальным нужен
     материал из ``_HERO_NEEDS``.
     """
+    if picker is None:
+        picker = TemplatePicker(catalog, ScenarioIndex.load(catalog=catalog))
     available = dict(content)
     available["plate"] = plate_src
     if plate_src and plate_src.get("credit"):
@@ -767,9 +778,22 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     if not [t for t in catalog.by_category("hero-devices") if t.id not in blocked]:
         return None
 
-    template = catalog.pick("hero-devices", duration=float(slot["duration"]),
-                            recent_videos=recent_videos, exclude=blocked,
-                            seed=seed + int(slot["index"]) * 7)
+    signals = {k for k, v in available.items() if v and k in ("plate", "icons", "word", "lines", "brand", "title")}
+    if has_alpha:
+        signals.add("alpha")
+    if content.get("figures"):
+        signals.add("numbers")
+    blob = build_blob(content.get("title"), content.get("caption"), " ".join(content.get("lines") or []), content.get("word"))
+    template, _ = picker.pick(
+        "hero-devices",
+        blob=blob,
+        signals=signals,
+        variant=variant,
+        duration=float(slot["duration"]),
+        recent_videos=recent_videos,
+        exclude=blocked,
+        seed=seed + int(slot["index"]) * 7,
+    )
     renderer = template.renderer
     params = hero_params(renderer, template.params, content, slot)
 
@@ -787,7 +811,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         entry["file"] = plate_src["file"]
         if plate_src.get("duration_sec"):
             params["media_sec"] = round(float(plate_src["duration_sec"]), 3)
-    elif plate_src and renderer in ("hero-plate", "hero-card-stack", "hero-exhibit"):
+    elif plate_src and renderer in ("hero-plate", "hero-card-stack",
+                                    "hero-exhibit", "hero-plate-pop"):
         # Приём со своим кадром живёт по его длине: материал короче аватар-плана,
         # и растянутая панель досидела бы кадр пустой.
         entry["file"] = plate_src["file"]
@@ -1103,6 +1128,84 @@ def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
     return reports, behind_layers, vfx_clips, summary
 
 
+_OVERLAY_BY_NAME = {
+    "chat-thread": "chat_thread",
+    "chat-ai-typing": "chat_thread",
+    "article-highlight": "article_scroll",
+    "browser-scroll": "article_scroll",
+    "paper-reveal": "paper_reveal",
+    "arxiv-card": "paper_reveal",
+    "ai-chat-reveal": "ai_chat_reveal",
+    "app-showcase": "app_showcase",
+    "chatgpt-exchange": "chatgpt_exchange",
+    "claude-exchange": "claude_exchange",
+    "message-thread-reveal": "message_thread_reveal",
+    "notes-reveal": "notes_reveal",
+    "notification-cascade": "notification_cascade",
+    "instagram-follow": "instagram_follow",
+    "tiktok-follow": "tiktok_follow",
+    "yt-lower-third": "yt_lower_third",
+    "x-post": "x_post",
+    "reddit-post": "reddit_post",
+    "spotify-card": "spotify_card",
+    "macos-notification": "macos_notification",
+}
+
+_NUM_IN_TEXT = re.compile(
+    r"(?<![\d.])(\d+(?:[.,]\d+)?)(?:\s*(%|млрд|млн|тыс\.?|кубит(?:ов|а)?|[Tт]))?",
+    re.IGNORECASE,
+)
+
+
+def _overlay_renderer(template: Template) -> str:
+    """Какой HTML-рендерер рисует карточку источника."""
+    mapped = _OVERLAY_BY_NAME.get(template.name)
+    if mapped:
+        return mapped
+    if template.renderer in ("chat_thread", "article_scroll", "paper_reveal",
+                             "source_card", "ai_chat_reveal", "app_showcase",
+                             "chatgpt_exchange", "claude_exchange",
+                             "message_thread_reveal", "notes_reveal",
+                             "notification_cascade", "instagram_follow",
+                             "tiktok_follow", "yt_lower_third", "x_post",
+                             "reddit_post", "spotify_card",
+                             "macos_notification"):
+        return template.renderer
+    return "source_card"
+
+
+def _plaque_overlay(*, template: Template, start: float, end: float,
+                    params: dict[str, Any], why: str) -> dict[str, Any]:
+    """Плашка: кастомный рендерер (accent-underline, clean-bar, dark-card), иначе generic plaque."""
+    ovl: dict[str, Any] = {
+        "type": "plaque", "start": start, "end": end,
+        "template": template.id, "params": params, "why": why,
+    }
+    renderer = template.renderer
+    if renderer and renderer != "plaque":
+        ovl["renderer"] = renderer
+    return ovl
+
+
+def _stats_from_text(text: str) -> list[dict[str, Any]]:
+    """Числа из реплики блока. Годы 1900–2100 отбрасываем, если есть другие."""
+    found: list[dict[str, Any]] = []
+    for match in _NUM_IN_TEXT.finditer(text or ""):
+        raw = match.group(1).replace(",", ".")
+        try:
+            value = float(raw)
+        except ValueError:
+            continue
+        suffix = (match.group(2) or "").strip()
+        found.append({"value": value, "suffix": suffix,
+                      "raw": match.group(0).strip()})
+    if not found:
+        return []
+    years = [n for n in found
+             if n["value"] == int(n["value"]) and 1900 <= n["value"] <= 2100]
+    others = [n for n in found if n not in years]
+    return others or found
+
 def _evidence_runs(slots: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     """Куски доказательства: подряд идущие слоты одного блока — один кусок.
 
@@ -1124,43 +1227,135 @@ def _evidence_runs(slots: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
 
 def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
-                    recent_videos: list[str], used: list[str]) -> list[dict[str, Any]]:
-    """Плашки, карточки источников, подсветка и CTA (§5.4–5.6, §6)."""
+                    recent_videos: list[str], used: list[str],
+                    picker: TemplatePicker | None = None) -> list[dict[str, Any]]:
+    """Плашки, карточки источников, подсветка, data-viz и CTA (§5.4–5.6, §6)."""
+    if picker is None:
+        cfg = getattr(ctx, "cfg", None)
+        picker = TemplatePicker(catalog, ScenarioIndex.load(cfg, catalog=catalog))
     overlays: list[dict[str, Any]] = []
     duration = float(plan["duration_sec"])
     sources = plan.get("sources", [])
     on_screen = [s for s in sources if s.get("show_on_screen", True)]
 
-    # Источник показывается не один раз за ролик. Заказчик просил больше
-    # реального материала — а материал и есть источники: если сценарий назвал
-    # два издания и в ролике два куска доказательства, показать надо оба.
-    # Ставятся они по кускам, а не по слотам: соседние слоты одного блока —
-    # это один кусок доказательства, и вторая карточка встык читалась бы сбоем.
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
         anchor = run[0]
-        card_template = catalog.pick(
-            "browser-ui" if variant == "A" else "frames-cards",
-            duration=float(anchor["duration"]), recent_videos=recent_videos,
-            exclude=used, seed=seed + i)
+        card_category = "browser-ui" if variant == "A" else "frames-cards"
+        blob = build_blob(
+            source.get("title"),
+            source.get("snippet"),
+            source.get("domain"),
+            source.get("screen_template"),
+        )
+        card_template, _ = picker.pick(
+            card_category,
+            blob=blob,
+            variant=variant,
+            duration=float(anchor["duration"]),
+            recent_videos=recent_videos,
+            exclude=used,
+            seed=seed + i,
+        )
         used.append(card_template.id)
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(run[-1]["end"]))
+        renderer = _overlay_renderer(card_template)
+        card_params = {
+            "template": source.get("screen_template", "browser"),
+            "domain": source.get("domain", ""),
+            "url": source.get("url", ""),
+            "title": source.get("title", ""),
+            "snippet": source.get("snippet", ""),
+            "published": source.get("published", ""),
+            "prompt": source.get("title") or source.get("snippet", ""),
+            "highlight_line": source.get("highlight_line", ""),
+            "highlight": source.get("highlight_line", ""),
+            "typing": bool(card_template.params.get("typing")),
+            "scroll": bool(card_template.params.get("scroll")),
+        }
+        if renderer == "ai_chat_reveal":
+            card_params["userMessage"] = (
+                source.get("title") or source.get("snippet") or "")
+            card_params["botName"] = "Assistant"
+        if renderer == "app_showcase":
+            card_params["tagline"] = (
+                source.get("title") or source.get("snippet") or "")
+            card_params["name"] = source.get("domain") or ""
+        if renderer == "chatgpt_exchange":
+            card_params["prompt"] = (
+                source.get("title") or source.get("snippet") or "")
+            if source.get("domain"):
+                card_params["row1Tool"] = source.get("domain")
+        if renderer == "claude_exchange":
+            card_params["prompt"] = (
+                source.get("title") or source.get("snippet") or "")
+            if source.get("domain"):
+                card_params["domain"] = source.get("domain")
+        if renderer == "message_thread_reveal":
+            if source.get("title"):
+                card_params["cardTitle"] = source.get("title")
+            if source.get("domain"):
+                card_params["cardDomain"] = source.get("domain")
+        if renderer == "notes_reveal":
+            if source.get("title"):
+                card_params["titleL1"] = source.get("title")
+            if source.get("domain"):
+                card_params["brandDomain"] = source.get("domain")
+        if renderer == "notification_cascade":
+            if source.get("title"):
+                card_params["notifTitle"] = source.get("title")
+            if source.get("snippet"):
+                card_params["message1"] = source.get("snippet")
+            if source.get("domain"):
+                card_params["footerText"] = source.get("domain")
+                card_params["appName"] = source.get("domain")
+        if renderer == "instagram_follow":
+            if source.get("title"):
+                card_params["displayName"] = source.get("title")
+            if source.get("domain"):
+                card_params["handle"] = source.get("domain")
+        if renderer == "tiktok_follow":
+            if source.get("title"):
+                card_params["displayName"] = source.get("title")
+            if source.get("domain"):
+                card_params["handle"] = source.get("domain")
+        if renderer == "yt_lower_third":
+            if source.get("title"):
+                card_params["channelName"] = source.get("title")
+            if source.get("domain"):
+                card_params["subscriberCount"] = source.get("domain")
+        if renderer == "x_post":
+            if source.get("title"):
+                card_params["displayName"] = source.get("title")
+            if source.get("domain"):
+                card_params["handle"] = source.get("domain")
+            if source.get("snippet"):
+                card_params["text"] = source.get("snippet")
+        if renderer == "reddit_post":
+            if source.get("title"):
+                card_params["title"] = source.get("title")
+            if source.get("domain"):
+                card_params["subreddit"] = source.get("domain")
+            if source.get("snippet"):
+                card_params["body"] = source.get("snippet")
+        if renderer == "spotify_card":
+            if source.get("title"):
+                card_params["trackName"] = source.get("title")
+            if source.get("domain"):
+                card_params["artistName"] = source.get("domain")
+            if source.get("snippet"):
+                card_params["brandText"] = source.get("snippet")
+        if renderer == "macos_notification":
+            if source.get("title"):
+                card_params["title"] = source.get("title")
+            if source.get("domain"):
+                card_params["appName"] = source.get("domain")
+            if source.get("snippet"):
+                card_params["body"] = source.get("snippet")
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
-            "template": card_template.id, "params": {
-                "template": source.get("screen_template", "browser"),
-                "domain": source.get("domain", ""),
-                "url": source.get("url", ""),
-                "title": source.get("title", ""),
-                "snippet": source.get("snippet", ""),
-                "published": source.get("published", ""),
-                # §5.5 требует подсветку ключевой строки. Она едет с карточкой,
-                # а не отдельным слоем: маркер лежит **внутри** текста статьи,
-                # и снаружи попасть в строку нечем — координат у неё нет.
-                "highlight": source.get("highlight_line", ""),
-                "typing": bool(card_template.params.get("typing")),
-                "scroll": bool(card_template.params.get("scroll")),
-            },
+            "template": card_template.id, "renderer": renderer,
+            "params": card_params,
             "why": "§5.6: источник обязан появиться на экране",
         })
         # §5.5: подсветка обязательна при показе скриншота статьи.
@@ -1170,20 +1365,32 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             "params": {"label": source.get("highlight_line", ""), "target": "title"},
             "why": "§5.5: фокусная подсветка ключевой строки источника",
         })
-        plaque_template = catalog.pick("lower-thirds", duration=2.4,
-                                       recent_videos=recent_videos, exclude=used,
-                                       prefer=["lower-thirds/source-domain"],
-                                       seed=seed + i)
+        domain = source.get("domain", "")
+        plaque_template, _ = picker.pick(
+            "lower-thirds",
+            blob=build_blob(domain, source.get("title")),
+            variant=variant,
+            duration=2.4,
+            recent_videos=recent_videos,
+            exclude=used,
+            prefer_head=["lower-thirds/source-domain"],
+            seed=seed + i,
+        )
         used.append(plaque_template.id)
-        overlays.append({
-            "type": "plaque", "start": card_end - 0.2,
-            "end": min(card_end + 2.2, duration),
-            "template": plaque_template.id,
-            "params": {"text": source.get("domain", ""), "subtitle": "источник",
-                       **{k: v for k, v in plaque_template.params.items()
-                          if k in ("position", "direction")}},
-            "why": "§5.4: плашка с доменом источника",
-        })
+        overlays.append(_plaque_overlay(
+            template=plaque_template,
+            start=card_end - 0.2,
+            end=min(card_end + 2.2, duration),
+            params={"text": domain, "subtitle": "источник",
+                    "name": domain, "role": "источник",
+                    **{k: v for k, v in plaque_template.params.items()
+                       if k in ("position", "direction", "accent_underline",
+                                "clean_bar", "dark_card")}},
+            why="§5.4: плашка с доменом источника",
+        ))
+
+    _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
+                    recent_videos=recent_videos, used=used, picker=picker)
 
     # Плашки из overlay-указаний сценария (lower_third).
     for block in plan.get("blocks", []):
@@ -1193,34 +1400,347 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         block_slots = [s for s in plan["slots"] if s["block_id"] == block["id"]]
         if not block_slots:
             continue
-        template = catalog.pick("lower-thirds", duration=2.4, recent_videos=recent_videos,
-                                exclude=used, prefer=[overlay.get("template_hint", "")],
-                                seed=seed + 7)
+        hint = overlay.get("template_hint") or ""
+        head = [hint] if hint else []
+        content = overlay.get("content", "")
+        role = (overlay.get("role") or overlay.get("subtitle")
+                or overlay.get("kicker") or "")
+        template, _ = picker.pick(
+            "lower-thirds",
+            blob=build_blob(content, role),
+            variant=variant,
+            duration=2.4,
+            recent_videos=recent_videos,
+            exclude=used,
+            prefer_head=head,
+            seed=seed + 7,
+        )
         used.append(template.id)
         start = float(block_slots[0]["start"]) + 0.4
-        overlays.append({
-            "type": "plaque", "start": start,
-            "end": min(start + 2.6, float(block_slots[-1]["end"])),
-            "template": template.id,
-            "params": {"text": overlay.get("content", ""),
-                       **{k: v for k, v in template.params.items()
-                          if k in ("position", "direction")}},
-            "why": f"плашка из сценария, блок {block['id']}",
-        })
+        overlays.append(_plaque_overlay(
+            template=template,
+            start=start,
+            end=min(start + 2.6, float(block_slots[-1]["end"])),
+            params={"text": content, "content": content, "name": content,
+                    "role": role,
+                    **{k: v for k, v in template.params.items()
+                       if k in ("position", "direction", "accent_underline",
+                                "clean_bar", "dark_card")}},
+            why=f"плашка из сценария, блок {block['id']}",
+        ))
 
-    # CTA — последние 2 сек, всегда (§6, QC-16).
+    # CTA — последние 2 сек, всегда (§6, QC-16). Identity close — вордмарк,
+    # не кнопка: если выпал logo-brand-close, композитор рисует локуп, не пилюлю.
     cta_start, cta_end = plan.get("cta_window", [duration - 2.0, duration])
-    cta_template = catalog.pick("outro-cta", duration=float(cta_end) - float(cta_start),
-                                recent_videos=recent_videos, exclude=used,
-                                prefer=["outro-cta/subscribe-pulse"], seed=seed)
+    cta_template, _ = picker.pick(
+        "outro-cta",
+        variant=variant,
+        duration=float(cta_end) - float(cta_start),
+        recent_videos=recent_videos,
+        exclude=used,
+        seed=seed,
+    )
     used.append(cta_template.id)
-    overlays.append({
-        "type": "cta", "start": float(cta_start), "end": float(cta_end),
-        "template": cta_template.id,
-        "params": {"text": "ПОДПИСАТЬСЯ"},
-        "why": "§6: кнопка подписки в последние 2 сек",
-    })
+    if (cta_template.renderer == "logo_brand_close"
+            or cta_template.params.get("logo_close")
+            or cta_template.name == "logo-brand-close"):
+        overlays.append({
+            "type": "cta", "start": float(cta_start), "end": float(cta_end),
+            "template": cta_template.id,
+            "renderer": "logo_brand_close",
+            "params": dict(cta_template.params),
+            "why": "§6: identity close — вордмарк, не кнопка подписки",
+        })
+    else:
+        overlays.append({
+            "type": "cta", "start": float(cta_start), "end": float(cta_end),
+            "template": cta_template.id,
+            "params": {"text": "ПОДПИСАТЬСЯ"},
+            "why": "§6: кнопка подписки в последние 2 сек",
+        })
     return overlays
+
+
+def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
+                    catalog: TemplateCatalog, *, variant: str, seed: int,
+                    recent_videos: list[str], used: list[str],
+                    picker: TemplatePicker | None = None) -> None:
+    """Оверлей с числом на evidence/develop — не чаще одного на ролик."""
+    if picker is None:
+        picker = TemplatePicker(catalog, ScenarioIndex.empty())
+    duration = float(plan["duration_sec"])
+    cta_start = float((plan.get("cta_window") or [duration - 2.0, duration])[0])
+    occupied = [(float(o["start"]), float(o["end"])) for o in overlays
+                if o.get("type") in ("source_card", "cta", "plaque")]
+    blocks = {b["id"]: b for b in plan.get("blocks", [])}
+    for slot in plan["slots"]:
+        if slot.get("role") not in ("evidence", "develop"):
+            continue
+        if slot["kind"] not in ("footage", "meme", "avatar"):
+            continue
+        nums = _stats_from_text(str(blocks.get(slot["block_id"], {}).get("text") or ""))
+        if not nums:
+            continue
+        start = float(slot["start"]) + 0.25
+        end = min(float(slot["end"]) - 0.15, start + 3.0, cta_start)
+        if end - start < 1.2:
+            continue
+        if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
+            continue
+        pct = str(nums[0].get("suffix") or "").lstrip().startswith("%")
+        declining = (len(nums) >= 2
+                     and float(nums[1]["value"]) < float(nums[0]["value"]))
+        base = (["data-viz/conic-progress-ring",
+                   "data-viz/stat-countup-card"]
+                  if len(nums) == 1 and pct and variant != "B"
+                  else ["data-viz/stat-countup-card"] if len(nums) == 1
+                  else ["data-viz/bar-chart-race",
+                        "data-viz/chart-story",
+                        "data-viz/mk-line-graph",
+                        "data-viz/animated-bar-chart",
+                        "data-viz/compare-bars", "data-viz/bar-race-mini"]
+                  if len(nums) >= 4
+                  else (["data-viz/decline-chart",
+                         "data-viz/chart-story",
+                         "data-viz/mk-line-graph",
+                         "data-viz/animated-bar-chart",
+                         "data-viz/compare-bars", "data-viz/bar-race-mini"]
+                        if declining
+                        else ["data-viz/chart-story",
+                              "data-viz/mk-line-graph",
+                              "data-viz/animated-bar-chart",
+                              "data-viz/compare-bars", "data-viz/bar-race-mini"]))
+        if variant == "B" and len(nums) >= 2:
+            base = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
+
+        rating_like = (
+            len(nums) == 1
+            and not pct
+            and 0.0 < float(nums[0]["value"]) <= 5.0
+            and abs(float(nums[0]["value"])
+                    - round(float(nums[0]["value"]))) > 1e-9
+        )
+
+        signals = {"numbers"}
+        if len(nums) >= 2:
+            signals.add("two_numbers")
+        if len(nums) >= 4:
+            signals.add("four_numbers")
+        if pct:
+            signals.add("pct")
+        if declining:
+            signals.add("declining")
+        if rating_like:
+            signals.add("rating_like")
+
+        block = blocks.get(slot["block_id"], {})
+        blob = build_blob(block.get("text"), block.get("heading"))
+        template, _ = picker.pick(
+            "data-viz",
+            blob=blob,
+            signals=signals,
+            variant=variant,
+            duration=end - start,
+            recent_videos=recent_videos,
+            exclude=used,
+            seed=seed + 11,
+            prefer_base=base,
+        )
+        used.append(template.id)
+        name = template.name
+        if name == "decline-chart":
+            start_v = float(nums[0]["value"])
+            end_v = float(nums[1]["value"]) if len(nums) >= 2 else start_v
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params = {
+                "start_value": start_v,
+                "end_value": end_v,
+                "label": heading or "Retention",
+                "values": [start_v, end_v],
+            }
+        elif name == "conic-progress-ring":
+            val = float(nums[0]["value"])
+            suffix = str(nums[0]["suffix"]) if nums[0].get("suffix") else "%"
+            token = (str(int(round(val))) if abs(val - round(val)) < 1e-9
+                     else f"{val:g}")
+            fill = val if 0.0 <= val <= 100.0 else 100.0
+            params = {
+                "progress": fill,
+                "value": val,
+                "label": f"{token}{suffix}",
+                "thickness": 12,
+            }
+        elif name == "star-rating-fill":
+            rating = 4.8
+            if nums:
+                val = float(nums[0]["value"])
+                if 0.0 <= val <= 5.0:
+                    rating = val
+            params = {
+                "rating": rating,
+                "starCount": 5,
+                "showValue": True,
+            }
+        elif name == "spain-map":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            regions = [{
+                "abbr": str(shape["abbr"]),
+                "name": str(shape["name"]),
+                "value": float(shape["gdp"]),
+            } for shape in SPM_SHAPES]
+            if nums:
+                ranked = sorted(regions, key=lambda row: -float(row["value"]))
+                for index, num in enumerate(nums[:len(ranked)]):
+                    ranked[index]["value"] = num["value"]
+            params = {
+                "title": heading or "PIB per cápita por Comunidad Autónoma",
+                "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
+                "source": "Fuente: Instituto Nacional de Estadística",
+                "regions": regions,
+                "highlight": ["MAD", "PVA", "NAV"],
+            }
+        elif name == "us-map":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            regions = [{
+                "abbr": str(shape["abbr"]),
+                "name": str(shape["name"]),
+                "value": float(shape["density"]),
+            } for shape in USM_SHAPES]
+            if nums:
+                ranked = sorted(regions, key=lambda row: -float(row["value"]))
+                for index, num in enumerate(nums[:len(ranked)]):
+                    ranked[index]["value"] = num["value"]
+            params = {
+                "title": heading or "Population Density by State",
+                "subtitle": "Residents per square mile, 2024 Census estimates",
+                "source": "Source: U.S. Census Bureau",
+                "regions": regions,
+                "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+            }
+        elif name == "us-map-hex":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params = {
+                "title": heading or "Median Household Income by State",
+                "subtitle": "American Community Survey, 2024",
+                "source": "Source: U.S. Census Bureau, American Community Survey 2024",
+                "highlight": ["MD", "NJ", "MA", "CT", "HI"],
+            }
+        elif name == "world-map":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params = {
+                "title": heading or "Global GDP per Capita",
+                "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+                "source": "Source: International Monetary Fund",
+                "highlight": ["756", "578", "840", "036", "752"],
+            }
+        elif name == "apple-money-count":
+            val = float(nums[0]["value"]) if nums else 10000.0
+            params = {"end_value": val, "prefix": "$"}
+        elif name == "north-korea-locked-down":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params = {"label": heading or "LOCKED DOWN"}
+        elif name == "nyc-paris-flight":
+            params = {
+                "origin": "New York", "dest": "Paris",
+                "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+                "km": "5,837",
+            }
+        elif name == "mk-progress-stat":
+            val = float(nums[0]["value"]) if nums else 22.0
+            params = {
+                "value": int(round(val)),
+                "max": max(int(round(val * 1.4)), int(round(val)) + 1),
+                "suffix": str(nums[0].get("suffix") or "") if nums else "",
+                "label": str(blocks.get(slot["block_id"], {}).get("heading")
+                             or "Goals reached"),
+                "caption": "Great job, we are getting closer!",
+            }
+        elif name == "flowchart-vertical":
+            params = {
+                "root": "Should I learn to code?",
+                "branches": ["Yes", "Not sure"],
+                "leaves": [
+                    "Start with Python", "Try no-code first",
+                    "Build a personal website", "Take a free intro course",
+                ],
+            }
+        elif name == "us-map-flow":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            cities = [{
+                "name": str(city["name"]),
+                "x": float(city["x"]),
+                "y": float(city["y"]),
+            } for city in UMF_CITIES]
+            flows = [{
+                "from": str(flow["from"]),
+                "to": str(flow["to"]),
+                "volume": float(flow["volume"]),
+            } for flow in UMF_FLOWS]
+            if nums:
+                for index, flow in enumerate(flows):
+                    if index >= len(nums):
+                        break
+                    flow["volume"] = float(nums[index]["value"])
+            params = {
+                "title": heading or "Interstate Flow Connections",
+                "subtitle": "Relative volume of major city-to-city corridors",
+                "source": "Source: Illustrative data",
+                "cities": cities,
+                "flows": flows,
+            }
+        elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
+            suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""
+            params: dict[str, Any] = {
+                "value": nums[0]["value"], "suffix": suffix,
+                "label": nums[0]["raw"],
+                "values": [n["value"] for n in nums[:4]],
+                "labels": [n["raw"] for n in nums[:4]],
+            }
+        else:
+            n_take = (8 if name == "bar-chart-race"
+                      else 6 if name == "mk-line-graph"
+                      else 4 if name == "chart-story"
+                      else 7 if name == "animated-bar-chart" else 4)
+            params = {
+                "values": [n["value"] for n in nums[:n_take]],
+                "labels": [n["raw"] for n in nums[:n_take]],
+                "value": nums[0]["value"],
+                "kpi": nums[0]["raw"],
+            }
+            if name == "bar-chart-race":
+                params["value_prefix"] = ""
+                params["value_suffix"] = (
+                    f" {nums[0]['suffix']}" if nums[0].get("suffix") else "")
+                params["title"] = str(
+                    blocks.get(slot["block_id"], {}).get("heading")
+                    or "Streaming Subscribers by Service")
+            if name == "chart-story":
+                params["unit"] = (
+                    str(nums[0]["suffix"]) if nums[0].get("suffix") else "%")
+                params["emphasize"] = len(params["values"]) - 1
+            if name == "mk-line-graph":
+                heading = str(blocks.get(slot["block_id"], {}).get("heading")
+                              or "")
+                series = [{
+                    "name": heading or "Renders",
+                    "values": [n["value"] for n in nums[:n_take]],
+                }]
+                rest = nums[n_take:n_take * 2]
+                if len(rest) >= 2:
+                    series.append({
+                        "name": "Projects",
+                        "values": [n["value"] for n in rest],
+                    })
+                params["series"] = series
+                params["xLabels"] = [n["raw"] for n in nums[:n_take]]
+                params["showValues"] = True
+        overlays.append({
+            "type": "dataviz", "start": start, "end": end,
+            "template": template.id, "renderer": template.renderer,
+            "params": params,
+            "why": "data-viz: в блоке есть число",
+        })
+        return
 
 
 def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
@@ -1228,7 +1748,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   catalog: TemplateCatalog, avatar_meta: dict[str, Any],
                   sfx_map: dict[str, Any], *, variant: str,
                   recent_videos: list[str], preferences: dict[str, Any] | None = None,
-                  asset_rotation: int = 0) -> dict[str, Any]:
+                  asset_rotation: int = 0,
+                  picker: TemplatePicker | None = None) -> dict[str, Any]:
+    if picker is None:
+        cfg = getattr(ctx, "cfg", None)
+        picker = TemplatePicker(catalog, ScenarioIndex.load(cfg, catalog=catalog))
     seed = _variant_seed(plan["video_id"], variant)
     # Какие источники требуют подписи в кадре — сказано в самом каталоге
     # источников, а не в коде: право на кадр приходит вместе с ним.
@@ -1257,10 +1781,6 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     hero_offset = seed % 2
     hero_eligible = 0
 
-    fullscreen_styles = (["text-fullscreen/impact-01", "text-fullscreen/impact-02"]
-                         if variant == "A" else
-                         ["text-fullscreen/stack-3lines", "text-fullscreen/fact-card"])
-
     for slot in slots:
         entry: dict[str, Any] = {
             "index": slot["index"], "start": slot["start"], "end": slot["end"],
@@ -1271,11 +1791,21 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         if slot["kind"] == "fullscreen_text":
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")
-            template = catalog.pick("text-fullscreen", duration=float(slot["duration"]),
-                                    recent_videos=recent_videos, exclude=used_templates,
-                                    prefer=([preferred] if preferred else [])
-                                    + [slot.get("template_hint", "")] + fullscreen_styles,
-                                    seed=seed)
+            content = slot.get("content", "")
+            s_content = str(content or "")
+            signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
+            head = [p for p in (preferred, slot.get("template_hint")) if p]
+            template, _ = picker.pick(
+                "text-fullscreen",
+                blob=s_content,
+                signals=signals,
+                variant=variant,
+                duration=float(slot["duration"]),
+                recent_videos=recent_videos,
+                exclude=used_templates,
+                seed=seed,
+                prefer_head=head,
+            )
             used_templates.append(template.id)
             content = slot.get("content", "")
             block = blocks_by_id.get(slot["block_id"], {})
@@ -1287,6 +1817,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             entry.update({
                 "content": content,
                 "template": template.id,
+                "renderer": template.renderer,
+                "params": dict(template.params),
                 "invert": bool(template.params.get("invert")) or variant == "B",
                 "accent_word": _fullscreen_accent(content, block),
                 "file": prep["dst"] if prep is not None else None,
@@ -1319,20 +1851,35 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         kb_template: Template | None = None
         if slot["kind"] in ("footage", "meme"):
             preferred = prefs.get(f"kenburns@{slot['role']}")
-            kb_template = catalog.pick("kenburns", duration=float(slot["duration"]),
-                                       recent_videos=recent_videos, exclude=used_templates,
-                                       prefer=[preferred] if preferred else [],
-                                       seed=seed + slot["index"])
+            head = [preferred] if preferred else []
+            content = slot.get("content", "")
+            kb_template, _ = picker.pick(
+                "kenburns",
+                blob=str(content or ""),
+                variant=variant,
+                duration=float(slot["duration"]),
+                recent_videos=recent_videos,
+                exclude=used_templates,
+                prefer_head=head,
+                seed=seed + slot["index"],
+            )
             used_templates.append(kb_template.id)
 
         transition_entry: dict[str, Any] | None = None
         if slot.get("transition_in") == "dynamic":
             category = "avatar-entry" if slot["kind"] in AVATAR_KINDS else "transitions"
             preferred = prefs.get(f"transition@{slot['role']}")
-            tr = catalog.pick(category, duration=0.24, recent_videos=recent_videos,
-                              exclude=used_templates + ["transitions/cut"],
-                              prefer=[preferred] if preferred else [],
-                              tags={"dynamic", "entry"}, seed=seed + slot["index"] * 3)
+            head = [preferred] if preferred else []
+            tr, _ = picker.pick(
+                category,
+                variant=variant,
+                duration=0.24,
+                recent_videos=recent_videos,
+                exclude=used_templates + ["transitions/cut"],
+                prefer_head=head,
+                tags={"dynamic", "entry"},
+                seed=seed + slot["index"] * 3,
+            )
             used_templates.append(tr.id)
             transition_entry = {
                 "template": tr.id, "renderer": tr.renderer,
@@ -1367,7 +1914,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
-                    seed=seed)
+                    seed=seed, picker=picker, variant=variant)
                 if hero_entry:
                     used_templates.append(hero_entry["template"])
 
@@ -1401,7 +1948,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         shots.append(entry)
 
     overlays = _build_overlays(ctx, plan, words_doc["words"], catalog, variant=variant,
-                               seed=seed, recent_videos=recent_videos, used=used_templates)
+                               seed=seed, recent_videos=recent_videos, used=used_templates,
+                               picker=picker)
 
     # Субтитры: весь ролик, кроме кадров с полноэкранным текстом (§5.1).
     fs_windows = [(float(s["start"]), float(s["end"])) for s in slots
@@ -1456,6 +2004,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
             "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 975),
+            "caption": pick_caption_style(plan, ctx.cfg.brandbook),
         },
         "avatar": avatar_meta.get("segments", []),
         "templates_used": used_templates,
@@ -1530,6 +2079,7 @@ def run_step(ctx) -> dict[str, Any]:
     avatar_meta = ctx.read_or("avatar_meta.json", {"segments": []})
     sfx_map = ctx.read_or("sfx_map.json", {})
     catalog = TemplateCatalog.load(ctx.cfg)
+    picker = TemplatePicker(catalog, ScenarioIndex.load(ctx.cfg, catalog=catalog))
 
     accepted = accepted_doc.get("accepted", {})
     generated = generated_doc.get("generated", {})
@@ -1563,7 +2113,7 @@ def run_step(ctx) -> dict[str, Any]:
         plans[variant] = build_variant(
             ctx, plan, words_doc, assets, prepared, catalog, avatar_meta, sfx_map,
             variant=variant, recent_videos=recent_videos,
-            preferences=preferences, asset_rotation=offset)
+            preferences=preferences, asset_rotation=offset, picker=picker)
         plans[variant]["matting"] = matte_summary
         ctx.write(f"edit_plan_{variant}.json", plans[variant])
 

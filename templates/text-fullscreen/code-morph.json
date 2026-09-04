@@ -1,0 +1,22 @@
+{
+  "id": "text-fullscreen/code-morph",
+  "name": "code-morph",
+  "category": "text-fullscreen",
+  "title": "FLIP-морфинг между состояниями кода — code-morph",
+  "duration_range": [
+    1.5,
+    7.0
+  ],
+  "params": {
+    "code_morph": true
+  },
+  "tags": [
+    "code",
+    "code-animation",
+    "morph",
+    "developer"
+  ],
+  "renderer": "code_morph",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

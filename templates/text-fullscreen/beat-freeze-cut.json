@@ -1,0 +1,23 @@
+{
+  "id": "text-fullscreen/beat-freeze-cut",
+  "name": "beat-freeze-cut",
+  "category": "text-fullscreen",
+  "title": "Beat freeze cut: рамп, фриз DROP и hard-cut — beat-freeze-cut",
+  "duration_range": [
+    2.0,
+    6.5
+  ],
+  "params": {
+    "beat_freeze_cut": true
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "beat",
+    "freeze",
+    "music"
+  ],
+  "renderer": "beat_freeze_cut",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

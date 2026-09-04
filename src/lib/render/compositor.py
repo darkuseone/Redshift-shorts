@@ -179,6 +179,368 @@ def _tr_white_flash(incoming, outgoing, progress, params, ctx):
     return Image.blend(incoming, white, clamp01(amount))
 
 
+def _zoom_crop(img: Image.Image, scale: float) -> Image.Image:
+    """Наезд: scale>1 вырезает центр. Как zoom_punch, без letterbox."""
+    rgb = img.convert("RGB")
+    w, h = rgb.size
+    scale = max(1.0, float(scale))
+    if abs(scale - 1.0) < 1e-3:
+        return rgb
+    win_w, win_h = w / scale, h / scale
+    box = ((w - win_w) / 2, (h - win_h) / 2, (w + win_w) / 2, (h + win_h) / 2)
+    return rgb.resize((w, h), Image.Resampling.BILINEAR, box=box)
+
+
+def _tr_cinematic_zoom(incoming, outgoing, progress, params, ctx):
+    """From зумит наружу, to — внутрь из tight, RGB-сдвиг по радиусу.
+
+    Каталог — WebGL 12 семплов. Здесь crop-zoom, mix и лёгкий blur к середине.
+    """
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    from_scale = float(params.get("from_scale", 1.16))
+    to_frame = _zoom_crop(incoming, from_scale + (1.0 - from_scale) * eased)
+    if outgoing is not None:
+        from_frame = _zoom_crop(outgoing, 1.0 + 0.14 * eased)
+        mixed = Image.blend(from_frame, to_frame, eased)
+    else:
+        mixed = to_frame
+    blur_amt = 8.0 * math.sin(math.pi * eased)
+    if blur_amt > 0.6:
+        mixed = mixed.filter(ImageFilter.GaussianBlur(blur_amt / 2.5))
+    fringe = 0.045 * math.sin(math.pi * eased)
+    if fringe > 0.004:
+        red = _zoom_crop(mixed, 1.0 + fringe * 1.06)
+        blue = _zoom_crop(mixed, 1.0 + fringe * 0.94)
+        mixed = Image.merge("RGB", (red.split()[0], mixed.split()[1], blue.split()[2]))
+    return mixed
+
+
+def _horizon_darken(img: Image.Image, amount: float) -> Image.Image:
+    """Затемнение к центру — event horizon без шейдера."""
+    if amount < 0.02:
+        return img.convert("RGB")
+    arr = np.asarray(img.convert("RGB")).astype(np.float32)
+    h, w = arr.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    cx, cy = w / 2.0, h / 2.0
+    dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+    maxd = math.hypot(cx, cy) or 1.0
+    falloff = np.clip(dist / (maxd * 0.38), 0.0, 1.0)
+    factor = 1.0 - amount * (1.0 - falloff)
+    arr *= factor[..., None]
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+
+
+def _tr_gravitational_lens(incoming, outgoing, progress, params, ctx):
+    """From затягивает к центру, to выходит из well, RGB-сдвиг.
+
+    Каталог — WebGL warp + horizon. Здесь crop-zoom, mix smoothstep и затемнение.
+    """
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    from_scale = float(params.get("from_scale", 1.14))
+    to_frame = _zoom_crop(incoming, from_scale + (1.0 - from_scale) * eased)
+    if outgoing is not None:
+        from_frame = _zoom_crop(outgoing, 1.0 + 0.32 * eased)
+        mix_t = 0.0 if eased < 0.3 else (1.0 if eased > 0.9 else (eased - 0.3) / 0.6)
+        mixed = Image.blend(from_frame, to_frame, mix_t)
+    else:
+        mixed = to_frame
+    mixed = _horizon_darken(mixed, 0.62 * math.sin(math.pi * eased))
+    fringe = 0.05 * math.sin(math.pi * eased)
+    if fringe > 0.004:
+        red = _zoom_crop(mixed, 1.0 + fringe * 1.08)
+        blue = _zoom_crop(mixed, 1.0 + fringe * 0.92)
+        mixed = Image.merge("RGB", (red.split()[0], mixed.split()[1], blue.split()[2]))
+    return mixed
+
+
+def _aces_tonemap(arr: np.ndarray) -> np.ndarray:
+    """ACES filmic, как в шейдере light-leak каталога."""
+    return np.clip(
+        (arr * (2.51 * arr + 0.03)) / (arr * (2.43 * arr + 0.59) + 0.14),
+        0.0, 1.0)
+
+
+def _tr_light_leak(incoming, outgoing, progress, params, ctx):
+    """Тёплый Beer-Lambert засвет сверху-справа и mix. Без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    a = np.asarray(incoming.convert("RGB"), dtype=np.float32) / 255.0
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = xx / max(w - 1, 1)
+    uv_y = yy / max(h - 1, 1)
+    dist = np.sqrt((uv_x - 1.3) ** 2 + (uv_y + 0.2) ** 2)
+    leak = np.clip(np.exp(-dist * 1.8) * eased * 4.0, 0.0, 1.0)
+    t = np.clip(dist * 0.7, 0.0, 1.0)[..., None]
+    warm = (np.array([1.0, 0.5, 0.15], dtype=np.float32) * (1.0 - t)
+            + np.array([1.0, 0.9, 0.75], dtype=np.float32) * t)
+    flare = np.exp(-np.abs(uv_y - (-0.2 + uv_x * 0.3)) * 15.0) * leak * 0.3
+    over = (a + warm * leak[..., None] * 3.0
+            + np.array([1.0, 0.8, 0.5], dtype=np.float32) * flare[..., None])
+    over = _aces_tonemap(over)
+    if outgoing is not None:
+        b = np.asarray(outgoing.convert("RGB"), dtype=np.float32) / 255.0
+        mix_t = 0.0 if eased < 0.15 else (
+            1.0 if eased > 0.85 else (eased - 0.15) / 0.70)
+        over = over * (1.0 - mix_t) + b * mix_t
+    return Image.fromarray(np.clip(over * 255.0, 0, 255).astype(np.uint8))
+
+
+def _smoothstep(edge0: float, edge1: float, x: np.ndarray) -> np.ndarray:
+    t = np.clip((x - edge0) / (edge1 - edge0 + 1e-12), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def _tr_sdf_iris(incoming, outgoing, progress, params, ctx):
+    """Круг SDF из центра, три кольца glow. Без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    a = np.asarray(incoming.convert("RGB"), dtype=np.float32) / 255.0
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = (xx / max(w - 1, 1) - 0.5) * (w / max(h, 1))
+    uv_y = yy / max(h - 1, 1) - 0.5
+    dist = np.sqrt(uv_x ** 2 + uv_y ** 2)
+    radius = eased * 1.2
+    fw = 0.003
+    edge = _smoothstep(radius + fw, radius - fw, dist)
+    if outgoing is not None:
+        b = np.asarray(outgoing.convert("RGB"), dtype=np.float32) / 255.0
+        mixed = a * (1.0 - edge[..., None]) + b * edge[..., None]
+    else:
+        mixed = a
+    ring1 = np.exp(-np.abs(dist - radius) * 25.0)
+    ring2 = np.exp(-np.abs(dist - radius + 0.04) * 20.0) * 0.5
+    ring3 = np.exp(-np.abs(dist - radius + 0.08) * 15.0) * 0.25
+    glow = (ring1 + ring2 + ring3) * eased * (1.0 - eased) * 4.0
+    warm = np.array([1.0, 0.85, 0.6], dtype=np.float32)
+    mixed = mixed + warm * glow[..., None] * 0.6
+    return Image.fromarray(np.clip(mixed * 255.0, 0, 255).astype(np.uint8))
+
+
+def _tr_thermal_distortion(incoming, outgoing, progress, params, ctx):
+    """Heat shimmer снизу и тёплый haze. Без WebGL / FBM."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32) / 255.0
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32) / 255.0
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = xx / max(w - 1, 1)
+    uv_y = yy / max(h - 1, 1)
+    y_fade = _smoothstep(0.08, 1.0, uv_y)
+    heat = eased * 1.5
+    shimmer = np.sin(uv_y * 40.0 + np.sin(uv_x * 18.0 + eased * 8.0) * 2.0 + eased * 6.0)
+    disp = np.rint(shimmer * heat * 0.03 * y_fade * w).astype(np.int32)
+    src_x = np.clip(xx + disp, 0, w - 1)
+    warped_a = np.take_along_axis(a, src_x[..., None], axis=1)
+    inv = np.sin(uv_y * 40.0 + np.sin(uv_x * 18.0 + 3.0) * 2.0 + eased * 6.0)
+    disp2 = np.rint(inv * (1.0 - eased) * 0.03 * y_fade * w).astype(np.int32)
+    src_x2 = np.clip(xx + disp2, 0, w - 1)
+    warped_b = np.take_along_axis(b, src_x2[..., None], axis=1)
+    mixed = warped_a * (1.0 - eased) + warped_b * eased
+    haze = heat * y_fade * 0.15 * (1.0 - eased)
+    warm = np.array([1.0, 0.9, 0.7], dtype=np.float32)
+    mixed = mixed + warm * haze[..., None]
+    return Image.fromarray(np.clip(mixed * 255.0, 0, 255).astype(np.uint8))
+
+
+def _tr_whip_pan_shader(incoming, outgoing, progress, params, ctx):
+    """Горизонтальный whip с 10 семплами направленного смаза. Без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    _h, w = a.shape[:2]
+    n = 10
+    from_off = eased * 1.5
+    to_off = (1.0 - eased) * 1.5
+    cols = np.arange(w)
+    from_acc = np.zeros_like(a)
+    to_acc = np.zeros_like(b)
+    for i in range(n):
+        f = float(i)
+        from_shift = int(round((from_off + eased * 0.08 * f) * w))
+        to_shift = int(round((to_off + (1.0 - eased) * 0.08 * f) * w))
+        from_acc += a[:, np.clip(cols + from_shift, 0, w - 1)]
+        to_acc += b[:, np.clip(cols - to_shift, 0, w - 1)]
+    mixed = from_acc / n * (1.0 - eased) + to_acc / n * eased
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
+def _tr_mk_clone_wall(incoming, outgoing, progress, params, ctx):
+    """Бумага и инверсия: стенка слов в HTML; здесь paper wipe без WebGL."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    paper = np.array([255.0, 255.0, 255.0], dtype=np.float32)
+    ink = np.array([29.0, 29.0, 31.0], dtype=np.float32)
+    if eased < 0.4:
+        t = eased / 0.4
+        mixed = a * (1.0 - t) + paper * t
+    elif eased < 0.7:
+        t = (eased - 0.4) / 0.3
+        mixed = paper * (1.0 - t) + ink * t
+    else:
+        t = (eased - 0.7) / 0.3
+        mixed = ink * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
+def _tr_transitions_3d(incoming, outgoing, progress, params, ctx):
+    """Card flip stand-in: navy → terracotta через ребро. Без rotationY."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    if eased < 0.5:
+        t = eased / 0.5
+        mixed = a * (1.0 - t) + navy * t
+    else:
+        t = (eased - 0.5) / 0.5
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
+def _tr_transitions_cover(incoming, outgoing, progress, params, ctx):
+    """Cover stand-in: navy → magenta/purple → terracotta. Без CSS transform."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    magenta = np.array([247.0, 37.0, 133.0], dtype=np.float32)
+    purple = np.array([114.0, 9.0, 183.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    if eased < 0.4:
+        t = eased / 0.4
+        mixed = a * (1.0 - t) + navy * t
+    elif eased < 0.55:
+        t = (eased - 0.4) / 0.15
+        mixed = magenta * (1.0 - t) + purple * t
+    elif eased < 0.7:
+        t = (eased - 0.55) / 0.15
+        mixed = purple * (1.0 - t) + terra * t
+    else:
+        t = (eased - 0.7) / 0.3
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
+def _tr_transitions_other(incoming, outgoing, progress, params, ctx):
+    """Flash cut stand-in: navy → white flash → terracotta. Без tween .clip."""
+    p = clamp01(progress)
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    white = np.array([255.0, 255.0, 255.0], dtype=np.float32)
+    if p < 0.4:
+        t = p / 0.4
+        mixed = a * (1.0 - t) + navy * t
+    elif p < 0.5:
+        t = (p - 0.4) / 0.1
+        mixed = navy * (1.0 - t) + white * t
+    elif p < 0.6:
+        t = (p - 0.5) / 0.1
+        mixed = white * (1.0 - t) + terra * t
+    else:
+        t = (p - 0.6) / 0.4
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
+def _tr_transitions_light(incoming, outgoing, progress, params, ctx):
+    """Light leak stand-in: navy → orange wash → terracotta. Без filter."""
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    warm = np.array([255.0, 165.0, 0.0], dtype=np.float32)
+    blob = np.array([255.0, 140.0, 0.0], dtype=np.float32)
+    if eased < 0.4:
+        t = eased / 0.4
+        mixed = a * (1.0 - t) + navy * t
+    elif eased < 0.55:
+        t = (eased - 0.4) / 0.15
+        mixed = navy * (1.0 - t) + warm * t
+    elif eased < 0.7:
+        t = (eased - 0.55) / 0.15
+        mixed = blob * (1.0 - t) + terra * t
+    else:
+        t = (eased - 0.7) / 0.3
+        mixed = terra * (1.0 - t) + b * t
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
+def _tr_transitions_destruction(incoming, outgoing, progress, params, ctx):
+    """Page burn stand-in: navy shrinks as a circle, orange fire, terracotta. Без canvas/clip-path."""
+    p = clamp01(progress)
+    eased = p * p
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    fire = np.array([255.0, 100.0, 0.0], dtype=np.float32)
+    ember = np.array([255.0, 50.0, 0.0], dtype=np.float32)
+    h, w = a.shape[:2]
+    yy, xx = np.ogrid[:h, :w]
+    uv_x = (xx / max(w - 1, 1) - 0.5) * (w / max(h, 1))
+    uv_y = yy / max(h - 1, 1) - 0.5
+    dist = np.sqrt(uv_x ** 2 + uv_y ** 2)
+    radius = max(0.0, 1.15 * (1.0 - eased))
+    fw = 0.004
+    inside = _smoothstep(radius + fw, radius - fw, dist)
+    card_a = a * 0.25 + navy * 0.75
+    b_fade = 0.0 if eased < 0.17 else min(1.0, (eased - 0.17) / 0.55)
+    card_b = b * (1.0 - b_fade) * 0.25 + terra * b_fade + np.array(
+        [0.0, 0.0, 0.0], dtype=np.float32) * (1.0 - b_fade) * 0.75
+    mixed = card_a * inside[..., None] + card_b * (1.0 - inside[..., None])
+    ring = np.exp(-np.abs(dist - radius) * 22.0) * (1.0 - eased) * min(eased * 6.0, 1.0)
+    mixed = mixed + fire * ring[..., None] * 0.85 + ember * ring[..., None] * 0.35
+    return Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+
+
+def _tr_transitions_blur(incoming, outgoing, progress, params, ctx):
+    """Blur through stand-in: navy → terracotta через GaussianBlur. Без tween filter."""
+    p = clamp01(progress)
+    src_a = outgoing if outgoing is not None else incoming
+    a = np.asarray(src_a.convert("RGB"), dtype=np.float32)
+    b = np.asarray(incoming.convert("RGB"), dtype=np.float32)
+    navy = np.array([27.0, 38.0, 59.0], dtype=np.float32)
+    terra = np.array([224.0, 122.0, 95.0], dtype=np.float32)
+    if p < 0.5:
+        t = p / 0.5
+        eased = t * t
+        mixed = a * (1.0 - eased) + navy * eased
+        blur = 7.5 * eased
+    else:
+        t = (p - 0.5) / 0.5
+        eased = 1 - (1 - t) * (1 - t)
+        mixed = terra * (1.0 - eased) + b * eased
+        blur = 7.5 * (1.0 - eased)
+    img = Image.fromarray(np.clip(mixed, 0, 255).astype(np.uint8))
+    if blur > 0.6:
+        img = img.filter(ImageFilter.GaussianBlur(blur))
+    return img
+
+
 def _tr_light_sweep(incoming, outgoing, progress, params, ctx):
     from .layers import light_sweep
 
@@ -195,16 +557,54 @@ def _tr_glitch(incoming, outgoing, progress, params, ctx):
     return frame.convert("RGB")
 
 
+def _tr_glitch_shader(incoming, outgoing, progress, params, ctx):
+    """Scan lines stand-in: RGB-сдвиг, mix и flicker — без WebGL."""
+    from PIL import ImageChops
+
+    p = clamp01(progress)
+    eased = 2 * p * p if p < 0.5 else 1 - ((-2 * p + 2) ** 2) / 2
+    inten = eased * (1.0 - eased) * 4.0
+    seed = int(params.get("seed", 0))
+    src = incoming.convert("RGB")
+    w, _h = src.size
+    shift = max(0, int(round(w * 0.035 * inten)))
+    if shift:
+        red, green, blue = src.split()
+        red = ImageChops.offset(red, shift, 0)
+        blue = ImageChops.offset(blue, -shift, 0)
+        src = Image.merge("RGB", (red, green, blue))
+    if outgoing is not None:
+        src = Image.blend(src, outgoing.convert("RGB"), eased)
+    flick = 1.0 + ((((seed * 23 + int(eased * 11)) % 100) / 100.0) - 0.5) * 0.3 * inten
+    if abs(flick - 1.0) > 0.01:
+        src = src.point(lambda v, f=flick: max(0, min(255, int(v * f))))
+    return src
+
+
 TRANSITIONS: dict[str, TransitionFn] = {
     "cut": _tr_cut,
     "zoom_punch": _tr_zoom_punch,
     "whip_pan": _tr_whip_pan,
+    "whip_pan_shader": _tr_whip_pan_shader,
+    "mk_clone_wall": _tr_mk_clone_wall,
+    "transitions_3d": _tr_transitions_3d,
+    "transitions_blur": _tr_transitions_blur,
+    "transitions_cover": _tr_transitions_cover,
+    "transitions_light": _tr_transitions_light,
+    "transitions_other": _tr_transitions_other,
+    "transitions_destruction": _tr_transitions_destruction,
     "paper_slide": _tr_paper_slide,
     "mask_wipe": _tr_mask_wipe,
     "blur_dip": _tr_blur_dip,
     "white_flash": _tr_white_flash,
     "light_sweep": _tr_light_sweep,
     "glitch": _tr_glitch,
+    "glitch_shader": _tr_glitch_shader,
+    "cinematic_zoom": _tr_cinematic_zoom,
+    "gravitational_lens": _tr_gravitational_lens,
+    "light_leak": _tr_light_leak,
+    "sdf_iris": _tr_sdf_iris,
+    "thermal_distortion": _tr_thermal_distortion,
 }
 
 

@@ -1,0 +1,3497 @@
+{
+  "version": 1,
+  "specific_weight_min": 20,
+  "default_weight_min": 10,
+  "unreachable_categories": [
+    "intro-hooks",
+    "parallax"
+  ],
+  "reason": "Категории intro-hooks (8 шаблонов, 7 интентов) и parallax (4 шаблона, 2 интента) не выбираются из каталога нигде в src/; подключение вне scope Phase C.",
+  "intents": [
+    {
+      "id": "browser-ai-chat",
+      "title": "диалог с ИИ, ChatGPT, нейросеть",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "ai chat",
+        "ai-chat",
+        "ask anything",
+        "chatgpt",
+        "chat gpt",
+        "нейросет",
+        "ии-чат",
+        "чат-бот",
+        "chatbot",
+        "gpt-4",
+        "gpt4",
+        "claude.ai"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/ai-chat-reveal"
+      ],
+      "weight": 40,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "browser-app-showcase",
+      "title": "витрина приложения, фитнес, дашборд",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "app showcase",
+        "fitness app",
+        "weekly goal",
+        "burned calories",
+        "app store",
+        "фитнес",
+        "калори",
+        "дашборд",
+        "dashboard app",
+        "workout app",
+        "smartphone screens"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/app-showcase"
+      ],
+      "weight": 39,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "browser-chatgpt-exchange",
+      "title": "обсуждение в ChatGPT, рейтинг моделей ИИ",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "chatgpt exchange",
+        "avatar ranking",
+        "сравнение ии",
+        "таблица моделей",
+        "ranking"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/chatgpt-exchange"
+      ],
+      "weight": 38,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "browser-claude-exchange",
+      "title": "диалог с Claude, Anthropic, Opus",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "claude",
+        "anthropic",
+        "opus",
+        "claude exchange"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/claude-exchange"
+      ],
+      "weight": 37,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "browser-message-thread",
+      "title": "переписка, смс, мессенджер, iMessage",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "imessage",
+        "message thread",
+        "смс",
+        "сообщения",
+        "переписка"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/message-thread-reveal"
+      ],
+      "weight": 36,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "browser-notes-reveal",
+      "title": "заметки, Apple Notes, списки",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "notes",
+        "apple notes",
+        "заметки",
+        "список",
+        "notes reveal"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/notes-reveal"
+      ],
+      "weight": 35,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "browser-notification-cascade",
+      "title": "каскад уведомлений, системные алерты, push",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "notification",
+        "cascade",
+        "уведомлен",
+        "alert",
+        "push"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/notification-cascade"
+      ],
+      "weight": 34,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "logic-flowchart",
+      "title": "блок-схема, дерево решений, алгоритм",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "flowchart",
+        "блок-схем",
+        "блок схем",
+        "дерево решен",
+        "decision tree",
+        "алгоритм",
+        "разветвл"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/flowchart-vertical",
+        "data-viz/flowchart"
+      ],
+      "weight": 31,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "stat-progress-goals",
+      "title": "достижение целей, прогресс, трекер успехов",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "goals reached",
+        "progress track",
+        "great job",
+        "целей достиг",
+        "прогресс",
+        "достигнут"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/mk-progress-stat"
+      ],
+      "weight": 30,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "geo-flight",
+      "title": "перелёт, авиамаршрут между городами (расширение)",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "transatlantic",
+        "jfk",
+        "cdg",
+        "new york to paris",
+        "нью-йорк",
+        "нью йорк",
+        "париж",
+        "рейс ",
+        "самолёт",
+        "самолет",
+        "перелёт",
+        "перелет",
+        "flight to"
+      ],
+      "patterns": [
+        "\\b\\d+\\s*(ч|час|hours?)\\s+(лёта|лета|flight)\\b"
+      ],
+      "needs": [],
+      "templates": [
+        "data-viz/nyc-paris-flight",
+        "data-viz/world-map"
+      ],
+      "weight": 29,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "geo-north-korea",
+      "title": "санкции КНДР, изоляция, Пхеньян, закрытая страна",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "north korea",
+        "northkorea",
+        "кндр",
+        "северной коре",
+        "северная коре",
+        "locked down",
+        "изоляц",
+        "санкци",
+        "пхеньян",
+        "pyongyang",
+        "закрыт"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/north-korea-locked-down"
+      ],
+      "weight": 28,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "finance-money-count",
+      "title": "выручка, капитализация, доллары, финансы",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "usd",
+        "dollar",
+        "revenue",
+        "valuation",
+        "market cap",
+        "выручк",
+        "капитализац",
+        "доллар"
+      ],
+      "patterns": [
+        "\\$\\s*\\d"
+      ],
+      "needs": [],
+      "templates": [
+        "data-viz/apple-money-count"
+      ],
+      "weight": 27,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "geo-world-map",
+      "title": "карта мира, мировой ВВП, глобальный атлас",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "world map",
+        "global gdp",
+        "gdp per capita",
+        "world atlas",
+        "imf",
+        "миров",
+        "карта мира",
+        "ввп на душу"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/world-map"
+      ],
+      "weight": 26,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "geo-us-hex",
+      "title": "гексагональная карта США, доходы домохозяйств",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "hex grid",
+        "hex map",
+        "hexagonal",
+        "hexagon",
+        "гексагон",
+        "гекс-карт",
+        "income by state",
+        "household income"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/us-map-hex"
+      ],
+      "weight": 25,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "geo-us-flow",
+      "title": "потоки между городами, миграция, транспортные коридоры США",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "interstate flow",
+        "flow connection",
+        "city-to-city",
+        "city to city",
+        "corridor",
+        "миграционн",
+        "поток между",
+        "рейс между",
+        "между городами"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/us-map-flow"
+      ],
+      "weight": 24,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "geo-us-map",
+      "title": "карта США, штаты, плотность населения",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "united states",
+        "u.s.",
+        "сша",
+        "америк",
+        "census",
+        "population density",
+        "per square mile",
+        " by state",
+        "штат ",
+        "калифорн",
+        "нью-йорк",
+        "нью йорк",
+        "texas",
+        "california"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/us-map"
+      ],
+      "weight": 23,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "dataviz-star-rating",
+      "title": "звёздный рейтинг, отзывы, satisfaction",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "stars",
+        "star rating",
+        "звезд",
+        "рейтинг",
+        "оценк",
+        "отзыв",
+        "app store",
+        "satisfaction"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/star-rating-fill"
+      ],
+      "weight": 22,
+      "variants": [
+        "A"
+      ],
+      "signals_any": [
+        "rating_like"
+      ]
+    },
+    {
+      "id": "geo-spain",
+      "title": "карта Испании, регионы, Мадрид, Каталония",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "spain",
+        "españa",
+        "espan",
+        "испан",
+        "madrid",
+        "catalun",
+        "comunidad autónoma",
+        "pib per"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/spain-map"
+      ],
+      "weight": 21,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-beat-freeze",
+      "title": "бит-дроп, стоп-кадр, динамический акцент",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "drop",
+        "freeze",
+        "beat",
+        "hard cut",
+        "on the beat",
+        "дроп",
+        "бит",
+        "замороз"
+      ],
+      "patterns": [
+        "(drop|freeze|beat|hard\\s*cut|on the beat|дроп|бит|замороз)"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/beat-freeze-cut"
+      ],
+      "weight": 27,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-terminal-shell",
+      "title": "терминал, командная строка, shell",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "terminal",
+        "терминал",
+        "консоль",
+        "bash",
+        "npm",
+        "pip",
+        "cargo",
+        "brew"
+      ],
+      "patterns": [
+        "(?m)(^\\s*\\$\\s|\\b(?:npx|npm|pip3?|cargo|hyperframes|brew|apt-get)\\s)"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/terminal-simulator"
+      ],
+      "weight": 26,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-dark-plus",
+      "title": "Python-функция def, dark plus подсветка кода",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [
+        "(?m)^\\s*def\\s+"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/dark-plus"
+      ],
+      "weight": 25,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-code-diff",
+      "title": "дифф кода, изменения, патч",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "git diff",
+        "diff --git",
+        "diff",
+        "патч",
+        "изменен"
+      ],
+      "patterns": [
+        "(?ms)(^\\s*---\\s*$)|(^\\s*diff\\s+--git\\b)|(^\\s*-[^-\\n].*$.*?^\\s*\\+[^+\\n])"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/code-diff"
+      ],
+      "weight": 24,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-code-scroll-long",
+      "title": "длинный блок кода (от 7 строк), вертикальный скролл",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [
+        "lines_ge_7"
+      ],
+      "templates": [
+        "text-fullscreen/code-scroll"
+      ],
+      "weight": 23,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-code-typing-short",
+      "title": "короткий фрагмент кода (до 7 строк), печать символов",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [
+        "(?m)(^\\s*(async\\s+)?function\\b|^\\s*def\\s+\\w+|^\\s*const\\s+\\w+|^\\s*class\\s+\\w+|[{};]\\s*$|=>|::|\\breturn\\s+\\w|\\bimport\\s+\\w)"
+      ],
+      "needs": [
+        "lines_lt_7"
+      ],
+      "templates": [
+        "text-fullscreen/code-typing"
+      ],
+      "weight": 22,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-code-snippet",
+      "title": "фрагмент кода, подсветка синтаксиса",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "def ",
+        "const ",
+        "function",
+        "import ",
+        "return ",
+        "class "
+      ],
+      "patterns": [
+        "(?m)(^\\s*(async\\s+)?function\\b|^\\s*def\\s+\\w+|^\\s*const\\s+\\w+|^\\s*class\\s+\\w+|[{};]\\s*$|=>|::|\\breturn\\s+\\w|\\bimport\\s+\\w)"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/code-typing",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus"
+      ],
+      "weight": 21,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-number-slam",
+      "title": "крупное число, цифра, показатель",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [
+        "\\d+"
+      ],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/number-slam-card",
+        "text-fullscreen/kinetic-stack"
+      ],
+      "weight": 20,
+      "variants": [
+        "A"
+      ],
+      "replaces_default": true
+    },
+    {
+      "id": "text-fullscreen-default-a",
+      "title": "базовый набор полноэкранного текста варианта A",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "weight": 10,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "text-fullscreen-default-b",
+      "title": "базовый набор полноэкранного текста варианта B",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "weight": 10,
+      "variants": [
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-source-domain",
+      "title": "плашка с доменом источника",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [
+        "источник",
+        "домен",
+        "source domain",
+        "цитата",
+        "материал"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "lower-thirds/source-domain"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-lockup-generic",
+      "title": "акцентная плашка сценария",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "lower-thirds/accent-underline",
+        "lower-thirds/clean-bar",
+        "lower-thirds/dark-card"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "cta-subscribe",
+      "title": "призыв подписаться на канал",
+      "categories": [
+        "outro-cta"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "outro-cta/subscribe-pulse"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "cta-brand-close",
+      "title": "финальный логотип бренда Redshift",
+      "categories": [
+        "outro-cta"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "outro-cta/logo-brand-close",
+        "outro-cta/subscribe-pulse"
+      ],
+      "weight": 11,
+      "variants": [
+        "B"
+      ]
+    },
+    {
+      "id": "cta-logo-stamp",
+      "title": "штамп логотипа бренда в конце",
+      "categories": [
+        "outro-cta"
+      ],
+      "keywords": [
+        "логотип",
+        "штамп",
+        "logo stamp",
+        "фирменный знак"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "outro-cta/logo-stamp"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "frames-paper-reveal",
+      "title": "научная статья, arxiv, препринт",
+      "categories": [
+        "frames-cards"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "weight": 10,
+      "variants": [
+        "B"
+      ]
+    },
+    {
+      "id": "browser-source-generic",
+      "title": "статья в браузере, скролл, сниппет",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "weight": 10,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "dataviz-bars-comparison",
+      "title": "сравнение в столбчатой диаграмме / race chart",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "сравнен",
+        "рейтинг",
+        "столбчат",
+        "диаграмм",
+        "bars",
+        "compare",
+        "chart",
+        "race"
+      ],
+      "patterns": [],
+      "needs": [
+        "numbers"
+      ],
+      "templates": [
+        "data-viz/bar-chart-race",
+        "data-viz/chart-story",
+        "data-viz/animated-bar-chart",
+        "data-viz/compare-bars",
+        "data-viz/bar-race-mini"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "dataviz-line-trends",
+      "title": "тренды, динамика во времени, графики",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "динамик",
+        "тренд",
+        "график",
+        "рост",
+        "паден",
+        "спад",
+        "timeline",
+        "таймлайн",
+        "серия"
+      ],
+      "patterns": [],
+      "needs": [
+        "numbers"
+      ],
+      "templates": [
+        "data-viz/mk-line-graph",
+        "data-viz/line-rise",
+        "data-viz/decline-chart",
+        "data-viz/timeline-dots"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "dataviz-progress-ring",
+      "title": "доли, проценты, кольцевой прогресс",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "процент",
+        "доля",
+        "прогресс",
+        "кольцевая",
+        "donut",
+        "progress ring"
+      ],
+      "patterns": [],
+      "needs": [
+        "numbers"
+      ],
+      "templates": [
+        "data-viz/conic-progress-ring",
+        "data-viz/donut-fill"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "dataviz-counter-stats",
+      "title": "анимированный счетчик цифр, метрика",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "счётчик",
+        "счетчик",
+        "число",
+        "статистик",
+        "countup",
+        "metric"
+      ],
+      "patterns": [],
+      "needs": [
+        "numbers"
+      ],
+      "templates": [
+        "data-viz/stat-countup-card",
+        "data-viz/counter-roll"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "dataviz-waves-signals",
+      "title": "волновые графики, осциллограммы, сигналы",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "волна",
+        "осциллограф",
+        "сигнал",
+        "частота",
+        "wave",
+        "oscilloscope"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/oscilloscope-trace",
+        "data-viz/weight-wave"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "dataviz-geo-bubble",
+      "title": "пузырьковая карта данных",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "bubble map",
+        "пузырьковая карта",
+        "точки на карте"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/us-map-bubble"
+      ],
+      "weight": 10,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "geo-generic",
+      "title": "географические карты, страны, регионы",
+      "categories": [
+        "data-viz"
+      ],
+      "keywords": [
+        "карта",
+        "map",
+        "гео",
+        "географи",
+        "страна",
+        "регион",
+        "территори",
+        "атлас"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "data-viz/world-map",
+        "data-viz/us-map",
+        "data-viz/spain-map",
+        "data-viz/us-map-flow",
+        "data-viz/us-map-hex",
+        "data-viz/us-map-bubble",
+        "data-viz/nyc-paris-flight",
+        "data-viz/north-korea-locked-down"
+      ],
+      "weight": 2,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "browser-social",
+      "title": "социальные сети, посты, треды",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "твит",
+        "tweet",
+        "x-post",
+        "reddit",
+        "реддит",
+        "соцсет",
+        "пост",
+        "social",
+        "community"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/x-post",
+        "browser-ui/reddit-post"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "browser-media-music",
+      "title": "медиа, музыкальный плеер, видеоспот",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "spotify",
+        "спотифай",
+        "трек",
+        "музык",
+        "плеер",
+        "видеоплеер",
+        "music",
+        "audio",
+        "video player",
+        "vpn"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/spotify-card",
+        "browser-ui/blue-sweater-intro-video",
+        "browser-ui/vpn-youtube-spot"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "browser-system-notification",
+      "title": "системные уведомления рабочего стола и телефона",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "macos",
+        "макбук",
+        "system notification",
+        "системное уведомлен",
+        "телефон уведомлен"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/macos-notification",
+        "browser-ui/phone-notification"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "browser-typing-inputs",
+      "title": "ввод текста, поиск, блокнот, терминал браузера",
+      "categories": [
+        "browser-ui"
+      ],
+      "keywords": [
+        "ввод текста",
+        "набор текста",
+        "гугл поиск",
+        "блокнот",
+        "typing",
+        "search input",
+        "terminal lines"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "browser-ui/chat-ai-typing",
+        "browser-ui/google-typing",
+        "browser-ui/notepad-typing",
+        "browser-ui/terminal-lines"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "frames-patent-tech",
+      "title": "патентная карточка, чертеж, инженерная схема",
+      "categories": [
+        "frames-cards"
+      ],
+      "keywords": [
+        "патент",
+        "изобретен",
+        "patent",
+        "чертеж",
+        "инженерн"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "frames-cards/patent-card"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "frames-product-spec",
+      "title": "карточка продукта, характеристики устройства",
+      "categories": [
+        "frames-cards"
+      ],
+      "keywords": [
+        "характеристик",
+        "спецификац",
+        "product card",
+        "железо",
+        "параметры продукта"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "frames-cards/product-card"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "frames-article-media",
+      "title": "карточка публикации, статья СМИ",
+      "categories": [
+        "frames-cards"
+      ],
+      "keywords": [
+        "публикац",
+        "новостная карточка",
+        "статья сми",
+        "журнал"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "frames-cards/article-card"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "frames-chart-data",
+      "title": "карточка с диаграммой данных",
+      "categories": [
+        "frames-cards"
+      ],
+      "keywords": [
+        "график карточка",
+        "показатели карточка",
+        "сводка данных"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "frames-cards/chart-card"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "frames-person-profile",
+      "title": "профиль персоны, карточка автора",
+      "categories": [
+        "frames-cards"
+      ],
+      "keywords": [
+        "профиль",
+        "биографи",
+        "персона",
+        "автор",
+        "profile"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "frames-cards/profile-card"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-plate",
+      "title": "плашка подложка за спиной спикера",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "подложка",
+        "плашка за спиной",
+        "бэкграунд спикера",
+        "plate"
+      ],
+      "patterns": [],
+      "needs": [
+        "plate"
+      ],
+      "templates": [
+        "hero-devices/plate-behind-back",
+        "hero-devices/footage-plate-pop"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-headline",
+      "title": "заголовок кадра над или за головой спикера",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "заголовок",
+        "тема",
+        "титр над головой",
+        "титр за головой"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "hero-devices/headline-over-head",
+        "hero-devices/headline-behind-head",
+        "hero-devices/title-behind-head"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-icons",
+      "title": "иконки и бейджи за спикером",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "иконки",
+        "символы",
+        "бейдж",
+        "icons"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "hero-devices/icons-behind-head"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-split",
+      "title": "разделенный экран с панелью справа от спикера",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "сплит",
+        "панель справа",
+        "split screen",
+        "split panel"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "hero-devices/split-panel-right"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-text-lines",
+      "title": "строки текста и тезисы рядом со спикером",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "строки текста",
+        "колонка",
+        "тезисы",
+        "пункты",
+        "список аргументов"
+      ],
+      "patterns": [],
+      "needs": [
+        "lines"
+      ],
+      "templates": [
+        "hero-devices/text-column-left",
+        "hero-devices/bubble-card",
+        "hero-devices/type-slab",
+        "hero-devices/script-stack",
+        "hero-devices/phrase-log",
+        "hero-devices/bubble-typed"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-brand",
+      "title": "фирменная плашка бренда со спикером",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "бренд-таблетка",
+        "логотип спикера",
+        "фирменный знак"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "hero-devices/brand-pill"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-slam",
+      "title": "громкое слово-панч или вердикт со спикером",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "вердикт",
+        "громкое слово",
+        "панч",
+        "вывод",
+        "slam",
+        "punch"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "hero-devices/knockout-negative",
+        "hero-devices/statement-slam",
+        "hero-devices/oversize-word",
+        "hero-devices/verdict-card"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-chat-ui",
+      "title": "смартфон и чат в руках спикера",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "чат со спикером",
+        "смартфон",
+        "телефон в руках",
+        "генерация ответа"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "hero-devices/chat-typing",
+        "hero-devices/chat-generate",
+        "hero-devices/phone-mock"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-source",
+      "title": "документ или источник рядом со спикером",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "доказательство",
+        "документ",
+        "статья спикера",
+        "пачка карточек"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "hero-devices/exhibit-card",
+        "hero-devices/source-paper",
+        "hero-devices/card-stack-top"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hero-data-figure",
+      "title": "числовые показатели со спикером",
+      "categories": [
+        "hero-devices"
+      ],
+      "keywords": [
+        "смена цифр",
+        "числовой факт",
+        "ротация цифр"
+      ],
+      "patterns": [],
+      "needs": [
+        "numbers"
+      ],
+      "templates": [
+        "hero-devices/figure-swap"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hook-question",
+      "title": "хук-вопрос с яркой вспышкой",
+      "categories": [
+        "intro-hooks"
+      ],
+      "keywords": [
+        "вопрос",
+        "почему",
+        "зачем",
+        "как так",
+        "question",
+        "?"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "intro-hooks/hook-question-flash"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hook-number",
+      "title": "числовой хук или обратный отсчет",
+      "categories": [
+        "intro-hooks"
+      ],
+      "keywords": [
+        "цифра",
+        "число",
+        "обратный отсчёт",
+        "три факта",
+        "3 2 1",
+        "countdown"
+      ],
+      "patterns": [],
+      "needs": [
+        "numbers"
+      ],
+      "templates": [
+        "intro-hooks/hook-number-slam",
+        "intro-hooks/hook-countdown-3"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hook-dark",
+      "title": "таинственный блэкаут хук",
+      "categories": [
+        "intro-hooks"
+      ],
+      "keywords": [
+        "блэкаут",
+        "тьма",
+        "одно слово",
+        "тайна",
+        "blackout"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "intro-hooks/hook-blackout-word"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hook-cold-open",
+      "title": "холодное открытие с футажа",
+      "categories": [
+        "intro-hooks"
+      ],
+      "keywords": [
+        "холодное открытие",
+        "кадры с места",
+        "видеоряд",
+        "cold open"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "intro-hooks/hook-footage-cold-open"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hook-split",
+      "title": "разделенный экран вступления",
+      "categories": [
+        "intro-hooks"
+      ],
+      "keywords": [
+        "раскрытие пополам",
+        "сплит хук",
+        "две стороны",
+        "разрез"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "intro-hooks/hook-split-reveal"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hook-typing",
+      "title": "ввод поискового запроса в начале ролика",
+      "categories": [
+        "intro-hooks"
+      ],
+      "keywords": [
+        "поисковый запрос",
+        "гуглим",
+        "ввод в строку поиска",
+        "typing search"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "intro-hooks/hook-typing-search"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "hook-avatar",
+      "title": "прямое обращение спикера вступления",
+      "categories": [
+        "intro-hooks"
+      ],
+      "keywords": [
+        "прямое обращение",
+        "спикер в камеру",
+        "лицом к зрителю"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "intro-hooks/hook-avatar-direct"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "kenburns-zoom",
+      "title": "зумирование камеры на объект или общий план",
+      "categories": [
+        "kenburns"
+      ],
+      "keywords": [
+        "зум",
+        "наезд",
+        "отъезд",
+        "приближен",
+        "отдален",
+        "zoom in",
+        "zoom out"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "kenburns/zoom-in-center",
+        "kenburns/zoom-in-subject",
+        "kenburns/zoom-out-reveal"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "kenburns-pan",
+      "title": "панорамирование камеры влево, вправо, вверх или вниз",
+      "categories": [
+        "kenburns"
+      ],
+      "keywords": [
+        "панорама",
+        "панорамирован",
+        "сдвиг камеры",
+        "pan left",
+        "pan right",
+        "pan up",
+        "pan down"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "kenburns/pan-left",
+        "kenburns/pan-right",
+        "kenburns/pan-up",
+        "kenburns/pan-down"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "kenburns-motion",
+      "title": "диагональный дрейф, push-tilt и микропараллакс камеры",
+      "categories": [
+        "kenburns"
+      ],
+      "keywords": [
+        "диагональ",
+        "дрифт",
+        "параллакс",
+        "тилт",
+        "камера",
+        "drift",
+        "push tilt"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "kenburns/diag-drift",
+        "kenburns/push-tilt",
+        "kenburns/micro-parallax"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-speaker",
+      "title": "титр с именем и должностью спикера",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [
+        "имя спикера",
+        "титры",
+        "должность",
+        "эксперт",
+        "name",
+        "title"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "lower-thirds/name-title"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-social",
+      "title": "социальные сети, YouTube, Instagram, TikTok",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [
+        "соцсети",
+        "инстаграм",
+        "тикток",
+        "ютуб",
+        "подпишись на канал",
+        "instagram",
+        "tiktok",
+        "youtube"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "lower-thirds/yt-lower-third",
+        "lower-thirds/instagram-follow",
+        "lower-thirds/tiktok-follow"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-metric-badge",
+      "title": "плашка с числовой метрикой или бейджем",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [
+        "метрика",
+        "бейдж",
+        "показатель",
+        "значок",
+        "badge"
+      ],
+      "patterns": [],
+      "needs": [
+        "numbers"
+      ],
+      "templates": [
+        "lower-thirds/metric-badge"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-notes-warning",
+      "title": "предупреждение, плашка с важной заметкой",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [
+        "внимание",
+        "предупрежден",
+        "важно",
+        "заметка",
+        "warning",
+        "caution",
+        "note"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "lower-thirds/warning-strip",
+        "lower-thirds/note-pin"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-progress-step",
+      "title": "индикатор шага или этапа внизу экрана",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [
+        "этап",
+        "шаг",
+        "стадия",
+        "progress step"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "lower-thirds/progress-step"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "lowerthird-tags-time",
+      "title": "теги темы и маркер времени",
+      "categories": [
+        "lower-thirds"
+      ],
+      "keywords": [
+        "теги",
+        "хэштег",
+        "таймкод",
+        "время",
+        "таймштамп",
+        "timestamp",
+        "tags"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "lower-thirds/tag-chips",
+        "lower-thirds/timestamp-marker"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "cta-question",
+      "title": "вопрос аудитории в конце ролика",
+      "categories": [
+        "outro-cta"
+      ],
+      "keywords": [
+        "вопрос зрителям",
+        "что думаете",
+        "напишите в комментариях",
+        "question"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "outro-cta/question-card"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "cta-loop-teaser",
+      "title": "зацикливание видео и тизер следующего ролика",
+      "categories": [
+        "outro-cta"
+      ],
+      "keywords": [
+        "следующее видео",
+        "петля",
+        "зацикливание",
+        "продолжение в",
+        "teaser",
+        "loop"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "outro-cta/loop-back",
+        "outro-cta/next-teaser"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "parallax-depth-drift",
+      "title": "глубинный параллакс и дрейф двух слоев",
+      "categories": [
+        "parallax"
+      ],
+      "keywords": [
+        "глубина",
+        "дрейф слоев",
+        "параллакс эффект",
+        "объемное фото",
+        "depth"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "parallax/two-layer-drift",
+        "parallax/depth-push"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "parallax-text-sweep",
+      "title": "пролет камеры и текст за объектом",
+      "categories": [
+        "parallax"
+      ],
+      "keywords": [
+        "текст за объектом",
+        "пролет переднего плана",
+        "sweep",
+        "behind object"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "parallax/text-behind-object",
+        "parallax/foreground-sweep"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-impact-word",
+      "title": "ударное слово или число на весь экран",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "удар",
+        "сильный акцент",
+        "выделение слова",
+        "impact"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/impact-01",
+        "text-fullscreen/impact-02"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-stack-lines",
+      "title": "построчный стек строк текста",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "три строки",
+        "построчный текст",
+        "строка за строкой",
+        "stack"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/line-by-line-slide"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-word-swap",
+      "title": "сменяемые ключевые слова",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "замена слова",
+        "сменяемые слова",
+        "альтернатива",
+        "word swap"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/word-swap",
+        "text-fullscreen/kinetic-type-swap"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-quote-frame",
+      "title": "полноэкранная рамка с цитатой",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "цитата",
+        "в кавычках",
+        "прямая речь",
+        "quote frame"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/quote-frame"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-date-marker",
+      "title": "маркер даты и времени моноширинным шрифтом",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "дата",
+        "год",
+        "число месяца",
+        "хронология",
+        "date marker"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/date-marker"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-compare-vs",
+      "title": "сравнение двух концепций или сущностей (VS)",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "против",
+        "сравнение двух",
+        "версус",
+        "vs",
+        "versus",
+        "compare"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/vs-compare"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-fact-card",
+      "title": "карточка с фактом или текстовая полоска-метка",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "факт дня",
+        "карточка с фактом",
+        "плашка с меткой",
+        "fact card"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/fact-card",
+        "text-fullscreen/label-strip"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-kinetic-motion",
+      "title": "кинетическая типографика, растворение, скан, скрембл",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "кинетическая типографика",
+        "растворение частиц",
+        "скан полоса",
+        "переход букв",
+        "размытие текста",
+        "kinetic"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/blur-out-up"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-mask-footage",
+      "title": "видеофутаж, просвечивающий сквозь крупный текст",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "видео в буквах",
+        "маска по тексту",
+        "футаж внутри текста",
+        "mask footage"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/bigtext-mask-footage"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-split-flap-board",
+      "title": "перекидное механическое табло аэропорта",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "табло аэропорта",
+        "перекидное табло",
+        "расписание",
+        "split flap",
+        "board"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/split-flap-board"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-news-ticker",
+      "title": "новостной тикер, бегущая строка срочных новостей",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "бегущая строка",
+        "срочные новости",
+        "новости",
+        "тикер",
+        "news ticker",
+        "breaking news"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/news-ticker"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "text-code-animations",
+      "title": "анимация и подсветка строк кода",
+      "categories": [
+        "text-fullscreen"
+      ],
+      "keywords": [
+        "морфинг кода",
+        "подсветка строки кода",
+        "code morph",
+        "code highlight"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "text-fullscreen/code-highlight",
+        "text-fullscreen/code-morph"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transitions-variant-a-order",
+      "title": "базовый порядок переходов варианта A",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/transitions-other",
+        "transitions/transitions-light",
+        "transitions/transitions-destruction",
+        "transitions/transitions-cover",
+        "transitions/transitions-blur",
+        "transitions/transitions-3d",
+        "transitions/mk-clone-wall-transition",
+        "transitions/whip-pan",
+        "transitions/thermal-distortion",
+        "transitions/sdf-iris",
+        "transitions/light-leak",
+        "transitions/gravitational-lens",
+        "transitions/glitch",
+        "transitions/cinematic-zoom",
+        "transitions/zoom-through"
+      ],
+      "weight": 10,
+      "variants": [
+        "A"
+      ]
+    },
+    {
+      "id": "transition-zoom",
+      "title": "динамический зум-переход сквозь кадр",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "зум переход",
+        "наезд через кадр",
+        "zoom punch",
+        "scale through"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/zoom-punch-in",
+        "transitions/zoom-punch-out",
+        "transitions/zoom-through",
+        "transitions/cinematic-zoom",
+        "transitions/transitions-scale"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-pan-whip",
+      "title": "быстрый панорамный хлыстовой переход",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "хлыстовая панорама",
+        "быстрый сдвиг",
+        "whip pan"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/whip-pan",
+        "transitions/whip-pan-l",
+        "transitions/whip-pan-r"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-flash-light",
+      "title": "переход через световую вспышку или засветку",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "вспышка",
+        "засветка",
+        "белая вспышка",
+        "flash",
+        "light leak"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/white-flash",
+        "transitions/flash-through-white",
+        "transitions/light-sweep",
+        "transitions/light-leak",
+        "transitions/transitions-light"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-glitch-distortion",
+      "title": "глитч и цифровые помехи при смене кадра",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "глитч",
+        "помехи",
+        "искажение",
+        "термальное искажение",
+        "glitch",
+        "distortion"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/glitch",
+        "transitions/glitch-short",
+        "transitions/thermal-distortion",
+        "transitions/transitions-distortion"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-blur-dissolve",
+      "title": "мягкое размытие и растворение кадра",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "размытие",
+        "растворение",
+        "диссолв",
+        "blur dip",
+        "dissolve"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/transitions-dissolve",
+        "transitions/blur-dip",
+        "transitions/domain-warp-dissolve",
+        "transitions/transitions-blur",
+        "transitions/transitions-grid"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-mask-wipe",
+      "title": "переход шторкой по маске или круговому ирису",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "маска",
+        "круговая шторка",
+        "радиальный переход",
+        "шторка",
+        "wipe",
+        "iris"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/mask-wipe-circle",
+        "transitions/mask-wipe-diagonal",
+        "transitions/sdf-iris",
+        "transitions/transitions-radial",
+        "transitions/mk-clone-wall-transition",
+        "transitions/transitions-cover"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-burn-destruction",
+      "title": "прожиг пленки, огонь и разрушение кадра",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "сгорание",
+        "прожиг",
+        "огонь",
+        "разрушение",
+        "burn",
+        "fire",
+        "destruction"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/transitions-destruction",
+        "transitions/ridged-burn"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-warp-wave",
+      "title": "вихревое искажение, гравитационная линза и волны",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "волны",
+        "воронка",
+        "гравитационная линза",
+        "вихрь",
+        "warp",
+        "swirl",
+        "lens",
+        "ripple"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/swirl-vortex",
+        "transitions/ripple-waves",
+        "transitions/cross-warp-morph",
+        "transitions/gravitational-lens",
+        "transitions/chromatic-radial-split"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-mechanical-3d",
+      "title": "механический затвор, жалюзи, 3D переворот",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "механический",
+        "жалюзи",
+        "затвор",
+        "3d переворот",
+        "mechanical",
+        "shutter"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/transitions-mechanical",
+        "transitions/transitions-3d",
+        "transitions/paper-slide",
+        "transitions/transitions-push"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "transition-cut-base",
+      "title": "прямой стык и базовый переход",
+      "categories": [
+        "transitions"
+      ],
+      "keywords": [
+        "склейка",
+        "прямой стык",
+        "базовый переход",
+        "hard cut",
+        "cut"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "transitions/cut",
+        "transitions/transitions-other"
+      ],
+      "weight": 5,
+      "variants": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "id": "avatar-entry-generic",
+      "title": "появление аватара спикера на экране",
+      "categories": [
+        "avatar-entry"
+      ],
+      "keywords": [
+        "аватар",
+        "спикер",
+        "ведущий",
+        "появление",
+        "avatar",
+        "speaker",
+        "entry"
+      ],
+      "patterns": [],
+      "needs": [],
+      "templates": [
+        "avatar-entry/hero-zoom-in",
+        "avatar-entry/slide-from-bottom",
+        "avatar-entry/circle-mask-grow",
+        "avatar-entry/split-slide-up",
+        "avatar-entry/flash-cut-in",
+        "avatar-entry/scale-pop"
+      ],
+      "weight": 1,
+      "variants": [
+        "A",
+        "B"
+      ]
+    }
+  ],
+  "tag_intents": {
+    "3d": [
+      "text-code-snippet",
+      "transition-mechanical-3d"
+    ],
+    "ai": [
+      "browser-ai-chat",
+      "browser-chatgpt-exchange",
+      "browser-claude-exchange",
+      "browser-source-generic",
+      "browser-media-music",
+      "browser-typing-inputs",
+      "hero-chat-ui"
+    ],
+    "airport": [
+      "text-split-flap-board"
+    ],
+    "alpha": [
+      "hero-plate",
+      "hero-headline",
+      "hero-icons",
+      "hero-source"
+    ],
+    "app": [
+      "browser-app-showcase",
+      "browser-media-music"
+    ],
+    "apple": [
+      "text-terminal-shell",
+      "text-code-snippet"
+    ],
+    "apple-terminal": [
+      "text-terminal-shell",
+      "text-code-snippet"
+    ],
+    "article": [
+      "frames-article-media"
+    ],
+    "audio": [
+      "browser-media-music"
+    ],
+    "avatar": [
+      "hero-plate",
+      "hero-headline",
+      "hero-icons",
+      "hero-split",
+      "hero-text-lines",
+      "hero-brand",
+      "hero-slam",
+      "hero-chat-ui",
+      "hero-source",
+      "hero-data-figure",
+      "hook-avatar",
+      "avatar-entry-generic"
+    ],
+    "bars": [
+      "dataviz-bars-comparison"
+    ],
+    "base": [
+      "transition-cut-base"
+    ],
+    "beat": [
+      "text-beat-freeze"
+    ],
+    "behind": [
+      "hero-headline"
+    ],
+    "blur": [
+      "text-kinetic-motion",
+      "transition-blur-dissolve"
+    ],
+    "board": [
+      "text-split-flap-board"
+    ],
+    "brand": [
+      "cta-brand-close",
+      "cta-logo-stamp",
+      "hero-brand"
+    ],
+    "bubble": [
+      "dataviz-geo-bubble",
+      "geo-generic"
+    ],
+    "burn": [
+      "transition-burn-destruction"
+    ],
+    "card": [
+      "text-number-slam",
+      "dataviz-bars-comparison",
+      "dataviz-counter-stats",
+      "browser-media-music",
+      "text-fact-card"
+    ],
+    "channel": [
+      "lowerthird-social"
+    ],
+    "chat": [
+      "browser-ai-chat",
+      "browser-chatgpt-exchange",
+      "browser-claude-exchange",
+      "browser-message-thread",
+      "browser-source-generic",
+      "hero-chat-ui"
+    ],
+    "chromatic": [
+      "text-kinetic-motion",
+      "transition-glitch-distortion",
+      "transition-warp-wave"
+    ],
+    "circle": [
+      "transition-mask-wipe"
+    ],
+    "claude": [
+      "browser-claude-exchange"
+    ],
+    "code": [
+      "text-code-diff",
+      "text-terminal-shell",
+      "text-code-snippet",
+      "browser-typing-inputs",
+      "text-code-animations"
+    ],
+    "code-animation": [
+      "text-code-diff",
+      "text-terminal-shell",
+      "text-code-snippet",
+      "text-code-animations"
+    ],
+    "community": [
+      "browser-social"
+    ],
+    "compare": [
+      "dataviz-bars-comparison",
+      "text-compare-vs"
+    ],
+    "count": [
+      "finance-money-count"
+    ],
+    "cover": [
+      "transition-mask-wipe"
+    ],
+    "crossfade": [
+      "transition-blur-dissolve"
+    ],
+    "cta": [
+      "cta-subscribe",
+      "cta-brand-close",
+      "cta-logo-stamp",
+      "cta-question",
+      "cta-loop-teaser"
+    ],
+    "cut": [
+      "transition-cut-base"
+    ],
+    "dark": [
+      "lowerthird-lockup-generic",
+      "hook-dark"
+    ],
+    "data": [
+      "logic-flowchart",
+      "stat-progress-goals",
+      "geo-flight",
+      "geo-north-korea",
+      "finance-money-count",
+      "geo-world-map",
+      "geo-us-hex",
+      "geo-us-flow",
+      "geo-us-map",
+      "dataviz-star-rating",
+      "geo-spain",
+      "dataviz-bars-comparison",
+      "dataviz-line-trends",
+      "dataviz-progress-ring",
+      "dataviz-counter-stats",
+      "dataviz-waves-signals",
+      "dataviz-geo-bubble",
+      "geo-generic",
+      "frames-chart-data",
+      "hero-data-figure"
+    ],
+    "date": [
+      "text-date-marker"
+    ],
+    "decline": [
+      "dataviz-line-trends"
+    ],
+    "desktop": [
+      "browser-system-notification"
+    ],
+    "destruction": [
+      "transition-burn-destruction"
+    ],
+    "developer": [
+      "text-code-diff",
+      "text-terminal-shell",
+      "text-code-snippet",
+      "text-code-animations"
+    ],
+    "device": [
+      "browser-app-showcase"
+    ],
+    "diff": [
+      "text-code-diff"
+    ],
+    "directional": [
+      "transition-mechanical-3d"
+    ],
+    "dissolve": [
+      "transition-blur-dissolve"
+    ],
+    "distortion": [
+      "transition-glitch-distortion"
+    ],
+    "donut": [
+      "dataviz-progress-ring"
+    ],
+    "drift": [
+      "kenburns-motion"
+    ],
+    "dynamic": [
+      "transition-zoom",
+      "transition-pan-whip",
+      "transition-flash-light",
+      "transition-glitch-distortion",
+      "transition-blur-dissolve",
+      "transition-mask-wipe",
+      "transition-burn-destruction",
+      "transition-warp-wave",
+      "transition-mechanical-3d",
+      "transition-cut-base"
+    ],
+    "end-card": [
+      "cta-brand-close"
+    ],
+    "entry": [
+      "avatar-entry-generic"
+    ],
+    "fact": [
+      "text-fact-card"
+    ],
+    "fire": [
+      "transition-burn-destruction"
+    ],
+    "flash": [
+      "hook-question",
+      "transition-flash-light",
+      "transition-cut-base",
+      "avatar-entry-generic"
+    ],
+    "flight": [
+      "geo-flight",
+      "geo-generic"
+    ],
+    "flip": [
+      "text-split-flap-board",
+      "transition-mechanical-3d"
+    ],
+    "flow": [
+      "geo-us-flow",
+      "geo-generic"
+    ],
+    "flowchart": [
+      "logic-flowchart"
+    ],
+    "follow": [
+      "lowerthird-social"
+    ],
+    "footage": [
+      "hero-plate",
+      "hero-chat-ui",
+      "hero-source",
+      "hook-cold-open",
+      "text-mask-footage"
+    ],
+    "freeze": [
+      "text-beat-freeze"
+    ],
+    "generate": [
+      "browser-media-music"
+    ],
+    "glitch": [
+      "transition-glitch-distortion"
+    ],
+    "grid": [
+      "transition-blur-dissolve"
+    ],
+    "hero": [
+      "hero-plate",
+      "hero-headline",
+      "hero-icons",
+      "hero-split",
+      "hero-text-lines",
+      "hero-brand",
+      "hero-slam",
+      "hero-chat-ui",
+      "hero-source",
+      "hero-data-figure"
+    ],
+    "hex": [
+      "geo-us-hex",
+      "geo-generic"
+    ],
+    "highlight": [
+      "browser-source-generic",
+      "text-code-animations"
+    ],
+    "hook": [
+      "hook-question",
+      "hook-number",
+      "hook-dark",
+      "hook-cold-open",
+      "hook-split",
+      "hook-typing",
+      "hook-avatar"
+    ],
+    "icons": [
+      "hero-icons"
+    ],
+    "imessage": [
+      "browser-message-thread"
+    ],
+    "impact": [
+      "text-number-slam",
+      "text-impact-word"
+    ],
+    "instagram": [
+      "lowerthird-social"
+    ],
+    "ios": [
+      "browser-notification-cascade"
+    ],
+    "iris": [
+      "transition-mask-wipe"
+    ],
+    "kenburns": [
+      "kenburns-zoom",
+      "kenburns-pan",
+      "kenburns-motion"
+    ],
+    "kinetic": [
+      "text-beat-freeze",
+      "text-number-slam",
+      "text-stack-lines",
+      "text-word-swap",
+      "text-kinetic-motion"
+    ],
+    "korea": [
+      "geo-north-korea",
+      "geo-generic"
+    ],
+    "label": [
+      "text-fact-card"
+    ],
+    "lens": [
+      "transition-warp-wave"
+    ],
+    "letters": [
+      "text-kinetic-motion"
+    ],
+    "light": [
+      "transition-flash-light"
+    ],
+    "line": [
+      "dataviz-line-trends"
+    ],
+    "lines": [
+      "hero-text-lines",
+      "hero-chat-ui"
+    ],
+    "lock": [
+      "geo-north-korea",
+      "geo-generic"
+    ],
+    "logo": [
+      "cta-brand-close"
+    ],
+    "loop": [
+      "cta-loop-teaser"
+    ],
+    "lower-third": [
+      "lowerthird-lockup-generic",
+      "lowerthird-social"
+    ],
+    "macos": [
+      "browser-system-notification"
+    ],
+    "map": [
+      "geo-flight",
+      "geo-north-korea",
+      "geo-world-map",
+      "geo-us-hex",
+      "geo-us-flow",
+      "geo-us-map",
+      "geo-spain",
+      "dataviz-geo-bubble",
+      "geo-generic"
+    ],
+    "mask": [
+      "text-mask-footage",
+      "transition-mask-wipe"
+    ],
+    "mechanical": [
+      "transition-mechanical-3d"
+    ],
+    "metal": [
+      "transition-mechanical-3d"
+    ],
+    "metric": [
+      "lowerthird-metric-badge"
+    ],
+    "minimal": [
+      "lowerthird-lockup-generic"
+    ],
+    "mobile": [
+      "browser-message-thread",
+      "browser-notification-cascade"
+    ],
+    "money": [
+      "finance-money-count"
+    ],
+    "mono": [
+      "text-date-marker"
+    ],
+    "morph": [
+      "text-code-animations",
+      "transition-warp-wave"
+    ],
+    "mosaic": [
+      "transition-blur-dissolve"
+    ],
+    "music": [
+      "text-beat-freeze",
+      "browser-media-music"
+    ],
+    "news": [
+      "text-news-ticker"
+    ],
+    "note": [
+      "lowerthird-notes-warning"
+    ],
+    "notes": [
+      "browser-notes-reveal"
+    ],
+    "notification": [
+      "browser-system-notification"
+    ],
+    "notifications": [
+      "browser-notification-cascade"
+    ],
+    "number": [
+      "stat-progress-goals",
+      "finance-money-count",
+      "text-number-slam",
+      "dataviz-counter-stats",
+      "hero-data-figure",
+      "hook-number",
+      "text-impact-word"
+    ],
+    "oscilloscope": [
+      "dataviz-waves-signals"
+    ],
+    "overlay": [
+      "lowerthird-lockup-generic"
+    ],
+    "pan": [
+      "kenburns-pan",
+      "transition-pan-whip"
+    ],
+    "paper": [
+      "browser-notes-reveal"
+    ],
+    "parallax": [
+      "kenburns-motion",
+      "parallax-depth-drift",
+      "parallax-text-sweep"
+    ],
+    "particles": [
+      "text-code-snippet",
+      "text-kinetic-motion"
+    ],
+    "patent": [
+      "frames-patent-tech"
+    ],
+    "person": [
+      "lowerthird-lockup-generic",
+      "frames-person-profile",
+      "lowerthird-speaker"
+    ],
+    "podcast": [
+      "lowerthird-lockup-generic"
+    ],
+    "post": [
+      "browser-social"
+    ],
+    "product": [
+      "frames-product-spec"
+    ],
+    "profile": [
+      "lowerthird-social"
+    ],
+    "progress": [
+      "stat-progress-goals",
+      "dataviz-progress-ring",
+      "lowerthird-progress-step"
+    ],
+    "push": [
+      "kenburns-motion",
+      "parallax-depth-drift",
+      "transition-mechanical-3d"
+    ],
+    "question": [
+      "cta-question"
+    ],
+    "quote": [
+      "text-quote-frame"
+    ],
+    "race": [
+      "dataviz-bars-comparison"
+    ],
+    "radial": [
+      "transition-mask-wipe",
+      "transition-warp-wave"
+    ],
+    "rating": [
+      "dataviz-star-rating"
+    ],
+    "reddit": [
+      "browser-social"
+    ],
+    "reveal": [
+      "browser-ai-chat",
+      "frames-paper-reveal",
+      "text-kinetic-motion"
+    ],
+    "ring": [
+      "dataviz-progress-ring"
+    ],
+    "ripple": [
+      "transition-warp-wave"
+    ],
+    "scale": [
+      "text-kinetic-motion",
+      "transition-zoom"
+    ],
+    "scan": [
+      "text-kinetic-motion"
+    ],
+    "science": [
+      "frames-paper-reveal"
+    ],
+    "scramble": [
+      "text-kinetic-motion"
+    ],
+    "scroll": [
+      "text-code-snippet",
+      "text-news-ticker"
+    ],
+    "series": [
+      "dataviz-line-trends"
+    ],
+    "shader": [
+      "transition-zoom",
+      "transition-pan-whip",
+      "transition-flash-light",
+      "transition-glitch-distortion",
+      "transition-blur-dissolve",
+      "transition-mask-wipe",
+      "transition-burn-destruction",
+      "transition-warp-wave"
+    ],
+    "showcase": [
+      "browser-app-showcase",
+      "text-terminal-shell",
+      "text-code-snippet"
+    ],
+    "shutter": [
+      "transition-mechanical-3d"
+    ],
+    "slam": [
+      "hero-slam"
+    ],
+    "slide": [
+      "transition-mechanical-3d"
+    ],
+    "social": [
+      "browser-social",
+      "lowerthird-social"
+    ],
+    "source": [
+      "lowerthird-source-domain",
+      "frames-paper-reveal",
+      "browser-source-generic",
+      "frames-patent-tech",
+      "frames-article-media",
+      "hero-source"
+    ],
+    "spain": [
+      "geo-spain",
+      "geo-generic"
+    ],
+    "split": [
+      "hero-split",
+      "hook-split",
+      "avatar-entry-generic"
+    ],
+    "spotify": [
+      "browser-media-music"
+    ],
+    "stack": [
+      "text-stack-lines"
+    ],
+    "stars": [
+      "dataviz-star-rating"
+    ],
+    "store": [
+      "browser-media-music"
+    ],
+    "story": [
+      "dataviz-bars-comparison"
+    ],
+    "stroke": [
+      "hero-text-lines"
+    ],
+    "subscribe": [
+      "cta-subscribe",
+      "cta-brand-close",
+      "lowerthird-social"
+    ],
+    "swap": [
+      "text-word-swap"
+    ],
+    "sweep": [
+      "parallax-text-sweep"
+    ],
+    "swirl": [
+      "transition-warp-wave"
+    ],
+    "sync": [
+      "hero-text-lines"
+    ],
+    "system": [
+      "browser-system-notification"
+    ],
+    "table": [
+      "browser-chatgpt-exchange"
+    ],
+    "tags": [
+      "lowerthird-tags-time"
+    ],
+    "teaser": [
+      "cta-loop-teaser"
+    ],
+    "terminal": [
+      "text-terminal-shell",
+      "text-code-snippet"
+    ],
+    "text": [
+      "text-beat-freeze",
+      "text-number-slam",
+      "hero-headline",
+      "hero-split",
+      "hero-text-lines",
+      "hero-slam",
+      "hero-chat-ui",
+      "hero-source",
+      "hook-question",
+      "hook-dark",
+      "parallax-text-sweep",
+      "text-stack-lines",
+      "text-word-swap",
+      "text-quote-frame",
+      "text-kinetic-motion",
+      "text-mask-footage",
+      "text-split-flap-board",
+      "text-news-ticker"
+    ],
+    "thermal": [
+      "transition-glitch-distortion"
+    ],
+    "through": [
+      "transition-zoom",
+      "transition-blur-dissolve"
+    ],
+    "ticker": [
+      "text-news-ticker"
+    ],
+    "tiktok": [
+      "lowerthird-social"
+    ],
+    "time": [
+      "lowerthird-tags-time"
+    ],
+    "timeline": [
+      "dataviz-line-trends"
+    ],
+    "travel": [
+      "geo-flight",
+      "geo-generic"
+    ],
+    "twitter": [
+      "browser-social"
+    ],
+    "typing": [
+      "browser-notes-reveal",
+      "text-code-snippet",
+      "browser-typing-inputs",
+      "hook-typing"
+    ],
+    "typography": [
+      "transition-mask-wipe"
+    ],
+    "ui": [
+      "browser-ai-chat",
+      "browser-app-showcase",
+      "browser-chatgpt-exchange",
+      "browser-claude-exchange",
+      "browser-message-thread",
+      "browser-notes-reveal",
+      "browser-notification-cascade",
+      "browser-source-generic",
+      "browser-social",
+      "browser-media-music",
+      "browser-system-notification",
+      "browser-typing-inputs",
+      "hero-chat-ui",
+      "hero-source",
+      "hook-typing"
+    ],
+    "usa": [
+      "geo-us-map",
+      "geo-generic"
+    ],
+    "vertical": [
+      "logic-flowchart"
+    ],
+    "video": [
+      "browser-media-music"
+    ],
+    "vortex": [
+      "transition-warp-wave"
+    ],
+    "vpn": [
+      "browser-media-music"
+    ],
+    "vscode": [
+      "text-code-snippet"
+    ],
+    "warm": [
+      "transition-flash-light"
+    ],
+    "warning": [
+      "lowerthird-notes-warning"
+    ],
+    "warp": [
+      "transition-blur-dissolve",
+      "transition-warp-wave"
+    ],
+    "wave": [
+      "dataviz-waves-signals",
+      "transition-warp-wave"
+    ],
+    "weight": [
+      "dataviz-waves-signals"
+    ],
+    "white": [
+      "transition-flash-light"
+    ],
+    "wipe": [
+      "transition-mask-wipe"
+    ],
+    "word": [
+      "text-impact-word"
+    ],
+    "world": [
+      "geo-flight",
+      "geo-world-map",
+      "geo-generic"
+    ],
+    "x": [
+      "browser-social"
+    ],
+    "youtube": [
+      "lowerthird-social"
+    ],
+    "zoom": [
+      "kenburns-zoom",
+      "transition-zoom"
+    ]
+  }
+}

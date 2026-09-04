@@ -127,6 +127,13 @@ python -m src.cli run --script scripts/redshift_0042.json --only P11 P12 --force
 (8 → 90 px, `accent` → `accent_deep`, гаснущее к краям) — оно сажает слово в кадр.
 Чёрного в субтитре нет нигде.
 
+Поверх этого прод кладёт жест `gradient-fill`: bounce и кровавый градиент
+`accent → accent_soft` на одном акцентном слове. Если тема космоса —
+`clip-wipe` (маска слева направо, акцент `#C8453D` вместо жёлтого каталога).
+`blend-difference` — только явным `caption`: белые слова инвертируются
+о футаж (`mix-blend-mode: difference`, не твин), акцент остаётся кровью.
+Pop-in Nunito больше не собирается.
+
 Акцентное слово — та же наклейка наизнанку: заливка `accent_soft`, ободок
 светлый на тёмной сцене и `accent_deep` на светлой (белый над стеной студии
 пропадает вместе с фоном).
@@ -318,3 +325,93 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-02 | Ничья при выборе подложки разводится всем хэшем и счётчиком использований | первый байт делит надвое по чётности, и у роликов 0047, 0048, 0049 он оказался 216, 186, 196 — все чётные, все три получили одну подложку. Плюс ротация по числу использований: на девяти бедах повтор слышен с третьего ролика |
 | 2026-09-02 | Короткие звуки не синтезируются: библиотека sfx курируемая | заказчик снял все двадцать синтетических wav и зальёт свои. Синтез у `fill-libraries` убран, а не спрятан за флагом: иначе он вернул бы их первым же прогоном, как уже грозил с музыкой |
 | 2026-09-02 | Живые SFX выбираются по смыслу кадра, а не по имени слота | заказчик залил вжухи, клики, электричество, калимбу. Появилась картинка — вжух; плашка — клик; кнопка — награда. Роль из сценария (`whoosh_in`) по-прежнему работает: это ручное решение автора. Глухой воздух с телефона не слышен (−29 дБ), в появление картинки он не берётся |
+| 2026-09-02 | Субтитры по умолчанию — gradient-fill с кровавым градиентом; космос — clip-wipe; pop-in Nunito удалён | одно слово pop-in не читалось как жест канала; радуга каталога спорит с палитрой |
+| 2026-09-02 | Полноэкранный жест blur-out-up: слова выходят из размытия и уходят вверх | каталог тянет `filter`; движок не умеет — призрак со статическим blur и смена opacity |
+| 2026-09-02 | Полноэкранный жест bottom-up-letters: буквы поднимаются снизу | каталог ставит transform в CSS и tl.to; здесь fromTo по глифу, Oswald, одно слово accent |
+| 2026-09-02 | Полноэкранный жест kinetic-type-swap: слот катит слова в маске | каталог тянет yPercent/cqw; здесь px, слот = max ширины, края ink, слот accent |
+| 2026-09-02 | Полноэкранный жест line-by-line-slide: строки заезжают слева | каталог твинит CSS-var и filter; здесь px и призрак, уход вправо, одно слово accent |
+| 2026-09-02 | Субтитры blend-difference: белые слова инвертируются о футаж; акцент остаётся кровью | mix-blend-mode статический; твин blend-mode движок не умеет; opt-in, прод не меняет |
+| 2026-09-03 | Полноэкранный жест particle-text-dissolve: строка из облака пыли | каталог: canvas onUpdate и clip-path; здесь SVG-mask scaleX и span, LCG, одно слово accent |
+| 2026-09-03 | Полноэкранный жест per-word-crossfade: слова входят из блюра с подъёмом | каталог твинит CSS-var и filter; здесь px и призрак, HOLD без ухода, одно слово accent |
+| 2026-09-03 | Полноэкранный жест scan-band: диагональная полоса с RGB-сдвигом | каталог твинит CSS-var на clip-path; здесь overflow-окно и x, Inter и #ff3158/#36efff как в каталоге |
+| 2026-09-03 | Полноэкранный жест scramble-reveal: строка из детерминированного шума | каталог пишет textContent из LCG; здесь таблица span-ов и opacity, mono и #71f5a7 как в каталоге |
+| 2026-09-03 | Полноэкранный жест shared-axis-z: слова набухают по оси Z | каталог твинит CSS-var; здесь заранее scale, Inter и #18181b как в каталоге; tone=accent → #C8453D |
+| 2026-09-03 | Нижняя треть accent-underline: имя, черта, роль без карточки | каталог твинит scaleX и visibility, мятный #46e5b7; здесь fromTo без visibility, #C8453D; Oswald и Space Mono как в каталоге |
+| 2026-09-03 | Нижняя треть clean-bar: белая плашка с акцентной полоской | каталог твинит clip-path и visibility, оранжевый #ff5a36; здесь SVG-mask scaleX, #C8453D; Montserrat как в каталоге |
+| 2026-09-03 | Нижняя треть dark-card: угольная карточка на светлом футаже | каталог твинит scaleX и visibility, золото #f5b942; здесь fromTo без visibility, #C8453D; уголь #16181d и Montserrat как в каталоге |
+| 2026-09-03 | Полноэкранный жест code-3d-extrude: код на скошенной плите | каталог: Three.js ExtrudeGeometry и onUpdate; здесь 2D scale/x/y/rotation, github-dark и JetBrains Mono как в каталоге |
+| 2026-09-03 | Полноэкранный жест code-diff: минус схлопывается, плюс раскрывается | каталог твинит height; здесь scaleY и заранее y, github-dark и #f85149/#3fb950 как в каталоге |
+| 2026-09-03 | Полноэкранный жест code-particle-assemble: пыль собирается в глифы кода | каталог: Three.js Points, uProgress и onUpdate; здесь capped span, mulberry32 seed 23, github-dark и JetBrains Mono как в каталоге |
+| 2026-09-03 | Полноэкранный жест code-scroll: камера скроллит файл к целевой строке | каталог меряет getBoundingClientRect; здесь заранее y и окно ~14 строк, github-dark и прожектор #58a6ff как в каталоге |
+| 2026-09-03 | Полноэкранный жест code-typing: посимвольный набор с кареткой | каталог меряет DOM; здесь заранее x/y каретки, github-dark и #58a6ff как в каталоге |
+| 2026-09-03 | Полноэкранный жест terminal-simulator: скелет строк и команда в терминале | каталог твинит CSS-var; здесь scaleX полосок и y терминала, #0f172a и #86efac как в каталоге |
+| 2026-09-03 | Полноэкранный жест apple-terminal-clear-dark: набор команды и вывод Terminal.app | каталог пишет textContent и innerHTML; здесь span-ы и opacity, Clear Dark #1a1a1a и #888888 как в каталоге |
+| 2026-09-03 | Полноэкранный жест dark-plus: VS Code workbench и посимвольный набор | каталог меряет DOM и rotateY; здесь заранее x/y и 2D rotation/x, цвета Dark+ как в каталоге |
+| 2026-09-03 | Переход cinematic-zoom: radial zoom-blur и сдвиг каналов | каталог — WebGL onUpdate; здесь scale входящего, вуали #3d348b/#f7b801 и chroma |
+| 2026-09-03 | Переход glitch: scan lines, scramble и chroma | каталог — WebGL onUpdate; здесь полосы/клетки, вуали #293241/#ee6c4d; glitch-short не трогаем |
+| 2026-09-03 | Переход gravitational-lens: колодец, горизонт и chroma | каталог — WebGL onUpdate; здесь scale к центру, вуали #10002b/#f20089 |
+| 2026-09-03 | Переход light-leak: тёплый засвет, flare и ACES | каталог — WebGL onUpdate; здесь пятно/полоса, вуали #001524/#fb8b24; light-sweep не трогаем |
+| 2026-09-03 | Переход sdf-iris: круг из центра и onion rings | каталог — WebGL onUpdate; здесь диск/кольца, вуали #003049/#ffc300; mask-wipe-circle не трогаем |
+| 2026-09-03 | Переход thermal-distortion: heat shimmer снизу и haze | каталог — WebGL onUpdate; здесь полосы/пятно, вуали #3d405b/#e07a5f |
+| 2026-09-03 | Переход whip-pan: оба кадра едут вбок с направленным смазом | каталог — WebGL onUpdate; здесь полосы/вуали #0b132b/#48bfe3; whip-pan-l/r не трогаем |
+| 2026-09-03 | Полноэкранный жест beat-freeze-cut: рамп, фриз DROP и hard-cut | каталог твинит filter/visibility; здесь scale/x/y/opacity, #E63946/#0B132B со скриншотов вместо мяты #00E5C7 |
+| 2026-09-03 | Переход mk-clone-wall-transition: плитка слов накрывает кадр и инвертируется | каталог твинит width/height и visibility; здесь scale/x/opacity, чернила #1d1d1f и бумага #ffffff |
+| 2026-09-03 | Переход transitions-3d: 3D card flip, SCENE A схлопывается и SCENE B раскрывается | каталог твинит rotationY; здесь scaleX/opacity, вуали #1b263b/#e07a5f |
+| 2026-09-03 | Переход transitions-blur: SCENE A уходит в размытие, SCENE B выходит из него | каталог твинит filter; здесь scale/opacity и призраки, вуали #1b263b/#e07a5f; blur-dip не трогаем |
+| 2026-09-03 | Переход transitions-cover: staggered blocks накрывают SCENE A и открывают SCENE B | каталог ставит translateX в CSS; здесь GSAP x на 1080 px, вайпы #f72585/#7209b7; blur/3d/paper-slide не трогаем |
+| 2026-09-03 | Переход transitions-destruction: page burn, SCENE A сгорает кругом и SCENE B проявляется | каталог рисует canvas и clip-path; здесь scale круга overflow:hidden, огонь #ff6400/#ff3200/#c81e00; sdf-iris и mask-wipe-circle не трогаем |
+| 2026-09-03 | Переход transitions-light: тёплые блики едут по кадру, SCENE B проявляется | каталог DEMO 1 твинит opacity/x; здесь GSAP x на 9:16, блики #ffa500/#ff8c00/#ffc800; light-leak и light-sweep не трогаем |
+| 2026-09-03 | Переход transitions-other: белая вспышка на склейке, SCENE B проявляется | каталог DEMO 1 твинит opacity 0.03 с / 0.1 с; здесь те же твины, вспышка #ffffff; white_flash не трогаем |
+| 2026-09-03 | Data-viz animated-bar-chart: столбики растут scaleY, карточка +42% | каталог твинит --hf-grow/--hf-dash; здесь GSAP scaleY, 7 столбиков 42…95%, Inter/#111827; bar-race-mini не трогаем |
+| 2026-09-03 | Data-viz bar-chart-race: гонка рядов scaleX, лидер #c8452d | каталог твинит width и textContent; здесь GSAP scaleX/x/y, 8 серий 2019–2024, Inter/#1f1d1b/#f5f3ef; bar-race-mini и animated-bar-chart не трогаем |
+| 2026-09-03 | Data-viz chart-story: столбики растут scaleY, коллаут 64% | каталог твинит attr.height и textContent; здесь GSAP scaleY/scaleX/scale, Q1–Q4 12…64%, Inter/#0a0a0a/#71f5a7; abc/bcr/dv-bar не трогаем |
+| 2026-09-03 | Data-viz conic-progress-ring: кольцо rotation, центр считает 0→100 | каталог твинит --ring-progress и textContent; здесь GSAP rotation половинок, Inter/#0a0a0a/#35d6a0/#1b2938; donut-fill не трогаем |
+| 2026-09-03 | Data-viz decline-chart: линия падает scaleX, число 82→34 | каталог твинит strokeDashoffset/filter/textContent; здесь SVG-mask scaleX, gloom opacity, Inter/#fb7185/#152f3c; line-rise не трогаем |
+| 2026-09-03 | Data-viz mk-line-graph: две линии scaleX, точки back.out | каталог твинит strokeDashoffset; здесь SVG-mask scaleX и HTML-точки, Inter/#1d1d1f/#0071e3/#45d6c8; line-rise и decline-chart не трогаем |
+| 2026-09-03 | Data-viz spain-map: хороплет регионов scale, MAD/PVA/NAV подсветка | каталог тянет topojson и твинит clipPath/filter; здесь запечённые контуры и scaleX-вайп, Inter/#0f172a/#7f1d1d/#fbbf24; mk-line-graph не трогаем |
+| 2026-09-03 | Data-viz star-rating-fill: звёзды заливаются scaleX, число 0.0→4.8 | каталог твинит clip-path/textContent; здесь SVG-mask scaleX и попа scale, Inter/#090d16/#ffc83d/#1a2230; conic-progress-ring не трогаем |
+| 2026-09-03 | Data-viz us-map: хороплет штатов scale, CA/NY/TX/FL/NJ подсветка | каталог тянет topojson и твинит clipPath/filter; здесь запечённые контуры и scaleX-вайп, Inter/#0f172a/#1e3a5f/#2563eb/#7c3aed/#ec4899; spain-map не трогаем |
+| 2026-09-03 | Data-viz us-map-flow: дуги коридоров scale, точки бегут x/y | каталог тянет topojson и твинит clipPath/dash/getPointAtLength; здесь запечённые контуры, scale дуг и GSAP x/y, Inter/#0f172a/#3b82f6/#60a5fa; us-map не трогаем |
+| 2026-09-03 | Data-viz us-map-hex: hex grid карта, гексагоны от центра, top-5 пульс | каталог вычисляет hex-геометрию в JS и твинит filter:brightness; здесь запечённые гексагоны, scaleX-вайп и белый оверлей opacity, Inter/#0f172a/#451a03/#f59e0b/#fef3c7; us-map/us-map-flow не трогаем |
+| 2026-09-03 | Data-viz world-map: хороплет мира fade от центра, CH/NO/US/AU/SE пульс | каталог тянет world-atlas и твинит clipPath/filter; здесь запечённые Natural Earth контуры, scaleX-вайп и белый оверлей, Inter/#0f172a/#064e3b/#0d9488/#22d3ee/#f0fdfa; us-map-hex не трогаем |
+| 2026-09-03 | Data-viz apple-money-count: счёт $0→$10 000, веер купюр и монет | каталог пишет textContent и твинит filter/textShadow; здесь span-ы и opacity, burst x/y/rotation/scale, Inter/#fdfefe/#111315/#30d158/#ffd54f; stat-countup-card не трогаем |
+| 2026-09-03 | Data-viz north-korea-locked-down: наезд на КНДР, scribble и LOCKED DOWN | каталог твинит filter/strokeDashoffset и PNG; здесь scale/x/y и SVG-mask scaleX, Inter/#eef3f4/#e21d2f/#ff3b30; world-map не трогаем |
+| 2026-09-03 | Data-viz nyc-paris-flight: самолёт Нью-Йорк→Париж, doodle и ARRIVED | каталог твинит strokeDashoffset/offsetDistance/filter и PNG; здесь x/y/rotation и SVG-mask scaleX, Inter/#f5f5f7/#0071e3/#ff3b30; us-map-flow не трогаем |
+| 2026-09-03 | Data-viz mk-progress-stat: цифра считает вверх, полоса scaleX | каталог пишет textContent и visibility; здесь span-ы и opacity, Inter/#1d1d1f/#0071e3/#f5f5f7; stat-countup-card не трогаем |
+| 2026-09-03 | Browser-ui ai-chat-reveal: iPhone-чат, набор, стрим ответа и end card | каталог пишет textContent и autoAlpha; здесь span-ы и opacity, Inter/#fdfdfd/#d2d5e0/#3ce6ac; chat-thread не трогаем |
+| 2026-09-03 | Browser-ui app-showcase: три телефона веером, кольцо, бары, график | каталог твинит width/strokeDashoffset; здесь scaleX/rotation/SVG-mask, Inter/#e4fa72/#271f15/#f1f2ec; phone-notification не трогаем |
+| 2026-09-03 | Data-viz flowchart-vertical: вертикальная блок-схема, ветви scaleY-маска, курсор x/y, исправление опечатки | каталог твинит strokeDashoffset и innerHTML; здесь SVG-маска scaleY, слои опечатки opacity, курсор x/y, Inter/#ffffff/#111214; flowchart не трогаем |
+| 2026-09-04 | Browser-ui chatgpt-exchange: ChatGPT iPhone-интерфейс, подсказки, набор промпта, стрим ответа и таблица | каталог твинит height/textContent; здесь span-ы и opacity, y/scale, Inter/#000/#212121/#48aaff; ai-chat-reveal не трогаем |
+| 2026-09-04 | Browser-ui claude-exchange: Claude iPhone-интерфейс, приветствие со звездой, набор промпта, цепочка шагов, стрим ответа и цитаты | каталог твинит height/textContent; здесь span-ы и opacity, y/scale/rotation, Inter/#20201f/#1c1c1b/#d97757; chatgpt-exchange не трогаем |
+| 2026-09-04 | Browser-ui message-thread-reveal: iMessage-чат, баблы, карточка ссылки, эмодзи и end card | каталог скакал координатами; здесь transform y, scale/opacity, Inter/#23262b/#0a80f8/#C8453D; ai-chat-reveal не трогаем |
+| 2026-09-04 | Browser-ui notes-reveal: Apple Notes печать строк, скролл листа, бумажная карточка с маркером и чеклистом | каталог считал координаты букв; здесь span-ы и opacity, transform y, scale/scaleX, Inter/#fcfbf8/#ece1d5/#C8453D; paper-reveal не трогаем |
+| 2026-09-04 | Browser-ui notification-cascade: каскад push-уведомлений, restack вверх, пилюля с крестиком и брендовый end card | каталог использовал autoAlpha; здесь transform y, scale, opacity, Inter/#251004/#111214/#C8453D; phone-notification не трогаем |
+| 2026-09-04 | Lower-thirds instagram-follow: плашка профиля Instagram, бейдж верификации, кнопка Follow -> Following с отскоком | каталог использовал -apple-system; здесь Inter/#1a1a1a/#0095f6/#2f2f2f, y, scale, opacity, backgroundColor; name-title не трогаем |
+| 2026-09-04 | Lower-thirds tiktok-follow: плашка профиля TikTok, аватарка cyan/crimson, кнопка Follow -> Following | каталог использовал -apple-system; здесь Inter/#1a1a1a/#fe2c55/#2f2f2f, y, scale, opacity, backgroundColor; instagram-follow не трогаем |
+| 2026-09-04 | Lower-thirds yt-lower-third: плашка профиля YouTube, аватарка red gradient/play, кнопка Subscribe -> Subscribed | каталог использовал DM Sans; здесь Inter/#ffffff/#0f0f0f/#272727, y, scale, opacity, backgroundColor; tiktok-follow не трогаем |
+| 2026-09-04 | Browser-ui x-post: карточка твита X, бейдж верификации, реакция лайка с отскоком и смена счетчика | каталог делал onStart textContent; здесь dual-span opacity, transform y, scale/opacity, Inter/#15202b/#e7e9ea/#f91880; notification-cascade не трогаем |
+| 2026-09-04 | Browser-ui reddit-post: карточка поста Reddit, аватарка сабреддита, реакция апвоута с отскоком и смена счетчика | каталог делал onStart textContent; здесь dual-span opacity, transform y, scale/opacity, Inter/#1a1a2e/#d7dadc/#FF4500; x-post не трогаем |
+| 2026-09-04 | Browser-ui spotify-card: стеклянная карточка трека Spotify, обложка, исполнитель, дыхание арта и логотип | каталог твинил y/scale/opacity; здесь Inter/gradient/emerald/#1db954, power3.out вход, дыхание обложки; reddit-post не трогаем |
+| 2026-09-04 | Browser-ui macos-notification: системное уведомление macOS в верхнем правом углу, аватарка HF, бейдж времени | каталог твинил x/opacity; здесь Inter/dark glass/#1c1c1e/brand gradient/#C8453D, x, opacity; spotify-card не трогаем |
+| 2026-09-04 | Transitions chromatic-radial-split: радиальный разлёт RGB-каналов на склейке | каталог крутит WebGL в onUpdate; здесь radial color split/opacity и статичный blur, #22223b/#7678ed; macos-notification не трогаем |
+| 2026-09-04 | Transitions cross-warp-morph: шумовое смещение и морфинг склейки в противоположных направлениях | каталог крутит WebGL в onUpdate; здесь opposing coordinate drift, dual crossfade, warp-градиенты и soft blur, #283618/#a7c957; chromatic-radial-split не трогаем |
+| 2026-09-04 | Transitions domain-warp-dissolve: каскадный ворп и радужное свечение кромок | каталог крутит WebGL в onUpdate; здесь cascaded warp crossfade, iridescent glow и soft blur, #0d1b2a/#00f5d4; cross-warp-morph не трогаем |
+| 2026-09-04 | Transitions flash-through-white: переход через белую вспышку на тёмных сценах | каталог крутит WebGL в onUpdate; здесь white flare midpoint, amber glow и crossfade, #03071e/#ffba08/#ffffff; domain-warp-dissolve не трогаем |
+| 2026-09-04 | Transitions ridged-burn: пламенный прожиг с искрами и острыми кромками | каталог крутит WebGL в onUpdate; здесь fiery blackbody burn, ember sparks и crossfade, #0b090a/#e5383b; flash-through-white не трогаем |
+| 2026-09-04 | Transitions ripple-waves: концентрические волны ряби с противофазой | каталог крутит WebGL в onUpdate; здесь concentric wave rings in counter-phase, ripple highlights и soft blur, #264653/#e9c46a; ridged-burn не трогаем |
+| 2026-09-04 | Transitions swirl-vortex: органическое вихревое вращение и закрутка склейки | каталог крутит WebGL в onUpdate; здесь counter-rotating swirl crossfade, vortex glow и soft blur, #073b4c/#06d6a0; ripple-waves не трогаем |
+| 2026-09-04 | Transitions transitions-dissolve: мягкое растворение SCENE A и проявление SCENE B | каталог крутит набор растворений; здесь smooth crossfade с scale drift и blur, #1b263b/#e07a5f; swirl-vortex не трогаем |
+| 2026-09-04 | Transitions transitions-distortion: глитч и хроматическое расщепление на склейке | каталог крутит глитч и сдвиги; здесь chromatic RGB slices, jitter и soft blur, #1b263b/#e07a5f; transitions-dissolve не трогаем |
+| 2026-09-04 | Transitions transitions-grid: мозаичный распад на тайлы и каскадное проявление | каталог крутит grid dissolve; здесь 3x4 мозаичные ячейки с центростремительным рипплом, #1b263b/#e07a5f; transitions-distortion не трогаем |
+| 2026-09-04 | Transitions transitions-mechanical: индастриал захлопывание шторок со снопом искр на стыке | каталог крутит mechanical shutter; здесь встречные створки со швом искр, #1b263b/#e07a5f/#111214/#C8453D; transitions-grid не трогаем |
+| 2026-09-04 | Transitions transitions-push: направленное выталкивание сцен со слайдом | каталог крутит push slide; здесь синхронный слайд сцен со сдвигом по осям и blur wash, #1b263b/#e07a5f; transitions-mechanical не трогаем |
+| 2026-09-04 | Transitions transitions-radial: круговое диафрагменное раскрытие склейки с кольцом свечения | каталог крутит iris transitions; здесь растущая круговая маска с кольцом свечения и soft blur, #1b263b/#e07a5f; transitions-push не трогаем |
+| 2026-09-04 | Transitions transitions-scale: сквозной наезд через кадр или стягивание в центр | каталог крутит zoom through/out; здесь динамический зум с crossfade и soft blur, #1b263b/#e07a5f; transitions-radial не трогаем |
+| 2026-09-04 | Text-fullscreen code-highlight: подсветка синтаксиса и горизонтальная плашка фокуса на целевой строке | каталог твинил width hl-box; здесь scaleX/opacity, тёмная тема JetBrains Mono/#0b0f17/#58a6ff, затенение остальных строк; transitions-scale не трогаем |
+| 2026-09-04 | Text-fullscreen code-morph: FLIP-морфинг между двумя состояниями кода с плавным переносом совпадающих токенов | каталог твинил FLIP rects; здесь математический пересчёт (dx, dy) в моноширинной сетке JetBrains Mono, fade-in/out разностных строк, тёмная тема #0b0f17/#e6edf3; code-highlight не трогаем |
+
+
+
+
+
+

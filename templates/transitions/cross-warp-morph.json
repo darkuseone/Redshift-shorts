@@ -1,0 +1,20 @@
+{
+  "id": "transitions/cross-warp-morph",
+  "name": "cross-warp-morph",
+  "category": "transitions",
+  "title": "Cross-warp morph: шумовое смещение и морфинг склейки — cross-warp-morph",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "morph",
+    "warp",
+    "shader"
+  ],
+  "renderer": "cross_warp_morph",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

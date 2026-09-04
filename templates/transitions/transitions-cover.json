@@ -1,0 +1,19 @@
+{
+  "id": "transitions/transitions-cover",
+  "name": "transitions-cover",
+  "category": "transitions",
+  "title": "Cover: staggered blocks накрывают SCENE A и открывают SCENE B — transitions-cover",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "cover",
+    "wipe"
+  ],
+  "renderer": "transitions_cover",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

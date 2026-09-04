@@ -44,3 +44,26 @@ Thumbs.db
 
 # Витрина приёмов собирается из исходников — в репозиторий не кладём.
 build/
+
+# HyperFrames catalog downloads — never vendor HTML (ports are Python/GSAP only)
+/compositions/
+/hyperframes.lock.json
+/vpn-youtube-spot.json
+/blue-sweater.json
+/flowchart.json
+/flowchart-vertical.json
+/us-map.json
+/split-flap-board.json
+/chatgpt-exchange.json
+/TEMPLATE.md
+*.json.log
+assets/fonts/inter-*
+assets/*.woff2
+assets/**/*.woff2
+assets/fonts/*-LICENSE.txt
+assets/*.jpg
+assets/hyperframes-logo-*.svg
+/*.json
+!package.json
+!package-lock.json
+

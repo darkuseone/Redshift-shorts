@@ -1,0 +1,19 @@
+{
+  "id": "transitions/glitch",
+  "name": "glitch",
+  "category": "transitions",
+  "title": "Glitch: scan lines, scramble и chroma — glitch",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "glitch",
+    "shader"
+  ],
+  "renderer": "glitch_shader",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

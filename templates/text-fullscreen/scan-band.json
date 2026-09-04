@@ -1,0 +1,23 @@
+{
+  "id": "text-fullscreen/scan-band",
+  "name": "scan-band",
+  "category": "text-fullscreen",
+  "title": "Диагональная полоса с RGB-сдвигом по вордмарку — scan-band",
+  "duration_range": [
+    0.8,
+    4.0
+  ],
+  "params": {
+    "scan_band": true,
+    "band_angle": 12
+  },
+  "tags": [
+    "text",
+    "kinetic",
+    "scan",
+    "chromatic"
+  ],
+  "renderer": "scan_band",
+  "last_used_in": [],
+  "added": "2026-09-02"
+}

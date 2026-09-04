@@ -64,6 +64,14 @@ class HyperFramesProject:
         fonts = copy_fonts(fonts_dir, self.root / "fonts",
                            read_json(fonts_dir / "fonts_manifest.json"))
 
+        # Статические ассеты шаблонов (маски, логотипы)
+        repo_assets = self.cfg.path("paths.assets_dir", "assets")
+        if repo_assets.exists():
+            for asset_file in repo_assets.glob("*.svg"):
+                _link_or_copy(asset_file, self.assets_dir / asset_file.name)
+            for asset_file in repo_assets.glob("*.png"):
+                _link_or_copy(asset_file, self.assets_dir / asset_file.name)
+
         brandbook = self.cfg.brandbook
         (self.root / "brand.css").write_text(build_css(brandbook, fonts),
                                              encoding="utf-8")

@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from ...backdrop import backdrop_css
-from .templates import dataviz_css, hero_css, split_css, transition_css
+from .captions import caption_css
+from .templates import dataviz_css, hero_css, overlay_css, split_css, transition_css
 
 # Слои кадра. Порядок задаётся здесь, а не data-track-index: трек в HyperFrames
 # отвечает за пересечения во времени, а не за то, что лежит поверх чего.
@@ -112,6 +113,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # заливка на тёмной сцене превращает приём в чёрное по чёрному, и
         # слово читается только там, где за ним оказалось лицо.
         "--color-knockout: var(--color-ink);",
+        "--blend-mode: difference;",
     ]
     parts.append(":root{" + "".join(var_lines) + "}")
 
@@ -122,7 +124,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # Заливка кадра живёт на full-bleed ребёнке: фон самого корня продюсер
         # при компоновке кадра теряет, и рендер уходит в чёрное.
         f"#root{{position:relative;width:var(--frame-w);height:var(--frame-h);"
-        f"overflow:hidden;font-family:var(--font-subtitle)}}"
+        f"overflow:hidden;font-family:var(--font-subtitle);"
+        "isolation:isolate}"
         f".stage-bg{{position:absolute;inset:0;z-index:{Z_STAGE};"
         "background:var(--color-bg-light)}"
     )
@@ -255,6 +258,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "text-transform:uppercase;color:rgba(255,255,255,0.62);"
         "text-shadow:0 1px 6px rgba(0,0,0,0.7);pointer-events:none}"
     )
+    parts.append(caption_css(brandbook))
 
     # --- полноэкранный текст (§5.2) ------------------------------------
     fs = brandbook["fullscreen_text"]
@@ -293,8 +297,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".plaque{left:var(--safe-x-min);right:calc(var(--frame-w) - var(--safe-x-max));"
         f"bottom:{height - int(safe['y_max']) + 60}px;padding:26px 34px;"
         f"border-radius:{int(plaque['radius_px_default'])}px;"
-        f"background:rgba(247,245,243,{plaque['bg_alpha']});color:var(--color-ink);"
-        f"border:{int(plaque['border_px'])}px solid rgba(192,57,43,{plaque['border_alpha']});"
+        f"background:{_rgba(colors['bg_light'], plaque['bg_alpha'])};color:var(--color-ink);"
+        f"border:{int(plaque['border_px'])}px solid {_rgba(colors['accent'], plaque['border_alpha'])};"
         "font-family:var(--font-subtitle);font-weight:800;font-size:44px;"
         f"box-shadow:0 {int(shadow['offset_y_px'])}px {int(shadow['blur_px'])}px "
         f"rgba(0,0,0,{shadow['alpha']})}}"
@@ -313,8 +317,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:var(--color-bg-pure);color:var(--color-ink);"
         "box-shadow:0 18px 48px rgba(0,0,0,0.22)}"
         ".source-card .bar{display:flex;align-items:center;gap:10px;"
-        "padding:16px 22px;background:#ECEAE7}"
-        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:#C9C6C2}"
+        "padding:16px 22px;background:var(--color-bg-light)}"
+        ".source-card .dot{width:14px;height:14px;border-radius:50%;background:var(--color-muted)}"
         # Строка адреса с настоящим путём статьи, а не одно имя домена: именно
         # она и делает кадр страницей издания, а не «окном вообще».
         ".source-card .url{flex:1;margin-left:12px;display:block;"
@@ -337,7 +341,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "font-family:var(--font-display);font-size:22px;display:flex;"
         "align-items:center;justify-content:center}"
         ".source-card .snippet{padding:14px 0 0;font-size:30px;"
-        "line-height:1.3;color:#3A3D42}"
+        "line-height:1.3;color:var(--color-muted)}"
         # Начало текста статьи серыми строками: страница продолжается за краем
         # карточки, и это видно без единого лишнего слова в кадре.
         ".source-card .lines{display:flex;flex-direction:column;gap:10px;"
@@ -384,13 +388,14 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # надписями на тёмной сцене.
         ".stage-dark{--color-on-stage:var(--color-bg-light);"
         "--color-knockout:var(--color-bg-light);"
-        "--stage-halo:rgba(6,8,12,0.85)}"
+        "--stage-halo:rgba(10,10,12,0.85)}"
     )
 
     # Слои переходов (§4.3, §15) — отдельный модуль: их 9 рендереров,
     # и геометрия у них считается от кадра, а не от рабочей зоны.
     parts.append(transition_css(brandbook))
     parts.append(dataviz_css(brandbook))
+    parts.append(overlay_css(brandbook))
     parts.append(split_css(brandbook))
     parts.append(hero_css(brandbook))
 

@@ -1,0 +1,22 @@
+{
+  "id": "browser-ui/blue-sweater-intro-video",
+  "name": "blue-sweater-intro-video",
+  "category": "browser-ui",
+  "title": "AI генерирует видео: ввод промпта, загрузка, результат — blue-sweater-intro-video",
+  "duration_range": [
+    4.0,
+    12.0
+  ],
+  "params": {
+    "template": "browser"
+  },
+  "tags": [
+    "ui",
+    "ai",
+    "video",
+    "generate"
+  ],
+  "renderer": "blue_sweater",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}

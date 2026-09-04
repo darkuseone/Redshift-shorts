@@ -1,0 +1,22 @@
+{
+  "id": "data-viz/stat-countup-card",
+  "name": "stat-countup-card",
+  "category": "data-viz",
+  "title": "Набегающая метрика на карточке",
+  "duration_range": [
+    1.2,
+    3.0
+  ],
+  "params": {
+    "steps": 12
+  },
+  "tags": [
+    "data",
+    "number",
+    "card"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
+}

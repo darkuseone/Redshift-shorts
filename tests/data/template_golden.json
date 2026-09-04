@@ -1,0 +1,2470 @@
+{
+  "version": 1,
+  "manifest_path": "tests/data/template_golden_manifest.json",
+  "seed": 42,
+  "total_cases": 88,
+  "cases": [
+    {
+      "id": "browser_ai_chat__var_A",
+      "scenario": "browser_ai_chat",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "лучший ai chat для программистов на gpt-4",
+      "prefer": [
+        "browser-ui/ai-chat-reveal",
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/chat-thread",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: ai chat, gpt-4 -> ai-chat-reveal"
+    },
+    {
+      "id": "browser_ai_chat__var_B",
+      "scenario": "browser_ai_chat",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "лучший ai chat для программистов на gpt-4",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: ai chat, gpt-4 -> ai-chat-reveal"
+    },
+    {
+      "id": "browser_app_showcase__var_A",
+      "scenario": "browser_app_showcase",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "новый fitness app для отслеживания калорий в app store",
+      "prefer": [
+        "browser-ui/app-showcase",
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/chat-thread",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: fitness app, app store -> app-showcase"
+    },
+    {
+      "id": "browser_app_showcase__var_B",
+      "scenario": "browser_app_showcase",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "новый fitness app для отслеживания калорий в app store",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: fitness app, app store -> app-showcase"
+    },
+    {
+      "id": "browser_chatgpt_exchange__var_A",
+      "scenario": "browser_chatgpt_exchange",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "сравнение ии моделей и chatgpt exchange в тестах",
+      "prefer": [
+        "browser-ui/ai-chat-reveal",
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/chat-thread",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: сравнение ии, chatgpt exchange -> chatgpt-exchange"
+    },
+    {
+      "id": "browser_chatgpt_exchange__var_B",
+      "scenario": "browser_chatgpt_exchange",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "сравнение ии моделей и chatgpt exchange в тестах",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: сравнение ии, chatgpt exchange -> chatgpt-exchange"
+    },
+    {
+      "id": "browser_claude_exchange__var_A",
+      "scenario": "browser_claude_exchange",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "обновление модели claude opus от компании anthropic",
+      "prefer": [
+        "browser-ui/claude-exchange",
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/claude-exchange",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: claude, opus, anthropic -> claude-exchange"
+    },
+    {
+      "id": "browser_claude_exchange__var_B",
+      "scenario": "browser_claude_exchange",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "обновление модели claude opus от компании anthropic",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: claude, opus, anthropic -> claude-exchange"
+    },
+    {
+      "id": "browser_message_thread__var_A",
+      "scenario": "browser_message_thread",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "новая переписка и важные сообщения в imessage",
+      "prefer": [
+        "browser-ui/message-thread-reveal",
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/message-thread-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: переписка, imessage -> message-thread-reveal"
+    },
+    {
+      "id": "browser_message_thread__var_B",
+      "scenario": "browser_message_thread",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "новая переписка и важные сообщения в imessage",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: переписка, imessage -> message-thread-reveal"
+    },
+    {
+      "id": "browser_notes_reveal__var_A",
+      "scenario": "browser_notes_reveal",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "заметки и структурированный список в apple notes",
+      "prefer": [
+        "browser-ui/notes-reveal",
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/notes-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: заметки, apple notes -> notes-reveal"
+    },
+    {
+      "id": "browser_notes_reveal__var_B",
+      "scenario": "browser_notes_reveal",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "заметки и структурированный список в apple notes",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: заметки, apple notes -> notes-reveal"
+    },
+    {
+      "id": "browser_notification_cascade__var_A",
+      "scenario": "browser_notification_cascade",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "системное уведомление и push alert на экране устройства",
+      "prefer": [
+        "browser-ui/notification-cascade",
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/notification-cascade",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: уведомлен, push, alert -> notification-cascade"
+    },
+    {
+      "id": "browser_notification_cascade__var_B",
+      "scenario": "browser_notification_cascade",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "системное уведомление и push alert на экране устройства",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "keywords: уведомлен, push, alert -> notification-cascade"
+    },
+    {
+      "id": "browser_neutral__var_A",
+      "scenario": "browser_neutral",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "обзор структуры открытых репозиториев github и документации",
+      "prefer": [
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/article-highlight",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "neutral browser-ui text -> static 3 defaults in A"
+    },
+    {
+      "id": "browser_neutral__var_B",
+      "scenario": "browser_neutral",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "обзор структуры открытых репозиториев github и документации",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "neutral browser-ui text -> static 3 defaults in A"
+    },
+    {
+      "id": "neg_claude_cloud__var_A",
+      "scenario": "neg_claude_cloud",
+      "call_site": "assemble.py:1290",
+      "category": "browser-ui",
+      "variant": "A",
+      "blob": "надежный высокоскоростной клауд-хостинг для корпоративной инфраструктуры",
+      "prefer": [
+        "browser-ui/chat-thread",
+        "browser-ui/article-highlight",
+        "browser-ui/browser-scroll"
+      ],
+      "template_id": "browser-ui/article-highlight",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "negative case: 'клауд' != 'claude'"
+    },
+    {
+      "id": "neg_claude_cloud__var_B",
+      "scenario": "neg_claude_cloud",
+      "call_site": "assemble.py:1290",
+      "category": "frames-cards",
+      "variant": "B",
+      "blob": "надежный высокоскоростной клауд-хостинг для корпоративной инфраструктуры",
+      "prefer": [
+        "frames-cards/paper-reveal",
+        "frames-cards/arxiv-card"
+      ],
+      "template_id": "frames-cards/paper-reveal",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "negative case: 'клауд' != 'claude'"
+    },
+    {
+      "id": "dataviz_spain__var_A",
+      "scenario": "dataviz_spain",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "исследование регионов spain и экономика madrid",
+      "prefer": [
+        "data-viz/spain-map",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/spain-map",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "12000"
+        }
+      ],
+      "notes": "keywords: spain, madrid -> spain-map"
+    },
+    {
+      "id": "dataviz_spain__var_B",
+      "scenario": "dataviz_spain",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "исследование регионов spain и экономика madrid",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "12000"
+        }
+      ],
+      "notes": "keywords: spain, madrid -> spain-map"
+    },
+    {
+      "id": "dataviz_star_rating__var_A",
+      "scenario": "dataviz_star_rating",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "высокий star rating и отличные оценки пользователей",
+      "prefer": [
+        "data-viz/star-rating-fill",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/star-rating-fill",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "rating_like"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "4.8"
+        }
+      ],
+      "notes": "keywords: star rating, оценки -> star-rating-fill"
+    },
+    {
+      "id": "dataviz_star_rating__var_B",
+      "scenario": "dataviz_star_rating",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "высокий star rating и отличные оценки пользователей",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "rating_like"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "4.8"
+        }
+      ],
+      "notes": "keywords: star rating, оценки -> star-rating-fill"
+    },
+    {
+      "id": "dataviz_us_map__var_A",
+      "scenario": "dataviz_us_map",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "официальная перепись census населения в united states сша",
+      "prefer": [
+        "data-viz/us-map",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "330",
+          "suffix": "млн"
+        }
+      ],
+      "notes": "keywords: census, united states, сша -> us-map"
+    },
+    {
+      "id": "dataviz_us_map__var_B",
+      "scenario": "dataviz_us_map",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "официальная перепись census населения в united states сша",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "330",
+          "suffix": "млн"
+        }
+      ],
+      "notes": "keywords: census, united states, сша -> us-map"
+    },
+    {
+      "id": "dataviz_us_map_flow__var_A",
+      "scenario": "dataviz_us_map_flow",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "миграционный коридор interstate flow и поток между городами",
+      "prefer": [
+        "data-viz/us-map-flow",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "50000"
+        }
+      ],
+      "notes": "keywords: interstate flow, поток между -> us-map-flow"
+    },
+    {
+      "id": "dataviz_us_map_flow__var_B",
+      "scenario": "dataviz_us_map_flow",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "миграционный коридор interstate flow и поток между городами",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "50000"
+        }
+      ],
+      "notes": "keywords: interstate flow, поток между -> us-map-flow"
+    },
+    {
+      "id": "dataviz_us_map_hex__var_A",
+      "scenario": "dataviz_us_map_hex",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "статистика доходов income by state на карте hex grid",
+      "prefer": [
+        "data-viz/us-map-hex",
+        "data-viz/us-map",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/us-map-hex",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "75000"
+        }
+      ],
+      "notes": "keywords: income by state, hex grid -> us-map-hex"
+    },
+    {
+      "id": "dataviz_us_map_hex__var_B",
+      "scenario": "dataviz_us_map_hex",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "статистика доходов income by state на карте hex grid",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "75000"
+        }
+      ],
+      "notes": "keywords: income by state, hex grid -> us-map-hex"
+    },
+    {
+      "id": "dataviz_world_map__var_A",
+      "scenario": "dataviz_world_map",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "мировой ввп на душу населения по данным world atlas imf",
+      "prefer": [
+        "data-viz/world-map",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "15000"
+        }
+      ],
+      "notes": "keywords: ввп на душу, world atlas, imf -> world-map"
+    },
+    {
+      "id": "dataviz_world_map__var_B",
+      "scenario": "dataviz_world_map",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "мировой ввп на душу населения по данным world atlas imf",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "15000"
+        }
+      ],
+      "notes": "keywords: ввп на душу, world atlas, imf -> world-map"
+    },
+    {
+      "id": "dataviz_apple_money_count__var_A",
+      "scenario": "dataviz_apple_money_count",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "квартальная выручка технологического гиганта превысила $ 90 млрд usd",
+      "prefer": [
+        "data-viz/apple-money-count",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/apple-money-count",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "90",
+          "suffix": "млрд"
+        }
+      ],
+      "notes": "pattern: $ 90, keywords: выручка, usd -> apple-money-count"
+    },
+    {
+      "id": "dataviz_apple_money_count__var_B",
+      "scenario": "dataviz_apple_money_count",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "квартальная выручка технологического гиганта превысила $ 90 млрд usd",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "90",
+          "suffix": "млрд"
+        }
+      ],
+      "notes": "pattern: $ 90, keywords: выручка, usd -> apple-money-count"
+    },
+    {
+      "id": "dataviz_north_korea__var_A",
+      "scenario": "dataviz_north_korea",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "международные санкции и закрытая экономика северная корея north korea pyongyang",
+      "prefer": [
+        "data-viz/north-korea-locked-down",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/north-korea-locked-down",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "26",
+          "suffix": "млн"
+        }
+      ],
+      "notes": "keywords: north korea, pyongyang, санкции -> north-korea-locked-down"
+    },
+    {
+      "id": "dataviz_north_korea__var_B",
+      "scenario": "dataviz_north_korea",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "международные санкции и закрытая экономика северная корея north korea pyongyang",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "26",
+          "suffix": "млн"
+        }
+      ],
+      "notes": "keywords: north korea, pyongyang, санкции -> north-korea-locked-down"
+    },
+    {
+      "id": "dataviz_nyc_paris_flight__var_A",
+      "scenario": "dataviz_nyc_paris_flight",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "регулярный рейс нью-йорк париж через transatlantic маршрут cdg",
+      "prefer": [
+        "data-viz/nyc-paris-flight",
+        "data-viz/us-map",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/us-map",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "5800"
+        }
+      ],
+      "notes": "keywords: рейс, нью-йорк, париж, transatlantic -> nyc-paris-flight"
+    },
+    {
+      "id": "dataviz_nyc_paris_flight__var_B",
+      "scenario": "dataviz_nyc_paris_flight",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "регулярный рейс нью-йорк париж через transatlantic маршрут cdg",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "5800"
+        }
+      ],
+      "notes": "keywords: рейс, нью-йорк, париж, transatlantic -> nyc-paris-flight"
+    },
+    {
+      "id": "dataviz_mk_progress_stat__var_A",
+      "scenario": "dataviz_mk_progress_stat",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "ключевой рубеж достигнут goals reached в трекере задач progress track",
+      "prefer": [
+        "data-viz/mk-progress-stat",
+        "data-viz/conic-progress-ring",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "pct"
+      ],
+      "prefer_base": [
+        "data-viz/conic-progress-ring",
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "100",
+          "suffix": "%"
+        }
+      ],
+      "notes": "keywords: goals reached, progress track, достигнут -> mk-progress-stat"
+    },
+    {
+      "id": "dataviz_mk_progress_stat__var_B",
+      "scenario": "dataviz_mk_progress_stat",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "ключевой рубеж достигнут goals reached в трекере задач progress track",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "pct"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "100",
+          "suffix": "%"
+        }
+      ],
+      "notes": "keywords: goals reached, progress track, достигнут -> mk-progress-stat"
+    },
+    {
+      "id": "dataviz_flowchart_vertical__var_A",
+      "scenario": "dataviz_flowchart_vertical",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "пошаговый алгоритм и блок-схема ветвления decision tree",
+      "prefer": [
+        "data-viz/flowchart-vertical",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/flowchart-vertical",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "5"
+        }
+      ],
+      "notes": "keywords: алгоритм, блок-схема, decision tree -> flowchart-vertical"
+    },
+    {
+      "id": "dataviz_flowchart_vertical__var_B",
+      "scenario": "dataviz_flowchart_vertical",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "пошаговый алгоритм и блок-схема ветвления decision tree",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "5"
+        }
+      ],
+      "notes": "keywords: алгоритм, блок-схема, decision tree -> flowchart-vertical"
+    },
+    {
+      "id": "dataviz_num_single_pct__var_A",
+      "scenario": "dataviz_num_single_pct",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "эффективность модели машинного обучения достигла целевого значения",
+      "prefer": [
+        "data-viz/conic-progress-ring",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/conic-progress-ring",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "pct"
+      ],
+      "prefer_base": [
+        "data-viz/conic-progress-ring",
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "78",
+          "suffix": "%"
+        }
+      ],
+      "notes": "single number with % -> conic-progress-ring"
+    },
+    {
+      "id": "dataviz_num_single_pct__var_B",
+      "scenario": "dataviz_num_single_pct",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "эффективность модели машинного обучения достигла целевого значения",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "pct"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "78",
+          "suffix": "%"
+        }
+      ],
+      "notes": "single number with % -> conic-progress-ring"
+    },
+    {
+      "id": "dataviz_num_single_count__var_A",
+      "scenario": "dataviz_num_single_count",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "общее число активных узлов в кластере обработки данных",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "1540"
+        }
+      ],
+      "notes": "single number without % -> stat-countup-card"
+    },
+    {
+      "id": "dataviz_num_single_count__var_B",
+      "scenario": "dataviz_num_single_count",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "общее число активных узлов в кластере обработки данных",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "1540"
+        }
+      ],
+      "notes": "single number without % -> stat-countup-card"
+    },
+    {
+      "id": "dataviz_num_four_bars__var_A",
+      "scenario": "dataviz_num_four_bars",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "динамика показателей за четыре последовательных периода",
+      "prefer": [
+        "data-viz/bar-chart-race",
+        "data-viz/chart-story",
+        "data-viz/mk-line-graph",
+        "data-viz/animated-bar-chart",
+        "data-viz/compare-bars",
+        "data-viz/bar-race-mini"
+      ],
+      "template_id": "data-viz/mk-line-graph",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "four_numbers",
+        "numbers",
+        "two_numbers"
+      ],
+      "prefer_base": [
+        "data-viz/bar-chart-race",
+        "data-viz/chart-story",
+        "data-viz/mk-line-graph",
+        "data-viz/animated-bar-chart",
+        "data-viz/compare-bars",
+        "data-viz/bar-race-mini"
+      ],
+      "nums": [
+        {
+          "value": "10"
+        },
+        {
+          "value": "25"
+        },
+        {
+          "value": "40"
+        },
+        {
+          "value": "60"
+        }
+      ],
+      "notes": "4+ numbers -> bar-chart-race / animated-bar-chart"
+    },
+    {
+      "id": "dataviz_num_four_bars__var_B",
+      "scenario": "dataviz_num_four_bars",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "динамика показателей за четыре последовательных периода",
+      "prefer": [
+        "data-viz/compare-bars",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/compare-bars",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "four_numbers",
+        "numbers",
+        "two_numbers"
+      ],
+      "prefer_base": [
+        "data-viz/compare-bars",
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "10"
+        },
+        {
+          "value": "25"
+        },
+        {
+          "value": "40"
+        },
+        {
+          "value": "60"
+        }
+      ],
+      "notes": "4+ numbers -> bar-chart-race / animated-bar-chart"
+    },
+    {
+      "id": "dataviz_num_declining__var_A",
+      "scenario": "dataviz_num_declining",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "резкое снижение метрик конверсии после сбоя",
+      "prefer": [
+        "data-viz/decline-chart",
+        "data-viz/chart-story",
+        "data-viz/mk-line-graph",
+        "data-viz/animated-bar-chart",
+        "data-viz/compare-bars",
+        "data-viz/bar-race-mini"
+      ],
+      "template_id": "data-viz/mk-line-graph",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "declining",
+        "numbers",
+        "two_numbers"
+      ],
+      "prefer_base": [
+        "data-viz/decline-chart",
+        "data-viz/chart-story",
+        "data-viz/mk-line-graph",
+        "data-viz/animated-bar-chart",
+        "data-viz/compare-bars",
+        "data-viz/bar-race-mini"
+      ],
+      "nums": [
+        {
+          "value": "95"
+        },
+        {
+          "value": "30"
+        }
+      ],
+      "notes": "declining (30 < 95) -> decline-chart"
+    },
+    {
+      "id": "dataviz_num_declining__var_B",
+      "scenario": "dataviz_num_declining",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "резкое снижение метрик конверсии после сбоя",
+      "prefer": [
+        "data-viz/compare-bars",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/compare-bars",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "declining",
+        "numbers",
+        "two_numbers"
+      ],
+      "prefer_base": [
+        "data-viz/compare-bars",
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "95"
+        },
+        {
+          "value": "30"
+        }
+      ],
+      "notes": "declining (30 < 95) -> decline-chart"
+    },
+    {
+      "id": "dataviz_num_rating_like__var_A",
+      "scenario": "dataviz_num_rating_like",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "средневзвешенный балл удовлетворенности по шкале",
+      "prefer": [
+        "data-viz/star-rating-fill",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/star-rating-fill",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "rating_like"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "4.65"
+        }
+      ],
+      "notes": "float in (0, 5] -> rating_like -> star-rating-fill"
+    },
+    {
+      "id": "dataviz_num_rating_like__var_B",
+      "scenario": "dataviz_num_rating_like",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "средневзвешенный балл удовлетворенности по шкале",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "rating_like"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "4.65"
+        }
+      ],
+      "notes": "float in (0, 5] -> rating_like -> star-rating-fill"
+    },
+    {
+      "id": "dataviz_neutral__var_A",
+      "scenario": "dataviz_neutral",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "сравнение показателей двух периодов наблюдения",
+      "prefer": [
+        "data-viz/chart-story",
+        "data-viz/mk-line-graph",
+        "data-viz/animated-bar-chart",
+        "data-viz/compare-bars",
+        "data-viz/bar-race-mini"
+      ],
+      "template_id": "data-viz/animated-bar-chart",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "two_numbers"
+      ],
+      "prefer_base": [
+        "data-viz/chart-story",
+        "data-viz/mk-line-graph",
+        "data-viz/animated-bar-chart",
+        "data-viz/compare-bars",
+        "data-viz/bar-race-mini"
+      ],
+      "nums": [
+        {
+          "value": "40"
+        },
+        {
+          "value": "80"
+        }
+      ],
+      "notes": "neutral 2 ascending numbers -> default dataviz base"
+    },
+    {
+      "id": "dataviz_neutral__var_B",
+      "scenario": "dataviz_neutral",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "сравнение показателей двух периодов наблюдения",
+      "prefer": [
+        "data-viz/compare-bars",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/compare-bars",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers",
+        "two_numbers"
+      ],
+      "prefer_base": [
+        "data-viz/compare-bars",
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "40"
+        },
+        {
+          "value": "80"
+        }
+      ],
+      "notes": "neutral 2 ascending numbers -> default dataviz base"
+    },
+    {
+      "id": "neg_flight_kreyser__var_A",
+      "scenario": "neg_flight_kreyser",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "старый военный крейсер аврора стоит на вечной стоянке",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "1917"
+        }
+      ],
+      "notes": "negative case: 'крейсер' != 'рейс '"
+    },
+    {
+      "id": "neg_flight_kreyser__var_B",
+      "scenario": "neg_flight_kreyser",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "старый военный крейсер аврора стоит на вечной стоянке",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "1917"
+        }
+      ],
+      "notes": "negative case: 'крейсер' != 'рейс '"
+    },
+    {
+      "id": "inherited_star_rating__var_A",
+      "scenario": "inherited_star_rating",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "высокий рейтинг доверия инвесторов к фонду",
+      "prefer": [
+        "data-viz/star-rating-fill",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/star-rating-fill",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "92"
+        }
+      ],
+      "notes": "inherited false positive: 'рейтинг' -> star-rating-fill"
+    },
+    {
+      "id": "inherited_star_rating__var_B",
+      "scenario": "inherited_star_rating",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "высокий рейтинг доверия инвесторов к фонду",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "92"
+        }
+      ],
+      "notes": "inherited false positive: 'рейтинг' -> star-rating-fill"
+    },
+    {
+      "id": "inherited_progress__var_A",
+      "scenario": "inherited_progress",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "A",
+      "blob": "заметный прогресс на мирных переговорах сторон",
+      "prefer": [
+        "data-viz/mk-progress-stat",
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/mk-progress-stat",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "75"
+        }
+      ],
+      "notes": "inherited false positive: 'прогресс' -> mk-progress-stat"
+    },
+    {
+      "id": "inherited_progress__var_B",
+      "scenario": "inherited_progress",
+      "call_site": "assemble.py:1607",
+      "category": "data-viz",
+      "variant": "B",
+      "blob": "заметный прогресс на мирных переговорах сторон",
+      "prefer": [
+        "data-viz/stat-countup-card"
+      ],
+      "template_id": "data-viz/stat-countup-card",
+      "duration": 2.5,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "numbers"
+      ],
+      "prefer_base": [
+        "data-viz/stat-countup-card"
+      ],
+      "nums": [
+        {
+          "value": "75"
+        }
+      ],
+      "notes": "inherited false positive: 'прогресс' -> mk-progress-stat"
+    },
+    {
+      "id": "text_number_slam__var_A",
+      "scenario": "text_number_slam",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "120 миллионов пользователей по всему миру",
+      "prefer": [
+        "text-fullscreen/number-slam-card",
+        "text-fullscreen/kinetic-stack"
+      ],
+      "template_id": "text-fullscreen/kinetic-stack",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "\\d rule: replaces styles with number-slam and kinetic-stack"
+    },
+    {
+      "id": "text_number_slam__var_B",
+      "scenario": "text_number_slam",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "120 миллионов пользователей по всему миру",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "\\d rule: replaces styles with number-slam and kinetic-stack"
+    },
+    {
+      "id": "text_codeish_short__var_A",
+      "scenario": "text_codeish_short",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "const token = await auth.login();",
+      "prefer": [
+        "text-fullscreen/code-typing",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "template_id": "text-fullscreen/bottom-up-letters",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_CODEISH + lines < 7 -> code-typing"
+    },
+    {
+      "id": "text_codeish_short__var_B",
+      "scenario": "text_codeish_short",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "const token = await auth.login();",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_CODEISH + lines < 7 -> code-typing"
+    },
+    {
+      "id": "text_codeish_long__var_A",
+      "scenario": "text_codeish_long",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "function transform(data) {\n  let a = data.x;\n  let b = data.y;\n  let c = a * 2;\n  let d = b * 3;\n  let e = c + d;\n  return e;\n}",
+      "prefer": [
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card",
+        "text-fullscreen/kinetic-stack"
+      ],
+      "template_id": "text-fullscreen/code-3d-extrude",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_ge_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_CODEISH + lines >= 7 -> code-scroll"
+    },
+    {
+      "id": "text_codeish_long__var_B",
+      "scenario": "text_codeish_long",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "function transform(data) {\n  let a = data.x;\n  let b = data.y;\n  let c = a * 2;\n  let d = b * 3;\n  let e = c + d;\n  return e;\n}",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_ge_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_CODEISH + lines >= 7 -> code-scroll"
+    },
+    {
+      "id": "text_diffish__var_A",
+      "scenario": "text_diffish",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "--- a/engine.py\n+++ b/engine.py\n-max_retries = 3\n+max_retries = 10",
+      "prefer": [
+        "text-fullscreen/code-diff",
+        "text-fullscreen/number-slam-card",
+        "text-fullscreen/kinetic-stack"
+      ],
+      "template_id": "text-fullscreen/number-slam-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_DIFFISH -> code-diff"
+    },
+    {
+      "id": "text_diffish__var_B",
+      "scenario": "text_diffish",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "--- a/engine.py\n+++ b/engine.py\n-max_retries = 3\n+max_retries = 10",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_DIFFISH -> code-diff"
+    },
+    {
+      "id": "text_def__var_A",
+      "scenario": "text_def",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "def compute_weights(x, y):\n    return np.dot(x, y)",
+      "prefer": [
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "template_id": "text-fullscreen/bottom-up-letters",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "^\\s*def\\s+ -> dark-plus"
+    },
+    {
+      "id": "text_def__var_B",
+      "scenario": "text_def",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "def compute_weights(x, y):\n    return np.dot(x, y)",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "^\\s*def\\s+ -> dark-plus"
+    },
+    {
+      "id": "text_shellish__var_A",
+      "scenario": "text_shellish",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "$ pip install redshift-cli\n$ redshift init",
+      "prefer": [
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "template_id": "text-fullscreen/bottom-up-letters",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_SHELLISH -> apple-terminal-clear-dark, terminal-simulator"
+    },
+    {
+      "id": "text_shellish__var_B",
+      "scenario": "text_shellish",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "$ pip install redshift-cli\n$ redshift init",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_SHELLISH -> apple-terminal-clear-dark, terminal-simulator"
+    },
+    {
+      "id": "text_beatish__var_A",
+      "scenario": "text_beatish",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "мощный дроп и сокрушительный бит в финале",
+      "prefer": [
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "template_id": "text-fullscreen/bottom-up-letters",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_BEATISH -> beat-freeze-cut"
+    },
+    {
+      "id": "text_beatish__var_B",
+      "scenario": "text_beatish",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "мощный дроп и сокрушительный бит в финале",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_BEATISH -> beat-freeze-cut"
+    },
+    {
+      "id": "text_diff_beat__var_A",
+      "scenario": "text_diff_beat",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "--- a/track.py\n+++ b/track.py\n-drop = False\n+beat = True",
+      "prefer": [
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "template_id": "text-fullscreen/bottom-up-letters",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_DIFFISH + _BEATISH -> win direction test: beat wins"
+    },
+    {
+      "id": "text_diff_beat__var_B",
+      "scenario": "text_diff_beat",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "--- a/track.py\n+++ b/track.py\n-drop = False\n+beat = True",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "_DIFFISH + _BEATISH -> win direction test: beat wins"
+    },
+    {
+      "id": "text_code_and_digits__var_A",
+      "scenario": "text_code_and_digits",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "const count = 42;\nconst limit = 100;",
+      "prefer": [
+        "text-fullscreen/code-typing",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card",
+        "text-fullscreen/kinetic-stack"
+      ],
+      "template_id": "text-fullscreen/code-3d-extrude",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "code + digits -> subtractive \\d rule test"
+    },
+    {
+      "id": "text_code_and_digits__var_B",
+      "scenario": "text_code_and_digits",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "const count = 42;\nconst limit = 100;",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "code + digits -> subtractive \\d rule test"
+    },
+    {
+      "id": "text_neutral__var_A",
+      "scenario": "text_neutral",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "A",
+      "blob": "Будущее искусственного интеллекта уже меняет индустрию",
+      "prefer": [
+        "text-fullscreen/beat-freeze-cut",
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/line-by-line-slide",
+        "text-fullscreen/particle-text-dissolve",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/scan-band",
+        "text-fullscreen/scramble-reveal",
+        "text-fullscreen/shared-axis-z",
+        "text-fullscreen/code-3d-extrude",
+        "text-fullscreen/code-diff",
+        "text-fullscreen/code-particle-assemble",
+        "text-fullscreen/code-scroll",
+        "text-fullscreen/code-typing",
+        "text-fullscreen/terminal-simulator",
+        "text-fullscreen/apple-terminal-clear-dark",
+        "text-fullscreen/dark-plus",
+        "text-fullscreen/number-slam-card"
+      ],
+      "template_id": "text-fullscreen/bottom-up-letters",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "neutral text -> static fullscreen styles (20 in A, 2 in B)"
+    },
+    {
+      "id": "text_neutral__var_B",
+      "scenario": "text_neutral",
+      "call_site": "assemble.py:1901",
+      "category": "text-fullscreen",
+      "variant": "B",
+      "blob": "Будущее искусственного интеллекта уже меняет индустрию",
+      "prefer": [
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card"
+      ],
+      "template_id": "text-fullscreen/fact-card",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [
+        "lines_lt_7"
+      ],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "neutral text -> static fullscreen styles (20 in A, 2 in B)"
+    },
+    {
+      "id": "transitions_dynamic__var_A",
+      "scenario": "transitions_dynamic",
+      "call_site": "assemble.py:1978",
+      "category": "transitions",
+      "variant": "A",
+      "blob": "",
+      "prefer": [
+        "transitions/transitions-other",
+        "transitions/transitions-light",
+        "transitions/transitions-destruction",
+        "transitions/transitions-cover",
+        "transitions/transitions-blur",
+        "transitions/transitions-3d",
+        "transitions/mk-clone-wall-transition",
+        "transitions/whip-pan",
+        "transitions/thermal-distortion",
+        "transitions/sdf-iris",
+        "transitions/light-leak",
+        "transitions/gravitational-lens",
+        "transitions/glitch",
+        "transitions/cinematic-zoom",
+        "transitions/zoom-through"
+      ],
+      "template_id": "transitions/transitions-destruction",
+      "duration": 0.24,
+      "seed": 42,
+      "exclude": [
+        "transitions/cut"
+      ],
+      "tags": [
+        "dynamic",
+        "entry"
+      ],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "dynamic transition in A/B"
+    },
+    {
+      "id": "transitions_dynamic__var_B",
+      "scenario": "transitions_dynamic",
+      "call_site": "assemble.py:1978",
+      "category": "transitions",
+      "variant": "B",
+      "blob": "",
+      "prefer": [],
+      "template_id": "transitions/transitions-grid",
+      "duration": 0.24,
+      "seed": 42,
+      "exclude": [
+        "transitions/cut"
+      ],
+      "tags": [
+        "dynamic",
+        "entry"
+      ],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "dynamic transition in A/B"
+    },
+    {
+      "id": "lowerthirds_domain__var_A",
+      "scenario": "lowerthirds_domain",
+      "call_site": "assemble.py:1403",
+      "category": "lower-thirds",
+      "variant": "A",
+      "blob": "techcrunch.com",
+      "prefer": [
+        "lower-thirds/source-domain"
+      ],
+      "template_id": "lower-thirds/source-domain",
+      "duration": 2.4,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "domain plaque -> source-domain"
+    },
+    {
+      "id": "lowerthirds_domain__var_B",
+      "scenario": "lowerthirds_domain",
+      "call_site": "assemble.py:1403",
+      "category": "lower-thirds",
+      "variant": "B",
+      "blob": "techcrunch.com",
+      "prefer": [
+        "lower-thirds/source-domain"
+      ],
+      "template_id": "lower-thirds/source-domain",
+      "duration": 2.4,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "domain plaque -> source-domain"
+    },
+    {
+      "id": "lowerthirds_lockup__var_A",
+      "scenario": "lowerthirds_lockup",
+      "call_site": "assemble.py:1436",
+      "category": "lower-thirds",
+      "variant": "A",
+      "blob": "Экспертный комментарий",
+      "prefer": [
+        "lower-thirds/accent-underline",
+        "lower-thirds/clean-bar",
+        "lower-thirds/dark-card"
+      ],
+      "template_id": "lower-thirds/dark-card",
+      "duration": 2.4,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "scenario overlay plaque -> lockups"
+    },
+    {
+      "id": "lowerthirds_lockup__var_B",
+      "scenario": "lowerthirds_lockup",
+      "call_site": "assemble.py:1436",
+      "category": "lower-thirds",
+      "variant": "B",
+      "blob": "Экспертный комментарий",
+      "prefer": [
+        "lower-thirds/accent-underline",
+        "lower-thirds/clean-bar",
+        "lower-thirds/dark-card"
+      ],
+      "template_id": "lower-thirds/dark-card",
+      "duration": 2.4,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "scenario overlay plaque -> lockups"
+    },
+    {
+      "id": "outro_cta__var_A",
+      "scenario": "outro_cta",
+      "call_site": "assemble.py:1460",
+      "category": "outro-cta",
+      "variant": "A",
+      "blob": "Подписывайтесь на канал",
+      "prefer": [
+        "outro-cta/subscribe-pulse"
+      ],
+      "template_id": "outro-cta/subscribe-pulse",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "CTA window -> subscribe-pulse / logo-brand-close"
+    },
+    {
+      "id": "outro_cta__var_B",
+      "scenario": "outro_cta",
+      "call_site": "assemble.py:1460",
+      "category": "outro-cta",
+      "variant": "B",
+      "blob": "Подписывайтесь на канал",
+      "prefer": [
+        "outro-cta/logo-brand-close",
+        "outro-cta/subscribe-pulse"
+      ],
+      "template_id": "outro-cta/logo-brand-close",
+      "duration": 2.0,
+      "seed": 42,
+      "exclude": [],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "CTA window -> subscribe-pulse / logo-brand-close"
+    },
+    {
+      "id": "hero_devices__var_A",
+      "scenario": "hero_devices",
+      "call_site": "assemble.py:776",
+      "category": "hero-devices",
+      "variant": "A",
+      "blob": "",
+      "prefer": [],
+      "template_id": "hero-devices/type-slab",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [
+        "hero-devices/imac-float",
+        "hero-devices/macbook-open"
+      ],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "hero devices with blocked exclusion"
+    },
+    {
+      "id": "hero_devices__var_B",
+      "scenario": "hero_devices",
+      "call_site": "assemble.py:776",
+      "category": "hero-devices",
+      "variant": "B",
+      "blob": "",
+      "prefer": [],
+      "template_id": "hero-devices/type-slab",
+      "duration": 3.0,
+      "seed": 42,
+      "exclude": [
+        "hero-devices/imac-float",
+        "hero-devices/macbook-open"
+      ],
+      "tags": [],
+      "signals": [],
+      "prefer_base": [],
+      "nums": [],
+      "notes": "hero devices with blocked exclusion"
+    }
+  ]
+}

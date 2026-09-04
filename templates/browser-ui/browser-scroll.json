@@ -16,7 +16,7 @@
     "ui",
     "source"
   ],
-  "renderer": "source_card",
+  "renderer": "article_scroll",
   "last_used_in": [
     "redshift_0042",
     "redshift_0043"

@@ -15,7 +15,7 @@
     "ui",
     "ai"
   ],
-  "renderer": "source_card",
+  "renderer": "chat_thread",
   "last_used_in": [
     "redshift_0044",
     "redshift_0046"

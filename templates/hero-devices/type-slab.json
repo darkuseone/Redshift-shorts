@@ -1,0 +1,23 @@
+{
+  "id": "hero-devices/type-slab",
+  "name": "type-slab",
+  "category": "hero-devices",
+  "title": "Плита типа слева от ведущего — Srinika × Mercury",
+  "duration_range": [
+    1.4,
+    4.0
+  ],
+  "params": {
+    "top": 420
+  },
+  "tags": [
+    "hero",
+    "avatar",
+    "text",
+    "lines"
+  ],
+  "renderer": "hero-type-slab",
+  "last_used_in": [],
+  "added": "2026-09-02",
+  "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
+}

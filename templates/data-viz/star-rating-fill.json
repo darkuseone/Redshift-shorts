@@ -1,0 +1,23 @@
+{
+  "id": "data-viz/star-rating-fill",
+  "name": "star-rating-fill",
+  "category": "data-viz",
+  "title": "Золотые звёзды заливаются слева направо, число считает в такт — star-rating-fill",
+  "duration_range": [
+    1.2,
+    4.0
+  ],
+  "params": {
+    "rating": 4.8,
+    "starCount": 5,
+    "showValue": true
+  },
+  "tags": [
+    "data",
+    "stars",
+    "rating"
+  ],
+  "renderer": "dataviz",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}
