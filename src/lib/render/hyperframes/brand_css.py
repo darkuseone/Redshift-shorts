@@ -254,8 +254,8 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     parts.append(
         f".credit{{position:absolute;left:var(--safe-x-min);"
         f"bottom:{credit_bottom}px;z-index:{Z_OVERLAY};"
-        "font-family:var(--font-mono);font-size:22px;letter-spacing:.08em;"
-        "text-transform:uppercase;color:rgba(255,255,255,0.62);"
+        "font-family:var(--font-mono);font-size:18px;letter-spacing:.08em;"
+        "text-transform:uppercase;color:rgba(255,255,255,0.55);"
         "text-shadow:0 1px 6px rgba(0,0,0,0.7);pointer-events:none}"
     )
     parts.append(caption_css(brandbook))

@@ -14036,9 +14036,9 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         ".hero-exhibit .ex-detail{display:block;margin-top:14px;"
         "font-family:var(--font-subtitle);font-weight:700;font-size:38px;"
         "color:var(--color-muted)}"
-        ".hero-exhibit .ex-credit{display:block;margin-top:14px;"
-        "font-family:var(--font-mono);font-size:24px;letter-spacing:0.10em;"
-        "text-transform:uppercase;color:var(--color-muted)}"
+        ".hero-exhibit .ex-credit{display:none;margin-top:8px;"
+        "font-family:var(--font-mono);font-size:16px;letter-spacing:0.08em;"
+        "text-transform:uppercase;color:rgba(255,255,255,0.45)}"
         f".ex-media{{position:absolute;display:block;z-index:{Z_AVATAR + 2};"
         "object-fit:cover;pointer-events:none}"
         # --- удар цветом ---
