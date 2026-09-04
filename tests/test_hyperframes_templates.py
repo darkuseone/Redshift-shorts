@@ -7020,3 +7020,62 @@ def test_news_ticker():
     piece = render_fullscreen(_fs_ctx(renderer="news_ticker", text="BREAKING"))
     assert piece.nodes
     assert "ntk-scroll" in piece.nodes[0]
+
+
+def test_code_highlight_animates_without_webgl():
+    """Проверяем sweep-плашку на строке кода и отсутствие запрещённых свойств."""
+    code_demo = (
+        'async function fetchStats(id) {\n'
+        '  const res = await api.get(`/stats/${id}`);\n'
+        '  const data = await res.json();\n'
+        '  return processMetrics(data);\n'
+        '}'
+    )
+    piece = render_fullscreen(_fs_ctx(
+        content=code_demo,
+        renderer="code_highlight",
+        code_highlight=True,
+        line=2,
+        filename="fetchStats.js",
+        duration=4.0,
+    ))
+    assert piece.nodes
+    node = piece.nodes[0]
+    assert "fs-code-highlight" in node
+    assert "cs-editor" in node
+    assert "cs-surface" in node
+    assert "cs-hl" in node
+    assert "fetchStats.js" in node
+    assert "fetchStats" in node and "processMetrics" in node
+
+    body = " ".join(piece.tweens)
+    assert "scaleX:0" in body and "scaleX:1" in body
+    assert "opacity:0.42" in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter" not in body
+    assert "visibility" not in body
+    assert "onUpdate" not in body
+
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra, f"Forbidden tween props: {extra}"
+
+    # Проверка fallback по умолчанию
+    default_piece = render_fullscreen(_fs_ctx(
+        renderer="code_highlight",
+        code_highlight=True,
+        duration=3.0,
+    ))
+    assert default_piece.nodes
+    assert "loadConfig.js" in default_piece.nodes[0]
+
+
+def test_code_highlight_css_keeps_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".fullscreen-text.fs-code-highlight" in css
+    assert "JetBrains Mono" in css
+    assert ".fullscreen-text.fs-code-highlight .cs-hl" in css
+    assert "rgba(88,166,255,0.18)" in css
+

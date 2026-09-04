@@ -54,7 +54,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (32, [
+    "text-fullscreen": (33, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -145,6 +145,11 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"code_scroll": True},
          ["code", "code-animation", "scroll", "developer"],
          "code_scroll"),
+        ("code-highlight",
+         "Синтаксическая подсветка строки кода с горизонтальной световой плашкой — code-highlight",
+         [1.5, 6.0],
+         {"code_highlight": True},
+         ["code", "code-animation", "highlight", "developer"], "code_highlight"),
         ("code-typing",
          "Посимвольный набор с кареткой — code-typing",
          [1.5, 5.0],

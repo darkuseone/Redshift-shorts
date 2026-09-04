@@ -3,7 +3,7 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 32,
+    "text-fullscreen": 33,
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
@@ -14,7 +14,7 @@
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 202
+    "_total": 203
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -750,6 +750,28 @@
         "developer"
       ],
       "renderer": "code_scroll",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "text-fullscreen/code-highlight",
+      "name": "code-highlight",
+      "category": "text-fullscreen",
+      "title": "Синтаксическая подсветка строки кода с горизонтальной световой плашкой — code-highlight",
+      "duration_range": [
+        1.5,
+        6.0
+      ],
+      "params": {
+        "code_highlight": true
+      },
+      "tags": [
+        "code",
+        "code-animation",
+        "highlight",
+        "developer"
+      ],
+      "renderer": "code_highlight",
       "last_used_in": [],
       "added": "2026-09-03"
     },

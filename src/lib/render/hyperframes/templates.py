@@ -12289,6 +12289,9 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+from .code_highlight import ch_fullscreen_css, fs_code_highlight  # noqa: E402
+
+
 FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "fullscreen_text": fs_plain,
     "kinetic_stack": fs_kinetic_stack,
@@ -12306,6 +12309,7 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "code_diff": fs_code_diff,
     "code_particle_assemble": fs_code_particle_assemble,
     "code_scroll": fs_code_scroll,
+    "code_highlight": fs_code_highlight,
     "code_typing": fs_code_typing,
     "terminal_simulator": fs_terminal_simulator,
     "apple_terminal_clear_dark": fs_apple_terminal_clear_dark,
@@ -12351,6 +12355,8 @@ def render_fullscreen(ctx: "TemplateCtx") -> Piece:
         return fs_code_particle_assemble(ctx)
     if params.get("code_scroll"):
         return fs_code_scroll(ctx)
+    if params.get("code_highlight"):
+        return fs_code_highlight(ctx)
     if params.get("code_typing"):
         return fs_code_typing(ctx)
     if params.get("terminal_simulator"):
@@ -13731,6 +13737,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         + mn_overlay_css()
         + sfb_css()
         + wv_css()
+        + ch_fullscreen_css()
     )
 
 

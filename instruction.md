@@ -407,6 +407,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Transitions transitions-push: направленное выталкивание сцен со слайдом | каталог крутит push slide; здесь синхронный слайд сцен со сдвигом по осям и blur wash, #1b263b/#e07a5f; transitions-mechanical не трогаем |
 | 2026-09-04 | Transitions transitions-radial: круговое диафрагменное раскрытие склейки с кольцом свечения | каталог крутит iris transitions; здесь растущая круговая маска с кольцом свечения и soft blur, #1b263b/#e07a5f; transitions-push не трогаем |
 | 2026-09-04 | Transitions transitions-scale: сквозной наезд через кадр или стягивание в центр | каталог крутит zoom through/out; здесь динамический зум с crossfade и soft blur, #1b263b/#e07a5f; transitions-radial не трогаем |
+| 2026-09-04 | Text-fullscreen code-highlight: подсветка синтаксиса и горизонтальная плашка фокуса на целевой строке | каталог твинил width hl-box; здесь scaleX/opacity, тёмная тема JetBrains Mono/#0b0f17/#58a6ff, затенение остальных строк; transitions-scale не трогаем |
 
 
 
