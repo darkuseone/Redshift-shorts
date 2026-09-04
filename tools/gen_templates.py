@@ -447,7 +447,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "iconText": "HF",
          }, ["ui", "desktop", "macos", "notification", "system"], "macos_notification"),
     ]),
-    "transitions": (40, [
+    "transitions": (41, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
         ("whip-pan-l", "Резкий пан влево", [0.16, 0.28], {"direction": -1, "blur": 24},
          ["dynamic", "pan"], "whip_pan"),
@@ -581,6 +581,10 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          "Radial: круговое диафрагменное раскрытие склейки с кольцом свечения — transitions-radial",
          [0.22, 0.42], {},
          ["dynamic", "radial", "iris", "circle"], "transitions_radial"),
+        ("transitions-scale",
+         "Scale: сквозной наезд через кадр или стягивание в центр — transitions-scale",
+         [0.22, 0.42], {},
+         ["dynamic", "scale", "zoom", "through"], "transitions_scale"),
     ]),
     "avatar-entry": (6, [
         ("hero-zoom-in", "Вход зумом на аватар", [0.2, 0.4], {"from_scale": 1.18},

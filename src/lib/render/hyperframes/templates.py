@@ -1980,6 +1980,7 @@ from .transitions_grid import tg_transition_css, tr_transitions_grid
 from .transitions_mechanical import tm_transition_css, tr_transitions_mechanical
 from .transitions_push import tp_transition_css, tr_transitions_push
 from .transitions_radial import trad_transition_css, tr_transitions_radial
+from .transitions_scale import tr_transitions_scale, ts_transition_css
 
 TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "cut": tr_cut,
@@ -2019,6 +2020,7 @@ TRANSITIONS: dict[str, Callable[[TemplateCtx], Piece]] = {
     "transitions_mechanical": tr_transitions_mechanical,
     "transitions_push": tr_transitions_push,
     "transitions_radial": tr_transitions_radial,
+    "transitions_scale": tr_transitions_scale,
 }
 
 
@@ -2425,6 +2427,7 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         + tm_transition_css()
         + tp_transition_css()
         + trad_transition_css()
+        + ts_transition_css()
     )
 
 

@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 40,
+    "transitions": 41,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 201
+    "_total": 202
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2852,6 +2852,26 @@
         "circle"
       ],
       "renderer": "transitions_radial",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-scale",
+      "name": "transitions-scale",
+      "category": "transitions",
+      "title": "Scale: сквозной наезд через кадр или стягивание в центр — transitions-scale",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "scale",
+        "zoom",
+        "through"
+      ],
+      "renderer": "transitions_scale",
       "last_used_in": [],
       "added": "2026-09-03"
     },

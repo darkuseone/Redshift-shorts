@@ -4582,6 +4582,42 @@ def test_transitions_radial_keeps_catalog_tokens():
     assert "-apple-system" not in block
 
 
+def test_transitions_scale_animates_without_webgl(ctx):
+    """Каталог демонстрирует scale переходы; здесь сквозной зум или стягивание."""
+    piece = render_transition("transitions_scale", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.12, "mode": "zoom_through"}}))
+    node = piece.nodes[0]
+    assert "tr-transitions-scale" in node
+    assert "tscale-stage" in node
+    assert "tscale-a" in node and "tscale-b" in node
+    assert "tscale-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.12" in body
+    assert f'"#{ctx.target}"' in body
+    assert "scale:2.4" in body
+    assert "scale:0.55" in body
+    assert "webgl" not in body.lower()
+
+
+def test_transitions_scale_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-transitions-scale" in css
+    frm = re.search(r"\.tr-transitions-scale \.tscale-a\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-transitions-scale \.tscale-b\{[^}]+\}", css).group(0)
+    assert "#1b263b" in frm
+    assert "#e07a5f" in too
+    stage = re.search(r"\.tr-transitions-scale \.tscale-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "backdrop-filter:blur(14px)" in css
+    block = css.split(".tr-transitions-scale", 1)[1]
+    assert "Inter" in block
+    assert "-apple-system" not in block
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9
