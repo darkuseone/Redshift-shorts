@@ -7,14 +7,14 @@
     "lower-thirds": 14,
     "frames-cards": 7,
     "browser-ui": 21,
-    "transitions": 35,
+    "transitions": 36,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
     "data-viz": 28,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 196
+    "_total": 197
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -2752,6 +2752,26 @@
         "crossfade"
       ],
       "renderer": "transitions_dissolve",
+      "last_used_in": [],
+      "added": "2026-09-03"
+    },
+    {
+      "id": "transitions/transitions-distortion",
+      "name": "transitions-distortion",
+      "category": "transitions",
+      "title": "Distortion: глитч и хроматическое расщепление на склейке — transitions-distortion",
+      "duration_range": [
+        0.22,
+        0.42
+      ],
+      "params": {},
+      "tags": [
+        "dynamic",
+        "glitch",
+        "distortion",
+        "chromatic"
+      ],
+      "renderer": "transitions_distortion",
       "last_used_in": [],
       "added": "2026-09-03"
     },

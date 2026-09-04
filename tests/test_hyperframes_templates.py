@@ -4398,6 +4398,40 @@ def test_transitions_dissolve_keeps_catalog_tokens():
     assert "backdrop-filter:blur(14px)" in css
 
 
+def test_transitions_distortion_animates_without_webgl(ctx):
+    """Каталог демонстрирует distortion переходы; здесь chromatic RGB slices и jitter."""
+    piece = render_transition("transitions_distortion", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.12}}))
+    node = piece.nodes[0]
+    assert "tr-transitions-distortion" in node
+    assert "tdist-stage" in node
+    assert "tdist-a" in node and "tdist-b" in node
+    assert "tdist-r" in node and "tdist-b-chroma" in node
+    assert "tdist-blur" in node
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.12" in body
+    assert f'"#{ctx.target}"' in body
+    assert "x:-18" in body or "x:18" in body
+    assert "webgl" not in body.lower()
+
+
+def test_transitions_distortion_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-transitions-distortion" in css
+    frm = re.search(r"\.tr-transitions-distortion \.tdist-a\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-transitions-distortion \.tdist-b\{[^}]+\}", css).group(0)
+    assert "#1b263b" in frm
+    assert "#e07a5f" in too
+    stage = re.search(r"\.tr-transitions-distortion \.tdist-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    assert "rgba(229,56,59,0.35)" in css
+    assert "rgba(72,191,227,0.35)" in css
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9

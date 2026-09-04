@@ -1,0 +1,20 @@
+{
+  "id": "transitions/transitions-distortion",
+  "name": "transitions-distortion",
+  "category": "transitions",
+  "title": "Distortion: глитч и хроматическое расщепление на склейке — transitions-distortion",
+  "duration_range": [
+    0.22,
+    0.42
+  ],
+  "params": {},
+  "tags": [
+    "dynamic",
+    "glitch",
+    "distortion",
+    "chromatic"
+  ],
+  "renderer": "transitions_distortion",
+  "last_used_in": [],
+  "added": "2026-09-03"
+}
