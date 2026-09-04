@@ -979,17 +979,19 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
                 result = prepare_avatar_shot(
                     avatar_src=avatar_src, dst=dst, duration_sec=duration,
                     width=width, height=height, fps=fps, start_sec=offset,
-                    # Фон под аватаром светлый и спокойный: заливка акцентом
-                    # съела бы весь лимит §3.3.1 (акцент ≤10–12 % кадра).
+                    # Light brand bg under avatar — accent fill would blow §3.3.1.
                     bg_colors=(str(ctx.cfg.color("bg_light")).lstrip("#"),
                                str(ctx.cfg.color("bg_pure")).lstrip("#")),
                     behind_layer=behind,
-                    vfx_src=vfx_clips.get(slot["index"]))
+                    vfx_src=vfx_clips.get(slot["index"]),
+                    compose_zoom=float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0))
             else:
-                result = prepare_shot(ShotSpec(src=avatar_src, dst=dst, duration_sec=duration,
-                                               width=width, height=height, fps=fps,
-                                               fit="crop", focus_x=0.5, focus_y=0.5,
-                                               start_sec=offset))
+                # Opaque fallback: same compose_zoom via ShotSpec (source already 9:16).
+                result = prepare_shot(ShotSpec(
+                    src=avatar_src, dst=dst, duration_sec=duration,
+                    width=width, height=height, fps=fps, fit="crop",
+                    focus_x=0.5, focus_y=0.35, start_sec=offset,
+                    compose_zoom=float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)))
             result["avatar_offset_sec"] = round(offset, 3)
             result["avatar_segment"] = segment["index"]
             result["matte"] = matte.to_dict() if matte else None
@@ -1433,8 +1435,9 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             why=f"плашка из сценария, блок {block['id']}",
         ))
 
-    # CTA — последние 2 сек, всегда (§6, QC-16). Identity close — вордмарк,
-    # не кнопка: если выпал logo-brand-close, композитор рисует локуп, не пилюлю.
+    # CTA — last ~2s (§6, QC-16). Picker stays free across outro-cta scenarios
+    # (loop question, subscribe pill, phrase+SFX, brand-close). When brand-close
+    # wins, wordmark defaults are EN CAPS REDSHIFT — not forced every video.
     cta_start, cta_end = plan.get("cta_window", [duration - 2.0, duration])
     cta_template, _ = picker.pick(
         "outro-cta",

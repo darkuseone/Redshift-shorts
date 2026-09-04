@@ -43,6 +43,7 @@ class ShotSpec:
     fit: str = "crop"            # crop | pillarbox
     focus_x: float = 0.5         # центр кропа по горизонтали, 0..1
     focus_y: float = 0.5
+    compose_zoom: float = 1.0  # mild in-compose zoom for sparse Avatar V framing
     start_sec: float = 0.0
     loop: bool = False
 
@@ -106,7 +107,8 @@ def build_filter(info, spec: ShotSpec) -> str:
             f"[bgb][fgs]overlay=(W-w)/2:(H-h)/2,setsar=1"
         )
 
-    scale = max(target_w / src_w, target_h / src_h)
+    zoom = max(float(getattr(spec, "compose_zoom", 1.0) or 1.0), 1.0)
+    scale = max(target_w / src_w, target_h / src_h) * zoom
     scaled_w = math.ceil(src_w * scale / 2) * 2
     scaled_h = math.ceil(src_h * scale / 2) * 2
     max_x = max(0, scaled_w - target_w)
@@ -366,12 +368,12 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
                         background: str = "brand",
                         bg_colors: tuple[str, str] = ("F7F5F3", "FFFFFF"),
                         behind_layer: Path | None = None,
-                        vfx_src: Path | None = None) -> dict[str, Any]:
-    """Аватар с прозрачным фоном → готовый план (§7.7).
+                        vfx_src: Path | None = None,
+                        compose_zoom: float = 1.0) -> dict[str, Any]:
+    """Avatar with alpha → ready plate (§7.7).
 
-    Порядок слоёв ровно тот, ради которого §7.7 и затевалась маска:
-    фон (брендовый градиент или VFX) → текст за головой → аватар.
-    Если маски нет, вызывать эту функцию не нужно — клип уже с фоном.
+    Layer order: brand/VFX bg → text-behind-head → avatar. Optional compose_zoom
+    scales then head-weighted-crops the avatar only (source files unchanged).
     """
     dst.parent.mkdir(parents=True, exist_ok=True)
     inputs: list[str] = []
@@ -411,7 +413,19 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
         filters.append(f"[{behind_index}:v]fps={fps},scale={width}:{height},setsar=1[behind]")
         filters.append("[bg][behind]overlay=0:0:format=auto[withtext]")
         stage = "withtext"
-    filters.append(f"[{avatar_index}:v]fps={fps},scale={width}:{height},setsar=1[av]")
+    zoom = max(float(compose_zoom or 1.0), 1.0)
+    if zoom > 1.001:
+        # Scale up then head-weighted crop: Avatar V often leaves subject ~30% tall.
+        sw = math.ceil(width * zoom / 2) * 2
+        sh = math.ceil(height * zoom / 2) * 2
+        crop_x = max(0, (sw - width) // 2)
+        # Bias crop upward so head stays in frame; trim empty desk/floor below.
+        crop_y = max(0, int(round((sh - height) * 0.32)))
+        filters.append(
+            f"[{avatar_index}:v]fps={fps},scale={sw}:{sh}:flags=lanczos,"
+            f"crop={width}:{height}:{crop_x}:{crop_y},setsar=1[av]")
+    else:
+        filters.append(f"[{avatar_index}:v]fps={fps},scale={width}:{height},setsar=1[av]")
     filters.append(f"[{stage}][av]overlay=0:0:format=auto,format=yuv420p[out]")
 
     args = ["-y", *inputs, "-filter_complex", ";".join(filters), "-map", "[out]",
@@ -426,6 +440,7 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
         "duration_sec": round(duration_sec, 3), "start_sec": round(start_sec, 3),
         "background": "vfx" if vfx_src else background,
         "text_behind_head": behind_layer is not None,
+        "compose_zoom": round(zoom, 3),
         "output_size": [out_info.width, out_info.height],
         "output_duration_sec": round(out_info.duration_sec, 3),
         "output_frames": out_info.nb_frames,
