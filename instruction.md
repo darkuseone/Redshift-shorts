@@ -402,6 +402,7 @@ SFX берутся **только** из библиотеки. Нет роли �
 | 2026-09-04 | Transitions swirl-vortex: органическое вихревое вращение и закрутка склейки | каталог крутит WebGL в onUpdate; здесь counter-rotating swirl crossfade, vortex glow и soft blur, #073b4c/#06d6a0; ripple-waves не трогаем |
 | 2026-09-04 | Transitions transitions-dissolve: мягкое растворение SCENE A и проявление SCENE B | каталог крутит набор растворений; здесь smooth crossfade с scale drift и blur, #1b263b/#e07a5f; swirl-vortex не трогаем |
 | 2026-09-04 | Transitions transitions-distortion: глитч и хроматическое расщепление на склейке | каталог крутит глитч и сдвиги; здесь chromatic RGB slices, jitter и soft blur, #1b263b/#e07a5f; transitions-dissolve не трогаем |
+| 2026-09-04 | Transitions transitions-grid: мозаичный распад на тайлы и каскадное проявление | каталог крутит grid dissolve; здесь 3x4 мозаичные ячейки с центростремительным рипплом, #1b263b/#e07a5f; transitions-distortion не трогаем |
 
 
 

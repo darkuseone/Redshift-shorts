@@ -4432,6 +4432,42 @@ def test_transitions_distortion_keeps_catalog_tokens():
     assert "rgba(72,191,227,0.35)" in css
 
 
+def test_transitions_grid_animates_without_webgl(ctx):
+    """Каталог демонстрирует grid transition; здесь мозаичные ячейки 3x4 и каскадный риппл."""
+    piece = render_transition("transitions_grid", TemplateCtx(
+        **{**ctx.__dict__, "params": {"from_scale": 1.10}}))
+    node = piece.nodes[0]
+    assert "tr-transitions-grid" in node
+    assert "tg-stage" in node
+    assert "tg-a" in node and "tg-b" in node
+    assert "tg-grid" in node
+    assert "tg-cell" in node
+    assert node.count("tg-cell") == 12
+    assert node.count(f'id="tr-{ctx.index:02d}"') == 1
+    body = " ".join(piece.tweens)
+    assert "scale:1.1" in body or "scale:1.10" in body
+    assert f'"#{ctx.target}"' in body
+    assert f'#tr-{ctx.index:02d}-c0' in body
+    assert "webgl" not in body.lower()
+
+
+def test_transitions_grid_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = transition_css(load_config().brandbook)
+    assert ".tr-transitions-grid" in css
+    frm = re.search(r"\.tr-transitions-grid \.tg-a\{[^}]+\}", css).group(0)
+    too = re.search(r"\.tr-transitions-grid \.tg-b\{[^}]+\}", css).group(0)
+    assert "#1b263b" in frm
+    assert "#e07a5f" in too
+    stage = re.search(r"\.tr-transitions-grid \.tg-stage\{[^}]+\}", css).group(0)
+    assert "position:relative" in stage
+    assert "position:absolute" not in stage
+    grid = re.search(r"\.tr-transitions-grid \.tg-grid\{[^}]+\}", css).group(0)
+    assert "grid-template-columns:repeat(3,1fr)" in grid
+    assert "grid-template-rows:repeat(4,1fr)" in grid
+
+
 def test_glitch_shader_scan_and_scramble_without_webgl(ctx):
     """Каталог крутит шейдер в onUpdate; здесь полосы, клетки и chroma."""
     seed = 9
