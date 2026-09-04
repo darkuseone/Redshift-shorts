@@ -8976,11 +8976,16 @@ def fs_kinetic_type_swap(ctx: "TemplateCtx") -> Piece:
             f'tl.fromTo("#{node_id}-stage",{{opacity:1}},{{opacity:0,'
             f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
             f'{_num(out_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-stage",{{opacity:0}},{_num(out_at + out)});')
     elif exit_mode == "up" and out > 0:
         tweens.append(
             f'tl.fromTo("#{node_id}-stage",{{opacity:1,y:0}},'
             f'{{opacity:0,y:{_num(-_KTS_EXIT_Y)},duration:{_num(out)},'
             f'ease:"power2.in",immediateRender:false}},{_num(out_at)});')
+        tweens.append(
+            f'tl.set("#{node_id}-stage",{{opacity:0,y:{_num(-_KTS_EXIT_Y)}}},'
+            f'{_num(out_at + out)});')
 
     return Piece(
         nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
@@ -9508,6 +9513,9 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
             f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
             f'{_num(out_at)});'
         )
+        tweens.append(
+            f'tl.set("#{node_id}-stage",{{opacity:0}},{_num(out_at + out)});'
+        )
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip fullscreen-text fs-scan-band" '
                f'{_timing(ctx)}>'
@@ -9680,11 +9688,18 @@ def fs_scramble_reveal(ctx: "TemplateCtx") -> Piece:
             f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
             f'{_num(out_at)});'
         )
+        tweens.append(
+            f'tl.set("#{node_id}-stage",{{opacity:0,x:{_num(exit_x)},'
+            f'y:{_num(exit_y)}}},{_num(out_at + out)});'
+        )
     elif exit_mode == "fade" and out > 0:
         tweens.append(
             f'tl.fromTo("#{node_id}-stage",{{opacity:1}},{{opacity:0,'
             f'duration:{_num(out)},ease:"power2.in",immediateRender:false}},'
             f'{_num(out_at)});'
+        )
+        tweens.append(
+            f'tl.set("#{node_id}-stage",{{opacity:0}},{_num(out_at + out)});'
         )
 
     label = _esc(content)
@@ -12763,6 +12778,8 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
         f'{{y:{_LT_CB_EXIT_Y},opacity:0,duration:{_num(t["exit_dur"])},'
         f'ease:"power2.in",immediateRender:false}},'
         f'{_num(at + t["exit_at"])});',
+        f'tl.set("#{node_id}-stage",{{y:{_LT_CB_EXIT_Y},opacity:0}},'
+        f'{_num(at + t["exit_at"] + t["exit_dur"])});',
     ]
     if name:
         rows.append(

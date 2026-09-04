@@ -3023,6 +3023,64 @@ def test_particle_text_dissolve_direction_density_and_exit():
 
 
 
+
+def test_scan_band_and_scramble_stage_exits_get_hard_kill():
+    """Fullscreen stage fades must hard-kill at fade end (±0.05s).
+
+    0042 P12 on bdf2c0c failed: #shot-12-stage opacity exit ended on a clip
+    boundary without tl.set. Same rule as PTD dust / transition faces.
+    """
+    import re
+
+    from src.lib.render.hyperframes.templates import (
+        TemplateCtx, fs_scan_band, fs_scramble_reveal,
+    )
+
+    eps = 0.05
+
+    def exit_ends(tweens: list[str]) -> list[float]:
+        ends = []
+        for line in tweens:
+            if 'fromTo("#shot-12-stage"' not in line:
+                continue
+            compact = line.replace(" ", "")
+            # Exit only: from opacity:1 toward opacity:0 (not entrance 0→1).
+            if not re.search(r"\{opacity:1[,}].*opacity:0", compact):
+                continue
+            dm = re.search(r"duration:([0-9.]+)", line)
+            am = re.search(r"},([0-9.]+)\);\s*$", line.strip())
+            if dm and am:
+                ends.append(float(am.group(1)) + float(dm.group(1)))
+        return ends
+
+    def hard_kills(tweens: list[str]) -> list[float]:
+        out = []
+        for line in tweens:
+            if 'tl.set("#shot-12-stage"' in line and "opacity:0" in line:
+                m = re.search(r"},([0-9.]+)\);\s*$", line.strip())
+                if m:
+                    out.append(float(m.group(1)))
+        return out
+
+    pieces = [
+        ("scan_band", fs_scan_band(TemplateCtx(
+            index=12, start=20.0, duration=4.39, target="shot-12", track=1,
+            params={"content": "СИГНАЛ", "band_angle": 12}))),
+        ("scramble_reveal", fs_scramble_reveal(TemplateCtx(
+            index=12, start=20.0, duration=4.39, target="shot-12", track=1,
+            params={"content": "СИГНАЛ", "accent": "green", "style": "terminal",
+                    "exit": "fade"}))),
+    ]
+    for name, piece in pieces:
+        ends = exit_ends(piece.tweens)
+        kills = hard_kills(piece.tweens)
+        assert ends, f"{name}: no stage opacity exit\n" + "\n".join(piece.tweens)
+        for end in ends:
+            assert any(abs(k - end) <= eps for k in kills), (
+                f"{name}: stage exit end {end} without hard kill ±{eps}s — "
+                f"kills={kills}\n" + "\n".join(piece.tweens))
+
+
 def test_particle_text_dissolve_dust_exits_get_hard_kill():
     """Shot-layer dust digits (#shot-*-dN-*) need tl.set at fade end.
 
