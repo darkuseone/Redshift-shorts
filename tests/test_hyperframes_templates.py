@@ -5393,6 +5393,11 @@ OVERLAY_PARAMS = {
         "votesActive": "4.3k",
         "comments": "328",
     },
+    "spotify_card": {
+        "trackName": "HyperFrames",
+        "artistName": "HeyGen",
+        "brandText": "Spotify",
+    },
 }
 
 
@@ -6183,7 +6188,56 @@ def test_reddit_post_keeps_catalog_tokens():
     assert ".reddit-post" in css
     assert ".rp-card" in css
     assert ".rp-vote-btn" in css
-    block = css.split(".reddit-post", 1)[1].split(".sfb-board", 1)[0]
+    block = css.split(".reddit-post", 1)[1].split(".spotify-card", 1)[0]
+    assert "Inter" in block
+
+
+def test_spotify_card_animates_without_forbidden_properties():
+    """Catalog breathes album art and staggers text; here y/scale/opacity, no forbidden props."""
+    ctx = TemplateCtx(index=0, start=0.0, duration=5.0, target="ovl-00",
+                      track=5, params=OVERLAY_PARAMS["spotify_card"])
+    piece = render_overlay("spotify_card", ctx)
+    node = piece.nodes[0]
+    assert "spotify-card" in node
+    assert "sc-card" in node and "sc-album-art" in node
+    assert "HyperFrames" in node
+    assert "HeyGen" in node
+    assert "Spotify" in node
+    assert "textContent" not in node
+    assert "filter:" not in node
+    assert "clip-path" not in node
+    body = " ".join(piece.tweens)
+    assert "textContent" not in body
+    assert "strokeDashoffset" not in body
+    assert "width:" not in body
+    assert "height:" not in body
+    assert "filter:" not in body
+    assert "visibility" not in body
+    assert "clip-path" not in body
+    assert "scale:" in body
+    assert "opacity:" in body
+    assert "y:" in body
+    extra = _tweened_props(piece.tweens) - ALLOWED_PROPS
+    assert not extra
+    for tween in piece.tweens:
+        selector = re.search(r'tl\.(?:fromTo|to|set)\("(#[^"]+)"', tween).group(1)
+        assert selector != "#ovl-00", tween
+        assert selector.startswith("#ovl-00-")
+    ids = re.findall(r'id="([^"]+)"', node)
+    assert len(ids) == len(set(ids))
+    empty = render_overlay("spotify_card", TemplateCtx(
+        index=0, start=0.0, duration=5.0, target="ovl-01", track=5, params={}))
+    assert empty.nodes == []
+
+
+def test_spotify_card_keeps_catalog_tokens():
+    from src.lib.config import load_config
+
+    css = overlay_css(load_config().brandbook)
+    assert ".spotify-card" in css
+    assert ".sc-card" in css
+    assert ".sc-album-art" in css
+    block = css.split(".spotify-card", 1)[1].split(".sfb-board", 1)[0]
     assert "Inter" in block
 
 

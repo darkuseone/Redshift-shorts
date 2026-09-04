@@ -257,7 +257,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (19, [
+    "browser-ui": (20, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -430,6 +430,13 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "votesActive": "4.3k",
              "comments": "328",
          }, ["ui", "social", "reddit", "post", "community"], "reddit_post"),
+        ("spotify-card",
+         "Spotify: карточка трека с обложкой и брендом — spotify-card",
+         [2.5, 6.5], {
+             "trackName": "HyperFrames",
+             "artistName": "HeyGen",
+             "brandText": "Spotify",
+         }, ["ui", "audio", "spotify", "music", "card"], "spotify_card"),
     ]),
     "transitions": (27, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),

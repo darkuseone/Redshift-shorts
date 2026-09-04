@@ -1129,6 +1129,7 @@ _OVERLAY_BY_NAME = {
     "yt-lower-third": "yt_lower_third",
     "x-post": "x_post",
     "reddit-post": "reddit_post",
+    "spotify-card": "spotify_card",
 }
 
 _NUM_IN_TEXT = re.compile(
@@ -1163,7 +1164,7 @@ def _overlay_renderer(template: Template) -> str:
                              "message_thread_reveal", "notes_reveal",
                              "notification_cascade", "instagram_follow",
                              "tiktok_follow", "yt_lower_third", "x_post",
-                             "reddit_post"):
+                             "reddit_post", "spotify_card"):
         return template.renderer
     return "source_card"
 
@@ -1370,6 +1371,13 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_params["subreddit"] = source.get("domain")
             if source.get("snippet"):
                 card_params["body"] = source.get("snippet")
+        if renderer == "spotify_card":
+            if source.get("title"):
+                card_params["trackName"] = source.get("title")
+            if source.get("domain"):
+                card_params["artistName"] = source.get("domain")
+            if source.get("snippet"):
+                card_params["brandText"] = source.get("snippet")
         overlays.append({
             "type": "source_card", "start": card_start, "end": card_end,
             "template": card_template.id, "renderer": renderer,

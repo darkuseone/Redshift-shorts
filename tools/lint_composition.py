@@ -319,6 +319,15 @@ def build_plan(media: dict[str, Path]) -> tuple[dict, list[dict]]:
             "comments": "328",
         },
     })
+    overlays.append({
+        "type": "source_card", "start": 147.5, "end": 152.5,
+        "template": "browser-ui/spotify-card", "renderer": "spotify_card",
+        "params": {
+            "trackName": "HyperFrames",
+            "artistName": "HeyGen",
+            "brandText": "Spotify",
+        },
+    })
 
 
 
