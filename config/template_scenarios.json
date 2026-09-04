@@ -766,13 +766,7 @@
       "categories": [
         "lower-thirds"
       ],
-      "keywords": [
-        "плашка",
-        "спикер",
-        "роль",
-        "титр",
-        "lockup"
-      ],
+      "keywords": [],
       "patterns": [],
       "needs": [],
       "templates": [
@@ -792,13 +786,7 @@
       "categories": [
         "outro-cta"
       ],
-      "keywords": [
-        "подпис",
-        "subscribe",
-        "лайк",
-        "подпишись",
-        "канал"
-      ],
+      "keywords": [],
       "patterns": [],
       "needs": [],
       "templates": [
@@ -816,13 +804,7 @@
       "categories": [
         "outro-cta"
       ],
-      "keywords": [
-        "redshift",
-        "бренд",
-        "логотип",
-        "brand",
-        "logo"
-      ],
+      "keywords": [],
       "patterns": [],
       "needs": [],
       "templates": [

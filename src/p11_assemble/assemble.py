@@ -742,13 +742,17 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  content: dict[str, Any], has_alpha: bool,
                  plate_src: dict[str, Any] | None,
                  recent_videos: list[str], exclude: list[str],
-                 seed: int) -> dict[str, Any] | None:
+                 seed: int,
+                 picker: TemplatePicker | None = None,
+                 variant: str = "A") -> dict[str, Any] | None:
     """Выбрать приём вокруг ведущего под конкретный кадр.
 
     Приём отбрасывается, если кадр не может его показать: без альфы всё, что
     рисуется под аватаром, окажется за непрозрачным видео, а остальным нужен
     материал из ``_HERO_NEEDS``.
     """
+    if picker is None:
+        picker = TemplatePicker(catalog, ScenarioIndex.load(catalog=catalog))
     available = dict(content)
     available["plate"] = plate_src
     if plate_src and plate_src.get("credit"):
@@ -774,9 +778,22 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     if not [t for t in catalog.by_category("hero-devices") if t.id not in blocked]:
         return None
 
-    template = catalog.pick("hero-devices", duration=float(slot["duration"]),
-                            recent_videos=recent_videos, exclude=blocked,
-                            seed=seed + int(slot["index"]) * 7)
+    signals = {k for k, v in available.items() if v and k in ("plate", "icons", "word", "lines", "brand", "title")}
+    if has_alpha:
+        signals.add("alpha")
+    if content.get("figures"):
+        signals.add("numbers")
+    blob = build_blob(content.get("title"), content.get("caption"), " ".join(content.get("lines") or []), content.get("word"))
+    template, _ = picker.pick(
+        "hero-devices",
+        blob=blob,
+        signals=signals,
+        variant=variant,
+        duration=float(slot["duration"]),
+        recent_videos=recent_videos,
+        exclude=blocked,
+        seed=seed + int(slot["index"]) * 7,
+    )
     renderer = template.renderer
     params = hero_params(renderer, template.params, content, slot)
 
@@ -1348,12 +1365,18 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             "params": {"label": source.get("highlight_line", ""), "target": "title"},
             "why": "§5.5: фокусная подсветка ключевой строки источника",
         })
-        plaque_template = catalog.pick("lower-thirds", duration=2.4,
-                                       recent_videos=recent_videos, exclude=used,
-                                       prefer=["lower-thirds/source-domain"],
-                                       seed=seed + i)
-        used.append(plaque_template.id)
         domain = source.get("domain", "")
+        plaque_template, _ = picker.pick(
+            "lower-thirds",
+            blob=build_blob(domain, source.get("title")),
+            variant=variant,
+            duration=2.4,
+            recent_videos=recent_videos,
+            exclude=used,
+            prefer_head=["lower-thirds/source-domain"],
+            seed=seed + i,
+        )
+        used.append(plaque_template.id)
         overlays.append(_plaque_overlay(
             template=plaque_template,
             start=card_end - 0.2,
@@ -1378,16 +1401,22 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         if not block_slots:
             continue
         hint = overlay.get("template_hint") or ""
-        lockups = ["lower-thirds/accent-underline", "lower-thirds/clean-bar",
-                   "lower-thirds/dark-card"]
-        prefer = ([hint] + lockups) if hint else lockups
-        template = catalog.pick("lower-thirds", duration=2.4, recent_videos=recent_videos,
-                                exclude=used, prefer=prefer, seed=seed + 7)
-        used.append(template.id)
-        start = float(block_slots[0]["start"]) + 0.4
+        head = [hint] if hint else []
         content = overlay.get("content", "")
         role = (overlay.get("role") or overlay.get("subtitle")
                 or overlay.get("kicker") or "")
+        template, _ = picker.pick(
+            "lower-thirds",
+            blob=build_blob(content, role),
+            variant=variant,
+            duration=2.4,
+            recent_videos=recent_videos,
+            exclude=used,
+            prefer_head=head,
+            seed=seed + 7,
+        )
+        used.append(template.id)
+        start = float(block_slots[0]["start"]) + 0.4
         overlays.append(_plaque_overlay(
             template=template,
             start=start,
@@ -1403,11 +1432,14 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # CTA — последние 2 сек, всегда (§6, QC-16). Identity close — вордмарк,
     # не кнопка: если выпал logo-brand-close, композитор рисует локуп, не пилюлю.
     cta_start, cta_end = plan.get("cta_window", [duration - 2.0, duration])
-    cta_prefer = (["outro-cta/subscribe-pulse"] if variant == "A"
-                  else ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"])
-    cta_template = catalog.pick("outro-cta", duration=float(cta_end) - float(cta_start),
-                                recent_videos=recent_videos, exclude=used,
-                                prefer=cta_prefer, seed=seed)
+    cta_template, _ = picker.pick(
+        "outro-cta",
+        variant=variant,
+        duration=float(cta_end) - float(cta_start),
+        recent_videos=recent_videos,
+        exclude=used,
+        seed=seed,
+    )
     used.append(cta_template.id)
     if (cta_template.renderer == "logo_brand_close"
             or cta_template.params.get("logo_close")
@@ -1819,10 +1851,18 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         kb_template: Template | None = None
         if slot["kind"] in ("footage", "meme"):
             preferred = prefs.get(f"kenburns@{slot['role']}")
-            kb_template = catalog.pick("kenburns", duration=float(slot["duration"]),
-                                       recent_videos=recent_videos, exclude=used_templates,
-                                       prefer=[preferred] if preferred else [],
-                                       seed=seed + slot["index"])
+            head = [preferred] if preferred else []
+            content = slot.get("content", "")
+            kb_template, _ = picker.pick(
+                "kenburns",
+                blob=str(content or ""),
+                variant=variant,
+                duration=float(slot["duration"]),
+                recent_videos=recent_videos,
+                exclude=used_templates,
+                prefer_head=head,
+                seed=seed + slot["index"],
+            )
             used_templates.append(kb_template.id)
 
         transition_entry: dict[str, Any] | None = None
@@ -1874,7 +1914,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
-                    seed=seed)
+                    seed=seed, picker=picker, variant=variant)
                 if hero_entry:
                     used_templates.append(hero_entry["template"])
 
