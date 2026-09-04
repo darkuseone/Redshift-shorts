@@ -707,8 +707,11 @@ class CompositionBuilder:
             # плашка выходила пустой: в кадре белая полоса без единой буквы.
             # Видно это только на кадре готового ролика, поэтому и прожило
             # долго: разметка валидна, lint молчит, QC меряет не текст.
-            content = _esc(params.get("text") or params.get("content")
-                           or ovl.get("content"))
+            raw = (params.get("text") or params.get("content")
+                   or ovl.get("content") or "")
+            if not str(raw).strip():
+                return None  # no empty solid plaque
+            content = _esc(raw)
             kicker = (params.get("subtitle") or params.get("kicker")
                       or params.get("domain"))
             extra = f'<span class="kicker">{_esc(kicker)}</span>' if kicker else ""

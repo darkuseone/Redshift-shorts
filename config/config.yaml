@@ -71,8 +71,8 @@ heygen:
   # small in 9:16 (desk-wide look). Applied at shot prepare AND as CSS size
   # on HyperFrames alpha avatars (object-fit path ignored compose_zoom before).
   # Does not rewrite assets/avatar_clips. Measured seg_00 subject ~30% tall →
-  # 3.75 fills ~frame; 2.85 still looked small on alpha path.
-  compose_zoom: 3.75
+  # 3.75 was face-filling / too tight on 0042 QA; 2.7 keeps subject large without crop crush.
+  compose_zoom: 2.7
   max_seconds_per_video: 42
   api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"

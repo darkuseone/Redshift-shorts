@@ -5247,8 +5247,8 @@ def test_transitions_3d_flips_with_scalex_without_rotationy(ctx):
     assert "t3-stage" in node
     assert "t3-face" in node and "t3-a" in node and "t3-b" in node
     assert "t3-edge" in node
-    assert "ONE" in node and "TWO" in node
-    assert "SCENE A" in node and "SCENE B" in node
+    assert "SCENE A" not in node and "SCENE B" not in node
+    assert ">ONE<" not in node and ">TWO<" not in node
     assert "position:absolute" not in node.split("t3-stage", 1)[0]
     assert node.count(f'id="tr-{ctx.index:02d}"') == 1
     ids = re.findall(r'id="([^"]+)"', node)
@@ -5322,8 +5322,8 @@ def test_transitions_blur_crossfades_with_scale_without_filter_tween(ctx):
     assert "tb-stage" in node
     assert "tb-face" in node and "tb-a" in node and "tb-b" in node
     assert "tb-ghost" in node
-    assert "ONE" in node and "TWO" in node
-    assert "SCENE A" in node and "SCENE B" in node
+    assert "SCENE A" not in node and "SCENE B" not in node
+    assert ">ONE<" not in node and ">TWO<" not in node
     assert "position:absolute" not in node.split("tb-stage", 1)[0]
     assert node.count(f'id="tr-{ctx.index:02d}"') == 1
     ids = re.findall(r'id="([^"]+)"', node)
@@ -5405,8 +5405,8 @@ def test_transitions_cover_slides_wipes_with_x_without_css_transform(ctx):
     assert "tc-stage" in node
     assert "tc-face" in node and "tc-a" in node and "tc-b" in node
     assert "tc-wipe" in node and "tc-wa" in node and "tc-wb" in node
-    assert "ONE" in node and "TWO" in node
-    assert "SCENE A" in node and "SCENE B" in node
+    assert "SCENE A" not in node and "SCENE B" not in node
+    assert ">ONE<" not in node and ">TWO<" not in node
     assert "position:absolute" not in node.split("tc-stage", 1)[0]
     assert node.count(f'id="tr-{ctx.index:02d}"') == 1
     ids = re.findall(r'id="([^"]+)"', node)
@@ -5498,8 +5498,8 @@ def test_transitions_destruction_burns_a_circle_without_clip_path_or_canvas(ctx)
     assert "tds-face" in node and "tds-a" in node and "tds-b" in node
     assert "tds-hole" in node
     assert "tds-ring" in node and "tds-r0" in node and "tds-r1" in node and "tds-r2" in node
-    assert "ONE" in node and "TWO" in node
-    assert "SCENE A" in node and "SCENE B" in node
+    assert "SCENE A" not in node and "SCENE B" not in node
+    assert ">ONE<" not in node and ">TWO<" not in node
     assert "position:absolute" not in node.split("tds-stage", 1)[0]
     assert "<canvas" not in node
     assert node.count(f'id="tr-{ctx.index:02d}"') == 1
@@ -5603,8 +5603,8 @@ def test_transitions_light_slides_leaks_with_x_without_css_transform(ctx):
     assert "tlt-face" in node and "tlt-a" in node and "tlt-b" in node
     assert "tlt-warm" in node
     assert "tlt-blob" in node and "tlt-l1" in node and "tlt-l2" in node
-    assert "ONE" in node and "TWO" in node
-    assert "SCENE A" in node and "SCENE B" in node
+    assert "SCENE A" not in node and "SCENE B" not in node
+    assert ">ONE<" not in node and ">TWO<" not in node
     assert "position:absolute" not in node.split("tlt-stage", 1)[0]
     assert node.count(f'id="tr-{ctx.index:02d}"') == 1
     ids = re.findall(r'id="([^"]+)"', node)
@@ -5711,8 +5711,8 @@ def test_transitions_other_flashes_white_without_css_transform(ctx):
     assert "tto-stage" in node
     assert "tto-face" in node and "tto-a" in node and "tto-b" in node
     assert "tto-flash" in node
-    assert "ONE" in node and "TWO" in node
-    assert "SCENE A" in node and "SCENE B" in node
+    assert "SCENE A" not in node and "SCENE B" not in node
+    assert ">ONE<" not in node and ">TWO<" not in node
     assert "position:absolute" not in node.split("tto-stage", 1)[0]
     assert node.count(f'id="tr-{ctx.index:02d}"') == 1
     ids = re.findall(r'id="([^"]+)"', node)

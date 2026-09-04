@@ -73,6 +73,112 @@ _HERO_KICKERS = {
     "cta": "ОСТАЁТСЯ ВОПРОС",
 }
 
+
+# Catalog demo strings that must never reach a live cut when shot.content exists.
+_FS_DEMO_WORDS = frozenset({
+    "FLIGHT", "BREAKING", "BREAKING NEWS", "BREAKING NEWS: SOMETHING HAPPENED",
+    "SOMETHING HAPPENED", "HELLO", "WORLD", "LOREM", "IPSUM",
+})
+
+# Discourse openers that are not the "big word" meaning of the block.
+_DISCOURSE_PREFIX = re.compile(
+    r"^(?:и\s+вот\s+ответ(?:\s+на(?:\s+вопрос)?)?[.!?]?\s*"
+    r"|вот\s+ответ(?:\s+на(?:\s+вопрос)?)?[.!?]?\s*"
+    r"|и\s+тут\s+срабатывает[^.]*[.!?]?\s*)",
+    re.IGNORECASE,
+)
+
+
+def _strip_discourse(text: str) -> str:
+    """Drop 'и вот ответ…' style openers so cards show the real meaning."""
+    raw = str(text or "").strip()
+    if not raw:
+        return ""
+    cleaned = _DISCOURSE_PREFIX.sub("", raw).strip(" ,.;:—-")
+    return cleaned or raw
+
+
+def _semantic_screen_text(block: dict[str, Any], *, fallback: str = "") -> str:
+    """Author-intent screen phrase: overlay punch → emphasis window → body."""
+    overlay = block.get("overlay") or {}
+    otype = str(overlay.get("type") or "")
+    ocontent = str(overlay.get("content") or "").strip()
+    if otype == "fullscreen_text" and ocontent:
+        return ocontent
+    if otype in ("lower_third", "plaque", "note") and ocontent:
+        return ocontent
+    punch = _punch(block)
+    if punch:
+        return " ".join(punch)
+    emphasis = str(block.get("emphasis_word") or "").strip()
+    body = _strip_discourse(str(block.get("text") or fallback or ""))
+    if emphasis and body:
+        words = body.split()
+        hit = next((i for i, w in enumerate(words)
+                    if emphasis.lower() in w.lower()), None)
+        if hit is not None:
+            lo = max(0, hit - 1)
+            hi = min(len(words), hit + 2)
+            return " ".join(words[lo:hi])
+    return body
+
+
+def _fullscreen_params(template: Any, content: str,
+                       block: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Template catalog params + live shot content; never leave demo copy.
+
+    Catalog JSON ships demo ``word``/``text`` (FLIGHT, BREAKING NEWS). Assemble
+    used to copy those into the edit plan unchanged while ``content`` sat unused
+    for renderers that read params.word/text. Fill from the spoken phrase and
+    drop known demos. Tone ``ink`` on dark plates becomes ``paper``-safe by
+    forcing invert so glyphs stay light over footage.
+    """
+    params = dict(getattr(template, "params", None) or {})
+    phrase = str(content or "").strip()
+    block = block or {}
+    if not phrase:
+        phrase = _semantic_screen_text(block)
+    phrase = phrase.strip()
+    params["content"] = phrase
+
+    # Override catalog demo word/text with semantic content.
+    demo_word = str(params.get("word") or "").strip()
+    if (not demo_word) or demo_word.upper() in _FS_DEMO_WORDS or demo_word.upper() == "FLIGHT":
+        # Prefer emphasis / short token from phrase for flap boards.
+        emphasis = str(block.get("emphasis_word") or "").strip()
+        seed = emphasis.strip() if emphasis else (
+            phrase.split()[0] if phrase.split() else "")
+        token = re.sub(r"[^0-9A-Za-zА-Яа-яЁё]+", "", seed)
+        if token:
+            params["word"] = token.upper()[:8]
+        else:
+            params.pop("word", None)
+
+    demo_text = str(params.get("text") or "").strip()
+    if (not demo_text) or demo_text.upper() in _FS_DEMO_WORDS or "BREAKING" in demo_text.upper():
+        if phrase:
+            params["text"] = phrase
+        else:
+            params.pop("text", None)
+
+    # Code templates without real code must not invent greet.js demos: feed
+    # the phrase so _cd_parse_pair has something, or leave empty → Piece().
+    if params.get("code_diff") or params.get("code_highlight") or params.get("code"):
+        if not any(params.get(k) for k in ("code_before", "code_after", "code", "before", "after")):
+            if phrase:
+                params["code"] = phrase
+            else:
+                params.pop("code_diff", None)
+
+    # Dark-plate readability: catalog tone=ink means black glyphs in some
+    # templates; over footage we want light. Invert covers the common path.
+    tone = str(params.get("tone") or "").lower()
+    if tone == "ink":
+        params["tone"] = "accent"  # brand red/light-safe on dark; not black
+    return params
+
+
+
 def _alpha_slots(avatar_meta: dict[str, Any]) -> set[int]:
     """Слоты, где аватар лёг с прозрачным фоном."""
     return {int(idx) for seg in avatar_meta.get("segments", [])
@@ -587,7 +693,16 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     """Собрать всё, чем можно накормить приёмы, из одного блока сценария."""
     text = str(block.get("text") or "").strip()
     word = str(block.get("emphasis_word") or "").strip()
-    lines = _wrap_lines(text)
+    # Big-word lines must carry speech meaning, not discourse openers like
+    # «И вот ответ на вопрос» — Markus QA: answer card showed only that kicker.
+    role = str(slot.get("role") or "")
+    text_for_lines = text
+    if block.get("answers_hook") or role in ("twist", "cta"):
+        semantic = _semantic_screen_text(block, fallback=text)
+        text_for_lines = semantic or _strip_discourse(text) or text
+    else:
+        text_for_lines = _strip_discourse(text) if _DISCOURSE_PREFIX.match(text) else text
+    lines = _wrap_lines(text_for_lines)
     accent = [i for i, line in enumerate(lines)
               if word and word.lower() in line.lower()]
 
@@ -808,17 +923,31 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
                block: dict[str, Any]) -> str:
     """Что вынести на экран, когда материала под кадр нет.
 
-    Не выдумка и не заголовок: ровно те слова, которые звучат в это мгновение.
-    Экран договаривает речь, а не спорит с ней, и зритель видит то же, что
-    слышит. Берётся три-четыре слова — больше в кегль полноэкранного текста
-    не встанет.
+    Смысл речи, не каталожный плейсхолдер и не дискурс-открывашка («и вот
+    ответ»). Порядок: авторский overlay → окно речи → акцентная клауза →
+    тело блока без discourse-prefix. Три-четыре слова — потолок кегля.
     """
+    semantic = _semantic_screen_text(block)
+    # Overlay / punch that is short enough for fullscreen wins over raw speech.
+    if semantic and len(semantic.split()) <= 5:
+        overlay = block.get("overlay") or {}
+        if str(overlay.get("type") or "") in (
+                "fullscreen_text", "lower_third", "plaque", "note"):
+            return semantic.upper().strip(" ,.;:—-")
+
     start, end = float(slot["start"]), float(slot["end"])
     said = [str(w.get("word") or "") for w in words
             if float(w["end"]) > start and float(w["start"]) < end]
     said = [w for w in said if w.strip()]
-    if not said:
-        said = str(block.get("text") or "").split()[:4]
+    if said:
+        joined = " ".join(said)
+        if _DISCOURSE_PREFIX.match(joined):
+            body = _strip_discourse(str(block.get("text") or joined))
+            said = body.split()[:4] or said
+        return " ".join(said[:4]).upper().strip(" ,.;:—-")
+
+    body = _strip_discourse(str(block.get("text") or semantic or ""))
+    said = body.split()[:4]
     return " ".join(said[:4]).upper().strip(" ,.;:—-")
 
 
@@ -1954,12 +2083,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # пустом чёрном: фраза вынесена крупно, а стоит она ни на чём.
             prep = prepared.get(slot["index"])
             asset = assets.get(slot["index"])
+            fs_params = _fullscreen_params(template, content, block)
             entry.update({
                 "content": content,
                 "template": template.id,
                 "renderer": template.renderer,
-                "params": dict(template.params),
-                "invert": bool(template.params.get("invert")) or variant == "B",
+                "params": fs_params,
+                # Light glyphs on dark plates (0042 QA: black hero/fullscreen unreadable).
+                "invert": True,
                 "accent_word": _fullscreen_accent(content, block),
                 "file": prep["dst"] if prep is not None else None,
                 # Full passport for QC-12; credit feeds thin BL caption over media.
@@ -2006,13 +2137,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # Borrow nearest real plate as bg when any footage exists in the cut.
             plate = _plate_source(slot, slots, prepared, assets)
             bg_file = (plate or {}).get("file") if plate else None
+            fs_params = _fullscreen_params(template, content, gap_block)
             entry.update({
                 "kind": "fullscreen_text",
                 "content": content,
                 "template": template.id,
                 "renderer": template.renderer,
-                "params": dict(template.params),
-                "invert": bool(template.params.get("invert")) or variant == "B",
+                "params": fs_params,
+                "invert": True,
                 "accent_word": _fullscreen_accent(content, gap_block),
                 "traits": sorted(gap_traits) if gap_traits else [],
                 "grounded_on": sorted(matched(template.needs, gap_traits)) if gap_traits else [],

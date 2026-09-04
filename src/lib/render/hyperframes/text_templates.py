@@ -18,7 +18,12 @@ def txt_split_flap_board(ctx: "TemplateCtx") -> Piece:
     node_id = f"sfb-{ctx.index:02d}"
     start = ctx.start
     duration = max(float(ctx.duration), 0.4)
-    word = str(ctx.params.get("word", "FLIGHT"))[:8]
+    # Live cuts must never show catalog demos (FLIGHT). Prefer explicit word,
+    # then shot content; empty → skip the board entirely.
+    raw = str(ctx.params.get("word") or ctx.params.get("content") or "").strip()
+    word = "".join(ch for ch in raw.upper() if not ch.isspace())[:8]
+    if not word:
+        return Piece()
     fade = min(0.4, duration * 0.45)
     out_at = start + duration - fade
 
@@ -57,7 +62,10 @@ def txt_news_ticker(ctx: "TemplateCtx") -> Piece:
     node_id = f"ntk-{ctx.index:02d}"
     start = ctx.start
     duration = max(float(ctx.duration), 0.4)
-    text = str(ctx.params.get("text", "BREAKING NEWS"))
+    # No catalog "BREAKING NEWS" fallback — empty ticker is skipped.
+    text = str(ctx.params.get("text") or ctx.params.get("content") or "").strip()
+    if not text:
+        return Piece()
     fade = min(0.4, duration * 0.45)
     out_at = start + duration - fade
 

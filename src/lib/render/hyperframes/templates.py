@@ -1140,11 +1140,11 @@ def tr_transitions_3d(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip tr-transitions-3d" {_timing(ctx)}>'
                f'<span class="t3-stage">'
                f'<span id="{node_id}-a" class="t3-face t3-a">'
-               f'<span class="t3-big">ONE</span>'
-               f'<span class="t3-label">SCENE A</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-b" class="t3-face t3-b">'
-               f'<span class="t3-big">TWO</span>'
-               f'<span class="t3-label">SCENE B</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-edge" class="t3-edge"></span>'
                f'</span></div>'],
         tweens=tweens)
@@ -1246,17 +1246,17 @@ def tr_transitions_blur(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip tr-transitions-blur" {_timing(ctx)}>'
                f'<span class="tb-stage">'
                f'<span id="{node_id}-a" class="tb-face tb-a">'
-               f'<span class="tb-big">ONE</span>'
-               f'<span class="tb-label">SCENE A</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-ag" class="tb-face tb-a tb-ghost">'
-               f'<span class="tb-big">ONE</span>'
-               f'<span class="tb-label">SCENE A</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-bg" class="tb-face tb-b tb-ghost">'
-               f'<span class="tb-big">TWO</span>'
-               f'<span class="tb-label">SCENE B</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-b" class="tb-face tb-b">'
-               f'<span class="tb-big">TWO</span>'
-               f'<span class="tb-label">SCENE B</span></span>'
+               f''
+               f'</span>'
                f'</span></div>'],
         tweens=tweens)
 
@@ -1349,11 +1349,11 @@ def tr_transitions_cover(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip tr-transitions-cover" {_timing(ctx)}>'
                f'<span class="tc-stage">'
                f'<span id="{node_id}-a" class="tc-face tc-a">'
-               f'<span class="tc-big">ONE</span>'
-               f'<span class="tc-label">SCENE A</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-b" class="tc-face tc-b">'
-               f'<span class="tc-big">TWO</span>'
-               f'<span class="tc-label">SCENE B</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-wb" class="tc-wipe tc-wb"></span>'
                f'<span id="{node_id}-wa" class="tc-wipe tc-wa"></span>'
                f'</span></div>'],
@@ -1480,11 +1480,11 @@ def tr_transitions_light(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip tr-transitions-light" {_timing(ctx)}>'
                f'<span class="tlt-stage">'
                f'<span id="{node_id}-a" class="tlt-face tlt-a">'
-               f'<span class="tlt-big">ONE</span>'
-               f'<span class="tlt-label">SCENE A</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-b" class="tlt-face tlt-b">'
-               f'<span class="tlt-big">TWO</span>'
-               f'<span class="tlt-label">SCENE B</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-warm" class="tlt-warm"></span>'
                f'<span id="{node_id}-l1" class="tlt-blob tlt-l1"></span>'
                f'<span id="{node_id}-l2" class="tlt-blob tlt-l2"></span>'
@@ -1571,11 +1571,11 @@ def tr_transitions_other(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip tr-transitions-other" {_timing(ctx)}>'
                f'<span class="tto-stage">'
                f'<span id="{node_id}-a" class="tto-face tto-a">'
-               f'<span class="tto-big">ONE</span>'
-               f'<span class="tto-label">SCENE A</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-b" class="tto-face tto-b">'
-               f'<span class="tto-big">TWO</span>'
-               f'<span class="tto-label">SCENE B</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-flash" class="tto-flash"></span>'
                f'</span></div>'],
         tweens=tweens)
@@ -1667,12 +1667,12 @@ def tr_transitions_destruction(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip tr-transitions-destruction" {_timing(ctx)}>'
                f'<span class="tds-stage">'
                f'<span id="{node_id}-b" class="tds-face tds-b">'
-               f'<span class="tds-big">TWO</span>'
-               f'<span class="tds-label">SCENE B</span></span>'
+               f''
+               f'</span>'
                f'<span id="{node_id}-hole" class="tds-hole">'
                f'<span id="{node_id}-a" class="tds-face tds-a">'
-               f'<span class="tds-big">ONE</span>'
-               f'<span class="tds-label">SCENE A</span></span></span>'
+               f''
+               f'</span></span>'
                f'<span id="{node_id}-r2" class="tds-ring tds-r2"></span>'
                f'<span id="{node_id}-r1" class="tds-ring tds-r1"></span>'
                f'<span id="{node_id}-r0" class="tds-ring tds-r0"></span>'
@@ -12448,6 +12448,9 @@ def ov_source_card(ctx: "TemplateCtx") -> Piece:
     title = str(ctx.params.get("title") or "")
     snippet = str(ctx.params.get("snippet") or "")
     highlight = str(ctx.params.get("highlight_line") or "")
+    # Empty solid white card without copy is a template leak (0042 QA @~8s).
+    if not title.strip() and not snippet.strip() and not domain.strip():
+        return Piece()
     node_id = ctx.target
     body = _esc(snippet)
     if highlight and highlight.lower() in snippet.lower():
@@ -12455,17 +12458,22 @@ def ov_source_card(ctx: "TemplateCtx") -> Piece:
         body = (_esc(snippet[:idx])
                 + f'<span class="hl">{_esc(snippet[idx:idx + len(highlight)])}</span>'
                 + _esc(snippet[idx + len(highlight):]))
-    tweens = entrance_tweens(f"#{node_id} .bar", ctx.start, name="rise")
-    tweens += entrance_tweens(f"#{node_id} .title", ctx.start, name="rise", delay=0.05)
+    # Fade an INNER stage (not the .clip): HyperFrames owns clip opacity.
+    # Without this the white shell sits empty while .title/.snippet rise.
+    stage = f"{node_id}-stage"
+    tweens = entrance_tweens(f"#{stage}", ctx.start, name="rise")
+    if title:
+        tweens += entrance_tweens(f"#{node_id} .title", ctx.start, name="rise", delay=0.05)
     if snippet:
         tweens += entrance_tweens(f"#{node_id} .snippet", ctx.start,
                                   name="rise", delay=0.10)
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay source-card" {_timing(ctx)}>'
+               f'<div id="{stage}" class="sc-stage" style="opacity:0">'
                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'
                f'<div class="title">{_esc(title)}</div>'
-               f'<div class="snippet">{body}</div></div>'],
+               f'<div class="snippet">{body}</div></div></div>'],
         tweens=tweens)
 
 
@@ -13967,9 +13975,9 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "display:flex;flex-direction:column;align-items:flex-start;gap:8px;"
         "pointer-events:none}"
         ".hero-type-slab .ts-line{display:block;font-family:var(--font-display);"
-        "text-transform:uppercase;line-height:0.9;color:var(--color-ink);"
+        "text-transform:uppercase;line-height:0.9;color:var(--color-on-stage);"
         "will-change:transform;"
-        "text-shadow:0 4px 22px rgba(247,245,243,0.9)}"
+        "text-shadow:0 4px 22px rgba(0,0,0,0.55),0 0 18px rgba(247,245,243,0.35)}"
         ".hero-type-slab .ts-line.accent{color:var(--color-accent)}"
         # --- футаж-окно поверх ---
         f".hero-plate-pop{{position:absolute;display:block;z-index:{Z_AVATAR + 1};"
