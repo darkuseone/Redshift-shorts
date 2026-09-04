@@ -24,15 +24,15 @@ CONCEPTS: dict[str, list[str]] = {
     "нейросет": ["neural network visualization", "ai data flow", "server room ai"],
     "интеллект": ["artificial intelligence abstract", "machine learning visualization"],
     "алгоритм": ["code on screen", "data processing abstract"],
-    "космос": ["deep space stars", "galaxy nebula", "orbit earth view", "solar system planets"],
-    "планет": ["planet surface", "exoplanet space", "telescope observatory", "solar system"],
-    "телескоп": ["space telescope", "observatory dome night", "astronomer telescope", "james webb telescope"],
-    "звезд": ["starfield timelapse", "night sky stars", "nebula deep space"],
-    "ракет": ["rocket launch", "spacecraft engine", "launch pad"],
-    "солнц": ["solar flare sun", "sun surface closeup", "solar observatory"],
-    "орбит": ["earth orbit view", "satellite orbit earth", "iss space station"],
-    "новост": ["newsroom broadcast desk", "breaking news screen", "press conference"],
-    "пресс": ["newspaper printing press", "journalist press conference", "news article screen"],
+    "космос": ["deep space stars", "galaxy nebula", "orbit earth view", "solar system planets", "milky way timelapse", "cosmic dust clouds"],
+    "планет": ["planet surface", "exoplanet space", "telescope observatory", "solar system", "mars surface rover", "saturn rings space"],
+    "телескоп": ["space telescope", "observatory dome night", "astronomer telescope", "james webb telescope", "radio telescope array"],
+    "звезд": ["starfield timelapse", "night sky stars", "nebula deep space", "aurora borealis space"],
+    "ракет": ["rocket launch", "spacecraft engine", "launch pad", "falcon heavy liftoff"],
+    "солнц": ["solar flare sun", "sun surface closeup", "solar observatory", "solar eclipse corona"],
+    "орбит": ["earth orbit view", "satellite orbit earth", "iss space station", "earth from space night"],
+    "новост": ["newsroom broadcast desk", "breaking news screen", "press conference", "tv news studio anchors", "live news reportage"],
+    "пресс": ["newspaper printing press", "journalist press conference", "news article screen", "magazine editorial desk"],
     "лаборатор": ["research laboratory", "scientist microscope", "clean room laboratory", "chip fab cleanroom"],
     "завод": ["semiconductor fab cleanroom", "chip manufacturing factory", "wafer fabrication"],
     "учён": ["scientist working", "researcher laboratory", "science team discussion"],
@@ -59,12 +59,12 @@ CONCEPTS: dict[str, list[str]] = {
 
 # Метафорические опоры по роли блока — когда предметного кадра нет.
 ROLE_METAPHORS: dict[str, list[str]] = {
-    "hook": ["abstract dark texture macro", "slow motion particles dark"],
-    "setup": ["technology abstract background", "macro texture technology"],
-    "evidence": ["documents on desk", "screen with data closeup", "news article screen"],
-    "develop": ["abstract data particles", "geometric motion background"],
-    "twist": ["dramatic dark abstract", "light through darkness"],
-    "cta": ["abstract gradient motion", "minimal red abstract background"],
+    "hook": ["abstract dark texture macro", "slow motion particles dark", "deep space stars"],
+    "setup": ["technology abstract background", "macro texture technology", "server room blue light"],
+    "evidence": ["documents on desk", "screen with data closeup", "news article screen", "newsroom broadcast desk"],
+    "develop": ["abstract data particles", "geometric motion background", "galaxy nebula"],
+    "twist": ["dramatic dark abstract", "light through darkness", "solar flare sun"],
+    "cta": ["abstract gradient motion", "minimal red abstract background", "earth orbit view"],
 }
 
 CATEGORY_HINT: dict[str, str] = {
@@ -140,7 +140,14 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
     # 4. Метафора по роли блока — на случай, если предметного кадра не найдётся.
     out.extend(ROLE_METAPHORS.get(slot.get("role", ""), []))
 
-    # 5. Фактура как последний рубеж.
+    # 5. Bonus space/news plates — keep avatar BGs and templates interesting
+    # even when the script is lab/AI-only (0042 quantum).
+    out.extend([
+        "deep space stars", "galaxy nebula", "earth orbit view",
+        "newsroom broadcast desk", "breaking news screen",
+    ])
+
+    # 6. Фактура как последний рубеж.
     out.append("abstract macro texture slow motion")
 
     seen: list[str] = []

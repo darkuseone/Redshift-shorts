@@ -423,7 +423,9 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
         sw = math.ceil(width * zoom / 2) * 2
         sh = math.ceil(height * zoom / 2) * 2
         crop_x = max(0, (sw - width) // 2)
-        crop_bias = 0.32 if zoom < 1.8 else min(0.62, 0.28 + 0.10 * zoom)
+        # Cap bias softer at strong zoom: 0.28+0.10*z @3.75→0.62 cropped the
+        # head on 0042 (subject mid-frame). 0.25+0.07*z @3.75→0.51 keeps head.
+        crop_bias = 0.32 if zoom < 1.8 else min(0.55, 0.25 + 0.07 * zoom)
         crop_y = max(0, int(round((sh - height) * crop_bias)))
         filters.append(
             f"[{avatar_index}:v]fps={fps},scale={sw}:{sh}:flags=lanczos,"

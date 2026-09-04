@@ -155,7 +155,37 @@ def test_gap_phrase_uses_spoken_window():
 def test_compose_zoom_strong_bias_formula():
     """Strong zoom must bias crop down; mild zoom keeps legacy 0.32."""
     def bias(zoom: float) -> float:
-        return 0.32 if zoom < 1.8 else min(0.62, 0.28 + 0.10 * zoom)
+        return 0.32 if zoom < 1.8 else min(0.55, 0.25 + 0.07 * zoom)
 
     assert bias(1.55) == 0.32
-    assert 0.54 <= bias(2.85) <= 0.58
+    assert 0.44 <= bias(2.85) <= 0.50
+    assert 0.50 <= bias(3.75) <= 0.55
+
+
+
+def test_hero_mutes_heavy_template_text():
+    from src.p11_assemble.assemble import hero_mutes_subtitle
+    # Mid-frame word/title heroes must mute word captions (overlap fix).
+    for renderer in ("hero-headline", "hero-oversize", "hero-title-behind",
+                     "hero-card-stack", "hero-paper"):
+        flags = hero_mutes_subtitle(renderer)
+        assert flags["carries_line"] or flags["covers_frame"], renderer
+
+
+def test_avatar_bg_plates_round_robin():
+    from src.p11_assemble.assemble import _avatar_bg_plates
+    slots = [
+        {"index": 0, "kind": "footage"},
+        {"index": 1, "kind": "avatar"},
+        {"index": 2, "kind": "footage"},
+        {"index": 3, "kind": "avatar"},
+    ]
+    prepared = {
+        0: {"dst": "/tmp/a.mp4"},
+        2: {"dst": "/tmp/b.mp4"},
+    }
+    assets = {0: {}, 2: {}}
+    out = _avatar_bg_plates(slots, prepared, assets)
+    assert out[1] in {"/tmp/a.mp4", "/tmp/b.mp4"}
+    assert out[3] in {"/tmp/a.mp4", "/tmp/b.mp4"}
+    assert out[1] != out[3] or len(set(out.values())) == 1

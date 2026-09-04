@@ -131,12 +131,12 @@
     "case": "upper",
     "position": "center",
     "baseline_y": [
-      940,
-      1010
+      1100,
+      1280
     ],
-    "baseline_y_default": 975,
-    "baseline_y_avatar_shift": 1050,
-    "face_bbox_shift_trigger_y": 800,
+    "baseline_y_default": 1180,
+    "baseline_y_avatar_shift": 1280,
+    "face_bbox_shift_trigger_y": 900,
     "font_role": "subtitle",
     "size_px": [
       84,

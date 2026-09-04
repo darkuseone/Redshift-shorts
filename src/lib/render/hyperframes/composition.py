@@ -346,12 +346,15 @@ class CompositionBuilder:
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
-                # Тот же запасной фон, что и у пустого слота: сцена ролика с
-                # холстом поверх. Раньше здесь стояла своя копия разметки — и
-                # звёздное поле не доходило до самого частого кадра ролика,
-                # хотя ведущий занимает 35-60 % хронометража.
-                nodes.append(self._scene_backdrop(node_id, timing,
-                                                  start=start, duration=duration))
+                # Prefer per-shot B-roll (`bg_file`) so the plate behind the
+                # talking head actually changes; static scene plate is fallback.
+                bg_src = self._asset(shot.get("bg_file"))
+                if bg_src:
+                    nodes.append(self._media_node(
+                        f"{node_id}-bg", bg_src, timing, css="shot avatar-bg"))
+                else:
+                    nodes.append(self._scene_backdrop(node_id, timing,
+                                                      start=start, duration=duration))
             elif index in avatar_nodes or kind == "avatar":
                 # Аватар без альфы приходит со своим фоном и занимает кадр
                 # целиком: подкладывать под него нечего. Но переход ему нужен.
@@ -864,6 +867,42 @@ class CompositionBuilder:
                 f'data-duration="{_num(self.duration)}" '
                 f'data-track-index="{TRACK_AUDIO}" data-volume="1"></audio>')
 
+
+    def _avatar_zoom_css(self) -> str:
+        """Size transparent Avatar V so the subject fills the frame.
+
+        HyperFrames alpha path plays the raw webm with object-fit:cover — the
+        prepare_avatar_shot compose_zoom never reached the screen. Enlarge via
+        width/height (not transform:scale) so GSAP entry tweens that end at
+        scale:1 keep the resting fill.
+        """
+        zoom = max(float(self.plan.get("avatar_compose_zoom") or 1.0), 1.0)
+        # Subject mid-frame on 0042 seg_00 (~40% x, ~51% y of opaque bbox).
+        fx = 0.40
+        fy = 0.48
+        faces = []
+        for seg in self.plan.get("avatar", []) or []:
+            box = seg.get("face_bbox")
+            if box and len(box) == 4:
+                faces.append(box)
+        if faces:
+            # Average face centre as focus.
+            cx = sum((b[0] + b[2]) / 2 for b in faces) / len(faces) / max(self.width, 1)
+            cy = sum((b[1] + b[3]) / 2 for b in faces) / len(faces) / max(self.height, 1)
+            fx = min(max(cx, 0.2), 0.8)
+            fy = min(max(cy, 0.25), 0.7)
+        if zoom <= 1.001:
+            return (".avatar{width:var(--frame-w);height:var(--frame-h);"
+                    "left:0;top:0;object-fit:cover}")
+        # left/top place the focus point at frame centre after enlarge.
+        return (
+            f".avatar{{width:calc(var(--frame-w) * {zoom:.3f});"
+            f"height:calc(var(--frame-h) * {zoom:.3f});"
+            f"left:calc(var(--frame-w) * (1 - {zoom:.3f}) * {fx:.3f});"
+            f"top:calc(var(--frame-h) * (1 - {zoom:.3f}) * {fy:.3f});"
+            f"object-fit:cover;max-width:none;max-height:none}}"
+        )
+
     # --- сборка ---------------------------------------------------------
     def build(self, mix_name: str) -> str:
         body: list[str] = [
@@ -896,6 +935,7 @@ class CompositionBuilder:
     <title>{_esc(title)}</title>
     <script src="vendor/gsap.min.js"></script>
     <link rel="stylesheet" href="brand.css" />
+    <style id="avatar-compose-zoom">{self._avatar_zoom_css()}</style>
   </head>
   <body>
     <div

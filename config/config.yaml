@@ -68,10 +68,11 @@ heygen:
   background: "transparent_if_available"
   output: "1080x1920"
   # In-compose zoom for prepared Avatar V plates where the subject sits
-  # small in 9:16 (desk-wide look). Applied only at shot prepare; does not
-  # rewrite assets/avatar_clips. 1.0 = off. Measured ~23% subject height on
-  # redshift_0042 → 2.85 targets ~65% (1.55 was still ~36%, visually unchanged).
-  compose_zoom: 2.85
+  # small in 9:16 (desk-wide look). Applied at shot prepare AND as CSS size
+  # on HyperFrames alpha avatars (object-fit path ignored compose_zoom before).
+  # Does not rewrite assets/avatar_clips. Measured seg_00 subject ~30% tall →
+  # 3.75 fills ~frame; 2.85 still looked small on alpha path.
+  compose_zoom: 3.75
   max_seconds_per_video: 42
   api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"
@@ -164,7 +165,7 @@ generation:
   ken_burns_zoom: 1.12
 
 magnific:
-  max_downloads_per_video: 50     # §7.2.4 — лимит подписки
+  max_downloads_per_video: 80     # raised so P7 force-rebuild can stock avatar BGs
   prefer_free_models: true
   paid_model_share_limit: 0.07
   api_key_env: MAGNIFIC_API_KEY
@@ -194,9 +195,9 @@ stock:
   pixabay_api_key_env: PIXABAY_API_KEY
   # NASA images-api и Internet Archive отдают материал анонимно — ключа нет
   # и не требуется, проверено запросом к images-api.nasa.gov.
-  max_candidates_per_query: 10     # §7.2.3: 5–10 кандидатов на запрос
-  queries_per_slot: 5              # §7.2.2: 3–5 запросов разной абстракции
-  target_pool_size: [30, 60]       # §7.2.3: итоговый пул на ролик
+  max_candidates_per_query: 14     # aggressive harvest (was 10; still within spirit of §7.2.3)
+  queries_per_slot: 7              # more abstraction ladder per slot (was 5)
+  target_pool_size: [50, 100]      # larger pool so avatar BGs + templates both get plates
   max_download_height: 1080        # §3.6.1: строго до 1080p, выше не брать
   # Вес принимаемого материала. Хранилище лежит в репозитории, и клип на 45 МБ
   # остаётся в истории git навсегда. Прогон 0047 положил 27 клипов на 369 МБ —
@@ -257,8 +258,8 @@ limits:
   max_shot_sec_with_events: 7
   min_shot_sec: 1.5                 # §3.6.2
   memes_per_video: [0, 2]
-  bg_vfx_per_video: 2
-  bg_vfx_sec: [2.0, 5.0]
+  bg_vfx_per_video: 6
+  bg_vfx_sec: [1.5, 8.0]
   # Потолок AI-футажа. Заказчик держит его в вилке 5-35 %: преимущество всегда
   # за настоящим материалом — сток, новостная вырезка, скриншот, кадр из статьи,
   # — а генерация закрывает то, чего не нашлось. Было 0.40, стало 0.35: на 0047

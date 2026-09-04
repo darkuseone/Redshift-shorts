@@ -21,7 +21,6 @@ from typing import Any, Iterable
 from ..errors import RedshiftError
 from ..lib.ffmpeg import probe
 from ..lib.logging import get_logger
-from ..lib.providers.generation import build_generation_provider
 from ..lib.render.layers import Ctx, text_behind_head
 from ..lib.render.matting import assess_matte, plan_vfx_backgrounds, try_local_matting
 from ..lib.render.shots import (
@@ -234,6 +233,52 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
     if index >= len(parts):
         return ""
     return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
+
+
+def _avatar_bg_plates(slots: list[dict[str, Any]],
+                       prepared: dict[int, dict[str, Any]],
+                       assets: dict[int, dict[str, Any]]) -> dict[int, str]:
+    """Real (non-AI) footage paths for alpha talking-head backgrounds.
+
+    HyperFrames alpha avatars used a single static scene plate for the whole
+    cut — background never changed. Round-robin distinct prepared plates so
+    each avatar beat gets interesting B-roll behind the transparent subject.
+    """
+    plates: list[str] = []
+    seen: set[str] = set()
+    for slot in slots:
+        idx = int(slot["index"])
+        asset = assets.get(idx) or {}
+        prep = prepared.get(idx) or {}
+        if asset.get("ai_generated"):
+            continue
+        path = str(prep.get("dst") or "").strip()
+        if not path or path in seen:
+            continue
+        if slot.get("kind") not in ("footage", "meme", "fullscreen_text"):
+            # Prefer footage/meme/fullscreen plates; skip baked avatar composites.
+            if slot.get("kind") in ("avatar", "split"):
+                continue
+        seen.add(path)
+        plates.append(path)
+    if not plates:
+        # Fall back to any non-AI prepared file (borrowed plate path).
+        for slot in slots:
+            plate = _plate_source(slot, slots, prepared, assets)
+            path = str((plate or {}).get("file") or "").strip()
+            if path and path not in seen:
+                seen.add(path)
+                plates.append(path)
+    out: dict[int, str] = {}
+    if not plates:
+        return out
+    cursor = 0
+    for slot in slots:
+        if slot.get("kind") != "avatar":
+            continue
+        out[int(slot["index"])] = plates[cursor % len(plates)]
+        cursor += 1
+    return out
 
 
 def _caption(text: str, *, limit: int = 8) -> str:
@@ -642,6 +687,13 @@ _FULL_FRAME_HEROES = ("hero-slam", "hero-knockout")
 # отдельности.
 _CAPTION_HEROES = ("hero-exhibit",)
 
+# Large mid-frame type that collides with word captions at ~baseline 1100–1280.
+# Word/title/head heroes used to leave captions on; Markus rejected the overlap.
+_TEXT_ZONE_HEROES = (
+    "hero-headline", "hero-oversize", "hero-split", "hero-title-behind",
+    "hero-figure", "hero-card-stack", "hero-paper", "hero-brand-pill",
+)
+
 
 def hero_mutes_subtitle(renderer: str) -> dict[str, bool]:
     """Отменяет ли приём пословный субтитр — и по какой из двух причин.
@@ -655,9 +707,12 @@ def hero_mutes_subtitle(renderer: str) -> dict[str, bool]:
         # Приём, который выкладывает реплику строками, сам и есть субтитр
         # этого кадра. Пословное слово поверх той же фразы — дубль, и оно
         # вдобавок ложится прямо на карточку: проверено кадром.
-        "carries_line": (bool({"lines", "punch", "entries"}
+        "carries_line": (bool({"lines", "punch", "entries", "word", "title",
+                               "head", "tail", "figures", "source", "quote",
+                               "brand"}
                               & set(_HERO_NEEDS.get(renderer, ())))
-                         or renderer in _CAPTION_HEROES),
+                         or renderer in _CAPTION_HEROES
+                         or renderer in _TEXT_ZONE_HEROES),
         # Приём, закрывающий кадр сплошной заливкой, съедает и субтитр: белое
         # слово на светлой заливке не читается, а чернильное на тёмной — тем
         # более. Своё слово он в кадре уже показывает.
@@ -1144,35 +1199,54 @@ def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
         behind_layers[block["id"]] = path
         summary["text_behind_head"].append({"block_id": block["id"], "text": text})
 
-    # --- VFX-фон (§7.7): ≤2 раза за ролик, 2–5 сек ---------------------------
+    # --- VFX-фон (§7.7): stock B-roll behind avatar (no paid AI gen) -------
+    # Prefer real footage plates already harvested by P7/P8. AI generation was
+    # money + often abstract mush; Markus wants interesting stock behind alpha.
     vfx_clips: dict[int, Path] = {}
     if bool(cfg.get("features.background_vfx", False)):
         limit = int(cfg.get("limits.bg_vfx_per_video", 2))
         lo, hi = cfg.get("limits.bg_vfx_sec", [2.0, 5.0])
+        avatar_slot_idxs = {idx for seg in segments if int(seg["index"]) in usable
+                            for idx in seg.get("slot_indices", [])}
         candidates = plan_vfx_backgrounds(
-            [s for s in plan["slots"] if s["index"] in
-             {idx for seg in segments if int(seg["index"]) in usable
-              for idx in seg.get("slot_indices", [])}],
+            [s for s in plan["slots"] if s["index"] in avatar_slot_idxs],
             limit=limit, duration_range=(float(lo), float(hi)))
-        if candidates:
-            provider = build_generation_provider(cfg, ctx.costs)
-            for slot_index in candidates:
-                slot = next(s for s in plan["slots"] if s["index"] == slot_index)
-                prompt = (f"abstract living background for a science short, "
-                          f"{slot.get('visual_intent') or slot['role']}, "
-                          f"muted palette, single warm red accent, slow motion, "
-                          f"no text, no logos, vertical 9:16")
-                out = ctx.wpath("matte", f"vfx_{slot_index:02d}.mp4")
-                try:
-                    asset = provider.generate(prompt, out, kind="video",
-                                              duration_sec=float(slot["duration"]) + 0.4,
-                                              prefer_free=True)
-                except Exception as exc:  # noqa: BLE001 — VFX не должен ронять сборку
-                    ctx.warn(f"VFX-фон не сгенерирован: {exc}", slot=slot_index)
-                    continue
-                vfx_clips[slot_index] = asset.path
-                summary["vfx"].append({"slot": slot_index,
+        # Stock plates from accepted assets for this cut (dict slot→entry).
+        stock_paths: list[Path] = []
+        try:
+            accepted_doc = ctx.read("accepted_assets.json")
+        except Exception:  # noqa: BLE001
+            accepted_doc = {}
+        accepted_map = accepted_doc.get("accepted") or {}
+        items = (list(accepted_map.values()) if isinstance(accepted_map, dict)
+                 else list(accepted_map or []))
+        for item in items:
+            if not isinstance(item, dict) or item.get("ai_generated"):
+                continue
+            local = str(item.get("local_file") or "").strip()
+            if local and Path(local).is_file():
+                stock_paths.append(Path(local))
+                continue
+            key = str(item.get("storage_key") or "").strip()
+            if key and ctx.storage.exists(key):
+                dst = ctx.wpath("broll", "raw", Path(key).name)
+                if not dst.is_file():
+                    ctx.storage.get(key, dst)
+                if dst.is_file():
+                    stock_paths.append(dst)
+        cursor = 0
+        for slot_index in candidates:
+            slot = next(s for s in plan["slots"] if s["index"] == slot_index)
+            if stock_paths:
+                vfx_clips[slot_index] = stock_paths[cursor % len(stock_paths)]
+                cursor += 1
+                summary["vfx"].append({"slot": slot_index, "source": "stock",
                                        "duration_sec": round(float(slot["duration"]), 2)})
+                continue
+            # Last resort: skip (brand gradient under avatar) — do NOT spend
+            # Magnific/Kling credits on abstract VFX for talking-head BGs.
+            ctx.warn("нет сток-плиты для фона аватара — градиент брендбука",
+                     slot=slot_index)
 
     summary["degraded"] = False
     return reports, behind_layers, vfx_clips, summary
@@ -1835,6 +1909,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     alpha_slots = _alpha_slots(avatar_meta)
     face_centres = _face_centres(avatar_meta)
     head_boxes = _head_boxes(avatar_meta)
+    avatar_bgs = _avatar_bg_plates(slots, prepared, assets)
+    compose_zoom = float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
     # Библиотека иконок §14: пилюля бренда берёт логотип оттуда. Её отсутствие
     # не должно валить сборку — приём просто не выпадет.
@@ -2022,6 +2098,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         entry.update({
             "file": prep["dst"],
+            "bg_file": (avatar_bgs.get(int(slot["index"]))
+                        if slot["kind"] == "avatar"
+                        and int(slot["index"]) in alpha_slots else None),
             "asset_id": asset.get("asset_id") or (f"avatar_seg_{prep.get('avatar_segment')}"
                                                   if is_avatar else None),
             "source": "heygen" if is_avatar else asset.get("source"),
@@ -2066,6 +2145,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         if hero.get("duration"):
             end = min(end, float(shot["start"]) + float(hero["duration"]))
         fs_windows.append((float(shot["start"]), end))
+    # Bulky source/browser cards own the frame; word captions collide with them.
+    _BULKY_OVL = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
+                  "ai_chat_reveal", "app_showcase", "dataviz"}
+    for ovl in overlays:
+        kind = str(ovl.get("type") or "")
+        renderer = str(ovl.get("renderer") or "")
+        if kind in _BULKY_OVL or renderer in _BULKY_OVL:
+            fs_windows.append((float(ovl["start"]), float(ovl["end"])))
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])
@@ -2105,9 +2192,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                      "plate": _backdrop_plate(ctx.cfg, scene)},
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
-            "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 975),
+            "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 1180),
             "caption": pick_caption_style(plan, ctx.cfg.brandbook),
         },
+        "avatar_compose_zoom": compose_zoom,
         "avatar": avatar_meta.get("segments", []),
         "templates_used": used_templates,
         "asset_rotation": asset_rotation,

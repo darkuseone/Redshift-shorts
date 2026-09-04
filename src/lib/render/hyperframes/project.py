@@ -109,6 +109,9 @@ class HyperFramesProject:
         for shot in plan.get("shots", []):
             if shot.get("file"):
                 sources.append(str(shot["file"]))
+            bg_file = shot.get("bg_file")
+            if bg_file:
+                sources.append(str(bg_file))
             # Материал приёма — отдельный файл шота, и он тоже обязан переехать
             # внутрь. В конвейере это скрывалось: приём берёт кадр у соседнего
             # шота, а тот уже перенесён своей строкой выше. Проба отдаёт приёму

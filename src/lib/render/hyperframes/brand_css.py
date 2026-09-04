@@ -147,7 +147,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
 
     # --- аватар ---------------------------------------------------------
     parts.append(
-        f".avatar{{position:absolute;inset:0;z-index:{Z_AVATAR};"
+        f".avatar{{position:absolute;z-index:{Z_AVATAR};"
+        "width:var(--frame-w);height:var(--frame-h);left:0;top:0;"
+        "object-fit:cover;pointer-events:none}"
+        # avatar-bg = B-roll plate under transparent talking-head
+        f".avatar-bg{{position:absolute;inset:0;z-index:{Z_SHOT};"
         "width:var(--frame-w);height:var(--frame-h);object-fit:cover}"
     )
 

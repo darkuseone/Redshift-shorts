@@ -161,11 +161,17 @@ def run_step(ctx) -> dict[str, Any]:
         intent_kind = classify_intent(slot.get("visual_intent", ""), slot.get("queries", []),
                                       plan.get("category", ""))
         queries = build_queries(slot, plan, count=queries_per_slot)
+        # Aggressive pad: space/news always in the ladder so avatar BGs get plates.
+        for extra in ("deep space stars", "galaxy nebula", "earth orbit view",
+                      "newsroom broadcast desk", "breaking news screen"):
+            if extra.lower() not in {q.lower() for q in queries}:
+                queries.append(extra)
+        queries = queries[: max(queries_per_slot + 3, len(queries))]
         source_order = _sources_for(intent_kind, routing)
         slot_candidates: list[dict[str, Any]] = []
 
         # --- 1. локальная база (§7.2.1) --------------------------------------
-        local = index.search(_tags_for(queries), limit=3, exclude_videos=recent_videos,
+        local = index.search(_tags_for(queries), limit=6, exclude_videos=recent_videos,
                              allow_recent=frozen)
         for record in local:
             # Индекс живёт в git, а файлы — во внешнем storage (§14.5). На свежем
