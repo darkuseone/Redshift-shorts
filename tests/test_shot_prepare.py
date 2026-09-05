@@ -228,3 +228,34 @@ def test_rich_terminal_copy_has_multiple_lines():
     assert name.endswith(".log")
     assert before.count("\n") >= 4
     assert "PASS" in after or "status" in after.lower()
+
+
+def test_accent_card_syncs_to_spoken_onset():
+    """FS/plaque must start at/after spoken punch, never before (0042 r5)."""
+    from src.lib.text import (
+        accent_card_start, enrich_overlay_punch, find_spoken_anchor,
+    )
+    words = [
+        {"word": "Этот", "start": 0.0, "end": 0.2},
+        {"word": "невозможно", "start": 0.5, "end": 1.2, "emphasis": True},
+        {"word": "ничем", "start": 2.2, "end": 2.7},
+    ]
+    anchor = find_spoken_anchor(words, "НЕЧЕМ", "невозможно")
+    assert anchor["word"] == "ничем"
+    start = accent_card_start(anchor, block_start=0.0, delay_sec=0.05)
+    assert start >= 2.2
+    assert start <= 2.35
+    punch = enrich_overlay_punch(
+        "НЕЧЕМ", "Этот ответ невозможно проверить. Вообще ничем.")
+    assert "ничем" in punch.lower()
+    assert len(punch.split()) >= 2
+
+
+def test_pick_scene_prefers_dominant_stems():
+    from src.lib.backdrop import pick_scene, plate_name
+    scene = pick_scene(
+        "Квантовый чип Google",
+        "105 кубитов. Квантовый чип считает. Вся вселенная шумит в сниппете.",
+    )
+    assert scene == "grid"
+    assert plate_name(scene) == "grid.jpg"

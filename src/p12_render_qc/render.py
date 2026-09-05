@@ -32,18 +32,41 @@ from .vision_qc import run_vision_qc
 _log = get_logger("p12")
 
 
-def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None) -> str:
-    """Короткий промпт обложки Shorts: тема ролика, вертикаль 9:16, без текста."""
+def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None,
+                      *, variant: str = "A") -> str:
+    """YouTube Shorts collage thumb: face + huge multi-color text + busy thematic bg."""
     meta = (script or {}).get("meta") or plan.get("meta") or {}
     title = str(meta.get("title") or plan.get("title") or "science short").strip()
     topic = str(meta.get("topic") or meta.get("category") or "").strip()
-    bits = [title]
-    if topic and topic.lower() not in title.lower():
-        bits.append(topic)
-    subject = ". ".join(bits)
+    punches: list[str] = []
+    for block in (script or {}).get("blocks") or plan.get("blocks") or []:
+        if not isinstance(block, dict):
+            continue
+        ov = block.get("overlay") or {}
+        if str(ov.get("type") or "") in ("fullscreen_text", "lower_third", "plaque"):
+            c = str(ov.get("content") or "").strip()
+            if c:
+                punches.append(c.upper())
+        ew = str(block.get("emphasis_word") or "").strip()
+        if ew and ew.upper() not in {p.upper() for p in punches}:
+            punches.append(ew.upper())
+    if variant.upper() == "B" and len(punches) > 1:
+        headline, alt = punches[1], punches[0]
+    else:
+        headline = punches[0] if punches else title.split(",")[0].upper()
+        alt = punches[1] if len(punches) > 1 else (punches[0] if punches else "REDSHIFT")
+    subject = topic or title
     return (
-        f"YouTube Shorts vertical cover 9:16, cinematic still, no text, no logo, "
-        f"no watermark, no UI chrome. Dramatic lighting, high detail. Subject: {subject}."
+        "YouTube Shorts vertical thumbnail 9:16, maximalist collage cover, mobile-first, "
+        "high contrast. Expressive creator: adult man with long dark wavy hair and groomed "
+        "beard, intense face, olive shirt or dark hoodie, dramatic red/cyan rim light, "
+        "large cutout in foreground interacting with the scene. Huge bold multi-color "
+        f"Russian all-caps sans-serif text stacked 2-4 lines: primary «{headline}», "
+        f"secondary «{alt}», colors white + bright yellow + brand red (#C8453D) on dark. "
+        f"Busy thematic background for «{subject}»: glowing quantum chip, golden dilution "
+        "fridge wiring, motherboard traces, deep-space nebula accents, Redshift brand "
+        "black/red/white. Dense layered collage, grunge tech-noir texture, no watermark, "
+        "no UI chrome, no tiny unreadable text."
     )
 
 
@@ -75,7 +98,7 @@ def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
                 gen["grok_image_params"] = merged
             provider = build_generation_provider(cfg, costs)
             if isinstance(provider, GrokImageGeneration):
-                prompt = _thumbnail_prompt(plan, script)
+                prompt = _thumbnail_prompt(plan, script, variant=variant)
                 raw = thumb.with_suffix(".grok.png")
                 asset = provider.generate(prompt, raw, kind="photo", duration_sec=0.0)
                 src = Path(asset.path)

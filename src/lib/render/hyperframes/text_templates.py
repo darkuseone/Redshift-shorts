@@ -99,7 +99,7 @@ def sfb_css() -> str:
         "display:flex;align-items:center;justify-content:center;"
         "background:transparent}"
         ".sfb-stage{position:absolute;inset:0;display:flex;align-items:center;"
-        "justify-content:center;background:#111214;opacity:0}"
+        "justify-content:center;background:transparent;opacity:0}"
         ".sfb-board{display:flex;gap:12px}"
         ".sfb-char{width:100px;height:140px;background:#111214;"
         "border:2px solid #7A7D82;border-radius:12px;display:flex;"

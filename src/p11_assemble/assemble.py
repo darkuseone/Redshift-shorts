@@ -33,6 +33,9 @@ from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.backdrop import describe as scene_why
 from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
+from ..lib.text import (
+    accent_card_start, enrich_overlay_punch, find_spoken_anchor,
+)
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, matched
 from ..lib.render.hyperframes.captions import pick_caption_style
@@ -1791,11 +1794,21 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             seed=seed + 7,
         )
         used.append(template.id)
-        start = float(block_slots[0]["start"]) + 0.4
+        # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
+        content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
+        b_start = float(block_slots[0]["start"])
+        b_end = float(block_slots[-1]["end"])
+        bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
+        anchor = find_spoken_anchor(bwords or words, content, block.get("emphasis_word"))
+        if anchor is not None:
+            start = accent_card_start(anchor, block_start=b_start, delay_sec=0.05)
+        else:
+            start = b_start + 0.4
+        start = min(start, max(b_start, b_end - 1.2))
         overlays.append(_plaque_overlay(
             template=template,
             start=start,
-            end=min(start + 2.6, float(block_slots[-1]["end"])),
+            end=min(start + 2.6, b_end),
             params={"text": content, "content": content, "name": content,
                     "role": role,
                     **{k: v for k, v in template.params.items()
@@ -2198,10 +2211,30 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # пустом чёрном: фраза вынесена крупно, а стоит она ни на чём.
             prep = prepared.get(slot["index"])
             asset = assets.get(slot["index"])
+            content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
             fs_params = _fullscreen_params(template, content, block)
             key = _norm_screen_key(str(content or ""))
             if key:
                 used_screen_phrases.add(key)
+            # Never leave intentional FS on empty black: stock plate → scene plate.
+            bg_file = prep["dst"] if prep is not None else None
+            gap_reason = None
+            if bg_file is None:
+                plate = _plate_source(slot, slots, prepared, assets)
+                if plate and plate.get("file"):
+                    bg_file = plate["file"]
+                    gap_reason = "фон — ближайший сток блока"
+                else:
+                    scene_name = pick_scene(
+                        str(plan.get("title") or ""),
+                        " ".join(str(b.get("text") or "")
+                                 for b in plan.get("blocks", [])))
+                    plate_path = _backdrop_plate(ctx.cfg, scene_name)
+                    if plate_path:
+                        bg_file = plate_path
+                        gap_reason = "фон — плита сцены ролика"
+                    else:
+                        gap_reason = "фон под полноэкранный текст не найден"
             entry.update({
                 "content": content,
                 "template": template.id,
@@ -2210,7 +2243,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 # Light glyphs on dark plates (0042 QA: black hero/fullscreen unreadable).
                 "invert": True,
                 "accent_word": _fullscreen_accent(content, block),
-                "file": prep["dst"] if prep is not None else None,
+                "file": bg_file,
                 # Full passport for QC-12; credit feeds thin BL caption over media.
                 "asset_id": (asset or {}).get("asset_id"),
                 "source": (asset or {}).get("source"),
@@ -2220,8 +2253,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "ai_generated": bool((asset or {}).get("ai_generated")),
                 "credit": _credit_line(asset or {}, sources_spec),
             })
-            if prep is None:
-                entry["gap_reason"] = "фон под полноэкранный текст не найден"
+            if gap_reason:
+                entry["gap_reason"] = gap_reason
             shots.append(entry)
             continue
 

@@ -301,7 +301,7 @@ def cm_fullscreen_css() -> str:
         ".fullscreen-text.fs-code-morph{width:var(--frame-w);height:var(--frame-h);"
         "padding:0;overflow:hidden;isolation:isolate;display:flex;"
         "align-items:center;justify-content:center;"
-        "background:radial-gradient(120% 70% at 50% 18%,#0e1726 0%,#05070b 72%);"
+        "background:transparent;"
         "font-family:'JetBrains Mono',var(--font-mono),monospace;font-weight:500;"
         "text-transform:none;letter-spacing:0;color:#e6edf3}"
         ".fullscreen-text.fs-code-morph .cm-stage{position:absolute;inset:0;"

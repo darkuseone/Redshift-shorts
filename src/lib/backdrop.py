@@ -83,6 +83,8 @@ DEFAULT_SCENE = "room"
 PLATES: dict[str, str] = {
     "horizon": "horizon.jpg",
     "grid": "grid.jpg",
+    # No dedicated space still: horizon plate is dark nebula-safe fallback.
+    "space": "horizon.jpg",
 }
 
 
@@ -111,8 +113,11 @@ def pick_scene(*texts: str) -> str:
     """Сцена по теме ролика. Совпадений нет — комната, она нейтральна.
 
     Пара основ проверяется раньше одиночных: «чёрная дыра» — это горизонт
-    событий, а просто «дыра» в тексте про бурение — это недра. Одиночная основа
-    короткая и жадная, и разбирать спор двух сцен ей нельзя.
+    событий, а просто «дыра» в тексте про бурение — это недра.
+
+    Среди одиночных совпадений побеждает сцена с большим числом хитов:
+    ролик про квантовый чип не должен уезжать в космос из‑за одного
+    «вселенная» в сниппете источника, когда «чип/кубит/квант» повторяются.
     """
     words = [w.strip(".,!?;:»«\"'()—–-").lower()
              for w in " ".join(str(t or "") for t in texts).split()]
@@ -121,11 +126,14 @@ def pick_scene(*texts: str) -> str:
         for pair in scene.get("pairs", ()):                   # type: ignore[union-attr]
             if all(any(_matches(w, (stem,)) for w in words) for stem in pair):
                 return name
+    best_name = ""
+    best_score = 0
     for name, scene in SCENES.items():
         stems = scene["stems"]                                # type: ignore[index]
-        if any(_matches(w, stems) for w in words):            # type: ignore[arg-type]
-            return name
-    return DEFAULT_SCENE
+        score = sum(1 for w in words if _matches(w, stems))   # type: ignore[arg-type]
+        if score > best_score:
+            best_name, best_score = name, score
+    return best_name or DEFAULT_SCENE
 
 
 def tone(scene: str) -> str:

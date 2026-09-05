@@ -211,3 +211,96 @@ def load_pronunciation(path) -> dict[str, Any]:
 
 def strip_stress(text: str) -> str:
     return text.replace(STRESS_MARK, "")
+
+
+def word_stem(word: str) -> str:
+    """Общее начало словоформ («ничем»/«НЕЧЕМ»/«нечем»)."""
+    bare = _bare_word(word)
+    if not bare:
+        return ""
+    return bare[:max(3, len(bare) - 2)]
+
+
+def _bare_word(word: str) -> str:
+    return word.strip(".,!?;:«»\"'—–").lower().replace("ё", "е")
+
+
+def stems_match(a: str, b: str) -> bool:
+    """Совпадение словоформ, включая ничем/нечем (гласная во 2-й позиции)."""
+    ba, bb = _bare_word(a), _bare_word(b)
+    if not ba or not bb:
+        return False
+    if word_stem(ba) == word_stem(bb):
+        return True
+    # Одна согласная + гласная + общий хвост: ничем ↔ нечем.
+    if (len(ba) >= 4 and len(bb) >= 4
+            and ba[0] == bb[0] and ba[2:] == bb[2:]
+            and ba[1] in "аеёиоуыэюя" and bb[1] in "аеёиоуыэюя"):
+        return True
+    return False
+
+
+def _content_tokens(content: str) -> list[str]:
+    return [t for t in re.split(r"\s+", str(content or "").strip()) if t.strip(".,!?;:«»\"'—–")]
+
+
+def find_spoken_anchor(words: list[dict[str, Any]], content: str = "",
+                       emphasis_word: str | None = None) -> dict[str, Any] | None:
+    """Слово выравнивания, под которое ставить акцентную карточку.
+
+    Сначала ищем в речи токены из ``content`` (оверлей/плашка), потом
+    ``emphasis_word``, потом слово с флагом emphasis. Карточка должна сесть
+    на произнесённый удар, а не на начало блока.
+    """
+    if not words:
+        return None
+    for token in reversed(_content_tokens(content)):
+        if len(_bare_word(token)) < 3:
+            continue
+        for w in words:
+            spoken = str(w.get("word") or w.get("display") or "")
+            if stems_match(spoken, token):
+                return w
+    emph = str(emphasis_word or "").strip()
+    if emph:
+        for w in words:
+            spoken = str(w.get("word") or w.get("display") or "")
+            if stems_match(spoken, emph):
+                return w
+    for w in words:
+        if w.get("emphasis"):
+            return w
+    return None
+
+
+def accent_card_start(anchor: dict[str, Any], *, block_start: float,
+                      delay_sec: float = 0.05) -> float:
+    """Старт карточки: onset слова + небольшая задержка, никогда раньше слова."""
+    onset = float(anchor.get("start") or block_start)
+    delay = max(0.0, min(0.15, float(delay_sec)))
+    return max(float(block_start), onset + delay)
+
+
+def enrich_overlay_punch(content: str, block_text: str, *,
+                         max_words: int = 4) -> str:
+    """Короткий stub («НЕЧЕМ») → окно клаузы, где этот удар реально несёт смысл."""
+    raw = str(content or "").strip()
+    text = str(block_text or "").strip()
+    if not raw or not text:
+        return raw
+    tokens = _content_tokens(raw)
+    if len(tokens) > 2:
+        return raw
+    needle = tokens[-1]
+    if len(_bare_word(needle)) < 3:
+        return raw
+    clauses = [c.strip(" —–-") for c in re.split(r"[,;:—–]|(?<=[.!?])\s+", text) if c.strip()]
+    clause = next((c for c in clauses if any(stems_match(w, needle) for w in c.split())),
+                  clauses[-1] if clauses else text)
+    words = [w for w in clause.split() if w.strip(".,!?;:«»\"'—–")]
+    if not words:
+        return raw
+    end = next((i + 1 for i, w in enumerate(words) if stems_match(w, needle)), len(words))
+    window = words[max(0, end - max_words):end]
+    enriched = " ".join(window).strip(".,!?;:")
+    return enriched or raw

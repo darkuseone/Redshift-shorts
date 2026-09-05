@@ -24,6 +24,9 @@ from typing import Any, Iterable
 
 from ..errors import RedshiftError
 from ..lib.logging import get_logger
+from ..lib.text import (
+    accent_card_start, enrich_overlay_punch, find_spoken_anchor,
+)
 
 _log = get_logger("p5")
 
@@ -191,13 +194,21 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
         reserved: list[tuple[float, float, str, str, str]] = []
 
         if overlay.get("type") == "fullscreen_text" and fullscreen_used < int(fs_limits[1]):
-            anchor = _find_word(bwords, lambda w: w.get("emphasis")) or bwords[0]
+            # Sync to spoken punch onset (content word), never early (−0.15).
+            raw_content = str(overlay.get("content") or "").strip()
+            content = enrich_overlay_punch(raw_content, str(block.get("text") or ""))
+            anchor = (find_spoken_anchor(
+                bwords, content or raw_content, block.get("emphasis_word"))
+                or bwords[0])
             fs_dur = min(max(float(fs_range[0]), 1.2), float(fs_range[1]))
-            fs_start = max(b_start, float(anchor["start"]) - 0.15)
+            fs_start = accent_card_start(anchor, block_start=b_start, delay_sec=0.05)
             fs_end = min(b_end, fs_start + fs_dur)
+            # If punch is late in the block, still show ≥ min duration by clamping end.
+            if fs_end - fs_start < float(fs_range[0]) - 1e-6 and b_end - fs_start >= float(fs_range[0]) - 1e-6:
+                fs_end = min(b_end, fs_start + float(fs_range[0]))
             if fs_end - fs_start >= float(fs_range[0]) - 1e-6:
                 reserved.append((fs_start, fs_end, "fullscreen_text",
-                                 overlay.get("content", ""), overlay.get("template_hint", "")))
+                                 content or raw_content, overlay.get("template_hint", "")))
                 fullscreen_used += 1
 
         meme_emotion = _irony_emotion(block.get("text", ""))
