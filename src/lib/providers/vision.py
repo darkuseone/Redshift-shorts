@@ -369,24 +369,107 @@ def _verdict_from_json(text: str, *, judge: str, frames: int) -> VisionVerdict:
     )
 
 
+def _gemini_api_key(cfg) -> str | None:
+    """GEMINI_API_KEY из конфига, иначе распространённые алиасы Google AI Studio."""
+    key = cfg.secret_for("vision.gemini_api_key_env", purpose="Gemini Vision")
+    if key:
+        return key
+    for env_name in ("GOOGLE_API_KEY", "GOOGLE_AI_API_KEY"):
+        key = cfg.secret(env_name, purpose="Gemini Vision")
+        if key:
+            return key
+    return None
+
+
+def _provider_http_status(exc: BaseException) -> int | None:
+    status = getattr(exc, "details", None) or {}
+    if isinstance(status, dict) and status.get("status") is not None:
+        try:
+            return int(status["status"])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _credits_or_auth_failure(exc: BaseException) -> bool:
+    """403/402/401 и тексты про credits / spending limit — повод сменить провайдера."""
+    status = _provider_http_status(exc)
+    if status in (401, 402, 403):
+        return True
+    text = str(exc).lower()
+    return any(token in text for token in (
+        "credit", "credits", "spending limit", "quota", "insufficient",
+        "billing", "payment required",
+    ))
+
+
+def _live_vision(cfg, costs, name: str) -> VisionProvider | None:
+    # Нет ключа → None (следующий в цепочке), даже при providers.mode=live.
+    # Иначе временный primary=gemini валил бы весь прогон при пустом GEMINI_API_KEY.
+    if name == "gemini":
+        key = _gemini_api_key(cfg)
+        if not key:
+            return None
+        if resolve_mode(cfg, api_key=key, service="gemini") is ProviderMode.LIVE:
+            return GeminiVision(cfg, costs, key)
+        return None
+    if name == "grok":
+        key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok Vision")
+        if not key:
+            return None
+        if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
+            return GrokVision(cfg, costs, key)
+        return None
+    return None
+
+
+class FallbackVision(VisionProvider):
+    """Основной судья + запасной при 401/402/403 / исчерпанных кредитах."""
+
+    def __init__(self, cfg, costs, primary: VisionProvider, secondary: VisionProvider) -> None:
+        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE,
+                         name=f"{primary.name}+{secondary.name}")
+        self.primary = primary
+        self.secondary = secondary
+
+    def judge(self, frames: Sequence[Path], *, intent: str, role: str,
+              query: str, kind: str = "broll") -> VisionVerdict:
+        try:
+            return self.primary.judge(frames, intent=intent, role=role,
+                                      query=query, kind=kind)
+        except ProviderError as exc:
+            if not _credits_or_auth_failure(exc):
+                raise
+            _log.warning("vision primary отказал — запасной судья",
+                         extra={"primary": self.primary.name,
+                                "fallback": self.secondary.name,
+                                "err": str(exc)[:200]})
+            return self.secondary.judge(frames, intent=intent, role=role,
+                                        query=query, kind=kind)
+
+
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
     """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
 
-    Имя судьи берётся из конфига, а не зашито в роль: Gemini исключён из
-    рабочего набора (§7.3), первичную оценку ведёт Grok по ключу XAI. Ветка
-    Gemini оставлена рабочей — она включается одной строкой конфига, если ключ
-    когда-нибудь появится.
+    Временно (XAI без кредитов) конфиг может ставить Gemini первым; ``vision.fallback``
+    держит Grok на случай, если Gemini-ключ ещё не заведён в Actions. При 403/402
+    по кредитам вызывается запасной live-судья, а не mock.
     """
-    judge = str(cfg.get(f"vision.{role}", "grok" if role == "primary" else "grok"))
-    purpose = "Grok Vision (арбитраж)" if role == "arbiter" else "Grok Vision"
+    preferred = str(cfg.get(f"vision.{role}", "gemini")).lower()
+    fallback = str(cfg.get("vision.fallback", "grok")).lower()
+    order: list[str] = []
+    for name in (preferred, fallback, "gemini", "grok"):
+        if name and name not in order and name != "mock":
+            order.append(name)
 
-    if judge == "gemini":
-        key = cfg.secret_for("vision.gemini_api_key_env", purpose="Gemini Vision")
-        if resolve_mode(cfg, api_key=key, service="gemini") is ProviderMode.LIVE:
-            return GeminiVision(cfg, costs, key or "")
-        return MockVision(cfg, costs, judge_name="gemini")
+    live: list[VisionProvider] = []
+    for name in order:
+        provider = _live_vision(cfg, costs, name)
+        if provider is not None:
+            live.append(provider)
 
-    key = cfg.secret_for("vision.grok_api_key_env", purpose=purpose)
-    if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
-        return GrokVision(cfg, costs, key or "")
-    return MockVision(cfg, costs, judge_name="grok")
+    if len(live) >= 2:
+        return FallbackVision(cfg, costs, live[0], live[1])
+    if len(live) == 1:
+        return live[0]
+    return MockVision(cfg, costs, judge_name=preferred or "gemini")

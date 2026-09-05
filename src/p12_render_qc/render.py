@@ -18,7 +18,7 @@ from ..errors import QCFailed
 from ..lib.ffmpeg import make_thumbnail, probe, run as ffmpeg_run
 from ..lib.costs import CostLedger
 from ..lib.providers.generation import (
-    GrokImageGeneration, build_generation_provider,
+    GeminiImageGeneration, GrokImageGeneration, build_generation_provider,
 )
 from ..lib.jsonio import read_json_or, write_json
 from ..lib.logging import get_logger
@@ -77,18 +77,18 @@ def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None,
 def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
                           plan: dict[str, Any], script: dict[str, Any] | None,
                           variant: str) -> dict[str, Any]:
-    """Обложка Shorts: Grok Imagine, иначе кадр ffmpeg.
+    """Обложка Shorts: Gemini/Grok image, иначе кадр ffmpeg.
 
-    Раньше P12 всегда брал кадр на ``thumbnail_time_sec`` (~1с) — мусор для
-    публикации. При ``render.thumbnail_mode=grok`` и живом XAI_API_KEY рисуем
-    отдельный 9:16 кадр; сбой/mock → прежний ffmpeg fallback.
+    ``render.thumbnail_mode``: ``auto`` (Gemini → Grok → ffmpeg), ``gemini``,
+    ``grok``, или ``ffmpeg``. Live image key нужен для publishable thumbs;
+    сбой/mock → прежний ffmpeg fallback на ``thumbnail_time_sec``.
     """
     cfg = ctx.cfg
-    mode = str(cfg.get("render.thumbnail_mode", "grok") or "grok").lower()
+    mode = str(cfg.get("render.thumbnail_mode", "auto") or "auto").lower()
     time_sec = float(cfg.get("render.thumbnail_time_sec", 1.0))
     meta: dict[str, Any] = {"mode": "ffmpeg", "variant": variant}
 
-    if mode == "grok":
+    if mode in ("auto", "gemini", "grok"):
         prev_params = None
         try:
             costs = getattr(ctx, "costs", None) or CostLedger(video_id=str(
@@ -101,10 +101,31 @@ def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
                 merged.update(thumb_extra)
                 gen["grok_image_params"] = merged
             provider = build_generation_provider(cfg, costs)
-            if isinstance(provider, GrokImageGeneration):
+            # Prefer outer provider (may be FallbackGeneration) so 403→secondary works.
+            leaf = getattr(provider, "primary", provider)
+            if mode == "gemini" and not isinstance(leaf, GeminiImageGeneration):
+                leaf = None
+                for attr in ("primary", "secondary"):
+                    inner = getattr(provider, attr, None)
+                    if isinstance(inner, GeminiImageGeneration):
+                        leaf = inner
+                        provider = inner
+                        break
+            elif mode == "grok" and not isinstance(leaf, GrokImageGeneration):
+                leaf = None
+                for attr in ("primary", "secondary"):
+                    inner = getattr(provider, attr, None)
+                    if isinstance(inner, GrokImageGeneration):
+                        leaf = inner
+                        provider = inner
+                        break
+            live_image = isinstance(
+                leaf, (GeminiImageGeneration, GrokImageGeneration))
+            if live_image:
                 prompt = _thumbnail_prompt(plan, script, variant=variant)
-                raw = thumb.with_suffix(".grok.png")
-                asset = provider.generate(prompt, raw, kind="photo", duration_sec=0.0)
+                raw = thumb.with_suffix(".ai.png")
+                asset = provider.generate(
+                    prompt, raw, kind="photo", duration_sec=0.0)
                 src = Path(asset.path)
                 ffmpeg_run(
                     ["-y", "-i", str(src), "-vf", "scale=1080:-2",
@@ -115,18 +136,21 @@ def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
                     src.unlink(missing_ok=True)
                 if raw.exists() and raw.resolve() != thumb.resolve():
                     raw.unlink(missing_ok=True)
+                via = str((asset.meta or {}).get("still_from")
+                          or ("gemini" if "gemini" in asset.model else "grok"))
                 meta.update({
-                    "mode": "grok",
+                    "mode": via,
                     "model": asset.model,
                     "prompt": prompt[:240],
                     "path": str(thumb),
                 })
-                _log.info("обложка Grok", extra={"variant": variant, "model": asset.model})
+                _log.info("обложка AI", extra={
+                    "variant": variant, "model": asset.model, "via": via})
                 return meta
-            _log.info("Grok thumb недоступен — ffmpeg fallback",
+            _log.info("AI thumb недоступен — ffmpeg fallback",
                       extra={"variant": variant, "provider": type(provider).__name__})
         except Exception as exc:  # noqa: BLE001
-            _log.warning("Grok thumb сбой — ffmpeg fallback",
+            _log.warning("AI thumb сбой — ffmpeg fallback",
                          extra={"variant": variant, "err": str(exc)[:240]})
         finally:
             if prev_params is not None:

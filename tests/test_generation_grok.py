@@ -98,13 +98,18 @@ def test_movement_is_real_not_a_freeze(cfg, tmp_path, monkeypatch):
         "первый и последний кадр совпали — наезда нет"
 
 
-def test_grok_is_the_generation_source(cfg, costs=None, **_):
+def test_generation_source_is_configured_not_magnific(cfg, costs=None, **_):
     """Источник генерации берётся из конфига, а не из наличия ключа Magnific."""
-    assert str(cfg.get("generation.source")).lower() == "grok"
+    source = str(cfg.get("generation.source")).lower()
+    assert source in ("gemini", "grok"), source
+    assert source != "magnific"
 
 
 def test_without_a_key_generation_falls_back_to_mock(cfg, monkeypatch):
     monkeypatch.delenv("XAI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_AI_API_KEY", raising=False)
     cfg.set("providers.mode", "auto")
     provider = build_generation_provider(cfg, CostLedger(video_id="t"))
     assert isinstance(provider, MockGeneration)

@@ -136,9 +136,12 @@ jobs:
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       HEYGEN_API: ${{ secrets.HEYGEN_API }}
       HEYGEN_AVATAR_ID: ${{ secrets.HEYGEN_AVATAR_ID }}
-      # Vision обеих ступеней §7.3 — Grok по этому ключу. NASA и Internet
-      # Archive работают анонимно, Gemini из рабочего набора выведен.
+      # TEMP: vision/image gen prefer Gemini (XAI credits empty). Subscription
+      # CLI cannot run on Actions — only API keys. Add GEMINI_API_KEY secret
+      # (Google AI Studio / AI Pro). GOOGLE_API_KEY accepted as alias in code.
       XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       MAGNIFIC_API_KEY: ${{ secrets.MAGNIFIC_API_KEY }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}

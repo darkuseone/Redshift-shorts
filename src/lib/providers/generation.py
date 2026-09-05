@@ -344,22 +344,211 @@ class GrokImageGeneration(GenerationProvider):
         )
 
 
+def _gemini_api_key(cfg) -> str | None:
+    key = cfg.secret_for("vision.gemini_api_key_env", purpose="Gemini (генерация кадров)")
+    if key:
+        return key
+    for env_name in ("GOOGLE_API_KEY", "GOOGLE_AI_API_KEY"):
+        key = cfg.secret(env_name, purpose="Gemini (генерация кадров)")
+        if key:
+            return key
+    return None
+
+
+def _provider_http_status(exc: BaseException) -> int | None:
+    status = getattr(exc, "details", None) or {}
+    if isinstance(status, dict) and status.get("status") is not None:
+        try:
+            return int(status["status"])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _credits_or_auth_failure(exc: BaseException) -> bool:
+    status = _provider_http_status(exc)
+    if status in (401, 402, 403):
+        return True
+    text = str(exc).lower()
+    return any(token in text for token in (
+        "credit", "credits", "spending limit", "quota", "insufficient",
+        "billing", "payment required",
+    ))
+
+
+class GeminiImageGeneration(GenerationProvider):
+    """Кадр рисует Gemini Image (Nano Banana), движение — ffmpeg Ken Burns.
+
+    Imagen ``:predict`` на Gemini API снят (август 2026). Актуальный путь —
+    ``generateContent`` у моделей ``gemini-*-flash-image`` / ``gemini-*-pro-image``.
+    """
+
+    def __init__(self, cfg, costs, api_key: str) -> None:
+        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="gemini_image")
+        self.api_key = api_key
+
+    def _image_bytes(self, prompt: str, model: str) -> bytes:
+        import base64
+
+        import requests
+
+        base = str(self.cfg.get("vision.gemini_api_base",
+                                "https://generativelanguage.googleapis.com"))
+        url = f"{base}/v1beta/models/{model}:generateContent"
+        aspect = str(self.cfg.get("generation.gemini_image_aspect", "9:16"))
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "responseModalities": ["TEXT", "IMAGE"],
+                "imageConfig": {"aspectRatio": aspect},
+            },
+        }
+
+        def _call() -> bytes:
+            resp = requests.post(url, params={"key": self.api_key}, json=payload,
+                                 timeout=self._timeout())
+            if resp.status_code >= 400:
+                raise ProviderError(f"Gemini image вернул {resp.status_code}",
+                                    status=resp.status_code, body=resp.text[:300],
+                                    model=model)
+            data = resp.json()
+            for candidate in data.get("candidates", []):
+                for part in candidate.get("content", {}).get("parts", []):
+                    inline = part.get("inlineData") or part.get("inline_data") or {}
+                    encoded = inline.get("data")
+                    if encoded:
+                        return base64.b64decode(encoded)
+            raise ProviderError("Gemini image не вернул кадр",
+                                keys=list(data)[:10], model=model)
+
+        return call_with_retry(_call, **self._retry_kwargs("Gemini image"))
+
+    def generate(self, prompt: str, dst: Path, *, kind: str = "video",
+                 duration_sec: float = 4.0, prefer_free: bool = True) -> GeneratedAsset:
+        model = str(self.cfg.get("generation.gemini_image_model",
+                                 "gemini-3.1-flash-image"))
+        width, height = self.cfg.resolution
+        dst.parent.mkdir(parents=True, exist_ok=True)
+
+        still = dst.with_suffix(".src.png")
+        try:
+            still.write_bytes(self._image_bytes(prompt, model))
+        except ProviderError as exc:
+            spare = str(self.cfg.get("generation.gemini_image_model_fallback", "")).strip()
+            if not spare or spare == model:
+                raise
+            _log.warning("модель Gemini image не принята — беру запасную",
+                         extra={"model": model, "fallback": spare,
+                                "reason": str(exc)[:200]})
+            still.write_bytes(self._image_bytes(prompt, spare))
+            model = spare
+
+        if kind == "photo":
+            dst = dst.with_suffix(".png")
+            dst.write_bytes(still.read_bytes())
+            still.unlink(missing_ok=True)
+        else:
+            fps = self.cfg.fps
+            frames = max(2, int(round(duration_sec * fps)))
+            zoom = float(self.cfg.get("generation.ken_burns_zoom", 1.12))
+            cover = (f"scale={width * 2}:{height * 2}:force_original_aspect_ratio=increase,"
+                     f"crop={width * 2}:{height * 2}")
+            motion = (f"zoompan=z='1+({zoom - 1:.4f})*on/{frames}':d={frames}"
+                      f":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+                      f":s={width}x{height}:fps={fps}")
+            run(["-y", "-loop", "1", "-i", str(still), "-t", f"{duration_sec:.2f}",
+                 "-vf", f"{cover},{motion},format=yuv420p",
+                 "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                 "-r", str(fps), str(dst)], what="Ken Burns по кадру Gemini")
+            still.unlink(missing_ok=True)
+
+        self.charge("generate", 1, "image",
+                    float(self.cfg.get("budget.price.gemini_image", 0.04)),
+                    model=model)
+        return GeneratedAsset(
+            id=f"gen_{hashlib.sha256(prompt.encode()).hexdigest()[:12]}",
+            path=dst, kind=kind, prompt=prompt, model=model,
+            duration_sec=duration_sec if kind == "video" else 0.0,
+            width=width, height=height, paid_model=False,
+            meta={"still_from": "gemini", "motion": "ken_burns"},
+        )
+
+
+class FallbackGeneration(GenerationProvider):
+    """Основной генератор + запасной при 401/402/403 / исчерпанных кредитах."""
+
+    def __init__(self, cfg, costs, primary: GenerationProvider,
+                 secondary: GenerationProvider) -> None:
+        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE,
+                         name=f"{primary.name}+{secondary.name}")
+        self.primary = primary
+        self.secondary = secondary
+
+    def generate(self, prompt: str, dst: Path, *, kind: str = "video",
+                 duration_sec: float = 4.0, prefer_free: bool = True) -> GeneratedAsset:
+        try:
+            return self.primary.generate(prompt, dst, kind=kind,
+                                         duration_sec=duration_sec,
+                                         prefer_free=prefer_free)
+        except ProviderError as exc:
+            if not _credits_or_auth_failure(exc):
+                raise
+            _log.warning("generation primary отказал — запасной",
+                         extra={"primary": self.primary.name,
+                                "fallback": self.secondary.name,
+                                "err": str(exc)[:200]})
+            return self.secondary.generate(prompt, dst, kind=kind,
+                                           duration_sec=duration_sec,
+                                           prefer_free=prefer_free)
+
+
+def _live_generation(cfg, costs, source: str) -> GenerationProvider | None:
+    if source == "gemini":
+        key = _gemini_api_key(cfg)
+        if not key:
+            return None
+        if resolve_mode(cfg, api_key=key, service="gemini") is ProviderMode.LIVE:
+            return GeminiImageGeneration(cfg, costs, key)
+        return None
+    if source == "grok":
+        key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok (генерация кадров)")
+        if not key:
+            return None
+        if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
+            return GrokImageGeneration(cfg, costs, key)
+        return None
+    if source == "magnific":
+        key = cfg.secret_for("magnific.api_key_env", purpose="Magnific")
+        if not key:
+            return None
+        if resolve_mode(cfg, api_key=key, service="magnific") is ProviderMode.LIVE:
+            return MagnificGeneration(cfg, costs, key)
+        return None
+    return None
+
+
 def build_generation_provider(cfg, costs) -> GenerationProvider:
     """Кто закрывает пустые слоты.
 
-    Magnific отсюда выведен: HTTP-эндпоинт генерации отвечает 404, а путь через
-    MCP-коннектор живёт в чате, а не в Actions, и считает кредиты — в прогоне
-    его не вызвать. Остаётся Grok: он рисует кадр, движение добавляет ffmpeg.
+    Magnific HTTP-генерация выведена (404). Временно (XAI без кредитов) источник
+    — Gemini Image; ``generation.fallback`` держит Grok. При 403/402 по кредитам
+    вызывается запасной live-генератор.
     """
-    source = str(cfg.get("generation.source", "grok")).lower()
+    preferred = str(cfg.get("generation.source", "gemini")).lower()
+    fallback = str(cfg.get("generation.fallback", "grok")).lower()
+    order: list[str] = []
+    for name in (preferred, fallback, "gemini", "grok"):
+        if name and name not in order and name not in ("mock", "magnific"):
+            order.append(name)
 
-    if source == "grok":
-        key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok (генерация кадров)")
-        if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
-            return GrokImageGeneration(cfg, costs, key or "")
-        return MockGeneration(cfg, costs)
+    live: list[GenerationProvider] = []
+    for name in order:
+        provider = _live_generation(cfg, costs, name)
+        if provider is not None:
+            live.append(provider)
 
-    key = cfg.secret_for("magnific.api_key_env", purpose="Magnific")
-    if resolve_mode(cfg, api_key=key, service="magnific") is ProviderMode.LIVE:
-        return MagnificGeneration(cfg, costs, key or "")
+    if len(live) >= 2:
+        return FallbackGeneration(cfg, costs, live[0], live[1])
+    if len(live) == 1:
+        return live[0]
     return MockGeneration(cfg, costs)

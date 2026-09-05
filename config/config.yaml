@@ -125,11 +125,12 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # Gemini выведен из рабочего набора: ключа под него нет и не планируется.
-  # Обе ступени §7.3 ведёт Grok по ключу XAI. Ветка gemini в коде осталась
-  # рабочей — включается сменой значения здесь.
-  primary: "grok"
-  arbiter: "grok"
+  # TEMP 2026-09-05: XAI_API_KEY без кредитов (403 spending limit). Vision
+  # временно на Gemini API (GEMINI_API_KEY / Google AI Studio). Grok — fallback.
+  # Subscription CLI на Actions не работает — только HTTP API key.
+  primary: "gemini"
+  arbiter: "gemini"
+  fallback: "grok"
   arbiter_max_calls: 8        # §7.3 шаг 3
   accept_threshold: 0.70
   reject_threshold: 0.45
@@ -142,11 +143,13 @@ vision:
   gemini_api_base: "https://generativelanguage.googleapis.com"
 
 generation:
-  # Кто закрывает пустые слоты §7.3. Magnific выведен из генерации: его HTTP
-  # эндпоинт отвечает 404, а MCP-путь живёт в чате, а не в Actions, и списывает
-  # кредиты — в прогоне его не вызвать. Сток Magnific при этом остаётся первым
-  # источником поиска, он бесплатен и это настоящая съёмка.
-  source: grok
+  # TEMP 2026-09-05: source=gemini (XAI credits empty). Grok — fallback.
+  # Magnific HTTP gen still 404; stock Magnific search unchanged.
+  source: gemini
+  fallback: grok
+  gemini_image_model: "gemini-3.1-flash-image"
+  gemini_image_model_fallback: "gemini-2.5-flash-image"
+  gemini_image_aspect: "9:16"
   # Слаг снят с живого ответа API: grok-2-image-1212 выведен из обращения
   # 2026-02-24, и сам сервис в тексте ошибки назвал замену. Ради этого модель и
   # вынесена в конфиг — устаревший слаг чинится строкой YAML, а не кодом.
@@ -162,7 +165,7 @@ generation:
     quality: "high"
     aspect_ratio: "9:16"
     resolution: "2k"
-  # Видео Grok не генерирует и не должен: кадр оживляется наездом (§H7 — всё
+  # Видео Grok/Gemini image не генерируют: кадр оживляется наездом (§H7 — всё
   # приближается), тем же приёмом Ken Burns, что и фотослоты стока.
   ken_burns_zoom: 1.12
 
@@ -340,9 +343,9 @@ render:
   color_primaries: "bt709"
   faststart: true
   ab_versions: ["A", "B"]
-  # Shorts cover: Grok Imagine 9:16 (XAI_API_KEY). ffmpeg frame @1s is fallback
-  # only — a random early frame is not a publishable thumb.
-  thumbnail_mode: "grok"
+  # TEMP: auto = Gemini image → Grok Imagine → ffmpeg @1s.
+  # Publishable thumbs need a live image key (GEMINI_API_KEY while XAI empty).
+  thumbnail_mode: "auto"
   thumbnail_time_sec: 1.0
   thumbnail_grok_params:
     aspect_ratio: "9:16"
@@ -364,6 +367,7 @@ budget:
     elevenlabs_per_1k_chars: 0.30
     heygen_per_second: 0.05
     gemini_per_image: 0.0004
+    gemini_image: 0.04
     grok_per_image: 0.0060
     magnific_per_image: 0.08
     magnific_per_video_sec: 0.20
