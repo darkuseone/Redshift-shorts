@@ -89,6 +89,31 @@ def run_step(ctx) -> dict[str, Any]:
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
     unfilled = list(accepted_doc.get("unfilled_slots", []))
+
+    if bool(cfg.get("generation.skip", False)):
+        skipped = [{
+            "slot": slot_index,
+            "reason": "generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
+        } for slot_index in unfilled]
+        duration = float(plan.get("duration_sec") or 1.0)
+        result = {
+            "video_id": plan.get("video_id") or accepted_doc.get("video_id"),
+            "generated_count": 0,
+            "skipped": skipped,
+            "paid_model_used": 0,
+            "ai_footage_sec": 0.0,
+            "ai_footage_share": 0.0,
+            "ai_share_limit": float(cfg.get("limits.ai_footage_share_max", 0.40)),
+            "generated": {},
+            "skip": True,
+        }
+        ctx.write("generated_assets.json", result)
+        for item in skipped:
+            ctx.warn(f"слот {item['slot']} остался пустым: {item['reason']}",
+                     slot=item["slot"])
+        _log.warning("generation.skip: P9 без API",
+                     extra={"unfilled": len(unfilled), "duration": duration})
+        return {"generated": 0, "skipped": len(skipped), "ai_share": 0.0}
     duration = float(plan["duration_sec"])
     ai_share_max = float(cfg.get("limits.ai_footage_share_max", 0.40))
     paid_share_limit = float(cfg.get("magnific.paid_model_share_limit", 0.07))

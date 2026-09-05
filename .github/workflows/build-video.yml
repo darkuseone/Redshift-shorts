@@ -26,6 +26,16 @@ on:
         required: false
         default: false
         type: boolean
+      skip_vision:
+        description: "P8 без live Gemini/Grok — переиспользовать кэш/ранг поиска"
+        required: false
+        default: false
+        type: boolean
+      skip_generate:
+        description: "P9 без image gen (Gemini/Grok/Magnific)"
+        required: false
+        default: false
+        type: boolean
       heygen_source:
         description: "Источник аватара: auto|api|prepared (пусто = из config.yaml)"
         required: false
@@ -310,6 +320,8 @@ jobs:
           python -m src.cli \
             --set providers.mode=${{ github.event.inputs.providers_mode }} \
             ${{ github.event.inputs.heygen_source != '' && format('--set heygen.source={0}', github.event.inputs.heygen_source) || '' }} \
+            ${{ github.event.inputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
+            ${{ github.event.inputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \
             run --script "${{ github.event.inputs.script }}" \
             ${{ github.event.inputs.from_step != '' && format('--from {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }} \

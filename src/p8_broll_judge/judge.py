@@ -82,8 +82,11 @@ def run_step(ctx) -> dict[str, Any]:
     reject_threshold = float(cfg.get("vision.reject_threshold", 0.45))
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 8))
 
-    primary = build_vision_provider(cfg, ctx.costs, role="primary")
-    arbiter = build_vision_provider(cfg, ctx.costs, role="arbiter")
+    skip_live = bool(cfg.get("vision.skip_live", False))
+    primary = None if skip_live else build_vision_provider(cfg, ctx.costs, role="primary")
+    arbiter = None if skip_live else build_vision_provider(cfg, ctx.costs, role="arbiter")
+    if skip_live:
+        _log.warning("vision.skip_live: без Gemini/Grok — переиспользую кэш/поиск")
     index = FootageIndex.load(cfg)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
@@ -138,7 +141,20 @@ def run_step(ctx) -> dict[str, Any]:
             reusable = (candidate.get("prior_score")
                         and candidate.get("prior_intent")
                         and _same_intent(candidate.get("prior_intent", ""), intent))
-            if candidate.get("origin") == "local_cache" and reusable:
+            # skip_live: материал уже судился раньше / есть в кэше — без API.
+            if skip_live:
+                prior = candidate.get("prior_score")
+                score = float(prior if prior is not None
+                              else candidate.get("score") or 0.72)
+                verdict_dict = {
+                    "score": score,
+                    "reason": ("skip_live: переиспользована оценка/ранг без "
+                               "Gemini/Grok API"),
+                    "summary": candidate.get("vision_summary", ""),
+                    "judge": "skip_live", "frames": 0,
+                }
+                reused_scores += 1
+            elif candidate.get("origin") == "local_cache" and reusable:
                 verdict_dict = {
                     "score": float(candidate["prior_score"]),
                     "reason": "оценка переиспользована из локальной базы",
@@ -221,9 +237,16 @@ def run_step(ctx) -> dict[str, Any]:
         best = next((entry for score, entry in scored if score >= accept_threshold), None)
         if best is None and scored:
             top_score, top_entry = scored[0]
+            if skip_live:
+                # Без live-судьи закрываем слот лучшим из кэша/поиска — иначе
+                # всё уйдёт в P9 (платная генерация), которую тоже пропускаем.
+                best = top_entry
+                best["decision"] = "accept_skip_live"
+                best["fallback_reason"] = (
+                    "vision.skip_live: принят лучший кандидат без API")
             # Спорный кандидат берём только если арбитраж уже был исчерпан:
             # иначе §7.3 требует отправить слот в генерацию.
-            if top_score >= reject_threshold and arbiter_calls >= arbiter_budget:
+            elif top_score >= reject_threshold and arbiter_calls >= arbiter_budget:
                 best = top_entry
                 best["decision"] = "accept_fallback"
                 best["fallback_reason"] = (
