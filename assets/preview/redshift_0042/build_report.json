@@ -4,7 +4,7 @@
   "variants": {
     "A": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_A.mp4",
-      "size_bytes": 39269542,
+      "size_bytes": 39894218,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -27,13 +27,13 @@
         "overlay_draws": 4,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 712,
-        "speech_frames": 712
+        "subtitle_frames": 447,
+        "speech_frames": 447
       }
     },
     "B": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_B.mp4",
-      "size_bytes": 32726350,
+      "size_bytes": 40046301,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -56,8 +56,8 @@
         "overlay_draws": 4,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 782,
-        "speech_frames": 782
+        "subtitle_frames": 503,
+        "speech_frames": 503
       }
     }
   },
@@ -299,11 +299,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "",
-            "score": 0.88,
-            "summary": "Ведущий крупным планом на фоне космического взрыва с цифрой 105 за головой",
+            "score": 0.35,
+            "summary": "Ведущий крупно на фоне красного космического взрыва с наложенным текстом «105 кубитов»",
             "has_text": false,
             "watermark": false,
-            "reason": "Полностью соответствует замыслу аватара, оформление канала не в счёт; фон выглядит нейросетевым",
+            "reason": "картинка не соответствует речи про «режим A: аватар во весь кадр», фон выглядит нейросетевым",
             "judge": "grok"
           },
           {
@@ -313,10 +313,10 @@
             "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
             "spoken": "прожил дольше,",
             "score": 0.35,
-            "summary": "three phones showing fitness apps with garbled quantum text on left",
+            "summary": "Three smartphones displaying fitness app mockups with goals, calories and progress bars",
             "has_text": true,
             "watermark": false,
-            "reason": "wrong topic + garbled text, weak link to 'lived longer'",
+            "reason": "Loose health-longevity link but generic stock mockup with mismatched quantum text and no direct evidence tie-in",
             "judge": "grok"
           },
           {
@@ -325,11 +325,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "Здесь",
-            "score": 0.88,
-            "summary": "Полноэкранный текст «Решена за пять минут» с полупрозрачным «Здесь» на тёмном фоне с красными частицами",
+            "score": 0.75,
+            "summary": "тёмный космический фон с крупным текстом «ЗДЕСЬ ВСЕ НАОБОРОТ» по центру",
             "has_text": false,
             "watermark": false,
-            "reason": "Текст прямо соответствует слову «Здесь», замысел кадра выполнен, контраст приемлемый, фон выглядит стоковым",
+            "reason": "текст начинается со слова «ЗДЕСЬ», совпадает с речью; лёгкое наложение снижает читаемость, фон выглядит стоковым",
             "judge": "grok"
           },
           {
@@ -337,12 +337,12 @@
             "shot_index": 13,
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
-            "spoken": "шаге. Задача, на которую суперкомпьютеру",
-            "score": 0.65,
-            "summary": "Космический фон с частицами и крупным текстом HARD CUT плюс оверлеи монтажных параметров",
+            "spoken": "",
+            "score": 0.82,
+            "summary": "Вертикальный кадр с космическим взрывом/туманностью и крупным красным текстом по центру",
             "has_text": false,
             "watermark": false,
-            "reason": "Фон и текст не про суперкомпьютер/задачу, а про монтаж; оверлеи выглядят как сток/интерфейс, но дизайн задуман",
+            "reason": "Полностью соответствует режиму C (футаж во весь кадр), текст задуманный, но материал выглядит типичным стоковым/генеративным футажем с низким контрастом надписи",
             "judge": "grok"
           },
           {
@@ -352,10 +352,10 @@
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "ответ на вопрос. Проверить этот результат",
             "score": 0.85,
-            "summary": "Ведущий крупным планом на фоне нейросетевой графики с крупным текстом за головой",
-            "has_text": true,
+            "summary": "Ведущий отвечает в кадре на фоне нейросети с крупным текстом «ВЕРДИМ» за головой",
+            "has_text": false,
             "watermark": false,
-            "reason": "Соответствует замыслу аватара и twist, но есть лишний мелкий текст и постановочный вид",
+            "reason": "Кадр точно соответствует замыслу: крупный план ведущего, ответ на вопрос, фоновый текст как субтитр, нет дефектов",
             "judge": "grok"
           },
           {
@@ -364,11 +364,11 @@
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "Доверил бы ты такому ответу",
-            "score": 0.35,
-            "summary": "Abstract neon network lines over dark bg with red rectangle and 'ДОЕ' text",
+            "score": 0.55,
+            "summary": "Абстрактная сеть линий с красным прямоугольником и текстом 'ДОЕ'",
             "has_text": true,
             "watermark": false,
-            "reason": "Tech-visual fits channel but broken text and weak CTA match",
+            "reason": "Нейросетевая абстракция подходит теме, но текст 'ДОЕ' и отсутствие связи с 'доверием ответу' снижают оценку",
             "judge": "grok"
           }
         ],
@@ -620,11 +620,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "Это квантовый чип. Внутри 105 кубитов",
-            "score": 0.55,
-            "summary": "Ведущий крупно на фоне красного космического взрыва",
+            "score": 0.88,
+            "summary": "Ведущий крупно на фоне красной космической анимации с оверлеем «105 кубитов»",
             "has_text": false,
             "watermark": false,
-            "reason": "Речь про квантовый чип, а в кадре только ведущий и нейросетевой фон без визуала чипа",
+            "reason": "Кадр точно соответствует речи и замыслу, но фон выглядит сгенерированным/стоковым",
             "judge": "grok"
           },
           {
@@ -633,11 +633,11 @@
             "kind": "split",
             "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
             "spoken": "прожил дольше,",
-            "score": 0.85,
-            "summary": "Man in green shirt with white text box overlay about logical qubit living longer from Nature",
+            "score": 0.95,
+            "summary": "ведущий с наложенной карточкой статьи nature.com о логическом кубите",
             "has_text": true,
             "watermark": false,
-            "reason": "Text matches speech evidence perfectly, overlay covers face area but design is intended",
+            "reason": "карточка идеально соответствует фразе «прожил дольше», сплит и evidence-замысел соблюдены",
             "judge": "grok"
           },
           {
@@ -646,11 +646,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "Здесь",
-            "score": 0.9,
-            "summary": "Полноэкранный текст «РЕШЕНА ЗА ПЯТЬ МИНУТ» с полупрозрачным «ЗДЕСЬ» на тёмном фоне с красными частицами",
+            "score": 0.55,
+            "summary": "тёмный фон с красными частицами и крупным текстом 'ЗДЕСЬ ВСЕ НАОБОРОТ' с наложенными слоями",
             "has_text": false,
             "watermark": false,
-            "reason": "Текст крупный, читаемый, соответствует речи «Здесь» и замыслу; фон слегка stocky, но без дефектов",
+            "reason": "текст с артефактами наложения, частично нечитаем, но соответствует замыслу full-screen и слову 'Здесь'",
             "judge": "grok"
           },
           {
@@ -658,12 +658,12 @@
             "shot_index": 13,
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
-            "spoken": "шаге. Задача, на которую суперкомпьютеру",
-            "score": 0.88,
-            "summary": "Яркий взрыв частиц жёлто-красного цвета на чёрном фоне с крупной надписью ЗАДАЧА",
+            "spoken": "",
+            "score": 0.92,
+            "summary": "Яркий взрыв частиц жёлто-зелёно-розового цвета на чёрном фоне",
             "has_text": false,
             "watermark": false,
-            "reason": "Визуал соответствует теме задачи суперкомпьютера, текст ЗАДАЧА — часть замысла, кадр вертикальный и центрированный",
+            "reason": "Чистый футаж режима C, центрирован, без артефактов и текста, идеально ложится под речь",
             "judge": "grok"
           },
           {
@@ -673,10 +673,10 @@
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "",
             "score": 0.92,
-            "summary": "Ведущий крупным планом на фоне неоновой сети с текстом за головой",
+            "summary": "ведущий крупным планом на фоне нейросети с субтитром за головой",
             "has_text": false,
             "watermark": false,
-            "reason": "Полностью соответствует режиму A и замыслу twist, текст — оформление канала",
+            "reason": "полностью соответствует замыслу аватара и твиста, оформление канала не в счёт",
             "judge": "grok"
           },
           {
@@ -685,11 +685,11 @@
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "в физику. Доверил бы ты такому ответу",
-            "score": 0.25,
-            "summary": "почти чёрный кадр с бледной зелёной сетью и красным DOE внизу",
+            "score": 0.1,
+            "summary": "почти полностью чёрный кадр с крошечной красной надписью внизу",
             "has_text": true,
             "watermark": false,
-            "reason": "кадр слишком тёмный и абстрактный, не иллюстрирует физику, низкая читаемость",
+            "reason": "кадр чёрный, не соответствует физике и CTA, текст не по центру",
             "judge": "grok"
           }
         ],
@@ -745,17 +745,10 @@
   ],
   "devices": {
     "A": {
-      "count": 15,
-      "grounded": 2,
-      "ungrounded": 13,
+      "count": 14,
+      "grounded": 3,
+      "ungrounded": 11,
       "placed": [
-        {
-          "at": 0.47,
-          "kind": "полноэкранный текст",
-          "template": "text-fullscreen/impact-02",
-          "grounded_on": [],
-          "why": ""
-        },
         {
           "at": 3.08,
           "kind": "приём вокруг ведущего",
@@ -764,6 +757,13 @@
             "number"
           ],
           "why": "приём оправдан: названо число"
+        },
+        {
+          "at": 3.08,
+          "kind": "plaque",
+          "template": "lower-thirds/note-pin",
+          "grounded_on": [],
+          "why": "r6: informative card over first avatar to mask off-camera gaze"
         },
         {
           "at": 8.0,
@@ -790,11 +790,20 @@
           "at": 18.42,
           "kind": "полноэкранный текст",
           "template": "text-fullscreen/impact-01",
-          "grounded_on": [],
-          "why": ""
+          "grounded_on": [
+            "number"
+          ],
+          "why": "приём оправдан: названо число"
         },
         {
           "at": 19.62,
+          "kind": "полноэкранный текст",
+          "template": "text-fullscreen/beat-freeze-cut",
+          "grounded_on": [],
+          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
+        },
+        {
+          "at": 21.86,
           "kind": "полноэкранный текст",
           "template": "text-fullscreen/code-diff",
           "grounded_on": [
@@ -803,30 +812,23 @@
           "why": "приём оправдан: сравниваются две величины"
         },
         {
-          "at": 21.86,
-          "kind": "полноэкранный текст",
-          "template": "text-fullscreen/kinetic-type-swap",
-          "grounded_on": [],
-          "why": "приём без смысловых требований: держит кадр, не спорит с речью"
-        },
-        {
           "at": 24.39,
           "kind": "полноэкранный текст",
-          "template": "text-fullscreen/beat-freeze-cut",
+          "template": "text-fullscreen/shared-axis-z",
           "grounded_on": [],
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
         {
           "at": 26.74,
           "kind": "полноэкранный текст",
-          "template": "text-fullscreen/scan-band",
+          "template": "text-fullscreen/kinetic-type-swap",
           "grounded_on": [],
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
         {
           "at": 29.32,
           "kind": "полноэкранный текст",
-          "template": "text-fullscreen/code-morph",
+          "template": "text-fullscreen/scan-band",
           "grounded_on": [],
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
@@ -838,13 +840,6 @@
           "why": ""
         },
         {
-          "at": 36.89,
-          "kind": "plaque",
-          "template": "lower-thirds/note-pin",
-          "grounded_on": [],
-          "why": "плашка из сценария, блок b5"
-        },
-        {
           "at": 37.61,
           "kind": "приём вокруг ведущего",
           "template": "hero-devices/type-slab",
@@ -854,23 +849,23 @@
         {
           "at": 42.51,
           "kind": "cta",
-          "template": "outro-cta/subscribe-pulse",
+          "template": "outro-cta/logo-brand-close",
           "grounded_on": [],
-          "why": "§6: кнопка подписки в последние 2 сек"
+          "why": "§6 r6: REDSHIFT + handle + Subscribe (no slogan)"
         }
       ]
     },
     "B": {
-      "count": 14,
-      "grounded": 1,
-      "ungrounded": 13,
+      "count": 13,
+      "grounded": 2,
+      "ungrounded": 11,
       "placed": [
         {
-          "at": 0.47,
-          "kind": "полноэкранный текст",
-          "template": "text-fullscreen/impact-02",
+          "at": 3.08,
+          "kind": "plaque",
+          "template": "lower-thirds/note-pin",
           "grounded_on": [],
-          "why": ""
+          "why": "r6: informative card over first avatar to mask off-camera gaze"
         },
         {
           "at": 8.0,
@@ -897,8 +892,10 @@
           "at": 18.42,
           "kind": "полноэкранный текст",
           "template": "text-fullscreen/impact-01",
-          "grounded_on": [],
-          "why": ""
+          "grounded_on": [
+            "number"
+          ],
+          "why": "приём оправдан: названо число"
         },
         {
           "at": 19.62,
@@ -952,21 +949,14 @@
           "why": ""
         },
         {
-          "at": 36.89,
-          "kind": "plaque",
-          "template": "lower-thirds/note-pin",
-          "grounded_on": [],
-          "why": "плашка из сценария, блок b5"
-        },
-        {
           "at": 42.51,
           "kind": "cta",
           "template": "outro-cta/logo-brand-close",
           "grounded_on": [],
-          "why": "§6: identity close — вордмарк, не кнопка подписки"
+          "why": "§6 r6: REDSHIFT + handle + Subscribe (no slogan)"
         }
       ]
     }
   },
-  "cost_usd": 0.546
+  "cost_usd": 0.522
 }
