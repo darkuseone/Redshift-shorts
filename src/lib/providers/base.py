@@ -67,5 +67,9 @@ class Provider:
         return {
             "attempts": int(self.cfg.get("providers.retries", 3)),
             "base_delay": float(self.cfg.get("providers.backoff_base_sec", 2.0)),
+            # 503/UNAVAILABLE/high demand — длиннее (5/10/20…) и больше попыток.
+            "capacity_attempts": int(self.cfg.get("providers.capacity_retries", 6)),
+            "capacity_base_delay": float(
+                self.cfg.get("providers.capacity_backoff_base_sec", 5.0)),
             "what": what,
         }

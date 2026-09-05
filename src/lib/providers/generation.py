@@ -21,7 +21,7 @@ from typing import Any
 from ...errors import ProviderError
 from ..ffmpeg import run
 from ..logging import get_logger
-from ..retry import call_with_retry
+from ..retry import call_with_retry, is_capacity_error
 from .base import Provider, ProviderMode, resolve_mode
 
 # Типы градиента фильтра ffmpeg ``gradients`` в порядке предпочтения. Набор
@@ -437,7 +437,9 @@ class GeminiImageGeneration(GenerationProvider):
             spare = str(self.cfg.get("generation.gemini_image_model_fallback", "")).strip()
             if not spare or spare == model:
                 raise
-            _log.warning("модель Gemini image не принята — беру запасную",
+            why = ("503/high demand" if is_capacity_error(exc)
+                   else "модель не принята")
+            _log.warning(f"Gemini image {why} — беру запасную",
                          extra={"model": model, "fallback": spare,
                                 "reason": str(exc)[:200]})
             still.write_bytes(self._image_bytes(prompt, spare))

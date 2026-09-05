@@ -16,8 +16,10 @@ project:
 providers:
   mode: auto
   request_timeout_sec: 60
-  retries: 3               # §10.5.3: 3 попытки
+  retries: 3               # §10.5.3: 3 попытки (обычные ошибки)
   backoff_base_sec: 2.0    # экспоненциальный бэкофф 2/4/8
+  capacity_retries: 6      # 503/UNAVAILABLE/high demand
+  capacity_backoff_base_sec: 5.0  # 5/10/20/40/80
 
 heygen:
   # Аватар 5 заказчика, выдан 24.08. Выданный id — это **группа** («Markus
@@ -140,6 +142,9 @@ vision:
   grok_api_base: "https://api.x.ai"
   gemini_api_key_env: GEMINI_API_KEY
   gemini_model: "gemini-3.8-flash"
+  # Запасной Flash только при стойком 503 на primary. 3.7 — предыдущий GA Flash
+  # (релизы 3.7→3.8 за ~3 недели); 2.5 для новых ключей уже недоступен.
+  gemini_model_fallback: "gemini-3.7-flash"
   gemini_api_base: "https://generativelanguage.googleapis.com"
 
 generation:

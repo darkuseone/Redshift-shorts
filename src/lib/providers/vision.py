@@ -25,7 +25,7 @@ from PIL import Image
 
 from ...errors import ProviderError
 from ..logging import get_logger
-from ..retry import call_with_retry
+from ..retry import call_with_retry, is_capacity_error
 from .base import Provider, ProviderMode, resolve_mode
 
 _log = get_logger("vision")
@@ -257,10 +257,14 @@ class GeminiVision(VisionProvider):
               query: str, kind: str = "broll") -> VisionVerdict:
         import requests
 
-        model = str(self.cfg.get("vision.gemini_model", "gemini-3.8-flash"))
+        primary = str(self.cfg.get("vision.gemini_model", "gemini-3.8-flash"))
+        spare = str(self.cfg.get("vision.gemini_model_fallback", "")).strip()
+        models = [primary]
+        if spare and spare != primary:
+            models.append(spare)
+
         base = str(self.cfg.get("vision.gemini_api_base",
                                 "https://generativelanguage.googleapis.com"))
-        url = f"{base}/v1beta/models/{model}:generateContent"
         parts: list[dict[str, Any]] = [
             {"text": prompt_for(kind, intent=intent, role=role, query=query)}]
         for frame in frames:
@@ -274,15 +278,38 @@ class GeminiVision(VisionProvider):
             "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
         }
 
-        def _call() -> dict[str, Any]:
-            resp = requests.post(url, params={"key": self.api_key}, json=payload,
-                                 timeout=self._timeout())
-            if resp.status_code >= 400:
-                raise ProviderError(f"Gemini вернул {resp.status_code}",
-                                    status=resp.status_code, body=resp.text[:300])
-            return resp.json()
+        last_exc: ProviderError | None = None
+        data: dict[str, Any] | None = None
+        model = primary
+        for model in models:
+            url = f"{base}/v1beta/models/{model}:generateContent"
 
-        data = call_with_retry(_call, **self._retry_kwargs("Gemini vision"))
+            def _call(url=url, model=model) -> dict[str, Any]:
+                resp = requests.post(url, params={"key": self.api_key}, json=payload,
+                                     timeout=self._timeout())
+                if resp.status_code >= 400:
+                    raise ProviderError(f"Gemini вернул {resp.status_code}",
+                                        status=resp.status_code, body=resp.text[:300],
+                                        model=model)
+                return resp.json()
+
+            try:
+                data = call_with_retry(_call, **self._retry_kwargs("Gemini vision"))
+                break
+            except ProviderError as exc:
+                last_exc = exc
+                if not is_capacity_error(exc) or model == models[-1]:
+                    raise
+                _log.warning(
+                    "Gemini vision 503/high demand — пробую следующий Flash",
+                    extra={"model": model, "fallback": models[-1],
+                           "err": str(exc)[:200]},
+                )
+
+        if data is None:
+            assert last_exc is not None
+            raise last_exc
+
         text = _gemini_text(data)
         self.charge("judge", len(frames), "images",
                     len(frames) * float(self.cfg.get("budget.price.gemini_per_image", 0.0004)),
