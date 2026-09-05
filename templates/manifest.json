@@ -1898,7 +1898,9 @@
         "vpn"
       ],
       "renderer": "vpn_youtube_spot",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
@@ -3194,7 +3196,9 @@
         "circle"
       ],
       "renderer": "transitions_radial",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": []
     },
