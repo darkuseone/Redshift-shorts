@@ -9121,7 +9121,7 @@ _LBC_CEILING = 768
 _LBC_WIDTH = 760
 _LBC_EXIT_Y = 48
 _LBC_DEFAULT_MARK = "REDSHIFT"
-_LBC_DEFAULT_TAG = "Write code. Ship to orbit."
+_LBC_DEFAULT_TAG = ""
 _LBC_DEFAULT_URL = "redshift.shorts"
 
 
@@ -9269,6 +9269,32 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
             f'tl.fromTo("#{node_id}-lock",{{opacity:1,y:0}},'
             f'{{opacity:0,y:{_num(-_LBC_EXIT_Y)},duration:{_num(out)},'
             f'ease:"power2.in",immediateRender:false}},{_num(out_at)});')
+
+    # YouTube-style Subscribe CTA (0042 r6: end card must show Subscribe).
+    _sub_raw = ctx.params.get("subscribe", True)
+    if isinstance(_sub_raw, bool):
+        show_sub = _sub_raw
+    else:
+        show_sub = str(_sub_raw).strip().lower() not in ("0", "false", "no", "")
+    if show_sub or ctx.params.get("buttonText"):
+        sub_label = str(ctx.params.get("buttonText") or "Subscribe").strip() or "Subscribe"
+        sub_size = max(22, min(36, int(round(size * 0.14))))
+        extras.append(
+            f'<span id="{node_id}-sub" class="lbc-sub" role="button" '
+            f'aria-label="{_esc(sub_label)}" style="font-size:{sub_size}px">'
+            f'{_esc(sub_label)}</span>')
+        sub_at = t0 + min(duration * 0.55, (url_at - t0) + 0.25 * scale)
+        sub_dur = max(0.35, 0.7 * scale)
+        tweens.append(
+            f'tl.fromTo("#{node_id}-sub",{{opacity:0,scale:0.86}},'
+            f'{{opacity:1,scale:1,duration:{_num(sub_dur)},ease:"back.out(1.6)"}},'
+            f'{_num(sub_at)});')
+        # gentle pulse while held
+        pulse_at = sub_at + sub_dur
+        if end - pulse_at > 0.4:
+            tweens.append(
+                f'tl.to("#{node_id}-sub",{{scale:1.05,duration:0.45,'
+                f'yoyo:true,repeat:3,ease:"sine.inOut"}},{_num(pulse_at)});')
 
     extras_html = "".join(extras)
     return Piece(
@@ -13149,6 +13175,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text.invert .lbc-tag{color:var(--color-bg-pure);"
         "-webkit-text-stroke:1.5px rgba(0,0,0,0.8);"
         "text-shadow:0 4px 20px rgba(0,0,0,0.7)}"
+        ".fullscreen-text .lbc-sub{display:inline-flex;align-items:center;justify-content:center;margin-top:18px;padding:16px 42px;border-radius:999px;background:#FF0000;color:#ffffff;font-family:var(--font-subtitle);font-weight:800;text-transform:uppercase;letter-spacing:0.04em;opacity:0;will-change:transform;box-shadow:0 10px 28px rgba(255,0,0,0.35)}"
         ".fullscreen-text .lbc-url{display:block;font-family:var(--font-mono);"
         "text-transform:none;letter-spacing:0.28em;color:#f7f8fa;"
         "opacity:0;will-change:transform;"
@@ -13172,7 +13199,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .ptd-ink .accent{fill:var(--color-accent)}"
         ".fullscreen-text.fs-scan-band{width:var(--frame-w);height:var(--frame-h);"
         "padding:0;overflow:hidden;isolation:isolate;"
-        "background:#0b0c0e;color:#f7f8fa;"
+        "background:transparent;color:#f7f8fa;"
         "font-family:Inter,system-ui,sans-serif;font-weight:850;"
         "letter-spacing:-0.065em}"
         ".fullscreen-text .sb-stage{position:absolute;inset:0;opacity:0;"
@@ -13197,7 +13224,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .sb-clone-core{color:#f7f8fa}"
         ".fullscreen-text.fs-scramble-reveal{width:var(--frame-w);height:var(--frame-h);"
         "padding:0;overflow:hidden;isolation:isolate;display:grid;place-items:center;"
-        "background:#0b1016;color:#f8fafc;"
+        "background:transparent;color:#f8fafc;"
         "font-family:var(--font-mono);font-weight:780}"
         ".fullscreen-text .sr-stage{display:block;width:950px;max-width:88%;"
         "will-change:transform,opacity}"

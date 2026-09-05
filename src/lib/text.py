@@ -283,7 +283,12 @@ def accent_card_start(anchor: dict[str, Any], *, block_start: float,
 
 def enrich_overlay_punch(content: str, block_text: str, *,
                          max_words: int = 4) -> str:
-    """Короткий stub («НЕЧЕМ») → окно клаузы, где этот удар реально несёт смысл."""
+    """Короткий stub («НЕЧЕМ») → окно клаузы, где этот удар реально несёт смысл.
+
+    Authored multi-token overlays («Проверить нечем») stay as-is when they
+    already read as a clause; only ultra-short stubs (≤1 real word, or a
+    digit+unit like «5 МИНУТ») get expanded from block text.
+    """
     raw = str(content or "").strip()
     text = str(block_text or "").strip()
     if not raw or not text:
@@ -291,16 +296,61 @@ def enrich_overlay_punch(content: str, block_text: str, *,
     tokens = _content_tokens(raw)
     if len(tokens) > 2:
         return raw
+    # Two+ alphabetic tokens already carry meaning — keep author copy.
+    alpha_tokens = [t for t in tokens if len(_bare_word(t)) >= 3 and not t.isdigit()]
+    if len(alpha_tokens) >= 2:
+        return raw
     needle = tokens[-1]
     if len(_bare_word(needle)) < 3:
         return raw
     clauses = [c.strip(" —–-") for c in re.split(r"[,;:—–]|(?<=[.!?])\s+", text) if c.strip()]
     clause = next((c for c in clauses if any(stems_match(w, needle) for w in c.split())),
                   clauses[-1] if clauses else text)
-    words = [w for w in clause.split() if w.strip(".,!?;:«»\"'—–")]
+    words = [w for w in clause.split() if w.strip(".,!?;:«»\"\'—–")]
     if not words:
         return raw
     end = next((i + 1 for i, w in enumerate(words) if stems_match(w, needle)), len(words))
     window = words[max(0, end - max_words):end]
     enriched = " ".join(window).strip(".,!?;:")
     return enriched or raw
+
+
+def punch_stems(text: str) -> set[str]:
+    """Stem keys for punch-family dedupe (НЕЧЕМ / ничем / Проверить нечем)."""
+    out: set[str] = set()
+    for token in _content_tokens(text):
+        bare = _bare_word(token).lower().replace("ё", "е")
+        if len(bare) < 3:
+            continue
+        # crude RU stem: drop common inflection tails
+        stem = bare
+        for suf in ("ами", "ями", "ов", "ев", "ей", "ом", "ем", "ах", "ях",
+                    "ую", "юю", "ая", "яя", "ые", "ие", "ых", "их",
+                    "ть", "ти", "ла", "ли", "ло", "ы", "и", "а", "я", "у", "ю", "е", "о"):
+            if len(stem) > 4 and stem.endswith(suf):
+                stem = stem[: -len(suf)]
+                break
+        stem = stem[:6] if len(stem) >= 6 else stem
+        # ничем/нечем share a family (и↔е)
+        if stem.startswith("нич"):
+            stem = "неч" + stem[3:]
+        out.add(stem)
+    return out
+
+
+def punch_families_overlap(a: str, b: str) -> bool:
+    return bool(punch_stems(a) & punch_stems(b))
+
+
+def spoken_onset_for_content(words: list[dict[str, Any]], content: str,
+                             emphasis_word: str | None = None,
+                             *, default: float | None = None) -> float | None:
+    """Absolute start sec of the spoken punch for ``content``, or default."""
+    anchor = find_spoken_anchor(words, content, emphasis_word)
+    if anchor is None:
+        return default
+    try:
+        return float(anchor.get("start"))
+    except (TypeError, ValueError):
+        return default
+

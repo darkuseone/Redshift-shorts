@@ -35,6 +35,7 @@ from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
+    punch_families_overlap, spoken_onset_for_content,
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, matched
@@ -1012,13 +1013,18 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
     """Что вынести на экран, когда материала под кадр нет.
 
     Смысл речи, не каталожный плейсхолдер и не дискурс-открывашка («и вот
-    ответ»). Overlay-punch («5 МИНУТ») — один раз на блок: иначе одна фраза
-    висит на всех gap-слотах подряд. Дальше — окно речи / другие клаузы.
+    ответ»). Overlay-punch («5 МИНУТ») — один раз на блок **и только после
+    spoken onset** (0042 r6: early РЕШЕНА/5 минут spam). До удара — только
+    уже произнесённые слова / нейтральные клаузы без будущего панча.
     """
     used = used if used is not None else None
     semantic = _semantic_screen_text(block)
     overlay = block.get("overlay") or {}
     otype = str(overlay.get("type") or "")
+    start, end = float(slot["start"]), float(slot["end"])
+    bwords = [w for w in words
+              if str(w.get("block_id") or "") == str(block.get("id") or "")]
+    pool = bwords or words
 
     def _take(phrase: str) -> str:
         key = _norm_screen_key(phrase)
@@ -1030,14 +1036,26 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
             used.add(key)
         return key
 
-    # Overlay punch only once — not on every subsequent gap in the same block.
+    punch_onset = None
+    if otype in ("fullscreen_text", "lower_third", "plaque", "note") and semantic:
+        punch_onset = spoken_onset_for_content(
+            pool, semantic, block.get("emphasis_word"))
+
+    # Overlay punch only once — never before VO; prefer the slot that
+    # *covers* the spoken onset so the card lands on the beat.
     if (semantic and len(semantic.split()) <= 5
             and otype in ("fullscreen_text", "lower_third", "plaque", "note")):
-        hit = _take(semantic)
-        if hit:
-            return hit
+        covers_onset = (punch_onset is not None
+                        and start - 1e-6 <= float(punch_onset) < end + 1e-6)
+        after_onset = (punch_onset is None
+                       or start + 0.05 >= float(punch_onset) - 1e-6)
+        if covers_onset or after_onset:
+            hit = _take(semantic if not covers_onset else (
+                enrich_overlay_punch(semantic, str(block.get("text") or ""))
+                or semantic))
+            if hit:
+                return hit
 
-    start, end = float(slot["start"]), float(slot["end"])
     said = [str(w.get("word") or "") for w in words
             if float(w["end"]) > start and float(w["start"]) < end]
     said = [w for w in said if w.strip()]
@@ -1046,21 +1064,97 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
         if _DISCOURSE_PREFIX.match(joined):
             body = _strip_discourse(str(block.get("text") or joined))
             said = body.split()[:4] or said
+        # Drop future punch tokens still not spoken by slot midpoint.
+        mid = (start + end) / 2.0
+        if punch_onset is not None and mid < float(punch_onset) - 1e-6:
+            safe = []
+            for w in said:
+                # skip tokens that belong to the future punch family
+                if punch_families_overlap(w, semantic or ""):
+                    continue
+                safe.append(w)
+            said = safe or said
         hit = _take(" ".join(said[:4]))
         if hit:
             return hit
 
-    for clause in _block_clauses(str(block.get("text") or semantic or "")):
+    for clause in _block_clauses(str(block.get("text") or "")):
+        if semantic and punch_onset is not None and start + 0.05 < float(punch_onset) - 1e-6:
+            if punch_families_overlap(clause, semantic):
+                continue
         hit = _take(clause)
         if hit:
             return hit
 
-    body = _strip_discourse(str(block.get("text") or semantic or ""))
+    body = _strip_discourse(str(block.get("text") or ""))
+    # Prefer early informative clause when punch is still ahead.
+    if semantic and punch_onset is not None and start + 0.05 < float(punch_onset) - 1e-6:
+        for clause in _block_clauses(body):
+            if not punch_families_overlap(clause, semantic):
+                hit = _take(clause)
+                if hit:
+                    return hit
     said = body.split()[:4]
     fallback = " ".join(said[:4]).upper().strip(" ,.;:—-")
+    if semantic and punch_onset is not None and start + 0.05 < float(punch_onset) - 1e-6:
+        if punch_families_overlap(fallback, semantic):
+            fallback = " ".join(body.split()[:3]).upper().strip(" ,.;:—-")
+            if punch_families_overlap(fallback, semantic):
+                fallback = "ФАКТ"
     if used is not None and fallback:
         used.add(_norm_screen_key(fallback))
     return fallback
+
+
+def _retime_fullscreen_slots(slots: list[dict[str, Any]],
+                             plan: dict[str, Any],
+                             words: list[dict[str, Any]]) -> None:
+    """Demote intentional FS that starts before spoken punch (P7+ self-heal).
+
+    Cached P5 plans park «решена за пять минут» at block head. Turning those
+    slots into footage lets ``gap_phrase`` fill with informative in-window
+    copy; the slot that *covers* punch onset may then take the punch once.
+    """
+    blocks = {b["id"]: b for b in plan.get("blocks", [])}
+    for slot in slots:
+        if slot.get("kind") != "fullscreen_text":
+            continue
+        reason = str(slot.get("reason") or "")
+        if "полноэкранный текст" not in reason:
+            continue
+        block = blocks.get(slot.get("block_id"), {})
+        overlay = block.get("overlay") or {}
+        raw = str(slot.get("content") or overlay.get("content") or "").strip()
+        if not raw:
+            continue
+        content = enrich_overlay_punch(raw, str(block.get("text") or "")) or raw
+        bwords = [w for w in words
+                  if str(w.get("block_id") or "") == str(block.get("id") or "")]
+        onset = spoken_onset_for_content(
+            bwords or words, content, block.get("emphasis_word"))
+        if onset is None:
+            continue
+        if float(slot["start"]) + 0.2 < float(onset):
+            slot["kind"] = "footage"
+            slot["needs_asset"] = True
+            slot["asset_role"] = slot.get("asset_role") or "broll"
+            slot["content"] = ""
+            slot["reason"] = (
+                "early punch demoted to informative fill (§5.2 r6); " + reason)
+            continue
+        # Snap slightly-early starts onto onset.
+        new_start = max(float(slot["start"]), float(onset) + 0.05)
+        if new_start > float(slot["start"]) + 1e-3:
+            block_end = float(bwords[-1]["end"]) if bwords else float(slot["end"])
+            new_end = max(new_start + 0.55, float(slot["end"]))
+            new_end = min(block_end, new_end)
+            if new_end - new_start >= 0.55 - 1e-6:
+                slot["start"] = round(new_start, 3)
+                slot["end"] = round(new_end, 3)
+                slot["duration"] = round(new_end - new_start, 3)
+                slot["content"] = content
+
+
 
 
 def explain_choice(template: Any, traits: Iterable[str]) -> str:
@@ -1805,10 +1899,39 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         else:
             start = b_start + 0.4
         start = min(start, max(b_start, b_end - 1.2))
+        plaque_end = min(start + 2.6, b_end)
+        # Suppress plaque when a punch-family FS/accent card already owns
+        # the beat (0042 r6: triple НЕЧЕМ = card + plaque + captions).
+        conflict = False
+        for s in plan.get("slots", []):
+            if s.get("kind") != "fullscreen_text":
+                continue
+            if float(s["end"]) <= start or float(s["start"]) >= plaque_end:
+                continue
+            sc = str(s.get("content") or "")
+            if sc and punch_families_overlap(sc, str(content)):
+                conflict = True
+                break
+        if not conflict:
+            for ov in overlays:
+                if ov.get("type") not in ("fullscreen_text", "accent", "cta"):
+                    # also check shots-to-be: use slot content above
+                    pass
+            # Also suppress if any earlier overlay plaque same family
+            for ov in overlays:
+                if ov.get("type") != "plaque":
+                    continue
+                pt = str((ov.get("params") or {}).get("text") or "")
+                if pt and punch_families_overlap(pt, str(content)):
+                    if float(ov["end"]) > start and float(ov["start"]) < plaque_end:
+                        conflict = True
+                        break
+        if conflict:
+            continue
         overlays.append(_plaque_overlay(
             template=template,
             start=start,
-            end=min(start + 2.6, b_end),
+            end=plaque_end,
             params={"text": content, "content": content, "name": content,
                     "role": role,
                     **{k: v for k, v in template.params.items()
@@ -1817,9 +1940,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             why=f"плашка из сценария, блок {block['id']}",
         ))
 
-    # CTA — last ~2s (§6, QC-16). Picker stays free across outro-cta scenarios
-    # (loop question, subscribe pill, phrase+SFX, brand-close). When brand-close
-    # wins, wordmark defaults are EN CAPS REDSHIFT — not forced every video.
+    # CTA — last ~2s (§6). Always: REDSHIFT. + handle + red Subscribe.
+    # No slogan tagline; invert is transparent so stock/cosmic underlay shows.
     cta_start, cta_end = plan.get("cta_window", [duration - 2.0, duration])
     cta_template, _ = picker.pick(
         "outro-cta",
@@ -1827,30 +1949,29 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         duration=float(cta_end) - float(cta_start),
         recent_videos=recent_videos,
         exclude=used,
+        prefer_head=["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"],
         seed=seed,
     )
     used.append(cta_template.id)
-    if (cta_template.renderer == "logo_brand_close"
-            or cta_template.params.get("logo_close")
-            or cta_template.name == "logo-brand-close"):
-        cta_params = dict(cta_template.params)
-        # Dark end plates (mesh/space): force light glyphs — ink tagline blends.
-        cta_params["invert"] = True
-        cta_params.setdefault("tone", "paper")
-        overlays.append({
-            "type": "cta", "start": float(cta_start), "end": float(cta_end),
-            "template": cta_template.id,
-            "renderer": "logo_brand_close",
-            "params": cta_params,
-            "why": "§6: identity close — вордмарк, не кнопка подписки",
-        })
-    else:
-        overlays.append({
-            "type": "cta", "start": float(cta_start), "end": float(cta_end),
-            "template": cta_template.id,
-            "params": {"text": "SUBSCRIBE"},
-            "why": "§6: кнопка подписки в последние 2 сек",
-        })
+    cta_params = dict(cta_template.params)
+    cta_params.update({
+        "logo_close": True,
+        "wordmark": str(cta_params.get("wordmark") or "REDSHIFT"),
+        "tagline": "",  # 0042 r6: drop «Write code. Ship to orbit.»
+        "url": str(cta_params.get("url") or "redshift.shorts"),
+        "subscribe": True,
+        "buttonText": "Subscribe",
+        "invert": True,
+        "tone": "paper",
+        "exit": "none",
+    })
+    overlays.append({
+        "type": "cta", "start": float(cta_start), "end": float(cta_end),
+        "template": "outro-cta/logo-brand-close",
+        "renderer": "logo_brand_close",
+        "params": cta_params,
+        "why": "§6 r6: REDSHIFT + handle + Subscribe (no slogan)",
+    })
     return overlays
 
 
@@ -2155,6 +2276,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     prefs = (preferences or {}) if variant == "A" else {}
     used_templates: list[str] = []
     slots = plan["slots"]
+    _retime_fullscreen_slots(slots, plan, words_doc.get("words") or [])
     shots: list[dict[str, Any]] = []
 
     # Приёмы вокруг ведущего ставятся через один подходящий аватар-кадр: на
@@ -2213,6 +2335,15 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             asset = assets.get(slot["index"])
             content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
             fs_params = _fullscreen_params(template, content, block)
+            # Delay punch chrome until spoken onset when slot starts early.
+            onset = spoken_onset_for_content(
+                [w for w in words_doc["words"]
+                 if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
+                str(content), block.get("emphasis_word"))
+            if onset is not None and float(slot["start"]) + 0.15 < float(onset):
+                fs_params["enter_delay"] = max(
+                    float(fs_params.get("enter_delay") or 0),
+                    float(onset) + 0.05 - float(slot["start"]))
             key = _norm_screen_key(str(content or ""))
             if key:
                 used_screen_phrases.add(key)
@@ -2234,13 +2365,22 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         bg_file = plate_path
                         gap_reason = "фон — плита сцены ролика"
                     else:
-                        gap_reason = "фон под полноэкранный текст не найден"
+                        # Last resort: any backdrop plate on disk (prefer grid).
+                        assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
+                        for name in ("grid.jpg", "horizon.jpg"):
+                            cand = assets_dir / "backdrops" / name
+                            if cand.exists():
+                                bg_file = str(cand)
+                                gap_reason = f"фон — запасная плита {name}"
+                                break
+                        if bg_file is None:
+                            gap_reason = "фон под полноэкранный текст не найден"
             entry.update({
                 "content": content,
                 "template": template.id,
                 "renderer": template.renderer,
                 "params": fs_params,
-                # Light glyphs on dark plates (0042 QA: black hero/fullscreen unreadable).
+                # Light glyphs; bg stays transparent so fs-bg plate shows (r6).
                 "invert": True,
                 "accent_word": _fullscreen_accent(content, block),
                 "file": bg_file,
@@ -2289,7 +2429,32 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # Borrow nearest real plate as bg when any footage exists in the cut.
             plate = _plate_source(slot, slots, prepared, assets)
             bg_file = (plate or {}).get("file") if plate else None
+            if bg_file is None:
+                scene_name = pick_scene(
+                    str(plan.get("title") or ""),
+                    " ".join(str(b.get("text") or "")
+                             for b in plan.get("blocks", [])))
+                plate_path = _backdrop_plate(ctx.cfg, scene_name)
+                if plate_path:
+                    bg_file = plate_path
+                else:
+                    assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
+                    for name in ("grid.jpg", "horizon.jpg"):
+                        cand = assets_dir / "backdrops" / name
+                        if cand.exists():
+                            bg_file = str(cand)
+                            break
             fs_params = _fullscreen_params(template, content, gap_block)
+            onset = spoken_onset_for_content(
+                [w for w in words_doc["words"]
+                 if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
+                str(content), gap_block.get("emphasis_word"))
+            if (onset is not None and content
+                    and float(slot["start"]) + 0.15 < float(onset)
+                    and punch_families_overlap(str(content), _semantic_screen_text(gap_block))):
+                fs_params["enter_delay"] = max(
+                    float(fs_params.get("enter_delay") or 0),
+                    float(onset) + 0.05 - float(slot["start"]))
             entry.update({
                 "kind": "fullscreen_text",
                 "content": content,
@@ -2416,20 +2581,76 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                                seed=seed, recent_videos=recent_videos, used=used_templates,
                                picker=picker)
 
+    # Drop plaques that echo an on-screen punch FS (slots may still say footage
+    # when the plaque was built; shots are authoritative after gap promote).
+    fs_punches = [
+        (float(s["start"]), float(s["end"]), str(s.get("content") or ""))
+        for s in shots
+        if s.get("kind") == "fullscreen_text" and s.get("content")
+    ]
+    filtered = []
+    for ov in overlays:
+        if ov.get("type") == "plaque":
+            pt = str((ov.get("params") or {}).get("text")
+                     or (ov.get("params") or {}).get("content") or "")
+            if pt and any(float(ov["start"]) < pe and float(ov["end"]) > ps
+                          and punch_families_overlap(pt, pc)
+                          for ps, pe, pc in fs_punches):
+                continue
+        filtered.append(ov)
+    overlays = filtered
+
+    # First avatar gaze mask (~2–4s): informative top/center hook card, no HeyGen.
+    first_avatar = next((s for s in shots if s.get("kind") == "avatar"), None)
+    if first_avatar is not None:
+        a0 = float(first_avatar["start"])
+        a1 = float(first_avatar["end"])
+        # Cover the early eye-line beat inside the first avatar window.
+        g0 = max(a0, min(a0 + 0.05, 3.0))
+        if a0 <= 4.5:
+            g0 = max(a0, min(2.0, a0 + 0.05)) if a0 < 2.0 else a0
+        g1 = min(a1, max(g0 + 1.6, min(a0 + 2.0, 4.8)))
+        if g1 - g0 >= 1.0:
+            hook = "105 КУБИТОВ"
+            for b in plan.get("blocks") or []:
+                body = str(b.get("text") or "")
+                if "кубит" in body.lower() or "105" in body:
+                    # short fact from setup
+                    if "105" in body:
+                        hook = "105 КУБИТОВ"
+                    break
+            overlays.append({
+                "type": "plaque",
+                "start": round(g0, 3),
+                "end": round(g1, 3),
+                "template": "lower-thirds/note-pin",
+                "params": {
+                    "text": hook,
+                    "content": hook,
+                    "name": hook,
+                    "role": "hook",
+                    "position": "top",
+                    "direction": "left",
+                },
+                "why": "r6: informative card over first avatar to mask off-camera gaze",
+            })
+
     # Субтитры: весь ролик, кроме кадров с полноэкранным текстом (§5.1).
-    fs_windows = [(float(s["start"]), float(s["end"])) for s in slots
-                  if s["kind"] == "fullscreen_text"]
+    # Mute captions under FS shots (incl. gap-promoted footage→FS) and bulky cards.
+    fs_windows = [(float(s["start"]), float(s["end"])) for s in shots
+                  if s.get("kind") == "fullscreen_text"]
+    punch_windows: list[tuple[float, float, str]] = [
+        (float(s["start"]), float(s["end"]), str(s.get("content") or ""))
+        for s in shots if s.get("kind") == "fullscreen_text" and s.get("content")
+    ]
     for shot in shots:
         hero = shot.get("hero") or {}
         if not (hero.get("carries_line") or hero.get("covers_frame")):
             continue
-        # Приём со своей длиной глушит субтитр только на своём окне: плашка на
-        # 1.8 сек внутри четырёхсекундного кадра забрала бы все четыре.
         end = float(shot["end"])
         if hero.get("duration"):
             end = min(end, float(shot["start"]) + float(hero["duration"]))
         fs_windows.append((float(shot["start"]), end))
-    # Bulky source/browser cards own the frame; word captions collide with them.
     _BULKY_OVL = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
                   "ai_chat_reveal", "app_showcase", "dataviz"}
     for ovl in overlays:
@@ -2437,13 +2658,20 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         renderer = str(ovl.get("renderer") or "")
         if kind in _BULKY_OVL or renderer in _BULKY_OVL:
             fs_windows.append((float(ovl["start"]), float(ovl["end"])))
+        if kind == "plaque":
+            pt = str((ovl.get("params") or {}).get("text")
+                     or (ovl.get("params") or {}).get("content") or "")
+            if pt:
+                punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])
-        # Отбрасываем по пересечению, а не по началу: слово, начавшееся до
-        # склейки и дожившее до неё, оставалось висеть поверх полноэкранного
-        # текста. Видно на кадре готового MP4 — «ты» поверх «ПЕРЕЖИВЁШЬ».
         if any(start < w_end and end > w_start for w_start, w_end in fs_windows):
+            continue
+        spoken = str(word.get("display") or word.get("word") or "")
+        # One punch-family instance on screen: hide caption echo of active card.
+        if any(start < pe and end > ps and punch_families_overlap(spoken, pc)
+               for ps, pe, pc in punch_windows if pc):
             continue
         subtitles.append({
             "display": word["display"], "start": start, "end": end,

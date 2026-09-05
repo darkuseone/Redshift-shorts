@@ -200,13 +200,20 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
             anchor = (find_spoken_anchor(
                 bwords, content or raw_content, block.get("emphasis_word"))
                 or bwords[0])
+            # Prefer catalog min, but never invent an early card: if the punch
+            # lands near block end, keep a short on-beat card (≥0.55s) instead
+            # of dropping it (r5) or sliding it to block start (legacy).
             fs_dur = min(max(float(fs_range[0]), 1.2), float(fs_range[1]))
             fs_start = accent_card_start(anchor, block_start=b_start, delay_sec=0.05)
             fs_end = min(b_end, fs_start + fs_dur)
-            # If punch is late in the block, still show ≥ min duration by clamping end.
-            if fs_end - fs_start < float(fs_range[0]) - 1e-6 and b_end - fs_start >= float(fs_range[0]) - 1e-6:
-                fs_end = min(b_end, fs_start + float(fs_range[0]))
-            if fs_end - fs_start >= float(fs_range[0]) - 1e-6:
+            min_keep = min(float(fs_range[0]), 0.55)
+            if fs_end - fs_start < float(fs_range[0]) - 1e-6:
+                # stretch to catalog min when room remains in the block
+                if b_end - fs_start >= float(fs_range[0]) - 1e-6:
+                    fs_end = min(b_end, fs_start + float(fs_range[0]))
+                elif b_end - fs_start >= min_keep - 1e-6:
+                    fs_end = b_end
+            if fs_end - fs_start >= min_keep - 1e-6:
                 reserved.append((fs_start, fs_end, "fullscreen_text",
                                  content or raw_content, overlay.get("template_hint", "")))
                 fullscreen_used += 1

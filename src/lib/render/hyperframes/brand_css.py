@@ -285,14 +285,21 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "background:transparent;color:var(--color-bg-pure);"
         "font-family:var(--font-display);text-transform:uppercase;"
         f"font-size:{int(fs['size_px'][1])}px;line-height:0.94}}"
-        ".fullscreen-text.invert{background:var(--color-space-deep);"
+        # invert = light glyphs only — never opaque space_deep over fs-bg
+        # (0042 r6: flat #0B132B end/FS voids when invert won vs over-media).
+        ".fullscreen-text.invert{background:transparent;"
         "color:var(--color-bg-pure)}"
         ".fullscreen-text.solid{background:var(--color-space-deep)}"
         ".fullscreen-text .accent{color:var(--color-accent)}"
         # Кадр с материалом за текстом: заливка уступает место футажу, а
         # читаемость держит затемнение. Сплошной цвет здесь оставлял белые
         # буквы на пустом чёрном — фраза вынесена крупно, а стоит она ни на чём.
-        f".fullscreen-text.over-media{{background:{_rgba(colors['ink'], scrim)};"
+        # Higher specificity + !important so template skins (scan-band #0b0c0e)
+        # cannot re-paint an opaque void over stock/cosmic fs-bg.
+        f".fullscreen-text.over-media,.fullscreen-text.over-media.invert,"
+        f".fullscreen-text.fs-scan-band.over-media,"
+        f".fullscreen-text.fs-scramble-reveal.over-media{{"
+        f"background:{_rgba(colors['ink'], scrim)} !important;"
         "color:var(--color-bg-pure)}"
         ".fullscreen-text.over-media .accent{color:var(--color-accent-soft)}"
         f".fs-bg{{position:absolute;inset:0;z-index:{Z_SHOT};"

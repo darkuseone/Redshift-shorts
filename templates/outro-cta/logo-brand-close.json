@@ -11,8 +11,10 @@
     "logo_close": true,
     "exit": "none",
     "wordmark": "REDSHIFT",
-    "tagline": "Write code. Ship to orbit.",
-    "url": "redshift.shorts"
+    "tagline": "",
+    "url": "redshift.shorts",
+    "subscribe": true,
+    "buttonText": "Subscribe"
   },
   "tags": [
     "cta",
