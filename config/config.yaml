@@ -142,7 +142,7 @@ vision:
   grok_api_base: "https://api.x.ai"
   gemini_api_key_env: GEMINI_API_KEY
   gemini_model: "gemini-3.8-flash"
-  # true = без live vision (Gemini/Grok); переиспользовать кэш/ранг поиска
+  # true = без live vision (Gemini/Grok): P8 кэш/ранг + P12 semantic QC skip
   skip_live: false
   # Запасной Flash только при стойком 503 на primary. 3.7 — предыдущий GA Flash
   # (релизы 3.7→3.8 за ~3 недели); 2.5 для новых ключей уже недоступен.
@@ -150,7 +150,7 @@ vision:
   gemini_api_base: "https://generativelanguage.googleapis.com"
 
 generation:
-  # true = P9 не вызывает image gen (Gemini/Grok/Magnific)
+  # true = без image gen (Gemini/Grok/Magnific): P9 + P12 thumbs → ffmpeg
   skip: false
   # TEMP 2026-09-05: source=gemini (XAI credits empty). Grok — fallback.
   # Magnific HTTP gen still 404; stock Magnific search unchanged.

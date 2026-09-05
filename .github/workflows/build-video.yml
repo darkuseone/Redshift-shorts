@@ -27,12 +27,12 @@ on:
         default: false
         type: boolean
       skip_vision:
-        description: "P8 без live Gemini/Grok — переиспользовать кэш/ранг поиска"
+        description: "Без live Gemini/Grok vision: P8 + P12 semantic QC; thumbs = ffmpeg"
         required: false
         default: false
         type: boolean
       skip_generate:
-        description: "P9 без image gen (Gemini/Grok/Magnific)"
+        description: "Без image gen: P9 + P12 AI thumbs (сразу ffmpeg, без Gemini/Grok image)"
         required: false
         default: false
         type: boolean

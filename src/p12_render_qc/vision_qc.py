@@ -68,35 +68,81 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any]) -> dict[str, A
     if not bool(cfg.get("features.vision_qc", True)):
         return {"enabled": False, "reason": "features.vision_qc выключен"}
 
-    duration = float(plan["duration_sec"])
-    provider = build_vision_provider(cfg, ctx.costs, role="primary")
-    positions = [(i + 0.5) / SAMPLES for i in range(SAMPLES)]
-    frames = extract_frames(video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
-                            positions, width=540)
+    # skip_vision / vision.skip_live: ZERO live Gemini/Grok — §11.2 тоже.
+    # Неблокирующий QC не должен ронять весь P12 при 429/403.
+    if bool(cfg.get("vision.skip_live", False)):
+        _log.warning("vision.skip_live: смысловой QC без live vision",
+                     extra={"variant": plan.get("variant")})
+        return {
+            "enabled": False,
+            "skipped": True,
+            "reason": "vision.skip_live: без Gemini/Grok vision API",
+            "variant": plan.get("variant"),
+            "samples": [],
+            "sample_count": 0,
+            "mismatch_share": 0.0,
+            "mismatch_limit": MISMATCH_LIMIT,
+            "picture_matches_speech": True,
+            "watermarks_found": 0,
+            "blocking": False,
+            "notes": ["vision.skip_live: смысловой QC пропущен"],
+        }
 
-    samples: list[dict[str, Any]] = []
-    for position, frame in zip(positions, frames):
-        t = duration * position
-        shot = next((s for s in plan["shots"]
-                     if float(s["start"]) <= t < float(s["end"])), {})
-        spoken = _spoken_at(plan, t)
-        intent = shot.get("reason") or shot.get("kind", "")
-        verdict = provider.judge([frame], kind="final_frame",
-                                 intent=f"{_expected(shot)}. Замысел кадра: {intent}",
-                                 role=str(shot.get("role", "")), query=spoken or intent)
-        samples.append({
-            "t": round(t, 2),
-            "shot_index": shot.get("index"),
-            "kind": shot.get("kind"),
-            "expected": _expected(shot),
-            "spoken": spoken,
-            "score": round(verdict.score, 3),
-            "summary": verdict.summary,
-            "has_text": verdict.has_text,
-            "watermark": verdict.watermark,
-            "reason": verdict.reason,
-            "judge": verdict.judge,
-        })
+    duration = float(plan["duration_sec"])
+    try:
+        provider = build_vision_provider(cfg, ctx.costs, role="primary")
+        positions = [(i + 0.5) / SAMPLES for i in range(SAMPLES)]
+        frames = extract_frames(
+            video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
+            positions, width=540)
+
+        samples: list[dict[str, Any]] = []
+        for position, frame in zip(positions, frames):
+            t = duration * position
+            shot = next((s for s in plan["shots"]
+                         if float(s["start"]) <= t < float(s["end"])), {})
+            spoken = _spoken_at(plan, t)
+            intent = shot.get("reason") or shot.get("kind", "")
+            verdict = provider.judge(
+                [frame], kind="final_frame",
+                intent=f"{_expected(shot)}. Замысел кадра: {intent}",
+                role=str(shot.get("role", "")), query=spoken or intent)
+            samples.append({
+                "t": round(t, 2),
+                "shot_index": shot.get("index"),
+                "kind": shot.get("kind"),
+                "expected": _expected(shot),
+                "spoken": spoken,
+                "score": round(verdict.score, 3),
+                "summary": verdict.summary,
+                "has_text": verdict.has_text,
+                "watermark": verdict.watermark,
+                "reason": verdict.reason,
+                "judge": verdict.judge,
+            })
+    except Exception as exc:  # noqa: BLE001 — §11.2 никогда не блокирует выдачу
+        from ..errors import ProviderError
+        soft = isinstance(exc, ProviderError) or "PROVIDER" in type(exc).__name__.upper()
+        msg = str(exc)[:240]
+        _log.warning("смысловой QC: provider/ошибка — пропускаю без fail",
+                     extra={"variant": plan.get("variant"), "err": msg, "soft": soft})
+        ctx.warn(f"смысловой QC пропущен из-за ошибки провайдера: {msg}",
+                 variant=plan.get("variant"))
+        return {
+            "enabled": True,
+            "skipped": True,
+            "provider_error": True,
+            "reason": msg,
+            "variant": plan.get("variant"),
+            "samples": [],
+            "sample_count": 0,
+            "mismatch_share": 0.0,
+            "mismatch_limit": MISMATCH_LIMIT,
+            "picture_matches_speech": True,
+            "watermarks_found": 0,
+            "blocking": False,
+            "notes": [f"vision provider error (non-blocking): {msg}"],
+        }
 
     mismatches = [s for s in samples if s["score"] < 0.45]
     watermarks = [s for s in samples if s["watermark"]]

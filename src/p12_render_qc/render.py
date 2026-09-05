@@ -88,6 +88,18 @@ def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
     time_sec = float(cfg.get("render.thumbnail_time_sec", 1.0))
     meta: dict[str, Any] = {"mode": "ffmpeg", "variant": variant}
 
+    # skip_generate / generation.skip: ZERO gemini_image/grok_image — сразу ffmpeg.
+    # skip_vision / vision.skip_live: тоже без live image (rebuild без paid APIs).
+    skip_image = (bool(cfg.get("generation.skip", False))
+                  or bool(cfg.get("vision.skip_live", False)))
+    if skip_image and mode in ("auto", "gemini", "grok"):
+        _log.warning("thumb: skip image API → ffmpeg",
+                     extra={"variant": variant,
+                            "generation.skip": bool(cfg.get("generation.skip", False)),
+                            "vision.skip_live": bool(cfg.get("vision.skip_live", False))})
+        mode = "ffmpeg"
+        meta["skipped_ai"] = True
+
     if mode in ("auto", "gemini", "grok"):
         prev_params = None
         try:
