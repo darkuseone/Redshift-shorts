@@ -4,7 +4,7 @@
   "variants": {
     "A": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_A.mp4",
-      "size_bytes": 39402525,
+      "size_bytes": 39182060,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -12,6 +12,13 @@
         1920
       ],
       "thumbnail": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/thumbnail.jpg",
+      "thumbnail_meta": {
+        "mode": "grok",
+        "variant": "A",
+        "model": "grok-imagine-image",
+        "prompt": "YouTube Shorts vertical cover 9:16, cinematic still, no text, no logo, no watermark, no UI chrome. Dramatic lighting, high detail. Subject: Квантовый чип, который обогнал время. Квантовый чип Google и проверка вычислений.",
+        "path": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/thumbnail.jpg"
+      },
       "qc_passed": true,
       "render_stats": {
         "frames": 1336,
@@ -26,7 +33,7 @@
     },
     "B": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_B.mp4",
-      "size_bytes": 38418137,
+      "size_bytes": 33670366,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -34,6 +41,13 @@
         1920
       ],
       "thumbnail": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/thumbnail_B.jpg",
+      "thumbnail_meta": {
+        "mode": "grok",
+        "variant": "B",
+        "model": "grok-imagine-image",
+        "prompt": "YouTube Shorts vertical cover 9:16, cinematic still, no text, no logo, no watermark, no UI chrome. Dramatic lighting, high detail. Subject: Квантовый чип, который обогнал время. Квантовый чип Google и проверка вычислений.",
+        "path": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/thumbnail_B.jpg"
+      },
       "qc_passed": true,
       "render_stats": {
         "frames": 1336,
@@ -286,10 +300,10 @@
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "",
             "score": 0.85,
-            "summary": "ведущий крупным планом на фоне нейросетевой графики с крупной цифрой 105",
+            "summary": "Ведущий крупно на фоне тёмной нейросетевой анимации с крупным красным «105»",
             "has_text": false,
             "watermark": false,
-            "reason": "соответствует замыслу аватара, фон тематический, но выглядит постановочно-нейросетевым",
+            "reason": "Соответствует замыслу аватара, текст — оформление канала, фон выглядит сгенерированным",
             "judge": "grok"
           },
           {
@@ -298,11 +312,11 @@
             "kind": "split",
             "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
             "spoken": "прожил дольше,",
-            "score": 0.85,
-            "summary": "Ведущий с оверлеем карточки Nature и русским текстом о логическом кубите",
+            "score": 0.55,
+            "summary": "ведущий с твитом о логическом кубите, закрывающим лицо",
             "has_text": true,
             "watermark": false,
-            "reason": "Текст и карточка точно соответствуют речи 'прожил дольше' и замыслу evidence, наложение по дизайну",
+            "reason": "содержание твита совпадает с речью, но оверлей полностью закрывает лицо и нарушает читаемость",
             "judge": "grok"
           },
           {
@@ -311,11 +325,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "Здесь",
-            "score": 0.9,
-            "summary": "Крупная цифра 5 и слово «ЗДЕСЬ» на тёмном звёздном фоне с красными уголками",
+            "score": 0.92,
+            "summary": "Large white 5 on dark rounded plate with 'ЗДЕСЬ' below over starry space background",
             "has_text": false,
             "watermark": false,
-            "reason": "Текст «ЗДЕСЬ» точно соответствует речи, дизайн кадра соответствует замыслу, дефектов нет",
+            "reason": "Text exactly matches spoken 'Здесь', full-screen section design as intended, clean vertical composition",
             "judge": "grok"
           },
           {
@@ -324,11 +338,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "шаге. Задача, на которую суперкомпьютеру",
-            "score": 0.9,
-            "summary": "Black screen with large red '5 МИНУТ' and smaller white 'ЗАДАЧА' centered",
+            "score": 0.75,
+            "summary": "Чёрный экран с крупным красным текстом по центру и словом ЗАДАЧА ниже",
             "has_text": false,
             "watermark": false,
-            "reason": "Clean full-screen text matches spoken 'Задача', solid vertical composition, no defects",
+            "reason": "Текст соответствует теме задачи и ошибки, кадр вертикальный, чистый, без артефактов и стоковых элементов",
             "judge": "grok"
           },
           {
@@ -337,11 +351,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "ответ на вопрос. Проверить этот результат",
-            "score": 0.92,
-            "summary": "Ведущий крупно в кадре на фоне нейросети, жестикулирует, текст 'ВЕРИМ' за головой",
+            "score": 0.82,
+            "summary": "Ведущий крупным планом отвечает на фоне нейросети с текстом 'ВЕРИМ' за головой",
             "has_text": false,
             "watermark": false,
-            "reason": "Полностью соответствует замыслу аватара + twist, оформление канала не считается, дефектов нет",
+            "reason": "Полностью соответствует замыслу: крупный план, ответ на вопрос, текст за головой — оформление канала, без артефактов и обрезок",
             "judge": "grok"
           },
           {
@@ -350,23 +364,21 @@
             "kind": "footage",
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "Доверил бы ты такому ответу",
-            "score": 0.35,
-            "summary": "Абстрактная сеть тонких линий на чёрном фоне с красным прямоугольником и текстом «ДОЕ»",
+            "score": 0.45,
+            "summary": "Abstract glowing network lines over dark background with semi-transparent red rectangle and red text 'ДОЕ'",
             "has_text": true,
             "watermark": false,
-            "reason": "Есть вшитый текст «ДОЕ», визуал абстрактный и не связан напрямую с фразой про доверие ответу",
+            "reason": "Techy network visual loosely matches 'trust the answer' CTA, but embedded 'ДОЕ' text and red box are irrelevant and distract",
             "judge": "grok"
           }
         ],
         "sample_count": 6,
-        "mismatch_share": 0.167,
+        "mismatch_share": 0.0,
         "mismatch_limit": 0.1,
-        "picture_matches_speech": false,
+        "picture_matches_speech": true,
         "watermarks_found": 0,
         "blocking": false,
-        "notes": [
-          "картинка расходится с речью на 17% проб (предел 10%, §11.2.1)"
-        ]
+        "notes": []
       }
     },
     "B": {
@@ -606,11 +618,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "Это квантовый чип. Внутри 105 кубитов",
-            "score": 0.88,
-            "summary": "Ведущий крупным планом на фоне квантовой визуализации",
+            "score": 0.9,
+            "summary": "Ведущий крупно на фоне квантовой нейровизуализации",
             "has_text": false,
             "watermark": false,
-            "reason": "Фон точно соответствует теме квантового чипа, кадр соответствует замыслу, но фон выглядит синтетически",
+            "reason": "Визуал точно соответствует теме квантового чипа, крупный план без обрезки, дизайн не считается дефектом",
             "judge": "grok"
           },
           {
@@ -619,11 +631,11 @@
             "kind": "split",
             "expected": "сплит: ведущий и материал в одном кадре — так и задумано",
             "spoken": "прожил дольше,",
-            "score": 0.78,
-            "summary": "Ведущий с крупным оверлеем статьи nature.com о квантовой коррекции ошибок",
+            "score": 0.85,
+            "summary": "ведущий с оверлеем статьи Nature о логическом кубите, речь совпадает",
             "has_text": true,
             "watermark": false,
-            "reason": "Текст точно соответствует «прожил дольше», но оверлей сильно перекрывает лицо ведущего",
+            "reason": "текст и речь идеально совпадают, но оверлей частично закрывает лицо",
             "judge": "grok"
           },
           {
@@ -632,11 +644,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "Здесь",
-            "score": 0.85,
-            "summary": "Крупная цифра 5 и слово «ЗДЕСЬ» по центру на тёмном звёздном фоне с красными уголками",
+            "score": 0.92,
+            "summary": "Крупная белая цифра 5 с частично видимым словом «ЗДЕСЬ» на тёмном космическом фоне со звёздами",
             "has_text": false,
             "watermark": false,
-            "reason": "Текст точно соответствует речи «Здесь», замысел кадра выполнен, но фон выглядит типично стоковым/генерированным",
+            "reason": "Полностью соответствует замыслу и речи «Здесь», оформление канала как задумано, фон типично стоковый",
             "judge": "grok"
           },
           {
@@ -645,11 +657,11 @@
             "kind": "fullscreen_text",
             "expected": "фраза во весь экран поверх фона — так и задумано",
             "spoken": "шаге. Задача, на которую суперкомпьютеру",
-            "score": 0.9,
-            "summary": "Futuristic glowing neural cells with circuit patterns on dark background, large orb with processor-like interior",
+            "score": 0.88,
+            "summary": "Glowing neurons and neural connections with ЗАДАЧА text overlay",
             "has_text": false,
             "watermark": false,
-            "reason": "Strong thematic match to supercomputer/AI task; intentional subtitle; high visual quality, minor empty space in vertical frame",
+            "reason": "Neural viz fits supercomputer task speech; intentional full-frame design, no defects counted",
             "judge": "grok"
           },
           {
@@ -658,11 +670,11 @@
             "kind": "avatar",
             "expected": "ведущий в кадре крупным планом — так и задумано",
             "spoken": "",
-            "score": 0.65,
-            "summary": "Ведущий крупно на фоне зелёной нейросети с наложенным текстом и кнопкой",
+            "score": 0.55,
+            "summary": "Ведущий крупно на фоне зелёной нейросети с наложенным разорванным текстом",
             "has_text": false,
             "watermark": false,
-            "reason": "Текст субтитра частично красный и выглядит сломанным, но кадр соответствует аватару",
+            "reason": "текст за головой нечитаем, частично обрезан и наложен на лицо",
             "judge": "grok"
           },
           {
@@ -672,10 +684,10 @@
             "expected": "материал по смыслу речи, ведущего в кадре нет",
             "spoken": "в физику. Доверил бы ты такому ответу",
             "score": 0.1,
-            "summary": "полностью чёрный кадр с крошечной красной надписью «ДОЕ» внизу",
+            "summary": "почти чёрный кадр с крошечной красной надписью ДОЕ внизу",
             "has_text": true,
             "watermark": false,
-            "reason": "нет никакого физического футажа, кадр пустой и не соответствует речи/замыслу CTA",
+            "reason": "нет никакого футажа по физике, просто чёрный экран",
             "judge": "grok"
           }
         ],
@@ -697,7 +709,6 @@
     "mock_count": 0
   },
   "warnings": [
-    "смысловой QC: картинка расходится с речью на 17% проб (предел 10%, §11.2.1)",
     "смысловой QC: картинка расходится с речью на 17% проб (предел 10%, §11.2.1)"
   ],
   "devices": {
@@ -725,7 +736,7 @@
         {
           "at": 8.0,
           "kind": "source_card",
-          "template": "browser-ui/vpn-youtube-spot",
+          "template": "browser-ui/x-post",
           "grounded_on": [],
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
@@ -762,7 +773,7 @@
         {
           "at": 21.86,
           "kind": "полноэкранный текст",
-          "template": "text-fullscreen/split-flap-board",
+          "template": "text-fullscreen/beat-freeze-cut",
           "grounded_on": [],
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
@@ -776,14 +787,14 @@
         {
           "at": 26.74,
           "kind": "полноэкранный текст",
-          "template": "text-fullscreen/beat-freeze-cut",
+          "template": "text-fullscreen/kinetic-type-swap",
           "grounded_on": [],
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
         {
           "at": 29.32,
           "kind": "полноэкранный текст",
-          "template": "text-fullscreen/code-morph",
+          "template": "text-fullscreen/scan-band",
           "grounded_on": [],
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
@@ -797,7 +808,7 @@
         {
           "at": 36.21,
           "kind": "полноэкранный текст",
-          "template": "text-fullscreen/kinetic-type-swap",
+          "template": "text-fullscreen/per-word-crossfade",
           "grounded_on": [],
           "why": ""
         },
@@ -925,5 +936,5 @@
       ]
     }
   },
-  "cost_usd": 0.072
+  "cost_usd": 0.084
 }
