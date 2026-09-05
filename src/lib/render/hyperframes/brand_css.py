@@ -378,7 +378,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "font-family:var(--font-display);font-size:22px;display:flex;"
         "align-items:center;justify-content:center}"
         ".source-card .snippet{padding:14px 0 0;font-size:30px;"
-        "line-height:1.3;color:#3A3D42}"
+        "line-height:1.3;color:#1A1C20}"
         # Начало текста статьи серыми строками: страница продолжается за краем
         # карточки, и это видно без единого лишнего слова в кадре.
         ".source-card .lines{display:flex;flex-direction:column;gap:10px;"

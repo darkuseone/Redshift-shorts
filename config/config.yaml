@@ -160,6 +160,8 @@ generation:
   grok_image_model_fallback: "grok-2-image-1212"
   grok_image_params:
     quality: "high"
+    aspect_ratio: "9:16"
+    resolution: "2k"
   # Видео Grok не генерирует и не должен: кадр оживляется наездом (§H7 — всё
   # приближается), тем же приёмом Ken Burns, что и фотослоты стока.
   ken_burns_zoom: 1.12
@@ -338,7 +340,14 @@ render:
   color_primaries: "bt709"
   faststart: true
   ab_versions: ["A", "B"]
+  # Shorts cover: Grok Imagine 9:16 (XAI_API_KEY). ffmpeg frame @1s is fallback
+  # only — a random early frame is not a publishable thumb.
+  thumbnail_mode: "grok"
   thumbnail_time_sec: 1.0
+  thumbnail_grok_params:
+    aspect_ratio: "9:16"
+    resolution: "2k"
+    quality: "high"
 
 news:
   # §7.5 — квоты бюджетируются и кэшируются

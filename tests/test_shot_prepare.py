@@ -189,3 +189,42 @@ def test_avatar_bg_plates_round_robin():
     assert out[1] in {"/tmp/a.mp4", "/tmp/b.mp4"}
     assert out[3] in {"/tmp/a.mp4", "/tmp/b.mp4"}
     assert out[1] != out[3] or len(set(out.values())) == 1
+
+
+def test_gap_phrase_overlay_once_then_rotates():
+    """Авторский punch («5 МИНУТ») не должен висеть на всех gap-слотах подряд."""
+    from src.p11_assemble.assemble import gap_phrase
+
+    block = {
+        "text": (
+            "Здесь всё наоборот. Чем больше кубитов в связке, тем чище считает "
+            "система. Ошибка падает вдвое. Задача решена за пять минут."
+        ),
+        "emphasis_word": "вдвое",
+        "overlay": {"type": "fullscreen_text", "content": "5 МИНУТ"},
+    }
+    used: set[str] = set()
+    first = gap_phrase([], {"start": 18.0, "end": 19.5, "index": 10}, block, used=used)
+    second = gap_phrase(
+        [{"word": "ошибка", "start": 22.0, "end": 22.4},
+         {"word": "падает", "start": 22.4, "end": 22.9},
+         {"word": "вдвое", "start": 22.9, "end": 23.4}],
+        {"start": 22.0, "end": 23.5, "index": 11}, block, used=used)
+    third = gap_phrase([], {"start": 24.0, "end": 26.0, "index": 12}, block, used=used)
+    assert first == "5 МИНУТ"
+    assert second != "5 МИНУТ"
+    assert third not in {first, second}
+    assert "5 МИНУТ" in used
+
+
+def test_rich_terminal_copy_has_multiple_lines():
+    from src.p11_assemble.assemble import _rich_terminal_copy
+
+    before, after, name = _rich_terminal_copy(
+        {"text": "105 кубитов. Ошибка падает вдвое. Суперкомпьютеру нужно больше времени, чем существует вселенная.",
+         "emphasis_word": "вдвое"},
+        "5 МИНУТ",
+    )
+    assert name.endswith(".log")
+    assert before.count("\n") >= 4
+    assert "PASS" in after or "status" in after.lower()

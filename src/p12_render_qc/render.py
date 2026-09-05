@@ -15,7 +15,11 @@ from pathlib import Path
 from typing import Any
 
 from ..errors import QCFailed
-from ..lib.ffmpeg import make_thumbnail, probe
+from ..lib.ffmpeg import make_thumbnail, probe, run as ffmpeg_run
+from ..lib.costs import CostLedger
+from ..lib.providers.generation import (
+    GrokImageGeneration, build_generation_provider,
+)
 from ..lib.jsonio import read_json_or, write_json
 from ..lib.logging import get_logger
 from ..lib.render.compositor import Compositor
@@ -26,6 +30,87 @@ from .qc import run_qc
 from .vision_qc import run_vision_qc
 
 _log = get_logger("p12")
+
+
+def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None) -> str:
+    """Короткий промпт обложки Shorts: тема ролика, вертикаль 9:16, без текста."""
+    meta = (script or {}).get("meta") or plan.get("meta") or {}
+    title = str(meta.get("title") or plan.get("title") or "science short").strip()
+    topic = str(meta.get("topic") or meta.get("category") or "").strip()
+    bits = [title]
+    if topic and topic.lower() not in title.lower():
+        bits.append(topic)
+    subject = ". ".join(bits)
+    return (
+        f"YouTube Shorts vertical cover 9:16, cinematic still, no text, no logo, "
+        f"no watermark, no UI chrome. Dramatic lighting, high detail. Subject: {subject}."
+    )
+
+
+def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
+                          plan: dict[str, Any], script: dict[str, Any] | None,
+                          variant: str) -> dict[str, Any]:
+    """Обложка Shorts: Grok Imagine, иначе кадр ffmpeg.
+
+    Раньше P12 всегда брал кадр на ``thumbnail_time_sec`` (~1с) — мусор для
+    публикации. При ``render.thumbnail_mode=grok`` и живом XAI_API_KEY рисуем
+    отдельный 9:16 кадр; сбой/mock → прежний ffmpeg fallback.
+    """
+    cfg = ctx.cfg
+    mode = str(cfg.get("render.thumbnail_mode", "grok") or "grok").lower()
+    time_sec = float(cfg.get("render.thumbnail_time_sec", 1.0))
+    meta: dict[str, Any] = {"mode": "ffmpeg", "variant": variant}
+
+    if mode == "grok":
+        prev_params = None
+        try:
+            costs = getattr(ctx, "costs", None) or CostLedger(video_id=str(
+                plan.get("video_id") or getattr(ctx, "video_id", "thumb")))
+            thumb_extra = dict(cfg.get("render.thumbnail_grok_params", {}) or {})
+            if thumb_extra:
+                gen = cfg.data.setdefault("generation", {})
+                prev_params = dict(gen.get("grok_image_params") or {})
+                merged = dict(prev_params)
+                merged.update(thumb_extra)
+                gen["grok_image_params"] = merged
+            provider = build_generation_provider(cfg, costs)
+            if isinstance(provider, GrokImageGeneration):
+                prompt = _thumbnail_prompt(plan, script)
+                raw = thumb.with_suffix(".grok.png")
+                asset = provider.generate(prompt, raw, kind="photo", duration_sec=0.0)
+                src = Path(asset.path)
+                ffmpeg_run(
+                    ["-y", "-i", str(src), "-vf", "scale=1080:-2",
+                     "-q:v", "2", str(thumb)],
+                    what="shorts thumbnail jpeg",
+                )
+                if src.resolve() != thumb.resolve():
+                    src.unlink(missing_ok=True)
+                if raw.exists() and raw.resolve() != thumb.resolve():
+                    raw.unlink(missing_ok=True)
+                meta.update({
+                    "mode": "grok",
+                    "model": asset.model,
+                    "prompt": prompt[:240],
+                    "path": str(thumb),
+                })
+                _log.info("обложка Grok", extra={"variant": variant, "model": asset.model})
+                return meta
+            _log.info("Grok thumb недоступен — ffmpeg fallback",
+                      extra={"variant": variant, "provider": type(provider).__name__})
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("Grok thumb сбой — ffmpeg fallback",
+                         extra={"variant": variant, "err": str(exc)[:240]})
+        finally:
+            if prev_params is not None:
+                cfg.data.setdefault("generation", {})["grok_image_params"] = prev_params
+
+    make_thumbnail(out_file, thumb, time_sec=time_sec)
+    meta["path"] = str(thumb)
+    meta["time_sec"] = time_sec
+    return meta
+
+
 
 
 def _copy(src: Path, dst: Path) -> None:
@@ -247,13 +332,15 @@ def run_step(ctx) -> dict[str, Any]:
 
         thumb = ctx.opath("thumbnail.jpg") if variant == variants[0] else \
             ctx.opath(f"thumbnail_{variant}.jpg")
-        make_thumbnail(out_file, thumb,
-                       time_sec=float(cfg.get("render.thumbnail_time_sec", 1.0)))
+        thumb_meta = make_shorts_thumbnail(
+            ctx, out_file=out_file, thumb=thumb, plan=plan, script=script,
+            variant=variant)
         results[variant] = {
             "file": str(out_file), "size_bytes": out_file.stat().st_size,
             "duration_sec": round(info.duration_sec, 3), "fps": info.fps,
             "resolution": [info.width, info.height],
-            "thumbnail": str(thumb), "qc_passed": True,
+            "thumbnail": str(thumb), "thumbnail_meta": thumb_meta,
+            "qc_passed": True,
             "render_stats": stats.to_dict(),
         }
         _log.info("рендер завершён", extra={

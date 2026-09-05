@@ -572,3 +572,42 @@ class TestRotationRespectsTheAiCeiling:
 
         kept = _rotate_assets(self.slots, self.assets, shift=1, ai_budget_sec=5.0)
         assert kept[1]["asset_id"] == "gen", "ротацию откатили без нужды"
+
+
+def test_shorts_thumbnail_falls_back_to_ffmpeg(tmp_path, monkeypatch):
+    """Без live Grok обложка всё ещё пишется кадром ffmpeg."""
+    from src.lib.config import load_config
+    from src.lib.costs import CostLedger
+    from src.lib.ffmpeg import run as ffmpeg_run
+    from src.p12_render_qc.render import make_shorts_thumbnail
+    from src.lib.providers.generation import MockGeneration
+
+    cfg = load_config()
+    cfg.data.setdefault("render", {})["thumbnail_mode"] = "grok"
+    # Force mock provider path.
+    monkeypatch.setattr(
+        "src.p12_render_qc.render.build_generation_provider",
+        lambda cfg, costs: MockGeneration(cfg, costs),
+    )
+
+    # Tiny solid video as source.
+    src = tmp_path / "clip.mp4"
+    ffmpeg_run([
+        "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:d=2",
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", str(src),
+    ], what="thumb fixture")
+    thumb = tmp_path / "thumbnail.jpg"
+
+    class _Ctx:
+        pass
+    ctx = _Ctx()
+    ctx.cfg = cfg
+    ctx.costs = CostLedger(video_id="t")
+    meta = make_shorts_thumbnail(
+        ctx, out_file=src, thumb=thumb,
+        plan={"video_id": "t", "meta": {"title": "Квантовый чип"}},
+        script={"meta": {"title": "Квантовый чип", "topic": "quantum"}},
+        variant="A",
+    )
+    assert thumb.exists() and thumb.stat().st_size > 1000
+    assert meta["mode"] == "ffmpeg"

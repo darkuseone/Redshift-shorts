@@ -123,6 +123,48 @@ def _semantic_screen_text(block: dict[str, Any], *, fallback: str = "") -> str:
     return body
 
 
+def _rich_terminal_copy(block: dict[str, Any], phrase: str) -> tuple[str, str, str]:
+    """Многострочный «терминальный» сниппет вместо одной короткой фразы.
+
+    code_diff / code_morph / code_highlight с ``code: "5 МИНУТ"`` оставляют
+    пустое окно greet.js. Собираем before/after из фактов блока + punch.
+    """
+    body = _strip_discourse(str(block.get("text") or ""))
+    emphasis = str(block.get("emphasis_word") or "").strip()
+    punch = _norm_screen_key(phrase) or _norm_screen_key(
+        _semantic_screen_text(block))
+    nums = re.findall(r"\d+(?:[.,]\d+)?(?:\s*%|\s*кубит\w*)?", body, flags=re.I)
+    facts: list[str] = []
+    if nums:
+        facts.append(f"qubits: {nums[0].replace(' ', '')}")
+    if "ошиб" in body.lower() or "вдвое" in body.lower():
+        facts.append("error_rate: /2 per step")
+    if punch:
+        facts.append(f"runtime: {punch.lower()}")
+    if "вселенн" in body.lower() or "суперкомпьютер" in body.lower():
+        facts.append("classical_eta: > universe_age")
+    if emphasis:
+        facts.append(f"signal: {emphasis}")
+    if not facts:
+        facts = [f"note: {punch or 'ok'}", "status: verified"]
+    # Keep 4–6 lines so the window has substance.
+    while len(facts) < 4:
+        facts.append(f"trace[{len(facts)}]: ok")
+    before = "\n".join([
+        "# willow_check",
+        "load surface_code",
+        *facts[:3],
+        "status: pending",
+    ])
+    after = "\n".join([
+        "# willow_check",
+        "load surface_code",
+        *facts[:4],
+        "status: PASS",
+    ])
+    return before, after, "willow_run.log"
+
+
 def _fullscreen_params(template: Any, content: str,
                        block: dict[str, Any] | None = None) -> dict[str, Any]:
     """Template catalog params + live shot content; never leave demo copy.
@@ -162,13 +204,33 @@ def _fullscreen_params(template: Any, content: str,
             params.pop("text", None)
 
     # Code templates without real code must not invent greet.js demos: feed
-    # the phrase so _cd_parse_pair has something, or leave empty → Piece().
-    if params.get("code_diff") or params.get("code_highlight") or params.get("code"):
-        if not any(params.get(k) for k in ("code_before", "code_after", "code", "before", "after")):
-            if phrase:
+    # multi-line terminal facts when the on-screen punch is a short slogan
+    # («5 МИНУТ»), else the phrase itself. Empty → Piece().
+    if (params.get("code_diff") or params.get("code_highlight")
+            or params.get("code") or params.get("code_morph")):
+        has_shaped = any(params.get(k) for k in (
+            "code_before", "code_after", "code", "before", "after"))
+        if not has_shaped:
+            if phrase and len(phrase.split()) <= 4:
+                before, after, filename = _rich_terminal_copy(block, phrase)
+                params["code_before"] = before
+                params["code_after"] = after
+                params["code"] = f"{before}\n---\n{after}"
+                params["filename"] = filename
+                params["text"] = after
+            elif phrase:
                 params["code"] = phrase
             else:
                 params.pop("code_diff", None)
+                params.pop("code_highlight", None)
+                params.pop("code_morph", None)
+        elif phrase and len(str(params.get("code") or "").split()) <= 4:
+            # Catalog/params already set a short slogan as code — enrich it.
+            before, after, filename = _rich_terminal_copy(block, phrase)
+            params["code_before"] = before
+            params["code_after"] = after
+            params["code"] = f"{before}\n---\n{after}"
+            params["filename"] = filename
 
     # Dark-plate readability: catalog tone=ink means black glyphs in some
     # templates; over footage we want light. Invert covers the common path.
@@ -919,21 +981,58 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
     return params
 
 
+def _norm_screen_key(text: str) -> str:
+    return " ".join(str(text or "").upper().split()).strip(" ,.;:—-")
+
+
+def _block_clauses(text: str) -> list[str]:
+    """Разбить тело блока на короткие смысловые фразы для ротации на экране."""
+    body = _strip_discourse(str(text or ""))
+    if not body:
+        return []
+    parts = re.split(r"[.!?…;:—]+", body)
+    out: list[str] = []
+    for part in parts:
+        words = [w for w in part.split() if w.strip()]
+        if len(words) < 2:
+            continue
+        # 3–4 слова — потолок кегля полноэкранного текста.
+        chunk = " ".join(words[:4]).strip(" ,.;:—-")
+        if chunk:
+            out.append(chunk)
+    return out
+
+
 def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
-               block: dict[str, Any]) -> str:
+               block: dict[str, Any],
+               *, used: set[str] | None = None) -> str:
     """Что вынести на экран, когда материала под кадр нет.
 
     Смысл речи, не каталожный плейсхолдер и не дискурс-открывашка («и вот
-    ответ»). Порядок: авторский overlay → окно речи → акцентная клауза →
-    тело блока без discourse-prefix. Три-четыре слова — потолок кегля.
+    ответ»). Overlay-punch («5 МИНУТ») — один раз на блок: иначе одна фраза
+    висит на всех gap-слотах подряд. Дальше — окно речи / другие клаузы.
     """
+    used = used if used is not None else None
     semantic = _semantic_screen_text(block)
-    # Overlay / punch that is short enough for fullscreen wins over raw speech.
-    if semantic and len(semantic.split()) <= 5:
-        overlay = block.get("overlay") or {}
-        if str(overlay.get("type") or "") in (
-                "fullscreen_text", "lower_third", "plaque", "note"):
-            return semantic.upper().strip(" ,.;:—-")
+    overlay = block.get("overlay") or {}
+    otype = str(overlay.get("type") or "")
+
+    def _take(phrase: str) -> str:
+        key = _norm_screen_key(phrase)
+        if not key:
+            return ""
+        if used is not None:
+            if key in used:
+                return ""
+            used.add(key)
+        return key
+
+    # Overlay punch only once — not on every subsequent gap in the same block.
+    if (semantic and len(semantic.split()) <= 5
+            and otype in ("fullscreen_text", "lower_third", "plaque", "note")):
+        hit = _take(semantic)
+        if hit:
+            return hit
 
     start, end = float(slot["start"]), float(slot["end"])
     said = [str(w.get("word") or "") for w in words
@@ -944,11 +1043,21 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
         if _DISCOURSE_PREFIX.match(joined):
             body = _strip_discourse(str(block.get("text") or joined))
             said = body.split()[:4] or said
-        return " ".join(said[:4]).upper().strip(" ,.;:—-")
+        hit = _take(" ".join(said[:4]))
+        if hit:
+            return hit
+
+    for clause in _block_clauses(str(block.get("text") or semantic or "")):
+        hit = _take(clause)
+        if hit:
+            return hit
 
     body = _strip_discourse(str(block.get("text") or semantic or ""))
     said = body.split()[:4]
-    return " ".join(said[:4]).upper().strip(" ,.;:—-")
+    fallback = " ".join(said[:4]).upper().strip(" ,.;:—-")
+    if used is not None and fallback:
+        used.add(_norm_screen_key(fallback))
+    return fallback
 
 
 def explain_choice(template: Any, traits: Iterable[str]) -> str:
@@ -1711,11 +1820,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     if (cta_template.renderer == "logo_brand_close"
             or cta_template.params.get("logo_close")
             or cta_template.name == "logo-brand-close"):
+        cta_params = dict(cta_template.params)
+        # Dark end plates (mesh/space): force light glyphs — ink tagline blends.
+        cta_params["invert"] = True
+        cta_params.setdefault("tone", "paper")
         overlays.append({
             "type": "cta", "start": float(cta_start), "end": float(cta_end),
             "template": cta_template.id,
             "renderer": "logo_brand_close",
-            "params": dict(cta_template.params),
+            "params": cta_params,
             "why": "§6: identity close — вордмарк, не кнопка подписки",
         })
     else:
@@ -2041,6 +2154,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     avatar_bgs = _avatar_bg_plates(slots, prepared, assets)
     compose_zoom = float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
+    # Dedup on-screen slogans across intentional FS + gap FS (0042: «5 МИНУТ»).
+    used_screen_phrases: set[str] = set()
     # Библиотека иконок §14: пилюля бренда берёт логотип оттуда. Её отсутствие
     # не должно валить сборку — приём просто не выпадет.
     try:
@@ -2084,6 +2199,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             prep = prepared.get(slot["index"])
             asset = assets.get(slot["index"])
             fs_params = _fullscreen_params(template, content, block)
+            key = _norm_screen_key(str(content or ""))
+            if key:
+                used_screen_phrases.add(key)
             entry.update({
                 "content": content,
                 "template": template.id,
@@ -2114,7 +2232,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # Live 0042/0047 left multi-second black cards when P7 missed and
             # P9 hit the 35% AI ceiling; Claude 1ff38b2 closed those with text.
             gap_block = blocks_by_id.get(slot["block_id"], {})
-            content = gap_phrase(words_doc["words"], slot, gap_block)
+            content = gap_phrase(words_doc["words"], slot, gap_block,
+                                 used=used_screen_phrases)
             gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
 
             s_content = str(content or "")

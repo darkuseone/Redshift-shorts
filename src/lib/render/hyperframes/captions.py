@@ -310,10 +310,17 @@ def caption_css(brandbook: dict[str, Any]) -> str:
     wipe_track = float(wipe.get("letter_spacing_em", 0.04))
     fill = subs.get("gradient_fill") or {}
     fill_track = float(fill.get("letter_spacing_em", 0.04))
+    # End-card / busy mesh: thin white glyphs blend without a hard stroke.
+    stroke = (
+        "-webkit-text-stroke:2.4px rgba(0,0,0,0.88);"
+        "paint-order:stroke fill;"
+    )
     shadow = (
-        f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{alpha:.2f}),"
+        f"{stroke}"
+        f"text-shadow:0 {offset}px {blur}px rgba(0,0,0,{max(alpha, 0.72):.2f}),"
         f"0 {max(1, offset // 2)}px {max(2, blur // 5)}px "
-        f"rgba(0,0,0,{alpha * 0.8:.2f})"
+        f"rgba(0,0,0,{max(alpha * 0.9, 0.65):.2f}),"
+        "0 0 2px rgba(0,0,0,0.95)"
     )
     return (
         f".caption-camera{{position:absolute;inset:0;z-index:{Z_CAPTION};"
