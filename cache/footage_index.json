@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-05",
-  "count": 53,
+  "count": 57,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1755,7 +1755,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-04",
+      "last_used": "2026-09-05",
       "added": "2026-09-03",
       "phashes": [
         "1c731c3200ee73dd",
@@ -1933,6 +1933,140 @@
         "attribution": "Pexels / Google DeepMind",
         "author": "Google DeepMind",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v10276362",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/a-man-developing-a-picture-inside-a-darkroom-10276362/",
+      "phash": "fe00bdb081fa2727",
+      "tags": [
+        "cryostat",
+        "laboratory"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 18.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-05",
+      "phashes": [
+        "fe00bdb081fa2727",
+        "f980219dd0df7ae0",
+        "fe803fb881fe0266"
+      ],
+      "width": 1080,
+      "height": 2048,
+      "file": "pexels/pexels_v10276362.mp4",
+      "extra": {
+        "attribution": "Pexels / Ron Lach",
+        "author": "Ron Lach",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v17356514",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/a-black-and-white-photo-of-a-guitar-17356514/",
+      "phash": "d9bc26109926e6db",
+      "tags": [
+        "processor",
+        "macro",
+        "shot"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 20.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-05",
+      "phashes": [
+        "d9bc26109926e6db",
+        "11d3d7521a3a9a9a",
+        "f8f8f8f8e0060e1e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v17356514.mp4",
+      "extra": {
+        "attribution": "Pexels / Ejov Igor",
+        "author": "Ejov Igor",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20349219",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/earth-20349219/",
+      "phash": "1b6c4cc6a4276673",
+      "tags": [
+        "earth",
+        "orbit",
+        "view"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 6.467,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-05",
+      "phashes": [
+        "1b6c4cc6a4276673",
+        "1bec4dc6a4266653",
+        "1aed4d46a42666d3"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20349219.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v18446021",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/race-day-vlog-18446021/",
+      "phash": "c7e3e238900e97c7",
+      "tags": [
+        "superconducting",
+        "circuit"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 20.003,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-05",
+      "phashes": [
+        "c7e3e238900e97c7",
+        "ec680d0b133edccd",
+        "3e74c11f5aa42c9a"
+      ],
+      "width": 720,
+      "height": 1280,
+      "file": "pexels/pexels_v18446021.mp4",
+      "extra": {
+        "attribution": "Pexels / Jaxon Matthew Willis",
+        "author": "Jaxon Matthew Willis",
+        "judged_intent": "Ведущий представляет тему, за головой — крупное слово"
       }
     }
   ]
