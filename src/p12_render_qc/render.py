@@ -58,15 +58,19 @@ def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None,
     subject = topic or title
     return (
         "YouTube Shorts vertical thumbnail 9:16, maximalist collage cover, mobile-first, "
-        "high contrast. Expressive creator: adult man with long dark wavy hair and groomed "
-        "beard, intense face, olive shirt or dark hoodie, dramatic red/cyan rim light, "
-        "large cutout in foreground interacting with the scene. Huge bold multi-color "
-        f"Russian all-caps sans-serif text stacked 2-4 lines: primary «{headline}», "
-        f"secondary «{alt}», colors white + bright yellow + brand red (#C8453D) on dark. "
-        f"Busy thematic background for «{subject}»: glowing quantum chip, golden dilution "
-        "fridge wiring, motherboard traces, deep-space nebula accents, Redshift brand "
-        "black/red/white. Dense layered collage, grunge tech-noir texture, no watermark, "
-        "no UI chrome, no tiny unreadable text."
+        "high contrast. Channel host face ONLY — recognizable Markus-like tech creator: "
+        "adult man, long dark wavy hair, groomed beard, expressive intense eyes looking "
+        "at camera, green shirt or green hoodie (Russian tech Shorts vibe), dramatic "
+        "red/cyan rim light, large sharp cutout in foreground interacting with the scene. "
+        "NO morph face, NO unknown/random face, NO stock-model look. Huge bold multi-color "
+        f"Russian all-caps sans-serif brandbook text stacked 2-4 lines: primary «{headline}», "
+        f"secondary «{alt}», colors white + bright yellow + brand red (#C8453D). "
+        "Key facts/stats/tables MUST sit on visible frosted glass / glassmorphism cards "
+        "(translucent dark panels, subtle white/red border, soft blur) — never floating "
+        f"bare text. Busy thematic collage for «{subject}»: quantum computer fridge, "
+        "qubit lattice, motherboard traces, deep-space nebula, Redshift black/red/white. "
+        "Dense layered collage, grunge tech-noir, no watermark, no UI chrome, "
+        "no tiny unreadable text."
     )
 
 

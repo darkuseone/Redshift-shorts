@@ -327,21 +327,22 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
     # --- плашки и карточки (§5.4, §5.6) ---------------------------------
     plaque = brandbook["plaque"]
     shadow = plaque["shadow"]
+    glass_blur = int(plaque.get("glass_blur_px", 16) or 16)
     parts.append(
         f".overlay{{position:absolute;z-index:{Z_OVERLAY}}}"
         ".plaque{left:var(--safe-x-min);right:calc(var(--frame-w) - var(--safe-x-max));"
         f"bottom:{height - int(safe['y_max']) + 60}px;padding:26px 34px;"
         f"border-radius:{int(plaque['radius_px_default'])}px;"
-        # Цвета плашки берутся из брендбука, а не стоят числами. Стояли: фон
-        # 247,245,243 и рамка 192,57,43 — второй такой краски в палитре уже не
-        # было вовсе, и смена акцента её не трогала.
+        # Glass morphism (0042 r7): translucent panel + blur over footage —
+        # never a one-tone black rectangle.
         f"background:{_rgba(colors[str(plaque.get('bg', 'panel'))], float(plaque['bg_alpha']))};"
+        f"backdrop-filter:blur({glass_blur}px);-webkit-backdrop-filter:blur({glass_blur}px);"
         f"color:var(--color-{str(plaque.get('text', 'bg_pure')).replace('_', '-')});"
         f"border:{int(plaque['border_px'])}px solid "
         f"{_rgba(colors[str(plaque.get('border_color', 'accent'))], float(plaque['border_alpha']))};"
         "font-family:var(--font-subtitle);font-weight:800;font-size:44px;"
         f"box-shadow:0 {int(shadow['offset_y_px'])}px {int(shadow['blur_px'])}px "
-        f"rgba(0,0,0,{shadow['alpha']})}}"
+        f"rgba(0,0,0,{shadow['alpha']}), inset 0 1px 0 rgba(255,255,255,0.12)}}"
         ".plaque .kicker{display:block;font-size:28px;"
         f"color:var(--color-{str(plaque.get('kicker', 'muted')).replace('_', '-')});"
         "margin-top:8px;font-weight:700}"

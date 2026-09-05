@@ -294,7 +294,7 @@
     "scale_to": 1.06,
     "requires_sfx": true,
     "_scrim_comment": "Затемнение футажа под полноэкранным текстом. 0.78 у overlay_dim делает кадр почти чёрным — ровно то, на что жаловался заказчик; 0.55 оставляет материал видимым и держит белые буквы читаемыми.",
-    "scrim_alpha": 0.55
+    "scrim_alpha": 0.38
   },
   "text_behind_head": {
     "font_role": "display",
@@ -318,10 +318,10 @@
     ],
     "radius_px_default": 24,
     "bg": "panel",
-    "bg_alpha": 0.92,
+    "bg_alpha": 0.48,
     "border_px": 2,
     "border_color": "accent",
-    "border_alpha": 0.4,
+    "border_alpha": 0.55,
     "shadow": {
       "blur_px": 28,
       "offset_y_px": 8,
@@ -346,7 +346,8 @@
     "max_simultaneous": 2,
     "text": "bg_pure",
     "kicker": "text_soft",
-    "_comment": "Плашка — панель канала из брендбука: тёмная #1A1F2E, белый текст, второстепенная строка #C7C9D1, рамка акцентом. Светлой она была от старой светлой палитры; окно браузера и карточка статьи остаются светлыми — это чужой интерфейс, а не наша панель."
+    "_comment": "Плашка — glass morphism канала: полупрозрачная панель #1A1F2E, blur, белые буквы, рамка акцентом. Не сплошной чёрный прямоугольник (0042 r7).",
+    "glass_blur_px": 18
   },
   "highlight": {
     "dim_opacity": [

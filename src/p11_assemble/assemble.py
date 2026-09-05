@@ -35,7 +35,7 @@ from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
-    punch_families_overlap, spoken_onset_for_content,
+    punch_families_overlap, soften_on_screen_copy, spoken_onset_for_content,
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, matched
@@ -680,7 +680,8 @@ def _quote(block: dict[str, Any]) -> str:
     """
     overlay = block.get("overlay") or {}
     if overlay.get("type") == "highlight" and str(overlay.get("content") or "").strip():
-        return str(overlay["content"]).strip()
+        # Display only — VO unchanged (0042 r7 plain-language cards).
+        return soften_on_screen_copy(str(overlay["content"]).strip())
     return _accent_clause(block)
 
 
@@ -1890,6 +1891,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         used.append(template.id)
         # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
         content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
+        content = soften_on_screen_copy(str(content or ""))
         b_start = float(block_slots[0]["start"])
         b_end = float(block_slots[-1]["end"])
         bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
@@ -2334,12 +2336,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             prep = prepared.get(slot["index"])
             asset = assets.get(slot["index"])
             content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
-            fs_params = _fullscreen_params(template, content, block)
-            # Delay punch chrome until spoken onset when slot starts early.
+            # Soften display after onset match uses VO-aligned enriched copy.
             onset = spoken_onset_for_content(
                 [w for w in words_doc["words"]
                  if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
                 str(content), block.get("emphasis_word"))
+            content = soften_on_screen_copy(str(content or ""))
+            fs_params = _fullscreen_params(template, content, block)
+            # Delay punch chrome until spoken onset when slot starts early.
             if onset is not None and float(slot["start"]) + 0.15 < float(onset):
                 fs_params["enter_delay"] = max(
                     float(fs_params.get("enter_delay") or 0),
@@ -2444,11 +2448,12 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         if cand.exists():
                             bg_file = str(cand)
                             break
-            fs_params = _fullscreen_params(template, content, gap_block)
             onset = spoken_onset_for_content(
                 [w for w in words_doc["words"]
                  if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
                 str(content), gap_block.get("emphasis_word"))
+            content = soften_on_screen_copy(str(content or ""))
+            fs_params = _fullscreen_params(template, content, gap_block)
             if (onset is not None and content
                     and float(slot["start"]) + 0.15 < float(onset)
                     and punch_families_overlap(str(content), _semantic_screen_text(gap_block))):

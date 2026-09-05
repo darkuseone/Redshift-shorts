@@ -354,3 +354,41 @@ def spoken_onset_for_content(words: list[dict[str, Any]], content: str,
     except (TypeError, ValueError):
         return default
 
+
+
+# On-screen jargon → plain display (VO/TTS untouched). Prefer broad-audience words
+# or a short gloss on cards; karaoke single-word captions stay spoken form.
+_ON_SCREEN_PLAIN: tuple[tuple[str, str], ...] = (
+    (r"(?i)квантов(?:ый|ого|ому|ым|ом)?\s+чип(?:а|у|ом|е|ы|ов)?",
+     "квантовый компьютер"),
+    (r"(?i)\bчип(?:а|у|ом|е|ы|ов)?\b", "процессор"),
+    (r"(?i)below the surface code threshold",
+     "ниже порога ошибок"),
+    (r"(?i)surface code threshold", "порог ошибок"),
+    (r"(?i)\bqubits?\b", "кубиты"),
+)
+
+
+def soften_on_screen_copy(text: str, *, gloss_qubit: bool = True) -> str:
+    """Simplify jargon for overlay/FS/plaque display without changing VO.
+
+    Examples: «квантовый чип» → «квантовый компьютер»; English highlight phrases
+    → short Russian; optional «кубит» → «кубит (квантовый бит)» on multi-word cards.
+    """
+    raw = str(text or "").strip()
+    if not raw:
+        return raw
+    out = raw
+    for pattern, repl in _ON_SCREEN_PLAIN:
+        out = re.sub(pattern, repl, out)
+    if gloss_qubit and re.search(r"(?i)кубит", out) and "(" not in out:
+        # Only gloss when the line is a card/phrase, not a lone karaoke token.
+        tokens = [t for t in re.split(r"\s+", out) if t]
+        if len(tokens) >= 2:
+            out = re.sub(
+                r"(?i)\b(кубит(?:а|у|ом|е|ы|ов|ами|ам|ах)?)\b",
+                r"\1 (квантовый бит)",
+                out,
+                count=1,
+            )
+    return out
