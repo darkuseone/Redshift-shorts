@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-04",
-  "count": 54,
+  "updated": "2026-09-05",
+  "count": 53,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1569,42 +1569,6 @@
       }
     },
     {
-      "id": "pexels_v15168379",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/purple-ink-mixing-underwater-in-slow-motion-15168379/",
-      "phash": "cebc818b44d9c8fc",
-      "tags": [
-        "viscous",
-        "flow",
-        "slow",
-        "motion",
-        "dark"
-      ],
-      "vision_summary": "Пурпурная вязкая жидкость медленно растекается в чёрной жидкости",
-      "score": 0.93,
-      "duration_sec": 19.585,
-      "used_in": [
-        "redshift_0047"
-      ],
-      "last_used": "2026-09-03",
-      "added": "2026-09-02",
-      "phashes": [
-        "cebc818b44d9c8fc",
-        "10140dfd79474e7a",
-        "c6ce1c9a3868cafa"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v15168379.mp4",
-      "extra": {
-        "attribution": "Pexels / Dan Cristian Pădureț",
-        "author": "Dan Cristian Pădureț",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
-      }
-    },
-    {
       "id": "pexels_v7565432",
       "type": "video",
       "source": "pexels",
@@ -1680,9 +1644,10 @@
       "score": 0.78,
       "duration_sec": 19.0,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-05",
       "added": "2026-09-02",
       "phashes": [
         "05ed77764c468a61",
@@ -1822,9 +1787,10 @@
       "score": 0.88,
       "duration_sec": 10.0,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-05",
       "added": "2026-09-03",
       "phashes": [
         "19d9662699992e66",
