@@ -257,7 +257,7 @@ class GeminiVision(VisionProvider):
               query: str, kind: str = "broll") -> VisionVerdict:
         import requests
 
-        model = str(self.cfg.get("vision.gemini_model", "gemini-2.5-flash"))
+        model = str(self.cfg.get("vision.gemini_model", "gemini-3.8-flash"))
         base = str(self.cfg.get("vision.gemini_api_base",
                                 "https://generativelanguage.googleapis.com"))
         url = f"{base}/v1beta/models/{model}:generateContent"
