@@ -464,7 +464,12 @@ class TemplatePicker:
 
         # Hard allowlist = scenario channels (head/specific/base/fallback).
         # When non-empty, catalog.pick must not escape into the full category.
-        allowed = _dedup(ch_head + ch_specific + ch_base + fallback)
+        # Drop retired/candidate ids so a junk-only intent cannot empty the pool.
+        allowed_raw = _dedup(ch_head + ch_specific + ch_base + fallback)
+        allowed = _dedup(
+            tid for tid in allowed_raw
+            if (tmpl := self.catalog.by_id(tid)) is not None and tmpl.is_active
+        )
         allow_arg: list[str] | None = list(allowed) if allowed else None
         allow_size = len(allowed)
         any_escaped = False
@@ -490,7 +495,7 @@ class TemplatePicker:
 
         # 4. Если никто из walk не выжил — решает ротация внутри множества fallback
         if chosen is None:
-            rot_allow = list(fallback) if fallback else allow_arg
+            rot_allow = allow_arg  # active-filtered; raw fallback may be all-retired
             chosen = self.catalog.pick(
                 category,
                 prefer=list(fallback),

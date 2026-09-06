@@ -55,7 +55,8 @@ class Template:
 
     @property
     def is_active(self) -> bool:
-        return (self.status or "active") == "active"
+        # gated stays pickable (needs= gate); retired/candidate do not.
+        return (self.status or "active") in ("active", "gated")
 
     def to_dict(self) -> dict[str, Any]:
         data = {

@@ -865,7 +865,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/code-morph",
@@ -890,7 +892,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [
+        "device"
+      ]
     },
     {
       "id": "text-fullscreen/code-typing",
@@ -1024,7 +1028,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [
+        "beat"
+      ],
+      "status": "gated",
+      "retired_reason": "music-promo chrome — only with beat trait"
     },
     {
       "id": "text-fullscreen/number-slam-card",
@@ -1076,7 +1084,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "airport split-flap — promo chrome"
     },
     {
       "id": "text-fullscreen/news-ticker",
@@ -1101,7 +1111,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [
+        "news"
+      ],
+      "status": "gated",
+      "retired_reason": "ticker — only with news trait"
     },
     {
       "id": "lower-thirds/name-title",
@@ -1384,7 +1398,9 @@
       "renderer": "instagram_follow",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "social follow CTA — not mid-roll"
     },
     {
       "id": "lower-thirds/tiktok-follow",
@@ -1412,7 +1428,9 @@
       "renderer": "tiktok_follow",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "social follow CTA — not mid-roll"
     },
     {
       "id": "lower-thirds/yt-lower-third",
@@ -1877,7 +1895,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "three phones fan — demo junk, wrong for sci VO"
     },
     {
       "id": "browser-ui/vpn-youtube-spot",
@@ -1902,7 +1922,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "App Store install demo — not editorial"
     },
     {
       "id": "browser-ui/blue-sweater-intro-video",
@@ -1925,7 +1947,9 @@
       "renderer": "blue_sweater",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "video-gen demo promo"
     },
     {
       "id": "browser-ui/chatgpt-exchange",
@@ -2113,7 +2137,9 @@
       "renderer": "notification_cascade",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "push notification cascade demo"
     },
     {
       "id": "browser-ui/x-post",
@@ -2207,7 +2233,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "music track card — off-topic for sci"
     },
     {
       "id": "browser-ui/macos-notification",
@@ -2237,7 +2265,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": []
+      "needs": [],
+      "status": "retired",
+      "retired_reason": "push notification cascade demo"
     },
     {
       "id": "transitions/cut",

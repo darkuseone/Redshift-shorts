@@ -286,6 +286,23 @@ def test_catalog_matches_spec_counts(cfg):
     assert len(catalog.all()) == 204
 
 
+
+def test_retired_never_picked(cfg):
+    """Retired templates must not win even when explicitly preferred (P0-1)."""
+    catalog = TemplateCatalog.load(cfg)
+    retired = [t for t in catalog.all() if (t.status or "active") == "retired"]
+    assert retired, "expected retired entries in manifest"
+    for tmpl in retired:
+        picked = catalog.pick(
+            tmpl.category,
+            prefer=[tmpl.id],
+            duration=3.0,
+            seed=1,
+        )
+        assert picked.id != tmpl.id
+        assert (picked.status or "active") in ("active", "gated")
+
+
 def test_catalog_rotation_avoids_recent(cfg):
     catalog = TemplateCatalog.load(cfg)
     first = catalog.pick("kenburns", duration=3.0, seed=1)
