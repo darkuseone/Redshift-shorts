@@ -65,6 +65,7 @@ class AssetRecord:
     added: str = field(default_factory=today)
     ai_generated: bool = False
     mock: bool = False
+    quarantined: bool = False
     extra: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -77,7 +78,7 @@ class AssetRecord:
             "used_in": self.used_in, "last_used": self.last_used, "added": self.added,
         }
         for key in ("phashes", "width", "height", "file", "role", "mood", "emotion",
-                    "ai_generated", "mock"):
+                    "ai_generated", "mock", "quarantined"):
             value = getattr(self, key)
             if value:
                 data[key] = value
@@ -232,6 +233,48 @@ def library_status(cfg) -> dict[str, Any]:
     return out
 
 
+
+def tag_url_coherence(record: "AssetRecord | dict[str, Any]") -> float:
+    """Fraction of tags that appear in url_origin / vision_summary / attribution.
+
+    Low coherence with an empty vision_summary marks poisoned index rows
+    (sewing machine tagged as processor, backhoe as galaxy, etc.).
+    """
+    if isinstance(record, dict):
+        tags = [str(x) for x in (record.get("tags") or []) if x]
+        url = str(record.get("url_origin") or "").lower()
+        vision = str(record.get("vision_summary") or "").lower()
+        extra = record.get("extra") or {}
+        attr = str(extra.get("attribution") or "").lower()
+        source = str(record.get("source") or "").lower()
+        license_ = str(record.get("license") or "").lower()
+    else:
+        tags = [str(x) for x in (record.tags or []) if x]
+        url = str(record.url_origin or "").lower()
+        vision = str(record.vision_summary or "").lower()
+        attr = str((record.extra or {}).get("attribution") or "").lower()
+        source = str(record.source or "").lower()
+        license_ = str(record.license or "").lower()
+    if not tags:
+        return 1.0
+    # Public-domain NASA/ESA slugs are often opaque (PIA12110) — do not quarantine.
+    if license_ in {"public-domain", "public_domain"} and source in {"nasa", "esa"}:
+        return 1.0
+    hay = f"{url} {vision} {attr}"
+    hits = 0
+    for tag in tags:
+        token = str(tag).lower().strip()
+        if not token:
+            continue
+        if token in hay or token.replace("-", "") in hay.replace("-", ""):
+            hits += 1
+            continue
+        # partial stem (processor vs processors)
+        if len(token) >= 4 and token[:4] in hay:
+            hits += 1
+    return hits / max(len(tags), 1)
+
+
 class FootageIndex:
     """Индекс кэша футажей: в git — только он, файлы во внешнем storage (§14.5)."""
 
@@ -292,6 +335,9 @@ class FootageIndex:
         recent = set(exclude_videos)
         scored: list[tuple[float, AssetRecord]] = []
         for item in self.items:
+            if getattr(item, "quarantined", False):
+                continue
+            coherence = tag_url_coherence(item)
             if item.score < min_score:
                 continue
             used_recently = bool(set(item.used_in) & recent)
@@ -299,9 +345,17 @@ class FootageIndex:
                 continue
             item_tags = {t.lower() for t in item.tags}
             overlap = len(wanted & item_tags)
-            if wanted and not overlap:
+            hay = f"{(item.url_origin or '').lower()} {(item.vision_summary or '').lower()}"
+            url_hits = sum(1 for w in wanted if w and w in hay)
+            if wanted and not overlap and not url_hits:
                 continue
-            score = overlap * 1.0 + item.score - (5.0 if used_recently else 0.0)
+            score = (
+                overlap * 1.0
+                + url_hits * 0.5
+                + coherence * 0.25
+                + item.score
+                - (5.0 if used_recently else 0.0)
+            )
             scored.append((score, item))
         scored.sort(key=lambda pair: pair[0], reverse=True)
         return [item for _s, item in scored[:limit]]

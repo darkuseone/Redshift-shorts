@@ -1985,7 +1985,8 @@
         "author": "Ejov Igor",
         "blocked_for_sci": true,
         "block_reason": "thematic mismatch for quantum/lab topics"
-      }
+      },
+      "quarantined": true
     },
     {
       "id": "pexels_v20349219",
@@ -2056,7 +2057,8 @@
         "author": "Jaxon Matthew Willis",
         "blocked_for_sci": true,
         "block_reason": "thematic mismatch for quantum/lab topics"
-      }
+      },
+      "quarantined": true
     },
     {
       "id": "pexels_v19532053",
@@ -2123,7 +2125,8 @@
         "attribution": "Pexels / Iceberg San",
         "author": "Iceberg San",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
+      },
+      "quarantined": true
     },
     {
       "id": "pexels_v25935014",
@@ -2193,7 +2196,8 @@
         "attribution": "Pexels / ZEYNEP ARSLAN",
         "author": "ZEYNEP ARSLAN",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
+      },
+      "quarantined": true
     },
     {
       "id": "pexels_v20757503",
@@ -2227,7 +2231,8 @@
         "attribution": "Pexels / Emirhan Emiroğlu",
         "author": "Emirhan Emiroğlu",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
+      },
+      "quarantined": true
     }
   ]
 }
