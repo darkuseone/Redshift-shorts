@@ -128,6 +128,19 @@ class HyperFramesProject:
         plate = (plan.get("backdrop") or {}).get("plate")
         if plate:
             sources.append(str(plate))
+        # Fullscreen/overlay thumbs (`params.media`) land in <img src="...">.
+        # Without staging, HyperFrames lint reports missing_local_asset on the
+        # raw work/.../shots/... path (seen on 0042 slam after e3970be).
+        for shot in plan.get("shots", []):
+            params = shot.get("params") or {}
+            for key in ("media", "media_src"):
+                if params.get(key):
+                    sources.append(str(params[key]))
+        for ovl in plan.get("overlays", []):
+            params = ovl.get("params") or {}
+            for key in ("media", "media_src"):
+                if params.get(key):
+                    sources.append(str(params[key]))
 
         for path_text in sources:
             if path_text in assets:

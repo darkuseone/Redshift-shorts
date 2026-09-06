@@ -429,6 +429,13 @@ class CompositionBuilder:
         })
         if "size_px" not in params:
             params["size_px"] = int(fs["size_px"][1])
+        # Remap in-card media thumbs to staged assets/ paths (same as hero icon).
+        for key in ("media", "media_src"):
+            mapped = self._asset(params.get(key))
+            if mapped:
+                params[key] = mapped
+            elif params.get(key):
+                params.pop(key)
         piece = render_fullscreen(TemplateCtx(
             index=int(shot["index"]), start=start, duration=duration,
             target=node_id, track=track, params=params))
@@ -644,6 +651,12 @@ class CompositionBuilder:
         template_id = str(ovl.get("template") or ovl.get("id") or "")
         renderer = str(ovl.get("renderer") or "")
         params = dict(ovl.get("params") or {})
+        for key in ("media", "media_src"):
+            mapped = self._asset(params.get(key))
+            if mapped:
+                params[key] = mapped
+            elif params.get(key):
+                params.pop(key)
         ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
                           duration=duration, target=node_id, track=track,
                           params=params)
