@@ -12323,6 +12323,7 @@ def _bfc_semantic_copy(params: dict[str, Any]) -> dict[str, Any]:
                 ("Freeze", "0.8s", True),
                 ("Cut", "3.00", False),
             ),
+            "has_content": False,
         }
 
     primary = accent.upper() if accent and len(accent) <= 16 else ""
@@ -12355,25 +12356,25 @@ def _bfc_semantic_copy(params: dict[str, Any]) -> dict[str, Any]:
         sub = sub[:87].rstrip() + "…"
 
     facts: list[tuple[str, str, bool]] = []
-    for t in clean:
-        low = t.lower().replace("ё", "е")
+    for tok in clean:
+        low = tok.lower().replace("ё", "е")
         if "кубит" in low or "qubit" in low:
-            facts.append(("QUBIT", t.upper()[:18], True))
-        elif any(ch.isdigit() for ch in t):
-            facts.append(("VALUE", t.upper()[:18], True))
+            facts.append(("КУБИТ", tok.upper()[:18], True))
+        elif any(ch.isdigit() for ch in tok):
+            facts.append(("ЧИСЛО", tok.upper()[:18], True))
         elif "прож" in low or low.startswith("жил") or "вперв" in low:
-            facts.append(("FIRST", t.upper()[:18], False))
+            facts.append(("ВПЕРВЫЕ", tok.upper()[:18], False))
         elif "логич" in low or "logic" in low:
-            facts.append(("LOGIC", t.upper()[:18], True))
-    for t in clean:
+            facts.append(("ЛОГИКА", tok.upper()[:18], True))
+    for tok in clean:
         if len(facts) >= 3:
             break
-        val = t.upper()[:18]
+        val = tok.upper()[:18]
         if any(v == val for _, v, _ in facts):
             continue
         facts.append((val[:8], val, False))
     while len(facts) < 3:
-        facts.append(("NOTE", primary[:18], False))
+        facts.append(("ФАКТ", primary[:18], False))
     facts = facts[:3]
     if not any(a for *_, a in facts):
         facts[min(1, len(facts) - 1)] = (
@@ -12382,20 +12383,44 @@ def _bfc_semantic_copy(params: dict[str, Any]) -> dict[str, Any]:
             True,
         )
 
-    kicker = str(params.get("kicker") or "").strip().upper() or "QUANTUM"
-    if kicker in {"MUSIC PROMO", "NEXT SHOT"}:
-        kicker = "QUANTUM"
+    topic = str(params.get("topic") or params.get("eyebrow") or "").strip()
+    if topic.upper() in {"VO BEAT", "MUSIC PROMO", "NEXT SHOT", "LIVE", ""}:
+        topic = ""
+    kicker = str(params.get("kicker") or "").strip().upper()
+    if not kicker or kicker in {"MUSIC PROMO", "NEXT SHOT", "QUANTUM"}:
+        kicker = (topic or primary)[:18]
+    pill = str(params.get("pill") or "").strip().upper()
+    if not pill or pill in {"LIVE"}:
+        pill = ""  # hide LIVE chrome when content present
+    eyebrow = topic[:18] if topic else ""
+    # Fit titles into work area as a pair (avoid overlap / overflow).
+    pair = f"{title_a} {title_b}".strip()
+    _ = fit_in_work_area(pair or primary, 120, role="display")
+    sub_fit = sub
+    if text_width(sub_fit, 36, role="subtitle") > WORK_AREA_W:
+        # Soft trim to two visual lines worth of characters.
+        words = sub_fit.split()
+        kept: list[str] = []
+        for w in words:
+            trial = " ".join(kept + [w])
+            if text_width(trial, 36, role="subtitle") > WORK_AREA_W * 1.85:
+                break
+            kept.append(w)
+        sub_fit = " ".join(kept)
+        if len(sub_fit) < len(sub):
+            sub_fit = sub_fit.rstrip(".,:; ") + "…"
     return {
         "primary": primary,
         "secondary": secondary[:42],
         "kicker": kicker[:18],
-        "pill": str(params.get("pill") or "LIVE").strip().upper()[:8] or "LIVE",
-        "eyebrow": str(params.get("eyebrow") or "VO BEAT").strip()[:24] or "VO BEAT",
+        "pill": pill[:8],
+        "eyebrow": eyebrow[:24],
         "title_a": title_a[:18],
         "title_b": title_b[:18],
-        "sub": sub,
+        "sub": sub_fit,
         "badge": primary[:12],
         "b_cards": tuple(facts),
+        "has_content": True,
     }
 
 
@@ -12458,20 +12483,21 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
     tweens.append(ft(zoom, "scale:1.08", "scale:1.12",
                      t["ramp_dur"], "power2.in", z_ramp, ir=True))
     zoom_end = z_ramp + t["ramp_dur"]
-    for i, peak in enumerate(_BFC_PATTERN):
-        bar = f"#{node_id}-bar{i}"
-        in_at = at + t["bar_in_at"] + i * t["bar_in_stagger"]
-        tweens.append(ft(bar, "scaleY:0.55", "scaleY:1",
-                         t["bar_in_dur"], "power2.out", in_at))
-        in_end = in_at + t["bar_in_dur"]
-        beat_at = _bfc_place(in_end, at + t["beat1"] + i * t["bar_beat_stagger"])
-        tweens.append(ft(bar, "scaleY:1", f"scaleY:{_bfc_n(peak)}",
-                         t["bar_beat_dur"], "power3.out", beat_at, ir=True))
-        beat_end = beat_at + t["bar_beat_dur"]
-        ramp_bar = _bfc_place(
-            beat_end, at + t["ramp"] + i * t["bar_ramp_stagger"])
-        tweens.append(ft(bar, f"scaleY:{_bfc_n(peak)}", "scaleY:1.55",
-                         t["bar_ramp_dur"], "power2.in", ramp_bar, ir=True))
+    if not copy.get("has_content"):
+        for i, peak in enumerate(_BFC_PATTERN):
+            bar = f"#{node_id}-bar{i}"
+            in_at = at + t["bar_in_at"] + i * t["bar_in_stagger"]
+            tweens.append(ft(bar, "scaleY:0.55", "scaleY:1",
+                             t["bar_in_dur"], "power2.out", in_at))
+            in_end = in_at + t["bar_in_dur"]
+            beat_at = _bfc_place(in_end, at + t["beat1"] + i * t["bar_beat_stagger"])
+            tweens.append(ft(bar, "scaleY:1", f"scaleY:{_bfc_n(peak)}",
+                             t["bar_beat_dur"], "power3.out", beat_at, ir=True))
+            beat_end = beat_at + t["bar_beat_dur"]
+            ramp_bar = _bfc_place(
+                beat_end, at + t["ramp"] + i * t["bar_ramp_stagger"])
+            tweens.append(ft(bar, f"scaleY:{_bfc_n(peak)}", "scaleY:1.55",
+                             t["bar_ramp_dur"], "power2.in", ramp_bar, ir=True))
     freeze_at = at + t["freeze"]
     # Soft dark flash — never additive white screen wash.
     tweens.extend([
@@ -12537,9 +12563,25 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
                      t["bc_punch"], "power3.out", at + t["beat3"]))
     tweens.append(ft(bc1, "scale:1.04", "scale:1",
                      t["bc_back"], "power2.out", at + t["bc_back_at"], ir=True))
-    bars_html = "".join(
-        f'<span id="{node_id}-bar{i}" class="bfc-bar"></span>'
-        for i in range(12))
+    has_content = bool(copy.get("has_content"))
+    bars_html = ""
+    wave_html = ""
+    pill_html = ""
+    if not has_content:
+        bars_html = "".join(
+            f'<span id="{node_id}-bar{i}" class="bfc-bar"></span>'
+            for i in range(12))
+        wave_html = (
+            f'<span class="bfc-wave"><svg viewBox="0 0 592 220" '
+            f'preserveAspectRatio="none" aria-hidden="true">'
+            f'<path class="bfc-wave-fill" d="{_BFC_WAVE_FILL}"/>'
+            f'<path class="bfc-wave-path" d="{_BFC_WAVE_PATH}"/>'
+            f'</svg></span>'
+        )
+        if copy.get("pill"):
+            pill_html = f'<span class="bfc-pill">{_esc(copy["pill"])}</span>'
+    elif copy.get("pill"):
+        pill_html = f'<span class="bfc-pill">{_esc(copy["pill"])}</span>'
     b_cards = copy["b_cards"]
     cards_html = "".join(
         f'<span id="{node_id}-bc{i}" class="bfc-b-card">'
@@ -12547,9 +12589,13 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
         f'<span class="bfc-b-value{" accent" if accent else ""}">'
         f'{_esc(value)}</span></span>'
         for i, (label, value, accent) in enumerate(b_cards))
+    eyebrow_html = (
+        f'<span class="bfc-eyebrow">{_esc(copy["eyebrow"])}</span>'
+        if copy.get("eyebrow") else ""
+    )
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip fullscreen-text '
-               f'fs-beat-freeze-cut{invert}" {_timing(ctx)}>'
+               f'fs-beat-freeze-cut{invert}{" bfc-semantic" if has_content else ""}" {_timing(ctx)}>'
                f'<span class="bfc-stage">'
                f'<span class="bfc-bg"></span><span class="bfc-grid"></span>'
                f'<span id="{node_id}-zoom" class="bfc-zoom">'
@@ -12557,18 +12603,14 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
                f'<span id="{node_id}-crop" class="bfc-crop">'
                f'<span id="{node_id}-card" class="bfc-card">'
                f'<span class="bfc-glow"></span>'
-               f'<span class="bfc-wave"><svg viewBox="0 0 592 220" '
-               f'preserveAspectRatio="none" aria-hidden="true">'
-               f'<path class="bfc-wave-fill" d="{_BFC_WAVE_FILL}"/>'
-               f'<path class="bfc-wave-path" d="{_BFC_WAVE_PATH}"/>'
-               f'</svg></span>'
+               f'{wave_html}'
                f'<span class="bfc-bars">{bars_html}</span>'
                f'<span class="bfc-meta"><span class="bfc-kicker">{_esc(copy["kicker"])}</span>'
-               f'<span class="bfc-pill">{_esc(copy["pill"])}</span></span>'
+               f'{pill_html}</span>'
                f'</span></span></span>'
                f'<span id="{node_id}-b" class="bfc-shot-b">'
                f'<span id="{node_id}-bleft" class="bfc-b-copy">'
-               f'<span class="bfc-eyebrow">{_esc(copy["eyebrow"])}</span>'
+               f'{eyebrow_html}'
                f'<span class="bfc-title"><span>{_esc(copy["title_a"])}</span>'
                f'<span>{_esc(copy["title_b"])}</span></span>'
                f'<span class="bfc-accent-bar"></span>'
@@ -13912,6 +13954,9 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .bfc-title{display:flex;flex-direction:column;"
         "font-size:108px;font-weight:900;line-height:0.92;letter-spacing:-0.04em;"
         "text-transform:uppercase;color:#ffffff}"
+        ".fullscreen-text.bfc-semantic .bfc-card{left:var(--safe-x-min,90px);width:min(740px,calc(var(--frame-w) - 2 * var(--safe-x-min,90px)));max-width:740px}"
+        ".fullscreen-text.bfc-semantic .bfc-title{gap:0.02em;font-size:clamp(48px,9vw,96px)}"
+        ".fullscreen-text.bfc-semantic .bfc-sub{max-width:740px;overflow:hidden}"
         ".fullscreen-text .bfc-accent-bar{width:120px;height:6px;border-radius:999px;"
         "background:#C8453D}"
         ".fullscreen-text .bfc-sub{font-size:24px;font-weight:500;color:#7A7D82;"

@@ -82,6 +82,9 @@ _HERO_KICKERS = {
 _FS_DEMO_WORDS = frozenset({
     "FLIGHT", "BREAKING", "BREAKING NEWS", "BREAKING NEWS: SOMETHING HAPPENED",
     "SOMETHING HAPPENED", "HELLO", "WORLD", "LOREM", "IPSUM",
+    "DROP", "HARD", "CUT", "FREEZE", "LIVE", "BEAT", "RAMP",
+    "HARD CUT", "MUSIC PROMO", "ON THE BEAT", "NEXT SHOT", "VO BEAT",
+    "Beat-locked", "BEAT-LOCKED",
 })
 
 # Discourse openers that are not the "big word" meaning of the block.
