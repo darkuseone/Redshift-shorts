@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-06",
-  "count": 61,
+  "count": 63,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1762,7 +1762,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-05",
+      "last_used": "2026-09-06",
       "added": "2026-09-03",
       "phashes": [
         "1c731c3200ee73dd",
@@ -1980,13 +1980,13 @@
       "width": 1080,
       "height": 1920,
       "file": "pexels/pexels_v17356514.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / Ejov Igor",
         "author": "Ejov Igor",
         "blocked_for_sci": true,
         "block_reason": "thematic mismatch for quantum/lab topics"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "pexels_v20349219",
@@ -2052,13 +2052,13 @@
       "width": 720,
       "height": 1280,
       "file": "pexels/pexels_v18446021.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / Jaxon Matthew Willis",
         "author": "Jaxon Matthew Willis",
         "blocked_for_sci": true,
         "block_reason": "thematic mismatch for quantum/lab topics"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "pexels_v19532053",
@@ -2121,12 +2121,12 @@
       "width": 1080,
       "height": 1920,
       "file": "pexels/pexels_v20349634.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / Iceberg San",
         "author": "Iceberg San",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "pexels_v25935014",
@@ -2192,12 +2192,12 @@
       "width": 720,
       "height": 1280,
       "file": "pexels/pexels_v20068211.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / ZEYNEP ARSLAN",
         "author": "ZEYNEP ARSLAN",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "pexels_v20757503",
@@ -2227,12 +2227,79 @@
       "width": 1080,
       "height": 1920,
       "file": "pexels/pexels_v20757503.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / Emirhan Emiroğlu",
         "author": "Emirhan Emiroğlu",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      },
-      "quarantined": true
+      }
+    },
+    {
+      "id": "pexels_v20349276",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/earth-20349276/",
+      "phash": "c4793bc7c43913e4",
+      "tags": [
+        "earth",
+        "orbit",
+        "view"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 4.367,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "c4793bc7c43913e4",
+        "c47c3bc7c43813e5",
+        "c4783bc7c43813e7"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20349276.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v27975940",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/messier106-galaxy-27975940/",
+      "phash": "189b6366cc993366",
+      "tags": [
+        "galaxy",
+        "nebula"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 12.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "189b6366cc993366",
+        "1c993366cc993366",
+        "cc993366cc993167"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v27975940.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
     }
   ]
 }
