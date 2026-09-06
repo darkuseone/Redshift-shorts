@@ -9,10 +9,8 @@ from src.lib.render.hyperframes.composition import CompositionBuilder
 from src.lib.render.hyperframes.project import HyperFramesProject
 
 
-def test_fullscreen_params_media_uses_staged_asset_path():
-    """Raw work/... paths in params.media must become assets/mNNN_... in HTML."""
-    media_src = "/w/shots/pexels_v34550739_303_crop.mp4"
-    plan = {
+def _slam_plan(media_src: str) -> dict:
+    return {
         "video_id": "redshift_0042",
         "variant": "B",
         "fps": 30,
@@ -44,13 +42,33 @@ def test_fullscreen_params_media_uses_staged_asset_path():
         "overlays": [],
         "subtitles": [],
     }
-    assets = {media_src: "assets/m000_pexels_v34550739_303_crop.mp4"}
+
+
+def test_fullscreen_params_media_mp4_uses_video_tag():
+    """Video crops in params.media must author as <video>, not <img>."""
+    media_src = "/w/shots/pexels_v34550739_303_crop.mp4"
+    staged = "assets/m000_pexels_v34550739_303_crop.mp4"
+    assets = {media_src: staged}
     brandbook = load_config().brandbook
-    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    out = CompositionBuilder(_slam_plan(media_src), brandbook, assets).build("assets/mix.wav")
     assert "fs-slam-media" in out
-    assert 'src="assets/m000_pexels_v34550739_303_crop.mp4"' in out
+    assert f'<video muted playsinline loop autoplay src="{staged}"></video>' in out
+    assert f'<img src="{staged}"' not in out
     assert media_src not in out
     assert "/w/shots/" not in out
+
+
+def test_fullscreen_params_media_image_keeps_img_tag():
+    """Still thumbs in params.media keep <img>."""
+    media_src = "/w/shots/thumb_still.png"
+    staged = "assets/m000_thumb_still.png"
+    assets = {media_src: staged}
+    brandbook = load_config().brandbook
+    out = CompositionBuilder(_slam_plan(media_src), brandbook, assets).build("assets/mix.wav")
+    assert "fs-slam-media" in out
+    assert f'<img src="{staged}" alt=""/>' in out
+    assert "<video" not in out.split("fs-slam-media", 1)[1].split("</span>", 1)[0]
+    assert media_src not in out
 
 
 def test_stage_media_includes_params_media(tmp_path: Path):

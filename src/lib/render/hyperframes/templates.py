@@ -8609,8 +8609,16 @@ def fs_number_slam(ctx: "TemplateCtx") -> Piece:
     media = str(ctx.params.get("media") or ctx.params.get("media_src") or "").strip()
     media_html = ""
     if media:
-        media_html = (
-            f'<span class="fs-slam-media"><img src="{_esc(media)}" alt=""/></span>')
+        # HyperFrames compile checks asset kind vs element: video paths must
+        # use <video>, stills keep <img>. Prefer the correct tag over dropping.
+        ext = Path(media).suffix.lower()
+        if ext in {".mp4", ".webm", ".mov"}:
+            media_tag = (
+                f'<video muted playsinline loop autoplay '
+                f'src="{_esc(media)}"></video>')
+        else:
+            media_tag = f'<img src="{_esc(media)}" alt=""/>'
+        media_html = f'<span class="fs-slam-media">{media_tag}</span>'
     detail = str(ctx.params.get("detail") or ctx.params.get("secondary") or "").strip()
 
     # Numeric slam: keep classic number + caption split.
@@ -13265,7 +13273,8 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "height:220px;margin:0 auto 18px;border-radius:22px;overflow:hidden;"
         "border:1px solid rgba(255,255,255,0.12);"
         "box-shadow:0 12px 36px rgba(0,0,0,0.35)}"
-        ".fullscreen-text .fs-slam-media img{width:100%;height:100%;object-fit:cover;"
+        ".fullscreen-text .fs-slam-media img,"
+        ".fullscreen-text .fs-slam-media video{width:100%;height:100%;object-fit:cover;"
         "display:block;filter:saturate(1.05) brightness(0.92)}"
         ".fullscreen-text .fs-num{display:block;line-height:0.9;"
         "color:var(--color-ink);"
