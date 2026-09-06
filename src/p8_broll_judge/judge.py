@@ -24,6 +24,7 @@ from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id
 from ..lib.palette import frame_light, palette_verdict
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
+from ..lib.query import classify_intent, thematic_reject_reason
 
 _log = get_logger("p8")
 
@@ -126,7 +127,29 @@ def run_step(ctx) -> dict[str, Any]:
             continue
 
         scored: list[tuple[float, dict[str, Any]]] = []
+        intent_kind = classify_intent(
+            intent, [candidate.get("query", "") for candidate in by_slot[slot_index]],
+            str(plan.get("category") or ""))
+        category = str(plan.get("category") or "")
         for candidate in by_slot[slot_index]:
+            theme = thematic_reject_reason(
+                " ".join([
+                    str(candidate.get("page_url") or ""),
+                    str(candidate.get("attribution") or ""),
+                    str(candidate.get("query") or ""),
+                    " ".join(candidate.get("tags") or []),
+                    str(candidate.get("vision_summary") or ""),
+                    str(candidate.get("asset_id") or ""),
+                    str(candidate.get("prior_intent") or ""),
+                ]),
+                category=category, intent_kind=intent_kind)
+            if theme:
+                entry = {**candidate, "score": 0.0, "decision": "reject_theme",
+                         "reject_reason": theme,
+                         "verdict": {"score": 0.0, "judge": "theme_guard",
+                                     "reason": theme, "summary": "", "frames": 0}}
+                judged.append(entry)
+                continue
             # Материал из локальной базы уже оценивался — платить второй раз
             # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6). Но оценка
             # принадлежит паре «кадр + смысл слота», а не кадру: судья отвечал

@@ -1,7 +1,7 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-05",
+  "updated": "2026-09-06",
   "count": 57,
   "items": [
     {
@@ -1711,10 +1711,13 @@
       "tags": [
         "abstract",
         "data",
-        "particles"
+        "particles",
+        "quantum",
+        "visualization",
+        "tech"
       ],
-      "vision_summary": "Abstract glowing purple particles on a dark wavy grid surface",
-      "score": 0.87,
+      "vision_summary": "Purple particle wave data visualization",
+      "score": 0.9,
       "duration_sec": 10.0,
       "used_in": [
         "redshift_0047",
@@ -1781,9 +1784,11 @@
       "tags": [
         "abstract",
         "data",
-        "particles"
+        "particles",
+        "quantum",
+        "visualization"
       ],
-      "vision_summary": "Abstract glowing particles bursting from bright center on black background",
+      "vision_summary": "Vibrant abstract particle animation",
       "score": 0.88,
       "duration_sec": 10.0,
       "used_in": [
@@ -1839,10 +1844,12 @@
         "graphic",
         "internet",
         "molecular",
-        "particle"
+        "particle",
+        "quantum",
+        "tech"
       ],
       "vision_summary": "Abstract glowing particle network mesh on black background",
-      "score": 0.72,
+      "score": 0.85,
       "duration_sec": 19.0,
       "used_in": [
         "redshift_0047",
@@ -1911,10 +1918,15 @@
       "phash": "ed68d273298fc6a0",
       "tags": [
         "quantum",
-        "processor"
+        "processor",
+        "chip",
+        "cryostat",
+        "laboratory",
+        "computer",
+        "tech"
       ],
-      "vision_summary": "Стилизованный 3D-рендер квантового чипа в прозрачном криостате",
-      "score": 0.78,
+      "vision_summary": "Futuristic quantum processor / AI chip render in clean lab light",
+      "score": 0.92,
       "duration_sec": 18.042,
       "used_in": [
         "redshift_0042"
@@ -1943,11 +1955,13 @@
       "url_origin": "https://www.pexels.com/video/a-man-developing-a-picture-inside-a-darkroom-10276362/",
       "phash": "fe00bdb081fa2727",
       "tags": [
-        "cryostat",
-        "laboratory"
+        "darkroom",
+        "photography",
+        "film developing",
+        "red safelight"
       ],
-      "vision_summary": "",
-      "score": 0.72,
+      "vision_summary": "Person developing photos under red darkroom safelight",
+      "score": 0.05,
       "duration_sec": 18.0,
       "used_in": [
         "redshift_0042"
@@ -1965,7 +1979,8 @@
       "extra": {
         "attribution": "Pexels / Ron Lach",
         "author": "Ron Lach",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+        "blocked_for_sci": true,
+        "block_reason": "thematic mismatch for quantum/lab topics"
       }
     },
     {
@@ -1976,12 +1991,13 @@
       "url_origin": "https://www.pexels.com/video/a-black-and-white-photo-of-a-guitar-17356514/",
       "phash": "d9bc26109926e6db",
       "tags": [
-        "processor",
-        "macro",
-        "shot"
+        "camera",
+        "lens",
+        "vintage photography",
+        "macro"
       ],
-      "vision_summary": "",
-      "score": 0.72,
+      "vision_summary": "Close-up of a vintage camera lens",
+      "score": 0.08,
       "duration_sec": 20.0,
       "used_in": [
         "redshift_0042"
@@ -1999,7 +2015,8 @@
       "extra": {
         "attribution": "Pexels / Ejov Igor",
         "author": "Ejov Igor",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+        "blocked_for_sci": true,
+        "block_reason": "thematic mismatch for quantum/lab topics"
       }
     },
     {
@@ -2044,11 +2061,14 @@
       "url_origin": "https://www.pexels.com/video/race-day-vlog-18446021/",
       "phash": "c7e3e238900e97c7",
       "tags": [
-        "superconducting",
-        "circuit"
+        "racing",
+        "motorsport",
+        "race car",
+        "cockpit",
+        "hose tubing"
       ],
-      "vision_summary": "",
-      "score": 0.72,
+      "vision_summary": "Race car cockpit switches, wiring and mechanical hoses",
+      "score": 0.05,
       "duration_sec": 20.003,
       "used_in": [
         "redshift_0042"
@@ -2066,7 +2086,8 @@
       "extra": {
         "attribution": "Pexels / Jaxon Matthew Willis",
         "author": "Jaxon Matthew Willis",
-        "judged_intent": "Ведущий представляет тему, за головой — крупное слово"
+        "blocked_for_sci": true,
+        "block_reason": "thematic mismatch for quantum/lab topics"
       }
     }
   ]

@@ -90,6 +90,70 @@ INTENT_PATTERNS: list[tuple[str, tuple[str, ...]]] = [
 ]
 
 
+# --- light thematic guardrail for sci topics (stock junk) -------------------
+# Result/URL haystack markers that must not win quantum/lab/tech/AI slots.
+# Keep tight: only clear junk + known mis-pick classes (darkroom/race/guitar).
+SCI_CATEGORIES = frozenset({"ai", "tech", "science", "space", "medicine", "biotech"})
+SCI_INTENT_KINDS = frozenset({
+    "lab", "servers", "dataviz", "interface", "space", "biotech", "medicine", "news",
+})
+
+# Hard junk — always filtered from queries; rejected on sci topics in stage1.
+STOCK_JUNK_MARKERS: tuple[str, ...] = (
+    "drug", "addict", "junkie", "narcotic", "heroin", "cocaine", "meth ",
+    "hose", "garden hose", "water pump", "irrigation", "sprinkler", "fire hose",
+)
+
+# Sci off-theme URL/title classes that previously slipped in as "cryostat"/circuit.
+SCI_OFFTHEME_MARKERS: tuple[str, ...] = (
+    "darkroom", "race-day", "race day", "racecar", "race car", "nascar",
+    "motorsport", "guitar", "underwater paint", "party drug",
+)
+
+
+def is_sci_topic(*, category: str = "", intent_kind: str = "") -> bool:
+    cat = (category or "").strip().lower()
+    kind = (intent_kind or "").strip().lower()
+    return cat in SCI_CATEGORIES or kind in SCI_INTENT_KINDS
+
+
+def thematic_reject_reason(
+    haystack: str,
+    *,
+    category: str = "",
+    intent_kind: str = "",
+) -> str | None:
+    """Cheap string reject for sci B-roll. Returns reason or None.
+
+    Light guardrail: only when the slot/plan is sci (ai/tech/lab/…). Drug/hose
+    junk and known off-theme URL classes (darkroom, race-day) are dropped so
+    mis-tagged stock cannot win quantum/lab picks.
+    """
+    if not is_sci_topic(category=category, intent_kind=intent_kind):
+        return None
+    blob = " ".join(haystack.split()).lower()
+    if not blob:
+        return None
+    for marker in STOCK_JUNK_MARKERS:
+        if marker in blob:
+            return f"тематический отсев (junk): «{marker}»"
+    for marker in SCI_OFFTHEME_MARKERS:
+        if marker in blob:
+            return f"sci off-theme: «{marker}»"
+    return None
+
+
+def scrub_queries(queries: list[str]) -> list[str]:
+    """Drop search strings that themselves ask for junk footage."""
+    out: list[str] = []
+    for q in queries:
+        low = q.lower()
+        if any(m in low for m in STOCK_JUNK_MARKERS):
+            continue
+        out.append(q)
+    return out
+
+
 def classify_intent(visual_intent: str, queries: Iterable[str], category: str = "") -> str:
     """К какому классу отнести слот — определяет приоритет источников (§7.2)."""
     haystack = " ".join([visual_intent, *queries]).lower()
@@ -151,7 +215,7 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
     out.append("abstract macro texture slow motion")
 
     seen: list[str] = []
-    for query in out:
+    for query in scrub_queries(out):
         query = re.sub(r"\s+", " ", query).strip()
         if query and query.lower() not in {q.lower() for q in seen}:
             seen.append(query)

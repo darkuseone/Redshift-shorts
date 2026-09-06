@@ -9,7 +9,7 @@ import pytest
 
 from src.errors import LibraryFrozen
 from src.lib.manifest import AssetLibrary, AssetRecord, FootageIndex
-from src.lib.query import build_queries, classify_intent
+from src.lib.query import build_queries, classify_intent, scrub_queries, thematic_reject_reason
 from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
@@ -408,6 +408,58 @@ def test_stage1_rejects_watermark_markers(cfg):
 
 def test_stage1_accepts_good_candidate(cfg):
     assert _stage1_reject(_cand(), cfg, 3.0) is None
+
+
+
+def test_stage1_rejects_darkroom_url_for_sci(cfg):
+    reason = _stage1_reject(
+        _cand(page_url="https://www.pexels.com/video/a-man-developing-a-picture-inside-a-darkroom-10276362/"),
+        cfg, 3.0, category="ai", intent_kind="lab")
+    assert reason and "darkroom" in reason
+
+
+def test_stage1_rejects_hose_marker_for_sci(cfg):
+    reason = _stage1_reject(
+        _cand(tags=["garden hose", "yard"], page_url="https://example.com/garden-hose"),
+        cfg, 3.0, category="ai", intent_kind="lab")
+    assert reason and "hose" in reason
+
+
+def test_stage1_rejects_race_day_for_sci(cfg):
+    reason = _stage1_reject(
+        _cand(page_url="https://www.pexels.com/video/race-day-vlog-18446021/",
+              tags=["superconducting", "circuit"]),
+        cfg, 3.0, category="ai", intent_kind="lab")
+    assert reason and ("race" in reason or "off-theme" in reason)
+
+
+def test_stage1_keeps_quantum_chip_for_sci(cfg):
+    assert _stage1_reject(
+        _cand(page_url="https://www.pexels.com/video/quantum-processor-chip-lab",
+              tags=["quantum", "processor"]),
+        cfg, 3.0, category="ai", intent_kind="lab") is None
+
+
+def test_stage1_allows_darkroom_outside_sci(cfg):
+    # Light guardrail is sci-only — lifestyle topics may keep darkroom stock.
+    assert _stage1_reject(
+        _cand(page_url="https://www.pexels.com/video/darkroom-10276362/"),
+        cfg, 3.0, category="city", intent_kind="city") is None
+
+
+def test_scrub_queries_drops_junk_terms():
+    cleaned = scrub_queries([
+        "quantum processor macro",
+        "garden hose watering lawn",
+        "drug addict street",
+        "server room blue light",
+    ])
+    assert cleaned == ["quantum processor macro", "server room blue light"]
+
+
+def test_thematic_reject_drug_for_sci():
+    assert thematic_reject_reason("person looking like drug addict", category="ai",
+                                  intent_kind="lab")
 
 
 # --- шаг 3: триггеры арбитража (§7.3) ----------------------------------------

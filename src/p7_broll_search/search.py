@@ -31,7 +31,7 @@ from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
-from ..lib.query import build_queries, classify_intent
+from ..lib.query import build_queries, classify_intent, thematic_reject_reason
 from ..lib.render.shots import slim_video
 
 _log = get_logger("p7")
@@ -56,7 +56,8 @@ def _license_mode(source: str, routing: dict[str, Any]) -> str:
 
 
 def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
-                   routing: dict[str, Any] | None = None) -> str | None:
+                   routing: dict[str, Any] | None = None,
+                   category: str = "", intent_kind: str = "") -> str | None:
     """Шаг 1 §7.3 — дешёвая отбраковка без vision. Возвращает причину или None."""
     if (not candidate.license_confirmed
             and _license_mode(candidate.source, routing or {}) != "owner_decision"):
@@ -76,7 +77,35 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
     lowered = f"{candidate.attribution} {' '.join(candidate.tags)}".lower()
     if any(bad in lowered for bad in ("watermark", "shutterstock", "getty", "preview")):
         return "признаки водяного знака или чужого стока"
+    # Sci light guardrail: URL/title/tags must not look like drug/hose junk or
+    # known off-theme mis-picks (darkroom-as-cryostat, race-day-as-circuit).
+    hay = " ".join([
+        candidate.page_url or "",
+        candidate.attribution or "",
+        candidate.query or "",
+        " ".join(candidate.tags or []),
+        str((candidate.meta or {}).get("title") or ""),
+        str((candidate.meta or {}).get("alt") or ""),
+    ])
+    thematic = thematic_reject_reason(
+        hay, category=category, intent_kind=intent_kind)
+    if thematic:
+        return thematic
     return None
+
+
+def _local_thematic_reject(record, *, category: str = "",
+                           intent_kind: str = "") -> str | None:
+    """Same junk guard for footage_index rows (local_cache bypassed stage1)."""
+    hay = " ".join([
+        getattr(record, "url_origin", "") or "",
+        " ".join(getattr(record, "tags", None) or []),
+        getattr(record, "vision_summary", "") or "",
+        str((getattr(record, "extra", None) or {}).get("attribution") or ""),
+        str((getattr(record, "extra", None) or {}).get("judged_intent") or ""),
+        getattr(record, "id", "") or "",
+    ])
+    return thematic_reject_reason(hay, category=category, intent_kind=intent_kind)
 
 
 def _article_for(slot: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any] | None:
@@ -179,6 +208,15 @@ def run_step(ctx) -> dict[str, Any]:
             # иначе слот «закроется» пустотой и сборка упадёт на подготовке плана.
             if not record.file or not ctx.storage.exists(record.file):
                 missing_in_storage.append(record.id)
+                continue
+            theme_reason = _local_thematic_reject(
+                record, category=str(plan.get("category") or ""),
+                intent_kind=intent_kind)
+            if theme_reason:
+                stage1_rejected.append({
+                    "id": record.id, "source": record.source,
+                    "reason": theme_reason, "query": queries[0],
+                })
                 continue
             # Кандидат из базы обязан проходить тот же дедуп, что и скачанный:
             # без этого один и тот же кадр попадал в разные слоты и валил QC-5.
@@ -358,8 +396,10 @@ def run_step(ctx) -> dict[str, Any]:
 
             passed: list[tuple[str, Any, str]] = []
             for source, candidate, query in found_all:
-                reason = _stage1_reject(candidate, cfg, float(slot["duration"]),
-                                        routing=routing)
+                reason = _stage1_reject(
+                    candidate, cfg, float(slot["duration"]), routing=routing,
+                    category=str(plan.get("category") or ""),
+                    intent_kind=intent_kind)
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": query})
@@ -397,8 +437,10 @@ def run_step(ctx) -> dict[str, Any]:
                          slot=slot["index"], url=article["url"][:120])
                 found = []
             for candidate in found:
-                reason = _stage1_reject(candidate, cfg, float(slot["duration"]),
-                                        routing=routing)
+                reason = _stage1_reject(
+                    candidate, cfg, float(slot["duration"]), routing=routing,
+                    category=str(plan.get("category") or ""),
+                    intent_kind=intent_kind)
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": article["url"]})
