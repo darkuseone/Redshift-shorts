@@ -277,7 +277,7 @@
       "title": "Три строки лесенкой",
       "duration_range": [
         1.2,
-        2.0
+        3.0
       ],
       "params": {
         "max_lines": 3,
@@ -329,7 +329,7 @@
       "title": "Цитата в рамке",
       "duration_range": [
         1.2,
-        2.0
+        3.0
       ],
       "params": {
         "quotes": true,
@@ -351,7 +351,7 @@
       "title": "Дата крупно",
       "duration_range": [
         0.8,
-        1.4
+        2.5
       ],
       "params": {
         "mono": true
@@ -416,7 +416,7 @@
       "title": "Текст-маска с футажом внутри",
       "duration_range": [
         1.0,
-        2.0
+        3.0
       ],
       "params": {
         "mask": true
@@ -438,7 +438,7 @@
       "title": "Карточка факта",
       "duration_range": [
         1.2,
-        2.0
+        3.0
       ],
       "params": {
         "card": true
@@ -491,7 +491,7 @@
       "title": "Слова выходят из размытия и уходят вверх — blur-out-up",
       "duration_range": [
         0.8,
-        2.0
+        3.0
       ],
       "params": {
         "stagger_ms": 55,
@@ -519,7 +519,7 @@
       "title": "Буквы поднимаются снизу со стаггером — bottom-up-letters",
       "duration_range": [
         0.8,
-        2.0
+        3.0
       ],
       "params": {
         "stagger_ms": 25,
@@ -631,7 +631,7 @@
       "title": "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
       "duration_range": [
         0.8,
-        2.4
+        3.0
       ],
       "params": {
         "word_crossfade": true,

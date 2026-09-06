@@ -5,7 +5,7 @@
   "title": "Три строки лесенкой",
   "duration_range": [
     1.2,
-    2.0
+    3.0
   ],
   "params": {
     "max_lines": 3,

@@ -5,7 +5,7 @@
   "title": "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
   "duration_range": [
     0.8,
-    2.4
+    3.0
   ],
   "params": {
     "word_crossfade": true,

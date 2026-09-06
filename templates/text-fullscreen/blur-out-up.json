@@ -5,7 +5,7 @@
   "title": "Слова выходят из размытия и уходят вверх — blur-out-up",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "stagger_ms": 55,

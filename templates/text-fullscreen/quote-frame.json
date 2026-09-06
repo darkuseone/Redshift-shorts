@@ -5,7 +5,7 @@
   "title": "Цитата в рамке",
   "duration_range": [
     1.2,
-    2.0
+    3.0
   ],
   "params": {
     "quotes": true,

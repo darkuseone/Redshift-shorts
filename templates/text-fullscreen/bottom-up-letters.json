@@ -5,7 +5,7 @@
   "title": "Буквы поднимаются снизу со стаггером — bottom-up-letters",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "stagger_ms": 25,
