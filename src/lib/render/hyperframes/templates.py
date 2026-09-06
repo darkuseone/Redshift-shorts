@@ -8609,16 +8609,15 @@ def fs_number_slam(ctx: "TemplateCtx") -> Piece:
     media = str(ctx.params.get("media") or ctx.params.get("media_src") or "").strip()
     media_html = ""
     if media:
-        # HyperFrames compile checks asset kind vs element: video paths must
-        # use <video>, stills keep <img>. Prefer the correct tag over dropping.
+        # Skip video thumbs: nested <video> inside a timed card triggers lint
+        # errors (media_missing_data_start / video_nested_in_timed_element).
+        # Fullscreen footage already plays on TRACK_FS_BG as a sibling clip.
+        # Keep <img> for still image thumbs only.
         ext = Path(media).suffix.lower()
-        if ext in {".mp4", ".webm", ".mov"}:
-            media_tag = (
-                f'<video muted playsinline loop autoplay '
-                f'src="{_esc(media)}"></video>')
-        else:
-            media_tag = f'<img src="{_esc(media)}" alt=""/>'
-        media_html = f'<span class="fs-slam-media">{media_tag}</span>'
+        if ext not in {".mp4", ".webm", ".mov"}:
+            media_html = (
+                f'<span class="fs-slam-media">'
+                f'<img src="{_esc(media)}" alt=""/></span>')
     detail = str(ctx.params.get("detail") or ctx.params.get("secondary") or "").strip()
 
     # Numeric slam: keep classic number + caption split.

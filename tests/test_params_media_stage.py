@@ -44,15 +44,17 @@ def _slam_plan(media_src: str) -> dict:
     }
 
 
-def test_fullscreen_params_media_mp4_uses_video_tag():
-    """Video crops in params.media must author as <video>, not <img>."""
+def test_fullscreen_params_media_mp4_skips_nested_video():
+    """mp4 params.media must NOT appear as nested <video> or <img> in slam card."""
     media_src = "/w/shots/pexels_v34550739_303_crop.mp4"
     staged = "assets/m000_pexels_v34550739_303_crop.mp4"
     assets = {media_src: staged}
     brandbook = load_config().brandbook
     out = CompositionBuilder(_slam_plan(media_src), brandbook, assets).build("assets/mix.wav")
-    assert "fs-slam-media" in out
-    assert f'<video muted playsinline loop autoplay src="{staged}"></video>' in out
+    assert "fs-slam-media" not in out
+    assert "<video" not in out
+    slam_card = out.split("fs-slam-card", 1)[1].split("</div>", 1)[0]
+    assert "<video" not in slam_card
     assert f'<img src="{staged}"' not in out
     assert media_src not in out
     assert "/w/shots/" not in out
