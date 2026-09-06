@@ -303,11 +303,12 @@ class TestPickerChannelsAndWalk:
         assert len(trace.walk) <= 24
 
     def test_no_cap_on_default_and_generic(self, picker):
-        # text-fullscreen variant A default intent has exactly 20 templates
+        # text-fullscreen variant A default intent narrowed to 8 on-brand templates (P0-3)
         _, trace_text = picker.pick("text-fullscreen", blob="нейтральный текст", variant="A")
-        assert len(trace_text.fallback) == 20
-        assert trace_text.fallback[0] == "text-fullscreen/beat-freeze-cut"
-        assert trace_text.fallback[-1] == "text-fullscreen/number-slam-card"
+        assert len(trace_text.fallback) == 8
+        assert trace_text.fallback[0] == "text-fullscreen/stack-3lines"
+        assert "text-fullscreen/beat-freeze-cut" not in trace_text.fallback
+        assert "text-fullscreen/date-marker" in trace_text.fallback
 
         # transitions variant A default intent has exactly 15 templates
         _, trace_tr = picker.pick("transitions", blob="", variant="A")
@@ -356,10 +357,10 @@ class TestReplacesDefault:
         text = "120 миллионов пользователей"
         t, trace = picker.pick("text-fullscreen", blob=text, variant="B")
         assert trace.replaced_default_by is None
-        assert trace.fallback == (
-            "text-fullscreen/stack-3lines",
-            "text-fullscreen/fact-card",
-        )
+        assert trace.fallback[0] == "text-fullscreen/stack-3lines"
+        assert "text-fullscreen/fact-card" in trace.fallback
+        assert "text-fullscreen/quote-frame" in trace.fallback
+        assert len(trace.fallback) == 6
 
     def test_text_number_slam_needs_empty_guard(self, picker):
         # Intent text-number-slam must not require 'numbers' signal
@@ -404,13 +405,75 @@ class TestPassThrough:
         assert "dynamic" in t.tags or "entry" in t.tags
 
     def test_duration_filtering(self, picker):
-        # Pick with strict duration
+        # Hard allow: duration inside scenario set; escape if empty (P0-2).
         t, trace = picker.pick(
             "transitions",
             duration=0.5,
             variant="A",
         )
-        assert t.fits(0.5)
+        if trace.escaped:
+            assert t.id in trace.fallback
+        else:
+            assert t.fits(0.5)
+
+
+    def test_prefer_is_a_hard_allowlist(self, picker):
+        """Scenario allowlist must not escape into junk like app-showcase (P0-2)."""
+        from src.lib.meaning import block_traits
+        blob = "Работа опубликована в Nature. Впервые логический кубит прожил дольше"
+        traits = block_traits(blob)
+        for seed in range(5):
+            t, trace = picker.pick(
+                "browser-ui",
+                blob=blob,
+                traits=traits,
+                variant="A",
+                duration=3.4,
+                seed=seed,
+            )
+            assert t.id != "browser-ui/app-showcase"
+            assert trace.allow_size > 0
+            allowed = set(trace.walk) | set(trace.fallback)
+            assert t.id in allowed
+
+
+    def test_default_sets_cover_duration_matrix(self, picker):
+        """P0-3 DoD: every variant x duration lands inside its default set."""
+        default_a = {
+            "text-fullscreen/stack-3lines",
+            "text-fullscreen/fact-card",
+            "text-fullscreen/per-word-crossfade",
+            "text-fullscreen/blur-out-up",
+            "text-fullscreen/bottom-up-letters",
+            "text-fullscreen/bigtext-mask-footage",
+            "text-fullscreen/quote-frame",
+            "text-fullscreen/date-marker",
+        }
+        default_b = {
+            "text-fullscreen/stack-3lines",
+            "text-fullscreen/fact-card",
+            "text-fullscreen/quote-frame",
+            "text-fullscreen/per-word-crossfade",
+            "text-fullscreen/blur-out-up",
+            "text-fullscreen/bigtext-mask-footage",
+        }
+        blob = "ОШИБКА ПАДАЕТ ВДВОЕ"
+        from src.lib.meaning import block_traits
+        traits = block_traits("Здесь всё наоборот. Ошибка падает вдвое на каждом шаге.")
+        for d in (1.5, 2.1, 2.5, 3.0):
+            for v in ("A", "B"):
+                t, trace = picker.pick(
+                    "text-fullscreen",
+                    blob=blob,
+                    signals={"lines_lt_7"},
+                    traits=traits,
+                    variant=v,
+                    duration=d,
+                    seed=3,
+                )
+                expected = default_a if v == "A" else default_b
+                assert t.id in expected, f"dur={d} {v} -> {t.id} not in default set"
+                assert not trace.escaped or t.id in expected
 
 
 class TestReachability:
@@ -423,7 +486,7 @@ class TestReachability:
 
         manifest_by_cat = {cat: set() for cat in live_categories}
         for t in picker.catalog.all():
-            if t.category in live_categories:
+            if t.category in live_categories and t.is_active:
                 manifest_by_cat[t.category].add(t.id)
 
         reached_by_cat = {cat: set() for cat in live_categories}
@@ -431,7 +494,12 @@ class TestReachability:
             for cat in intent.categories:
                 if cat in live_categories:
                     for v in intent.variants:
-                        blob = intent.keywords[0] if intent.keywords else ""
+                        if intent.keywords:
+                            blob = intent.keywords[0]
+                        elif intent.patterns:
+                            blob = "42 test"  # pattern-only intents (e.g. text-number-slam)
+                        else:
+                            blob = ""
                         signals = intent.needs | intent.signals_any
                         _, trace = picker.pick(cat, blob=blob, signals=signals, variant=v)
                         for ch_templates in trace.channels.values():

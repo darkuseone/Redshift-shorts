@@ -139,12 +139,37 @@ def _cache_key(candidate: StockCandidate) -> str:
     return f"{candidate.source}/{safe}{ext}"
 
 
+
+def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
+    """Return (deny_ids, prefer_ids) for this video from config/footage_pins.json."""
+    from pathlib import Path as _P
+    try:
+        path = cfg.path("paths.footage_pins", "config/footage_pins.json")
+    except Exception:
+        path = _P("config/footage_pins.json")
+    if not _P(path).exists():
+        path = _P("config/footage_pins.json")
+    if not _P(path).exists():
+        return set(), []
+    path = _P(path)
+    try:
+        import json as _json
+        data = _json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return set(), []
+    entry = data.get(video_id) or {}
+    deny = {str(x) for x in (entry.get("deny") or []) if x}
+    prefer = [str(x) for x in (entry.get("prefer") or []) if x]
+    return deny, prefer
+
+
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
     cfg = ctx.cfg
     routing = _load_routing(cfg)
     providers = build_stock_providers(cfg, ctx.costs)
     index = FootageIndex.load(cfg)
+    pin_deny, pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
 
     queries_per_slot = int(cfg.get("stock.queries_per_slot", 4))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))
@@ -202,6 +227,12 @@ def run_step(ctx) -> dict[str, Any]:
         # --- 1. локальная база (§7.2.1) --------------------------------------
         local = index.search(_tags_for(queries), limit=6, exclude_videos=recent_videos,
                              allow_recent=frozen)
+        # Pins: hard deny + prefer boost (do not replace Markus-approved clips).
+        if pin_deny:
+            local = [r for r in local if r.id not in pin_deny]
+        if pin_prefer:
+            prefer_set = set(pin_prefer)
+            local = sorted(local, key=lambda r: (0 if r.id in prefer_set else 1, -r.score))
         for record in local:
             # Индекс живёт в git, а файлы — во внешнем storage (§14.5). На свежем
             # клоне записи есть, а payload'а нет: предлагать такой материал нельзя,

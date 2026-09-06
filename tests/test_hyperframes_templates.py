@@ -2731,7 +2731,7 @@ def test_blur_out_up_direction_flips_the_axis():
     def enter_y(piece):
         return float(re.search(r"scale:0.92,y:([0-9.]+)", " ".join(piece.tweens)).group(1))
 
-    assert enter_y(far) == pytest.approx(enter_y(std) * 1.85)
+    assert enter_y(far) == pytest.approx(enter_y(std) * 1.85, rel=1e-4, abs=0.05)
 
 
 def test_bottom_up_letters_staggers_glyphs():

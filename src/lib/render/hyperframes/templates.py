@@ -167,6 +167,17 @@ def fit_size(text: str, available_px: float, max_size: int, *,
     return max(24, int(max_size * available_px / at_max))
 
 
+
+WORK_AREA_W = 740  # brandbook safe_zones.work_area: 830 - 90
+
+
+def fit_in_work_area(text: str, max_size: int, *, role: str,
+                     width: float = WORK_AREA_W, pad: float = 0.0) -> int:
+    """Fit text into the brand work area using the font that will render it."""
+    available = max(24.0, float(width) - float(pad))
+    return fit_size(text, available, max_size, role=role)
+
+
 def wrap_measured(text: str, size: int, available_px: float, *,
                   role: str = "display") -> list[str]:
     """Перенос по словам, измеренный гарнитурой, а не счётом знаков.
@@ -6908,7 +6919,7 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
     node_id = f"hh-{ctx.index:02d}"
     # Кегль подбирается измерением: заголовок идёт в одну строку через весь
     # кадр, и длинное слово при фиксированном кегле обрезалось бы краем.
-    size = fit_size(word, 1080 - 2 * 50, int(ctx.params.get("size", 168)))
+    size = fit_size(word, 1080 - 2 * 50, int(ctx.params.get("size", 168)), role="subtitle")
     top = behind_head_top(ctx.params, size, fallback=int(ctx.params.get("top", 190)))
 
     kicker_html = (f'<span class="hh-kicker">{_esc(kicker)}</span>' if kicker else "")
@@ -6954,7 +6965,7 @@ def split_rows(word: str, max_size: int = 172) -> tuple[list[str], int]:
     best: tuple[list[str], int] = ([word], 24)
     for per in range(1, len(word) + 1):
         rows = [word[i:i + per] for i in range(0, len(word), per)]
-        by_width = fit_size(widest(rows), box_w, max_size)
+        by_width = fit_size(widest(rows), box_w, max_size, role="subtitle")
         # 0.86 — межстрочное расстояние из CSS панели; высота строки от него и
         # считается.
         by_height = int(box_h / (len(rows) * 0.86))
@@ -7043,7 +7054,7 @@ def hero_knockout(ctx: "TemplateCtx") -> Piece:
     # и слово обрезается краем кадра — проверено на «ЕДИНСТВЕННЫЙ».
     margin = int(ctx.params.get("margin", 60))
     longest = widest(lines)
-    size = fit_size(longest, 1080 - 2 * margin, int(ctx.params.get("size", 300)))
+    size = fit_size(longest, 1080 - 2 * margin, int(ctx.params.get("size", 300)), role="subtitle")
 
     # Блок садится на полосу лица, а не в середину кадра и не в середину
     # головы. Буквы здесь — дырки, и видно сквозь них то, что за ними: на
@@ -7399,7 +7410,7 @@ def hero_type_slab(ctx: "TemplateCtx") -> Piece:
     node_id = f"ts-{ctx.index:02d}"
     available = 1080 * 0.48
     longest = max(lines, key=len)
-    size = fit_size(longest.upper(), available, int(ctx.params.get("size", 148)))
+    size = fit_size(longest.upper(), available, int(ctx.params.get("size", 148)), role="subtitle")
     rows, tweens = [], []
     for i, line in enumerate(lines[:4]):
         cls = "accent" if i in accents else ""
@@ -7461,7 +7472,7 @@ def hero_script_stack(ctx: "TemplateCtx") -> Piece:
     # Обводка рисуется наружу от глифа и добавляет по её ширине с каждой
     # стороны строки — в бюджет кегля она обязана входить.
     size = fit_size(widest(lines[:3]).upper(), 1080 - safe - 2 * SS_STROKE,
-                    int(ctx.params.get("size", 132)))
+                    int(ctx.params.get("size", 132)), role="subtitle")
 
     rows, tweens = [], []
     for i, line in enumerate(lines[:3]):
@@ -7656,7 +7667,7 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     node_id = f"tb-{ctx.index:02d}"
     safe = 2 * 90
     size = fit_size(widest((head, tail)).upper(), 1080 - safe,
-                    int(ctx.params.get("size", 150)))
+                    int(ctx.params.get("size", 150)), role="subtitle")
     # Две строки: перекрывать голова обязана низ второй, поэтому от макушки
     # отсчитывается блок целиком.
     top = behind_head_top(ctx.params, size, rows=2,
@@ -7719,7 +7730,7 @@ def hero_exhibit(ctx: "TemplateCtx") -> Piece:
     detail = str(ctx.params.get("detail") or "")
     credit = str(ctx.params.get("credit") or "")
     left, top, pic_w, pic_h = EX_PIC
-    size = fit_size(name.upper(), pic_w, int(ctx.params.get("size", 88)))
+    size = fit_size(name.upper(), pic_w, int(ctx.params.get("size", 88)), role="subtitle")
 
     label = (f'<span class="ex-name" style="font-size:{size}px">{_esc(name.upper())}</span>')
     if detail:
@@ -7794,7 +7805,7 @@ def hero_slam(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = f"sl-{ctx.index:02d}"
     size = fit_size(widest(lines).upper(), 1080 - 2 * 80,
-                    int(ctx.params.get("size", 186)))
+                    int(ctx.params.get("size", 186)), role="subtitle")
 
     rows = "".join(
         f'<span class="sl-line{" accent" if i and len(lines) > 1 else ""}">'
@@ -7876,7 +7887,7 @@ def hero_oversize(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = f"ov-{ctx.index:02d}"
     over = float(ctx.params.get("overflow", 1.3))
-    size = int(fit_size(word.upper(), 1080 - 2 * 90, 460) * over)
+    size = int(fit_size(word.upper(), 1080 - 2 * 90, 460, role="subtitle") * over)
 
     # Слово едет вбок и чуть приближается: остановившись, оно превращается в
     # заставку, а кадр §4.1 обязан жить.
@@ -7914,7 +7925,7 @@ def hero_figure(ctx: "TemplateCtx") -> Piece:
     # Число живёт в верхней трети: ниже оно садится ведущему на голову.
     top = int(ctx.params.get("top", 170))
     widest_value = widest([f["value"] for f in figures])
-    size = fit_size(widest_value, 1080 - 2 * 90, int(ctx.params.get("size", 300)))
+    size = fit_size(widest_value, 1080 - 2 * 90, int(ctx.params.get("size", 300)), role="subtitle")
 
     step = ctx.duration / len(figures)
     # Ведущий отъезжает вниз: число живёт в верхней трети, и без сдвига подпись
@@ -7975,7 +7986,7 @@ def hero_verdict(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = f"vd-{ctx.index:02d}"
     size = fit_size(widest(lines).upper(), 1080 - 2 * 90,
-                    int(ctx.params.get("size", 172)))
+                    int(ctx.params.get("size", 172)), role="subtitle")
 
     rows = "".join(
         f'<span class="vd-line{" late" if i else ""}">{_esc(line.upper())}</span>'
@@ -8240,9 +8251,9 @@ def _fs_ceiling(ctx: "TemplateCtx") -> int:
 
 def _fs_size(ctx: "TemplateCtx", text: str) -> int:
     ceiling = _fs_ceiling(ctx)
-    available = float(ctx.params.get("available_px") or 900)
+    available = min(float(ctx.params.get("available_px") or 900), float(WORK_AREA_W))
     longest = max(text.upper().split() or [text], key=len, default="")
-    return fit_size(longest, available, ceiling)
+    return fit_size(longest, available, ceiling, role="display")
 
 
 def fs_plain(ctx: "TemplateCtx") -> Piece:
@@ -8733,7 +8744,7 @@ def fs_line_by_line_slide(ctx: "TemplateCtx") -> Piece:
     available = float(ctx.params.get("available_px") or 900)
     longest = max(lines, key=len)
     ceiling = max(24, int(_fs_ceiling(ctx) * factor))
-    size = fit_size(longest, available, ceiling)
+    size = fit_size(longest, available, ceiling, role="display")
     gap = max(2, int(round(gap_em * size)))
     travel_x = round(_LBLS_X_EM * size, 2)
     travel_y = round(_LBLS_Y_EM * size, 2)
@@ -9233,7 +9244,7 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     body, dot = _lbc_body_and_dot(wordmark)
     node_id = ctx.target
     available = float(ctx.params.get("available_px") or _LBC_WIDTH)
-    size = fit_size(body + dot, available, _LBC_CEILING)
+    size = fit_size(body + dot, available, _LBC_CEILING, role="display")
     letter_y = round(_LBC_LETTER_Y_EM * size, 2)
     period_y = round(_LBC_PERIOD_Y_EM * size, 2)
     tag_size = max(28, min(48, int(round(size * 0.22))))
@@ -9418,7 +9429,7 @@ def fs_particle_text_dissolve(ctx: "TemplateCtx") -> Piece:
     visual = content.upper()
     node_id = ctx.target
     available = float(ctx.params.get("available_px") or 900)
-    size = fit_size(visual, available, _PTD_CEILING)
+    size = fit_size(visual, available, _PTD_CEILING, role="display")
     frame_w = int(ctx.params.get("frame_w") or _PTD_FRAME_W)
     frame_h = int(ctx.params.get("frame_h") or _PTD_FRAME_H)
     line_w = text_width(visual, size)
@@ -9609,8 +9620,9 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
     # Полоса должна иметь paint-box на старте, иначе продюсер её выкидывает.
     x0 = 0
     x1 = frame_w
-    available = float(ctx.params.get("available_px") or frame_w * 0.86)
-    size = fit_size(content, available, max(28, min(150, round(0.13 * frame_w))))
+    available = min(float(ctx.params.get("available_px") or frame_w * 0.86), float(WORK_AREA_W))
+    size = fit_size(content, available, max(28, min(150, round(0.13 * frame_w))),
+                    role="display")
     red_x = round(-0.008 * frame_w, 2)
     cyan_x = round(0.017 * frame_w, 2)
     core_x = round(0.0065 * frame_w, 2)
@@ -12311,6 +12323,7 @@ def _bfc_semantic_copy(params: dict[str, Any]) -> dict[str, Any]:
                 ("Freeze", "0.8s", True),
                 ("Cut", "3.00", False),
             ),
+            "has_content": False,
         }
 
     primary = accent.upper() if accent and len(accent) <= 16 else ""
@@ -12343,25 +12356,25 @@ def _bfc_semantic_copy(params: dict[str, Any]) -> dict[str, Any]:
         sub = sub[:87].rstrip() + "…"
 
     facts: list[tuple[str, str, bool]] = []
-    for t in clean:
-        low = t.lower().replace("ё", "е")
+    for tok in clean:
+        low = tok.lower().replace("ё", "е")
         if "кубит" in low or "qubit" in low:
-            facts.append(("QUBIT", t.upper()[:18], True))
-        elif any(ch.isdigit() for ch in t):
-            facts.append(("VALUE", t.upper()[:18], True))
+            facts.append(("КУБИТ", tok.upper()[:18], True))
+        elif any(ch.isdigit() for ch in tok):
+            facts.append(("ЧИСЛО", tok.upper()[:18], True))
         elif "прож" in low or low.startswith("жил") or "вперв" in low:
-            facts.append(("FIRST", t.upper()[:18], False))
+            facts.append(("ВПЕРВЫЕ", tok.upper()[:18], False))
         elif "логич" in low or "logic" in low:
-            facts.append(("LOGIC", t.upper()[:18], True))
-    for t in clean:
+            facts.append(("ЛОГИКА", tok.upper()[:18], True))
+    for tok in clean:
         if len(facts) >= 3:
             break
-        val = t.upper()[:18]
+        val = tok.upper()[:18]
         if any(v == val for _, v, _ in facts):
             continue
         facts.append((val[:8], val, False))
     while len(facts) < 3:
-        facts.append(("NOTE", primary[:18], False))
+        facts.append(("ФАКТ", primary[:18], False))
     facts = facts[:3]
     if not any(a for *_, a in facts):
         facts[min(1, len(facts) - 1)] = (
@@ -12370,20 +12383,44 @@ def _bfc_semantic_copy(params: dict[str, Any]) -> dict[str, Any]:
             True,
         )
 
-    kicker = str(params.get("kicker") or "").strip().upper() or "QUANTUM"
-    if kicker in {"MUSIC PROMO", "NEXT SHOT"}:
-        kicker = "QUANTUM"
+    topic = str(params.get("topic") or params.get("eyebrow") or "").strip()
+    if topic.upper() in {"VO BEAT", "MUSIC PROMO", "NEXT SHOT", "LIVE", ""}:
+        topic = ""
+    kicker = str(params.get("kicker") or "").strip().upper()
+    if not kicker or kicker in {"MUSIC PROMO", "NEXT SHOT", "QUANTUM"}:
+        kicker = (topic or primary)[:18]
+    pill = str(params.get("pill") or "").strip().upper()
+    if not pill or pill in {"LIVE"}:
+        pill = ""  # hide LIVE chrome when content present
+    eyebrow = topic[:18] if topic else ""
+    # Fit titles into work area as a pair (avoid overlap / overflow).
+    pair = f"{title_a} {title_b}".strip()
+    _ = fit_in_work_area(pair or primary, 120, role="display")
+    sub_fit = sub
+    if text_width(sub_fit, 36, role="subtitle") > WORK_AREA_W:
+        # Soft trim to two visual lines worth of characters.
+        words = sub_fit.split()
+        kept: list[str] = []
+        for w in words:
+            trial = " ".join(kept + [w])
+            if text_width(trial, 36, role="subtitle") > WORK_AREA_W * 1.85:
+                break
+            kept.append(w)
+        sub_fit = " ".join(kept)
+        if len(sub_fit) < len(sub):
+            sub_fit = sub_fit.rstrip(".,:; ") + "…"
     return {
         "primary": primary,
         "secondary": secondary[:42],
         "kicker": kicker[:18],
-        "pill": str(params.get("pill") or "LIVE").strip().upper()[:8] or "LIVE",
-        "eyebrow": str(params.get("eyebrow") or "VO BEAT").strip()[:24] or "VO BEAT",
+        "pill": pill[:8],
+        "eyebrow": eyebrow[:24],
         "title_a": title_a[:18],
         "title_b": title_b[:18],
-        "sub": sub,
+        "sub": sub_fit,
         "badge": primary[:12],
         "b_cards": tuple(facts),
+        "has_content": True,
     }
 
 
@@ -12446,20 +12483,21 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
     tweens.append(ft(zoom, "scale:1.08", "scale:1.12",
                      t["ramp_dur"], "power2.in", z_ramp, ir=True))
     zoom_end = z_ramp + t["ramp_dur"]
-    for i, peak in enumerate(_BFC_PATTERN):
-        bar = f"#{node_id}-bar{i}"
-        in_at = at + t["bar_in_at"] + i * t["bar_in_stagger"]
-        tweens.append(ft(bar, "scaleY:0.55", "scaleY:1",
-                         t["bar_in_dur"], "power2.out", in_at))
-        in_end = in_at + t["bar_in_dur"]
-        beat_at = _bfc_place(in_end, at + t["beat1"] + i * t["bar_beat_stagger"])
-        tweens.append(ft(bar, "scaleY:1", f"scaleY:{_bfc_n(peak)}",
-                         t["bar_beat_dur"], "power3.out", beat_at, ir=True))
-        beat_end = beat_at + t["bar_beat_dur"]
-        ramp_bar = _bfc_place(
-            beat_end, at + t["ramp"] + i * t["bar_ramp_stagger"])
-        tweens.append(ft(bar, f"scaleY:{_bfc_n(peak)}", "scaleY:1.55",
-                         t["bar_ramp_dur"], "power2.in", ramp_bar, ir=True))
+    if not copy.get("has_content"):
+        for i, peak in enumerate(_BFC_PATTERN):
+            bar = f"#{node_id}-bar{i}"
+            in_at = at + t["bar_in_at"] + i * t["bar_in_stagger"]
+            tweens.append(ft(bar, "scaleY:0.55", "scaleY:1",
+                             t["bar_in_dur"], "power2.out", in_at))
+            in_end = in_at + t["bar_in_dur"]
+            beat_at = _bfc_place(in_end, at + t["beat1"] + i * t["bar_beat_stagger"])
+            tweens.append(ft(bar, "scaleY:1", f"scaleY:{_bfc_n(peak)}",
+                             t["bar_beat_dur"], "power3.out", beat_at, ir=True))
+            beat_end = beat_at + t["bar_beat_dur"]
+            ramp_bar = _bfc_place(
+                beat_end, at + t["ramp"] + i * t["bar_ramp_stagger"])
+            tweens.append(ft(bar, f"scaleY:{_bfc_n(peak)}", "scaleY:1.55",
+                             t["bar_ramp_dur"], "power2.in", ramp_bar, ir=True))
     freeze_at = at + t["freeze"]
     # Soft dark flash — never additive white screen wash.
     tweens.extend([
@@ -12525,9 +12563,25 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
                      t["bc_punch"], "power3.out", at + t["beat3"]))
     tweens.append(ft(bc1, "scale:1.04", "scale:1",
                      t["bc_back"], "power2.out", at + t["bc_back_at"], ir=True))
-    bars_html = "".join(
-        f'<span id="{node_id}-bar{i}" class="bfc-bar"></span>'
-        for i in range(12))
+    has_content = bool(copy.get("has_content"))
+    bars_html = ""
+    wave_html = ""
+    pill_html = ""
+    if not has_content:
+        bars_html = "".join(
+            f'<span id="{node_id}-bar{i}" class="bfc-bar"></span>'
+            for i in range(12))
+        wave_html = (
+            f'<span class="bfc-wave"><svg viewBox="0 0 592 220" '
+            f'preserveAspectRatio="none" aria-hidden="true">'
+            f'<path class="bfc-wave-fill" d="{_BFC_WAVE_FILL}"/>'
+            f'<path class="bfc-wave-path" d="{_BFC_WAVE_PATH}"/>'
+            f'</svg></span>'
+        )
+        if copy.get("pill"):
+            pill_html = f'<span class="bfc-pill">{_esc(copy["pill"])}</span>'
+    elif copy.get("pill"):
+        pill_html = f'<span class="bfc-pill">{_esc(copy["pill"])}</span>'
     b_cards = copy["b_cards"]
     cards_html = "".join(
         f'<span id="{node_id}-bc{i}" class="bfc-b-card">'
@@ -12535,9 +12589,13 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
         f'<span class="bfc-b-value{" accent" if accent else ""}">'
         f'{_esc(value)}</span></span>'
         for i, (label, value, accent) in enumerate(b_cards))
+    eyebrow_html = (
+        f'<span class="bfc-eyebrow">{_esc(copy["eyebrow"])}</span>'
+        if copy.get("eyebrow") else ""
+    )
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip fullscreen-text '
-               f'fs-beat-freeze-cut{invert}" {_timing(ctx)}>'
+               f'fs-beat-freeze-cut{invert}{" bfc-semantic" if has_content else ""}" {_timing(ctx)}>'
                f'<span class="bfc-stage">'
                f'<span class="bfc-bg"></span><span class="bfc-grid"></span>'
                f'<span id="{node_id}-zoom" class="bfc-zoom">'
@@ -12545,18 +12603,14 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
                f'<span id="{node_id}-crop" class="bfc-crop">'
                f'<span id="{node_id}-card" class="bfc-card">'
                f'<span class="bfc-glow"></span>'
-               f'<span class="bfc-wave"><svg viewBox="0 0 592 220" '
-               f'preserveAspectRatio="none" aria-hidden="true">'
-               f'<path class="bfc-wave-fill" d="{_BFC_WAVE_FILL}"/>'
-               f'<path class="bfc-wave-path" d="{_BFC_WAVE_PATH}"/>'
-               f'</svg></span>'
+               f'{wave_html}'
                f'<span class="bfc-bars">{bars_html}</span>'
                f'<span class="bfc-meta"><span class="bfc-kicker">{_esc(copy["kicker"])}</span>'
-               f'<span class="bfc-pill">{_esc(copy["pill"])}</span></span>'
+               f'{pill_html}</span>'
                f'</span></span></span>'
                f'<span id="{node_id}-b" class="bfc-shot-b">'
                f'<span id="{node_id}-bleft" class="bfc-b-copy">'
-               f'<span class="bfc-eyebrow">{_esc(copy["eyebrow"])}</span>'
+               f'{eyebrow_html}'
                f'<span class="bfc-title"><span>{_esc(copy["title_a"])}</span>'
                f'<span>{_esc(copy["title_b"])}</span></span>'
                f'<span class="bfc-accent-bar"></span>'
@@ -12874,9 +12928,9 @@ def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = ctx.target
     available = float(params.get("available_px") or 740)
-    name_size = (fit_size(name.upper(), available, _LT_AU_NAME_CEILING)
+    name_size = (fit_size(name.upper(), available, _LT_AU_NAME_CEILING, role="display")
                  if name else _LT_AU_NAME_CEILING)
-    role_size = (min(_LT_AU_ROLE_SIZE, fit_size(role, available, _LT_AU_ROLE_SIZE))
+    role_size = (min(_LT_AU_ROLE_SIZE, fit_size(role, available, _LT_AU_ROLE_SIZE, role="display"))
                  if role else _LT_AU_ROLE_SIZE)
     name_w = text_width(name.upper(), name_size) if name else 0.0
     role_w = text_width(role, role_size) if role else 0.0
@@ -12994,9 +13048,9 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_CB_TAB_W - _LT_CB_PAD_L - _LT_CB_PAD_R)
     fit_avail = text_avail / _LT_CB_SLACK
-    name_size = (fit_size(name, fit_avail, _LT_CB_NAME_CEILING)
+    name_size = (fit_size(name, fit_avail, _LT_CB_NAME_CEILING, role="subtitle")
                  if name else _LT_CB_NAME_CEILING)
-    role_size = (min(_LT_CB_ROLE_SIZE, fit_size(role, fit_avail, _LT_CB_ROLE_SIZE))
+    role_size = (min(_LT_CB_ROLE_SIZE, fit_size(role, fit_avail, _LT_CB_ROLE_SIZE, role="subtitle"))
                  if role else _LT_CB_ROLE_SIZE)
     name_w = text_width(name, name_size) * _LT_CB_SLACK if name else 0.0
     role_w = text_width(role, role_size) * _LT_CB_SLACK if role else 0.0
@@ -13122,9 +13176,9 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_DC_PAD_L - _LT_DC_PAD_R)
     fit_avail = text_avail / _LT_DC_SLACK
-    name_size = (fit_size(name, fit_avail, _LT_DC_NAME_CEILING)
+    name_size = (fit_size(name, fit_avail, _LT_DC_NAME_CEILING, role="subtitle")
                  if name else _LT_DC_NAME_CEILING)
-    role_size = (min(_LT_DC_ROLE_SIZE, fit_size(role, fit_avail, _LT_DC_ROLE_SIZE))
+    role_size = (min(_LT_DC_ROLE_SIZE, fit_size(role, fit_avail, _LT_DC_ROLE_SIZE, role="subtitle"))
                  if role else _LT_DC_ROLE_SIZE)
     name_w = text_width(name, name_size) * _LT_DC_SLACK if name else 0.0
     role_w = text_width(role, role_size) * _LT_DC_SLACK if role else 0.0
@@ -13383,7 +13437,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "{position:absolute;inset:0;display:grid;place-items:center;"
         "font-weight:850;line-height:0.86;letter-spacing:-0.065em;"
         "white-space:nowrap}"
-        ".fullscreen-text .sb-wordmark{color:#f7f8fa;"
+        ".fullscreen-text .sb-wordmark{font-family:var(--font-display);color:#f7f8fa;"
         "text-shadow:0 23px 77px rgba(0,0,0,0.45)}"
         ".fullscreen-text .sb-skew{position:absolute;inset:0;"
         "transform-origin:0 0}"
@@ -13900,6 +13954,9 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text .bfc-title{display:flex;flex-direction:column;"
         "font-size:108px;font-weight:900;line-height:0.92;letter-spacing:-0.04em;"
         "text-transform:uppercase;color:#ffffff}"
+        ".fullscreen-text.bfc-semantic .bfc-card{left:var(--safe-x-min,90px);width:min(740px,calc(var(--frame-w) - 2 * var(--safe-x-min,90px)));max-width:740px}"
+        ".fullscreen-text.bfc-semantic .bfc-title{gap:0.02em;font-size:clamp(48px,9vw,96px)}"
+        ".fullscreen-text.bfc-semantic .bfc-sub{max-width:740px;overflow:hidden}"
         ".fullscreen-text .bfc-accent-bar{width:120px;height:6px;border-radius:999px;"
         "background:#C8453D}"
         ".fullscreen-text .bfc-sub{font-size:24px;font-weight:500;color:#7A7D82;"

@@ -5,7 +5,7 @@
   "title": "Текст-маска с футажом внутри",
   "duration_range": [
     1.0,
-    2.0
+    3.0
   ],
   "params": {
     "mask": true

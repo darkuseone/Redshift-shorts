@@ -692,26 +692,14 @@
       "patterns": [],
       "needs": [],
       "templates": [
-        "text-fullscreen/beat-freeze-cut",
-        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/stack-3lines",
+        "text-fullscreen/fact-card",
+        "text-fullscreen/per-word-crossfade",
         "text-fullscreen/blur-out-up",
         "text-fullscreen/bottom-up-letters",
-        "text-fullscreen/kinetic-type-swap",
-        "text-fullscreen/line-by-line-slide",
-        "text-fullscreen/particle-text-dissolve",
-        "text-fullscreen/per-word-crossfade",
-        "text-fullscreen/scan-band",
-        "text-fullscreen/scramble-reveal",
-        "text-fullscreen/shared-axis-z",
-        "text-fullscreen/code-3d-extrude",
-        "text-fullscreen/code-diff",
-        "text-fullscreen/code-particle-assemble",
-        "text-fullscreen/code-scroll",
-        "text-fullscreen/code-typing",
-        "text-fullscreen/terminal-simulator",
-        "text-fullscreen/apple-terminal-clear-dark",
-        "text-fullscreen/dark-plus",
-        "text-fullscreen/number-slam-card"
+        "text-fullscreen/bigtext-mask-footage",
+        "text-fullscreen/quote-frame",
+        "text-fullscreen/date-marker"
       ],
       "weight": 10,
       "variants": [
@@ -729,7 +717,11 @@
       "needs": [],
       "templates": [
         "text-fullscreen/stack-3lines",
-        "text-fullscreen/fact-card"
+        "text-fullscreen/fact-card",
+        "text-fullscreen/quote-frame",
+        "text-fullscreen/per-word-crossfade",
+        "text-fullscreen/blur-out-up",
+        "text-fullscreen/bigtext-mask-footage"
       ],
       "weight": 10,
       "variants": [
