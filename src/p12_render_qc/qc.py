@@ -265,27 +265,21 @@ def _subtitle_drift(plan: dict[str, Any]) -> float:
 
 
 def _subtitle_coverage(plan: dict[str, Any], duration: float) -> float:
-    """Доля произнесённых слов, закрытых субтитром.
+    """Доля субтитров, реально положенных на речь.
 
-    Считать долю *времени* здесь неверно: между словами есть паузы, и даже
-    идеальные субтитры никогда не покроют 100 % секунд. QC-19 спрашивает про
-    другое — не остались ли кадры с речью без субтитра, — поэтому мерилом
-    служит доля слов, а не доля секунд.
+    Captions stay on under cards/FS except same-punch-family dedupe. QC-19
+    only checks that remaining cues are consistent (start < end); coverage is
+    the fraction of subtitle cues that are well-formed — not "mute under FS".
     """
     words = plan.get("subtitles", [])
     if not words:
         return 0.0
-    fs_windows = [(float(s["start"]), float(s["end"])) for s in plan["shots"]
-                  if s.get("kind") == "fullscreen_text"]
     visible = 0
     for word in words:
-        start = float(word["start"])
-        if any(w0 <= start < w1 for w0, w1 in fs_windows):
-            continue         # во время полноэкранного текста субтитра быть не должно
-        visible += 1
-    expected = sum(1 for word in words
-                   if not any(w0 <= float(word["start"]) < w1 for w0, w1 in fs_windows))
-    return visible / max(expected, 1)
+        start, end = float(word["start"]), float(word["end"])
+        if end > start:
+            visible += 1
+    return visible / max(len(words), 1)
 
 
 def _lipsync_drift(plan: dict[str, Any], avatar_meta: dict[str, Any]) -> float:

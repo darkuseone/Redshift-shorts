@@ -4201,8 +4201,47 @@ def test_beat_freeze_cut_keeps_it_kosmos_palette_not_catalog_mint():
     assert "position:absolute" not in stage
     invert = re.search(
         r"\.fullscreen-text\.fs-beat-freeze-cut\.invert\{[^}]+\}", css).group(0)
-    assert "#111214" in invert
+    # r6+: invert keeps transparent plate so footage shows under dark glass
+    assert "transparent" in invert or "#111214" in invert
     assert "#0B132B" not in invert
+
+
+
+def test_beat_freeze_cut_fills_vo_not_catalog_placeholders():
+    """With spoken content, never ship HARD CUT / MUSIC PROMO / Ramp demo."""
+    piece = render_fullscreen(_fs_ctx(
+        content="ВПЕРВЫЕ ЛОГИЧЕСКИЙ КУБИТ ПРОЖИЛ",
+        renderer="beat_freeze_cut", beat_freeze_cut=True,
+        accent_word="КУБИТ", duration=6.0))
+    node = piece.nodes[0]
+    assert "HARD" not in node
+    assert "MUSIC PROMO" not in node
+    assert "Beat-locked" not in node
+    assert "1.35→2.2" not in node
+    assert "КУБИТ" in node
+    assert "DROP" not in node
+
+
+def test_phrase_slam_uses_one_accent_word_hierarchy():
+    piece = render_fullscreen(_fs_ctx(
+        content="ЗДЕСЬ ВСЁ НАОБОРОТ", slam=True, accent_word="НАОБОРОТ",
+        invert=True))
+    node = piece.nodes[0]
+    assert "fs-slam-punch" in node
+    assert "НАОБОРОТ" in node
+    assert "fs-slam-lead" in node
+    assert "ЗДЕСЬ" in node
+
+
+def test_beat_freeze_cut_flash_is_not_additive_screen_wash():
+    from src.lib.config import load_config
+    from src.lib.render.hyperframes.templates import overlay_css
+    css = overlay_css(load_config().brandbook)
+    flash = css.split(".bfc-flash{")[1].split("}")[0]
+    assert "mix-blend-mode:screen" not in flash
+    assert "rgba(11,19,43" in flash
+    card = css.split(".bfc-card{")[1].split("}")[0]
+    assert "rgba(17,18,20,0.62)" in card
 
 
 def test_number_slam_splits_the_caption():

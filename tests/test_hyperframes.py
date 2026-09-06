@@ -1268,7 +1268,7 @@ def test_beat_freeze_cut_fullscreen_reaches_the_markup(plan, assets, brandbook):
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "fs-beat-freeze-cut" in out
     assert "bfc-card" in out and "bfc-hit" in out
-    assert "DROP" in out and "FREEZE" in out
+    assert "DROP" in out and "bfc-badge" in out
     tween_src = "".join(
         line for line in out.splitlines() if "tl.fromTo" in line or "tl.to" in line)
     assert "visibility" not in tween_src

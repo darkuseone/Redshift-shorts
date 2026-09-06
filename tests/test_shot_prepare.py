@@ -165,7 +165,8 @@ def test_compose_zoom_strong_bias_formula():
 
 def test_hero_mutes_heavy_template_text():
     from src.p11_assemble.assemble import hero_mutes_subtitle
-    # Mid-frame word/title heroes must mute word captions (overlap fix).
+    # Heroes still *mark* mid-frame text (punch-family dedupe / reposition),
+    # but assemble no longer blanket-mutes all captions under them.
     for renderer in ("hero-headline", "hero-oversize", "hero-title-behind",
                      "hero-card-stack", "hero-paper"):
         flags = hero_mutes_subtitle(renderer)

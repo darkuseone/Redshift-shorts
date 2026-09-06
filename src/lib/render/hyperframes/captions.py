@@ -43,6 +43,21 @@ TRACK_CAPTION_ACCENT_EVEN = 21
 TRACK_CAPTION_ACCENT_ODD = 22
 Z_CAPTION_ACCENT = Z_CAPTION + 1
 
+
+def _phrase_baseline(phrase: list[dict[str, Any]], default: float) -> float:
+    """Per-cue baseline when assemble raised captions to clear a card."""
+    for word in phrase:
+        raw = word.get("baseline_y")
+        if raw is None:
+            continue
+        try:
+            return float(raw)
+        except (TypeError, ValueError):
+            continue
+    return float(default)
+
+
+
 FRAMINGS = {"tight": 0.82, "standard": 1.0, "wide": 1.25}
 
 # Каталог: «уходит быстро, большую часть времени доезжает».
@@ -656,7 +671,7 @@ def build_clip_wipe(
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
         clip_id = f"cw-{p:02d}"
         accent_at = _accent_index(phrase)
-        top = int(baseline - size / 2)
+        top = int(_phrase_baseline(phrase, baseline) - size / 2)
         word_nodes: list[str] = []
         for i, word in enumerate(phrase):
             wid = f"{clip_id}-w{i}"
@@ -825,7 +840,7 @@ def build_gradient_fill(
         clip_id = f"gf-{p:02d}"
         group_id = f"{clip_id}-g"
         accent_at = _accent_index(phrase)
-        top = int(baseline - size / 2)
+        top = int(_phrase_baseline(phrase, baseline) - size / 2)
         word_nodes: list[str] = []
 
         for i, word in enumerate(phrase):
@@ -1067,7 +1082,7 @@ def build_blend_difference(
         group_id = f"{clip_id}-g"
         accent_group = f"{accent_id}-g"
         accent_at = _accent_index(phrase)
-        top = int(baseline - size / 2)
+        top = int(_phrase_baseline(phrase, baseline) - size / 2)
         dur = end - start
         layout = dict(
             start=start, duration=dur, top=top,

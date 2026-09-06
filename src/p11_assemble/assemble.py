@@ -169,6 +169,16 @@ def _rich_terminal_copy(block: dict[str, Any], phrase: str) -> tuple[str, str, s
     return before, after, "willow_run.log"
 
 
+
+def _attach_fs_media(fs_params: dict[str, Any], bg_file: str | None) -> dict[str, Any]:
+    """Optional in-card footage/image thumb for informative phrase cards."""
+    if bg_file and (fs_params.get("slam") or fs_params.get("card")
+                    or fs_params.get("scale_from")):
+        fs_params = dict(fs_params)
+        fs_params.setdefault("media", str(bg_file))
+    return fs_params
+
+
 def _fullscreen_params(template: Any, content: str,
                        block: dict[str, Any] | None = None) -> dict[str, Any]:
     """Template catalog params + live shot content; never leave demo copy.
@@ -2343,6 +2353,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 str(content), block.get("emphasis_word"))
             content = soften_on_screen_copy(str(content or ""))
             fs_params = _fullscreen_params(template, content, block)
+            fs_params = _attach_fs_media(fs_params, bg_file)
             # Delay punch chrome until spoken onset when slot starts early.
             if onset is not None and float(slot["start"]) + 0.15 < float(onset):
                 fs_params["enter_delay"] = max(
@@ -2454,6 +2465,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 str(content), gap_block.get("emphasis_word"))
             content = soften_on_screen_copy(str(content or ""))
             fs_params = _fullscreen_params(template, content, gap_block)
+            fs_params = _attach_fs_media(fs_params, bg_file)
             if (onset is not None and content
                     and float(slot["start"]) + 0.15 < float(onset)
                     and punch_families_overlap(str(content), _semantic_screen_text(gap_block))):
@@ -2640,13 +2652,16 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "why": "r6: informative card over first avatar to mask off-camera gaze",
             })
 
-    # Субтитры: весь ролик, кроме кадров с полноэкранным текстом (§5.1).
-    # Mute captions under FS shots (incl. gap-promoted footage→FS) and bulky cards.
-    fs_windows = [(float(s["start"]), float(s["end"])) for s in shots
-                  if s.get("kind") == "fullscreen_text"]
+    # Smart captions (0042 B): keep nearly all spoken words.
+    # Mute ONLY same punch-family echo while that card is up; then restore.
+    # Spatial collision with a card → reposition baseline, never blanket-delete.
     punch_windows: list[tuple[float, float, str]] = [
         (float(s["start"]), float(s["end"]), str(s.get("content") or ""))
         for s in shots if s.get("kind") == "fullscreen_text" and s.get("content")
+    ]
+    card_windows: list[tuple[float, float]] = [
+        (float(s["start"]), float(s["end"]))
+        for s in shots if s.get("kind") == "fullscreen_text"
     ]
     for shot in shots:
         hero = shot.get("hero") or {}
@@ -2655,33 +2670,46 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         end = float(shot["end"])
         if hero.get("duration"):
             end = min(end, float(shot["start"]) + float(hero["duration"]))
-        fs_windows.append((float(shot["start"]), end))
+        card_windows.append((float(shot["start"]), end))
+        # Same-family mute only — pull the on-screen word/title if present.
+        hw = str(
+            (hero.get("params") or {}).get("word")
+            or (hero.get("params") or {}).get("title")
+            or (hero.get("params") or {}).get("content")
+            or hero.get("word") or hero.get("title") or ""
+        )
+        if hw:
+            punch_windows.append((float(shot["start"]), end, hw))
     _BULKY_OVL = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
                   "ai_chat_reveal", "app_showcase", "dataviz"}
     for ovl in overlays:
         kind = str(ovl.get("type") or "")
         renderer = str(ovl.get("renderer") or "")
-        if kind in _BULKY_OVL or renderer in _BULKY_OVL:
-            fs_windows.append((float(ovl["start"]), float(ovl["end"])))
+        if kind in _BULKY_OVL or renderer in _BULKY_OVL or kind == "plaque":
+            card_windows.append((float(ovl["start"]), float(ovl["end"])))
         if kind == "plaque":
             pt = str((ovl.get("params") or {}).get("text")
                      or (ovl.get("params") or {}).get("content") or "")
             if pt:
                 punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
+    default_baseline = int(ctx.cfg.brand("subtitles.baseline_y_default", 1180))
+    # Raise captions above mid-frame glass cards (frame ~1920 tall).
+    raised_baseline = max(640, default_baseline - 360)
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])
-        if any(start < w_end and end > w_start for w_start, w_end in fs_windows):
-            continue
         spoken = str(word.get("display") or word.get("word") or "")
         # One punch-family instance on screen: hide caption echo of active card.
         if any(start < pe and end > ps and punch_families_overlap(spoken, pc)
                for ps, pe, pc in punch_windows if pc):
             continue
-        subtitles.append({
+        cue = {
             "display": word["display"], "start": start, "end": end,
             "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
-        })
+        }
+        if any(start < ce and end > cs for cs, ce in card_windows):
+            cue["baseline_y"] = raised_baseline
+        subtitles.append(cue)
     # Склейка — после отбраковки, а не до: слово, снятое полноэкранным текстом,
     # не имеет права утащить с собой приклеенный к нему предлог.
     subtitles = glue_short_cues(subtitles)

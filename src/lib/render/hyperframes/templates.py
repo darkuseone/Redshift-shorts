@@ -8594,29 +8594,78 @@ def fs_bottom_up_letters(ctx: "TemplateCtx") -> Piece:
 
 
 def fs_number_slam(ctx: "TemplateCtx") -> Piece:
-    """Цифра-удар на карточке — K3 promo. Число отдельно, подпись ниже."""
+    """Цифра-удар / phrase punch на стеклянной карточке.
+
+    Число + подпись (K3). Для фразы без цифры — иерархия: лёгкий lead +
+    одно accent-слово (не три равных гигантских слова). Опционально media
+    thumb внутри карточки (``params.media``).
+    """
     content, accent, invert = _content_of(ctx)
     if not content:
         return Piece()
-    parts = content.split()
+    parts = [p for p in content.split() if p.strip()]
+    node_id = ctx.target
+    cls = "clip fullscreen-text fs-slam" + (" invert" if invert else "")
+    media = str(ctx.params.get("media") or ctx.params.get("media_src") or "").strip()
+    media_html = ""
+    if media:
+        media_html = (
+            f'<span class="fs-slam-media"><img src="{_esc(media)}" alt=""/></span>')
+    detail = str(ctx.params.get("detail") or ctx.params.get("secondary") or "").strip()
+
+    # Numeric slam: keep classic number + caption split.
     if parts and re.match(r"^[\d$€£%.,+\-×xX]+", parts[0]):
         number, caption = parts[0], " ".join(parts[1:])
-    else:
-        number, caption = content, ""
-    node_id = ctx.target
-    size = _fs_size(ctx, number)
-    cls = "clip fullscreen-text fs-slam" + (" invert" if invert else "")
-    cap = (f'<span class="fs-cap">{_esc(caption)}</span>' if caption else "")
+        size = _fs_size(ctx, number)
+        cap = (f'<span class="fs-cap">{_esc(caption)}</span>' if caption else "")
+        if detail and not caption:
+            cap = f'<span class="fs-cap">{_esc(detail)}</span>'
+        tweens = entrance_tweens(f"#{node_id}-inner", _enter_at(ctx), name="zoom-in")
+        if cap:
+            tweens += entrance_tweens(f"#{node_id} .fs-cap", _enter_at(ctx),
+                                      name="rise", delay=0.12)
+        return Piece(
+            nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
+                   f'<span class="fs-slam-card">{media_html}'
+                   f'<span id="{node_id}-inner" class="fs-num" '
+                   f'style="font-size:{size}px">{_mark_accent(number, accent or number)}'
+                   f'</span>{cap}</span></div>'],
+            tweens=tweens)
+
+    # Phrase punch: one accent word heavy; lead lighter / smaller.
+    accent_tok = (accent or "").strip()
+    if not accent_tok or accent_tok.upper() not in content.upper():
+        accent_tok = max(parts, key=len) if len(parts) >= 2 else (parts[0] if parts else "")
+    lead_parts: list[str] = []
+    punch = accent_tok
+    matched = False
+    for p in parts:
+        if not matched and accent_tok and accent_tok.upper() in p.upper():
+            punch = p.strip(".,!?;:«»\"'—–")
+            matched = True
+            continue
+        lead_parts.append(p)
+    lead = " ".join(lead_parts).strip()
+    punch_size = min(_fs_size(ctx, punch), 220)
+    lead_size = max(28, int(punch_size * 0.38))
+    lead_html = (
+        f'<span class="fs-slam-lead" style="font-size:{lead_size}px">'
+        f'{_esc(lead)}</span>' if lead else "")
+    detail_html = (
+        f'<span class="fs-cap">{_esc(detail)}</span>' if detail else "")
     tweens = entrance_tweens(f"#{node_id}-inner", _enter_at(ctx), name="zoom-in")
-    if caption:
+    if lead_html:
+        tweens += entrance_tweens(f"#{node_id} .fs-slam-lead", _enter_at(ctx),
+                                  name="rise", delay=0.06)
+    if detail_html:
         tweens += entrance_tweens(f"#{node_id} .fs-cap", _enter_at(ctx),
-                                  name="rise", delay=0.12)
+                                  name="rise", delay=0.14)
     return Piece(
         nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
-               f'<span class="fs-slam-card">'
-               f'<span id="{node_id}-inner" class="fs-num" '
-               f'style="font-size:{size}px">{_mark_accent(number, accent or number)}'
-               f'</span>{cap}</span></div>'],
+               f'<span class="fs-slam-card">{media_html}{lead_html}'
+               f'<span id="{node_id}-inner" class="fs-num fs-slam-punch" '
+               f'style="font-size:{punch_size}px">{_esc(punch)}'
+               f'</span>{detail_html}</span></div>'],
         tweens=tweens)
 
 
@@ -12225,19 +12274,122 @@ def _bfc_place(prev_end: float, want: float) -> float:
     return round(prev_end + 0.001, 4)
 
 
-def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
-    """Music-promo: рамп → freeze DROP → hard-cut. Каталог твинит filter.
-
-    Здесь scale/x/y/opacity и статичный backdrop-filter. Твины на карточке,
-    кропе, барах и слоях freeze/cut, не на ``.clip``. Мята каталога ``#00E5C7``
-    спорит со скриншотами — акцент ``#E63946``, сцена ``#0B132B``, панели
-    ``#1A1F2E``. Циан ``#00E5FF`` не берём.
-    """
-    params = ctx.params
+def _bfc_semantic_copy(params: dict[str, Any]) -> dict[str, Any]:
+    """VO/script fill for beat-freeze-cut — never ship catalog EN placeholders."""
     raw = str(params.get("content") or params.get("text") or "").strip()
     line = raw.split("\n")[0].strip() if raw else ""
-    primary = line if 1 <= len(line) <= 16 else "DROP"
-    secondary = str(params.get("secondary") or "ON THE BEAT").strip() or "ON THE BEAT"
+    has = bool(line)
+    accent = str(params.get("accent_word") or "").strip()
+
+    def _tok(word: str) -> str:
+        return re.sub(r"[^0-9A-Za-zА-Яа-яЁё]+", "", word or "")
+
+    tokens = [_tok(t) for t in line.split() if _tok(t)]
+    # Drop leftover empty / pure-paren gloss leftovers already stripped.
+    clean = list(tokens)
+
+    if not has:
+        return {
+            "primary": "DROP",
+            "secondary": str(params.get("secondary") or "ON THE BEAT").strip() or "ON THE BEAT",
+            "kicker": "MUSIC PROMO",
+            "pill": "LIVE",
+            "eyebrow": "Next shot",
+            "title_a": "HARD",
+            "title_b": "CUT",
+            "sub": "Beat-locked freeze, then cut. Built for music-led promos and montages.",
+            "badge": "FREEZE",
+            "b_cards": (
+                ("Ramp", "1.35→2.2", False),
+                ("Freeze", "0.8s", True),
+                ("Cut", "3.00", False),
+            ),
+        }
+
+    primary = accent.upper() if accent and len(accent) <= 16 else ""
+    if not primary:
+        for t in clean:
+            if 3 <= len(t) <= 16:
+                primary = t.upper()
+                break
+        if not primary:
+            primary = (clean[0] if clean else line)[:16].upper()
+    secondary = str(params.get("secondary") or "").strip()
+    if not secondary:
+        secondary = " ".join(clean[:3]).upper() if clean else primary
+
+    if accent and any(accent.upper() in t.upper() for t in clean):
+        title_b = next(t for t in clean if accent.upper() in t.upper()).upper()
+        lead = [t for t in clean if accent.upper() not in t.upper()]
+        title_a = (lead[0] if lead else clean[0]).upper()
+        if title_a == title_b and len(clean) > 1:
+            title_a = clean[0].upper()
+            title_b = clean[1].upper()
+    elif len(clean) >= 2:
+        title_a, title_b = clean[0].upper(), clean[1].upper()
+    else:
+        title_a, title_b = (clean[0].upper() if clean else primary), primary
+
+    rest = [t for t in clean if t.upper() not in {title_a, title_b}]
+    sub = " ".join(rest) if rest else " ".join(clean)
+    if len(sub) > 90:
+        sub = sub[:87].rstrip() + "…"
+
+    facts: list[tuple[str, str, bool]] = []
+    for t in clean:
+        low = t.lower().replace("ё", "е")
+        if "кубит" in low or "qubit" in low:
+            facts.append(("QUBIT", t.upper()[:18], True))
+        elif any(ch.isdigit() for ch in t):
+            facts.append(("VALUE", t.upper()[:18], True))
+        elif "прож" in low or low.startswith("жил") or "вперв" in low:
+            facts.append(("FIRST", t.upper()[:18], False))
+        elif "логич" in low or "logic" in low:
+            facts.append(("LOGIC", t.upper()[:18], True))
+    for t in clean:
+        if len(facts) >= 3:
+            break
+        val = t.upper()[:18]
+        if any(v == val for _, v, _ in facts):
+            continue
+        facts.append((val[:8], val, False))
+    while len(facts) < 3:
+        facts.append(("NOTE", primary[:18], False))
+    facts = facts[:3]
+    if not any(a for *_, a in facts):
+        facts[min(1, len(facts) - 1)] = (
+            facts[min(1, len(facts) - 1)][0],
+            facts[min(1, len(facts) - 1)][1],
+            True,
+        )
+
+    kicker = str(params.get("kicker") or "").strip().upper() or "QUANTUM"
+    if kicker in {"MUSIC PROMO", "NEXT SHOT"}:
+        kicker = "QUANTUM"
+    return {
+        "primary": primary,
+        "secondary": secondary[:42],
+        "kicker": kicker[:18],
+        "pill": str(params.get("pill") or "LIVE").strip().upper()[:8] or "LIVE",
+        "eyebrow": str(params.get("eyebrow") or "VO BEAT").strip()[:24] or "VO BEAT",
+        "title_a": title_a[:18],
+        "title_b": title_b[:18],
+        "sub": sub,
+        "badge": primary[:12],
+        "b_cards": tuple(facts),
+    }
+
+
+def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
+    """Music-promo motion: ramp → freeze → hard-cut, filled from VO when present.
+
+    Scale/x/y/opacity + static backdrop-filter. No catalog EN placeholders when
+    ``content`` is set. Dark glass over footage — no additive screen washout.
+    """
+    params = ctx.params
+    copy = _bfc_semantic_copy(params)
+    primary = copy["primary"]
+    secondary = copy["secondary"]
     node_id = ctx.target
     invert = " invert" if params.get("invert") else ""
     t = _bfc_times(ctx.duration)
@@ -12302,12 +12454,13 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
         tweens.append(ft(bar, f"scaleY:{_bfc_n(peak)}", "scaleY:1.55",
                          t["bar_ramp_dur"], "power2.in", ramp_bar, ir=True))
     freeze_at = at + t["freeze"]
+    # Soft dark flash — never additive white screen wash.
     tweens.extend([
-        ft(flash, "opacity:0.55", "opacity:0",
+        ft(flash, "opacity:0.14", "opacity:0",
            t["flash_dur"], "power2.out", freeze_at),
         ft(outline, "opacity:0", "opacity:1",
            t["hit_in"], "power4.out", freeze_at),
-        ft(contour, "opacity:0", "opacity:0.85",
+        ft(contour, "opacity:0", "opacity:0.55",
            t["hit_in"], "power4.out", freeze_at),
         ft(badge, "opacity:0", "opacity:1",
            t["hit_in"], "power4.out", freeze_at),
@@ -12317,7 +12470,7 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
            t["hit_out"], "power2.in", at + t["hit_out_at"], ir=True),
         ft(outline, "opacity:1", "opacity:0.75",
            t["settle_dur"], "sine.out", at + t["settle_at"], ir=True),
-        ft(contour, "opacity:0.85", "opacity:0.75",
+        ft(contour, "opacity:0.55", "opacity:0.4",
            t["settle_dur"], "sine.out", at + t["settle_at"], ir=True),
         ft(badge, "opacity:1", "opacity:0.75",
            t["settle_dur"], "sine.out", at + t["settle_at"], ir=True),
@@ -12325,18 +12478,18 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
     cut_at = at + t["cut"]
     switch_at = at + t["switch"]
     tweens.extend([
-        ft(smear, "opacity:0,scaleX:0.35,x:-280", "opacity:0.95,scaleX:1.6,x:120",
+        ft(smear, "opacity:0,scaleX:0.35,x:-280", "opacity:0.7,scaleX:1.6,x:120",
            t["smear_in"], "power4.in", cut_at),
-        ft(blur, "opacity:0", "opacity:0.85",
+        ft(blur, "opacity:0", "opacity:0.55",
            t["smear_in"], "power3.in", cut_at),
-        ft(smear, "opacity:0.95,x:120", "opacity:0,x:360",
+        ft(smear, "opacity:0.7,x:120", "opacity:0,x:360",
            t["smear_out"], "power2.out", at + t["smear_out_at"], ir=True),
-        ft(blur, "opacity:0.85", "opacity:0",
+        ft(blur, "opacity:0.55", "opacity:0",
            t["zoom_rec"], "power3.out", switch_at, ir=True),
         ft(shot_a, "opacity:1", "opacity:0", 0.001, "none", switch_at),
         ft(shot_b, "opacity:0", "opacity:1", 0.001, "none", switch_at),
         ft(outline, "opacity:0.75", "opacity:0", 0.001, "none", switch_at, ir=True),
-        ft(contour, "opacity:0.75", "opacity:0", 0.001, "none", switch_at, ir=True),
+        ft(contour, "opacity:0.4", "opacity:0", 0.001, "none", switch_at, ir=True),
         ft(badge, "opacity:0.75", "opacity:0", 0.001, "none", switch_at, ir=True),
         ft(bleft, "opacity:0,x:-24", "opacity:1,x:0",
            t["bleft_dur"], "power3.out", switch_at),
@@ -12368,11 +12521,7 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
     bars_html = "".join(
         f'<span id="{node_id}-bar{i}" class="bfc-bar"></span>'
         for i in range(12))
-    b_cards = (
-        ('Ramp', '1.35→2.2', False),
-        ('Freeze', '0.8s', True),
-        ('Cut', '3.00', False),
-    )
+    b_cards = copy["b_cards"]
     cards_html = "".join(
         f'<span id="{node_id}-bc{i}" class="bfc-b-card">'
         f'<span class="bfc-b-label">{_esc(label)}</span>'
@@ -12395,16 +12544,16 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
                f'<path class="bfc-wave-path" d="{_BFC_WAVE_PATH}"/>'
                f'</svg></span>'
                f'<span class="bfc-bars">{bars_html}</span>'
-               f'<span class="bfc-meta"><span class="bfc-kicker">MUSIC PROMO</span>'
-               f'<span class="bfc-pill">LIVE</span></span>'
+               f'<span class="bfc-meta"><span class="bfc-kicker">{_esc(copy["kicker"])}</span>'
+               f'<span class="bfc-pill">{_esc(copy["pill"])}</span></span>'
                f'</span></span></span>'
                f'<span id="{node_id}-b" class="bfc-shot-b">'
                f'<span id="{node_id}-bleft" class="bfc-b-copy">'
-               f'<span class="bfc-eyebrow">Next shot</span>'
-               f'<span class="bfc-title"><span>HARD</span><span>CUT</span></span>'
+               f'<span class="bfc-eyebrow">{_esc(copy["eyebrow"])}</span>'
+               f'<span class="bfc-title"><span>{_esc(copy["title_a"])}</span>'
+               f'<span>{_esc(copy["title_b"])}</span></span>'
                f'<span class="bfc-accent-bar"></span>'
-               f'<span class="bfc-sub">Beat-locked freeze, then cut. '
-               f'Built for music-led promos and montages.</span></span>'
+               f'<span class="bfc-sub">{_esc(copy["sub"])}</span></span>'
                f'<span class="bfc-b-list">{cards_html}</span>'
                f'</span></span>'
                f'<span id="{node_id}-intro" class="bfc-intro">'
@@ -12413,12 +12562,13 @@ def fs_beat_freeze_cut(ctx: "TemplateCtx") -> Piece:
                f'<span id="{node_id}-outline" class="bfc-outline"></span>'
                f'<span id="{node_id}-flash" class="bfc-flash"></span>'
                f'<span id="{node_id}-contour" class="bfc-contour"></span>'
-               f'<span id="{node_id}-badge" class="bfc-badge">FREEZE</span>'
+               f'<span id="{node_id}-badge" class="bfc-badge">{_esc(copy["badge"])}</span>'
                f'<span id="{node_id}-smear" class="bfc-smear"></span>'
                f'<span id="{node_id}-blur" class="bfc-blur"></span>'
                f'<span class="bfc-vignette"></span>'
                f'</span></div>'],
         tweens=tweens)
+
 
 
 from .code_highlight import ch_fullscreen_css, fs_code_highlight  # noqa: E402
@@ -13102,6 +13252,21 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);"
         "border-color:rgba(200,69,61,0.45);"
         "box-shadow:0 22px 56px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.14)}"
+        ".fullscreen-text .fs-slam-lead{display:block;font-weight:600;letter-spacing:0.04em;"
+        "text-transform:uppercase;color:#7A7D82;line-height:1.1;opacity:0.92;"
+        "will-change:transform}"
+        ".fullscreen-text.invert .fs-slam-lead{color:#A8ADB6;"
+        "text-shadow:0 2px 10px rgba(0,0,0,0.45)}"
+        ".fullscreen-text .fs-slam-punch{color:var(--color-accent);"
+        "font-weight:900;letter-spacing:-0.03em}"
+        ".fullscreen-text.invert .fs-slam-punch{color:#C8453D;"
+        "text-shadow:0 4px 22px rgba(200,69,61,0.35),0 3px 18px rgba(0,0,0,0.55)}"
+        ".fullscreen-text .fs-slam-media{display:block;width:100%;max-width:520px;"
+        "height:220px;margin:0 auto 18px;border-radius:22px;overflow:hidden;"
+        "border:1px solid rgba(255,255,255,0.12);"
+        "box-shadow:0 12px 36px rgba(0,0,0,0.35)}"
+        ".fullscreen-text .fs-slam-media img{width:100%;height:100%;object-fit:cover;"
+        "display:block;filter:saturate(1.05) brightness(0.92)}"
         ".fullscreen-text .fs-num{display:block;line-height:0.9;"
         "color:var(--color-ink);"
         "text-shadow:0 2px 0 rgba(255,255,255,0.08)}"
@@ -13692,10 +13857,11 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "justify-content:center;padding:72px 48px 96px;will-change:opacity}"
         ".fullscreen-text .bfc-card{position:relative;width:900px;height:1020px;"
         "border-radius:32px;overflow:hidden;"
-        "background:linear-gradient(160deg,rgba(255,255,255,0.06) 0%,transparent 40%),"
-        "linear-gradient(180deg,#111214 0%,#0a0a0c 100%);"
-        "border:1px solid rgba(255,255,255,0.08);"
-        "box-shadow:0 40px 120px rgba(0,0,0,0.55),0 0 0 1px rgba(200,69,61,0.12),"
+        "background:linear-gradient(160deg,rgba(255,255,255,0.04) 0%,transparent 42%),"
+        "rgba(17,18,20,0.62);"
+        "backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);"
+        "border:1px solid rgba(255,255,255,0.10);"
+        "box-shadow:0 40px 120px rgba(0,0,0,0.45),0 0 0 1px rgba(200,69,61,0.12),"
         "inset 0 1px 0 rgba(255,255,255,0.06);will-change:transform,opacity}"
         ".fullscreen-text .bfc-glow{position:absolute;left:50%;top:28%;width:380px;"
         "height:380px;margin-left:-190px;margin-top:-190px;border-radius:50%;"
@@ -13760,22 +13926,23 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "#C8453D;border-radius:8px;box-shadow:0 0 0 1px rgba(200,69,61,0.25),"
         "inset 0 0 0 1px rgba(200,69,61,0.15),0 0 48px rgba(200,69,61,0.2);"
         "opacity:0;pointer-events:none;z-index:25;will-change:opacity}"
-        ".fullscreen-text .bfc-flash{position:absolute;inset:0;background:#ffffff;"
-        "opacity:0;mix-blend-mode:screen;pointer-events:none;z-index:26;"
+        ".fullscreen-text .bfc-flash{position:absolute;inset:0;"
+        "background:rgba(11,19,43,0.45);"
+        "opacity:0;pointer-events:none;z-index:26;"
         "will-change:opacity}"
         ".fullscreen-text .bfc-contour{position:absolute;inset:0;background:"
-        "linear-gradient(90deg,transparent 0%,rgba(200,69,61,0.08) 48%,"
+        "linear-gradient(90deg,transparent 0%,rgba(200,69,61,0.10) 48%,"
         "transparent 52%),radial-gradient(ellipse 40% 55% at 50% 48%,"
-        "transparent 40%,rgba(200,69,61,0.18) 100%);opacity:0;"
-        "mix-blend-mode:screen;pointer-events:none;z-index:25;will-change:opacity}"
+        "transparent 40%,rgba(11,19,43,0.28) 100%);opacity:0;"
+        "pointer-events:none;z-index:25;will-change:opacity}"
         ".fullscreen-text .bfc-badge{position:absolute;top:80px;right:48px;"
         "font-size:15px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;"
         "color:#ffffff;background:#C8453D;padding:10px 18px;border-radius:6px;"
         "opacity:0;z-index:27;will-change:opacity}"
         ".fullscreen-text .bfc-smear{position:absolute;inset:-8% -20%;"
         "pointer-events:none;z-index:40;opacity:0;background:linear-gradient(90deg,"
-        "transparent 0%,rgba(200,69,61,0.12) 35%,rgba(255,255,255,0.55) 50%,"
-        "rgba(200,69,61,0.12) 65%,transparent 100%);filter:blur(18px);"
+        "transparent 0%,rgba(200,69,61,0.18) 35%,rgba(17,18,20,0.35) 50%,"
+        "rgba(200,69,61,0.18) 65%,transparent 100%);filter:blur(18px);"
         "transform-origin:50% 50%;will-change:transform,opacity}"
         ".fullscreen-text .bfc-blur{position:absolute;inset:0;pointer-events:none;"
         "z-index:39;opacity:0;backdrop-filter:blur(14px);"
