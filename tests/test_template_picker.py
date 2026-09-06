@@ -404,14 +404,36 @@ class TestPassThrough:
         assert "dynamic" in t.tags or "entry" in t.tags
 
     def test_duration_filtering(self, picker):
-        # Pick with strict duration
+        # Hard allow: duration inside scenario set; escape if empty (P0-2).
         t, trace = picker.pick(
             "transitions",
             duration=0.5,
             variant="A",
         )
-        assert t.fits(0.5)
+        if trace.escaped:
+            assert t.id in trace.fallback
+        else:
+            assert t.fits(0.5)
 
+
+    def test_prefer_is_a_hard_allowlist(self, picker):
+        """Scenario allowlist must not escape into junk like app-showcase (P0-2)."""
+        from src.lib.meaning import block_traits
+        blob = "Работа опубликована в Nature. Впервые логический кубит прожил дольше"
+        traits = block_traits(blob)
+        for seed in range(5):
+            t, trace = picker.pick(
+                "browser-ui",
+                blob=blob,
+                traits=traits,
+                variant="A",
+                duration=3.4,
+                seed=seed,
+            )
+            assert t.id != "browser-ui/app-showcase"
+            assert trace.allow_size > 0
+            allowed = set(trace.walk) | set(trace.fallback)
+            assert t.id in allowed
 
 class TestReachability:
     def test_all_manifest_templates_present_in_channels_for_live_categories(self, picker):

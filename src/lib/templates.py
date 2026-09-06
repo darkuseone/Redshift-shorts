@@ -156,7 +156,10 @@ class TemplateCatalog:
         block_traits = None if traits is None else {str(t) for t in traits if t}
         base = [t for t in pool if t.id not in excluded]
         if not base:
-            base = list(pool)
+            # Without allow, legacy soft-exclude restores the pool.
+            # With allow, an exclude that empties the set must not reopen it.
+            if allow_set is None:
+                base = list(pool)
 
         def apply_filters(*, use_duration: bool, use_traits: bool) -> list[Template]:
             candidates = list(base)

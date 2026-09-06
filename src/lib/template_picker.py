@@ -67,6 +67,8 @@ class PickTrace:
     won_at: int | None  # индекс победителя в walk, None = решила ротация
     tie_class: int  # |{explicit==0}| на выигравшем вызове; 1 при попадании в walk
     replaced_default_by: str | None  # intent_id с replaces_default, если сработал (D2 п. 7)
+    allow_size: int = 0  # hard allowlist size (0 = allow omitted)
+    escaped: bool = False  # True if catalog.pick climbed allow ladder
 
 
 @dataclass(frozen=True)
@@ -460,6 +462,13 @@ class TemplatePicker:
         tie_class: int = 0
         chosen: Template | None = None
 
+        # Hard allowlist = scenario channels (head/specific/base/fallback).
+        # When non-empty, catalog.pick must not escape into the full category.
+        allowed = _dedup(ch_head + ch_specific + ch_base + fallback)
+        allow_arg: list[str] | None = list(allowed) if allowed else None
+        allow_size = len(allowed)
+        any_escaped = False
+
         for idx, tid in enumerate(walk):
             t = self.catalog.pick(
                 category,
@@ -470,7 +479,9 @@ class TemplatePicker:
                 seed=seed,
                 tags=tags,
                 traits=traits,
+                allow=allow_arg,
             )
+            any_escaped = any_escaped or bool(getattr(self.catalog, "_last_escaped", False))
             if t.id == tid:
                 won_at = idx
                 tie_class = 1
@@ -479,6 +490,7 @@ class TemplatePicker:
 
         # 4. Если никто из walk не выжил — решает ротация внутри множества fallback
         if chosen is None:
+            rot_allow = list(fallback) if fallback else allow_arg
             chosen = self.catalog.pick(
                 category,
                 prefer=list(fallback),
@@ -488,7 +500,9 @@ class TemplatePicker:
                 seed=seed,
                 tags=tags,
                 traits=traits,
+                allow=rot_allow if rot_allow else None,
             )
+            any_escaped = any_escaped or bool(getattr(self.catalog, "_last_escaped", False))
             won_at = None
             active = self._active_candidates(
                 category,
@@ -499,6 +513,14 @@ class TemplatePicker:
             fallback_set = set(fallback)
             tie_class = sum(1 for cand in active if cand.id in fallback_set)
 
+        if any_escaped:
+            logger.warning(
+                "сценарный набор для категории %s не смог закрыть слот "
+                "длиной %s — откат внутри allow (escaped=True)",
+                category,
+                duration,
+            )
+
         trace = PickTrace(
             fired=fired,
             channels=channels,
@@ -507,5 +529,7 @@ class TemplatePicker:
             won_at=won_at,
             tie_class=tie_class,
             replaced_default_by=replaced_default_by,
+            allow_size=allow_size,
+            escaped=any_escaped,
         )
         return chosen, trace
