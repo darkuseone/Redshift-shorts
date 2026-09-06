@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-06",
-  "count": 60,
+  "count": 61,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -242,8 +242,10 @@
       "vision_summary": "",
       "score": 0.62,
       "duration_sec": 0.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-06",
       "added": "2026-09-01",
       "phashes": [
         "d12ea6d919a66699"
@@ -1950,42 +1952,6 @@
       }
     },
     {
-      "id": "pexels_v10276362",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/a-man-developing-a-picture-inside-a-darkroom-10276362/",
-      "phash": "fe00bdb081fa2727",
-      "tags": [
-        "darkroom",
-        "photography",
-        "film developing",
-        "red safelight"
-      ],
-      "vision_summary": "Person developing photos under red darkroom safelight",
-      "score": 0.05,
-      "duration_sec": 18.0,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-05",
-      "phashes": [
-        "fe00bdb081fa2727",
-        "f980219dd0df7ae0",
-        "fe803fb881fe0266"
-      ],
-      "width": 1080,
-      "height": 2048,
-      "file": "pexels/pexels_v10276362.mp4",
-      "extra": {
-        "attribution": "Pexels / Ron Lach",
-        "author": "Ron Lach",
-        "blocked_for_sci": true,
-        "block_reason": "thematic mismatch for quantum/lab topics"
-      }
-    },
-    {
       "id": "pexels_v17356514",
       "type": "video",
       "source": "pexels",
@@ -2178,7 +2144,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-06",
       "added": "2026-09-06",
       "phashes": [
         "ec9b8661936c93a6",
@@ -2192,6 +2158,75 @@
         "attribution": "Pexels / Google DeepMind",
         "author": "Google DeepMind",
         "judged_intent": "Ведущий представляет тему, за головой — крупное слово"
+      }
+    },
+    {
+      "id": "pexels_v20068211",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/the-ceiling-of-the-church-is-decorated-with-ornate-designs-20068211/",
+      "phash": "f38e3bc293cd7480",
+      "tags": [
+        "cryostat",
+        "golden",
+        "chandelier",
+        "laboratory"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 13.183,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "f38e3bc293cd7480",
+        "f355ec54b3700b8c",
+        "232c47d5508e7d0f"
+      ],
+      "width": 720,
+      "height": 1280,
+      "file": "pexels/pexels_v20068211.mp4",
+      "extra": {
+        "attribution": "Pexels / ZEYNEP ARSLAN",
+        "author": "ZEYNEP ARSLAN",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20757503",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/dikis-makinesi-20757503/",
+      "phash": "2dac0f1191ea7687",
+      "tags": [
+        "processor",
+        "macro",
+        "shot"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 32.032,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "2dac0f1191ea7687",
+        "09a97e1682666dad",
+        "09897c36866d6d8d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20757503.mp4",
+      "extra": {
+        "attribution": "Pexels / Emirhan Emiroğlu",
+        "author": "Emirhan Emiroğlu",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
       }
     }
   ]
