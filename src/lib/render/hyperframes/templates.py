@@ -167,6 +167,17 @@ def fit_size(text: str, available_px: float, max_size: int, *,
     return max(24, int(max_size * available_px / at_max))
 
 
+
+WORK_AREA_W = 740  # brandbook safe_zones.work_area: 830 - 90
+
+
+def fit_in_work_area(text: str, max_size: int, *, role: str,
+                     width: float = WORK_AREA_W, pad: float = 0.0) -> int:
+    """Fit text into the brand work area using the font that will render it."""
+    available = max(24.0, float(width) - float(pad))
+    return fit_size(text, available, max_size, role=role)
+
+
 def wrap_measured(text: str, size: int, available_px: float, *,
                   role: str = "display") -> list[str]:
     """Перенос по словам, измеренный гарнитурой, а не счётом знаков.
@@ -6908,7 +6919,7 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
     node_id = f"hh-{ctx.index:02d}"
     # Кегль подбирается измерением: заголовок идёт в одну строку через весь
     # кадр, и длинное слово при фиксированном кегле обрезалось бы краем.
-    size = fit_size(word, 1080 - 2 * 50, int(ctx.params.get("size", 168)))
+    size = fit_size(word, 1080 - 2 * 50, int(ctx.params.get("size", 168)), role="subtitle")
     top = behind_head_top(ctx.params, size, fallback=int(ctx.params.get("top", 190)))
 
     kicker_html = (f'<span class="hh-kicker">{_esc(kicker)}</span>' if kicker else "")
@@ -6954,7 +6965,7 @@ def split_rows(word: str, max_size: int = 172) -> tuple[list[str], int]:
     best: tuple[list[str], int] = ([word], 24)
     for per in range(1, len(word) + 1):
         rows = [word[i:i + per] for i in range(0, len(word), per)]
-        by_width = fit_size(widest(rows), box_w, max_size)
+        by_width = fit_size(widest(rows), box_w, max_size, role="subtitle")
         # 0.86 — межстрочное расстояние из CSS панели; высота строки от него и
         # считается.
         by_height = int(box_h / (len(rows) * 0.86))
@@ -7043,7 +7054,7 @@ def hero_knockout(ctx: "TemplateCtx") -> Piece:
     # и слово обрезается краем кадра — проверено на «ЕДИНСТВЕННЫЙ».
     margin = int(ctx.params.get("margin", 60))
     longest = widest(lines)
-    size = fit_size(longest, 1080 - 2 * margin, int(ctx.params.get("size", 300)))
+    size = fit_size(longest, 1080 - 2 * margin, int(ctx.params.get("size", 300)), role="subtitle")
 
     # Блок садится на полосу лица, а не в середину кадра и не в середину
     # головы. Буквы здесь — дырки, и видно сквозь них то, что за ними: на
@@ -7399,7 +7410,7 @@ def hero_type_slab(ctx: "TemplateCtx") -> Piece:
     node_id = f"ts-{ctx.index:02d}"
     available = 1080 * 0.48
     longest = max(lines, key=len)
-    size = fit_size(longest.upper(), available, int(ctx.params.get("size", 148)))
+    size = fit_size(longest.upper(), available, int(ctx.params.get("size", 148)), role="subtitle")
     rows, tweens = [], []
     for i, line in enumerate(lines[:4]):
         cls = "accent" if i in accents else ""
@@ -7461,7 +7472,7 @@ def hero_script_stack(ctx: "TemplateCtx") -> Piece:
     # Обводка рисуется наружу от глифа и добавляет по её ширине с каждой
     # стороны строки — в бюджет кегля она обязана входить.
     size = fit_size(widest(lines[:3]).upper(), 1080 - safe - 2 * SS_STROKE,
-                    int(ctx.params.get("size", 132)))
+                    int(ctx.params.get("size", 132)), role="subtitle")
 
     rows, tweens = [], []
     for i, line in enumerate(lines[:3]):
@@ -7656,7 +7667,7 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     node_id = f"tb-{ctx.index:02d}"
     safe = 2 * 90
     size = fit_size(widest((head, tail)).upper(), 1080 - safe,
-                    int(ctx.params.get("size", 150)))
+                    int(ctx.params.get("size", 150)), role="subtitle")
     # Две строки: перекрывать голова обязана низ второй, поэтому от макушки
     # отсчитывается блок целиком.
     top = behind_head_top(ctx.params, size, rows=2,
@@ -7719,7 +7730,7 @@ def hero_exhibit(ctx: "TemplateCtx") -> Piece:
     detail = str(ctx.params.get("detail") or "")
     credit = str(ctx.params.get("credit") or "")
     left, top, pic_w, pic_h = EX_PIC
-    size = fit_size(name.upper(), pic_w, int(ctx.params.get("size", 88)))
+    size = fit_size(name.upper(), pic_w, int(ctx.params.get("size", 88)), role="subtitle")
 
     label = (f'<span class="ex-name" style="font-size:{size}px">{_esc(name.upper())}</span>')
     if detail:
@@ -7794,7 +7805,7 @@ def hero_slam(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = f"sl-{ctx.index:02d}"
     size = fit_size(widest(lines).upper(), 1080 - 2 * 80,
-                    int(ctx.params.get("size", 186)))
+                    int(ctx.params.get("size", 186)), role="subtitle")
 
     rows = "".join(
         f'<span class="sl-line{" accent" if i and len(lines) > 1 else ""}">'
@@ -7876,7 +7887,7 @@ def hero_oversize(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = f"ov-{ctx.index:02d}"
     over = float(ctx.params.get("overflow", 1.3))
-    size = int(fit_size(word.upper(), 1080 - 2 * 90, 460) * over)
+    size = int(fit_size(word.upper(), 1080 - 2 * 90, 460, role="subtitle") * over)
 
     # Слово едет вбок и чуть приближается: остановившись, оно превращается в
     # заставку, а кадр §4.1 обязан жить.
@@ -7914,7 +7925,7 @@ def hero_figure(ctx: "TemplateCtx") -> Piece:
     # Число живёт в верхней трети: ниже оно садится ведущему на голову.
     top = int(ctx.params.get("top", 170))
     widest_value = widest([f["value"] for f in figures])
-    size = fit_size(widest_value, 1080 - 2 * 90, int(ctx.params.get("size", 300)))
+    size = fit_size(widest_value, 1080 - 2 * 90, int(ctx.params.get("size", 300)), role="subtitle")
 
     step = ctx.duration / len(figures)
     # Ведущий отъезжает вниз: число живёт в верхней трети, и без сдвига подпись
@@ -7975,7 +7986,7 @@ def hero_verdict(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = f"vd-{ctx.index:02d}"
     size = fit_size(widest(lines).upper(), 1080 - 2 * 90,
-                    int(ctx.params.get("size", 172)))
+                    int(ctx.params.get("size", 172)), role="subtitle")
 
     rows = "".join(
         f'<span class="vd-line{" late" if i else ""}">{_esc(line.upper())}</span>'
@@ -8240,9 +8251,9 @@ def _fs_ceiling(ctx: "TemplateCtx") -> int:
 
 def _fs_size(ctx: "TemplateCtx", text: str) -> int:
     ceiling = _fs_ceiling(ctx)
-    available = float(ctx.params.get("available_px") or 900)
+    available = min(float(ctx.params.get("available_px") or 900), float(WORK_AREA_W))
     longest = max(text.upper().split() or [text], key=len, default="")
-    return fit_size(longest, available, ceiling)
+    return fit_size(longest, available, ceiling, role="display")
 
 
 def fs_plain(ctx: "TemplateCtx") -> Piece:
@@ -8733,7 +8744,7 @@ def fs_line_by_line_slide(ctx: "TemplateCtx") -> Piece:
     available = float(ctx.params.get("available_px") or 900)
     longest = max(lines, key=len)
     ceiling = max(24, int(_fs_ceiling(ctx) * factor))
-    size = fit_size(longest, available, ceiling)
+    size = fit_size(longest, available, ceiling, role="display")
     gap = max(2, int(round(gap_em * size)))
     travel_x = round(_LBLS_X_EM * size, 2)
     travel_y = round(_LBLS_Y_EM * size, 2)
@@ -9233,7 +9244,7 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     body, dot = _lbc_body_and_dot(wordmark)
     node_id = ctx.target
     available = float(ctx.params.get("available_px") or _LBC_WIDTH)
-    size = fit_size(body + dot, available, _LBC_CEILING)
+    size = fit_size(body + dot, available, _LBC_CEILING, role="display")
     letter_y = round(_LBC_LETTER_Y_EM * size, 2)
     period_y = round(_LBC_PERIOD_Y_EM * size, 2)
     tag_size = max(28, min(48, int(round(size * 0.22))))
@@ -9418,7 +9429,7 @@ def fs_particle_text_dissolve(ctx: "TemplateCtx") -> Piece:
     visual = content.upper()
     node_id = ctx.target
     available = float(ctx.params.get("available_px") or 900)
-    size = fit_size(visual, available, _PTD_CEILING)
+    size = fit_size(visual, available, _PTD_CEILING, role="display")
     frame_w = int(ctx.params.get("frame_w") or _PTD_FRAME_W)
     frame_h = int(ctx.params.get("frame_h") or _PTD_FRAME_H)
     line_w = text_width(visual, size)
@@ -9609,8 +9620,9 @@ def fs_scan_band(ctx: "TemplateCtx") -> Piece:
     # Полоса должна иметь paint-box на старте, иначе продюсер её выкидывает.
     x0 = 0
     x1 = frame_w
-    available = float(ctx.params.get("available_px") or frame_w * 0.86)
-    size = fit_size(content, available, max(28, min(150, round(0.13 * frame_w))))
+    available = min(float(ctx.params.get("available_px") or frame_w * 0.86), float(WORK_AREA_W))
+    size = fit_size(content, available, max(28, min(150, round(0.13 * frame_w))),
+                    role="display")
     red_x = round(-0.008 * frame_w, 2)
     cyan_x = round(0.017 * frame_w, 2)
     core_x = round(0.0065 * frame_w, 2)
@@ -12874,9 +12886,9 @@ def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
         return Piece()
     node_id = ctx.target
     available = float(params.get("available_px") or 740)
-    name_size = (fit_size(name.upper(), available, _LT_AU_NAME_CEILING)
+    name_size = (fit_size(name.upper(), available, _LT_AU_NAME_CEILING, role="display")
                  if name else _LT_AU_NAME_CEILING)
-    role_size = (min(_LT_AU_ROLE_SIZE, fit_size(role, available, _LT_AU_ROLE_SIZE))
+    role_size = (min(_LT_AU_ROLE_SIZE, fit_size(role, available, _LT_AU_ROLE_SIZE, role="display"))
                  if role else _LT_AU_ROLE_SIZE)
     name_w = text_width(name.upper(), name_size) if name else 0.0
     role_w = text_width(role, role_size) if role else 0.0
@@ -12994,9 +13006,9 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_CB_TAB_W - _LT_CB_PAD_L - _LT_CB_PAD_R)
     fit_avail = text_avail / _LT_CB_SLACK
-    name_size = (fit_size(name, fit_avail, _LT_CB_NAME_CEILING)
+    name_size = (fit_size(name, fit_avail, _LT_CB_NAME_CEILING, role="subtitle")
                  if name else _LT_CB_NAME_CEILING)
-    role_size = (min(_LT_CB_ROLE_SIZE, fit_size(role, fit_avail, _LT_CB_ROLE_SIZE))
+    role_size = (min(_LT_CB_ROLE_SIZE, fit_size(role, fit_avail, _LT_CB_ROLE_SIZE, role="subtitle"))
                  if role else _LT_CB_ROLE_SIZE)
     name_w = text_width(name, name_size) * _LT_CB_SLACK if name else 0.0
     role_w = text_width(role, role_size) * _LT_CB_SLACK if role else 0.0
@@ -13122,9 +13134,9 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_DC_PAD_L - _LT_DC_PAD_R)
     fit_avail = text_avail / _LT_DC_SLACK
-    name_size = (fit_size(name, fit_avail, _LT_DC_NAME_CEILING)
+    name_size = (fit_size(name, fit_avail, _LT_DC_NAME_CEILING, role="subtitle")
                  if name else _LT_DC_NAME_CEILING)
-    role_size = (min(_LT_DC_ROLE_SIZE, fit_size(role, fit_avail, _LT_DC_ROLE_SIZE))
+    role_size = (min(_LT_DC_ROLE_SIZE, fit_size(role, fit_avail, _LT_DC_ROLE_SIZE, role="subtitle"))
                  if role else _LT_DC_ROLE_SIZE)
     name_w = text_width(name, name_size) * _LT_DC_SLACK if name else 0.0
     role_w = text_width(role, role_size) * _LT_DC_SLACK if role else 0.0
@@ -13383,7 +13395,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "{position:absolute;inset:0;display:grid;place-items:center;"
         "font-weight:850;line-height:0.86;letter-spacing:-0.065em;"
         "white-space:nowrap}"
-        ".fullscreen-text .sb-wordmark{color:#f7f8fa;"
+        ".fullscreen-text .sb-wordmark{font-family:var(--font-display);color:#f7f8fa;"
         "text-shadow:0 23px 77px rgba(0,0,0,0.45)}"
         ".fullscreen-text .sb-skew{position:absolute;inset:0;"
         "transform-origin:0 0}"
