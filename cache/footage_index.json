@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-06",
-  "count": 57,
+  "count": 60,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -276,8 +276,10 @@
       "vision_summary": "",
       "score": 0.62,
       "duration_sec": 0.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-06",
       "added": "2026-09-01",
       "phashes": [
         "d939a6e666d189c8"
@@ -1647,7 +1649,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-05",
+      "last_used": "2026-09-06",
       "added": "2026-09-02",
       "phashes": [
         "05ed77764c468a61",
@@ -1723,7 +1725,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-04",
+      "last_used": "2026-09-06",
       "added": "2026-09-03",
       "phashes": [
         "048655cba7373ba8",
@@ -1855,7 +1857,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-05",
+      "last_used": "2026-09-06",
       "added": "2026-09-03",
       "phashes": [
         "c22f7da515e4c61c",
@@ -1931,7 +1933,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-06",
       "added": "2026-09-04",
       "phashes": [
         "ed68d273298fc6a0",
@@ -2088,6 +2090,108 @@
         "author": "Jaxon Matthew Willis",
         "blocked_for_sci": true,
         "block_reason": "thematic mismatch for quantum/lab topics"
+      }
+    },
+    {
+      "id": "pexels_v19532053",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/a-man-sitting-in-front-of-a-computer-screen-19532053/",
+      "phash": "d89a9ad2d2c4e4e6",
+      "tags": [
+        "breaking",
+        "news",
+        "screen"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 19.712,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "d89a9ad2d2c4e4e6",
+        "d89a92d2c6c6e4e6",
+        "d8d8d8c2e2e666e2"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v19532053.mp4",
+      "extra": {
+        "attribution": "Pexels / Hasan  ACI",
+        "author": "Hasan  ACI",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20349634",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/b-ackho-e-20349634/",
+      "phash": "23295c30e3f79c45",
+      "tags": [
+        "galaxy",
+        "nebula"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 8.333,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "23295c30e3f79c45",
+        "1646297373d68d49",
+        "fb1f000e273ff890"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20349634.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v25935014",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/an-artist-s-illustration-of-artificial-intelligence-ai-this-image-explores-how-ai-can-be-used-to-progress-the-field-of-quantum-computing-it-was-created-by-bakken-and-baeck-as-part-of-t-25935014/",
+      "phash": "ec9b8661936c93a6",
+      "tags": [
+        "quantum",
+        "computer",
+        "laboratory",
+        "wide"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 16.067,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "ec9b8661936c93a6",
+        "3c363c3c13c9c3c9",
+        "eb6a9294c5c195c7"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v25935014.mp4",
+      "extra": {
+        "attribution": "Pexels / Google DeepMind",
+        "author": "Google DeepMind",
+        "judged_intent": "Ведущий представляет тему, за головой — крупное слово"
       }
     }
   ]
