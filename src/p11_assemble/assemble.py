@@ -1021,6 +1021,39 @@ def _block_clauses(text: str) -> list[str]:
     return out
 
 
+
+_PHRASE_TRAILERS = frozenset({
+    "в", "на", "с", "и", "а", "но", "что", "чем", "как", "для", "при", "по",
+    "из", "от", "до", "же", "ли", "бы", "к", "у", "о", "об", "про", "без",
+    "над", "под", "между", "через", "или", "либо", "то", "не",
+})
+
+
+def _is_readable_phrase(text: str) -> bool:
+    """True when on-screen copy reads as a finished phrase, not a fragment."""
+    words = [w for w in re.findall(r"[A-Za-zА-Яа-яЁё0-9\-]+", str(text or "")) if w]
+    if len(words) < 2:
+        return False
+    low = [w.lower().replace("ё", "е") for w in words]
+    if low[0] in _PHRASE_TRAILERS or low[-1] in _PHRASE_TRAILERS:
+        return False
+    # broken mid-word truncation like "КАЖДОМ Ш"
+    if len(low[-1]) == 1 and not low[-1].isdigit():
+        return False
+    return True
+
+
+def _shorten_clause(clause: str, *, lo: int = 2, hi: int = 5) -> str:
+    words = [w for w in str(clause or "").split() if w]
+    if not words:
+        return ""
+    for n in range(min(hi, len(words)), lo - 1, -1):
+        candidate = " ".join(words[:n])
+        if _is_readable_phrase(candidate):
+            return candidate
+    return ""
+
+
 def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
                block: dict[str, Any],
                *, used: set[str] | None = None) -> str:
@@ -1088,9 +1121,18 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
                     continue
                 safe.append(w)
             said = safe or said
-        hit = _take(" ".join(said[:4]))
-        if hit:
-            return hit
+        # Prefer a finished phrase over a raw 4-word sliding window.
+        joined4 = " ".join(said[:4])
+        if _is_readable_phrase(joined4):
+            hit = _take(joined4)
+            if hit:
+                return hit
+        for n in range(min(5, len(said)), 1, -1):
+            cand = " ".join(said[:n])
+            if _is_readable_phrase(cand):
+                hit = _take(cand)
+                if hit:
+                    return hit
 
     for clause in _block_clauses(str(block.get("text") or "")):
         if semantic and punch_onset is not None and start + 0.05 < float(punch_onset) - 1e-6:
@@ -1108,13 +1150,19 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
                 hit = _take(clause)
                 if hit:
                     return hit
-    said = body.split()[:4]
-    fallback = " ".join(said[:4]).upper().strip(" ,.;:—-")
-    if semantic and punch_onset is not None and start + 0.05 < float(punch_onset) - 1e-6:
-        if punch_families_overlap(fallback, semantic):
-            fallback = " ".join(body.split()[:3]).upper().strip(" ,.;:—-")
-            if punch_families_overlap(fallback, semantic):
-                fallback = "ФАКТ"
+    # Last resort: nearest finished clause, shortened to 2–5 words.
+    # Empty string → slot can demote to footage (see _retime_fullscreen_slots).
+    fallback = ""
+    for clause in _block_clauses(body):
+        if semantic and punch_onset is not None and start + 0.05 < float(punch_onset) - 1e-6:
+            if punch_families_overlap(clause, semantic):
+                continue
+        shortened = _shorten_clause(clause)
+        if shortened and _is_readable_phrase(shortened):
+            fallback = shortened.upper().strip(" ,.;:—-")
+            break
+    if not fallback:
+        return ""
     if used is not None and fallback:
         used.add(_norm_screen_key(fallback))
     return fallback
@@ -2670,14 +2718,25 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             g0 = max(a0, min(2.0, a0 + 0.05)) if a0 < 2.0 else a0
         g1 = min(a1, max(g0 + 1.6, min(a0 + 2.0, 4.8)))
         if g1 - g0 >= 1.0:
-            hook = "105 КУБИТОВ"
+            hook = ""
+            import re as _re_hook
             for b in plan.get("blocks") or []:
                 body = str(b.get("text") or "")
-                if "кубит" in body.lower() or "105" in body:
-                    # short fact from setup
-                    if "105" in body:
-                        hook = "105 КУБИТОВ"
+                m = _re_hook.search(
+                    r"(\d[\d\s]*)\s*(кубит\w*|qubit\w*)", body, _re_hook.I)
+                if m:
+                    num = m.group(1).replace(" ", "").strip()
+                    hook = f"{num} КУБИТОВ"
                     break
+            if not hook:
+                for b in plan.get("blocks") or []:
+                    body = str(b.get("text") or "")
+                    m = _re_hook.search(r"(\d[\d\s]{0,8})", body)
+                    if m:
+                        hook = m.group(1).replace(" ", "").strip()
+                        break
+            if not hook:
+                hook = "ФАКТ"
             overlays.append({
                 "type": "plaque",
                 "start": round(g0, 3),
@@ -2735,8 +2794,58 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             if pt:
                 punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
     default_baseline = int(ctx.cfg.brand("subtitles.baseline_y_default", 1180))
-    # Raise captions above mid-frame glass cards (frame ~1920 tall).
-    raised_baseline = max(640, default_baseline - 360)
+    # Known vertical bands for bulky overlays (y_top, y_bottom) in 1920 frame.
+    CARD_BANDS = {
+        "beat_freeze_cut": (720, 1500),
+        "scan_band": (700, 1200),
+        "code_highlight": (600, 1400),
+        "code_morph": (600, 1400),
+        "code_diff": (600, 1400),
+        "number_slam": (640, 1280),
+        "source_card": (400, 1100),
+        "browser": (400, 1100),
+        "plaque": (900, 1400),
+        "default": (700, 1300),
+    }
+
+    def _band_for(renderer_or_kind: str) -> tuple[int, int]:
+        return CARD_BANDS.get(renderer_or_kind, CARD_BANDS["default"])
+
+    def _baseline_away_from_cards(start: float, end: float) -> int | None:
+        """Place subtitle in nearest free band relative to active cards."""
+        active_bands: list[tuple[int, int]] = []
+        for cs, ce in card_windows:
+            if start < ce and end > cs:
+                active_bands.append(CARD_BANDS["default"])
+        for ovl in overlays:
+            kind = str(ovl.get("type") or "")
+            renderer = str(ovl.get("renderer") or "")
+            if not (start < float(ovl["end"]) and end > float(ovl["start"])):
+                continue
+            if kind in _BULKY_OVL or renderer in _BULKY_OVL or kind == "plaque":
+                active_bands.append(_band_for(renderer or kind))
+        for s in shots:
+            if s.get("kind") != "fullscreen_text":
+                continue
+            if not (start < float(s["end"]) and end > float(s["start"])):
+                continue
+            rnd = str((s.get("params") or {}).get("renderer") or s.get("renderer") or "default")
+            active_bands.append(_band_for(rnd))
+        if not active_bands:
+            return None
+        # Pick the topmost card band; put subtitle above it if room, else below.
+        y_top = min(b[0] for b in active_bands)
+        y_bottom = max(b[1] for b in active_bands)
+        size = 64
+        if y_top >= 220 + size:
+            return max(180, y_top - size - 24)
+        # Below the card if there is room under it before frame bottom.
+        below = y_bottom + size + 24
+        if below < 1700:
+            return below
+        # Last resort: keep default (do not push into card mid).
+        return default_baseline
+
     subtitles = []
     for word in words_doc["words"]:
         start, end = float(word["start"]), float(word["end"])
@@ -2750,7 +2859,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
         }
         if any(start < ce and end > cs for cs, ce in card_windows):
-            cue["baseline_y"] = raised_baseline
+            raised = _baseline_away_from_cards(start, end)
+            if raised is not None:
+                cue["baseline_y"] = raised
         subtitles.append(cue)
     # Склейка — после отбраковки, а не до: слово, снятое полноэкранным текстом,
     # не имеет права утащить с собой приклеенный к нему предлог.
