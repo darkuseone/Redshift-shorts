@@ -1695,6 +1695,34 @@ def _evidence_runs(slots: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     return runs
 
 
+
+def _hint_from_screen_template(screen: str | None) -> str | None:
+    """Map script screen_template shorthand to a concrete template id."""
+    key = str(screen or "").strip().lower()
+    if not key:
+        return None
+    mapping = {
+        "browser": "browser-ui/browser-scroll",
+        "search": "browser-ui/google-typing",
+        "chat": "browser-ui/chat-thread",
+        "paper": "frames-cards/arxiv-card",
+        "arxiv": "frames-cards/arxiv-card",
+    }
+    return mapping.get(key)
+
+
+def _source_card_category(source: dict[str, Any], *, variant: str) -> str:
+    """Pick overlay category from source shape; A/B differ inside the category."""
+    url = str(source.get("url") or "").lower()
+    domain = str(source.get("domain") or "").lower()
+    hay = f"{url} {domain} {source.get('screen_template') or ''}".lower()
+    if any(tok in hay for tok in ("arxiv", "doi.org", ".pdf")):
+        return "frames-cards"
+    if source.get("url") or source.get("domain"):
+        return "browser-ui"
+    return "browser-ui" if variant == "A" else "frames-cards"
+
+
 def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
@@ -1715,10 +1743,20 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
 
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
         anchor = run[0]
-        card_category = "browser-ui" if variant == "A" else "frames-cards"
+        card_category = _source_card_category(source, variant=variant)
         ev_block = next((b for b in (plan.get("blocks") or [])
                          if b.get("id") == anchor.get("block_id")), {})
-        card_traits = block_traits(str(ev_block.get("text") or source.get("snippet") or ""))
+        card_traits = set(block_traits(str(ev_block.get("text") or source.get("snippet") or "")))
+        # Source cards with a quote/snippet honestly ground browser-scroll (needs=quote).
+        if source.get("snippet") or source.get("highlight_line"):
+            card_traits.add("quote")
+        head = [
+            h for h in (
+                source.get("template_hint"),
+                _hint_from_screen_template(source.get("screen_template")),
+                (ev_block.get("overlay") or {}).get("template_hint"),
+            ) if h
+        ]
         blob = build_blob(
             source.get("title"),
             source.get("snippet"),
@@ -1735,6 +1773,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             recent_videos=recent_videos,
             exclude=used,
             seed=seed + i,
+            prefer_head=head,
         )
         used.append(card_template.id)
         card_start = float(anchor["start"])
