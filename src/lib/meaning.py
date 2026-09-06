@@ -75,6 +75,11 @@ TRAIT_PATTERNS: dict[str, str] = {
     # Место и масштаб: карта, разрез, орбита.
     "place": (r"на Земле|в космосе|орбит\w*|глубин\w*|под землёй|на Марсе|на Луне|"
               r"в океане|километр\w*|\bслой\b|\bкор[аеы]\b"),
+    # Ритм / дроп — для beat-freeze-cut и музыкальных приёмов.
+    "beat": r"\bбит\b|ритм\w*|\bдроп\b|на счёт|\bтакт\b|\bbeat\b|\bdrop\b",
+    # Новостная лента / заголовки агентств — для news-ticker.
+    "news": (r"новост\w*|заголовк\w*|лент[аы] новостей|сообщ\w+ агентств|"
+             r"\bbreaking\b|\bheadline\w*"),
 }
 
 TRAITS: tuple[str, ...] = tuple(TRAIT_PATTERNS)
@@ -95,6 +100,8 @@ TRAIT_TITLES: dict[str, str] = {
     "money": "названы деньги",
     "device": "речь об устройстве или технике",
     "place": "названо место или масштаб",
+    "beat": "ритм, бит, дроп",
+    "news": "новости, заголовки, лента",
 }
 
 _COMPILED = {name: re.compile(pattern, re.IGNORECASE)
