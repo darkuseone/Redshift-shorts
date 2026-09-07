@@ -25,6 +25,60 @@ from .logging import get_logger
 _log = get_logger("templates")
 
 ROTATION_WINDOW = 3          # §15.12.1
+# Lower rank tuple value is preferred. Empty frequency sits with variant.
+FREQUENCY_WEIGHT = {"signature": 0, "variant": 1, "rare": 2}
+
+_FS_SIGNATURE = frozenset({
+    "stack-3lines", "fact-card", "quote-frame", "per-word-crossfade",
+    "blur-out-up", "bigtext-mask-footage",
+})
+_FS_VARIANT = frozenset({
+    "date-marker", "label-strip", "bottom-up-letters", "kinetic-type-swap",
+})
+_FS_RARE = frozenset({"scan-band"})
+_BROWSER_SIGNATURE = frozenset({
+    "browser-scroll", "article-highlight", "chat-thread",
+})
+_EXOTIC_RENDERERS = frozenset({
+    "gravitational_lens", "swirl_vortex", "ridged_burn", "thermal_distortion",
+    "glitch_shader", "chromatic_radial_split", "cross_warp_morph",
+    "domain_warp_dissolve", "sdf_iris", "whip_pan_shader",
+})
+_SIMPLE_TRANSITION = frozenset({
+    "cut", "whip_pan", "zoom_punch", "mask_wipe", "paper_slide",
+    "blur_dip", "white_flash", "light_sweep", "glitch",
+})
+
+
+def frequency_for(template_id: str, category: str, renderer: str) -> str:
+    """Heuristic §F.4. Contested ids are listed in the PR, not auto-overridden."""
+    name = template_id.split("/", 1)[-1]
+    rend = str(renderer or "")
+    if name in _FS_RARE or rend.startswith("transitions_") or rend in _EXOTIC_RENDERERS:
+        return "rare"
+    if category == "frames-cards" or category == "avatar-entry" or category == "kenburns":
+        return "signature"
+    if category == "lower-thirds":
+        return "signature"
+    if category == "outro-cta":
+        return "signature"
+    if category == "browser-ui" and name in _BROWSER_SIGNATURE:
+        return "signature"
+    if category == "text-fullscreen" and name in _FS_SIGNATURE:
+        return "signature"
+    if category == "text-fullscreen" and name in _FS_VARIANT:
+        return "variant"
+    if category in ("data-viz", "hero-devices", "intro-hooks", "parallax"):
+        return "variant"
+    if category == "transitions" and rend in _SIMPLE_TRANSITION:
+        return "variant"
+    if category == "transitions":
+        return "rare"
+    if category == "browser-ui":
+        return "variant"
+    if category == "text-fullscreen":
+        return "variant"
+    return "variant"
 
 
 @dataclass
@@ -46,6 +100,8 @@ class Template:
     # active | retired | gated | candidate — non-active never enter pick.
     status: str = "active"
     retired_reason: str = ""
+    # signature | variant | rare — weight among active. Empty = variant.
+    frequency: str = ""
 
     def fits(self, duration: float) -> bool:
         lo, hi = self.duration_range
@@ -71,6 +127,8 @@ class Template:
             data["example_video"] = self.example_video
         if self.retired_reason:
             data["retired_reason"] = self.retired_reason
+        if self.frequency:
+            data["frequency"] = self.frequency
         return data
 
 
@@ -235,15 +293,16 @@ class TemplateCatalog:
 
         def rank(template: Template) -> tuple:
             explicit = 0 if template.id in preferred else 1
+            freq = FREQUENCY_WEIGHT.get((template.frequency or "variant").lower(), 1)
             grounded = 0 if (template.needs and block_traits is not None
                              and satisfies(template.needs, block_traits)) else 1
             used_recently = 1 if set(template.last_used_in[-ROTATION_WINDOW:]) & recent else 0
             usage = len(template.last_used_in)
-            return (explicit, grounded, used_recently, usage, template.id)
+            return (explicit, freq, grounded, used_recently, usage, template.id)
 
         candidates.sort(key=rank)
-        best_rank = rank(candidates[0])[:4]
-        equals = [t for t in candidates if rank(t)[:4] == best_rank]
+        best_rank = rank(candidates[0])[:5]
+        equals = [t for t in candidates if rank(t)[:5] == best_rank]
         return random.Random(seed).choice(equals) if len(equals) > 1 else candidates[0]
 
     def mark_used(self, template_ids: Iterable[str], video_id: str) -> None:

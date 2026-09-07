@@ -692,3 +692,47 @@ class TestCliExplain:
         assert data["count"] == 28
         assert "data-viz/nyc-paris-flight" in data["templates"]
 
+
+def test_active_templates_have_frequency(picker):
+    missing = [t.id for t in picker.catalog.templates if t.is_active and not t.frequency]
+    assert missing == []
+    assert picker.catalog.by_id("text-fullscreen/scan-band").frequency == "rare"
+    assert picker.catalog.by_id("browser-ui/chat-thread").frequency == "signature"
+
+
+def test_frequency_heuristic_matches_locked_buckets():
+    from src.lib.templates import frequency_for
+
+    assert frequency_for("text-fullscreen/scan-band", "text-fullscreen", "scan_band") == "rare"
+    assert frequency_for("text-fullscreen/stack-3lines", "text-fullscreen", "fullscreen_text") == "signature"
+    assert frequency_for("transitions/cut", "transitions", "cut") == "variant"
+    assert frequency_for("transitions/gravitational-lens", "transitions", "gravitational_lens") == "rare"
+
+
+def test_pick_prefers_signature_frequency_over_rare():
+    data = {
+        "templates": [
+            {
+                "id": "text-fullscreen/rare-one", "name": "rare-one",
+                "category": "text-fullscreen", "title": "r",
+                "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                "renderer": "x", "frequency": "rare", "status": "active",
+            },
+            {
+                "id": "text-fullscreen/sig-one", "name": "sig-one",
+                "category": "text-fullscreen", "title": "s",
+                "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                "renderer": "x", "frequency": "signature", "status": "active",
+            },
+        ]
+    }
+    cat = TemplateCatalog(Path("unused.json"), data)
+    picked = cat.pick("text-fullscreen", duration=2.0, seed=0)
+    assert picked.id == "text-fullscreen/sig-one"
+
+
+def test_gen_templates_preserves_lifecycle_fields():
+    src = Path("tools/gen_templates.py").read_text(encoding="utf-8")
+    assert "status" in src and "retired_reason" in src and "frequency" in src
+    assert "last_used_in" in src
+

@@ -16,6 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "templates"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # Референсы с examples HyperFrames: жесты, не готовые 16:9-фильмы.
 _EX_TEXTURE = ("https://static.heygen.ai/hyperframes-oss/docs/images/showcase/"
@@ -890,6 +892,8 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
 
 
 def main() -> int:
+    from src.lib.templates import frequency_for
+
     manifest: dict = {
         "_comment": ("Каталог шаблонов §15. Генерируется tools/gen_templates.py — "
                      "правьте генератор, а не этот файл. Поле last_used_in обновляет "
@@ -904,16 +908,20 @@ def main() -> int:
         "templates": [],
     }
 
-    # last_used_in копится прогонами P11 и в генераторе не описан. Перезаписать
-    # манифест «с нуля» значит обнулить ротацию §15.12 и заставить каталог
-    # заново сойтись на первых попавшихся шаблонах.
-    history: dict[str, list[str]] = {}
-    added_on: dict[str, str] = {}
+    # last_used_in / status / frequency live on the disk manifest. Rewriting
+    # from the catalog tuples would retire nobody and drop rotation history.
+    preserved: dict[str, dict] = {}
     existing = TEMPLATES / "manifest.json"
     if existing.exists():
         for entry in json.loads(existing.read_text(encoding="utf-8"))["templates"]:
-            history[entry["id"]] = entry.get("last_used_in", [])
-            added_on[entry["id"]] = entry.get("added", "2026-08-18")
+            keep = {
+                "last_used_in": entry.get("last_used_in", []),
+                "added": entry.get("added", "2026-08-18"),
+            }
+            for key in ("status", "retired_reason", "frequency"):
+                if entry.get(key):
+                    keep[key] = entry[key]
+            preserved[entry["id"]] = keep
 
     total = 0
     for category, (expected, items) in CATALOG.items():
@@ -922,8 +930,10 @@ def main() -> int:
         for item in items:
             tid, title, duration, params, tags, renderer, *rest = item
             example_video = rest[0] if rest else ""
+            tid_full = f"{category}/{tid}"
+            prev = preserved.get(tid_full, {})
             entry = {
-                "id": f"{category}/{tid}",
+                "id": tid_full,
                 "name": tid,
                 "category": category,
                 "title": title,
@@ -931,9 +941,15 @@ def main() -> int:
                 "params": params,
                 "tags": tags,
                 "renderer": renderer,
-                "last_used_in": history.get(f"{category}/{tid}", []),
-                "added": added_on.get(f"{category}/{tid}") or "2026-09-03",
+                "last_used_in": prev.get("last_used_in", []),
+                "added": prev.get("added") or "2026-09-03",
+                "frequency": prev.get("frequency") or frequency_for(
+                    tid_full, category, renderer),
             }
+            if prev.get("status"):
+                entry["status"] = prev["status"]
+            if prev.get("retired_reason"):
+                entry["retired_reason"] = prev["retired_reason"]
             if example_video:
                 entry["example_video"] = example_video
             manifest["templates"].append(entry)
