@@ -7468,11 +7468,10 @@ def hero_script_stack(ctx: "TemplateCtx") -> Piece:
     # Поле — по левой границе рабочей области (§3.2). Уходить в самый край, как
     # на референсе, нельзя: справа висит колонка лайков и комментариев, и под
     # ней букв не прочитать.
-    safe = 2 * 90
     # Обводка рисуется наружу от глифа и добавляет по её ширине с каждой
     # стороны строки — в бюджет кегля она обязана входить.
-    size = fit_size(widest(lines[:3]).upper(), 1080 - safe - 2 * SS_STROKE,
-                    int(ctx.params.get("size", 132)), role="subtitle")
+    size = fit_size(widest(lines[:3]).upper(), WORK_AREA_W - 2 * SS_STROKE,
+                    int(ctx.params.get("size", 132)), role="display")
 
     rows, tweens = [], []
     for i, line in enumerate(lines[:3]):
@@ -7665,9 +7664,8 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     if not head or not tail:
         return Piece()
     node_id = f"tb-{ctx.index:02d}"
-    safe = 2 * 90
-    size = fit_size(widest((head, tail)).upper(), 1080 - safe,
-                    int(ctx.params.get("size", 150)), role="subtitle")
+    size = fit_size(widest((head, tail)).upper(), WORK_AREA_W,
+                    int(ctx.params.get("size", 150)), role="display")
     # Две строки: перекрывать голова обязана низ второй, поэтому от макушки
     # отсчитывается блок целиком.
     top = behind_head_top(ctx.params, size, rows=2,
@@ -7804,8 +7802,8 @@ def hero_slam(ctx: "TemplateCtx") -> Piece:
     if not lines:
         return Piece()
     node_id = f"sl-{ctx.index:02d}"
-    size = fit_size(widest(lines).upper(), 1080 - 2 * 80,
-                    int(ctx.params.get("size", 186)), role="subtitle")
+    size = fit_size(widest(lines).upper(), WORK_AREA_W,
+                    int(ctx.params.get("size", 186)), role="display")
 
     rows = "".join(
         f'<span class="sl-line{" accent" if i and len(lines) > 1 else ""}">'
@@ -7985,8 +7983,8 @@ def hero_verdict(ctx: "TemplateCtx") -> Piece:
     if not lines:
         return Piece()
     node_id = f"vd-{ctx.index:02d}"
-    size = fit_size(widest(lines).upper(), 1080 - 2 * 90,
-                    int(ctx.params.get("size", 172)), role="subtitle")
+    size = fit_size(widest(lines).upper(), WORK_AREA_W,
+                    int(ctx.params.get("size", 172)), role="display")
 
     rows = "".join(
         f'<span class="vd-line{" late" if i else ""}">{_esc(line.upper())}</span>'
