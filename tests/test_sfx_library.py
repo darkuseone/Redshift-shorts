@@ -60,7 +60,8 @@ def test_picture_in_does_not_pick_the_inaudible_rumble(cfg, tmp_path):
 def test_old_script_roles_still_resolve():
     assert intent_for_role("whoosh_in") == "picture_in"
     assert intent_for_role("ui_click") == "ui"
-    assert intent_for_role("subscribe_ping") == "cta"
+    assert intent_for_role("subscribe_ping") == "subscribe_cta"
+    assert intent_for_role("pop") == "card_appear"
     assert intent_for_role("data_beep") == "data"
 
 

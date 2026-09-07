@@ -84,17 +84,23 @@ TAGS: dict[str, str] = {**KINDS, **SHAPE}
 INTENTS: dict[str, tuple[str, ...]] = {
     "picture_in": ("whoosh", "sharp"),
     "picture_out": ("whoosh", "soft"),
-    "avatar_in": ("whoosh", "sharp"),
+    "avatar_in": ("hat", "bright"),
     "avatar_out": ("whoosh", "soft"),
     "transition": ("whoosh", "swipe"),
     "fullscreen": ("reveal", "hat"),
+    "reveal_fullscreen": ("reveal", "hat"),
     "plaque": ("click", "snap"),
+    "card_appear": ("click", "snap"),
+    "card_dismiss": ("whoosh", "soft"),
     "cta": ("reward", "chime"),
+    "subscribe_cta": ("reward", "chime"),
     "meme": ("reward", "sting"),
     "impact": ("hit", "punch"),
+    "accent_hit": ("hit", "punch"),
     "sub": ("sub", "hit"),
     "ui": ("click", "ui"),
     "data": ("electric", "spark"),
+    "myth_flip": ("electric", "spark"),
     "riser": ("electric", "build"),
     "tick": ("tick", "click"),
 }
@@ -109,7 +115,7 @@ ROLE_TO_INTENT: dict[str, str] = {
     "sub_drop": "sub",
     "boom": "impact",
     "riser": "riser",
-    "pop": "plaque",
+    "pop": "card_appear",
     "ui_click": "ui",
     "type_key": "tick",
     "tick": "tick",
@@ -121,7 +127,7 @@ ROLE_TO_INTENT: dict[str, str] = {
     "camera_shutter": "plaque",
     "error_buzz": "sub",
     "meme_stinger": "meme",
-    "subscribe_ping": "cta",
+    "subscribe_ping": "subscribe_cta",
 }
 
 WHOOSH_INTENTS = frozenset({

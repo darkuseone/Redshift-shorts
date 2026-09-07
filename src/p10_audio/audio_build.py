@@ -35,6 +35,12 @@ AVATAR_KINDS = ("avatar", "split")
 WHOOSH_SCRIPT_ROLES = frozenset({
     "whoosh_in", "whoosh_out", "swipe", "riser", "none", "",
 })
+# Script overlay types (and assemble overlay types) that are on-screen cards.
+# picture_in stays a B-roll whoosh; these fire card_appear instead.
+CARD_OVERLAY_TYPES = frozenset({
+    "plaque", "source_card", "frame", "lower_third", "highlight",
+})
+_CARD_TEMPLATE_HINTS = ("slam", "fact-card", "number-slam", "stat-card")
 
 
 def music_target_lufs(cfg) -> float:
@@ -107,6 +113,11 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
     duration = float(plan["duration_sec"])
     min_gap = float(cfg.get("limits.sfx_min_gap_sec", 2.0))
     script_sfx = _script_sfx_by_block(plan)
+    card_block_ids = {
+        str(block["id"])
+        for block in plan.get("blocks", [])
+        if str((block.get("overlay") or {}).get("type") or "") in CARD_OVERLAY_TYPES
+    }
     events: list[dict[str, Any]] = []
 
     for index, slot in enumerate(slots):
@@ -116,13 +127,21 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
         block_sfx = script_sfx.get(slot.get("block_id", ""), "")
 
         if kind == "fullscreen_text":
-            events.append(_event(t, "fullscreen", "появление full-screen text (§5.2)",
-                                 role="reveal"))
+            hint = str(slot.get("template_hint") or "")
+            if slot.get("media") or slot.get("media_src") or slot.get("file") \
+                    or any(token in hint for token in _CARD_TEMPLATE_HINTS):
+                events.append(_event(t, "card_appear",
+                                     "карточка с медиа в FS", role="pop"))
+            else:
+                events.append(_event(t, "fullscreen", "появление full-screen text (§5.2)",
+                                     role="reveal"))
         elif kind == "meme":
             events.append(_event(t, "meme", "мем-вставка (§5.8)", role="meme_stinger"))
         elif kind in AVATAR_KINDS and (prev is None or prev["kind"] not in AVATAR_KINDS):
+            # Empty role: INTENTS["avatar_in"] must win, not the shared whoosh_in
+            # record that also voices picture_in.
             events.append(_event(t, "avatar_in", "вход аватара (§4.4.2)",
-                                 role="whoosh_in"))
+                                 role=""))
         elif prev is not None and prev["kind"] in AVATAR_KINDS and kind not in AVATAR_KINDS:
             events.append(_event(t, "avatar_out", "выход аватара (§4.4.2)",
                                  role="whoosh_out"))
@@ -133,7 +152,8 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
             kind == "footage"
             or (kind == "split" and (prev is None or prev["kind"] != "split"))
         )
-        if picture_arrives and block_sfx in WHOOSH_SCRIPT_ROLES:
+        if (picture_arrives and block_sfx in WHOOSH_SCRIPT_ROLES
+                and slot.get("block_id") not in card_block_ids):
             events.append(_event(t, "picture_in", "появилась картинка",
                                  role="whoosh_in"))
 
@@ -142,14 +162,27 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
                                  "динамический переход обязан звучать (§4.3)",
                                  role="swipe"))
 
+    seen_card_blocks: set[str] = set()
     for block in plan.get("blocks", []):
         overlay = block.get("overlay") or {}
-        if overlay.get("type") != "lower_third":
+        if str(overlay.get("type") or "") not in CARD_OVERLAY_TYPES:
             continue
-        block_slots = [s for s in slots if s["block_id"] == block["id"]]
+        block_slots = [s for s in slots if s.get("block_id") == block["id"]]
         if block_slots:
-            events.append(_event(float(block_slots[0]["start"]) + 0.4, "plaque",
-                                 f"плашка блока {block['id']}", role="pop"))
+            seen_card_blocks.add(str(block["id"]))
+            events.append(_event(float(block_slots[0]["start"]) + 0.4, "card_appear",
+                                 f"карточка блока {block['id']}", role="pop"))
+    for ovl in plan.get("overlays") or []:
+        if str(ovl.get("type") or "") not in CARD_OVERLAY_TYPES:
+            continue
+        block_id = str(ovl.get("block_id") or "")
+        if block_id and block_id in seen_card_blocks:
+            continue
+        start = ovl.get("start")
+        if start is None:
+            continue
+        events.append(_event(float(start), "card_appear",
+                             "карточка из плана оверлеев", role="pop"))
 
     for block in plan.get("blocks", []):
         role = block.get("sfx")
