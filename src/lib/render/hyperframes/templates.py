@@ -13453,7 +13453,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "will-change:transform}"
         ".fullscreen-text .sb-clone{text-shadow:none}"
         ".fullscreen-text .sb-clone-red{color:#ff3158;opacity:0.9}"
-        ".fullscreen-text .sb-clone-cyan{color:#36efff;opacity:0.9}"
+        ".fullscreen-text .sb-clone-cyan{color:var(--color-cyan);opacity:0.9}"
         ".fullscreen-text .sb-clone-core{color:#f7f8fa}"
         ".fullscreen-text.fs-scramble-reveal{width:var(--frame-w);height:var(--frame-h);"
         "padding:0;overflow:hidden;isolation:isolate;display:grid;place-items:center;"

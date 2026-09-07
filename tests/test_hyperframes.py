@@ -967,7 +967,7 @@ def test_scan_band_fullscreen_keeps_catalog_chromatic(plan, assets, brandbook):
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
     # scan-band сам на --font-display; Inter остаётся в других шаблонах каталога.
     assert ".fs-scan-band" in css and "font-family:var(--font-display)" in css
-    assert "#ff3158" in css and "#36efff" in css
+    assert "#ff3158" in css and "var(--color-cyan)" in css
     assert "#0b0c0e" in css
     assert ".sb-band" in css
 

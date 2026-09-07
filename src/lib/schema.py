@@ -75,6 +75,9 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                     "role": {"enum": list(BLOCK_ROLES)},
                     "text": {"type": "string", "minLength": 1},
                     "emphasis_word": {"type": "string"},
+                    "emphasis_family": {
+                        "enum": ["myth", "emotion", "tech", "number", "source"],
+                    },
                     "avatar": {"enum": list(AVATAR_MODES), "default": "auto"},
                     "visual_intent": {"type": "string"},
                     "broll_queries": {"type": "array", "items": {"type": "string"}},

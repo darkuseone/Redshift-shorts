@@ -246,6 +246,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # цвета в брендбуке нет и заводить его незачем.
         f".word.emphasis{{color:var(--color-{accent_var});"
         f"text-shadow:{accent_glow}}}"
+        ".word.emphasis.cyan{color:var(--color-cyan)}"
         # Приклеенный предлог живёт в цвете обычного слова даже внутри
         # акцентной реплики: красный означает ударение, а не начало фразы.
         f".word .lead{{font-style:normal;color:{subs['color']};"
@@ -291,6 +292,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "color:var(--color-bg-pure)}"
         ".fullscreen-text.solid{background:var(--color-space-deep)}"
         ".fullscreen-text .accent{color:var(--color-accent)}"
+        ".fullscreen-text .accent-cyan{color:var(--color-cyan)}"
         # Кадр с материалом за текстом: заливка уступает место футажу, а
         # читаемость держит затемнение. Сплошной цвет здесь оставлял белые
         # буквы на пустом чёрном — фраза вынесена крупно, а стоит она ни на чём.
