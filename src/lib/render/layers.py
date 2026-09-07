@@ -213,7 +213,7 @@ def subtitle_baseline(ctx: Ctx, *, face_bbox: tuple[int, int, int, int] | None) 
     default = int(spec["baseline_y_default"])
     if not face_bbox:
         return default
-    if face_bbox[3] > int(spec["face_bbox_shift_trigger_y"]):
+    if face_bbox[3] >= int(spec["face_bbox_shift_trigger_y"]):
         return int(spec["baseline_y_avatar_shift"])
     return default
 

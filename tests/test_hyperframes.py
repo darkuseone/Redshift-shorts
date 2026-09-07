@@ -556,7 +556,8 @@ def test_transitions_3d_overlay_does_not_tween_the_incoming_shot(
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "tr-transitions-3d" in out
     assert "t3-a" in out and "t3-b" in out
-    assert "t3-edge" in out and "ONE" in out
+    assert "t3-edge" in out
+    assert ">ONE<" not in out and ">TWO<" not in out
     assert "rotationY" not in out
     assert '"#shot-00"' not in "\n".join(
         l for l in out.splitlines() if l.strip().startswith("tl.")
@@ -578,7 +579,8 @@ def test_transitions_blur_overlay_does_not_tween_the_incoming_shot(
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "tr-transitions-blur" in out
     assert "tb-a" in out and "tb-b" in out
-    assert "tb-ghost" in out and "ONE" in out
+    assert "tb-ghost" in out
+    assert ">ONE<" not in out and ">TWO<" not in out
     assert "tr-transitions-3d" not in out
     assert 'class="clip tr-blur"' not in out
     tween_body = "\n".join(
@@ -604,7 +606,8 @@ def test_transitions_cover_overlay_does_not_tween_the_incoming_shot(
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "tr-transitions-cover" in out
     assert "tc-a" in out and "tc-b" in out
-    assert "tc-wa" in out and "tc-wb" in out and "ONE" in out
+    assert "tc-wa" in out and "tc-wb" in out
+    assert ">ONE<" not in out and ">TWO<" not in out
     assert "tr-transitions-blur" not in out
     assert "tr-transitions-3d" not in out
     assert 'class="clip tr-blur"' not in out
@@ -634,7 +637,8 @@ def test_transitions_destruction_overlay_does_not_tween_the_incoming_shot(
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "tr-transitions-destruction" in out
     assert "tds-a" in out and "tds-b" in out
-    assert "tds-hole" in out and "tds-r0" in out and "ONE" in out
+    assert "tds-hole" in out and "tds-r0" in out
+    assert ">ONE<" not in out and ">TWO<" not in out
     assert "tr-transitions-cover" not in out
     assert "tr-transitions-blur" not in out
     assert "tr-transitions-3d" not in out
@@ -666,7 +670,8 @@ def test_transitions_light_overlay_does_not_tween_the_incoming_shot(
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "tr-transitions-light" in out
     assert "tlt-a" in out and "tlt-b" in out
-    assert "tlt-warm" in out and "tlt-l1" in out and "ONE" in out
+    assert "tlt-warm" in out and "tlt-l1" in out
+    assert ">ONE<" not in out and ">TWO<" not in out
     assert "tr-light-leak" not in out
     assert 'class="clip tr-sweep"' not in out
     assert "tr-transitions-destruction" not in out
@@ -697,7 +702,8 @@ def test_transitions_other_overlay_does_not_tween_the_incoming_shot(
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
     assert "tr-transitions-other" in out
     assert "tto-a" in out and "tto-b" in out
-    assert "tto-flash" in out and "ONE" in out
+    assert "tto-flash" in out
+    assert ">ONE<" not in out and ">TWO<" not in out
     assert 'class="clip tr-flash"' not in out
     assert "tr-transitions-light" not in out
     assert "tr-transitions-destruction" not in out
@@ -2741,10 +2747,9 @@ class TestChannelSurfacesAreDark:
 
         css = build_css(brandbook, {"display": "Oswald-Bold.ttf"})
         card = css.split(".fullscreen-text .fs-slam-card{")[1].split("}")[0]
-        # MAIN: slam-card — бумажная/светлая карточка каталога, не панель.
-        assert ("var(--color-panel)" in card
-                or "var(--color-bg-pure)" in card
-                or "var(--color-bg-light)" in card), card
+        # DoD 16.2s: тёмное стекло панели канала, не молочная засветка.
+        assert "var(--color-panel)" in card, card
+        assert "rgba(247,245,243" not in card, card
 
 
 class TestTheBrandMarksFrameTheCard:

@@ -2138,7 +2138,9 @@ def test_source_page_shows_only_what_the_script_really_cites():
     content = _hero_content(block, slot, None, (540, 700), title="Квантовый чип")
     params = hero_params("hero-paper", {}, content, slot)
     assert params["source"] == "nature.com"
-    assert params["quote"] == "below the surface code threshold"
+    # overlay.highlight is English in the script; display copy is softened
+    # to a finished Russian phrase (DoD on-screen language).
+    assert params["quote"] == "ниже порога ошибок"
 
     node = render_hero("hero-paper", _hero_ctx("hero-paper", params=params)).nodes[0]
     assert "nature.com" in node
