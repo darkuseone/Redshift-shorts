@@ -25,11 +25,21 @@ def cfg():
     return load_config()
 
 
-def test_config_prefers_gemini_temporarily(cfg):
+def _provider_blob(provider) -> str:
+    parts = [getattr(provider, "name", ""), type(provider).__name__]
+    for attr in ("primary", "secondary"):
+        child = getattr(provider, attr, None)
+        if child is not None:
+            parts.append(_provider_blob(child))
+    return " ".join(parts).lower()
+
+
+def test_config_prefers_gemini_without_xai(cfg):
     assert str(cfg.get("vision.primary")).lower() == "gemini"
-    assert str(cfg.get("vision.fallback")).lower() == "grok"
+    assert str(cfg.get("vision.fallback") or "") == ""
     assert str(cfg.get("generation.source")).lower() == "gemini"
-    assert str(cfg.get("generation.fallback")).lower() == "grok"
+    assert str(cfg.get("generation.fallback") or "") == ""
+    assert cfg.get("providers.allow_xai") is False
     assert str(cfg.get("render.thumbnail_mode")).lower() == "auto"
 
 
@@ -41,22 +51,35 @@ def test_vision_uses_gemini_when_key_present(cfg, monkeypatch):
     assert isinstance(provider, GeminiVision)
 
 
-def test_vision_falls_back_to_grok_without_gemini(cfg, monkeypatch):
+def test_vision_does_not_use_grok_when_allow_xai_is_false(cfg, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    cfg.set("providers.mode", "auto")
+    cfg.set("providers.allow_xai", False)
+    provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
+    assert "grok" not in _provider_blob(provider)
+    assert not isinstance(provider, FallbackVision)
+    assert isinstance(provider, GeminiVision)
+
+
+def test_vision_without_gemini_stays_mock_when_xai_forbidden(cfg, monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_AI_API_KEY", raising=False)
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
     cfg.set("providers.mode", "auto")
+    cfg.set("providers.allow_xai", False)
     provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
-    # preferred gemini missing → live grok (possibly wrapped alone)
-    leaf = getattr(provider, "primary", provider)
-    assert isinstance(leaf, GrokVision) or isinstance(provider, GrokVision)
+    assert isinstance(provider, MockVision)
+    assert "grok" not in _provider_blob(provider)
 
 
 def test_vision_fallback_on_403(cfg, monkeypatch, tmp_path):
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
     cfg.set("providers.mode", "auto")
+    cfg.set("providers.allow_xai", True)
+    cfg.set("vision.fallback", "grok")
     provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
     assert isinstance(provider, FallbackVision)
 
@@ -89,10 +112,22 @@ def test_generation_prefers_gemini_key(cfg, monkeypatch):
     assert isinstance(leaf, GeminiImageGeneration) or isinstance(provider, GeminiImageGeneration)
 
 
+def test_generation_does_not_use_grok_when_allow_xai_is_false(cfg, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    cfg.set("providers.mode", "auto")
+    cfg.set("providers.allow_xai", False)
+    provider = build_generation_provider(cfg, CostLedger(video_id="t"))
+    assert "grok" not in _provider_blob(provider)
+    assert not isinstance(provider, FallbackGeneration)
+
+
 def test_generation_fallback_on_403(cfg, monkeypatch, tmp_path):
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
     cfg.set("providers.mode", "auto")
+    cfg.set("providers.allow_xai", True)
+    cfg.set("generation.fallback", "grok")
     provider = build_generation_provider(cfg, CostLedger(video_id="t"))
     assert isinstance(provider, FallbackGeneration)
 
@@ -119,3 +154,26 @@ def test_credits_helper():
     assert V._credits_or_auth_failure(ProviderError("x", status=403))
     assert G._credits_or_auth_failure(ProviderError("out of credits", status=200))
     assert not V._credits_or_auth_failure(ProviderError("timeout", status=500))
+
+
+def test_skip_live_does_not_invent_a_passing_score():
+    from src.lib.footage_seed import SEED_SCORE
+    from src.p8_broll_judge.judge import skip_live_verdict
+
+    unverified = skip_live_verdict({"score": 0.72, "asset_id": "pexels_v20757503"},
+                                   "процессор крупно")
+    assert unverified["judge"] == "skip_live_unverified"
+    assert unverified["score"] == SEED_SCORE
+    assert unverified["score"] < 0.70
+
+    reused = skip_live_verdict(
+        {"prior_score": 0.88, "prior_intent": "логический кубит в статье",
+         "vision_summary": "paper"},
+        "логический кубит в журнале")
+    assert reused["judge"] == "skip_live"
+    assert reused["score"] == 0.88
+
+    mismatched = skip_live_verdict(
+        {"prior_score": 0.88, "prior_intent": "швейная машинка крупно"},
+        "логический кубит в статье")
+    assert mismatched["score"] == pytest.approx(0.73)

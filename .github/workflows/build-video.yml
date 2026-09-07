@@ -146,10 +146,10 @@ jobs:
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       HEYGEN_API: ${{ secrets.HEYGEN_API }}
       HEYGEN_AVATAR_ID: ${{ secrets.HEYGEN_AVATAR_ID }}
-      # TEMP: vision/image gen prefer Gemini (XAI credits empty). Subscription
-      # CLI cannot run on Actions — only API keys. Add GEMINI_API_KEY secret
-      # (Google AI Studio / AI Pro). GOOGLE_API_KEY accepted as alias in code.
-      XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+      # Gemini-only vision/image. XAI_API_KEY is not exported: providers.allow_xai
+      # is false and the code ignores grok even if the secret exists in the repo.
+      # Subscription CLI cannot run on Actions — only GEMINI_API_KEY (Google AI
+      # Studio / AI Pro). GOOGLE_API_KEY accepted as alias in code.
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       MAGNIFIC_API_KEY: ${{ secrets.MAGNIFIC_API_KEY }}

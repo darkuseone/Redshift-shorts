@@ -15,6 +15,7 @@ project:
 # auto  — live при наличии ключа в окружении, иначе mock (с warning в лог)
 providers:
   mode: auto
+  allow_xai: false          # xAI не собирается и не вызывается (vision и image)
   request_timeout_sec: 60
   retries: 3               # §10.5.3: 3 попытки (обычные ошибки)
   backoff_base_sec: 2.0    # экспоненциальный бэкофф 2/4/8
@@ -127,12 +128,12 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # TEMP 2026-09-05: XAI_API_KEY без кредитов (403 spending limit). Vision
-  # временно на Gemini API (GEMINI_API_KEY / Google AI Studio). Grok — fallback.
-  # Subscription CLI на Actions не работает — только HTTP API key.
+  # Gemini-only: providers.allow_xai=false, no grok in the chain.
+  # Empty fallback is honest — there is no substitute provider; refusal
+  # goes to engine gates (pin_deny / quarantine / coherence / palette / light).
   primary: "gemini"
   arbiter: "gemini"
-  fallback: "grok"
+  fallback: ""
   arbiter_max_calls: 8        # §7.3 шаг 3
   accept_threshold: 0.70
   reject_threshold: 0.45
@@ -152,10 +153,9 @@ vision:
 generation:
   # true = без image gen (Gemini/Grok/Magnific): P9 + P12 thumbs → ffmpeg
   skip: false
-  # TEMP 2026-09-05: source=gemini (XAI credits empty). Grok — fallback.
-  # Magnific HTTP gen still 404; stock Magnific search unchanged.
+  # Gemini-only image gen. Empty fallback: no xAI, Magnific HTTP still 404.
   source: gemini
-  fallback: grok
+  fallback: ""
   gemini_image_model: "gemini-3.1-flash-image"
   gemini_image_model_fallback: "gemini-2.5-flash-image"
   gemini_image_aspect: "9:16"

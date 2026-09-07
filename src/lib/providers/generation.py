@@ -513,6 +513,8 @@ def _live_generation(cfg, costs, source: str) -> GenerationProvider | None:
             return GeminiImageGeneration(cfg, costs, key)
         return None
     if source == "grok":
+        if not bool(cfg.get("providers.allow_xai", False)):
+            return None
         key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok (генерация кадров)")
         if not key:
             return None
@@ -532,16 +534,21 @@ def _live_generation(cfg, costs, source: str) -> GenerationProvider | None:
 def build_generation_provider(cfg, costs) -> GenerationProvider:
     """Кто закрывает пустые слоты.
 
-    Magnific HTTP-генерация выведена (404). Временно (XAI без кредитов) источник
-    — Gemini Image; ``generation.fallback`` держит Grok. При 403/402 по кредитам
-    вызывается запасной live-генератор.
+    Magnific HTTP-генерация выведена (404). Default source is Gemini Image;
+    empty ``generation.fallback`` and ``providers.allow_xai: false`` keep grok
+    out of the chain even when ``XAI_API_KEY`` is present.
     """
     preferred = str(cfg.get("generation.source", "gemini")).lower()
-    fallback = str(cfg.get("generation.fallback", "grok")).lower()
+    fallback = str(cfg.get("generation.fallback", "") or "").lower()
+    allow_xai = bool(cfg.get("providers.allow_xai", False))
     order: list[str] = []
-    for name in (preferred, fallback, "gemini", "grok"):
+    for name in (preferred, fallback, "gemini"):
         if name and name not in order and name not in ("mock", "magnific"):
+            if name == "grok" and not allow_xai:
+                continue
             order.append(name)
+    if allow_xai and "grok" not in order:
+        order.append("grok")
 
     live: list[GenerationProvider] = []
     for name in order:

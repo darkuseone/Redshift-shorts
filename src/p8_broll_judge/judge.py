@@ -20,11 +20,15 @@ import re
 from pathlib import Path
 from typing import Any
 
+from ..lib.footage_seed import SEED_SCORE
 from ..lib.logging import get_logger
-from ..lib.manifest import AssetRecord, FootageIndex, new_id
+from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import classify_intent, thematic_reject_reason
+from ..p7_broll_search.search import _load_footage_pins
+
+COHERENCE_MIN = 0.15
 
 _log = get_logger("p8")
 
@@ -74,6 +78,51 @@ def _same_intent(left: str, right: str) -> bool:
     return len(a & b) / len(a | b) >= 0.5
 
 
+def _engine_gate_reason(candidate: dict[str, Any], *, pin_deny: set[str],
+                        index: FootageIndex) -> str | None:
+    """Blocking gates that do not need a live judge."""
+    asset_id = str(candidate.get("asset_id") or "")
+    if asset_id and asset_id in pin_deny:
+        return f"pin_deny: {asset_id}"
+    indexed = index.by_id(asset_id) if asset_id else None
+    if candidate.get("quarantined") or (indexed is not None and indexed.quarantined):
+        return f"quarantined: {asset_id}"
+    rec: dict[str, Any] | AssetRecord | None
+    if candidate.get("tags") or candidate.get("url_origin") or candidate.get("vision_summary"):
+        rec = candidate
+    else:
+        rec = indexed
+    if rec is not None:
+        coherence = tag_url_coherence(rec)
+        if coherence < COHERENCE_MIN:
+            return f"tag_url_coherence {coherence:.2f} < {COHERENCE_MIN:.2f}"
+    return None
+
+
+def skip_live_verdict(candidate: dict[str, Any], intent: str) -> dict[str, Any]:
+    """Honest skip_live score: never invent 0.72 above accept_threshold."""
+    prior = candidate.get("prior_score")
+    if prior is not None:
+        score = float(prior)
+        judge = "skip_live"
+        reason = "skip_live: переиспользована оценка без live API"
+    else:
+        score = float(SEED_SCORE)
+        judge = "skip_live_unverified"
+        reason = "skip_live: нет live-оценки, honest-borderline SEED_SCORE"
+    prior_intent = str(candidate.get("prior_intent") or "")
+    if prior_intent and not _same_intent(prior_intent, intent):
+        score = max(0.0, score - 0.15)
+        reason += "; prior_intent mismatch −0.15"
+    return {
+        "score": score,
+        "reason": reason,
+        "summary": candidate.get("vision_summary", ""),
+        "judge": judge,
+        "frames": 0,
+    }
+
+
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
@@ -87,8 +136,9 @@ def run_step(ctx) -> dict[str, Any]:
     primary = None if skip_live else build_vision_provider(cfg, ctx.costs, role="primary")
     arbiter = None if skip_live else build_vision_provider(cfg, ctx.costs, role="arbiter")
     if skip_live:
-        _log.warning("vision.skip_live: без Gemini/Grok — переиспользую кэш/поиск")
+        _log.warning("vision.skip_live: без live API — движковые гейты блокирующие")
     index = FootageIndex.load(cfg)
+    pin_deny, _pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
     by_slot: dict[int, list[dict[str, Any]]] = {}
@@ -150,6 +200,14 @@ def run_step(ctx) -> dict[str, Any]:
                                      "reason": theme, "summary": "", "frames": 0}}
                 judged.append(entry)
                 continue
+            gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
+            if gate:
+                entry = {**candidate, "score": 0.0, "decision": "reject_gate",
+                         "reject_reason": gate,
+                         "verdict": {"score": 0.0, "judge": "engine_gate",
+                                     "reason": gate, "summary": "", "frames": 0}}
+                judged.append(entry)
+                continue
             # Материал из локальной базы уже оценивался — платить второй раз
             # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6). Но оценка
             # принадлежит паре «кадр + смысл слота», а не кадру: судья отвечал
@@ -166,16 +224,7 @@ def run_step(ctx) -> dict[str, Any]:
                         and _same_intent(candidate.get("prior_intent", ""), intent))
             # skip_live: материал уже судился раньше / есть в кэше — без API.
             if skip_live:
-                prior = candidate.get("prior_score")
-                score = float(prior if prior is not None
-                              else candidate.get("score") or 0.72)
-                verdict_dict = {
-                    "score": score,
-                    "reason": ("skip_live: переиспользована оценка/ранг без "
-                               "Gemini/Grok API"),
-                    "summary": candidate.get("vision_summary", ""),
-                    "judge": "skip_live", "frames": 0,
-                }
+                verdict_dict = skip_live_verdict(candidate, intent)
                 reused_scores += 1
             elif candidate.get("origin") == "local_cache" and reusable:
                 verdict_dict = {
@@ -261,12 +310,19 @@ def run_step(ctx) -> dict[str, Any]:
         if best is None and scored:
             top_score, top_entry = scored[0]
             if skip_live:
-                # Без live-судьи закрываем слот лучшим из кэша/поиска — иначе
-                # всё уйдёт в P9 (платная генерация), которую тоже пропускаем.
-                best = top_entry
-                best["decision"] = "accept_skip_live"
-                best["fallback_reason"] = (
-                    "vision.skip_live: принят лучший кандидат без API")
+                # Unverified seed/rank must not close a slot when anything
+                # with a real prior exists; accept_skip_live only for gated
+                # candidates that are not skip_live_unverified.
+                verified = [
+                    entry for _score, entry in scored
+                    if str((entry.get("verdict") or {}).get("judge") or "")
+                    != "skip_live_unverified"
+                ]
+                if verified:
+                    best = verified[0]
+                    best["decision"] = "accept_skip_live"
+                    best["fallback_reason"] = (
+                        "vision.skip_live: принят лучший прошедший гейты")
             # Спорный кандидат берём только если арбитраж уже был исчерпан:
             # иначе §7.3 требует отправить слот в генерацию.
             elif top_score >= reject_threshold and arbiter_calls >= arbiter_budget:

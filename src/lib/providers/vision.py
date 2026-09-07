@@ -441,6 +441,8 @@ def _live_vision(cfg, costs, name: str) -> VisionProvider | None:
             return GeminiVision(cfg, costs, key)
         return None
     if name == "grok":
+        if not bool(cfg.get("providers.allow_xai", False)):
+            return None
         key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok Vision")
         if not key:
             return None
@@ -478,16 +480,22 @@ class FallbackVision(VisionProvider):
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
     """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
 
-    Временно (XAI без кредитов) конфиг может ставить Gemini первым; ``vision.fallback``
-    держит Grok на случай, если Gemini-ключ ещё не заведён в Actions. При 403/402
-    по кредитам вызывается запасной live-судья, а не mock.
+    Default: Gemini only. ``providers.allow_xai`` must be true before grok
+    enters the chain — a hardcoded tail used to call xAI on the first Gemini
+    402/403. Empty ``vision.fallback`` is honest: there is no substitute
+    provider; refusal falls through to engine gates.
     """
     preferred = str(cfg.get(f"vision.{role}", "gemini")).lower()
-    fallback = str(cfg.get("vision.fallback", "grok")).lower()
+    fallback = str(cfg.get("vision.fallback", "") or "").lower()
+    allow_xai = bool(cfg.get("providers.allow_xai", False))
     order: list[str] = []
-    for name in (preferred, fallback, "gemini", "grok"):
+    for name in (preferred, fallback, "gemini"):
         if name and name not in order and name != "mock":
+            if name == "grok" and not allow_xai:
+                continue
             order.append(name)
+    if allow_xai and "grok" not in order:
+        order.append("grok")
 
     live: list[VisionProvider] = []
     for name in order:
