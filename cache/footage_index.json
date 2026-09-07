@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-06",
-  "count": 63,
+  "updated": "2026-09-07",
+  "count": 65,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1651,7 +1651,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-06",
+      "last_used": "2026-09-07",
       "added": "2026-09-02",
       "phashes": [
         "05ed77764c468a61",
@@ -1762,7 +1762,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-06",
+      "last_used": "2026-09-07",
       "added": "2026-09-03",
       "phashes": [
         "1c731c3200ee73dd",
@@ -1859,7 +1859,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-06",
+      "last_used": "2026-09-07",
       "added": "2026-09-03",
       "phashes": [
         "c22f7da515e4c61c",
@@ -1935,7 +1935,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-06",
+      "last_used": "2026-09-07",
       "added": "2026-09-04",
       "phashes": [
         "ed68d273298fc6a0",
@@ -2252,7 +2252,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-07",
       "added": "2026-09-06",
       "phashes": [
         "c4793bc7c43913e4",
@@ -2298,6 +2298,73 @@
       "extra": {
         "attribution": "Pexels / Iceberg San",
         "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20436933",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/pluto-20436933/",
+      "phash": "c1e03e0fc0f0cf8f",
+      "tags": [
+        "earth",
+        "orbit",
+        "view"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 8.333,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-07",
+      "phashes": [
+        "c1e03e0fc0f0cf8f",
+        "c8e3371cd8e1c51e",
+        "c9c4363bd1c7c538"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20436933.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v30775057",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/red-liquid-heating-in-laboratory-beaker-30775057/",
+      "phash": "e8a358d785688bf1",
+      "tags": [
+        "cryostat",
+        "laboratory"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 16.2,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-07",
+      "phashes": [
+        "e8a358d785688bf1",
+        "e8a758d785688bf0",
+        "e8a758d785688bf0"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v30775057.mp4",
+      "extra": {
+        "attribution": "Pexels / Kleison  Leopoldino",
+        "author": "Kleison  Leopoldino",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
       }
     }
