@@ -111,8 +111,14 @@ scripts/      входные JSON-сценарии
 .claude/      16 скиллов: исполняемая форма правил сборки
 tools/        каталог шаблонов, витрина приёмов, забор клипов аватара,
               короткая проба кадра, проверка артефактов прогона,
-              lint композиции движком до прогона Actions
+              lint композиции движком до прогона Actions,
+              Magnific browser SOP (`tools/magnific_browser_sop.md`)
 ```
+
+Magnific: API-путь за кредиты живёт в `config/magnific_models.json` (`image`/`video`).
+Безлимит подписки — **только веб**, Kling ∞ = **720p**, см.
+[`tools/magnific_browser_sop.md`](tools/magnific_browser_sop.md) и блок
+`web_unlimited`. Для 0042 генерация по умолчанию выключена (`skip_generate=true`).
 
 ## Что сделано своими средствами и почему
 

@@ -44,7 +44,7 @@
       "why": "в 5 раз дешевле seedance-mini при том же 720p/9:16",
       "max_resolution": "1080p",
       "supports_9_16": true,
-      "note": "720p требует стартового кадра — под наш случай подходит 1080p"
+      "note": "API-путь за кредиты. 1080p здесь — платный API, не веб-безлимит. Браузерный Kling ∞ = 720p, см. web_unlimited."
     },
     "quality": {
       "slug": "bytedance-seedance-pro-2.0",
@@ -68,8 +68,33 @@
     "bytedance-seedance-mini-2.0 (5s, 720p)": 700
   },
 
+  "web_unlimited": {
+    "_comment": "Безлимит подписки существует ТОЛЬКО в веб-приложении. На API он не распространяется (unlimited_applies_to_api: false). Блоки image/video выше описывают API-путь за кредиты — не путать. Для 0042 по умолчанию не вызывается (skip_generate=true). SOP: tools/magnific_browser_sop.md",
+    "unlimited_applies_to_api": false,
+    "video": {
+      "slug": "kling-25",
+      "resolution": "720p",
+      "duration_sec": [5, 10],
+      "aspect_ratio": "9:16",
+      "note": "1080p в этом UI — платный режим, не брать"
+    },
+    "image_prefer": {
+      "slug": "nano-banana-2",
+      "multiple": true,
+      "refs_max": 14
+    },
+    "image_alt": {
+      "slug": "seedream-5-pro"
+    },
+    "upscale": {
+      "documentary": "precision",
+      "stylized": "creative"
+    },
+    "avoid_paid": ["nano-banana-pro", "cinematic", "gpt-2"]
+  },
+
   "constraints": {
-    "_comment": "§3.6.1: материал берём строго до 1080p, выше не запрашиваем.",
+    "_comment": "§3.6.1: API-материал до 1080p. Браузерный Kling Unlimited — только 720p (web_unlimited.video.resolution).",
     "max_height": 1080,
     "aspect_ratio": "9:16",
     "duration_range_sec": [4, 15]
