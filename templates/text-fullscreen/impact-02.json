@@ -5,7 +5,7 @@
   "title": "Слово с подчёркиванием accent",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "underline": true

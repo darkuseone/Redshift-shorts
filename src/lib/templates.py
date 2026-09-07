@@ -127,8 +127,9 @@ class TemplateCatalog:
         ``allow`` is a hard allowlist from the scenario set. When set, the pool
         is cut to those ids **before** exclude/duration/tags/traits. An empty
         result does **not** expand to the full category; instead we climb a
-        ladder: drop duration → drop traits → allow only. Full category is
-        used only when ``allow`` is omitted.
+        ladder: drop duration → drop traits → allow only. If ``exclude`` empties
+        the allow pool, we soft-reuse inside allow (still never reopen the full
+        category). Full category is used only when ``allow`` is omitted.
 
         ``traits`` — block traits (src/lib/meaning.py). A template that cannot
         be filled is dropped. If meaning filter empties the pool, need-less
@@ -157,10 +158,18 @@ class TemplateCatalog:
         block_traits = None if traits is None else {str(t) for t in traits if t}
         base = [t for t in pool if t.id not in excluded]
         if not base:
-            # Without allow, legacy soft-exclude restores the pool.
-            # With allow, an exclude that empties the set must not reopen it.
-            if allow_set is None:
-                base = list(pool)
+            # Soft-drop exclude when it empties the pool. Without allow this
+            # restores the full category (legacy). With allow, pool is already
+            # clipped to the scenario set — reuse inside allow rather than
+            # raising TEMPLATE_CATEGORY_EMPTY after many FS/gap picks. Never
+            # reopen the full category when allow is set.
+            if allow_set is not None:
+                _log.warning(
+                    "сценарный набор для категории %s исчерпан exclude — "
+                    "повтор внутри allow (%d шт.)",
+                    category, len(pool),
+                )
+            base = list(pool)
 
         def apply_filters(*, use_duration: bool, use_traits: bool) -> list[Template]:
             candidates = list(base)

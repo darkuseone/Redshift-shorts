@@ -5,7 +5,7 @@
   "title": "Полоса-ярлык поперёк кадра",
   "duration_range": [
     0.8,
-    1.6
+    3.0
   ],
   "params": {
     "strip_height": 220

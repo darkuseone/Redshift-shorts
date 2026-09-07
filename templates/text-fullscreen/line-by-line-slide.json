@@ -5,7 +5,7 @@
   "title": "Строки заезжают слева со стаггером — line-by-line-slide",
   "duration_range": [
     0.8,
-    2.4
+    3.0
   ],
   "params": {
     "line_slide": true,

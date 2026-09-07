@@ -5,7 +5,7 @@
   "title": "Дата крупно",
   "duration_range": [
     0.8,
-    2.5
+    3.0
   ],
   "params": {
     "mono": true

@@ -303,9 +303,9 @@ class TestPickerChannelsAndWalk:
         assert len(trace.walk) <= 24
 
     def test_no_cap_on_default_and_generic(self, picker):
-        # text-fullscreen variant A default intent narrowed to 8 on-brand templates (P0-3)
+        # text-fullscreen variant A default intent: on-brand templates covering 1.5–3.0s (P0-3)
         _, trace_text = picker.pick("text-fullscreen", blob="нейтральный текст", variant="A")
-        assert len(trace_text.fallback) == 8
+        assert len(trace_text.fallback) == 10
         assert trace_text.fallback[0] == "text-fullscreen/stack-3lines"
         assert "text-fullscreen/beat-freeze-cut" not in trace_text.fallback
         assert "text-fullscreen/date-marker" in trace_text.fallback
@@ -333,13 +333,14 @@ class TestPickerChannelsAndWalk:
 class TestReplacesDefault:
     def test_code_plus_digit_variant_a(self, picker):
         # Code + digit: specific walk has code templates then number-slam templates
-        # fallback is replaced by text-number-slam (2 templates)
+        # fallback is replaced by text-number-slam (includes longer fact-card for 2.5s+ slots)
         text = "def calculate_price(): return 42"
         t, trace = picker.pick("text-fullscreen", blob=text, variant="A")
         assert trace.replaced_default_by == "text-number-slam"
         assert trace.fallback == (
             "text-fullscreen/number-slam-card",
             "text-fullscreen/kinetic-stack",
+            "text-fullscreen/fact-card",
         )
         # dark-plus wins in walk
         assert t.id == "text-fullscreen/dark-plus"
@@ -360,7 +361,7 @@ class TestReplacesDefault:
         assert trace.fallback[0] == "text-fullscreen/stack-3lines"
         assert "text-fullscreen/fact-card" in trace.fallback
         assert "text-fullscreen/quote-frame" in trace.fallback
-        assert len(trace.fallback) == 6
+        assert len(trace.fallback) == 10
 
     def test_text_number_slam_needs_empty_guard(self, picker):
         # Intent text-number-slam must not require 'numbers' signal
@@ -448,6 +449,8 @@ class TestPassThrough:
             "text-fullscreen/bigtext-mask-footage",
             "text-fullscreen/quote-frame",
             "text-fullscreen/date-marker",
+            "text-fullscreen/kinetic-type-swap",
+            "text-fullscreen/label-strip",
         }
         default_b = {
             "text-fullscreen/stack-3lines",
@@ -456,11 +459,15 @@ class TestPassThrough:
             "text-fullscreen/per-word-crossfade",
             "text-fullscreen/blur-out-up",
             "text-fullscreen/bigtext-mask-footage",
+            "text-fullscreen/bottom-up-letters",
+            "text-fullscreen/date-marker",
+            "text-fullscreen/kinetic-type-swap",
+            "text-fullscreen/label-strip",
         }
         blob = "ОШИБКА ПАДАЕТ ВДВОЕ"
         from src.lib.meaning import block_traits
         traits = block_traits("Здесь всё наоборот. Ошибка падает вдвое на каждом шаге.")
-        for d in (1.5, 2.1, 2.5, 3.0):
+        for d in (1.5, 2.1, 2.5, 2.58, 3.0):
             for v in ("A", "B"):
                 t, trace = picker.pick(
                     "text-fullscreen",
@@ -473,7 +480,59 @@ class TestPassThrough:
                 )
                 expected = default_a if v == "A" else default_b
                 assert t.id in expected, f"dur={d} {v} -> {t.id} not in default set"
+                assert t.fits(d), f"dur={d} {v} -> {t.id} duration_range={t.duration_range}"
                 assert not trace.escaped or t.id in expected
+
+    def test_fs_duration_matrix_never_template_category_empty(self, picker):
+        """Real FS slot lengths must never raise TEMPLATE_CATEGORY_EMPTY (P0-3)."""
+        from src.errors import RedshiftError
+        from src.lib.meaning import block_traits
+
+        blobs = [
+            "ОШИБКА ПАДАЕТ ВДВОЕ",
+            "логический кубит прожил дольше",
+            "Впервые 105 кубитов работают вместе",
+            "Здесь всё наоборот",
+        ]
+        default_b = [
+            "text-fullscreen/stack-3lines",
+            "text-fullscreen/fact-card",
+            "text-fullscreen/quote-frame",
+            "text-fullscreen/per-word-crossfade",
+            "text-fullscreen/blur-out-up",
+            "text-fullscreen/bigtext-mask-footage",
+            "text-fullscreen/bottom-up-letters",
+            "text-fullscreen/date-marker",
+            "text-fullscreen/kinetic-type-swap",
+            "text-fullscreen/label-strip",
+        ]
+        for d in (1.5, 2.1, 2.5, 2.58, 3.0):
+            for v in ("A", "B"):
+                for blob in blobs:
+                    traits = block_traits(blob)
+                    try:
+                        t, trace = picker.pick(
+                            "text-fullscreen",
+                            blob=blob,
+                            signals={"lines_lt_7"},
+                            traits=traits,
+                            variant=v,
+                            duration=d,
+                            seed=7,
+                            # Exhaust allowlist like many gap FS fills in P11.
+                            exclude=list(default_b) if v == "B" else list(default_b) + [
+                                "text-fullscreen/number-slam-card",
+                                "text-fullscreen/kinetic-stack",
+                            ],
+                        )
+                    except RedshiftError as exc:
+                        assert False, (
+                            f"TEMPLATE_CATEGORY_EMPTY dur={d} {v} blob={blob!r}: {exc}"
+                        )
+                    assert t.id.startswith("text-fullscreen/")
+                    # Hard allowlist: never reopen junk / 3-phone demos.
+                    assert t.id != "browser-ui/app-showcase"
+                    assert "app-showcase" not in t.id
 
 
 class TestReachability:

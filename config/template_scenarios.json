@@ -497,15 +497,15 @@
       "keywords": [
         "drop",
         "freeze",
-        "beat",
         "hard cut",
         "on the beat",
         "дроп",
-        "бит",
-        "замороз"
+        "замороз",
+        "бит-дроп",
+        "на бит"
       ],
       "patterns": [
-        "(drop|freeze|beat|hard\\s*cut|on the beat|дроп|бит|замороз)"
+        "(?i)(?<![0-9a-zA-Zа-яА-ЯёЁ])(drop|freeze|beat|hard\\s*cut|on the beat|дроп|бит|замороз)(?![0-9a-zA-Zа-яА-ЯёЁ])"
       ],
       "needs": [],
       "templates": [
@@ -674,7 +674,8 @@
       "needs": [],
       "templates": [
         "text-fullscreen/number-slam-card",
-        "text-fullscreen/kinetic-stack"
+        "text-fullscreen/kinetic-stack",
+        "text-fullscreen/fact-card"
       ],
       "weight": 20,
       "variants": [
@@ -699,7 +700,9 @@
         "text-fullscreen/bottom-up-letters",
         "text-fullscreen/bigtext-mask-footage",
         "text-fullscreen/quote-frame",
-        "text-fullscreen/date-marker"
+        "text-fullscreen/date-marker",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/label-strip"
       ],
       "weight": 10,
       "variants": [
@@ -721,7 +724,11 @@
         "text-fullscreen/quote-frame",
         "text-fullscreen/per-word-crossfade",
         "text-fullscreen/blur-out-up",
-        "text-fullscreen/bigtext-mask-footage"
+        "text-fullscreen/bigtext-mask-footage",
+        "text-fullscreen/bottom-up-letters",
+        "text-fullscreen/date-marker",
+        "text-fullscreen/kinetic-type-swap",
+        "text-fullscreen/label-strip"
       ],
       "weight": 10,
       "variants": [

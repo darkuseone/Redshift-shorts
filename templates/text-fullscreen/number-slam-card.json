@@ -5,7 +5,7 @@
   "title": "Цифра-удар на карточке — K3 promo",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "slam": true,

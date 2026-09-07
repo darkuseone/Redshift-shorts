@@ -212,7 +212,7 @@
       "title": "Гигантская цифра",
       "duration_range": [
         0.8,
-        2.0
+        3.0
       ],
       "params": {
         "size_px": [
@@ -247,7 +247,7 @@
       "title": "Слово с подчёркиванием accent",
       "duration_range": [
         0.8,
-        2.0
+        3.0
       ],
       "params": {
         "underline": true
@@ -306,7 +306,7 @@
       "title": "Слова сменяются на месте",
       "duration_range": [
         1.0,
-        2.0
+        3.0
       ],
       "params": {
         "swap_ms": 260
@@ -351,7 +351,7 @@
       "title": "Дата крупно",
       "duration_range": [
         0.8,
-        2.5
+        3.0
       ],
       "params": {
         "mono": true
@@ -372,7 +372,7 @@
       "title": "Два значения через VS",
       "duration_range": [
         1.2,
-        2.0
+        3.0
       ],
       "params": {
         "split": true
@@ -396,7 +396,7 @@
       "title": "Полоса-ярлык поперёк кадра",
       "duration_range": [
         0.8,
-        1.6
+        3.0
       ],
       "params": {
         "strip_height": 220
@@ -466,7 +466,7 @@
       "title": "Слова входят rise со стаггером — Texture / OBLIST",
       "duration_range": [
         0.8,
-        2.0
+        3.0
       ],
       "params": {
         "stagger_ms": 55,
@@ -572,7 +572,7 @@
       "title": "Строки заезжают слева со стаггером — line-by-line-slide",
       "duration_range": [
         0.8,
-        2.4
+        3.0
       ],
       "params": {
         "line_slide": true,
@@ -716,7 +716,7 @@
       "title": "Слова набухают по оси Z со стаггером — shared-axis-z",
       "duration_range": [
         0.8,
-        2.4
+        3.0
       ],
       "params": {
         "shared_axis_z": true,
@@ -1041,7 +1041,7 @@
       "title": "Цифра-удар на карточке — K3 promo",
       "duration_range": [
         0.8,
-        2.0
+        3.0
       ],
       "params": {
         "slam": true,
