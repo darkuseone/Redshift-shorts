@@ -276,6 +276,9 @@ def _fullscreen_params(template: Any, content: str,
     params = dict(getattr(template, "params", None) or {})
     phrase = str(content or "").strip()
     block = block or {}
+    # Семейство акцента едет в параметры приёма: красит слово рендерер, а не
+    # план, и без этого поля cyan оставался токеном в JSON.
+    params["accent_family"] = accent_family(block)
     if not phrase:
         phrase = _semantic_screen_text(block)
     phrase = phrase.strip()
@@ -709,10 +712,30 @@ def _phrase_hits_windows(phrase: list[dict[str, Any]],
     )
 
 
+# Какое семейство акцента у блока (MEGA D-9). Красный — про чувство и миф,
+# cyan — про технику, число и источник. Токен `cyan` лежит в брендбуке «IT
+# КОСМОС» первым классом с §14, но до кадра не доезжал ни разу: `emphasis_family`
+# объявлен в схеме и не читался ни одним модулем, а `captions.py` жёстко писал
+# `var(--color-accent)`. Правило разводит два акцента по смыслу, а не по вкусу.
+ACCENT_FAMILY_BY_EMPHASIS = {
+    "myth": "red", "emotion": "red",
+    "tech": "cyan", "number": "cyan", "source": "cyan",
+}
+
+
+def accent_family(block: dict[str, Any] | None) -> str:
+    """Семейство акцента блока: ``red`` либо ``cyan``. По умолчанию красный."""
+    if not block:
+        return "red"
+    return ACCENT_FAMILY_BY_EMPHASIS.get(
+        str(block.get("emphasis_family") or ""), "red")
+
+
 def _build_subtitle_cues(words: list[dict[str, Any]], *,
                          punch_windows: list[tuple[float, float, str]],
                          mute_windows: list[tuple[float, float]],
                          line_windows: list[tuple[float, float]] | None = None,
+                         family_by_block: dict[str, str] | None = None,
                          ) -> list[dict[str, Any]]:
     """Karaoke cues at the default baseline; mute on punch/card/CTA, never raise.
 
@@ -754,6 +777,10 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
                 "end": float(word["end"]),
                 "emphasis": bool(word.get("emphasis")),
                 "block_id": word["block_id"],
+                # Семейство акцента едет со словом: субтитр красится там же,
+                # где рисуется, а не угадывает цвет по соседям.
+                "accent_family": (family_by_block or {}).get(
+                    str(word.get("block_id") or ""), "red"),
             }
             if word.get("lead"):
                 cue["lead"] = word["lead"]
@@ -2891,6 +2918,147 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
 # Рендереры browser-ui, которые честно показывают настоящий источник.
 # Окна чата и мессенджера сюда не входят: их содержимое пришлось бы
 # сочинить, а выдуманная переписка — не иллюстрация, а подделка.
+class _RecordingPicker:
+    """Тот же picker, но запоминает, чем кончился каждый подбор.
+
+    `PickTrace` возвращался всеми десятью вызовами `picker.pick` и везде
+    выбрасывался в `_`. Без него нечем закрыть ни QC-25, ни простой вопрос
+    «почему в кадре именно этот приём»: в отчёте оставались только id.
+
+    Обёртка, а не правка десяти мест: одиннадцатый вызов, который добавят
+    завтра, попадёт в отчёт сам, а не забудет записаться.
+    """
+
+    __slots__ = ("_inner", "traces")
+
+    def __init__(self, inner: TemplatePicker) -> None:
+        self._inner = inner
+        self.traces: list[dict[str, Any]] = []
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._inner, name)
+
+    def pick(self, category: str, **kw: Any):
+        template, trace = self._inner.pick(category, **kw)
+        self.traces.append({
+            "category": category,
+            "template": template.id,
+            "fired": [fid for fid, _w in trace.fired],
+            "walk": list(trace.walk),
+            "won_at": trace.won_at,
+            "allow_size": trace.allow_size,
+            "escaped": bool(trace.escaped),
+        })
+        return template, trace
+
+
+# Стиль хука из сценария → приём каталога (§5.2 H-2). Словарь здесь, а не в
+# схеме: схема описывает сценарий, а соответствие приёму — дело сборщика.
+HOOK_STYLE_TEMPLATES = {
+    "number_slam": "intro-hooks/hook-number-slam",
+    "question_flash": "intro-hooks/hook-question-flash",
+    "blackout_word": "intro-hooks/hook-blackout-word",
+    "cold_open": "intro-hooks/hook-footage-cold-open",
+    "split_reveal": "intro-hooks/hook-split-reveal",
+    "typing_search": "intro-hooks/hook-typing-search",
+    "avatar_direct": "intro-hooks/hook-avatar-direct",
+}
+
+# Признаки блока, которые словарь интентов хука ждёт как **сигналы** (N-14).
+# Два словаря — признаки из `meaning.py` и сигналы из `assemble.py` — до сих
+# пор не пересекались на пути хука: интент `hook-number` требовал сигнала
+# `numbers`, которого на этом пути никто не выставлял, и не срабатывал никогда.
+_HOOK_TRAIT_SIGNALS = frozenset({"number", "question", "comparison",
+                                 "superlative", "negation", "quote", "danger"})
+
+
+def _hook_signals(spec: dict[str, Any], traits: set[str], *,
+                  has_asset: bool) -> set[str]:
+    """Сигналы для подбора хука: признаки блока плюс структура кадра."""
+    signals = {t for t in traits if t in _HOOK_TRAIT_SIGNALS}
+    if has_asset:
+        signals.add("footage")
+    if str(spec.get("on_screen") or "").strip():
+        signals.add("on_screen")
+    if str(spec.get("cold_open_query") or "").strip():
+        signals.add("cold_open")
+    return signals
+
+
+# Рендереры хука, которые сборщик действительно кладёт в кадр. Список короче
+# каталога намеренно: `split`, `avatar` и `source_card` тоже помечены как хуки,
+# но кадр под них надо собирать иначе — сплит требует второго слоя, аватар
+# требует альфа-слота, а «ввод поискового запроса» требует параметров строки
+# поиска, которых в сценарии сегодня нет. Пока их нечем наполнить, приём,
+# выбранный и не показанный, — это пустое место в самых дорогих секундах
+# ролика. Три оставшихся ждут своего кадра, а не подбора.
+_HOOK_RENDERED = frozenset({"fullscreen_text", "footage"})
+
+
+def _hook_allows(template_id: str, renderer: str, *, slot: dict[str, Any],
+                 has_asset: bool, has_source: bool) -> bool:
+    """Может ли этот кадр показать этот приём хука."""
+    if renderer not in _HOOK_RENDERED:
+        return False
+    if renderer == "footage":
+        return has_asset
+    return True                                   # fullscreen_text — всегда
+
+
+def _pick_hook_shot(slot: dict[str, Any], block: dict[str, Any],
+                    plan: dict[str, Any], picker: TemplatePicker,
+                    catalog: TemplateCatalog, *, variant: str, seed: int,
+                    recent_videos: list[str], used_templates: list[str],
+                    has_asset: bool):
+    """Приём первых секунд — решением, а не остатком (§5.2 H-1).
+
+    До этой функции `picker.pick("intro-hooks", …)` не вызывался нигде: все
+    десять точек подбора передавали одну из десяти других категорий, и конфиг
+    честно числил категорию недостижимой. На 0042 хук собрался случайно —
+    кадр 0 отдал 0.47 с футажа, кадры 1 и 2 стали двумя полноэкранными
+    надписями подряд, и обе фразы выбрала `gap_phrase`, то есть «что вынести
+    на экран, когда материала нет». Хука как решения не было — был отказ
+    материала.
+
+    Возвращает ``(template, trace)`` либо ``None``, если кадр вне окна хука
+    или ни один приём каталога этому кадру не по силам.
+    """
+    if str(slot.get("role") or "") != "hook":
+        return None
+    window = plan.get("hook_window") or [0.0, 3.0]
+    if float(slot["start"]) >= float(window[1]):
+        return None
+
+    spec = dict(plan.get("hook") or {})
+    traits = block_traits(str(block.get("text") or "")) if block else set()
+    has_source = bool(plan.get("sources"))
+    blocked = list(used_templates)
+    for template in catalog.by_category("intro-hooks"):
+        if not _hook_allows(template.id, template.renderer, slot=slot,
+                            has_asset=has_asset, has_source=has_source):
+            blocked.append(template.id)
+    if not [t for t in catalog.by_category("intro-hooks")
+            if t.id not in blocked]:
+        return None
+
+    hint = str(spec.get("template_hint") or "")
+    styled = HOOK_STYLE_TEMPLATES.get(str(spec.get("style") or ""))
+    head = [t for t in (hint, styled) if t and t not in blocked]
+    return picker.pick(
+        "intro-hooks",
+        blob=" ".join([str(spec.get("on_screen") or ""),
+                       str(block.get("text") or "")]).strip(),
+        signals=_hook_signals(spec, traits, has_asset=has_asset),
+        traits=traits,
+        variant=variant,
+        duration=float(slot["duration"]),
+        recent_videos=recent_videos,
+        exclude=blocked,
+        seed=seed,
+        prefer_head=head,
+    )
+
+
 _LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
                                       "source_card"})
 
@@ -3012,6 +3180,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     if picker is None:
         cfg = getattr(ctx, "cfg", None)
         picker = TemplatePicker(catalog, ScenarioIndex.load(cfg, catalog=catalog))
+    picker = _RecordingPicker(picker)
     seed = _variant_seed(plan["video_id"], variant)
     # Какие источники требуют подписи в кадре — сказано в самом каталоге
     # источников, а не в коде: право на кадр приходит вместе с ним.
@@ -3039,6 +3208,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     fs_cap = _fullscreen_cap(ctx.cfg)
     fs_count = 0
     budget = VisualBudget()
+    # Приём хука ставится один раз за ролик. В окно 0–3 с на 0042 попадают три
+    # слота, и без этого флага все три брали бы приём из intro-hooks подряд —
+    # то же «две полноэкранные надписи подряд», из-за которых хук и переделан.
+    hook_placed = False
     # Оверлеи, которые поставила лестница закрытия кадра: они рождаются в цикле
     # шотов, а общий список оверлеев собирается ниже — сливаются после.
     ladder_overlays: list[dict[str, Any]] = []
@@ -3058,6 +3231,82 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "block_id": slot["block_id"], "role": slot["role"], "mode": slot["mode"],
             "reason": slot["reason"],
         }
+
+        # Хук первых секунд разбирается до общих веток: приём этих кадров —
+        # решение сценария, а не то, что осталось после подбора материала.
+        hook_block = blocks_by_id.get(slot["block_id"], {})
+        hook_pick = None if hook_placed else _pick_hook_shot(
+            slot, hook_block, plan, picker, catalog, variant=variant, seed=seed,
+            recent_videos=recent_videos, used_templates=used_templates,
+            has_asset=assets.get(slot["index"]) is not None)
+        if hook_pick is not None:
+            hook_tpl, _hook_trace = hook_pick
+            if hook_tpl.renderer == "fullscreen_text":
+                # Экранная строка хука — из сценария; `gap_phrase` остаётся
+                # запасным вариантом, а не источником по умолчанию.
+                content = str((plan.get("hook") or {}).get("on_screen") or "").strip()
+                if not content:
+                    content = str(slot.get("content")
+                                  or (hook_block.get("overlay") or {}).get("content")
+                                  or "").strip()
+                content = soften_on_screen_copy(content)
+                if content and _claim_screen_phrase(used_screen_phrases, content):
+                    bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
+                    asset = assets.get(slot["index"])
+                    used_templates.append(hook_tpl.id)
+                    fs_params = _attach_fs_media(
+                        _fullscreen_params(hook_tpl, content, hook_block), bg_file)
+                    # Хук читают за секунду: задержки входа здесь нет намеренно.
+                    fs_params.pop("enter_delay", None)
+                    entry.update({
+                        "kind": "fullscreen_text",
+                        "content": content,
+                        "template": hook_tpl.id,
+                        "renderer": hook_tpl.renderer,
+                        "params": fs_params,
+                        "invert": True,
+                        "carries_line": True,
+                        "hook": True,
+                        "accent_word": _fullscreen_accent(content, hook_block),
+                        "accent_family": accent_family(hook_block),
+                        "file": bg_file,
+                        "asset_id": (asset or {}).get("asset_id"),
+                        "source": (asset or {}).get("source"),
+                        "license": (asset or {}).get("license"),
+                        "attribution": (asset or {}).get("attribution", ""),
+                        "page_url": (asset or {}).get("page_url", ""),
+                        "ai_generated": bool((asset or {}).get("ai_generated")),
+                        "credit": _credit_line(asset or {}, sources_spec),
+                        "why": "хук §5.2: приём первых секунд выбран по сценарию",
+                    })
+                    fs_count += 1
+                    hook_placed = True
+                    shots.append(entry)
+                    continue
+            elif hook_tpl.renderer == "footage":
+                # Холодное открытие: кадр до первого слова, без надписи.
+                prep = prepared.get(slot["index"])
+                asset = assets.get(slot["index"])
+                if prep is not None and asset is not None:
+                    used_templates.append(hook_tpl.id)
+                    entry.update({
+                        "kind": "footage",
+                        "template": hook_tpl.id,
+                        "renderer": hook_tpl.renderer,
+                        "hook": True,
+                        "file": prep["file"],
+                        "asset_id": asset.get("asset_id"),
+                        "source": asset.get("source"),
+                        "license": asset.get("license"),
+                        "attribution": asset.get("attribution", ""),
+                        "page_url": asset.get("page_url", ""),
+                        "ai_generated": bool(asset.get("ai_generated")),
+                        "credit": _credit_line(asset, sources_spec),
+                        "why": "хук §5.2: холодное открытие кадром до первого слова",
+                    })
+                    hook_placed = True
+                    shots.append(entry)
+                    continue
 
         if slot["kind"] == "fullscreen_text":
             content = slot.get("content", "")
@@ -3116,6 +3365,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "invert": True,
                 "carries_line": True,
                 "accent_word": _fullscreen_accent(content, block),
+                "accent_family": accent_family(block),
                 "file": bg_file,
                 "asset_id": (asset or {}).get("asset_id"),
                 "source": (asset or {}).get("source"),
@@ -3229,6 +3479,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "invert": True,
                 "carries_line": True,
                 "accent_word": _fullscreen_accent(content, gap_block),
+                "accent_family": accent_family(gap_block),
                 "traits": sorted(gap_traits) if gap_traits else [],
                 "grounded_on": sorted(matched(template.needs, gap_traits)) if gap_traits else [],
                 "why_template": explain_choice(template, gap_traits) if gap_traits else "",
@@ -3460,6 +3711,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         punch_windows=punch_windows,
         mute_windows=card_windows,
         line_windows=line_windows,
+        family_by_block={b["id"]: accent_family(b)
+                         for b in plan.get("blocks", [])},
     )
 
     # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон
@@ -3491,6 +3744,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "avatar_compose_zoom": compose_zoom,
         "avatar": avatar_meta.get("segments", []),
         "templates_used": used_templates,
+        "pick_traces": picker.traces,
         "asset_rotation": asset_rotation,
         "preferences_applied": sorted(prefs) if prefs else [],
         "cta_window": plan.get("cta_window"),

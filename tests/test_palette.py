@@ -160,3 +160,94 @@ class TestPinkNeverPassesAgain:
         verdict = palette_verdict([self._field((214, 150, 178), 0.5)], rules)
         assert 300 <= verdict["dominant_off_hue"] <= 345, verdict
         assert "°" in verdict["reason"] and "розов" in verdict["reason"]
+
+
+class TestTheAccentShareIsFinallyMeasured:
+    """`render_stats.accent_share_max = 0.0` на обоих вариантах (N-11).
+
+    Доля акцентного цвета на пути HyperFrames не считалась вовсе: её заполнял
+    только старый PIL-компоновщик (`overlays.py:158`), а бюджет
+    `color_rules.accent_max_frame_share = 0.12` был объявлен в брендбуке и не
+    измерялся ни разу. Гейт без мерки — это не гейт.
+    """
+
+    def _flat(self, rgb):
+        return Image.new("RGB", (160, 284), rgb)
+
+    def _half(self, rgb):
+        """Половина кадра в цвете: так выглядит акцент, расползшийся по кадру."""
+        img = Image.new("RGB", (160, 284), (11, 19, 43))
+        img.paste(Image.new("RGB", (160, 142), rgb), (0, 0))
+        return img
+
+    def test_the_brand_red_is_seen(self):
+        from src.lib.palette import accent_share
+        assert accent_share(self._flat((200, 69, 61)))["red"] > 0.99
+
+    def test_the_brand_cyan_is_seen(self):
+        from src.lib.palette import accent_share
+        assert accent_share(self._flat((54, 239, 255)))["cyan"] > 0.99
+
+    def test_the_channel_dark_is_not_an_accent(self):
+        """Космос #0B132B — это фон канала, а не акцент."""
+        from src.lib.palette import accent_share
+        assert accent_share(self._flat((11, 19, 43)))["total"] == 0.0
+
+    def test_white_text_is_not_an_accent(self):
+        from src.lib.palette import accent_share
+        assert accent_share(self._flat((255, 255, 255)))["total"] == 0.0
+
+    def test_skin_is_not_mistaken_for_the_brand_red(self):
+        """Ведущий в кадре не должен читаться как залитый акцентом."""
+        from src.lib.palette import accent_share
+        for skin in ((222, 184, 158), (198, 154, 122), (140, 100, 78)):
+            share = accent_share(self._flat(skin))
+            assert share["total"] < 0.05, f"кожа {skin} прочиталась акцентом: {share}"
+
+    def test_the_two_families_never_double_count(self):
+        from src.lib.palette import accent_share
+        share = accent_share(self._half((200, 69, 61)))
+        assert share["cyan"] == 0.0
+        assert abs(share["total"] - share["red"]) < 1e-9
+
+    def test_the_worst_frame_decides_for_the_video(self):
+        """Среднее размажет вспышку акцента и пропустит залитый кадр."""
+        from src.lib.palette import accent_share_max
+        frames = [self._flat((11, 19, 43))] * 5 + [self._flat((200, 69, 61))]
+        out = accent_share_max(frames)
+        assert out["max"] > 0.99, out
+        assert out["frames"] == 6
+
+    def test_no_frames_measures_zero_rather_than_crashing(self):
+        from src.lib.palette import accent_share_max
+        assert accent_share_max([])["max"] == 0.0
+
+    def test_a_sane_frame_lands_inside_the_budget(self, rules):
+        """Кадр с одним акцентным словом обязан попадать в коридор 0.02-0.12."""
+        from src.lib.palette import accent_share
+        img = Image.new("RGB", (160, 284), (11, 19, 43))
+        # Полоса ≈ 6 % кадра — примерно одно слово крупным кеглем.
+        img.paste(Image.new("RGB", (160, 17), (200, 69, 61)), (0, 130))
+        share = accent_share(img)["total"]
+        assert 0.02 <= share <= 0.12, share
+
+
+class TestTheAccentBudgetIsDeclaredOnBothSides:
+
+    def test_the_brandbook_declares_the_whole_corridor(self):
+        with open("config/brandbook.json", encoding="utf-8") as fh:
+            rules = json.load(fh)["color_rules"]
+        assert rules["accent_min_frame_share"] == 0.02
+        assert rules["accent_max_frame_share"] == 0.12
+
+    def test_the_qc_reads_the_same_numbers(self):
+        """Порог в двух местах разъезжается молча — читаем из одного."""
+        source = open("src/p12_render_qc/qc.py", encoding="utf-8").read()
+        assert "accent_max_frame_share" in source
+        assert "accent_min_frame_share" in source
+
+    def test_the_samples_are_not_extracted_twice(self):
+        """§12.3: ноль новых вызовов ffmpeg — кадры снимаются один раз."""
+        render = open("src/p12_render_qc/render.py", encoding="utf-8").read()
+        assert "sample_positions()" in render
+        assert "frames=qc_frames" in render

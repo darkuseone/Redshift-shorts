@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 
 from pathlib import Path
 from typing import Any, Callable
@@ -18,6 +19,7 @@ from ..lib.jsonio import read_json_or
 from ..lib.logging import get_logger
 from ..lib.phash import video_is_duplicate
 from ..lib.render.canvas import SafeZones
+from ..lib.render.hyperframes.templates import WORK_AREA_W, text_width
 from ..lib.templates import overlap_share
 
 _log = get_logger("qc")
@@ -30,6 +32,20 @@ def _check(check_id: int, name: str, passed: bool, *, value: Any = None,
             "value": value, "threshold": threshold, "detail": detail,
             "timecode_sec": round(timecode, 2) if timecode is not None else None,
             "blocking": blocking}
+
+
+# Что на кадре хука не пишут никогда: это не хук, а заставка. Список тот же,
+# что блокирует устный хук на P0 (`HOOK_GREETING`), — экран и голос не должны
+# расходиться в том, что считается разгоном.
+_HOOK_BANNED_ON_SCREEN = (
+    "привет", "подписывайся", "подписывайтесь", "с вами", "в этом видео",
+    "сегодня разберём", "сегодня разберем", "смотри до конца", "новое видео",
+)
+
+
+def _hook_is_banned(text: str) -> bool:
+    low = str(text or "").lower()
+    return any(bad in low for bad in _HOOK_BANNED_ON_SCREEN)
 
 
 def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
@@ -228,6 +244,128 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                          in_zone and coverage >= 0.9,
                          value={"baseline_y": baseline, "coverage": round(coverage, 3)},
                          threshold={"baseline_y": [baseline_lo, shift_y], "coverage": 0.9}))
+
+    # --- QC-20/21/22: номера закреплены за MEGA P1, формулировка её же.
+
+    # 20. Текст за пределами рабочего поля. Кегль подбирается `fit_in_work_area`
+    # на рендере, но подбор идёт по одной строке: составной заголовок мог
+    # вылезти за 740 px и обрезаться краем кадра.
+    over = []
+    for shot in plan.get("shots", []):
+        text = str(shot.get("content") or "")
+        size = int((shot.get("params") or {}).get("size") or 0)
+        if not text or size <= 0:
+            continue
+        widest = max((text_width(line.upper(), size, role="display")
+                      for line in text.splitlines() if line.strip()), default=0.0)
+        if widest > WORK_AREA_W + 1.0:
+            over.append({"index": shot.get("index"), "px": round(widest)})
+    checks.append(_check(
+        20, "Текст за рабочим полем", not over,
+        value=len(over), threshold=WORK_AREA_W,
+        detail=", ".join(f"кадр {o['index']}: {o['px']} px" for o in over[:6])))
+
+    # 21. Приём без основания. Каждый приём обязан опираться на признак блока,
+    # иначе это украшение поверх речи, а не монтаж.
+    placed = [*plan.get("shots", []), *plan.get("overlays", [])]
+    decided = [p for p in placed if p.get("template")]
+    ungrounded = [p for p in decided if not p.get("grounded_on")]
+    ungrounded_share = (len(ungrounded) / len(decided)) if decided else 0.0
+    checks.append(_check(
+        21, "Приёмы без основания", ungrounded_share <= 0.30,
+        value=round(ungrounded_share, 3), threshold=0.30,
+        detail=f"{len(ungrounded)} из {len(decided)}"))
+
+    # 22. Выбранный приём обязан лежать в разрешённом наборе. `escaped` в
+    # трассе значит, что каталог полез вверх по лестнице allow — то есть
+    # сценарный набор не сработал, и в кадр попал приём «хоть какой-нибудь».
+    traces = plan.get("pick_traces") or []
+    escaped = [t for t in traces if t.get("allow_size") and t.get("escaped")]
+    checks.append(_check(
+        22, "Выбранный приём внутри разрешённого набора", not escaped,
+        value=len(escaped), threshold=0,
+        detail=", ".join(f"{t['category']}→{t['template']}" for t in escaped[:6])))
+
+    # 23. Полноэкранных надписей — в смонтированном ролике, а не в плане.
+    # Потолок `limits.fullscreen_text_per_video` стоял в конфиге и никем не
+    # мерился на выходе (N-2): на 0042 четырнадцать кадров из двадцати
+    # закрылись надписью при девятнадцати пройденных QC.
+    shots = plan.get("shots", [])
+    fs_hi = int((limits.get("fullscreen_text_per_video") or [2, 4])[-1])
+    fs_shots = [s for s in shots if s.get("kind") == "fullscreen_text"]
+    checks.append(_check(
+        23, "Полноэкранных надписей в ролике", len(fs_shots) <= fs_hi,
+        value=len(fs_shots), threshold=fs_hi,
+        detail=", ".join(str(s["index"]) for s in fs_shots[:8])))
+
+    # 24. Голых плит: кадр без текста, без ассета и без приёма. Последняя
+    # ветка лестницы §7.2, и она обязана оставаться последней.
+    plates = [s for s in shots
+              if "plate without text" in str(s.get("gap_reason") or "")]
+    checks.append(_check(
+        24, "Голых плит без текста и материала", len(plates) <= 2,
+        value=len(plates), threshold=2,
+        detail=", ".join(str(s["index"]) for s in plates[:8])))
+
+    # 25. Визуальное разнообразие: ни один приём не звучит больше двух раз.
+    # На 0042 `blur-out-up` встречался трижды (V-4).
+    used = [str(s.get("template") or "") for s in shots if s.get("template")]
+    used += [str(o.get("template") or "")
+             for o in plan.get("overlays", []) if o.get("template")]
+    counts = Counter(used)
+    worst_template, worst_count = (counts.most_common(1) or [("", 0)])[0]
+    checks.append(_check(
+        25, "Приём не повторяется больше двух раз", worst_count <= 2,
+        value={"template": worst_template, "count": worst_count},
+        threshold=2,
+        detail=f"{worst_template} — {worst_count} раза" if worst_count > 2 else ""))
+
+    # 29. Экранный хук: строка обязана быть в кадре к первой секунде и
+    # читаться за неё же. До §5 хук собирался случайно — первые кадры 0042
+    # выбрала `gap_phrase`, то есть «что вынести, когда материала нет».
+    hook_shot = next((s for s in shots if s.get("hook")), None)
+    if hook_shot is None:
+        hook_shot = next((s for s in shots
+                          if s.get("kind") == "fullscreen_text"
+                          and float(s.get("start", 99)) <= 1.0), None)
+    hook_text = str((hook_shot or {}).get("content") or "")
+    hook_words = len([w for w in hook_text.split() if w])
+    hook_at = float((hook_shot or {}).get("start", 99.0)) + float(
+        ((hook_shot or {}).get("params") or {}).get("enter_delay") or 0.0)
+    # Нижняя граница — одно слово, а не три, как сказано в прозе §12.2. Банк
+    # хуков §5.4 сам себе противоречит: «НЕВОЗМОЖНО ПРОВЕРИТЬ», «105 КУБИТОВ»,
+    # «НАЙДИ ОШИБКУ» — все по два слова, а стиль `blackout_word` по замыслу
+    # выносит на экран ровно одно. Считаем правдой примеры, а не абзац: гейт с
+    # порогом в три слова забраковал бы эталонную разметку 0042 из того же ТЗ.
+    hook_ok = bool(hook_shot) and hook_at <= 1.0 and 1 <= hook_words <= 7 \
+        and not _hook_is_banned(hook_text)
+    checks.append(_check(
+        29, "Экранный хук в первую секунду", hook_ok,
+        value={"at_sec": round(hook_at, 2) if hook_shot else None,
+               "words": hook_words, "text": hook_text[:48]},
+        threshold={"at_sec": 1.0, "words": [1, 7]},
+        detail=("хук-кадра нет" if not hook_shot else "")))
+
+    # 30. Доля акцента в кадре (§7.5). До этой волны `accent_share_max`
+    # оставался нулём на пути HyperFrames: его считал только старый
+    # PIL-компоновщик, а бюджет `color_rules.accent_max_frame_share` был
+    # объявлен и не измерялся ни разу. Коридор двусторонний намеренно: ролик
+    # совсем без акцента — такой же брак, как залитый им, просто тише.
+    accent_rules = (cfg.brandbook.get("color_rules") or {}) \
+        if hasattr(cfg, "brandbook") else {}
+    accent_hi = float(accent_rules.get("accent_max_frame_share", 0.12))
+    accent_lo = float(accent_rules.get("accent_min_frame_share", 0.02))
+    accent_max = float(render_stats.get("accent_share_max") or 0.0)
+    accent_measured = int(render_stats.get("accent_share_max") is not None)
+    checks.append(_check(
+        30, "Доля акцентного цвета в кадре",
+        accent_lo <= accent_max <= accent_hi,
+        value={"max": round(accent_max, 4),
+               "by_family": render_stats.get("accent_by_family") or {}},
+        threshold=[accent_lo, accent_hi],
+        detail=("замер по шести пробам готового файла"
+                if accent_measured else "замер не выполнен"),
+        blocking=False))
 
     blocking = [c for c in checks if c["blocking"]]
     passed_count = sum(1 for c in blocking if c["passed"])

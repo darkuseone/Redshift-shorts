@@ -8,7 +8,11 @@
     "target_duration_sec": 50,
     "allow_memes": true,
     "allow_bg_vfx": true,
-    "publish_date": "2026-08-19"
+    "publish_date": "2026-08-19",
+    "hook": {
+      "on_screen": "НЕВОЗМОЖНО ПРОВЕРИТЬ",
+      "style": "blackout_word"
+    }
   },
   "sources": [
     {
@@ -36,7 +40,10 @@
       "emphasis_word": "невозможно",
       "avatar": "off",
       "visual_intent": "Холодный кадр квантового процессора в криостате, крупно",
-      "broll_queries": ["quantum processor macro shot", "cryostat golden chandelier laboratory"],
+      "broll_queries": [
+        "quantum processor macro shot",
+        "cryostat golden chandelier laboratory"
+      ],
       "overlay": {
         "type": "fullscreen_text",
         "content": "НЕЧЕМ",
@@ -44,7 +51,8 @@
       },
       "sfx": "hit_impact",
       "meme_allowed": false,
-      "mode_hint": "C"
+      "mode_hint": "C",
+      "emphasis_family": "emotion"
     },
     {
       "id": "b2",
@@ -53,12 +61,15 @@
       "emphasis_word": "кубитов",
       "avatar": "on",
       "visual_intent": "Ведущий представляет тему, за головой — крупное слово",
-      "broll_queries": ["quantum computer laboratory wide"],
+      "broll_queries": [
+        "quantum computer laboratory wide"
+      ],
       "overlay": {
         "type": "none"
       },
       "sfx": "whoosh_in",
-      "mode_hint": "A"
+      "mode_hint": "A",
+      "emphasis_family": "tech"
     },
     {
       "id": "b3",
@@ -67,7 +78,10 @@
       "emphasis_word": "Nature",
       "avatar": "auto",
       "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
-      "broll_queries": ["scientific paper on screen", "researcher reading article laptop"],
+      "broll_queries": [
+        "scientific paper on screen",
+        "researcher reading article laptop"
+      ],
       "overlay": {
         "type": "highlight",
         "content": "ниже порога поверхностного кода",
@@ -75,7 +89,8 @@
       },
       "sfx": "ui_click",
       "source_ref": "nature.com",
-      "mode_hint": "B"
+      "mode_hint": "B",
+      "emphasis_family": "source"
     },
     {
       "id": "b4",
@@ -95,7 +110,8 @@
         "template_hint": "text-fullscreen/impact-01"
       },
       "sfx": "data_beep",
-      "mode_hint": "C"
+      "mode_hint": "C",
+      "emphasis_family": "number"
     },
     {
       "id": "b5",
@@ -104,7 +120,9 @@
       "emphasis_word": "верим",
       "avatar": "on",
       "visual_intent": "Ведущий крупно, поворотный момент, акцентное слово",
-      "broll_queries": ["thoughtful scientist portrait dark"],
+      "broll_queries": [
+        "thoughtful scientist portrait dark"
+      ],
       "overlay": {
         "type": "lower_third",
         "content": "Проверить нечем",
@@ -112,7 +130,8 @@
       },
       "sfx": "sub_drop",
       "answers_hook": true,
-      "mode_hint": "A"
+      "mode_hint": "A",
+      "emphasis_family": "myth"
     },
     {
       "id": "b6",
@@ -121,12 +140,15 @@
       "emphasis_word": "доверил",
       "avatar": "auto",
       "visual_intent": "Финальный кадр, кнопка подписки",
-      "broll_queries": ["abstract red gradient background"],
+      "broll_queries": [
+        "abstract red gradient background"
+      ],
       "overlay": {
         "type": "none"
       },
       "sfx": "subscribe_ping",
-      "mode_hint": "A"
+      "mode_hint": "A",
+      "emphasis_family": "emotion"
     }
   ],
   "cta": {

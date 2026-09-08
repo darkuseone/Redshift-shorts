@@ -24,6 +24,8 @@
 from __future__ import annotations
 
 import argparse
+import html as html_mod
+import re
 import shutil
 import subprocess
 import sys
@@ -36,7 +38,9 @@ sys.path.insert(0, str(ROOT))
 from src.lib.config import load_config                              # noqa: E402
 from src.lib.ffmpeg import ffmpeg_bin                               # noqa: E402
 from src.lib.render.hyperframes.project import HyperFramesProject   # noqa: E402
-from src.lib.render.hyperframes.templates import HERO, TRANSITIONS  # noqa: E402
+from src.lib.render.hyperframes.templates import (                   # noqa: E402
+    HERO, TRANSITIONS, WORK_AREA_W, text_width,
+)
 
 # Шаг субтитра, на котором ломалось двойное округление: начало и длительность
 # округлялись порознь и обе уезжали вверх. Держим его здесь нарочно.
@@ -375,6 +379,34 @@ def _uncovered(media: dict[str, Path]) -> list[str]:
     return silent
 
 
+# Строки композиции и их кегль: ``<span style="font-size:NNpx">ТЕКСТ</span>``
+# и то же самое на ``div``. Разбор нарочно грубый — линту нужен не парсер HTML,
+# а список строк, которые кто-то набрал крупнее рабочего поля.
+_SIZED_TEXT = re.compile(
+    r'<(?:span|div)[^>]*font-size:\s*(\d+(?:\.\d+)?)px[^>]*>([^<]{1,400})<',
+    re.IGNORECASE)
+
+
+def work_area_violations(html: str) -> list[tuple[str, int, int]]:
+    """Строки, вылезающие за рабочее поле брендбука (740 px).
+
+    MEGA K.3 п.5, переносим как есть. Кегль подбирается `fit_in_work_area` на
+    рендере, но подбор идёт по одной строке: составной заголовок собирался из
+    частей и уезжал под край кадра — а увидеть это можно было только на
+    готовом ролике, то есть через четверть часа рендера.
+    """
+    out: list[tuple[str, int, int]] = []
+    for raw_size, raw_text in _SIZED_TEXT.findall(html):
+        text = html_mod.unescape(raw_text).strip()
+        size = int(float(raw_size))
+        if not text or size <= 0:
+            continue
+        width = text_width(text, size, role="display")
+        if width > WORK_AREA_W + 1.0:
+            out.append((text[:48], size, int(width)))
+    return out
+
+
 def run(hyperframes: str, work: Path) -> tuple[int, str]:
     """Собрать проект и отдать его lint. Возвращает (код, вывод)."""
     media = _media(work / "media")
@@ -388,7 +420,16 @@ def run(hyperframes: str, work: Path) -> tuple[int, str]:
     if silent:
         out += ("\nприёмы без узлов (проверкой не покрыты): "
                 + ", ".join(silent) + "\n")
-    return (proc.returncode or (1 if silent else 0)), out
+
+    # QC-20 до рендера: ошибка композиции стоит секунды линта вместо минут.
+    over: list[tuple[str, int, int]] = []
+    for page in sorted(root.rglob("*.html")):
+        over += work_area_violations(page.read_text(encoding="utf-8"))
+    if over:
+        out += (f"\n✗ work_area: {len(over)} строк шире {WORK_AREA_W} px\n"
+                + "".join(f"    {size}px · {width} px · {text!r}\n"
+                          for text, size, width in over[:12]))
+    return (proc.returncode or (1 if (silent or over) else 0)), out
 
 
 def main() -> int:

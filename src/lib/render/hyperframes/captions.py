@@ -301,6 +301,15 @@ def _accent_index(words: list[dict[str, Any]]) -> int:
     return len(words) - 1
 
 
+def _accent_cyan(word: dict[str, Any]) -> bool:
+    """Красить ли акцент этого слова в cyan (§7.1).
+
+    Семейство приезжает со словом из сборки (`accent_family`), а не выводится
+    здесь: цвет — свойство смысла блока, а не длины фразы.
+    """
+    return str((word or {}).get("accent_family") or "red") == "cyan"
+
+
 def _ease(brandbook: dict[str, Any], name: str, fallback: str) -> str:
     curve = (brandbook.get("easing") or {}).get(name)
     if not curve:
@@ -349,6 +358,7 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         f"text-transform:uppercase;letter-spacing:{tracking}em;"
         f"line-height:{line_height};color:{color};opacity:0;{shadow}}}"
         ".cf-word.is-accent{color:var(--color-accent)}"
+        ".cf-word.is-accent.cyan{color:var(--color-cyan)}"
         ".cf-vignette{position:absolute;inset:0;pointer-events:none;"
         "background:radial-gradient(ellipse at 50% 50%,"
         "rgba(0,0,0,0) 42%,rgba(0,0,0,0.4) 100%)}"
@@ -402,6 +412,8 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         ".bd-word.is-spacer{visibility:hidden}"
         ".bd-word.is-accent{"
         f"color:var(--color-accent);{shadow}}}"
+        ".bd-word.is-accent.cyan{"
+        f"color:var(--color-cyan);{shadow}}}"
     )
 
 
@@ -497,6 +509,8 @@ def build_camera_follow(
         for i, word in enumerate(laid):
             wid = f"{clip_id}-w{i}"
             klass = "cf-word is-accent" if word.accent else "cf-word"
+            if word.accent and _accent_cyan(phrase[i]):
+                klass += " cyan"
             # Геометрия мира — инлайн, не твин. Первое слово сразу видно:
             # каталог не оставляет кадр нулевым пустым.
             opacity = ";opacity:1" if i == 0 else ""
@@ -800,8 +814,20 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "baseline_y": float(subs.get("baseline_y_default", 975)),
         "accent": str(colors.get("accent", "#C8453D")),
         "accent_soft": str(colors.get("accent_soft", "#E4726A")),
+        # Второе семейство акцента — из того же брендбука. Градиент «кровь»
+        # красным словам не годится для cyan: он даёт розовый провал в
+        # середине, а не свечение.
+        "cyan": str(colors.get("cyan", "#36EFFF")),
+        "cyan_soft": str(colors.get("cyan_soft", "#7AF0FF")),
         "ink": str(subs.get("color", "#FFFFFF")),
     }
+
+
+def _accent_pair(params: dict[str, Any], word: dict[str, Any]) -> tuple[str, str]:
+    """Пара цветов градиента по семейству акцента слова."""
+    if _accent_cyan(word):
+        return params["cyan"], params["cyan_soft"]
+    return params["accent"], params["accent_soft"]
 
 
 def _blood_gradient(gid: str, accent: str, soft: str) -> str:
@@ -888,7 +914,7 @@ def build_gradient_fill(
                     f'line-height:{size}px">{_esc(shown)}</span>'
                     f'<svg width="{_px(wpx)}" height="{size}" '
                     f'viewBox="0 0 {_px(wpx)} {size}">'
-                    f'<defs>{_blood_gradient(f"{wid}-grad", params["accent"], params["accent_soft"])}'
+                    f'<defs>{_blood_gradient(f"{wid}-grad", *_accent_pair(params, word))}'
                     f'<mask id="{wid}-m" maskUnits="userSpaceOnUse" '
                     f'maskContentUnits="userSpaceOnUse">'
                     f'<rect id="{wid}-r" class="gf-wipe-r" x="0" y="0" '
@@ -970,6 +996,8 @@ def _bd_row(
             cls = "bd-word is-spacer" if i == accent_at else "bd-word"
         else:
             cls = "bd-word is-accent" if i == accent_at else "bd-word is-spacer"
+            if i == accent_at and _accent_cyan(word):
+                cls += " cyan"
         margin = _px(gap_px) if i < n - 1 else "0"
         nodes.append(
             f'<div id="{clip_id}-w{i}" class="{cls}" '

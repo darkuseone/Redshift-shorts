@@ -541,7 +541,8 @@ class TestReachability:
             cat for cat in picker.catalog.counts().keys()
             if cat not in picker.index.unreachable_categories
         ]
-        assert len(live_categories) == 10
+        # Одиннадцать, а не десять: `intro-hooks` подключена в Q1.2.
+        assert len(live_categories) == 11
 
         manifest_by_cat = {cat: set() for cat in live_categories}
         for t in picker.catalog.all():
@@ -569,7 +570,15 @@ class TestReachability:
             assert not missing, f"Category {cat} has unreached templates in channels: {missing}"
 
     def test_unreachable_categories_have_no_live_call_sites(self, picker):
-        assert set(picker.index.unreachable_categories) == {"intro-hooks", "parallax"}
+        """`intro-hooks` подключена в Q1.2; `parallax` ждёт Q2.6 (§8.3)."""
+        assert set(picker.index.unreachable_categories) == {"parallax"}
+
+    def test_the_hook_category_is_actually_reached_from_the_assembler(self):
+        """Запись о недостижимости снимается вместе с вызовом, а не вместо него."""
+        source = (Path(__file__).resolve().parents[1] / "src" / "p11_assemble"
+                  / "assemble.py").read_text(encoding="utf-8")
+        assert 'picker.pick(\n        "intro-hooks"' in source or \
+            '"intro-hooks",' in source, "категория снята из списка, но не вызвана"
 
 
 class TestNegativeCorpus:

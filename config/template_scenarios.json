@@ -3,10 +3,9 @@
   "specific_weight_min": 20,
   "default_weight_min": 10,
   "unreachable_categories": [
-    "intro-hooks",
     "parallax"
   ],
-  "reason": "Категории intro-hooks (8 шаблонов, 7 интентов) и parallax (4 шаблона, 2 интента) не выбираются из каталога нигде в src/; подключение вне scope Phase C.",
+  "reason": "Категория parallax (4 шаблона, 2 интента) не выбирается из каталога нигде в src/: MOTION[\"parallax\"] зарегистрирован, но render_motion вызывается единственной строкой \"kenburns\" (§8.3, Q2.6). Категория intro-hooks подключена в Q1.2 — _pick_hook_shot в assemble.py.",
   "intents": [
     {
       "id": "browser-ai-chat",
@@ -1585,6 +1584,9 @@
       "variants": [
         "A",
         "B"
+      ],
+      "signals_any": [
+        "question"
       ]
     },
     {
@@ -1602,9 +1604,7 @@
         "countdown"
       ],
       "patterns": [],
-      "needs": [
-        "numbers"
-      ],
+      "needs": [],
       "templates": [
         "intro-hooks/hook-number-slam",
         "intro-hooks/hook-countdown-3"
@@ -1613,6 +1613,9 @@
       "variants": [
         "A",
         "B"
+      ],
+      "signals_any": [
+        "number"
       ]
     },
     {
@@ -1637,6 +1640,9 @@
       "variants": [
         "A",
         "B"
+      ],
+      "signals_any": [
+        "negation"
       ]
     },
     {
@@ -1660,6 +1666,9 @@
       "variants": [
         "A",
         "B"
+      ],
+      "signals_any": [
+        "cold_open"
       ]
     },
     {

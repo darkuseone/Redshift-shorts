@@ -1025,6 +1025,7 @@ def run_step(ctx) -> dict[str, Any]:
         "cta": draft.get("cta", {}),
         "cta_window": [round(max(0.0, duration - cta_tail), 3), round(duration, 3)],
         "hook_window": [0.0, float(limits.get("hook_sec", 3.0))],
+        "hook": draft.get("hook", {}),
         "avatar_id": ctx.cfg.get("heygen.avatar_id"),
         "stats": stats,
         "notes": warnings,

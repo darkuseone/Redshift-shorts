@@ -618,6 +618,9 @@ class RenderStats:
     overlay_draws: int = 0
     safe_zone_violations: list[dict[str, Any]] = field(default_factory=list)
     accent_share_max: float = 0.0
+    # Доля по каждому семейству отдельно: гейт смотрит на сумму, а разбор —
+    # на слагаемые, иначе непонятно, кто именно расползся по кадру.
+    accent_by_family: dict[str, float] = field(default_factory=dict)
     subtitle_frames: int = 0
     speech_frames: int = 0
 
@@ -627,6 +630,7 @@ class RenderStats:
             "shots": self.shots, "overlay_draws": self.overlay_draws,
             "safe_zone_violations": self.safe_zone_violations,
             "accent_share_max": round(self.accent_share_max, 4),
+            "accent_by_family": dict(self.accent_by_family),
             "subtitle_frames": self.subtitle_frames,
             "speech_frames": self.speech_frames,
         }

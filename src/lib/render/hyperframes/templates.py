@@ -12730,7 +12730,35 @@ FULLSCREEN: dict[str, Callable[["TemplateCtx"], Piece]] = {
 }
 
 
+def _apply_accent_family(piece: Piece, family: str) -> Piece:
+    """Перекрасить акцентное слово в семейство блока (§7.1).
+
+    Класс ставится здесь, одним швом, а не протаскивается параметром через
+    девять вызовов `_mark_accent`: у полноэкранных приёмов общий вход
+    `render_fullscreen`, и десятый приём, который завтра добавят, получит
+    семейство сам, а не забудет его прокинуть.
+
+    `.accent-cyan` уже объявлен в `brand_css.py:295` и до сих пор никем не
+    выводился: cyan лежал в брендбуке первым классом и не доезжал до кадра.
+    """
+    if family != "cyan":
+        return piece
+    return Piece(
+        nodes=[n.replace('class="accent"', 'class="accent accent-cyan"')
+               for n in piece.nodes],
+        tweens=list(piece.tweens),
+        css=list(piece.css),
+    )
+
+
 def render_fullscreen(ctx: "TemplateCtx") -> Piece:
+    """Собрать полноэкранный кадр и покрасить акцент семейством блока."""
+    return _apply_accent_family(
+        _render_fullscreen_body(ctx),
+        str(ctx.params.get("accent_family") or "red"))
+
+
+def _render_fullscreen_body(ctx: "TemplateCtx") -> Piece:
     """Собрать полноэкранный кадр по renderer и params шаблона."""
     named = str(ctx.params.get("renderer") or "")
     if named in FULLSCREEN and named != "fullscreen_text":

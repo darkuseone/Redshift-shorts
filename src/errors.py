@@ -52,6 +52,10 @@ class HookUnanswered(ValidationError):
     code = "HOOK_UNANSWERED"
 
 
+class HookGreeting(ValidationError):
+    code = "HOOK_GREETING"
+
+
 class QuoteTooLong(ValidationError):
     code = "QUOTE_TOO_LONG"
 

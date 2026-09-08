@@ -16,6 +16,12 @@ OVERLAY_TYPES = ("fullscreen_text", "frame", "lower_third", "highlight", "none")
 SCREEN_TEMPLATES = ("browser", "notepad", "search", "chat_ai", "arxiv_card", "patent_card")
 AVATAR_MODES = ("auto", "on", "off")
 CTA_TYPES = ("question", "loop", "statement")
+# Стили хука 0–5 с (§5.2). Порядок не значим: это перечисление, а не приоритет.
+# Каждый стиль отвечает одному интенту каталога, соответствие живёт в
+# `assemble.py` (`HOOK_STYLE_TEMPLATES`), а не здесь: схема описывает сценарий,
+# а не каталог приёмов.
+HOOK_STYLES = ("number_slam", "question_flash", "blackout_word",
+               "cold_open", "split_reveal", "typing_search", "avatar_direct")
 
 SCRIPT_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -40,6 +46,23 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                 "publish_date": {"type": "string"},
                 "music_mood": {"type": "string"},
                 "notes": {"type": "string"},
+                # Хук первых пяти секунд. Без этого блока хук собирался
+                # случайно: на 0042 первые три кадра выбрала `gap_phrase`,
+                # то есть «что вынести на экран, когда материала нет».
+                "hook": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        # 3–7 слов, попадают на кадр к 0.5–1.0 с. Это семя для
+                        # OCR-проверки и для подбора приёма.
+                        "on_screen": {"type": "string", "minLength": 3,
+                                      "maxLength": 64},
+                        "style": {"enum": list(HOOK_STYLES)},
+                        # Запрос под холодное открытие: кадр до первого слова.
+                        "cold_open_query": {"type": "string"},
+                        "template_hint": {"type": "string"},
+                    },
+                },
             },
         },
         "sources": {

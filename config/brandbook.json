@@ -26,8 +26,12 @@
     "_comment": "Палитра брендбука «IT КОСМОС»: live red #C8453D (не форсим #E63946 без скринов), космос #0B132B, техно-нейтраль #1A1F2E, второстепенный текст #C7C9D1, свет #FFFFFF, cyan #36EFFF / soft #7AF0FF / deep #0BB8C9. bg_light и bg_pure остались светлыми намеренно: это поверхности настоящего интерфейса — окно браузера и карточка статьи, которые обязаны выглядеть настоящей страницей, а не панелью канала. TODO(markus-screenshots): подтвердить cyan/red по брендовым референсам Cursor."
   },
   "color_rules": {
-    "accent_tokens": ["accent", "cyan"],
+    "accent_tokens": [
+      "accent",
+      "cyan"
+    ],
     "accent_max_frame_share": 0.12,
+    "accent_min_frame_share": 0.02,
     "accent_highlights_single_word": true,
     "max_colors_in_frame": 3,
     "gradients_per_video_max": 1,

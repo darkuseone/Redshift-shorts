@@ -120,6 +120,61 @@ def dominant_off_hue(image: Image.Image | Path | str,
     return float(buckets[top] / hue.size), top * width
 
 
+# Коридоры двух акцентов канала в HSV. Границы взяты от токенов брендбука
+# (`accent #C8453D` → hue ≈ 4°, `cyan #36EFFF` → hue ≈ 186°) и расширены ровно
+# настолько, чтобы поймать слово под свечением и антиалиасингом, но не поймать
+# кожу ведущего (hue 20-40° при низкой насыщенности) и не поймать небо.
+ACCENT_CORRIDORS = {
+    "red": {"hue": (348.0, 18.0), "sat_min": 0.35, "value_min": 0.30},
+    "cyan": {"hue": (168.0, 204.0), "sat_min": 0.35, "value_min": 0.35},
+}
+
+
+def accent_share(image: Image.Image | Path | str,
+                 corridors: dict[str, Any] | None = None) -> dict[str, float]:
+    """Какую долю кадра занимает каждый акцент канала.
+
+    `render_stats.accent_share_max` на пути HyperFrames оставался нулём: доля
+    считалась только в старом PIL-компоновщике (`overlays.py:158`), а бюджет
+    `color_rules.accent_max_frame_share = 0.12` объявлен и не измерялся ни
+    разу (N-11). Возвращается доля по каждому семейству и их сумма: гейт
+    смотрит на сумму, а разбор — на слагаемые.
+    """
+    if not isinstance(image, Image.Image):
+        image = Image.open(image)
+    rgb = np.asarray(image.convert("RGB").resize(SAMPLE), dtype=np.float32) / 255.0
+    hue, sat, value = _hsv(rgb)
+    out: dict[str, float] = {}
+    for name, spec in (corridors or ACCENT_CORRIDORS).items():
+        lo, hi = float(spec["hue"][0]), float(spec["hue"][1])
+        # Красный лежит на стыке круга, поэтому коридор может быть «через ноль».
+        in_hue = (hue >= lo) | (hue <= hi) if lo > hi else (hue >= lo) & (hue <= hi)
+        mask = in_hue & (sat >= float(spec["sat_min"])) \
+            & (value >= float(spec["value_min"]))
+        out[name] = float(mask.mean())
+    out["total"] = float(sum(v for k, v in out.items() if k != "total"))
+    return out
+
+
+def accent_share_max(frames: Sequence[Image.Image | Path | str],
+                     corridors: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Худший кадр решает за ролик — как и в проверке палитры.
+
+    Среднее размажет вспышку акцента на весь хронометраж и пропустит кадр,
+    который зритель увидит целиком красным.
+    """
+    per_frame = [accent_share(f, corridors) for f in frames]
+    if not per_frame:
+        return {"max": 0.0, "red": 0.0, "cyan": 0.0, "frames": 0}
+    worst = max(per_frame, key=lambda d: d["total"])
+    return {
+        "max": round(worst["total"], 4),
+        "red": round(max(d["red"] for d in per_frame), 4),
+        "cyan": round(max(d["cyan"] for d in per_frame), 4),
+        "frames": len(per_frame),
+    }
+
+
 def palette_verdict(frames: Sequence[Image.Image | Path | str],
                     rules: dict[str, Any]) -> dict[str, Any]:
     """Приговор кадрам кандидата: худший кадр решает за весь клип.

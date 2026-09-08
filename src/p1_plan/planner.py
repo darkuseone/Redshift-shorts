@@ -265,6 +265,9 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
         "music_tags": music_tags,
         "sources": script.get("sources", []),
         "cta": script.get("cta", {}),
+        # Хук едет из сценария в план целиком: сборщик выбирает приём первых
+        # секунд по нему, а не по тому, что осталось от подбора материала.
+        "hook": meta.get("hook", {}),
         "modes_by_block": {b["id"]: b["mode"] for b in blocks},
         "conflicts": conflicts,
     }

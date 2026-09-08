@@ -146,8 +146,10 @@ class TestTheRetentionLoopHasAShape:
         assert self._codes(sample_script, cfg) == []
 
     def test_a_hook_that_turns_into_an_intro_is_named(self, sample_script, cfg):
+        # Без «сегодня разберём» в начале: с Q1.2 это отдельный, блокирующий
+        # брак (HOOK_GREETING), и он сработал бы раньше проверки длины.
         sample_script["blocks"][0]["text"] = (
-            "Сегодня разберём историю, которая началась почти сорок лет назад "
+            "История началась почти сорок лет назад "
             "в северной экспедиции, и закончилась совершенно неожиданным образом "
             "для всех участников той долгой работы."
         )

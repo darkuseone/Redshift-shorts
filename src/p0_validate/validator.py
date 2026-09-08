@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 from ..errors import (
-    BudgetExceeded, DurationOutOfRange, FillerWords, HookUnanswered, MissingCta,
-    MissingHook, NoSource, QuoteTooLong, ValidationError,
+    BudgetExceeded, DurationOutOfRange, FillerWords, HookGreeting, HookUnanswered,
+    MissingCta, MissingHook, NoSource, QuoteTooLong, ValidationError,
 )
 from ..lib.costs import estimate_cost, guard_estimate
 from ..lib.fillers import discourse_hits, strip_hesitations
@@ -95,6 +95,62 @@ def _check_hook_answered(blocks: list[dict[str, Any]]) -> None:
         "или пометьте отвечающий блок полем \"answers_hook\": true",
         hook_id=hook.get("id"), hook_terms=sorted(hook_terms)[:10],
     )
+
+
+# Разгон вместо хука: ролик начинается с представления, а не с причины
+# смотреть. Первые секунды — единственное, что видит пролистывающий, и
+# «всем привет, сегодня разберём» тратит их на вежливость.
+_GREETING_OPENERS = (
+    "привет", "всем привет", "здравствуй", "здравствуйте", "добрый день",
+    "добрый вечер", "с вами", "это канал", "на связи",
+    "в этом видео", "в сегодняшнем видео", "сегодня разберём", "сегодня разберем",
+    "сегодня поговорим", "сегодня я расскажу", "подписывайтесь",
+)
+
+
+def _check_hook_greeting(blocks: list[dict[str, Any]]) -> None:
+    """§5.2 H-5 HOOK_GREETING: приветствие в первом блоке — брак.
+
+    Блокирующий, а не предупреждение: предупреждение здесь ничего не меняет —
+    ролик всё равно уедет в рендер, а зритель всё равно уйдёт на первой
+    секунде. Дешевле остановить на P0, где правка стоит одну строку сценария.
+    """
+    hook = next((b for b in blocks if b.get("role") == "hook"), None) or \
+        (blocks[0] if blocks else None)
+    if not hook:
+        return
+    opening = re.sub(r"^[\s\-—«\"']+", "", str(hook.get("text") or "")).lower()
+    for opener in _GREETING_OPENERS:
+        if opening.startswith(opener):
+            raise HookGreeting(
+                f"хук начинается с приветствия {opener!r}: первые секунды обязаны "
+                f"дать причину смотреть, а не представление "
+                f"(§5.2; банк хуков — в ТЗ §5.4)",
+                block_id=hook.get("id"), opener=opener,
+            )
+
+
+def _check_hook_on_screen(meta: dict[str, Any],
+                          blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Экранная строка хука: есть ли она и не длинна ли (§5.2 H-5)."""
+    out: list[dict[str, Any]] = []
+    spec = meta.get("hook") or {}
+    on_screen = str(spec.get("on_screen") or "").strip()
+    hook = next((b for b in blocks if b.get("role") == "hook"), None) or {}
+    overlay_content = str((hook.get("overlay") or {}).get("content") or "").strip()
+    if not on_screen and not overlay_content:
+        out.append({
+            "code": "HOOK_NO_ON_SCREEN",
+            "message": "у хука нет экранной строки: ни meta.hook.on_screen, ни "
+                       "overlay.content — приём выберется вслепую",
+        })
+    if on_screen and count_words(on_screen) > 7:
+        out.append({
+            "code": "HOOK_ON_SCREEN_TOO_LONG",
+            "message": f"экранная строка хука — {count_words(on_screen)} слов "
+                       f"при потолке 7: за секунду её не прочитать",
+        })
+    return out
 
 
 # --- петля удержания (script_playbook.md) ------------------------------------
@@ -260,8 +316,10 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
         warnings.append({"code": "HOOK_NOT_FIRST",
                          "message": "блок hook не первый — порядок будет исправлен планировщиком"})
 
-    # --- HOOK_UNANSWERED
+    # --- HOOK_GREETING / HOOK_UNANSWERED
+    _check_hook_greeting(blocks)
     _check_hook_answered(blocks)
+    warnings.extend(_check_hook_on_screen(meta, blocks))
 
     # --- форма петли удержания (предупреждения, не отказ)
     warnings.extend(_check_retention_loop(blocks, script.get("cta")))

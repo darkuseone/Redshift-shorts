@@ -26,8 +26,10 @@ from ..lib.render.compositor import Compositor
 from ..lib.render.hyperframes import HyperFramesCompositor
 from ..lib.render.layers import Ctx
 from .overlays import build_overlay_renderer
+from ..lib.palette import accent_share_max
+from ..lib.ffmpeg import extract_frames
 from .qc import run_qc
-from .vision_qc import run_vision_qc
+from .vision_qc import run_vision_qc, sample_positions
 
 _log = get_logger("p12")
 
@@ -373,6 +375,22 @@ def run_step(ctx) -> dict[str, Any]:
         stats = compositor.render(plan, out_file, ctx.work_dir / "mix.wav")
         info = probe(out_file)
 
+        # Доля акцента (§7.5). Кадры снимаются один раз и уходят дальше в
+        # смысловой QC: `render_stats.accent_share_max` до этой волны оставался
+        # нулём на пути HyperFrames, потому что его считал только старый
+        # PIL-компоновщик, а бюджет 0.12 был объявлен и не измерялся ни разу.
+        qc_frames = None
+        try:
+            qc_frames = extract_frames(
+                out_file, ctx.wpath("qc", variant, ".k").parent,
+                sample_positions(), width=540)
+            accent = accent_share_max(qc_frames)
+            stats.accent_share_max = float(accent["max"])
+            stats.accent_by_family = {"red": accent["red"], "cyan": accent["cyan"]}
+        except Exception as exc:                              # noqa: BLE001
+            _log.warning("доля акцента не измерена", extra={"variant": variant,
+                                                            "error": str(exc)})
+
         qc = run_qc(ctx, plan=plan, cut_plan=cut_plan, render_stats=stats.to_dict(),
                     media=info, sfx_map=sfx_map, avatar_meta=avatar_meta,
                     accepted=accepted, generated=generated, script=script)
@@ -391,7 +409,8 @@ def run_step(ctx) -> dict[str, Any]:
 
         # §11.2 — смысловой QC по готовому файлу. Не блокирует выдачу: он даёт
         # материал для правки правил, а решение о браке принимает §11.1.
-        qc["vision"] = run_vision_qc(ctx, video_path=out_file, plan=plan)
+        qc["vision"] = run_vision_qc(ctx, video_path=out_file, plan=plan,
+                                     frames=qc_frames)
 
         thumb = ctx.opath("thumbnail.jpg") if variant == variants[0] else \
             ctx.opath(f"thumbnail_{variant}.jpg")
@@ -437,6 +456,14 @@ def run_step(ctx) -> dict[str, Any]:
         "warnings": list(ctx.warnings),
         "devices": _devices_report({v: ctx.read(f"edit_plan_{v}.json") for v in variants}),
         "cost_usd": ctx.costs.total_usd,
+        # Деньги по сервисам, а не одной суммой: денежный DoD §4.4 требует
+        # видеть, что elevenlabs=0 и heygen=0, а не только что итог невелик.
+        "costs": ctx.costs.to_dict(),
+        # Трассы подбора приёмов: `PickTrace` возвращался всеми вызовами
+        # `picker.pick` и везде выбрасывался в `_`. Без него QC-25 и разбор
+        # «почему выбран этот приём» нечем закрыть.
+        "pick_traces": {v: ctx.read(f"edit_plan_{v}.json").get("pick_traces", [])
+                        for v in variants},
     }
     ctx.write("build_report.json", report)
     write_json(ctx.opath("build_report.json"), report)

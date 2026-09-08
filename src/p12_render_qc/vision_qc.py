@@ -63,7 +63,18 @@ def _expected(shot: dict[str, Any]) -> str:
     return expected
 
 
-def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any]) -> dict[str, Any]:
+def sample_positions() -> list[float]:
+    """Где именно снимаются пробы. Одно место правды на весь P12.
+
+    Доля акцента (§7.5) меряется на **тех же** кадрах: новых вызовов ffmpeg
+    волна не добавляет, а расхождение позиций сделало бы два замера про разные
+    ролики.
+    """
+    return [(i + 0.5) / SAMPLES for i in range(SAMPLES)]
+
+
+def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
+                  frames: list[Any] | None = None) -> dict[str, Any]:
     cfg = ctx.cfg
     if not bool(cfg.get("features.vision_qc", True)):
         return {"enabled": False, "reason": "features.vision_qc выключен"}
@@ -91,10 +102,11 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any]) -> dict[str, A
     duration = float(plan["duration_sec"])
     try:
         provider = build_vision_provider(cfg, ctx.costs, role="primary")
-        positions = [(i + 0.5) / SAMPLES for i in range(SAMPLES)]
-        frames = extract_frames(
-            video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
-            positions, width=540)
+        positions = sample_positions()
+        if frames is None:
+            frames = extract_frames(
+                video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
+                positions, width=540)
 
         samples: list[dict[str, Any]] = []
         for position, frame in zip(positions, frames):
