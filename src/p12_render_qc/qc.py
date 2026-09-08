@@ -19,7 +19,7 @@ from ..lib.jsonio import read_json_or
 from ..lib.logging import get_logger
 from ..lib.phash import video_is_duplicate
 from ..lib.render.canvas import SafeZones
-from ..lib.render.hyperframes.templates import WORK_AREA_W, text_width
+from ..lib.render.hyperframes.templates import text_width
 from ..lib.templates import overlap_share
 
 _log = get_logger("qc")
@@ -247,22 +247,27 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
 
     # --- QC-20/21/22: номера закреплены за MEGA P1, формулировка её же.
 
-    # 20. Текст за пределами рабочего поля. Кегль подбирается `fit_in_work_area`
-    # на рендере, но подбор идёт по одной строке: составной заголовок мог
-    # вылезти за 740 px и обрезаться краем кадра.
+    # 20. Текст за полем брендбука. Полей два: `work_area` (740 px) смещено
+    # влево, справа 250 px отданы ведущему; полноэкранные приёмы ведущего не
+    # имеют и набирают по центру во всю ширину за вычетом тех же полей —
+    # 1080 - 2*90 = 900 px. Меряем по внешней границе: строка шире неё вылезает
+    # в любом случае, а 740 px — брак только на стороне ведущего, и по плану
+    # эти элементы не отличить. Тот же порог, что у предрендерного линта.
+    bleed_w = 1080 - 2 * 90
     over = []
     for shot in plan.get("shots", []):
         text = str(shot.get("content") or "")
         size = int((shot.get("params") or {}).get("size") or 0)
         if not text or size <= 0:
             continue
-        widest = max((text_width(line.upper(), size, role="display")
+        widest = max((min(text_width(line.upper(), size, role="display"),
+                          text_width(line.upper(), size, role="subtitle"))
                       for line in text.splitlines() if line.strip()), default=0.0)
-        if widest > WORK_AREA_W + 1.0:
+        if widest > bleed_w + 1.0:
             over.append({"index": shot.get("index"), "px": round(widest)})
     checks.append(_check(
-        20, "Текст за рабочим полем", not over,
-        value=len(over), threshold=WORK_AREA_W,
+        20, "Текст за полем брендбука", not over,
+        value=len(over), threshold=bleed_w,
         detail=", ".join(f"кадр {o['index']}: {o['px']} px" for o in over[:6])))
 
     # 21. Приём без основания. Каждый приём обязан опираться на признак блока,

@@ -387,13 +387,28 @@ _SIZED_TEXT = re.compile(
     re.IGNORECASE)
 
 
-def work_area_violations(html: str) -> list[tuple[str, int, int]]:
-    """Строки, вылезающие за рабочее поле брендбука (740 px).
+# Поле у кадра два, и это не небрежность. `work_area` брендбука (x 90…830,
+# 740 px) смещено влево: справа 250 px отданы ведущему. Полноэкранные приёмы
+# ведущего в кадре не имеют и набирают по центру во всю ширину за вычетом тех
+# же полей — `1080 - 2*90 = 900 px`. Линт меряет по внешней границе: строка
+# шире неё вылезает за поле в любом случае, а 740 px — брак только для
+# элементов на стороне ведущего, и по разметке их не отличить.
+FRAME_W = 1080
+BRAND_MARGIN = 90
+BLEED_W = FRAME_W - 2 * BRAND_MARGIN
 
-    MEGA K.3 п.5, переносим как есть. Кегль подбирается `fit_in_work_area` на
-    рендере, но подбор идёт по одной строке: составной заголовок собирался из
-    частей и уезжал под край кадра — а увидеть это можно было только на
-    готовом ролике, то есть через четверть часа рендера.
+
+def work_area_violations(html: str) -> list[tuple[str, int, int]]:
+    """Строки, вылезающие за поле брендбука.
+
+    MEGA K.3 п.5. Кегль подбирается `fit_size` на рендере, но подбор идёт по
+    одной строке: составной заголовок собирался из частей и уезжал под край
+    кадра — а увидеть это можно было только на готовом ролике, то есть через
+    четверть часа рендера.
+
+    Ширина берётся по **узкой** из двух гарнитур: по разметке не видно, какой
+    из них строка будет набрана, и ошибиться в сторону ложной тревоги здесь
+    дороже — линт стоит в CI перед рендером и остановит зелёную сборку.
     """
     out: list[tuple[str, int, int]] = []
     for raw_size, raw_text in _SIZED_TEXT.findall(html):
@@ -401,8 +416,9 @@ def work_area_violations(html: str) -> list[tuple[str, int, int]]:
         size = int(float(raw_size))
         if not text or size <= 0:
             continue
-        width = text_width(text, size, role="display")
-        if width > WORK_AREA_W + 1.0:
+        width = min(text_width(text, size, role="display"),
+                    text_width(text, size, role="subtitle"))
+        if width > BLEED_W + 1.0:
             out.append((text[:48], size, int(width)))
     return out
 
@@ -426,7 +442,7 @@ def run(hyperframes: str, work: Path) -> tuple[int, str]:
     for page in sorted(root.rglob("*.html")):
         over += work_area_violations(page.read_text(encoding="utf-8"))
     if over:
-        out += (f"\n✗ work_area: {len(over)} строк шире {WORK_AREA_W} px\n"
+        out += (f"\n✗ work_area: {len(over)} строк шире {BLEED_W} px\n"
                 + "".join(f"    {size}px · {width} px · {text!r}\n"
                           for text, size, width in over[:12]))
     return (proc.returncode or (1 if (silent or over) else 0)), out
