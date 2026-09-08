@@ -20,6 +20,7 @@ from ..lib.costs import CostLedger
 from ..lib.providers.generation import (
     GeminiImageGeneration, GrokImageGeneration, build_generation_provider,
 )
+from ..lib.endings import record_ending
 from ..lib.jsonio import read_json_or, write_json
 from ..lib.logging import get_logger
 from ..lib.render.compositor import Compositor
@@ -27,6 +28,7 @@ from ..lib.render.hyperframes import HyperFramesCompositor
 from ..lib.render.layers import Ctx
 from .overlays import build_overlay_renderer
 from ..lib.palette import accent_share_max
+from ..lib.phash import dhash_image, hamming
 from ..lib.ffmpeg import extract_frames
 from .qc import run_qc
 from .vision_qc import run_vision_qc, sample_positions
@@ -391,6 +393,25 @@ def run_step(ctx) -> dict[str, Any]:
             _log.warning("доля акцента не измерена", extra={"variant": variant,
                                                             "error": str(exc)})
 
+        # Шов лупа (§6.3 R-4) — два дополнительных кадра, и только когда шов
+        # обещан типом концовки: за один ролик это лишние 0.2 с ffmpeg, за сто
+        # роликов — двадцать секунд впустую, если мерить всегда.
+        if str((cut_plan.get("cta") or {}).get("type") or "") == "visual_loop_seam":
+            try:
+                # `extract_frames` берёт **относительные** позиции 0..1, а не
+                # секунды: 0.1 с от конца — это доля, а не смещение.
+                total = float(info.get("duration_sec") or plan["duration_sec"] or 0.0)
+                tail_rel = max(0.0, (total - 0.1) / total) if total > 0.1 else 1.0
+                seam_frames = extract_frames(
+                    out_file, ctx.wpath("seam", variant, ".k").parent,
+                    [0.0, tail_rel], width=540)
+                if len(seam_frames) == 2:
+                    stats.loop_seam_dhash_bits = hamming(
+                        dhash_image(seam_frames[0]), dhash_image(seam_frames[1]))
+            except Exception as exc:                          # noqa: BLE001
+                _log.warning("шов лупа не измерен", extra={"variant": variant,
+                                                           "error": str(exc)})
+
         qc = run_qc(ctx, plan=plan, cut_plan=cut_plan, render_stats=stats.to_dict(),
                     media=info, sfx_map=sfx_map, avatar_meta=avatar_meta,
                     accepted=accepted, generated=generated, script=script)
@@ -468,6 +489,14 @@ def run_step(ctx) -> dict[str, Any]:
     ctx.write("build_report.json", report)
     write_json(ctx.opath("build_report.json"), report)
     _record_run(ctx, report, cut_plan)
+    # Кольцо концовок (§6.4) сдвигается только на выданных роликах: прогон,
+    # упавший на QC, ничем не закончился и права занимать тип не имеет.
+    if all_passed:
+        report["ending"] = record_ending(
+            cfg, video_id=cut_plan["video_id"],
+            kind=str((script.get("cta") or {}).get("type") or ""))
+        ctx.write("build_report.json", report)
+        write_json(ctx.opath("build_report.json"), report)
 
     if not all_passed:
         failed = {v: [c["id"] for c in q["checks"] if not c["passed"]]

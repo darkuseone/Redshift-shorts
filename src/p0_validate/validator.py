@@ -15,14 +15,16 @@ from ..errors import (
     BudgetExceeded, DurationOutOfRange, FillerWords, HookGreeting, HookUnanswered,
     MissingCta, MissingHook, NoSource, QuoteTooLong, ValidationError,
 )
+from ..lib.beats import answer_block_index
 from ..lib.costs import estimate_cost, guard_estimate
 from ..lib.fillers import discourse_hits, strip_hesitations
 from ..lib.fonts import validate_font
 from ..lib.jsonio import read_json
 from ..lib.logging import get_logger
+from ..lib.endings import last_ending_type, next_ending_type, repeats_previous
 from ..lib.schema import (
-    SCRIPT_SCHEMA, count_words, estimate_block_duration, estimate_script_duration,
-    extract_quotes,
+    CTA_LEGACY, SCRIPT_SCHEMA, count_words, estimate_block_duration,
+    estimate_script_duration, extract_quotes,
 )
 
 _log = get_logger("p0")
@@ -177,19 +179,57 @@ _NEXT_LOOP_MARKERS = (
 )
 
 
-def _answer_block_index(blocks: list[dict[str, Any]]) -> int | None:
-    """Где закрывается гештальт хука.
+def _map_legacy_cta(script: dict[str, Any]) -> list[dict[str, Any]]:
+    """Старые три типа концовки → восемь новых (§6.4), до проверки схемы.
 
-    Явная пометка сценариста сильнее роли: ``answers_hook`` ставят там, где
-    ответ не совпал с ``twist``.
+    Шесть уже написанных сценариев канала используют ``question``. Отвергать их
+    было бы правкой ради правки: имя типа изменилось, замысел — нет. Перевод
+    идёт **до** ``_schema_validate``, иначе схема упадёт на легитимном сценарии.
     """
-    for i, block in enumerate(blocks):
-        if block.get("answers_hook"):
-            return i
-    for i, block in enumerate(blocks):
-        if block.get("role") == "twist":
-            return i
-    return None
+    cta = script.get("cta")
+    if not isinstance(cta, dict):
+        return []
+    kind = cta.get("type")
+    if not isinstance(kind, str) or kind not in CTA_LEGACY:
+        return []
+    cta["type"] = CTA_LEGACY[kind]
+    return [{
+        "code": "CTA_TYPE_RENAMED",
+        "message": (f"тип концовки «{kind}» переименован в «{cta['type']}» (§6.4): "
+                    "перечень вырос с трёх типов до восьми, старое имя оставлено "
+                    "как псевдоним"),
+    }]
+
+
+def _check_ending_rotation(cta: dict[str, Any] | None, cfg, *,
+                           video_id: str = "") -> list[dict[str, Any]]:
+    """Ротация концовок (§6.4): тот же тип не два ролика подряд.
+
+    Предупреждение, а не отказ: решает автор. Но молчать нельзя — именно так
+    канал и закончился одинаково шесть роликов подряд, каждый раз законно.
+    """
+    kind = str((cta or {}).get("type") or "")
+    if not kind:
+        return []
+    try:
+        if not repeats_previous(cfg, kind, video_id=video_id):
+            return []
+        suggestion = next_ending_type(cfg, allow_loop_seam=False)
+        previous = last_ending_type(cfg)
+    except Exception:  # noqa: BLE001 — память ротации не обязана существовать
+        return []
+    return [{
+        "code": "CTA_TYPE_REPEATS",
+        "message": (f"предыдущий ролик закончился тем же типом «{previous}»: "
+                    f"кольцо §6.4 предлагает «{suggestion}» — канал не должен "
+                    "заканчиваться одинаково два раза подряд"),
+    }]
+
+
+# Где закрывается гештальт хука. Определение переехало в `lib/beats.py`: ту же
+# точку ищет карта битов §6.1, и разойтись гейт с монтажом не имеет права —
+# иначе P0 предупреждает про один блок, а монтаж считает ответом другой.
+_answer_block_index = answer_block_index
 
 
 def _check_retention_loop(blocks: list[dict[str, Any]],
@@ -250,11 +290,12 @@ def _check_retention_loop(blocks: list[dict[str, Any]],
     text = str((cta or {}).get("text") or "")
     kind = str((cta or {}).get("type") or "")
     opens_next = any(m in text.lower() for m in _NEXT_LOOP_MARKERS)
-    if kind == "statement" and not opens_next:
+    if kind == "soft_subscribe" and not opens_next:
         warnings.append({
             "code": "CTA_CLOSES_EVERYTHING",
-            "message": ("CTA ничего не открывает: тип statement и ни слова о следующем "
-                        "ролике — подписка держится на новой петле, а не на просьбе"),
+            "message": ("CTA ничего не открывает: тип soft_subscribe и ни слова о "
+                        "следующем ролике — подписка держится на новой петле, а не "
+                        "на просьбе"),
         })
     return warnings
 
@@ -295,6 +336,7 @@ def _check_fonts(cfg) -> list[dict[str, Any]]:
 def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
     """Полная валидация. Возвращает нормализованный сценарий с блоком ``_validation``."""
     warnings: list[dict[str, Any]] = []
+    warnings.extend(_map_legacy_cta(script))
     _schema_validate(script)
 
     meta = script.get("meta", {})
@@ -323,6 +365,8 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
 
     # --- форма петли удержания (предупреждения, не отказ)
     warnings.extend(_check_retention_loop(blocks, script.get("cta")))
+    warnings.extend(_check_ending_rotation(script.get("cta"), cfg,
+                                           video_id=str(meta.get("video_id") or "")))
 
     # --- QUOTE_TOO_LONG
     _check_quotes(blocks, int(cfg.get("limits.quote_max_words", 15)))
@@ -409,7 +453,7 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
 
     if not script.get("cta") and "cta" in roles:
         cta_block = next(b for b in blocks if b.get("role") == "cta")
-        script["cta"] = {"text": cta_block.get("text", ""), "type": "statement"}
+        script["cta"] = {"text": cta_block.get("text", ""), "type": "soft_subscribe"}
 
     validated = dict(script)
     validated["meta"] = meta

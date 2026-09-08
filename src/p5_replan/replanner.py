@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable
 
 from ..errors import RedshiftError
+from ..lib.beats import annotate_slots
 from ..lib.logging import get_logger
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
@@ -65,6 +66,9 @@ class Slot:
     asset_role: str = ""            # broll | evidence | meme | interstitial | generated
     template_hint: str = ""
     meme_emotion: str = ""          # эмоция мема (§14.3): по ней он и берётся из базы
+    # Бит петли удержания (§6.1). Роль говорит о содержании блока, бит — о его
+    # месте в петле: «evidence» бывает и затяжкой, и ответом.
+    beat: str = "stretch"
     reason: str = ""
 
     @property
@@ -80,7 +84,8 @@ class Slot:
             "content": self.content, "transition_in": self.transition_in,
             "events": self.events, "needs_asset": self.needs_asset,
             "asset_role": self.asset_role, "template_hint": self.template_hint,
-            "meme_emotion": self.meme_emotion, "reason": self.reason,
+            "meme_emotion": self.meme_emotion, "beat": self.beat,
+            "reason": self.reason,
         }
 
 
@@ -984,7 +989,11 @@ def run_step(ctx) -> dict[str, Any]:
         raise RedshiftError("монтажный план пуст: нет ни одного слота",
                             code="EMPTY_CUT_PLAN")
 
+    # Карта битов §6.1 — до статистики: счётчик битов уходит в неё же.
+    beat_counts = annotate_slots(slots, draft["blocks"])
+
     stats = compute_stats(slots, duration)
+    stats["beats"] = beat_counts
     limits = ctx.cfg.get("limits")
     lo_share, hi_share = limits.get("avatar_share", [0.35, 0.60])
 

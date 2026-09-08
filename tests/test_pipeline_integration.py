@@ -146,8 +146,14 @@ def test_run_output_passes_all_qc(repo_root):
     if not report_path.exists():
         pytest.skip("нет собранного ролика")
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    if "qc" not in report:
+        # Отчёт частичного прогона (`--only P11`) до QC не доходит. Это не
+        # брак ролика, и падать с KeyError на нём нечестно.
+        pytest.skip(f"отчёт без QC: прогон {report.get('status')} не дошёл до P12")
     for variant, qc in report["qc"].items():
-        assert qc["total"] == 19, f"{variant}: проверок должно быть 19 (§11.1)"
+        # Девятнадцать — исходный набор §11.1; гейты этой волны его только
+        # дополняют, поэтому сверху не ограничиваем.
+        assert qc["total"] >= 19, f"{variant}: блокирующих проверок меньше 19 (§11.1)"
         assert qc["passed"], f"{variant}: провалены {[f['id'] for f in qc['failed']]}"
 
 

@@ -153,6 +153,6 @@
   ],
   "cta": {
     "text": "Доверил бы ты такому ответу свои деньги?",
-    "type": "question"
+    "type": "open_question"
   }
 }

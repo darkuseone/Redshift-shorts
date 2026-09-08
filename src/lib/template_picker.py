@@ -407,6 +407,7 @@ class TemplatePicker:
         tags: Iterable[str] = (),
         prefer_head: Sequence[str] = (),
         prefer_base: Sequence[str] = (),
+        exclude_renderers: Iterable[str] = (),
     ) -> tuple[Template, PickTrace]:
         """Выбрать шаблон с трассировкой пяти каналов prefer."""
         # tag_intents не исполняется на pick (D6, §4)
@@ -491,6 +492,24 @@ class TemplatePicker:
             )
             if kept:
                 allowed = kept
+
+        # Эскалация (§6.1 R-2): внутри затяжки два соседних кадра не могут
+        # держаться на одном рендерере. Отсекаем по классу приёма, а не по id:
+        # `blur-out-up` и `slam-in` — разные шаблоны и один и тот же приём,
+        # и зритель видит именно приём. Как и с бюджетом частот, запрет
+        # снимается, если после него не остаётся ничего: кадр без приёма хуже
+        # повторённого приёма.
+        banned_renderers = {str(r) for r in exclude_renderers if r}
+        if banned_renderers and allowed:
+            kept = tuple(
+                tid for tid in allowed
+                if ((tmpl := self.catalog.by_id(tid)) is None
+                    or str(tmpl.renderer) not in banned_renderers)
+            )
+            if kept:
+                allowed = kept
+                walk = tuple(t for t in walk if t in set(kept)) or walk
+                fallback = tuple(t for t in fallback if t in set(kept)) or fallback
 
         allow_arg: list[str] | None = list(allowed) if allowed else None
         allow_size = len(allowed)

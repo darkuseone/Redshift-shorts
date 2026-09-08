@@ -623,6 +623,10 @@ class RenderStats:
     accent_by_family: dict[str, float] = field(default_factory=dict)
     subtitle_frames: int = 0
     speech_frames: int = 0
+    # Расхождение первого и последнего кадра в битах dHash (§6.3 R-4). `None`
+    # значит «не мерили»: QC-27 обязан отличать несомкнутый шов от неснятого
+    # замера, иначе неудачный ffmpeg молча превратится в зелёный гейт.
+    loop_seam_dhash_bits: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -633,6 +637,7 @@ class RenderStats:
             "accent_by_family": dict(self.accent_by_family),
             "subtitle_frames": self.subtitle_frames,
             "speech_frames": self.speech_frames,
+            "loop_seam_dhash_bits": self.loop_seam_dhash_bits,
         }
 
 

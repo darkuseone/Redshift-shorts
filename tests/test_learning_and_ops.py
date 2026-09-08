@@ -308,6 +308,8 @@ def test_vision_qc_is_not_blocking(repo_root):
     if not path.exists():
         pytest.skip("нет собранного ролика")
     report = json.loads(path.read_text(encoding="utf-8"))
+    if "qc" not in report:
+        pytest.skip(f"отчёт без QC: прогон {report.get('status')} не дошёл до P12")
     for qc in report["qc"].values():
         vision = qc.get("vision")
         if vision and vision.get("enabled"):

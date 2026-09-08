@@ -15,7 +15,15 @@ CATEGORIES = ("ai", "space", "tech", "medicine", "science")
 OVERLAY_TYPES = ("fullscreen_text", "frame", "lower_third", "highlight", "none")
 SCREEN_TEMPLATES = ("browser", "notepad", "search", "chat_ai", "arxiv_card", "patent_card")
 AVATAR_MODES = ("auto", "on", "off")
-CTA_TYPES = ("question", "loop", "statement")
+# Типы концовки (§6.4). Три старых типа канал использовал шесть роликов подряд:
+# все `redshift_0042…0047` заканчивались `question`. Восемь типов дают ротатору
+# из чего выбирать; старые имена не удалены, а отображены — `_CTA_LEGACY`
+# в `p0_validate` переводит их до проверки схемы, чтобы уже написанные сценарии
+# не пришлось править руками.
+CTA_TYPES = ("open_question", "binary_vote", "part2_cliff", "soft_subscribe",
+             "share_prompt", "save_prompt", "visual_loop_seam", "source_tease")
+CTA_LEGACY = {"question": "open_question", "loop": "visual_loop_seam",
+              "statement": "soft_subscribe"}
 # Стили хука 0–5 с (§5.2). Порядок не значим: это перечисление, а не приоритет.
 # Каждый стиль отвечает одному интенту каталога, соответствие живёт в
 # `assemble.py` (`HOOK_STYLE_TEMPLATES`), а не здесь: схема описывает сценарий,
@@ -128,7 +136,7 @@ SCRIPT_SCHEMA: dict[str, Any] = {
             "additionalProperties": False,
             "properties": {
                 "text": {"type": "string"},
-                "type": {"enum": list(CTA_TYPES), "default": "question"},
+                "type": {"enum": list(CTA_TYPES), "default": "open_question"},
             },
         },
     },

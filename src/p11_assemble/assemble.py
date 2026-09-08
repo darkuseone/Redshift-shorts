@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from ..errors import RedshiftError
+from ..lib.beats import annotate_slots
 from ..lib.ffmpeg import probe
 from ..lib.logging import get_logger
 from ..lib.render.matting import assess_matte, plan_vfx_backgrounds, try_local_matting
@@ -1708,7 +1709,9 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  picker: TemplatePicker | None = None,
                  variant: str = "A",
                  block: dict[str, Any] | None = None,
-                 video_duration: float | None = None) -> dict[str, Any] | None:
+                 video_duration: float | None = None,
+                 exclude_renderers: "frozenset[str] | set[str]" = frozenset(),
+                 ) -> dict[str, Any] | None:
     """Выбрать приём вокруг ведущего под конкретный кадр.
 
     Приём отбрасывается, если кадр не может его показать: без альфы всё, что
@@ -1777,6 +1780,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         recent_videos=recent_videos,
         exclude=blocked,
         seed=seed + int(slot["index"]) * 7,
+        exclude_renderers=exclude_renderers,
     )
     renderer = template.renderer
     params = hero_params(renderer, template.params, content, slot)
@@ -2380,7 +2384,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
                     picker: TemplatePicker | None = None,
-                    budget: "VisualBudget | None" = None) -> list[dict[str, Any]]:
+                    budget: "VisualBudget | None" = None,
+                    loop_seam: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Плашки, карточки источников, подсветка, data-viz и CTA (§5.4–5.6, §6)."""
     if picker is None:
         cfg = getattr(ctx, "cfg", None)
@@ -2684,13 +2689,19 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # CTA — last ~2s (§6). Always: REDSHIFT. + handle + red Subscribe.
     # No slogan tagline; invert is transparent so stock/cosmic underlay shows.
     cta_start, cta_end = plan.get("cta_window", [duration - 2.0, duration])
+    # Шов лупа не переживёт полноэкранной плашки с логотипом: она закроет
+    # ровно тот кадр, который обязан совпасть с первым. Под этот тип концовки
+    # в каталоге лежит `outro-cta/loop-back` (`renderer: footage`) — до сегодня
+    # с пустым `last_used_in`.
+    seam = bool(loop_seam)
     cta_template, _ = picker.pick(
         "outro-cta",
         variant=variant,
         duration=float(cta_end) - float(cta_start),
         recent_videos=recent_videos,
         exclude=used,
-        prefer_head=["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"],
+        prefer_head=(["outro-cta/loop-back"] if seam else
+                     ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"]),
         seed=seed,
     )
     used.append(cta_template.id)
@@ -2708,12 +2719,20 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         "tone": "paper",
         "exit": "none",
     })
+    if seam:
+        # Подпись поверх шва — мелкая и прижатая к низу: она не должна попасть
+        # в те 64 бита, по которым QC-27 сравнивает первый кадр с последним.
+        cta_params.update({"logo_close": False, "invert": False,
+                           "compact": True, "position": "bottom"})
     overlays.append({
         "type": "cta", "start": float(cta_start), "end": float(cta_end),
-        "template": "outro-cta/logo-brand-close",
-        "renderer": "logo_brand_close",
+        "template": "outro-cta/loop-back" if seam else "outro-cta/logo-brand-close",
+        "renderer": "footage" if seam else "logo_brand_close",
         "params": cta_params,
-        "why": ("§6 r6: REDSHIFT + handle (no Subscribe)"
+        "why": ("§6.3 R-4: шов лупа — CTA не закрывает кадр, который смыкается "
+                "с первым"
+                if seam else
+                "§6 r6: REDSHIFT + handle (no Subscribe)"
                 if not show_subscribe else
                 "§6 r6: REDSHIFT + handle + Subscribe (no slogan)"),
     })
@@ -3312,6 +3331,147 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     return "", None, None
 
 
+# Тип концовки, при котором последний кадр обязан совпасть с первым (§6.3).
+LOOP_SEAM_CTA = "visual_loop_seam"
+
+# Разворот движения камеры: шов держится, только если в конце камера идёт
+# обратно — иначе первый кадр после петли рванёт в ту же сторону, и склейка
+# станет заметна именно тем, чем должна была спрятаться.
+_KENBURNS_MIRROR = {
+    "kenburns/zoom-in-center": "kenburns/zoom-out-center",
+    "kenburns/zoom-out-center": "kenburns/zoom-in-center",
+    "kenburns/pan-left": "kenburns/pan-right",
+    "kenburns/pan-right": "kenburns/pan-left",
+    "kenburns/pan-up": "kenburns/pan-down",
+    "kenburns/pan-down": "kenburns/pan-up",
+}
+
+
+def _mirror_kenburns(kb: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Тот же наезд, пущенный назад.
+
+    Если у шаблона нет пары в словаре, разворачиваем численно: `zoom` и `pan` —
+    это и есть всё движение, а имя шаблона остаётся честным указанием на то,
+    откуда взяты параметры.
+    """
+    if not kb:
+        return None
+    out = dict(kb)
+    name = str(kb.get("template") or "")
+    out["template"] = _KENBURNS_MIRROR.get(name, name)
+    zoom = kb.get("zoom")
+    if isinstance(zoom, (list, tuple)) and len(zoom) == 2:
+        out["zoom"] = [float(zoom[1]), float(zoom[0])]
+    pan = kb.get("pan")
+    if isinstance(pan, (list, tuple)) and len(pan) == 2:
+        out["pan"] = [-float(pan[0]), -float(pan[1])]
+    out["mirrored"] = True
+    return out
+
+
+def _close_loop_seam(shots: list[dict[str, Any]], plan: dict[str, Any],
+                     ) -> dict[str, Any] | None:
+    """Свести последний кадр с первым (§6.3, R-4).
+
+    Работает только при ``cta.type == "visual_loop_seam"``: шов — это тип
+    концовки, а не украшение, которое можно навесить на любой ролик. Совпасть
+    обязаны три вещи — материал в кадре, движение камеры (в обратную сторону)
+    и экранный глиф. Проверяет это уже не код сборки, а QC-27 по кадрам
+    отрендеренного файла: план может обещать совпадение и всё равно разойтись
+    на посадке текста.
+
+    Возвращает описание шва для плана либо ``None``, если тип концовки другой
+    или сводить нечего (ролик из одного кадра).
+    """
+    cta_type = str((plan.get("cta") or {}).get("type") or "")
+    if cta_type != LOOP_SEAM_CTA or len(shots) < 2:
+        return None
+
+    head, tail = shots[0], shots[-1]
+    fields = []
+    for field in ("file", "asset_id", "source", "license", "attribution",
+                  "credit", "page_url", "ai_generated", "mock", "fit", "focus"):
+        if field in head:
+            if tail.get(field) != head.get(field):
+                fields.append(field)
+            tail[field] = head[field]
+    if head.get("kind") in ("footage", "fullscreen_text"):
+        tail["kind"] = head["kind"]
+    if head.get("content"):
+        tail["content"] = head["content"]
+    mirrored = _mirror_kenburns(head.get("kenburns"))
+    if mirrored is not None:
+        tail["kenburns"] = mirrored
+    tail["loop_seam"] = True
+    tail["reason"] = ("§6.3 R-4: шов лупа — последний кадр повторяет первый, "
+                      "камера идёт обратно")
+    return {
+        "cta_type": cta_type,
+        "head_index": int(head.get("index", 0)),
+        "tail_index": int(tail.get("index", len(shots) - 1)),
+        "asset_id": head.get("asset_id"),
+        "kenburns": (mirrored or {}).get("template"),
+        "changed_fields": fields,
+    }
+
+
+class _Escalation:
+    """Правило эскалации §6.1 R-2 и §6.5: приём обязан меняться.
+
+    Две вещи, которые ритм не покрывает и на которых 0042 потерял удержание:
+
+    * внутри затяжки два соседних кадра не могут держаться на одном рендерере
+      — иначе это не «новый визуальный факт каждые 1.5–3 с», а один и тот же
+      приём с другими буквами;
+    * ответ обязан отличаться от всей затяжки **классом**, а не только id.
+      На 0042 `payoff`-кадром был `text-fullscreen/blur-out-up` — ровно тот же
+      приём, что и двумя кадрами раньше.
+
+    Запрет уходит в `TemplatePicker.pick(exclude_renderers=…)` и там снимается,
+    если после него в разрешённом наборе ничего не остаётся: кадр без приёма
+    хуже повторённого приёма.
+
+    Замер на 0042 после Q1/Q2, обе версии: план **не меняется** от включения
+    правила — приёмов, несущих рендерер, в ролике всего пять-семь, и они уже
+    расходятся. Проверено обратным прогоном с `bans()`, возвращающим пустое
+    множество: `payoff ∩ stretch` пусто в обоих случаях. То есть здесь это
+    страховка, а не починка; она сработает на сценарии, где затяжка длиннее и
+    приёмов в ней больше.
+    """
+
+    def __init__(self) -> None:
+        self.prev_beat: str = ""
+        self.prev_renderer: str = ""
+        self.stretch_renderers: set[str] = set()
+
+    def bans(self, beat: str) -> frozenset[str]:
+        if beat == "payoff":
+            return frozenset(self.stretch_renderers)
+        if beat == "stretch" and self.prev_beat == "stretch" and self.prev_renderer:
+            return frozenset({self.prev_renderer})
+        return frozenset()
+
+    def note(self, beat: str, renderer: str) -> None:
+        renderer = str(renderer or "")
+        if beat == "stretch" and renderer:
+            self.stretch_renderers.add(renderer)
+        self.prev_beat = beat
+        self.prev_renderer = renderer
+
+
+def _slot_beats(plan: dict[str, Any]) -> None:
+    """Проставить `beat` слотам, если план собран до §6.1.
+
+    Кэш переживает правки кода: `--from P7` поднимает `cut_plan.json`, снятый
+    прошлой сборкой, и слоты в нём биты не несут. Считаем на месте — карта
+    выводится из блоков, а они в плане есть.
+    """
+    slots = plan.get("slots") or []
+    if slots and all(s.get("beat") for s in slots):
+        return
+    annotate_slots(slots, plan.get("blocks") or [])
+
+
 def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   assets: dict[int, dict[str, Any]], prepared: dict[int, dict[str, Any]],
                   catalog: TemplateCatalog, avatar_meta: dict[str, Any],
@@ -3332,6 +3492,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     prefs = (preferences or {}) if variant == "A" else {}
     used_templates: list[str] = []
     slots = plan["slots"]
+    _slot_beats(plan)
+    escalation = _Escalation()
     _retime_fullscreen_slots(slots, plan, words_doc.get("words") or [])
     shots: list[dict[str, Any]] = []
 
@@ -3367,10 +3529,20 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     hero_eligible = 0
 
     for slot in slots:
+        # Что поставил предыдущий кадр — известно только после того, как он
+        # собран: веток выхода из итерации много, и запоминать приём в каждой
+        # значило бы забыть в одной. Складываем на входе в следующую.
+        if shots:
+            prev = shots[-1]
+            escalation.note(
+                str(prev.get("beat") or ""),
+                str(prev.get("renderer")
+                    or (prev.get("hero") or {}).get("renderer") or ""))
         entry: dict[str, Any] = {
             "index": slot["index"], "start": slot["start"], "end": slot["end"],
             "duration": slot["duration"], "kind": slot["kind"],
             "block_id": slot["block_id"], "role": slot["role"], "mode": slot["mode"],
+            "beat": str(slot.get("beat") or "stretch"),
             "reason": slot["reason"],
         }
 
@@ -3491,6 +3663,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 exclude=used_templates,
                 seed=seed,
                 prefer_head=head,
+                exclude_renderers=escalation.bans(str(slot.get("beat") or "")),
             )
             used_templates.append(template.id)
             fs_params = _fullscreen_params(template, content, block)
@@ -3617,6 +3790,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 exclude=used_templates,
                 seed=seed + int(slot["index"]),
                 prefer_head=head,
+                exclude_renderers=escalation.bans(str(slot.get("beat") or "")),
             )
             used_templates.append(template.id)
             onset = spoken_onset_for_content(
@@ -3728,7 +3902,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
                     seed=seed, picker=picker, variant=variant, block=block,
-                    video_duration=float(plan["duration_sec"]))
+                    video_duration=float(plan["duration_sec"]),
+                    exclude_renderers=escalation.bans(
+                        str(slot.get("beat") or "")))
                 if hero_entry:
                     used_templates.append(hero_entry["template"])
 
@@ -3761,9 +3937,13 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         })
         shots.append(entry)
 
+    # Шов лупа сводится до сборки оверлеев: CTA-плашка выбирается по тому,
+    # смыкается кадр или нет, а не наоборот.
+    loop_seam = _close_loop_seam(shots, plan)
+
     overlays = _build_overlays(ctx, plan, words_doc["words"], catalog, variant=variant,
                                seed=seed, recent_videos=recent_videos, used=used_templates,
-                               picker=picker, budget=budget)
+                               picker=picker, budget=budget, loop_seam=loop_seam)
     # Приёмы лестницы §7.2 родились в цикле шотов — доливаем их к общим
     # оверлеям здесь, чтобы дальше все проверки видели один список.
     overlays.extend(ladder_overlays)
@@ -3892,6 +4072,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   "music_bed": "music_bed.wav", "sfx_map": "sfx_map.json",
                   "loudness": sfx_map.get("loudness", {})},
         "shots": shots,
+        "loop_seam": loop_seam,
         "overlays": overlays,
         "subtitles": subtitles,
         "backdrop": {"scene": scene, "tone": scene_tone(scene),

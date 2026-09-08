@@ -11,5 +11,23 @@
     "fullscreen_text_count": 3,
     "meme_enabled": true,
     "dynamic_transition_bias": 0.5
-  }
+  },
+  "ending_last_type": "open_question",
+  "ending_ring": [
+    "open_question",
+    "binary_vote",
+    "part2_cliff",
+    "share_prompt",
+    "source_tease",
+    "save_prompt",
+    "visual_loop_seam",
+    "soft_subscribe"
+  ],
+  "ending_history": [
+    {
+      "video_id": "redshift_0042",
+      "type": "open_question",
+      "recorded_at": "2026-09-08"
+    }
+  ]
 }

@@ -348,6 +348,27 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
         threshold=2,
         detail=f"{worst_template} — {worst_count} раза" if worst_count > 2 else ""))
 
+    # 27. Шов лупа (§6.3 R-4). Мерится только там, где он обещан: тип
+    # концовки `visual_loop_seam` — единственный, который берёт на себя
+    # обязательство сомкнуть последний кадр с первым. На всех остальных типах
+    # проверка не блокирует и остаётся справкой: интересно знать, насколько
+    # ролик близок к петле, но требовать её не за что.
+    seam_declared = str((cut_plan.get("cta") or {}).get("type") or "") == "visual_loop_seam"
+    seam_bits = render_stats.get("loop_seam_dhash_bits")
+    seam_max = int(cfg.get("limits.loop_seam_dhash_max", 12))
+    seam_measured = seam_bits is not None
+    checks.append(_check(
+        27, "Шов лупа: последний кадр совпадает с первым",
+        (not seam_declared) or (seam_measured and int(seam_bits) <= seam_max),
+        value={"bits": None if not seam_measured else int(seam_bits),
+               "declared": seam_declared},
+        threshold=seam_max,
+        detail=("тип концовки не visual_loop_seam — шов не обещан"
+                if not seam_declared else
+                "замер не выполнен" if not seam_measured else
+                f"расхождение {int(seam_bits)} бит из 64"),
+        blocking=seam_declared))
+
     # 29. Экранный хук: строка обязана быть в кадре к первой секунде и
     # читаться за неё же. До §5 хук собирался случайно — первые кадры 0042
     # выбрала `gap_phrase`, то есть «что вынести, когда материала нет».
