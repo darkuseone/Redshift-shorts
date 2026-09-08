@@ -535,8 +535,10 @@ def build_parser() -> argparse.ArgumentParser:
     lib.add_argument("--status", action="store_true", default=True)
     lib.set_defaults(func=cmd_libraries)
 
-    fill = sub.add_parser("fill-libraries", help="дозаполнение SFX/музыки/мемов до лимитов")
-    fill.add_argument("--kind", nargs="+", choices=["sfx", "music", "memes"], default=None)
+    fill = sub.add_parser("fill-libraries",
+                          help="дозаполнение SFX/музыки/мемов/футажа до лимитов")
+    fill.add_argument("--kind", nargs="+",
+                      choices=["sfx", "music", "memes", "footage"], default=None)
     fill.add_argument("--dry-run", action="store_true")
     fill.set_defaults(func=cmd_fill_libraries)
 

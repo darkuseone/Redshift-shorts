@@ -438,3 +438,36 @@ def test_the_evergreen_base_is_never_evicted(cfg, tmp_path, monkeypatch):
     assert report["evicted_count"] >= 1, "вытеснение не запускалось"
     assert seed_file.exists(), "засев вытеснен — база потеряна"
     assert not churn_file.exists(), "вытеснили не то: расходный клип на месте"
+
+
+def test_agent_indexes_match_their_sources():
+    """Q2.11: производный индекс не должен тихо расходиться с источником."""
+    import subprocess
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    root = _Path(__file__).resolve().parents[1]
+    proc = subprocess.run(
+        [_sys.executable, str(root / "tools" / "gen_indexes.py"), "--check"],
+        cwd=root, capture_output=True, text=True, timeout=120)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_agent_indexes_stay_small_enough_to_read():
+    """Смысл индекса — влезать в контекст целиком; порог правила 40 КБ."""
+    from pathlib import Path as _Path
+
+    root = _Path(__file__).resolve().parents[1]
+    for rel in ("templates/manifest.index.json",
+                "config/template_scenarios.index.json"):
+        size = (root / rel).stat().st_size
+        assert size < 40 * 1024, f"{rel}: {size} байт, читать целиком уже дорого"
+
+
+def test_the_reading_rule_is_written_down():
+    """Правило живёт в CLAUDE.md, а не в голове того, кто его придумал."""
+    from pathlib import Path as _Path
+
+    text = (_Path(__file__).resolve().parents[1] / "CLAUDE.md").read_text(encoding="utf-8")
+    assert "40 КБ" in text
+    assert "gen_indexes.py" in text

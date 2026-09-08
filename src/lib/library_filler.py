@@ -143,9 +143,35 @@ def fill_memes(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
                      "оригинальным аудио")}
 
 
+def fill_footage(cfg, *, costs=None, dry_run: bool = False) -> dict[str, Any]:
+    """Долить базу вечнозелёного видео (§9, Q2.1).
+
+    Голод по материалу — корень половины претензий к картинке: когда в индексе
+    два десятка клипов, P7 нечего предложить слоту, и кадр закрывается общим
+    падом или пустотой. Доливка идёт тем же `seed_footage`, что и первый засев:
+    она идемпотентна — тема с набранной нормой пропускается, совпавший по pHash
+    кадр не кладётся второй раз.
+    """
+    from .footage_seed import seed_footage
+    from .manifest import FootageIndex
+    from .storage import build_storage
+
+    index = FootageIndex.load(cfg)
+    before = len(index.items)
+    outcome = seed_footage(cfg, storage=build_storage(cfg), costs=costs,
+                           per_topic=int(cfg.get("stock.seed_per_topic", 3)),
+                           dry_run=dry_run)
+    after = len(FootageIndex.load(cfg).items) if not dry_run else before
+    return {"kind": "footage", "added": outcome.get("added", []),
+            "count": after, "before": before,
+            "frozen": bool(outcome.get("frozen")),
+            "note": outcome.get("note", "")}
+
+
 def fill_libraries(cfg, *, kinds: Sequence[str] = ("sfx", "music", "memes"),
                    costs=None, dry_run: bool = False) -> dict[str, Any]:
-    handlers = {"sfx": fill_sfx, "music": fill_music, "memes": fill_memes}
+    handlers = {"sfx": fill_sfx, "music": fill_music, "memes": fill_memes,
+                "footage": fill_footage}
     result: dict[str, Any] = {"dry_run": dry_run, "results": {}}
     for kind in kinds:
         handler = handlers.get(kind)

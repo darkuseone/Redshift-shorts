@@ -1,0 +1,1634 @@
+{
+  "_note": "Индекс каталога. Источник — templates/manifest.json, перегенерация — python tools/gen_indexes.py.",
+  "counts": {
+    "avatar-entry": 6,
+    "browser-ui": 21,
+    "data-viz": 28,
+    "frames-cards": 7,
+    "hero-devices": 25,
+    "intro-hooks": 8,
+    "kenburns": 10,
+    "lower-thirds": 14,
+    "outro-cta": 6,
+    "parallax": 4,
+    "text-fullscreen": 34,
+    "transitions": 41
+  },
+  "total": 204,
+  "categories": {
+    "avatar-entry": [
+      {
+        "id": "avatar-entry/circle-mask-grow",
+        "renderer": "mask_wipe",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "avatar-entry/flash-cut-in",
+        "renderer": "white_flash",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "avatar-entry/hero-zoom-in",
+        "renderer": "zoom_punch",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "avatar-entry/scale-pop",
+        "renderer": "zoom_punch",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "avatar-entry/slide-from-bottom",
+        "renderer": "paper_slide",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "avatar-entry/split-slide-up",
+        "renderer": "paper_slide",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      }
+    ],
+    "browser-ui": [
+      {
+        "id": "browser-ui/ai-chat-reveal",
+        "renderer": "ai_chat_reveal",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/app-showcase",
+        "renderer": "app_showcase",
+        "needs": [],
+        "frequency": "variant",
+        "status": "retired"
+      },
+      {
+        "id": "browser-ui/article-highlight",
+        "renderer": "article_scroll",
+        "needs": [
+          "quote"
+        ],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/blue-sweater-intro-video",
+        "renderer": "blue_sweater",
+        "needs": [],
+        "frequency": "variant",
+        "status": "retired"
+      },
+      {
+        "id": "browser-ui/browser-scroll",
+        "renderer": "article_scroll",
+        "needs": [
+          "quote"
+        ],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/chat-ai-typing",
+        "renderer": "chat_thread",
+        "needs": [
+          "question"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/chat-thread",
+        "renderer": "chat_thread",
+        "needs": [
+          "question"
+        ],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/chatgpt-exchange",
+        "renderer": "chatgpt_exchange",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/claude-exchange",
+        "renderer": "claude_exchange",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/google-typing",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/macos-notification",
+        "renderer": "macos_notification",
+        "needs": [],
+        "frequency": "variant",
+        "status": "retired"
+      },
+      {
+        "id": "browser-ui/message-thread-reveal",
+        "renderer": "message_thread_reveal",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/notepad-typing",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/notes-reveal",
+        "renderer": "notes_reveal",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/notification-cascade",
+        "renderer": "notification_cascade",
+        "needs": [],
+        "frequency": "variant",
+        "status": "retired"
+      },
+      {
+        "id": "browser-ui/phone-notification",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/reddit-post",
+        "renderer": "reddit_post",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/spotify-card",
+        "renderer": "spotify_card",
+        "needs": [],
+        "frequency": "variant",
+        "status": "retired"
+      },
+      {
+        "id": "browser-ui/terminal-lines",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "browser-ui/vpn-youtube-spot",
+        "renderer": "vpn_youtube_spot",
+        "needs": [],
+        "frequency": "variant",
+        "status": "retired"
+      },
+      {
+        "id": "browser-ui/x-post",
+        "renderer": "x_post",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      }
+    ],
+    "data-viz": [
+      {
+        "id": "data-viz/animated-bar-chart",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/apple-money-count",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/bar-chart-race",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/bar-race-mini",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/chart-story",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/compare-bars",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/conic-progress-ring",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/counter-roll",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/decline-chart",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/donut-fill",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/flowchart",
+        "renderer": "dataviz",
+        "needs": [
+          "number",
+          "mechanism"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/flowchart-vertical",
+        "renderer": "dataviz",
+        "needs": [
+          "number",
+          "mechanism"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/line-rise",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/mk-line-graph",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/mk-progress-stat",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/north-korea-locked-down",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/nyc-paris-flight",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/oscilloscope-trace",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/spain-map",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/star-rating-fill",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/stat-countup-card",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/timeline-dots",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/us-map",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/us-map-bubble",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/us-map-flow",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/us-map-hex",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/weight-wave",
+        "renderer": "dataviz",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "data-viz/world-map",
+        "renderer": "dataviz",
+        "needs": [
+          "place"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      }
+    ],
+    "frames-cards": [
+      {
+        "id": "frames-cards/article-card",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "frames-cards/arxiv-card",
+        "renderer": "paper_reveal",
+        "needs": [
+          "quote"
+        ],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "frames-cards/chart-card",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "frames-cards/paper-reveal",
+        "renderer": "paper_reveal",
+        "needs": [
+          "quote"
+        ],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "frames-cards/patent-card",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "frames-cards/product-card",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "frames-cards/profile-card",
+        "renderer": "source_card",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      }
+    ],
+    "hero-devices": [
+      {
+        "id": "hero-devices/brand-pill",
+        "renderer": "hero-brand-pill",
+        "needs": [
+          "brand"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/bubble-card",
+        "renderer": "hero-bubble-card",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/bubble-typed",
+        "renderer": "hero-bubble-typed",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/card-stack-top",
+        "renderer": "hero-card-stack",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/chat-generate",
+        "renderer": "hero-chat-generate",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/chat-typing",
+        "renderer": "hero-chat-typing",
+        "needs": [
+          "question"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/exhibit-card",
+        "renderer": "hero-exhibit",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/figure-swap",
+        "renderer": "hero-figure",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/footage-plate-pop",
+        "renderer": "hero-plate-pop",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/headline-behind-head",
+        "renderer": "hero-headline",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/headline-over-head",
+        "renderer": "hero-headline",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/icons-behind-head",
+        "renderer": "hero-icons",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/knockout-negative",
+        "renderer": "hero-knockout",
+        "needs": [
+          "superlative",
+          "negation"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/oversize-word",
+        "renderer": "hero-oversize",
+        "needs": [
+          "superlative"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/phone-mock",
+        "renderer": "hero-phone-mock",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/phrase-log",
+        "renderer": "hero-log",
+        "needs": [
+          "list"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/plate-behind-back",
+        "renderer": "hero-plate",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/script-stack",
+        "renderer": "hero-script-stack",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/source-paper",
+        "renderer": "hero-paper",
+        "needs": [
+          "quote"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/split-panel-right",
+        "renderer": "hero-split",
+        "needs": [
+          "comparison"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/statement-slam",
+        "renderer": "hero-slam",
+        "needs": [
+          "negation",
+          "superlative",
+          "discovery"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/text-column-left",
+        "renderer": "hero-text-column",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/title-behind-head",
+        "renderer": "hero-title-behind",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/type-slab",
+        "renderer": "hero-type-slab",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "hero-devices/verdict-card",
+        "renderer": "hero-verdict",
+        "needs": [
+          "negation",
+          "superlative",
+          "discovery"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      }
+    ],
+    "intro-hooks": [
+      {
+        "id": "intro-hooks/hook-avatar-direct",
+        "renderer": "avatar",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "intro-hooks/hook-blackout-word",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "intro-hooks/hook-countdown-3",
+        "renderer": "fullscreen_text",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "intro-hooks/hook-footage-cold-open",
+        "renderer": "footage",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "intro-hooks/hook-number-slam",
+        "renderer": "fullscreen_text",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "intro-hooks/hook-question-flash",
+        "renderer": "fullscreen_text",
+        "needs": [
+          "question"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "intro-hooks/hook-split-reveal",
+        "renderer": "split",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "intro-hooks/hook-typing-search",
+        "renderer": "source_card",
+        "needs": [
+          "question"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      }
+    ],
+    "kenburns": [
+      {
+        "id": "kenburns/diag-drift",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/micro-parallax",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/pan-down",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/pan-left",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/pan-right",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/pan-up",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/push-tilt",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/zoom-in-center",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/zoom-in-subject",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "kenburns/zoom-out-reveal",
+        "renderer": "kenburns",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      }
+    ],
+    "lower-thirds": [
+      {
+        "id": "lower-thirds/accent-underline",
+        "renderer": "lt_accent_underline",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/clean-bar",
+        "renderer": "lt_clean_bar",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/dark-card",
+        "renderer": "lt_dark_card",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/instagram-follow",
+        "renderer": "instagram_follow",
+        "needs": [],
+        "frequency": "signature",
+        "status": "retired"
+      },
+      {
+        "id": "lower-thirds/metric-badge",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/name-title",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/note-pin",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/progress-step",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/source-domain",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/tag-chips",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/tiktok-follow",
+        "renderer": "tiktok_follow",
+        "needs": [],
+        "frequency": "signature",
+        "status": "retired"
+      },
+      {
+        "id": "lower-thirds/timestamp-marker",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/warning-strip",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "lower-thirds/yt-lower-third",
+        "renderer": "yt_lower_third",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      }
+    ],
+    "outro-cta": [
+      {
+        "id": "outro-cta/logo-brand-close",
+        "renderer": "logo_brand_close",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "outro-cta/logo-stamp",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "outro-cta/loop-back",
+        "renderer": "footage",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "outro-cta/next-teaser",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "outro-cta/question-card",
+        "renderer": "plaque",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "outro-cta/subscribe-pulse",
+        "renderer": "cta_button",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      }
+    ],
+    "parallax": [
+      {
+        "id": "parallax/depth-push",
+        "renderer": "parallax",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "parallax/foreground-sweep",
+        "renderer": "parallax",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "parallax/text-behind-object",
+        "renderer": "parallax",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "parallax/two-layer-drift",
+        "renderer": "parallax",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      }
+    ],
+    "text-fullscreen": [
+      {
+        "id": "text-fullscreen/apple-terminal-clear-dark",
+        "renderer": "apple_terminal_clear_dark",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/beat-freeze-cut",
+        "renderer": "beat_freeze_cut",
+        "needs": [
+          "beat"
+        ],
+        "frequency": "variant",
+        "status": "gated"
+      },
+      {
+        "id": "text-fullscreen/bigtext-mask-footage",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/blur-out-up",
+        "renderer": "blur_out_up",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/bottom-up-letters",
+        "renderer": "bottom_up_letters",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/code-3d-extrude",
+        "renderer": "code_3d_extrude",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/code-diff",
+        "renderer": "code_diff",
+        "needs": [
+          "device",
+          "comparison"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/code-highlight",
+        "renderer": "code_highlight",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/code-morph",
+        "renderer": "code_morph",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/code-particle-assemble",
+        "renderer": "code_particle_assemble",
+        "needs": [
+          "device",
+          "discovery"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/code-scroll",
+        "renderer": "code_scroll",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/code-typing",
+        "renderer": "code_typing",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/dark-plus",
+        "renderer": "dark_plus",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/date-marker",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/fact-card",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/impact-01",
+        "renderer": "fullscreen_text",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/impact-02",
+        "renderer": "fullscreen_text",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/kinetic-stack",
+        "renderer": "kinetic_stack",
+        "needs": [
+          "list"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/kinetic-type-swap",
+        "renderer": "kinetic_type_swap",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/label-strip",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/line-by-line-slide",
+        "renderer": "line_by_line_slide",
+        "needs": [
+          "list"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/news-ticker",
+        "renderer": "news_ticker",
+        "needs": [
+          "news"
+        ],
+        "frequency": "variant",
+        "status": "gated"
+      },
+      {
+        "id": "text-fullscreen/number-slam-card",
+        "renderer": "number_slam",
+        "needs": [
+          "number"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/particle-text-dissolve",
+        "renderer": "particle_text_dissolve",
+        "needs": [
+          "discovery"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/per-word-crossfade",
+        "renderer": "per_word_crossfade",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/quote-frame",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/scan-band",
+        "renderer": "scan_band",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/scramble-reveal",
+        "renderer": "scramble_reveal",
+        "needs": [
+          "discovery",
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/shared-axis-z",
+        "renderer": "shared_axis_z",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/split-flap-board",
+        "renderer": "split_flap_board",
+        "needs": [],
+        "frequency": "variant",
+        "status": "retired"
+      },
+      {
+        "id": "text-fullscreen/stack-3lines",
+        "renderer": "fullscreen_text",
+        "needs": [],
+        "frequency": "signature",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/terminal-simulator",
+        "renderer": "terminal_simulator",
+        "needs": [
+          "device"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/vs-compare",
+        "renderer": "fullscreen_text",
+        "needs": [
+          "comparison"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "text-fullscreen/word-swap",
+        "renderer": "fullscreen_text",
+        "needs": [
+          "comparison"
+        ],
+        "frequency": "variant",
+        "status": "active"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "transitions/blur-dip",
+        "renderer": "blur_dip",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/chromatic-radial-split",
+        "renderer": "chromatic_radial_split",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/cinematic-zoom",
+        "renderer": "cinematic_zoom",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/cross-warp-morph",
+        "renderer": "cross_warp_morph",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/cut",
+        "renderer": "cut",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/domain-warp-dissolve",
+        "renderer": "domain_warp_dissolve",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/flash-through-white",
+        "renderer": "flash_through_white",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/glitch",
+        "renderer": "glitch_shader",
+        "needs": [
+          "danger",
+          "negation"
+        ],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/glitch-short",
+        "renderer": "glitch",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/gravitational-lens",
+        "renderer": "gravitational_lens",
+        "needs": [
+          "discovery",
+          "place",
+          "superlative"
+        ],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/light-leak",
+        "renderer": "light_leak",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/light-sweep",
+        "renderer": "light_sweep",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/mask-wipe-circle",
+        "renderer": "mask_wipe",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/mask-wipe-diagonal",
+        "renderer": "mask_wipe",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/mk-clone-wall-transition",
+        "renderer": "mk_clone_wall",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/paper-slide",
+        "renderer": "paper_slide",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/ridged-burn",
+        "renderer": "ridged_burn",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/ripple-waves",
+        "renderer": "ripple_waves",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/sdf-iris",
+        "renderer": "sdf_iris",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/swirl-vortex",
+        "renderer": "swirl_vortex",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/thermal-distortion",
+        "renderer": "thermal_distortion",
+        "needs": [
+          "danger"
+        ],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-3d",
+        "renderer": "transitions_3d",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-blur",
+        "renderer": "transitions_blur",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-cover",
+        "renderer": "transitions_cover",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-destruction",
+        "renderer": "transitions_destruction",
+        "needs": [
+          "danger",
+          "negation"
+        ],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-dissolve",
+        "renderer": "transitions_dissolve",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-distortion",
+        "renderer": "transitions_distortion",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-grid",
+        "renderer": "transitions_grid",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-light",
+        "renderer": "transitions_light",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-mechanical",
+        "renderer": "transitions_mechanical",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-other",
+        "renderer": "transitions_other",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-push",
+        "renderer": "transitions_push",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-radial",
+        "renderer": "transitions_radial",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/transitions-scale",
+        "renderer": "transitions_scale",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/whip-pan",
+        "renderer": "whip_pan_shader",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      },
+      {
+        "id": "transitions/whip-pan-l",
+        "renderer": "whip_pan",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/whip-pan-r",
+        "renderer": "whip_pan",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/white-flash",
+        "renderer": "white_flash",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/zoom-punch-in",
+        "renderer": "zoom_punch",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/zoom-punch-out",
+        "renderer": "zoom_punch",
+        "needs": [],
+        "frequency": "variant",
+        "status": "active"
+      },
+      {
+        "id": "transitions/zoom-through",
+        "renderer": "zoom_through",
+        "needs": [],
+        "frequency": "rare",
+        "status": "active"
+      }
+    ]
+  }
+}

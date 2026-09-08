@@ -12,7 +12,7 @@ on:
         required: true
         default: "memes"
         type: choice
-        options: [sfx, music, memes, all]
+        options: [sfx, music, memes, footage, all]
       dry_run:
         description: "Только показать, что было бы добавлено"
         required: false

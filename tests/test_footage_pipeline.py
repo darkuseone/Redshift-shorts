@@ -1150,3 +1150,39 @@ class TestAnInterstitialIsNeverABlackScreen:
         for chunk in blocks[1:]:
             head = blocks[blocks.index(chunk) - 1][-400:]
             assert 'asset_role="interstitial"' in head, head[-160:]
+
+
+class TestTheFootageLibraryCanBeTopdUp:
+    """Q2.1: голод по материалу — корень половины претензий к картинке.
+
+    Когда в индексе два десятка клипов, P7 нечего предложить слоту, и кадр
+    закрывается общим падом или пустотой. Доливка идёт тем же `seed_footage`,
+    что и первый засев, и остаётся идемпотентной.
+    """
+
+    def test_footage_is_a_known_kind(self):
+        from src.lib.library_filler import fill_libraries
+        import inspect
+
+        source = inspect.getsource(fill_libraries)
+        assert '"footage"' in source, "доливка не знает про футаж"
+
+    def test_the_cli_accepts_it(self):
+        cli = (Path(__file__).resolve().parents[1] / "src" / "cli.py") \
+            .read_text(encoding="utf-8")
+        assert '"sfx", "music", "memes", "footage"' in cli
+
+    def test_the_workflow_offers_it(self):
+        wf = (Path(__file__).resolve().parents[1] / ".github" / "workflows"
+              / "fill-libraries.yml").read_text(encoding="utf-8")
+        assert "footage" in wf
+
+    def test_a_dry_run_adds_nothing(self, cfg):
+        """Идемпотентность: прогон вхолостую не трогает ни базу, ни индекс."""
+        from src.lib.library_filler import fill_footage
+        from src.lib.manifest import FootageIndex
+
+        before = len(FootageIndex.load(cfg).items)
+        out = fill_footage(cfg, dry_run=True)
+        assert out["kind"] == "footage"
+        assert len(FootageIndex.load(cfg).items) == before

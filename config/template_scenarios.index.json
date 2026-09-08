@@ -1,0 +1,1189 @@
+{
+  "_note": "Индекс словаря интентов. Источник — config/template_scenarios.json, перегенерация — python tools/gen_indexes.py.",
+  "specific_weight_min": 20,
+  "default_weight_min": 10,
+  "unreachable_categories": [],
+  "intents_total": 105,
+  "categories": {
+    "avatar-entry": [
+      {
+        "id": "avatar-entry-generic",
+        "weight": 1,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 6
+      }
+    ],
+    "browser-ui": [
+      {
+        "id": "browser-ai-chat",
+        "weight": 40,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "browser-app-showcase",
+        "weight": 39,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "browser-chatgpt-exchange",
+        "weight": 38,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "browser-claude-exchange",
+        "weight": 37,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "browser-message-thread",
+        "weight": 36,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "browser-notes-reveal",
+        "weight": 35,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "browser-notification-cascade",
+        "weight": 34,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "browser-source-generic",
+        "weight": 10,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "browser-media-music",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "browser-social",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "browser-system-notification",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "browser-typing-inputs",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 4
+      }
+    ],
+    "data-viz": [
+      {
+        "id": "logic-flowchart",
+        "weight": 31,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [
+          "mechanism"
+        ],
+        "templates": 2
+      },
+      {
+        "id": "stat-progress-goals",
+        "weight": 30,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "geo-flight",
+        "weight": 29,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "geo-north-korea",
+        "weight": 28,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "finance-money-count",
+        "weight": 27,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "geo-world-map",
+        "weight": 26,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "geo-us-hex",
+        "weight": 25,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "geo-us-flow",
+        "weight": 24,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "geo-us-map",
+        "weight": 23,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "dataviz-star-rating",
+        "weight": 22,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [
+          "rating_like"
+        ],
+        "templates": 1
+      },
+      {
+        "id": "geo-spain",
+        "weight": 21,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "dataviz-bars-comparison",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "number"
+        ],
+        "signals_any": [],
+        "templates": 5
+      },
+      {
+        "id": "dataviz-counter-stats",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "number"
+        ],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "dataviz-line-trends",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "number"
+        ],
+        "signals_any": [],
+        "templates": 4
+      },
+      {
+        "id": "dataviz-progress-ring",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "number"
+        ],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "dataviz-geo-bubble",
+        "weight": 10,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "dataviz-waves-signals",
+        "weight": 10,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "geo-generic",
+        "weight": 2,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 8
+      }
+    ],
+    "frames-cards": [
+      {
+        "id": "frames-paper-reveal",
+        "weight": 10,
+        "variants": [
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "frames-article-media",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "frames-chart-data",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "frames-patent-tech",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "frames-person-profile",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "frames-product-spec",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      }
+    ],
+    "hero-devices": [
+      {
+        "id": "hero-data-figure",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "number"
+        ],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "hero-plate",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "plate"
+        ],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "hero-text-lines",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "lines"
+        ],
+        "signals_any": [],
+        "templates": 6
+      },
+      {
+        "id": "hero-brand",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "hero-chat-ui",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "hero-headline",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "hero-icons",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "hero-slam",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 4
+      },
+      {
+        "id": "hero-source",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "hero-split",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      }
+    ],
+    "intro-hooks": [
+      {
+        "id": "hook-cold-open",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [
+          "cold_open"
+        ],
+        "templates": 1
+      },
+      {
+        "id": "hook-dark",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [
+          "negation"
+        ],
+        "templates": 1
+      },
+      {
+        "id": "hook-number",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [
+          "number"
+        ],
+        "templates": 2
+      },
+      {
+        "id": "hook-question",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [
+          "question"
+        ],
+        "templates": 1
+      },
+      {
+        "id": "hook-avatar",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "hook-split",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "hook-typing",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      }
+    ],
+    "kenburns": [
+      {
+        "id": "kenburns-motion",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "kenburns-pan",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 4
+      },
+      {
+        "id": "kenburns-zoom",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      }
+    ],
+    "lower-thirds": [
+      {
+        "id": "lowerthird-metric-badge",
+        "weight": 20,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [
+          "number"
+        ],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "lowerthird-lockup-generic",
+        "weight": 10,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "lowerthird-source-domain",
+        "weight": 10,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "lowerthird-notes-warning",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "lowerthird-progress-step",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "lowerthird-social",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "lowerthird-speaker",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "lowerthird-tags-time",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      }
+    ],
+    "outro-cta": [
+      {
+        "id": "cta-brand-close",
+        "weight": 11,
+        "variants": [
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "cta-subscribe",
+        "weight": 10,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "cta-logo-stamp",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "cta-loop-teaser",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "cta-question",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      }
+    ],
+    "parallax": [
+      {
+        "id": "parallax-depth-drift",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "parallax-text-sweep",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      }
+    ],
+    "text-fullscreen": [
+      {
+        "id": "text-beat-freeze",
+        "weight": 27,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-terminal-shell",
+        "weight": 26,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "text-dark-plus",
+        "weight": 25,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-code-diff",
+        "weight": 24,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-code-scroll-long",
+        "weight": 23,
+        "variants": [
+          "A"
+        ],
+        "needs": [
+          "lines_ge_7"
+        ],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-code-typing-short",
+        "weight": 22,
+        "variants": [
+          "A"
+        ],
+        "needs": [
+          "lines_lt_7"
+        ],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-code-snippet",
+        "weight": 21,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 7
+      },
+      {
+        "id": "text-number-slam",
+        "weight": 20,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "text-fullscreen-default-a",
+        "weight": 10,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 10
+      },
+      {
+        "id": "text-fullscreen-default-b",
+        "weight": 10,
+        "variants": [
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 10
+      },
+      {
+        "id": "text-code-animations",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "text-compare-vs",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-date-marker",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-fact-card",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "text-impact-word",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "text-kinetic-motion",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 7
+      },
+      {
+        "id": "text-mask-footage",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-news-ticker",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-quote-frame",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-split-flap-board",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 1
+      },
+      {
+        "id": "text-stack-lines",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "text-word-swap",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      }
+    ],
+    "transitions": [
+      {
+        "id": "transitions-variant-a-order",
+        "weight": 10,
+        "variants": [
+          "A"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 15
+      },
+      {
+        "id": "transition-blur-dissolve",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 5
+      },
+      {
+        "id": "transition-burn-destruction",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "transition-cut-base",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 2
+      },
+      {
+        "id": "transition-flash-light",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 5
+      },
+      {
+        "id": "transition-glitch-distortion",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 4
+      },
+      {
+        "id": "transition-mask-wipe",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 6
+      },
+      {
+        "id": "transition-mechanical-3d",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 4
+      },
+      {
+        "id": "transition-pan-whip",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 3
+      },
+      {
+        "id": "transition-warp-wave",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 5
+      },
+      {
+        "id": "transition-zoom",
+        "weight": 5,
+        "variants": [
+          "A",
+          "B"
+        ],
+        "needs": [],
+        "signals_any": [],
+        "templates": 5
+      }
+    ]
+  }
+}
