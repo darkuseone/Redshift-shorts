@@ -69,6 +69,9 @@ class PickTrace:
     replaced_default_by: str | None  # intent_id с replaces_default, если сработал (D2 п. 7)
     allow_size: int = 0  # hard allowlist size (0 = allow omitted)
     escaped: bool = False  # True if catalog.pick climbed allow ladder
+    # На какой ступени сорвался подбор: "duration"/"traits" — приём всё равно
+    # из разрешённого набора, "category" — вышел за него. QC-22 смотрит сюда.
+    escape_level: str = ""
 
 
 @dataclass(frozen=True)
@@ -492,6 +495,7 @@ class TemplatePicker:
         allow_arg: list[str] | None = list(allowed) if allowed else None
         allow_size = len(allowed)
         any_escaped = False
+        escape_levels: set[str] = set()
 
         for idx, tid in enumerate(walk):
             t = self.catalog.pick(
@@ -506,6 +510,7 @@ class TemplatePicker:
                 allow=allow_arg,
             )
             any_escaped = any_escaped or bool(getattr(self.catalog, "_last_escaped", False))
+            escape_levels.add(str(getattr(self.catalog, "_last_escape_level", "") or ""))
             if t.id == tid:
                 won_at = idx
                 tie_class = 1
@@ -527,6 +532,7 @@ class TemplatePicker:
                 allow=rot_allow if rot_allow else None,
             )
             any_escaped = any_escaped or bool(getattr(self.catalog, "_last_escaped", False))
+            escape_levels.add(str(getattr(self.catalog, "_last_escape_level", "") or ""))
             won_at = None
             active = self._active_candidates(
                 category,
@@ -555,6 +561,8 @@ class TemplatePicker:
             replaced_default_by=replaced_default_by,
             allow_size=allow_size,
             escaped=any_escaped,
+            escape_level=("category" if "category" in escape_levels
+                          else next(iter(sorted(escape_levels - {""})), "")),
         )
         # Уровень записывается после выбора: бюджет считает выданное, а не
         # задуманное.

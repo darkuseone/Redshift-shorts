@@ -172,7 +172,9 @@ class TestQc20And21And22CarryTheMegaWording:
         assert _check(_run(cfg, plan), "QC-20")["passed"]
 
     def test_qc21_counts_devices_without_a_reason(self, cfg):
-        plan = _plan(shots=[_shot(i, template=f"t/{i}") for i in range(4)])
+        """Основание считается только там, где его вообще считали."""
+        plan = _plan(shots=[_shot(i, template=f"t/{i}", grounded_on=[])
+                            for i in range(4)])
         check = _check(_run(cfg, plan), "QC-21")
         assert not check["passed"] and check["value"] == 1.0
 
@@ -181,16 +183,36 @@ class TestQc20And21And22CarryTheMegaWording:
                             for i in range(4)])
         assert _check(_run(cfg, plan), "QC-21")["passed"]
 
+    def test_qc21_ignores_devices_that_need_no_grounding(self, cfg):
+        """`grounded_on` — это `matched(needs, traits)`; у шаблона без `needs`
+        он пуст по построению. Из 204 шаблонов каталога `needs` объявлен у 74,
+        и порог 0.30 не прошёл бы ни один ролик."""
+        plan = _plan(shots=[_shot(i, template=f"t/{i}") for i in range(9)]
+                     + [_shot(9, template="t/9", grounded_on=["number"])])
+        assert _check(_run(cfg, plan), "QC-21")["passed"]
+
     def test_qc22_catches_a_pick_that_escaped_the_allowlist(self, cfg):
         plan = _plan(pick_traces=[
             {"category": "text-fullscreen", "template": "text-fullscreen/x",
-             "allow_size": 6, "escaped": True}])
+             "allow_size": 6, "escaped": True, "escape_level": "category"}])
         assert not _check(_run(cfg, plan), "QC-22")["passed"]
 
     def test_qc22_passes_when_every_pick_stayed_inside(self, cfg):
         plan = _plan(pick_traces=[
             {"category": "text-fullscreen", "template": "text-fullscreen/x",
-             "allow_size": 6, "escaped": False}])
+             "allow_size": 6, "escaped": False, "escape_level": ""}])
+        assert _check(_run(cfg, plan), "QC-22")["passed"]
+
+    @pytest.mark.parametrize("level", ["duration", "traits"])
+    def test_qc22_does_not_blame_the_picker_for_an_impossible_slot(self, cfg, level):
+        """Слот в 0.28 с короче любого шаблона категории — это дефект нарезки.
+
+        Приём при таком откате всё равно берётся из разрешённого набора, и
+        засчитывать его как выход за набор значит ловить чужую поломку.
+        """
+        plan = _plan(pick_traces=[
+            {"category": "text-fullscreen", "template": "text-fullscreen/x",
+             "allow_size": 6, "escaped": True, "escape_level": level}])
         assert _check(_run(cfg, plan), "QC-22")["passed"]
 
 

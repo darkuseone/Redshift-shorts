@@ -192,6 +192,7 @@ class TemplateCatalog:
                           for t in data.get("templates", [])]
         self._by_id = {t.id: t for t in self.templates}
         self._last_escaped = False
+        self._last_escape_level = ""
         self._last_allow_size = 0
 
     @classmethod
@@ -308,10 +309,17 @@ class TemplateCatalog:
                 # without allow: keep candidates as last resort below
             return candidates
 
+        # Ступени отката различаются по смыслу, и это важно для QC-22.
+        # `duration` и `traits` снимают ограничение, но приём всё равно берётся
+        # **из разрешённого набора**: слот короче любого шаблона категории —
+        # это дефект нарезки, а не подбора. Выход за набор — только последняя
+        # ступень, и именно её значит «picked ∉ allow».
         escaped = False
+        escape_level = ""
         candidates = apply_filters(use_duration=True, use_traits=True)
         if not candidates and allow_set is not None:
             escaped = True
+            escape_level = "duration"
             _log.warning(
                 "сценарный набор для категории %s не закрыл слот "
                 "(duration=%s) — откат: без duration",
@@ -320,6 +328,7 @@ class TemplateCatalog:
             candidates = apply_filters(use_duration=False, use_traits=True)
         if not candidates and allow_set is not None:
             escaped = True
+            escape_level = "traits"
             _log.warning(
                 "сценарный набор для категории %s — откат: без traits",
                 category,
@@ -327,6 +336,7 @@ class TemplateCatalog:
             candidates = apply_filters(use_duration=False, use_traits=False)
         if not candidates and allow_set is not None:
             escaped = True
+            escape_level = "category"
             candidates = list(base)
         if not candidates:
             if allow_set is not None:
@@ -338,6 +348,7 @@ class TemplateCatalog:
 
         # Stash escape flag for callers that inspect the last pick (picker).
         self._last_escaped = escaped  # type: ignore[attr-defined]
+        self._last_escape_level = escape_level  # type: ignore[attr-defined]
         self._last_allow_size = len(allow_set) if allow_set is not None else 0  # type: ignore[attr-defined]
 
         recent = set(recent_videos)

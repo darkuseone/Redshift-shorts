@@ -3067,6 +3067,7 @@ class _RecordingPicker:
             "won_at": trace.won_at,
             "allow_size": trace.allow_size,
             "escaped": bool(trace.escaped),
+            "escape_level": str(getattr(trace, "escape_level", "") or ""),
         })
         return template, trace
 

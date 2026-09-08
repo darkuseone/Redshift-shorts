@@ -270,22 +270,33 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
         value=len(over), threshold=bleed_w,
         detail=", ".join(f"кадр {o['index']}: {o['px']} px" for o in over[:6])))
 
-    # 21. Приём без основания. Каждый приём обязан опираться на признак блока,
-    # иначе это украшение поверх речи, а не монтаж.
+    # 21. Приём без основания. Считаются только те приёмы, которым основание
+    # вообще положено: `grounded_on` — это `matched(template.needs, traits)`,
+    # и у шаблона без `needs` он пуст **по построению**. Считать такой приём
+    # необоснованным — не находка, а ошибка мерки: из 204 шаблонов каталога
+    # `needs` объявлен у 74, и порог 0.30 не прошёл бы ни один ролик.
     placed = [*plan.get("shots", []), *plan.get("overlays", [])]
-    decided = [p for p in placed if p.get("template")]
-    ungrounded = [p for p in decided if not p.get("grounded_on")]
-    ungrounded_share = (len(ungrounded) / len(decided)) if decided else 0.0
+    # `grounded_on` кладут только те пути, где основание вообще считается:
+    # приём вокруг ведущего, карточка источника и надпись пустого слота.
+    # Список — значит «основание считали»; отсутствие ключа — «не про это».
+    needful = [p for p in placed
+               if p.get("template") and isinstance(p.get("grounded_on"), list)]
+    ungrounded = [p for p in needful if not p.get("grounded_on")]
+    ungrounded_share = (len(ungrounded) / len(needful)) if needful else 0.0
     checks.append(_check(
         21, "Приёмы без основания", ungrounded_share <= 0.30,
         value=round(ungrounded_share, 3), threshold=0.30,
-        detail=f"{len(ungrounded)} из {len(decided)}"))
+        detail=f"{len(ungrounded)} из {len(needful)} приёмов, которым "
+               f"основание положено"))
 
-    # 22. Выбранный приём обязан лежать в разрешённом наборе. `escaped` в
-    # трассе значит, что каталог полез вверх по лестнице allow — то есть
-    # сценарный набор не сработал, и в кадр попал приём «хоть какой-нибудь».
+    # 22. Выбранный приём обязан лежать в разрешённом наборе. Ступени отката
+    # различаются по смыслу: снятие `duration` и `traits` оставляет приём
+    # **внутри** набора — слот короче любого шаблона категории это дефект
+    # нарезки, а не подбора. Выходом за набор считается только последняя
+    # ступень, иначе гейт ловил бы чужую поломку.
     traces = plan.get("pick_traces") or []
-    escaped = [t for t in traces if t.get("allow_size") and t.get("escaped")]
+    escaped = [t for t in traces
+               if t.get("allow_size") and t.get("escape_level") == "category"]
     checks.append(_check(
         22, "Выбранный приём внутри разрешённого набора", not escaped,
         value=len(escaped), threshold=0,
