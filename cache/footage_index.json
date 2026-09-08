@@ -349,8 +349,10 @@
       "vision_summary": "",
       "score": 0.62,
       "duration_sec": 0.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
       "added": "2026-09-01",
       "phashes": [
         "15d25a9b6a78251e"
@@ -944,12 +946,12 @@
       "width": 1920,
       "height": 1277,
       "file": "seed/lab/nasa_PIA13308.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JPL",
         "seed_topic": "lab",
         "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_PIA20602",
@@ -981,12 +983,12 @@
       "width": 1430,
       "height": 1919,
       "file": "seed/mars/nasa_PIA20602.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JPL",
         "seed_topic": "mars",
         "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_PIA20603",
@@ -1017,12 +1019,12 @@
       "width": 1496,
       "height": 1919,
       "file": "seed/mars/nasa_PIA20603.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JPL",
         "seed_topic": "mars",
         "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_PIA19142",
@@ -1053,12 +1055,12 @@
       "width": 1920,
       "height": 983,
       "file": "seed/mars/nasa_PIA19142.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JPL",
         "seed_topic": "mars",
         "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_GSFC_20171208_Archive_e000495",
