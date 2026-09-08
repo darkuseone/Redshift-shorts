@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -491,6 +492,35 @@ def _fullscreen_cap(cfg) -> int:
         return int(rng)
     except (TypeError, ValueError):
         return 4
+
+
+@dataclass
+class VisualBudget:
+    """Сколько раз ролик уже закрыл пустой кадр каждым способом.
+
+    Потолок полноэкранного текста был и раньше (`fs_cap`). Без остальных
+    потолков лестница §7.2 просто сползла бы на первую подходящую ступень:
+    на эталонном 0042 это дало бы четырнадцать карточек вместо четырнадцати
+    надписей — то же слайд-шоу, другим шрифтом. Потолок нужен каждой ступени,
+    а не только последней.
+    """
+
+    card: int = 0
+    dataviz: int = 0
+    source: int = 0
+    parallax: int = 0
+    fullscreen: int = 0
+    plate: int = 0
+
+    # Потолки на ролик. `fullscreen` берётся из брендбука (`fs_cap`), поэтому
+    # здесь его нет: у него уже есть свой источник правды.
+    CAPS = {"card": 4, "dataviz": 2, "source": 3, "parallax": 3, "plate": 2}
+
+    def allows(self, rung: str) -> bool:
+        return int(getattr(self, rung, 0)) < int(self.CAPS.get(rung, 0))
+
+    def take(self, rung: str) -> None:
+        setattr(self, rung, int(getattr(self, rung, 0)) + 1)
 
 
 def _claim_screen_phrase(used: set[str], content: str) -> bool:
@@ -2558,6 +2588,274 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     return overlays
 
 
+def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
+                     blocks: dict[str, Any], picker: TemplatePicker, *,
+                     variant: str, seed: int, recent_videos: list[str],
+                     used: list[str], start: float, end: float,
+                     why: str = "data-viz: в блоке есть число",
+                     ) -> dict[str, Any]:
+    """Собрать оверлей-диаграмму по числам блока.
+
+    Вынесено из `_append_dataviz`, чтобы лестница закрытия кадра (§7.2)
+    строила диаграмму тем же кодом, а не своей копией: параметры двадцати
+    восьми шаблонов подобраны по одному, и вторая их редакция разошлась бы
+    с первой на первом же новом приёме.
+    """
+    pct = str(nums[0].get("suffix") or "").lstrip().startswith("%")
+    declining = (len(nums) >= 2
+                 and float(nums[1]["value"]) < float(nums[0]["value"]))
+    base = (["data-viz/conic-progress-ring",
+               "data-viz/stat-countup-card"]
+              if len(nums) == 1 and pct and variant != "B"
+              else ["data-viz/stat-countup-card"] if len(nums) == 1
+              else ["data-viz/bar-chart-race",
+                    "data-viz/chart-story",
+                    "data-viz/mk-line-graph",
+                    "data-viz/animated-bar-chart",
+                    "data-viz/compare-bars", "data-viz/bar-race-mini"]
+              if len(nums) >= 4
+              else (["data-viz/decline-chart",
+                     "data-viz/chart-story",
+                     "data-viz/mk-line-graph",
+                     "data-viz/animated-bar-chart",
+                     "data-viz/compare-bars", "data-viz/bar-race-mini"]
+                    if declining
+                    else ["data-viz/chart-story",
+                          "data-viz/mk-line-graph",
+                          "data-viz/animated-bar-chart",
+                          "data-viz/compare-bars", "data-viz/bar-race-mini"]))
+    if variant == "B" and len(nums) >= 2:
+        base = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
+
+    rating_like = (
+        len(nums) == 1
+        and not pct
+        and 0.0 < float(nums[0]["value"]) <= 5.0
+        and abs(float(nums[0]["value"])
+                - round(float(nums[0]["value"]))) > 1e-9
+    )
+
+    signals = {"numbers"}
+    if len(nums) >= 2:
+        signals.add("two_numbers")
+    if len(nums) >= 4:
+        signals.add("four_numbers")
+    if pct:
+        signals.add("pct")
+    if declining:
+        signals.add("declining")
+    if rating_like:
+        signals.add("rating_like")
+
+    block = blocks.get(slot["block_id"], {})
+    blob = build_blob(block.get("text"), block.get("heading"))
+    template, _ = picker.pick(
+        "data-viz",
+        blob=blob,
+        signals=signals,
+        variant=variant,
+        duration=end - start,
+        recent_videos=recent_videos,
+        exclude=used,
+        seed=seed + 11,
+        prefer_base=base,
+    )
+    used.append(template.id)
+    name = template.name
+    if name == "decline-chart":
+        start_v = float(nums[0]["value"])
+        end_v = float(nums[1]["value"]) if len(nums) >= 2 else start_v
+        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        params = {
+            "start_value": start_v,
+            "end_value": end_v,
+            "label": heading or "Retention",
+            "values": [start_v, end_v],
+        }
+    elif name == "conic-progress-ring":
+        val = float(nums[0]["value"])
+        suffix = str(nums[0]["suffix"]) if nums[0].get("suffix") else "%"
+        token = (str(int(round(val))) if abs(val - round(val)) < 1e-9
+                 else f"{val:g}")
+        fill = val if 0.0 <= val <= 100.0 else 100.0
+        params = {
+            "progress": fill,
+            "value": val,
+            "label": f"{token}{suffix}",
+            "thickness": 12,
+        }
+    elif name == "star-rating-fill":
+        rating = 4.8
+        if nums:
+            val = float(nums[0]["value"])
+            if 0.0 <= val <= 5.0:
+                rating = val
+        params = {
+            "rating": rating,
+            "starCount": 5,
+            "showValue": True,
+        }
+    elif name == "spain-map":
+        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        regions = [{
+            "abbr": str(shape["abbr"]),
+            "name": str(shape["name"]),
+            "value": float(shape["gdp"]),
+        } for shape in SPM_SHAPES]
+        if nums:
+            ranked = sorted(regions, key=lambda row: -float(row["value"]))
+            for index, num in enumerate(nums[:len(ranked)]):
+                ranked[index]["value"] = num["value"]
+        params = {
+            "title": heading or "PIB per cápita por Comunidad Autónoma",
+            "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
+            "source": "Fuente: Instituto Nacional de Estadística",
+            "regions": regions,
+            "highlight": ["MAD", "PVA", "NAV"],
+        }
+    elif name == "us-map":
+        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        regions = [{
+            "abbr": str(shape["abbr"]),
+            "name": str(shape["name"]),
+            "value": float(shape["density"]),
+        } for shape in USM_SHAPES]
+        if nums:
+            ranked = sorted(regions, key=lambda row: -float(row["value"]))
+            for index, num in enumerate(nums[:len(ranked)]):
+                ranked[index]["value"] = num["value"]
+        params = {
+            "title": heading or "Population Density by State",
+            "subtitle": "Residents per square mile, 2024 Census estimates",
+            "source": "Source: U.S. Census Bureau",
+            "regions": regions,
+            "highlight": ["CA", "NY", "TX", "FL", "NJ"],
+        }
+    elif name == "us-map-hex":
+        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        params = {
+            "title": heading or "Median Household Income by State",
+            "subtitle": "American Community Survey, 2024",
+            "source": "Source: U.S. Census Bureau, American Community Survey 2024",
+            "highlight": ["MD", "NJ", "MA", "CT", "HI"],
+        }
+    elif name == "world-map":
+        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        params = {
+            "title": heading or "Global GDP per Capita",
+            "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
+            "source": "Source: International Monetary Fund",
+            "highlight": ["756", "578", "840", "036", "752"],
+        }
+    elif name == "apple-money-count":
+        val = float(nums[0]["value"]) if nums else 10000.0
+        params = {"end_value": val, "prefix": "$"}
+    elif name == "north-korea-locked-down":
+        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        params = {"label": heading or "LOCKED DOWN"}
+    elif name == "nyc-paris-flight":
+        params = {
+            "origin": "New York", "dest": "Paris",
+            "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
+            "km": "5,837",
+        }
+    elif name == "mk-progress-stat":
+        val = float(nums[0]["value"]) if nums else 22.0
+        params = {
+            "value": int(round(val)),
+            "max": max(int(round(val * 1.4)), int(round(val)) + 1),
+            "suffix": str(nums[0].get("suffix") or "") if nums else "",
+            "label": str(blocks.get(slot["block_id"], {}).get("heading")
+                         or "Goals reached"),
+            "caption": "Great job, we are getting closer!",
+        }
+    elif name == "flowchart-vertical":
+        params = {
+            "root": "Should I learn to code?",
+            "branches": ["Yes", "Not sure"],
+            "leaves": [
+                "Start with Python", "Try no-code first",
+                "Build a personal website", "Take a free intro course",
+            ],
+        }
+    elif name == "us-map-flow":
+        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        cities = [{
+            "name": str(city["name"]),
+            "x": float(city["x"]),
+            "y": float(city["y"]),
+        } for city in UMF_CITIES]
+        flows = [{
+            "from": str(flow["from"]),
+            "to": str(flow["to"]),
+            "volume": float(flow["volume"]),
+        } for flow in UMF_FLOWS]
+        if nums:
+            for index, flow in enumerate(flows):
+                if index >= len(nums):
+                    break
+                flow["volume"] = float(nums[index]["value"])
+        params = {
+            "title": heading or "Interstate Flow Connections",
+            "subtitle": "Relative volume of major city-to-city corridors",
+            "source": "Source: Illustrative data",
+            "cities": cities,
+            "flows": flows,
+        }
+    elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
+        suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""
+        params: dict[str, Any] = {
+            "value": nums[0]["value"], "suffix": suffix,
+            "label": nums[0]["raw"],
+            "values": [n["value"] for n in nums[:4]],
+            "labels": [n["raw"] for n in nums[:4]],
+        }
+    else:
+        n_take = (8 if name == "bar-chart-race"
+                  else 6 if name == "mk-line-graph"
+                  else 4 if name == "chart-story"
+                  else 7 if name == "animated-bar-chart" else 4)
+        params = {
+            "values": [n["value"] for n in nums[:n_take]],
+            "labels": [n["raw"] for n in nums[:n_take]],
+            "value": nums[0]["value"],
+            "kpi": nums[0]["raw"],
+        }
+        if name == "bar-chart-race":
+            params["value_prefix"] = ""
+            params["value_suffix"] = (
+                f" {nums[0]['suffix']}" if nums[0].get("suffix") else "")
+            params["title"] = str(
+                blocks.get(slot["block_id"], {}).get("heading")
+                or "Streaming Subscribers by Service")
+        if name == "chart-story":
+            params["unit"] = (
+                str(nums[0]["suffix"]) if nums[0].get("suffix") else "%")
+            params["emphasize"] = len(params["values"]) - 1
+        if name == "mk-line-graph":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading")
+                          or "")
+            series = [{
+                "name": heading or "Renders",
+                "values": [n["value"] for n in nums[:n_take]],
+            }]
+            rest = nums[n_take:n_take * 2]
+            if len(rest) >= 2:
+                series.append({
+                    "name": "Projects",
+                    "values": [n["value"] for n in rest],
+                })
+            params["series"] = series
+            params["xLabels"] = [n["raw"] for n in nums[:n_take]]
+            params["showValues"] = True
+    return {
+        "type": "dataviz", "start": start, "end": end,
+        "template": template.id, "renderer": template.renderer,
+        "params": params,
+        "why": why,
+    }
+
+
 def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
@@ -2584,260 +2882,124 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             continue
         if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
             continue
-        pct = str(nums[0].get("suffix") or "").lstrip().startswith("%")
-        declining = (len(nums) >= 2
-                     and float(nums[1]["value"]) < float(nums[0]["value"]))
-        base = (["data-viz/conic-progress-ring",
-                   "data-viz/stat-countup-card"]
-                  if len(nums) == 1 and pct and variant != "B"
-                  else ["data-viz/stat-countup-card"] if len(nums) == 1
-                  else ["data-viz/bar-chart-race",
-                        "data-viz/chart-story",
-                        "data-viz/mk-line-graph",
-                        "data-viz/animated-bar-chart",
-                        "data-viz/compare-bars", "data-viz/bar-race-mini"]
-                  if len(nums) >= 4
-                  else (["data-viz/decline-chart",
-                         "data-viz/chart-story",
-                         "data-viz/mk-line-graph",
-                         "data-viz/animated-bar-chart",
-                         "data-viz/compare-bars", "data-viz/bar-race-mini"]
-                        if declining
-                        else ["data-viz/chart-story",
-                              "data-viz/mk-line-graph",
-                              "data-viz/animated-bar-chart",
-                              "data-viz/compare-bars", "data-viz/bar-race-mini"]))
-        if variant == "B" and len(nums) >= 2:
-            base = ["data-viz/compare-bars", "data-viz/stat-countup-card"]
-
-        rating_like = (
-            len(nums) == 1
-            and not pct
-            and 0.0 < float(nums[0]["value"]) <= 5.0
-            and abs(float(nums[0]["value"])
-                    - round(float(nums[0]["value"]))) > 1e-9
-        )
-
-        signals = {"numbers"}
-        if len(nums) >= 2:
-            signals.add("two_numbers")
-        if len(nums) >= 4:
-            signals.add("four_numbers")
-        if pct:
-            signals.add("pct")
-        if declining:
-            signals.add("declining")
-        if rating_like:
-            signals.add("rating_like")
-
-        block = blocks.get(slot["block_id"], {})
-        blob = build_blob(block.get("text"), block.get("heading"))
-        template, _ = picker.pick(
-            "data-viz",
-            blob=blob,
-            signals=signals,
-            variant=variant,
-            duration=end - start,
-            recent_videos=recent_videos,
-            exclude=used,
-            seed=seed + 11,
-            prefer_base=base,
-        )
-        used.append(template.id)
-        name = template.name
-        if name == "decline-chart":
-            start_v = float(nums[0]["value"])
-            end_v = float(nums[1]["value"]) if len(nums) >= 2 else start_v
-            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
-            params = {
-                "start_value": start_v,
-                "end_value": end_v,
-                "label": heading or "Retention",
-                "values": [start_v, end_v],
-            }
-        elif name == "conic-progress-ring":
-            val = float(nums[0]["value"])
-            suffix = str(nums[0]["suffix"]) if nums[0].get("suffix") else "%"
-            token = (str(int(round(val))) if abs(val - round(val)) < 1e-9
-                     else f"{val:g}")
-            fill = val if 0.0 <= val <= 100.0 else 100.0
-            params = {
-                "progress": fill,
-                "value": val,
-                "label": f"{token}{suffix}",
-                "thickness": 12,
-            }
-        elif name == "star-rating-fill":
-            rating = 4.8
-            if nums:
-                val = float(nums[0]["value"])
-                if 0.0 <= val <= 5.0:
-                    rating = val
-            params = {
-                "rating": rating,
-                "starCount": 5,
-                "showValue": True,
-            }
-        elif name == "spain-map":
-            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
-            regions = [{
-                "abbr": str(shape["abbr"]),
-                "name": str(shape["name"]),
-                "value": float(shape["gdp"]),
-            } for shape in SPM_SHAPES]
-            if nums:
-                ranked = sorted(regions, key=lambda row: -float(row["value"]))
-                for index, num in enumerate(nums[:len(ranked)]):
-                    ranked[index]["value"] = num["value"]
-            params = {
-                "title": heading or "PIB per cápita por Comunidad Autónoma",
-                "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
-                "source": "Fuente: Instituto Nacional de Estadística",
-                "regions": regions,
-                "highlight": ["MAD", "PVA", "NAV"],
-            }
-        elif name == "us-map":
-            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
-            regions = [{
-                "abbr": str(shape["abbr"]),
-                "name": str(shape["name"]),
-                "value": float(shape["density"]),
-            } for shape in USM_SHAPES]
-            if nums:
-                ranked = sorted(regions, key=lambda row: -float(row["value"]))
-                for index, num in enumerate(nums[:len(ranked)]):
-                    ranked[index]["value"] = num["value"]
-            params = {
-                "title": heading or "Population Density by State",
-                "subtitle": "Residents per square mile, 2024 Census estimates",
-                "source": "Source: U.S. Census Bureau",
-                "regions": regions,
-                "highlight": ["CA", "NY", "TX", "FL", "NJ"],
-            }
-        elif name == "us-map-hex":
-            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
-            params = {
-                "title": heading or "Median Household Income by State",
-                "subtitle": "American Community Survey, 2024",
-                "source": "Source: U.S. Census Bureau, American Community Survey 2024",
-                "highlight": ["MD", "NJ", "MA", "CT", "HI"],
-            }
-        elif name == "world-map":
-            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
-            params = {
-                "title": heading or "Global GDP per Capita",
-                "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
-                "source": "Source: International Monetary Fund",
-                "highlight": ["756", "578", "840", "036", "752"],
-            }
-        elif name == "apple-money-count":
-            val = float(nums[0]["value"]) if nums else 10000.0
-            params = {"end_value": val, "prefix": "$"}
-        elif name == "north-korea-locked-down":
-            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
-            params = {"label": heading or "LOCKED DOWN"}
-        elif name == "nyc-paris-flight":
-            params = {
-                "origin": "New York", "dest": "Paris",
-                "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
-                "km": "5,837",
-            }
-        elif name == "mk-progress-stat":
-            val = float(nums[0]["value"]) if nums else 22.0
-            params = {
-                "value": int(round(val)),
-                "max": max(int(round(val * 1.4)), int(round(val)) + 1),
-                "suffix": str(nums[0].get("suffix") or "") if nums else "",
-                "label": str(blocks.get(slot["block_id"], {}).get("heading")
-                             or "Goals reached"),
-                "caption": "Great job, we are getting closer!",
-            }
-        elif name == "flowchart-vertical":
-            params = {
-                "root": "Should I learn to code?",
-                "branches": ["Yes", "Not sure"],
-                "leaves": [
-                    "Start with Python", "Try no-code first",
-                    "Build a personal website", "Take a free intro course",
-                ],
-            }
-        elif name == "us-map-flow":
-            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
-            cities = [{
-                "name": str(city["name"]),
-                "x": float(city["x"]),
-                "y": float(city["y"]),
-            } for city in UMF_CITIES]
-            flows = [{
-                "from": str(flow["from"]),
-                "to": str(flow["to"]),
-                "volume": float(flow["volume"]),
-            } for flow in UMF_FLOWS]
-            if nums:
-                for index, flow in enumerate(flows):
-                    if index >= len(nums):
-                        break
-                    flow["volume"] = float(nums[index]["value"])
-            params = {
-                "title": heading or "Interstate Flow Connections",
-                "subtitle": "Relative volume of major city-to-city corridors",
-                "source": "Source: Illustrative data",
-                "cities": cities,
-                "flows": flows,
-            }
-        elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
-            suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""
-            params: dict[str, Any] = {
-                "value": nums[0]["value"], "suffix": suffix,
-                "label": nums[0]["raw"],
-                "values": [n["value"] for n in nums[:4]],
-                "labels": [n["raw"] for n in nums[:4]],
-            }
-        else:
-            n_take = (8 if name == "bar-chart-race"
-                      else 6 if name == "mk-line-graph"
-                      else 4 if name == "chart-story"
-                      else 7 if name == "animated-bar-chart" else 4)
-            params = {
-                "values": [n["value"] for n in nums[:n_take]],
-                "labels": [n["raw"] for n in nums[:n_take]],
-                "value": nums[0]["value"],
-                "kpi": nums[0]["raw"],
-            }
-            if name == "bar-chart-race":
-                params["value_prefix"] = ""
-                params["value_suffix"] = (
-                    f" {nums[0]['suffix']}" if nums[0].get("suffix") else "")
-                params["title"] = str(
-                    blocks.get(slot["block_id"], {}).get("heading")
-                    or "Streaming Subscribers by Service")
-            if name == "chart-story":
-                params["unit"] = (
-                    str(nums[0]["suffix"]) if nums[0].get("suffix") else "%")
-                params["emphasize"] = len(params["values"]) - 1
-            if name == "mk-line-graph":
-                heading = str(blocks.get(slot["block_id"], {}).get("heading")
-                              or "")
-                series = [{
-                    "name": heading or "Renders",
-                    "values": [n["value"] for n in nums[:n_take]],
-                }]
-                rest = nums[n_take:n_take * 2]
-                if len(rest) >= 2:
-                    series.append({
-                        "name": "Projects",
-                        "values": [n["value"] for n in rest],
-                    })
-                params["series"] = series
-                params["xLabels"] = [n["raw"] for n in nums[:n_take]]
-                params["showValues"] = True
-        overlays.append({
-            "type": "dataviz", "start": start, "end": end,
-            "template": template.id, "renderer": template.renderer,
-            "params": params,
-            "why": "data-viz: в блоке есть число",
-        })
+        overlays.append(_dataviz_overlay(
+            slot, nums, blocks, picker, variant=variant, seed=seed,
+            recent_videos=recent_videos, used=used, start=start, end=end))
         return
+
+
+# Рендереры browser-ui, которые честно показывают настоящий источник.
+# Окна чата и мессенджера сюда не входят: их содержимое пришлось бы
+# сочинить, а выдуманная переписка — не иллюстрация, а подделка.
+_LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
+                                      "source_card"})
+
+
+def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
+                      budget: VisualBudget, picker: TemplatePicker,
+                      catalog: TemplateCatalog, plan: dict[str, Any],
+                      variant: str, seed: int, recent_videos: list[str],
+                      used_templates: list[str], brand_icons,
+                      words: list[dict[str, Any]], plate_src: dict[str, Any] | None,
+                      traits: set[str],
+                      ) -> tuple[str, dict[str, Any] | None, dict[str, Any] | None]:
+    """Чем закрыть кадр, которому не досталось материала (§7.2).
+
+    До этой лестницы у сборщика было ровно две ветки: полноэкранный текст или
+    голая плита. На эталонном 0042 стока хватило на шесть кадров из двадцати, и
+    четырнадцать закрылись надписью — критик назвал это «хаотичным слайд-шоу из
+    текста» и поставил `visual 2/10` при девятнадцати пройденных QC.
+
+    Возвращается ``(ступень, приём-hero, оверлей)``; текст и плита ступеней не
+    имеют — их собирает вызывающий код, потому что он же держит счётчик фраз.
+
+    **Порядок обратный таблице ТЗ, и это главное решение здесь.** В таблице
+    ступени стоят от самой содержательной к самой дешёвой: карточка, данные,
+    источник. Но карточке нужно только акцентное слово — оно есть у каждого
+    блока, — а диаграмме нужно число, источнику нужна цитата или бренд. При
+    порядке из таблицы трат-free ступень выгребает свой потолок первой, на
+    самых обычных блоках, и к блоку с числом лестница приходит уже пустой.
+
+    Замер на эталонном 0042 при нулевом стоке, порядок из таблицы:
+    ``card 4, dataviz 1, fullscreen 4, plate 11`` — одиннадцать голых плит при
+    норме две. Поэтому ступени идут по редкости условия: сначала те, чьё
+    основание блок либо имеет, либо нет (число, цитата), и только потом
+    карточка, которая подходит всему. Содержательность решает спор равных.
+    """
+    nums = _stats_from_text(str(block.get("text") or "")) if block else []
+    start = float(slot["start"]) + 0.2
+    end = min(float(slot["end"]) - 0.1, start + 3.2)
+    window_ok = end - start >= 1.2
+
+    # 2. Данные — когда блок назвал число. Идёт первой: число больше нечем
+    #    показать, а карточка и текст умеют говорить о чём угодно.
+    if nums and window_ok and budget.allows("dataviz"):
+        overlay = _dataviz_overlay(
+            slot, nums, {block.get("id", ""): block}, picker,
+            variant=variant, seed=seed + int(slot["index"]),
+            recent_videos=recent_videos, used=used_templates,
+            start=start, end=end,
+            why="лестница §7.2, ступень 2: в блоке названо число")
+        budget.take("dataviz")
+        used_templates.append(str(overlay.get("template") or ""))
+        return "dataviz", None, overlay
+
+    # 3. Источник или устройство. Гейт жёсткий и намеренный: окно статьи
+    #    рисуется **только** под настоящий источник из плана. Карточка,
+    #    похожая на цитату, но собранная из воздуха, — выдуманный документ, а
+    #    не приём монтажа.
+    # Каждый показ берёт **свой** источник. Один и тот же документ, трижды
+    # въехавший в кадр, — это ровно то «грубое дублирование карточек», на
+    # которое жаловался критик; потолок ступени тут упирается не в цифру 3, а
+    # в то, сколько источников у ролика вообще есть.
+    sources = [s for s in (plan.get("sources") or []) if s.get("domain")]
+    source = sources[budget.source] if budget.source < len(sources) else None
+    if (source and window_ok and budget.allows("source")
+            and {"quote", "brand", "device"} & set(traits)):
+        template, _ = picker.pick(
+            "browser-ui",
+            blob=build_blob(block.get("text"), block.get("heading")),
+            traits=traits, variant=variant, duration=end - start,
+            recent_videos=recent_videos, exclude=used_templates,
+            seed=seed + int(slot["index"]))
+        if template.renderer in _LADDER_SOURCE_RENDERERS:
+            budget.take("source")
+            used_templates.append(template.id)
+            return "source", None, {
+                "type": "source_card", "start": start, "end": end,
+                "template": template.id, "renderer": template.renderer,
+                "params": {
+                    "domain": str(source.get("domain") or ""),
+                    "title": str(source.get("title") or ""),
+                    "body": str(source.get("snippet") or ""),
+                    "url": str(source.get("url") or ""),
+                },
+                "traits": sorted(traits),
+                "why": "лестница §7.2, ступень 3: у блока цитата и есть источник",
+            }
+
+    # 1. Карточка-ключ — акцентное слово блока, по возможности с медиа. Идёт
+    #    последней среди приёмов: подходит любому блоку, поэтому раньше она
+    #    забирала потолок у ступеней, которым блок нужен особенный.
+    #    `has_alpha=False`: аватара в этом кадре нет, и всё, что рисуется под
+    #    ним, оказалось бы за непрозрачным видео. Отбор по `_HERO_NEEDS` сам
+    #    отбросит приёмы, которым нечем наполниться.
+    if block.get("emphasis_word") and budget.allows("card"):
+        hero = _hero_device(
+            catalog, slot=slot,
+            content=_hero_content(block, slot, brand_icons,
+                                  title=str(plan.get("title") or ""), words=words),
+            has_alpha=False, plate_src=plate_src,
+            recent_videos=recent_videos, exclude=used_templates,
+            seed=seed + int(slot["index"]), picker=picker, variant=variant,
+            block=block, video_duration=float(plan["duration_sec"]))
+        if hero:
+            budget.take("card")
+            used_templates.append(hero["template"])
+            hero["why"] = "лестница §7.2, ступень 1: у блока есть акцентное слово"
+            return "card", hero, None
+
+    return "", None, None
 
 
 def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
@@ -2876,6 +3038,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     used_screen_phrases: set[str] = set()
     fs_cap = _fullscreen_cap(ctx.cfg)
     fs_count = 0
+    budget = VisualBudget()
+    # Оверлеи, которые поставила лестница закрытия кадра: они рождаются в цикле
+    # шотов, а общий список оверлеев собирается ниже — сливаются после.
+    ladder_overlays: list[dict[str, Any]] = []
     # Библиотека иконок §14: пилюля бренда берёт логотип оттуда. Её отсутствие
     # не должно валить сборку — приём просто не выпадет.
     try:
@@ -2968,9 +3134,37 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         prep = prepared.get(slot["index"])
         asset = assets.get(slot["index"])
         if prep is None or (asset is None and slot["kind"] not in AVATAR_KINDS):
-            # Empty slot: unique FS under the brandbook cap, else plate without text.
+            # Пустой слот идёт по лестнице §7.2: карточка → диаграмма →
+            # источник → полноэкранный текст → плита. Раньше веток было две,
+            # и на 0042 четырнадцать кадров из двадцати закрылись надписью.
             bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
             gap_block = blocks_by_id.get(slot["block_id"], {})
+            gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
+            rung, hero_dev, overlay_dev = _close_empty_slot(
+                slot, gap_block, budget=budget, picker=picker, catalog=catalog,
+                plan=plan, variant=variant, seed=seed,
+                recent_videos=recent_videos, used_templates=used_templates,
+                brand_icons=brand_icons,
+                words=[w for w in words_doc["words"]
+                       if float(w["end"]) > float(slot["start"])
+                       and float(w["start"]) < float(slot["end"])],
+                plate_src=_plate_source(slot, slots, prepared, assets),
+                traits=gap_traits)
+            if rung:
+                entry.update({
+                    "kind": "footage",
+                    "file": bg_file,
+                    "asset_id": None,
+                    "traits": sorted(gap_traits) if gap_traits else [],
+                    "gap_reason": f"материал не найден: кадр закрыт приёмом ({rung})",
+                    "ladder_rung": rung,
+                })
+                if hero_dev:
+                    entry["hero"] = hero_dev
+                if overlay_dev:
+                    ladder_overlays.append(overlay_dev)
+                shots.append(entry)
+                continue
             content = ""
             if fs_count < fs_cap:
                 raw = gap_phrase(words_doc["words"], slot, gap_block,
@@ -2991,7 +3185,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     "gap_reason": ("fullscreen cap: plate without text"
                                    if fs_count >= fs_cap
                                    else "no unique phrase: plate without text"),
+                    "ladder_rung": "plate",
                 })
+                budget.take("plate")
                 shots.append(entry)
                 continue
             gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
@@ -3039,7 +3235,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "file": bg_file,
                 "asset_id": None,
                 "gap_reason": "материал не найден: кадр закрыт словом блока",
+                "ladder_rung": "fullscreen",
             })
+            budget.take("fullscreen")
             if bg_file is None:
                 entry["gap_reason"] += "; фон — сцена ролика"
             fs_count += 1
@@ -3154,6 +3352,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     overlays = _build_overlays(ctx, plan, words_doc["words"], catalog, variant=variant,
                                seed=seed, recent_videos=recent_videos, used=used_templates,
                                picker=picker)
+    # Приёмы лестницы §7.2 родились в цикле шотов — доливаем их к общим
+    # оверлеям здесь, чтобы дальше все проверки видели один список.
+    overlays.extend(ladder_overlays)
 
     # Drop plaques that echo an on-screen punch FS (slots may still say footage
     # when the plaque was built; shots are authoritative after gap promote).
