@@ -1661,10 +1661,12 @@
       "width": 1920,
       "height": 1080,
       "file": "pixabay/pixabay_v113379.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pixabay / Digital_View",
         "author": "Digital_View",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "yellow-green wireframe grid, off-palette for quantum"
       }
     },
     {
@@ -1772,10 +1774,12 @@
       "width": 1080,
       "height": 1920,
       "file": "pexels/pexels_v34912823.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / Nicola Narracci",
         "author": "Nicola Narracci",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "purple microbe-like particles, off-palette for quantum"
       }
     },
     {

@@ -13,6 +13,8 @@ def test_poisoned_ids_not_returned_by_search():
         "pexels_v20757503",
         "pexels_v20068211",
         "pexels_v20349634",
+        "pexels_v34912823",
+        "pixabay_v113379",
     }
     for asset_id in poisoned:
         rec = idx.by_id(asset_id)
@@ -28,6 +30,10 @@ def test_poisoned_ids_not_returned_by_search():
     assert "pexels_v20349634" not in {
         r.id for r in idx.search(["galaxy", "nebula"], limit=50)
     }
+    found = {r.id for r in idx.search(["abstract", "particles", "quantum"], limit=50)}
+    assert "pexels_v34912823" not in found
+    found_grid = {r.id for r in idx.search(["network", "geometric", "cybernetic"], limit=50)}
+    assert "pixabay_v113379" not in found_grid
 
 
 def test_pins_file_lists_good_and_deny():
@@ -36,3 +42,9 @@ def test_pins_file_lists_good_and_deny():
     entry = pins["redshift_0042"]
     assert "pexels_v18069803" in entry["prefer"]
     assert "pexels_v20757503" in entry["deny"]
+    assert "pexels_v34912823" in entry["deny"]
+    assert "pixabay_v113379" in entry["deny"]
+    assert "pexels_v34550739" in entry["deny"]
+    assert "pexels_v34912823" not in entry["prefer"]
+    assert "pixabay_v113379" not in entry["prefer"]
+    assert "pexels_v34550739" not in entry["prefer"]
