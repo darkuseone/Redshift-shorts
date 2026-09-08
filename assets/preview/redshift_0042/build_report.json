@@ -4,7 +4,7 @@
   "variants": {
     "A": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_A.mp4",
-      "size_bytes": 20598867,
+      "size_bytes": 19293838,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -24,16 +24,16 @@
         "frames": 1336,
         "duration_sec": 44.511,
         "shots": 20,
-        "overlay_draws": 5,
+        "overlay_draws": 4,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 576,
-        "speech_frames": 576
+        "subtitle_frames": 558,
+        "speech_frames": 558
       }
     },
     "B": {
       "file": "/home/runner/work/Redshift-shorts/Redshift-shorts/output/redshift_0042/redshift_0042_B.mp4",
-      "size_bytes": 20722059,
+      "size_bytes": 18550025,
       "duration_sec": 44.533,
       "fps": 30.0,
       "resolution": [
@@ -53,11 +53,11 @@
         "frames": 1336,
         "duration_sec": 44.511,
         "shots": 20,
-        "overlay_draws": 5,
+        "overlay_draws": 4,
         "safe_zone_violations": [],
         "accent_share_max": 0.0,
-        "subtitle_frames": 535,
-        "speech_frames": 535
+        "subtitle_frames": 459,
+        "speech_frames": 459
       }
     }
   },
@@ -169,7 +169,7 @@
           "id": "QC-9",
           "name": "Уровень музыкальной подложки",
           "passed": true,
-          "value": -24.45,
+          "value": -24.46,
           "threshold": [
             -26.56,
             -22.4
@@ -413,7 +413,7 @@
           "id": "QC-9",
           "name": "Уровень музыкальной подложки",
           "passed": true,
-          "value": -24.45,
+          "value": -24.46,
           "threshold": [
             -26.56,
             -22.4
@@ -552,7 +552,7 @@
     }
   },
   "assets": {
-    "count": 16,
+    "count": 17,
     "unlicensed": [],
     "mock_count": 0
   },
@@ -575,10 +575,8 @@
     "слот 14 (b4) не получил ни одного кандидата",
     "слот 15: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
     "слот 15 (b4) не получил ни одного кандидата",
-    "слот 19: ни один кандидат не прошёл отбор — второй заход по уточнённым запросам",
-    "слот 19 (b6) не получил ни одного кандидата",
-    "пул кандидатов 20 меньше рекомендованных 50 (§7.2.3)",
-    "15 слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
+    "пул кандидатов 25 меньше рекомендованных 50 (§7.2.3)",
+    "13 слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
     "слот 1 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
     "слот 2 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
     "слот 4 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
@@ -592,9 +590,7 @@
     "слот 13 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
     "слот 14 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
     "слот 15 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
-    "слот 17 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
-    "слот 19 остался пустым: generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
-    "нет SFX для ролей ['avatar_in']: библиотека не заполнена (§14.1) — звук не выдумывается",
+    "нет SFX для ролей ['avatar_in', 'subscribe_cta']: библиотека не заполнена (§14.1) — звук не выдумывается",
     "для сплита 5 нет верхней половины",
     "для сплита 6 нет верхней половины",
     "для сплита 7 нет верхней половины",
@@ -606,9 +602,9 @@
   ],
   "devices": {
     "A": {
-      "count": 12,
-      "grounded": 2,
-      "ungrounded": 10,
+      "count": 10,
+      "grounded": 1,
+      "ungrounded": 9,
       "placed": [
         {
           "at": 0.47,
@@ -655,22 +651,6 @@
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
         {
-          "at": 8.0,
-          "kind": "source_card",
-          "template": "browser-ui/browser-scroll",
-          "grounded_on": [
-            "quote"
-          ],
-          "why": "приём оправдан: есть цитата или ссылка на источник"
-        },
-        {
-          "at": 8.6,
-          "kind": "highlight",
-          "template": "",
-          "grounded_on": [],
-          "why": "§5.5: фокусная подсветка ключевой строки источника"
-        },
-        {
           "at": 11.2,
           "kind": "plaque",
           "template": "lower-thirds/source-domain",
@@ -696,14 +676,14 @@
           "kind": "cta",
           "template": "outro-cta/logo-brand-close",
           "grounded_on": [],
-          "why": "§6 r6: REDSHIFT + handle + Subscribe (no slogan)"
+          "why": "§6 r6: REDSHIFT + handle (no Subscribe)"
         }
       ]
     },
     "B": {
-      "count": 11,
-      "grounded": 1,
-      "ungrounded": 10,
+      "count": 9,
+      "grounded": 0,
+      "ungrounded": 9,
       "placed": [
         {
           "at": 0.47,
@@ -741,22 +721,6 @@
           "why": "приём без смысловых требований: держит кадр, не спорит с речью"
         },
         {
-          "at": 8.0,
-          "kind": "source_card",
-          "template": "browser-ui/browser-scroll",
-          "grounded_on": [
-            "quote"
-          ],
-          "why": "приём оправдан: есть цитата или ссылка на источник"
-        },
-        {
-          "at": 8.6,
-          "kind": "highlight",
-          "template": "",
-          "grounded_on": [],
-          "why": "§5.5: фокусная подсветка ключевой строки источника"
-        },
-        {
           "at": 11.2,
           "kind": "plaque",
           "template": "lower-thirds/source-domain",
@@ -782,7 +746,7 @@
           "kind": "cta",
           "template": "outro-cta/logo-brand-close",
           "grounded_on": [],
-          "why": "§6 r6: REDSHIFT + handle + Subscribe (no slogan)"
+          "why": "§6 r6: REDSHIFT + handle (no Subscribe)"
         }
       ]
     }

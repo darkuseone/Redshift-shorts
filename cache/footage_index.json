@@ -933,8 +933,10 @@
       "vision_summary": "",
       "score": 0.62,
       "duration_sec": 0.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "phashes": [
         "f45c462ab99eb189"
@@ -1593,7 +1595,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-04",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "phashes": [
         "0787617195cf6c34",
@@ -1689,9 +1691,10 @@
       "score": 0.55,
       "duration_sec": 10.047,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": "2026-09-03",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "phashes": [
         "e93f253b27bf0018",
