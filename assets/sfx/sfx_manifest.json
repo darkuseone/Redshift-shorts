@@ -4,7 +4,7 @@
   "max_items": 20,
   "count": 18,
   "frozen": false,
-  "updated": "2026-09-07",
+  "updated": "2026-09-08",
   "items": [
     {
       "id": "sfx_whoosh_sharp",
@@ -24,7 +24,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "whoosh_sharp.wav",
       "role": "whoosh_in",
@@ -59,7 +59,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "whoosh_soft.wav",
       "role": "whoosh_out",
@@ -94,7 +94,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "whoosh_double.wav",
       "role": "swipe",
@@ -129,7 +129,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "whoosh_cinematic.wav",
       "role": "boom",
@@ -264,7 +264,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "hit_punch.wav",
       "role": "hit_impact",
@@ -492,8 +492,10 @@
       "vision_summary": "открытый хэт — появление текста",
       "score": 0.0,
       "duration_sec": 0.736,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "hat_open.wav",
       "role": "reveal",
@@ -525,8 +527,10 @@
       "vision_summary": "калимба E",
       "score": 0.0,
       "duration_sec": 1.55,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "chime_kalimba_e.wav",
       "role": "chime",
@@ -558,8 +562,10 @@
       "vision_summary": "калимба G",
       "score": 0.0,
       "duration_sec": 1.5,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "chime_kalimba_g.wav",
       "role": "notification",
@@ -594,7 +600,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "file": "coin_pickup.wav",
       "role": "subscribe_ping",

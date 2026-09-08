@@ -1,7 +1,7 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-07",
+  "updated": "2026-09-08",
   "count": 65,
   "items": [
     {
@@ -1651,7 +1651,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-02",
       "phashes": [
         "05ed77764c468a61",
@@ -1762,7 +1762,7 @@
         "redshift_0047",
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-03",
       "phashes": [
         "1c731c3200ee73dd",
@@ -1935,7 +1935,7 @@
       "used_in": [
         "redshift_0042"
       ],
-      "last_used": "2026-09-07",
+      "last_used": "2026-09-08",
       "added": "2026-09-04",
       "phashes": [
         "ed68d273298fc6a0",
