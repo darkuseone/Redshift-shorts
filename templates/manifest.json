@@ -5652,7 +5652,9 @@
         "slam"
       ],
       "renderer": "hero-verdict",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-08-18",
       "needs": [
         "negation",
