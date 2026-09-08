@@ -357,8 +357,9 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         "width:var(--frame-w);height:var(--frame-h)}"
         ".cw-group{position:absolute;left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
-        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end}"
-        ".cw-mask{display:block;flex:0 0 auto;overflow:hidden}"
+        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;"
+        "overflow:visible}"
+        ".cw-mask{display:block;flex:0 0 auto;overflow:visible}"
         ".cw-mask svg{display:block;overflow:visible}"
         ".cw-wipe-r{transform-origin:0px 50%;transform-box:fill-box}"
         ".cw-ink{font-family:var(--font-display);font-weight:700;"
@@ -404,15 +405,27 @@ def caption_css(brandbook: dict[str, Any]) -> str:
     )
 
 
+def _caption_shown(word: dict[str, Any]) -> str:
+    """On-screen token: lead + display so digits glued as lead still paint."""
+    lead = str(word.get("lead") or "").strip()
+    display = str(word.get("display") or "").strip()
+    if lead:
+        return f"{lead} {display}".strip()
+    return display
+
+
 def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, Any]]:
     visible: list[dict[str, Any]] = []
     for word in raw:
         display = subtitle_word(str(word.get("display") or ""), case_mode)
+        lead = subtitle_word(str(word.get("lead") or ""), case_mode)
+        if lead and any(ch.isdigit() for ch in lead):
+            display = f"{lead} {display}".strip()
+            lead = ""
         if not display:
             continue
         item = dict(word)
         item["display"] = display
-        lead = subtitle_word(str(word.get("lead") or ""), case_mode)
         item["lead"] = lead
         visible.append(item)
     return visible
@@ -460,7 +473,7 @@ def build_camera_follow(
         accent_at = _accent_index(phrase)
         flags = [i == accent_at for i in range(len(phrase))]
         laid = layout_camera_follow(
-            [w["display"] for w in phrase],
+            [_caption_shown(w) for w in phrase],
             frame_w=params["frame_w"],
             frame_h=params["frame_h"],
             base=base,
@@ -607,8 +620,8 @@ def fit_wipe_group(
 ) -> tuple[int, list[float]]:
     """Кегль фразы, чтобы слова в ряд влезли в рабочую зону."""
     size = int(base)
-    min_size = max(24, int(base * 0.45))
-    while size > min_size:
+    min_size = 12
+    while size >= min_size:
         widths = [measure_word(t, size, letter_spacing_em) for t in texts]
         gap = size * gap_em
         total = sum(widths) + gap * max(0, len(texts) - 1)
@@ -648,10 +661,11 @@ def build_clip_wipe(
         next_start = (
             float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
         )
-        texts = [w["display"] for w in phrase]
+        texts = [_caption_shown(w) for w in phrase]
+        pad_budget = max(1, len(texts)) * 2 * max(6, int(params["base_px"] * 0.12))
         size, widths = fit_wipe_group(
             texts,
-            max_width=params["frame_w"],
+            max_width=max(200.0, params["frame_w"] - pad_budget),
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
@@ -666,8 +680,8 @@ def build_clip_wipe(
         end = max(exit_at + exit_span, start + 0.05)
         if p + 1 < len(phrases):
             # Exclusive end so even/odd tracks never share a frame at the join
-            # (clip visibility includes both endpoints).
-            end = min(end, next_start - 0.001)
+            # (clip visibility includes both endpoints). One frame at 30 fps.
+            end = min(end, next_start - (1.0 / 30.0))
             exit_at = max(start, end - exit_span)
 
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
@@ -677,12 +691,16 @@ def build_clip_wipe(
         track_y = 0 if p % 2 == 0 else int(size * 0.42)
         top = int(_phrase_baseline(phrase, baseline) - size / 2 + track_y)
         word_nodes: list[str] = []
+        glyph_pad = max(6, int(size * 0.12))
         for i, word in enumerate(phrase):
             wid = f"{clip_id}-w{i}"
-            wpx = _px(widths[i])
+            shown = texts[i]
+            svg_w = widths[i] + 2 * glyph_pad
+            wpx = _px(svg_w)
             margin = _px(gap_px) if i < n - 1 else "0"
             # Маска — белый rect в SVG. Тянем scaleX rect, не clip-path и не
             # контр-масштаб букв: слой 1000× в Chrome растрится в кашу.
+            # Left pad keeps Oswald side-bearing of «Л»/«Г» inside the box.
             word_nodes.append(
                 f'<div id="{wid}" class="cw-mask" '
                 f'style="width:{wpx}px;height:{size}px;margin-right:{margin}px">'
@@ -692,8 +710,8 @@ def build_clip_wipe(
                 f'<rect id="{wid}-r" class="cw-wipe-r" x="0" y="0" '
                 f'width="{wpx}" height="{size}" fill="#fff"/></mask></defs>'
                 f'<text id="{wid}-ink" class="cw-ink" mask="url(#{wid}-m)" '
-                f'x="0" y="{_px(size * 0.82)}" font-size="{size}px">'
-                f"{_esc(word['display'])}</text></svg></div>"
+                f'x="{_px(glyph_pad)}" y="{_px(size * 0.82)}" font-size="{size}px">'
+                f"{_esc(shown)}</text></svg></div>"
             )
             count += 1
 
@@ -708,10 +726,11 @@ def build_clip_wipe(
             f'{"".join(word_nodes)}</div></div>'
         )
         # Tweens sit on the inner group, never the clip: the engine owns clip
-        # visibility. Kill the previous group at this start so even/odd tracks
-        # cannot stack uncleared glyphs.
+        # visibility. Kill every previous group at this start so even/odd
+        # tracks cannot stack uncleared glyphs mid B-roll.
         if p > 0:
-            tweens.append(opacity_hard_kill(f"#cw-{p - 1:02d}-g", start))
+            for prev in range(p):
+                tweens.append(opacity_hard_kill(f"#cw-{prev:02d}-g", start))
         tweens.append(opacity_hard_kill(f"#{group_id}", end))
 
         for i, word in enumerate(phrase):
@@ -828,10 +847,7 @@ def build_gradient_fill(
         next_start = (
             float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
         )
-        texts = [
-            f'{w["lead"]} {w["display"]}' if w.get("lead") else w["display"]
-            for w in phrase
-        ]
+        texts = [_caption_shown(w) for w in phrase]
         size, widths = fit_wipe_group(
             texts,
             max_width=params["frame_w"],
@@ -1065,7 +1081,7 @@ def build_blend_difference(
         next_start = (
             float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
         )
-        texts = [w["display"] for w in phrase]
+        texts = [_caption_shown(w) for w in phrase]
         size, widths = fit_wipe_group(
             texts,
             max_width=params["frame_w"],

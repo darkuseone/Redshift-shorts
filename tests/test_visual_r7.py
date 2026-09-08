@@ -169,6 +169,56 @@ def test_latin_heavy_copy_drops_english_not_domains():
     assert _on_screen_copy("nature.com", field="domain") == "nature.com"
 
 
+def test_source_card_skipped_on_all_avatar_evidence():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _build_overlays
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    plan = {
+        "video_id": "redshift_0042",
+        "duration_sec": 12.0,
+        "cta_window": [10.0, 12.0],
+        "sources": [{
+            "title": "Работа опубликована в Nature",
+            "domain": "nature.com",
+            "url": "https://www.nature.com/articles/s41586-024-08449-y",
+            "show_on_screen": True,
+            "snippet": "Логический кубит живёт дольше физических.",
+            "highlight_line": "ниже порога поверхностного кода",
+        }],
+        "blocks": [{"id": "b3", "role": "evidence",
+                    "text": "Работа опубликована в Nature."}],
+        "slots": [
+            {"index": 0, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "avatar",
+             "start": 8.0, "end": 10.5, "duration": 2.5},
+            {"index": 1, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "split",
+             "start": 10.5, "end": 12.0, "duration": 1.5},
+        ],
+    }
+    overlays = _build_overlays(None, plan, [], cat, variant="B",
+                               seed=1, recent_videos=[], used=[])
+    assert [o for o in overlays if o["type"] == "source_card"] == []
+
+
+def test_split_without_top_degrades_to_avatar():
+    from src.p11_assemble.assemble import degrade_split_without_top
+
+    slot = {
+        "index": 3, "kind": "split", "mode": "B", "needs_asset": True,
+        "asset_role": "evidence", "reason": "режим B",
+    }
+    out = degrade_split_without_top(slot)
+    assert out["kind"] == "avatar"
+    assert out["mode"] == "A"
+    assert out["needs_asset"] is False
+    assert slot["kind"] == "avatar"
+
+
 def test_source_card_anchors_off_avatar():
     import json as _json
 

@@ -51,8 +51,16 @@ def test_fit_group_shrinks_to_work_area():
         ["ПРОФЕССИОНАЛЬНОЕ", "ВИДЕО", "СОБИРАЕТСЯ"],
         max_width=740, base=88, letter_spacing_em=0.04, gap_em=0.22)
     assert size <= 88
-    assert size >= 24
+    assert size >= 12
     assert sum(widths) <= 740
+
+
+def test_fit_group_keeps_long_ru_word_inside_safe_width():
+    size, widths = fit_wipe_group(
+        ["ЛОГИЧЕСКИЙ"],
+        max_width=740, base=88, letter_spacing_em=0.04, gap_em=0.22)
+    assert widths[0] <= 740
+    assert size >= 12
 
 
 def test_clip_wipe_uses_mask_scale_not_clip_path(cfg):
@@ -141,6 +149,23 @@ def test_default_caption_is_gradient_fill(cfg):
     assert cfg.brand("subtitles.caption") == "gradient-fill"
     for gesture in ("gradient_fill", "clip_wipe", "camera_follow", "blend_difference"):
         assert cfg.brand(f"subtitles.{gesture}"), f"жест {gesture} пропал из брендбука"
+
+
+def test_clip_wipe_paints_digit_lead(cfg):
+    from src.lib.render.hyperframes.captions import build_clip_wipe
+
+    plan = {
+        "subtitles": [
+            {"display": "кубитов", "lead": "105", "start": 4.3, "end": 4.8,
+             "block_id": "b2"},
+        ],
+        "subtitle_style": {},
+    }
+    nodes, _tweens, count = build_clip_wipe(plan, cfg.brandbook, duration=10.0)
+    assert count == 1
+    blob = "\n".join(nodes)
+    assert "105" in blob
+    assert "КУБИТОВ" in blob
 
 
 def test_consecutive_clip_wipe_groups_hard_kill_previous(cfg):

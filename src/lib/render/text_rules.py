@@ -75,8 +75,12 @@ def glue_short_cues(cues: list[dict], *, max_letters: int = SHORT_CUE_LETTERS,
     out: list[dict] = []
     for cue in reversed(cues):
         nxt = out[-1] if out else None
+        cleaned = clean_word(str(cue.get("display") or ""))
+        # Digits are the line («105 кубитов»). Gluing them into ``lead``
+        # hid the number from clip-wipe, which only paints ``display``.
         if (nxt is not None
-                and _cue_letters(str(cue.get("display") or "")) <= max_letters
+                and _cue_letters(cleaned) <= max_letters
+                and not any(ch.isdigit() for ch in cleaned)
                 and cue.get("block_id") == nxt.get("block_id")
                 and float(nxt["start"]) - float(cue["end"]) <= max_gap):
             merged = dict(nxt)

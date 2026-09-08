@@ -67,6 +67,16 @@ _FACE_COVERING_BUBBLES = frozenset({
 })
 
 
+def degrade_split_without_top(slot: dict[str, Any]) -> dict[str, Any]:
+    """Mode B with no upper B-roll → mode A. No empty blue void."""
+    slot["kind"] = "avatar"
+    slot["mode"] = "A"
+    slot["needs_asset"] = False
+    slot["asset_role"] = ""
+    slot["reason"] = "split degraded to A: no upper B-roll"
+    return slot
+
+
 def _transition_exclude(category: str, used: list[str]) -> list[str]:
     """Exclude list for the transition picker; avatar-entry hard-denies the white disk."""
     extra = list(AVATAR_ENTRY_DENY) if category == "avatar-entry" else []
@@ -575,13 +585,20 @@ def _caption_line_windows(
     """Windows where a card carries the spoken line — mute the whole phrase."""
     windows: list[tuple[float, float]] = []
     for shot in shots:
-        hero = shot.get("hero") or {}
-        if not hero or not hero.get("carries_line"):
+        if shot.get("kind") == "fullscreen_text" and shot.get("content"):
+            windows.append((float(shot["start"]), float(shot["end"])))
             continue
-        windows.append(_hero_line_span(shot, hero))
+        hero = shot.get("hero") or {}
+        if hero.get("carries_line") or shot.get("carries_line"):
+            if hero:
+                windows.append(_hero_line_span(shot, hero))
+            else:
+                windows.append((float(shot["start"]), float(shot["end"])))
     for ovl in overlays:
         params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
-        if ovl.get("carries_line") or params.get("carries_line"):
+        kind = str(ovl.get("type") or "")
+        if (ovl.get("carries_line") or params.get("carries_line")
+                or kind in ("source_card", "fullscreen_text")):
             windows.append((float(ovl["start"]), float(ovl["end"])))
     return windows
 
@@ -594,7 +611,7 @@ def _caption_mute_windows(
     windows: list[tuple[float, float]] = []
     for shot in shots:
         if shot.get("kind") == "fullscreen_text":
-            windows.append(_fs_mute_span(shot))
+            windows.append((float(shot["start"]), float(shot["end"])))
             continue
         hero = shot.get("hero") or {}
         renderer = str(hero.get("renderer") or "")
@@ -702,13 +719,21 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
         if muted and len(kept) < 2:
             continue
         for word in kept:
-            subtitles.append({
+            cue = {
                 "display": word["display"], "start": float(word["start"]),
                 "end": float(word["end"]),
                 "emphasis": bool(word.get("emphasis")),
                 "block_id": word["block_id"],
-            })
+            }
+            if word.get("lead"):
+                cue["lead"] = word["lead"]
+            subtitles.append(cue)
     subtitles = glue_short_cues(subtitles)
+    for cue in subtitles:
+        lead = str(cue.get("lead") or "")
+        if lead and any(ch.isdigit() for ch in lead):
+            cue["display"] = f"{lead} {cue['display']}".strip()
+            cue["lead"] = ""
     return drop_orphan_short_cues(subtitles)
 
 
@@ -1857,21 +1882,23 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
                         top_src = ctx.wpath("broll", "raw", Path(key).name)
                         ctx.storage.get(key, top_src)
                 if top_src is None or not top_src.is_file():
-                    ctx.warn(f"для сплита {slot['index']} нет верхней половины",
+                    ctx.warn(f"для сплита {slot['index']} нет верхней половины — режим A",
                              slot=slot["index"])
+                    degrade_split_without_top(slot)
+                    # Fall through to the avatar prepare path below.
+                else:
+                    dst = ctx.wpath("shots", f"split_{slot['index']:02d}_{int(duration * 1000)}.mp4")
+                    prepared[slot["index"]] = prepare_split_shot(
+                        top_src=top_src, bottom_src=avatar_src, dst=dst,
+                        duration_sec=duration, width=width, height=height, fps=fps,
+                        bottom_start_sec=offset,
+                        bottom_has_alpha=bool(segment.get("has_alpha")),
+                        bg_colors=(str(ctx.cfg.color("bg_light")).lstrip("#"),
+                                   str(ctx.cfg.color("bg_pure")).lstrip("#")),
+                        divider_color="0x" + str(ctx.cfg.color("accent")).lstrip("#"))
+                    prepared[slot["index"]]["avatar_offset_sec"] = round(offset, 3)
+                    prepared[slot["index"]]["asset_id"] = (asset or {}).get("asset_id")
                     continue
-                dst = ctx.wpath("shots", f"split_{slot['index']:02d}_{int(duration * 1000)}.mp4")
-                prepared[slot["index"]] = prepare_split_shot(
-                    top_src=top_src, bottom_src=avatar_src, dst=dst,
-                    duration_sec=duration, width=width, height=height, fps=fps,
-                    bottom_start_sec=offset,
-                    bottom_has_alpha=bool(segment.get("has_alpha")),
-                    bg_colors=(str(ctx.cfg.color("bg_light")).lstrip("#"),
-                               str(ctx.cfg.color("bg_pure")).lstrip("#")),
-                    divider_color="0x" + str(ctx.cfg.color("accent")).lstrip("#"))
-                prepared[slot["index"]]["avatar_offset_sec"] = round(offset, 3)
-                prepared[slot["index"]]["asset_id"] = (asset or {}).get("asset_id")
-                continue
 
             dst = ctx.wpath("shots", f"avatar_{slot['index']:02d}_{int(duration * 1000)}.mp4")
             matte = matte_reports.get(int(segment["index"]))
@@ -2252,17 +2279,22 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         used.append(card_template.id)
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(run[-1]["end"]))
+        for later in run:
+            if float(later["start"]) <= card_start + 1e-4:
+                continue
+            if str(later.get("kind") or "") in AVATAR_KINDS:
+                card_end = min(card_end, float(later["start"]))
+                break
         renderer = _overlay_renderer(card_template)
         avatar_anchor = str(anchor.get("kind") or "") in AVATAR_KINDS
-        bb = getattr(getattr(ctx, "cfg", None), "brandbook", None) if ctx is not None else None
         skip_bulky = False
         compact_card = False
         if avatar_anchor:
-            room = _source_card_room_px(bb)
-            if room < _COMPACT_CARD_MIN_PX:
-                skip_bulky = True
-            else:
-                compact_card = True
+            # Nature/arxiv cards on the talking head (0042 08–10.5s). No
+            # compact fallback — skip the bulky card on avatar/split entirely.
+            skip_bulky = True
+        if card_end - card_start < 0.6:
+            skip_bulky = True
         title = _on_screen_copy(source.get("title", ""), field="title")
         snippet = _on_screen_copy(source.get("snippet", ""), field="snippet")
         highlight_line = _on_screen_copy(
@@ -2365,6 +2397,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             overlays.append({
                 "type": "source_card", "start": card_start, "end": card_end,
                 "template": card_template.id, "renderer": renderer,
+                "carries_line": True,
                 "params": card_params,
                 "traits": sorted(card_traits),
                 "grounded_on": sorted(matched(card_template.needs, card_traits)),
@@ -2915,6 +2948,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "renderer": template.renderer,
                 "params": fs_params,
                 "invert": True,
+                "carries_line": True,
                 "accent_word": _fullscreen_accent(content, block),
                 "file": bg_file,
                 "asset_id": (asset or {}).get("asset_id"),
@@ -2997,6 +3031,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "renderer": template.renderer,
                 "params": fs_params,
                 "invert": True,
+                "carries_line": True,
                 "accent_word": _fullscreen_accent(content, gap_block),
                 "traits": sorted(gap_traits) if gap_traits else [],
                 "grounded_on": sorted(matched(template.needs, gap_traits)) if gap_traits else [],

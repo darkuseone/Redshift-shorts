@@ -110,13 +110,13 @@ def test_sparse_mute_drops_only_muted_words():
         "Чем", "кубитов", "связке", "падает", "вселенная"]
 
 
-def test_fullscreen_mute_is_capped_not_whole_shot():
-    from src.p11_assemble.assemble import FS_MUTE_SEC, _caption_mute_windows
+def test_fullscreen_mutes_the_whole_shot():
+    from src.p11_assemble.assemble import _caption_line_windows, _caption_mute_windows
 
-    shots = [{"kind": "fullscreen_text", "start": 0.0, "end": 8.0,
-              "content": "НАОБОРОТ", "params": {}}]
-    windows = _caption_mute_windows(shots, [])
-    assert windows == [(0.0, FS_MUTE_SEC)]
+    shots = [{"kind": "fullscreen_text", "start": 8.0, "end": 10.5,
+              "content": "РАБОТА ОПУБЛИКОВАНА В NATURE", "params": {}}]
+    assert _caption_mute_windows(shots, []) == [(8.0, 10.5)]
+    assert _caption_line_windows(shots, []) == [(8.0, 10.5)]
 
 
 def test_title_behind_carries_line_mutes_its_window():
@@ -149,6 +149,21 @@ def test_slam_hero_still_mutes_its_own_window():
                  "covers_frame": True, "duration": 1.8},
     }]
     assert _caption_mute_windows(shots, []) == [(4.0, 5.8)]
+
+
+def test_digit_token_stays_in_display_not_lead():
+    words = [
+        {"display": "Внутри", "start": 4.0, "end": 4.3, "block_id": "b2",
+         "emphasis": False},
+        {"display": "105", "start": 4.3, "end": 4.6, "block_id": "b2",
+         "emphasis": False},
+        {"display": "кубитов", "start": 4.6, "end": 5.1, "block_id": "b2",
+         "emphasis": False},
+    ]
+    cues = _build_subtitle_cues(words, punch_windows=[], mute_windows=[])
+    shown = [c["display"] for c in cues]
+    assert "105" in shown
+    assert not any(str(c.get("lead") or "") == "105" for c in cues)
 
 
 def test_top_note_pin_does_not_mute_captions():
