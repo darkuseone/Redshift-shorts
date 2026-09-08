@@ -14,10 +14,8 @@
     "source",
     "ui"
   ],
-  "needs": [
-    "quote"
-  ],
   "renderer": "hero-paper",
   "last_used_in": [],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

@@ -17,11 +17,11 @@
     "source",
     "highlight"
   ],
-  "needs": [
-    "quote"
-  ],
   "renderer": "article_scroll",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0042"
+  ],
   "added": "2026-09-02",
+  "frequency": "signature",
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
 }

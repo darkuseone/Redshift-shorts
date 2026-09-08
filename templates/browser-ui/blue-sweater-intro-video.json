@@ -18,5 +18,8 @@
   ],
   "renderer": "blue_sweater",
   "last_used_in": [],
-  "added": "2026-09-03"
+  "added": "2026-09-03",
+  "frequency": "variant",
+  "status": "retired",
+  "retired_reason": "video-gen demo promo"
 }

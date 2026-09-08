@@ -16,13 +16,11 @@
     "ui",
     "source"
   ],
-  "needs": [
-    "quote"
-  ],
   "renderer": "article_scroll",
   "last_used_in": [
     "redshift_0042",
     "redshift_0043"
   ],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "signature"
 }

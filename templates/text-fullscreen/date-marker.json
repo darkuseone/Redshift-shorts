@@ -5,7 +5,7 @@
   "title": "Дата крупно",
   "duration_range": [
     0.8,
-    3.0
+    1.4
   ],
   "params": {
     "mono": true
@@ -14,8 +14,10 @@
     "date",
     "mono"
   ],
-  "needs": [],
   "renderer": "fullscreen_text",
-  "last_used_in": [],
-  "added": "2026-08-18"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

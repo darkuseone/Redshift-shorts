@@ -15,11 +15,11 @@
     "science",
     "reveal"
   ],
-  "needs": [
-    "quote"
-  ],
   "renderer": "paper_reveal",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0042"
+  ],
   "added": "2026-09-02",
+  "frequency": "signature",
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
 }

@@ -73,16 +73,19 @@ class TestATemplateNeedsSomethingToFillIt:
 
 class TestTheCatalogPicksByMeaning:
     def test_a_chart_needs_a_number(self, catalog):
-        """График без числа — пустая рамка; карта — исключение по смыслу.
+        """График без числа — пустая рамка; два исключения по смыслу.
 
         Требование категории («число») перебивается требованием id там, где
         приём говорит не о величине: карта мира показывает место, и числа
-        в блоке может не быть вовсе.
+        в блоке может не быть вовсе, а блок-схема показывает устройство
+        процесса — требовать от неё число значит запретить ей ровно тот
+        случай, ради которого она и нужна (Q2.10).
         """
         for template in catalog.by_category("data-viz"):
             assert template.needs, template.id
-            assert template.needs == ["number"] or "place" in template.needs, \
-                template.id
+            assert (template.needs == ["number"]
+                    or "place" in template.needs
+                    or "mechanism" in template.needs), template.id
 
     def test_a_question_brings_the_chat_window(self, catalog):
         picked = catalog.pick("browser-ui", traits={"question"}, seed=3)
@@ -283,3 +286,65 @@ class TestAnEmptySlotIsNeverAnEmptyFrame:
         assert "gap_phrase(" in branch
         assert '"gap_reason"' in branch, "причина пропуска обязана остаться в отчёте"
         assert build_variant is not None
+
+
+class TestAMechanismIsAlsoSomethingToDraw:
+    """Схема без единой цифры (§8.2 Q2.10).
+
+    Семья блок-схем жила на ключевых словах «блок-схема», «дерево решений»,
+    «алгоритм». В научной речи канала их не произносят ни разу — а объяснение
+    устройства процесса там самый частый вид реплики. Признак `mechanism`
+    ловит именно его: как одно превращается в другое, из чего собрано, за
+    счёт чего работает.
+    """
+
+    @pytest.mark.parametrize("text", [
+        "Сначала считает физический кубит, потом логический проверяет результат",
+        "Это работает за счёт того, что ошибки гасят друг друга",
+        "Принцип работы простой: на каждом шаге ошибка падает",
+        "Логический кубит состоит из множества физических",
+        "Шум превращается в ошибку, а ошибка — в неверный ответ",
+    ])
+    def test_an_explained_process_carries_the_trait(self, text):
+        from src.lib.meaning import block_traits
+        assert "mechanism" in block_traits(text)
+
+    @pytest.mark.parametrize("text", [
+        "Логический кубит живёт дольше физического",
+        "Мы упёрлись в физику и дальше не пошли",
+        "Этот ответ невозможно проверить. Вообще ничем.",
+    ])
+    def test_a_plain_statement_does_not(self, text):
+        """Признак, который стоит везде, не признак."""
+        from src.lib.meaning import block_traits
+        assert "mechanism" not in block_traits(text)
+
+    def test_the_flowchart_family_no_longer_demands_a_number(self):
+        """Требовать число от блок-схемы — запретить ей её же случай."""
+        manifest = json.loads(
+            (Path(__file__).resolve().parents[1] / "templates" / "manifest.json")
+            .read_text(encoding="utf-8"))
+        flow = [t for t in manifest["templates"] if "flowchart" in t["id"]]
+        assert flow, "блок-схемы пропали из каталога"
+        for template in flow:
+            assert "mechanism" in (template.get("needs") or []), template["id"]
+
+    def test_the_flowchart_is_reachable_from_a_mechanism_block(self, catalog):
+        from src.lib.meaning import block_traits
+        from src.lib.template_picker import ScenarioIndex, TemplatePicker, build_blob
+        from src.lib.config import load_config
+
+        cfg = load_config(overrides=["providers.mode=mock"])
+        picker = TemplatePicker(catalog, ScenarioIndex.load(cfg, catalog=catalog))
+        text = "Сначала считает физический кубит, потом логический проверяет результат"
+        traits = block_traits(text)
+        picked, escaped = set(), 0
+        for variant in ("A", "B"):
+            for seed in range(12):
+                template, trace = picker.pick(
+                    "data-viz", blob=build_blob("СХЕМА", text), signals=traits,
+                    traits=traits, variant=variant, duration=3.0, seed=seed)
+                picked.add(template.id)
+                escaped += bool(trace.escaped)
+        assert any("flowchart" in tid for tid in picked), picked
+        assert escaped == 0, "подбор вылезает за разрешённый набор (QC-22)"

@@ -17,8 +17,12 @@
     "freeze",
     "music"
   ],
-  "needs": [],
   "renderer": "beat_freeze_cut",
-  "last_used_in": [],
-  "added": "2026-09-03"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-09-03",
+  "frequency": "variant",
+  "status": "gated",
+  "retired_reason": "music-promo chrome — only with beat trait"
 }

@@ -19,6 +19,9 @@
     "reveal"
   ],
   "renderer": "ai_chat_reveal",
-  "last_used_in": [],
-  "added": "2026-09-03"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-09-03",
+  "frequency": "variant"
 }

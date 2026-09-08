@@ -10,11 +10,9 @@
   "params": {
     "logo_close": true,
     "exit": "none",
-    "wordmark": "REDSHIFT",
-    "tagline": "",
-    "url": "redshift.shorts",
-    "subscribe": true,
-    "buttonText": "Subscribe"
+    "wordmark": "РЕДШИФТ",
+    "tagline": "Пиши код. Шли на орбиту.",
+    "url": "redshift.shorts"
   },
   "tags": [
     "cta",
@@ -22,11 +20,10 @@
     "logo",
     "end-card"
   ],
-  "needs": [],
   "renderer": "logo_brand_close",
   "last_used_in": [
-    "redshift_0047",
     "redshift_0042"
   ],
-  "added": "2026-09-02"
+  "added": "2026-09-02",
+  "frequency": "signature"
 }

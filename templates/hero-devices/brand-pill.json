@@ -15,10 +15,8 @@
     "avatar",
     "brand"
   ],
-  "needs": [
-    "brand"
-  ],
   "renderer": "hero-brand-pill",
   "last_used_in": [],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

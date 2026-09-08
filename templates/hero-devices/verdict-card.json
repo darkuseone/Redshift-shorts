@@ -14,12 +14,10 @@
     "text",
     "slam"
   ],
-  "needs": [
-    "negation",
-    "superlative",
-    "discovery"
-  ],
   "renderer": "hero-verdict",
-  "last_used_in": [],
-  "added": "2026-08-18"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

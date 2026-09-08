@@ -17,11 +17,11 @@
     "avatar",
     "footage"
   ],
-  "needs": [],
   "renderer": "hero-plate-pop",
   "last_used_in": [
-    "redshift_0047"
+    "redshift_0042"
   ],
   "added": "2026-09-02",
+  "frequency": "variant",
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
 }

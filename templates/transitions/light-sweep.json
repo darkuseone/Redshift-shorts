@@ -12,7 +12,6 @@
     "dynamic",
     "light"
   ],
-  "needs": [],
   "renderer": "light_sweep",
   "last_used_in": [
     "redshift_0042",
@@ -20,5 +19,6 @@
     "redshift_0046",
     "redshift_0047"
   ],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

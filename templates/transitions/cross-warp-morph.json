@@ -15,6 +15,9 @@
     "shader"
   ],
   "renderer": "cross_warp_morph",
-  "last_used_in": [],
-  "added": "2026-09-03"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-09-03",
+  "frequency": "rare"
 }

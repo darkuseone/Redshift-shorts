@@ -15,11 +15,11 @@
     "ui",
     "code"
   ],
-  "needs": [],
   "renderer": "source_card",
   "last_used_in": [
     "redshift_0044",
     "redshift_0046"
   ],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

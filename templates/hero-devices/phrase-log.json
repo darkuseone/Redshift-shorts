@@ -17,12 +17,11 @@
     "lines",
     "sync"
   ],
-  "needs": [
-    "list"
-  ],
   "renderer": "hero-log",
   "last_used_in": [
-    "redshift_0047"
+    "redshift_0047",
+    "redshift_0042"
   ],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

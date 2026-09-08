@@ -12,10 +12,10 @@
     "cut",
     "base"
   ],
-  "needs": [],
   "renderer": "cut",
   "last_used_in": [
     "redshift_0044"
   ],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

@@ -17,8 +17,10 @@
     "scan",
     "chromatic"
   ],
-  "needs": [],
   "renderer": "scan_band",
-  "last_used_in": [],
-  "added": "2026-09-02"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-09-02",
+  "frequency": "rare"
 }

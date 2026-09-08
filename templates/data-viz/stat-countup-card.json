@@ -15,11 +15,9 @@
     "number",
     "card"
   ],
-  "needs": [
-    "number"
-  ],
   "renderer": "dataviz",
   "last_used_in": [],
   "added": "2026-09-02",
+  "frequency": "variant",
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
 }

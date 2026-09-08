@@ -16,12 +16,10 @@
     "number",
     "data"
   ],
-  "needs": [
-    "number"
-  ],
   "renderer": "hero-figure",
   "last_used_in": [
     "redshift_0042"
   ],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }

@@ -23,5 +23,8 @@
   ],
   "renderer": "tiktok_follow",
   "last_used_in": [],
-  "added": "2026-09-03"
+  "added": "2026-09-03",
+  "frequency": "signature",
+  "status": "retired",
+  "retired_reason": "social follow CTA — not mid-roll"
 }

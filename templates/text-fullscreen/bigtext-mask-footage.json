@@ -5,7 +5,7 @@
   "title": "Текст-маска с футажом внутри",
   "duration_range": [
     1.0,
-    3.0
+    2.0
   ],
   "params": {
     "mask": true
@@ -15,8 +15,10 @@
     "footage",
     "mask"
   ],
-  "needs": [],
   "renderer": "fullscreen_text",
-  "last_used_in": [],
-  "added": "2026-08-18"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-08-18",
+  "frequency": "signature"
 }

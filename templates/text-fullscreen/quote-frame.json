@@ -5,7 +5,7 @@
   "title": "Цитата в рамке",
   "duration_range": [
     1.2,
-    3.0
+    2.0
   ],
   "params": {
     "quotes": true,
@@ -15,8 +15,10 @@
     "quote",
     "text"
   ],
-  "needs": [],
   "renderer": "fullscreen_text",
-  "last_used_in": [],
-  "added": "2026-08-18"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-08-18",
+  "frequency": "signature"
 }

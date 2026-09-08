@@ -18,6 +18,11 @@
     "device"
   ],
   "renderer": "app_showcase",
-  "last_used_in": [],
-  "added": "2026-09-03"
+  "last_used_in": [
+    "redshift_0042"
+  ],
+  "added": "2026-09-03",
+  "frequency": "variant",
+  "status": "retired",
+  "retired_reason": "three phones fan — demo junk, wrong for sci VO"
 }

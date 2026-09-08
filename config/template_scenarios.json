@@ -201,7 +201,11 @@
       ],
       "weight": 31,
       "variants": [
-        "A"
+        "A",
+        "B"
+      ],
+      "signals_any": [
+        "mechanism"
       ]
     },
     {

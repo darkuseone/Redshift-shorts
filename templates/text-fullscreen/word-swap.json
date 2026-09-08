@@ -5,7 +5,7 @@
   "title": "Слова сменяются на месте",
   "duration_range": [
     1.0,
-    3.0
+    2.0
   ],
   "params": {
     "swap_ms": 260
@@ -14,10 +14,8 @@
     "text",
     "swap"
   ],
-  "needs": [
-    "comparison"
-  ],
   "renderer": "fullscreen_text",
   "last_used_in": [],
-  "added": "2026-08-18"
+  "added": "2026-08-18",
+  "frequency": "variant"
 }
