@@ -171,24 +171,33 @@ class TestQc20And21And22CarryTheMegaWording:
                                   params={"size": 90})])
         assert _check(_run(cfg, plan), "QC-20")["passed"]
 
+    # Приёмы каталога, у которых `needs` объявлен — то есть основание им
+    # положено. Берём настоящие id: гейт сверяется с манифестом, а не с полем.
+    NEEDY = ["data-viz/compare-bars", "data-viz/stat-countup-card",
+             "data-viz/flowchart", "data-viz/bar-race"]
+
     def test_qc21_counts_devices_without_a_reason(self, cfg):
-        """Основание считается только там, где его вообще считали."""
-        plan = _plan(shots=[_shot(i, template=f"t/{i}", grounded_on=[])
-                            for i in range(4)])
+        """Приём попросил основание и не получил — вот это брак."""
+        plan = _plan(shots=[_shot(i, template=t, grounded_on=[])
+                            for i, t in enumerate(self.NEEDY)])
         check = _check(_run(cfg, plan), "QC-21")
         assert not check["passed"] and check["value"] == 1.0
 
     def test_qc21_passes_when_most_devices_are_grounded(self, cfg):
-        plan = _plan(shots=[_shot(i, template=f"t/{i}", grounded_on=["number"])
-                            for i in range(4)])
+        plan = _plan(shots=[_shot(i, template=t, grounded_on=["number"])
+                            for i, t in enumerate(self.NEEDY)])
         assert _check(_run(cfg, plan), "QC-21")["passed"]
 
-    def test_qc21_ignores_devices_that_need_no_grounding(self, cfg):
+    def test_qc21_ignores_devices_that_never_asked(self, cfg):
         """`grounded_on` — это `matched(needs, traits)`; у шаблона без `needs`
-        он пуст по построению. Из 204 шаблонов каталога `needs` объявлен у 74,
-        и порог 0.30 не прошёл бы ни один ролик."""
-        plan = _plan(shots=[_shot(i, template=f"t/{i}") for i in range(9)]
-                     + [_shot(9, template="t/9", grounded_on=["number"])])
+        он пуст **по построению**. Из 204 шаблонов каталога `needs` объявлен
+        у 74, и порог 0.30 не прошёл бы ни один ролик: первый заход мерил по
+        наличию поля и ловил полноэкранный текст, которому требований не
+        предъявляли вовсе."""
+        plan = _plan(
+            shots=[_shot(i, template="text-fullscreen/blur-out-up",
+                         grounded_on=[]) for i in range(9)]
+            + [_shot(9, template=self.NEEDY[0], grounded_on=["number"])])
         assert _check(_run(cfg, plan), "QC-21")["passed"]
 
     def test_qc22_catches_a_pick_that_escaped_the_allowlist(self, cfg):

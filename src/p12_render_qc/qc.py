@@ -20,7 +20,7 @@ from ..lib.logging import get_logger
 from ..lib.phash import video_is_duplicate
 from ..lib.render.canvas import SafeZones
 from ..lib.render.hyperframes.templates import text_width
-from ..lib.templates import overlap_share
+from ..lib.templates import TemplateCatalog, overlap_share
 
 _log = get_logger("qc")
 
@@ -276,11 +276,23 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     # необоснованным — не находка, а ошибка мерки: из 204 шаблонов каталога
     # `needs` объявлен у 74, и порог 0.30 не прошёл бы ни один ролик.
     placed = [*plan.get("shots", []), *plan.get("overlays", [])]
-    # `grounded_on` кладут только те пути, где основание вообще считается:
-    # приём вокруг ведущего, карточка источника и надпись пустого слота.
-    # Список — значит «основание считали»; отсутствие ключа — «не про это».
-    needful = [p for p in placed
-               if p.get("template") and isinstance(p.get("grounded_on"), list)]
+    # Основание положено приёму, который его **просил**: у шаблона объявлен
+    # `needs`. Пустой `grounded_on` у шаблона без `needs` — не брак, а
+    # арифметика: `matched(needs, traits)` от пустого списка пуст всегда.
+    # Первый заход мерил по наличию поля и всё равно ловил не то — полноэкранный
+    # текст кладёт список даже там, где у шаблона требований нет вовсе.
+    try:
+        _catalog = TemplateCatalog.load(cfg)
+    except Exception:                                     # noqa: BLE001
+        _catalog = None
+
+    def _asked_for_grounding(item: dict[str, Any]) -> bool:
+        if not isinstance(item.get("grounded_on"), list) or _catalog is None:
+            return False
+        tmpl = _catalog.by_id(str(item.get("template") or ""))
+        return bool(tmpl is not None and tmpl.needs)
+
+    needful = [p for p in placed if p.get("template") and _asked_for_grounding(p)]
     ungrounded = [p for p in needful if not p.get("grounded_on")]
     ungrounded_share = (len(ungrounded) / len(needful)) if needful else 0.0
     checks.append(_check(
