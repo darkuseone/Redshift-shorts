@@ -360,13 +360,13 @@
       "width": 1920,
       "height": 1511,
       "file": "seed/sun/nasa_S74-23458.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JSC",
         "seed_topic": "sun",
         "blocked_for_sci": true,
         "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_AFRC2017-0233-007",
@@ -402,13 +402,13 @@
       "width": 1920,
       "height": 1280,
       "file": "seed/sun/nasa_AFRC2017-0233-007.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / AFRC",
         "seed_topic": "sun",
         "blocked_for_sci": true,
         "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_AFRC2017-0233-008",
@@ -444,13 +444,13 @@
       "width": 1920,
       "height": 1280,
       "file": "seed/sun/nasa_AFRC2017-0233-008.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / AFRC",
         "seed_topic": "sun",
         "blocked_for_sci": true,
         "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_as08-14-2506",
@@ -489,13 +489,13 @@
       "width": 1920,
       "height": 1920,
       "file": "seed/moon/nasa_as08-14-2506.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JSC",
         "seed_topic": "moon",
         "blocked_for_sci": true,
         "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_as15-88-12002",
@@ -531,13 +531,13 @@
       "width": 1920,
       "height": 1912,
       "file": "seed/moon/nasa_as15-88-12002.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JSC",
         "seed_topic": "moon",
         "blocked_for_sci": true,
         "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_as08-13-2344",
@@ -574,13 +574,13 @@
       "width": 1851,
       "height": 1920,
       "file": "seed/moon/nasa_as08-13-2344.jpg",
+      "quarantined": true,
       "extra": {
         "attribution": "NASA / JSC",
         "seed_topic": "moon",
         "blocked_for_sci": true,
         "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
-      },
-      "quarantined": true
+      }
     },
     {
       "id": "nasa_Artemis II at the pad sunset 01282026_3",
@@ -1934,9 +1934,10 @@
       "score": 0.82,
       "duration_sec": 6.25,
       "used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
-      "last_used": null,
+      "last_used": "2026-09-08",
       "added": "2026-09-03",
       "phashes": [
         "f1e1d03f0fc8923a",
