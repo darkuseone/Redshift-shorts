@@ -39,7 +39,7 @@ from ..lib.text import (
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, matched
-from ..lib.render.hyperframes.captions import pick_caption_style
+from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
 from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
@@ -60,6 +60,73 @@ def _load_yaml(path) -> dict:
         return {}
 
 AVATAR_KINDS = ("avatar", "split")
+# White disk of circle-mask-grow sits opaque on the presenter's face.
+AVATAR_ENTRY_DENY = ("avatar-entry/circle-mask-grow",)
+
+
+def _transition_exclude(category: str, used: list[str]) -> list[str]:
+    """Exclude list for the transition picker; avatar-entry hard-denies the white disk."""
+    extra = list(AVATAR_ENTRY_DENY) if category == "avatar-entry" else []
+    return list(used) + ["transitions/cut"] + extra
+
+
+_FACE_ZONE_BOTTOM = 1150
+_COMPACT_CARD_MIN_PX = 260
+_LATIN_COPY_RATIO = 0.60
+_DOMAIN_OR_URL = re.compile(
+    r"^(?:https?://)?(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"
+    r"(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?:/.*)?$",
+    re.I,
+)
+
+
+def _is_url_or_domain(text: str) -> bool:
+    s = str(text or "").strip()
+    if not s:
+        return False
+    if "://" in s:
+        return True
+    if " " in s:
+        return False
+    return bool(_DOMAIN_OR_URL.match(s))
+
+
+def _latin_heavy_copy(text: str, *, threshold: float = _LATIN_COPY_RATIO) -> bool:
+    """True when on-screen copy is mostly Latin letters and not a URL/domain."""
+    raw = str(text or "").strip()
+    if not raw or _is_url_or_domain(raw):
+        return False
+    letters = [ch for ch in raw if ch.isalpha()]
+    if not letters:
+        return False
+    latin = sum(1 for ch in letters if ch.isascii())
+    return (latin / len(letters)) >= threshold
+
+
+def _on_screen_copy(text: str, *, field: str) -> str:
+    """Drop Latin-majority overlay strings; keep URLs/domains and Cyrillic."""
+    raw = str(text or "")
+    if _latin_heavy_copy(raw):
+        _log.warning("latin overlay copy dropped", extra={
+            "field": field, "text": raw[:80]})
+        return ""
+    return raw
+
+
+def _source_card_room_px(brandbook: dict[str, Any] | None) -> int:
+    """Pixels between the face-zone floor and the subtitle-pinned card bottom.
+
+    Card is bottom-anchored at subtitle_top and grows up. If that span is
+    smaller than ``_COMPACT_CARD_MIN_PX``, skip the bulky card.
+    """
+    if not brandbook:
+        return 0
+    subs = brandbook.get("subtitles") or {}
+    size = subs.get("size_px") or [84, 104]
+    size_hi = int(size[1] if isinstance(size, (list, tuple)) and len(size) > 1
+                  else (size[0] if size else 104))
+    subtitle_top = int(subs.get("baseline_y_default", 1180)) - size_hi // 2 - 30
+    return int(subtitle_top - _FACE_ZONE_BOTTOM)
 
 
 # --- приёмы вокруг ведущего (§5.3, референсы заказчика) ------------------------
@@ -415,29 +482,60 @@ def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
             or "logo-brand-close" in template)
 
 
+PHRASE_MUTE_RATIO = 0.34
+# Match clip-wipe grouping so a hole in the middle cannot spawn orphan words.
+_CAPTION_MAX_WORDS = 6
+_CAPTION_PAUSE_BREAK = 0.45
+
+
+def _word_is_muted(
+    word: dict[str, Any],
+    *,
+    punch_windows: list[tuple[float, float, str]],
+    mute_windows: list[tuple[float, float]],
+) -> bool:
+    start, end = float(word["start"]), float(word["end"])
+    spoken = str(word.get("display") or word.get("word") or "")
+    if any(start < pe and end > ps and punch_families_overlap(spoken, pc)
+           for ps, pe, pc in punch_windows if pc):
+        return True
+    return any(start < ce and end > cs for cs, ce in mute_windows)
+
+
 def _build_subtitle_cues(words: list[dict[str, Any]], *,
                          punch_windows: list[tuple[float, float, str]],
                          mute_windows: list[tuple[float, float]]) -> list[dict[str, Any]]:
     """Karaoke cues at the default baseline; mute on punch/card/CTA, never raise.
 
-    Overlap with a bulky card / plaque / fullscreen / CTA window drops the cue
-    instead of relocating it onto the avatar face. Punch-family echo of the
-    card already on screen is also muted. After glue, leftover ≤2-letter chips
-    (ТИ / ВЕ) are dropped.
+    Mute is phrase-level: dropping the middle of a sentence used to leave a
+    pause > pause_break_sec, and clip-wipe then rendered the leftovers as
+    one-word orphans. If enough of a phrase sits under a card/punch, the
+    whole phrase is silent; otherwise the whole phrase stays.
+    After glue, leftover ≤2-letter chips (ТИ / ВЕ) are dropped.
     """
+    phrases = group_caption_phrases(
+        words,
+        max_words=_CAPTION_MAX_WORDS,
+        pause_break_sec=_CAPTION_PAUSE_BREAK,
+    )
     subtitles: list[dict[str, Any]] = []
-    for word in words:
-        start, end = float(word["start"]), float(word["end"])
-        spoken = str(word.get("display") or word.get("word") or "")
-        if any(start < pe and end > ps and punch_families_overlap(spoken, pc)
-               for ps, pe, pc in punch_windows if pc):
+    for phrase in phrases:
+        if not phrase:
             continue
-        if any(start < ce and end > cs for cs, ce in mute_windows):
+        muted = sum(
+            1 for word in phrase
+            if _word_is_muted(word, punch_windows=punch_windows,
+                              mute_windows=mute_windows)
+        )
+        if muted / len(phrase) >= PHRASE_MUTE_RATIO:
             continue
-        subtitles.append({
-            "display": word["display"], "start": start, "end": end,
-            "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
-        })
+        for word in phrase:
+            subtitles.append({
+                "display": word["display"], "start": float(word["start"]),
+                "end": float(word["end"]),
+                "emphasis": bool(word.get("emphasis")),
+                "block_id": word["block_id"],
+            })
     subtitles = glue_short_cues(subtitles)
     return drop_orphan_short_cues(subtitles)
 
@@ -1908,7 +2006,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                  if s.get("show_on_screen") and (s.get("proof_card") or s.get("snippet") or s.get("highlight_line"))]
 
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
-        anchor = run[0]
+        anchor = next((s for s in run if s.get("kind") not in AVATAR_KINDS), run[0])
         card_category = _source_card_category(source, variant=variant)
         ev_block = next((b for b in (plan.get("blocks") or [])
                          if b.get("id") == anchor.get("block_id")), {})
@@ -1945,19 +2043,35 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(run[-1]["end"]))
         renderer = _overlay_renderer(card_template)
+        avatar_anchor = str(anchor.get("kind") or "") in AVATAR_KINDS
+        bb = getattr(getattr(ctx, "cfg", None), "brandbook", None) if ctx is not None else None
+        skip_bulky = False
+        compact_card = False
+        if avatar_anchor:
+            room = _source_card_room_px(bb)
+            if room < _COMPACT_CARD_MIN_PX:
+                skip_bulky = True
+            else:
+                compact_card = True
+        title = _on_screen_copy(source.get("title", ""), field="title")
+        snippet = _on_screen_copy(source.get("snippet", ""), field="snippet")
+        highlight_line = _on_screen_copy(
+            source.get("highlight_line", ""), field="highlight_line")
         card_params = {
             "template": source.get("screen_template", "browser"),
             "domain": source.get("domain", ""),
             "url": source.get("url", ""),
-            "title": source.get("title", ""),
-            "snippet": source.get("snippet", ""),
+            "title": title,
+            "snippet": snippet,
             "published": source.get("published", ""),
-            "prompt": source.get("title") or source.get("snippet", ""),
-            "highlight_line": source.get("highlight_line", ""),
-            "highlight": source.get("highlight_line", ""),
+            "prompt": title or snippet,
+            "highlight_line": highlight_line,
+            "highlight": highlight_line,
             "typing": bool(card_template.params.get("typing")),
             "scroll": bool(card_template.params.get("scroll")),
         }
+        if compact_card:
+            card_params["compact"] = True
         if renderer == "ai_chat_reveal":
             card_params["userMessage"] = (
                 source.get("title") or source.get("snippet") or "")
@@ -2037,22 +2151,23 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_params["appName"] = source.get("domain")
             if source.get("snippet"):
                 card_params["body"] = source.get("snippet")
-        overlays.append({
-            "type": "source_card", "start": card_start, "end": card_end,
-            "template": card_template.id, "renderer": renderer,
-            "params": card_params,
-            "traits": sorted(card_traits),
-            "grounded_on": sorted(matched(card_template.needs, card_traits)),
-            "why": explain_choice(card_template, card_traits)
-                   or "§5.6: источник обязан появиться на экране",
-        })
-        # §5.5: подсветка обязательна при показе скриншота статьи.
-        overlays.append({
-            "type": "highlight", "start": card_start + 0.6,
-            "end": min(card_start + 1.7, card_end),
-            "params": {"label": source.get("highlight_line", ""), "target": "title"},
-            "why": "§5.5: фокусная подсветка ключевой строки источника",
-        })
+        if not skip_bulky:
+            overlays.append({
+                "type": "source_card", "start": card_start, "end": card_end,
+                "template": card_template.id, "renderer": renderer,
+                "params": card_params,
+                "traits": sorted(card_traits),
+                "grounded_on": sorted(matched(card_template.needs, card_traits)),
+                "why": explain_choice(card_template, card_traits)
+                       or "§5.6: источник обязан появиться на экране",
+            })
+            # §5.5: подсветка обязательна при показе скриншота статьи.
+            overlays.append({
+                "type": "highlight", "start": card_start + 0.6,
+                "end": min(card_start + 1.7, card_end),
+                "params": {"label": highlight_line, "target": "title"},
+                "why": "§5.5: фокусная подсветка ключевой строки источника",
+            })
         domain = source.get("domain", "")
         plaque_template, _ = picker.pick(
             "lower-thirds",
@@ -2090,7 +2205,9 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             continue
         hint = overlay.get("template_hint") or ""
         head = [hint] if hint else []
-        content = overlay.get("content", "")
+        content = _on_screen_copy(overlay.get("content", ""), field="overlay.content")
+        if not str(content).strip():
+            continue
         role = (overlay.get("role") or overlay.get("subtitle")
                 or overlay.get("kicker") or "")
         template, _ = picker.pick(
@@ -2171,13 +2288,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     )
     used.append(cta_template.id)
     cta_params = dict(cta_template.params)
+    video_id = str(plan.get("video_id") or "")
+    show_subscribe = video_id != "redshift_0042"
     cta_params.update({
         "logo_close": True,
         "wordmark": str(cta_params.get("wordmark") or "REDSHIFT"),
         "tagline": "",  # 0042 r6: drop «Write code. Ship to orbit.»
         "url": str(cta_params.get("url") or "redshift.shorts"),
-        "subscribe": True,
-        "buttonText": "Subscribe",
+        "subscribe": show_subscribe,
+        "buttonText": "Subscribe" if show_subscribe else "",
         "invert": True,
         "tone": "paper",
         "exit": "none",
@@ -2187,7 +2306,9 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         "template": "outro-cta/logo-brand-close",
         "renderer": "logo_brand_close",
         "params": cta_params,
-        "why": "§6 r6: REDSHIFT + handle + Subscribe (no slogan)",
+        "why": ("§6 r6: REDSHIFT + handle (no Subscribe)"
+                if not show_subscribe else
+                "§6 r6: REDSHIFT + handle + Subscribe (no slogan)"),
     })
     return overlays
 
@@ -2207,7 +2328,7 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
     for slot in plan["slots"]:
         if slot.get("role") not in ("evidence", "develop"):
             continue
-        if slot["kind"] not in ("footage", "meme", "avatar"):
+        if slot["kind"] not in ("footage", "meme"):
             continue
         nums = _stats_from_text(str(blocks.get(slot["block_id"], {}).get("text") or ""))
         if not nums:
@@ -2700,22 +2821,27 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             category = "avatar-entry" if slot["kind"] in AVATAR_KINDS else "transitions"
             preferred = prefs.get(f"transition@{slot['role']}")
             head = [preferred] if preferred else []
+            exclude = _transition_exclude(category, used_templates)
             tr, _ = picker.pick(
                 category,
                 variant=variant,
                 duration=0.24,
                 recent_videos=recent_videos,
-                exclude=used_templates + ["transitions/cut"],
+                exclude=exclude,
                 prefer_head=head,
                 tags={"dynamic", "entry"},
                 seed=seed + slot["index"] * 3,
             )
-            used_templates.append(tr.id)
-            transition_entry = {
-                "template": tr.id, "renderer": tr.renderer,
-                "duration": max(0.16, min(0.32, float(tr.duration_range[1] or 0.24))),
-                "params": {**tr.params, "seed": seed + slot["index"]},
-            }
+            if category == "avatar-entry" and tr.id in AVATAR_ENTRY_DENY:
+                transition_entry = {"template": "transitions/cut", "renderer": "cut",
+                                    "duration": 0.0, "params": {}}
+            else:
+                used_templates.append(tr.id)
+                transition_entry = {
+                    "template": tr.id, "renderer": tr.renderer,
+                    "duration": max(0.16, min(0.32, float(tr.duration_range[1] or 0.24))),
+                    "params": {**tr.params, "seed": seed + slot["index"]},
+                }
         else:
             transition_entry = {"template": "transitions/cut", "renderer": "cut",
                                 "duration": 0.0, "params": {}}
@@ -2877,7 +3003,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         if hw:
             punch_windows.append((float(shot["start"]), end, hw))
     _BULKY_OVL = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
-                  "ai_chat_reveal", "app_showcase", "dataviz"}
+                  "ai_chat_reveal", "app_showcase", "dataviz", "plaque"}
     for ovl in overlays:
         kind = str(ovl.get("type") or "")
         renderer = str(ovl.get("renderer") or "")

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import math
 import re
 from dataclasses import dataclass, field
@@ -40,6 +41,8 @@ from .wmp_shapes import (
     WMP_GRATICULE, WMP_SHAPES, WMP_TOP5, WMP_TITLE, WMP_SUBTITLE, WMP_SOURCE,
     WMP_VB,
 )
+
+_log = logging.getLogger("redshift.hyperframes")
 
 # Слой переходов лежит выше футажа, но ниже субтитров: перекрывать слово
 # вспышкой нельзя, оно и так короткое.
@@ -1814,8 +1817,9 @@ def tr_mask_wipe(ctx: "TemplateCtx") -> Piece:
 
     ``clip-path`` анимировать нельзя, поэтому маска — обычный элемент с
     ``border-radius`` и ``overflow:hidden``, которому тянут ``scale``. Круг
-    растёт от нуля до диагонали кадра, диагональный вариант — то же, но
-    повёрнутым прямоугольником.
+    растёт от нуля до диагонали кадра и гаснет по мере роста — непрозрачный
+    диск поверх лица запрещён. Диагональный вариант — то же, но повёрнутым
+    прямоугольником.
     """
     shape = str(ctx.params.get("shape", "circle"))
     node_id = f"tr-{ctx.index:02d}"
@@ -1825,8 +1829,9 @@ def tr_mask_wipe(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip {css_class}" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(d)}" '
                f'data-track-index="{ctx.track}"><span></span></div>'],
-        tweens=[f'tl.fromTo("#{node_id} span",{{scale:0}},'
-                f'{{scale:1,duration:{_num(d)},ease:"power3.inOut"}},{_num(ctx.start)});'])
+        tweens=[f'tl.fromTo("#{node_id} span",{{scale:0,opacity:0.55}},'
+                f'{{scale:1,opacity:0,duration:{_num(d)},ease:"power3.inOut"}},{_num(ctx.start)});',
+                opacity_hard_kill(f"#{node_id} span", ctx.start + d)])
 
 
 def tr_light_sweep(ctx: "TemplateCtx") -> Piece:
@@ -2140,7 +2145,7 @@ def transition_css(brandbook: dict[str, Any]) -> str:
         f"z-index:{Z_TRANSITION};overflow:hidden;pointer-events:none}}"
         f".tr-mask-circle span{{position:absolute;left:50%;top:50%;"
         f"width:{diagonal}px;height:{diagonal}px;margin:-{diagonal // 2}px 0 0 -{diagonal // 2}px;"
-        "border-radius:50%;background:var(--color-bg-pure);display:block}"
+        "border-radius:50%;background:var(--color-cyan);display:block;opacity:0}"
         f".tr-mask-diagonal span{{position:absolute;left:-20%;top:-20%;"
         "width:140%;height:140%;background:var(--color-bg-pure);display:block;"
         "transform-origin:0 0;rotate:-24deg}"
@@ -6858,7 +6863,7 @@ def hero_icons(ctx: "TemplateCtx") -> Piece:
 
 # Какую долю высоты строки голове позволено съесть. Больше — и слово теряет
 # середину: у «НЕЧЕМ» голова закрыла ровно «ЧЕ», и оно читалось как «НЕ⋯ЕМ».
-BEHIND_HEAD_BITE = 0.22
+BEHIND_HEAD_BITE = 0.12
 
 
 # Доля кегля, которую занимает нарисованная часть прописных, и шаг между
@@ -6904,13 +6909,20 @@ def behind_head_top(params: dict, size: int, *, rows: int = 1,
     """
     head_top = params.get("head_top")
     if not head_top:
+        _log.warning(
+            "behind_head_top: head_top missing, using fallback=%s", fallback)
         return fallback
     # Прописные без выносных занимают примерно 0.72 кегля; ниже базовой линии
     # у них пусто, и перекрывать надо именно нарисованное.
     cap = size * CAP_SHARE
     line = size * float(params.get("line_height", 0.94))
     bottom = float(head_top) + cap * BEHIND_HEAD_BITE
-    return max(60, int(bottom - cap - line * (rows - 1)))
+    top = max(60, int(bottom - cap - line * (rows - 1)))
+    # Multi-line: the first row must sit entirely above the crown. Bite is
+    # allowed only on the last row (a one-row block is that last row).
+    if rows > 1 and top + cap > float(head_top):
+        top = max(60, int(float(head_top) - cap))
+    return top
 
 
 def hero_headline(ctx: "TemplateCtx") -> Piece:
@@ -7675,9 +7687,13 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     size = fit_size(widest((head, tail)).upper(), WORK_AREA_W,
                     int(ctx.params.get("size", 150)), role="display")
     # Две строки: перекрывать голова обязана низ второй, поэтому от макушки
-    # отсчитывается блок целиком.
+    # отсчитывается блок целиком. First line never enters the head band.
     top = behind_head_top(ctx.params, size, rows=2,
                           fallback=int(ctx.params.get("top", 300)))
+    cap = size * CAP_SHARE
+    head_top = ctx.params.get("head_top")
+    if head_top and top + cap > float(head_top):
+        top = max(60, int(float(head_top) - cap))
 
     tweens = enter_and_drift(f"#{node_id} .tb-head", ctx.start, ctx.duration,
                              name="zoom-in")
@@ -12767,8 +12783,9 @@ def ov_source_card(ctx: "TemplateCtx") -> Piece:
     if snippet:
         tweens += entrance_tweens(f"#{node_id} .snippet", ctx.start,
                                   name="rise", delay=0.10)
+    compact = " compact" if ctx.params.get("compact") else ""
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip overlay source-card" {_timing(ctx)}>'
+        nodes=[f'<div id="{node_id}" class="clip overlay source-card{compact}" {_timing(ctx)}>'
                f'<div id="{stage}" class="sc-stage" style="opacity:0">'
                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'

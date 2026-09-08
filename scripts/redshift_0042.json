@@ -12,13 +12,13 @@
   },
   "sources": [
     {
-      "title": "Quantum error correction below the surface code threshold",
+      "title": "Квантовая коррекция ошибок ниже порога поверхностного кода",
       "domain": "nature.com",
       "url": "https://www.nature.com/articles/s41586-024-08449-y",
       "show_on_screen": true,
       "screen_template": "browser",
       "snippet": "Логический кубит впервые живёт дольше, чем составляющие его физические кубиты.",
-      "highlight_line": "below the surface code threshold"
+      "highlight_line": "ниже порога поверхностного кода"
     },
     {
       "title": "Willow processor announcement",
@@ -70,7 +70,7 @@
       "broll_queries": ["scientific paper on screen", "researcher reading article laptop"],
       "overlay": {
         "type": "highlight",
-        "content": "below the surface code threshold",
+        "content": "ниже порога поверхностного кода",
         "template_hint": "browser-ui/browser-scroll"
       },
       "sfx": "ui_click",

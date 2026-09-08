@@ -360,6 +360,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "border-radius:22px;overflow:hidden;"
         "background:transparent;color:var(--color-ink);"
         "box-shadow:none}"
+        # Compact: same bottom edge, cap height so the card cannot grow
+        # through the face band (Y 500–1150). Assemble skips the card if
+        # this span is under 260 px.
+        f".source-card.compact{{bottom:{height - subtitle_top}px;"
+        f"max-height:{max(0, subtitle_top - 1150)}px}}"
         ".source-card .sc-stage{border-radius:22px;overflow:hidden;"
         "background:var(--color-bg-pure);color:var(--color-ink);"
         "box-shadow:0 18px 48px rgba(0,0,0,0.22)}"
@@ -404,7 +409,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # повторяет фон на каждой строке, как настоящий маркер.
         ".source-card .hl{border-radius:6px;padding:0 .10em;"
         "-webkit-box-decoration-break:clone;box-decoration-break:clone;"
-        "background-color:rgba(0,0,0,0)}"
+        "background:rgba(200,69,61,.22)}"
     )
 
     # --- CTA (§5.7) ------------------------------------------------------

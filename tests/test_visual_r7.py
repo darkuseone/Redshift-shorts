@@ -62,6 +62,104 @@ def test_invert_fact_and_slam_cards_use_glass_css():
            "background:#111214" not in compact
 
 
+def test_hero_title_behind_first_line_clears_the_crown():
+    from src.lib.render.hyperframes.templates import (
+        CAP_SHARE, behind_head_top,
+    )
+
+    head_top = 620
+    size = 150
+    top = behind_head_top({"head_top": head_top}, size, rows=2, fallback=300)
+    cap = size * CAP_SHARE
+    assert top + cap < head_top
+
+
+def test_0042_cta_has_no_subscribe_button():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _build_overlays
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    plan = {
+        "video_id": "redshift_0042",
+        "duration_sec": 12.0,
+        "cta_window": [10.0, 12.0],
+        "sources": [],
+        "blocks": [{"id": "b1", "role": "cta", "text": "Остаётся вопрос."}],
+        "slots": [{"index": 0, "block_id": "b1", "role": "cta",
+                   "kind": "footage", "start": 0.0, "end": 12.0,
+                   "duration": 12.0}],
+    }
+    overlays = _build_overlays(None, plan, [], cat, variant="B",
+                               seed=1, recent_videos=[], used=[])
+    cta = next(o for o in overlays if o["type"] == "cta")
+    assert not cta["params"].get("buttonText")
+    assert cta["params"].get("subscribe") is False
+
+
+def test_logo_brand_close_hides_sub_when_subscribe_false():
+    from src.lib.render.hyperframes.templates import TemplateCtx, render_fullscreen
+
+    piece = render_fullscreen(TemplateCtx(
+        index=1, start=0.0, duration=4.0, target="shot-01", track=1,
+        params={"wordmark": "REDSHIFT", "url": "redshift.shorts",
+                "subscribe": False, "buttonText": "", "logo_close": True,
+                "available_px": 900}))
+    node = piece.nodes[0]
+    assert "lbc-sub" not in node
+
+
+def test_latin_heavy_copy_drops_english_not_domains():
+    from src.p11_assemble.assemble import _latin_heavy_copy, _on_screen_copy
+
+    assert _latin_heavy_copy("below the surface code threshold")
+    assert not _latin_heavy_copy("nature.com")
+    assert not _latin_heavy_copy("ниже порога поверхностного кода")
+    assert _on_screen_copy("below the surface code threshold",
+                           field="title") == ""
+    assert _on_screen_copy("nature.com", field="domain") == "nature.com"
+
+
+def test_source_card_anchors_off_avatar():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _build_overlays
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    plan = {
+        "video_id": "anchor_test",
+        "duration_sec": 12.0,
+        "cta_window": [10.0, 12.0],
+        "sources": [{
+            "title": "Квантовая коррекция ошибок ниже порога поверхностного кода",
+            "domain": "nature.com",
+            "url": "https://www.nature.com/articles/s41586-024-08449-y",
+            "show_on_screen": True,
+            "snippet": "Логический кубит живёт дольше физических.",
+            "highlight_line": "ниже порога поверхностного кода",
+        }],
+        "blocks": [{"id": "b3", "role": "evidence",
+                    "text": "Работа опубликована в Nature."}],
+        "slots": [
+            {"index": 0, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "avatar",
+             "start": 8.0, "end": 10.0, "duration": 2.0},
+            {"index": 1, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "footage",
+             "start": 10.0, "end": 12.0, "duration": 2.0},
+        ],
+    }
+    overlays = _build_overlays(None, plan, [], cat, variant="B",
+                               seed=1, recent_videos=[], used=[])
+    cards = [o for o in overlays if o["type"] == "source_card"]
+    assert cards
+    assert cards[0]["start"] >= 10.0
+
+
 def test_compose_zoom_unchanged_for_0042_r7():
     # Steering: do not touch avatar/zoom this run (native 9:16 is NEXT videos).
     import yaml

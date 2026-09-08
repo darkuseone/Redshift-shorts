@@ -83,7 +83,7 @@ def test_a_new_picture_gets_a_whoosh(cfg):
     intents = [(round(e["t"], 2), e["intent"]) for e in events]
     assert (0.0, "picture_in") in intents
     assert (4.0, "picture_in") in intents
-    assert any(i == "cta" for _, i in intents)
+    assert any(i == "subscribe_cta" for _, i in intents)
 
 
 def test_a_scripted_hit_replaces_the_whoosh_on_that_picture(cfg):

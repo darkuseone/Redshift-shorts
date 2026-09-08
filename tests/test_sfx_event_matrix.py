@@ -57,3 +57,27 @@ def test_card_appear_and_avatar_in_pick_different_files_within_two_seconds():
     by_intent_card = pick_sfx(cfg, want=INTENTS["card_appear"], video_id=plan["video_id"])
     by_intent_avatar = pick_sfx(cfg, want=INTENTS["avatar_in"], video_id=plan["video_id"])
     assert by_intent_card.file != by_intent_avatar.file
+
+
+def test_cta_resolves_to_soft_whoosh_not_coin():
+    cfg = load_config()
+    plan = {
+        "video_id": "redshift_0042",
+        "duration_sec": 12.0,
+        "cta_window": [10.0, 12.0],
+        "blocks": [{"id": "b1", "sfx": "none", "overlay": {"type": "none"}}],
+        "slots": [
+            {"index": 0, "start": 0.0, "end": 10.0, "kind": "footage",
+             "block_id": "b1", "transition_in": "cut"},
+            {"index": 1, "start": 10.0, "end": 12.0, "kind": "footage",
+             "block_id": "b1", "transition_in": "cut"},
+        ],
+    }
+    events = _plan_sfx(plan, cfg)
+    cta = next(e for e in events if e["intent"] == "subscribe_cta")
+    assert cta["intent"] not in WHOOSH_INTENTS
+    rec = _resolve_sfx(cfg, cta, video_id=plan["video_id"], avoid_ids=())
+    assert rec is not None
+    assert rec.id != "sfx_coin_pickup"
+    assert "soft" in rec.tags
+    assert INTENTS["subscribe_cta"] == ("whoosh", "soft")

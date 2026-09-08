@@ -68,15 +68,42 @@ def test_orphan_two_letter_chips_dropped_after_glue():
 
 
 def test_punch_family_mute_keeps_unrelated_words():
+    # Phrase-level mute: 1 punch-family word of 6 stays with the phrase.
     words = [
-        {"display": "наоборот", "start": 18.1, "end": 18.5, "block_id": "b4",
-         "emphasis": False},
-        {"display": "кубитов", "start": 18.5, "end": 18.9, "block_id": "b4",
-         "emphasis": False},
+        {"display": w, "start": 18.0 + i * 0.28, "end": 18.22 + i * 0.28,
+         "block_id": "b4", "emphasis": False}
+        for i, w in enumerate(
+            ["Чем", "больше", "кубитов", "связке", "падает", "вселенная"])
     ]
     cues = _build_subtitle_cues(
         words,
-        punch_windows=[(18.0, 19.5, "ЗДЕСЬ ВСЁ НАОБОРОТ")],
+        punch_windows=[(18.0, 18.25, "ЧЕМ БОЛЬШЕ")],
         mute_windows=[],
     )
-    assert [c["display"] for c in cues] == ["кубитов"]
+    assert [c["display"] for c in cues] == [
+        "Чем", "больше", "кубитов", "связке", "падает", "вселенная"]
+
+
+def _six_words():
+    return [
+        {"display": w, "start": 18.0 + i * 0.28, "end": 18.22 + i * 0.28,
+         "block_id": "b4", "emphasis": False}
+        for i, w in enumerate(
+            ["Чем", "больше", "кубитов", "связке", "падает", "вселенная"])
+    ]
+
+
+def test_majority_mute_drops_the_whole_phrase():
+    words = _six_words()
+    # Middle three words sit under the card (indices 1–3).
+    cues = _build_subtitle_cues(
+        words, punch_windows=[], mute_windows=[(18.27, 19.10)])
+    assert cues == []
+
+
+def test_minority_mute_keeps_the_whole_phrase():
+    words = _six_words()
+    cues = _build_subtitle_cues(
+        words, punch_windows=[], mute_windows=[(18.27, 18.54)])
+    assert [c["display"] for c in cues] == [
+        "Чем", "больше", "кубитов", "связке", "падает", "вселенная"]

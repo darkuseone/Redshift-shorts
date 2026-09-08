@@ -141,3 +141,25 @@ def test_default_caption_is_gradient_fill(cfg):
     assert cfg.brand("subtitles.caption") == "gradient-fill"
     for gesture in ("gradient_fill", "clip_wipe", "camera_follow", "blend_difference"):
         assert cfg.brand(f"subtitles.{gesture}"), f"жест {gesture} пропал из брендбука"
+
+
+def test_single_word_clip_wipe_is_centered(cfg):
+    """A one-word leftover must still sit on the full safe-width, centered."""
+    from src.lib.render.hyperframes.captions import build_clip_wipe, clip_wipe_params
+
+    params = clip_wipe_params(cfg.brandbook)
+    plan = {
+        "subtitles": [
+            {"display": "СВЯЗКЕ", "start": 20.0, "end": 20.4, "block_id": "b4"},
+        ],
+        "subtitle_style": {},
+    }
+    nodes, _tweens, count = build_clip_wipe(plan, cfg.brandbook, duration=30.0)
+    assert count == 1
+    assert nodes
+    css = caption_css(cfg.brandbook)
+    assert "justify-content:center" in css
+    node = nodes[0]
+    assert f'left:{int(params["origin_x"])}px' in node
+    assert f'width:{int(params["frame_w"])}px' in node
+    assert "cw-group" in node

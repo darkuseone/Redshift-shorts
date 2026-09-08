@@ -195,8 +195,7 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
                                  priority=2, role=str(role)))
 
     cta_start = float(plan.get("cta_window", [duration - 2, duration])[0])
-    events.append(_event(cta_start, "cta", "кнопка подписки (§6, QC-16)",
-                         role="subscribe_ping"))
+    events.append(_event(cta_start, "subscribe_cta", "кнопка подписки (§6, QC-16)"))
 
     events = _collapse_whooshes(events)
     events.sort(key=lambda e: (e["t"], e["priority"]))

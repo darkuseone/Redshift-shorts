@@ -101,7 +101,7 @@ def test_sfx_density_respects_two_second_rule(cfg):
 def test_sfx_covers_mandatory_points(cfg):
     intents = {e["intent"] for e in _plan_sfx(_plan_stub(), cfg)}
     assert "fullscreen" in intents
-    assert "cta" in intents
+    assert "subscribe_cta" in intents
     assert {"avatar_in", "avatar_out", "transition", "picture_in"} & intents
 
 

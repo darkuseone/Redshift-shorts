@@ -5089,6 +5089,34 @@ def test_sdf_iris_opens_from_center_without_webgl(ctx):
     assert "tr-mask-circle" in wipe.nodes[0]
 
 
+def test_mask_wipe_fades_cyan_not_opaque_white():
+    from src.lib.config import load_config
+
+    wipe = render_transition("mask_wipe", TemplateCtx(
+        index=1, start=0.0, duration=0.24, target="shot-01", track=11,
+        params={"shape": "circle"}))
+    body = " ".join(wipe.tweens)
+    assert "var(--color-bg-pure)" not in body
+    assert "opacity:0.55" in body
+    assert "opacity:0" in body
+    assert "tl.set(" in body and "{opacity:0}" in body.replace(" ", "")
+    css = transition_css(load_config().brandbook)
+    circle = re.search(r"\.tr-mask-circle span\{[^}]+\}", css).group(0)
+    assert "var(--color-bg-pure)" not in circle
+    assert "var(--color-cyan)" in circle
+    assert "opacity:0" in circle
+
+
+def test_avatar_entry_denies_circle_mask_grow():
+    from src.p11_assemble.assemble import AVATAR_ENTRY_DENY, _transition_exclude
+
+    assert "avatar-entry/circle-mask-grow" in AVATAR_ENTRY_DENY
+    exclude = _transition_exclude("avatar-entry", ["hero-zoom-in"])
+    assert "avatar-entry/circle-mask-grow" in exclude
+    assert "avatar-entry/circle-mask-grow" not in _transition_exclude(
+        "transitions", [])
+
+
 def test_sdf_iris_keeps_catalog_teal_and_gold():
     from src.lib.config import load_config
 

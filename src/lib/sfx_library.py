@@ -93,7 +93,7 @@ INTENTS: dict[str, tuple[str, ...]] = {
     "card_appear": ("click", "snap"),
     "card_dismiss": ("whoosh", "soft"),
     "cta": ("reward", "chime"),
-    "subscribe_cta": ("reward", "chime"),
+    "subscribe_cta": ("whoosh", "soft"),
     "meme": ("reward", "sting"),
     "impact": ("hit", "punch"),
     "accent_hit": ("hit", "punch"),

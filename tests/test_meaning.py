@@ -275,7 +275,9 @@ class TestAnEmptySlotIsNeverAnEmptyFrame:
         source = (_Path(__file__).resolve().parents[1]
                   / "src" / "p11_assemble" / "assemble.py").read_text(encoding="utf-8")
         branch = source[source.index('if prep is None or (asset is None'):]
-        branch = branch[:branch.index("shots.append(entry)")]
+        # Cap/empty-phrase path appends a plate first; the device itself is
+        # the fullscreen_text update later in the same empty-slot branch.
+        branch = branch[:branch.index("kb_template: Template")]
         assert '"kind": "fullscreen_text"' in branch
         assert ("catalog.pick(" in branch) or ("picker.pick(" in branch)
         assert "gap_phrase(" in branch

@@ -768,7 +768,8 @@ class CompositionBuilder:
         highlight = str(params.get("highlight") or "")
         title = _mark_phrase(str(params.get("title") or ""), highlight)
         snippet = _mark_phrase(str(params.get("snippet") or ""), highlight)
-        return (f'<div id="{node_id}" class="clip overlay source-card" __TIMING__>'
+        compact = " compact" if params.get("compact") else ""
+        return (f'<div id="{node_id}" class="clip overlay source-card{compact}" __TIMING__>'
                 f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                 f'<span class="dot"></span>'
                 f'<span class="url"><b>{_esc(domain)}</b>{_esc(path)}</span></div>'
@@ -815,12 +816,12 @@ class CompositionBuilder:
                 # Полупрозрачный, как настоящий маркер: заголовок переносится,
                 # и непрозрачная плашка следующей строки срезала хвост буквы на
                 # предыдущей — «Quantum» читался как «Ouantum». Проверено кадром.
-                soft = str(self.brandbook["colors"].get("accent_soft", "#E4726A"))
-                rgb = ",".join(str(int(soft.lstrip("#")[i:i + 2], 16)) for i in (0, 2, 4))
+                accent = str(self.brandbook["colors"].get("accent", "#C8453D"))
+                rgb = ",".join(str(int(accent.lstrip("#")[i:i + 2], 16)) for i in (0, 2, 4))
                 self.tweens.append(
                     f'tl.fromTo("#{node_id} .hl",'
                     f'{{backgroundColor:"rgba({rgb},0)"}},'
-                    f'{{backgroundColor:"rgba({rgb},0.55)",duration:0.42,'
+                    f'{{backgroundColor:"rgba({rgb},0.22)",duration:0.42,'
                     f'ease:"power2.out"}},{_num(start + 0.6)});')
             if params.get("scroll"):
                 # Страница едет вверх ровно столько, чтобы это читалось как
