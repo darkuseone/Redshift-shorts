@@ -1764,7 +1764,7 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     # Meaning traits stay separate from structural signals (plate/alpha/word).
     traits = None if block is None else block_traits(str((block.get("text") if isinstance(block, dict) else block) or ""))
     if content.get("figures"):
-        signals.add("numbers")
+        signals.add("number")
     blob = build_blob(content.get("title"), content.get("caption"), " ".join(content.get("lines") or []), content.get("word"))
     template, _ = picker.pick(
         "hero-devices",
@@ -2566,6 +2566,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         plaque_template, _ = picker.pick(
             "lower-thirds",
             blob=build_blob(domain, source.get("title")),
+            signals=block_traits(str(source.get("snippet") or "")),
+            traits={"brand"} if domain else set(),
             variant=variant,
             duration=2.4,
             recent_videos=recent_videos,
@@ -2604,9 +2606,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             continue
         role = (overlay.get("role") or overlay.get("subtitle")
                 or overlay.get("kicker") or "")
+        # Признаки блока идут сигналами: словарь интентов нижней трети ждёт
+        # их именно так, а раньше на этом пути не выставлялось ничего, и
+        # `lowerthird-metric-badge` был недостижим при живом числе в реплике.
+        lt_traits = block_traits(str(block.get("text") or ""))
         template, _ = picker.pick(
             "lower-thirds",
             blob=build_blob(content, role),
+            signals=lt_traits,
+            traits=lt_traits,
             variant=variant,
             duration=2.4,
             recent_videos=recent_videos,
@@ -2756,7 +2764,7 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
                 - round(float(nums[0]["value"]))) > 1e-9
     )
 
-    signals = {"numbers"}
+    signals = {"number"}
     if len(nums) >= 2:
         signals.add("two_numbers")
     if len(nums) >= 4:

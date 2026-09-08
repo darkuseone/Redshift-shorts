@@ -746,3 +746,57 @@ def test_gen_templates_preserves_lifecycle_fields():
     assert "status" in src and "retired_reason" in src and "frequency" in src
     assert "last_used_in" in src
 
+
+
+class TestAGatedIntentIsMoreSpecificThanACatchAll:
+    """N-14: интент с условием проигрывал заглушке без условий.
+
+    `lowerthird-metric-badge` требует `number` и весил 5 — ниже
+    `default_weight_min`, то есть попадал в generic-канал. А тот берётся
+    только когда default-канал пуст, и `lowerthird-lockup-generic` (вес 10,
+    ни ключевых слов, ни гейтов) срабатывал всегда. Плашка с метрикой не
+    выигрывала ни на одном сиде при живом числе в реплике.
+    """
+
+    def _cfg(self):
+        return json.loads((Path(__file__).resolve().parents[1] / "config"
+                           / "template_scenarios.json").read_text(encoding="utf-8"))
+
+    def test_no_gated_intent_sits_below_the_specific_threshold(self):
+        cfg = self._cfg()
+        floor = cfg["specific_weight_min"]
+        low = [i["id"] for i in cfg["intents"]
+               if (i.get("needs") or i.get("signals_any")) and i["weight"] < floor]
+        assert not low, f"интенты с условием ниже порога специфичности: {low}"
+
+    def test_the_metric_badge_wins_when_the_block_has_a_number(self, picker):
+        from src.lib.meaning import block_traits
+        traits = block_traits("Ошибка падает вдвое: сто пять кубитов держат порог")
+        picked = {
+            picker.pick("lower-thirds", blob=build_blob("МЕТРИКА", "порог"),
+                        signals=traits, traits=traits, variant="B",
+                        duration=2.4, seed=seed)[0].id
+            for seed in range(12)
+        }
+        assert "lower-thirds/metric-badge" in picked, picked
+
+    def test_a_block_without_a_number_keeps_the_generic_plaque(self, picker):
+        """Гейт работает в обе стороны: без числа метрике в кадре нечего делать."""
+        from src.lib.meaning import block_traits
+        traits = block_traits("Мы упёрлись в физику и дальше не пошли")
+        picked = {
+            picker.pick("lower-thirds", blob=build_blob("ФИЗИКА", ""),
+                        signals=traits, traits=traits, variant="B",
+                        duration=2.4, seed=seed)[0].id
+            for seed in range(12)
+        }
+        assert "lower-thirds/metric-badge" not in picked, picked
+
+    def test_the_two_dictionaries_agree_on_the_name_of_a_number(self):
+        """`numbers` — сигнал, `number` — признак; врозь они не сходились."""
+        cfg = self._cfg()
+        stale = [i["id"] for i in cfg["intents"] if "numbers" in (i.get("needs") or [])]
+        assert not stale, f"интенты всё ещё ждут сигнал 'numbers': {stale}"
+        source = (Path(__file__).resolve().parents[1] / "src" / "p11_assemble"
+                  / "assemble.py").read_text(encoding="utf-8")
+        assert '"numbers"' not in source

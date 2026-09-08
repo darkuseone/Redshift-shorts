@@ -890,7 +890,7 @@
       ],
       "patterns": [],
       "needs": [
-        "numbers"
+        "number"
       ],
       "templates": [
         "data-viz/bar-chart-race",
@@ -899,7 +899,7 @@
         "data-viz/compare-bars",
         "data-viz/bar-race-mini"
       ],
-      "weight": 10,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -924,7 +924,7 @@
       ],
       "patterns": [],
       "needs": [
-        "numbers"
+        "number"
       ],
       "templates": [
         "data-viz/mk-line-graph",
@@ -932,7 +932,7 @@
         "data-viz/decline-chart",
         "data-viz/timeline-dots"
       ],
-      "weight": 10,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -954,13 +954,13 @@
       ],
       "patterns": [],
       "needs": [
-        "numbers"
+        "number"
       ],
       "templates": [
         "data-viz/conic-progress-ring",
         "data-viz/donut-fill"
       ],
-      "weight": 10,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -982,13 +982,13 @@
       ],
       "patterns": [],
       "needs": [
-        "numbers"
+        "number"
       ],
       "templates": [
         "data-viz/stat-countup-card",
         "data-viz/counter-roll"
       ],
-      "weight": 10,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1327,7 +1327,7 @@
         "hero-devices/plate-behind-back",
         "hero-devices/footage-plate-pop"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1429,7 +1429,7 @@
         "hero-devices/phrase-log",
         "hero-devices/bubble-typed"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1548,12 +1548,12 @@
       ],
       "patterns": [],
       "needs": [
-        "numbers"
+        "number"
       ],
       "templates": [
         "hero-devices/figure-swap"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1578,7 +1578,7 @@
       "templates": [
         "intro-hooks/hook-question-flash"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1607,7 +1607,7 @@
         "intro-hooks/hook-number-slam",
         "intro-hooks/hook-countdown-3"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1634,7 +1634,7 @@
       "templates": [
         "intro-hooks/hook-blackout-word"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1660,7 +1660,7 @@
       "templates": [
         "intro-hooks/hook-footage-cold-open"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
@@ -1891,12 +1891,12 @@
       ],
       "patterns": [],
       "needs": [
-        "numbers"
+        "number"
       ],
       "templates": [
         "lower-thirds/metric-badge"
       ],
-      "weight": 5,
+      "weight": 20,
       "variants": [
         "A",
         "B"
