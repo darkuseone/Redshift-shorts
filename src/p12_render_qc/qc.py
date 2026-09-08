@@ -148,7 +148,7 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
         music_lo = round(voice + 20.0 * math.log10(float(ratio[0])) - 1.5, 2)
         music_hi = round(voice + 20.0 * math.log10(float(ratio[-1])) + 1.5, 2)
     else:
-        bounds = cfg.get("audio.music_lufs", [-40, -37])
+        bounds = cfg.get("audio.music_lufs", [-26, -24])
         music_lo, music_hi = float(bounds[0]), float(bounds[-1])
     music_ok = music_lufs is None or (float(music_lo) <= float(music_lufs) <= float(music_hi))
     share = (None if music_lufs is None

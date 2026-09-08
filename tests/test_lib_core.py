@@ -92,10 +92,11 @@ def test_normalize_to_lufs_hits_target():
 
 
 def test_music_bed_level_is_in_spec():
-    """§4.4: подложка −30…−34 LUFS, «на грани слышимости»."""
+    """Product target: bed −26…−24 LUFS vs voice −14 (ratio ~0.28–0.32)."""
     bed = A.to_stereo(_tone(3.0, 220.0, 0.5))
-    bed, _ = A.normalize_to_lufs(bed, -32.0)
-    assert -34.0 <= A.measure_lufs_array(bed) <= -30.0
+    bed, _ = A.normalize_to_lufs(bed, -25.0)
+    measured = A.measure_lufs_array(bed)
+    assert abs(measured - (-25.0)) < 0.5
 
 
 def test_true_peak_limiter():
