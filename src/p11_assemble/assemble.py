@@ -482,10 +482,115 @@ def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
             or "logo-brand-close" in template)
 
 
-PHRASE_MUTE_RATIO = 0.34
+# Majority of words under a card → drop the phrase. Sparse hits drop only
+# those words so spoken VO outside bulky cards still has captions.
+PHRASE_MUTE_RATIO = 0.50
 # Match clip-wipe grouping so a hole in the middle cannot spawn orphan words.
 _CAPTION_MAX_WORDS = 6
 _CAPTION_PAUSE_BREAK = 0.45
+# Fullscreen slam is visually dominant for ~a beat, not the whole B-roll hold.
+FS_MUTE_SEC = 1.6
+MUTE_COVERAGE_WARN = 0.45
+# Late-timeline title-behind sits on a full avatar and eats the line.
+LATE_HERO_BEAT = 0.60
+# Large punch/slam that actually covers the caption band. Subtle behind-head
+# kickers and above-crown headlines do not mute spoken VO.
+_BULKY_HERO_MUTE = frozenset({
+    "hero-slam", "hero-knockout", "hero-oversize", "hero-split", "hero-exhibit",
+})
+
+
+def _plaque_covers_captions(ovl: dict[str, Any]) -> bool:
+    """Top/note-pin plaques sit above the caption band — do not mute VO."""
+    params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
+    pos = str(params.get("position") or "").lower()
+    if pos in ("top", "tl", "tr"):
+        return False
+    template = str(ovl.get("template") or "")
+    if "note-pin" in template:
+        return False
+    return True
+
+
+def _fs_mute_span(shot: dict[str, Any]) -> tuple[float, float]:
+    """Mute only while fullscreen type is visually dominant, not the B-roll hold."""
+    start = float(shot["start"])
+    end = float(shot["end"])
+    delay = float((shot.get("params") or {}).get("enter_delay") or 0.0)
+    vis = start + max(0.0, delay)
+    mute_end = min(end, vis + FS_MUTE_SEC)
+    if mute_end <= vis + 1e-6:
+        vis = start
+        mute_end = min(end, start + FS_MUTE_SEC)
+    return vis, mute_end
+
+
+def _union_span(windows: list[tuple[float, float]]) -> float:
+    ordered = sorted((float(a), float(b)) for a, b in windows if b > a)
+    if not ordered:
+        return 0.0
+    total = 0.0
+    cur_s, cur_e = ordered[0]
+    for start, end in ordered[1:]:
+        if start <= cur_e:
+            cur_e = max(cur_e, end)
+        else:
+            total += cur_e - cur_s
+            cur_s, cur_e = start, end
+    return total + cur_e - cur_s
+
+
+def _caption_mute_windows(
+    shots: list[dict[str, Any]],
+    overlays: list[dict[str, Any]],
+) -> list[tuple[float, float]]:
+    """Windows where bulky on-screen type hides karaoke — not every overlay."""
+    windows: list[tuple[float, float]] = []
+    for shot in shots:
+        if shot.get("kind") == "fullscreen_text":
+            windows.append(_fs_mute_span(shot))
+            continue
+        hero = shot.get("hero") or {}
+        renderer = str(hero.get("renderer") or "")
+        bulky = bool(hero.get("covers_frame")) or renderer in _BULKY_HERO_MUTE
+        if not bulky:
+            continue
+        end = float(shot["end"])
+        if hero.get("duration"):
+            end = min(end, float(shot["start"]) + float(hero["duration"]))
+        windows.append((float(shot["start"]), end))
+    bulky_ovl = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
+                 "ai_chat_reveal", "app_showcase", "dataviz"}
+    for ovl in overlays:
+        kind = str(ovl.get("type") or "")
+        renderer = str(ovl.get("renderer") or "")
+        if kind == "plaque":
+            if _plaque_covers_captions(ovl):
+                windows.append((float(ovl["start"]), float(ovl["end"])))
+            continue
+        if kind in bulky_ovl or renderer in bulky_ovl:
+            windows.append((float(ovl["start"]), float(ovl["end"])))
+        if _is_cta_overlay(ovl):
+            windows.append((float(ovl["start"]), float(ovl["end"])))
+    return windows
+
+
+def _warn_mute_coverage(windows: list[tuple[float, float]],
+                        words: list[dict[str, Any]]) -> None:
+    if not words or not windows:
+        return
+    speech0 = float(words[0]["start"])
+    speech1 = float(words[-1]["end"])
+    speech = speech1 - speech0
+    if speech <= 0:
+        return
+    clipped = [(max(s, speech0), min(e, speech1)) for s, e in windows]
+    frac = _union_span(clipped) / speech
+    if frac > MUTE_COVERAGE_WARN:
+        _log.warning(
+            "caption mute covers %.0f%% of speech (limit %.0f%%)",
+            frac * 100.0, MUTE_COVERAGE_WARN * 100.0,
+        )
 
 
 def _word_is_muted(
@@ -507,11 +612,11 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
                          mute_windows: list[tuple[float, float]]) -> list[dict[str, Any]]:
     """Karaoke cues at the default baseline; mute on punch/card/CTA, never raise.
 
-    Mute is phrase-level: dropping the middle of a sentence used to leave a
-    pause > pause_break_sec, and clip-wipe then rendered the leftovers as
-    one-word orphans. If enough of a phrase sits under a card/punch, the
-    whole phrase is silent; otherwise the whole phrase stays.
-    After glue, leftover ≤2-letter chips (ТИ / ВЕ) are dropped.
+    Heavily covered phrases (muted-word ratio ≥ PHRASE_MUTE_RATIO) stay silent
+    so a hole in the middle cannot spawn clip-wipe orphans. Sparse mutes drop
+    only the covered words; leftovers are re-glued and 1–2 letter chips fall
+    off. A phrase that would keep fewer than two spoken words after a sparse
+    mute is dropped rather than left as a one-word flash.
     """
     phrases = group_caption_phrases(
         words,
@@ -522,14 +627,18 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
     for phrase in phrases:
         if not phrase:
             continue
-        muted = sum(
-            1 for word in phrase
-            if _word_is_muted(word, punch_windows=punch_windows,
-                              mute_windows=mute_windows)
-        )
+        flags = [
+            _word_is_muted(word, punch_windows=punch_windows,
+                           mute_windows=mute_windows)
+            for word in phrase
+        ]
+        muted = sum(flags)
         if muted / len(phrase) >= PHRASE_MUTE_RATIO:
             continue
-        for word in phrase:
+        kept = [word for word, hit in zip(phrase, flags) if not hit]
+        if muted and len(kept) < 2:
+            continue
+        for word in kept:
             subtitles.append({
                 "display": word["display"], "start": float(word["start"]),
                 "end": float(word["end"]),
@@ -1452,7 +1561,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                  seed: int,
                  picker: TemplatePicker | None = None,
                  variant: str = "A",
-                 block: dict[str, Any] | None = None) -> dict[str, Any] | None:
+                 block: dict[str, Any] | None = None,
+                 video_duration: float | None = None) -> dict[str, Any] | None:
     """Выбрать приём вокруг ведущего под конкретный кадр.
 
     Приём отбрасывается, если кадр не может его показать: без альфы всё, что
@@ -1470,12 +1580,22 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         content = {**content, "credit": real_plate["credit"]}
 
     blocked = list(exclude)
+    late = bool(
+        video_duration
+        and float(video_duration) > 0
+        and float(slot.get("start") or 0) > LATE_HERO_BEAT * float(video_duration)
+    )
     for template in catalog.by_category("hero-devices"):
         if "alpha" in set(template.tags) and not has_alpha:
             blocked.append(template.id)
             continue
         needs = _HERO_NEEDS.get(template.renderer, ())
         if any(not available.get(key) for key in needs):
+            blocked.append(template.id)
+            continue
+        # Late beat: title-behind over a full avatar eats the line. Headline
+        # above the crown (clear_crown) stays readable.
+        if late and template.renderer == "hero-title-behind":
             blocked.append(template.id)
             continue
         # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
@@ -1509,6 +1629,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     )
     renderer = template.renderer
     params = hero_params(renderer, template.params, content, slot)
+    if late:
+        params["clear_crown"] = True
 
     entry: dict[str, Any] = {
         "template": template.id, "renderer": renderer, "params": params,
@@ -2870,7 +2992,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates,
-                    seed=seed, picker=picker, variant=variant, block=block)
+                    seed=seed, picker=picker, variant=variant, block=block,
+                    video_duration=float(plan["duration_sec"]))
                 if hero_entry:
                     used_templates.append(hero_entry["template"])
 
@@ -2975,47 +3098,37 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "why": "r6: informative card over first avatar to mask off-camera gaze",
             })
 
-    # Smart captions: punch-family mute stays. Overlap with a bulky card /
-    # plaque / fullscreen / CTA window mutes the cue (never raise onto the face).
-    # Shown cues keep the default baseline (~1180).
-    punch_windows: list[tuple[float, float, str]] = [
-        (float(s["start"]), float(s["end"]), str(s.get("content") or ""))
-        for s in shots if s.get("kind") == "fullscreen_text" and s.get("content")
-    ]
-    card_windows: list[tuple[float, float]] = [
-        (float(s["start"]), float(s["end"]))
-        for s in shots if s.get("kind") == "fullscreen_text"
-    ]
-    for shot in shots:
-        hero = shot.get("hero") or {}
-        if not (hero.get("carries_line") or hero.get("covers_frame")):
-            continue
-        end = float(shot["end"])
-        if hero.get("duration"):
-            end = min(end, float(shot["start"]) + float(hero["duration"]))
-        card_windows.append((float(shot["start"]), end))
+    # Smart captions: punch-family mute stays. Card mute is only bulky type
+    # (FS slam beat, punch/slam heroes, source cards, CTA) — not behind-head
+    # kickers or the whole FS B-roll hold.
+    punch_windows: list[tuple[float, float, str]] = []
+    for s in shots:
+        if s.get("kind") == "fullscreen_text" and s.get("content"):
+            ps, pe = _fs_mute_span(s)
+            punch_windows.append((ps, pe, str(s.get("content") or "")))
+        hero = s.get("hero") or {}
         hw = str(
             (hero.get("params") or {}).get("word")
             or (hero.get("params") or {}).get("title")
+            or (hero.get("params") or {}).get("head")
             or (hero.get("params") or {}).get("content")
             or hero.get("word") or hero.get("title") or ""
         )
-        if hw:
-            punch_windows.append((float(shot["start"]), end, hw))
-    _BULKY_OVL = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
-                  "ai_chat_reveal", "app_showcase", "dataviz", "plaque"}
+        if not hw:
+            continue
+        end = float(s["end"])
+        if hero.get("duration"):
+            end = min(end, float(s["start"]) + float(hero["duration"]))
+        punch_windows.append((float(s["start"]), end, hw))
     for ovl in overlays:
-        kind = str(ovl.get("type") or "")
-        renderer = str(ovl.get("renderer") or "")
-        if kind in _BULKY_OVL or renderer in _BULKY_OVL or kind == "plaque":
-            card_windows.append((float(ovl["start"]), float(ovl["end"])))
-        if kind == "plaque":
-            pt = str((ovl.get("params") or {}).get("text")
-                     or (ovl.get("params") or {}).get("content") or "")
-            if pt:
-                punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
-        if _is_cta_overlay(ovl):
-            card_windows.append((float(ovl["start"]), float(ovl["end"])))
+        if str(ovl.get("type") or "") != "plaque":
+            continue
+        pt = str((ovl.get("params") or {}).get("text")
+                 or (ovl.get("params") or {}).get("content") or "")
+        if pt:
+            punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
+    card_windows = _caption_mute_windows(shots, overlays)
+    _warn_mute_coverage(card_windows, words_doc["words"])
     subtitles = _build_subtitle_cues(
         words_doc["words"],
         punch_windows=punch_windows,

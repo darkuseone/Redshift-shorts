@@ -241,6 +241,9 @@ def _resolve_sfx(cfg, event: dict[str, Any], *, video_id: str,
     intent = event.get("intent") or intent_for_role(role)
     want = INTENTS.get(intent, ())
     record = pick_sfx(cfg, want=want, video_id=video_id, avoid_ids=avoid_ids)
+    if record is None and intent in ("avatar_in", "subscribe_cta"):
+        record = pick_sfx(cfg, want=("whoosh", "soft"), video_id=video_id,
+                          avoid_ids=avoid_ids)
     if record is None and role:
         return sfx_lib.by_role(role)
     return record

@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from ..text_rules import subtitle_word
-from .templates import text_width
+from .templates import opacity_hard_kill, text_width
 
 # Совпадает с brand_css.Z_SUBTITLE: субтитр поверх оверлеев.
 Z_CAPTION = 40
@@ -693,14 +693,22 @@ def build_clip_wipe(
             )
             count += 1
 
+        group_id = f"{clip_id}-g"
         nodes.append(
             f'<div id="{clip_id}" class="clip caption-wipe" '
             f'data-start="{_num(start)}" data-duration="{_num(end - start)}" '
             f'data-track-index="{track}">'
-            f'<div class="cw-group" style="top:{top}px;left:{int(params["origin_x"])}px;'
+            f'<div id="{group_id}" class="cw-group" '
+            f'style="top:{top}px;left:{int(params["origin_x"])}px;'
             f'width:{int(params["frame_w"])}px;gap:0">'
             f'{"".join(word_nodes)}</div></div>'
         )
+        # Tweens sit on the inner group, never the clip: the engine owns clip
+        # visibility. Kill the previous group at this start so even/odd tracks
+        # cannot stack uncleared glyphs.
+        if p > 0:
+            tweens.append(opacity_hard_kill(f"#cw-{p - 1:02d}-g", start))
+        tweens.append(opacity_hard_kill(f"#{group_id}", end))
 
         for i, word in enumerate(phrase):
             wid = f"{clip_id}-w{i}"

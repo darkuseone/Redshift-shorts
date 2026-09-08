@@ -84,7 +84,7 @@ TAGS: dict[str, str] = {**KINDS, **SHAPE}
 INTENTS: dict[str, tuple[str, ...]] = {
     "picture_in": ("whoosh", "sharp"),
     "picture_out": ("whoosh", "soft"),
-    "avatar_in": ("hat", "bright"),
+    "avatar_in": ("whoosh", "soft"),
     "avatar_out": ("whoosh", "soft"),
     "transition": ("whoosh", "swipe"),
     "fullscreen": ("reveal", "hat"),
@@ -398,7 +398,16 @@ def pick_sfx(cfg, *, want: Sequence[str], video_id: str,
         return None
     want_set = set(want)
     avoid = set(avoid_ids)
-    pool = [i for i in lib.items if i.id not in avoid] or list(lib.items)
+
+    def _on_disk(item: Any) -> bool:
+        name = str(getattr(item, "file", "") or "")
+        return bool(name) and (lib.dir / name).is_file()
+
+    pool = [i for i in lib.items if i.id not in avoid and _on_disk(i)]
+    if not pool:
+        pool = [i for i in lib.items if _on_disk(i)]
+    if not pool:
+        return None
 
     def rank(item: Any) -> tuple[int, int]:
         matched = len(want_set & set(item.tags)) if want_set else 1

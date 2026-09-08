@@ -81,3 +81,15 @@ def test_cta_resolves_to_soft_whoosh_not_coin():
     assert rec.id != "sfx_coin_pickup"
     assert "soft" in rec.tags
     assert INTENTS["subscribe_cta"] == ("whoosh", "soft")
+    assert INTENTS["avatar_in"] == ("whoosh", "soft")
+
+
+def test_avatar_in_resolves_to_existing_soft_whoosh():
+    cfg = load_config()
+    rec = pick_sfx(cfg, want=INTENTS["avatar_in"], video_id="redshift_0042")
+    assert rec is not None
+    from src.lib.manifest import open_library
+    path = open_library(cfg, "sfx").file_path(rec)
+    assert path.is_file(), path
+    assert rec.id != "sfx_coin_pickup"
+    assert "whoosh" in rec.tags or "soft" in rec.tags

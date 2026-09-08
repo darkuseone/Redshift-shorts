@@ -74,6 +74,53 @@ def test_hero_title_behind_first_line_clears_the_crown():
     assert top + cap < head_top
 
 
+def test_late_beat_skips_title_behind_and_clears_crown():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _hero_device
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    content = {
+        "word": "ЧИП", "title": "Квантовый чип",
+        "head": "КВАНТОВЫЙ", "tail": "ЧИП",
+        "lines": ["квантовый", "чип"], "accent_lines": [0],
+        "punch": ["квантовый", "чип"], "entries": ["квантовый"],
+        "figures": [], "face": (540, 570),
+        "head_box": (200, 620, 880, 1400), "brand": None, "icons": [],
+    }
+    slot = {"index": 8, "role": "twist", "duration": 4.0,
+            "start": 32.0, "end": 36.0}
+    seen = set()
+    for seed in range(24):
+        entry = _hero_device(
+            cat, slot=slot, content=content, has_alpha=True,
+            plate_src=None, recent_videos=[], exclude=[], seed=seed,
+            video_duration=40.0)
+        if entry:
+            seen.add(entry["renderer"])
+            assert entry["renderer"] != "hero-title-behind", entry
+            assert entry["params"].get("clear_crown") is True
+    assert seen
+
+
+def test_clear_crown_title_sits_entirely_above_head():
+    from src.lib.render.hyperframes.templates import (
+        CAP_SHARE, behind_head_top,
+    )
+
+    head_top = 620
+    size = 150
+    line = size * 0.94
+    top = behind_head_top(
+        {"head_top": head_top, "clear_crown": True},
+        size, rows=2, fallback=300, bite=0.0, gap=12.0)
+    cap = size * CAP_SHARE
+    bottom = top + cap + line
+    assert bottom <= head_top
+
+
 def test_0042_cta_has_no_subscribe_button():
     import json as _json
 

@@ -143,6 +143,35 @@ def test_default_caption_is_gradient_fill(cfg):
         assert cfg.brand(f"subtitles.{gesture}"), f"жест {gesture} пропал из брендбука"
 
 
+def test_consecutive_clip_wipe_groups_hard_kill_previous(cfg):
+    """A new phrase must opacity-0 the previous group so glyphs cannot stack."""
+    from src.lib.render.hyperframes.captions import build_clip_wipe
+
+    plan = {
+        "subtitles": [
+            {"display": "один", "start": 1.0, "end": 1.4, "block_id": "b1"},
+            {"display": "два", "start": 1.5, "end": 1.9, "block_id": "b1"},
+            {"display": "три", "start": 3.0, "end": 3.4, "block_id": "b2"},
+            {"display": "четыре", "start": 3.5, "end": 3.9, "block_id": "b2"},
+        ],
+        "subtitle_style": {},
+    }
+    nodes, tweens, count = build_clip_wipe(plan, cfg.brandbook, duration=10.0)
+    assert count == 4
+    assert len(nodes) == 2
+    assert 'id="cw-00-g"' in nodes[0]
+    assert 'id="cw-01-g"' in nodes[1]
+    blob = "\n".join(tweens)
+    # Previous group is killed at the next phrase start (3.0).
+    assert 'tl.set("#cw-00-g",{opacity:0},3)' in blob.replace(" ", "")
+    # Each group is also killed at its own end — no uncleared persistent node.
+    assert 'tl.set("#cw-00-g",{opacity:0}' in blob
+    assert 'tl.set("#cw-01-g",{opacity:0}' in blob
+    assert {n for n in re.findall(r'id="(cw-\d+-g)"', "\n".join(nodes))} == {
+        "cw-00-g", "cw-01-g",
+    }
+
+
 def test_single_word_clip_wipe_is_centered(cfg):
     """A one-word leftover must still sit on the full safe-width, centered."""
     from src.lib.render.hyperframes.captions import build_clip_wipe, clip_wipe_params

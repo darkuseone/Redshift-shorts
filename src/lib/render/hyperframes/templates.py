@@ -6896,13 +6896,17 @@ def face_band(params: dict) -> tuple[int, int] | None:
 
 
 def behind_head_top(params: dict, size: int, *, rows: int = 1,
-                    fallback: int) -> int:
+                    fallback: int, bite: float | None = None,
+                    gap: float = 0.0) -> int:
     """Верх блока, стоящего за головой, от измеренной макушки.
 
     Раньше высота была константой пресета, а голова — там, где придётся.
     На новом аватаре она пришлась слову ровно поперёк. Теперь блок садится
     так, чтобы голова перекрывала только низ последней строки — то самое
     перекрытие, которое и даёт глубину, — а буквы оставались читаемы.
+
+    Late-beat / ``clear_crown``: bite is zero and the whole block sits above
+    the crown. Keep bite only on early hook beats.
 
     Без измерения (нет альфы) остаётся прежнее число пресета: догадка хуже
     измерения, но лучше, чем ничего.
@@ -6912,11 +6916,16 @@ def behind_head_top(params: dict, size: int, *, rows: int = 1,
         _log.warning(
             "behind_head_top: head_top missing, using fallback=%s", fallback)
         return fallback
+    if bite is None:
+        bite = 0.0 if params.get("clear_crown") else BEHIND_HEAD_BITE
     # Прописные без выносных занимают примерно 0.72 кегля; ниже базовой линии
     # у них пусто, и перекрывать надо именно нарисованное.
     cap = size * CAP_SHARE
     line = size * float(params.get("line_height", 0.94))
-    bottom = float(head_top) + cap * BEHIND_HEAD_BITE
+    if float(bite) <= 0:
+        return max(60, int(
+            float(head_top) - cap - line * (rows - 1) - float(gap)))
+    bottom = float(head_top) + cap * float(bite)
     top = max(60, int(bottom - cap - line * (rows - 1)))
     # Multi-line: the first row must sit entirely above the crown. Bite is
     # allowed only on the last row (a one-row block is that last row).
@@ -6940,7 +6949,10 @@ def hero_headline(ctx: "TemplateCtx") -> Piece:
     # Кегль подбирается измерением: заголовок идёт в одну строку через весь
     # кадр, и длинное слово при фиксированном кегле обрезалось бы краем.
     size = fit_size(word, 1080 - 2 * 50, int(ctx.params.get("size", 168)), role="subtitle")
-    top = behind_head_top(ctx.params, size, fallback=int(ctx.params.get("top", 190)))
+    clear = bool(ctx.params.get("clear_crown"))
+    top = behind_head_top(
+        ctx.params, size, fallback=int(ctx.params.get("top", 190)),
+        bite=0.0 if clear else None, gap=12.0 if clear else 0.0)
 
     kicker_html = (f'<span class="hh-kicker">{_esc(kicker)}</span>' if kicker else "")
     # Слово оседает сверху и потом еле заметно едет: после входа кадр не имеет
@@ -7686,13 +7698,16 @@ def hero_title_behind(ctx: "TemplateCtx") -> Piece:
     node_id = f"tb-{ctx.index:02d}"
     size = fit_size(widest((head, tail)).upper(), WORK_AREA_W,
                     int(ctx.params.get("size", 150)), role="display")
-    # Две строки: перекрывать голова обязана низ второй, поэтому от макушки
-    # отсчитывается блок целиком. First line never enters the head band.
-    top = behind_head_top(ctx.params, size, rows=2,
-                          fallback=int(ctx.params.get("top", 300)))
+    # Две строки: на хуке голова перекрывает низ второй — это глубина.
+    # Late beat / clear_crown: весь блок выше макушки, bite = 0.
+    clear = bool(ctx.params.get("clear_crown"))
+    top = behind_head_top(
+        ctx.params, size, rows=2,
+        fallback=int(ctx.params.get("top", 300)),
+        bite=0.0 if clear else None, gap=12.0 if clear else 0.0)
     cap = size * CAP_SHARE
     head_top = ctx.params.get("head_top")
-    if head_top and top + cap > float(head_top):
+    if not clear and head_top and top + cap > float(head_top):
         top = max(60, int(float(head_top) - cap))
 
     tweens = enter_and_drift(f"#{node_id} .tb-head", ctx.start, ctx.duration,

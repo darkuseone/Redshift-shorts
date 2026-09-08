@@ -2073,6 +2073,23 @@ def test_behind_head_devices_sit_on_the_measured_crown():
     assert 'style="top:190px' in plain
 
 
+def test_clear_crown_title_behind_sits_above_the_head():
+    from src.lib.render.hyperframes.templates import CAP_SHARE
+
+    head_top = 620
+    params = {"head": "КВАНТОВЫЙ", "tail": "ЧИП", "head_top": head_top,
+              "clear_crown": True}
+    node = render_hero("hero-title-behind",
+                       _hero_ctx("hero-title-behind", params=params)).nodes[0]
+    top = int(re.search(r'class="clip hero-title-behind" style="top:(\d+)px',
+                        node).group(1))
+    size = int(re.search(r"font-size:(\d+)px", node).group(1))
+    cap = size * 0.72
+    line = size * 0.94
+    assert top + cap + line <= head_top + 1e-6
+    assert cap == size * CAP_SHARE
+
+
 def test_log_marks_the_accent_word_and_never_shows_a_bare_dash():
     """Список копится чёрным, и одно слово в нём горит — акцентное.
 

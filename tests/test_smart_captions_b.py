@@ -68,7 +68,7 @@ def test_orphan_two_letter_chips_dropped_after_glue():
 
 
 def test_punch_family_mute_keeps_unrelated_words():
-    # Phrase-level mute: 1 punch-family word of 6 stays with the phrase.
+    # Sparse punch: drop the overlapping word, keep the rest of the phrase.
     words = [
         {"display": w, "start": 18.0 + i * 0.28, "end": 18.22 + i * 0.28,
          "block_id": "b4", "emphasis": False}
@@ -81,7 +81,7 @@ def test_punch_family_mute_keeps_unrelated_words():
         mute_windows=[],
     )
     assert [c["display"] for c in cues] == [
-        "Чем", "больше", "кубитов", "связке", "падает", "вселенная"]
+        "больше", "кубитов", "связке", "падает", "вселенная"]
 
 
 def _six_words():
@@ -95,15 +95,59 @@ def _six_words():
 
 def test_majority_mute_drops_the_whole_phrase():
     words = _six_words()
-    # Middle three words sit under the card (indices 1–3).
+    # Middle three words sit under the card (indices 1–3). 3/6 → empty.
     cues = _build_subtitle_cues(
         words, punch_windows=[], mute_windows=[(18.27, 19.10)])
     assert cues == []
 
 
-def test_minority_mute_keeps_the_whole_phrase():
+def test_sparse_mute_drops_only_muted_words():
     words = _six_words()
+    # 1/6 muted → five words remain (not the whole phrase, not empty).
     cues = _build_subtitle_cues(
         words, punch_windows=[], mute_windows=[(18.27, 18.54)])
     assert [c["display"] for c in cues] == [
-        "Чем", "больше", "кубитов", "связке", "падает", "вселенная"]
+        "Чем", "кубитов", "связке", "падает", "вселенная"]
+
+
+def test_fullscreen_mute_is_capped_not_whole_shot():
+    from src.p11_assemble.assemble import FS_MUTE_SEC, _caption_mute_windows
+
+    shots = [{"kind": "fullscreen_text", "start": 0.0, "end": 8.0,
+              "content": "НАОБОРОТ", "params": {}}]
+    windows = _caption_mute_windows(shots, [])
+    assert windows == [(0.0, FS_MUTE_SEC)]
+
+
+def test_title_behind_does_not_open_a_mute_window():
+    from src.p11_assemble.assemble import _caption_mute_windows
+
+    shots = [{
+        "kind": "avatar", "start": 32.0, "end": 36.0,
+        "hero": {"renderer": "hero-title-behind", "carries_line": True,
+                 "covers_frame": False,
+                 "params": {"head": "КВАНТОВЫЙ", "tail": "ЧИП"}},
+    }]
+    assert _caption_mute_windows(shots, []) == []
+
+
+def test_slam_hero_still_mutes_its_own_window():
+    from src.p11_assemble.assemble import _caption_mute_windows
+
+    shots = [{
+        "kind": "avatar", "start": 4.0, "end": 8.0,
+        "hero": {"renderer": "hero-slam", "carries_line": True,
+                 "covers_frame": True, "duration": 1.8},
+    }]
+    assert _caption_mute_windows(shots, []) == [(4.0, 5.8)]
+
+
+def test_top_note_pin_does_not_mute_captions():
+    from src.p11_assemble.assemble import _caption_mute_windows
+
+    overlays = [{
+        "type": "plaque", "start": 2.0, "end": 4.0,
+        "template": "lower-thirds/note-pin",
+        "params": {"text": "105 КУБИТОВ", "position": "top"},
+    }]
+    assert _caption_mute_windows([], overlays) == []
