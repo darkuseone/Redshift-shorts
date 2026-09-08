@@ -92,7 +92,9 @@
         "dark"
       ],
       "renderer": "fullscreen_text",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-08-18",
       "needs": [],
       "frequency": "variant"
@@ -5171,7 +5173,8 @@
       "renderer": "hero-split",
       "last_used_in": [
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-08-18",
       "needs": [
@@ -5199,7 +5202,8 @@
       ],
       "renderer": "hero-knockout",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0042"
       ],
       "added": "2026-08-18",
       "needs": [
@@ -5414,7 +5418,8 @@
       ],
       "renderer": "hero-script-stack",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0042"
       ],
       "added": "2026-08-18",
       "needs": [],
@@ -5544,7 +5549,9 @@
         "slam"
       ],
       "renderer": "hero-slam",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-08-18",
       "needs": [
         "negation",
