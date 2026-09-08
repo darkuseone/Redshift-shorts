@@ -3,8 +3,7 @@
     "prefer": [
       "pexels_v25935014",
       "pexels_v30775057",
-      "pexels_v18069803",
-      "pexels_v20349219"
+      "pexels_v18069803"
     ],
     "deny": [
       "pexels_v17356514",
@@ -18,10 +17,14 @@
       "pexels_v35288383",
       "pixabay_v113383",
       "pexels_v7565432",
+      "pexels_v20349219",
       "nasa_PIA13308",
       "nasa_PIA20602",
       "nasa_PIA20603",
-      "nasa_PIA19142"
-    ]
+      "nasa_PIA19142",
+      "nasa_S74-23458",
+      "nasa_*"
+    ],
+    "same_asset_max_slots": 1
   }
 }

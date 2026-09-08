@@ -57,6 +57,44 @@ def _candidate(slot_index: int, asset_id: str, *, score: float = 0.92) -> dict:
     }
 
 
+def test_default_same_asset_max_slots_is_one():
+    cfg = load_config()
+    assert int(cfg.get("stock.same_asset_max_slots", 2)) == 1
+
+
+def test_same_asset_capped_at_one_slot(monkeypatch):
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", True)
+    cfg.set("stock.same_asset_max_slots", 1)
+    cfg.set("stock.repeat_score_penalty", 0.12)
+
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+
+    slots = []
+    candidates = []
+    for i in range(5):
+        slots.append({
+            "index": i, "kind": "footage", "role": "develop",
+            "asset_role": "broll", "needs_asset": True,
+            "visual_intent": "quantum laboratory cryostat",
+            "start": float(i * 2), "end": float(i * 2 + 2),
+        })
+        candidates.append(_candidate(i, "sparkle_clip", score=0.95))
+        candidates.append(_candidate(i, f"other_{i}", score=0.80))
+
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "repeat_cap_test", "candidates": candidates},
+        {"video_id": "repeat_cap_test", "category": "ai", "slots": slots},
+    )
+    run_step(ctx)
+    result = ctx.written["accepted_assets.json"]
+    accepted_ids = [entry["asset_id"] for entry in result["accepted"].values()]
+    assert accepted_ids.count("sparkle_clip") <= 1
+
+
 def test_same_asset_capped_at_two_slots(monkeypatch):
     from src.p8_broll_judge import judge as J
 

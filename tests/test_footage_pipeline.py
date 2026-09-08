@@ -497,6 +497,13 @@ def test_thematic_reject_rover_for_quantum_not_space():
     assert thematic_reject_reason(hay, category="space", intent_kind="space") is None
 
 
+def test_thematic_reject_nasa_solar_still_for_quantum_not_space():
+    hay = "nasa_S74-23458 https://images.nasa.gov/details-S74-23458 sun solar flare"
+    assert thematic_reject_reason(hay, category="ai", intent_kind="lab")
+    assert thematic_reject_reason(hay, category="tech")
+    assert thematic_reject_reason(hay, category="space", intent_kind="space") is None
+
+
 # --- шаг 3: триггеры арбитража (§7.3) ----------------------------------------
 
 def _verdict(score, disagreement=0.0):

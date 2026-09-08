@@ -26,7 +26,9 @@ from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import classify_intent, thematic_reject_reason
-from ..p7_broll_search.search import _load_footage_pins
+from ..p7_broll_search.search import (
+    _footage_pin_entry, _load_footage_pins, pin_id_denied,
+)
 
 COHERENCE_MIN = 0.15
 
@@ -82,7 +84,7 @@ def _engine_gate_reason(candidate: dict[str, Any], *, pin_deny: set[str],
                         index: FootageIndex) -> str | None:
     """Blocking gates that do not need a live judge."""
     asset_id = str(candidate.get("asset_id") or "")
-    if asset_id and asset_id in pin_deny:
+    if pin_id_denied(asset_id, pin_deny):
         return f"pin_deny: {asset_id}"
     indexed = index.by_id(asset_id) if asset_id else None
     if candidate.get("quarantined") or (indexed is not None and indexed.quarantined):
@@ -139,6 +141,7 @@ def run_step(ctx) -> dict[str, Any]:
         _log.warning("vision.skip_live: без live API — движковые гейты блокирующие")
     index = FootageIndex.load(cfg)
     pin_deny, _pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
+    pin_entry = _footage_pin_entry(cfg, str(plan.get("video_id") or ""))
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
     by_slot: dict[int, list[dict[str, Any]]] = {}
@@ -150,7 +153,9 @@ def run_step(ctx) -> dict[str, Any]:
     judged: list[dict[str, Any]] = []
     accepted: dict[int, dict[str, Any]] = {}
     accepted_counts: dict[str, int] = {}
-    repeat_max = int(cfg.get("stock.same_asset_max_slots", 2))
+    repeat_max = int(cfg.get("stock.same_asset_max_slots", 1))
+    if pin_entry.get("same_asset_max_slots") is not None:
+        repeat_max = int(pin_entry["same_asset_max_slots"])
     repeat_penalty = float(cfg.get("stock.repeat_score_penalty", 0.12))
     arbiter_calls = 0
     reused_scores = 0

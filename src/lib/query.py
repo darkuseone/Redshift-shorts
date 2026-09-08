@@ -116,6 +116,15 @@ SCI_ROVER_MARKERS: tuple[str, ...] = (
     "mars science laboratory", "curiosity", "rover", " msl", "msl ",
 )
 
+# NASA planetary/solar archives won 14s of a quantum-chip cut (nasa_S74-23458).
+SCI_NASA_ARCHIVE_MARKERS: tuple[str, ...] = (
+    "nasa_", "images.nasa.gov",
+)
+SCI_PLANETARY_MARKERS: tuple[str, ...] = (
+    "lunar", "moon surface", "solar flare", "sun surface",
+    "mars surface", "planetary",
+)
+
 
 def is_sci_topic(*, category: str = "", intent_kind: str = "") -> bool:
     cat = (category or "").strip().lower()
@@ -153,6 +162,12 @@ def thematic_reject_reason(
         for marker in SCI_ROVER_MARKERS:
             if marker in blob:
                 return f"sci off-theme rover: «{marker.strip()}»"
+        for marker in SCI_NASA_ARCHIVE_MARKERS:
+            if marker in blob:
+                return f"sci off-theme nasa archive: «{marker}»"
+        for marker in SCI_PLANETARY_MARKERS:
+            if marker in blob:
+                return f"sci off-theme planetary: «{marker}»"
     return None
 
 

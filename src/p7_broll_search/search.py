@@ -100,8 +100,11 @@ def _license_mode(source: str, routing: dict[str, Any]) -> str:
 
 def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
                    routing: dict[str, Any] | None = None,
-                   category: str = "", intent_kind: str = "") -> str | None:
+                   category: str = "", intent_kind: str = "",
+                   pin_deny: set[str] | None = None) -> str | None:
     """Шаг 1 §7.3 — дешёвая отбраковка без vision. Возвращает причину или None."""
+    if pin_id_denied(getattr(candidate, "id", "") or "", pin_deny or set()):
+        return f"pin_deny: {candidate.id}"
     if (not candidate.license_confirmed
             and _license_mode(candidate.source, routing or {}) != "owner_decision"):
         return "лицензия не подтверждена (§7.2.7)"
@@ -123,6 +126,8 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
     # Sci light guardrail: URL/title/tags must not look like drug/hose junk or
     # known off-theme mis-picks (darkroom-as-cryostat, race-day-as-circuit).
     hay = " ".join([
+        candidate.id or "",
+        candidate.source or "",
         candidate.page_url or "",
         candidate.attribution or "",
         candidate.query or "",
@@ -183,8 +188,8 @@ def _cache_key(candidate: StockCandidate) -> str:
 
 
 
-def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
-    """Return (deny_ids, prefer_ids) for this video from config/footage_pins.json."""
+def _footage_pin_entry(cfg, video_id: str) -> dict[str, Any]:
+    """Raw per-video pin object from config/footage_pins.json, or {}."""
     from pathlib import Path as _P
     try:
         path = cfg.path("paths.footage_pins", "config/footage_pins.json")
@@ -193,14 +198,32 @@ def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
     if not _P(path).exists():
         path = _P("config/footage_pins.json")
     if not _P(path).exists():
-        return set(), []
-    path = _P(path)
+        return {}
     try:
         import json as _json
-        data = _json.loads(path.read_text(encoding="utf-8"))
+        data = _json.loads(_P(path).read_text(encoding="utf-8"))
     except Exception:
-        return set(), []
+        return {}
     entry = data.get(video_id) or {}
+    return entry if isinstance(entry, dict) else {}
+
+
+def pin_id_denied(asset_id: str, deny: set[str]) -> bool:
+    """True when the id is listed or matches a deny prefix token (``nasa_*``)."""
+    aid = str(asset_id or "")
+    if not aid or not deny:
+        return False
+    if aid in deny:
+        return True
+    for token in deny:
+        if token.endswith("*") and len(token) > 1 and aid.startswith(token[:-1]):
+            return True
+    return False
+
+
+def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
+    """Return (deny_ids, prefer_ids) for this video from config/footage_pins.json."""
+    entry = _footage_pin_entry(cfg, video_id)
     deny = {str(x) for x in (entry.get("deny") or []) if x}
     prefer = [str(x) for x in (entry.get("prefer") or []) if x]
     return deny, prefer
@@ -272,7 +295,7 @@ def run_step(ctx) -> dict[str, Any]:
                              allow_recent=frozen)
         # Pins: hard deny + prefer boost (do not replace Markus-approved clips).
         if pin_deny:
-            local = [r for r in local if r.id not in pin_deny]
+            local = [r for r in local if not pin_id_denied(r.id, pin_deny)]
         if pin_prefer:
             prefer_set = set(pin_prefer)
             local = sorted(local, key=lambda r: (0 if r.id in prefer_set else 1, -r.score))
@@ -473,7 +496,7 @@ def run_step(ctx) -> dict[str, Any]:
                 reason = _stage1_reject(
                     candidate, cfg, float(slot["duration"]), routing=routing,
                     category=str(plan.get("category") or ""),
-                    intent_kind=intent_kind)
+                    intent_kind=intent_kind, pin_deny=pin_deny)
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": query})
@@ -514,7 +537,7 @@ def run_step(ctx) -> dict[str, Any]:
                 reason = _stage1_reject(
                     candidate, cfg, float(slot["duration"]), routing=routing,
                     category=str(plan.get("category") or ""),
-                    intent_kind=intent_kind)
+                    intent_kind=intent_kind, pin_deny=pin_deny)
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": article["url"]})
