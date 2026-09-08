@@ -184,23 +184,18 @@ class TestFourteenEmptySlotsAreNotFourteenCaptions:
         fs = rungs["fullscreen"]
         assert fs <= 4, f"полноэкранного текста {fs}, потолок брендбука 4: {rungs}"
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "ступеней сегодня три, а не шесть: арифметика ТЗ сходится только когда "
-        "все четыре приёмные ступени берут свой потолок (4+2+3+3=12 при 14 "
-        "пустых слотах и 4 надписях). Диаграмма упирается в §8.2 — "
-        "`_stats_from_text` видит только арабские цифры, а сценарии пишут числа "
-        "словами (Q2.5); параллакс упирается в §8.3 — `render_motion` "
-        "вызывается единственной строкой `\"kenburns\"` (Q2.6). Замер на живом "
-        "0042 при нулевом стоке: из двадцати слотов ровно один проходит и окно, "
-        "и признак ступени «источник». Снять маркер обязан Q2."))
     def test_bare_plates_stay_within_two(self, built):
+        """Маркер xfail снят в Q2: арифметика ТЗ сошлась, когда ступеней стало
+        четыре. Диаграмма ожила в Q2.5 (числительные словами), параллакс — в
+        Q2.6 (диспатч `render_motion` и свой задний слой)."""
         rungs = _rungs(built)
         assert rungs["plate"] <= 2, f"голых плит {rungs['plate']}, потолок 2: {rungs}"
 
     def test_at_least_six_frames_are_closed_by_a_device(self, built):
-        """Ступени 1-3 — то, ради чего лестница и появилась."""
+        """Четыре приёмные ступени — то, ради чего лестница и появилась."""
         rungs = _rungs(built)
-        devices = rungs["card"] + rungs["dataviz"] + rungs["source"]
+        devices = (rungs["card"] + rungs["dataviz"] + rungs["source"]
+                   + rungs["parallax"])
         assert devices >= 6, f"приёмами закрыто лишь {devices} кадров из 14: {rungs}"
 
     def test_a_device_frame_carries_the_device_it_claims(self, built):

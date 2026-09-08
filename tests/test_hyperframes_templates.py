@@ -7536,3 +7536,58 @@ class TestTheMediaTagFollowsTheFileNotTheHabit:
                                source)
         assert not hardcoded, (
             f"{len(hardcoded)} приёмов снова пишут <video> в обход _media_node")
+
+
+class TestParallaxIsFinallyReachable:
+    """Приём числился в каталоге и не работал ни разу (§8.3, N-5).
+
+    Две поломки подряд. `MOTION` знал `kenburns` и `parallax` с самого начала,
+    но `render_motion` вызывался ровно один раз и со строкой `"kenburns"` —
+    ветка параллакса была недостижима из любого плана. Даже при диспатче
+    `r_parallax` целился в `#behind-NN`, а такой узел создаётся только для
+    слова за головой ведущего на альфа-слоте: на кадре без ведущего твин
+    уходил в пустоту, и GSAP молча ничего не делал.
+    """
+
+    def _ctx(self, **params):
+        return TemplateCtx(index=7, start=2.0, duration=3.0, target="shot-07",
+                           track=1, params=params)
+
+    def test_the_motion_registry_still_knows_both(self):
+        assert {"kenburns", "parallax"} <= set(MOTION)
+
+    def test_parallax_moves_its_own_back_layer(self):
+        tweens = "".join(render_motion("parallax",
+                                       self._ctx(back_id="par-07")).tweens)
+        assert "#par-07" in tweens
+        assert "#behind-07" not in tweens, "приём снова целится в чужой узел"
+
+    def test_both_layers_actually_move(self):
+        """Один слой без второго — это не глубина, а просто наезд."""
+        tweens = render_motion("parallax", self._ctx(back_id="par-07")).tweens
+        assert len(tweens) == 2
+        assert any("#shot-07" in t for t in tweens)
+        assert any("#par-07" in t for t in tweens)
+
+    def test_the_layers_move_in_opposite_directions(self):
+        """Слои расходятся: вместе они дали бы обычный сдвиг кадра."""
+        near, far = render_motion("parallax", self._ctx(back_id="par-07")).tweens
+        assert "y:-" in near.split("},{")[0] or "y:-" in far.split("},{")[0]
+
+    def test_the_back_layer_is_scaled_up(self):
+        """Задний слой крупнее: иначе на сдвиге покажется край кадра."""
+        tweens = "".join(render_motion("parallax",
+                                       self._ctx(back_id="par-07")).tweens)
+        assert "scale:1.12" in tweens
+
+    def test_the_dispatch_is_no_longer_a_literal(self):
+        source = (Path(__file__).resolve().parents[1] / "src" / "lib" / "render"
+                  / "hyperframes" / "composition.py").read_text(encoding="utf-8")
+        assert 'render_motion("kenburns"' not in source, \
+            "диспатч снова прибит литералом"
+        assert "shot.get(\"motion\")" in source
+
+    def test_no_category_is_recorded_as_unreachable(self):
+        cfg = json.loads((Path(__file__).resolve().parents[1] / "config"
+                          / "template_scenarios.json").read_text(encoding="utf-8"))
+        assert cfg["unreachable_categories"] == []

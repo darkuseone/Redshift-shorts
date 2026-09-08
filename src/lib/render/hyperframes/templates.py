@@ -2035,16 +2035,25 @@ def r_kenburns(ctx: "TemplateCtx") -> Piece:
 
 
 def r_parallax(ctx: "TemplateCtx") -> Piece:
-    """Два слоя расходятся с разной скоростью — глубина без 3D."""
+    """Два слоя расходятся с разной скоростью — глубина без 3D.
+
+    Задний слой берётся из ``params["back_id"]``, а не из ``#behind-NN``.
+    Старый адрес указывал на узел, который создаётся только для слова за
+    головой ведущего на альфа-слоте: на кадре без ведущего твин уходил в
+    пустоту, и GSAP молча ничего не делал. Приём числился в каталоге и не
+    работал ни разу.
+    """
     shift_pct = float(ctx.params.get("shift_pct", 0.04))
     near = int(1920 * shift_pct)
     far = int(near * 0.35)
+    back = str(ctx.params.get("back_id") or f"behind-{ctx.index:02d}")
     return Piece(tweens=[
         f'tl.fromTo("#{ctx.target}",{{scale:1.06,y:{-far}}},'
         f'{{y:{far},duration:{_num(ctx.duration)},ease:"none",{HOLD}}},'
         f'{_num(ctx.start)});',
-        f'tl.fromTo("#behind-{ctx.index:02d}",{{y:{near}}},'
-        f'{{y:{-near},duration:{_num(ctx.duration)},ease:"none"}},{_num(ctx.start)});',
+        f'tl.fromTo("#{back}",{{scale:1.12,y:{near}}},'
+        f'{{y:{-near},duration:{_num(ctx.duration)},ease:"none",{HOLD}}},'
+        f'{_num(ctx.start)});',
     ])
 
 

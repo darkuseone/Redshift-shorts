@@ -143,6 +143,10 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         "width:var(--frame-w);height:var(--frame-h);object-fit:cover;"
         "will-change:transform}"
         f".shot-bg{{position:absolute;inset:0;z-index:{Z_SHOT};overflow:hidden}}"
+        # Задний слой параллакса: тот же кадр крупнее и слоем ниже основного.
+        # Без своего z-index он встал бы вровень с ним и съел бы глубину, ради
+        # которой приём и существует.
+        f".par-back{{z-index:{Z_SHOT - 1}}}"
     )
 
     # --- аватар ---------------------------------------------------------

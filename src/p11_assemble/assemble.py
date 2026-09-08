@@ -3172,7 +3172,7 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                       variant: str, seed: int, recent_videos: list[str],
                       used_templates: list[str], brand_icons,
                       words: list[dict[str, Any]], plate_src: dict[str, Any] | None,
-                      traits: set[str],
+                      traits: set[str], bg_file: str | None = None,
                       ) -> tuple[str, dict[str, Any] | None, dict[str, Any] | None]:
     """Чем закрыть кадр, которому не досталось материала (§7.2).
 
@@ -3248,6 +3248,23 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                 "traits": sorted(traits),
                 "why": "лестница §7.2, ступень 3: у блока цитата и есть источник",
             }
+
+    # 4. Параллакс-плита: кадр расходится на два слоя, глубина без 3D.
+    #    Ступень идёт перед карточкой по той же причине, что и остальные: ей
+    #    нужен кадр под приём (`plate_src`) и слот не короче полутора секунд,
+    #    а карточке хватает любого блока с акцентным словом.
+    # Кадр под приём: пин или подложка, которую этот шот и так покажет. Оба
+    # варианта — настоящая картинка из библиотеки; сгенерированную сюда не
+    # берём, у неё своя мерка доли AI.
+    still = (plate_src and not plate_src.get("ai_generated")) or bool(bg_file)
+    if still and float(slot["duration"]) >= 1.5 and budget.allows("parallax"):
+        budget.take("parallax")
+        return "parallax", None, {
+            "type": "motion", "start": float(slot["start"]),
+            "end": float(slot["end"]), "renderer": "parallax",
+            "shift_pct": 0.04,
+            "why": "лестница §7.2, ступень 4: есть кадр под приём и слот ≥ 1.5 с",
+        }
 
     # 1. Карточка-ключ — акцентное слово блока, по возможности с медиа. Идёт
     #    последней среди приёмов: подходит любому блоку, поэтому раньше она
@@ -3502,7 +3519,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                        if float(w["end"]) > float(slot["start"])
                        and float(w["start"]) < float(slot["end"])],
                 plate_src=_plate_source(slot, slots, prepared, assets),
-                traits=gap_traits)
+                traits=gap_traits, bg_file=bg_file)
             if rung:
                 entry.update({
                     "kind": "footage",
@@ -3514,7 +3531,13 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 })
                 if hero_dev:
                     entry["hero"] = hero_dev
-                if overlay_dev:
+                if overlay_dev and overlay_dev.get("type") == "motion":
+                    # Движение кадра живёт на самом шоте, а не в оверлеях:
+                    # композитор читает `shot["motion"]`, и оверлеем приём
+                    # доехал бы до плана и не доехал бы до кадра.
+                    entry["motion"] = {k: v for k, v in overlay_dev.items()
+                                       if k not in ("type", "start", "end")}
+                elif overlay_dev:
                     ladder_overlays.append(overlay_dev)
                 shots.append(entry)
                 continue

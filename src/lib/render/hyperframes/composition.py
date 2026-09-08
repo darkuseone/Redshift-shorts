@@ -41,7 +41,7 @@ from .templates import (
     OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens,
     ensure_opacity_exit_hard_kills, fit_size,
     fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
-    render_motion, render_overlay, render_transition, text_width,
+    render_motion, render_overlay, render_transition, text_width, MOTION,
 )
 
 TRACK_STAGE = 0
@@ -67,6 +67,9 @@ TRACK_FS_BG = 15
 # Графика брендбука: свой трек, иначе она встаёт на трек шота и пересекается
 # с ним по времени — движок считает это конфликтом клипов.
 TRACK_MARKS = 16
+# Задний слой параллакса. Свой трек по той же причине, что и фон под текстом:
+# основной кадр уже занимает трек шота, а соседние встык — соседние шоты.
+TRACK_PARALLAX_BACK = 17
 # Фразы camera-follow стыкуются встык — два трека, как шоты. Не 13/14:
 # там герой. 18/19 не пересекаются со звуком (20).
 assert TRACK_CAPTION_EVEN == 18 and TRACK_CAPTION_ODD == 19
@@ -373,8 +376,8 @@ class CompositionBuilder:
                 if src:
                     nodes.append(self._media_node(node_id, src, timing, css="shot",
                                                   media_start=shot.get("avatar_offset_sec")))
-                    self._add_kenburns(node_id, shot, start + tr_sec,
-                                       max(0.1, duration - tr_sec))
+                    nodes += self._add_motion(node_id, shot, start + tr_sec,
+                                              max(0.1, duration - tr_sec))
                 else:
                     nodes.append(self._scene_backdrop(node_id, timing,
                                                       start=start, duration=duration))
@@ -451,17 +454,48 @@ class CompositionBuilder:
         return piece
 
 
-    def _add_kenburns(self, node_id: str, shot: dict[str, Any],
-                      start: float, duration: float) -> None:
-        kb = shot.get("kenburns")
-        if not kb:
-            return
+    def _add_motion(self, node_id: str, shot: dict[str, Any],
+                    start: float, duration: float) -> list[str]:
+        """Движение кадра: имя приёма — из плана, а не литералом (§8.3).
+
+        `MOTION` знал `kenburns` и `parallax` с самого начала, но
+        `render_motion` вызывался ровно один раз и со строкой `"kenburns"` —
+        ветка параллакса была недостижима из любого плана. Вторая поломка
+        лежала следом: `r_parallax` целится в `#behind-NN`, а такой узел
+        создаётся только для `text_behind_head` на альфа-слотах аватара, и на
+        кадре без ведущего твин уходил в пустоту — GSAP молча ничего не делал.
+
+        Возвращает узлы, которые приёму нужны собственные: у параллакса это
+        задний слой под основным клипом.
+        """
+        spec = shot.get("motion") or shot.get("kenburns")
+        if not spec:
+            return []
+        name = str((shot.get("motion") or {}).get("renderer") or "kenburns")
+        if name not in MOTION:
+            name = "kenburns"
+        index = int(shot["index"])
+        nodes: list[str] = []
+        params = dict(spec)
+        if name == "parallax":
+            # Свой задний узел: тот же кадр, крупнее, слоем ниже основного.
+            src = self._asset(shot.get("file"))
+            if not src:
+                name = "kenburns"
+            else:
+                back_id = f"par-{index:02d}"
+                nodes.append(self._media_node(
+                    back_id, src,
+                    _timing(start, start + duration, TRACK_PARALLAX_BACK),
+                    css="shot par-back"))
+                params["back_id"] = back_id
         # fromTo, а не CSS-transform + tween: контракт запрещает задавать
         # стартовое значение в CSS, когда его же тянет GSAP.
-        piece = render_motion("kenburns", TemplateCtx(
-            index=int(shot["index"]), start=start, duration=duration,
-            target=node_id, track=TRACK_SHOT_EVEN, params=dict(kb)))
+        piece = render_motion(name, TemplateCtx(
+            index=index, start=start, duration=duration,
+            target=node_id, track=TRACK_SHOT_EVEN, params=params))
         self.tweens.extend(piece.tweens)
+        return nodes
 
     @staticmethod
     def _transition_duration(shot: dict[str, Any]) -> float:
