@@ -55,6 +55,11 @@ def test_poisoned_ids_not_returned_by_search():
     assert "nasa_S74-23458" not in found_sun
     found_moon = {r.id for r in idx.search(["moon", "lunar"], limit=50)}
     assert "nasa_as08-14-2506" not in found_moon
+    lava = idx.by_id("pixabay_v144678")
+    assert lava is not None
+    assert lava.quarantined
+    found_lava = {r.id for r in idx.search(["volcano", "lava", "magma"], limit=50)}
+    assert "pixabay_v144678" not in found_lava
 
 
 def test_pins_file_lists_good_and_deny():
@@ -83,6 +88,7 @@ def test_pins_file_lists_good_and_deny():
     assert "pexels_v34550739" in entry["deny"]
     assert "pexels_v35288383" in entry["deny"]
     assert "pixabay_v113383" in entry["deny"]
+    assert "pixabay_v144678" in entry["deny"]
     assert "pexels_v34912823" not in entry["prefer"]
     assert "pixabay_v113379" not in entry["prefer"]
     assert "pexels_v34550739" not in entry["prefer"]

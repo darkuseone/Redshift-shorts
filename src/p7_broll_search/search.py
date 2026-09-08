@@ -101,7 +101,8 @@ def _license_mode(source: str, routing: dict[str, Any]) -> str:
 def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
                    routing: dict[str, Any] | None = None,
                    category: str = "", intent_kind: str = "",
-                   pin_deny: set[str] | None = None) -> str | None:
+                   pin_deny: set[str] | None = None,
+                   video_id: str = "") -> str | None:
     """Шаг 1 §7.3 — дешёвая отбраковка без vision. Возвращает причину или None."""
     if pin_id_denied(getattr(candidate, "id", "") or "", pin_deny or set()):
         return f"pin_deny: {candidate.id}"
@@ -136,14 +137,15 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
         str((candidate.meta or {}).get("alt") or ""),
     ])
     thematic = thematic_reject_reason(
-        hay, category=category, intent_kind=intent_kind)
+        hay, category=category, intent_kind=intent_kind, video_id=video_id)
     if thematic:
         return thematic
     return None
 
 
 def _local_thematic_reject(record, *, category: str = "",
-                           intent_kind: str = "") -> str | None:
+                           intent_kind: str = "",
+                           video_id: str = "") -> str | None:
     """Same junk guard for footage_index rows (local_cache bypassed stage1)."""
     hay = " ".join([
         getattr(record, "url_origin", "") or "",
@@ -153,7 +155,8 @@ def _local_thematic_reject(record, *, category: str = "",
         str((getattr(record, "extra", None) or {}).get("judged_intent") or ""),
         getattr(record, "id", "") or "",
     ])
-    return thematic_reject_reason(hay, category=category, intent_kind=intent_kind)
+    return thematic_reject_reason(
+        hay, category=category, intent_kind=intent_kind, video_id=video_id)
 
 
 def _article_for(slot: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any] | None:
@@ -293,10 +296,21 @@ def run_step(ctx) -> dict[str, Any]:
         # --- 1. локальная база (§7.2.1) --------------------------------------
         local = index.search(_tags_for(queries), limit=6, exclude_videos=recent_videos,
                              allow_recent=frozen)
-        # Pins: hard deny + prefer boost (do not replace Markus-approved clips).
+        # Pins: hard deny + inject/boost prefer so P8 can hard-accept them.
         if pin_deny:
             local = [r for r in local if not pin_id_denied(r.id, pin_deny)]
         if pin_prefer:
+            have = {r.id for r in local}
+            for pid in pin_prefer:
+                if pid in have or pin_id_denied(pid, pin_deny):
+                    continue
+                rec = index.by_id(pid)
+                if rec is None or rec.quarantined:
+                    continue
+                if not rec.file:
+                    continue
+                local.append(rec)
+                have.add(pid)
             prefer_set = set(pin_prefer)
             local = sorted(local, key=lambda r: (0 if r.id in prefer_set else 1, -r.score))
         for record in local:
@@ -308,7 +322,8 @@ def run_step(ctx) -> dict[str, Any]:
                 continue
             theme_reason = _local_thematic_reject(
                 record, category=str(plan.get("category") or ""),
-                intent_kind=intent_kind)
+                intent_kind=intent_kind,
+                video_id=str(plan.get("video_id") or ""))
             if theme_reason:
                 stage1_rejected.append({
                     "id": record.id, "source": record.source,
@@ -496,7 +511,8 @@ def run_step(ctx) -> dict[str, Any]:
                 reason = _stage1_reject(
                     candidate, cfg, float(slot["duration"]), routing=routing,
                     category=str(plan.get("category") or ""),
-                    intent_kind=intent_kind, pin_deny=pin_deny)
+                    intent_kind=intent_kind, pin_deny=pin_deny,
+                    video_id=str(plan.get("video_id") or ""))
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": query})
@@ -537,7 +553,8 @@ def run_step(ctx) -> dict[str, Any]:
                 reason = _stage1_reject(
                     candidate, cfg, float(slot["duration"]), routing=routing,
                     category=str(plan.get("category") or ""),
-                    intent_kind=intent_kind, pin_deny=pin_deny)
+                    intent_kind=intent_kind, pin_deny=pin_deny,
+                    video_id=str(plan.get("video_id") or ""))
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": article["url"]})

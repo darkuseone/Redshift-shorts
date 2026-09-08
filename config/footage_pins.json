@@ -23,7 +23,8 @@
       "nasa_PIA20603",
       "nasa_PIA19142",
       "nasa_S74-23458",
-      "nasa_*"
+      "nasa_*",
+      "pixabay_v144678"
     ],
     "same_asset_max_slots": 1
   }

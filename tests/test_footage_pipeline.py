@@ -504,6 +504,14 @@ def test_thematic_reject_nasa_solar_still_for_quantum_not_space():
     assert thematic_reject_reason(hay, category="space", intent_kind="space") is None
 
 
+def test_thematic_reject_volcano_for_0042_not_0047():
+    hay = "pixabay_v144678 volcano lava magma eruption volcanic rock"
+    assert thematic_reject_reason(
+        hay, category="ai", intent_kind="lab", video_id="redshift_0042")
+    assert thematic_reject_reason(
+        hay, category="science", intent_kind="lab", video_id="redshift_0047") is None
+
+
 # --- шаг 3: триггеры арбитража (§7.3) ----------------------------------------
 
 def _verdict(score, disagreement=0.0):

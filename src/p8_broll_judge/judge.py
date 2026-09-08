@@ -80,6 +80,17 @@ def _same_intent(left: str, right: str) -> bool:
     return len(a & b) / len(a | b) >= 0.5
 
 
+def _prefer_rank(asset_id: str, pin_prefer: list[str]) -> int | None:
+    """Index in the pin prefer list, or None if the id is not pinned."""
+    aid = str(asset_id or "")
+    if not aid:
+        return None
+    try:
+        return pin_prefer.index(aid)
+    except ValueError:
+        return None
+
+
 def _engine_gate_reason(candidate: dict[str, Any], *, pin_deny: set[str],
                         index: FootageIndex) -> str | None:
     """Blocking gates that do not need a live judge."""
@@ -140,8 +151,9 @@ def run_step(ctx) -> dict[str, Any]:
     if skip_live:
         _log.warning("vision.skip_live: без live API — движковые гейты блокирующие")
     index = FootageIndex.load(cfg)
-    pin_deny, _pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
-    pin_entry = _footage_pin_entry(cfg, str(plan.get("video_id") or ""))
+    video_id = str(plan.get("video_id") or "")
+    pin_deny, pin_prefer = _load_footage_pins(cfg, video_id)
+    pin_entry = _footage_pin_entry(cfg, video_id)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
     by_slot: dict[int, list[dict[str, Any]]] = {}
@@ -192,6 +204,7 @@ def run_step(ctx) -> dict[str, Any]:
             intent, [candidate.get("query", "") for candidate in by_slot[slot_index]],
             str(plan.get("category") or ""))
         category = str(plan.get("category") or "")
+        gated: list[dict[str, Any]] = []
         for candidate in by_slot[slot_index]:
             theme = thematic_reject_reason(
                 " ".join([
@@ -203,7 +216,7 @@ def run_step(ctx) -> dict[str, Any]:
                     str(candidate.get("asset_id") or ""),
                     str(candidate.get("prior_intent") or ""),
                 ]),
-                category=category, intent_kind=intent_kind)
+                category=category, intent_kind=intent_kind, video_id=video_id)
             if theme:
                 entry = {**candidate, "score": 0.0, "decision": "reject_theme",
                          "reject_reason": theme,
@@ -219,6 +232,63 @@ def run_step(ctx) -> dict[str, Any]:
                                      "reason": gate, "summary": "", "frames": 0}}
                 judged.append(entry)
                 continue
+            gated.append(candidate)
+
+        def _under_repeat_cap(entry: dict[str, Any]) -> bool:
+            aid = str(entry.get("asset_id") or "")
+            if not aid:
+                return True
+            return accepted_counts.get(aid, 0) < repeat_max
+
+        prefer_gated = sorted(
+            (c for c in gated
+             if _prefer_rank(c.get("asset_id"), pin_prefer) is not None),
+            key=lambda c: int(_prefer_rank(c.get("asset_id"), pin_prefer) or 0),
+        )
+        best: dict[str, Any] | None = None
+        for candidate in prefer_gated:
+            if not _under_repeat_cap(candidate):
+                continue
+            palette = palette_verdict(
+                [Path(f) for f in candidate.get("frames", [])], palette_rules)
+            light = (frame_light([Path(f) for f in candidate.get("frames", [])])
+                     if slot.get("asset_role") == "interstitial" else None)
+            if skip_live or candidate.get("prior_score") is not None:
+                verdict_dict = skip_live_verdict(candidate, intent)
+                reused_scores += 1
+            else:
+                verdict_dict = {
+                    "score": float(SEED_SCORE),
+                    "reason": "pin_prefer: принят без vision",
+                    "summary": candidate.get("vision_summary", ""),
+                    "judge": "pin_prefer", "frames": 0,
+                }
+            entry = {**candidate, "verdict": verdict_dict, "intent": intent,
+                     "score": float(verdict_dict["score"]), "palette": palette}
+            if light is not None:
+                entry["light"] = light
+            if light is not None and light["visible_share"] < visible_min:
+                entry["decision"] = "reject_dark"
+                entry["reject_reason"] = (
+                    f"перебивке видно {light['visible_share']:.0%} кадра при пороге "
+                    f"{visible_min:.0%}: зритель увидит субтитр на пустоте")
+                rejected_by_dark += 1
+                judged.append(entry)
+                continue
+            if not palette["passed"]:
+                entry["decision"] = "reject_palette"
+                entry["reject_reason"] = palette["reason"]
+                rejected_by_palette += 1
+                judged.append(entry)
+                continue
+            entry["decision"] = "accept_prefer"
+            entry["fallback_reason"] = "pin_prefer: hard-prefer before scoring"
+            judged.append(entry)
+            best = entry
+            break
+
+        if best is None:
+          for candidate in gated:
             # Материал из локальной базы уже оценивался — платить второй раз
             # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6). Но оценка
             # принадлежит паре «кадр + смысл слота», а не кадру: судья отвечал
@@ -316,21 +386,15 @@ def run_step(ctx) -> dict[str, Any]:
             if entry["decision"] != "reject_palette":
                 scored.append((entry["score"], entry))
 
-        def _repeat_key(pair: tuple[float, dict[str, Any]]) -> float:
+          def _repeat_key(pair: tuple[float, dict[str, Any]]) -> float:
             score, entry = pair
             aid = str(entry.get("asset_id") or "")
             return score - repeat_penalty * accepted_counts.get(aid, 0)
 
-        def _under_repeat_cap(entry: dict[str, Any]) -> bool:
-            aid = str(entry.get("asset_id") or "")
-            if not aid:
-                return True
-            return accepted_counts.get(aid, 0) < repeat_max
-
-        scored.sort(key=_repeat_key, reverse=True)
-        best = next((entry for score, entry in scored
-                     if score >= accept_threshold and _under_repeat_cap(entry)), None)
-        if best is None and scored:
+          scored.sort(key=_repeat_key, reverse=True)
+          best = next((entry for score, entry in scored
+                       if score >= accept_threshold and _under_repeat_cap(entry)), None)
+          if best is None and scored:
             top_score, top_entry = scored[0]
             if skip_live:
                 # Unverified seed/rank must not close a slot when anything

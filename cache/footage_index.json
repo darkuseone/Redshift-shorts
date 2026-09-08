@@ -1947,10 +1947,12 @@
       "width": 1920,
       "height": 1080,
       "file": "pixabay/pixabay_v144678.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pixabay / 31906497",
         "author": "31906497",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "volcano/lava — off-topic for redshift_0042 quantum chip"
       }
     },
     {

@@ -130,6 +130,67 @@ def test_same_asset_capped_at_two_slots(monkeypatch):
     assert len(result["unfilled_slots"]) >= 3
 
 
+def test_pin_prefer_wins_over_higher_scored_other(monkeypatch):
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", True)
+    cfg.set("stock.same_asset_max_slots", 1)
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+
+    slots = [{
+        "index": 0, "kind": "footage", "role": "develop",
+        "asset_role": "broll", "needs_asset": True,
+        "visual_intent": "quantum laboratory cryostat",
+        "start": 0.0, "end": 2.0,
+    }]
+    candidates = [
+        _candidate(0, "random_high_score", score=0.99),
+        _candidate(0, "pexels_v25935014", score=0.62),
+    ]
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "redshift_0042", "candidates": candidates},
+        {"video_id": "redshift_0042", "category": "ai", "slots": slots},
+    )
+    run_step(ctx)
+    result = ctx.written["accepted_assets.json"]
+    accepted = result["accepted"]["0"]
+    assert accepted["asset_id"] == "pexels_v25935014"
+    assert accepted["decision"] == "accept_prefer"
+
+
+def test_volcano_candidate_rejected_for_0042(monkeypatch):
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", True)
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+
+    slots = [{
+        "index": 0, "kind": "footage", "role": "develop",
+        "asset_role": "broll", "needs_asset": True,
+        "visual_intent": "quantum laboratory cryostat",
+        "start": 0.0, "end": 2.0,
+    }]
+    volcano = _candidate(0, "pixabay_v144678", score=0.95)
+    volcano["tags"] = ["volcano", "lava", "magma"]
+    volcano["vision_summary"] = "Close-up of bright lava streams"
+    volcano["url_origin"] = "https://pixabay.com/videos/id-144678/"
+    prefer = _candidate(0, "pexels_v30775057", score=0.70)
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "redshift_0042", "candidates": [volcano, prefer]},
+        {"video_id": "redshift_0042", "category": "ai", "slots": slots},
+    )
+    run_step(ctx)
+    result = ctx.written["accepted_assets.json"]
+    judged = result["judged"]
+    volcano_row = next(j for j in judged if j["asset_id"] == "pixabay_v144678")
+    assert volcano_row["decision"] in ("reject_theme", "reject_gate")
+    assert result["accepted"]["0"]["asset_id"] == "pexels_v30775057"
+
+
 def test_repeat_cap_falls_through_to_other_asset(monkeypatch):
     from src.p8_broll_judge import judge as J
 
