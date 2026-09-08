@@ -216,6 +216,13 @@ def test_text_behind_head_taken_from_block(markup):
     assert ">размер</div>" in markup
 
 
+def test_behind_head_skips_long_karaoke_phrase(plan, assets, brandbook):
+    plan["_blocks"] = [{"id": "b2", "emphasis_word": "логический кубит"}]
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert "behind-head" not in out
+    assert "логический" not in out.lower()
+
+
 # --- мелочи, которые ломают атрибуты -----------------------------------------
 
 @pytest.mark.parametrize("value,expected", [

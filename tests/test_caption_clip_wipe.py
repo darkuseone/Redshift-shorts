@@ -162,14 +162,22 @@ def test_consecutive_clip_wipe_groups_hard_kill_previous(cfg):
     assert 'id="cw-00-g"' in nodes[0]
     assert 'id="cw-01-g"' in nodes[1]
     blob = "\n".join(tweens)
+    compact = blob.replace(" ", "")
     # Previous group is killed at the next phrase start (3.0).
-    assert 'tl.set("#cw-00-g",{opacity:0},3)' in blob.replace(" ", "")
+    assert 'tl.set("#cw-00-g",{opacity:0},3)' in compact
     # Each group is also killed at its own end — no uncleared persistent node.
     assert 'tl.set("#cw-00-g",{opacity:0}' in blob
     assert 'tl.set("#cw-01-g",{opacity:0}' in blob
     assert {n for n in re.findall(r'id="(cw-\d+-g)"', "\n".join(nodes))} == {
         "cw-00-g", "cw-01-g",
     }
+    # Exclusive clip end: first group must not hold through the next start.
+    first_dur = float(re.search(r'id="cw-00"[^>]*data-duration="([\d.]+)"', nodes[0]).group(1))
+    assert first_dur < 2.0
+    # Unique y so even/odd leftovers cannot occupy the same baseline.
+    tops = [int(v) for v in re.findall(r"top:(\d+)px", "\n".join(nodes))]
+    assert len(tops) == 2
+    assert tops[0] != tops[1]
 
 
 def test_single_word_clip_wipe_is_centered(cfg):

@@ -664,14 +664,18 @@ def build_clip_wipe(
         last_wipe = max(float(w["start"]) + params["wipe_sec"] for w in phrase)
         exit_at = max(start, last_wipe, exit_at)
         end = max(exit_at + exit_span, start + 0.05)
-        if end > next_start + 1e-6 and p + 1 < len(phrases):
-            end = next_start
+        if p + 1 < len(phrases):
+            # Exclusive end so even/odd tracks never share a frame at the join
+            # (clip visibility includes both endpoints).
+            end = min(end, next_start - 0.001)
             exit_at = max(start, end - exit_span)
 
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
         clip_id = f"cw-{p:02d}"
         accent_at = _accent_index(phrase)
-        top = int(_phrase_baseline(phrase, baseline) - size / 2)
+        # Unique y so a leftover even-track glyph cannot sit on the odd line.
+        track_y = 0 if p % 2 == 0 else int(size * 0.42)
+        top = int(_phrase_baseline(phrase, baseline) - size / 2 + track_y)
         word_nodes: list[str] = []
         for i, word in enumerate(phrase):
             wid = f"{clip_id}-w{i}"

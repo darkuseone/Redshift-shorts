@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import html
+import re
 from typing import Any
 
 from ..text_rules import subtitle_word
@@ -527,7 +528,12 @@ class CompositionBuilder:
                 continue
             block = by_block.get(shot.get("block_id"), {})
             word = str(block.get("emphasis_word") or "").strip()
-            if not word:
+            # Dynamic karaoke must not go behind the head. Only a single
+            # short keyword is allowed; long phrases clip into syllable scraps.
+            if not word or " " in word:
+                continue
+            letters = re.findall(r"[A-Za-zА-Яа-яЁё]", word)
+            if len(letters) < 3 or len(letters) > 12:
                 continue
             index = int(shot["index"])
             node_id = f"behind-{index:02d}"

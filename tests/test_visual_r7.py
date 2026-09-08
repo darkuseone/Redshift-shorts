@@ -207,6 +207,68 @@ def test_source_card_anchors_off_avatar():
     assert cards[0]["start"] >= 10.0
 
 
+def test_hero_device_skips_face_covering_bubbles_on_avatar():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _hero_device
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    content = {
+        "word": "ЧИП", "title": "Квантовый чип",
+        "head": "КВАНТОВЫЙ", "tail": "ЧИП",
+        "lines": ["квантовый", "чип"], "accent_lines": [0],
+        "punch": ["квантовый", "чип"], "entries": ["квантовый"],
+        "figures": [], "face": (540, 570),
+        "head_box": (200, 620, 880, 1400), "brand": None, "icons": [],
+    }
+    slot = {"index": 3, "role": "twist", "duration": 4.0,
+            "start": 12.0, "end": 16.0, "kind": "avatar"}
+    seen = set()
+    for seed in range(40):
+        entry = _hero_device(
+            cat, slot=slot, content=content, has_alpha=True,
+            plate_src=None, recent_videos=[], exclude=[], seed=seed,
+            video_duration=40.0)
+        if entry:
+            seen.add(entry["renderer"])
+            assert entry["renderer"] not in (
+                "hero-bubble-typed", "hero-bubble-card"), entry
+            assert entry.get("template") != "hero-devices/bubble-typed"
+    assert seen
+
+
+def test_plaque_stops_at_avatar_cut():
+    from src.p11_assemble.assemble import _clamp_plaques_at_avatar_cuts
+
+    overlays = [{
+        "type": "plaque", "start": 35.0, "end": 39.5,
+        "template": "lower-thirds/note-pin",
+        "params": {"text": "Проверить нечем", "position": "top"},
+    }]
+    shots = [
+        {"kind": "footage", "start": 31.0, "end": 37.6},
+        {"kind": "avatar", "start": 37.6, "end": 42.0},
+    ]
+    out = _clamp_plaques_at_avatar_cuts(overlays, shots)
+    assert out[0]["end"] == 37.6
+
+
+def test_nasa_plate_is_skipped_for_empty_slot_bg(tmp_path):
+    from src.p11_assemble.assemble import _is_nasa_asset, _plate_source
+
+    assert _is_nasa_asset({"asset_id": "nasa_S74-23458", "source": "nasa"})
+    assert not _is_nasa_asset({"asset_id": "pexels_v25935014", "source": "pexels"})
+    slots = [
+        {"index": 0, "kind": "footage", "block_id": "b4"},
+        {"index": 1, "kind": "footage", "block_id": "b4"},
+    ]
+    prepared = {0: {"dst": "/tmp/nasa.jpg", "duration_sec": 3.0}}
+    assets = {0: {"asset_id": "nasa_S74-23458", "source": "nasa"}}
+    assert _plate_source(slots[1], slots, prepared, assets) is None
+
+
 def test_compose_zoom_unchanged_for_0042_r7():
     # Steering: do not touch avatar/zoom this run (native 9:16 is NEXT videos).
     import yaml

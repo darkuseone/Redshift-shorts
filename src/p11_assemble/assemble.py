@@ -21,7 +21,6 @@ from typing import Any, Iterable
 from ..errors import RedshiftError
 from ..lib.ffmpeg import probe
 from ..lib.logging import get_logger
-from ..lib.render.layers import Ctx, text_behind_head
 from ..lib.render.matting import assess_matte, plan_vfx_backgrounds, try_local_matting
 from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
@@ -62,6 +61,10 @@ def _load_yaml(path) -> dict:
 AVATAR_KINDS = ("avatar", "split")
 # White disk of circle-mask-grow sits opaque on the presenter's face.
 AVATAR_ENTRY_DENY = ("avatar-entry/circle-mask-grow",)
+# Opaque full-width bubble cards cover the talking head — skip on avatar.
+_FACE_COVERING_BUBBLES = frozenset({
+    "hero-bubble-typed", "hero-bubble-card",
+})
 
 
 def _transition_exclude(category: str, used: list[str]) -> list[str]:
@@ -381,14 +384,24 @@ def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
     return out
 
 
+def _is_nasa_asset(asset: dict[str, Any] | None) -> bool:
+    """NASA stills/clips are off-topic for quantum/AI cuts (0042 S74 still)."""
+    if not asset:
+        return False
+    aid = str(asset.get("asset_id") or "")
+    src = str(asset.get("source") or "").lower()
+    return aid.startswith("nasa_") or src == "nasa"
+
+
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]],
                   assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
-    """Nearest real (non-AI) footage for hero/fullscreen plates.
+    """Nearest real (non-AI, non-NASA) footage for hero/fullscreen plates.
 
     Prefer same-block stock/press; if that block has no real media (empty P7/P9
     gaps), fall back to the nearest real prepared footage anywhere in the cut
-    so plate-needing heroes still show NASA/news instead of an empty panel.
+    so plate-needing heroes still show a topical still instead of an empty panel.
+    NASA archive stills are skipped — empty slots take a brand plate instead.
     AI-only pools return None — heroes then skip plate templates.
     """
     index = int(slot["index"])
@@ -406,7 +419,7 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                 continue
             if same_block_only and s["block_id"] != slot["block_id"]:
                 continue
-            if _is_ai(s):
+            if _is_ai(s) or _is_nasa_asset(assets.get(int(s["index"]))):
                 continue
             out.append(s)
         return out
@@ -423,17 +436,8 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
             "credit": credit, "ai_generated": bool(asset.get("ai_generated"))}
 
 
-def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
-                  prepared: dict[int, dict[str, Any]],
-                  assets: dict[int, dict[str, Any]], ctx, plan: dict[str, Any]
-                  ) -> str | None:
-    """Prepared dst, nearest stock plate, or a scene backdrop — never invent text."""
-    prep = prepared.get(slot["index"])
-    if prep is not None and prep.get("dst"):
-        return prep["dst"]
-    plate = _plate_source(slot, slots, prepared, assets)
-    if plate and plate.get("file"):
-        return str(plate["file"])
+def _brand_plate_file(ctx, plan: dict[str, Any]) -> str | None:
+    """Scene backdrop or procedural grid — never a NASA still."""
     scene_name = pick_scene(
         str(plan.get("title") or ""),
         " ".join(str(b.get("text") or "") for b in plan.get("blocks", [])))
@@ -446,6 +450,22 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
         if cand.exists():
             return str(cand)
     return None
+
+
+def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
+                  prepared: dict[int, dict[str, Any]],
+                  assets: dict[int, dict[str, Any]], ctx, plan: dict[str, Any]
+                  ) -> str | None:
+    """Prepared dst, nearest non-NASA plate, or a brand grid — never invent text."""
+    prep = prepared.get(slot["index"])
+    if prep is not None and prep.get("dst"):
+        asset = assets.get(slot["index"])
+        if not _is_nasa_asset(asset):
+            return prep["dst"]
+    plate = _plate_source(slot, slots, prepared, assets)
+    if plate and plate.get("file"):
+        return str(plate["file"])
+    return _brand_plate_file(ctx, plan)
 
 
 def _fullscreen_cap(cfg) -> int:
@@ -497,6 +517,7 @@ LATE_HERO_BEAT = 0.60
 # kickers and above-crown headlines do not mute spoken VO.
 _BULKY_HERO_MUTE = frozenset({
     "hero-slam", "hero-knockout", "hero-oversize", "hero-split", "hero-exhibit",
+    "hero-bubble-typed", "hero-bubble-card",
 })
 
 
@@ -540,6 +561,31 @@ def _union_span(windows: list[tuple[float, float]]) -> float:
     return total + cur_e - cur_s
 
 
+def _hero_line_span(shot: dict[str, Any], hero: dict[str, Any]) -> tuple[float, float]:
+    end = float(shot["end"])
+    if hero.get("duration"):
+        end = min(end, float(shot["start"]) + float(hero["duration"]))
+    return float(shot["start"]), end
+
+
+def _caption_line_windows(
+    shots: list[dict[str, Any]],
+    overlays: list[dict[str, Any]],
+) -> list[tuple[float, float]]:
+    """Windows where a card carries the spoken line — mute the whole phrase."""
+    windows: list[tuple[float, float]] = []
+    for shot in shots:
+        hero = shot.get("hero") or {}
+        if not hero or not hero.get("carries_line"):
+            continue
+        windows.append(_hero_line_span(shot, hero))
+    for ovl in overlays:
+        params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
+        if ovl.get("carries_line") or params.get("carries_line"):
+            windows.append((float(ovl["start"]), float(ovl["end"])))
+    return windows
+
+
 def _caption_mute_windows(
     shots: list[dict[str, Any]],
     overlays: list[dict[str, Any]],
@@ -553,12 +599,10 @@ def _caption_mute_windows(
         hero = shot.get("hero") or {}
         renderer = str(hero.get("renderer") or "")
         bulky = bool(hero.get("covers_frame")) or renderer in _BULKY_HERO_MUTE
-        if not bulky:
+        carries = bool(hero.get("carries_line"))
+        if not bulky and not carries:
             continue
-        end = float(shot["end"])
-        if hero.get("duration"):
-            end = min(end, float(shot["start"]) + float(hero["duration"]))
-        windows.append((float(shot["start"]), end))
+        windows.append(_hero_line_span(shot, hero))
     bulky_ovl = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
                  "ai_chat_reveal", "app_showcase", "dataviz"}
     for ovl in overlays:
@@ -607,9 +651,22 @@ def _word_is_muted(
     return any(start < ce and end > cs for cs, ce in mute_windows)
 
 
+def _phrase_hits_windows(phrase: list[dict[str, Any]],
+                         windows: list[tuple[float, float]]) -> bool:
+    if not windows:
+        return False
+    return any(
+        float(word["start"]) < end and float(word["end"]) > start
+        for word in phrase
+        for start, end in windows
+    )
+
+
 def _build_subtitle_cues(words: list[dict[str, Any]], *,
                          punch_windows: list[tuple[float, float, str]],
-                         mute_windows: list[tuple[float, float]]) -> list[dict[str, Any]]:
+                         mute_windows: list[tuple[float, float]],
+                         line_windows: list[tuple[float, float]] | None = None,
+                         ) -> list[dict[str, Any]]:
     """Karaoke cues at the default baseline; mute on punch/card/CTA, never raise.
 
     Heavily covered phrases (muted-word ratio ≥ PHRASE_MUTE_RATIO) stay silent
@@ -617,7 +674,11 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
     only the covered words; leftovers are re-glued and 1–2 letter chips fall
     off. A phrase that would keep fewer than two spoken words after a sparse
     mute is dropped rather than left as a one-word flash.
+
+    ``carries_line`` windows drop the whole phrase on any overlap so a typed
+    bubble cannot share the band with karaoke leftovers.
     """
+    line_windows = list(line_windows or [])
     phrases = group_caption_phrases(
         words,
         max_words=_CAPTION_MAX_WORDS,
@@ -626,6 +687,8 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
     subtitles: list[dict[str, Any]] = []
     for phrase in phrases:
         if not phrase:
+            continue
+        if _phrase_hits_windows(phrase, line_windows):
             continue
         flags = [
             _word_is_muted(word, punch_windows=punch_windows,
@@ -1598,6 +1661,11 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         if late and template.renderer == "hero-title-behind":
             blocked.append(template.id)
             continue
+        # Full-width bubble cards sit on the talking head (0042: only forehead
+        # visible). Side bubble is not in the catalog — skip the family.
+        if template.renderer in _FACE_COVERING_BUBBLES:
+            blocked.append(template.id)
+            continue
         # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
         # вот кем она снята. Под сгенерированным пятном она подписывала
         # «REDSHIFT / GENERATED» и тем самым объявляла зрителю ровно то, чего
@@ -1808,15 +1876,16 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
             dst = ctx.wpath("shots", f"avatar_{slot['index']:02d}_{int(duration * 1000)}.mp4")
             matte = matte_reports.get(int(segment["index"]))
             if matte is not None and matte.usable:
-                # §7.7: есть годная маска — собираем фон + текст за головой + аватар.
-                behind = behind_layers.get(slot["block_id"]) if slot["mode"] == "A" else None
+                # §7.7: matte + VFX bg. Karaoke must not be baked behind the
+                # head — leftover syllable scraps (0042). Keyword type uses
+                # hero-title-behind, not this PNG path.
                 result = prepare_avatar_shot(
                     avatar_src=avatar_src, dst=dst, duration_sec=duration,
                     width=width, height=height, fps=fps, start_sec=offset,
                     # Light brand bg under avatar — accent fill would blow §3.3.1.
                     bg_colors=(str(ctx.cfg.color("bg_light")).lstrip("#"),
                                str(ctx.cfg.color("bg_pure")).lstrip("#")),
-                    behind_layer=behind,
+                    behind_layer=None,
                     vfx_src=vfx_clips.get(slot["index"]),
                     compose_zoom=float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0))
             else:
@@ -1913,23 +1982,9 @@ def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
         ctx.warn(f"§7.7: {summary['reason']}")
         return reports, {}, {}, summary
 
-    # --- текст за головой (§5.3): только режим A и только при годной маске ---
+    # Karaoke captions must not be matted behind the head (0042 syllable
+    # scraps). Intentional single-keyword type is hero-title-behind HTML.
     behind_layers: dict[str, Path] = {}
-    render_ctx = Ctx.build(cfg)
-    for block in plan.get("blocks", []):
-        if block.get("mode") != "A":
-            continue
-        text = (block.get("emphasis_word") or "").strip()
-        if not text:
-            continue
-        block_segments = [s for s in segments if s["block_id"] == block["id"]]
-        if not block_segments or int(block_segments[0]["index"]) not in usable:
-            continue
-        layer = text_behind_head(render_ctx, text, progress=1.0)
-        path = ctx.wpath("matte", f"behind_{block['id']}.png")
-        layer.save(path)
-        behind_layers[block["id"]] = path
-        summary["text_behind_head"].append({"block_id": block["id"], "text": text})
 
     # --- VFX-фон (§7.7): stock B-roll behind avatar (no paid AI gen) -------
     # Prefer real footage plates already harvested by P7/P8. AI generation was
@@ -1954,6 +2009,8 @@ def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
                  else list(accepted_map or []))
         for item in items:
             if not isinstance(item, dict) or item.get("ai_generated"):
+                continue
+            if _is_nasa_asset(item):
                 continue
             local = str(item.get("local_file") or "").strip()
             if local and Path(local).is_file():
@@ -2028,6 +2085,37 @@ def _overlay_renderer(template: Template) -> str:
                              "macos_notification"):
         return template.renderer
     return "source_card"
+
+
+def _clamp_end_before_next_avatar(
+    start: float, end: float, shots: list[dict[str, Any]],
+) -> float:
+    """Stop a plaque at the cut if the next shot is a talking head."""
+    for shot in shots:
+        if str(shot.get("kind") or "") not in AVATAR_KINDS:
+            continue
+        a0 = float(shot["start"])
+        if start < a0 - 1e-4 < end:
+            end = min(end, a0)
+    return end
+
+
+def _clamp_plaques_at_avatar_cuts(
+    overlays: list[dict[str, Any]],
+    shots: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Plaque/note-pin must not carry across a cut onto an avatar chest."""
+    for ovl in overlays:
+        kind = str(ovl.get("type") or "")
+        template = str(ovl.get("template") or "")
+        if kind != "plaque" and "note-pin" not in template:
+            continue
+        ovl["end"] = round(
+            _clamp_end_before_next_avatar(
+                float(ovl["start"]), float(ovl["end"]), shots),
+            3,
+        )
+    return overlays
 
 
 def _plaque_overlay(*, template: Template, start: float, end: float,
@@ -2356,6 +2444,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             start = b_start + 0.4
         start = min(start, max(b_start, b_end - 1.2))
         plaque_end = min(start + 2.6, b_end)
+        plaque_end = _clamp_end_before_next_avatar(
+            start, plaque_end, plan.get("slots") or [])
         # Suppress plaque when a punch-family FS/accent card already owns
         # the beat (0042 r6: triple НЕЧЕМ = card + plaque + captions).
         conflict = False
@@ -3013,12 +3103,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "avatar_offset_sec": prep.get("avatar_offset_sec"),
             "matte": prep.get("matte"),
             "background": prep.get("background"),
-            # Приём на кадре отменяет слово за головой (§5.3): панель за спиной
-            # перекрывает его, оставляя торчать одну букву, лучи ложатся
-            # поверх, заголовок добавляет к нему третий текст, а сплит и
-            # выбивка уводят ведущего с места, к которому слово привязано.
-            # Слово остаётся на аватар-кадрах без приёма — их всегда половина.
-            "text_behind_head": bool(prep.get("text_behind_head")) and not hero_entry,
+            # Karaoke must not go behind the head. hero-title-behind is the
+            # only intentional keyword path, and it is a hero overlay.
+            "text_behind_head": False,
             "ai_generated": bool(asset.get("ai_generated")),
             "mock": bool(asset.get("mock")),
             "fit": prep.get("fit"), "focus": [prep.get("focus_x"), prep.get("focus_y")],
@@ -3098,6 +3185,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "why": "r6: informative card over first avatar to mask off-camera gaze",
             })
 
+    overlays = _clamp_plaques_at_avatar_cuts(overlays, shots)
+
     # Smart captions: punch-family mute stays. Card mute is only bulky type
     # (FS slam beat, punch/slam heroes, source cards, CTA) — not behind-head
     # kickers or the whole FS B-roll hold.
@@ -3128,11 +3217,13 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         if pt:
             punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
     card_windows = _caption_mute_windows(shots, overlays)
+    line_windows = _caption_line_windows(shots, overlays)
     _warn_mute_coverage(card_windows, words_doc["words"])
     subtitles = _build_subtitle_cues(
         words_doc["words"],
         punch_windows=punch_windows,
         mute_windows=card_windows,
+        line_windows=line_windows,
     )
 
     # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон

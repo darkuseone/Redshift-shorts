@@ -119,8 +119,8 @@ def test_fullscreen_mute_is_capped_not_whole_shot():
     assert windows == [(0.0, FS_MUTE_SEC)]
 
 
-def test_title_behind_does_not_open_a_mute_window():
-    from src.p11_assemble.assemble import _caption_mute_windows
+def test_title_behind_carries_line_mutes_its_window():
+    from src.p11_assemble.assemble import _caption_line_windows, _caption_mute_windows
 
     shots = [{
         "kind": "avatar", "start": 32.0, "end": 36.0,
@@ -128,7 +128,16 @@ def test_title_behind_does_not_open_a_mute_window():
                  "covers_frame": False,
                  "params": {"head": "КВАНТОВЫЙ", "tail": "ЧИП"}},
     }]
-    assert _caption_mute_windows(shots, []) == []
+    assert _caption_mute_windows(shots, []) == [(32.0, 36.0)]
+    assert _caption_line_windows(shots, []) == [(32.0, 36.0)]
+
+
+def test_carries_line_drops_the_whole_phrase():
+    words = _six_words()
+    cues = _build_subtitle_cues(
+        words, punch_windows=[], mute_windows=[],
+        line_windows=[(18.0, 18.5)])
+    assert cues == []
 
 
 def test_slam_hero_still_mutes_its_own_window():
