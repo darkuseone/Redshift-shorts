@@ -1,0 +1,46 @@
+OPUS-IMPROVE — сессия и как открыть документ
+=============================================
+
+Share URL: НЕТ.
+
+Эта сессия Claude Code шла в неинтерактивном SDK-режиме
+(CLAUDE_CODE_ENTRYPOINT=sdk-cli, CLAUDE_CODE_CHILD_SESSION=1). В нём публичная
+ссылка на разговор не выпускается, и создать её командой изнутри сессии нельзя.
+Поэтому вместо ссылки — локальные координаты и способ открыть документ.
+
+Локальные координаты
+--------------------
+session id : bbc789cd-67db-45e1-bdae-b1e7865c50e9
+transcript : /home/box/.claude/projects/-workspace-repos-Redshift-shorts/bbc789cd-67db-45e1-bdae-b1e7865c50e9.jsonl
+model      : claude-opus-5 (ultrathink)
+repo tip   : 6e7719dcdda0a67da9cb75e7e00f8fbd68ba3182  (fix/quality-overhaul-0042b)
+
+Как открыть ТЗ в Claude Code
+----------------------------
+Маркус, самый короткий путь — запустить Claude Code в корне репозитория и
+попросить его прочитать файл. Тогда у агента сразу будет и документ, и код,
+на который документ ссылается номерами строк:
+
+    cd /workspace/repos/Redshift-shorts
+    claude
+    > прочитай /workspace/tz/REDSHIFT-IMPROVE-TZ-vNEXT.md, начни с раздела 2
+      (executive summary), потом покажи таблицу DoD из раздела 4.3
+
+Чтобы сразу отдать документ в работу исполнителю:
+
+    > прочитай /workspace/tz/REDSHIFT-IMPROVE-TZ-vNEXT.md и исполни фазу Q1,
+      шаг за шагом, с тестами после каждого шага. Код не пушить без
+      зелёного pytest.
+
+Без агента, просто прочитать:
+
+    less /workspace/tz/REDSHIFT-IMPROVE-TZ-vNEXT.md
+    # или в редакторе / просмотрщике Markdown
+
+Три файла этого прогона
+-----------------------
+/workspace/tz/REDSHIFT-IMPROVE-TZ-vNEXT.md   — само ТЗ (волна качества Q1/Q2/Q3)
+/workspace/tz/OPUS-IMPROVE-STATUS.md         — статус, координаты, метрики успеха
+/workspace/tz/OPUS-IMPROVE-SESSION.txt       — этот файл
+
+Кода не менялось: ТЗ ждёт одобрения. git status на репозитории чист.
