@@ -2,8 +2,8 @@
   "redshift_0042": {
     "prefer": [
       "pexels_v18069803",
-      "pexels_v35288383",
-      "pixabay_v113383",
+      "pexels_v25935014",
+      "pexels_v30775057",
       "pexels_v7565432",
       "pexels_v20349219"
     ],
@@ -15,7 +15,9 @@
       "pexels_v20757503",
       "pexels_v34912823",
       "pixabay_v113379",
-      "pexels_v34550739"
+      "pexels_v34550739",
+      "pexels_v35288383",
+      "pixabay_v113383"
     ]
   }
 }

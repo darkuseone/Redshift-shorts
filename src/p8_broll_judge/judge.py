@@ -149,6 +149,9 @@ def run_step(ctx) -> dict[str, Any]:
 
     judged: list[dict[str, Any]] = []
     accepted: dict[int, dict[str, Any]] = {}
+    accepted_counts: dict[str, int] = {}
+    repeat_max = int(cfg.get("stock.same_asset_max_slots", 2))
+    repeat_penalty = float(cfg.get("stock.repeat_score_penalty", 0.12))
     arbiter_calls = 0
     reused_scores = 0
     rejected_by_palette = 0
@@ -174,6 +177,9 @@ def run_step(ctx) -> dict[str, Any]:
                                  "summary": "", "frames": 0}}
             accepted[slot_index] = entry
             judged.append(entry)
+            meme_id = str(entry.get("asset_id") or "")
+            if meme_id:
+                accepted_counts[meme_id] = accepted_counts.get(meme_id, 0) + 1
             continue
 
         scored: list[tuple[float, dict[str, Any]]] = []
@@ -305,8 +311,20 @@ def run_step(ctx) -> dict[str, Any]:
             if entry["decision"] != "reject_palette":
                 scored.append((entry["score"], entry))
 
-        scored.sort(key=lambda pair: pair[0], reverse=True)
-        best = next((entry for score, entry in scored if score >= accept_threshold), None)
+        def _repeat_key(pair: tuple[float, dict[str, Any]]) -> float:
+            score, entry = pair
+            aid = str(entry.get("asset_id") or "")
+            return score - repeat_penalty * accepted_counts.get(aid, 0)
+
+        def _under_repeat_cap(entry: dict[str, Any]) -> bool:
+            aid = str(entry.get("asset_id") or "")
+            if not aid:
+                return True
+            return accepted_counts.get(aid, 0) < repeat_max
+
+        scored.sort(key=_repeat_key, reverse=True)
+        best = next((entry for score, entry in scored
+                     if score >= accept_threshold and _under_repeat_cap(entry)), None)
         if best is None and scored:
             top_score, top_entry = scored[0]
             if skip_live:
@@ -316,7 +334,7 @@ def run_step(ctx) -> dict[str, Any]:
                 verified = [
                     entry for _score, entry in scored
                     if str((entry.get("verdict") or {}).get("judge") or "")
-                    != "skip_live_unverified"
+                    != "skip_live_unverified" and _under_repeat_cap(entry)
                 ]
                 if verified:
                     best = verified[0]
@@ -326,12 +344,17 @@ def run_step(ctx) -> dict[str, Any]:
             # Спорный кандидат берём только если арбитраж уже был исчерпан:
             # иначе §7.3 требует отправить слот в генерацию.
             elif top_score >= reject_threshold and arbiter_calls >= arbiter_budget:
-                best = top_entry
-                best["decision"] = "accept_fallback"
-                best["fallback_reason"] = (
-                    "лимит арбитража исчерпан, принят лучший из спорных")
+                best = next((entry for _score, entry in scored
+                             if _under_repeat_cap(entry)), None)
+                if best is not None:
+                    best["decision"] = "accept_fallback"
+                    best["fallback_reason"] = (
+                        "лимит арбитража исчерпан, принят лучший из спорных")
         if best is not None:
             accepted[slot_index] = best
+            aid = str(best.get("asset_id") or "")
+            if aid:
+                accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

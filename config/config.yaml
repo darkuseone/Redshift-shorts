@@ -196,6 +196,9 @@ magnific:
     paid_video:  "bytedance-seedance-pro-2.0"
 
 stock:
+  # Same clip must not win every adjacent slot (0042 sparkle void: 13.7 s).
+  same_asset_max_slots: 2
+  repeat_score_penalty: 0.12
   # Перебивка живёт 1.4 секунды ради того, чтобы в кадре что-то произошло.
   # Материал темнее этого показывает субтитр на пустоте: в 0047 так вышло
   # дважды, средняя яркость 17.7 и 20.1 из 255. Замер по базе: медиана

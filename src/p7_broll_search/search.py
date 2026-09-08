@@ -31,8 +31,51 @@ from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
-from ..lib.query import build_queries, classify_intent, thematic_reject_reason
+from ..lib.query import (
+    build_queries, classify_intent, is_sci_topic, thematic_reject_reason,
+)
 from ..lib.render.shots import slim_video
+
+SCI_QUERY_PAD = (
+    "dilution refrigerator",
+    "cryostat gold cylinder",
+    "quantum processor macro",
+    "cleanroom laboratory",
+    "supercomputer server blink",
+)
+SPACE_NEWS_PAD = (
+    "deep space stars",
+    "galaxy nebula",
+    "earth orbit view",
+    "newsroom broadcast desk",
+    "breaking news screen",
+)
+
+
+def pad_slot_queries(
+    queries: list[str],
+    *,
+    queries_per_slot: int,
+    intent_kind: str = "",
+    category: str = "",
+) -> list[str]:
+    """Pad a short query ladder. Sci slots get lab/chip extras before space/news."""
+    if len(queries) >= queries_per_slot:
+        return list(queries)
+    extras: list[str] = []
+    if is_sci_topic(category=category, intent_kind=intent_kind):
+        extras.extend(SCI_QUERY_PAD)
+    extras.extend(SPACE_NEWS_PAD)
+    existing = {q.lower() for q in queries}
+    out = list(queries)
+    for extra in extras:
+        if len(out) >= queries_per_slot:
+            break
+        if extra.lower() not in existing:
+            out.append(extra)
+            existing.add(extra.lower())
+    return out
+
 
 _log = get_logger("p7")
 
@@ -215,12 +258,12 @@ def run_step(ctx) -> dict[str, Any]:
         intent_kind = classify_intent(slot.get("visual_intent", ""), slot.get("queries", []),
                                       plan.get("category", ""))
         queries = build_queries(slot, plan, count=queries_per_slot)
-        # Aggressive pad: space/news always in the ladder so avatar BGs get plates.
-        for extra in ("deep space stars", "galaxy nebula", "earth orbit view",
-                      "newsroom broadcast desk", "breaking news screen"):
-            if extra.lower() not in {q.lower() for q in queries}:
-                queries.append(extra)
-        queries = queries[: max(queries_per_slot + 3, len(queries))]
+        queries = pad_slot_queries(
+            queries,
+            queries_per_slot=queries_per_slot,
+            intent_kind=intent_kind,
+            category=str(plan.get("category") or ""),
+        )
         source_order = _sources_for(intent_kind, routing)
         slot_candidates: list[dict[str, Any]] = []
 

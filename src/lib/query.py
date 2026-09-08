@@ -204,14 +204,8 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
     # 4. Метафора по роли блока — на случай, если предметного кадра не найдётся.
     out.extend(ROLE_METAPHORS.get(slot.get("role", ""), []))
 
-    # 5. Bonus space/news plates — keep avatar BGs and templates interesting
-    # even when the script is lab/AI-only (0042 quantum).
-    out.extend([
-        "deep space stars", "galaxy nebula", "earth orbit view",
-        "newsroom broadcast desk", "breaking news screen",
-    ])
-
-    # 6. Фактура как последний рубеж.
+    # 5. Фактура как последний рубеж. Space/news padding lives in P7
+    # ``pad_slot_queries`` and only fills a short ladder.
     out.append("abstract macro texture slow motion")
 
     seen: list[str] = []

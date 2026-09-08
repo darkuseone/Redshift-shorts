@@ -348,6 +348,34 @@ def test_detected_gradient_types_actually_render(tmp_path):
 
 # --- запросы (§7.2) -----------------------------------------------------------
 
+def test_full_profile_queries_do_not_pad_newsroom():
+    """A slot that already has a full ladder must not grow space/news filler."""
+    from src.p7_broll_search.search import pad_slot_queries
+
+    queries = [
+        "quantum processor macro shot",
+        "cryostat gold cylinder",
+        "dilution refrigerator",
+        "cleanroom laboratory",
+    ]
+    out = pad_slot_queries(
+        queries, queries_per_slot=4, intent_kind="lab", category="ai")
+    joined = " ".join(out).lower()
+    assert "newsroom broadcast desk" not in joined
+    assert out == queries
+
+
+def test_short_sci_queries_pad_thematic_not_newsroom():
+    from src.p7_broll_search.search import pad_slot_queries
+
+    out = pad_slot_queries(
+        ["quantum processor macro"],
+        queries_per_slot=5, intent_kind="lab", category="ai")
+    joined = " ".join(out).lower()
+    assert "dilution refrigerator" in joined or "cryostat gold cylinder" in joined
+    assert "newsroom broadcast desk" not in joined
+
+
 def test_queries_are_english_and_varied():
     slot = {"queries": ["quantum processor macro"], "visual_intent": "квантовый чип в криостате",
             "role": "hook", "block_id": "b1"}

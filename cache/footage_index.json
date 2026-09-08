@@ -1739,10 +1739,12 @@
       "width": 1080,
       "height": 1920,
       "file": "pexels/pexels_v34550739.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / Nicola Narracci",
         "author": "Nicola Narracci",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "purple particle wave, off-palette for quantum"
       }
     },
     {
@@ -1813,10 +1815,12 @@
       "width": 1080,
       "height": 1920,
       "file": "pexels/pexels_v35288383.mp4",
+      "quarantined": true,
       "extra": {
         "attribution": "Pexels / Nicola Narracci",
         "author": "Nicola Narracci",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "pink-yellow sparkle burst, off-palette for quantum"
       }
     },
     {
