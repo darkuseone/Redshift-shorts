@@ -2215,6 +2215,96 @@ def _plaque_overlay(*, template: Template, start: float, end: float,
     return ovl
 
 
+# Числительные словами → значение. `meaning.py` уже ловит их как признак
+# блока, но диаграмме нужен не признак, а число: столбик надо чем-то мерить.
+# Двадцать частотных плюс доли и множители — ровно то, чем говорят сценарии
+# канала: «сто пять кубитов», «ошибка падает вдвое», «треть мощности».
+_WORD_VALUES: dict[str, float] = {
+    "ноль": 0, "один": 1, "одна": 1, "одно": 1, "два": 2, "две": 2, "три": 3,
+    "четыре": 4, "пять": 5, "шесть": 6, "семь": 7, "восемь": 8, "девять": 9,
+    "десять": 10, "одиннадцать": 11, "двенадцать": 12, "тринадцать": 13,
+    "четырнадцать": 14, "пятнадцать": 15, "шестнадцать": 16, "семнадцать": 17,
+    "восемнадцать": 18, "девятнадцать": 19, "двадцать": 20, "тридцать": 30,
+    "сорок": 40, "пятьдесят": 50, "шестьдесят": 60, "семьдесят": 70,
+    "восемьдесят": 80, "девяносто": 90, "сто": 100, "двести": 200,
+    "триста": 300, "четыреста": 400, "пятьсот": 500, "шестьсот": 600,
+    "семьсот": 700, "восемьсот": 800, "девятьсот": 900,
+    # «Тысяча» стоит здесь как самостоятельное числительное, а не только как
+    # множитель после другого: без неё «тысяча девятьсот девяносто первый»
+    # разбирался в 990 — число, которого в реплике нет, и оно проскакивало
+    # мимо отбраковки годов, потому что в диапазон 1900–2100 не попадало.
+    "тысяча": 1000, "тысячи": 1000, "тысячу": 1000,
+}
+# Множители и доли идут отдельно: «вдвое» — это не число предметов, а во
+# сколько раз, и на столбике это подпись, а не высота.
+_WORD_FACTORS: dict[str, tuple[float, str]] = {
+    "вдвое": (2.0, "×"), "втрое": (3.0, "×"), "вчетверо": (4.0, "×"),
+    "половина": (0.5, ""), "половину": (0.5, ""), "треть": (1 / 3, ""),
+    "четверть": (0.25, ""),
+}
+_WORD_SCALES: dict[str, tuple[float, str]] = {
+    "тысяч": (1e3, "тыс."), "миллион": (1e6, "млн"), "миллиард": (1e9, "млрд"),
+}
+# Значения-множители: слагаемым в составном числительном они не бывают.
+_WORD_SCALE_VALUES = frozenset({1e3, 1e6, 1e9})
+_WORD_NUM_RE = re.compile(
+    r"\b(" + "|".join(sorted(_WORD_VALUES, key=len, reverse=True))
+    + r")\w*(?:\s+(тысяч\w*|миллион\w*|миллиард\w*))?", re.IGNORECASE)
+_WORD_FACTOR_RE = re.compile(
+    r"\b(" + "|".join(sorted(_WORD_FACTORS, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE)
+
+
+def _stats_from_words(text: str) -> list[dict[str, Any]]:
+    """Числа, названные словами. §8.2: цифры есть в 6 % блоков, слова — в 25 %.
+
+    Замер по шести сценариям канала: пригодных для диаграммы блоков с цифрами
+    — один на шесть роликов. Двадцать восемь шаблонов `data-viz` (14 %
+    каталога) не имели ни одного шанса сработать.
+    """
+    out: list[dict[str, Any]] = []
+    low = str(text or "").lower()
+    parts: list[dict[str, Any]] = []
+    for match in _WORD_NUM_RE.finditer(low):
+        value = _WORD_VALUES.get(match.group(1))
+        if value is None:
+            continue
+        suffix = ""
+        scale = match.group(2) or ""
+        for stem, (mult, label) in _WORD_SCALES.items():
+            if scale.startswith(stem):
+                value *= mult
+                suffix = label
+                break
+        parts.append({"value": float(value), "suffix": suffix,
+                      "raw": match.group(0).strip(), "spelled": True,
+                      "at": match.start(), "end": match.end()})
+
+    # «Сто пять» — это сто пять, а не сто и пять. Слагаемые склеиваются, пока
+    # каждое следующее меньше предыдущего и стоит вплотную: так устроен русский
+    # составной числительный, и ровно этот блок 0042 («сто пять кубитов») —
+    # тот, ради которого §8.2 и оживляла категорию.
+    for part in parts:
+        prev = out[-1] if out else None
+        adjacent = prev is not None and low[prev["end"]:part["at"]].strip() == ""
+        if (prev is not None and adjacent and not prev["suffix"]
+                and not part["suffix"] and part["value"] < prev["value"]
+                and part["value"] not in _WORD_SCALE_VALUES):
+            prev["value"] += part["value"]
+            prev["raw"] = f"{prev['raw']} {part['raw']}"
+            prev["end"] = part["end"]
+            continue
+        out.append(part)
+    for part in out:
+        part.pop("at", None)
+        part.pop("end", None)
+    for match in _WORD_FACTOR_RE.finditer(low):
+        value, suffix = _WORD_FACTORS[match.group(1)]
+        out.append({"value": float(value), "suffix": suffix,
+                    "raw": match.group(0).strip(), "spelled": True})
+    return out
+
+
 def _stats_from_text(text: str) -> list[dict[str, Any]]:
     """Числа из реплики блока. Годы 1900–2100 отбрасываем, если есть другие."""
     found: list[dict[str, Any]] = []
@@ -2227,6 +2317,10 @@ def _stats_from_text(text: str) -> list[dict[str, Any]]:
         suffix = (match.group(2) or "").strip()
         found.append({"value": value, "suffix": suffix,
                       "raw": match.group(0).strip()})
+    # Цифры важнее слов: «105» точнее, чем «сто пять», и если в блоке есть
+    # и то и другое — это одно и то же число, названное дважды.
+    if not found:
+        found = _stats_from_words(text)
     if not found:
         return []
     years = [n for n in found
@@ -2887,7 +2981,12 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
                     picker: TemplatePicker | None = None) -> None:
-    """Оверлей с числом на evidence/develop — не чаще одного на ролик."""
+    """Оверлеи с числом — до двух на ролик (§8.2, бюджет `VisualBudget`).
+
+    Роли шире, чем `evidence`/`develop`: на 0042 число живёт в `setup`
+    («внутри процессора сто пять кубитов»), и по старому списку ролей блок,
+    ради которого категорию и оживляли, диаграммы бы не получил.
+    """
     if picker is None:
         picker = TemplatePicker(catalog, ScenarioIndex.empty())
     duration = float(plan["duration_sec"])
@@ -2895,8 +2994,9 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
     occupied = [(float(o["start"]), float(o["end"])) for o in overlays
                 if o.get("type") in ("source_card", "cta", "plaque")]
     blocks = {b["id"]: b for b in plan.get("blocks", [])}
+    placed = 0
     for slot in plan["slots"]:
-        if slot.get("role") not in ("evidence", "develop"):
+        if slot.get("role") not in ("setup", "evidence", "develop", "twist"):
             continue
         if slot["kind"] not in ("footage", "meme"):
             continue
@@ -2912,7 +3012,10 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         overlays.append(_dataviz_overlay(
             slot, nums, blocks, picker, variant=variant, seed=seed,
             recent_videos=recent_videos, used=used, start=start, end=end))
-        return
+        occupied.append((start, end))
+        placed += 1
+        if placed >= VisualBudget.CAPS["dataviz"]:
+            return
 
 
 # Рендереры browser-ui, которые честно показывают настоящий источник.
