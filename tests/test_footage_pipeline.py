@@ -490,6 +490,13 @@ def test_thematic_reject_drug_for_sci():
                                   intent_kind="lab")
 
 
+def test_thematic_reject_rover_for_quantum_not_space():
+    hay = "nasa_PIA13308 laboratory Mars Science Laboratory MSL rover"
+    assert thematic_reject_reason(hay, category="ai", intent_kind="lab")
+    assert thematic_reject_reason(hay, category="science", intent_kind="lab")
+    assert thematic_reject_reason(hay, category="space", intent_kind="space") is None
+
+
 # --- шаг 3: триггеры арбитража (§7.3) ----------------------------------------
 
 def _verdict(score, disagreement=0.0):

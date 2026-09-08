@@ -110,6 +110,12 @@ SCI_OFFTHEME_MARKERS: tuple[str, ...] = (
     "motorsport", "guitar", "underwater paint", "party drug",
 )
 
+# Rover / MSL stills tagged "laboratory" won quantum slots (nasa_PIA13308).
+# Space-category videos may still use them; AI/tech/lab must not.
+SCI_ROVER_MARKERS: tuple[str, ...] = (
+    "mars science laboratory", "curiosity", "rover", " msl", "msl ",
+)
+
 
 def is_sci_topic(*, category: str = "", intent_kind: str = "") -> bool:
     cat = (category or "").strip().lower()
@@ -129,7 +135,9 @@ def thematic_reject_reason(
     junk and known off-theme URL classes (darkroom, race-day) are dropped so
     mis-tagged stock cannot win quantum/lab picks.
     """
-    if not is_sci_topic(category=category, intent_kind=intent_kind):
+    cat = (category or "").strip().lower()
+    kind = (intent_kind or "").strip().lower()
+    if not is_sci_topic(category=cat, intent_kind=kind):
         return None
     blob = " ".join(haystack.split()).lower()
     if not blob:
@@ -140,6 +148,11 @@ def thematic_reject_reason(
     for marker in SCI_OFFTHEME_MARKERS:
         if marker in blob:
             return f"sci off-theme: «{marker}»"
+    space_topic = cat == "space" or kind == "space"
+    if not space_topic:
+        for marker in SCI_ROVER_MARKERS:
+            if marker in blob:
+                return f"sci off-theme rover: «{marker.strip()}»"
     return None
 
 

@@ -17,6 +17,10 @@ def test_poisoned_ids_not_returned_by_search():
         "pixabay_v113379",
         "pexels_v35288383",
         "pexels_v34550739",
+        "nasa_PIA13308",
+        "nasa_PIA20602",
+        "nasa_PIA20603",
+        "nasa_PIA19142",
     }
     for asset_id in poisoned:
         rec = idx.by_id(asset_id)
@@ -38,15 +42,30 @@ def test_poisoned_ids_not_returned_by_search():
     assert "pexels_v34550739" not in found
     found_grid = {r.id for r in idx.search(["network", "geometric", "cybernetic"], limit=50)}
     assert "pixabay_v113379" not in found_grid
+    found_lab = {r.id for r in idx.search(["laboratory", "lab", "clean"], limit=50)}
+    assert "nasa_PIA13308" not in found_lab
+    found_mars = {r.id for r in idx.search(["mars", "rover", "curiosity"], limit=50)}
+    assert not found_mars & {
+        "nasa_PIA13308", "nasa_PIA20602", "nasa_PIA20603", "nasa_PIA19142",
+    }
 
 
 def test_pins_file_lists_good_and_deny():
     import json
     pins = json.loads(Path("config/footage_pins.json").read_text(encoding="utf-8"))
     entry = pins["redshift_0042"]
+    assert entry["prefer"][:3] == [
+        "pexels_v25935014", "pexels_v30775057", "pexels_v18069803",
+    ]
     assert "pexels_v18069803" in entry["prefer"]
     assert "pexels_v25935014" in entry["prefer"]
     assert "pexels_v30775057" in entry["prefer"]
+    assert "pexels_v7565432" not in entry["prefer"]
+    assert "pexels_v7565432" in entry["deny"]
+    assert "nasa_PIA13308" in entry["deny"]
+    assert "nasa_PIA20602" in entry["deny"]
+    assert "nasa_PIA20603" in entry["deny"]
+    assert "nasa_PIA19142" in entry["deny"]
     assert "pexels_v20757503" in entry["deny"]
     assert "pexels_v34912823" in entry["deny"]
     assert "pixabay_v113379" in entry["deny"]
