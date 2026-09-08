@@ -4144,7 +4144,9 @@
         "compare"
       ],
       "renderer": "dataviz",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-08-18",
       "needs": [
         "number"
@@ -4169,7 +4171,9 @@
         "card"
       ],
       "renderer": "dataviz",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-02",
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
       "needs": [
@@ -4245,7 +4249,9 @@
         "story"
       ],
       "renderer": "dataviz",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": [
         "number"
@@ -4296,7 +4302,9 @@
         "decline"
       ],
       "renderer": "dataviz",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0042"
+      ],
       "added": "2026-09-03",
       "needs": [
         "number"
