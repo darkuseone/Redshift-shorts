@@ -7484,3 +7484,55 @@ def test_code_morph_css_keeps_tokens():
     assert ".fullscreen-text.fs-code-morph .cm-glow" in css
 
 
+
+class TestTheMediaTagFollowsTheFileNotTheHabit:
+    """Тег кадра внутри приёма — по настоящему виду файла.
+
+    Пять приёмов вокруг ведущего писали ``<video>`` всегда, а материал в них
+    приходит и картинкой: пин, кадр NASA, снимок из индекса. Движок на такое
+    расхождение закрывается наглухо (`media_src_kind_mismatch`) — рендер не
+    падает, он просто не выходит. На ветке это лежало пятью ошибками линтера,
+    а в кадре — пустотой на месте иллюстрации.
+    """
+
+    HERO_RENDERERS = ("hero-plate", "hero-card-stack", "hero-plate-pop",
+                      "hero-chat-generate", "hero-exhibit")
+
+    def _piece(self, renderer: str, src: str) -> Piece:
+        ctx = TemplateCtx(
+            index=3, start=4.0, duration=3.0, target="shot-03", track=5,
+            params={"src": src, "title": "СТО ПЯТЬ", "word": "СТО ПЯТЬ",
+                    "name": "Willow", "prompt": "квантовый процессор",
+                    "gen_prompt": "квантовый процессор в криостате",
+                    "app": "Gemini", "credit": "NASA"},
+        )
+        return render_hero(renderer, ctx)
+
+    @pytest.mark.parametrize("renderer", HERO_RENDERERS)
+    def test_a_still_becomes_an_image_tag(self, renderer):
+        html = "".join(self._piece(renderer, "assets/footage/pin/plate.jpg").nodes)
+        assert "<video" not in html, f"{renderer}: картинка отдана как <video>"
+        assert "<img" in html, f"{renderer}: картинка вообще не попала в кадр"
+
+    @pytest.mark.parametrize("renderer", HERO_RENDERERS)
+    def test_a_clip_stays_a_video_tag(self, renderer):
+        html = "".join(self._piece(renderer, "assets/footage/broll/clip.mp4").nodes)
+        assert "<video" in html, f"{renderer}: видео отдано не как <video>"
+        assert "muted" in html and "playsinline" in html
+
+    @pytest.mark.parametrize("renderer", HERO_RENDERERS)
+    def test_the_media_node_stays_a_timed_clip(self, renderer):
+        """Без `data-start` движок не покажет кадр вовсе."""
+        for src in ("plate.png", "clip.mp4"):
+            html = "".join(self._piece(renderer, src).nodes)
+            assert 'data-start=' in html, f"{renderer}/{src}: кадр без отметки времени"
+            assert 'class="clip' in html or "class='clip" in html
+
+    def test_no_hero_renderer_hardcodes_a_video_tag_for_param_media(self):
+        """Шестой приём не должен начать заново: тег идёт через `_media_node`."""
+        source = (Path(__file__).resolve().parents[1] / "src" / "lib" / "render"
+                  / "hyperframes" / "templates.py").read_text(encoding="utf-8")
+        hardcoded = re.findall(r"<video id=\"\{node_id\}[^\"]*\" [^>]*src=\"\{_esc\(src\)",
+                               source)
+        assert not hardcoded, (
+            f"{len(hardcoded)} приёмов снова пишут <video> в обход _media_node")

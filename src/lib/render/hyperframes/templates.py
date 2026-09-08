@@ -70,6 +70,28 @@ def _num(value: float) -> str:
     return f"{float(value):.3f}".rstrip("0").rstrip(".") or "0"
 
 
+VIDEO_SUFFIXES = frozenset({".mp4", ".webm", ".mov", ".m4v"})
+
+
+def _media_node(node_id: str, cls: str, src: str, *, start: float,
+                duration: float, track: int, style: str = "") -> str:
+    """Кадр внутри приёма: тег по настоящему виду файла, а не по привычке.
+
+    Пять приёмов вокруг ведущего писали ``<video>`` всегда, а `plate_src`
+    приносит и картинки — пины, кадры NASA, снимки из индекса. Движок на такое
+    расхождение закрывается наглухо (`media_src_kind_mismatch`): рендер не
+    падает с ошибкой, он просто не выходит. На ветке это лежало пятью ошибками
+    линтера, а в кадре — пустотой на месте иллюстрации.
+    """
+    attrs = (f'id="{node_id}" class="{cls}" src="{_esc(src)}" '
+             + (f'style="{style}" ' if style else "")
+             + f'data-start="{_num(start)}" data-duration="{_num(duration)}" '
+               f'data-track-index="{track}"')
+    if Path(src).suffix.lower() in VIDEO_SUFFIXES:
+        return f'<video {attrs} muted playsinline></video>'
+    return f'<img {attrs} alt="">'
+
+
 def _timing(ctx: "TemplateCtx") -> str:
     return (f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
             f'data-track-index="{ctx.track}"')
@@ -7169,11 +7191,11 @@ def hero_plate(ctx: "TemplateCtx") -> Piece:
     top = int(ctx.params.get("top", PLATE_TOP))
 
     return Piece(
-        nodes=[f'<video id="{node_id}" class="clip hero-plate" src="{_esc(src)}" '
-               f'style="left:{left}px;top:{top}px;'
-               f'width:{PLATE_W}px;height:{PLATE_H}px" '
-               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
-               f'data-track-index="{ctx.track}" muted playsinline></video>'],
+        nodes=[_media_node(
+            node_id, "clip hero-plate", src,
+            style=f"left:{left}px;top:{top}px;"
+                  f"width:{PLATE_W}px;height:{PLATE_H}px",
+            start=ctx.start, duration=ctx.duration, track=ctx.track)],
         tweens=enter_and_drift(f"#{node_id}", ctx.start, ctx.duration,
                                name="zoom-in", fade=False))
 
@@ -7385,11 +7407,10 @@ def hero_card_stack(ctx: "TemplateCtx") -> Piece:
         # а не от полной высоты приёма — иначе кадр торчит из-под скругления.
         media_top = 120 + int(height * 0.34)
         media_height = max(120, height - media_top - 56)
-        nodes.append(
-            f'<video id="{node_id}-m" class="clip cs-media" src="{_esc(src)}" '
-            f'style="top:{media_top}px;height:{media_height}px" '
-            f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
-            f'data-track-index="{ctx.track_alt}" muted playsinline></video>')
+        nodes.append(_media_node(
+            f"{node_id}-m", "clip cs-media", src,
+            style=f"top:{media_top}px;height:{media_height}px",
+            start=ctx.start, duration=ctx.duration, track=ctx.track_alt))
         tweens += enter_and_drift(f"#{node_id}-m", ctx.start, ctx.duration,
                                   name="zoom-in", fade=False)
     return Piece(nodes=nodes, tweens=tweens)
@@ -7472,9 +7493,10 @@ def hero_plate_pop(ctx: "TemplateCtx") -> Piece:
     left = (1080 - width) // 2
     top = int(ctx.params.get("top", 210))
     return Piece(
-        nodes=[f'<video id="{node_id}" class="clip hero-plate-pop" src="{_esc(src)}" '
-               f'style="left:{left}px;top:{top}px;width:{width}px;height:{height}px" '
-               f'{_timing(ctx)} muted playsinline></video>'],
+        nodes=[_media_node(
+            node_id, "clip hero-plate-pop", src,
+            style=f"left:{left}px;top:{top}px;width:{width}px;height:{height}px",
+            start=ctx.start, duration=ctx.duration, track=ctx.track)],
         tweens=enter_and_drift(f"#{node_id}", ctx.start, ctx.duration,
                                name="zoom-out", fade=False))
 
@@ -7674,10 +7696,10 @@ def hero_chat_generate(ctx: "TemplateCtx") -> Piece:
         f'<span class="cg-track"><span class="cg-fill"></span></span>'
         f'<span class="cg-canvas">{bars}</span>'
         f'</div></div>')
-    media = (f'<video id="{node_id}-m" class="clip cg-media" src="{_esc(src)}" '
-             f'style="left:{mx}px;top:{my}px;width:{mw}px;height:{mh}px" '
-             f'data-start="{_num(media_start)}" data-duration="{_num(media_dur)}" '
-             f'data-track-index="{ctx.track_alt}" muted playsinline></video>')
+    media = _media_node(
+        f"{node_id}-m", "clip cg-media", src,
+        style=f"left:{mx}px;top:{my}px;width:{mw}px;height:{mh}px",
+        start=media_start, duration=media_dur, track=ctx.track_alt)
     return Piece(nodes=[chrome, media], tweens=tweens)
 
 
@@ -7820,10 +7842,11 @@ def hero_exhibit(ctx: "TemplateCtx") -> Piece:
         nodes=[f'<div id="{node_id}" class="clip hero-exhibit" '
                f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
                f'data-track-index="{ctx.track}">{frame}{label}</div>',
-               f'<video id="{node_id}-m" class="clip ex-media" src="{_esc(src)}" '
-               f'style="left:{left}px;top:{top}px;width:{pic_w}px;height:{pic_h}px" '
-               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
-               f'data-track-index="{ctx.track_alt}" muted playsinline></video>'],
+               _media_node(
+                   f"{node_id}-m", "clip ex-media", src,
+                   style=f"left:{left}px;top:{top}px;"
+                         f"width:{pic_w}px;height:{pic_h}px",
+                   start=ctx.start, duration=ctx.duration, track=ctx.track_alt)],
         tweens=tweens)
 
 
