@@ -39,6 +39,7 @@ from ..lib.text import (
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, matched
+from ..lib.query import topical_match_score
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
@@ -3179,6 +3180,10 @@ def _pick_hook_shot(slot: dict[str, Any], block: dict[str, Any],
     )
 
 
+# Ниже этого счёта материал говорит не о том, что звучит (§9.2). Тот же порог,
+# что у судьи в P8: два места с одним смыслом не должны расходиться.
+_TOPICAL_MIN = 0.35
+
 _LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
                                       "source_card"})
 
@@ -3520,7 +3525,20 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         prep = prepared.get(slot["index"])
         asset = assets.get(slot["index"])
-        if prep is None or (asset is None and slot["kind"] not in AVATAR_KINDS):
+        # §9.2, третья точка: материал есть, но он не про эту реплику. Честнее
+        # закрыть кадр приёмом, чем поставить чужую картинку — зритель видит
+        # расхождение раньше, чем успевает прочитать субтитр.
+        off_topic = False
+        if asset is not None and slot["kind"] not in AVATAR_KINDS:
+            topical = asset.get("topical")
+            if topical is None:
+                topical = topical_match_score(
+                    asset.get("tags") or [],
+                    str(blocks_by_id.get(slot["block_id"], {}).get("text") or ""),
+                    str(plan.get("category") or ""))
+            off_topic = float(topical) < _TOPICAL_MIN
+        if prep is None or off_topic or (asset is None
+                                         and slot["kind"] not in AVATAR_KINDS):
             # Пустой слот идёт по лестнице §7.2: карточка → диаграмма →
             # источник → полноэкранный текст → плита. Раньше веток было две,
             # и на 0042 четырнадцать кадров из двадцати закрылись надписью.

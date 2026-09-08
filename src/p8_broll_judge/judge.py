@@ -25,7 +25,9 @@ from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
-from ..lib.query import classify_intent, thematic_reject_reason
+from ..lib.query import (
+    classify_intent, thematic_reject_reason, topical_match_score,
+)
 from ..p7_broll_search.search import (
     _footage_pin_entry, _load_footage_pins, pin_id_denied,
 )
@@ -78,6 +80,30 @@ def _same_intent(left: str, right: str) -> bool:
     if not a or not b:
         return False
     return len(a & b) / len(a | b) >= 0.5
+
+
+def watermark_reject_reason(verdict: dict[str, Any] | None,
+                            candidate: dict[str, Any] | None = None) -> str:
+    """Вшитая в кадр чужая подпись — жёсткий отказ, даже пину (§9.3).
+
+    `watermark` и `has_text` зрение возвращало с самого начала
+    (`vision.py:79-80`) и в отборе они не использовались **никак**. На 0042 в
+    кадре 0 стоял клип с вшитым `PEXELS / GOOGLE DEEPMIND` — он лежал в
+    hard-prefer пинах, поэтому движок его не трогал, и подпись чужого стока
+    уехала в готовый ролик.
+
+    Пин — это «возьми вот этот кадр», а не «возьми его любой ценой»: право
+    выбирать материал у заказчика есть, право протащить чужой логотип в кадр
+    канала — нет. Причина пишется в отчёт, чтобы было видно, какой пин отклонён.
+    """
+    verdict = verdict or {}
+    if bool(verdict.get("watermark")):
+        return ("в кадр вшита чужая подпись или логотип стока: "
+                "показывать её в ролике канала нельзя")
+    # Кандидат мог принести признак из индекса, минуя свежий вердикт.
+    if candidate and bool((candidate.get("vision") or {}).get("watermark")):
+        return "в индексе у кадра отмечена вшитая подпись стока"
+    return ""
 
 
 def _prefer_rank(asset_id: str, pin_prefer: list[str]) -> int | None:
@@ -173,12 +199,15 @@ def run_step(ctx) -> dict[str, Any]:
     reused_scores = 0
     rejected_by_palette = 0
     rejected_by_dark = 0
+    rejected_by_watermark = 0
     # Порог светлоты перебивки. Замер по базе: медиана 55 % видимого, у клипа,
     # давшего чёрную перебивку в 0047, — 16 %.
     visible_min = float(ctx.cfg.get("stock.interstitial_visible_min", 0.20))
 
     for slot_index in sorted(by_slot):
         slot = slots_by_index.get(slot_index, {})
+        slot_block = next((b for b in plan.get("blocks", [])
+                           if b.get("id") == slot.get("block_id")), {})
         role = slot.get("role", "")
         intent = slot.get("visual_intent", "") or slot.get("reason", "")
 
@@ -279,6 +308,16 @@ def run_step(ctx) -> dict[str, Any]:
                 entry["decision"] = "reject_palette"
                 entry["reject_reason"] = palette["reason"]
                 rejected_by_palette += 1
+                judged.append(entry)
+                continue
+            mark = watermark_reject_reason(verdict_dict, candidate)
+            if mark:
+                entry["decision"] = "reject_watermark"
+                entry["reject_reason"] = mark
+                rejected_by_watermark += 1
+                _log.warning("пин отклонён: вшитая подпись", extra={
+                    "asset_id": candidate.get("asset_id"),
+                    "slot": slot_index, "reason": mark})
                 judged.append(entry)
                 continue
             entry["decision"] = "accept_prefer"
@@ -382,8 +421,15 @@ def run_step(ctx) -> dict[str, Any]:
                 _log.info("кандидат отклонён по палитре", extra={
                     "slot": slot_index, "asset": candidate.get("asset_id"),
                     "off_share": palette["off_share"]})
+            mark = watermark_reject_reason(entry.get("verdict"), candidate)
+            if mark and entry["decision"] not in ("reject_palette", "reject_dark"):
+                entry["decision"] = "reject_watermark"
+                entry["reject_reason"] = mark
+                rejected_by_watermark += 1
+                _log.info("кандидат отклонён по вшитой подписи", extra={
+                    "slot": slot_index, "asset": candidate.get("asset_id")})
             judged.append(entry)
-            if entry["decision"] != "reject_palette":
+            if entry["decision"] not in ("reject_palette", "reject_watermark"):
                 scored.append((entry["score"], entry))
 
           def _repeat_key(pair: tuple[float, dict[str, Any]]) -> float:
@@ -489,6 +535,7 @@ def run_step(ctx) -> dict[str, Any]:
         "arbiter_budget": arbiter_budget,
         "reused_scores": reused_scores,
         "rejected_by_palette": rejected_by_palette,
+        "rejected_by_watermark": rejected_by_watermark,
         "rejected_by_dark": rejected_by_dark,
         "judged_count": len(judged),
         "accepted_count": len(accepted),
@@ -508,6 +555,9 @@ def run_step(ctx) -> dict[str, Any]:
     if rejected_by_dark:
         ctx.warn(f"{rejected_by_dark} кандидатов отклонены как слишком тёмные для "
                  f"перебивки (порог {visible_min:.0%} видимого кадра)")
+    if rejected_by_watermark:
+        ctx.warn(f"{rejected_by_watermark} кандидатов отклонены за вшитую подпись "
+                 f"стока — в кадре канала чужой логотип недопустим (§9.3)")
     if rejected_by_palette:
         ctx.warn(f"{rejected_by_palette} кандидатов отклонены по палитре канала "
                  f"(§3.1): посторонний цвет занимал больше "

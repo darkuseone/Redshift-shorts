@@ -32,6 +32,7 @@ from ..lib.phash import phash_image
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import (
+    allow_generic_pad,
     build_queries, classify_intent, is_sci_topic, thematic_reject_reason,
 )
 from ..lib.render.shots import slim_video
@@ -58,14 +59,25 @@ def pad_slot_queries(
     queries_per_slot: int,
     intent_kind: str = "",
     category: str = "",
+    slot: dict[str, Any] | None = None,
+    plan: dict[str, Any] | None = None,
 ) -> list[str]:
-    """Pad a short query ladder. Sci slots get lab/chip extras before space/news."""
+    """Дополнить короткую лестницу запросов.
+
+    Научный слот сначала получает лабораторию и чип, и только потом — общий
+    пад. Сам общий пад проходит через гейт §9.1: пять запросов про космос и
+    студию новостей подходят чему угодно и поэтому не подходят ничему.
+    Подмешивались они **в каждый слот каждого ролика**, и ролик про квантовый
+    чип честно получал галактику.
+    """
     if len(queries) >= queries_per_slot:
         return list(queries)
     extras: list[str] = []
     if is_sci_topic(category=category, intent_kind=intent_kind):
         extras.extend(SCI_QUERY_PAD)
-    extras.extend(SPACE_NEWS_PAD)
+    if slot is None or allow_generic_pad(slot, plan, intent_kind=intent_kind,
+                                         category=category):
+        extras.extend(SPACE_NEWS_PAD)
     existing = {q.lower() for q in queries}
     out = list(queries)
     for extra in extras:
@@ -289,6 +301,8 @@ def run_step(ctx) -> dict[str, Any]:
             queries_per_slot=queries_per_slot,
             intent_kind=intent_kind,
             category=str(plan.get("category") or ""),
+            slot=slot,
+            plan=plan,
         )
         source_order = _sources_for(intent_kind, routing)
         slot_candidates: list[dict[str, Any]] = []

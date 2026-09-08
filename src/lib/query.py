@@ -17,10 +17,13 @@ from typing import Any, Iterable
 
 # Понятия канала: русский триггер → английские опоры запроса.
 CONCEPTS: dict[str, list[str]] = {
-    "квант": ["quantum processor", "quantum computer", "cryostat laboratory"],
+    "квант": ["quantum processor", "quantum computer", "cryostat laboratory",
+              "dilution refrigerator gold", "superconducting qubit chip"],
     "кубит": ["quantum chip macro", "superconducting circuit", "quantum processor closeup"],
     "чип": ["microchip macro", "semiconductor wafer", "circuit board closeup"],
-    "процессор": ["processor macro shot", "silicon chip", "computer hardware closeup"],
+    # Было `processor macro shot` / `computer hardware closeup` — сток отдавал
+    # по ним офисные столы и ноутбуки. Нужен сам кристалл, а не «техника».
+    "процессор": ["cpu die macro", "silicon wafer closeup", "circuit board macro"],
     "нейросет": ["neural network visualization", "ai data flow", "server room ai"],
     "интеллект": ["artificial intelligence abstract", "machine learning visualization"],
     "алгоритм": ["code on screen", "data processing abstract"],
@@ -52,7 +55,10 @@ CONCEPTS: dict[str, list[str]] = {
     "деньг": ["financial charts screen", "stock market data"],
     "город": ["city timelapse night", "urban crowd street"],
     "люди": ["crowd people walking", "people city street"],
-    "ошибк": ["error warning screen", "glitch abstract"],
+    # `error warning screen` тянул со стока красные окна винды. Реплика про
+    # коррекцию ошибок — это схема и осциллограмма, а не системный сбой.
+    "ошибк": ["error correction diagram", "signal noise oscilloscope",
+              "glitch abstract dark", "error warning screen"],
     "время": ["clock time lapse", "hourglass macro"],
     "вселен": ["universe deep space", "cosmic web visualization"],
 }
@@ -203,6 +209,43 @@ def classify_intent(visual_intent: str, queries: Iterable[str], category: str = 
     return CATEGORY_HINT.get(category, "default")
 
 
+# Универсальный пад: пять запросов, которые подходят чему угодно и поэтому не
+# подходят ничему. Ролик про квантовый чип честно получал галактику и студию
+# новостей — отсюда и «пастельные кубики про LLM» в отзыве критика.
+GENERIC_PAD_KINDS = frozenset({"space", "news"})
+
+
+def allow_generic_pad(slot: dict[str, Any], plan: dict[str, Any] | None = None,
+                      *, intent_kind: str = "", category: str = "") -> bool:
+    """Можно ли доливать слот космосом и новостной студией (§9.1).
+
+    Можно в двух случаях: слот **про это** (`space`/`news`), либо у слота нет
+    ни одного предметного понятия — тогда общий кадр честнее пустоты. Во всех
+    остальных случаях пад врёт про тему, и лучше короткая лестница запросов.
+
+    Гейт один на оба места, где пад живёт: `build_queries` здесь и
+    `pad_slot_queries` в P7. Раньше они расходились, и починка одного места
+    ничего не меняла.
+    """
+    kind = intent_kind or classify_intent(
+        str(slot.get("visual_intent") or ""), slot.get("queries") or [], category)
+    if kind in GENERIC_PAD_KINDS:
+        return True
+    block = {}
+    if plan:
+        block = next((b for b in plan.get("blocks", [])
+                      if b.get("id") == slot.get("block_id")), {})
+    source_text = " ".join([
+        str(slot.get("visual_intent") or ""),
+        str(block.get("text") or ""),
+        str(block.get("visual_intent") or ""),
+        " ".join(str(q) for q in (slot.get("queries") or [])),
+    ])
+    # Предметных понятий нет — значит показывать нечего конкретного, и общий
+    # кадр не спорит с речью.
+    return not _concepts_from_text(source_text)
+
+
 def _concepts_from_text(text: str) -> list[str]:
     lowered = text.lower()
     found: list[str] = []
@@ -210,6 +253,38 @@ def _concepts_from_text(text: str) -> list[str]:
         if trigger in lowered:
             found.extend(options)
     return list(dict.fromkeys(found))
+
+
+def topical_match_score(candidate_tags: set[str] | list[str], block_text: str,
+                        category: str = "") -> float:
+    """0..1: насколько материал про то, о чём сейчас звучит реплика (§9.2).
+
+    Зрение отвечает на вопрос «что изображено» и отвечает честно: на 0042 оно
+    написало бы «светящиеся фиолетовые сферы» — и было бы право. Отбраковать
+    такой клип должен не критик качества, а тематический счёт: «относится ли
+    изображённое к тому, что говорят».
+
+    Счёт — доля попаданий тегов кандидата в понятия, которые даёт сама реплика.
+    Понятия берутся из `CONCEPTS`, то есть из того же словаря, по которому
+    строился запрос: если материал не пересекается с ним ни одним словом, он
+    пришёл из общего пада или из чужого слота.
+    """
+    tags = {str(t).lower().strip() for t in (candidate_tags or []) if str(t).strip()}
+    if not tags:
+        return 0.0
+    wanted = _concepts_from_text(str(block_text or ""))
+    if not wanted:
+        # Реплика без предметных понятий ничего не требует от кадра — и
+        # штрафовать материал не за что.
+        return 1.0
+    words: set[str] = set()
+    for phrase in wanted:
+        words.update(w for w in phrase.lower().split() if len(w) > 2)
+    if not words:
+        return 1.0
+    hits = sum(1 for tag in tags
+               if any(w in tag or tag in w for w in words))
+    return round(min(1.0, hits / max(1, min(len(tags), 4))), 3)
 
 
 def _looks_english(text: str) -> bool:
