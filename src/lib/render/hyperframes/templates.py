@@ -84,9 +84,17 @@ def _mark_accent(text: str, accent: str) -> str:
             + _esc(text[idx + len(accent):]))
 
 
+_ACCENT_PUNCT = "()[]«»\"'.,:;"
+
+
+def _clean_accent_word(accent: str) -> str:
+    """Accent is a word, never an opening paren from a gloss («(квантовый»)."""
+    return str(accent or "").strip().strip(_ACCENT_PUNCT).strip()
+
+
 def _content_of(ctx: "TemplateCtx") -> tuple[str, str, bool]:
     content = str(ctx.params.get("content") or "").strip()
-    accent = str(ctx.params.get("accent_word") or "").strip()
+    accent = _clean_accent_word(str(ctx.params.get("accent_word") or ""))
     invert = bool(ctx.params.get("invert"))
     return content, accent, invert
 
@@ -8870,13 +8878,17 @@ def fs_strip(ctx: "TemplateCtx") -> Piece:
     if not content:
         return Piece()
     node_id = ctx.target
-    size = min(_fs_size(ctx, content), 180)
+    # Fit the FULL phrase, not the longest single word: sizing to «КУБИТОВ»
+    # left «ЧЕМ БОЛЬШЕ КУБИТОВ В» overflowing and slicing glyphs (EM / ЛЬШЕ).
+    ceiling = min(_fs_ceiling(ctx), 180)
+    available = min(float(ctx.params.get("available_px") or 900), float(WORK_AREA_W))
+    size = fit_size(content.upper(), available, ceiling, role="display")
     height = int(ctx.params.get("strip_height") or 220)
     cls = "clip fullscreen-text fs-strip" + (" invert" if invert else "")
     return Piece(
         nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
                f'<span id="{node_id}-inner" class="fs-band" '
-               f'style="height:{height}px;font-size:{size}px">'
+               f'style="height:{height}px;font-size:{size}px;white-space:nowrap">'
                f'{_mark_accent(content, accent)}</span></div>'],
         tweens=enter_and_drift(f"#{node_id}-inner", _enter_at(ctx), _hold(ctx),
                                name="rise"))
@@ -13361,7 +13373,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "{display:block;will-change:transform}"
         ".fullscreen-text .fs-band{display:flex;align-items:center;"
         "justify-content:center;width:100%;background:var(--color-accent);"
-        "color:var(--color-bg-pure);will-change:transform}"
+        "color:var(--color-bg-pure);white-space:nowrap;will-change:transform}"
         ".fullscreen-text.fs-strip{background:var(--color-bg-light)}"
         ".fullscreen-text .kts-stage{display:flex;align-items:center;"
         "justify-content:center;width:100%;height:100%;will-change:opacity}"

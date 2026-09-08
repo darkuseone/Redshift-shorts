@@ -27,7 +27,7 @@ from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
     prepare_split_shot,
 )
-from ..lib.render.text_rules import glue_short_cues
+from ..lib.render.text_rules import drop_orphan_short_cues, glue_short_cues
 from ..lib.backdrop import plate_name as _scene_plate_name
 from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.backdrop import describe as scene_why
@@ -354,6 +354,92 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
     credit = str(asset.get("attribution") or asset.get("source") or "").strip()
     return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0),
             "credit": credit, "ai_generated": bool(asset.get("ai_generated"))}
+
+
+def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
+                  prepared: dict[int, dict[str, Any]],
+                  assets: dict[int, dict[str, Any]], ctx, plan: dict[str, Any]
+                  ) -> str | None:
+    """Prepared dst, nearest stock plate, or a scene backdrop — never invent text."""
+    prep = prepared.get(slot["index"])
+    if prep is not None and prep.get("dst"):
+        return prep["dst"]
+    plate = _plate_source(slot, slots, prepared, assets)
+    if plate and plate.get("file"):
+        return str(plate["file"])
+    scene_name = pick_scene(
+        str(plan.get("title") or ""),
+        " ".join(str(b.get("text") or "") for b in plan.get("blocks", [])))
+    plate_path = _backdrop_plate(ctx.cfg, scene_name)
+    if plate_path:
+        return plate_path
+    assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
+    for name in ("grid.jpg", "horizon.jpg"):
+        cand = assets_dir / "backdrops" / name
+        if cand.exists():
+            return str(cand)
+    return None
+
+
+def _fullscreen_cap(cfg) -> int:
+    rng = [2, 4]
+    if cfg is not None:
+        try:
+            rng = cfg.get("limits.fullscreen_text_per_video", [2, 4]) or [2, 4]
+        except Exception:  # noqa: BLE001
+            rng = [2, 4]
+    if isinstance(rng, (list, tuple)) and rng:
+        return int(rng[-1])
+    try:
+        return int(rng)
+    except (TypeError, ValueError):
+        return 4
+
+
+def _claim_screen_phrase(used: set[str], content: str) -> bool:
+    """Reserve a unique on-screen slogan. False = already used or empty."""
+    key = _norm_screen_key(content)
+    if not key:
+        return False
+    if key in used:
+        return False
+    used.add(key)
+    return True
+
+
+def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
+    kind = str(ovl.get("type") or "")
+    renderer = str(ovl.get("renderer") or "")
+    template = str(ovl.get("template") or "")
+    return (kind == "cta" or renderer == "logo_brand_close"
+            or "logo-brand-close" in template)
+
+
+def _build_subtitle_cues(words: list[dict[str, Any]], *,
+                         punch_windows: list[tuple[float, float, str]],
+                         mute_windows: list[tuple[float, float]]) -> list[dict[str, Any]]:
+    """Karaoke cues at the default baseline; mute on punch/card/CTA, never raise.
+
+    Overlap with a bulky card / plaque / fullscreen / CTA window drops the cue
+    instead of relocating it onto the avatar face. Punch-family echo of the
+    card already on screen is also muted. After glue, leftover ≤2-letter chips
+    (ТИ / ВЕ) are dropped.
+    """
+    subtitles: list[dict[str, Any]] = []
+    for word in words:
+        start, end = float(word["start"]), float(word["end"])
+        spoken = str(word.get("display") or word.get("word") or "")
+        if any(start < pe and end > ps and punch_families_overlap(spoken, pc)
+               for ps, pe, pc in punch_windows if pc):
+            continue
+        if any(start < ce and end > cs for cs, ce in mute_windows):
+            continue
+        subtitles.append({
+            "display": word["display"], "start": start, "end": end,
+            "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
+        })
+    subtitles = glue_short_cues(subtitles)
+    return drop_orphan_short_cues(subtitles)
 
 
 # Что приёму нужно на входе. Без этого он рисует пустоту поверх ведущего, и
@@ -710,28 +796,57 @@ def _stem(word: str) -> str:
     сравнении с вложением пятибуквенный «порыв» сжимался до «пор» и совпадал
     с «породой». Равенство начал такого не допускает.
     """
-    bare = word.strip(".,!?;:«»\"'—–").lower().replace("ё", "е")
+    bare = word.strip(".,!?;:«»\"'—–()[]").lower().replace("ё", "е")
     return bare[:max(3, len(bare) - 2)]
+
+
+_STOCK_BRAND_SOURCES = ("pexels", "pixabay")
+_ACCENT_STRIP = ".,!?;:«»\"'—–()[]"
+
+
+def _is_stock_brand_credit(text: str) -> bool:
+    """True for burned-in Pexels/Pixabay watermark-style credit strings."""
+    t = re.sub(r"\s+", " ", str(text or "").strip().lower())
+    if not t:
+        return False
+    for brand in _STOCK_BRAND_SOURCES:
+        if t == brand:
+            return True
+        if t.startswith(f"{brand} ") or t.startswith(f"{brand}/") or t.startswith(f"{brand} /"):
+            return True
+        if t.endswith(f" {brand}") or t.endswith(f"/{brand}") or t.endswith(f"/ {brand}"):
+            return True
+    return False
 
 
 def _credit_line(asset: dict[str, Any], sources: dict[str, Any]) -> str:
     """Small bottom-left source line for real photo/video (not AI).
 
-    Show domain/source for all non-AI stock and press so viewers see where the
-    frame came from. ``attribution_required`` sources still prefer the formal
-    attribution string; others fall back to attribution, domain, or source id.
-    Empty string = no caption. Generated assets never get a credit.
+    Press and other named sources keep a human/domain credit. Pexels/Pixabay
+    burn their brand into the frame already — do not print ``PEXELS`` /
+    ``PIXABAY`` again unless the licence ``attribution_required`` and the
+    string is a non-brand human name. Empty string = no caption.
     """
     if not asset or asset.get("ai_generated"):
         return ""
     source = str(asset.get("source") or "").strip()
     if not source and not asset.get("attribution"):
         return ""
-    # ``sources`` kept for callers / future license hooks; name resolution below.
-    _ = (sources.get("sources") or {}).get(source) or {}
+    src_meta = (sources.get("sources") or {}).get(source) or {}
+    required = bool(src_meta.get("attribution_required"))
     name = str(asset.get("attribution") or "").strip()
     meta = asset.get("meta") or {}
     domain = str(meta.get("domain") or "").strip()
+    source_l = source.lower()
+
+    if source_l in _STOCK_BRAND_SOURCES:
+        if not required:
+            return ""
+        if name and not _is_stock_brand_credit(name):
+            return name
+        return ""
+    if _is_stock_brand_credit(name) or _is_stock_brand_credit(source):
+        return ""
     if name and domain and domain.lower() not in name.lower():
         return f"{name} · {domain}"
     return name or domain or source
@@ -749,20 +864,20 @@ def _fullscreen_accent(content: str, block: dict[str, Any]) -> str | None:
     ``None`` только для фразы из одного слова: там выделять нечего, всё и так
     выделено размером.
     """
-    words = [w for w in content.split() if w.strip(".,!?;:«»\"'—–")]
+    words = [w for w in content.split() if w.strip(_ACCENT_STRIP)]
     if len(words) < 2:
         return None
     emphasis = _stem(str(block.get("emphasis_word") or ""))
     if emphasis:
         for word in words:
-            bare = word.strip(".,!?;:«»\"'—–")
+            bare = word.strip(_ACCENT_STRIP)
             if _stem(bare) == emphasis:
                 return bare
-    digits = [w.strip(".,!?;:«»\"'—–") for w in words
+    digits = [w.strip(_ACCENT_STRIP) for w in words
               if any(ch.isdigit() for ch in w)]
     if digits:
         return digits[0]
-    return max((w.strip(".,!?;:«»\"'—–") for w in words), key=len)
+    return max((w.strip(_ACCENT_STRIP) for w in words), key=len)
 
 
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
@@ -2393,6 +2508,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
     # Dedup on-screen slogans across intentional FS + gap FS (0042: «5 МИНУТ»).
     used_screen_phrases: set[str] = set()
+    fs_cap = _fullscreen_cap(ctx.cfg)
+    fs_count = 0
     # Библиотека иконок §14: пилюля бренда берёт логотип оттуда. Её отсутствие
     # не должно валить сборку — приём просто не выпадет.
     try:
@@ -2411,8 +2528,33 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         }
 
         if slot["kind"] == "fullscreen_text":
-            preferred = prefs.get(f"fullscreen_text@{slot['role']}")
             content = slot.get("content", "")
+            block = blocks_by_id.get(slot["block_id"], {})
+            asset = assets.get(slot["index"])
+            content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
+            onset = spoken_onset_for_content(
+                [w for w in words_doc["words"]
+                 if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
+                str(content), block.get("emphasis_word"))
+            content = soften_on_screen_copy(str(content or ""))
+            bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
+            # Cap + uniqueness: skip duplicate Nature / НАОБОРОТ; over-cap → plate.
+            if fs_count >= fs_cap or not _claim_screen_phrase(used_screen_phrases, content):
+                entry.update({
+                    "kind": "footage",
+                    "file": bg_file,
+                    "asset_id": (asset or {}).get("asset_id"),
+                    "source": (asset or {}).get("source"),
+                    "license": (asset or {}).get("license"),
+                    "attribution": (asset or {}).get("attribution", ""),
+                    "page_url": (asset or {}).get("page_url", ""),
+                    "ai_generated": bool((asset or {}).get("ai_generated")),
+                    "credit": _credit_line(asset or {}, sources_spec),
+                    "gap_reason": "fullscreen cap or duplicate phrase: plate without text",
+                })
+                shots.append(entry)
+                continue
+            preferred = prefs.get(f"fullscreen_text@{slot['role']}")
             s_content = str(content or "")
             signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
             head = [p for p in (preferred, slot.get("template_hint")) if p]
@@ -2428,68 +2570,20 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 prefer_head=head,
             )
             used_templates.append(template.id)
-            content = slot.get("content", "")
-            block = blocks_by_id.get(slot["block_id"], {})
-            # Фон под текстом — тот же футаж, что и у остальных кадров блока.
-            # Раньше слот его не просил, и кадр выходил белыми буквами на
-            # пустом чёрном: фраза вынесена крупно, а стоит она ни на чём.
-            prep = prepared.get(slot["index"])
-            asset = assets.get(slot["index"])
-            content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
-            # Soften display after onset match uses VO-aligned enriched copy.
-            onset = spoken_onset_for_content(
-                [w for w in words_doc["words"]
-                 if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
-                str(content), block.get("emphasis_word"))
-            content = soften_on_screen_copy(str(content or ""))
             fs_params = _fullscreen_params(template, content, block)
             fs_params = _attach_fs_media(fs_params, bg_file)
-            # Delay punch chrome until spoken onset when slot starts early.
             if onset is not None and float(slot["start"]) + 0.15 < float(onset):
                 fs_params["enter_delay"] = max(
                     float(fs_params.get("enter_delay") or 0),
                     float(onset) + 0.05 - float(slot["start"]))
-            key = _norm_screen_key(str(content or ""))
-            if key:
-                used_screen_phrases.add(key)
-            # Never leave intentional FS on empty black: stock plate → scene plate.
-            bg_file = prep["dst"] if prep is not None else None
-            gap_reason = None
-            if bg_file is None:
-                plate = _plate_source(slot, slots, prepared, assets)
-                if plate and plate.get("file"):
-                    bg_file = plate["file"]
-                    gap_reason = "фон — ближайший сток блока"
-                else:
-                    scene_name = pick_scene(
-                        str(plan.get("title") or ""),
-                        " ".join(str(b.get("text") or "")
-                                 for b in plan.get("blocks", [])))
-                    plate_path = _backdrop_plate(ctx.cfg, scene_name)
-                    if plate_path:
-                        bg_file = plate_path
-                        gap_reason = "фон — плита сцены ролика"
-                    else:
-                        # Last resort: any backdrop plate on disk (prefer grid).
-                        assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
-                        for name in ("grid.jpg", "horizon.jpg"):
-                            cand = assets_dir / "backdrops" / name
-                            if cand.exists():
-                                bg_file = str(cand)
-                                gap_reason = f"фон — запасная плита {name}"
-                                break
-                        if bg_file is None:
-                            gap_reason = "фон под полноэкранный текст не найден"
             entry.update({
                 "content": content,
                 "template": template.id,
                 "renderer": template.renderer,
                 "params": fs_params,
-                # Light glyphs; bg stays transparent so fs-bg plate shows (r6).
                 "invert": True,
                 "accent_word": _fullscreen_accent(content, block),
                 "file": bg_file,
-                # Full passport for QC-12; credit feeds thin BL caption over media.
                 "asset_id": (asset or {}).get("asset_id"),
                 "source": (asset or {}).get("source"),
                 "license": (asset or {}).get("license"),
@@ -2498,22 +2592,42 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "ai_generated": bool((asset or {}).get("ai_generated")),
                 "credit": _credit_line(asset or {}, sources_spec),
             })
-            if gap_reason:
-                entry["gap_reason"] = gap_reason
+            if bg_file is None:
+                entry["gap_reason"] = "фон под полноэкранный текст не найден"
+            fs_count += 1
             shots.append(entry)
             continue
 
         prep = prepared.get(slot["index"])
         asset = assets.get(slot["index"])
         if prep is None or (asset is None and slot["kind"] not in AVATAR_KINDS):
-            # Empty slot → spoken-word fullscreen, not a dark brand fill.
-            # Live 0042/0047 left multi-second black cards when P7 missed and
-            # P9 hit the 35% AI ceiling; Claude 1ff38b2 closed those with text.
+            # Empty slot: unique FS under the brandbook cap, else plate without text.
+            bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
             gap_block = blocks_by_id.get(slot["block_id"], {})
-            content = gap_phrase(words_doc["words"], slot, gap_block,
+            content = ""
+            if fs_count < fs_cap:
+                raw = gap_phrase(words_doc["words"], slot, gap_block,
                                  used=used_screen_phrases)
+                content = soften_on_screen_copy(str(raw or ""))
+                key = _norm_screen_key(content)
+                raw_key = _norm_screen_key(raw)
+                # Soften must not recreate a slogan already on screen.
+                if key and key in used_screen_phrases and key != raw_key:
+                    content = ""
+                elif key:
+                    used_screen_phrases.add(key)
+            if fs_count >= fs_cap or not content:
+                entry.update({
+                    "kind": "footage",
+                    "file": bg_file,
+                    "asset_id": None,
+                    "gap_reason": ("fullscreen cap: plate without text"
+                                   if fs_count >= fs_cap
+                                   else "no unique phrase: plate without text"),
+                })
+                shots.append(entry)
+                continue
             gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
-
             s_content = str(content or "")
             signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")
@@ -2531,29 +2645,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 prefer_head=head,
             )
             used_templates.append(template.id)
-            # Borrow nearest real plate as bg when any footage exists in the cut.
-            plate = _plate_source(slot, slots, prepared, assets)
-            bg_file = (plate or {}).get("file") if plate else None
-            if bg_file is None:
-                scene_name = pick_scene(
-                    str(plan.get("title") or ""),
-                    " ".join(str(b.get("text") or "")
-                             for b in plan.get("blocks", [])))
-                plate_path = _backdrop_plate(ctx.cfg, scene_name)
-                if plate_path:
-                    bg_file = plate_path
-                else:
-                    assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
-                    for name in ("grid.jpg", "horizon.jpg"):
-                        cand = assets_dir / "backdrops" / name
-                        if cand.exists():
-                            bg_file = str(cand)
-                            break
             onset = spoken_onset_for_content(
                 [w for w in words_doc["words"]
                  if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
                 str(content), gap_block.get("emphasis_word"))
-            content = soften_on_screen_copy(str(content or ""))
             fs_params = _fullscreen_params(template, content, gap_block)
             fs_params = _attach_fs_media(fs_params, bg_file)
             if (onset is not None and content
@@ -2579,6 +2674,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             })
             if bg_file is None:
                 entry["gap_reason"] += "; фон — сцена ролика"
+            fs_count += 1
             shots.append(entry)
             continue
 
@@ -2753,9 +2849,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "why": "r6: informative card over first avatar to mask off-camera gaze",
             })
 
-    # Smart captions (0042 B): keep nearly all spoken words.
-    # Mute ONLY same punch-family echo while that card is up; then restore.
-    # Spatial collision with a card → reposition baseline, never blanket-delete.
+    # Smart captions: punch-family mute stays. Overlap with a bulky card /
+    # plaque / fullscreen / CTA window mutes the cue (never raise onto the face).
+    # Shown cues keep the default baseline (~1180).
     punch_windows: list[tuple[float, float, str]] = [
         (float(s["start"]), float(s["end"]), str(s.get("content") or ""))
         for s in shots if s.get("kind") == "fullscreen_text" and s.get("content")
@@ -2772,7 +2868,6 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         if hero.get("duration"):
             end = min(end, float(shot["start"]) + float(hero["duration"]))
         card_windows.append((float(shot["start"]), end))
-        # Same-family mute only — pull the on-screen word/title if present.
         hw = str(
             (hero.get("params") or {}).get("word")
             or (hero.get("params") or {}).get("title")
@@ -2793,79 +2888,13 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                      or (ovl.get("params") or {}).get("content") or "")
             if pt:
                 punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
-    default_baseline = int(ctx.cfg.brand("subtitles.baseline_y_default", 1180))
-    # Known vertical bands for bulky overlays (y_top, y_bottom) in 1920 frame.
-    CARD_BANDS = {
-        "beat_freeze_cut": (720, 1500),
-        "scan_band": (700, 1200),
-        "code_highlight": (600, 1400),
-        "code_morph": (600, 1400),
-        "code_diff": (600, 1400),
-        "number_slam": (640, 1280),
-        "source_card": (400, 1100),
-        "browser": (400, 1100),
-        "plaque": (900, 1400),
-        "default": (700, 1300),
-    }
-
-    def _band_for(renderer_or_kind: str) -> tuple[int, int]:
-        return CARD_BANDS.get(renderer_or_kind, CARD_BANDS["default"])
-
-    def _baseline_away_from_cards(start: float, end: float) -> int | None:
-        """Place subtitle in nearest free band relative to active cards."""
-        active_bands: list[tuple[int, int]] = []
-        for cs, ce in card_windows:
-            if start < ce and end > cs:
-                active_bands.append(CARD_BANDS["default"])
-        for ovl in overlays:
-            kind = str(ovl.get("type") or "")
-            renderer = str(ovl.get("renderer") or "")
-            if not (start < float(ovl["end"]) and end > float(ovl["start"])):
-                continue
-            if kind in _BULKY_OVL or renderer in _BULKY_OVL or kind == "plaque":
-                active_bands.append(_band_for(renderer or kind))
-        for s in shots:
-            if s.get("kind") != "fullscreen_text":
-                continue
-            if not (start < float(s["end"]) and end > float(s["start"])):
-                continue
-            rnd = str((s.get("params") or {}).get("renderer") or s.get("renderer") or "default")
-            active_bands.append(_band_for(rnd))
-        if not active_bands:
-            return None
-        # Pick the topmost card band; put subtitle above it if room, else below.
-        y_top = min(b[0] for b in active_bands)
-        y_bottom = max(b[1] for b in active_bands)
-        size = 64
-        if y_top >= 220 + size:
-            return max(180, y_top - size - 24)
-        # Below the card if there is room under it before frame bottom.
-        below = y_bottom + size + 24
-        if below < 1700:
-            return below
-        # Last resort: keep default (do not push into card mid).
-        return default_baseline
-
-    subtitles = []
-    for word in words_doc["words"]:
-        start, end = float(word["start"]), float(word["end"])
-        spoken = str(word.get("display") or word.get("word") or "")
-        # One punch-family instance on screen: hide caption echo of active card.
-        if any(start < pe and end > ps and punch_families_overlap(spoken, pc)
-               for ps, pe, pc in punch_windows if pc):
-            continue
-        cue = {
-            "display": word["display"], "start": start, "end": end,
-            "emphasis": bool(word.get("emphasis")), "block_id": word["block_id"],
-        }
-        if any(start < ce and end > cs for cs, ce in card_windows):
-            raised = _baseline_away_from_cards(start, end)
-            if raised is not None:
-                cue["baseline_y"] = raised
-        subtitles.append(cue)
-    # Склейка — после отбраковки, а не до: слово, снятое полноэкранным текстом,
-    # не имеет права утащить с собой приклеенный к нему предлог.
-    subtitles = glue_short_cues(subtitles)
+        if _is_cta_overlay(ovl):
+            card_windows.append((float(ovl["start"]), float(ovl["end"])))
+    subtitles = _build_subtitle_cues(
+        words_doc["words"],
+        punch_windows=punch_windows,
+        mute_windows=card_windows,
+    )
 
     # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон
     # держится весь ролик и посреди него не меняется.

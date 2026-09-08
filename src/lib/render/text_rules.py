@@ -88,3 +88,22 @@ def glue_short_cues(cues: list[dict], *, max_letters: int = SHORT_CUE_LETTERS,
         out.append(dict(cue))
     out.reverse()
     return out
+
+
+def drop_orphan_short_cues(cues: list[dict], *,
+                           max_letters: int = SHORT_CUE_LETTERS) -> list[dict]:
+    """Drop leftover 1–2 letter chips that ``glue_short_cues`` could not attach.
+
+    After glue, «а расчёты» is one cue. A stranded «ТИ» / «ВЕ» with no neighbour
+    in range stays a one-glyph flash and must not reach the frame. Numeric cues
+    (``105``) have no letters and are kept.
+    """
+    kept: list[dict] = []
+    for cue in cues:
+        text = str(cue.get("display") or "")
+        cleaned = clean_word(text)
+        letters = _cue_letters(text)
+        if letters <= max_letters and not any(ch.isdigit() for ch in cleaned):
+            continue
+        kept.append(cue)
+    return kept

@@ -23,9 +23,12 @@ def test_soften_english_surface_code_highlight():
     assert "surface" not in out.lower()
 
 
-def test_soften_qubit_gloss_on_phrase_not_singleton():
+def test_soften_qubit_gloss_off_by_default():
     assert soften_on_screen_copy("кубитов") == "кубитов"
-    glossed = soften_on_screen_copy("105 кубитов внутри")
+    phrase = soften_on_screen_copy("105 кубитов внутри")
+    assert "квантовый бит" not in phrase.lower()
+    assert "(" not in phrase
+    glossed = soften_on_screen_copy("105 кубитов внутри", gloss_qubit=True)
     assert "квантовый бит" in glossed.lower()
 
 

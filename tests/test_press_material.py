@@ -260,21 +260,27 @@ def test_card_marks_nothing_when_there_is_nothing_to_mark(phrase):
 # --- подпись источника (§1, правило 8) ----------------------------------------
 
 def test_credit_is_printed_only_where_the_licence_asks_for_it():
-    """MAIN: BL-подпись для любого не-AI стока/пресса; AI — без подписи.
-
-    Раньше подпись включалась только при attribution_required. После BL-credits
-    на main кадр показывает источник и для Pexels/NASA — зритель видит, откуда
-    кадр. Сгенерированное по-прежнему без подписи.
-    """
+    """Press keeps a human credit; Pexels/Pixabay brand watermarks stay off."""
     from src.p11_assemble.assemble import _credit_line
 
     spec = {"sources": {"press": {"attribution_required": True},
-                        "pexels": {"attribution_required": False}}}
+                        "pexels": {"attribution_required": False},
+                        "pixabay": {"attribution_required": False}}}
 
     press = {"source": "press", "attribution": "Nature",
              "meta": {"domain": "nature.com"}}
     assert _credit_line(press, spec) == "Nature · nature.com"
-    assert _credit_line({"source": "pexels", "attribution": "Иван Петров"}, spec) == "Иван Петров"
+    # Burned-in stock brands duplicate on-screen; hide unless the licence
+    # actually requires a non-brand human name.
+    assert _credit_line({"source": "pexels", "attribution": "Иван Петров"}, spec) == ""
+    assert _credit_line({"source": "pexels",
+                         "attribution": "Pexels / Google DeepMind"}, spec) == ""
+    assert _credit_line({"source": "pixabay",
+                         "attribution": "Pixabay / Digital_View"}, spec) == ""
+    spec_req = {"sources": {"pexels": {"attribution_required": True}}}
+    assert _credit_line({"source": "pexels", "attribution": "Иван Петров"},
+                        spec_req) == "Иван Петров"
+    assert _credit_line({"source": "pexels", "attribution": "PEXELS"}, spec_req) == ""
     # Своё авторство в кадре не декларируют.
     assert _credit_line({**press, "ai_generated": True}, spec) == ""
     # Домен не дублируется, если он уже в имени.

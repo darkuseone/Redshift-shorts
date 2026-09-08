@@ -192,6 +192,23 @@ def test_avatar_bg_plates_round_robin():
     assert out[1] != out[3] or len(set(out.values())) == 1
 
 
+def test_fullscreen_cap_reads_brandbook_limit():
+    from src.lib.config import load_config
+    from src.p11_assemble.assemble import _fullscreen_cap
+
+    assert _fullscreen_cap(load_config()) == 4
+
+
+def test_claim_screen_phrase_rejects_duplicates():
+    from src.p11_assemble.assemble import _claim_screen_phrase
+
+    used: set[str] = set()
+    assert _claim_screen_phrase(used, "РАБОТА ОПУБЛИКОВАНА В NATURE")
+    assert not _claim_screen_phrase(used, "работа опубликована в nature")
+    assert _claim_screen_phrase(used, "ЗДЕСЬ ВСЁ НАОБОРОТ")
+    assert not _claim_screen_phrase(used, "здесь всё наоборот")
+
+
 def test_gap_phrase_overlay_once_then_rotates():
     """Авторский punch («5 МИНУТ») не должен висеть на всех gap-слотах подряд."""
     from src.p11_assemble.assemble import gap_phrase

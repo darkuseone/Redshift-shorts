@@ -827,6 +827,20 @@ def test_fullscreen_accent_does_not_confuse_similar_stems():
     assert _fullscreen_accent("ДЕРЖИТ ПОРОДА", {"emphasis_word": "порыв"}) == "ДЕРЖИТ"
 
 
+def test_fullscreen_accent_strips_paren_gloss():
+    from src.p11_assemble.assemble import _fullscreen_accent
+
+    out = _fullscreen_accent(
+        "ЧЕМ БОЛЬШЕ КУБИТОВ (квантовый бит) В",
+        {"emphasis_word": "квантовый"},
+    )
+    assert out == "квантовый"
+    longest = _fullscreen_accent("ЧЕМ БОЛЬШЕ (квантовый", {})
+    assert longest is not None
+    assert "(" not in longest
+    assert ")" not in longest
+
+
 def test_fullscreen_slot_gets_the_queries_of_its_block():
     """Кадр с текстом ищет материал теми же словами, что и остальной блок.
 

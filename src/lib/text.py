@@ -369,11 +369,12 @@ _ON_SCREEN_PLAIN: tuple[tuple[str, str], ...] = (
 )
 
 
-def soften_on_screen_copy(text: str, *, gloss_qubit: bool = True) -> str:
+def soften_on_screen_copy(text: str, *, gloss_qubit: bool = False) -> str:
     """Simplify jargon for overlay/FS/plaque display without changing VO.
 
     Examples: «квантовый чип» → «квантовый компьютер»; English highlight phrases
-    → short Russian; optional «кубит» → «кубит (квантовый бит)» on multi-word cards.
+    → short Russian. Parenthetical qubit gloss is off by default so cards stay
+    laconic (1–4 words); pass ``gloss_qubit=True`` only for an explicit call.
     """
     raw = str(text or "").strip()
     if not raw:

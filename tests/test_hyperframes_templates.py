@@ -2674,6 +2674,41 @@ def _fs_ctx(**params):
                                         **params})
 
 
+def test_fs_strip_sizes_full_phrase_and_nowrap():
+    """label-strip fits the whole line; words must not break mid-glyph."""
+    from src.lib.render.hyperframes.templates import (
+        WORK_AREA_W, fit_size, fs_strip, overlay_css,
+    )
+    from src.lib.config import load_config
+
+    content = "ЧЕМ БОЛЬШЕ КУБИТОВ В"
+    ctx = _fs_ctx(content=content, strip_height=220, size_px=180,
+                  available_px=900, accent_word="(квантовый")
+    piece = fs_strip(ctx)
+    node = piece.nodes[0]
+    available = min(900.0, float(WORK_AREA_W))
+    full_size = fit_size(content.upper(), available, 180, role="display")
+    word_size = fit_size("КУБИТОВ", available, 180, role="display")
+    assert full_size < word_size
+    assert f"font-size:{full_size}px" in node
+    assert "white-space:nowrap" in node
+    assert "(квантовый" not in node
+    css = overlay_css(load_config().brandbook)
+    band = re.search(r"\.fullscreen-text \.fs-band\{([^}]*)\}", css)
+    assert band is not None
+    assert "white-space:nowrap" in band.group(1)
+
+
+def test_content_of_strips_accent_punctuation():
+    from src.lib.render.hyperframes.templates import _content_of
+
+    ctx = _fs_ctx(content="ЧЕМ БОЛЬШЕ КУБИТОВ (квантовый бит) В",
+                  accent_word="(квантовый")
+    _content, accent, _invert = _content_of(ctx)
+    assert accent == "квантовый"
+    assert "(" not in accent
+
+
 def test_kinetic_stack_staggers_words():
     piece = render_fullscreen(_fs_ctx(content="раз два три", accent_word="два",
                                      stagger_ms=55, kinetic=True))
