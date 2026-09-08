@@ -19,7 +19,7 @@ from typing import Any, Iterable, Sequence
 
 from src.errors import RedshiftError
 from src.lib.config import Config
-from src.lib.templates import Template, TemplateCatalog
+from src.lib.templates import FrequencyBudget, Template, TemplateCatalog
 
 logger = logging.getLogger(__name__)
 
@@ -351,9 +351,13 @@ def detect_intents(
 class TemplatePicker:
     """Сценарный селектор шаблонов поверх каталога и ротации."""
 
-    def __init__(self, catalog: TemplateCatalog, index: ScenarioIndex) -> None:
+    def __init__(self, catalog: TemplateCatalog, index: ScenarioIndex,
+                 freq_budget: "FrequencyBudget | None" = None) -> None:
         self.catalog = catalog
         self.index = index
+        # Доля уровней на ролик (§8.5). Общий бюджет на весь подбор: уровень —
+        # это доля, а не приоритет, и считать её надо по всему ролику разом.
+        self.freq_budget = freq_budget if freq_budget is not None else FrequencyBudget()
 
     @classmethod
     def create(cls, cfg: Config) -> "TemplatePicker":
@@ -470,6 +474,21 @@ class TemplatePicker:
             tid for tid in allowed_raw
             if (tmpl := self.catalog.by_id(tid)) is not None and tmpl.is_active
         )
+        # Уровень, добравший свою верхнюю долю, временно уходит из
+        # разрешённого набора — но только если после него что-то останется:
+        # пустой allow отправил бы подбор гулять по всей категории, а это
+        # ровно то, что ловит QC-22.
+        saturated = {lvl for lvl in ("signature", "variant", "rare")
+                     if self.freq_budget.saturated(lvl)}
+        if saturated and allowed:
+            kept = tuple(
+                tid for tid in allowed
+                if ((tmpl := self.catalog.by_id(tid)) is None
+                    or (tmpl.frequency or "variant").lower() not in saturated)
+            )
+            if kept:
+                allowed = kept
+
         allow_arg: list[str] | None = list(allowed) if allowed else None
         allow_size = len(allowed)
         any_escaped = False
@@ -537,4 +556,7 @@ class TemplatePicker:
             allow_size=allow_size,
             escaped=any_escaped,
         )
+        # Уровень записывается после выбора: бюджет считает выданное, а не
+        # задуманное.
+        self.freq_budget.take((chosen.frequency or "variant").lower())
         return chosen, trace

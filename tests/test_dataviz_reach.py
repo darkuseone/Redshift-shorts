@@ -96,10 +96,36 @@ class TestTheChartBudgetIsTwo:
         """Потолок один на оба пути: и на лестницу, и на общий проход."""
         assert VisualBudget.CAPS["dataviz"] == 2
 
-    def test_the_pass_stops_at_the_cap(self):
-        source = (REPO_ROOT / "src" / "p11_assemble" / "assemble.py") \
-            .read_text(encoding="utf-8")
-        assert 'placed >= VisualBudget.CAPS["dataviz"]' in source
+    def test_the_two_paths_share_one_counter(self):
+        """Лестница и общий проход считают в один счётчик, а не в два.
+
+        Врозь они давали четыре графика на 0042 и `compare-bars` четыре раза
+        подряд — ровно то, что ловит QC-25.
+        """
+        from src.p11_assemble.assemble import VisualBudget, _append_dataviz
+
+        budget = VisualBudget()
+        budget.take("dataviz")
+        budget.take("dataviz")          # потолок уже выбран лестницей
+        overlays: list = []
+        _append_dataviz(
+            {"duration_sec": 40.0, "cta_window": [38.0, 40.0], "slots": [],
+             "blocks": []},
+            overlays, None, variant="B", seed=1, recent_videos=[], used=[],
+            budget=budget)
+        assert overlays == [], "общий проход добавил график сверх потолка"
+
+    def test_the_cap_is_checked_before_placing(self):
+        """Иначе последний график всегда ставился «на один больше»."""
+        from src.p11_assemble.assemble import VisualBudget
+
+        budget = VisualBudget()
+        taken = 0
+        while budget.allows("dataviz"):
+            budget.take("dataviz")
+            taken += 1
+            assert taken <= 5
+        assert taken == VisualBudget.CAPS["dataviz"]
 
     def test_setup_is_among_the_roles(self):
         """На 0042 число живёт в `setup`, а не в `evidence`."""

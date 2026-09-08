@@ -28,6 +28,58 @@ ROTATION_WINDOW = 3          # §15.12.1
 # Lower rank tuple value is preferred. Empty frequency sits with variant.
 FREQUENCY_WEIGHT = {"signature": 0, "variant": 1, "rare": 2}
 
+# Доли уровней на ролик (§8.5). Нижняя граница signature — это узнаваемость
+# канала, верхняя — предел, за которым узнаваемость становится однообразием.
+FREQUENCY_SHARE = {
+    "signature": (0.55, 0.80),
+    "variant": (0.15, 0.35),
+    "rare": (0.0, 0.10),
+}
+
+
+class FrequencyBudget:
+    """Сколько приёмов каждого уровня ролик уже выдал.
+
+    `frequency` был жёстким ключом сортировки: `signature` побеждал `variant`
+    всегда и на всех кадрах, поэтому доля узнаваемых приёмов упиралась в
+    единицу, а разнообразие держалось только на потолке повторов одного id.
+    Уровень — это доля, а не приоритет: пока signature ниже верхней границы,
+    он выигрывает как раньше; как только дошёл до неё — временно уходит из
+    разрешённого набора, и picker честно берёт variant.
+    """
+
+    __slots__ = ("counts",)
+
+    def __init__(self) -> None:
+        self.counts: dict[str, int] = {"signature": 0, "variant": 0, "rare": 0}
+
+    @property
+    def total(self) -> int:
+        return sum(self.counts.values())
+
+    def share(self, level: str) -> float:
+        return self.counts.get(level, 0) / self.total if self.total else 0.0
+
+    def take(self, level: str) -> None:
+        key = (level or "variant").lower()
+        if key in self.counts:
+            self.counts[key] += 1
+
+    def saturated(self, level: str) -> bool:
+        """Дошёл ли уровень до верхней границы своей доли.
+
+        Первые кадры не ограничиваются: на одном-двух приёмах любая доля
+        либо 0, либо 1, и запрет по ней означал бы запрет по случайности.
+        """
+        if self.total < 4:
+            return False
+        top = FREQUENCY_SHARE.get(level, (0.0, 1.0))[1]
+        return self.share(level) >= top
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"counts": dict(self.counts),
+                "shares": {k: round(self.share(k), 3) for k in self.counts}}
+
 _FS_SIGNATURE = frozenset({
     "stack-3lines", "fact-card", "quote-frame", "per-word-crossfade",
     "blur-out-up", "bigtext-mask-footage",

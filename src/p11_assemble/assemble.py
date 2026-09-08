@@ -2378,7 +2378,8 @@ def _source_card_category(source: dict[str, Any], *, variant: str) -> str:
 def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
-                    picker: TemplatePicker | None = None) -> list[dict[str, Any]]:
+                    picker: TemplatePicker | None = None,
+                    budget: "VisualBudget | None" = None) -> list[dict[str, Any]]:
     """Плашки, карточки источников, подсветка, data-viz и CTA (§5.4–5.6, §6)."""
     if picker is None:
         cfg = getattr(ctx, "cfg", None)
@@ -2589,6 +2590,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         ))
 
     _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
+                    budget=budget,
                     recent_videos=recent_videos, used=used, picker=picker)
 
     # Плашки из overlay-указаний сценария (lower_third).
@@ -2988,7 +2990,8 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
 def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
-                    picker: TemplatePicker | None = None) -> None:
+                    picker: TemplatePicker | None = None,
+                    budget: "VisualBudget | None" = None) -> None:
     """Оверлеи с числом — до двух на ролик (§8.2, бюджет `VisualBudget`).
 
     Роли шире, чем `evidence`/`develop`: на 0042 число живёт в `setup`
@@ -3002,8 +3005,15 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
     occupied = [(float(o["start"]), float(o["end"])) for o in overlays
                 if o.get("type") in ("source_card", "cta", "plaque")]
     blocks = {b["id"]: b for b in plan.get("blocks", [])}
-    placed = 0
+    # Счётчик общий с лестницей §7.2: у диаграммы один потолок на ролик, а не
+    # по одному на каждый путь. Врозь они давали четыре графика на 0042 и
+    # `compare-bars` четыре раза подряд — то самое, что ловит QC-25.
+    budget = budget if budget is not None else VisualBudget()
     for slot in plan["slots"]:
+        # Потолок проверяется до постановки, а не после: иначе последний
+        # график всегда ставился «на один больше».
+        if not budget.allows("dataviz"):
+            return
         if slot.get("role") not in ("setup", "evidence", "develop", "twist"):
             continue
         if slot["kind"] not in ("footage", "meme"):
@@ -3021,9 +3031,7 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             slot, nums, blocks, picker, variant=variant, seed=seed,
             recent_videos=recent_videos, used=used, start=start, end=end))
         occupied.append((start, end))
-        placed += 1
-        if placed >= VisualBudget.CAPS["dataviz"]:
-            return
+        budget.take("dataviz")
 
 
 # Рендереры browser-ui, которые честно показывают настоящий источник.
@@ -3736,7 +3744,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
     overlays = _build_overlays(ctx, plan, words_doc["words"], catalog, variant=variant,
                                seed=seed, recent_videos=recent_videos, used=used_templates,
-                               picker=picker)
+                               picker=picker, budget=budget)
     # Приёмы лестницы §7.2 родились в цикле шотов — доливаем их к общим
     # оверлеям здесь, чтобы дальше все проверки видели один список.
     overlays.extend(ladder_overlays)

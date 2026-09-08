@@ -800,3 +800,71 @@ class TestAGatedIntentIsMoreSpecificThanACatchAll:
         source = (Path(__file__).resolve().parents[1] / "src" / "p11_assemble"
                   / "assemble.py").read_text(encoding="utf-8")
         assert '"numbers"' not in source
+
+
+class TestTheFrequencyLevelIsAShareNotAPriority:
+    """§8.5: `frequency` был жёстким ключом сортировки.
+
+    `signature` побеждал `variant` всегда и на всех кадрах, поэтому доля
+    узнаваемых приёмов упиралась в единицу, а разнообразие держалось только
+    на потолке повторов одного id.
+    """
+
+    def _budget(self):
+        from src.lib.templates import FrequencyBudget
+        return FrequencyBudget()
+
+    def test_an_empty_budget_forbids_nothing(self):
+        budget = self._budget()
+        assert not budget.saturated("signature")
+        assert budget.share("signature") == 0.0
+
+    def test_the_first_few_picks_are_not_limited(self):
+        """На одном-двух приёмах доля либо 0, либо 1: это случайность, не доля."""
+        budget = self._budget()
+        budget.take("signature")
+        budget.take("signature")
+        assert not budget.saturated("signature")
+
+    def test_the_level_saturates_at_its_ceiling(self):
+        budget = self._budget()
+        for _ in range(8):
+            budget.take("signature")
+        assert budget.saturated("signature")
+        assert budget.share("signature") == 1.0
+
+    def test_a_level_below_its_ceiling_stays_open(self):
+        budget = self._budget()
+        for _ in range(3):
+            budget.take("signature")
+        for _ in range(3):
+            budget.take("variant")
+        assert not budget.saturated("signature"), budget.to_dict()
+
+    def test_the_picker_keeps_its_own_budget(self, picker):
+        before = picker.freq_budget.total
+        picker.pick("text-fullscreen", blob=build_blob("СЛОВО", ""),
+                    variant="B", duration=2.5, seed=1)
+        assert picker.freq_budget.total == before + 1
+
+    def test_the_shares_land_inside_the_corridor_over_a_video(self, picker):
+        """Инвариант §8.5 на двадцати кадрах."""
+        used: list[str] = []
+        for seed in range(20):
+            template, _ = picker.pick(
+                "text-fullscreen", blob=build_blob(f"СЛОВО {seed}", ""),
+                variant="B", duration=2.5, exclude=used, seed=seed)
+            used.append(template.id)
+        shares = picker.freq_budget
+        assert 0.55 <= shares.share("signature") <= 0.80, shares.to_dict()
+        assert shares.share("rare") <= 0.10, shares.to_dict()
+
+    def test_a_saturated_level_never_empties_the_allowed_set(self, picker):
+        """Пустой allow отправил бы подбор гулять по категории — это QC-22."""
+        for _ in range(12):
+            picker.freq_budget.take("signature")
+        template, trace = picker.pick(
+            "text-fullscreen", blob=build_blob("СЛОВО", ""),
+            variant="B", duration=2.5, seed=3)
+        assert template.id
+        assert not trace.escaped
