@@ -235,17 +235,22 @@ def test_gap_phrase_overlay_once_then_rotates():
     assert "5 МИНУТ" in used
 
 
-def test_rich_terminal_copy_has_multiple_lines():
+def test_rich_terminal_copy_stays_inside_script():
     from src.p11_assemble.assemble import _rich_terminal_copy
 
     before, after, name = _rich_terminal_copy(
         {"text": "105 кубитов. Ошибка падает вдвое. Суперкомпьютеру нужно больше времени, чем существует вселенная.",
-         "emphasis_word": "вдвое"},
+         "emphasis_word": "вдвое",
+         "overlay": {"type": "fullscreen_text", "content": "5 МИНУТ"}},
         "5 МИНУТ",
     )
-    assert name.endswith(".log")
-    assert before.count("\n") >= 4
-    assert "PASS" in after or "status" in after.lower()
+    blob = "\n".join([before, after, name])
+    assert "willow_check" not in blob
+    assert "surface_code" not in blob
+    assert "willow_run" not in blob
+    assert "5 МИНУТ" in before
+    assert "5 МИНУТ" in after
+    assert name == ""
 
 
 def test_accent_card_syncs_to_spoken_onset():

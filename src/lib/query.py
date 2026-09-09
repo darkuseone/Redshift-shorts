@@ -130,12 +130,11 @@ SCI_PLANETARY_MARKERS: tuple[str, ...] = (
     "lunar", "moon surface", "solar flare", "sun surface",
     "mars surface", "planetary",
 )
-# Volcano/lava won 14s of redshift_0042 (pixabay_v144678). Geology videos
-# (0047 lava-flow intent) must keep the path — pin + video_id only.
+# Volcano/lava is geology. AI/tech cuts must not win it; science may keep it.
 SCI_VOLCANO_MARKERS: tuple[str, ...] = (
     "volcano", "lava", "magma", "eruption",
 )
-VOLCANO_DENY_VIDEOS: frozenset[str] = frozenset({"redshift_0042"})
+VOLCANO_DENY_CATEGORIES: frozenset[str] = frozenset({"ai", "tech"})
 
 
 def is_sci_topic(*, category: str = "", intent_kind: str = "") -> bool:
@@ -181,8 +180,7 @@ def thematic_reject_reason(
         for marker in SCI_PLANETARY_MARKERS:
             if marker in blob:
                 return f"sci off-theme planetary: «{marker}»"
-    vid = str(video_id or "").strip()
-    if vid in VOLCANO_DENY_VIDEOS:
+    if cat in VOLCANO_DENY_CATEGORIES:
         for marker in SCI_VOLCANO_MARKERS:
             if marker in blob:
                 return f"sci off-theme volcano: «{marker}»"

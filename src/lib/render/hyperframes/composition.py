@@ -43,6 +43,7 @@ from .templates import (
     fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
     render_motion, render_overlay, render_transition, text_width, MOTION,
 )
+from ..avatar_compose import fit_compose_zoom, rect_iou, collision_rects
 from ..canvas import (
     SafeZones, caption_layout_bbox, overlay_layout_bbox, plaque_enter_sec,
 )
@@ -716,6 +717,32 @@ class CompositionBuilder:
         if not ok:
             self.stats["safe_zone_violations"].append(entry)
 
+    def _record_face_safe_zone(self) -> None:
+        """MUST-009: projected face ∩ caption/bottom-400 is a QC-7 fail."""
+        requested = float(self.plan.get("avatar_compose_zoom") or 1.0)
+        for seg in self.plan.get("avatar") or []:
+            box = seg.get("face_bbox")
+            if not (box and len(box) == 4):
+                continue
+            fit = fit_compose_zoom(
+                box, requested, brandbook=self.brandbook,
+                width=self.width, height=self.height)
+            why = [
+                name for name, rect in collision_rects(
+                    self.brandbook, width=self.width, height=self.height)
+                if rect_iou(fit.face, rect) > 1e-6
+            ]
+            ok = not why
+            entry = {
+                "overlay": "avatar_face",
+                "bbox": [round(v, 1) for v in fit.face],
+                "ok": ok, "why": why,
+                "compose_zoom": round(fit.zoom, 3),
+            }
+            self.stats["safe_zone_checks"].append(entry)
+            if not ok:
+                self.stats["safe_zone_violations"].append(entry)
+
     def _overlay_piece(self, node_id: str, ovl: dict[str, Any],
                        start: float, duration: float, track: int):
         """Карточки источника, чат, статья и data-viz идут в рендереры каталога."""
@@ -977,32 +1004,34 @@ class CompositionBuilder:
         HyperFrames alpha path plays the raw webm with object-fit:cover — the
         prepare_avatar_shot compose_zoom never reached the screen. Enlarge via
         width/height (not transform:scale) so GSAP entry tweens that end at
-        scale:1 keep the resting fill.
+        scale:1 keep the resting fill. Zoom is fitted to face_band / captions
+        (MUST-009): never grow into the bottom 400 or the subtitle strip.
         """
-        zoom = max(float(self.plan.get("avatar_compose_zoom") or 1.0), 1.0)
-        # Subject mid-frame on 0042 seg_00 (~40% x, ~51% y of opaque bbox).
-        fx = 0.40
-        fy = 0.48
+        requested = max(float(self.plan.get("avatar_compose_zoom") or 1.0), 1.0)
         faces = []
         for seg in self.plan.get("avatar", []) or []:
             box = seg.get("face_bbox")
             if box and len(box) == 4:
                 faces.append(box)
+        bbox = None
         if faces:
-            # Average face centre as focus.
-            cx = sum((b[0] + b[2]) / 2 for b in faces) / len(faces) / max(self.width, 1)
-            cy = sum((b[1] + b[3]) / 2 for b in faces) / len(faces) / max(self.height, 1)
-            fx = min(max(cx, 0.2), 0.8)
-            fy = min(max(cy, 0.25), 0.7)
-        if zoom <= 1.001:
+            bbox = (
+                sum(b[0] for b in faces) / len(faces),
+                sum(b[1] for b in faces) / len(faces),
+                sum(b[2] for b in faces) / len(faces),
+                sum(b[3] for b in faces) / len(faces),
+            )
+        fit = fit_compose_zoom(
+            bbox, requested, brandbook=self.brandbook,
+            width=self.width, height=self.height)
+        zoom = fit.zoom
+        if zoom <= 1.001 and abs(fit.left) < 0.5 and abs(fit.top) < 0.5:
             return (".avatar{width:var(--frame-w);height:var(--frame-h);"
                     "left:0;top:0;object-fit:cover}")
-        # left/top place the focus point at frame centre after enlarge.
         return (
             f".avatar{{width:calc(var(--frame-w) * {zoom:.3f});"
             f"height:calc(var(--frame-h) * {zoom:.3f});"
-            f"left:calc(var(--frame-w) * (1 - {zoom:.3f}) * {fx:.3f});"
-            f"top:calc(var(--frame-h) * (1 - {zoom:.3f}) * {fy:.3f});"
+            f"left:{fit.left:.1f}px;top:{fit.top:.1f}px;"
             f"object-fit:cover;max-width:none;max-height:none}}"
         )
 
@@ -1021,6 +1050,7 @@ class CompositionBuilder:
         body += self._overlay_nodes()
         body += self._subtitle_nodes()
         self._record_caption_safe_zone()
+        self._record_face_safe_zone()
         body.append(self._audio_node(mix_name))
 
         indented = "\n      ".join(body)

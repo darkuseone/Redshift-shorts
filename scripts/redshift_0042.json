@@ -9,6 +9,7 @@
     "allow_memes": true,
     "allow_bg_vfx": true,
     "publish_date": "2026-08-19",
+    "cta": false,
     "hook": {
       "on_screen": "НЕВОЗМОЖНО ПРОВЕРИТЬ",
       "style": "blackout_word"

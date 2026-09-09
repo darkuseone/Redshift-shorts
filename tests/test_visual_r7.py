@@ -139,7 +139,8 @@ def test_0042_cta_has_no_subscribe_button():
     path = ROOT / "templates" / "manifest.json"
     cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
     plan = {
-        "video_id": "redshift_0042",
+        "video_id": "renamed_id",
+        "show_subscribe": False,
         "duration_sec": 12.0,
         "cta_window": [10.0, 12.0],
         "sources": [],

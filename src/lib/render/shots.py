@@ -370,7 +370,10 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
                         bg_colors: tuple[str, str] = ("F7F5F3", "FFFFFF"),
                         behind_layer: Path | None = None,
                         vfx_src: Path | None = None,
-                        compose_zoom: float = 1.0) -> dict[str, Any]:
+                        compose_zoom: float = 1.0,
+                        face_bbox: tuple[int, int, int, int] | None = None,
+                        brandbook: dict[str, Any] | None = None,
+                        mode: str = "A") -> dict[str, Any]:
     """Avatar with alpha → ready plate (§7.7).
 
     Layer order: brand/VFX bg → text-behind-head → avatar. Optional compose_zoom
@@ -415,18 +418,32 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
         filters.append("[bg][behind]overlay=0:0:format=auto[withtext]")
         stage = "withtext"
     zoom = max(float(compose_zoom or 1.0), 1.0)
+    crop_x_fit = crop_y_fit = None
+    if brandbook is not None:
+        from .avatar_compose import fit_compose_zoom
+        fit = fit_compose_zoom(
+            face_bbox, zoom, brandbook=brandbook,
+            width=width, height=height, mode=mode)
+        zoom = max(float(fit.zoom), 1.0)
+        crop_x_fit, crop_y_fit = fit.crop_x, fit.crop_y
     if zoom > 1.001:
         # Scale up then head-weighted crop: Avatar V often leaves subject ~23–30% tall
         # with a huge black void above the head. Mild zoom (≤1.6) keeps a light bias;
         # stronger zoom must shift the window down harder or the void just scales up
         # (measured: z=2.85 @ bias 0.32 → still ~40% fill; bias 0.55 → ~72%).
+        # MUST-009: when a face_bbox is known, crop comes from fit_compose_zoom so
+        # the head stays in face_band and out of the caption / bottom-400 band.
         sw = math.ceil(width * zoom / 2) * 2
         sh = math.ceil(height * zoom / 2) * 2
-        crop_x = max(0, (sw - width) // 2)
-        # Cap bias softer at strong zoom: 0.28+0.10*z @3.75→0.62 cropped the
-        # head on 0042 (subject mid-frame). 0.25+0.07*z @3.75→0.51 keeps head.
-        crop_bias = 0.32 if zoom < 1.8 else min(0.55, 0.25 + 0.07 * zoom)
-        crop_y = max(0, int(round((sh - height) * crop_bias)))
+        if crop_x_fit is not None and crop_y_fit is not None:
+            crop_x = min(max(0, int(crop_x_fit)), max(0, sw - width))
+            crop_y = min(max(0, int(crop_y_fit)), max(0, sh - height))
+        else:
+            crop_x = max(0, (sw - width) // 2)
+            # Cap bias softer at strong zoom: 0.28+0.10*z @3.75→0.62 cropped the
+            # head on 0042 (subject mid-frame). 0.25+0.07*z @3.75→0.51 keeps head.
+            crop_bias = 0.32 if zoom < 1.8 else min(0.55, 0.25 + 0.07 * zoom)
+            crop_y = max(0, int(round((sh - height) * crop_bias)))
         filters.append(
             f"[{avatar_index}:v]fps={fps},scale={sw}:{sh}:flags=lanczos,"
             f"crop={width}:{height}:{crop_x}:{crop_y},setsar=1[av]")

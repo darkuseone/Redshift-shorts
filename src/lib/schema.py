@@ -16,7 +16,7 @@ OVERLAY_TYPES = ("fullscreen_text", "frame", "lower_third", "highlight", "none")
 SCREEN_TEMPLATES = ("browser", "notepad", "search", "chat_ai", "arxiv_card", "patent_card")
 AVATAR_MODES = ("auto", "on", "off")
 # Типы концовки (§6.4). Три старых типа канал использовал шесть роликов подряд:
-# все `redshift_0042…0047` заканчивались `question`. Восемь типов дают ротатору
+# все ранние ролики канала заканчивались `question`. Восемь типов дают ротатору
 # из чего выбирать; старые имена не удалены, а отображены — `_CTA_LEGACY`
 # в `p0_validate` переводит их до проверки схемы, чтобы уже написанные сценарии
 # не пришлось править руками.
@@ -54,8 +54,13 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                 "publish_date": {"type": "string"},
                 "music_mood": {"type": "string"},
                 "notes": {"type": "string"},
+                "source_ref": {"type": "string"},
+                # MUST-028: false hides Subscribe for every video_id.
+                "cta": {"type": "boolean"},
+                "gaze": {"type": "boolean"},
+                "look_at": {"type": "boolean"},
                 # Хук первых пяти секунд. Без этого блока хук собирался
-                # случайно: на 0042 первые три кадра выбрала `gap_phrase`,
+                # случайно: первые три кадра брала gap_phrase,
                 # то есть «что вынести на экран, когда материала нет».
                 "hook": {
                     "type": "object",
@@ -69,6 +74,8 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                         # Запрос под холодное открытие: кадр до первого слова.
                         "cold_open_query": {"type": "string"},
                         "template_hint": {"type": "string"},
+                        "gaze": {"type": "boolean"},
+                        "look_at": {"type": "boolean"},
                     },
                 },
             },
@@ -126,6 +133,8 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                     "meme_allowed": {"type": "boolean"},
                     "answers_hook": {"type": "boolean"},
                     "source_ref": {"type": "string"},
+                    "gaze": {"type": "boolean"},
+                    "look_at": {"type": "boolean"},
                     "mode_hint": {"enum": ["A", "B", "C"]},
                 },
             },

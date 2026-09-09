@@ -289,8 +289,8 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                          detail="; ".join(str(a) for a in adjacent[:3])))
 
     # 19. Субтитры в центральной зоне на всех кадрах с речью
-    baseline_lo, baseline_hi = cfg.brand("subtitles.baseline_y", [940, 1010])
-    shift_y = cfg.brand("subtitles.baseline_y_avatar_shift", 1050)
+    baseline_lo, baseline_hi = cfg.brand("subtitles.baseline_y", [1100, 1280])
+    shift_y = cfg.brand("subtitles.baseline_y_avatar_shift", 1280)
     baseline = float(plan.get("subtitle_style", {}).get("baseline_y", baseline_lo))
     in_zone = baseline_lo <= baseline <= max(baseline_hi, shift_y)
     coverage = _subtitle_coverage(plan, duration)

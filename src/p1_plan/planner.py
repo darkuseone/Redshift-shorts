@@ -176,6 +176,7 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
             "sfx": raw.get("sfx", "none"),
             "meme_allowed": bool(raw.get("meme_allowed", meta.get("allow_memes", True))),
             "source_ref": raw.get("source_ref"),
+            "gaze": bool(raw.get("gaze") or raw.get("look_at") or raw.get("look-at")),
             "_estimated_sec": round(estimate_block_duration(raw["text"]), 3),
         }
         blocks.append(entry)
@@ -285,6 +286,7 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
         # Хук едет из сценария в план целиком: сборщик выбирает приём первых
         # секунд по нему, а не по тому, что осталось от подбора материала.
         "hook": meta.get("hook", {}),
+        "show_subscribe": meta.get("cta") is not False,
         "modes_by_block": {b["id"]: b["mode"] for b in blocks},
         "conflicts": conflicts,
     }

@@ -1,6 +1,7 @@
 """Стоковые источники B-roll (§7.2, §10.4).
 
-Live-провайдеры: Pexels, Pixabay, NASA Images, Internet Archive, Mixkit.
+Live-провайдеры: Pexels, Pixabay, NASA Images, Internet Archive.
+Mixkit в live не подключается: лицензия per-item, парсера data-license нет.
 Каждый возвращает кандидатов с **лицензией**: §7.2.7 требует проверять лицензию
 до скачивания, а для Internet Archive — попозиционно (§10.4, R-10), потому что
 там у каждого объекта своя.
@@ -15,6 +16,7 @@ from __future__ import annotations
 
 import colorsys
 import hashlib
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
@@ -345,6 +347,49 @@ class PixabayStock(StockProvider):
 
 # --- NASA ---------------------------------------------------------------------
 
+_NASA_COPYRIGHT_RE = re.compile(r"copyright", re.I)
+_NASA_BRAND_RE = re.compile(r"\b(meatball|nasa\s+worm|worm\s+logo)\b", re.I)
+
+
+def nasa_item_allowed(meta: dict[str, Any] | None) -> bool:
+    """Drop NASA 3rd-party copyright text and meatball/worm brand marks."""
+    meta = meta or {}
+    keywords = meta.get("keywords") or []
+    if not isinstance(keywords, list):
+        keywords = [keywords]
+    blob = " ".join([
+        str(meta.get("title") or ""),
+        str(meta.get("description") or ""),
+        str(meta.get("rights") or ""),
+        " ".join(str(k) for k in keywords),
+    ])
+    if _NASA_COPYRIGHT_RE.search(blob):
+        return False
+    if _NASA_BRAND_RE.search(blob):
+        return False
+    return True
+
+
+def ia_license_confirmed(license_url: str) -> bool:
+    """IA whitelist: PD / CC0 / BY / BY-SA. NC/ND and empty licenseurl drop."""
+    url = str(license_url or "").strip().lower()
+    if not url:
+        return False
+    if re.search(r"by-nc|noncommercial|/nc[-/]|-nc", url):
+        return False
+    if re.search(r"by-nd|noderiv|/nd[-/]|-nd", url):
+        return False
+    if "publicdomain" in url or "public-domain" in url or "mark/1.0" in url:
+        return True
+    if "cc0" in url or "/publicdomain/zero" in url:
+        return True
+    if re.search(r"licenses/by-sa(?:/|$)", url):
+        return True
+    if re.search(r"licenses/by(?:/|$)", url):
+        return True
+    return False
+
+
 class NasaStock(StockProvider):
     license_name = "NASA public domain (проверять попозиционно)"
     license_per_item = True
@@ -371,9 +416,11 @@ class NasaStock(StockProvider):
             nasa_id = meta.get("nasa_id", "")
             if not nasa_id:
                 continue
-            # §10.4: часть материалов NASA — чужие; берём только с явным PD/CC.
+            if not nasa_item_allowed(meta):
+                continue
+            # §10.4: часть материалов NASA — чужие. Пустое rights ≠ PD.
             rights = str(meta.get("rights", "")).lower()
-            confirmed = "public domain" in rights or not rights
+            confirmed = "public domain" in rights
             out.append(StockCandidate(
                 id=f"nasa_{nasa_id}", source="nasa", kind=kind, query=query,
                 download_url=item.get("href", ""),
@@ -400,9 +447,14 @@ class NasaStock(StockProvider):
             raise ProviderError(f"NASA collection вернул {resp.status_code}",
                                 status=resp.status_code)
         urls = [u for u in resp.json() if isinstance(u, str)]
-        prefer = [u for u in urls if u.endswith(("~orig.mp4", "~large.mp4", ".mp4"))] or urls
-        # §3.6.1: выше 1080p не берём даже при наличии.
-        ranked = sorted(prefer, key=lambda u: ("4k" in u.lower(), "orig" in u.lower()))
+        prefer = [u for u in urls if u.endswith(
+            ("~large.mp4", "~medium.mp4", "~orig.mp4", ".mp4"))] or urls
+        # §3.6.1: выше 1080p не берём. orig/4K в конец, large/medium раньше.
+        ranked = sorted(prefer, key=lambda u: (
+            "4k" in u.lower() or "2160" in u.lower(),
+            "~orig" in u.lower(),
+            "~medium" not in u.lower() and "~large" not in u.lower(),
+        ))
         if not ranked:
             raise ProviderError("NASA: в коллекции нет пригодных файлов", id=candidate.id)
         return self._http_download(ranked[0], dst)
@@ -438,10 +490,7 @@ class InternetArchiveStock(StockProvider):
         out: list[StockCandidate] = []
         for doc in (data.get("response", {}).get("docs", []) or []):
             license_url = doc.get("licenseurl") or ""
-            # R-10: лицензия проверяется попозиционно; без явной лицензии — мимо.
-            confirmed = bool(license_url) and any(
-                marker in license_url for marker in
-                ("publicdomain", "creativecommons.org/licenses/by", "cc0", "mark/1.0"))
+            confirmed = ia_license_confirmed(license_url)
             out.append(StockCandidate(
                 id=f"ia_{doc['identifier']}", source="internet_archive", kind=kind, query=query,
                 page_url=f"https://archive.org/details/{doc['identifier']}",
@@ -507,7 +556,7 @@ def build_stock_providers(cfg, costs) -> dict[str, StockProvider]:
     else:
         providers["nasa"] = NasaStock(cfg, costs)
         providers["internet_archive"] = InternetArchiveStock(cfg, costs)
-        providers["mixkit"] = MockStock(cfg, costs, name="mixkit")
+        # Mixkit: no data-license parser → not live (MUST-027 / SHOULD-003).
     return providers
 
 
@@ -612,6 +661,12 @@ class FreepikStock(StockProvider):
                    query: str) -> StockCandidate:
         premium = bool(item.get("premium", item.get("licenses", [{}])[0]
                                 .get("type") == "premium"))
+        license_types = [
+            str(x.get("type") or "").lower()
+            for x in (item.get("licenses") or [])
+            if isinstance(x, dict)
+        ]
+        editorial = any("editorial" in t for t in license_types)
         width = int((item.get("dimensions") or {}).get("width") or 0)
         height = int((item.get("dimensions") or {}).get("height") or 0)
         if not self._fits_resolution(width, height):
@@ -623,14 +678,13 @@ class FreepikStock(StockProvider):
             duration_sec=self._duration_sec(item.get("duration")),
             page_url=str(item.get("url") or ""),
             preview_url=str((item.get("image") or {}).get("source", {}).get("url", "")),
-            license=self.license_name,
-            # Подтверждаем лицензию поштучно: свободный материал — сразу,
-            # премиальный — как доступный по действующей подписке.
-            license_confirmed=True,
+            license="editorial-only" if editorial else self.license_name,
+            license_confirmed=not editorial,
             attribution=f"Freepik / {item.get('author', {}).get('name', '')}".strip(" /"),
             author=str((item.get("author") or {}).get("name") or ""),
             tags=[tag.get("name", "") for tag in (item.get("tags") or [])][:8],
-            meta={"premium": premium, "ai_generated": bool(item.get("ai_generated"))},
+            meta={"premium": premium, "ai_generated": bool(item.get("ai_generated")),
+                  "license_types": license_types},
         )
 
     def download(self, candidate: StockCandidate, dst: Path) -> Path:

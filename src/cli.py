@@ -1,13 +1,15 @@
 """CLI REDSHIFT.
 
-    python -m src.cli run --script scripts/redshift_0042.json
-    python -m src.cli validate --script scripts/redshift_0042.json
+    python -m src.cli run --script scripts/example.json
+    python -m src.cli validate --script scripts/example.json
+    python -m src.cli validate --script ... --article-url URL   # ARTICLE_URL
+    python -m src.cli validate --script ... --topic TOPIC       # TOPIC
     python -m src.cli run --script ... --from P7          # resume после падения
     python -m src.cli fonts-check
     python -m src.cli libraries --status
     python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
     python -m src.cli maintenance
-    python -m src.cli learn --video-id redshift_0042 --choice A
+    python -m src.cli learn --video-id example --choice A
 """
 
 from __future__ import annotations
@@ -69,14 +71,46 @@ def _load_cfg(args):
     return load_config(args.config, args.brandbook, overrides=args.set or [])
 
 
+def _add_ingest_flags(parser: argparse.ArgumentParser) -> None:
+    """ARTICLE_URL / TOPIC on the existing P0–P12 chain (MUST-023). Not a second pipeline."""
+    group = parser.add_argument_group("ARTICLE_URL / TOPIC")
+    exclusive = group.add_mutually_exclusive_group()
+    exclusive.add_argument(
+        "--article-url",
+        default=None,
+        metavar="URL",
+        help="ARTICLE_URL: primary source → sources[] на существующем P0–P12; нет title — стоп",
+    )
+    exclusive.add_argument(
+        "--topic",
+        default=None,
+        metavar="TOPIC",
+        help="TOPIC: поиск только по донорам sources.yaml; 0 hits — стоп, не VO из темы",
+    )
+
+
+def _ingest_if_requested(script: dict[str, Any], args, cfg) -> dict[str, Any]:
+    url = getattr(args, "article_url", None)
+    topic = getattr(args, "topic", None)
+    if not url and not topic:
+        return script
+    from .lib.article_ingest import apply_article_url, apply_topic
+    if url:
+        return apply_article_url(script, url)
+    return apply_topic(script, topic, cfg=cfg)
+
+
 # --- команды -----------------------------------------------------------------
 
 def cmd_run(args) -> int:
     cfg = _load_cfg(args)
     script_path = Path(args.script)
     script = read_json(script_path)
+    script = _ingest_if_requested(script, args, cfg)
     video_id = script.get("meta", {}).get("video_id") or script_path.stem
     ctx = _make_context(args, cfg, video_id=video_id, script_path=script_path)
+    if getattr(args, "article_url", None) or getattr(args, "topic", None):
+        ctx.script_path = ctx.write("ingested_script.json", script)
 
     _log.info("прогон стартовал", extra={
         "video_id": video_id, "work_dir": str(ctx.work_dir),
@@ -119,6 +153,7 @@ def cmd_validate(args) -> int:
     setup_logging(level="INFO", json_output=False)
     script = read_json(args.script)
     try:
+        script = _ingest_if_requested(script, args, cfg)
         validated = validate_script(script, cfg)
     except RedshiftError as exc:
         print(json.dumps(exc.to_dict(), ensure_ascii=False, indent=2), file=sys.stderr)
@@ -504,7 +539,14 @@ def cmd_steps(args) -> int:
 # --- разбор аргументов --------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="redshift", description="REDSHIFT — сборка YouTube Shorts")
+    parser = argparse.ArgumentParser(
+        prog="redshift",
+        description=(
+            "REDSHIFT — сборка YouTube Shorts. "
+            "ARTICLE_URL / TOPIC — флаги validate/run на существующем P0–P12; "
+            "без primary source — стоп, не генерация из темы."
+        ),
+    )
     parser.add_argument("--config", default=None, help="путь к config.yaml")
     parser.add_argument("--brandbook", default=None, help="путь к brandbook.json")
     parser.add_argument("--set", action="append", metavar="KEY.PATH=VALUE",
@@ -522,10 +564,12 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--force", action="store_true", help="игнорировать кэш шагов")
     run.add_argument("--no-cache", action="store_true")
     run.add_argument("--dry-run", action="store_true")
+    _add_ingest_flags(run)
     run.set_defaults(func=cmd_run)
 
     val = sub.add_parser("validate", help="только P0")
     val.add_argument("--script", required=True)
+    _add_ingest_flags(val)
     val.set_defaults(func=cmd_validate)
 
     fc = sub.add_parser("fonts-check", help="проверка кириллицы и лицензий шрифтов")
