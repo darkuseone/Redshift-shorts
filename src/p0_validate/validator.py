@@ -29,8 +29,9 @@ from ..lib.schema import (
 
 _log = get_logger("p0")
 
-# Категории, где источник обязателен (§8.2 NO_SOURCE)
-SOURCE_REQUIRED_CATEGORIES = ("ai", "space", "tech", "medicine")
+# Категории, где источник обязателен (§8.2 NO_SOURCE). science — тоже:
+# иначе 0047 уходит с source_ref и пустым sources[].
+SOURCE_REQUIRED_CATEGORIES = ("ai", "space", "tech", "medicine", "science")
 
 _STOPWORDS = {
     "этот", "этой", "этом", "который", "которая", "которые", "чтобы", "потому",
@@ -317,6 +318,37 @@ def _check_retention_loop(blocks: list[dict[str, Any]],
     return []
 
 
+def _collect_source_refs(meta: dict[str, Any],
+                         blocks: list[dict[str, Any]]) -> list[str]:
+    """source_ref from meta and blocks, in order, unique."""
+    refs: list[str] = []
+    seen: set[str] = set()
+    for raw in (meta.get("source_ref"), *(b.get("source_ref") for b in blocks)):
+        ref = str(raw or "").strip()
+        if not ref:
+            continue
+        key = ref.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        refs.append(ref)
+    return refs
+
+
+def _source_covers_ref(source: dict[str, Any], ref: str) -> bool:
+    """True when sources[] already holds this source_ref (domain / url / title)."""
+    needle = str(ref or "").strip().lower()
+    if not needle:
+        return False
+    for key in ("domain", "url", "title"):
+        hay = str(source.get(key) or "").strip().lower()
+        if not hay:
+            continue
+        if needle in hay or hay in needle:
+            return True
+    return False
+
+
 def _check_source_snippets(sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Русский `snippet` обязателен на карточке источника (§7.3, Q3.5).
 
@@ -420,11 +452,24 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
 
     # --- NO_SOURCE
     category = meta.get("category")
-    sources = script.get("sources", [])
+    sources = [s for s in (script.get("sources") or []) if isinstance(s, dict)]
+    refs = _collect_source_refs(meta, blocks)
     if category in SOURCE_REQUIRED_CATEGORIES and not sources:
         raise NoSource(
             f"категория {category!r} требует источников: §5.6 обязывает показать источник на экране",
             category=category,
+        )
+    if refs and not sources:
+        raise NoSource(
+            f"source_ref={refs[0]!r} задан, но sources[] пуст: карту источника не из чего собрать",
+            category=category, source_ref=refs[0],
+        )
+    dangling = [ref for ref in refs if not any(_source_covers_ref(s, ref) for s in sources)]
+    if dangling:
+        raise NoSource(
+            f"source_ref={dangling[0]!r} не совпадает ни с одной записью sources[] "
+            "(нужны domain/url/title той же ссылки, не пустой массив и не чужой домен)",
+            category=category, source_ref=dangling[0],
         )
     warnings.extend(_check_source_snippets(sources))
 

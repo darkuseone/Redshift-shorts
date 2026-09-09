@@ -54,6 +54,7 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                 "publish_date": {"type": "string"},
                 "music_mood": {"type": "string"},
                 "notes": {"type": "string"},
+                "source_ref": {"type": "string"},
                 # Хук первых пяти секунд. Без этого блока хук собирался
                 # случайно: на 0042 первые три кадра выбрала `gap_phrase`,
                 # то есть «что вынести на экран, когда материала нет».
