@@ -33,6 +33,7 @@ from ..lib.ffmpeg import extract_frames
 from .qc import apply_semantic_qc, run_qc
 from .vision_qc import run_vision_qc, sample_positions
 from ..p8_broll_judge.judge import CRITIC_METRIC_KEYS, critic_metrics_payload
+from ..p10_audio.audio_build import sfx_skipped_from_events
 
 _log = get_logger("p12")
 
@@ -513,6 +514,9 @@ def run_step(ctx) -> dict[str, Any]:
                         for v in variants},
         # MUST-016/017: запросы на слот + surplus до paid critic.
         "search": search_report,
+        "sfx_skipped": list(
+            sfx_map.get("sfx_skipped")
+            or sfx_skipped_from_events(sfx_map.get("events") or [])),
     }
     report.update({k: critic[k] for k in CRITIC_METRIC_KEYS})
     ctx.write("build_report.json", report)

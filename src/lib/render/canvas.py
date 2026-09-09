@@ -254,6 +254,37 @@ def paste_scaled(canvas: Image.Image, layer: Image.Image, factor: float,
     canvas.alpha_composite(resized, (cx - new_w // 2, cy - new_h // 2))
 
 
+# Plaque / card appear (brandbook ``plaque.enter_ms``). Templates must not
+# pick their own 600+ ms rise; MUST-015 clamps the overlay entrance here.
+_PLAQUE_ENTER_MS_DEFAULT = 260
+_PLAQUE_ENTER_MS_RANGE = (200, 280)
+
+
+def plaque_enter_ms(requested: float | None = None,
+                    brandbook: dict[str, Any] | None = None) -> int:
+    """Clamp overlay enter to brandbook plaque window, milliseconds."""
+    lo, hi = _PLAQUE_ENTER_MS_RANGE
+    if brandbook:
+        spec = (brandbook.get("plaque") or {}).get("enter_ms") or [lo, hi]
+        try:
+            lo, hi = int(spec[0]), int(spec[-1])
+        except (TypeError, ValueError, IndexError):
+            lo, hi = _PLAQUE_ENTER_MS_RANGE
+    if requested is None:
+        ms = _PLAQUE_ENTER_MS_DEFAULT
+    else:
+        ms = int(round(float(requested)))
+    if lo > hi:
+        lo, hi = hi, lo
+    return max(lo, min(hi, ms))
+
+
+def plaque_enter_sec(requested: float | None = None,
+                     brandbook: dict[str, Any] | None = None) -> float:
+    """Same clamp in seconds — what edit_plan and GSAP duration use."""
+    return plaque_enter_ms(requested, brandbook=brandbook) / 1000.0
+
+
 # --- safe zones (§3.2) --------------------------------------------------------
 
 @dataclass

@@ -218,6 +218,24 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
     return placed
 
 
+def sfx_skipped_from_events(events: Sequence[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    """Skip path for missing SFX: never silent without a report row (MUST-015)."""
+    skipped: list[dict[str, Any]] = []
+    for event in events or []:
+        status = str(event.get("status") or "")
+        if not status or status == "placed":
+            continue
+        skipped.append({
+            "t": event.get("t"),
+            "intent": event.get("intent"),
+            "role": event.get("role"),
+            "why": event.get("why"),
+            "status": status,
+            "file": event.get("file"),
+        })
+    return skipped
+
+
 def _collapse_whooshes(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Один вжух на один момент: вход аватара и картинка — одно движение воздуха."""
     prefer = ("avatar_in", "avatar_out", "transition", "picture_in", "picture_out")
@@ -422,6 +440,7 @@ def run_step(ctx) -> dict[str, Any]:
         "sfx_peak_dbfs": float(sfx_peak_lo),
         "sfx_peak_corridor": [float(sfx_peak_lo), float(sfx_peak_hi)],
         "missing_roles": sorted(set(missing_roles)),
+        "sfx_skipped": sfx_skipped_from_events(placed),
         "min_gap_sec": float(cfg.get("limits.sfx_min_gap_sec", 2.0)),
         # Раскладка и бед уезжают в отчёт: по ним P12 двигает кольца (§10.1,
         # §10.3), а разбор видит, чем этот ролик звучал иначе предыдущего.

@@ -43,6 +43,7 @@ from .templates import (
     fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
     render_motion, render_overlay, render_transition, text_width, MOTION,
 )
+from ..canvas import plaque_enter_sec
 
 TRACK_STAGE = 0
 TRACK_SHOT_EVEN = 1
@@ -691,6 +692,11 @@ class CompositionBuilder:
         template_id = str(ovl.get("template") or ovl.get("id") or "")
         renderer = str(ovl.get("renderer") or "")
         params = dict(ovl.get("params") or {})
+        if ovl.get("enter_ms") is not None:
+            params.setdefault("enter_ms", ovl["enter_ms"])
+        elif "enter_ms" not in params:
+            params["enter_ms"] = int(round(
+                plaque_enter_sec(brandbook=self.brandbook) * 1000))
         for key in ("media", "media_src"):
             mapped = self._asset(params.get(key))
             if mapped:
@@ -875,7 +881,13 @@ class CompositionBuilder:
         # масштаба читается как «панель подали снизу», с масштабом — как
         # «карточку поднесли». Дрейф на удержании не нужен: карточка стоит
         # рядом с движущимся словом субтитра и без него.
-        self.tweens.extend(entrance_tweens(f"#{node_id}", start, name="rise"))
+        # MUST-015: enter from brandbook plaque window, not ENTRANCES rise 660 ms.
+        requested = ovl.get("enter_ms")
+        if requested is None:
+            requested = (ovl.get("params") or {}).get("enter_ms")
+        enter = plaque_enter_sec(requested, brandbook=self.brandbook)
+        self.tweens.extend(entrance_tweens(
+            f"#{node_id}", start, name="rise", duration=enter))
 
     def _credit_nodes(self) -> list[str]:
         """Подпись источника мелким шрифтом (§1, правило 8).
