@@ -23,13 +23,22 @@ def test_soften_english_surface_code_highlight():
     assert "surface" not in out.lower()
 
 
-def test_soften_qubit_gloss_off_by_default():
+def test_the_screen_never_carries_a_bracket_gloss():
+    """Q3.4: «(квантовый бит)» на карточке — брак, названный критиком дословно.
+
+    Флага `gloss_qubit` больше нет: пояснение уехало в озвучку
+    (`gloss_for_speech`), а на экране это теперь инвариант, а не настройка.
+    """
+    from src.lib.text import gloss_for_speech
+
     assert soften_on_screen_copy("кубитов") == "кубитов"
     phrase = soften_on_screen_copy("105 кубитов внутри")
     assert "квантовый бит" not in phrase.lower()
     assert "(" not in phrase
-    glossed = soften_on_screen_copy("105 кубитов внутри", gloss_qubit=True)
-    assert "квантовый бит" in glossed.lower()
+    # Пояснение живо — но только голосом и без скобок.
+    spoken = gloss_for_speech("105 кубитов внутри", seen=set())
+    assert "квантовый бит" in spoken.lower()
+    assert "(" not in spoken
 
 
 def test_thumbnail_prompt_requires_glass_cards_and_markus_like():

@@ -129,6 +129,36 @@ def _on_screen_copy(text: str, *, field: str) -> str:
     return raw
 
 
+# Заголовок карточки источника: сколько слов помещается в строку А по §7.3
+# («акцентное слово + подпись ≤ 6 слов»). Шесть — верхняя граница подписи;
+# заголовок берём той же меры, чтобы карточка не превращалась в абзац.
+_CARD_HEADLINE_WORDS = 6
+
+
+def _russian_headline(source: dict[str, Any]) -> str:
+    """Русский заголовок карточки источника (§7.3, Q3.5).
+
+    До этой правки латинский заголовок просто выбрасывался
+    (`_on_screen_copy`), и карточка оставалась без строки А — «Quantum error
+    correction…» уходил в лог, а на экране не появлялось ничего. Теперь
+    английский заголовок не занимает первую строку **никогда**: его место —
+    домен внизу карточки, а строку А держит русский `snippet`, обрезанный до
+    меры подписи.
+    """
+    title = str(source.get("title") or "").strip()
+    if title and not _latin_heavy_copy(title):
+        return title
+    snippet = str(source.get("snippet") or "").strip()
+    if not snippet:
+        return ""
+    # Первое предложение целиком, если оно короткое; иначе — первые слова.
+    lead = re.split(r"(?<=[.!?])\s+", snippet)[0].strip()
+    words = [w for w in lead.split() if w]
+    if len(words) <= _CARD_HEADLINE_WORDS:
+        return lead.rstrip(".")
+    return " ".join(words[:_CARD_HEADLINE_WORDS]).rstrip(",;:") + "…"
+
+
 def _source_card_room_px(brandbook: dict[str, Any] | None) -> int:
     """Pixels between the face-zone floor and the subtitle-pinned card bottom.
 
@@ -2453,7 +2483,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             skip_bulky = True
         if card_end - card_start < 0.6:
             skip_bulky = True
-        title = _on_screen_copy(source.get("title", ""), field="title")
+        title = _russian_headline(source)
         snippet = _on_screen_copy(source.get("snippet", ""), field="snippet")
         highlight_line = _on_screen_copy(
             source.get("highlight_line", ""), field="highlight_line")

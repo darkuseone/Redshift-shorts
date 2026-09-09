@@ -18,7 +18,9 @@ from typing import Any
 
 from ..lib.logging import get_logger
 from ..lib.schema import estimate_block_duration
-from ..lib.text import load_pronunciation, normalize_text, spoken_text
+from ..lib.text import (
+    gloss_for_speech, load_pronunciation, normalize_text, spoken_text,
+)
 
 _log = get_logger("p1")
 
@@ -142,8 +144,14 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
     limits = cfg.get("limits")
 
     blocks: list[dict[str, Any]] = []
+    # Пояснения терминов (§11.3, Q3.4) звучат один раз за ролик: набор общий
+    # на все блоки, поэтому «кубит» поясняется там, где встретился впервые, и
+    # больше нигде. На экран пояснение не попадает вовсе — §7.3.
+    glossed_terms: set[str] = set()
     for raw in script["blocks"]:
-        tokens = normalize_text(raw["text"], pron, block_id=raw["id"],
+        tokens = normalize_text(gloss_for_speech(raw["text"], seen=glossed_terms,
+                                                 repo_root=cfg.repo_root),
+                                pron, block_id=raw["id"],
                                 emphasis_word=raw.get("emphasis_word"))
         directive = raw.get("avatar", "auto")
         entry = {

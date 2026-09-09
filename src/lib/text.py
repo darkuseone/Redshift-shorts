@@ -358,6 +358,9 @@ def spoken_onset_for_content(words: list[dict[str, Any]], content: str,
 
 # On-screen jargon → plain display (VO/TTS untouched). Prefer broad-audience words
 # or a short gloss on cards; karaoke single-word captions stay spoken form.
+# Запасная таблица на случай, если `config/glossary.json` недоступен: она
+# повторяет то, что лежит в файле, и нужна только чтобы сборка не падала из-за
+# отсутствующего конфига. Правки вносятся в файл, а не сюда.
 _ON_SCREEN_PLAIN: tuple[tuple[str, str], ...] = (
     (r"(?i)квантов(?:ый|ого|ому|ым|ом)?\s+чип(?:а|у|ом|е|ы|ов)?",
      "квантовый компьютер"),
@@ -368,28 +371,96 @@ _ON_SCREEN_PLAIN: tuple[tuple[str, str], ...] = (
     (r"(?i)\bqubits?\b", "кубиты"),
 )
 
+# Скобочная пояснялка на карточке — брак, названный критиком дословно. Правило
+# §7.3 запрещает её на любом экранном тексте, поэтому здесь это не настройка,
+# а инвариант: `soften_on_screen_copy` не умеет её ставить в принципе.
+_GLOSS_BRACKETS = ("(", ")")
 
-def soften_on_screen_copy(text: str, *, gloss_qubit: bool = False) -> str:
-    """Simplify jargon for overlay/FS/plaque display without changing VO.
+_GLOSSARY_CACHE: dict[str, Any] = {}
 
-    Examples: «квантовый чип» → «квантовый компьютер»; English highlight phrases
-    → short Russian. Parenthetical qubit gloss is off by default so cards stay
-    laconic (1–4 words); pass ``gloss_qubit=True`` only for an explicit call.
+
+def load_glossary(repo_root=None) -> dict[str, Any]:
+    """Словарь терминов (§7.3, §11.3). Кэшируется по пути.
+
+    Две колонки на термин: ``on_screen`` — чем термин становится на карточке,
+    ``spoken`` — что к нему добавляется в озвучке. Разделение не косметическое:
+    на экране у нас одно акцентное слово и подпись ≤ 6 слов, в речи — сколько
+    угодно, потому что её слушают, а не читают за секунду.
+    """
+    from pathlib import Path as _Path
+
+    from .jsonio import read_json_or
+
+    root = _Path(repo_root) if repo_root is not None else _Path(__file__).resolve().parents[2]
+    path = root / "config" / "glossary.json"
+    key = str(path)
+    if key not in _GLOSSARY_CACHE:
+        _GLOSSARY_CACHE[key] = read_json_or(path, {"on_screen": [], "spoken": []})
+    return _GLOSSARY_CACHE[key]
+
+
+def _on_screen_rules(repo_root=None) -> tuple[tuple[str, str], ...]:
+    rules = load_glossary(repo_root).get("on_screen") or []
+    pairs = tuple((str(r["pattern"]), str(r["replace"])) for r in rules
+                  if r.get("pattern") and r.get("replace") is not None)
+    return pairs or _ON_SCREEN_PLAIN
+
+
+def soften_on_screen_copy(text: str, *, repo_root=None) -> str:
+    """Упростить жаргон для экранного текста, не трогая озвучку (§7.3).
+
+    Скобочных глоссов здесь нет и не будет: «(квантовый бит)» на карточке —
+    прямая цитата критика, а карточка по §7.3 несёт одно акцентное слово и
+    подпись ≤ 6 слов. Пояснения уходят в озвучку — `gloss_for_speech`.
     """
     raw = str(text or "").strip()
     if not raw:
         return raw
     out = raw
-    for pattern, repl in _ON_SCREEN_PLAIN:
+    for pattern, repl in _on_screen_rules(repo_root):
         out = re.sub(pattern, repl, out)
-    if gloss_qubit and re.search(r"(?i)кубит", out) and "(" not in out:
-        # Only gloss when the line is a card/phrase, not a lone karaoke token.
-        tokens = [t for t in re.split(r"\s+", out) if t]
-        if len(tokens) >= 2:
-            out = re.sub(
-                r"(?i)\b(кубит(?:а|у|ом|е|ы|ов|ами|ам|ах)?)\b",
-                r"\1 (квантовый бит)",
-                out,
-                count=1,
-            )
     return out
+
+
+def gloss_for_speech(text: str, *, seen: set[str] | None = None,
+                     repo_root=None) -> str:
+    """Вставить пояснение термина **в устный** текст (§11.3).
+
+    ``seen`` — уже пояснённые термины ролика: пояснение звучит один раз, иначе
+    ролик превращается в лекцию. Вызывающий передаёт один и тот же набор на
+    все блоки — так «кубит» поясняется в первом блоке, где встретился, и
+    больше нигде.
+    """
+    raw = str(text or "")
+    if not raw.strip():
+        return raw
+    seen = seen if seen is not None else set()
+    out = raw
+    for rule in load_glossary(repo_root).get("spoken") or []:
+        term = str(rule.get("term") or "")
+        gloss = str(rule.get("gloss") or "")
+        if not term or not gloss:
+            continue
+        if rule.get("once", True) and term in seen:
+            continue
+        if not re.search(term, out):
+            continue
+        if gloss.lower() in out.lower():
+            # Автор уже пояснил термин своими словами — второй раз незачем.
+            seen.add(term)
+            continue
+        match = re.search(term, out)
+        if match is None:
+            continue
+        tail = out[match.end():match.end() + 1]
+        # Вторая запятая не ставится там, где следующий знак уже её несёт:
+        # «кубитов, квантовый бит,, и это много» — не речь, а опечатка.
+        closer = "" if tail in ",.!?;:" else ","
+        out = f"{out[:match.end()]}, {gloss}{closer}{out[match.end():]}"
+        seen.add(term)
+    return out
+
+
+def has_bracket_gloss(text: str) -> bool:
+    """Есть ли на строке скобочная пояснялка — запрещённая §7.3 на карточке."""
+    return bool(re.search(r"\([^)]{2,}\)", str(text or "")))

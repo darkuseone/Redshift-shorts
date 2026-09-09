@@ -303,3 +303,157 @@ def test_the_credit_sits_above_the_subtitle_band_and_never_over_it():
     subs = brandbook["subtitles"]
     height = int(brandbook["canvas"]["height"])
     assert bottom >= height - int(subs["baseline_y_default"]) + int(subs["size_px"][1]) // 2
+
+
+# --- Q3.4/Q3.5: язык экрана против языка озвучки (§7.3, §11.3) ---------------
+
+class TestTheGlossLivesInTheVoiceNotOnTheCard:
+    """Критик назвал «(квантовый бит)» на карточке дословно.
+
+    §7.3: карточка — акцентное слово + подпись ≤ 6 слов + медиа. Скобочные
+    глоссы запрещены на любом экранном тексте, а пояснение уходит в озвучку.
+    """
+
+    def test_the_glossary_is_data_not_regexes_in_code(self, repo_root):
+        import json
+
+        path = repo_root / "config" / "glossary.json"
+        assert path.exists(), "config/glossary.json — часть Q3.4"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert data["on_screen"] and data["spoken"]
+        for rule in data["on_screen"]:
+            assert rule["pattern"] and rule["replace"]
+            assert "(" not in rule["replace"], "скобки на экране запрещены (§7.3)"
+
+    def test_screen_copy_never_gains_a_bracket_gloss(self):
+        from src.lib.text import has_bracket_gloss, soften_on_screen_copy
+
+        for line in ("105 кубитов внутри", "кубит", "квантовый чип",
+                     "below the surface code threshold"):
+            out = soften_on_screen_copy(line)
+            assert not has_bracket_gloss(out), f"скобочный глосс на экране: {out!r}"
+
+    def test_the_english_service_line_becomes_russian(self):
+        from src.lib.text import soften_on_screen_copy
+
+        out = soften_on_screen_copy("below the surface code threshold")
+        assert "порог" in out.lower() and "surface" not in out.lower()
+
+    def test_the_voice_gets_the_gloss_once_per_video(self):
+        from src.lib.text import gloss_for_speech
+
+        seen: set[str] = set()
+        first = gloss_for_speech("Внутри 105 кубитов.", seen=seen)
+        second = gloss_for_speech("И ещё кубиты сверху.", seen=seen)
+        assert "квантовый бит" in first.lower()
+        assert "квантовый бит" not in second.lower(), "пояснение звучит один раз"
+
+    def test_the_voice_gloss_carries_no_brackets(self):
+        from src.lib.text import gloss_for_speech, has_bracket_gloss
+
+        out = gloss_for_speech("Кубит держит суперпозицию.", seen=set())
+        assert not has_bracket_gloss(out)
+        assert out.count(",,") == 0, "двойная запятая — опечатка, а не речь"
+
+    def test_an_author_who_explained_it_himself_is_left_alone(self):
+        from src.lib.text import gloss_for_speech
+
+        line = "Кубит — это квантовый бит, и он хрупкий."
+        assert gloss_for_speech(line, seen=set()) == line
+
+    def test_the_pipeline_puts_the_gloss_in_spoken_text_only(self, cfg, repo_root):
+        """P1 кладёт пояснение в `spoken_text`, а `text` для экрана не трогает."""
+        import json
+
+        from src.p1_plan.planner import plan as build_plan
+
+        script = json.loads(
+            (repo_root / "scripts" / "redshift_0042.json").read_text(encoding="utf-8"))
+        from src.p0_validate.validator import validate_script
+
+        from src.lib.text import strip_stress
+
+        plan = build_plan(validate_script(script, cfg), cfg)
+        # `spoken_text` несёт знаки ударения — их ставит нормализация для TTS.
+        glossed = [b for b in plan["blocks"]
+                   if "квантовый бит" in strip_stress(str(b["spoken_text"])).lower()]
+        assert glossed, "пояснение не доехало до озвучки"
+        for block in plan["blocks"]:
+            assert "квантовый бит" not in str(block["text"]).lower(), \
+                "пояснение просочилось в экранный текст"
+
+
+class TestTheSourceCardSpeaksRussian:
+    """Q3.5: русский `snippet` обязателен, английский заголовок — не в строке А."""
+
+    def test_a_cyrillic_title_is_kept_as_is(self):
+        from src.p11_assemble.assemble import _russian_headline
+
+        title = "Квантовая коррекция ошибок ниже порога"
+        assert _russian_headline({"title": title, "snippet": "что-то"}) == title
+
+    def test_a_latin_title_gives_way_to_the_russian_snippet(self):
+        from src.p11_assemble.assemble import _russian_headline
+
+        head = _russian_headline({
+            "title": "A giant planet candidate transiting a white dwarf",
+            "snippet": "Планета размером с Юпитер обращается вокруг остатка мёртвой звезды."})
+        assert head.startswith("Планета размером")
+        assert "planet" not in head.lower()
+
+    def test_the_headline_stays_within_the_caption_measure(self):
+        from src.p11_assemble.assemble import _CARD_HEADLINE_WORDS, _russian_headline
+
+        head = _russian_headline({
+            "title": "No Way Back: Maximizing Survival Time",
+            "snippet": ("Максимальное собственное время под горизонтом достигается "
+                        "в свободном падении: любой манёвр двигателем его сокращает.")})
+        assert len(head.split()) <= _CARD_HEADLINE_WORDS + 1  # +1 на многоточие
+
+    def test_a_short_russian_snippet_is_taken_whole(self):
+        from src.p11_assemble.assemble import _russian_headline
+
+        assert _russian_headline({"title": "Willow announcement",
+                                  "snippet": "Логический кубит живёт дольше."}) \
+            == "Логический кубит живёт дольше"
+
+    def test_no_snippet_no_headline(self):
+        from src.p11_assemble.assemble import _russian_headline
+
+        assert _russian_headline({"title": "Willow processor announcement"}) == ""
+
+    def test_p0_names_an_on_screen_source_without_a_russian_snippet(self, cfg):
+        from src.p0_validate.validator import _check_source_snippets
+
+        codes = [w["code"] for w in _check_source_snippets([
+            {"title": "A giant planet candidate", "domain": "nature.com",
+             "show_on_screen": True}])]
+        assert codes == ["SOURCE_SNIPPET_MISSING"]
+
+    def test_a_source_that_stays_off_screen_needs_nothing(self):
+        from src.p0_validate.validator import _check_source_snippets
+
+        assert _check_source_snippets([
+            {"title": "Willow processor announcement", "domain": "blog.google",
+             "show_on_screen": False}]) == []
+
+    def test_an_english_snippet_does_not_count(self):
+        from src.p0_validate.validator import _check_source_snippets
+
+        codes = [w["code"] for w in _check_source_snippets([
+            {"title": "X", "domain": "nature.com", "show_on_screen": True,
+             "snippet": "A logical qubit outlives its physical qubits."}])]
+        assert codes == ["SOURCE_SNIPPET_MISSING"]
+
+    @pytest.mark.parametrize("video_id", ["redshift_0042", "redshift_0043",
+                                          "redshift_0044", "redshift_0045",
+                                          "redshift_0046"])
+    def test_every_on_screen_source_in_the_channel_has_one(self, repo_root, video_id):
+        """DoD Q3.5 на живых сценариях, а не на выдуманном примере."""
+        import json
+
+        from src.p0_validate.validator import _check_source_snippets
+
+        script = json.loads(
+            (repo_root / "scripts" / f"{video_id}.json").read_text(encoding="utf-8"))
+        assert _check_source_snippets(script.get("sources", [])) == []

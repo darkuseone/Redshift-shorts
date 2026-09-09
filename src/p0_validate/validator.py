@@ -41,6 +41,8 @@ _STOPWORDS = {
     "не", "ни", "же", "ли", "бы", "вот", "так", "там", "тут", "then", "the",
 }
 
+_CYRILLIC_RE = re.compile(r"[А-Яа-яЁё]")
+
 _QUESTION_MARKERS = ("почему", "как ", "зачем", "что если", "правда ли", "сколько",
                      "когда", "кто ", "чем ", "?")
 
@@ -300,6 +302,34 @@ def _check_retention_loop(blocks: list[dict[str, Any]],
     return warnings
 
 
+def _check_source_snippets(sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Русский `snippet` обязателен на карточке источника (§7.3, Q3.5).
+
+    Латинский заголовок на карточку не попадает: `_on_screen_copy` его
+    выбрасывает, и без русской строки карточка выходит без первой строки —
+    рамка с доменом и пустотой. Требуем то, что карточка обязана показать,
+    а не то, что у источника есть.
+
+    Предупреждение, а не отказ: сценарий с источником без цитаты собрать
+    можно, просто карточка выйдет беднее — решает автор.
+    """
+    warnings: list[dict[str, Any]] = []
+    for source in sources or []:
+        if not source.get("show_on_screen", True):
+            continue
+        snippet = str(source.get("snippet") or "").strip()
+        if snippet and _CYRILLIC_RE.search(snippet):
+            continue
+        title = str(source.get("title") or "")
+        warnings.append({
+            "code": "SOURCE_SNIPPET_MISSING",
+            "message": (f"источник «{title[:60]}» показывается на экране без русской "
+                        "цитаты: английский заголовок на карточку не попадает "
+                        "(§7.3), и первая строка останется пустой"),
+        })
+    return warnings
+
+
 def _check_quotes(blocks: list[dict[str, Any]], max_words: int) -> None:
     for block in blocks:
         for quote in extract_quotes(block.get("text", "")):
@@ -379,6 +409,7 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
             f"категория {category!r} требует источников: §5.6 обязывает показать источник на экране",
             category=category,
         )
+    warnings.extend(_check_source_snippets(sources))
 
     # --- MEME_IN_MEDICINE: не отказ, а принудительное выключение (§8.2)
     if category == "medicine" and meta.get("allow_memes", True):
