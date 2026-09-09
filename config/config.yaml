@@ -276,7 +276,7 @@ features:
   avatar_matting: true      # §7.7 киллсвитч
   background_vfx: true      # зависит от avatar_matting
   ab_versions: true
-  auto_topic_search: false
+  auto_topic_search: false  # MUST-023: явный --article-url / --topic, автопоиск не включать
   vision_qc: true           # §11.2 смысловой QC по финальному ролику
 
 limits:
