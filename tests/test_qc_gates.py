@@ -241,6 +241,34 @@ class TestQc20And21And22CarryTheMegaWording:
         assert _check(_run(cfg, plan), "QC-22")["passed"]
 
 
+class TestQc14CapsGeneratedFootageAtTenPercent:
+    """MUST-007: зритель не должен видеть пачку сгенерированных кадров вместо съёмки."""
+
+    def test_nine_percent_passes(self, cfg):
+        # 4.32 / 48 = 0.09. Один план короче потолка QC-4 (5 с).
+        plan = _plan(shots=[_shot(0, duration=4.32, ai_generated=True)])
+        check = _check(_run(cfg, plan), "QC-14")
+        assert check["passed"]
+        assert check["blocking"]
+        assert check["threshold"] == pytest.approx(0.10)
+        assert check["value"] == pytest.approx(0.09, abs=1e-4)
+
+    def test_twelve_percent_fails_and_blocks(self, cfg):
+        # 2.88 + 2.88 = 5.76 / 48 = 0.12. Два коротких плана, чтобы не задеть QC-4.
+        plan = _plan(shots=[
+            _shot(0, duration=2.88, ai_generated=True),
+            _shot(1, duration=2.88, ai_generated=True),
+        ])
+        check = _check(_run(cfg, plan), "QC-14")
+        assert not check["passed"]
+        assert check["blocking"]
+        assert check["threshold"] == pytest.approx(0.10)
+        assert check["value"] == pytest.approx(0.12, abs=1e-4)
+
+    def test_config_cap_is_ten_percent(self, cfg):
+        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.10)
+
+
 class TestQc30MeasuresTheAccentAtLast:
 
     def _with(self, cfg, share):

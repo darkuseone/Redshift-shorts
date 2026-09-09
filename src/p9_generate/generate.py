@@ -5,7 +5,7 @@
 
 Ограничения, которые шаг обязан соблюсти:
 
-* доля чисто AI-generated футажа ≤ 40 % хронометража (§7.2.6, QC-14) — если
+* доля чисто AI-generated футажа ≤ 10 % хронометража (§5.9, QC-14) — если
   генерация выведет ролик за этот потолок, слот остаётся пустым, и это
   фиксируется как проблема плана, а не заметается генерацией;
 * платные модели ≤ 3–7 % случаев (§7.7), приоритет бесплатным;
@@ -103,7 +103,7 @@ def run_step(ctx) -> dict[str, Any]:
             "paid_model_used": 0,
             "ai_footage_sec": 0.0,
             "ai_footage_share": 0.0,
-            "ai_share_limit": float(cfg.get("limits.ai_footage_share_max", 0.40)),
+            "ai_share_limit": float(cfg.get("limits.ai_footage_share_max", 0.10)),
             "generated": {},
             "skip": True,
         }
@@ -115,7 +115,7 @@ def run_step(ctx) -> dict[str, Any]:
                      extra={"unfilled": len(unfilled), "duration": duration})
         return {"generated": 0, "skipped": len(skipped), "ai_share": 0.0}
     duration = float(plan["duration_sec"])
-    ai_share_max = float(cfg.get("limits.ai_footage_share_max", 0.40))
+    ai_share_max = float(cfg.get("limits.ai_footage_share_max", 0.10))
     paid_share_limit = float(cfg.get("magnific.paid_model_share_limit", 0.07))
     prefer_free = bool(cfg.get("magnific.prefer_free_models", True))
 

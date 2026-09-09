@@ -210,13 +210,13 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     checks.append(_check(13, "Тишина в конце", tail <= float(limits.get("end_silence_ms", 300)),
                          value=round(tail, 1), threshold=limits.get("end_silence_ms", 300)))
 
-    # 14. Доля AI-generated футажа ≤ 40 %
+    # 14. Доля AI-generated футажа ≤ 10 %
     ai_sec = sum(float(s["duration"]) for s in plan["shots"] if s.get("ai_generated"))
     ai_share = ai_sec / max(duration, 1e-6)
     checks.append(_check(14, "Доля AI-generated футажа",
-                         ai_share <= float(limits.get("ai_footage_share_max", 0.4)) + 1e-6,
+                         ai_share <= float(limits.get("ai_footage_share_max", 0.10)) + 1e-6,
                          value=round(ai_share, 4),
-                         threshold=limits.get("ai_footage_share_max", 0.4)))
+                         threshold=limits.get("ai_footage_share_max", 0.10)))
 
     # 15. Мемы в категории medicine
     category = script.get("meta", {}).get("category")
