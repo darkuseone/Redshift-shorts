@@ -296,6 +296,16 @@ limits:
   cut_share_min: 0.70               # §4.3: Cut ≥70% склеек
   dynamic_transition_min_gap_sec: 6.0
   sfx_min_gap_sec: 2.0              # §4.4: плотность SFX ≤ 1 / 2 сек
+  # §10.2: `sfx_min_gap_sec` разводит звуки во времени, но не мешает одному
+  # и тому же wav прозвучать восемь раз за ролик — это слышно как петля.
+  sfx_same_file_max: 3
+  # §10.4: мёртвая пауза в первые три секунды. Предупреждающий гейт QC-28.
+  first_seconds_gap_ms: 200
+  first_seconds_window: 3.0
+  # §6.3 R-4: расхождение первого и последнего кадра для шва лупа, биты dHash.
+  loop_seam_dhash_max: 12
+  # §6.2 R-3: кадр короче порога — мигание, а не бит.
+  min_visual_beat_sec: 0.8
   quote_max_words: 15
   pillarbox_per_video: 2            # §3.6.5
   gradient_per_video: 1             # §3.3.5

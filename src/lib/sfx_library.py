@@ -105,6 +105,76 @@ INTENTS: dict[str, tuple[str, ...]] = {
     "tick": ("tick", "click"),
 }
 
+# Раскладки звука (§10.1). Библиотека заморожена — двадцать записей и
+# `frozen_when_full`, — а два соседних ролика обязаны звучать по-разному.
+# Уникальность даёт **отображение** событие → смысл, а не новые файлы: ноль
+# записей, ноль кредитов. Меняются только те события, которые слышно как
+# «характер» ролика; остальные наследуются из `INTENTS`.
+SFX_SCENARIOS: dict[str, dict[str, tuple[str, ...]]] = {
+    # По умолчанию: стекло и щелчки — узнаваемый звук канала.
+    "glass": {
+        "card_appear": ("click", "snap"),
+        "plaque": ("click", "snap"),
+        "avatar_in": ("hat", "bright"),
+        "transition": ("whoosh", "swipe"),
+        "reveal_fullscreen": ("reveal", "hat"),
+        "fullscreen": ("reveal", "hat"),
+    },
+    # Тяжёлые ролики: `twist` бьёт, а не звенит.
+    "impact": {
+        "card_appear": ("hit", "punch"),
+        "plaque": ("hit", "punch"),
+        "avatar_in": ("whoosh", "wide"),
+        "transition": ("hit", "thud"),
+        "reveal_fullscreen": ("hit", "punch"),
+        "fullscreen": ("hit", "punch"),
+    },
+    # Медицина и открытые вопросы: мягко, без удара.
+    "soft": {
+        "card_appear": ("chime", "kalimba"),
+        "plaque": ("chime", "kalimba"),
+        "avatar_in": ("whoosh", "soft"),
+        "transition": ("whoosh", "soft"),
+        "reveal_fullscreen": ("chime", "kalimba"),
+        "fullscreen": ("chime", "kalimba"),
+    },
+}
+
+DEFAULT_SCENARIO = "glass"
+
+# Когда раскладка выбирается сама. Правило читается сверху вниз, первое
+# совпадение выигрывает; ниже — кольцо последних двух, чтобы соседние ролики
+# не совпали даже при одинаковой рубрике.
+SCENARIO_BY_CATEGORY: dict[str, str] = {"medicine": "soft"}
+SCENARIO_BY_CTA: dict[str, str] = {"binary_vote": "impact",
+                                   "open_question": "soft",
+                                   "part2_cliff": "impact"}
+
+
+def scenario_tags(scenario: str, intent: str) -> tuple[str, ...]:
+    """Теги события в выбранной раскладке; вне раскладки — общие `INTENTS`."""
+    table = SFX_SCENARIOS.get(scenario or DEFAULT_SCENARIO, {})
+    return table.get(intent) or INTENTS.get(intent, ())
+
+
+def pick_scenario(*, video_id: str = "", category: str = "", cta_type: str = "",
+                  recent: Sequence[str] = ()) -> str:
+    """Какая раскладка звучит в этом ролике (§10.1).
+
+    Тот же механизм, что у бедов: рубрика и тип концовки задают предпочтение,
+    кольцо последних двух его перебивает, а спор решает хэш `video_id` — чтобы
+    выбор был воспроизводим, а не случаен.
+    """
+    names = list(SFX_SCENARIOS)
+    preferred = SCENARIO_BY_CATEGORY.get(category) or SCENARIO_BY_CTA.get(cta_type)
+    recent_set = {r for r in recent if r in SFX_SCENARIOS}
+    free = [n for n in names if n not in recent_set] or names
+    if preferred in free:
+        return preferred
+    digest = hashlib.sha256((video_id or "").encode("utf-8")).digest()
+    return free[int.from_bytes(digest[:8], "big") % len(free)]
+
+
 # Старые имена ролей из сценариев → смысл. Сценарий не переписываем:
 # «whoosh_in» по-прежнему работает, просто закрывается живым вжухом.
 ROLE_TO_INTENT: dict[str, str] = {

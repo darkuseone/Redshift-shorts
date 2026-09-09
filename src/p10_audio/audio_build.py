@@ -24,9 +24,11 @@ import numpy as np
 
 from ..lib import audio as A
 from ..lib.logging import get_logger
+from ..lib.jsonio import read_json_or
 from ..lib.manifest import open_library
 from ..lib.sfx_library import (
-    INTENTS, WHOOSH_INTENTS, intent_for_role, pick_sfx,
+    INTENTS, WHOOSH_INTENTS, intent_for_role, pick_scenario, pick_sfx,
+    scenario_tags,
 )
 
 _log = get_logger("p10")
@@ -82,7 +84,11 @@ def choose_bed(cfg, plan: dict[str, Any]):
     tags = plan.get("music_tags") or []
     record = music_lib.by_mood(mood) if mood else None
     if record is None and tags:
-        record = pick_bed(cfg, want=tags, video_id=plan.get("video_id", ""))
+        # Кольцо последних бедов (§10.3) живёт в том же файле предпочтений,
+        # что и кольцо концовок: одна механика, одно место.
+        prefs = read_json_or(cfg.repo_root / "config" / "editing_preferences.json", {})
+        record = pick_bed(cfg, want=tags, video_id=plan.get("video_id", ""),
+                          bed_ring=[str(b) for b in (prefs.get("bed_ring") or [])])
     if record is None:
         record = music_lib.items[0] if music_lib.items else None
     return record
@@ -230,7 +236,7 @@ def _collapse_whooshes(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _resolve_sfx(cfg, event: dict[str, Any], *, video_id: str,
-                 avoid_ids: Sequence[str]):
+                 avoid_ids: Sequence[str], scenario: str = ""):
     """Роль из сценария, если есть в базе; иначе теги смысла кадра."""
     sfx_lib = open_library(cfg, "sfx")
     role = event.get("role") or ""
@@ -239,8 +245,14 @@ def _resolve_sfx(cfg, event: dict[str, Any], *, video_id: str,
         if record is not None and record.id not in set(avoid_ids):
             return record
     intent = event.get("intent") or intent_for_role(role)
-    want = INTENTS.get(intent, ())
+    want = scenario_tags(scenario, intent) if scenario else INTENTS.get(intent, ())
     record = pick_sfx(cfg, want=want, video_id=video_id, avoid_ids=avoid_ids)
+    if record is None and want != INTENTS.get(intent, ()):
+        # Раскладка просит того, чего в замороженной библиотеке нет: падаем
+        # на общий смысл события, а не на тишину. Раскладка меняет характер
+        # ролика, но не имеет права оставить событие без звука.
+        record = pick_sfx(cfg, want=INTENTS.get(intent, ()), video_id=video_id,
+                          avoid_ids=avoid_ids)
     if record is None and intent in ("avatar_in", "subscribe_cta"):
         record = pick_sfx(cfg, want=("whoosh", "soft"), video_id=video_id,
                           avoid_ids=avoid_ids)
@@ -297,10 +309,32 @@ def run_step(ctx) -> dict[str, Any]:
     placed: list[dict[str, Any]] = []
     missing_roles: list[str] = []
     used_ids: list[str] = []
+    # Раскладка звука (§10.1): два соседних ролика обязаны звучать по-разному
+    # при замороженной библиотеке, и различие даёт отображение событие → смысл,
+    # а не новые файлы.
+    prefs = read_json_or(cfg.repo_root / "config" / "editing_preferences.json", {})
+    scenario = pick_scenario(
+        video_id=str(plan.get("video_id") or ""),
+        category=str(plan.get("category") or ""),
+        cta_type=str((plan.get("cta") or {}).get("type") or ""),
+        recent=[str(r) for r in (prefs.get("sfx_scenario_ring") or [])])
+    # Потолок на повтор одного файла (§10.2): `sfx_min_gap_sec` разводит звуки
+    # во времени, но не мешает одному и тому же wav прозвучать восемь раз —
+    # а это слышно как петля, а не как приём.
+    same_file_max = int(cfg.get("limits.sfx_same_file_max", 3))
+    file_counts: dict[str, int] = {}
 
     for event in events:
+        saturated = [aid for aid, n in file_counts.items() if n >= same_file_max]
         record = _resolve_sfx(cfg, event, video_id=plan.get("video_id", ""),
-                              avoid_ids=used_ids)
+                              avoid_ids=[*used_ids, *saturated],
+                              scenario=scenario)
+        if record is not None and file_counts.get(record.id, 0) >= same_file_max:
+            # Замена не нашлась: библиотека мала. Тишина здесь честнее петли —
+            # событие остаётся в отчёте с причиной, а не исчезает молча.
+            placed.append({**event, "status": "same_file_cap",
+                           "asset_id": record.id, "cap": same_file_max})
+            continue
         if record is None:
             missing_roles.append(event.get("role") or event.get("intent") or "?")
             placed.append({**event, "status": "missing_in_library"})
@@ -317,6 +351,7 @@ def run_step(ctx) -> dict[str, Any]:
         A.place(sfx_bus, clip, float(event["t"]), sr)
         sfx_lib.mark_used(record.id, plan["video_id"])
         used_ids.append(record.id)
+        file_counts[record.id] = file_counts.get(record.id, 0) + 1
         placed.append({**event, "status": "placed", "asset_id": record.id,
                        "file": record.file, "picked_role": record.role,
                        "tags": list(record.tags)})
@@ -388,6 +423,11 @@ def run_step(ctx) -> dict[str, Any]:
         "sfx_peak_corridor": [float(sfx_peak_lo), float(sfx_peak_hi)],
         "missing_roles": sorted(set(missing_roles)),
         "min_gap_sec": float(cfg.get("limits.sfx_min_gap_sec", 2.0)),
+        # Раскладка и бед уезжают в отчёт: по ним P12 двигает кольца (§10.1,
+        # §10.3), а разбор видит, чем этот ролик звучал иначе предыдущего.
+        "scenario": scenario,
+        "same_file_max": same_file_max,
+        "bed_id": str(getattr(record, "id", "") or ""),
         "music": music_info,
         "loudness": {
             "voice_lufs": round(A.measure_loudness_buffer(voice_stereo, sr).integrated_lufs, 2),

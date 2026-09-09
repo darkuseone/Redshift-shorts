@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа (§4.5, §7.8). Пополняется командой `redshift learn --video-id X --choice A|B`. Формат записи: «в ситуации X выбран вариант Y».",
   "version": 1,
-  "updated_at": null,
+  "updated_at": "2026-09-09T00:07:17+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -29,5 +29,7 @@
       "type": "open_question",
       "recorded_at": "2026-09-08"
     }
-  ]
+  ],
+  "sfx_scenario_ring": [],
+  "bed_ring": []
 }

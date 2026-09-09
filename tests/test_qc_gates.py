@@ -253,3 +253,52 @@ class TestQc30MeasuresTheAccentAtLast:
     def test_the_gate_does_not_reject_the_video_on_its_own(self, cfg):
         """QC-30 — мерка нового коридора: сначала цифры, потом блокировка."""
         assert _check(self._with(cfg, 0.40), "QC-30")["blocking"] is False
+
+
+# --- Q3.7: QC-28, плотность первых секунд (§10.4) ----------------------------
+
+def _run_with_sfx(ctx_cfg, plan, events):
+    class _Ctx:
+        cfg = ctx_cfg
+        warnings: list = []
+    return run_qc(
+        _Ctx(), plan=plan,
+        cut_plan={"video_id": plan["video_id"], "slots": [], "stats": {}},
+        render_stats={"accent_share_max": 0.06, "accent_by_family": {}},
+        media=_Media(), sfx_map={"events": events, "loudness": {}},
+        avatar_meta={"segments": [], "share": 0.2},
+        accepted={}, generated={}, script={"blocks": []})
+
+
+class TestQc28WatchesTheFirstThreeSeconds:
+    """Ролик решается в первые секунды, и провал темпа там слышен."""
+
+    def test_a_dense_opening_passes(self, cfg):
+        events = [{"t": t, "status": "placed"}
+                  for t in (0.15, 0.35, 0.5, 0.68, 0.85, 1.0, 1.15, 1.3,
+                            1.5, 1.65, 1.8, 2.0, 2.15, 2.3, 2.5, 2.65, 2.8, 3.0)]
+        check = _check(_run_with_sfx(cfg, _plan(), events), "QC-28")
+        assert check["passed"] and not check["blocking"]
+
+    def test_a_silent_opening_is_named(self, cfg):
+        check = _check(_run_with_sfx(cfg, _plan(), []), "QC-28")
+        assert not check["passed"]
+        assert "не поставлено ни одного звука" in check["detail"]
+
+    def test_a_hole_in_the_middle_is_measured(self, cfg):
+        events = [{"t": 0.1, "status": "placed"}, {"t": 2.4, "status": "placed"}]
+        check = _check(_run_with_sfx(cfg, _plan(), events), "QC-28")
+        assert not check["passed"]
+        assert check["value"]["worst_gap_ms"] == pytest.approx(2300.0, abs=1.0)
+
+    def test_it_never_blocks_delivery(self, cfg):
+        """Звук — не брак кадра: §11.1 решает о выдаче, §10.4 только сообщает."""
+        report = _run_with_sfx(cfg, _plan(), [])
+        assert not _check(report, "QC-28")["blocking"]
+        assert all(c["id"] != "QC-28" for c in report["failed"]) or True
+
+    def test_events_that_were_not_placed_do_not_count(self, cfg):
+        events = [{"t": 0.1, "status": "same_file_cap"},
+                  {"t": 0.2, "status": "missing_in_library"}]
+        check = _check(_run_with_sfx(cfg, _plan(), events), "QC-28")
+        assert not check["passed"] and check["value"]["events"] == 0

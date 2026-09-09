@@ -277,3 +277,78 @@ def test_pick_scene_prefers_dominant_stems():
     )
     assert scene == "grid"
     assert plate_name(scene) == "grid.jpg"
+
+
+# --- Q3.6: подложки без алиасов и закрепления заказчика (§7.6) ---------------
+
+class TestBackdropPlatesAreHonestAboutWhatExists:
+    """До Q3.6 `space` был алиасом на `horizon.jpg`.
+
+    Комментарий в коде гласил «No dedicated space still», и ролик про космос
+    молча шёл на фоне чёрной дыры — сцена подобрана верно, а показана чужая
+    плита. Алиас снят: сцена без своей плиты рисуется градиентами (рабочий
+    запасной путь), а список недостающих назван вслух.
+    """
+
+    def test_no_scene_borrows_another_scenes_plate(self):
+        from src.lib.backdrop import PLATES
+
+        assert len(set(PLATES.values())) == len(PLATES), \
+            f"две сцены делят один файл: {PLATES}"
+
+    def test_every_declared_plate_is_on_disk(self, repo_root):
+        from src.lib.backdrop import PLATES
+
+        for scene, name in PLATES.items():
+            assert (repo_root / "assets" / "backdrops" / name).is_file(), \
+                f"плита сцены {scene} объявлена, но файла нет: {name}"
+
+    def test_the_missing_plates_are_named_not_hidden(self):
+        from src.lib.backdrop import PLATES, PLATES_MISSING, SCENES
+
+        assert set(PLATES) | set(PLATES_MISSING) == set(SCENES), \
+            "есть сцена, про которую неизвестно, будет ли у неё плита"
+        assert not set(PLATES) & set(PLATES_MISSING)
+
+    def test_a_scene_without_a_plate_returns_empty_not_a_wrong_file(self):
+        from src.lib.backdrop import PLATES_MISSING, plate_name
+
+        for scene in PLATES_MISSING:
+            assert plate_name(scene) == "", f"{scene} снова получил чужую плиту"
+
+    def test_the_plate_prompt_carries_the_channel_palette(self):
+        from src.lib.backdrop import PLATE_PROMPT
+
+        low = PLATE_PROMPT.lower()
+        assert "#c8453d" in low and "#36efff" in low
+        assert "9:16" in low and "no people" in low
+
+    def test_pins_are_read_from_the_repo(self, repo_root):
+        from src.lib.backdrop import load_pins
+
+        pins = load_pins(repo_root)
+        assert set(pins) >= {"by_video", "by_category", "by_scene"}
+
+    def test_a_pin_beats_the_scene_table(self):
+        from src.lib.backdrop import plate_name
+
+        pins = {"by_video": {}, "by_category": {},
+                "by_scene": {"space": "horizon.jpg"}}
+        assert plate_name("space", pins=pins) == "horizon.jpg"
+
+    def test_the_narrower_pin_wins(self):
+        """Один проблемный ролик правится, не меняя рубрику целиком."""
+        from src.lib.backdrop import plate_name
+
+        pins = {"by_video": {"redshift_0047": "grid.jpg"},
+                "by_category": {"space": "horizon.jpg"},
+                "by_scene": {"depth": "horizon.jpg"}}
+        assert plate_name("depth", video_id="redshift_0047",
+                          category="space", pins=pins) == "grid.jpg"
+        assert plate_name("depth", video_id="redshift_0042",
+                          category="space", pins=pins) == "horizon.jpg"
+
+    def test_no_pins_no_change(self):
+        from src.lib.backdrop import plate_name
+
+        assert plate_name("grid", pins={}) == "grid.jpg"

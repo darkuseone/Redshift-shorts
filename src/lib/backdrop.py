@@ -83,13 +83,52 @@ DEFAULT_SCENE = "room"
 PLATES: dict[str, str] = {
     "horizon": "horizon.jpg",
     "grid": "grid.jpg",
-    # No dedicated space still: horizon plate is dark nebula-safe fallback.
-    "space": "horizon.jpg",
 }
 
+# Сцены без собственной плиты. До Q3.6 `space` был алиасом на `horizon.jpg`
+# с комментарием «No dedicated space still» — и ролик про космос молча шёл на
+# фоне чёрной дыры. Алиас снят: сцена без плиты рисуется градиентами (это
+# рабочий запасной путь), а список недостающих плит назван вслух, чтобы его
+# можно было закрыть, а не наследовать.
+PLATES_MISSING: tuple[str, ...] = ("space", "depth", "room")
 
-def plate_name(scene: str) -> str:
-    """Имя файла плиты сцены. Пустая строка — плиты нет, рисуем градиентами."""
+# Единый промпт плиты (§7.6 + палитра брендбука). Живёт рядом со списком
+# недостающих сцен, чтобы новая плита делалась той же строкой, что и прошлая.
+PLATE_PROMPT = (
+    "vertical 9:16, dark cinematic plate, black / white / red #C8453D / "
+    "cyan #36EFFF only, no text, no logos, no people, subtle grain, "
+    "Netflix-investigation energy, negative space in the centre for a talking head"
+)
+
+
+def load_pins(repo_root) -> dict[str, object]:
+    """Прибитые подложки (`config/backdrop_pins.json`).
+
+    Автоподбор сцены по тексту иногда промахивается — на 0047 «дыра» дала
+    аккреционный диск за спиной ведущего, который говорил про скважину. Файл
+    закреплений позволяет заказчику решить спор одной строкой, не трогая код.
+    """
+    from pathlib import Path as _Path
+
+    from .jsonio import read_json_or
+
+    path = _Path(repo_root) / "config" / "backdrop_pins.json"
+    return read_json_or(path, {"by_video": {}, "by_category": {}, "by_scene": {}})
+
+
+def plate_name(scene: str, *, video_id: str = "", category: str = "",
+               pins: dict[str, object] | None = None) -> str:
+    """Имя файла плиты сцены. Пустая строка — плиты нет, рисуем градиентами.
+
+    Порядок закреплений — от частного к общему: ролик, рубрика, сцена. Так
+    единственный проблемный ролик правится, не меняя рубрику целиком.
+    """
+    if pins:
+        for key, table in ((video_id, pins.get("by_video")),
+                           (category, pins.get("by_category")),
+                           (scene, pins.get("by_scene"))):
+            if key and isinstance(table, dict) and table.get(key):
+                return str(table[key])
     return PLATES.get(scene, "")
 
 

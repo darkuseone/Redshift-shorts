@@ -182,3 +182,33 @@ def rotate_from(ring: Sequence[str], last: str | None) -> list[str]:
         return items
     cut = items.index(last) + 1
     return items[cut:] + items[:cut]
+
+
+# --- кольца звука (§10.1, §10.3) ---------------------------------------------
+#
+# Живут в том же файле предпочтений и по той же механике, что кольцо концовок:
+# «что звучало в последних роликах». Отдельный модуль под них заводить незачем —
+# это одно и то же знание о канале, просто про звук.
+
+RING_MAX = 3
+
+
+def push_ring(cfg, key: str, value: str, *, limit: int = RING_MAX) -> list[str]:
+    """Добавить значение в кольцо последних N. Идемпотентно по значению.
+
+    Возвращает кольцо после записи. Пустое значение игнорируется: писать в
+    память «ничего не звучало» бессмысленно, а вычищать потом — работа.
+    """
+    if not value:
+        return [str(v) for v in (load_prefs(cfg).get(key) or [])]
+    prefs = load_prefs(cfg)
+    ring = [str(v) for v in (prefs.get(key) or []) if str(v) != value]
+    ring.append(value)
+    prefs[key] = ring[-limit:]
+    prefs["updated_at"] = _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds")
+    write_json(_prefs_path(cfg), prefs)
+    return prefs[key]
+
+
+def ring(cfg, key: str) -> list[str]:
+    return [str(v) for v in (load_prefs(cfg).get(key) or [])]

@@ -1,0 +1,15 @@
+{
+  "_comment": "Прибитые подложки (§7.6, Q3.6). Здесь заказчик закрепляет конкретную плиту за рубрикой или за отдельным роликом — минуя автоподбор сцены по тексту. Пустые словари означают «решает pick_scene», и это нормальное состояние: закрепление нужно там, где автоподбор промахнулся, а не везде.",
+  "version": 1,
+  "by_video": {},
+  "by_category": {},
+  "by_scene": {
+    "horizon": "horizon.jpg",
+    "grid": "grid.jpg"
+  },
+  "_missing": {
+    "_comment": "Плиты, которых на диске нет. До этой волны `space` был алиасом на horizon.jpg с комментарием «No dedicated space still» — то есть ролик про космос шёл на фоне чёрной дыры, и это молча. Теперь недостающая плита названа: сцена рисуется градиентами (запасной путь), пока файл не положат. Делаются они браузером Magnific (Nano Banana 2, безлимит по подписке) — ни одного вызова API. Порядок и промпт: tools/magnific_browser_sop.md",
+    "scenes": ["space", "depth", "room"],
+    "prompt": "vertical 9:16, dark cinematic plate, black / white / red #C8453D / cyan #36EFFF only, no text, no logos, no people, subtle grain, Netflix-investigation energy, negative space in the centre for a talking head"
+  }
+}

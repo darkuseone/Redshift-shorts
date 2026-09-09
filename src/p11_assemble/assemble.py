@@ -29,6 +29,7 @@ from ..lib.render.shots import (
     prepare_split_shot,
 )
 from ..lib.render.text_rules import drop_orphan_short_cues, glue_short_cues
+from ..lib.backdrop import load_pins as _load_backdrop_pins
 from ..lib.backdrop import plate_name as _scene_plate_name
 from ..lib.brand_icons import load_library as load_brand_icons
 from ..lib.backdrop import describe as scene_why
@@ -381,15 +382,25 @@ def _alpha_slots(avatar_meta: dict[str, Any]) -> set[int]:
             for idx in seg.get("slot_indices", [])}
 
 
-def _backdrop_plate(cfg, scene: str) -> str:
+def _backdrop_plate(cfg, scene: str, *, video_id: str = "",
+                    category: str = "") -> str:
     """Путь к плите сцены — или пусто, если её нет на диске.
 
     Проверка существования не формальность: имя плиты записано в
     :mod:`src.lib.backdrop`, а сам файл живёт в ассетах, и разъехаться они
     могут. Пустая строка честнее ссылки в никуда — сцена нарисуется
     градиентами, как и задумано запасным путём.
+
+    Закрепления (`config/backdrop_pins.json`, §7.6) читаются здесь, а не в
+    самом словаре сцен: подбор сцены — про смысл текста, закрепление — про
+    решение заказчика, и смешивать их в одной таблице значило бы потерять,
+    что именно сработало.
     """
-    name = _scene_plate_name(scene)
+    try:
+        pins = _load_backdrop_pins(cfg.repo_root)
+    except Exception:                                    # noqa: BLE001
+        pins = {}
+    name = _scene_plate_name(scene, video_id=video_id, category=category, pins=pins)
     if not name:
         return ""
     path = cfg.path("paths.assets_dir", "assets") / "backdrops" / name
@@ -4107,7 +4118,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "subtitles": subtitles,
         "backdrop": {"scene": scene, "tone": scene_tone(scene),
                      "why": scene_why(scene),
-                     "plate": _backdrop_plate(ctx.cfg, scene)},
+                     "plate": _backdrop_plate(
+                         ctx.cfg, scene, video_id=str(plan.get("video_id") or ""),
+                         category=str(plan.get("category") or ""))},
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
             "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 1180),

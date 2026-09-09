@@ -369,6 +369,28 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                 f"расхождение {int(seam_bits)} бит из 64"),
         blocking=seam_declared))
 
+    # 28. Плотность первых секунд (§10.4). Ролик решается в первые три
+    # секунды, и мёртвая пауза длиннее пятой доли секунды там слышна как
+    # провал темпа. Предупреждающий: звук — не брак кадра, но повод править
+    # раскладку событий.
+    fs_window = float(limits.get("first_seconds_window", 3.0))
+    fs_gap_ms = float(limits.get("first_seconds_gap_ms", 200))
+    beats = sorted(float(e["t"]) for e in sfx_map.get("events", [])
+                   if e.get("status") == "placed" and float(e.get("t", 99)) <= fs_window)
+    marks = [0.0, *beats]
+    worst_gap = max((marks[i] - marks[i - 1] for i in range(1, len(marks))), default=fs_window)
+    if not beats:
+        worst_gap = fs_window
+    checks.append(_check(
+        28, "Мёртвая пауза в первые секунды",
+        worst_gap * 1000.0 <= fs_gap_ms + 1e-6,
+        value={"worst_gap_ms": round(worst_gap * 1000.0, 1),
+               "events": len(beats), "window_sec": fs_window},
+        threshold=fs_gap_ms,
+        detail=("в первые секунды не поставлено ни одного звука"
+                if not beats else ""),
+        blocking=False))
+
     # 29. Экранный хук: строка обязана быть в кадре к первой секунде и
     # читаться за неё же. До §5 хук собирался случайно — первые кадры 0042
     # выбрала `gap_phrase`, то есть «что вынести, когда материала нет».

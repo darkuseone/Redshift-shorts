@@ -20,7 +20,7 @@ from ..lib.costs import CostLedger
 from ..lib.providers.generation import (
     GeminiImageGeneration, GrokImageGeneration, build_generation_provider,
 )
-from ..lib.endings import record_ending
+from ..lib.endings import push_ring, record_ending
 from ..lib.jsonio import read_json_or, write_json
 from ..lib.logging import get_logger
 from ..lib.render.compositor import Compositor
@@ -495,6 +495,14 @@ def run_step(ctx) -> dict[str, Any]:
         report["ending"] = record_ending(
             cfg, video_id=cut_plan["video_id"],
             kind=str((script.get("cta") or {}).get("type") or ""))
+        # Кольца звука (§10.1, §10.3) — там же и по той же причине: два
+        # соседних ролика не должны звучать одинаково при замороженной
+        # библиотеке.
+        report["rings"] = {
+            "sfx_scenario": push_ring(cfg, "sfx_scenario_ring",
+                                      str(sfx_map.get("scenario") or "")),
+            "bed": push_ring(cfg, "bed_ring", str(sfx_map.get("bed_id") or "")),
+        }
         ctx.write("build_report.json", report)
         write_json(ctx.opath("build_report.json"), report)
 
