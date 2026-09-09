@@ -128,21 +128,29 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # Gemini-only: providers.allow_xai=false, no grok in the chain.
-  # Empty fallback is honest — there is no substitute provider; refusal
-  # goes to engine gates (pin_deny / quarantine / coherence / palette / light).
-  primary: "gemini"
-  arbiter: "gemini"
-  fallback: ""
-  arbiter_max_calls: 8        # §7.3 шаг 3
+  # MUST-019: mid-critic GLM-5.3-free; Grok только серая зона [0.45, 0.70].
+  # Gemini — запас primary, если GLM-ключа нет. Generation по-прежнему
+  # providers.allow_xai=false (xAI не в цепочке картинок).
+  primary: "glm"
+  arbiter: "grok"
+  fallback: "glm"
+  arbiter_max_calls: 3        # MUST-019: ≤3 на ролик, не 8
   accept_threshold: 0.70
   reject_threshold: 0.45
   frame_disagreement_threshold: 0.30
+  grey_xai: true              # Grok/xAI только как arbiter серой зоны
   grok_api_key_env: XAI_API_KEY
-  grok_model: "grok-4-fast"
+  grok_model: "grok-4.6"      # не grok-4-fast / grok-2-vision
   grok_api_base: "https://api.x.ai"
   gemini_api_key_env: GEMINI_API_KEY
   gemini_model: "gemini-3.8-flash"
+  # GLM intl (docs): api.z.ai/api/paas/v4. Модель заказчика — 5.3-free
+  # (TokenRouter slug z-ai/glm-5.3-free), не GLM-4.6V-Flash.
+  # Ключ: GLM_API_KEY, иначе TOKENROUTER_API_KEY / ZAI_API_KEY.
+  # TokenRouter host — переопределить glm_api_base на OpenAI-совместимый /v1.
+  glm_api_key_env: GLM_API_KEY
+  glm_model: "z-ai/glm-5.3-free"
+  glm_api_base: "https://api.z.ai/api/paas/v4"
   # true = без live vision (Gemini/Grok): P8 кэш/ранг. P12 не ставит semantic
   # pass: qc_skipped_semantic, ролик не выдаётся (MUST-006). Mock — mode=mock.
   skip_live: false
@@ -388,6 +396,7 @@ budget:
     gemini_per_image: 0.0004
     gemini_image: 0.04
     grok_per_image: 0.0060
+    glm_per_image: 0.0
     magnific_per_image: 0.08
     magnific_per_video_sec: 0.20
 

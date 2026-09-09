@@ -120,7 +120,7 @@ def estimate_cost(script: dict[str, Any], cfg) -> dict[str, Any]:
     pool_max = int(cfg.get("stock.target_pool_size")[1])
     frames_per_item = len(cfg.get("stock.video_probe_frames", [0.1, 0.5, 0.9]))
     gemini_usd = pool_max * frames_per_item * float(price["gemini_per_image"])
-    grok_usd = int(cfg.get("vision.arbiter_max_calls", 8)) * float(price["grok_per_image"])
+    grok_usd = int(cfg.get("vision.arbiter_max_calls", 3)) * float(price["grok_per_image"])
 
     # P9: генерация закрывает не более четверти слотов — иначе ролик упирается
     # в потолок доли AI-футажа (§7.2.6).
@@ -145,7 +145,7 @@ def estimate_cost(script: dict[str, Any], cfg) -> dict[str, Any]:
             "tts_chars": round(tts_chars),
             "avatar_sec": round(avatar_sec, 2),
             "vision_items": pool_max,
-            "grok_calls": int(cfg.get("vision.arbiter_max_calls", 8)),
+            "grok_calls": int(cfg.get("vision.arbiter_max_calls", 3)),
             "generated_images": gen_images,
         },
     }
