@@ -107,12 +107,13 @@ def test_subtitle_has_no_leading_capital():
     assert apply_case("Я", "lower") == "я"                   # одна буква — не аббревиатура
 
 
-def test_subtitle_shifts_down_when_face_low(render_ctx):
+def test_subtitle_shifts_up_when_face_is_in_the_lower_third(render_ctx):
     from src.lib.render.layers import subtitle_baseline
 
     default = subtitle_baseline(render_ctx, face_bbox=None)
-    shifted = subtitle_baseline(render_ctx, face_bbox=(300, 400, 700, 900))
-    assert shifted > default
+    shifted = subtitle_baseline(render_ctx, face_bbox=(300, 1080, 700, 1480))
+    assert shifted < default
+    assert shifted == 720
 
 
 def test_fullscreen_text_fills_frame(render_ctx):
