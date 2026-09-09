@@ -302,6 +302,31 @@ def test_the_channel_own_captions_are_not_foreign_text(cfg, tmp_path):
         assert verdict.has_text is False
 
 
+def test_final_frame_does_not_take_the_stocky_haircut(cfg, tmp_path):
+    """«Сток» — штраф отбора B-roll; готовый кадр ролика им не режут."""
+    from src.lib.costs import CostLedger
+    from src.lib.providers.vision import MockVision
+
+    frame = tmp_path / "plate.jpg"
+    Image.new("RGB", (54, 96), (40, 80, 160)).save(frame)
+    judge = MockVision(cfg, CostLedger())
+    stocky_query = None
+    broll_score = 0.0
+    for i in range(300):
+        query = f"stock-probe-{i}"
+        broll = judge.judge([frame], intent="lab", role="develop",
+                            query=query, kind="broll")
+        if broll.stocky:
+            stocky_query = query
+            broll_score = broll.score
+            break
+    assert stocky_query, "не нашли запрос, на котором mock ставит stocky"
+    final = judge.judge([frame], intent="кадр ролика", role="body",
+                        query=stocky_query, kind="final_frame")
+    assert final.score > broll_score
+    assert final.score >= 0.45
+
+
 def test_vision_qc_blocks_when_mismatch_exceeds_ten_percent(cfg, tmp_path, monkeypatch):
     """§11.2: одна проба из шести ниже порога — blocking, ролик не success."""
     from src.lib.providers import vision as V

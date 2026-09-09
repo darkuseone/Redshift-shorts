@@ -717,17 +717,7 @@ def _subtitle_drift(plan: dict[str, Any],
         c_start = float(cue["start"])
         c_end = float(cue["end"])
         token = _cue_token(cue.get("display") or cue.get("word") or "")
-        best_i: int | None = None
-        best_score: float | None = None
-        for i, word in enumerate(speech):
-            if used[i]:
-                continue
-            w_start = float(word["start"])
-            w_tok = _cue_token(word.get("display") or word.get("word") or "")
-            dt = abs(c_start - w_start)
-            score = dt if (token and w_tok == token) else dt + 1000.0
-            if best_score is None or score < best_score:
-                best_i, best_score = i, score
+        best_i = _match_speech_word(speech, used, c_start, token)
         if best_i is None:
             continue
         used[best_i] = True
@@ -740,6 +730,30 @@ def _subtitle_drift(plan: dict[str, Any],
             else:
                 break
     return worst
+
+
+def _match_speech_word(speech: list[dict[str, Any]], used: list[bool],
+                       cue_start: float, token: str) -> int | None:
+    """Слово речи для куи: тот же токен рядом по времени, не первое вхождение."""
+    near: list[tuple[float, int]] = []
+    same: list[tuple[float, int]] = []
+    other: list[tuple[float, int]] = []
+    for i, word in enumerate(speech):
+        if used[i]:
+            continue
+        dt = abs(cue_start - float(word["start"]))
+        w_tok = _cue_token(word.get("display") or word.get("word") or "")
+        if token and w_tok == token:
+            if dt <= 0.5:
+                near.append((dt, i))
+            else:
+                same.append((dt, i))
+        else:
+            other.append((dt, i))
+    pool = near or same or other
+    if not pool:
+        return None
+    return min(pool)[1]
 
 
 def _subtitle_coverage(plan: dict[str, Any], duration: float) -> float:

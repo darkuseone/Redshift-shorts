@@ -358,6 +358,20 @@ class TestQc10MeasuresSubtitleDriftAgainstSpeech:
         assert check["passed"]
         assert check["value"] == pytest.approx(0.0, abs=1.0)
 
+    def test_a_repeated_word_matches_the_nearby_token(self, cfg):
+        """Второе «кубит» — не первое, снятое mute на 2.7 с раньше."""
+        plan = _plan(
+            subtitles=[{"display": "кубит", "start": 14.508, "end": 14.958}],
+            speech_words=[
+                {"display": "кубит", "start": 11.806, "end": 12.256},
+                {"display": "физический", "start": 13.790, "end": 14.240},
+                {"display": "кубит", "start": 14.508, "end": 14.958},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
 
 class TestQc11ReportsClipOffsetNotMouth:
     """MUST-026: QC-11 — avatar_clip_offset, не губы и не lip-sync."""
