@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 
 from ...glyphs import glyph_svg
+from ..canvas import plaque_enter_sec
 
 from .spm_shapes import SPM_SHAPES, SPM_VB
 from .umf_shapes import UMF_CITIES, UMF_FLOWS, UMF_SHAPES, UMF_VB
@@ -344,17 +345,20 @@ DRIFT_GAP = 0.02
 
 def entrance_tweens(target: str, start: float, *, name: str = "zoom-in",
                     fade: bool = True, delay: float = 0.0,
-                    scale_to: float = 1.0, hold: bool = False) -> list[str]:
+                    scale_to: float = 1.0, hold: bool = False,
+                    duration: float | None = None) -> list[str]:
     """Твины появления элемента.
 
     ``fade=False`` для клипов: прозрачность у них за движком.
     ``scale_to`` — конечный масштаб, если элемент обязан остаться увеличенным.
     ``hold=True`` — элемент уже на экране до этого твина (клип ведущего живёт
     весь сегмент), и начальное состояние не должно уходить назад по ленте.
+    ``duration`` overrides the dictionary when a plaque/card must enter in the
+    brandbook window (MUST-015: 200–280 ms). Other callers keep ENTRANCES.
     """
     spec = ENTRANCES.get(name) or ENTRANCES["zoom-in"]
     at = start + delay
-    duration = float(spec["duration"])
+    duration = float(spec["duration"]) if duration is None else float(duration)
     scale_from, shift = float(spec["scale"]), float(spec["y"])
 
     # Без проявления вход обязан **расти**, а не уменьшаться. Проверено кадром:
@@ -12840,24 +12844,32 @@ def ov_source_card(ctx: "TemplateCtx") -> Piece:
     snippet = str(ctx.params.get("snippet") or "")
     highlight = str(ctx.params.get("highlight_line") or "")
     # Empty solid white card without copy is a template leak (0042 QA @~8s).
-    if not title.strip() and not snippet.strip() and not domain.strip():
+    if not title.strip() and not snippet.strip() and not domain.strip() and not highlight.strip():
         return Piece()
     node_id = ctx.target
     body = _esc(snippet)
-    if highlight and highlight.lower() in snippet.lower():
+    if highlight and snippet and highlight.lower() in snippet.lower():
         idx = snippet.lower().index(highlight.lower())
         body = (_esc(snippet[:idx])
                 + f'<span class="hl">{_esc(snippet[idx:idx + len(highlight)])}</span>'
                 + _esc(snippet[idx + len(highlight):]))
+    elif highlight:
+        # MUST-015: authored highlight_line still has to appear, even when it
+        # is not a substring of snippet.
+        extra = f'<span class="hl">{_esc(highlight)}</span>'
+        body = f"{body} {extra}".strip() if body else extra
     # Fade an INNER stage (not the .clip): HyperFrames owns clip opacity.
     # Without this the white shell sits empty while .title/.snippet rise.
+    # MUST-015: plaque enter is 200–280 ms, not the 660 ms dictionary rise.
+    enter = plaque_enter_sec(ctx.params.get("enter_ms"))
     stage = f"{node_id}-stage"
-    tweens = entrance_tweens(f"#{stage}", ctx.start, name="rise")
+    tweens = entrance_tweens(f"#{stage}", ctx.start, name="rise", duration=enter)
     if title:
-        tweens += entrance_tweens(f"#{node_id} .title", ctx.start, name="rise", delay=0.05)
+        tweens += entrance_tweens(f"#{node_id} .title", ctx.start, name="rise",
+                                  delay=0.05, duration=enter)
     if snippet:
         tweens += entrance_tweens(f"#{node_id} .snippet", ctx.start,
-                                  name="rise", delay=0.10)
+                                  name="rise", delay=0.10, duration=enter)
     compact = " compact" if ctx.params.get("compact") else ""
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay source-card{compact}" {_timing(ctx)}>'
@@ -12915,7 +12927,9 @@ def ov_article_scroll(ctx: "TemplateCtx") -> Piece:
         elif highlight:
             body = f'{body} <span class="hl">{_esc(highlight)}</span>'
     shift = min(80, max(36, int(len(snippet) * 0.4)))
-    tweens = entrance_tweens(f"#{node_id} .as-frame", ctx.start, name="rise")
+    enter = plaque_enter_sec(ctx.params.get("enter_ms"))
+    tweens = entrance_tweens(f"#{node_id} .as-frame", ctx.start, name="rise",
+                             duration=enter)
     hold = max(0.0, ctx.duration - 0.55)
     if hold >= 0.6:
         tweens.append(
@@ -12957,7 +12971,9 @@ def ov_paper_reveal(ctx: "TemplateCtx") -> Piece:
             lines.append(highlight)
             accent_at = len(lines) - 1
     rows, tweens = [], []
-    tweens += entrance_tweens(f"#{node_id} .pr-card", ctx.start, name="zoom-out")
+    enter = plaque_enter_sec(ctx.params.get("enter_ms"))
+    tweens += entrance_tweens(f"#{node_id} .pr-card", ctx.start, name="zoom-out",
+                              duration=enter)
     for i, line in enumerate(lines[:5]):
         cls = " accent" if i == accent_at else ""
         rows.append(f'<span class="pr-line{cls}">{_esc(line)}</span>')

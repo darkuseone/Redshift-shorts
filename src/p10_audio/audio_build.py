@@ -27,8 +27,9 @@ from ..lib.logging import get_logger
 from ..lib.jsonio import read_json_or
 from ..lib.manifest import open_library
 from ..lib.sfx_library import (
-    INTENTS, WHOOSH_INTENTS, intent_for_role, pick_scenario, pick_sfx,
-    scenario_tags,
+    CARD_OVERLAY_TYPES, CARD_SFX_INTENTS, INTENTS, WHOOSH_INTENTS,
+    intent_for_role, pick_scenario, pick_sfx, scenario_tags,
+    sfx_for_card_type,
 )
 
 _log = get_logger("p10")
@@ -36,11 +37,6 @@ _log = get_logger("p10")
 AVATAR_KINDS = ("avatar", "split")
 WHOOSH_SCRIPT_ROLES = frozenset({
     "whoosh_in", "whoosh_out", "swipe", "riser", "none", "",
-})
-# Script overlay types (and assemble overlay types) that are on-screen cards.
-# picture_in stays a B-roll whoosh; these fire card_appear instead.
-CARD_OVERLAY_TYPES = frozenset({
-    "plaque", "source_card", "frame", "lower_third", "highlight",
 })
 _CARD_TEMPLATE_HINTS = ("slam", "fact-card", "number-slam", "stat-card")
 
@@ -87,17 +83,38 @@ def choose_bed(cfg, plan: dict[str, Any]):
         # Кольцо последних бедов (§10.3) живёт в том же файле предпочтений,
         # что и кольцо концовок: одна механика, одно место.
         prefs = read_json_or(cfg.repo_root / "config" / "editing_preferences.json", {})
-        record = pick_bed(cfg, want=tags, video_id=plan.get("video_id", ""),
-                          bed_ring=[str(b) for b in (prefs.get("bed_ring") or [])])
+        record = pick_bed(
+            cfg, want=tags, video_id=plan.get("video_id", ""),
+            bed_ring=[str(b) for b in (prefs.get("bed_ring") or [])],
+            adjacent_video_id=_adjacent_video_id(
+                cfg, current=str(plan.get("video_id") or "")))
     if record is None:
         record = music_lib.items[0] if music_lib.items else None
     return record
 
 
 def _event(t: float, intent: str, why: str, *, priority: int = 1,
-           role: str = "") -> dict[str, Any]:
-    return {"t": float(t), "intent": intent, "role": role, "why": why,
-            "priority": int(priority)}
+           role: str = "", slot_index: Any = None) -> dict[str, Any]:
+    event = {"t": float(t), "intent": intent, "role": role, "why": why,
+             "priority": int(priority)}
+    if slot_index is not None:
+        event["slot_index"] = slot_index
+    return event
+
+
+def _adjacent_video_id(cfg, *, current: str = "") -> str:
+    """Последний собранный ролик канала: run_history, не скан output/."""
+    try:
+        history = read_json_or(
+            cfg.path("paths.cache_dir", "cache") / "run_history.json",
+            {"runs": []})
+    except Exception:  # noqa: BLE001 — нет кэша = нет соседа
+        return ""
+    for run in reversed(list(history.get("runs") or [])):
+        vid = str(run.get("video_id") or "")
+        if vid and vid != current:
+            return vid
+    return ""
 
 
 def _script_sfx_by_block(plan: dict[str, Any]) -> dict[str, str]:
@@ -133,13 +150,15 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
 
         if kind == "fullscreen_text":
             hint = str(slot.get("template_hint") or "")
-            if slot.get("media") or slot.get("media_src") or slot.get("file") \
-                    or any(token in hint for token in _CARD_TEMPLATE_HINTS):
-                events.append(_event(t, "card_appear",
-                                     "карточка с медиа в FS", role="pop"))
+            is_card = bool(slot.get("media") or slot.get("media_src") or slot.get("file")
+                           or any(token in hint for token in _CARD_TEMPLATE_HINTS))
+            intent, role = sfx_for_card_type("", fullscreen_card=is_card)
+            if is_card:
+                events.append(_event(t, intent, "карточка с медиа в FS",
+                                     role=role, slot_index=slot.get("index")))
             else:
                 events.append(_event(t, "fullscreen", "появление full-screen text (§5.2)",
-                                     role="reveal"))
+                                     role="reveal", slot_index=slot.get("index")))
         elif kind == "meme":
             events.append(_event(t, "meme", "мем-вставка (§5.8)", role="meme_stinger"))
         elif kind in AVATAR_KINDS and (prev is None or prev["kind"] not in AVATAR_KINDS):
@@ -170,15 +189,20 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
     seen_card_blocks: set[str] = set()
     for block in plan.get("blocks", []):
         overlay = block.get("overlay") or {}
-        if str(overlay.get("type") or "") not in CARD_OVERLAY_TYPES:
+        overlay_type = str(overlay.get("type") or "")
+        intent, role = sfx_for_card_type(overlay_type)
+        if not intent:
             continue
         block_slots = [s for s in slots if s.get("block_id") == block["id"]]
         if block_slots:
             seen_card_blocks.add(str(block["id"]))
-            events.append(_event(float(block_slots[0]["start"]) + 0.4, "card_appear",
-                                 f"карточка блока {block['id']}", role="pop"))
+            events.append(_event(
+                float(block_slots[0]["start"]) + 0.4, intent,
+                f"карточка блока {block['id']}", role=role,
+                slot_index=block_slots[0].get("index")))
     for ovl in plan.get("overlays") or []:
-        if str(ovl.get("type") or "") not in CARD_OVERLAY_TYPES:
+        intent, role = sfx_for_card_type(str(ovl.get("type") or ""))
+        if not intent:
             continue
         block_id = str(ovl.get("block_id") or "")
         if block_id and block_id in seen_card_blocks:
@@ -186,8 +210,9 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
         start = ovl.get("start")
         if start is None:
             continue
-        events.append(_event(float(start), "card_appear",
-                             "карточка из плана оверлеев", role="pop"))
+        events.append(_event(
+            float(start), intent, "карточка из плана оверлеев", role=role,
+            slot_index=ovl.get("slot_index", _slot_index_at(slots, float(start)))))
 
     for block in plan.get("blocks", []):
         role = block.get("sfx")
@@ -205,17 +230,72 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
 
     events = _collapse_whooshes(events)
     events.sort(key=lambda e: (e["t"], e["priority"]))
+    _mark_first_card_sfx(events)
+    return _place_with_density(events, min_gap)
+
+
+def _slot_index_at(slots: Sequence[dict[str, Any]], t: float) -> Any:
+    for slot in slots:
+        start = float(slot.get("start") or 0.0)
+        end = float(slot.get("end") or start)
+        if start - 1e-6 <= t <= end + 1e-6:
+            return slot.get("index")
+    return None
+
+
+def _mark_first_card_sfx(events: list[dict[str, Any]]) -> None:
+    """Первый card/plaque слота нельзя снять плотностью — режем другие."""
+    seen: set[Any] = set()
+    for event in events:
+        if event.get("intent") not in CARD_SFX_INTENTS:
+            continue
+        key = event.get("slot_index")
+        if key is None:
+            key = ("t", round(float(event["t"]), 2))
+        if key in seen:
+            continue
+        event["keep"] = True
+        seen.add(key)
+
+
+def _place_with_density(events: list[dict[str, Any]],
+                        min_gap: float) -> list[dict[str, Any]]:
     placed: list[dict[str, Any]] = []
     for event in events:
         if placed and event["t"] - placed[-1]["t"] < min_gap:
-            if event["priority"] > placed[-1]["priority"]:
+            prev = placed[-1]
+            if event.get("keep") and not prev.get("keep"):
+                placed[-1] = event
                 continue
-            if event["priority"] == placed[-1]["priority"] and event["t"] - placed[-1]["t"] < 0.35:
+            if event.get("keep"):
+                placed.append(event)
                 continue
-            if event["t"] - placed[-1]["t"] < min_gap * 0.5:
+            if event["priority"] > prev["priority"]:
+                continue
+            if event["priority"] == prev["priority"] and event["t"] - prev["t"] < 0.35:
+                continue
+            if event["t"] - prev["t"] < min_gap * 0.5:
                 continue
         placed.append(event)
     return placed
+
+
+def sfx_skipped_from_events(events: Sequence[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    """Skip path for missing SFX: never silent without a report row (MUST-015)."""
+    skipped: list[dict[str, Any]] = []
+    for event in events or []:
+        status = str(event.get("status") or "")
+        if not status or status == "placed":
+            continue
+        skipped.append({
+            "t": event.get("t"),
+            "intent": event.get("intent"),
+            "role": event.get("role"),
+            "why": event.get("why"),
+            "status": status,
+            "file": event.get("file"),
+        })
+    return skipped
 
 
 def _collapse_whooshes(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -422,6 +502,7 @@ def run_step(ctx) -> dict[str, Any]:
         "sfx_peak_dbfs": float(sfx_peak_lo),
         "sfx_peak_corridor": [float(sfx_peak_lo), float(sfx_peak_hi)],
         "missing_roles": sorted(set(missing_roles)),
+        "sfx_skipped": sfx_skipped_from_events(placed),
         "min_gap_sec": float(cfg.get("limits.sfx_min_gap_sec", 2.0)),
         # Раскладка и бед уезжают в отчёт: по ним P12 двигает кольца (§10.1,
         # §10.3), а разбор видит, чем этот ролик звучал иначе предыдущего.

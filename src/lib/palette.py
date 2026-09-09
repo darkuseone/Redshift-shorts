@@ -23,8 +23,10 @@
 
 from __future__ import annotations
 
+import math
+import re
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Iterable, Sequence
 
 import numpy as np
 from PIL import Image
@@ -249,3 +251,244 @@ def frame_light(frames: Sequence[Image.Image | Path | str],
     return {"measured": True,
             "visible_share": round(min(shares), 4),
             "mean": round(min(means), 4)}
+
+
+# MUST-021: HyperFrames overlay fills never went through footage-palette QC.
+# Allowlist is brandbook colors plus white/ink. ΔE lets anti-alias neighbours
+# through; magenta #FF00AA and leftover gold stay out. Do not recolor the
+# 14k template catalog because one overlay carried a foreign hex.
+FILL_DELTA_E_MAX = 12.0
+_HEX_RE = re.compile(r"#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b")
+_COLOR_KEYS = frozenset({
+    "fill", "color", "bg", "background", "accent", "accent_color",
+    "stroke", "border", "border_color", "highlight_color", "text_color",
+    "ink", "paper", "tint", "glow", "rule", "underline",
+})
+TECH_THEMES = frozenset({
+    "tech", "ai", "ai-tool", "ai_tool", "aitool", "ai-tools",
+})
+# Cyan on these themes is the 0047-class mistake: a second accent where the
+# card is not about a tool. Number/source stay out of this set so MEGA D-9
+# cyan on those families does not fail a live 0042 plan.
+MEDICINE_THEMES = frozenset({
+    "medicine", "medical", "health", "healthcare", "vaccine",
+    "clinic", "pharma",
+})
+
+
+def normalize_hex(raw: str) -> str | None:
+    """`#RGB` / `#RRGGBB` / `#RRGGBBAA` → uppercase `#RRGGBB`, or None."""
+    text = str(raw or "").strip()
+    if not text.startswith("#"):
+        return None
+    body = text[1:]
+    if len(body) == 8 and all(c in "0123456789abcdefABCDEF" for c in body):
+        body = body[:6]
+    elif len(body) == 3 and all(c in "0123456789abcdefABCDEF" for c in body):
+        body = "".join(ch * 2 for ch in body)
+    elif not (len(body) == 6 and all(c in "0123456789abcdefABCDEF" for c in body)):
+        return None
+    return f"#{body.upper()}"
+
+
+def brandbook_fill_allowlist(brandbook: dict[str, Any] | None) -> set[str]:
+    """Every hex the brandbook names, plus white and ink as the card requires."""
+    allowed: set[str] = set()
+    for extra in ("#FFFFFF", "#000000", "#111214"):
+        norm = normalize_hex(extra)
+        if norm:
+            allowed.add(norm)
+    colors = (brandbook or {}).get("colors") or {}
+    if isinstance(colors, dict):
+        for value in colors.values():
+            if not isinstance(value, str):
+                continue
+            norm = normalize_hex(value.strip())
+            if norm:
+                allowed.add(norm)
+            rgb = _rgb_from_css(value)
+            if rgb is not None:
+                allowed.add(_hex_from_rgb(rgb))
+    return allowed
+
+
+def hex_in_allowlist(raw: str, allowlist: Iterable[str], *,
+                     max_de: float = FILL_DELTA_E_MAX) -> bool:
+    needle = normalize_hex(raw)
+    if needle is None:
+        return True
+    allowed = {normalize_hex(item) for item in allowlist}
+    allowed.discard(None)
+    if needle in allowed:
+        return True
+    rgb = _hex_to_rgb(needle)
+    if rgb is None:
+        return True
+    return any(_delta_e76(rgb, _hex_to_rgb(item)) <= max_de
+               for item in allowed if _hex_to_rgb(item) is not None)
+
+
+def overlay_fill_hexes(overlay: dict[str, Any]) -> list[str]:
+    """Hex fills declared on the overlay (params + nested color keys)."""
+    found: list[str] = []
+    seen: set[str] = set()
+
+    def take(raw: str) -> None:
+        for match in _HEX_RE.findall(str(raw)):
+            norm = normalize_hex(match)
+            if norm and norm not in seen:
+                seen.add(norm)
+                found.append(norm)
+
+    def walk(node: Any, *, color_context: bool) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, color_context=color_context or str(key) in _COLOR_KEYS)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item, color_context=color_context)
+        elif isinstance(node, str) and color_context:
+            take(node)
+
+    params = overlay.get("params") if isinstance(overlay.get("params"), dict) else {}
+    for key in _COLOR_KEYS:
+        if key in overlay and overlay.get(key) is not None:
+            walk(overlay.get(key), color_context=True)
+        if key in params:
+            walk(params.get(key), color_context=True)
+    return found
+
+
+def overlay_offbrand_fills(overlays: Sequence[dict[str, Any]],
+                           brandbook: dict[str, Any] | None,
+                           *, max_de: float = FILL_DELTA_E_MAX) -> list[dict[str, Any]]:
+    """Overlays whose declared fill is not a brandbook colour."""
+    allow = brandbook_fill_allowlist(brandbook)
+    hits: list[dict[str, Any]] = []
+    for overlay in overlays:
+        if not isinstance(overlay, dict):
+            continue
+        foreign = [hex_ for hex_ in overlay_fill_hexes(overlay)
+                   if not hex_in_allowlist(hex_, allow, max_de=max_de)]
+        if foreign:
+            hits.append({
+                "overlay": overlay.get("type"),
+                "hex": foreign,
+                "start": overlay.get("start"),
+            })
+    return hits
+
+
+def overlay_uses_cyan(overlay: dict[str, Any],
+                      brandbook: dict[str, Any] | None) -> bool:
+    params = overlay.get("params") if isinstance(overlay.get("params"), dict) else {}
+    family = str(params.get("accent_family") or overlay.get("accent_family") or "")
+    if family.strip().lower() == "cyan":
+        return True
+    cyan_tokens = []
+    colors = (brandbook or {}).get("colors") or {}
+    if isinstance(colors, dict):
+        for name in ("cyan", "cyan_soft", "cyan_deep"):
+            norm = normalize_hex(str(colors.get(name) or ""))
+            if norm:
+                cyan_tokens.append(norm)
+    if not cyan_tokens:
+        cyan_tokens = ["#36EFFF", "#7AF0FF", "#0BB8C9"]
+    for hex_ in overlay_fill_hexes(overlay):
+        if hex_in_allowlist(hex_, cyan_tokens, max_de=FILL_DELTA_E_MAX):
+            return True
+    return False
+
+
+def overlay_theme(overlay: dict[str, Any],
+                  script: dict[str, Any] | None = None) -> str:
+    params = overlay.get("params") if isinstance(overlay.get("params"), dict) else {}
+    for key in ("theme", "slot_theme", "domain_theme", "topic"):
+        raw = params.get(key) or overlay.get(key)
+        if raw:
+            return str(raw).strip().lower()
+    block_id = overlay.get("block_id") or params.get("block_id")
+    if block_id is None:
+        return ""
+    for block in (script or {}).get("blocks") or []:
+        if not isinstance(block, dict):
+            continue
+        if str(block.get("id")) != str(block_id):
+            continue
+        nested = block.get("overlay") if isinstance(block.get("overlay"), dict) else {}
+        for key in ("theme", "slot_theme", "topic"):
+            raw = nested.get(key) or block.get(key)
+            if raw:
+                return str(raw).strip().lower()
+        family = str(block.get("emphasis_family") or "").strip().lower()
+        return family
+    return ""
+
+
+def overlay_cyan_misuse(overlays: Sequence[dict[str, Any]],
+                        brandbook: dict[str, Any] | None,
+                        script: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Cyan fill/family on a medicine (non-tech) card — blocking MUST-021."""
+    hits: list[dict[str, Any]] = []
+    for overlay in overlays:
+        if not isinstance(overlay, dict):
+            continue
+        if not overlay_uses_cyan(overlay, brandbook):
+            continue
+        theme = overlay_theme(overlay, script)
+        if theme in TECH_THEMES:
+            continue
+        if theme not in MEDICINE_THEMES:
+            continue
+        hits.append({
+            "overlay": overlay.get("type"),
+            "theme": theme,
+            "start": overlay.get("start"),
+        })
+    return hits
+
+
+def _hex_to_rgb(hex_: str | None) -> tuple[int, int, int] | None:
+    norm = normalize_hex(hex_ or "")
+    if norm is None:
+        return None
+    body = norm[1:]
+    return int(body[0:2], 16), int(body[2:4], 16), int(body[4:6], 16)
+
+
+def _hex_from_rgb(rgb: tuple[int, int, int]) -> str:
+    return f"#{rgb[0]:02X}{rgb[1]:02X}{rgb[2]:02X}"
+
+
+def _rgb_from_css(value: str) -> tuple[int, int, int] | None:
+    text = str(value or "").strip()
+    match = re.match(
+        r"rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", text, flags=re.I)
+    if not match:
+        return None
+    return (max(0, min(255, int(match.group(1)))),
+            max(0, min(255, int(match.group(2)))),
+            max(0, min(255, int(match.group(3)))))
+
+
+def _srgb_to_lab(rgb: tuple[int, int, int]) -> tuple[float, float, float]:
+    def channel(c: int) -> float:
+        x = c / 255.0
+        return ((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92
+
+    r, g, b = channel(rgb[0]), channel(rgb[1]), channel(rgb[2])
+    x = r * 0.4124 + g * 0.3576 + b * 0.1805
+    y = r * 0.2126 + g * 0.7152 + b * 0.0722
+    z = r * 0.0193 + g * 0.1192 + b * 0.9505
+
+    def pivot(t: float) -> float:
+        return t ** (1.0 / 3.0) if t > 0.008856 else (7.787 * t) + 16.0 / 116.0
+
+    fx, fy, fz = pivot(x / 0.95047), pivot(y / 1.0), pivot(z / 1.08883)
+    return (116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz))
+
+
+def _delta_e76(a: tuple[int, int, int], b: tuple[int, int, int]) -> float:
+    la, aa, ba = _srgb_to_lab(a)
+    lb, ab, bb = _srgb_to_lab(b)
+    return math.sqrt((la - lb) ** 2 + (aa - ab) ** 2 + (ba - bb) ** 2)

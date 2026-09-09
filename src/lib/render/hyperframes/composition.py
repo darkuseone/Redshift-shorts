@@ -43,6 +43,9 @@ from .templates import (
     fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
     render_motion, render_overlay, render_transition, text_width, MOTION,
 )
+from ..canvas import (
+    SafeZones, caption_layout_bbox, overlay_layout_bbox, plaque_enter_sec,
+)
 
 TRACK_STAGE = 0
 TRACK_SHOT_EVEN = 1
@@ -183,7 +186,8 @@ class CompositionBuilder:
         # Сколько раз графика брендбука уже вышла в кадр.
         self.marks_placed = 0
         self.stats = {"shots": 0, "overlay_draws": 0, "subtitle_words": 0,
-                      "avatar_clips": 0}
+                      "avatar_clips": 0, "safe_zone_checks": [],
+                      "safe_zone_violations": []}
 
     # --- вспомогательное ------------------------------------------------
     def _asset(self, path: str | None) -> str | None:
@@ -672,6 +676,7 @@ class CompositionBuilder:
                 self.tweens.extend(piece.tweens)
                 if piece.nodes:
                     self.stats["overlay_draws"] += 1
+                    self._record_overlay_safe_zone(ovl)
                 continue
             timing = _timing(start, float(ovl["end"]), track)
             body = self._overlay_body(node_id, ovl)
@@ -679,8 +684,37 @@ class CompositionBuilder:
                 continue
             nodes.append(body.replace("__TIMING__", timing))
             self.stats["overlay_draws"] += 1
+            self._record_overlay_safe_zone(ovl)
             self._add_overlay_entrance(node_id, ovl, start)
         return nodes
+
+    def _record_overlay_safe_zone(self, ovl: dict[str, Any]) -> None:
+        """Каждый нарисованный оверлей пишет bbox в тот же список, что QC-7."""
+        box = overlay_layout_bbox(ovl, self.brandbook)
+        params = ovl.get("params")
+        if not isinstance(params, dict):
+            params = {}
+            ovl["params"] = params
+        params["bbox"] = [round(v, 1) for v in box]
+        safe = SafeZones.from_brandbook(self.brandbook)
+        ok = safe.contains(box)
+        entry = {"overlay": ovl.get("type"), "bbox": params["bbox"], "ok": ok,
+                 "why": [] if ok else safe.violations(box)}
+        self.stats["safe_zone_checks"].append(entry)
+        if not ok:
+            self.stats["safe_zone_violations"].append(entry)
+
+    def _record_caption_safe_zone(self) -> None:
+        if not self.plan.get("subtitles"):
+            return
+        box = caption_layout_bbox(self.brandbook)
+        safe = SafeZones.from_brandbook(self.brandbook)
+        ok = safe.contains(box)
+        entry = {"overlay": "captions", "bbox": [round(v, 1) for v in box],
+                 "ok": ok, "why": [] if ok else safe.violations(box)}
+        self.stats["safe_zone_checks"].append(entry)
+        if not ok:
+            self.stats["safe_zone_violations"].append(entry)
 
     def _overlay_piece(self, node_id: str, ovl: dict[str, Any],
                        start: float, duration: float, track: int):
@@ -691,6 +725,11 @@ class CompositionBuilder:
         template_id = str(ovl.get("template") or ovl.get("id") or "")
         renderer = str(ovl.get("renderer") or "")
         params = dict(ovl.get("params") or {})
+        if ovl.get("enter_ms") is not None:
+            params.setdefault("enter_ms", ovl["enter_ms"])
+        elif "enter_ms" not in params:
+            params["enter_ms"] = int(round(
+                plaque_enter_sec(brandbook=self.brandbook) * 1000))
         for key in ("media", "media_src"):
             mapped = self._asset(params.get(key))
             if mapped:
@@ -875,7 +914,13 @@ class CompositionBuilder:
         # масштаба читается как «панель подали снизу», с масштабом — как
         # «карточку поднесли». Дрейф на удержании не нужен: карточка стоит
         # рядом с движущимся словом субтитра и без него.
-        self.tweens.extend(entrance_tweens(f"#{node_id}", start, name="rise"))
+        # MUST-015: enter from brandbook plaque window, not ENTRANCES rise 660 ms.
+        requested = ovl.get("enter_ms")
+        if requested is None:
+            requested = (ovl.get("params") or {}).get("enter_ms")
+        enter = plaque_enter_sec(requested, brandbook=self.brandbook)
+        self.tweens.extend(entrance_tweens(
+            f"#{node_id}", start, name="rise", duration=enter))
 
     def _credit_nodes(self) -> list[str]:
         """Подпись источника мелким шрифтом (§1, правило 8).
@@ -975,6 +1020,7 @@ class CompositionBuilder:
         body += self._hero_nodes()
         body += self._overlay_nodes()
         body += self._subtitle_nodes()
+        self._record_caption_safe_zone()
         body.append(self._audio_node(mix_name))
 
         indented = "\n      ".join(body)

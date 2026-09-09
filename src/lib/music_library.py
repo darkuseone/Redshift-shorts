@@ -318,9 +318,13 @@ def library_status(cfg) -> dict[str, Any]:
     }
 
 
+BED_PICK_MAX = 15
+
+
 def pick_bed(cfg, *, want: Sequence[str], video_id: str,
              recent_videos: Sequence[str] = (),
-             bed_ring: Sequence[str] = ()) -> Any:
+             bed_ring: Sequence[str] = (),
+             adjacent_video_id: str = "") -> Any:
     """Выбрать подложку: сперва по тегам, потом по свежести, потом по хэшу.
 
     Три правила по убыванию важности, и каждое из-за своего изъяна:
@@ -335,6 +339,10 @@ def pick_bed(cfg, *, want: Sequence[str], video_id: str,
       библиотеку в целом, но не отвечает на вопрос «что играло вчера»:
       бед, использованный один раз из девяти, по счётчику остаётся самым
       свежим и может встать два ролика подряд. Кольцо это закрывает.
+    * **соседний ролик** — последний id кольца и беды с ``used_in``, где
+      стоит ``adjacent_video_id``. При двух и больше бедах в пуле соседний
+      id вычёркивается целиком, не тайбрейком: два подряд ролика канала
+      не делят кровать. ``output/`` не сканируется.
     * **хэш ``video_id``** — на полном отпечатке, а не на первом байте.
       Первый байт делит надвое по чётности, и три ролика подряд (0047, 0048,
       0049) попали в одну сторону: 216, 186, 196 — все чётные. Пересборка
@@ -348,9 +356,21 @@ def pick_bed(cfg, *, want: Sequence[str], video_id: str,
     lib = open_library(cfg, "music")
     if not lib.items:
         return None
+    catalog = list(lib.items)[:BED_PICK_MAX]
     want_set = set(want)
     recent = set(recent_videos)
-    ring = {str(b) for b in bed_ring}
+    ring = {str(b) for b in bed_ring if b}
+    adjacent = {str(bed_ring[-1])} if bed_ring else set()
+    if adjacent_video_id:
+        adjacent.update(
+            i.id for i in catalog
+            if adjacent_video_id in set(i.used_in or ()))
+
+    pool = catalog
+    if len(catalog) >= 2 and adjacent:
+        free = [i for i in catalog if i.id not in adjacent]
+        if free:
+            pool = free
 
     def rank(item: Any) -> tuple[int, int, int]:
         matched = len(want_set & set(item.tags))
@@ -362,7 +382,7 @@ def pick_bed(cfg, *, want: Sequence[str], video_id: str,
         # одинаково, а на девяти бедах это слышно с третьего ролика.
         return matched, -stale, -len(item.used_in)
 
-    best = max(rank(i) for i in lib.items)
-    finalists = sorted((i for i in lib.items if rank(i) == best), key=lambda i: i.id)
+    best = max(rank(i) for i in pool)
+    finalists = sorted((i for i in pool if rank(i) == best), key=lambda i: i.id)
     digest = hashlib.sha256((video_id or "").encode("utf-8")).digest()
     return finalists[int.from_bytes(digest[:8], "big") % len(finalists)]

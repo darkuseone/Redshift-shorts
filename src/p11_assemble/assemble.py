@@ -43,6 +43,7 @@ from ..lib.text import (
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, matched
 from ..lib.query import topical_match_score
+from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
@@ -129,6 +130,57 @@ def _on_screen_copy(text: str, *, field: str) -> str:
             "field": field, "text": raw[:80]})
         return ""
     return raw
+
+
+_SOURCE_COPY_FIELDS = (
+    "title", "snippet", "highlight_line", "proof_card", "domain", "url",
+    "published",
+)
+
+
+def _script_source_corpus(plan: dict[str, Any]) -> str:
+    """Union of spoken blocks and authored source fields (MUST-015)."""
+    chunks: list[str] = []
+    for block in plan.get("blocks") or []:
+        chunks.append(str(block.get("text") or ""))
+        overlay = block.get("overlay") or {}
+        for key in ("content", "highlight_line", "snippet", "text", "highlight"):
+            chunks.append(str(overlay.get(key) or ""))
+    for source in plan.get("sources") or []:
+        for key in _SOURCE_COPY_FIELDS:
+            chunks.append(str(source.get(key) or ""))
+    return "\n".join(chunks)
+
+
+def _copy_from_script_or_source(text: str, corpus: str) -> str:
+    """Keep card copy only when it already lives in script ∪ sources."""
+    raw = str(text or "").strip()
+    if not raw:
+        return ""
+    if raw in corpus:
+        return raw
+    if raw.lower() in corpus.lower():
+        return raw
+    return ""
+
+
+def _overlay_enter_ms(ctx, requested: float | None = None) -> int:
+    brandbook = None
+    cfg = getattr(ctx, "cfg", None) if ctx is not None else None
+    if cfg is not None:
+        brandbook = getattr(cfg, "brandbook", None)
+    return plaque_enter_ms(requested, brandbook=brandbook)
+
+
+def _stamp_card_enter(ovl: dict[str, Any], enter_ms: int) -> dict[str, Any]:
+    """Write brandbook enter onto the overlay that lands in edit_plan."""
+    ms = int(enter_ms)
+    ovl["enter_ms"] = ms
+    ovl["enter_sec"] = round(ms / 1000.0, 3)
+    params = dict(ovl.get("params") or {})
+    params["enter_ms"] = ms
+    ovl["params"] = params
+    return ovl
 
 
 # Заголовок карточки источника: сколько слов помещается в строку А по §7.3
@@ -1175,8 +1227,8 @@ def _quote(block: dict[str, Any]) -> str:
     """
     overlay = block.get("overlay") or {}
     if overlay.get("type") == "highlight" and str(overlay.get("content") or "").strip():
-        # Display only — VO unchanged (0042 r7 plain-language cards).
-        return soften_on_screen_copy(str(overlay["content"]).strip())
+        # MUST-015: highlight is authored script copy, not a softened paraphrase.
+        return str(overlay["content"]).strip()
     return _accent_clause(block)
 
 
@@ -2250,7 +2302,8 @@ def _clamp_plaques_at_avatar_cuts(
 
 
 def _plaque_overlay(*, template: Template, start: float, end: float,
-                    params: dict[str, Any], why: str) -> dict[str, Any]:
+                    params: dict[str, Any], why: str,
+                    enter_ms: int | None = None) -> dict[str, Any]:
     """Плашка: кастомный рендерер (accent-underline, clean-bar, dark-card), иначе generic plaque."""
     ovl: dict[str, Any] = {
         "type": "plaque", "start": start, "end": end,
@@ -2259,6 +2312,8 @@ def _plaque_overlay(*, template: Template, start: float, end: float,
     renderer = template.renderer
     if renderer and renderer != "plaque":
         ovl["renderer"] = renderer
+    if enter_ms is not None:
+        _stamp_card_enter(ovl, enter_ms)
     return ovl
 
 
@@ -2436,6 +2491,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     overlays: list[dict[str, Any]] = []
     duration = float(plan["duration_sec"])
     sources = plan.get("sources", [])
+    enter_ms = _overlay_enter_ms(ctx)
     # Bulky browser/source_card overlays are opt-in proof beats only.
     # Routine real footage uses the thin BL `.credit` from `_credit_line`.
     # Require both show_on_screen and proof_card so legacy scripts that only
@@ -2497,9 +2553,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         if card_end - card_start < 0.6:
             skip_bulky = True
         title = _russian_headline(source)
-        snippet = _on_screen_copy(source.get("snippet", ""), field="snippet")
-        highlight_line = _on_screen_copy(
-            source.get("highlight_line", ""), field="highlight_line")
+        # MUST-015: card copy is the authored source fields, not a latin-drop
+        # or a softened paraphrase. highlight_line "X" must remain "X".
+        snippet = str(source.get("snippet") or "")
+        highlight_line = str(source.get("highlight_line") or "")
+        enter_ms = _overlay_enter_ms(ctx)
         card_params = {
             "template": source.get("screen_template", "browser"),
             "domain": source.get("domain", ""),
@@ -2512,6 +2570,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             "highlight": highlight_line,
             "typing": bool(card_template.params.get("typing")),
             "scroll": bool(card_template.params.get("scroll")),
+            "enter_ms": enter_ms,
         }
         if compact_card:
             card_params["compact"] = True
@@ -2595,7 +2654,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             if source.get("snippet"):
                 card_params["body"] = source.get("snippet")
         if not skip_bulky:
-            overlays.append({
+            overlays.append(_stamp_card_enter({
                 "type": "source_card", "start": card_start, "end": card_end,
                 "template": card_template.id, "renderer": renderer,
                 "carries_line": True,
@@ -2604,14 +2663,14 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 "grounded_on": sorted(matched(card_template.needs, card_traits)),
                 "why": explain_choice(card_template, card_traits)
                        or "§5.6: источник обязан появиться на экране",
-            })
+            }, enter_ms))
             # §5.5: подсветка обязательна при показе скриншота статьи.
-            overlays.append({
+            overlays.append(_stamp_card_enter({
                 "type": "highlight", "start": card_start + 0.6,
                 "end": min(card_start + 1.7, card_end),
                 "params": {"label": highlight_line, "target": "title"},
                 "why": "§5.5: фокусная подсветка ключевой строки источника",
-            })
+            }, enter_ms))
         domain = source.get("domain", "")
         plaque_template, _ = picker.pick(
             "lower-thirds",
@@ -2636,6 +2695,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                        if k in ("position", "direction", "accent_underline",
                                 "clean_bar", "dark_card")}},
             why="§5.4: плашка с доменом источника",
+            enter_ms=enter_ms,
         ))
 
     _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
@@ -2652,8 +2712,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             continue
         hint = overlay.get("template_hint") or ""
         head = [hint] if hint else []
-        content = _on_screen_copy(overlay.get("content", ""), field="overlay.content")
-        if not str(content).strip():
+        content = str(overlay.get("content") or "").strip()
+        if not content:
             continue
         role = (overlay.get("role") or overlay.get("subtitle")
                 or overlay.get("kicker") or "")
@@ -2676,7 +2736,6 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         used.append(template.id)
         # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
         content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
-        content = soften_on_screen_copy(str(content or ""))
         b_start = float(block_slots[0]["start"])
         b_end = float(block_slots[-1]["end"])
         bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
@@ -2727,6 +2786,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                        if k in ("position", "direction", "accent_underline",
                                 "clean_bar", "dark_card")}},
             why=f"плашка из сценария, блок {block['id']}",
+            enter_ms=enter_ms,
         ))
 
     # CTA — last ~2s (§6). Always: REDSHIFT. + handle + red Subscribe.
