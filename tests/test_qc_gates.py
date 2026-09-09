@@ -240,6 +240,22 @@ class TestQc20And21And22CarryTheMegaWording:
         assert check["passed"]
         assert check["value"] == 0.0
 
+    def test_qc21_ignores_signature_furniture(self, cfg):
+        """Хук, CTA и плашка не раздувают долю и не заваливают гейт сами."""
+        plan = _plan(shots=[
+            _shot(0, template="intro-hooks/hook-blackout-word", grounded_on=[]),
+        ], overlays=[
+            {"type": "plaque", "template": "lower-thirds/note-pin",
+             "start": 2.0, "end": 4.0, "grounded_on": []},
+            {"type": "cta", "template": "outro-cta/logo-brand-close",
+             "start": 46.0, "end": 48.0, "grounded_on": []},
+            {"type": "dataviz", "template": self.NEEDY[0],
+             "start": 10.0, "end": 13.0, "grounded_on": ["number"]},
+        ])
+        check = _check(_run(cfg, plan), "QC-21")
+        assert check["passed"]
+        assert check["value"] == 0.0
+
     def test_qc21_counts_ungrounded_dataviz_overlay(self, cfg):
         plan = _plan(overlays=[{
             "type": "dataviz", "template": self.NEEDY[0],
@@ -248,6 +264,9 @@ class TestQc20And21And22CarryTheMegaWording:
         check = _check(_run(cfg, plan), "QC-21")
         assert not check["passed"]
         assert check["value"] == 1.0
+
+
+class TestQc14CapsGeneratedFootageAtTenPercent:
 
     def test_qc22_catches_a_pick_that_escaped_the_allowlist(self, cfg):
         plan = _plan(pick_traces=[
@@ -320,6 +339,89 @@ class TestQc10MeasuresSubtitleDriftAgainstSpeech:
         plan = _plan(
             subtitles=[{"display": "слово", "start": 1.0, "end": 1.3}],
             speech_words=[{"display": "слово", "start": 1.0, "end": 1.3}],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_muted_hook_cues_match_the_spoken_word_not_index_zero(self, cfg):
+        """Под хуком караоке снято: первый куй — середина речи, не words[0]."""
+        plan = _plan(
+            subtitles=[{"display": "Работа", "start": 8.094, "end": 8.544}],
+            speech_words=[
+                {"display": "Этот", "start": 0.0, "end": 0.3},
+                {"display": "ответ", "start": 0.3, "end": 0.6},
+                {"display": "Работа", "start": 8.094, "end": 8.544},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_a_repeated_word_matches_the_nearby_token(self, cfg):
+        """Второе «кубит» — не первое, снятое mute на 2.7 с раньше."""
+        plan = _plan(
+            subtitles=[{"display": "кубит", "start": 14.508, "end": 14.958}],
+            speech_words=[
+                {"display": "кубит", "start": 11.806, "end": 12.256},
+                {"display": "физический", "start": 13.790, "end": 14.240},
+                {"display": "кубит", "start": 14.508, "end": 14.958},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_a_glued_lead_syncs_to_the_first_spoken_token(self, cfg):
+        """«бы ты такому»: start куи — у предлога, display — у знаменательного."""
+        plan = _plan(
+            subtitles=[{
+                "display": "такому", "lead": "бы ты",
+                "start": 43.367, "end": 44.244,
+            }],
+            speech_words=[
+                {"display": "бы", "start": 43.367, "end": 43.500},
+                {"display": "ты", "start": 43.500, "end": 43.700},
+                {"display": "такому", "start": 43.700, "end": 44.244},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_abutting_p4_windows_do_not_steal_the_next_word(self, cfg):
+        """P4: end[i] == start[i+1]. Съесть «каждый» — ложный сдвиг на ранний «кубит»."""
+        plan = _plan(
+            subtitles=[
+                {"display": "чем", "start": 13.1945, "end": 13.4079},
+                {"display": "каждый", "start": 13.4079, "end": 13.7446},
+                {"display": "физический", "start": 13.7896, "end": 14.2396},
+                {"display": "кубит", "start": 14.5080, "end": 14.9580},
+            ],
+            speech_words=[
+                {"display": "кубит", "start": 11.8061, "end": 12.2561},
+                {"display": "чем", "start": 13.1945, "end": 13.4079},
+                {"display": "каждый", "start": 13.4079, "end": 13.7446},
+                {"display": "физический", "start": 13.7896, "end": 14.2396},
+                {"display": "кубит", "start": 14.5080, "end": 14.9580},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_abutting_duplicate_token_keeps_the_overlapping_copy(self, cfg):
+        """«что» стыкуется с вторым «верим»; первое «верим» на 1.6 с раньше — не оно."""
+        plan = _plan(
+            subtitles=[
+                {"display": "что", "start": 41.3836, "end": 41.5970},
+                {"display": "верим", "start": 41.5970, "end": 41.9337},
+            ],
+            speech_words=[
+                {"display": "верим", "start": 39.9952, "end": 40.3319},
+                {"display": "что", "start": 41.3836, "end": 41.5970},
+                {"display": "верим", "start": 41.5970, "end": 41.9337},
+            ],
         )
         check = _check(_run(cfg, plan), "QC-10")
         assert check["passed"]

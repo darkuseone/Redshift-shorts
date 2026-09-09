@@ -197,6 +197,32 @@ class TestTheSourceCardSurvivesTheMerge:
         assert "quote" in card["grounded_on"], card["why"]
 
 
+class TestDatavizOverlayGroundsOnTheNumber:
+    """Диаграмма ставится из-за числа в блоке — QC-21 должен это видеть."""
+
+    def test_grounded_on_number(self):
+        from src.lib.templates import Template
+        from src.p11_assemble.assemble import _dataviz_overlay
+
+        class _Picker:
+            def pick(self, *args, **kwargs):
+                tmpl = Template(
+                    id="data-viz/stat-countup-card", name="stat-countup-card",
+                    category="data-viz", title="", duration_range=[1.0, 4.0],
+                    params={}, tags=[], renderer="dataviz", needs=["number"])
+                return tmpl, type("T", (), {"fired": [], "walk": [], "won_at": "",
+                                            "allow_size": 1, "escaped": False,
+                                            "escape_level": ""})()
+
+        overlay = _dataviz_overlay(
+            {"block_id": "b2", "index": 1},
+            [{"value": 105.0, "raw": "105", "suffix": ""}],
+            {"b2": {"id": "b2", "text": "Внутри 105 кубитов", "heading": ""}},
+            _Picker(), variant="A", seed=1, recent_videos=[], used=[],
+            start=1.0, end=4.0)
+        assert overlay["grounded_on"] == ["number"]
+
+
 class TestTheTransitionAnswersToWhatItIntroduces:
     """Переход отвечает за то, что вводит, — и не ставится просто так.
 

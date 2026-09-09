@@ -157,6 +157,17 @@ def test_run_output_passes_all_qc(repo_root):
         assert qc["passed"], f"{variant}: провалены {[f['id'] for f in qc['failed']]}"
 
 
+def test_artifact_checker_allows_extra_qc_gates():
+    """CI mock-прогон отдаёт 30 блокирующих; ровно 19 — устаревший потолок."""
+    from tools.check_run_artifacts import qc_gate_count_ok
+
+    assert qc_gate_count_ok(19)
+    assert qc_gate_count_ok(30)
+    assert not qc_gate_count_ok(18)
+    assert not qc_gate_count_ok(None)
+    assert not qc_gate_count_ok("x")
+
+
 def test_run_output_has_all_artifacts(repo_root):
     out = repo_root / "output" / "redshift_0042"
     if not (out / "build_report.json").exists():

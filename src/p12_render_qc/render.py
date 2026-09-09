@@ -540,7 +540,8 @@ def run_step(ctx) -> dict[str, Any]:
         write_json(ctx.opath("build_report.json"), report)
 
     if not all_passed:
-        failed = {v: [c["id"] for c in q["checks"] if not c["passed"]]
+        failed = {v: [c["id"] for c in q["checks"]
+                      if not c["passed"] and c.get("blocking", True)]
                   for v, q in qc_reports.items()}
         raise QCFailed("ролик не прошёл блокирующий QC (§11.1) и не выдан",
                        failed_checks=failed)

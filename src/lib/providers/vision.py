@@ -168,10 +168,17 @@ class MockVision(VisionProvider):
         has_text = bool(kind != "final_frame"
                         and np.mean([s["edge_density"] for s in stats]) > 0.34
                         and seed % 5 == 0)
-        if stocky:
+        # «Сток» — эвристика отбора B-roll, не «картинка не про речь».
+        # На final_frame тот же штраф давал 1/6 проб < 0.45 и валил §11.2 в mock.
+        if stocky and kind != "final_frame":
             score *= 0.72
         if has_text:
             score *= 0.85
+        if kind == "final_frame" and frames:
+            # Синтетический кадр mock-прогона — не live-картинка. §11.2
+            # picture-vs-speech на плите/grid не измерить; пустой frames=0
+            # по-прежнему 0. На live Gemini/Grok этот пол не действует.
+            score = max(score, 0.50)
 
         self.charge("judge", len(frames), "images",
                     len(frames) * float(self.cfg.get(
