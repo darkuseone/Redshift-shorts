@@ -120,6 +120,21 @@ def short_side_over_cap(width: Any, height: Any, max_h: int = 1080) -> bool:
     return min(w, h) > int(max_h)
 
 
+def stage1_dead_ids(rejected: Iterable[dict[str, Any]] | None) -> set[str]:
+    """Id, которые нельзя судить. «Дубль» — не смерть клипа: он уже кандидат
+    более раннего слота, и глобальный бан отдавал P8 пустой пул при живой базе."""
+    dead: set[str] = set()
+    for row in rejected or []:
+        aid = str(row.get("id") or "")
+        if not aid:
+            continue
+        reason = str(row.get("reason") or "")
+        if "дубль" in reason.lower():
+            continue
+        dead.add(aid)
+    return dead
+
+
 def judge_blocks_stage1_dead(candidate: dict[str, Any], *,
                              dead_ids: set[str], max_h: int = 1080) -> str | None:
     """Почему кандидат нельзя отдавать vision. None — можно."""
@@ -546,6 +561,9 @@ def run_step(ctx) -> dict[str, Any]:
                 "page_url": record.url_origin,
             })
             from_cache += 1
+            # Один клип из базы на слот. Иначе первый слот забирает всю полку,
+            # хвост голодает, а «дубль» в stage1_rejected убивал и первый слот.
+            break
 
         if frozen and slot_candidates:
             candidates_out.extend(slot_candidates)
