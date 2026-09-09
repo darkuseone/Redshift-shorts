@@ -104,8 +104,7 @@ def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
         return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi}]"
     if verdict.frame_disagreement > disagree:
         return f"кадры расходятся на {verdict.frame_disagreement:.2f} > {disagree}"
-    if role in ("evidence", "twist"):
-        return f"роль блока {role} — цена ошибки выше обычной"
+    # MUST-020: evidence/twist не auto-arbitrate — те же пороги, что у обычного слота.
     return None
 
 
@@ -204,6 +203,99 @@ def _tally_vision(name: str, counters: dict[str, int]) -> None:
         counters["glm"] += 1
     elif "gemini" in blob:
         counters["gemini"] += 1
+
+
+CRITIC_METRIC_KEYS = (
+    "candidates_per_slot",
+    "killed_stage1",
+    "killed_cheap",
+    "killed_glm",
+    "grok_calls",
+    "gemini_calls",
+    "magnific_calls",
+    "gen_share",
+    "critic_cost",
+)
+
+
+def _service_call_count(costs, *names: str) -> int:
+    if costs is None:
+        return 0
+    wanted = {n.lower() for n in names}
+    entries = getattr(costs, "entries", None)
+    if entries is not None:
+        return sum(1 for e in entries
+                   if str(getattr(e, "service", "") or "").lower() in wanted)
+    data = costs.to_dict() if hasattr(costs, "to_dict") else {}
+    return sum(1 for e in (data.get("entries") or [])
+               if str(e.get("service") or "").lower() in wanted)
+
+
+def _critic_cost_usd(costs) -> float:
+    if costs is None:
+        return 0.0
+    if hasattr(costs, "by_service"):
+        by = costs.by_service()
+    else:
+        by = (costs.to_dict() if hasattr(costs, "to_dict") else {}).get("by_service") or {}
+    return round(sum(float(by.get(k, 0) or 0) for k in ("glm", "grok", "gemini")), 6)
+
+
+def _killed_glm_count(judged: list[dict[str, Any]], reject_threshold: float) -> int:
+    n = 0
+    for entry in judged:
+        verdict = entry.get("verdict") or {}
+        if "glm" not in str(verdict.get("judge") or "").lower():
+            continue
+        try:
+            score = float(verdict.get("score") or 0)
+        except (TypeError, ValueError):
+            score = 0.0
+        decision = str(entry.get("decision") or "")
+        if score < reject_threshold or decision.startswith("reject"):
+            n += 1
+    return n
+
+
+def critic_metrics_payload(accepted: dict[str, Any] | None = None, *,
+                           generated: dict[str, Any] | None = None,
+                           costs=None,
+                           candidates: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Стабильные ключи MUST-020 для build_report и cost_report."""
+    accepted = accepted or {}
+    generated = generated or {}
+    candidates = candidates or {}
+    per_slot = accepted.get("candidates_per_slot")
+    if not isinstance(per_slot, dict):
+        counts: dict[str, int] = {}
+        for row in candidates.get("candidates") or []:
+            key = str(row.get("slot_index", ""))
+            counts[key] = counts.get(key, 0) + 1
+        per_slot = counts
+    killed_stage1 = accepted.get("killed_stage1", accepted.get("skipped_stage1", 0))
+    if killed_stage1 is None:
+        killed_stage1 = len(candidates.get("stage1_rejected") or [])
+    gen_share = generated.get("ai_footage_share")
+    if gen_share is None:
+        gen_share = accepted.get("gen_share", 0.0)
+    magnific = accepted.get("magnific_calls")
+    if costs is not None:
+        magnific = _service_call_count(costs, "magnific")
+        critic_cost = _critic_cost_usd(costs)
+    else:
+        magnific = int(magnific or 0)
+        critic_cost = float(accepted.get("critic_cost") or 0.0)
+    return {
+        "candidates_per_slot": {str(k): int(v) for k, v in dict(per_slot).items()},
+        "killed_stage1": int(killed_stage1 or 0),
+        "killed_cheap": int(accepted.get("killed_cheap") or 0),
+        "killed_glm": int(accepted.get("killed_glm") or 0),
+        "grok_calls": int(accepted.get("grok_calls") or 0),
+        "gemini_calls": int(accepted.get("gemini_calls") or 0),
+        "magnific_calls": int(magnific or 0),
+        "gen_share": round(float(gen_share or 0.0), 4),
+        "critic_cost": round(float(critic_cost or 0.0), 6),
+    }
 
 
 def skip_live_verdict(candidate: dict[str, Any], intent: str) -> dict[str, Any]:
@@ -654,6 +746,25 @@ def run_step(ctx) -> dict[str, Any]:
                    if s["needs_asset"]
                    and s["asset_role"] in ("broll", "evidence", "meme", "interstitial")]
     unfilled = [i for i in asset_slots if i not in accepted]
+    candidates_per_slot = {str(i): 0 for i in asset_slots}
+    for slot_index, rows in by_slot.items():
+        candidates_per_slot[str(slot_index)] = len(rows)
+    killed_glm = _killed_glm_count(judged, reject_threshold)
+    costs = getattr(ctx, "costs", None)
+    critic = critic_metrics_payload(
+        {
+            "candidates_per_slot": candidates_per_slot,
+            "killed_stage1": skipped_stage1,
+            "killed_cheap": killed_cheap,
+            "killed_glm": killed_glm,
+            "grok_calls": vision_counts["grok"],
+            "gemini_calls": vision_counts["gemini"],
+            "magnific_calls": _service_call_count(costs, "magnific"),
+            "gen_share": 0.0,
+            "critic_cost": _critic_cost_usd(costs),
+        },
+        costs=costs,
+    )
 
     result = {
         "video_id": doc["video_id"],
@@ -665,8 +776,14 @@ def run_step(ctx) -> dict[str, Any]:
         "glm_calls": vision_counts["glm"],
         "gemini_calls": vision_counts["gemini"],
         "killed_cheap": killed_cheap,
+        "killed_glm": killed_glm,
+        "killed_stage1": skipped_stage1,
         "cheap_seen": cheap_seen,
         "cheap_kill_rate": round(killed_cheap / max(cheap_seen, 1), 4),
+        "candidates_per_slot": candidates_per_slot,
+        "magnific_calls": critic["magnific_calls"],
+        "gen_share": critic["gen_share"],
+        "critic_cost": critic["critic_cost"],
         "reused_scores": reused_scores,
         "rejected_by_palette": rejected_by_palette,
         "rejected_by_watermark": rejected_by_watermark,

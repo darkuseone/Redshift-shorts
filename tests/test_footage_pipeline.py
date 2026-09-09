@@ -583,8 +583,9 @@ def test_arbitration_triggered_on_frame_disagreement(cfg):
     assert _needs_arbitration(_verdict(0.85, disagreement=0.4), "develop", cfg)
 
 
-def test_arbitration_triggered_for_evidence_role(cfg):
-    assert _needs_arbitration(_verdict(0.9), "evidence", cfg)
+def test_arbitration_not_triggered_for_evidence_or_twist_outside_grey(cfg):
+    assert _needs_arbitration(_verdict(0.9), "evidence", cfg) is None
+    assert _needs_arbitration(_verdict(0.92), "twist", cfg) is None
 
 
 def test_arbitration_not_triggered_for_clear_accept(cfg):
