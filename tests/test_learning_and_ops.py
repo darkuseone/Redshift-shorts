@@ -473,3 +473,70 @@ def test_the_reading_rule_is_written_down():
     text = (_Path(__file__).resolve().parents[1] / "CLAUDE.md").read_text(encoding="utf-8")
     assert "40 КБ" in text
     assert "gen_indexes.py" in text
+
+
+# --- Q3.8/Q3.9: плейбук и SOP как часть репозитория --------------------------
+
+class TestTheWrittenRulesAreInTheRepo:
+    """Правило, которого нет в репозитории, знает только тот, кто его придумал."""
+
+    def test_the_playbook_has_the_hook_section(self, repo_root):
+        text = (repo_root / "script_playbook.md").read_text(encoding="utf-8")
+        assert "## 6a. Хук как система" in text
+        # Все семь стилей названы — иначе автор не знает, из чего выбирать.
+        from src.lib.schema import HOOK_STYLES
+
+        for style in HOOK_STYLES:
+            assert f"`{style}`" in text, f"стиль {style} не описан в плейбуке"
+
+    def test_the_hook_bank_is_in_the_repo(self, repo_root):
+        """DoD Q3.8: банк хуков §5.4 лежит в репозитории, а не в ТЗ."""
+        text = (repo_root / "script_playbook.md").read_text(encoding="utf-8")
+        for seed in ("НЕВОЗМОЖНО ПРОВЕРИТЬ", "105 КУБИТОВ", "КТО ЭТО ПРОВЕРИЛ?",
+                     "ЭТО НЕ ДВИГАТЕЛЬ", "МИФ ↔ ИЗМЕРЕНИЕ", "НАЙДИ ОШИБКУ"):
+            assert seed in text, f"хук «{seed}» не доехал до плейбука"
+
+    def test_the_playbook_has_the_plain_language_section(self, repo_root):
+        text = (repo_root / "script_playbook.md").read_text(encoding="utf-8")
+        assert "## 6b. Язык для всех" in text
+        assert "config/glossary.json" in text
+        assert "квантовый бит" in text
+
+    def test_the_checklist_knows_the_eight_ending_types(self, repo_root):
+        from src.lib.schema import CTA_TYPES
+
+        text = (repo_root / "script_playbook.md").read_text(encoding="utf-8")
+        for kind in CTA_TYPES:
+            assert f"`{kind}`" in text, f"тип концовки {kind} не назван в плейбуке"
+
+    def test_the_rejected_patterns_carry_the_new_bans(self, repo_root):
+        text = (repo_root / "rejected_patterns.md").read_text(encoding="utf-8")
+        assert "HOOK_GREETING" in text
+        assert "квантовый бит" in text
+        assert "visual_loop_seam" in text
+
+    def test_the_magnific_sop_is_reproducible_by_a_second_agent(self, repo_root):
+        """DoD Q3.9: SOP называет модель, промпт, приёмку и куда класть файл."""
+        path = repo_root / "tools" / "magnific_browser_sop.md"
+        assert path.exists()
+        text = path.read_text(encoding="utf-8")
+        for must in ("Nano Banana 2", "9:16", "#C8453D", "#36EFFF",
+                     "assets/backdrops", "PLATES_MISSING",
+                     "config/backdrop_pins.json"):
+            assert must in text, f"SOP не называет {must}"
+
+    def test_the_sop_forbids_spending(self, repo_root):
+        """Заказчик: «не трать токены магнифик». Это в SOP, а не в чьей-то памяти."""
+        text = (repo_root / "tools" / "magnific_browser_sop.md").read_text(
+            encoding="utf-8")
+        assert "ни одного вызова Magnific API" in text
+        assert "mcp__Magnific__images_generate" in text  # назван как запрещённый
+
+    def test_the_sop_prompt_matches_the_code(self, repo_root):
+        """Промпт живёт в коде; SOP обязан цитировать его, а не свою версию."""
+        from src.lib.backdrop import PLATE_PROMPT
+
+        text = (repo_root / "tools" / "magnific_browser_sop.md").read_text(
+            encoding="utf-8")
+        for fragment in PLATE_PROMPT.split(", "):
+            assert fragment.strip() in text, f"SOP разошёлся с кодом: {fragment!r}"

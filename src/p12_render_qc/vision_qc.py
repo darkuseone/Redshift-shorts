@@ -73,6 +73,51 @@ def sample_positions() -> list[float]:
     return [(i + 0.5) / SAMPLES for i in range(SAMPLES)]
 
 
+def _verdict_cache(ctx) -> dict[str, Any]:
+    """Кэш вердиктов на одну сборку (§11.3, Q3.10).
+
+    Версии A и B расходятся шестью шаблонами из двадцати кадров, а проб на
+    версию шесть. Значит бо́льшая часть проб B — это те же самые кадры под ту
+    же самую речь, и второй вызов судьи по ним ничего не узнаёт: он платный,
+    а ответ уже есть.
+
+    Кэш живёт на контексте прогона, а не в модуле: две сборки в одном процессе
+    (тесты, батч) не имеют права делиться вердиктами о разных роликах.
+
+    Замер на отрендеренном 0042 (A и B, шесть проб): **три кадра из шести**
+    совпадают побитово — экономия три вызова из двенадцати, а не шесть, как
+    обещала таблица Q3.10. Шесть означало бы, что версии не различаются вовсе;
+    они различаются шестью шаблонами, и на двух пробах расхождение большое
+    (16 и 19 бит), на одной — один бит. Этот один бит мы намеренно **не**
+    засчитываем: см. `_verdict_key`.
+    """
+    cache = getattr(ctx, "_vision_verdicts", None)
+    if cache is None:
+        cache = {}
+        try:
+            setattr(ctx, "_vision_verdicts", cache)
+        except Exception:                                # noqa: BLE001
+            return {}
+    return cache
+
+
+def _verdict_key(frame: Any, *, role: str, spoken: str, intent: str) -> str:
+    """Ключ пробы: сам кадр плюс то, с чем его сверяют.
+
+    Кадр берётся точным dHash, а не порогом похожести: порог экономит больше,
+    но начинает переиспользовать вердикт о **другом** кадре, а смысловой QC
+    только тем и ценен, что смотрит на конкретный кадр. Совпало побитово —
+    это буквально тот же вход, и ответ судьи обязан быть тем же.
+    """
+    from ..lib.phash import dhash_image
+
+    try:
+        digest = dhash_image(frame)
+    except Exception:                                    # noqa: BLE001
+        return ""
+    return "|".join((digest, role, spoken[:120], intent[:120]))
+
+
 def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                   frames: list[Any] | None = None) -> dict[str, Any]:
     cfg = ctx.cfg
@@ -109,16 +154,26 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                 positions, width=540)
 
         samples: list[dict[str, Any]] = []
+        cache = _verdict_cache(ctx)
+        reused = 0
         for position, frame in zip(positions, frames):
             t = duration * position
             shot = next((s for s in plan["shots"]
                          if float(s["start"]) <= t < float(s["end"])), {})
             spoken = _spoken_at(plan, t)
             intent = shot.get("reason") or shot.get("kind", "")
-            verdict = provider.judge(
-                [frame], kind="final_frame",
-                intent=f"{_expected(shot)}. Замысел кадра: {intent}",
-                role=str(shot.get("role", "")), query=spoken or intent)
+            key = _verdict_key(frame, role=str(shot.get("role", "")),
+                               spoken=spoken or "", intent=intent)
+            verdict = cache.get(key) if key else None
+            if verdict is None:
+                verdict = provider.judge(
+                    [frame], kind="final_frame",
+                    intent=f"{_expected(shot)}. Замысел кадра: {intent}",
+                    role=str(shot.get("role", "")), query=spoken or intent)
+                if key:
+                    cache[key] = verdict
+            else:
+                reused += 1
             samples.append({
                 "t": round(t, 2),
                 "shot_index": shot.get("index"),
@@ -169,6 +224,9 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
         "mismatch_limit": MISMATCH_LIMIT,
         "picture_matches_speech": mismatch_share <= MISMATCH_LIMIT,
         "watermarks_found": len(watermarks),
+        # Сколько проб закрыто кэшем вместо платного вызова (Q3.10). Число в
+        # отчёте, а не в логе: денежный DoD §4.4 проверяется по отчёту.
+        "reused_verdicts": reused,
         "blocking": False,
         "notes": [],
     }

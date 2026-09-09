@@ -159,3 +159,80 @@ def test_thumbnail_skip_vision_also_forces_ffmpeg(tmp_path, monkeypatch):
     assert called["build"] == 0
     assert meta["mode"] == "ffmpeg"
     assert thumb.exists()
+
+
+# --- Q3.10: дедуп смыслового QC по вариантам (§11.3) -------------------------
+
+class TestTheJudgeIsNotAskedTheSameQuestionTwice:
+    """Версии A и B расходятся шестью шаблонами из двадцати кадров.
+
+    Значит часть проб B — это те же кадры под ту же речь, и второй платный
+    вызов по ним ничего не узнаёт. Замер на отрендеренном 0042: три кадра из
+    шести совпадают побитово — экономия три вызова из двенадцати.
+    """
+
+    def test_the_same_frame_and_the_same_speech_give_the_same_key(self, tmp_path):
+        from PIL import Image
+
+        from src.p12_render_qc.vision_qc import _verdict_key
+
+        frame = tmp_path / "f.png"
+        Image.new("RGB", (32, 32), (10, 20, 30)).save(frame)
+        a = _verdict_key(frame, role="body", spoken="речь", intent="кадр")
+        b = _verdict_key(frame, role="body", spoken="речь", intent="кадр")
+        assert a == b and a
+
+    def test_a_different_frame_gives_a_different_key(self, tmp_path):
+        from PIL import Image
+
+        from src.p12_render_qc.vision_qc import _verdict_key
+
+        one, two = tmp_path / "a.png", tmp_path / "b.png"
+        Image.new("RGB", (32, 32), (10, 20, 30)).save(one)
+        # Полоса вертикальная, а не горизонтальная: dHash сравнивает соседей
+        # по строке, и горизонтальная линия его вообще не сдвигает.
+        img = Image.new("RGB", (32, 32), (10, 20, 30))
+        for y in range(32):
+            for x in range(16):
+                img.putpixel((x, y), (250, 250, 250))
+        img.save(two)
+        assert _verdict_key(one, role="body", spoken="речь", intent="кадр") != \
+            _verdict_key(two, role="body", spoken="речь", intent="кадр")
+
+    def test_the_same_frame_under_different_speech_is_a_different_question(self, tmp_path):
+        from PIL import Image
+
+        from src.p12_render_qc.vision_qc import _verdict_key
+
+        frame = tmp_path / "f.png"
+        Image.new("RGB", (32, 32), (10, 20, 30)).save(frame)
+        assert _verdict_key(frame, role="body", spoken="одно", intent="кадр") != \
+            _verdict_key(frame, role="body", spoken="другое", intent="кадр")
+
+    def test_an_unreadable_frame_disables_caching_rather_than_guessing(self, tmp_path):
+        from src.p12_render_qc.vision_qc import _verdict_key
+
+        broken = tmp_path / "broken.png"
+        broken.write_bytes(b"not an image")
+        assert _verdict_key(broken, role="body", spoken="речь", intent="кадр") == ""
+
+    def test_the_cache_belongs_to_the_run_not_the_module(self):
+        """Две сборки в одном процессе не делятся вердиктами о разных роликах."""
+        from src.p12_render_qc.vision_qc import _verdict_cache
+
+        class _Ctx:
+            pass
+
+        first, second = _Ctx(), _Ctx()
+        _verdict_cache(first)["k"] = "v"
+        assert _verdict_cache(second) == {}
+        assert _verdict_cache(first) == {"k": "v"}
+
+    def test_a_context_that_refuses_attributes_still_works(self):
+        """Кэш — оптимизация, а не условие работы: без него QC обязан идти."""
+        from src.p12_render_qc.vision_qc import _verdict_cache
+
+        class _Frozen:
+            __slots__ = ()
+
+        assert _verdict_cache(_Frozen()) == {}
