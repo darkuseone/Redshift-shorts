@@ -30,7 +30,7 @@ from .overlays import build_overlay_renderer
 from ..lib.palette import accent_share_max
 from ..lib.phash import dhash_image, hamming
 from ..lib.ffmpeg import extract_frames
-from .qc import apply_semantic_qc, run_qc
+from .qc import apply_semantic_qc, blocking_failed_ids, run_qc
 from .vision_qc import run_vision_qc, sample_positions
 from ..p8_broll_judge.judge import CRITIC_METRIC_KEYS, critic_metrics_payload
 from ..p10_audio.audio_build import sfx_skipped_from_events
@@ -424,7 +424,7 @@ def run_step(ctx) -> dict[str, Any]:
             shutil.move(str(out_file), str(rejected))
             _log.error("QC не пройден — ролик не выдан", extra={
                 "variant": variant,
-                "failed": [c["id"] for c in qc["checks"] if not c["passed"]],
+                "failed": blocking_failed_ids(qc),
             })
             results[variant] = {"file": None, "rejected_file": str(rejected),
                                 "qc_passed": False}
@@ -442,7 +442,7 @@ def run_step(ctx) -> dict[str, Any]:
             shutil.move(str(out_file), str(rejected))
             _log.error("смысловой QC не пройден — ролик не выдан", extra={
                 "variant": variant,
-                "failed": [c["id"] for c in qc["checks"] if not c["passed"]],
+                "failed": blocking_failed_ids(qc),
             })
             results[variant] = {"file": None, "rejected_file": str(rejected),
                                 "qc_passed": False}
@@ -540,7 +540,7 @@ def run_step(ctx) -> dict[str, Any]:
         write_json(ctx.opath("build_report.json"), report)
 
     if not all_passed:
-        failed = {v: [c["id"] for c in q["checks"] if not c["passed"]]
+        failed = {v: blocking_failed_ids(q)
                   for v, q in qc_reports.items()}
         raise QCFailed("ролик не прошёл блокирующий QC (§11.1) и не выдан",
                        failed_checks=failed)

@@ -265,6 +265,14 @@ class TestTheHookLandsBeforeTheFirstSecond:
         built = _build(hook_ctx, _plan(hook={"on_screen": "НЕВОЗМОЖНО ПРОВЕРИТЬ"}))
         assert "НЕВОЗМОЖНО" in str(built["shots"][0].get("content") or "").upper()
 
+    def test_the_hook_shot_records_grounding(self, hook_ctx):
+        """QC-21 читает grounded_on; без поля хук с пустым needs выглядел как брак."""
+        built = _build(hook_ctx, _plan(hook={"on_screen": "НЕВОЗМОЖНО ПРОВЕРИТЬ",
+                                             "style": "blackout_word"}))
+        shot = built["shots"][0]
+        assert "grounded_on" in shot
+        assert "traits" in shot
+
     def test_the_hook_device_is_placed_once(self, hook_ctx):
         """В окно 0–3 с попадает не один слот, а приём хука — один.
 
