@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
+from ..errors import RedshiftError
 from ..lib.logging import get_logger
 from ..lib.schema import estimate_block_duration
 from ..lib.text import (
@@ -223,7 +224,8 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
                     f"позже требуемых {first_limit:.0f} сек: ранние блоки помечены "
                     f"avatar: off. Сократите хук или разрешите аватар раньше"
                 ),
-                "first_avatar_sec": round(_first_avatar_at() or 0.0, 2),
+                "first_avatar_sec": round(
+                    _first_avatar_at() if _first_avatar_at() is not None else 1e9, 2),
                 "limit_sec": first_limit,
             })
 
@@ -286,6 +288,14 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
         "modes_by_block": {b["id"]: b["mode"] for b in blocks},
         "conflicts": conflicts,
     }
+    late = next((c for c in conflicts if c["code"] == "AVATAR_FIRST_APPEARANCE_LATE"), None)
+    if late:
+        raise RedshiftError(
+            late["message"],
+            code="AVATAR_FIRST_APPEARANCE_LATE",
+            first_avatar_sec=late.get("first_avatar_sec"),
+            limit_sec=late.get("limit_sec"),
+        )
     return draft
 
 

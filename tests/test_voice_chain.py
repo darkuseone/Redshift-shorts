@@ -102,14 +102,35 @@ def test_plan_first_avatar_within_six_seconds(sample_script, cfg):
 
 
 def test_plan_reports_conflict_when_avatar_cannot_appear_early(sample_script, cfg):
-    """Неразрешимый конфликт §6 обязан всплыть, а не «рассосаться» молча."""
+    """Неразрешимый конфликт §6 — отказ выдачи, не warning."""
+    from src.errors import RedshiftError
+
     for block in sample_script["blocks"][:3]:
         block["avatar"] = "off"
         block["mode_hint"] = "C"
     validated = validate_script(sample_script, cfg)
+    with pytest.raises(RedshiftError) as exc:
+        plan(validated, cfg)
+    assert exc.value.code == "AVATAR_FIRST_APPEARANCE_LATE"
+    assert float(exc.value.details["first_avatar_sec"]) >= 7.0
+
+
+def test_plan_first_avatar_at_two_seconds_passes(sample_script, cfg):
+    sample_script["blocks"][0]["avatar"] = "off"
+    sample_script["blocks"][0]["mode_hint"] = "C"
+    sample_script["blocks"][1]["avatar"] = "on"
+    sample_script["blocks"][1]["mode_hint"] = "A"
+    validated = validate_script(sample_script, cfg)
     draft = plan(validated, cfg)
-    codes = [c["code"] for c in draft["conflicts"]]
-    assert "AVATAR_FIRST_APPEARANCE_LATE" in codes
+    cursor = 0.0
+    first = None
+    for block in draft["blocks"]:
+        if block["mode"] in ("A", "B"):
+            first = cursor
+            break
+        cursor += block["_estimated_sec"]
+    assert first is not None
+    assert 1.0 <= first <= 6.0
 
 
 def test_plan_promotes_early_auto_block_to_meet_deadline(sample_script, cfg):
