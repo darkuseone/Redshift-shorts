@@ -372,6 +372,23 @@ class TestQc10MeasuresSubtitleDriftAgainstSpeech:
         assert check["passed"]
         assert check["value"] == pytest.approx(0.0, abs=1.0)
 
+    def test_a_glued_lead_syncs_to_the_first_spoken_token(self, cfg):
+        """«бы ты такому»: start куи — у предлога, display — у знаменательного."""
+        plan = _plan(
+            subtitles=[{
+                "display": "такому", "lead": "бы ты",
+                "start": 43.367, "end": 44.244,
+            }],
+            speech_words=[
+                {"display": "бы", "start": 43.367, "end": 43.500},
+                {"display": "ты", "start": 43.500, "end": 43.700},
+                {"display": "такому", "start": 43.700, "end": 44.244},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
 
 class TestQc11ReportsClipOffsetNotMouth:
     """MUST-026: QC-11 — avatar_clip_offset, не губы и не lip-sync."""

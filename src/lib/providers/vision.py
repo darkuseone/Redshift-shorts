@@ -174,6 +174,11 @@ class MockVision(VisionProvider):
             score *= 0.72
         if has_text:
             score *= 0.85
+        if kind == "final_frame" and frames:
+            # Синтетический кадр mock-прогона — не live-картинка. §11.2
+            # picture-vs-speech на плите/grid не измерить; пустой frames=0
+            # по-прежнему 0. На live Gemini/Grok этот пол не действует.
+            score = max(score, 0.50)
 
         self.charge("judge", len(frames), "images",
                     len(frames) * float(self.cfg.get(

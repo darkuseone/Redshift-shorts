@@ -716,8 +716,8 @@ def _subtitle_drift(plan: dict[str, Any],
     for cue in cues:
         c_start = float(cue["start"])
         c_end = float(cue["end"])
-        token = _cue_token(cue.get("display") or cue.get("word") or "")
-        best_i = _match_speech_word(speech, used, c_start, token)
+        token = _cue_head_token(cue)
+        best_i = _match_speech_word(speech, used, c_start, c_end, token)
         if best_i is None:
             continue
         used[best_i] = True
@@ -732,25 +732,40 @@ def _subtitle_drift(plan: dict[str, Any],
     return worst
 
 
+def _cue_head_token(cue: dict[str, Any]) -> str:
+    """Первый произнесённый токен куи: у склейки это lead, не display."""
+    lead = str(cue.get("lead") or "").strip()
+    if lead:
+        return _cue_token(lead.split()[0])
+    return _cue_token(cue.get("display") or cue.get("word") or "")
+
+
 def _match_speech_word(speech: list[dict[str, Any]], used: list[bool],
-                       cue_start: float, token: str) -> int | None:
-    """Слово речи для куи: тот же токен рядом по времени, не первое вхождение."""
+                       cue_start: float, cue_end: float,
+                       token: str) -> int | None:
+    """Слово речи для куи: тот же токен в окне куи, не первое вхождение в ролике."""
+    overlap: list[tuple[float, int]] = []
     near: list[tuple[float, int]] = []
     same: list[tuple[float, int]] = []
     other: list[tuple[float, int]] = []
     for i, word in enumerate(speech):
         if used[i]:
             continue
-        dt = abs(cue_start - float(word["start"]))
+        w0 = float(word["start"])
+        w1 = float(word["end"]) if word.get("end") is not None else w0
+        dt = abs(cue_start - w0)
         w_tok = _cue_token(word.get("display") or word.get("word") or "")
+        hits = w0 < cue_end + 1e-3 and w1 > cue_start - 1e-3
         if token and w_tok == token:
-            if dt <= 0.5:
+            if hits:
+                overlap.append((dt, i))
+            elif dt <= 0.5:
                 near.append((dt, i))
             else:
                 same.append((dt, i))
         else:
             other.append((dt, i))
-    pool = near or same or other
+    pool = overlap or near or same or other
     if not pool:
         return None
     return min(pool)[1]
