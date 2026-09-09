@@ -29,6 +29,9 @@ _log = get_logger("qc")
 # Instruction числа не задаёт; код с «< 1.0» не падал почти никогда.
 # QC-6 держит 0.20 на пересечении *материала*, не шаблонов.
 QC17_TEMPLATE_OVERLAP_MAX = 0.80
+# QC-21 смотрит на приёмы кадра и содержательные оверлеи, не на хром
+# (CTA / плашка домена). Пустой needs у outro-cta иначе ронял любой ролик.
+QC21_CONTENT_OVERLAY_TYPES = frozenset({"dataviz", "source_card"})
 
 
 def _check(check_id: int, name: str, passed: bool, *, value: Any = None,
@@ -326,7 +329,11 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
 
     # 21. Приём без основания. Need-less выбранный шаблон = ungrounded
     # (MUST-010): пустой `needs` больше не прячет приём от гейта.
-    placed = [*plan.get("shots", []), *plan.get("overlays", [])]
+    # CTA и нижние плашки — хром (QC-16 / домен источника), не приём MEGA P1:
+    # на кэш-сборке 0042 они одни поднимали долю выше 30% при живых карточках.
+    placed = list(plan.get("shots") or [])
+    placed += [o for o in (plan.get("overlays") or [])
+               if str(o.get("type") or "") in QC21_CONTENT_OVERLAY_TYPES]
     selected = [p for p in placed if p.get("template")]
     ungrounded = [p for p in selected if not p.get("grounded_on")]
     ungrounded_share = (len(ungrounded) / len(selected)) if selected else 0.0
