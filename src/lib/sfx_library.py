@@ -80,7 +80,40 @@ SHAPE: dict[str, str] = {
 
 TAGS: dict[str, str] = {**KINDS, **SHAPE}
 
+# Тип карты на экране → смысл SFX. picture_in остаётся вжухом B-roll:
+# плашка, source-card, highlight и FS-карточка туда не ходят.
 # Смысл кадра → какие теги просим. Совпадение важнее имени файла.
+CARD_TYPE_TO_INTENT: dict[str, str] = {
+    "plaque": "plaque",
+    "lower_third": "plaque",
+    "frame": "plaque",
+    "source_card": "card_appear",
+    "highlight": "card_appear",
+}
+CARD_TYPE_TO_ROLE: dict[str, str] = {
+    "plaque": "ui_click",
+    "lower_third": "ui_click",
+    "frame": "ui_click",
+    "source_card": "pop",
+    "highlight": "pop",
+}
+CARD_OVERLAY_TYPES = frozenset(CARD_TYPE_TO_INTENT)
+CARD_SFX_INTENTS = frozenset(CARD_TYPE_TO_INTENT.values())
+SFX_PICK_MAX = 20
+
+
+def sfx_for_card_type(overlay_type: str, *, fullscreen_card: bool = False
+                      ) -> tuple[str, str]:
+    """Intent и роль сценария для появления карты. Пусто — это не карта."""
+    if fullscreen_card:
+        return "card_appear", "pop"
+    kind = str(overlay_type or "")
+    intent = CARD_TYPE_TO_INTENT.get(kind, "")
+    if not intent:
+        return "", ""
+    return intent, CARD_TYPE_TO_ROLE.get(kind, "pop")
+
+
 INTENTS: dict[str, tuple[str, ...]] = {
     "picture_in": ("whoosh", "sharp"),
     "picture_out": ("whoosh", "soft"),
@@ -468,14 +501,15 @@ def pick_sfx(cfg, *, want: Sequence[str], video_id: str,
         return None
     want_set = set(want)
     avoid = set(avoid_ids)
+    catalog = list(lib.items)[:SFX_PICK_MAX]
 
     def _on_disk(item: Any) -> bool:
         name = str(getattr(item, "file", "") or "")
         return bool(name) and (lib.dir / name).is_file()
 
-    pool = [i for i in lib.items if i.id not in avoid and _on_disk(i)]
+    pool = [i for i in catalog if i.id not in avoid and _on_disk(i)]
     if not pool:
-        pool = [i for i in lib.items if _on_disk(i)]
+        pool = [i for i in catalog if _on_disk(i)]
     if not pool:
         return None
 

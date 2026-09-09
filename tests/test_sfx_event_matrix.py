@@ -196,8 +196,12 @@ class TestTheBedRing:
                           bed_ring=[free.id])
         assert ringed is not None and ringed.id != free.id
 
-    def test_the_ring_does_not_override_meaning(self):
-        """Единственный подходящий по смыслу бед берётся, даже если он в кольце."""
+    def test_a_non_adjacent_ring_entry_does_not_override_meaning(self):
+        """Единственный подходящий по смыслу бед берётся, если он не соседний.
+
+        Соседний id (последний в кольце) вычёркивается жёстко — MUST-022.
+        Более старый член кольца по-прежнему только тайбрейк: смысл важнее.
+        """
         from src.lib.manifest import open_library
         from src.lib.music_library import pick_bed
 
@@ -214,8 +218,11 @@ class TestTheBedRing:
         if unique is None:
             pytest.skip("нет беда с уникальным тегом")
         item, want = unique
+        other = next((i for i in lib.items if i.id != item.id), None)
+        if other is None:
+            pytest.skip("в пуле одна кровать — вычёркивать некого")
         assert pick_bed(cfg, want=want, video_id="redshift_9001",
-                        bed_ring=[item.id]).id == item.id
+                        bed_ring=[item.id, other.id]).id == item.id
 
     def test_the_ring_is_stored_beside_the_ending_ring(self):
         import json
