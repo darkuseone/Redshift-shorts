@@ -204,17 +204,25 @@ class TestQc20And21And22CarryTheMegaWording:
                             for i, t in enumerate(self.NEEDY)])
         assert _check(_run(cfg, plan), "QC-21")["passed"]
 
-    def test_qc21_ignores_devices_that_never_asked(self, cfg):
-        """`grounded_on` — это `matched(needs, traits)`; у шаблона без `needs`
-        он пуст **по построению**. Из 204 шаблонов каталога `needs` объявлен
-        у 74, и порог 0.30 не прошёл бы ни один ролик: первый заход мерил по
-        наличию поля и ловил полноэкранный текст, которому требований не
-        предъявляли вовсе."""
+    def test_qc21_counts_needless_as_ungrounded(self, cfg):
+        """Need-less выбранный шаблон = ungrounded (MUST-010)."""
         plan = _plan(
             shots=[_shot(i, template="text-fullscreen/blur-out-up",
                          grounded_on=[]) for i in range(9)]
             + [_shot(9, template=self.NEEDY[0], grounded_on=["number"])])
-        assert _check(_run(cfg, plan), "QC-21")["passed"]
+        check = _check(_run(cfg, plan), "QC-21")
+        assert not check["passed"]
+        assert check["value"] == 0.9
+
+    def test_qc21_passes_when_needless_share_stays_under_threshold(self, cfg):
+        plan = _plan(shots=[
+            _shot(0, template="text-fullscreen/blur-out-up", grounded_on=[]),
+            *[_shot(i, template=self.NEEDY[0], grounded_on=["number"])
+              for i in range(1, 5)],
+        ])
+        check = _check(_run(cfg, plan), "QC-21")
+        assert check["passed"]
+        assert check["value"] == 0.2
 
     def test_qc22_catches_a_pick_that_escaped_the_allowlist(self, cfg):
         plan = _plan(pick_traces=[

@@ -119,6 +119,122 @@ class TestIntentDetection:
         assert any(it.id == "text-number-slam" for it in intents1)
 
 
+class TestEmptyTriggerNotAlwaysFire:
+    """MUST-010: пустые needs+signals+keywords+patterns не матчатся сами."""
+
+    def test_empty_trigger_without_catchall_never_fires(self, picker):
+        data = {
+            "version": 1,
+            "intents": [
+                {
+                    "id": "empty-always",
+                    "title": "t",
+                    "categories": ["browser-ui"],
+                    "keywords": [],
+                    "patterns": [],
+                    "needs": [],
+                    "signals_any": [],
+                    "templates": ["browser-ui/chat-thread"],
+                    "weight": 20,
+                    "variants": ["A", "B"],
+                }
+            ],
+        }
+        index = ScenarioIndex.from_dict(data, catalog=picker.catalog)
+        fired = index.detect_intents(
+            "любой текст без сущности",
+            category="browser-ui",
+            variant="A",
+        )
+        assert fired == []
+
+    def test_empty_trigger_catchall_does_fire(self, picker):
+        data = {
+            "version": 1,
+            "intents": [
+                {
+                    "id": "empty-catch",
+                    "title": "t",
+                    "categories": ["browser-ui"],
+                    "keywords": [],
+                    "patterns": [],
+                    "needs": [],
+                    "signals_any": [],
+                    "templates": ["browser-ui/chat-thread"],
+                    "variants": ["A"],
+                    "catchall": True,
+                }
+            ],
+        }
+        index = ScenarioIndex.from_dict(data, catalog=picker.catalog)
+        fired = index.detect_intents("нейтральный текст", category="browser-ui", variant="A")
+        assert [it.id for it in fired] == ["empty-catch"]
+        assert fired[0].weight == 0
+        assert fired[0].catchall
+
+    def test_two_catchalls_same_category_variant_rejected(self, picker):
+        data = {
+            "version": 1,
+            "intents": [
+                {
+                    "id": "catch-a",
+                    "title": "t",
+                    "categories": ["browser-ui"],
+                    "templates": ["browser-ui/chat-thread"],
+                    "variants": ["A"],
+                    "catchall": True,
+                },
+                {
+                    "id": "catch-b",
+                    "title": "t",
+                    "categories": ["browser-ui"],
+                    "templates": ["browser-ui/article-highlight"],
+                    "variants": ["A"],
+                    "catchall": True,
+                },
+            ],
+        }
+        with pytest.raises(RedshiftError) as exc:
+            ScenarioIndex.from_dict(data, catalog=picker.catalog)
+        assert exc.value.code == "SCENARIO_INDEX_INVALID"
+
+    def test_entityless_text_does_not_fire_world_map_nk_or_chat(self, picker):
+        blob = "Белок складывается сам по законам физики"
+        banned = {
+            "geo-world-map",
+            "geo-north-korea",
+            "geo-generic",
+            "browser-ai-chat",
+            "browser-chatgpt-exchange",
+            "browser-claude-exchange",
+        }
+        fired = set()
+        for category in ("data-viz", "browser-ui"):
+            fired |= {
+                it.id
+                for it in picker.index.detect_intents(blob, category=category, variant="A")
+            }
+        assert not (fired & banned), fired & banned
+
+    def test_production_empty_triggers_are_explicit_catchalls(self, picker):
+        empty = [
+            it for it in picker.index.intents
+            if not it.keywords and not it.patterns and not it.signals_any and not it.needs
+        ]
+        assert empty, "ожидали default-полосу с пустым триггером"
+        assert all(it.catchall for it in empty)
+        # 0 или 1 catchall на (категория, вариант)
+        slots: dict[tuple[str, str], str] = {}
+        for it in picker.index.intents:
+            if not it.catchall:
+                continue
+            for cat in it.categories:
+                for var in it.variants:
+                    key = (cat, var)
+                    assert key not in slots, (key, slots[key], it.id)
+                    slots[key] = it.id
+
+
 class TestWeightBands:
     def test_bands_boundaries(self, picker):
         idx = picker.index

@@ -760,8 +760,7 @@
         "id": "cta-subscribe",
         "weight": 10,
         "variants": [
-          "A",
-          "B"
+          "A"
         ],
         "needs": [],
         "signals_any": [],

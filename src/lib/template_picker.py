@@ -56,6 +56,9 @@ class Intent:
     weight: int
     variants: frozenset[str]
     replaces_default: bool = False  # D2 п. 7 — субтрактивное правило `\d`
+    # Пустой триггер (нет keywords/patterns/signals_any/needs) матчится
+    # только с этим флагом. Без него пустота — не истина (MUST-010).
+    catchall: bool = False
 
 
 @dataclass(frozen=True)
@@ -202,7 +205,11 @@ class ScenarioIndex:
                 )
             seen_ids.add(iid)
 
+            catchall = bool(item.get("catchall", False))
             w = item.get("weight")
+            # Catchall без явного веса — 0, чтобы не всплывать в specific.
+            if w is None and catchall:
+                w = 0
             if not isinstance(w, int) or w < 0:
                 raise RedshiftError(
                     f"Интент '{iid}' имеет невалидный вес {w} (должен быть целым >= 0)",
@@ -260,8 +267,25 @@ class ScenarioIndex:
                     weight=w,
                     variants=frozenset(item.get("variants", ())),
                     replaces_default=bool(item.get("replaces_default", False)),
+                    catchall=catchall,
                 )
             )
+
+        catchall_slots: dict[tuple[str, str], str] = {}
+        for intent in parsed_intents:
+            if not intent.catchall:
+                continue
+            for cat in intent.categories:
+                for var in intent.variants:
+                    slot = (cat, var)
+                    prev = catchall_slots.get(slot)
+                    if prev is not None:
+                        raise RedshiftError(
+                            f"catchall больше одного на категорию '{cat}' "
+                            f"вариант '{var}': '{prev}' и '{intent.id}'",
+                            code="SCENARIO_INDEX_INVALID",
+                        )
+                    catchall_slots[slot] = intent.id
 
         raw_tag_intents = data.get("tag_intents", {})
         if not isinstance(raw_tag_intents, dict):
@@ -315,7 +339,19 @@ class ScenarioIndex:
             if intent.needs and not intent.needs.issubset(signals_set):
                 continue
 
-            if not intent.keywords and not intent.patterns and not intent.signals_any:
+            lexical = bool(intent.keywords or intent.patterns or intent.signals_any)
+            if not lexical and not intent.needs:
+                # Пустой триггер: матч только у явного catchall (MUST-010).
+                if intent.catchall:
+                    matched.append(intent)
+                continue
+
+            if intent.catchall:
+                matched.append(intent)
+                continue
+
+            if not lexical:
+                # Только needs — сигнал и есть триггер, пустота не истина.
                 matched.append(intent)
                 continue
 
