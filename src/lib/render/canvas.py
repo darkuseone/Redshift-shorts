@@ -334,6 +334,53 @@ class SafeZones:
         return (self.x_min + self.x_max) // 2
 
 
+# Оверлеи, которые HyperFrames реально рисует и QC-7 обязан измерить.
+# highlight — слой внутри source-card, отдельного клипа нет.
+SAFE_ZONE_OVERLAY_TYPES = frozenset({
+    "plaque", "source_card", "cta", "dataviz", "lower_third", "frame",
+    "motion",
+})
+
+
+def overlay_layout_bbox(overlay: dict[str, Any],
+                        brandbook: dict[str, Any]) -> tuple[float, float, float, float]:
+    """BBox оверлея: явный ``params.bbox`` или раскладка рабочей зоны.
+
+    HyperFrames не отдаёт Chrome-метрики в QC, поэтому замер — это раскладка,
+    которую композиция и пишет. Чужой сдвиг в нижние 400 px обязан сюда
+    попасть как есть, иначе QC-7 снова пройдёт «потому что список пуст».
+    """
+    params = overlay.get("params") if isinstance(overlay.get("params"), dict) else {}
+    existing = params.get("bbox") or overlay.get("bbox")
+    if isinstance(existing, (list, tuple)) and len(existing) == 4:
+        return tuple(float(v) for v in existing)
+    safe = SafeZones.from_brandbook(brandbook)
+    if all(k in params for k in ("x", "y", "w", "h")):
+        x, y = float(params["x"]), float(params["y"])
+        return (x, y, x + float(params["w"]), y + float(params["h"]))
+    kind = str(overlay.get("type") or "")
+    heights = {"plaque": 140.0, "lower_third": 140.0, "frame": 140.0,
+               "source_card": 420.0, "cta": 120.0, "dataviz": 640.0,
+               "motion": 480.0}
+    height = heights.get(kind, float(safe.y_max - safe.y_min))
+    y1 = float(safe.y_max)
+    y0 = max(float(safe.y_min), y1 - height)
+    return (float(safe.x_min), y0, float(safe.x_max), y1)
+
+
+def caption_layout_bbox(brandbook: dict[str, Any]
+                        ) -> tuple[float, float, float, float]:
+    """Полоса субтитров по брендбуку — тот же список, что QC-7."""
+    safe = SafeZones.from_brandbook(brandbook)
+    subs = brandbook.get("subtitles") or {}
+    baseline = float(subs.get("baseline_y_default") or safe.y_max)
+    sizes = subs.get("size_px") or [92]
+    size = float(sizes[-1] if isinstance(sizes, (list, tuple)) else sizes)
+    y0 = baseline - size
+    y1 = baseline + size * 0.35
+    return (float(safe.x_min), y0, float(safe.x_max), y1)
+
+
 def accent_area_share(layer: Image.Image, accent: RGBA, tolerance: int = 40) -> float:
     """Доля площади кадра, занятая акцентным цветом (§3.3.1: ≤10–12 %)."""
     import numpy as np

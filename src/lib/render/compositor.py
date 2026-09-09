@@ -627,12 +627,16 @@ class RenderStats:
     # значит «не мерили»: QC-27 обязан отличать несомкнутый шов от неснятого
     # замера, иначе неудачный ffmpeg молча превратится в зелёный гейт.
     loop_seam_dhash_bits: int | None = None
+    safe_zone_measured: bool = False
+    safe_zone_checks: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "frames": self.frames, "duration_sec": round(self.duration_sec, 3),
             "shots": self.shots, "overlay_draws": self.overlay_draws,
             "safe_zone_violations": self.safe_zone_violations,
+            "safe_zone_measured": self.safe_zone_measured,
+            "safe_zone_checks": list(self.safe_zone_checks),
             "accent_share_max": round(self.accent_share_max, 4),
             "accent_by_family": dict(self.accent_by_family),
             "subtitle_frames": self.subtitle_frames,

@@ -19,7 +19,7 @@ from ..lib.jsonio import read_json_or
 from ..lib.logging import get_logger
 from ..lib.palette import overlay_cyan_misuse, overlay_offbrand_fills
 from ..lib.phash import video_is_duplicate
-from ..lib.render.canvas import SafeZones
+from ..lib.render.canvas import SafeZones, SAFE_ZONE_OVERLAY_TYPES
 from ..lib.render.hyperframes.templates import text_width
 from ..lib.templates import overlap_share
 
@@ -148,17 +148,42 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                          worst_overlap <= limit_overlap + 1e-6,
                          value=round(worst_overlap, 3), threshold=limit_overlap))
 
-    # 7. Элементы вне safe zones
+    # 7. Элементы вне safe zones. Пустой список при живых оверлеях — это
+    # «не мерили», а не «всё в зоне»: HyperFrames раньше не писал bbox, и
+    # QC-7 зеленел вхолостую.
     safe = SafeZones.from_brandbook(cfg.brandbook)
     violations = list(render_stats.get("safe_zone_violations", []))
+    checks_done = list(render_stats.get("safe_zone_checks") or [])
+    measured_boxes = 0
     for overlay in plan.get("overlays", []):
         box = overlay.get("params", {}).get("bbox")
-        if box and not safe.contains(tuple(box)):
-            violations.append({"overlay": overlay["type"], "bbox": box,
+        if not (box and len(box) == 4):
+            continue
+        measured_boxes += 1
+        if not safe.contains(tuple(box)):
+            violations.append({"overlay": overlay.get("type"), "bbox": box,
                                "why": safe.violations(tuple(box))})
-    checks.append(_check(7, "Элементы вне safe zones", not violations,
-                         value=len(violations), threshold=0,
-                         detail="; ".join(str(v) for v in violations[:3])))
+    measurable = [
+        ov for ov in plan.get("overlays") or []
+        if str(ov.get("type") or "") in SAFE_ZONE_OVERLAY_TYPES
+    ]
+    measured = bool(
+        measured_boxes or checks_done
+        or render_stats.get("safe_zone_measured"))
+    if measurable and not measured:
+        checks.append(_check(
+            7, "Элементы вне safe zones", False,
+            value={"violations": len(violations), "measured": 0,
+                   "overlays": len(measurable)},
+            threshold=0, detail="не мерили"))
+    else:
+        checks.append(_check(
+            7, "Элементы вне safe zones", not violations,
+            value={"violations": len(violations), "measured": measured_boxes
+                   or len(checks_done),
+                   "overlays": len(measurable)},
+            threshold=0,
+            detail="; ".join(str(v) for v in violations[:3])))
 
     # 8. Loudness −14 ±1 LUFS, TP ≤ −1 dBTP
     mix_lufs = loudness.get("mix_lufs")

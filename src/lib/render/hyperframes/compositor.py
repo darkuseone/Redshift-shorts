@@ -84,11 +84,16 @@ class HyperFramesCompositor:
         fps = int(plan["fps"])
         built = project.stats
         covered = _subtitle_coverage_sec(plan)
+        checks = list(built.get("safe_zone_checks") or [])
+        violations = list(built.get("safe_zone_violations") or [])
         self.stats = RenderStats(
             frames=result.get("frames") or int(round(duration * fps)),
             duration_sec=duration,
             shots=built["shots"],
             overlay_draws=built["overlay_draws"],
+            safe_zone_violations=violations,
+            safe_zone_checks=checks,
+            safe_zone_measured=bool(checks) or int(built.get("overlay_draws") or 0) == 0,
             # Кадры с субтитром и кадры с речью — это одно и то же окно:
             # субтитр держится ровно столько, сколько звучит слово (§5.1).
             subtitle_frames=int(round(covered * fps)),
