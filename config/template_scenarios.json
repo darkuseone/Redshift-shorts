@@ -17,7 +17,6 @@
         "ask anything",
         "chatgpt",
         "chat gpt",
-        "нейросет",
         "ии-чат",
         "чат-бот",
         "chatbot",
@@ -33,7 +32,8 @@
       "weight": 40,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "browser-app-showcase",
@@ -85,7 +85,8 @@
       "weight": 38,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "browser-claude-exchange",
@@ -107,7 +108,8 @@
       "weight": 37,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "browser-message-thread",
@@ -278,12 +280,8 @@
         "кндр",
         "северной коре",
         "северная коре",
-        "locked down",
-        "изоляц",
-        "санкци",
         "пхеньян",
-        "pyongyang",
-        "закрыт"
+        "pyongyang"
       ],
       "patterns": [],
       "needs": [],
@@ -293,7 +291,8 @@
       "weight": 28,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "finance-money-count",
@@ -303,13 +302,11 @@
       ],
       "keywords": [
         "usd",
-        "dollar",
         "revenue",
         "valuation",
         "market cap",
         "выручк",
-        "капитализац",
-        "доллар"
+        "капитализац"
       ],
       "patterns": [
         "\\$\\s*\\d"
@@ -321,7 +318,8 @@
       "weight": 27,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "geo-world-map",
@@ -335,7 +333,6 @@
         "gdp per capita",
         "world atlas",
         "imf",
-        "миров",
         "карта мира",
         "ввп на душу"
       ],
@@ -347,7 +344,8 @@
       "weight": 26,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "geo-us-hex",
@@ -432,7 +430,8 @@
       "weight": 23,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "dataviz-star-rating",
@@ -441,9 +440,7 @@
         "data-viz"
       ],
       "keywords": [
-        "stars",
         "star rating",
-        "звезд",
         "рейтинг",
         "оценк",
         "отзыв",
@@ -487,7 +484,8 @@
       "weight": 21,
       "variants": [
         "A"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "text-beat-freeze",
@@ -506,7 +504,7 @@
         "на бит"
       ],
       "patterns": [
-        "(?i)(?<![0-9a-zA-Zа-яА-ЯёЁ])(drop|freeze|beat|hard\\s*cut|on the beat|дроп|бит|замороз)(?![0-9a-zA-Zа-яА-ЯёЁ])"
+        "(?i)(?<![0-9a-zA-Zа-яА-ЯёЁ])(drop|freeze|hard\\s*cut|on the beat|бит-дроп|на бит|дроп|замороз)(?![0-9a-zA-Zа-яА-ЯёЁ])"
       ],
       "needs": [],
       "templates": [
@@ -1080,11 +1078,12 @@
         "data-viz/nyc-paris-flight",
         "data-viz/north-korea-locked-down"
       ],
-      "weight": 2,
+      "weight": 0,
       "variants": [
         "A",
         "B"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "browser-social",
@@ -1113,7 +1112,8 @@
       "variants": [
         "A",
         "B"
-      ]
+      ],
+      "requires_entity": true
     },
     {
       "id": "browser-media-music",

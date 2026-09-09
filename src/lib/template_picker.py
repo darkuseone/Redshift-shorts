@@ -43,6 +43,113 @@ def _dedup(items: Iterable[str]) -> tuple[str, ...]:
     return tuple(out)
 
 
+# Rare geo / finance / social / brand-app: без именованной сущности
+# шаблон не выбирается (MUST-011). Фразы — страна, биржа, продукт, домен.
+RARE_TEMPLATE_ENTITIES: dict[str, tuple[str, ...]] = {
+    "data-viz/north-korea-locked-down": (
+        "north korea", "northkorea", "кндр", "пхеньян", "pyongyang",
+        "северная коре", "северной коре",
+    ),
+    "data-viz/nyc-paris-flight": (
+        "transatlantic", "jfk", "cdg", "new york", "нью-йорк", "нью йорк",
+        "paris", "париж",
+    ),
+    "data-viz/spain-map": (
+        "spain", "españa", "espan", "испан", "madrid", "catalun",
+    ),
+    "data-viz/us-map": (
+        "united states", "u.s.", "сша", "америк", "census", "california",
+    ),
+    "data-viz/us-map-flow": (
+        "united states", "u.s.", "сша", "interstate", "city-to-city",
+        "corridor",
+    ),
+    "data-viz/us-map-hex": (
+        "united states", "u.s.", "сша", "hex grid", "income by state",
+        "hex map",
+    ),
+    "data-viz/us-map-bubble": (
+        "united states", "u.s.", "сша", "bubble map",
+    ),
+    "data-viz/world-map": (
+        "world map", "карта мира", "world atlas", "imf", "global gdp",
+        "gdp per capita", "ввп на душу",
+    ),
+    "data-viz/apple-money-count": (
+        "$", "usd", "revenue", "valuation", "market cap", "выручк",
+        "капитализац",
+    ),
+    "data-viz/star-rating-fill": (
+        "star rating", "рейтинг", "app store", "satisfaction",
+    ),
+    "data-viz/mk-progress-stat": (
+        "goals reached", "прогресс", "целей",
+    ),
+    "browser-ui/chatgpt-exchange": (
+        "chatgpt", "gpt-4", "gpt4", "chat gpt",
+    ),
+    "browser-ui/claude-exchange": (
+        "claude", "anthropic", "opus",
+    ),
+    "browser-ui/ai-chat-reveal": (
+        "chatgpt", "gpt-4", "gpt4", "claude.ai", "ai chat", "чат-бот",
+        "chatbot",
+    ),
+    "browser-ui/message-thread-reveal": (
+        "imessage", "message thread", "смс", "переписка",
+    ),
+    "browser-ui/reddit-post": (
+        "reddit", "реддит",
+    ),
+    "browser-ui/x-post": (
+        "tweet", "твит", "x-post", "x.com",
+    ),
+    "lower-thirds/yt-lower-third": (
+        "youtube", "ютуб",
+    ),
+    "text-fullscreen/beat-freeze-cut": (
+        "on the beat", "бит-дроп", "на бит", "hard cut", "дроп",
+        "drop", "freeze", "замороз",
+    ),
+}
+
+_NAMED_ENTITY_RE = re.compile(
+    r"(?i)("
+    r"north\s*korea|кндр|пхеньян|pyongyang|северн\w*\s+коре|"
+    r"united\s+states|\bu\.?s\.?a\.?\b|\bсша\b|california|\bcensus\b|"
+    r"spain|españa|испан|madrid|"
+    r"new\s*york|нью-?йорк|paris|париж|\bjfk\b|\bcdg\b|transatlantic|"
+    r"chatgpt|gpt-4|gpt4|claude\.ai|\banthropic\b|\bopus\b|"
+    r"nasdaq|nyse|\bimf\b|world\s+atlas|world\s+map|карта\s+мира|"
+    r"https?://|\$\s*\d|"
+    r"reddit|instagram|tiktok|\bx\.com\b|youtube|"
+    r"chatbot|чат-бот|ai[\s-]?chat"
+    r")"
+)
+
+
+def has_named_entity(blob: str) -> bool:
+    """Есть ли в тексте страна / продукт / тикер / URL / сумма (MUST-011)."""
+    text = blob or ""
+    if _NAMED_ENTITY_RE.search(text):
+        return True
+    low = text.lower()
+    for phrases in RARE_TEMPLATE_ENTITIES.values():
+        if any(p.lower() in low for p in phrases if len(p) >= 3):
+            return True
+    return False
+
+
+def rare_templates_blocked(blob: str) -> frozenset[str]:
+    """id rare-шаблонов, которым в blob нет своей сущности."""
+    low = (blob or "").lower()
+    blocked: set[str] = set()
+    for tid, phrases in RARE_TEMPLATE_ENTITIES.items():
+        if not any(p.lower() in low for p in phrases):
+            blocked.add(tid)
+    return frozenset(blocked)
+
+
 @dataclass(frozen=True)
 class Intent:
     id: str
@@ -59,6 +166,8 @@ class Intent:
     # Пустой триггер (нет keywords/patterns/signals_any/needs) матчится
     # только с этим флагом. Без него пустота — не истина (MUST-010).
     catchall: bool = False
+    # Rare geo/finance/social/brand-app: без entity интент не матчится (MUST-011).
+    requires_entity: bool = False
 
 
 @dataclass(frozen=True)
@@ -268,6 +377,7 @@ class ScenarioIndex:
                     variants=frozenset(item.get("variants", ())),
                     replaces_default=bool(item.get("replaces_default", False)),
                     catchall=catchall,
+                    requires_entity=bool(item.get("requires_entity", False)),
                 )
             )
 
@@ -335,6 +445,8 @@ class ScenarioIndex:
             if category not in intent.categories:
                 continue
             if variant not in intent.variants:
+                continue
+            if intent.requires_entity and not has_named_entity(blob):
                 continue
             if intent.needs and not intent.needs.issubset(signals_set):
                 continue
@@ -514,6 +626,23 @@ class TemplatePicker:
             tid for tid in allowed_raw
             if (tmpl := self.catalog.by_id(tid)) is not None and tmpl.is_active
         )
+        # MUST-011: rare geo/finance/social/brand-app без своей сущности
+        # не попадают ни в walk, ни в fallback, ни в полный category-escape.
+        blocked_rare = rare_templates_blocked(blob)
+        if blocked_rare:
+            def _without_blocked(ids: tuple[str, ...]) -> tuple[str, ...]:
+                kept = tuple(tid for tid in ids if tid not in blocked_rare)
+                return kept
+
+            walk = _without_blocked(walk)
+            fallback = _without_blocked(fallback)
+            allowed = _without_blocked(allowed)
+            if not allowed:
+                allowed = _dedup(
+                    t.id for t in self.catalog.by_category(category)
+                    if t.id not in blocked_rare
+                )
+
         # Уровень, добравший свою верхнюю долю, временно уходит из
         # разрешённого набора — но только если после него что-то останется:
         # пустой allow отправил бы подбор гулять по всей категории, а это

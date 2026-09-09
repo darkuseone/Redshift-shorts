@@ -336,7 +336,7 @@
       },
       {
         "id": "geo-generic",
-        "weight": 2,
+        "weight": 0,
         "variants": [
           "A",
           "B"

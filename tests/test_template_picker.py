@@ -235,6 +235,67 @@ class TestEmptyTriggerNotAlwaysFire:
                     slots[key] = it.id
 
 
+class TestRareEntityGate:
+    """MUST-011: rare geo/finance/social = 0 без именованной сущности."""
+
+    def test_empirical_kolskaya_mirov_does_not_take_world_map(self, picker):
+        blob = "Кольская кора миров"
+        fired = {it.id for it in picker.index.detect_intents(
+            blob, category="data-viz", variant="A")}
+        assert "geo-world-map" not in fired
+        t, _ = picker.pick("data-viz", blob=blob, variant="A")
+        assert t.id != "data-viz/world-map"
+
+    def test_empirical_empty_cta_does_not_take_nk(self, picker):
+        blob = ""
+        fired = {it.id for it in picker.index.detect_intents(
+            blob, category="data-viz", variant="A")}
+        assert "geo-north-korea" not in fired
+        assert "geo-generic" not in fired
+        t, _ = picker.pick("data-viz", blob=blob, variant="A")
+        assert t.id != "data-viz/north-korea-locked-down"
+
+    def test_empirical_protein_neuronet_does_not_take_ai_chat(self, picker):
+        blob = "белок нейросет"
+        fired = {it.id for it in picker.index.detect_intents(
+            blob, category="browser-ui", variant="A")}
+        assert "browser-ai-chat" not in fired
+        t, _ = picker.pick("browser-ui", blob=blob, variant="A")
+        assert t.id != "browser-ui/ai-chat-reveal"
+
+    def test_empirical_quantum_bit_does_not_take_beat_freeze(self, picker):
+        blob = "Квантовый бит живёт"
+        fired = {it.id for it in picker.index.detect_intents(
+            blob, category="text-fullscreen", variant="A")}
+        assert "text-beat-freeze" not in fired
+        t, _ = picker.pick("text-fullscreen", blob=blob, variant="A")
+        assert t.id != "text-fullscreen/beat-freeze-cut"
+
+    def test_north_korea_entity_allows_nk_template(self, picker):
+        blob = "North Korea sanctions, Пхеньян"
+        fired = {it.id for it in picker.index.detect_intents(
+            blob, category="data-viz", variant="A")}
+        assert "geo-north-korea" in fired
+        t, _ = picker.pick("data-viz", blob=blob, variant="A")
+        assert t.id == "data-viz/north-korea-locked-down"
+
+    def test_geo_generic_weight_is_zero(self, picker):
+        by_id = {it.id: it for it in picker.index.intents}
+        assert by_id["geo-generic"].weight == 0
+        assert by_id["geo-generic"].requires_entity
+        fired = picker.index.detect_intents(
+            "просто карта без страны", category="data-viz", variant="A")
+        assert not any(it.id == "geo-generic" for it in fired)
+
+    def test_dollar_without_entity_does_not_take_apple_money(self, picker):
+        blob = "один доллар ещё не финансы"
+        fired = {it.id for it in picker.index.detect_intents(
+            blob, category="data-viz", variant="A")}
+        assert "finance-money-count" not in fired
+        t, _ = picker.pick("data-viz", blob=blob, variant="A")
+        assert t.id != "data-viz/apple-money-count"
+
+
 class TestWeightBands:
     def test_bands_boundaries(self, picker):
         idx = picker.index
@@ -261,6 +322,7 @@ class TestWeightBands:
         assert by_id["cta-brand-close"] == 11
         assert by_id["cta-subscribe"] == 10
         assert by_id["cta-brand-close"] > by_id["cta-subscribe"]
+        assert by_id["geo-generic"] == 0
 
         # text-fullscreen winning direction hierarchy
         assert (
@@ -495,15 +557,15 @@ class TestReplacesDefault:
 
 class TestPassThrough:
     def test_exclude_skips_in_walk(self, picker):
-        # geo-flight templates: [nyc-paris-flight, world-map]
-        t1, trace1 = picker.pick("data-viz", blob=build_blob("рейс Нью-Йорк — Париж"), variant="A")
+        # geo-flight + world-map entity, чтобы rare world-map не отрезался MUST-011
+        blob = build_blob("рейс Нью-Йорк — Париж, world atlas")
+        t1, trace1 = picker.pick("data-viz", blob=blob, variant="A")
         assert t1.id == "data-viz/nyc-paris-flight"
         assert trace1.won_at == 0
 
-        # Exclude first template in walk
         t2, trace2 = picker.pick(
             "data-viz",
-            blob=build_blob("рейс Нью-Йорк — Париж"),
+            blob=blob,
             variant="A",
             exclude=["data-viz/nyc-paris-flight"],
         )
