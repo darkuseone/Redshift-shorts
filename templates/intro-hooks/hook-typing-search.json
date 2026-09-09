@@ -22,5 +22,15 @@
   "frequency": "variant",
   "needs": [
     "question"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "intro-hooks"
+  ],
+  "requires": [
+    "question"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

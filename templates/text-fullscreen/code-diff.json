@@ -25,5 +25,16 @@
   "needs": [
     "device",
     "comparison"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [
+    "device",
+    "comparison"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

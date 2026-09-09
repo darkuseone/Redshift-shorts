@@ -26,5 +26,16 @@
   "needs": [
     "number",
     "mechanism"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "data-viz"
+  ],
+  "requires": [
+    "number",
+    "mechanism"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

@@ -22,5 +22,13 @@
   ],
   "added": "2026-08-18",
   "frequency": "variant",
-  "needs": []
+  "needs": [],
+  "rarity": "variant",
+  "topics": [
+    "browser-ui"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

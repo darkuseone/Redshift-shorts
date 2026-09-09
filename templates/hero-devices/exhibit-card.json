@@ -24,5 +24,15 @@
   "frequency": "variant",
   "needs": [
     "device"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "hero-devices"
+  ],
+  "requires": [
+    "device"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

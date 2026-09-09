@@ -24,5 +24,15 @@
   "frequency": "variant",
   "needs": [
     "question"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "browser-ui"
+  ],
+  "requires": [
+    "question"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

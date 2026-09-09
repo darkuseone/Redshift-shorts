@@ -26,5 +26,15 @@
   "frequency": "variant",
   "needs": [
     "device"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [
+    "device"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

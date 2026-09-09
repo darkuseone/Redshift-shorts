@@ -24,5 +24,15 @@
   "frequency": "signature",
   "needs": [
     "quote"
-  ]
+  ],
+  "rarity": "signature",
+  "topics": [
+    "frames-cards"
+  ],
+  "requires": [
+    "quote"
+  ],
+  "forbids": [],
+  "cooldown_videos": 3,
+  "brand_ok": true
 }

@@ -23,5 +23,15 @@
   "frequency": "variant",
   "needs": [
     "number"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "data-viz"
+  ],
+  "requires": [
+    "number"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

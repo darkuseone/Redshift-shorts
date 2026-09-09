@@ -26,5 +26,15 @@
   "needs": [
     "quote"
   ],
+  "rarity": "signature",
+  "topics": [
+    "browser-ui"
+  ],
+  "requires": [
+    "quote"
+  ],
+  "forbids": [],
+  "cooldown_videos": 3,
+  "brand_ok": true,
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
 }

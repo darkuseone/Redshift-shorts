@@ -19,7 +19,13 @@ from typing import Any, Iterable, Sequence
 
 from src.errors import RedshiftError
 from src.lib.config import Config
-from src.lib.templates import FrequencyBudget, Template, TemplateCatalog
+from src.lib.templates import (
+    FrequencyBudget,
+    Template,
+    TemplateCatalog,
+    cooldown_of,
+    normalize_rarity,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -624,7 +630,8 @@ class TemplatePicker:
         allowed_raw = _dedup(ch_head + ch_specific + ch_base + fallback)
         allowed = _dedup(
             tid for tid in allowed_raw
-            if (tmpl := self.catalog.by_id(tid)) is not None and tmpl.is_active
+            if (tmpl := self.catalog.by_id(tid)) is not None
+            and tmpl.is_active and tmpl.brand_ok
         )
         # MUST-011: rare geo/finance/social/brand-app без своей сущности
         # не попадают ни в walk, ни в fallback, ни в полный category-escape.
@@ -640,8 +647,24 @@ class TemplatePicker:
             if not allowed:
                 allowed = _dedup(
                     t.id for t in self.catalog.by_category(category)
-                    if t.id not in blocked_rare
+                    if t.id not in blocked_rare and t.brand_ok
                 )
+
+        # MUST-012: cooldown_videos — жёсткий вырез, не штраф в ранге.
+        if recent_videos and allowed:
+            recent = {str(v) for v in recent_videos}
+            kept_cd = tuple(
+                tid for tid in allowed
+                if not (
+                    (tmpl := self.catalog.by_id(tid)) is not None
+                    and cooldown_of(tmpl) > 0
+                    and set(tmpl.last_used_in[-cooldown_of(tmpl):]) & recent
+                )
+            )
+            if kept_cd:
+                allowed = kept_cd
+                walk = tuple(t for t in walk if t in set(kept_cd)) or walk
+                fallback = tuple(t for t in fallback if t in set(kept_cd)) or fallback
 
         # Уровень, добравший свою верхнюю долю, временно уходит из
         # разрешённого набора — но только если после него что-то останется:
@@ -653,7 +676,7 @@ class TemplatePicker:
             kept = tuple(
                 tid for tid in allowed
                 if ((tmpl := self.catalog.by_id(tid)) is None
-                    or (tmpl.frequency or "variant").lower() not in saturated)
+                    or normalize_rarity(tmpl.rarity or tmpl.frequency) not in saturated)
             )
             if kept:
                 allowed = kept
@@ -750,5 +773,5 @@ class TemplatePicker:
         )
         # Уровень записывается после выбора: бюджет считает выданное, а не
         # задуманное.
-        self.freq_budget.take((chosen.frequency or "variant").lower())
+        self.freq_budget.take(normalize_rarity(chosen.rarity or chosen.frequency))
         return chosen, trace

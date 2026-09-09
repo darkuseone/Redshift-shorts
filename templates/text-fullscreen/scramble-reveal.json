@@ -28,5 +28,16 @@
   "needs": [
     "discovery",
     "device"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [
+    "discovery",
+    "device"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

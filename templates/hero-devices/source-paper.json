@@ -20,5 +20,15 @@
   "frequency": "variant",
   "needs": [
     "quote"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "hero-devices"
+  ],
+  "requires": [
+    "quote"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

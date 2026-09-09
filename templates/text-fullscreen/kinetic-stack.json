@@ -22,5 +22,15 @@
   "needs": [
     "list"
   ],
+  "rarity": "variant",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [
+    "list"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true,
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
 }

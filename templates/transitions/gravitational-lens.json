@@ -25,5 +25,17 @@
     "discovery",
     "place",
     "superlative"
-  ]
+  ],
+  "rarity": "rare",
+  "topics": [
+    "transitions"
+  ],
+  "requires": [
+    "discovery",
+    "place",
+    "superlative"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

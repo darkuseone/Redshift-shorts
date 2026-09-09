@@ -787,6 +787,8 @@ class TestNegativeCorpus:
 
 class TestStability:
     def test_last_used_in_does_not_break_guided_choice(self, picker):
+        # Walk hit ignores usage counts. Cooldown is a separate hard gate and
+        # applies only when recent_videos is passed (MUST-012).
         target = picker.catalog.by_id("data-viz/flowchart-vertical")
         target.last_used_in.extend(["video_01", "video_02", "video_03", "video_04"])
 
@@ -794,7 +796,6 @@ class TestStability:
             "data-viz",
             blob=build_blob("блок-схема дерево решений алгоритм"),
             variant="A",
-            recent_videos=["video_04"],
         )
         assert t.id == "data-viz/flowchart-vertical"
         assert trace.won_at == 0
@@ -925,6 +926,7 @@ def test_gen_templates_preserves_lifecycle_fields():
     assert "status" in src and "retired_reason" in src and "frequency" in src
     assert "last_used_in" in src
     assert "duration_range" in src and "needs" in src
+    assert "rarity" in src and "brand_ok" in src and "cooldown_videos" in src
 
 
 
@@ -1123,3 +1125,134 @@ class TestDeleteList:
             cat, name = tid.split("/", 1)
             path = root / cat / f"{name}.json"
             assert not path.exists(), path
+
+
+class TestTaxonomyMust012:
+    """MUST-012: rarity / topics / requires / forbids / cooldown / brand_ok."""
+
+    def test_every_active_template_has_taxonomy(self, picker):
+        from src.lib.templates import ALLOWED_RARITY, normalize_rarity
+
+        missing = []
+        for t in picker.catalog.templates:
+            if not t.is_active:
+                continue
+            rarity = normalize_rarity(t.rarity or t.frequency)
+            ok = (
+                rarity in ALLOWED_RARITY
+                and isinstance(t.topics, list) and t.topics
+                and isinstance(t.requires, list)
+                and isinstance(t.forbids, list)
+                and isinstance(t.cooldown_videos, int)
+                and isinstance(t.brand_ok, bool)
+            )
+            if not ok:
+                missing.append(t.id)
+        assert missing == []
+
+    def test_requires_unmet_on_empty_text_is_not_picked(self):
+        data = {
+            "templates": [
+                {
+                    "id": "data-viz/needs-number", "name": "needs-number",
+                    "category": "data-viz", "title": "n",
+                    "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                    "renderer": "dataviz", "frequency": "variant",
+                    "rarity": "variant", "topics": ["data-viz"],
+                    "needs": ["number"], "requires": ["number"],
+                    "forbids": [], "cooldown_videos": 1, "brand_ok": True,
+                    "status": "active",
+                },
+                {
+                    "id": "data-viz/needless", "name": "needless",
+                    "category": "data-viz", "title": "n",
+                    "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                    "renderer": "dataviz", "frequency": "variant",
+                    "rarity": "variant", "topics": ["data-viz"],
+                    "needs": [], "requires": [],
+                    "forbids": [], "cooldown_videos": 1, "brand_ok": True,
+                    "status": "active",
+                },
+            ]
+        }
+        cat = TemplateCatalog(Path("unused.json"), data)
+        picked = cat.pick("data-viz", duration=2.0, traits=set(), seed=0)
+        assert picked.id == "data-viz/needless"
+
+    def test_two_videos_do_not_reuse_signature_when_cooldown(self):
+        data = {
+            "templates": [
+                {
+                    "id": "text-fullscreen/sig-a", "name": "sig-a",
+                    "category": "text-fullscreen", "title": "a",
+                    "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                    "renderer": "x", "frequency": "signature",
+                    "rarity": "signature", "topics": ["text-fullscreen"],
+                    "requires": [], "forbids": [], "cooldown_videos": 1,
+                    "brand_ok": True, "status": "active",
+                },
+                {
+                    "id": "text-fullscreen/sig-b", "name": "sig-b",
+                    "category": "text-fullscreen", "title": "b",
+                    "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                    "renderer": "x", "frequency": "signature",
+                    "rarity": "signature", "topics": ["text-fullscreen"],
+                    "requires": [], "forbids": [], "cooldown_videos": 1,
+                    "brand_ok": True, "status": "active",
+                },
+            ]
+        }
+        cat = TemplateCatalog(Path("unused.json"), data)
+        first = cat.pick("text-fullscreen", duration=2.0, seed=0)
+        cat.mark_used([first.id], "video_01")
+        second = cat.pick(
+            "text-fullscreen", duration=2.0, seed=0,
+            recent_videos=["video_01"],
+        )
+        assert first.id != second.id
+
+    def test_brand_ok_false_is_never_picked(self):
+        data = {
+            "templates": [
+                {
+                    "id": "kenburns/ok", "name": "ok",
+                    "category": "kenburns", "title": "ok",
+                    "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                    "renderer": "kb", "frequency": "signature",
+                    "rarity": "signature", "topics": ["kenburns"],
+                    "requires": [], "forbids": [], "cooldown_videos": 3,
+                    "brand_ok": True, "status": "active",
+                },
+                {
+                    "id": "kenburns/off", "name": "off",
+                    "category": "kenburns", "title": "off",
+                    "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                    "renderer": "kb", "frequency": "signature",
+                    "rarity": "signature", "topics": ["kenburns"],
+                    "requires": [], "forbids": [], "cooldown_videos": 3,
+                    "brand_ok": False, "status": "active",
+                },
+            ]
+        }
+        cat = TemplateCatalog(Path("unused.json"), data)
+        picked = {cat.pick("kenburns", duration=2.0, seed=s).id for s in range(12)}
+        assert picked == {"kenburns/ok"}
+
+    def test_brand_ok_false_only_catalog_is_empty_pick(self):
+        data = {
+            "templates": [
+                {
+                    "id": "kenburns/off", "name": "off",
+                    "category": "kenburns", "title": "off",
+                    "duration_range": [1.0, 5.0], "params": {}, "tags": [],
+                    "renderer": "kb", "frequency": "signature",
+                    "rarity": "signature", "topics": ["kenburns"],
+                    "requires": [], "forbids": [], "cooldown_videos": 3,
+                    "brand_ok": False, "status": "active",
+                },
+            ]
+        }
+        cat = TemplateCatalog(Path("unused.json"), data)
+        with pytest.raises(RedshiftError) as exc:
+            cat.pick("kenburns", duration=2.0, seed=0)
+        assert exc.value.code == "TEMPLATE_CATEGORY_EMPTY"

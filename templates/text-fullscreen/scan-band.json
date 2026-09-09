@@ -23,5 +23,13 @@
   ],
   "added": "2026-09-02",
   "frequency": "rare",
-  "needs": []
+  "needs": [],
+  "rarity": "rare",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

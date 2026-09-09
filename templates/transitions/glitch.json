@@ -22,5 +22,16 @@
   "needs": [
     "danger",
     "negation"
-  ]
+  ],
+  "rarity": "rare",
+  "topics": [
+    "transitions"
+  ],
+  "requires": [
+    "danger",
+    "negation"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

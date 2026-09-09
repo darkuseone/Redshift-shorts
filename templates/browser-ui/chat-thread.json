@@ -22,5 +22,15 @@
   "needs": [
     "question"
   ],
+  "rarity": "signature",
+  "topics": [
+    "browser-ui"
+  ],
+  "requires": [
+    "question"
+  ],
+  "forbids": [],
+  "cooldown_videos": 3,
+  "brand_ok": true,
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
 }

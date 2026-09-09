@@ -26,5 +26,16 @@
   "needs": [
     "superlative",
     "negation"
-  ]
+  ],
+  "rarity": "variant",
+  "topics": [
+    "hero-devices"
+  ],
+  "requires": [
+    "superlative",
+    "negation"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

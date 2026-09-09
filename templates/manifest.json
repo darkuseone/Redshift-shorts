@@ -46,7 +46,17 @@
       "frequency": "variant",
       "needs": [
         "question"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [
+        "question"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "intro-hooks/hook-number-slam",
@@ -72,7 +82,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "intro-hooks/hook-blackout-word",
@@ -97,7 +117,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "intro-hooks/hook-footage-cold-open",
@@ -119,7 +147,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "intro-hooks/hook-split-reveal",
@@ -141,7 +177,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "intro-hooks/hook-typing-search",
@@ -167,7 +211,17 @@
       "frequency": "variant",
       "needs": [
         "question"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [
+        "question"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "intro-hooks/hook-countdown-3",
@@ -191,7 +245,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "intro-hooks/hook-avatar-direct",
@@ -213,7 +277,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "intro-hooks"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/impact-01",
@@ -249,7 +321,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/impact-02",
@@ -280,7 +362,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/stack-3lines",
@@ -310,7 +402,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/word-swap",
@@ -334,7 +434,17 @@
       "frequency": "variant",
       "needs": [
         "comparison"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "comparison"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/quote-frame",
@@ -359,7 +469,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/date-marker",
@@ -383,7 +501,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/vs-compare",
@@ -408,7 +534,17 @@
       "frequency": "variant",
       "needs": [
         "comparison"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "comparison"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/label-strip",
@@ -431,7 +567,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/bigtext-mask-footage",
@@ -456,7 +600,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/fact-card",
@@ -485,7 +637,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/kinetic-stack",
@@ -511,6 +671,16 @@
       "needs": [
         "list"
       ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "list"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
     },
     {
@@ -540,7 +710,15 @@
       ],
       "added": "2026-09-02",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/bottom-up-letters",
@@ -569,7 +747,15 @@
       ],
       "added": "2026-09-02",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/kinetic-type-swap",
@@ -595,7 +781,15 @@
       ],
       "added": "2026-09-02",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/line-by-line-slide",
@@ -626,7 +820,17 @@
       "frequency": "variant",
       "needs": [
         "list"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "list"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/particle-text-dissolve",
@@ -656,7 +860,17 @@
       "frequency": "variant",
       "needs": [
         "discovery"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "discovery"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/per-word-crossfade",
@@ -685,7 +899,15 @@
       ],
       "added": "2026-09-02",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/scan-band",
@@ -712,7 +934,15 @@
       ],
       "added": "2026-09-02",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/scramble-reveal",
@@ -744,7 +974,18 @@
       "needs": [
         "discovery",
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "discovery",
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/shared-axis-z",
@@ -772,7 +1013,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/code-3d-extrude",
@@ -798,7 +1047,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/code-diff",
@@ -827,7 +1086,18 @@
       "needs": [
         "device",
         "comparison"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device",
+        "comparison"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/code-particle-assemble",
@@ -856,7 +1126,18 @@
       "needs": [
         "device",
         "discovery"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device",
+        "discovery"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/code-scroll",
@@ -882,7 +1163,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/code-highlight",
@@ -910,7 +1201,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/code-morph",
@@ -938,7 +1239,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/code-typing",
@@ -966,7 +1277,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/terminal-simulator",
@@ -992,7 +1313,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/apple-terminal-clear-dark",
@@ -1022,7 +1353,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/dark-plus",
@@ -1050,7 +1391,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "text-fullscreen/number-slam-card",
@@ -1078,6 +1429,16 @@
       "needs": [
         "number"
       ],
+      "rarity": "variant",
+      "topics": [
+        "text-fullscreen"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
     },
     {
@@ -1100,7 +1461,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/accent-underline",
@@ -1125,7 +1494,15 @@
       "last_used_in": [],
       "added": "2026-09-03",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/clean-bar",
@@ -1150,7 +1527,15 @@
       "last_used_in": [],
       "added": "2026-09-03",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/dark-card",
@@ -1175,7 +1560,15 @@
       "last_used_in": [],
       "added": "2026-09-03",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/source-domain",
@@ -1204,7 +1597,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/metric-badge",
@@ -1227,7 +1628,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/note-pin",
@@ -1254,7 +1663,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/warning-strip",
@@ -1278,7 +1695,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/progress-step",
@@ -1300,7 +1725,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/tag-chips",
@@ -1322,7 +1755,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "lower-thirds/timestamp-marker",
@@ -1344,7 +1785,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "lower-thirds"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "frames-cards/article-card",
@@ -1370,7 +1819,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "frames-cards"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "frames-cards/arxiv-card",
@@ -1398,7 +1855,17 @@
       "frequency": "signature",
       "needs": [
         "quote"
-      ]
+      ],
+      "rarity": "signature",
+      "topics": [
+        "frames-cards"
+      ],
+      "requires": [
+        "quote"
+      ],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "frames-cards/patent-card",
@@ -1424,7 +1891,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "frames-cards"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "frames-cards/profile-card",
@@ -1449,7 +1924,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "frames-cards"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "frames-cards/product-card",
@@ -1474,7 +1957,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "frames-cards"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "frames-cards/chart-card",
@@ -1500,7 +1991,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "frames-cards"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "frames-cards/paper-reveal",
@@ -1528,6 +2027,16 @@
       "needs": [
         "quote"
       ],
+      "rarity": "signature",
+      "topics": [
+        "frames-cards"
+      ],
+      "requires": [
+        "quote"
+      ],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
     },
     {
@@ -1557,7 +2066,17 @@
       "frequency": "signature",
       "needs": [
         "quote"
-      ]
+      ],
+      "rarity": "signature",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [
+        "quote"
+      ],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "browser-ui/google-typing",
@@ -1583,7 +2102,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "browser-ui/chat-ai-typing",
@@ -1611,7 +2138,17 @@
       "frequency": "variant",
       "needs": [
         "question"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [
+        "question"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "browser-ui/notepad-typing",
@@ -1637,7 +2174,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "browser-ui/terminal-lines",
@@ -1663,7 +2208,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "browser-ui/phone-notification",
@@ -1688,7 +2241,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "browser-ui/chat-thread",
@@ -1714,6 +2275,16 @@
       "needs": [
         "question"
       ],
+      "rarity": "signature",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [
+        "question"
+      ],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
     {
@@ -1744,6 +2315,16 @@
       "needs": [
         "quote"
       ],
+      "rarity": "signature",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [
+        "quote"
+      ],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
     },
     {
@@ -1786,7 +2367,15 @@
       "last_used_in": [],
       "added": "2026-09-03",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "browser-ui"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/cut",
@@ -1808,7 +2397,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/whip-pan-l",
@@ -1837,7 +2434,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/whip-pan-r",
@@ -1866,7 +2471,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/zoom-punch-in",
@@ -1894,7 +2507,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/zoom-punch-out",
@@ -1922,7 +2543,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/mask-wipe-circle",
@@ -1950,7 +2579,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/mask-wipe-diagonal",
@@ -1978,7 +2615,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/light-sweep",
@@ -2003,7 +2648,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/glitch-short",
@@ -2031,7 +2684,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/paper-slide",
@@ -2059,7 +2720,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/blur-dip",
@@ -2087,7 +2756,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/white-flash",
@@ -2115,7 +2792,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/zoom-through",
@@ -2140,6 +2825,14 @@
       "added": "2026-09-02",
       "frequency": "rare",
       "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
     {
@@ -2165,7 +2858,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/glitch",
@@ -2191,7 +2892,18 @@
       "needs": [
         "danger",
         "negation"
-      ]
+      ],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [
+        "danger",
+        "negation"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/gravitational-lens",
@@ -2220,7 +2932,19 @@
         "discovery",
         "place",
         "superlative"
-      ]
+      ],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [
+        "discovery",
+        "place",
+        "superlative"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/light-leak",
@@ -2243,7 +2967,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/sdf-iris",
@@ -2266,7 +2998,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/thermal-distortion",
@@ -2291,7 +3031,17 @@
       "frequency": "rare",
       "needs": [
         "danger"
-      ]
+      ],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [
+        "danger"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/whip-pan",
@@ -2314,7 +3064,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/mk-clone-wall-transition",
@@ -2339,7 +3097,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-3d",
@@ -2362,7 +3128,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-blur",
@@ -2385,7 +3159,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-cover",
@@ -2408,7 +3190,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-destruction",
@@ -2434,7 +3224,18 @@
       "needs": [
         "danger",
         "negation"
-      ]
+      ],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [
+        "danger",
+        "negation"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-light",
@@ -2457,7 +3258,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-other",
@@ -2480,7 +3289,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/chromatic-radial-split",
@@ -2504,7 +3321,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/cross-warp-morph",
@@ -2528,7 +3353,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/domain-warp-dissolve",
@@ -2552,7 +3385,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/flash-through-white",
@@ -2576,7 +3417,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/ridged-burn",
@@ -2600,7 +3449,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/ripple-waves",
@@ -2624,7 +3481,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/swirl-vortex",
@@ -2648,7 +3513,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-dissolve",
@@ -2671,7 +3544,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-distortion",
@@ -2695,7 +3576,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-grid",
@@ -2719,7 +3608,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-mechanical",
@@ -2743,7 +3640,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-push",
@@ -2767,7 +3672,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-radial",
@@ -2791,7 +3704,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "transitions/transitions-scale",
@@ -2815,7 +3736,15 @@
       ],
       "added": "2026-09-03",
       "frequency": "rare",
-      "needs": []
+      "needs": [],
+      "rarity": "rare",
+      "topics": [
+        "transitions"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "avatar-entry/hero-zoom-in",
@@ -2844,7 +3773,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "avatar-entry"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "avatar-entry/slide-from-bottom",
@@ -2874,7 +3811,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "avatar-entry"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "avatar-entry/circle-mask-grow",
@@ -2903,7 +3848,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "avatar-entry"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "avatar-entry/split-slide-up",
@@ -2934,7 +3887,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "avatar-entry"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "avatar-entry/flash-cut-in",
@@ -2964,7 +3925,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "avatar-entry"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "avatar-entry/scale-pop",
@@ -2993,7 +3962,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "avatar-entry"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/zoom-in-center",
@@ -3025,7 +4002,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/zoom-in-subject",
@@ -3058,7 +4043,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/zoom-out-reveal",
@@ -3090,7 +4083,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/pan-left",
@@ -3126,7 +4127,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/pan-right",
@@ -3162,7 +4171,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/pan-up",
@@ -3198,7 +4215,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/pan-down",
@@ -3234,7 +4259,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/diag-drift",
@@ -3270,7 +4303,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/push-tilt",
@@ -3306,7 +4347,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "kenburns/micro-parallax",
@@ -3339,7 +4388,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "kenburns"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "parallax/text-behind-object",
@@ -3362,7 +4419,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "parallax"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "parallax/two-layer-drift",
@@ -3384,7 +4449,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "parallax"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "parallax/depth-push",
@@ -3407,7 +4480,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "parallax"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "parallax/foreground-sweep",
@@ -3430,7 +4511,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "parallax"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/bar-race-mini",
@@ -3454,7 +4543,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/line-rise",
@@ -3478,7 +4577,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/counter-roll",
@@ -3502,7 +4611,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/donut-fill",
@@ -3526,7 +4645,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/timeline-dots",
@@ -3550,7 +4679,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/compare-bars",
@@ -3576,7 +4715,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/stat-countup-card",
@@ -3604,6 +4753,16 @@
       "needs": [
         "number"
       ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
     {
@@ -3629,7 +4788,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/bar-chart-race",
@@ -3654,7 +4823,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/chart-story",
@@ -3681,7 +4860,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/conic-progress-ring",
@@ -3706,7 +4895,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/decline-chart",
@@ -3734,7 +4933,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/mk-line-graph",
@@ -3790,7 +4999,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/flowchart",
@@ -3820,7 +5039,18 @@
       "needs": [
         "number",
         "mechanism"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number",
+        "mechanism"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/oscilloscope-trace",
@@ -3843,7 +5073,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/weight-wave",
@@ -3866,7 +5106,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "data-viz/flowchart-vertical",
@@ -3902,7 +5152,18 @@
       "needs": [
         "number",
         "mechanism"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "data-viz"
+      ],
+      "requires": [
+        "number",
+        "mechanism"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "outro-cta/subscribe-pulse",
@@ -3931,7 +5192,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "outro-cta"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "outro-cta/question-card",
@@ -3953,7 +5222,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "outro-cta"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "outro-cta/loop-back",
@@ -3975,7 +5252,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "outro-cta"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "outro-cta/next-teaser",
@@ -3997,7 +5282,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "outro-cta"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "outro-cta/logo-stamp",
@@ -4019,7 +5312,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "outro-cta"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "outro-cta/logo-brand-close",
@@ -4049,7 +5350,15 @@
       ],
       "added": "2026-09-02",
       "frequency": "signature",
-      "needs": []
+      "needs": [],
+      "rarity": "signature",
+      "topics": [
+        "outro-cta"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 3,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/plate-behind-back",
@@ -4076,7 +5385,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/headline-over-head",
@@ -4103,7 +5420,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/headline-behind-head",
@@ -4130,7 +5455,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/icons-behind-head",
@@ -4156,7 +5489,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/split-panel-right",
@@ -4187,7 +5528,17 @@
       "frequency": "variant",
       "needs": [
         "comparison"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "comparison"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/knockout-negative",
@@ -4217,7 +5568,18 @@
       "needs": [
         "superlative",
         "negation"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "superlative",
+        "negation"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/text-column-left",
@@ -4244,7 +5606,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/bubble-card",
@@ -4271,7 +5641,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/brand-pill",
@@ -4296,7 +5674,17 @@
       "frequency": "variant",
       "needs": [
         "brand"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "brand"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/card-stack-top",
@@ -4323,7 +5711,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/phone-mock",
@@ -4349,7 +5745,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/type-slab",
@@ -4376,6 +5780,14 @@
       "added": "2026-09-02",
       "frequency": "variant",
       "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
     },
     {
@@ -4404,6 +5816,14 @@
       "added": "2026-09-02",
       "frequency": "variant",
       "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true,
       "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
     },
     {
@@ -4430,7 +5850,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/chat-typing",
@@ -4458,7 +5886,17 @@
       "frequency": "variant",
       "needs": [
         "question"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "question"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/chat-generate",
@@ -4485,7 +5923,15 @@
       "last_used_in": [],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/title-behind-head",
@@ -4510,7 +5956,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/exhibit-card",
@@ -4538,7 +5992,17 @@
       "frequency": "variant",
       "needs": [
         "device"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "device"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/statement-slam",
@@ -4566,7 +6030,19 @@
         "negation",
         "superlative",
         "discovery"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "negation",
+        "superlative",
+        "discovery"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/phrase-log",
@@ -4596,7 +6072,17 @@
       "frequency": "variant",
       "needs": [
         "list"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "list"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/oversize-word",
@@ -4622,7 +6108,17 @@
       "frequency": "variant",
       "needs": [
         "superlative"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "superlative"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/figure-swap",
@@ -4650,7 +6146,17 @@
       "frequency": "variant",
       "needs": [
         "number"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "number"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/verdict-card",
@@ -4678,7 +6184,19 @@
         "negation",
         "superlative",
         "discovery"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "negation",
+        "superlative",
+        "discovery"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/source-paper",
@@ -4702,7 +6220,17 @@
       "frequency": "variant",
       "needs": [
         "quote"
-      ]
+      ],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [
+        "quote"
+      ],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     },
     {
       "id": "hero-devices/bubble-typed",
@@ -4728,7 +6256,15 @@
       ],
       "added": "2026-08-18",
       "frequency": "variant",
-      "needs": []
+      "needs": [],
+      "rarity": "variant",
+      "topics": [
+        "hero-devices"
+      ],
+      "requires": [],
+      "forbids": [],
+      "cooldown_videos": 1,
+      "brand_ok": true
     }
   ]
 }

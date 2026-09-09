@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -612,7 +613,24 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
 
 
 def main() -> int:
-    from src.lib.templates import frequency_for
+    from src.lib.templates import frequency_for, normalize_rarity, ROTATION_WINDOW
+
+    brand_hex: set[str] = set()
+    brandbook = ROOT / "config" / "brandbook.json"
+    if brandbook.exists():
+        colors = json.loads(brandbook.read_text(encoding="utf-8")).get("colors", {})
+        for value in colors.values():
+            if isinstance(value, str) and value.startswith("#"):
+                brand_hex.add(value.lower())
+                if len(value) == 7:
+                    brand_hex.add(value.lower())
+
+    def _params_brand_ok(params: dict) -> bool:
+        blob = json.dumps(params, ensure_ascii=False)
+        found = re.findall(r"#[0-9A-Fa-f]{3,8}", blob)
+        if not found:
+            return True
+        return all(h.lower() in brand_hex for h in found)
 
     manifest: dict = {
         "_comment": ("Каталог шаблонов §15. Генерируется tools/gen_templates.py — "
@@ -639,13 +657,23 @@ def main() -> int:
                 "last_used_in": entry.get("last_used_in", []),
                 "added": entry.get("added", "2026-08-18"),
             }
-            for key in ("status", "retired_reason", "frequency"):
+            for key in ("status", "retired_reason", "frequency", "rarity"):
                 if entry.get(key):
                     keep[key] = entry[key]
             if entry.get("duration_range"):
                 keep["duration_range"] = entry["duration_range"]
             if "needs" in entry:
                 keep["needs"] = entry["needs"]
+            if "requires" in entry:
+                keep["requires"] = entry["requires"]
+            if "topics" in entry:
+                keep["topics"] = entry["topics"]
+            if "forbids" in entry:
+                keep["forbids"] = entry["forbids"]
+            if "cooldown_videos" in entry:
+                keep["cooldown_videos"] = entry["cooldown_videos"]
+            if "brand_ok" in entry:
+                keep["brand_ok"] = entry["brand_ok"]
             preserved[entry["id"]] = keep
 
     total = 0
@@ -673,6 +701,26 @@ def main() -> int:
             }
             if "needs" in prev:
                 entry["needs"] = prev["needs"]
+            rarity = normalize_rarity(
+                prev.get("rarity") or entry["frequency"])
+            entry["frequency"] = rarity
+            entry["rarity"] = rarity
+            entry["topics"] = list(prev["topics"]) if "topics" in prev else [category]
+            requires = prev["requires"] if "requires" in prev else list(
+                prev.get("needs") or entry.get("needs") or [])
+            entry["requires"] = requires
+            if "needs" not in entry:
+                entry["needs"] = list(requires)
+            entry["forbids"] = list(prev["forbids"]) if "forbids" in prev else []
+            if "cooldown_videos" in prev:
+                entry["cooldown_videos"] = int(prev["cooldown_videos"])
+            else:
+                entry["cooldown_videos"] = (
+                    ROTATION_WINDOW if rarity == "signature" else 1)
+            if "brand_ok" in prev:
+                entry["brand_ok"] = bool(prev["brand_ok"])
+            else:
+                entry["brand_ok"] = _params_brand_ok(params)
             if prev.get("status"):
                 entry["status"] = prev["status"]
             if prev.get("retired_reason"):
