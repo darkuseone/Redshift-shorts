@@ -135,8 +135,10 @@ class TestThePlanSaysWhyEachDeviceIsThere:
         slot = {"index": 3, "role": "develop", "duration": 5.0, "start": 0.0, "end": 5.0}
         block = {"id": "b4", "text": "Что будет, если бурить дальше?"}
         reasons = set()
+        # Chat-окно на аватаре закрывает лицо в нижней трети — has_alpha=False:
+        # проверяем, что «задан вопрос» всё ещё доходит до why у приёма.
         for seed in range(24):
-            entry = _hero_device(cat, slot=slot, content=content, has_alpha=True,
+            entry = _hero_device(cat, slot=slot, content=content, has_alpha=False,
                                  plate_src=None, recent_videos=[], exclude=[],
                                  seed=seed, block=block)
             if entry:

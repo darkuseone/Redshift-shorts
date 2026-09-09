@@ -310,13 +310,15 @@ def test_phone_mock_skipped_when_face_is_in_the_lower_third():
     plate = {"file": "/w/shots/a.mp4", "duration_sec": 3.0}
     seen = set()
     banned = {"hero-phone-mock", "hero-chat-generate", "hero-chat-typing"}
-    for seed in range(40):
-        entry = _hero_device(
-            cat, slot=slot, content=content, has_alpha=True,
-            plate_src=plate, recent_videos=[], exclude=[], seed=seed)
-        if entry:
-            seen.add(entry["renderer"])
-            assert entry["renderer"] not in banned, entry
+    for head_box in ((390, 1080, 690, 1480), (438, 684, 606, 912), None):
+        content["head_box"] = head_box
+        for seed in range(24):
+            entry = _hero_device(
+                cat, slot=slot, content=content, has_alpha=True,
+                plate_src=plate, recent_videos=[], exclude=[], seed=seed)
+            if entry:
+                seen.add(entry["renderer"])
+                assert entry["renderer"] not in banned, (head_box, entry)
     assert seen
 
 

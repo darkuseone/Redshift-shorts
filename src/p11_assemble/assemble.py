@@ -1983,10 +1983,11 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
             blocked.append(template.id)
             continue
         if has_alpha and template.renderer in _FACE_COVERING_UI:
-            box = content.get("head_box")
-            if box and len(box) >= 4 and int(box[1]) >= 900:
-                blocked.append(template.id)
-                continue
+            # Compose always parks the face in the lower band (1080–1480).
+            # Raw HeyGen bbox is mid-frame (~684), so a y>=900 gate let
+            # ChatGPT-карточка закрыть уже сдвинутый рот (0042 t04).
+            blocked.append(template.id)
+            continue
         # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
         # вот кем она снята. Под сгенерированным пятном она подписывала
         # «REDSHIFT / GENERATED» и тем самым объявляла зрителю ровно то, чего
