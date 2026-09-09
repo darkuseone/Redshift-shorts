@@ -5,7 +5,7 @@
   "title": "Два значения через VS",
   "duration_range": [
     1.2,
-    2.0
+    3.0
   ],
   "params": {
     "split": true
@@ -18,5 +18,18 @@
     "redshift_0044"
   ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "comparison"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [
+    "comparison"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

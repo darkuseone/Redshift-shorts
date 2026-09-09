@@ -20,5 +20,14 @@
   "renderer": "lt_clean_bar",
   "last_used_in": [],
   "added": "2026-09-03",
-  "frequency": "signature"
+  "frequency": "signature",
+  "needs": [],
+  "rarity": "signature",
+  "topics": [
+    "lower-thirds"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 3,
+  "brand_ok": true
 }

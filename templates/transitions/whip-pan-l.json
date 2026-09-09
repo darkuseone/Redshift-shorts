@@ -24,5 +24,14 @@
     "redshift_0047"
   ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [],
+  "rarity": "variant",
+  "topics": [
+    "transitions"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

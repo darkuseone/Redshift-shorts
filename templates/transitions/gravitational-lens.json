@@ -20,5 +20,22 @@
     "redshift_0042"
   ],
   "added": "2026-09-03",
-  "frequency": "rare"
+  "frequency": "rare",
+  "needs": [
+    "discovery",
+    "place",
+    "superlative"
+  ],
+  "rarity": "rare",
+  "topics": [
+    "transitions"
+  ],
+  "requires": [
+    "discovery",
+    "place",
+    "superlative"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

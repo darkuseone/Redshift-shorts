@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -56,7 +57,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("hook-avatar-direct", "Аватар говорит в камеру сразу", [1.5, 3.0],
          {"entry": "hero-zoom-in"}, ["hook", "avatar"], "avatar"),
     ]),
-    "text-fullscreen": (34, [
+    "text-fullscreen": (31, [
         ("impact-01", "Гигантская цифра", [0.8, 2.0],
          {"size_px": [260, 420], "uppercase": True, "slam": True},
          ["number", "impact"], "fullscreen_text"),
@@ -181,25 +182,11 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"dark_plus": True},
          ["code", "developer", "showcase", "vscode"],
          "dark_plus"),
-        ("beat-freeze-cut",
-         "Beat freeze cut: рамп, фриз DROP и hard-cut — beat-freeze-cut",
-         [2.0, 6.5],
-         {"beat_freeze_cut": True},
-         ["text", "kinetic", "beat", "freeze", "music"],
-         "beat_freeze_cut"),
         ("number-slam-card", "Цифра-удар на карточке — K3 promo", [0.8, 2.0],
          {"slam": True, "scale_from": 1.35, "uppercase": True},
          ["number", "impact", "card"], "number_slam", _EX_K3),
-        ("split-flap-board",
-         "Табло аэропорта (split-flap) перелистывает буквы — split-flap-board",
-         [2.0, 6.0], {"word": "FLIGHT"},
-         ["text", "board", "airport", "flip"], "split_flap_board"),
-        ("news-ticker",
-         "Бегущая строка новостей — news-ticker",
-         [2.0, 10.0], {"text": "BREAKING NEWS: SOMETHING HAPPENED"},
-         ["text", "news", "ticker", "scroll"], "news_ticker"),
     ]),
-    "lower-thirds": (14, [
+    "lower-thirds": (11, [
         ("name-title", "Имя и должность", [1.5, 4.0],
          {"position": "bottom", "direction": "left"}, ["person"], "plaque"),
         ("accent-underline", "Имя и роль с акцентной чертой", [1.5, 4.8],
@@ -225,32 +212,6 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"position": "bottom", "chips": True}, ["tags"], "plaque"),
         ("timestamp-marker", "Отметка времени", [1.5, 2.5],
          {"position": "top", "mono": True}, ["time"], "plaque"),
-        ("instagram-follow",
-         "Instagram: плашка профиля с кнопкой Follow/Following — instagram-follow",
-         [2.5, 6.0], {
-             "displayName": "HeyGen",
-             "handle": "@heygen_official",
-             "followers": "47.5K followers",
-             "buttonText": "Follow",
-             "followingText": "Following",
-         }, ["social", "instagram", "follow", "profile", "lower-third"], "instagram_follow"),
-        ("tiktok-follow",
-         "TikTok: плашка профиля с кнопкой Follow/Following — tiktok-follow",
-         [2.5, 6.0], {
-             "displayName": "HeyGen",
-             "handle": "@heygen.com",
-             "followers": "1,999 followers",
-             "buttonText": "Follow",
-             "followingText": "Following",
-         }, ["social", "tiktok", "follow", "profile", "lower-third"], "tiktok_follow"),
-        ("yt-lower-third",
-         "YouTube: плашка профиля с кнопкой Subscribe/Subscribed — yt-lower-third",
-         [2.5, 6.0], {
-             "channelName": "HeyGen",
-             "subscriberCount": "82.2K subscribers",
-             "buttonText": "Subscribe",
-             "subscribedText": "Subscribed",
-         }, ["social", "youtube", "subscribe", "channel", "lower-third"], "yt_lower_third"),
     ]),
     "frames-cards": (7, [
         ("article-card", "Карточка статьи", [1.5, 4.0], {"template": "browser"},
@@ -269,7 +230,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
          {"template": "arxiv_card"}, ["source", "science", "reveal"],
          "paper_reveal", _EX_PR),
     ]),
-    "browser-ui": (21, [
+    "browser-ui": (9, [
         ("browser-scroll", "Скролл статьи с подсветкой строки", [2.0, 4.5],
          {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source"], "article_scroll"),
@@ -288,100 +249,6 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("article-highlight", "Статья в браузере со скроллом и вырезом цитаты",
          [2.0, 4.5], {"template": "browser", "scroll": True, "highlight": True},
          ["ui", "source", "highlight"], "article_scroll", _EX_WEBSITE),
-        ("ai-chat-reveal",
-         "iPhone-чат: набор, стрим ответа и end card — ai-chat-reveal",
-         [2.0, 19.4], {"template": "chat_ai", "typing": True, "stream": True},
-         ["ui", "ai", "chat", "reveal"], "ai_chat_reveal"),
-        ("app-showcase",
-         "Три телефона веером: дашборд, кольцо, график — app-showcase",
-         [2.0, 5.5], {"template": "phone", "showcase": True},
-         ["ui", "app", "showcase", "device"], "app_showcase"),
-        ("vpn-youtube-spot",
-         "App Store: скролл, установка и открытие приложения — vpn-youtube-spot",
-         [2.0, 8.0], {"template": "phone"},
-         ["ui", "app", "store", "vpn"], "vpn_youtube_spot"),
-        ("blue-sweater-intro-video",
-         "AI генерирует видео: ввод промпта, загрузка, результат — blue-sweater-intro-video",
-         [4.0, 12.0], {"template": "browser"},
-         ["ui", "ai", "video", "generate"], "blue_sweater"),
-        ("chatgpt-exchange",
-         "ChatGPT: ввод промпта, поток ответа и сравнительная таблица — chatgpt-exchange",
-         [3.0, 15.0], {
-             "prompt": "Hey what's the best tool for ai avatars",
-             "intro1": (
-                 "It really depends on what you're trying to do, because “AI avatars” "
-                 "has split into a few different categories."
-             ),
-             "intro2": "For **most creators and marketers**, here's how I'd rank them today:",
-             "tableHeadUse": "Use case",
-             "tableHeadTool": "Best tool",
-             "tableHeadWhy": "Why",
-             "row1Use": "Overall realism",
-             "row1Tool": "HeyGen",
-             "row1Why": (
-                 "Most natural facial expressions, lip sync, gestures, voice cloning "
-                 "and localization. Benchmark for talking head videos."
-             ),
-             "row1Chip": "Official A.I Ranking",
-             "row2Use": "Enterprise/training",
-             "row2Tool": "Synthesia",
-             "row2Why": (
-                 "Better collaboration, SCORM, compliance, team workflows; "
-                 "less creator-focused."
-             ),
-             "row2Chip": "Official A.I Ranking",
-             "row3Use": "Mobile UGC",
-             "row3Tool": "Captions",
-             "row3Why": (
-                 "Extremely fast mobile workflow and social editing. "
-                 "Great for Reels creators."
-             ),
-             "row3Chip": "Creator Stack",
-             "row4Use": "Real-time conversations",
-             "row4Tool": "Tavus",
-             "row4Why": "Interactive avatars that can hold live conversations.",
-             "row4Chip": "Creator Stack",
-         }, ["ui", "ai", "chat", "table"], "chatgpt_exchange"),
-        ("claude-exchange",
-         "Claude: ввод промпта, поиск в веб, стрим ответа и цитаты — claude-exchange",
-         [3.0, 21.4], {
-             "prompt": "What's the best tool for ai avatars?",
-             "thinking": "Weighing accuracy against current market…",
-             "lead": "I'll search for the current state of this space since AI avatar tools move fast.",
-             "search": "best AI avatar video generator 2026",
-             "answer1": "It depends on what you're making, but the field has consolidated fast and one platform now covers most of it.",
-             "answer2": (
-                 "**HeyGen** is where most teams land. Independent testing, not just vendor blogs, "
-                 "puts **Avatar IV** highest for talking-head realism, with facial micro-expressions "
-                 "and gesture control that hold up at a full-screen crop {HeyGen}."
-             ),
-             "answer3": "By use case, the pieces shake out roughly like this:",
-             "answer4": "**Marketing / hyper-realistic talking heads** → Avatar IV",
-             "answer5": "**Enterprise training** → Video Translate for every locale",
-             "answer6": "**UGC-style performance ads** → Instant Avatar from one selfie, then batch the variants",
-             "answer7": "**Real-time conversational / interactive** → Interactive Avatar",
-             "answer8": "**Custom digital twin from a selfie** → Instant Avatar in about five minutes",
-         }, ["ui", "ai", "chat", "claude"], "claude_exchange"),
-        ("message-thread-reveal",
-         "iMessage-диалог: ветка сообщений, карточка ссылки и финальная карточка — message-thread-reveal",
-         [3.0, 25.8], {
-             "contactName": "Rachel",
-             "questionMessage": "what r u using for the launch video??",
-             "teaserMessage": "wait look 👀",
-             "cardTitle": "HyperFrames | Write HTML, render pixel-perfect video",
-             "cardDomain": "hyperframes.heygen.com",
-             "reactionMessage": "OMG IT'S HTML",
-             "reactionEmoji": "🤯🤯🤯",
-             "benefitMessage": "renders in 4K. no editor",
-             "discoveryMessage": "where did u find this",
-             "sourceMessage": "on heygen",
-             "workflowMessage": "u just write plain html tags",
-             "ownershipMessage": "the code is yours forever",
-             "installMessage": "installing rn",
-             "thanksMessage": "ty bestie 💚",
-             "ecProof": "12,000+ creators",
-             "ecCta": "Start rendering free",
-         }, ["ui", "chat", "imessage", "mobile"], "message_thread_reveal"),
         ("notes-reveal",
          "Apple Notes: печать строк заметки, скролл и карточка с маркером — notes-reveal",
          [3.0, 24.9], {
@@ -405,59 +272,6 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              "check3Value": "TODAY",
              "brandDomain": "hyperframes.heygen.com",
          }, ["ui", "notes", "typing", "paper"], "notes_reveal"),
-        ("notification-cascade",
-         "Каскад входящих push-уведомлений и финальная карточка — notification-cascade",
-         [3.0, 16.0], {
-             "notifTitle": "New render",
-             "message1": "Launch video is ready.",
-             "message2": "All checks passed.",
-             "message3": "4K render done in 92s.",
-             "message4": "Published to the catalog.",
-             "appName": "HyperFrames",
-             "headlineTop": "SHIP VIDEO",
-             "headlineAccent": "FROM HTML",
-             "footerText": "hyperframes.heygen.com",
-         }, ["ui", "notifications", "mobile", "ios"], "notification_cascade"),
-        ("x-post",
-         "X (Twitter): карточка твита с реакцией лайка и счетчиками — x-post",
-         [2.5, 6.5], {
-             "displayName": "Hyperframes",
-             "handle": "@hyperframes",
-             "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
-             "timestamp": "1:10 PM · Apr 7, 2026",
-             "replies": "34",
-             "reposts": "2.3K",
-             "likes": "10.9K",
-             "likesActive": "11.0K",
-             "views": "150K",
-         }, ["ui", "social", "x", "twitter", "post"], "x_post"),
-        ("reddit-post",
-         "Reddit: карточка поста с реакцией апвоута и счетчиками — reddit-post",
-         [2.5, 6.5], {
-             "subreddit": "r/hyperframes",
-             "author": "u/developer · 3h",
-             "title": "Writing HTML to render video changed everything for our pipeline",
-             "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds. The whole workflow runs headlessly.",
-             "votes": "4.2k",
-             "votesActive": "4.3k",
-             "comments": "328",
-         }, ["ui", "social", "reddit", "post", "community"], "reddit_post"),
-        ("spotify-card",
-         "Spotify: карточка трека с обложкой и брендом — spotify-card",
-         [2.5, 6.5], {
-             "trackName": "HyperFrames",
-             "artistName": "HeyGen",
-             "brandText": "Spotify",
-         }, ["ui", "audio", "spotify", "music", "card"], "spotify_card"),
-        ("macos-notification",
-         "macOS: всплывающее системное уведомление в углу экрана — macos-notification",
-         [2.0, 5.5], {
-             "appName": "HyperFrames",
-             "time": "now",
-             "title": "Build complete",
-             "body": "Video rendered in 1.4s with zero frame drops.",
-             "iconText": "HF",
-         }, ["ui", "desktop", "macos", "notification", "system"], "macos_notification"),
     ]),
     "transitions": (41, [
         ("cut", "Прямая склейка — база ≥70 %", [0.0, 0.0], {}, ["cut", "base"], "cut"),
@@ -644,7 +458,7 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("foreground-sweep", "Передний план проходит по кадру", [1.0, 2.5],
          {"layers": 2, "shift_pct": 0.05}, ["parallax", "sweep"], "parallax"),
     ]),
-    "data-viz": (28, [
+    "data-viz": (17, [
         ("bar-race-mini", "Мини-гонка столбиков", [2.0, 4.0], {"bars": 4},
          ["data", "bars"], "dataviz"),
         ("line-rise", "Линия идёт вверх", [1.5, 3.5], {"points": 8},
@@ -684,69 +498,6 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
              ],
              "xLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
          }, ["data", "line", "series"], "dataviz"),
-        ("spain-map",
-         "Хороплет Испании: регионы вспыхивают, MAD/PVA/NAV подсветка — spain-map",
-         [2.0, 12.0], {
-             "title": "PIB per cápita por Comunidad Autónoma",
-             "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
-             "source": "Fuente: Instituto Nacional de Estadística",
-             "highlight": ["MAD", "PVA", "NAV"],
-             "regions": [
-                 {"abbr": "AND", "name": "Andalucía", "value": 20200},
-                 {"abbr": "ARA", "name": "Aragón", "value": 30500},
-                 {"abbr": "AST", "name": "Asturias", "value": 24100},
-                 {"abbr": "BAL", "name": "Illes Balears", "value": 28900},
-                 {"abbr": "CAN", "name": "Canarias", "value": 21500},
-                 {"abbr": "CNT", "name": "Cantabria", "value": 25200},
-                 {"abbr": "CYL", "name": "Castilla y León", "value": 25800},
-                 {"abbr": "CLM", "name": "Castilla-La Mancha", "value": 21400},
-                 {"abbr": "CAT", "name": "Catalunya", "value": 33700},
-                 {"abbr": "VAL", "name": "Comunitat Valenciana", "value": 23800},
-                 {"abbr": "EXT", "name": "Extremadura", "value": 19200},
-                 {"abbr": "GAL", "name": "Galicia", "value": 24500},
-                 {"abbr": "MAD", "name": "Comunidad de Madrid", "value": 38100},
-                 {"abbr": "MUR", "name": "Región de Murcia", "value": 22100},
-                 {"abbr": "NAV", "name": "Navarra", "value": 35200},
-                 {"abbr": "PVA", "name": "País Vasco", "value": 36800},
-                 {"abbr": "RIO", "name": "La Rioja", "value": 29800},
-                 {"abbr": "CEU", "name": "Ceuta", "value": 21000},
-                 {"abbr": "MEL", "name": "Melilla", "value": 19500},
-             ],
-         }, ["data", "map", "spain"], "dataviz"),
-        ("star-rating-fill",
-         "Золотые звёзды заливаются слева направо, число считает в такт — star-rating-fill",
-         [1.2, 4.0], {"rating": 4.8, "starCount": 5, "showValue": True},
-         ["data", "stars", "rating"], "dataviz"),
-        ("us-map",
-         "Хороплет США: штаты вспыхивают, CA/NY/TX/FL/NJ подсветка — us-map",
-         [2.0, 12.0], {
-             "title": "Population Density by State",
-             "subtitle": "Residents per square mile, 2024 Census estimates",
-             "source": "Source: U.S. Census Bureau",
-             "highlight": ["CA", "NY", "TX", "FL", "NJ"],
-         }, ["data", "map", "usa"], "dataviz"),
-        ("us-map-flow",
-         "Дуги коридоров между городами, точки бегут по дуге — us-map-flow",
-         [2.0, 12.0], {
-             "title": "Interstate Flow Connections",
-             "subtitle": "Relative volume of major city-to-city corridors",
-             "source": "Source: Illustrative data",
-         }, ["data", "map", "flow"], "dataviz"),
-        ("us-map-hex",
-         "Hex grid map США: гексагоны от центра, top-5 пульс — us-map-hex",
-         [2.0, 10.0], {
-             "title": "Median Household Income by State",
-             "subtitle": "American Community Survey, 2024",
-             "source": "Source: U.S. Census Bureau, American Community Survey 2024",
-             "highlight": ["MD", "NJ", "MA", "CT", "HI"],
-         }, ["data", "map", "hex"], "dataviz"),
-        ("us-map-bubble",
-         "Карта США с бабблами по городам — us-map-bubble",
-         [2.0, 12.0], {
-             "title": "Major Tech Hubs",
-             "subtitle": "Tech employment by city, 2024",
-             "source": "Source: Tech.co",
-         }, ["data", "map", "bubble"], "dataviz"),
         ("flowchart",
          "Блок-схема с узлами и связями — flowchart",
          [2.0, 12.0], {
@@ -758,36 +509,6 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
         ("weight-wave",
          "Волна весов (weight-wave) — weight-wave",
          [2.0, 10.0], {}, ["data", "wave", "weight"], "dataviz"),
-        ("world-map",
-         "Хороплет мира: страны от центра, CH/NO/US/AU/SE пульс — world-map",
-         [2.0, 14.0], {
-             "title": "Global GDP per Capita",
-             "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
-             "source": "Source: International Monetary Fund",
-             "highlight": ["756", "578", "840", "036", "752"],
-         }, ["data", "map", "world"], "dataviz"),
-        ("apple-money-count",
-         "Счёт $0→$10 000, затем веер купюр и монет — apple-money-count",
-         [2.0, 5.0], {"end_value": 10000, "prefix": "$"},
-         ["data", "number", "money", "count"], "dataviz"),
-        ("north-korea-locked-down",
-         "Наезд на КНДР, красный scribble и LOCKED DOWN — north-korea-locked-down",
-         [2.0, 7.0], {"label": "LOCKED DOWN"},
-         ["data", "map", "korea", "lock"], "dataviz"),
-        ("nyc-paris-flight",
-         "Самолёт Нью-Йорк→Париж, doodle посадки и ARRIVED — nyc-paris-flight",
-         [2.0, 6.0], {
-             "origin": "New York", "dest": "Paris",
-             "origin_code": "JFK / NYC", "dest_code": "CDG / FR",
-             "km": "5,837",
-         }, ["data", "map", "flight", "travel"], "dataviz"),
-        ("mk-progress-stat",
-         "Крупная цифра считает вверх, полоса заполняется scaleX — mk-progress-stat",
-         [2.0, 7.0], {
-             "value": 22, "max": 30, "suffix": "",
-             "label": "Goals reached",
-             "caption": "Great job, we are getting closer!",
-         }, ["data", "number", "progress"], "dataviz"),
         ("flowchart-vertical",
          "Вертикальная блок-схема с узлами, связями и выбором — flowchart-vertical",
          [2.0, 12.0], {
@@ -892,7 +613,24 @@ CATALOG: dict[str, tuple[int, list[tuple]]] = {
 
 
 def main() -> int:
-    from src.lib.templates import frequency_for
+    from src.lib.templates import frequency_for, normalize_rarity, ROTATION_WINDOW
+
+    brand_hex: set[str] = set()
+    brandbook = ROOT / "config" / "brandbook.json"
+    if brandbook.exists():
+        colors = json.loads(brandbook.read_text(encoding="utf-8")).get("colors", {})
+        for value in colors.values():
+            if isinstance(value, str) and value.startswith("#"):
+                brand_hex.add(value.lower())
+                if len(value) == 7:
+                    brand_hex.add(value.lower())
+
+    def _params_brand_ok(params: dict) -> bool:
+        blob = json.dumps(params, ensure_ascii=False)
+        found = re.findall(r"#[0-9A-Fa-f]{3,8}", blob)
+        if not found:
+            return True
+        return all(h.lower() in brand_hex for h in found)
 
     manifest: dict = {
         "_comment": ("Каталог шаблонов §15. Генерируется tools/gen_templates.py — "
@@ -908,8 +646,9 @@ def main() -> int:
         "templates": [],
     }
 
-    # last_used_in / status / frequency live on the disk manifest. Rewriting
-    # from the catalog tuples would retire nobody and drop rotation history.
+    # last_used_in / status / frequency / duration_range live on the disk
+    # manifest. Rewriting duration from catalog tuples would shrink slots that
+    # P11 already retuned (MUST-013 must not collapse remaining templates).
     preserved: dict[str, dict] = {}
     existing = TEMPLATES / "manifest.json"
     if existing.exists():
@@ -918,9 +657,23 @@ def main() -> int:
                 "last_used_in": entry.get("last_used_in", []),
                 "added": entry.get("added", "2026-08-18"),
             }
-            for key in ("status", "retired_reason", "frequency"):
+            for key in ("status", "retired_reason", "frequency", "rarity"):
                 if entry.get(key):
                     keep[key] = entry[key]
+            if entry.get("duration_range"):
+                keep["duration_range"] = entry["duration_range"]
+            if "needs" in entry:
+                keep["needs"] = entry["needs"]
+            if "requires" in entry:
+                keep["requires"] = entry["requires"]
+            if "topics" in entry:
+                keep["topics"] = entry["topics"]
+            if "forbids" in entry:
+                keep["forbids"] = entry["forbids"]
+            if "cooldown_videos" in entry:
+                keep["cooldown_videos"] = entry["cooldown_videos"]
+            if "brand_ok" in entry:
+                keep["brand_ok"] = entry["brand_ok"]
             preserved[entry["id"]] = keep
 
     total = 0
@@ -937,7 +690,7 @@ def main() -> int:
                 "name": tid,
                 "category": category,
                 "title": title,
-                "duration_range": duration,
+                "duration_range": prev.get("duration_range") or duration,
                 "params": params,
                 "tags": tags,
                 "renderer": renderer,
@@ -946,6 +699,28 @@ def main() -> int:
                 "frequency": prev.get("frequency") or frequency_for(
                     tid_full, category, renderer),
             }
+            if "needs" in prev:
+                entry["needs"] = prev["needs"]
+            rarity = normalize_rarity(
+                prev.get("rarity") or entry["frequency"])
+            entry["frequency"] = rarity
+            entry["rarity"] = rarity
+            entry["topics"] = list(prev["topics"]) if "topics" in prev else [category]
+            requires = prev["requires"] if "requires" in prev else list(
+                prev.get("needs") or entry.get("needs") or [])
+            entry["requires"] = requires
+            if "needs" not in entry:
+                entry["needs"] = list(requires)
+            entry["forbids"] = list(prev["forbids"]) if "forbids" in prev else []
+            if "cooldown_videos" in prev:
+                entry["cooldown_videos"] = int(prev["cooldown_videos"])
+            else:
+                entry["cooldown_videos"] = (
+                    ROTATION_WINDOW if rarity == "signature" else 1)
+            if "brand_ok" in prev:
+                entry["brand_ok"] = bool(prev["brand_ok"])
+            else:
+                entry["brand_ok"] = _params_brand_ok(params)
             if prev.get("status"):
                 entry["status"] = prev["status"]
             if prev.get("retired_reason"):

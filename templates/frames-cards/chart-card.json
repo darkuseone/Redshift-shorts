@@ -21,5 +21,14 @@
     "redshift_0044"
   ],
   "added": "2026-08-18",
-  "frequency": "signature"
+  "frequency": "signature",
+  "needs": [],
+  "rarity": "signature",
+  "topics": [
+    "frames-cards"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 3,
+  "brand_ok": true
 }

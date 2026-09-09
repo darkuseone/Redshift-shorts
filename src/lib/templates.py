@@ -27,6 +27,7 @@ _log = get_logger("templates")
 ROTATION_WINDOW = 3          # §15.12.1
 # Lower rank tuple value is preferred. Empty frequency sits with variant.
 FREQUENCY_WEIGHT = {"signature": 0, "variant": 1, "rare": 2}
+ALLOWED_RARITY = frozenset(FREQUENCY_WEIGHT)
 
 # Доли уровней на ролик (§8.5). Нижняя граница signature — это узнаваемость
 # канала, верхняя — предел, за которым узнаваемость становится однообразием.
@@ -40,12 +41,10 @@ FREQUENCY_SHARE = {
 class FrequencyBudget:
     """Сколько приёмов каждого уровня ролик уже выдал.
 
-    `frequency` был жёстким ключом сортировки: `signature` побеждал `variant`
-    всегда и на всех кадрах, поэтому доля узнаваемых приёмов упиралась в
-    единицу, а разнообразие держалось только на потолке повторов одного id.
-    Уровень — это доля, а не приоритет: пока signature ниже верхней границы,
-    он выигрывает как раньше; как только дошёл до неё — временно уходит из
-    разрешённого набора, и picker честно берёт variant.
+    `frequency` / `rarity` — это доля на ролик, не ключ сортировки. Потолок
+    доли (`saturated`) в TemplatePicker — **жёсткий** вырез из allow, а не
+    advisory-штраф: уровень, добравший верх, не выбирается, пока в наборе
+    остаётся другой.
     """
 
     __slots__ = ("counts",)
@@ -133,6 +132,27 @@ def frequency_for(template_id: str, category: str, renderer: str) -> str:
     return "variant"
 
 
+def normalize_rarity(value: str | None) -> str:
+    rarity = (value or "variant").lower()
+    return rarity if rarity in ALLOWED_RARITY else "variant"
+
+
+def cooldown_of(template: "Template") -> int:
+    """Сколько последних роликов шаблон не должен повторяться.
+
+    Явное ``cooldown_videos`` побеждает. Если поле не задано: signature —
+    ``ROTATION_WINDOW`` (3), остальные — 1. 0 отключает паузу.
+    """
+    rarity = normalize_rarity(template.rarity or template.frequency)
+    if template.cooldown_videos is None:
+        return ROTATION_WINDOW if rarity == "signature" else 1
+    return max(0, int(template.cooldown_videos))
+
+
+def _requirements(template: "Template") -> list[str]:
+    return list(template.requires or template.needs or ())
+
+
 @dataclass
 class Template:
     id: str
@@ -154,6 +174,16 @@ class Template:
     retired_reason: str = ""
     # signature | variant | rare — weight among active. Empty = variant.
     frequency: str = ""
+    # MUST-012 taxonomy. ``rarity`` дублирует ``frequency`` (канон ТЗ);
+    # пустые списки — валидная таксономия, не «поля нет».
+    rarity: str = ""
+    topics: list[str] = field(default_factory=list)
+    requires: list[str] = field(default_factory=list)
+    forbids: list[str] = field(default_factory=list)
+    cooldown_videos: int | None = None
+    # Legacy JSON без поля считается уже проверенным (golden). Генератор
+    # пишет явное значение после проверки hue в params.
+    brand_ok: bool = True
 
     def fits(self, duration: float) -> bool:
         lo, hi = self.duration_range
@@ -181,6 +211,13 @@ class Template:
             data["retired_reason"] = self.retired_reason
         if self.frequency:
             data["frequency"] = self.frequency
+        rarity = normalize_rarity(self.rarity or self.frequency)
+        data["rarity"] = rarity
+        data["topics"] = list(self.topics)
+        data["requires"] = list(self.requires or self.needs)
+        data["forbids"] = list(self.forbids)
+        data["cooldown_videos"] = cooldown_of(self)
+        data["brand_ok"] = bool(self.brand_ok)
         return data
 
 
@@ -298,8 +335,9 @@ class TemplateCatalog:
                 elif allow_set is not None:
                     return []
             if use_traits and block_traits is not None:
-                meaningful = [t for t in candidates if satisfies(t.needs, block_traits)]
-                soft = [t for t in candidates if not t.needs]
+                meaningful = [t for t in candidates
+                              if satisfies(_requirements(t), block_traits)]
+                soft = [t for t in candidates if not _requirements(t)]
                 if meaningful:
                     candidates = meaningful
                 elif soft:
@@ -351,15 +389,41 @@ class TemplateCatalog:
         self._last_escape_level = escape_level  # type: ignore[attr-defined]
         self._last_allow_size = len(allow_set) if allow_set is not None else 0  # type: ignore[attr-defined]
 
+        branded = [t for t in candidates if t.brand_ok]
+        if branded:
+            candidates = branded
+        else:
+            candidates = []
+
         recent = set(recent_videos)
+        if candidates and recent:
+            fresh = [
+                t for t in candidates
+                if not (cooldown_of(t) > 0
+                        and set(t.last_used_in[-cooldown_of(t):]) & recent)
+            ]
+            if fresh:
+                candidates = fresh
+
+        if not candidates:
+            raise RedshiftError(
+                f"в категории {category} нет шаблона с brand_ok/вне cooldown",
+                code="TEMPLATE_CATEGORY_EMPTY",
+            )
+
         preferred = list(prefer)
 
         def rank(template: Template) -> tuple:
             explicit = 0 if template.id in preferred else 1
-            freq = FREQUENCY_WEIGHT.get((template.frequency or "variant").lower(), 1)
-            grounded = 0 if (template.needs and block_traits is not None
-                             and satisfies(template.needs, block_traits)) else 1
-            used_recently = 1 if set(template.last_used_in[-ROTATION_WINDOW:]) & recent else 0
+            freq = FREQUENCY_WEIGHT.get(
+                normalize_rarity(template.rarity or template.frequency), 1)
+            req = _requirements(template)
+            grounded = 0 if (req and block_traits is not None
+                             and satisfies(req, block_traits)) else 1
+            window = cooldown_of(template)
+            used_recently = 1 if (
+                window > 0 and set(template.last_used_in[-window:]) & recent
+            ) else 0
             usage = len(template.last_used_in)
             return (explicit, freq, grounded, used_recently, usage, template.id)
 

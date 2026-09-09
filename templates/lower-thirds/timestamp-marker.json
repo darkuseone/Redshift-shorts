@@ -17,5 +17,14 @@
   "renderer": "plaque",
   "last_used_in": [],
   "added": "2026-08-18",
-  "frequency": "signature"
+  "frequency": "signature",
+  "needs": [],
+  "rarity": "signature",
+  "topics": [
+    "lower-thirds"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 3,
+  "brand_ok": true
 }

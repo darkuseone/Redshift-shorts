@@ -19,5 +19,18 @@
   "renderer": "code_scroll",
   "last_used_in": [],
   "added": "2026-09-03",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "device"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [
+    "device"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

@@ -5,7 +5,7 @@
   "title": "Слова входят из блюра с коротким подъёмом — per-word-crossfade",
   "duration_range": [
     0.8,
-    2.4
+    3.0
   ],
   "params": {
     "word_crossfade": true,
@@ -24,5 +24,14 @@
     "redshift_0042"
   ],
   "added": "2026-09-02",
-  "frequency": "signature"
+  "frequency": "signature",
+  "needs": [],
+  "rarity": "signature",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 3,
+  "brand_ok": true
 }

@@ -15,7 +15,26 @@
     "slam"
   ],
   "renderer": "hero-slam",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0042"
+  ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "negation",
+    "superlative",
+    "discovery"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "hero-devices"
+  ],
+  "requires": [
+    "negation",
+    "superlative",
+    "discovery"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

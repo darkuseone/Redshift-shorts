@@ -23,5 +23,18 @@
     "redshift_0042"
   ],
   "added": "2026-09-02",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "discovery"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "text-fullscreen"
+  ],
+  "requires": [
+    "discovery"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

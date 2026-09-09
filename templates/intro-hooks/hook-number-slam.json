@@ -19,5 +19,18 @@
   "renderer": "fullscreen_text",
   "last_used_in": [],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "number"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "intro-hooks"
+  ],
+  "requires": [
+    "number"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

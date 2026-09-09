@@ -6,9 +6,10 @@ Edit-план — самодостаточный документ: §9.1 тре�
 оверлеев и пословные тайминги — ничего не догружается на рендере.
 
 Версии A и B (§4.5) собираются из **одного набора материалов** и различаются
-монтажными решениями: порядком вставок внутри блока, шаблонами Ken Burns и
-переходов, оформлением полноэкранного текста, наличием мема. §15.12.2 требует
-различия минимум в 3 шаблонных позициях, и это проверяется, а не декларируется.
+монтажными решениями: hook / hero / cta из разных пулов категории, порядком
+вставок внутри блока, Ken Burns, переходами, оформлением полноэкранного
+текста, наличием мема. §15.12.2 требует различия минимум в 3 шаблонных
+позициях, и это проверяется, а не декларируется.
 """
 
 from __future__ import annotations
@@ -2426,7 +2427,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     recent_videos: list[str], used: list[str],
                     picker: TemplatePicker | None = None,
                     budget: "VisualBudget | None" = None,
-                    loop_seam: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+                    loop_seam: dict[str, Any] | None = None,
+                    peer_exclude: Iterable[str] = ()) -> list[dict[str, Any]]:
     """Плашки, карточки источников, подсветка, data-viz и CTA (§5.4–5.6, §6)."""
     if picker is None:
         cfg = getattr(ctx, "cfg", None)
@@ -2735,12 +2737,13 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # в каталоге лежит `outro-cta/loop-back` (`renderer: footage`) — до сегодня
     # с пустым `last_used_in`.
     seam = bool(loop_seam)
+    cta_exclude = list(used) + [str(x) for x in peer_exclude if x]
     cta_template, _ = picker.pick(
         "outro-cta",
         variant=variant,
         duration=float(cta_end) - float(cta_start),
         recent_videos=recent_videos,
-        exclude=used,
+        exclude=cta_exclude,
         prefer_head=(["outro-cta/loop-back"] if seam else
                      ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"]),
         seed=seed,
@@ -2767,8 +2770,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                            "compact": True, "position": "bottom"})
     overlays.append({
         "type": "cta", "start": float(cta_start), "end": float(cta_end),
-        "template": "outro-cta/loop-back" if seam else "outro-cta/logo-brand-close",
-        "renderer": "footage" if seam else "logo_brand_close",
+        "template": cta_template.id,
+        "renderer": cta_template.renderer,
         "params": cta_params,
         "why": ("§6.3 R-4: шов лупа — CTA не закрывает кадр, который смыкается "
                 "с первым"
@@ -3519,7 +3522,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                   sfx_map: dict[str, Any], *, variant: str,
                   recent_videos: list[str], preferences: dict[str, Any] | None = None,
                   asset_rotation: int = 0,
-                  picker: TemplatePicker | None = None) -> dict[str, Any]:
+                  picker: TemplatePicker | None = None,
+                  peer_exclude: Iterable[str] = ()) -> dict[str, Any]:
     if picker is None:
         cfg = getattr(ctx, "cfg", None)
         picker = TemplatePicker(catalog, ScenarioIndex.load(cfg, catalog=catalog))
@@ -3532,6 +3536,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # а B остаётся альтернативой, иначе обучение схлопнет обе версии в одну.
     prefs = (preferences or {}) if variant == "A" else {}
     used_templates: list[str] = []
+    peer_block = [str(x) for x in peer_exclude if x]
     slots = plan["slots"]
     _slot_beats(plan)
     escalation = _Escalation()
@@ -3592,7 +3597,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         hook_block = blocks_by_id.get(slot["block_id"], {})
         hook_pick = None if hook_placed else _pick_hook_shot(
             slot, hook_block, plan, picker, catalog, variant=variant, seed=seed,
-            recent_videos=recent_videos, used_templates=used_templates,
+            recent_videos=recent_videos,
+            used_templates=used_templates + peer_block,
             has_asset=assets.get(slot["index"]) is not None)
         if hook_pick is not None:
             hook_tpl, _hook_trace = hook_pick
@@ -3941,7 +3947,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         head_box=head_boxes.get(int(slot["index"]))),
                     has_alpha=int(slot["index"]) in alpha_slots,
                     plate_src=_plate_source(slot, slots, prepared, assets),
-                    recent_videos=recent_videos, exclude=used_templates,
+                    recent_videos=recent_videos, exclude=used_templates + peer_block,
                     seed=seed, picker=picker, variant=variant, block=block,
                     video_duration=float(plan["duration_sec"]),
                     exclude_renderers=escalation.bans(
@@ -3984,7 +3990,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
     overlays = _build_overlays(ctx, plan, words_doc["words"], catalog, variant=variant,
                                seed=seed, recent_videos=recent_videos, used=used_templates,
-                               picker=picker, budget=budget, loop_seam=loop_seam)
+                               picker=picker, budget=budget, loop_seam=loop_seam,
+                               peer_exclude=peer_block)
     # Приёмы лестницы §7.2 родились в цикле шотов — доливаем их к общим
     # оверлеям здесь, чтобы дальше все проверки видели один список.
     overlays.extend(ladder_overlays)
@@ -4138,15 +4145,38 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
 
 
+_LOOP_BACK_CTA = "outro-cta/loop-back"
+
+
+def _ab_pool_templates(plan: dict[str, Any]) -> list[str]:
+    """Hook / hero / cta ids версии — пулы, которые B не должна клонировать."""
+    ids: list[str] = []
+    seen: set[str] = set()
+
+    def add(tid: Any) -> None:
+        name = str(tid or "")
+        if name and name not in seen:
+            seen.add(name)
+            ids.append(name)
+
+    for shot in plan.get("shots") or []:
+        if shot.get("hook"):
+            add(shot.get("template"))
+        hero = shot.get("hero")
+        if isinstance(hero, dict):
+            add(hero.get("template"))
+    for overlay in plan.get("overlays") or []:
+        if str(overlay.get("type") or "") == "cta":
+            add(overlay.get("template"))
+    return ids
+
+
 def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
                          catalog: TemplateCatalog, required: int, ctx) -> int:
     """§15.12.2 — довести различие версий до требуемого **конструктивно**.
 
-    Полагаться на то, что разные сиды сами дадут три различия, нельзя: пул
-    шаблонов категории конечен, а предпочтения тянут версию A к устоявшимся
-    вариантам. Когда различий не хватает, версия B получает другие шаблоны там,
-    где это ничего не ломает: Ken Burns, переходы и оформление полноэкранного
-    текста взаимозаменяемы внутри своей категории.
+    Сначала смысловые пулы hook / hero / cta (MUST-014): не «другой Ken Burns
+    того же кадра». Затем Ken Burns и переходы внутри своей категории.
     """
     a_plan, b_plan = plans[variants[0]], plans[variants[1]]
     diff = diff_count(a_plan["templates_used"], b_plan["templates_used"])
@@ -4155,8 +4185,91 @@ def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
 
     a_templates = set(a_plan["templates_used"])
     swapped = 0
-    for shot in b_plan["shots"]:
-        if diff + swapped >= required:
+
+    def _enough() -> bool:
+        return diff + swapped >= required
+
+    def _commit(old_id: str, new_id: str) -> None:
+        nonlocal swapped
+        used = list(b_plan.get("templates_used") or [])
+        if old_id in used:
+            b_plan["templates_used"] = [new_id if t == old_id else t for t in used]
+        else:
+            b_plan["templates_used"] = used + [new_id]
+        swapped += 1
+
+    def _alts(category: str, current_id: str, *,
+              renderer: str | None = None,
+              skip_ids: Iterable[str] = ()) -> list:
+        skip = set(skip_ids)
+        used_b = set(b_plan.get("templates_used") or [])
+        out = []
+        for template in catalog.by_category(category):
+            if template.id == current_id or template.id in skip:
+                continue
+            if template.id in a_templates or template.id in used_b:
+                continue
+            if not getattr(template, "brand_ok", True):
+                continue
+            if renderer is not None and template.renderer != renderer:
+                continue
+            out.append(template)
+        return out
+
+    for shot in b_plan.get("shots") or []:
+        if _enough():
+            break
+        if not shot.get("hook"):
+            continue
+        current_id = str(shot.get("template") or "")
+        if not current_id or current_id not in a_templates:
+            continue
+        current = catalog.by_id(current_id)
+        renderer = str((current.renderer if current is not None
+                        else shot.get("renderer")) or "") or None
+        alternatives = _alts("intro-hooks", current_id, renderer=renderer)
+        if not alternatives:
+            continue
+        replacement = alternatives[0]
+        shot["template"] = replacement.id
+        _commit(current_id, replacement.id)
+
+    for shot in b_plan.get("shots") or []:
+        if _enough():
+            break
+        hero = shot.get("hero")
+        if not isinstance(hero, dict):
+            continue
+        current_id = str(hero.get("template") or "")
+        if not current_id or current_id not in a_templates:
+            continue
+        alternatives = _alts("hero-devices", current_id)
+        if not alternatives:
+            continue
+        replacement = alternatives[0]
+        hero["template"] = replacement.id
+        hero["renderer"] = replacement.renderer
+        _commit(current_id, replacement.id)
+
+    if not b_plan.get("loop_seam"):
+        for overlay in b_plan.get("overlays") or []:
+            if _enough():
+                break
+            if str(overlay.get("type") or "") != "cta":
+                continue
+            current_id = str(overlay.get("template") or "")
+            if not current_id or current_id not in a_templates:
+                continue
+            alternatives = _alts("outro-cta", current_id, skip_ids=(_LOOP_BACK_CTA,))
+            if not alternatives:
+                continue
+            replacement = alternatives[0]
+            overlay["template"] = replacement.id
+            overlay["renderer"] = replacement.renderer
+            _commit(current_id, replacement.id)
+
+    for shot in b_plan.get("shots") or []:
+        if _enough():
             break
         for field, category in (("kenburns", "kenburns"), ("transition", "transitions")):
             current = shot.get(field)
@@ -4180,9 +4293,7 @@ def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
                     "duration": current.get("duration", 0.24),
                     "params": {**replacement.params, "seed": shot["index"]},
                 }
-            b_plan["templates_used"] = [
-                replacement.id if t == old_id else t for t in b_plan["templates_used"]]
-            swapped += 1
+            _commit(old_id, replacement.id)
             break
 
     diff = diff_count(a_plan["templates_used"], b_plan["templates_used"])
@@ -4219,6 +4330,7 @@ def run_step(ctx) -> dict[str, Any]:
 
     variants = list(ctx.variants)
     plans: dict[str, dict[str, Any]] = {}
+    peer_exclude: list[str] = []
     for offset, variant in enumerate(variants):
         # Потолок доли AI считается по экранному времени — там же, где его
         # меряет QC-14. Иначе ротация версии B выносит за него ролик, за
@@ -4235,9 +4347,12 @@ def run_step(ctx) -> dict[str, Any]:
         plans[variant] = build_variant(
             ctx, plan, words_doc, assets, prepared, catalog, avatar_meta, sfx_map,
             variant=variant, recent_videos=recent_videos,
-            preferences=preferences, asset_rotation=offset, picker=picker)
+            preferences=preferences, asset_rotation=offset, picker=picker,
+            peer_exclude=peer_exclude)
         plans[variant]["matting"] = matte_summary
         ctx.write(f"edit_plan_{variant}.json", plans[variant])
+        if not peer_exclude:
+            peer_exclude = _ab_pool_templates(plans[variant])
 
     # §15.12.2 — версии обязаны различаться минимум на 3 шаблонных позиции.
     ab_diff = None

@@ -20,5 +20,14 @@
   ],
   "added": "2026-09-02",
   "frequency": "rare",
+  "needs": [],
+  "rarity": "rare",
+  "topics": [
+    "transitions"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true,
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
 }

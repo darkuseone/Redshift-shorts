@@ -18,5 +18,20 @@
     "redshift_0042"
   ],
   "added": "2026-09-03",
-  "frequency": "rare"
+  "frequency": "rare",
+  "needs": [
+    "danger",
+    "negation"
+  ],
+  "rarity": "rare",
+  "topics": [
+    "transitions"
+  ],
+  "requires": [
+    "danger",
+    "negation"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

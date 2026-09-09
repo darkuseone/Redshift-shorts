@@ -37,5 +37,14 @@
   "renderer": "notes_reveal",
   "last_used_in": [],
   "added": "2026-09-03",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [],
+  "rarity": "variant",
+  "topics": [
+    "browser-ui"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

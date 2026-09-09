@@ -19,7 +19,13 @@ from typing import Any, Iterable, Sequence
 
 from src.errors import RedshiftError
 from src.lib.config import Config
-from src.lib.templates import FrequencyBudget, Template, TemplateCatalog
+from src.lib.templates import (
+    FrequencyBudget,
+    Template,
+    TemplateCatalog,
+    cooldown_of,
+    normalize_rarity,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +49,113 @@ def _dedup(items: Iterable[str]) -> tuple[str, ...]:
     return tuple(out)
 
 
+# Rare geo / finance / social / brand-app: без именованной сущности
+# шаблон не выбирается (MUST-011). Фразы — страна, биржа, продукт, домен.
+RARE_TEMPLATE_ENTITIES: dict[str, tuple[str, ...]] = {
+    "data-viz/north-korea-locked-down": (
+        "north korea", "northkorea", "кндр", "пхеньян", "pyongyang",
+        "северная коре", "северной коре",
+    ),
+    "data-viz/nyc-paris-flight": (
+        "transatlantic", "jfk", "cdg", "new york", "нью-йорк", "нью йорк",
+        "paris", "париж",
+    ),
+    "data-viz/spain-map": (
+        "spain", "españa", "espan", "испан", "madrid", "catalun",
+    ),
+    "data-viz/us-map": (
+        "united states", "u.s.", "сша", "америк", "census", "california",
+    ),
+    "data-viz/us-map-flow": (
+        "united states", "u.s.", "сша", "interstate", "city-to-city",
+        "corridor",
+    ),
+    "data-viz/us-map-hex": (
+        "united states", "u.s.", "сша", "hex grid", "income by state",
+        "hex map",
+    ),
+    "data-viz/us-map-bubble": (
+        "united states", "u.s.", "сша", "bubble map",
+    ),
+    "data-viz/world-map": (
+        "world map", "карта мира", "world atlas", "imf", "global gdp",
+        "gdp per capita", "ввп на душу",
+    ),
+    "data-viz/apple-money-count": (
+        "$", "usd", "revenue", "valuation", "market cap", "выручк",
+        "капитализац",
+    ),
+    "data-viz/star-rating-fill": (
+        "star rating", "рейтинг", "app store", "satisfaction",
+    ),
+    "data-viz/mk-progress-stat": (
+        "goals reached", "прогресс", "целей",
+    ),
+    "browser-ui/chatgpt-exchange": (
+        "chatgpt", "gpt-4", "gpt4", "chat gpt",
+    ),
+    "browser-ui/claude-exchange": (
+        "claude", "anthropic", "opus",
+    ),
+    "browser-ui/ai-chat-reveal": (
+        "chatgpt", "gpt-4", "gpt4", "claude.ai", "ai chat", "чат-бот",
+        "chatbot",
+    ),
+    "browser-ui/message-thread-reveal": (
+        "imessage", "message thread", "смс", "переписка",
+    ),
+    "browser-ui/reddit-post": (
+        "reddit", "реддит",
+    ),
+    "browser-ui/x-post": (
+        "tweet", "твит", "x-post", "x.com",
+    ),
+    "lower-thirds/yt-lower-third": (
+        "youtube", "ютуб",
+    ),
+    "text-fullscreen/beat-freeze-cut": (
+        "on the beat", "бит-дроп", "на бит", "hard cut", "дроп",
+        "drop", "freeze", "замороз",
+    ),
+}
+
+_NAMED_ENTITY_RE = re.compile(
+    r"(?i)("
+    r"north\s*korea|кндр|пхеньян|pyongyang|северн\w*\s+коре|"
+    r"united\s+states|\bu\.?s\.?a\.?\b|\bсша\b|california|\bcensus\b|"
+    r"spain|españa|испан|madrid|"
+    r"new\s*york|нью-?йорк|paris|париж|\bjfk\b|\bcdg\b|transatlantic|"
+    r"chatgpt|gpt-4|gpt4|claude\.ai|\banthropic\b|\bopus\b|"
+    r"nasdaq|nyse|\bimf\b|world\s+atlas|world\s+map|карта\s+мира|"
+    r"https?://|\$\s*\d|"
+    r"reddit|instagram|tiktok|\bx\.com\b|youtube|"
+    r"chatbot|чат-бот|ai[\s-]?chat"
+    r")"
+)
+
+
+def has_named_entity(blob: str) -> bool:
+    """Есть ли в тексте страна / продукт / тикер / URL / сумма (MUST-011)."""
+    text = blob or ""
+    if _NAMED_ENTITY_RE.search(text):
+        return True
+    low = text.lower()
+    for phrases in RARE_TEMPLATE_ENTITIES.values():
+        if any(p.lower() in low for p in phrases if len(p) >= 3):
+            return True
+    return False
+
+
+def rare_templates_blocked(blob: str) -> frozenset[str]:
+    """id rare-шаблонов, которым в blob нет своей сущности."""
+    low = (blob or "").lower()
+    blocked: set[str] = set()
+    for tid, phrases in RARE_TEMPLATE_ENTITIES.items():
+        if not any(p.lower() in low for p in phrases):
+            blocked.add(tid)
+    return frozenset(blocked)
+
+
 @dataclass(frozen=True)
 class Intent:
     id: str
@@ -56,6 +169,11 @@ class Intent:
     weight: int
     variants: frozenset[str]
     replaces_default: bool = False  # D2 п. 7 — субтрактивное правило `\d`
+    # Пустой триггер (нет keywords/patterns/signals_any/needs) матчится
+    # только с этим флагом. Без него пустота — не истина (MUST-010).
+    catchall: bool = False
+    # Rare geo/finance/social/brand-app: без entity интент не матчится (MUST-011).
+    requires_entity: bool = False
 
 
 @dataclass(frozen=True)
@@ -202,7 +320,11 @@ class ScenarioIndex:
                 )
             seen_ids.add(iid)
 
+            catchall = bool(item.get("catchall", False))
             w = item.get("weight")
+            # Catchall без явного веса — 0, чтобы не всплывать в specific.
+            if w is None and catchall:
+                w = 0
             if not isinstance(w, int) or w < 0:
                 raise RedshiftError(
                     f"Интент '{iid}' имеет невалидный вес {w} (должен быть целым >= 0)",
@@ -260,8 +382,26 @@ class ScenarioIndex:
                     weight=w,
                     variants=frozenset(item.get("variants", ())),
                     replaces_default=bool(item.get("replaces_default", False)),
+                    catchall=catchall,
+                    requires_entity=bool(item.get("requires_entity", False)),
                 )
             )
+
+        catchall_slots: dict[tuple[str, str], str] = {}
+        for intent in parsed_intents:
+            if not intent.catchall:
+                continue
+            for cat in intent.categories:
+                for var in intent.variants:
+                    slot = (cat, var)
+                    prev = catchall_slots.get(slot)
+                    if prev is not None:
+                        raise RedshiftError(
+                            f"catchall больше одного на категорию '{cat}' "
+                            f"вариант '{var}': '{prev}' и '{intent.id}'",
+                            code="SCENARIO_INDEX_INVALID",
+                        )
+                    catchall_slots[slot] = intent.id
 
         raw_tag_intents = data.get("tag_intents", {})
         if not isinstance(raw_tag_intents, dict):
@@ -312,10 +452,24 @@ class ScenarioIndex:
                 continue
             if variant not in intent.variants:
                 continue
+            if intent.requires_entity and not has_named_entity(blob):
+                continue
             if intent.needs and not intent.needs.issubset(signals_set):
                 continue
 
-            if not intent.keywords and not intent.patterns and not intent.signals_any:
+            lexical = bool(intent.keywords or intent.patterns or intent.signals_any)
+            if not lexical and not intent.needs:
+                # Пустой триггер: матч только у явного catchall (MUST-010).
+                if intent.catchall:
+                    matched.append(intent)
+                continue
+
+            if intent.catchall:
+                matched.append(intent)
+                continue
+
+            if not lexical:
+                # Только needs — сигнал и есть триггер, пустота не истина.
                 matched.append(intent)
                 continue
 
@@ -476,8 +630,42 @@ class TemplatePicker:
         allowed_raw = _dedup(ch_head + ch_specific + ch_base + fallback)
         allowed = _dedup(
             tid for tid in allowed_raw
-            if (tmpl := self.catalog.by_id(tid)) is not None and tmpl.is_active
+            if (tmpl := self.catalog.by_id(tid)) is not None
+            and tmpl.is_active and tmpl.brand_ok
         )
+        # MUST-011: rare geo/finance/social/brand-app без своей сущности
+        # не попадают ни в walk, ни в fallback, ни в полный category-escape.
+        blocked_rare = rare_templates_blocked(blob)
+        if blocked_rare:
+            def _without_blocked(ids: tuple[str, ...]) -> tuple[str, ...]:
+                kept = tuple(tid for tid in ids if tid not in blocked_rare)
+                return kept
+
+            walk = _without_blocked(walk)
+            fallback = _without_blocked(fallback)
+            allowed = _without_blocked(allowed)
+            if not allowed:
+                allowed = _dedup(
+                    t.id for t in self.catalog.by_category(category)
+                    if t.id not in blocked_rare and t.brand_ok
+                )
+
+        # MUST-012: cooldown_videos — жёсткий вырез, не штраф в ранге.
+        if recent_videos and allowed:
+            recent = {str(v) for v in recent_videos}
+            kept_cd = tuple(
+                tid for tid in allowed
+                if not (
+                    (tmpl := self.catalog.by_id(tid)) is not None
+                    and cooldown_of(tmpl) > 0
+                    and set(tmpl.last_used_in[-cooldown_of(tmpl):]) & recent
+                )
+            )
+            if kept_cd:
+                allowed = kept_cd
+                walk = tuple(t for t in walk if t in set(kept_cd)) or walk
+                fallback = tuple(t for t in fallback if t in set(kept_cd)) or fallback
+
         # Уровень, добравший свою верхнюю долю, временно уходит из
         # разрешённого набора — но только если после него что-то останется:
         # пустой allow отправил бы подбор гулять по всей категории, а это
@@ -488,7 +676,7 @@ class TemplatePicker:
             kept = tuple(
                 tid for tid in allowed
                 if ((tmpl := self.catalog.by_id(tid)) is None
-                    or (tmpl.frequency or "variant").lower() not in saturated)
+                    or normalize_rarity(tmpl.rarity or tmpl.frequency) not in saturated)
             )
             if kept:
                 allowed = kept
@@ -585,5 +773,5 @@ class TemplatePicker:
         )
         # Уровень записывается после выбора: бюджет считает выданное, а не
         # задуманное.
-        self.freq_budget.take((chosen.frequency or "variant").lower())
+        self.freq_budget.take(normalize_rarity(chosen.rarity or chosen.frequency))
         return chosen, trace

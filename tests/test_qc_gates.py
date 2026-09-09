@@ -10,9 +10,12 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
-from src.p12_render_qc.qc import _hook_is_banned, run_qc
+from src.p12_render_qc.qc import QC17_TEMPLATE_OVERLAP_MAX, _hook_is_banned, run_qc
 
 
 class _Media:
@@ -204,17 +207,25 @@ class TestQc20And21And22CarryTheMegaWording:
                             for i, t in enumerate(self.NEEDY)])
         assert _check(_run(cfg, plan), "QC-21")["passed"]
 
-    def test_qc21_ignores_devices_that_never_asked(self, cfg):
-        """`grounded_on` — это `matched(needs, traits)`; у шаблона без `needs`
-        он пуст **по построению**. Из 204 шаблонов каталога `needs` объявлен
-        у 74, и порог 0.30 не прошёл бы ни один ролик: первый заход мерил по
-        наличию поля и ловил полноэкранный текст, которому требований не
-        предъявляли вовсе."""
+    def test_qc21_counts_needless_as_ungrounded(self, cfg):
+        """Need-less выбранный шаблон = ungrounded (MUST-010)."""
         plan = _plan(
             shots=[_shot(i, template="text-fullscreen/blur-out-up",
                          grounded_on=[]) for i in range(9)]
             + [_shot(9, template=self.NEEDY[0], grounded_on=["number"])])
-        assert _check(_run(cfg, plan), "QC-21")["passed"]
+        check = _check(_run(cfg, plan), "QC-21")
+        assert not check["passed"]
+        assert check["value"] == 0.9
+
+    def test_qc21_passes_when_needless_share_stays_under_threshold(self, cfg):
+        plan = _plan(shots=[
+            _shot(0, template="text-fullscreen/blur-out-up", grounded_on=[]),
+            *[_shot(i, template=self.NEEDY[0], grounded_on=["number"])
+              for i in range(1, 5)],
+        ])
+        check = _check(_run(cfg, plan), "QC-21")
+        assert check["passed"]
+        assert check["value"] == 0.2
 
     def test_qc22_catches_a_pick_that_escaped_the_allowlist(self, cfg):
         plan = _plan(pick_traces=[
@@ -447,3 +458,53 @@ class TestTzMust024ConstantsAgree:
         status = "ok" if folded["passed"] else "qc_failed"
         assert folded["passed"] is False
         assert status != "ok"
+
+
+class TestQc17TemplateSetOverlap:
+    """MUST-014: QC-17 падает на копии набора, а не только при Jaccard == 1.0."""
+
+    def _history(self, cfg, tmp_path, templates, video_id="redshift_0001"):
+        cfg.set("paths.cache_dir", str(tmp_path / "cache"))
+        cache = Path(cfg.path("paths.cache_dir"))
+        cache.mkdir(parents=True, exist_ok=True)
+        (cache / "run_history.json").write_text(
+            json.dumps({"runs": [{"video_id": video_id, "templates": templates}]}),
+            encoding="utf-8",
+        )
+
+    def test_identical_ids_fail(self, cfg, tmp_path):
+        ids = [
+            "intro-hooks/hook-blackout-word",
+            "hero-devices/type-slab",
+            "outro-cta/logo-brand-close",
+            "kenburns/pan-left",
+        ]
+        self._history(cfg, tmp_path, ids)
+        check = _check(_run(cfg, _plan(templates_used=list(ids))), "QC-17")
+        assert not check["passed"]
+        assert check["blocking"]
+        assert check["value"] == pytest.approx(1.0)
+        assert check["threshold"] == pytest.approx(QC17_TEMPLATE_OVERLAP_MAX)
+
+    def test_near_clone_at_threshold_fails(self, cfg, tmp_path):
+        prev = [f"t/{i}" for i in range(10)]
+        current = [f"t/{i}" for i in range(9)] + ["t/x"]
+        self._history(cfg, tmp_path, prev)
+        check = _check(_run(cfg, _plan(templates_used=current)), "QC-17")
+        assert check["value"] >= QC17_TEMPLATE_OVERLAP_MAX
+        assert not check["passed"]
+
+    def test_modest_overlap_passes(self, cfg, tmp_path):
+        prev = [f"t/{i}" for i in range(10)]
+        current = [f"t/{i}" for i in range(3)] + [f"u/{i}" for i in range(7)]
+        self._history(cfg, tmp_path, prev)
+        check = _check(_run(cfg, _plan(templates_used=current)), "QC-17")
+        assert check["value"] < QC17_TEMPLATE_OVERLAP_MAX
+        assert check["passed"]
+
+    def test_no_previous_video_passes(self, cfg, tmp_path):
+        cfg.set("paths.cache_dir", str(tmp_path / "cache"))
+        Path(cfg.path("paths.cache_dir")).mkdir(parents=True, exist_ok=True)
+        check = _check(_run(cfg, _plan(templates_used=["intro-hooks/hook-blackout-word"])),
+                       "QC-17")
+        assert check["passed"]

@@ -22,5 +22,14 @@
   ],
   "added": "2026-09-02",
   "frequency": "variant",
+  "needs": [],
+  "rarity": "variant",
+  "topics": [
+    "hero-devices"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true,
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
 }

@@ -2,19 +2,19 @@
   "_note": "Индекс каталога. Источник — templates/manifest.json, перегенерация — python tools/gen_indexes.py.",
   "counts": {
     "avatar-entry": 6,
-    "browser-ui": 21,
-    "data-viz": 28,
+    "browser-ui": 9,
+    "data-viz": 17,
     "frames-cards": 7,
     "hero-devices": 25,
     "intro-hooks": 8,
     "kenburns": 10,
-    "lower-thirds": 14,
+    "lower-thirds": 11,
     "outro-cta": 6,
     "parallax": 4,
-    "text-fullscreen": 34,
+    "text-fullscreen": 31,
     "transitions": 41
   },
-  "total": 204,
+  "total": 175,
   "categories": {
     "avatar-entry": [
       {
@@ -62,20 +62,6 @@
     ],
     "browser-ui": [
       {
-        "id": "browser-ui/ai-chat-reveal",
-        "renderer": "ai_chat_reveal",
-        "needs": [],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "browser-ui/app-showcase",
-        "renderer": "app_showcase",
-        "needs": [],
-        "frequency": "variant",
-        "status": "retired"
-      },
-      {
         "id": "browser-ui/article-highlight",
         "renderer": "article_scroll",
         "needs": [
@@ -83,13 +69,6 @@
         ],
         "frequency": "signature",
         "status": "active"
-      },
-      {
-        "id": "browser-ui/blue-sweater-intro-video",
-        "renderer": "blue_sweater",
-        "needs": [],
-        "frequency": "variant",
-        "status": "retired"
       },
       {
         "id": "browser-ui/browser-scroll",
@@ -119,36 +98,8 @@
         "status": "active"
       },
       {
-        "id": "browser-ui/chatgpt-exchange",
-        "renderer": "chatgpt_exchange",
-        "needs": [],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "browser-ui/claude-exchange",
-        "renderer": "claude_exchange",
-        "needs": [],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
         "id": "browser-ui/google-typing",
         "renderer": "source_card",
-        "needs": [],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "browser-ui/macos-notification",
-        "renderer": "macos_notification",
-        "needs": [],
-        "frequency": "variant",
-        "status": "retired"
-      },
-      {
-        "id": "browser-ui/message-thread-reveal",
-        "renderer": "message_thread_reveal",
         "needs": [],
         "frequency": "variant",
         "status": "active"
@@ -168,13 +119,6 @@
         "status": "active"
       },
       {
-        "id": "browser-ui/notification-cascade",
-        "renderer": "notification_cascade",
-        "needs": [],
-        "frequency": "variant",
-        "status": "retired"
-      },
-      {
         "id": "browser-ui/phone-notification",
         "renderer": "plaque",
         "needs": [],
@@ -182,36 +126,8 @@
         "status": "active"
       },
       {
-        "id": "browser-ui/reddit-post",
-        "renderer": "reddit_post",
-        "needs": [],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "browser-ui/spotify-card",
-        "renderer": "spotify_card",
-        "needs": [],
-        "frequency": "variant",
-        "status": "retired"
-      },
-      {
         "id": "browser-ui/terminal-lines",
         "renderer": "source_card",
-        "needs": [],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "browser-ui/vpn-youtube-spot",
-        "renderer": "vpn_youtube_spot",
-        "needs": [],
-        "frequency": "variant",
-        "status": "retired"
-      },
-      {
-        "id": "browser-ui/x-post",
-        "renderer": "x_post",
         "needs": [],
         "frequency": "variant",
         "status": "active"
@@ -220,15 +136,6 @@
     "data-viz": [
       {
         "id": "data-viz/animated-bar-chart",
-        "renderer": "dataviz",
-        "needs": [
-          "number"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/apple-money-count",
         "renderer": "dataviz",
         "needs": [
           "number"
@@ -347,52 +254,7 @@
         "status": "active"
       },
       {
-        "id": "data-viz/mk-progress-stat",
-        "renderer": "dataviz",
-        "needs": [
-          "number"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/north-korea-locked-down",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/nyc-paris-flight",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
         "id": "data-viz/oscilloscope-trace",
-        "renderer": "dataviz",
-        "needs": [
-          "number"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/spain-map",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/star-rating-fill",
         "renderer": "dataviz",
         "needs": [
           "number"
@@ -419,55 +281,10 @@
         "status": "active"
       },
       {
-        "id": "data-viz/us-map",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/us-map-bubble",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/us-map-flow",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/us-map-hex",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
         "id": "data-viz/weight-wave",
         "renderer": "dataviz",
         "needs": [
           "number"
-        ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "data-viz/world-map",
-        "renderer": "dataviz",
-        "needs": [
-          "place"
         ],
         "frequency": "variant",
         "status": "active"
@@ -893,13 +710,6 @@
         "status": "active"
       },
       {
-        "id": "lower-thirds/instagram-follow",
-        "renderer": "instagram_follow",
-        "needs": [],
-        "frequency": "signature",
-        "status": "retired"
-      },
-      {
         "id": "lower-thirds/metric-badge",
         "renderer": "plaque",
         "needs": [],
@@ -942,13 +752,6 @@
         "status": "active"
       },
       {
-        "id": "lower-thirds/tiktok-follow",
-        "renderer": "tiktok_follow",
-        "needs": [],
-        "frequency": "signature",
-        "status": "retired"
-      },
-      {
         "id": "lower-thirds/timestamp-marker",
         "renderer": "plaque",
         "needs": [],
@@ -958,13 +761,6 @@
       {
         "id": "lower-thirds/warning-strip",
         "renderer": "plaque",
-        "needs": [],
-        "frequency": "signature",
-        "status": "active"
-      },
-      {
-        "id": "lower-thirds/yt-lower-third",
-        "renderer": "yt_lower_third",
         "needs": [],
         "frequency": "signature",
         "status": "active"
@@ -1053,15 +849,6 @@
         ],
         "frequency": "variant",
         "status": "active"
-      },
-      {
-        "id": "text-fullscreen/beat-freeze-cut",
-        "renderer": "beat_freeze_cut",
-        "needs": [
-          "beat"
-        ],
-        "frequency": "variant",
-        "status": "gated"
       },
       {
         "id": "text-fullscreen/bigtext-mask-footage",
@@ -1223,15 +1010,6 @@
         "status": "active"
       },
       {
-        "id": "text-fullscreen/news-ticker",
-        "renderer": "news_ticker",
-        "needs": [
-          "news"
-        ],
-        "frequency": "variant",
-        "status": "gated"
-      },
-      {
         "id": "text-fullscreen/number-slam-card",
         "renderer": "number_slam",
         "needs": [
@@ -1286,13 +1064,6 @@
         "needs": [],
         "frequency": "variant",
         "status": "active"
-      },
-      {
-        "id": "text-fullscreen/split-flap-board",
-        "renderer": "split_flap_board",
-        "needs": [],
-        "frequency": "variant",
-        "status": "retired"
       },
       {
         "id": "text-fullscreen/stack-3lines",

@@ -18,8 +18,24 @@
   ],
   "renderer": "hero-knockout",
   "last_used_in": [
-    "redshift_0046"
+    "redshift_0046",
+    "redshift_0042"
   ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "superlative",
+    "negation"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "hero-devices"
+  ],
+  "requires": [
+    "superlative",
+    "negation"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

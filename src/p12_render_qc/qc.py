@@ -20,9 +20,14 @@ from ..lib.logging import get_logger
 from ..lib.phash import video_is_duplicate
 from ..lib.render.canvas import SafeZones
 from ..lib.render.hyperframes.templates import text_width
-from ..lib.templates import TemplateCatalog, overlap_share
+from ..lib.templates import overlap_share
 
 _log = get_logger("qc")
+
+# MUST-014: Jaccard набора шаблонов с предыдущим роликом. Fail при ≥ порога.
+# Instruction числа не задаёт; код с «< 1.0» не падал почти никогда.
+# QC-6 держит 0.20 на пересечении *материала*, не шаблонов.
+QC17_TEMPLATE_OVERLAP_MAX = 0.80
 
 
 def _check(check_id: int, name: str, passed: bool, *, value: Any = None,
@@ -245,9 +250,11 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     templates = plan.get("templates_used", [])
     prev_templates = previous[-1].get("templates", []) if previous else []
     template_overlap = overlap_share(templates, prev_templates)
+    qc17_max = float(limits.get("qc17_template_overlap_max", QC17_TEMPLATE_OVERLAP_MAX))
+    overlap_ok = (not prev_templates) or (template_overlap < qc17_max)
     checks.append(_check(17, "Набор шаблонов не повторяет предыдущий ролик",
-                         template_overlap < 1.0 - 1e-9 if prev_templates else True,
-                         value=round(template_overlap, 3), threshold="< 1.0"))
+                         overlap_ok,
+                         value=round(template_overlap, 3), threshold=qc17_max))
 
     # 18. Два аватар-сегмента подряд
     adjacent = avatar_meta.get("adjacent_without_gap", [])
@@ -291,36 +298,17 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
         value=len(over), threshold=bleed_w,
         detail=", ".join(f"кадр {o['index']}: {o['px']} px" for o in over[:6])))
 
-    # 21. Приём без основания. Считаются только те приёмы, которым основание
-    # вообще положено: `grounded_on` — это `matched(template.needs, traits)`,
-    # и у шаблона без `needs` он пуст **по построению**. Считать такой приём
-    # необоснованным — не находка, а ошибка мерки: из 204 шаблонов каталога
-    # `needs` объявлен у 74, и порог 0.30 не прошёл бы ни один ролик.
+    # 21. Приём без основания. Need-less выбранный шаблон = ungrounded
+    # (MUST-010): пустой `needs` больше не прячет приём от гейта.
     placed = [*plan.get("shots", []), *plan.get("overlays", [])]
-    # Основание положено приёму, который его **просил**: у шаблона объявлен
-    # `needs`. Пустой `grounded_on` у шаблона без `needs` — не брак, а
-    # арифметика: `matched(needs, traits)` от пустого списка пуст всегда.
-    # Первый заход мерил по наличию поля и всё равно ловил не то — полноэкранный
-    # текст кладёт список даже там, где у шаблона требований нет вовсе.
-    try:
-        _catalog = TemplateCatalog.load(cfg)
-    except Exception:                                     # noqa: BLE001
-        _catalog = None
-
-    def _asked_for_grounding(item: dict[str, Any]) -> bool:
-        if not isinstance(item.get("grounded_on"), list) or _catalog is None:
-            return False
-        tmpl = _catalog.by_id(str(item.get("template") or ""))
-        return bool(tmpl is not None and tmpl.needs)
-
-    needful = [p for p in placed if p.get("template") and _asked_for_grounding(p)]
-    ungrounded = [p for p in needful if not p.get("grounded_on")]
-    ungrounded_share = (len(ungrounded) / len(needful)) if needful else 0.0
+    selected = [p for p in placed if p.get("template")]
+    ungrounded = [p for p in selected if not p.get("grounded_on")]
+    ungrounded_share = (len(ungrounded) / len(selected)) if selected else 0.0
     checks.append(_check(
         21, "Приёмы без основания", ungrounded_share <= 0.30,
         value=round(ungrounded_share, 3), threshold=0.30,
-        detail=f"{len(ungrounded)} из {len(needful)} приёмов, которым "
-               f"основание положено"))
+        detail=f"{len(ungrounded)} из {len(selected)} выбранных приёмов "
+               f"без grounded_on (need-less считается)"))
 
     # 22. Выбранный приём обязан лежать в разрешённом наборе. Ступени отката
     # различаются по смыслу: снятие `duration` и `traits` оставляет приём

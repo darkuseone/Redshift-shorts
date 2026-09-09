@@ -16,8 +16,23 @@
     "card"
   ],
   "renderer": "dataviz",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0042"
+  ],
   "added": "2026-09-02",
   "frequency": "variant",
+  "needs": [
+    "number"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "data-viz"
+  ],
+  "requires": [
+    "number"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true,
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
 }

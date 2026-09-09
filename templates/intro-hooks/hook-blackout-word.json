@@ -16,7 +16,18 @@
     "dark"
   ],
   "renderer": "fullscreen_text",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0042"
+  ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [],
+  "rarity": "variant",
+  "topics": [
+    "intro-hooks"
+  ],
+  "requires": [],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }

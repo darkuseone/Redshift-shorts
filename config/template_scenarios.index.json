@@ -3,7 +3,7 @@
   "specific_weight_min": 20,
   "default_weight_min": 10,
   "unreachable_categories": [],
-  "intents_total": 105,
+  "intents_total": 81,
   "categories": {
     "avatar-entry": [
       {
@@ -20,68 +20,8 @@
     ],
     "browser-ui": [
       {
-        "id": "browser-ai-chat",
-        "weight": 40,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "browser-app-showcase",
-        "weight": 39,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "browser-chatgpt-exchange",
-        "weight": 38,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "browser-claude-exchange",
-        "weight": 37,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "browser-message-thread",
-        "weight": 36,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
         "id": "browser-notes-reveal",
         "weight": 35,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "browser-notification-cascade",
-        "weight": 34,
         "variants": [
           "A"
         ],
@@ -100,28 +40,6 @@
         "templates": 3
       },
       {
-        "id": "browser-media-music",
-        "weight": 5,
-        "variants": [
-          "A",
-          "B"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 3
-      },
-      {
-        "id": "browser-social",
-        "weight": 5,
-        "variants": [
-          "A",
-          "B"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 2
-      },
-      {
         "id": "browser-system-notification",
         "weight": 5,
         "variants": [
@@ -130,7 +48,7 @@
         ],
         "needs": [],
         "signals_any": [],
-        "templates": 2
+        "templates": 1
       },
       {
         "id": "browser-typing-inputs",
@@ -157,108 +75,6 @@
           "mechanism"
         ],
         "templates": 2
-      },
-      {
-        "id": "stat-progress-goals",
-        "weight": 30,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "geo-flight",
-        "weight": 29,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 2
-      },
-      {
-        "id": "geo-north-korea",
-        "weight": 28,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "finance-money-count",
-        "weight": 27,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "geo-world-map",
-        "weight": 26,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "geo-us-hex",
-        "weight": 25,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "geo-us-flow",
-        "weight": 24,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "geo-us-map",
-        "weight": 23,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "dataviz-star-rating",
-        "weight": 22,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [
-          "rating_like"
-        ],
-        "templates": 1
-      },
-      {
-        "id": "geo-spain",
-        "weight": 21,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
       },
       {
         "id": "dataviz-bars-comparison",
@@ -313,17 +129,6 @@
         "templates": 2
       },
       {
-        "id": "dataviz-geo-bubble",
-        "weight": 10,
-        "variants": [
-          "A",
-          "B"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
         "id": "dataviz-waves-signals",
         "weight": 10,
         "variants": [
@@ -333,17 +138,6 @@
         "needs": [],
         "signals_any": [],
         "templates": 2
-      },
-      {
-        "id": "geo-generic",
-        "weight": 2,
-        "variants": [
-          "A",
-          "B"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 8
       }
     ],
     "frames-cards": [
@@ -712,17 +506,6 @@
         "templates": 1
       },
       {
-        "id": "lowerthird-social",
-        "weight": 5,
-        "variants": [
-          "A",
-          "B"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 3
-      },
-      {
         "id": "lowerthird-speaker",
         "weight": 5,
         "variants": [
@@ -760,8 +543,7 @@
         "id": "cta-subscribe",
         "weight": 10,
         "variants": [
-          "A",
-          "B"
+          "A"
         ],
         "needs": [],
         "signals_any": [],
@@ -826,16 +608,6 @@
       }
     ],
     "text-fullscreen": [
-      {
-        "id": "text-beat-freeze",
-        "weight": 27,
-        "variants": [
-          "A"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
       {
         "id": "text-terminal-shell",
         "weight": 26,
@@ -1008,29 +780,7 @@
         "templates": 1
       },
       {
-        "id": "text-news-ticker",
-        "weight": 5,
-        "variants": [
-          "A",
-          "B"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
         "id": "text-quote-frame",
-        "weight": 5,
-        "variants": [
-          "A",
-          "B"
-        ],
-        "needs": [],
-        "signals_any": [],
-        "templates": 1
-      },
-      {
-        "id": "text-split-flap-board",
         "weight": 5,
         "variants": [
           "A",

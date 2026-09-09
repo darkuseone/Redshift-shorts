@@ -17,8 +17,22 @@
   ],
   "renderer": "hero-chat-typing",
   "last_used_in": [
-    "redshift_0047"
+    "redshift_0047",
+    "redshift_0042"
   ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "question"
+  ],
+  "rarity": "variant",
+  "topics": [
+    "hero-devices"
+  ],
+  "requires": [
+    "question"
+  ],
+  "forbids": [],
+  "cooldown_videos": 1,
+  "brand_ok": true
 }
