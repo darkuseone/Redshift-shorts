@@ -20,6 +20,16 @@ from src.p3_speech_opt.optimizer import (
 from src.p4_align.aligner import align_by_energy, build_srt, map_tokens_to_words
 from src.p0_validate.validator import validate_script
 
+# 0042 на диске ~3.08 с; P0 режет хук >3 с. Планировщик тестируем на легальном хуке.
+_SHORT_HOOK = "Этот ответ невозможно проверить. Совсем никак."
+
+
+@pytest.fixture
+def sample_script(sample_script):
+    hook = next(b for b in sample_script["blocks"] if b.get("role") == "hook")
+    hook["text"] = _SHORT_HOOK
+    return sample_script
+
 
 # --- нормализация текста (§4.2.5) --------------------------------------------
 
@@ -96,10 +106,6 @@ def test_plan_reports_conflict_when_avatar_cannot_appear_early(sample_script, cf
     for block in sample_script["blocks"][:3]:
         block["avatar"] = "off"
         block["mode_hint"] = "C"
-    sample_script["blocks"][0]["text"] = (
-        "Этот ответ невозможно проверить ничем, и это самое странное свойство "
-        "всей затеи с квантовыми вычислениями сегодня."
-    )
     validated = validate_script(sample_script, cfg)
     draft = plan(validated, cfg)
     codes = [c["code"] for c in draft["conflicts"]]

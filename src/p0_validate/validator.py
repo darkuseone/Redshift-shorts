@@ -159,17 +159,17 @@ def _check_hook_on_screen(meta: dict[str, Any],
 
 # --- петля удержания (script_playbook.md) ------------------------------------
 # Ролик держат не «интересной темой», а незакрытым вопросом: он открывается в
-# первые секунды и закрывается ответом, которого зритель не предсказал. Ниже —
-# проверки формы этой петли. Все они предупреждения, а не отказы: сценарий
-# бывает намеренно устроен иначе, и решать это человеку. Но молча пропускать
-# ролик, где ответ стоит вторым блоком, значит собирать его без петли вовсе.
+# первые секунды и закрывается ответом, которого зритель не предсказал. Длина
+# хука — отказ: удар длиннее limits.hook_sec уже вступление, а не хук. Остальные
+# проверки формы петли пока предупреждения: сценарий бывает намеренно устроен
+# иначе. Молча пропускать ролик, где ответ стоит вторым блоком, нельзя.
 
 # Доля хронометража, раньше которой ответ гасит интригу, не успев её раскачать.
 PAYOFF_EARLIEST_SHARE = 0.40
 # Доля, позже которой ответу негде осесть: за ним ещё перенос и CTA.
 PAYOFF_LATEST_SHARE = 0.88
-# Хук длиннее этого перестаёт быть ударом и становится вступлением.
-HOOK_MAX_SEC = 5.0
+# Fallback, если в конфиге нет limits.hook_sec. Истина — config.yaml.
+HOOK_MAX_SEC = 3.0
 # Сколько новых слов обязан принести ответ сверх уже сказанного.
 PAYOFF_MIN_NEW_WORDS = 2
 
@@ -234,8 +234,16 @@ def _check_ending_rotation(cta: dict[str, Any] | None, cfg, *,
 _answer_block_index = answer_block_index
 
 
+def _hook_max_sec(cfg) -> float:
+    """Потолок хука: один источник с P5 — ``limits.hook_sec``."""
+    if cfg is None:
+        return HOOK_MAX_SEC
+    return float(cfg.get("limits.hook_sec", HOOK_MAX_SEC))
+
+
 def _check_retention_loop(blocks: list[dict[str, Any]],
-                          cta: dict[str, Any] | None) -> list[dict[str, Any]]:
+                          cta: dict[str, Any] | None, *,
+                          hook_max_sec: float = HOOK_MAX_SEC) -> list[dict[str, Any]]:
     """Форма петли: удар — интрига — затяжка — ответ — CTA на следующую петлю."""
     warnings: list[dict[str, Any]] = []
     if not blocks:
@@ -246,12 +254,14 @@ def _check_retention_loop(blocks: list[dict[str, Any]],
     starts = [sum(spans[:i]) for i in range(len(blocks))]
 
     hook_i = next((i for i, b in enumerate(blocks) if b.get("role") == "hook"), None)
-    if hook_i is not None and spans[hook_i] > HOOK_MAX_SEC:
-        warnings.append({
-            "code": "HOOK_TOO_LONG",
-            "message": (f"хук длится ~{spans[hook_i]:.1f} сек (потолок {HOOK_MAX_SEC}): "
-                        "это уже вступление, а не удар — режьте до одного обещания"),
-        })
+    if hook_i is not None and spans[hook_i] > hook_max_sec:
+        raise ValidationError(
+            f"хук длится ~{spans[hook_i]:.1f} сек (потолок {hook_max_sec}): "
+            "это уже вступление, а не удар — режьте до одного обещания",
+            code="HOOK_TOO_LONG",
+            duration_sec=round(spans[hook_i], 3),
+            max_sec=hook_max_sec,
+        )
 
     answer_i = _answer_block_index(blocks)
     if answer_i is None:
@@ -393,8 +403,10 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
     _check_hook_answered(blocks)
     warnings.extend(_check_hook_on_screen(meta, blocks))
 
-    # --- форма петли удержания (предупреждения, не отказ)
-    warnings.extend(_check_retention_loop(blocks, script.get("cta")))
+    # --- форма петли удержания (HOOK_TOO_LONG — отказ; остальное — предупреждения)
+    warnings.extend(_check_retention_loop(
+        blocks, script.get("cta"), hook_max_sec=_hook_max_sec(cfg),
+    ))
     warnings.extend(_check_ending_rotation(script.get("cta"), cfg,
                                            video_id=str(meta.get("video_id") or "")))
 

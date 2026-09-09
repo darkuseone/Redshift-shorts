@@ -373,6 +373,9 @@ class TestTheGlossLivesInTheVoiceNotOnTheCard:
 
         from src.lib.text import strip_stress
 
+        # 0042 spoken hook ~3.08 с — P0 режет. Глосс живёт в других блоках.
+        hook = next(b for b in script["blocks"] if b.get("role") == "hook")
+        hook["text"] = "Этот ответ невозможно проверить. Совсем никак."
         plan = build_plan(validate_script(script, cfg), cfg)
         # `spoken_text` несёт знаки ударения — их ставит нормализация для TTS.
         glossed = [b for b in plan["blocks"]

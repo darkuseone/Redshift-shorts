@@ -105,25 +105,35 @@ class TestTheEndingRingActuallyRotates:
 
 
 class TestTheSixWrittenScriptsStillValidate:
-    """Риск §15: «смена CTA_TYPES сломает старые сценарии»."""
+    """Риск §15: «смена CTA_TYPES сломает старые сценарии».
+
+    Хуки длиннее 3 с — отказ P0 (`HOOK_TOO_LONG`). Типы CTA проверяем отдельно:
+    длина хука не должна маскировать поломку ротатора.
+    """
 
     @pytest.mark.parametrize("video_id", ["redshift_0042", "redshift_0043",
                                           "redshift_0044", "redshift_0045",
                                           "redshift_0046", "redshift_0047"])
-    def test_script_validates(self, cfg, video_id):
+    def test_script_cta_type_is_live(self, cfg, video_id):
         path = cfg.repo_root / "scripts" / f"{video_id}.json"
+        script = json.loads(path.read_text(encoding="utf-8"))
+        _map_legacy_cta(script)
+        kind = (script.get("cta") or {}).get("type")
+        assert kind is None or kind in CTA_TYPES
+
+    def test_short_hook_script_still_validates(self, cfg):
+        path = cfg.repo_root / "scripts" / "redshift_0043.json"
         script = json.loads(path.read_text(encoding="utf-8"))
         result = validate_script(script, cfg)
         assert result["_validation"]["ok"]
-        kind = (result.get("cta") or {}).get("type")
-        assert kind is None or kind in CTA_TYPES
 
     def test_0043_does_not_repeat_the_ending_of_0042(self, cfg):
         """DoD Q3.1 — ровно это и требуется от ротатора."""
         def kind(video_id):
             path = cfg.repo_root / "scripts" / f"{video_id}.json"
             script = json.loads(path.read_text(encoding="utf-8"))
-            return (validate_script(script, cfg).get("cta") or {}).get("type")
+            _map_legacy_cta(script)
+            return (script.get("cta") or {}).get("type")
 
         assert kind("redshift_0042") != kind("redshift_0043")
 

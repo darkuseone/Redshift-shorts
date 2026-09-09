@@ -8,7 +8,21 @@ from src.errors import (
     BudgetExceeded, DurationOutOfRange, HookUnanswered, MissingCta, MissingHook,
     NoSource, QuoteTooLong, ValidationError,
 )
-from src.p0_validate.validator import validate_script
+from src.lib.jsonio import read_json
+from src.lib.schema import estimate_block_duration
+from src.p0_validate.validator import HOOK_MAX_SEC, validate_script
+
+# Spoken hook ≤3.0 с. 0042 на диске ~3.08 с — для прочих правил P0 режем в памяти.
+_SHORT_HOOK = "Этот ответ невозможно проверить. Совсем никак."
+_HOOK_3_1 = "Этот ответ невозможно проверить никаким опытом."
+_CHANNEL_SCRIPTS = tuple(f"redshift_00{n}.json" for n in range(42, 48))
+
+
+@pytest.fixture
+def sample_script(sample_script):
+    hook = next(b for b in sample_script["blocks"] if b.get("role") == "hook")
+    hook["text"] = _SHORT_HOOK
+    return sample_script
 
 
 def test_valid_script_passes(sample_script, cfg):
@@ -89,8 +103,10 @@ def test_duration_too_short(sample_script, cfg):
 
 
 def test_duration_too_long(sample_script, cfg):
+    # Хук не раздуваем: иначе сработает HOOK_TOO_LONG раньше DURATION_OUT_OF_RANGE.
     for block in sample_script["blocks"]:
-        block["text"] = block["text"] * 4
+        if block.get("role") != "hook":
+            block["text"] = block["text"] * 4
     with pytest.raises(DurationOutOfRange):
         validate_script(sample_script, cfg)
 
@@ -131,12 +147,53 @@ def test_duplicate_block_ids(sample_script, cfg):
     assert exc.value.code == "DUPLICATE_BLOCK_ID"
 
 
+def test_hook_just_over_three_seconds_is_blocking(sample_script, cfg):
+    sample_script["blocks"][0]["text"] = _HOOK_3_1
+    duration = estimate_block_duration(_HOOK_3_1)
+    assert duration > HOOK_MAX_SEC
+    with pytest.raises(ValidationError) as exc:
+        validate_script(sample_script, cfg)
+    assert exc.value.code == "HOOK_TOO_LONG"
+    assert "вступление" in exc.value.message
+
+
+def test_hook_under_three_seconds_without_greeting_passes(sample_script, cfg):
+    sample_script["blocks"][0]["text"] = _SHORT_HOOK
+    assert estimate_block_duration(_SHORT_HOOK) <= HOOK_MAX_SEC
+    result = validate_script(sample_script, cfg)
+    assert result["_validation"]["ok"] is True
+    codes = [w["code"] for w in result["_validation"]["warnings"]]
+    assert "HOOK_TOO_LONG" not in codes
+
+
+def test_channel_scripts_with_hook_over_three_seconds_fail(cfg, repo_root):
+    """Приёмка MUST-001: spoken hook >3.0 с не получает ok. Имена — в ассерте."""
+    too_long = []
+    for name in _CHANNEL_SCRIPTS:
+        script = read_json(repo_root / "scripts" / name)
+        hook = next(b for b in script["blocks"] if b.get("role") == "hook")
+        if estimate_block_duration(hook["text"]) <= HOOK_MAX_SEC:
+            continue
+        too_long.append(name)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(script, cfg)
+        assert exc.value.code == "HOOK_TOO_LONG", name
+    assert "redshift_0047.json" in too_long
+    over_0042_0046 = [n for n in too_long if n != "redshift_0047.json"]
+    assert over_0042_0046 == [
+        "redshift_0042.json",
+        "redshift_0044.json",
+        "redshift_0045.json",
+        "redshift_0046.json",
+    ]
+
+
 class TestTheRetentionLoopHasAShape:
     """Форма петли из `script_playbook.md`.
 
-    Проверки предупреждают, а не отказывают: сценарий бывает намеренно устроен
-    иначе. Но ролик, где ответ стоит вторым блоком, собирать вслепую нельзя —
-    держать зрителя после этого нечем.
+    Длина хука — отказ. Остальные проверки предупреждают: сценарий бывает
+    намеренно устроен иначе. Но ролик, где ответ стоит вторым блоком, собирать
+    вслепую нельзя — держать зрителя после этого нечем.
     """
 
     def _codes(self, script, cfg):
@@ -153,7 +210,9 @@ class TestTheRetentionLoopHasAShape:
             "в северной экспедиции, и закончилась совершенно неожиданным образом "
             "для всех участников той долгой работы."
         )
-        assert "HOOK_TOO_LONG" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "HOOK_TOO_LONG"
 
     def test_an_answer_in_the_second_block_is_named(self, sample_script, cfg):
         blocks = sample_script["blocks"]
