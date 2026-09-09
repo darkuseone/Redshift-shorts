@@ -1,7 +1,7 @@
 """CLI REDSHIFT.
 
-    python -m src.cli run --script scripts/redshift_0042.json
-    python -m src.cli validate --script scripts/redshift_0042.json
+    python -m src.cli run --script scripts/example.json
+    python -m src.cli validate --script scripts/example.json
     python -m src.cli validate --script ... --article-url URL   # ARTICLE_URL
     python -m src.cli validate --script ... --topic TOPIC       # TOPIC
     python -m src.cli run --script ... --from P7          # resume после падения
@@ -9,7 +9,7 @@
     python -m src.cli libraries --status
     python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
     python -m src.cli maintenance
-    python -m src.cli learn --video-id redshift_0042 --choice A
+    python -m src.cli learn --video-id example --choice A
 """
 
 from __future__ import annotations

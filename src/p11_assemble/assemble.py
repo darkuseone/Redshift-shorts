@@ -611,6 +611,40 @@ def _gaze_plaque_copy(plan: dict[str, Any]) -> str:
     return "ФАКТ"
 
 
+def show_subscribe_cta(plan: dict[str, Any]) -> bool:
+    """Subscribe button: explicit flag, never a video_id special case."""
+    if plan.get("show_subscribe") is False:
+        return False
+    meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
+    if meta.get("cta") is False or meta.get("show_subscribe") is False:
+        return False
+    return True
+
+
+def wants_gaze_plaque(plan: dict[str, Any]) -> bool:
+    """Gaze plaque if look-at/gaze is set or an evidence card is in the script."""
+    def flagged(node: Any) -> bool:
+        if not isinstance(node, dict):
+            return False
+        return bool(node.get("gaze") or node.get("look_at") or node.get("look-at"))
+
+    if flagged(plan) or flagged(plan.get("hook")) or flagged(plan.get("meta")):
+        return True
+    for block in plan.get("blocks") or []:
+        if not isinstance(block, dict):
+            continue
+        if flagged(block):
+            return True
+        if block.get("role") != "evidence":
+            continue
+        overlay = block.get("overlay") if isinstance(block.get("overlay"), dict) else {}
+        otype = str(overlay.get("type") or "")
+        if block.get("source_ref") or otype in (
+                "highlight", "frame", "lower_third", "source_card"):
+            return True
+    return False
+
+
 def _is_nasa_asset(asset: dict[str, Any] | None) -> bool:
     """NASA stills/clips are off-topic for quantum/AI cuts (0042 S74 still)."""
     if not asset:
@@ -2932,8 +2966,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     )
     used.append(cta_template.id)
     cta_params = dict(cta_template.params)
-    video_id = str(plan.get("video_id") or "")
-    show_subscribe = video_id != "redshift_0042"
+    show_subscribe = show_subscribe_cta(plan)
     cta_params.update({
         "logo_close": True,
         "wordmark": str(cta_params.get("wordmark") or "REDSHIFT"),
@@ -4199,7 +4232,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
     # First avatar gaze mask (~2–4s): informative top/center hook card, no HeyGen.
     first_avatar = next((s for s in shots if s.get("kind") == "avatar"), None)
-    if first_avatar is not None:
+    if first_avatar is not None and wants_gaze_plaque(plan):
         a0 = float(first_avatar["start"])
         a1 = float(first_avatar["end"])
         # Cover the early eye-line beat inside the first avatar window.
