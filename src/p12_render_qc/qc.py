@@ -482,6 +482,53 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     }
 
 
+def apply_semantic_qc(qc: dict[str, Any], vision: dict[str, Any] | None) -> dict[str, Any]:
+    """§11.2 входит в решение о выдаче: mismatch > порога или skip ≠ success."""
+    from .vision_qc import semantic_blocks
+
+    qc = {**qc, "checks": list(qc.get("checks") or []),
+          "failed": list(qc.get("failed") or [])}
+    if not vision:
+        return qc
+    qc["vision"] = vision
+    if (not vision.get("enabled")
+            and not vision.get("qc_skipped_semantic")
+            and not vision.get("skipped")):
+        return qc
+
+    skipped = bool(vision.get("qc_skipped_semantic") or vision.get("skipped"))
+    limit = float(vision.get("mismatch_limit")
+                  if vision.get("mismatch_limit") is not None else 0.10)
+    share = vision.get("mismatch_share")
+    blocks = semantic_blocks(mismatch_share=share, limit=limit, skipped=skipped)
+    vision["blocking"] = blocks
+    passed = not blocks
+    detail = (vision.get("reason")
+              or "; ".join(vision.get("notes") or [])
+              or ("qc_skipped_semantic" if skipped else
+                  f"mismatch_share={share}"))
+    check = {
+        "id": "QC-SEMANTIC",
+        "name": "Смысловой QC §11.2",
+        "passed": passed,
+        "value": share,
+        "threshold": limit,
+        "detail": detail,
+        "timecode_sec": None,
+        "blocking": True,
+    }
+    qc["checks"] = [c for c in qc["checks"] if c.get("id") != "QC-SEMANTIC"] + [check]
+    blocking = [c for c in qc["checks"] if c["blocking"]]
+    qc["passed"] = all(c["passed"] for c in blocking)
+    qc["passed_count"] = sum(1 for c in blocking if c["passed"])
+    qc["total"] = len(blocking)
+    qc["failed"] = [{"id": c["id"], "name": c["name"], "value": c["value"],
+                     "threshold": c["threshold"], "timecode_sec": c["timecode_sec"],
+                     "detail": c["detail"]}
+                    for c in qc["checks"] if not c["passed"]]
+    return qc
+
+
 def _shot_events(cut_plan: dict[str, Any], shot: dict[str, Any]) -> list[dict[str, Any]]:
     for slot in cut_plan["slots"]:
         if slot["index"] == shot["index"]:

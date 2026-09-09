@@ -11,6 +11,7 @@ def test_skip_flags_default_off():
     cfg = load_config()
     assert cfg.get("vision.skip_live") is False
     assert cfg.get("generation.skip") is False
+    assert cfg.get("limits.vision_mismatch_share_max") == 0.10
 
 
 def test_skip_flags_cli_override():
@@ -46,9 +47,11 @@ def test_vision_qc_skip_live_short_circuits(tmp_path, monkeypatch):
         ctx, video_path=tmp_path / "v.mp4",
         plan={"duration_sec": 10, "variant": "B", "shots": [], "subtitles": []},
     )
-    assert report["enabled"] is False
+    assert report.get("qc_skipped_semantic") is True
     assert report.get("skipped") is True
-    assert report["blocking"] is False
+    assert report["blocking"] is True
+    assert report["picture_matches_speech"] is False
+    assert report["mismatch_share"] is None
     assert called["build"] == 0
 
 
@@ -81,8 +84,9 @@ def test_vision_qc_provider_error_is_non_blocking(tmp_path, monkeypatch):
               "subtitles": []},
     )
     assert report.get("provider_error") or report.get("skipped")
-    assert report["blocking"] is False
-    assert report["picture_matches_speech"] is True
+    assert report.get("qc_skipped_semantic") is True
+    assert report["blocking"] is True
+    assert report["picture_matches_speech"] is False
     ctx.warn.assert_called()
 
 
@@ -236,3 +240,74 @@ class TestTheJudgeIsNotAskedTheSameQuestionTwice:
             __slots__ = ()
 
         assert _verdict_cache(_Frozen()) == {}
+
+
+def _ok_qc():
+    return {
+        "passed": True, "passed_count": 1, "total": 1,
+        "checks": [{"id": "QC-1", "name": "длительность", "passed": True,
+                    "blocking": True, "value": 48, "threshold": [35, 70],
+                    "detail": "", "timecode_sec": None}],
+        "failed": [],
+    }
+
+
+def test_mismatch_share_eleven_percent_blocks():
+    """Фикстура MUST-006: 11 % расхождений — blocking fail."""
+    from src.p12_render_qc.qc import apply_semantic_qc
+    from src.p12_render_qc.vision_qc import semantic_blocks
+
+    assert semantic_blocks(mismatch_share=0.11, limit=0.10, skipped=False)
+    vision = {
+        "enabled": True, "skipped": False, "qc_skipped_semantic": False,
+        "mismatch_share": 0.11, "mismatch_limit": 0.10,
+        "picture_matches_speech": False, "blocking": True, "notes": [],
+    }
+    folded = apply_semantic_qc(_ok_qc(), vision)
+    assert not folded["passed"]
+    assert folded["vision"]["blocking"] is True
+    assert any(c["id"] == "QC-SEMANTIC" and c["blocking"] and not c["passed"]
+               for c in folded["checks"])
+
+
+def test_mismatch_share_nine_percent_passes():
+    """Фикстура MUST-006: 9 % расхождений — pass."""
+    from src.p12_render_qc.qc import apply_semantic_qc
+    from src.p12_render_qc.vision_qc import semantic_blocks
+
+    assert not semantic_blocks(mismatch_share=0.09, limit=0.10, skipped=False)
+    vision = {
+        "enabled": True, "skipped": False, "qc_skipped_semantic": False,
+        "mismatch_share": 0.09, "mismatch_limit": 0.10,
+        "picture_matches_speech": True, "blocking": False, "notes": [],
+    }
+    folded = apply_semantic_qc(_ok_qc(), vision)
+    assert folded["passed"]
+    assert folded["vision"]["blocking"] is False
+
+
+def test_skip_live_is_not_a_shipped_semantic_success(tmp_path, monkeypatch):
+    """skip_live не пишет semantic pass и не даёт status success."""
+    from src.p12_render_qc import vision_qc as VQ
+    from src.p12_render_qc.qc import apply_semantic_qc
+
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *_a, **_k: None)
+    cfg = load_config(overrides=["vision.skip_live=true"])
+    ctx = MagicMock()
+    ctx.cfg = cfg
+    ctx.costs = MagicMock()
+    ctx.warn = MagicMock()
+    ctx.wpath = lambda *a: tmp_path.joinpath(*map(str, a))
+
+    vision = VQ.run_vision_qc(
+        ctx, video_path=tmp_path / "v.mp4",
+        plan={"duration_sec": 10, "variant": "A", "shots": [], "subtitles": []},
+    )
+    folded = apply_semantic_qc(_ok_qc(), vision)
+    status = "ok" if folded["passed"] else "qc_failed"
+    assert vision["qc_skipped_semantic"] is True
+    assert vision["picture_matches_speech"] is not True
+    assert folded["passed"] is False
+    assert status != "ok"
+    assert "success" not in status
+    assert folded.get("vision")
