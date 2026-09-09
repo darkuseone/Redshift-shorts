@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-08",
-  "count": 65,
+  "updated": "2026-09-09",
+  "count": 69,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -2408,6 +2408,146 @@
         "attribution": "Pexels / Kleison  Leopoldino",
         "author": "Kleison  Leopoldino",
         "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v35003022",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/golden-molecular-lattice-network-35003022/",
+      "phash": "143827f979863ec4",
+      "tags": [
+        "quantum",
+        "processor",
+        "molecular",
+        "lattice",
+        "laboratory",
+        "data"
+      ],
+      "vision_summary": "Golden molecular lattice network on dark field — qubit/processor metaphor",
+      "score": 0.86,
+      "duration_sec": 10.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-09",
+      "phashes": [
+        "143827f979863ec4",
+        "c8ab2e1953514cfe",
+        "06b2e3f4d2d2bc48"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v35003022.mp4",
+      "extra": {
+        "attribution": "Pexels / local cache",
+        "watched": true
+      }
+    },
+    {
+      "id": "pexels_v38431825",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/stock-market-ticker-numbers-finance-screen-38431825/",
+      "phash": "2d7b9629b34a52c4",
+      "tags": [
+        "finance",
+        "money",
+        "numbers",
+        "data",
+        "screen",
+        "abstract"
+      ],
+      "vision_summary": "Stock-market ticker numbers on a dark finance screen — money/trust CTA",
+      "score": 0.86,
+      "duration_sec": 15.015,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-09",
+      "phashes": [
+        "2d7b9629b34a52c4",
+        "2d7b9629934c744c",
+        "2d7b96a91246724e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v38431825.mp4",
+      "extra": {
+        "attribution": "Pexels / local cache",
+        "watched": true
+      }
+    },
+    {
+      "id": "grok_cryostat_0042",
+      "type": "video",
+      "source": "generated",
+      "license": "generated-owned",
+      "url_origin": "cursor://generate-image/grok_quantum_cryostat_chandelier",
+      "phash": "c64d333138e7cf41",
+      "tags": [
+        "quantum",
+        "processor",
+        "cryostat",
+        "chandelier",
+        "laboratory",
+        "golden",
+        "chip"
+      ],
+      "vision_summary": "Gold dilution-refrigerator quantum processor chandelier in a dark laboratory",
+      "score": 0.86,
+      "duration_sec": 3.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-09",
+      "phashes": [
+        "c64d333138e7cf41",
+        "c64d333038f7cdc1",
+        "c64c33303cf6cdc3"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/grok_cryostat_0042.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / grok-image",
+        "watched": true
+      }
+    },
+    {
+      "id": "grok_supercomputer_0042",
+      "type": "video",
+      "source": "generated",
+      "license": "generated-owned",
+      "url_origin": "cursor://generate-image/grok_supercomputer_hall",
+      "phash": "c838b3422ef6c38f",
+      "tags": [
+        "server",
+        "room",
+        "supercomputer",
+        "data",
+        "blue",
+        "light",
+        "computer"
+      ],
+      "vision_summary": "Supercomputer server room with blue light receding down the aisle",
+      "score": 0.86,
+      "duration_sec": 3.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-09",
+      "phashes": [
+        "c838b3422ef6c38f",
+        "c839b3422e76c38f",
+        "d839b3422776438f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/grok_supercomputer_0042.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / grok-image",
+        "watched": true
       }
     }
   ]

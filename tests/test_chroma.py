@@ -163,23 +163,10 @@ def test_head_box_measures_the_head_and_not_the_props(tmp_path):
         f"ширина головы без стойки: {x0}..{x1}"
 
 
-def test_bubble_circle_leaves_the_asked_for_margin_around_the_head(tmp_path):
-    """Круг обязан вместить голову и оставить 10–15 % поля.
+def test_circle_hole_bubble_renderer_is_gone():
+    """Кружок-дырка на лице удалён из модуля — лицо в него не влазило."""
+    import src.lib.render.hyperframes.templates as tmpl
 
-    Радиус по полудиагонали коробки формально голову вмещал, но поле выходило
-    вдвое больше просимого: лицо болталось в середине пустого круга. Обратная
-    крайность — 6 % — заказчику на кадре показалась впритык.
-    """
-    import math
-
-    from src.lib.render.hyperframes.templates import bubble_radius
-
-    head_w, head_h = 120, 160
-    radius = bubble_radius({"head_w": head_w, "head_h": head_h})
-
-    # Голова — овал: самая дальняя её точка от центра лежит на длинной полуоси.
-    reach = max(head_w, head_h) / 2
-    assert radius > reach, "голова обязана помещаться целиком"
-    assert 1.10 <= radius / reach <= 1.16, f"поле {radius / reach:.3f}"
-    # Полудиагональ коробки — прежнее правило — дала бы заметно больший круг.
-    assert radius < math.hypot(head_w, head_h) / 2
+    assert not hasattr(tmpl, "bubble_radius")
+    assert "hero-bubble-card" not in tmpl.HERO
+    assert "hero-bubble-typed" not in tmpl.HERO

@@ -371,7 +371,7 @@ def disk_orphan_records(ctx, index: FootageIndex) -> list[AssetRecord]:
                 id=asset_id, type="video", source=source, license=license_,
                 url_origin=f"https://www.{source}.com/video/{asset_id.split('_')[-1]}/",
                 tags=[source, "video"], vision_summary="",
-                score=0.72, duration_sec=float(info.duration_sec or 0.0),
+                score=0.45, duration_sec=float(info.duration_sec or 0.0),
                 width=int(info.width or 0), height=int(info.height or 0),
                 file=rel, extra={"attribution": f"{source} / local cache",
                                  "orphan_ingest": True},
@@ -684,6 +684,11 @@ def run_step(ctx) -> dict[str, Any]:
                 if getattr(record, "quarantined", False):
                     continue
                 if not record.file or not ctx.storage.exists(record.file):
+                    continue
+                # Empty-slot fallback used to dump any orphan (tags=[pexels,video],
+                # score 0.72) into a quantum cut — earth, galaxy, a chemistry
+                # beaker. Require a real overlap with the slot queries.
+                if _local_overlap(record, queries) < 1:
                     continue
                 theme_reason = _local_reject_reason(
                     record, category=category, intent_kind=intent_kind,

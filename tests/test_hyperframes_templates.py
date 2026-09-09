@@ -1951,7 +1951,6 @@ HERO_PARAMS = {
     "hero-text-column": {"lines": ["И ГОРИЗОНТ", "КОТОРЫЙ РАНЬШЕ",
                                    "КАЗАЛСЯ СТЕНОЙ"],
                          "accent_lines": [0]},
-    "hero-bubble-card": {"lines": ["ни один прибор", "не увидит границу"]},
     "hero-brand-pill": {"label": "Google", "icon": "assets/icons/google.png"},
     "hero-card-stack": {"title": "СВЕТИЛ ВНУТРЬ", "src": "assets/m000_shot.mp4"},
     "hero-phone-mock": {"lines": ["что там внутри", "никто не знает"],
@@ -1976,9 +1975,6 @@ HERO_PARAMS = {
                                 {"value": "$18 530 611", "note": "получает Google"},
                                 {"value": "$0", "note": "получает Google"}]},
     "hero-verdict": {"punch": ["Себе", "ноль"]},
-    "hero-bubble-typed": {"entries": [{"text": "ни одна компания", "at": 0.0},
-                                      {"text": "не платит гуглу", "at": 0.9},
-                                      {"text": "ни рубля", "at": 1.8}]},
     "hero-paper": {"source": "arxiv.org",
                    "quote": "maximizing survival time below the event horizon"},
 }
@@ -2115,27 +2111,6 @@ def test_log_marks_the_accent_word_and_never_shows_a_bare_dash():
     params = hero_params("hero-log", {}, content, slot)
     node = render_hero("hero-log", _hero_ctx("hero-log", params=params)).nodes[0]
     assert '<b class="lg-hit">ВЫБРАТЬ,</b>' in node, node
-
-
-def test_typed_card_is_centred_by_position_and_accents_its_last_chunk():
-    """Карточка набирается кусками, последний приходит акцентом.
-
-    Центровка — позицией, а не ``translateX``: вход тянет ``transform``
-    целиком, и первый же твин стёр бы сдвиг на половину ширины — карточка
-    уехала бы вправо на весь ролик.
-    """
-    from src.lib.render.hyperframes.templates import BT_CARD_W
-
-    piece = render_hero("hero-bubble-typed", _hero_ctx("hero-bubble-typed"))
-    node = piece.nodes[0]
-    assert node.count('class="bt-chunk') == 3
-    assert 'class="bt-chunk last"' in node
-    assert f'left:{(1080 - BT_CARD_W) // 2}px' in node
-    # Каждый кусок приходит на своей отметке, а не через ровный шаг.
-    starts = sorted(float(m) for m in re.findall(
-        r'\.bt-chunk:nth-child\(\d+\)"[^;]*?,([\d.]+)\);', " ".join(piece.tweens)))
-    assert len(starts) == 3 and len(set(starts)) == 3, starts
-    assert starts == sorted(starts) and starts[-1] > starts[0], starts
 
 
 def test_source_page_shows_only_what_the_script_really_cites():
@@ -2667,20 +2642,6 @@ def test_headline_size_is_measured_too():
     size = int(re.search(r"font-size:(\d+)px", long_word).group(1))
     from src.lib.render.hyperframes.templates import text_width
     assert text_width("НЕПРЕДСКАЗУЕМОСТЬ", size) <= 980 + 1e-6
-
-
-def test_bubble_leaves_no_residual_scale_on_the_shared_avatar():
-    """Клип аватара общий и может покрывать несколько слотов.
-
-    Дрейф оставил бы на нём остаточный масштаб после конца приёма — ту же
-    утечку, ради которой у сплита стоит обратный твин.
-    """
-    piece = render_hero("hero-bubble-card",
-                        _hero_ctx("hero-bubble-card", duration=6.0))
-    avatar = [t for t in piece.tweens if '"#avatar-01"' in t]
-    assert len(avatar) == 1, f"на аватаре больше одного твина: {avatar}"
-    to_state = re.search(r"\},\{([^}]*)\}", avatar[0]).group(1)
-    assert "scale:1.0," in to_state + ",", f"приём оставляет масштаб: {to_state}"
 
 
 def _fs_ctx(**params):
@@ -7192,19 +7153,14 @@ def test_text_on_a_dark_stage_does_not_stay_ink_black():
 
 
 def test_typed_chunks_do_not_run_together():
-    """Пробел в `::after` внутри `inline-block` схлопывается и не рисуется.
-
-    На кадре это читалось как «комокгаза»: два куска карточки встык. Отступ
-    ставится полем блока, а не текстовым узлом внутри него.
-    """
+    """Кружок с набираемой карточкой удалён — CSS кусков больше нет."""
     from src.lib.config import load_config
     from src.lib.render.hyperframes.brand_css import build_css
 
     css = build_css(load_config().brandbook, fonts={})
-    rules = [r for r in css.split("}") if ".bt-chunk" in r and "inline-block" in r]
-    assert rules, "кусок карточки перестал быть блочным"
-    assert "margin-right" in rules[0], rules[0]
-    assert ".bt-chunk::after" not in css, "пробел снова внутри блока"
+    assert ".bt-chunk" not in css
+    assert ".hero-bubble-typed" not in css
+    assert ".hero-bubble-card" not in css
 
 
 # --- экспонат (§5.4) ----------------------------------------------------------

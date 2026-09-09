@@ -281,9 +281,9 @@ def test_catalog_matches_spec_counts(cfg):
     assert counts == {
         "intro-hooks": 8, "text-fullscreen": 31, "lower-thirds": 11, "frames-cards": 7,
         "browser-ui": 9, "transitions": 41, "avatar-entry": 6, "kenburns": 10,
-        "parallax": 4, "data-viz": 17, "outro-cta": 6, "hero-devices": 25,
+        "parallax": 4, "data-viz": 17, "outro-cta": 6, "hero-devices": 23,
     }
-    assert len(catalog.all()) == 175
+    assert len(catalog.all()) == 173
 
 
 

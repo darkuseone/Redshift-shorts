@@ -66,12 +66,16 @@ def test_pins_file_lists_good_and_deny():
     import json
     pins = json.loads(Path("config/footage_pins.json").read_text(encoding="utf-8"))
     entry = pins["redshift_0042"]
-    assert entry["prefer"][:3] == [
-        "pexels_v25935014", "pexels_v30775057", "pexels_v18069803",
+    assert entry["prefer"][:2] == [
+        "pexels_v25935014", "pexels_v18069803",
     ]
     assert "pexels_v18069803" in entry["prefer"]
     assert "pexels_v25935014" in entry["prefer"]
-    assert "pexels_v30775057" in entry["prefer"]
+    assert "pexels_v30775057" not in entry["prefer"]
+    assert "pexels_v30775057" in entry["deny"]
+    assert "pexels_v20349276" in entry["deny"]
+    assert "pexels_v27975940" in entry["deny"]
+    assert "pexels_v20436933" in entry["deny"]
     assert "pexels_v20349219" not in entry["prefer"]
     assert "pexels_v7565432" not in entry["prefer"]
     assert "pexels_v7565432" in entry["deny"]
@@ -94,6 +98,13 @@ def test_pins_file_lists_good_and_deny():
     assert "pexels_v34550739" not in entry["prefer"]
     assert "pexels_v35288383" not in entry["prefer"]
     assert "pixabay_v113383" not in entry["prefer"]
+    assert "pexels_v16727463" in entry["deny"]
+    assert "pexels_v19162466" in entry["deny"]
+    assert "pexels_v28613453" in entry["deny"]
+    assert "pexels_v29669602" in entry["deny"]
+    assert "pexels_v35003022" in entry["prefer"]
+    assert "pexels_v38431825" in entry["prefer"]
+    assert "pixabay_v200531" in entry["prefer"]
 
 
 def test_pin_deny_prefix_matches_every_nasa_id():

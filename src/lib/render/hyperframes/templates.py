@@ -7249,118 +7249,6 @@ def hero_text_column(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
-# Сколько свободного поля оставить между головой и краем круга. Первая мерка
-# была 6 % — заказчик посмотрел кадр и попросил отодвинуть голову ещё, до
-# «десяти-пятнадцати процентов»: на шести голова читается впритык к кольцу.
-BUBBLE_MARGIN = 1.15
-
-
-def bubble_radius(params: dict, *, default: int = 460) -> int:
-    """Радиус круга — от измеренной коробки головы, а не от фикс. диаметра.
-
-    Круг обязан вместить голову целиком, и мерка тут — коробка головы. Но
-    описывать надо **овал, а не коробку**: у прямоугольника дальше всего от
-    центра углы, а в углах коробки головы нет — там фон. Полудиагональ давала
-    радиус на 25 % больше нужного, лицо болталось в середине пустого круга.
-    Радиус берётся по длинной полуоси овала, к ней добавляется поле:
-    ``BUBBLE_MARGIN`` свободного места между головой и кольцом.
-
-    Вход клипа внутри круга запаса не требует: приближение у клипов идёт
-    **снизу вверх** (``entrance_tweens`` разворачивает масштаб, когда нет
-    проявления) — голова начинает меньше и приходит ровно к измеренному
-    размеру, а не перерастает его.
-    """
-    w = float(params.get("head_w") or 0)
-    h = float(params.get("head_h") or 0)
-    if w <= 0 or h <= 0:
-        return int(params.get("ring", default)) // 2
-    return int(max(w, h) / 2 * float(params.get("head_margin", BUBBLE_MARGIN)))
-
-
-def bubble_field(node_id: str, face_x: int, face_y: int, radius: int, *,
-                 cls: str) -> str:
-    """Тёмное поле с круглой дыркой на лице и кольцом по её краю.
-
-    Дырка вырезается SVG-маской: второе видео со ``border-radius:50%`` не
-    годится — продюсер рисует кадры в коробку элемента, игнорируя скругление,
-    и вместо круга получался квадрат (проверено зумом).
-    """
-    return (f'<svg class="{cls}" viewBox="0 0 1080 1920" preserveAspectRatio="none">'
-            f'<defs>'
-            f'<radialGradient id="{node_id}-g" cx="50%" cy="30%" r="80%">'
-            f'<stop offset="0%" stop-color="#2A2320"/>'
-            f'<stop offset="58%" stop-color="#141416"/>'
-            f'<stop offset="100%" stop-color="#08090B"/>'
-            f'</radialGradient>'
-            f'<mask id="{node_id}-m">'
-            f'<rect width="1080" height="1920" fill="white"/>'
-            f'<circle cx="{face_x}" cy="{face_y}" r="{radius}" fill="black"/>'
-            f'</mask>'
-            f'</defs>'
-            f'<rect width="1080" height="1920" mask="url(#{node_id}-m)" '
-            f'fill="url(#{node_id}-g)"/>'
-            f'<circle cx="{face_x}" cy="{face_y}" r="{radius + 5}" fill="none" '
-            f'stroke="#FFFFFF" stroke-width="10"/>'
-            f'</svg>')
-
-
-def hero_bubble_card(ctx: "TemplateCtx") -> Piece:
-    """Ведущий в круге, реплика карточкой под ним.
-
-    Референс: человека **обрезают в кружок** на тёмном поле, под ним белая
-    карточка с фразой. Кольцо поверх кадра этого не даёт — тело остаётся видно
-    вокруг, и приём читается как рамка, а не как смена плана.
-
-    Круг вырезается SVG-маской в тёмном поле, и сквозь дырку виден сам аватар.
-    Второе видео с ``border-radius:50%`` не годится: продюсер рисует кадры в
-    коробку элемента, **игнорируя скругление и рамку** — проверено зумом,
-    получался квадрат. Маской вырезает надёжно, тем же приёмом, что и выбивка.
-
-    «Резко помещают в круг» — ровно то, чего быть не должно: поле проявляется,
-    а сам ведущий в это время приближается, и переход читается сменой плана.
-    """
-    lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
-    if not lines:
-        return Piece()
-    node_id = f"bc-{ctx.index:02d}"
-    accent_last = bool(ctx.params.get("accent_last", True))
-    # Круг ставится по реальному лицу: у сегмента аватара есть face_bbox, и
-    # догадка «четверть высоты кадра» промахивалась мимо головы на сотню
-    # пикселей. Без bbox остаётся прежняя оценка.
-    radius = bubble_radius(ctx.params)
-    face_x = int(ctx.params.get("face_cx", 540))
-    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + radius))
-
-    body = "".join(
-        f'<span class="bc-line{" accent" if accent_last and i == len(lines) - 1 else ""}">'
-        f'{_esc(line)}</span>'
-        for i, line in enumerate(lines[:4]))
-    card_top = face_y + radius + 46
-
-    svg = bubble_field(node_id, face_x, face_y, radius, cls="bc-field")
-
-    return Piece(
-        nodes=[f'<div id="{node_id}" class="clip hero-bubble-card" '
-               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
-               f'data-track-index="{ctx.track}">{svg}'
-               f'<span class="bc-card" style="top:{card_top}px">{body}</span></div>'],
-        tweens=(
-            entrance_tweens(f"#{node_id} .bc-field", ctx.start, name="dim")
-            + entrance_tweens(f"#{node_id} .bc-card", ctx.start,
-                              name="zoom-out", delay=0.10)
-            # Ведущий приближается внутри дырки: без этого «помещение в круг»
-            # выглядит как включённая заслонка, а не как смена плана.
-            #
-            # Только вход, без дрейфа. Клип аватара общий и может покрывать
-            # несколько слотов, а дрейф оставил бы на нём остаточный масштаб
-            # после конца приёма — та же утечка, ради которой у сплита стоит
-            # обратный твин. Замереть ведущий при этом не может: он живое
-            # видео и говорит.
-            + entrance_tweens(f"#{ctx.target}", ctx.start,
-                              name="zoom-in", fade=False, hold=True)
-        ))
-
-
 def hero_brand_pill(ctx: "TemplateCtx") -> Piece:
     """Пилюля с логотипом бренда сбоку от ведущего.
 
@@ -8089,73 +7977,6 @@ def hero_verdict(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
-# Карточка набираемой реплики: поле карточки и её отступ от круга.
-BT_CARD_W, BT_PAD, BT_GAP = 900, 46, 40
-
-
-def hero_bubble_typed(ctx: "TemplateCtx") -> Piece:
-    """Ведущий в круге, реплика набирается в карточке по ходу речи.
-
-    Референс: тот же круг с ведущим и белая карточка под ним, но текст в ней
-    не стоит целиком — он **прибывает**, кусок за куском, ровно на своих
-    словах, и последний приходит выделенным. Разница с обычной карточкой не в
-    вёрстке, а во времени: та показывает готовую мысль, эта показывает, как
-    мысль набирается.
-
-    Набор идёт кусками, а не буквами: посимвольная печать не переживает
-    перемотку — кадр по seek обязан совпасть с кадром по проигрыванию.
-
-    Карточка держит размер с самого начала: куски занимают своё место сразу и
-    только проявляются, иначе текст на каждом слове перевёрстывался бы, и
-    карточка дёргалась бы под ним.
-    """
-    entries = [e for e in (ctx.params.get("entries") or [])
-               if str((e or {}).get("text") or "").strip()]
-    if not entries:
-        return Piece()
-    node_id = f"bt-{ctx.index:02d}"
-    radius = bubble_radius(ctx.params)
-    face_x = int(ctx.params.get("face_cx", 540))
-    face_y = int(ctx.params.get("face_cy", 0.24 * 1920 + radius))
-
-    chunks = [str(e["text"]).strip() for e in entries[:6]]
-    # Кегль подбирается по всей реплике сразу: она набирается в одну карточку,
-    # и последний кусок обязан влезть в неё так же, как первый.
-    lines, size = fit_block(" ".join(chunks), BT_CARD_W - 2 * BT_PAD,
-                            int(ctx.params.get("size", 56)), 4, role="subtitle")
-    body = "".join(
-        f'<span class="bt-chunk{" last" if i == len(chunks) - 1 else ""}">'
-        f'{_esc(text)}</span>'
-        for i, text in enumerate(chunks))
-
-    card_top = face_y + radius + BT_GAP
-    height = 2 * BT_PAD + int(len(lines) * size * 1.28)
-
-    tweens = (entrance_tweens(f"#{node_id} .bt-field", ctx.start, name="dim")
-              + entrance_tweens(f"#{node_id} .bt-card", ctx.start,
-                                name="zoom-out", delay=0.10)
-              # Ведущий приближается внутри дырки — иначе круг читается как
-              # включённая заслонка, а не как смена плана. Только вход, без
-              # дрейфа: клип аватара общий, остаточный масштаб утёк бы дальше.
-              + entrance_tweens(f"#{ctx.target}", ctx.start, name="zoom-in",
-                                fade=False, hold=True))
-    for i, entry in enumerate(entries[:6]):
-        at = max(0.0, min(float(entry.get("at", 0.0)), max(0.0, ctx.duration - 0.3)))
-        tweens += entrance_tweens(f"#{node_id} .bt-chunk:nth-child({i + 1})",
-                                  ctx.start, name="type", delay=at)
-
-    return Piece(
-        nodes=[f'<div id="{node_id}" class="clip hero-bubble-typed" '
-               f'data-start="{_num(ctx.start)}" data-duration="{_num(ctx.duration)}" '
-               f'data-track-index="{ctx.track}">'
-               + bubble_field(node_id, face_x, face_y, radius, cls="bt-field")
-               + f'<span class="bt-card" style="top:{card_top}px;'
-               f'left:{(1080 - BT_CARD_W) // 2}px;width:{BT_CARD_W}px;'
-               f'min-height:{height}px;padding:{BT_PAD}px;'
-               f'font-size:{size}px">{body}</span></div>'],
-        tweens=tweens)
-
-
 # Страница первоисточника: поле самой страницы и то, куда уезжает ведущий.
 #
 # Два условия, и оба проверены кадром. Низ страницы держится **выше строки
@@ -8280,7 +8101,6 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-split": hero_split,
     "hero-knockout": hero_knockout,
     "hero-text-column": hero_text_column,
-    "hero-bubble-card": hero_bubble_card,
     "hero-brand-pill": hero_brand_pill,
     "hero-card-stack": hero_card_stack,
     "hero-phone-mock": hero_phone_mock,
@@ -8297,7 +8117,6 @@ HERO: dict[str, Callable[["TemplateCtx"], Piece]] = {
     "hero-figure": hero_figure,
     "hero-verdict": hero_verdict,
     "hero-paper": hero_paper,
-    "hero-bubble-typed": hero_bubble_typed,
 }
 
 
@@ -14357,47 +14176,6 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         "text-shadow:0 4px 20px var(--stage-halo),0 2px 6px var(--stage-halo)}"
         # Золото референсов переведено в акцент бренда: выцветший красный.
         ".hero-text-column .tc-line.accent{color:var(--color-accent)}"
-        # --- круглая рамка и карточка ---
-        f".hero-bubble-card{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
-        "pointer-events:none}"
-        # Кольцо обводит лицо, не закрывая его: заливки нет, только рамка.
-        # Тёмное поле с круглой дыркой: ведущий остаётся виден только в круге.
-        # Градиент, а не filter — размытие вне разрешённого списка движка.
-        ".hero-bubble-card .bc-field{position:absolute;inset:0;display:block;"
-        "width:100%;height:100%;will-change:transform}"
-        ".hero-bubble-card .bc-card{position:absolute;left:var(--safe-x-min);"
-        "right:var(--safe-x-min);display:flex;flex-direction:column;"
-        "gap:10px;padding:56px 46px 44px;border-radius:44px;"
-        "background:var(--color-bg-pure);color:var(--color-ink);"
-        "box-shadow:0 26px 70px rgba(0,0,0,0.28);text-align:center;"
-        "will-change:transform}"
-        ".hero-bubble-card .bc-line{display:block;font-family:var(--font-subtitle);"
-        "font-weight:700;font-size:62px;line-height:1.16}"
-        ".hero-bubble-card .bc-line.accent{font-weight:800;"
-        "color:var(--color-accent)}"
-        # --- круг и набираемая карточка ---
-        f".hero-bubble-typed{{position:absolute;inset:0;z-index:{Z_AVATAR + 1};"
-        "pointer-events:none}"
-        ".hero-bubble-typed .bt-field{position:absolute;inset:0;display:block;"
-        "width:100%;height:100%;will-change:transform}"
-        # Карточка по центру кадра: реплика в ней читается как реплика, а не
-        # как подпись у края.
-        # Центрируется позицией, а не translateX: вход тянет transform
-        # целиком, и центровка из CSS была бы стёрта первым же твином.
-        ".hero-bubble-typed .bt-card{position:absolute;display:block;"
-        "border-radius:40px;"
-        "background:var(--color-bg-pure);color:var(--color-ink);"
-        "box-shadow:0 26px 70px rgba(0,0,0,0.30);text-align:center;"
-        "font-family:var(--font-subtitle);font-weight:700;line-height:1.28;"
-        "will-change:transform}"
-        # Куски встают в строку и держат место с самого начала: место занято,
-        # видимость приходит твином.
-        # Отступ, а не пробел в `::after`: пробел внутри `inline-block`
-        # схлопывается на его конце и в кадре не рисуется — куски слипались в
-        # «комокгаза». Блочность самому куску нужна: вход тянет ему трансформу,
-        # а строчному элементу трансформа не применяется.
-        ".hero-bubble-typed .bt-chunk{display:inline-block;margin-right:0.28em}"
-        ".hero-bubble-typed .bt-chunk.last{color:var(--color-accent)}"
         # --- пилюля бренда ---
         f".hero-brand-pill{{position:absolute;z-index:{Z_AVATAR + 1};"
         "pointer-events:none}"

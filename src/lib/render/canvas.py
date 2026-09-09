@@ -368,12 +368,18 @@ def overlay_layout_bbox(overlay: dict[str, Any],
     return (float(safe.x_min), y0, float(safe.x_max), y1)
 
 
-def caption_layout_bbox(brandbook: dict[str, Any]
+def caption_layout_bbox(brandbook: dict[str, Any], *,
+                        for_avatar: bool = False
                         ) -> tuple[float, float, float, float]:
-    """Полоса субтитров по брендбуку — тот же список, что QC-7."""
+    """Полоса субтитров по брендбуку — тот же список, что QC-7.
+
+    ``for_avatar=True`` — полоса, которая делит кадр с лицом: после сдвига
+    ведущего вниз это ``baseline_y_avatar_shift`` (субтитры над головой).
+    """
     safe = SafeZones.from_brandbook(brandbook)
     subs = brandbook.get("subtitles") or {}
-    baseline = float(subs.get("baseline_y_default") or safe.y_max)
+    key = "baseline_y_avatar_shift" if for_avatar else "baseline_y_default"
+    baseline = float(subs.get(key) or subs.get("baseline_y_default") or safe.y_max)
     sizes = subs.get("size_px") or [92]
     size = float(sizes[-1] if isinstance(sizes, (list, tuple)) else sizes)
     y0 = baseline - size
@@ -415,7 +421,8 @@ def stamp_plan_safe_zones(plan: dict[str, Any], brandbook: dict[str, Any],
             continue
         _record(kind, overlay_layout_bbox(ovl, brandbook), ovl)
     if plan.get("subtitles"):
-        _record("captions", caption_layout_bbox(brandbook))
+        _record("captions", caption_layout_bbox(
+            brandbook, for_avatar=bool(plan.get("avatar"))))
 
     stats.safe_zone_checks = checks
     stats.safe_zone_violations = violations

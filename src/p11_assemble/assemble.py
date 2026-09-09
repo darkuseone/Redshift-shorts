@@ -68,10 +68,6 @@ def _load_yaml(path) -> dict:
 AVATAR_KINDS = ("avatar", "split")
 # White disk of circle-mask-grow sits opaque on the presenter's face.
 AVATAR_ENTRY_DENY = ("avatar-entry/circle-mask-grow",)
-# Opaque full-width bubble cards cover the talking head — skip on avatar.
-_FACE_COVERING_BUBBLES = frozenset({
-    "hero-bubble-typed", "hero-bubble-card",
-})
 
 
 def degrade_split_without_top(slot: dict[str, Any]) -> dict[str, Any]:
@@ -90,7 +86,7 @@ def _transition_exclude(category: str, used: list[str]) -> list[str]:
     return list(used) + ["transitions/cut"] + extra
 
 
-_FACE_ZONE_BOTTOM = 1150
+_FACE_ZONE_BOTTOM = 1080
 _COMPACT_CARD_MIN_PX = 260
 _LATIN_COPY_RATIO = 0.60
 _DOMAIN_OR_URL = re.compile(
@@ -283,8 +279,11 @@ def _source_card_room_px(brandbook: dict[str, Any] | None) -> int:
     size = subs.get("size_px") or [84, 104]
     size_hi = int(size[1] if isinstance(size, (list, tuple)) and len(size) > 1
                   else (size[0] if size else 104))
-    subtitle_top = int(subs.get("baseline_y_default", 1180)) - size_hi // 2 - 30
-    return int(subtitle_top - _FACE_ZONE_BOTTOM)
+    subtitle_top = int(subs.get("baseline_y_avatar_shift")
+                       or subs.get("baseline_y_default", 1180)) - size_hi // 2 - 30
+    face_floor = int(((brandbook.get("avatar") or {}).get("face_band_y")
+                      or [_FACE_ZONE_BOTTOM, 1480])[0])
+    return int(subtitle_top - face_floor)
 
 
 # --- приёмы вокруг ведущего (§5.3, референсы заказчика) ------------------------
@@ -807,7 +806,6 @@ LATE_HERO_BEAT = 0.60
 # kickers and above-crown headlines do not mute spoken VO.
 _BULKY_HERO_MUTE = frozenset({
     "hero-slam", "hero-knockout", "hero-oversize", "hero-split", "hero-exhibit",
-    "hero-bubble-typed", "hero-bubble-card",
 })
 
 
@@ -1053,7 +1051,6 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-split": ("word",),
     "hero-knockout": ("word",),
     "hero-text-column": ("lines",),
-    "hero-bubble-card": ("lines",),
     "hero-brand-pill": ("brand",),
     "hero-card-stack": ("title", "plate"),
     "hero-phone-mock": ("lines",),
@@ -1070,7 +1067,6 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-figure": ("figures",),
     "hero-verdict": ("punch",),
     "hero-paper": ("source", "quote"),
-    "hero-bubble-typed": ("entries",),
 }
 
 
@@ -1657,20 +1653,8 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
         params["head_half"] = max(int(box[2]) - int(box[0]),
                                   int(box[3]) - int(box[1])) // 2
     if content.get("face"):
-        # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
+        # Выбивка целит в светлую полосу лица: буквы видны только там, где
         # за ними светлее заливки.
-        if renderer in ("hero-bubble-card", "hero-bubble-typed"):
-            params["face_cx"], params["face_cy"] = content["face"]
-            if content.get("head_box"):
-                # Круг считается от коробки головы: по фиксированному диаметру
-                # он срезал щёки и подбородок. Центр — тоже её, а не лица:
-                # радиус описан вокруг головы, и если посадить его на середину
-                # лица, макушка вылезет ровно на разницу между ними.
-                box = content["head_box"]
-                params["head_w"] = int(box[2]) - int(box[0])
-                params["head_h"] = int(box[3]) - int(box[1])
-                params["face_cx"] = (int(box[0]) + int(box[2])) // 2
-                params["face_cy"] = (int(box[1]) + int(box[3])) // 2
         if renderer == "hero-knockout":
             params["face_cy"] = content["face"][1]
             if content.get("head_box"):
@@ -1990,11 +1974,6 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # Late beat: title-behind over a full avatar eats the line. Headline
         # above the crown (clear_crown) stays readable.
         if late and template.renderer == "hero-title-behind":
-            blocked.append(template.id)
-            continue
-        # Full-width bubble cards sit on the talking head (0042: only forehead
-        # visible). Side bubble is not in the catalog — skip the family.
-        if template.renderer in _FACE_COVERING_BUBBLES:
             blocked.append(template.id)
             continue
         # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
@@ -4334,7 +4313,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                          category=str(plan.get("category") or ""))},
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
-            "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 1180),
+            "baseline_y": (
+                ctx.cfg.brand("subtitles.baseline_y_avatar_shift", 720)
+                if (avatar_meta.get("segments") or [])
+                else ctx.cfg.brand("subtitles.baseline_y_default", 1180)
+            ),
             "caption": pick_caption_style(plan, ctx.cfg.brandbook),
         },
         "avatar_compose_zoom": compose_zoom,

@@ -114,6 +114,7 @@ STOCK_JUNK_MARKERS: tuple[str, ...] = (
 SCI_OFFTHEME_MARKERS: tuple[str, ...] = (
     "darkroom", "race-day", "race day", "racecar", "race car", "nascar",
     "motorsport", "guitar", "underwater paint", "party drug",
+    "beaker", "red-liquid", "red liquid heating",
 )
 
 # Rover / MSL stills tagged "laboratory" won quantum slots (nasa_PIA13308).
@@ -129,6 +130,8 @@ SCI_NASA_ARCHIVE_MARKERS: tuple[str, ...] = (
 SCI_PLANETARY_MARKERS: tuple[str, ...] = (
     "lunar", "moon surface", "solar flare", "sun surface",
     "mars surface", "planetary",
+    "galaxy", "nebula", "messier", "/earth-", "video/earth",
+    "/pluto-", "earth orbit",
 )
 # Volcano/lava is geology. AI/tech cuts must not win it; science may keep it.
 SCI_VOLCANO_MARKERS: tuple[str, ...] = (

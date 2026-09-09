@@ -1083,6 +1083,8 @@ DELETE_TEMPLATE_IDS = (
     "lower-thirds/yt-lower-third",
     "text-fullscreen/beat-freeze-cut",
     "text-fullscreen/news-ticker",
+    "hero-devices/bubble-card",
+    "hero-devices/bubble-typed",
 )
 
 DELETE_INTENT_IDS = (

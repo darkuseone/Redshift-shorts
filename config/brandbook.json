@@ -139,11 +139,11 @@
     "case": "upper",
     "position": "center",
     "baseline_y": [
-      1100,
+      620,
       1280
     ],
     "baseline_y_default": 1180,
-    "baseline_y_avatar_shift": 1280,
+    "baseline_y_avatar_shift": 720,
     "face_bbox_shift_trigger_y": 900,
     "font_role": "subtitle",
     "size_px": [
@@ -412,8 +412,8 @@
     ],
     "first_appearance_before_sec": 6.0,
     "face_band_y": [
-      350,
-      750
+      1080,
+      1480
     ],
     "modes": {
       "A": {

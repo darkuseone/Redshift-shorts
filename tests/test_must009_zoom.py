@@ -51,8 +51,10 @@ def test_fitted_face_stays_in_band_caption_iou_zero(cfg):
     assert face_in_band(fit.face, brand, mode="A")
     for _name, rect in collision_rects(brand, width=1080, height=1920):
         assert rect_iou(fit.face, rect) == 0.0
-    cap = caption_layout_bbox(brand)
+    cap = caption_layout_bbox(brand, for_avatar=True)
     assert rect_iou(fit.face, cap) == 0.0
+    # Talking head sits in the lower third, not the upper centre.
+    assert fit.face[1] >= 1000
 
 
 def test_unclamped_css_zoom_hits_caption_fitted_does_not(cfg):
@@ -64,7 +66,7 @@ def test_unclamped_css_zoom_hits_caption_fitted_does_not(cfg):
     left = 1080 * (1 - z) * cx
     top = 1920 * (1 - z) * cy
     raw = project_face(bbox, z, left, top)
-    cap = caption_layout_bbox(brand)
+    cap = caption_layout_bbox(brand, for_avatar=True)
     bottom = (0.0, 1520.0, 1080.0, 1920.0)
     assert rect_iou(raw, cap) > 0 or rect_iou(raw, bottom) > 0
     fit = fit_compose_zoom(bbox, 2.7, brandbook=brand)
@@ -77,7 +79,7 @@ def test_mode_b_face_not_under_caption_or_bottom_safe(cfg):
     brand = cfg.brandbook
     bbox = (360, 400, 720, 760)
     fit = fit_compose_zoom(bbox, 2.7, brandbook=brand, mode="B")
-    cap = caption_layout_bbox(brand)
+    cap = caption_layout_bbox(brand, for_avatar=True)
     bottom = (0.0, 1520.0, 1080.0, 1920.0)
     assert rect_iou(fit.face, cap) == 0.0
     assert rect_iou(fit.face, bottom) == 0.0
@@ -98,13 +100,13 @@ def test_config_zoom_is_ceiling_not_blind_constant(cfg):
 
 def test_instruction_and_qc_use_brandbook_caption_baseline(cfg):
     lo, hi = cfg.brand("subtitles.baseline_y")
-    assert [lo, hi] == [1100, 1280]
+    assert [lo, hi] == [620, 1280]
     text = (cfg.repo_root / "instruction.md").read_text(encoding="utf-8")
-    assert "1100–1280" in text or "1100-1280" in text
+    assert "620–1280" in text or "620-1280" in text
     assert "940–1010" not in text and "940-1010" not in text
     from src.p12_render_qc import qc as qc_mod
     src = inspect.getsource(qc_mod.run_qc)
-    assert "[1100, 1280]" in src
+    assert "[620, 1280]" in src
     assert "[940, 1010]" not in src
 
 

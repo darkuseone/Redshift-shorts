@@ -714,7 +714,8 @@ class CompositionBuilder:
     def _record_caption_safe_zone(self) -> None:
         if not self.plan.get("subtitles"):
             return
-        box = caption_layout_bbox(self.brandbook)
+        for_avatar = bool(self.plan.get("avatar"))
+        box = caption_layout_bbox(self.brandbook, for_avatar=for_avatar)
         safe = SafeZones.from_brandbook(self.brandbook)
         ok = safe.contains(box)
         entry = {"overlay": "captions", "bbox": [round(v, 1) for v in box],

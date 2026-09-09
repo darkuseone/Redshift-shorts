@@ -5,7 +5,7 @@
     "browser-ui": 9,
     "data-viz": 17,
     "frames-cards": 7,
-    "hero-devices": 25,
+    "hero-devices": 23,
     "intro-hooks": 8,
     "kenburns": 10,
     "lower-thirds": 11,
@@ -14,7 +14,7 @@
     "text-fullscreen": 31,
     "transitions": 41
   },
-  "total": 175,
+  "total": 173,
   "categories": {
     "avatar-entry": [
       {
@@ -352,20 +352,6 @@
         "needs": [
           "brand"
         ],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "hero-devices/bubble-card",
-        "renderer": "hero-bubble-card",
-        "needs": [],
-        "frequency": "variant",
-        "status": "active"
-      },
-      {
-        "id": "hero-devices/bubble-typed",
-        "renderer": "hero-bubble-typed",
-        "needs": [],
         "frequency": "variant",
         "status": "active"
       },

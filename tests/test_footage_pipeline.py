@@ -558,12 +558,16 @@ def test_thematic_reject_nasa_solar_still_for_quantum_not_space():
     assert thematic_reject_reason(hay, category="space", intent_kind="space") is None
 
 
-def test_thematic_reject_volcano_for_0042_not_0047():
-    hay = "pixabay_v144678 volcano lava magma eruption volcanic rock"
+def test_thematic_reject_beaker_and_earth_for_quantum_not_space():
     assert thematic_reject_reason(
-        hay, category="ai", intent_kind="lab", video_id="redshift_0042")
-    assert thematic_reject_reason(
-        hay, category="science", intent_kind="lab", video_id="redshift_0047") is None
+        "https://www.pexels.com/video/red-liquid-heating-in-laboratory-beaker-30775057/",
+        category="science", intent_kind="lab")
+    earth = "https://www.pexels.com/video/earth-20349276/ earth orbit view"
+    assert thematic_reject_reason(earth, category="science", intent_kind="lab")
+    assert thematic_reject_reason(earth, category="space", intent_kind="space") is None
+    galaxy = "https://www.pexels.com/video/messier106-galaxy-27975940/ galaxy nebula"
+    assert thematic_reject_reason(galaxy, category="ai", intent_kind="lab")
+    assert thematic_reject_reason(galaxy, category="space", intent_kind="space") is None
 
 
 # --- шаг 3: триггеры арбитража (§7.3) ----------------------------------------

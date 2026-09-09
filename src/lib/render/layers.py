@@ -208,7 +208,7 @@ def subtitle(ctx: Ctx, word: str, *, progress: float, emphasis: bool = False,
 
 
 def subtitle_baseline(ctx: Ctx, *, face_bbox: tuple[int, int, int, int] | None) -> int:
-    """§5.1: в режиме A блок субтитров опускается, если лицо ушло вниз."""
+    """§5.1: лицо в нижней трети — субтитры уезжают *вверх*, над головой."""
     spec = ctx.brandbook["subtitles"]
     default = int(spec["baseline_y_default"])
     if not face_bbox:

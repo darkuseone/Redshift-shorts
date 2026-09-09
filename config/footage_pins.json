@@ -2,10 +2,27 @@
   "redshift_0042": {
     "prefer": [
       "pexels_v25935014",
-      "pexels_v30775057",
-      "pexels_v18069803"
+      "pexels_v18069803",
+      "pexels_v35003022",
+      "pixabay_v200531",
+      "pexels_v38431825",
+      "grok_cryostat_0042",
+      "grok_supercomputer_0042"
     ],
     "deny": [
+      "pexels_v30775057",
+      "pexels_v20349276",
+      "pexels_v27975940",
+      "pexels_v20436933",
+      "pexels_v16727463",
+      "pexels_v16945380",
+      "pexels_v19162466",
+      "pexels_v28613453",
+      "pexels_v29669602",
+      "pexels_v12271136",
+      "pexels_v16655793",
+      "pexels_v30471021",
+      "pexels_v34796961",
       "pexels_v17356514",
       "pexels_v18446021",
       "pexels_v20068211",

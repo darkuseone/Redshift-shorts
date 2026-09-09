@@ -267,36 +267,19 @@ def test_source_card_anchors_off_avatar():
     assert cards[0]["start"] >= 10.0
 
 
-def test_hero_device_skips_face_covering_bubbles_on_avatar():
+def test_hero_device_catalog_has_no_face_circle_bubbles():
     import json as _json
 
     from src.lib.templates import TemplateCatalog
-    from src.p11_assemble.assemble import _hero_device
+    from src.lib.render.hyperframes.templates import HERO
 
     path = ROOT / "templates" / "manifest.json"
     cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
-    content = {
-        "word": "ЧИП", "title": "Квантовый чип",
-        "head": "КВАНТОВЫЙ", "tail": "ЧИП",
-        "lines": ["квантовый", "чип"], "accent_lines": [0],
-        "punch": ["квантовый", "чип"], "entries": ["квантовый"],
-        "figures": [], "face": (540, 570),
-        "head_box": (200, 620, 880, 1400), "brand": None, "icons": [],
-    }
-    slot = {"index": 3, "role": "twist", "duration": 4.0,
-            "start": 12.0, "end": 16.0, "kind": "avatar"}
-    seen = set()
-    for seed in range(40):
-        entry = _hero_device(
-            cat, slot=slot, content=content, has_alpha=True,
-            plate_src=None, recent_videos=[], exclude=[], seed=seed,
-            video_duration=40.0)
-        if entry:
-            seen.add(entry["renderer"])
-            assert entry["renderer"] not in (
-                "hero-bubble-typed", "hero-bubble-card"), entry
-            assert entry.get("template") != "hero-devices/bubble-typed"
-    assert seen
+    ids = {t.id for t in cat.all()}
+    assert "hero-devices/bubble-card" not in ids
+    assert "hero-devices/bubble-typed" not in ids
+    assert "hero-bubble-card" not in HERO
+    assert "hero-bubble-typed" not in HERO
 
 
 def test_plaque_stops_at_avatar_cut():
