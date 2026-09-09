@@ -128,7 +128,8 @@ def test_visual_clips_are_direct_children_of_root(markup):
     for line in body.strip().splitlines():
         line = line.strip()
         if 'class="clip' in line:
-            assert line.startswith("<div") or line.startswith("<video"), line
+            assert line.startswith("<div") or line.startswith("<video") \
+                or line.startswith("<img"), line
 
 
 # --- медиа --------------------------------------------------------------------
@@ -136,6 +137,22 @@ def test_visual_clips_are_direct_children_of_root(markup):
 def test_videos_are_muted_and_inline(markup):
     for tag in re.findall(r"<video[^>]*>", markup):
         assert "muted" in tag and "playsinline" in tag, tag
+
+
+def test_a_still_plate_is_an_image_tag_not_a_video(plan, assets, brandbook):
+    """jpg в <video> — media_src_kind_mismatch, compile HyperFrames падает."""
+    plan = {
+        **plan,
+        "shots": [
+            {**plan["shots"][0], "file": "/w/shots/grid.jpg"},
+            *plan["shots"][1:],
+        ],
+    }
+    assets = {**assets, "/w/shots/grid.jpg": "assets/m000_grid.jpg"}
+    html = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    video_tags = re.findall(r"<video[^>]*>", html)
+    assert all(".jpg" not in tag for tag in video_tags), video_tags
+    assert re.search(r'<img\b[^>]*src="assets/m000_grid.jpg"', html)
 
 
 def test_audio_is_a_separate_element(markup):

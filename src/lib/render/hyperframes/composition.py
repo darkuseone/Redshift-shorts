@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import html
 import re
+from pathlib import Path
 from typing import Any
 
 from ..text_rules import subtitle_word
@@ -38,7 +39,7 @@ from .captions import (
     build_gradient_fill, resolve_caption,
 )
 from .templates import (
-    OVERLAYS, TemplateCtx, enter_and_drift, entrance_tweens,
+    OVERLAYS, TemplateCtx, VIDEO_SUFFIXES, enter_and_drift, entrance_tweens,
     ensure_opacity_exit_hard_kills, fit_size,
     fit_size as fit_text_size, render_dataviz, render_fullscreen, render_hero,
     render_motion, render_overlay, render_transition, text_width, MOTION,
@@ -392,13 +393,18 @@ class CompositionBuilder:
 
     def _media_node(self, node_id: str, src: str, timing: str, *, css: str,
                     media_start: float | None = None) -> str:
-        # Видео обязано быть muted+playsinline: звук ролика идёт отдельной
-        # дорожкой микса, иначе он сложится дважды.
+        # Тег по виду файла, не «всегда video». Пустой слот в mock-прогоне
+        # подставляет сцену ролика (`grid.jpg`); <video src="…jpg"> — это
+        # media_src_kind_mismatch, и HyperFrames падает на compile. Тот же
+        # разбор суффикса, что у приёмов вокруг ведущего (`templates._media_node`).
         offset = ""
         if media_start:
             offset = f' data-media-start="{_num(media_start)}"'
-        return (f'<video id="{node_id}" class="{css}" src="{_esc(src)}" '
-                f'{timing}{offset} muted playsinline></video>')
+        attrs = (f'id="{node_id}" class="{css}" src="{_esc(src)}" '
+                 f'{timing}{offset}')
+        if Path(src).suffix.lower() in VIDEO_SUFFIXES:
+            return f'<video {attrs} muted playsinline></video>'
+        return f'<img {attrs} alt="">'
 
     def _brand_marks(self, node_id: str, start: float, duration: float,
                      track: int) -> str:
