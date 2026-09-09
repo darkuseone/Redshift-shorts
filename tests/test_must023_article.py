@@ -214,10 +214,10 @@ def test_validate_without_flags_unchanged(sample_script, tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)["ok"] is True
 
 
-def test_disk_0042_without_flags_still_hook_too_long(capsys):
+def test_disk_0042_without_flags_still_validates(capsys):
     ret = main(["validate", "--script", str(ROOT / "scripts" / "redshift_0042.json")])
-    assert ret == 2
-    assert json.loads(capsys.readouterr().err)["code"] == "HOOK_TOO_LONG"
+    assert ret == 0
+    assert json.loads(capsys.readouterr().out)["ok"] is True
 
 
 def test_run_article_url_writes_ingested_script(sample_script, tmp_path, monkeypatch, capsys):

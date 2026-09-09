@@ -373,7 +373,7 @@ class TestTheGlossLivesInTheVoiceNotOnTheCard:
 
         from src.lib.text import strip_stress
 
-        # 0042 spoken hook ~3.08 с — P0 режет. Глосс живёт в других блоках.
+        # Хук на диске уже ≤3 с; для этого теста всё равно фиксируем короткую фразу.
         hook = next(b for b in script["blocks"] if b.get("role") == "hook")
         hook["text"] = "Этот ответ невозможно проверить. Совсем никак."
         plan = build_plan(validate_script(script, cfg), cfg)
