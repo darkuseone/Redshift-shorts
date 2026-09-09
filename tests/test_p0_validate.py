@@ -95,8 +95,17 @@ def test_no_source(sample_script, cfg):
 
 
 def test_duration_too_short(sample_script, cfg):
-    for block in sample_script["blocks"]:
-        block["text"] = "Коротко."
+    # Короткие, но разные: иначе петля бьёт PAYOFF_RESTATES_SETUP раньше длительности.
+    texts = [
+        "Удар хука.",
+        "Сетап кадра.",
+        "Факт evid.",
+        "Ход мысли.",
+        "Иной ответ на вопрос.",
+        "Конец роли.",
+    ]
+    for block, text in zip(sample_script["blocks"], texts):
+        block["text"] = text
     with pytest.raises(DurationOutOfRange) as exc:
         validate_script(sample_script, cfg)
     assert exc.value.details["estimated_sec"] < 35
@@ -191,9 +200,8 @@ def test_channel_scripts_with_hook_over_three_seconds_fail(cfg, repo_root):
 class TestTheRetentionLoopHasAShape:
     """Форма петли из `script_playbook.md`.
 
-    Длина хука — отказ. Остальные проверки предупреждают: сценарий бывает
-    намеренно устроен иначе. Но ролик, где ответ стоит вторым блоком, собирать
-    вслепую нельзя — держать зрителя после этого нечем.
+    Петля — отказ, не предупреждение: иначе ролик с незакрытым вопросом
+    уходит в выдачу.
     """
 
     def _codes(self, script, cfg):
@@ -214,32 +222,43 @@ class TestTheRetentionLoopHasAShape:
             validate_script(sample_script, cfg)
         assert exc.value.code == "HOOK_TOO_LONG"
 
-    def test_an_answer_in_the_second_block_is_named(self, sample_script, cfg):
+    def test_an_answer_in_the_second_block_is_blocking(self, sample_script, cfg):
         blocks = sample_script["blocks"]
         twist = next(b for b in blocks if b["role"] == "twist")
         blocks.remove(twist)
         blocks.insert(1, twist)
-        assert "PAYOFF_TOO_EARLY" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "PAYOFF_TOO_EARLY"
 
-    def test_an_answer_that_only_repeats_the_setup_is_named(self, sample_script, cfg):
+    def test_an_answer_that_only_repeats_the_setup_is_blocking(self, sample_script, cfg):
         blocks = sample_script["blocks"]
         twist = next(b for b in blocks if b["role"] == "twist")
         twist["text"] = " ".join(b["text"] for b in blocks[:2])[:200]
-        assert "PAYOFF_RESTATES_SETUP" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "PAYOFF_RESTATES_SETUP"
 
-    def test_a_script_without_a_payoff_block_is_named(self, sample_script, cfg):
+    def test_a_script_without_a_payoff_block_is_blocking(self, sample_script, cfg):
         for block in sample_script["blocks"]:
             if block["role"] == "twist":
                 block["role"] = "develop"
             block.pop("answers_hook", None)
-        assert "LOOP_NO_PAYOFF_BLOCK" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code in ("LOOP_NO_PAYOFF_BLOCK", "HOOK_UNANSWERED")
 
-    def test_a_cta_that_opens_nothing_is_named(self, sample_script, cfg):
+    def test_a_cta_that_opens_nothing_is_blocking(self, sample_script, cfg):
         sample_script["cta"] = {"text": "Подписывайтесь, если было полезно.",
                                 "type": "statement"}
-        assert "CTA_CLOSES_EVERYTHING" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "CTA_CLOSES_EVERYTHING"
 
     def test_a_cta_that_promises_the_next_loop_is_quiet(self, sample_script, cfg):
         sample_script["cta"] = {"text": "В следующем ролике — что нашли на двенадцатом километре.",
                                 "type": "statement"}
-        assert "CTA_CLOSES_EVERYTHING" not in self._codes(sample_script, cfg)
+        result = validate_script(sample_script, cfg)
+        codes = [w["code"] for w in result["_validation"]["warnings"]]
+        assert "CTA_CLOSES_EVERYTHING" not in codes
+        assert result["_validation"]["ok"]
