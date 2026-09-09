@@ -18,5 +18,8 @@
   "renderer": "hero-brand-pill",
   "last_used_in": [],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "brand"
+  ]
 }

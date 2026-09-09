@@ -5,7 +5,7 @@
   "title": "Буквы поднимаются снизу со стаггером — bottom-up-letters",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "stagger_ms": 25,
@@ -24,5 +24,6 @@
     "redshift_0042"
   ],
   "added": "2026-09-02",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": []
 }

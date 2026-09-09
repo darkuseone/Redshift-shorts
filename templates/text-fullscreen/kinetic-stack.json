@@ -5,7 +5,7 @@
   "title": "Слова входят rise со стаггером — Texture / OBLIST",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "stagger_ms": 55,
@@ -19,5 +19,8 @@
   "last_used_in": [],
   "added": "2026-09-02",
   "frequency": "variant",
+  "needs": [
+    "list"
+  ],
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
 }

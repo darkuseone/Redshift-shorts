@@ -5,7 +5,7 @@
   "title": "Слова набухают по оси Z со стаггером — shared-axis-z",
   "duration_range": [
     0.8,
-    2.4
+    3.0
   ],
   "params": {
     "shared_axis_z": true,
@@ -23,5 +23,6 @@
     "redshift_0042"
   ],
   "added": "2026-09-03",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": []
 }

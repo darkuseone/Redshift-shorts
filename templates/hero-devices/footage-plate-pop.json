@@ -23,5 +23,6 @@
   ],
   "added": "2026-09-02",
   "frequency": "variant",
+  "needs": [],
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
 }

@@ -19,5 +19,10 @@
     "redshift_0042"
   ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "negation",
+    "superlative",
+    "discovery"
+  ]
 }

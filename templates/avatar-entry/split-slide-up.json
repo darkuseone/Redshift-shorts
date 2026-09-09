@@ -26,5 +26,6 @@
     "redshift_0047"
   ],
   "added": "2026-08-18",
-  "frequency": "signature"
+  "frequency": "signature",
+  "needs": []
 }

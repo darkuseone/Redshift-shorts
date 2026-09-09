@@ -5,7 +5,7 @@
   "title": "Гигантская цифра",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "size_px": [
@@ -29,5 +29,8 @@
     "redshift_0047"
   ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "number"
+  ]
 }

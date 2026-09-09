@@ -3,18 +3,18 @@
   "version": 2,
   "counts": {
     "intro-hooks": 8,
-    "text-fullscreen": 34,
-    "lower-thirds": 14,
+    "text-fullscreen": 31,
+    "lower-thirds": 11,
     "frames-cards": 7,
-    "browser-ui": 21,
+    "browser-ui": 9,
     "transitions": 41,
     "avatar-entry": 6,
     "kenburns": 10,
     "parallax": 4,
-    "data-viz": 28,
+    "data-viz": 17,
     "outro-cta": 6,
     "hero-devices": 25,
-    "_total": 204
+    "_total": 175
   },
   "rotation_rules": {
     "avoid_if_used_in_last_n_videos_same_role": 3,
@@ -43,10 +43,10 @@
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "question"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "intro-hooks/hook-number-slam",
@@ -69,10 +69,10 @@
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "intro-hooks/hook-blackout-word",
@@ -96,8 +96,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "intro-hooks/hook-footage-cold-open",
@@ -118,8 +118,8 @@
       "renderer": "footage",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "intro-hooks/hook-split-reveal",
@@ -140,8 +140,8 @@
       "renderer": "split",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "intro-hooks/hook-typing-search",
@@ -164,10 +164,10 @@
       "renderer": "source_card",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "question"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "intro-hooks/hook-countdown-3",
@@ -188,10 +188,10 @@
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "intro-hooks/hook-avatar-direct",
@@ -212,8 +212,8 @@
       "renderer": "avatar",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "text-fullscreen/impact-01",
@@ -246,10 +246,10 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/impact-02",
@@ -277,10 +277,10 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/stack-3lines",
@@ -309,8 +309,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "text-fullscreen/word-swap",
@@ -331,10 +331,10 @@
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "comparison"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/quote-frame",
@@ -358,8 +358,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "text-fullscreen/date-marker",
@@ -382,8 +382,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "text-fullscreen/vs-compare",
@@ -405,10 +405,10 @@
         "redshift_0044"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "comparison"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/label-strip",
@@ -430,8 +430,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "text-fullscreen/bigtext-mask-footage",
@@ -455,8 +455,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "text-fullscreen/fact-card",
@@ -484,8 +484,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "text-fullscreen/kinetic-stack",
@@ -507,11 +507,11 @@
       "renderer": "kinetic_stack",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4",
+      "frequency": "variant",
       "needs": [
         "list"
       ],
-      "frequency": "variant"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-texture-launch-video-v1-s.mp4"
     },
     {
       "id": "text-fullscreen/blur-out-up",
@@ -539,8 +539,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "text-fullscreen/bottom-up-letters",
@@ -568,8 +568,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "text-fullscreen/kinetic-type-swap",
@@ -594,8 +594,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "text-fullscreen/line-by-line-slide",
@@ -623,10 +623,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
+      "frequency": "variant",
       "needs": [
         "list"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/particle-text-dissolve",
@@ -653,10 +653,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
+      "frequency": "variant",
       "needs": [
         "discovery"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/per-word-crossfade",
@@ -684,8 +684,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "text-fullscreen/scan-band",
@@ -711,8 +711,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "text-fullscreen/scramble-reveal",
@@ -740,11 +740,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
+      "frequency": "variant",
       "needs": [
         "discovery",
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/shared-axis-z",
@@ -771,8 +771,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "text-fullscreen/code-3d-extrude",
@@ -795,10 +795,10 @@
       "renderer": "code_3d_extrude",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/code-diff",
@@ -823,11 +823,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device",
         "comparison"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/code-particle-assemble",
@@ -852,11 +852,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device",
         "discovery"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/code-scroll",
@@ -879,10 +879,10 @@
       "renderer": "code_scroll",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/code-highlight",
@@ -907,10 +907,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/code-morph",
@@ -935,10 +935,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/code-typing",
@@ -963,10 +963,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/terminal-simulator",
@@ -989,10 +989,10 @@
       "renderer": "terminal_simulator",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/apple-terminal-clear-dark",
@@ -1019,10 +1019,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/dark-plus",
@@ -1047,41 +1047,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "text-fullscreen/beat-freeze-cut",
-      "name": "beat-freeze-cut",
-      "category": "text-fullscreen",
-      "title": "Beat freeze cut: рамп, фриз DROP и hard-cut — beat-freeze-cut",
-      "duration_range": [
-        2.0,
-        6.5
-      ],
-      "params": {
-        "beat_freeze_cut": true
-      },
-      "tags": [
-        "text",
-        "kinetic",
-        "beat",
-        "freeze",
-        "music"
-      ],
-      "renderer": "beat_freeze_cut",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [
-        "beat"
-      ],
-      "status": "gated",
-      "retired_reason": "music-promo chrome — only with beat trait",
-      "frequency": "variant"
+      ]
     },
     {
       "id": "text-fullscreen/number-slam-card",
@@ -1105,69 +1074,11 @@
       "renderer": "number_slam",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4",
+      "frequency": "variant",
       "needs": [
         "number"
       ],
-      "frequency": "variant"
-    },
-    {
-      "id": "text-fullscreen/split-flap-board",
-      "name": "split-flap-board",
-      "category": "text-fullscreen",
-      "title": "Табло аэропорта (split-flap) перелистывает буквы — split-flap-board",
-      "duration_range": [
-        2.0,
-        6.0
-      ],
-      "params": {
-        "word": "FLIGHT"
-      },
-      "tags": [
-        "text",
-        "board",
-        "airport",
-        "flip"
-      ],
-      "renderer": "split_flap_board",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "airport split-flap — promo chrome",
-      "frequency": "variant"
-    },
-    {
-      "id": "text-fullscreen/news-ticker",
-      "name": "news-ticker",
-      "category": "text-fullscreen",
-      "title": "Бегущая строка новостей — news-ticker",
-      "duration_range": [
-        2.0,
-        10.0
-      ],
-      "params": {
-        "text": "BREAKING NEWS: SOMETHING HAPPENED"
-      },
-      "tags": [
-        "text",
-        "news",
-        "ticker",
-        "scroll"
-      ],
-      "renderer": "news_ticker",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [
-        "news"
-      ],
-      "status": "gated",
-      "retired_reason": "ticker — only with news trait",
-      "frequency": "variant"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
     },
     {
       "id": "lower-thirds/name-title",
@@ -1188,8 +1099,8 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/accent-underline",
@@ -1213,8 +1124,8 @@
       "renderer": "lt_accent_underline",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/clean-bar",
@@ -1238,8 +1149,8 @@
       "renderer": "lt_clean_bar",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/dark-card",
@@ -1263,8 +1174,8 @@
       "renderer": "lt_dark_card",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/source-domain",
@@ -1292,8 +1203,8 @@
         "redshift_0046"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/metric-badge",
@@ -1315,8 +1226,8 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/note-pin",
@@ -1342,8 +1253,8 @@
         "redshift_0046"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/warning-strip",
@@ -1366,8 +1277,8 @@
         "redshift_0044"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/progress-step",
@@ -1388,8 +1299,8 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/tag-chips",
@@ -1410,8 +1321,8 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "lower-thirds/timestamp-marker",
@@ -1432,98 +1343,8 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
-    },
-    {
-      "id": "lower-thirds/instagram-follow",
-      "name": "instagram-follow",
-      "category": "lower-thirds",
-      "title": "Instagram: плашка профиля с кнопкой Follow/Following — instagram-follow",
-      "duration_range": [
-        2.5,
-        6.0
-      ],
-      "params": {
-        "displayName": "HeyGen",
-        "handle": "@heygen_official",
-        "followers": "47.5K followers",
-        "buttonText": "Follow",
-        "followingText": "Following"
-      },
-      "tags": [
-        "social",
-        "instagram",
-        "follow",
-        "profile",
-        "lower-third"
-      ],
-      "renderer": "instagram_follow",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "social follow CTA — not mid-roll",
-      "frequency": "signature"
-    },
-    {
-      "id": "lower-thirds/tiktok-follow",
-      "name": "tiktok-follow",
-      "category": "lower-thirds",
-      "title": "TikTok: плашка профиля с кнопкой Follow/Following — tiktok-follow",
-      "duration_range": [
-        2.5,
-        6.0
-      ],
-      "params": {
-        "displayName": "HeyGen",
-        "handle": "@heygen.com",
-        "followers": "1,999 followers",
-        "buttonText": "Follow",
-        "followingText": "Following"
-      },
-      "tags": [
-        "social",
-        "tiktok",
-        "follow",
-        "profile",
-        "lower-third"
-      ],
-      "renderer": "tiktok_follow",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "social follow CTA — not mid-roll",
-      "frequency": "signature"
-    },
-    {
-      "id": "lower-thirds/yt-lower-third",
-      "name": "yt-lower-third",
-      "category": "lower-thirds",
-      "title": "YouTube: плашка профиля с кнопкой Subscribe/Subscribed — yt-lower-third",
-      "duration_range": [
-        2.5,
-        6.0
-      ],
-      "params": {
-        "channelName": "HeyGen",
-        "subscriberCount": "82.2K subscribers",
-        "buttonText": "Subscribe",
-        "subscribedText": "Subscribed"
-      },
-      "tags": [
-        "social",
-        "youtube",
-        "subscribe",
-        "channel",
-        "lower-third"
-      ],
-      "renderer": "yt_lower_third",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "frames-cards/article-card",
@@ -1548,8 +1369,8 @@
         "redshift_0045"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "frames-cards/arxiv-card",
@@ -1574,10 +1395,10 @@
         "redshift_0045"
       ],
       "added": "2026-08-18",
+      "frequency": "signature",
       "needs": [
         "quote"
-      ],
-      "frequency": "signature"
+      ]
     },
     {
       "id": "frames-cards/patent-card",
@@ -1602,8 +1423,8 @@
         "redshift_0046"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "frames-cards/profile-card",
@@ -1627,8 +1448,8 @@
         "redshift_0046"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "frames-cards/product-card",
@@ -1652,8 +1473,8 @@
         "redshift_0043"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "frames-cards/chart-card",
@@ -1678,8 +1499,8 @@
         "redshift_0044"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "frames-cards/paper-reveal",
@@ -1703,11 +1524,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4",
+      "frequency": "signature",
       "needs": [
         "quote"
       ],
-      "frequency": "signature"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-pr-to-video-launch-v1-s.mp4"
     },
     {
       "id": "browser-ui/browser-scroll",
@@ -1733,10 +1554,10 @@
         "redshift_0043"
       ],
       "added": "2026-08-18",
+      "frequency": "signature",
       "needs": [
         "quote"
-      ],
-      "frequency": "signature"
+      ]
     },
     {
       "id": "browser-ui/google-typing",
@@ -1761,8 +1582,8 @@
         "redshift_0045"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "browser-ui/chat-ai-typing",
@@ -1787,10 +1608,10 @@
         "redshift_0046"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "question"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "browser-ui/notepad-typing",
@@ -1815,8 +1636,8 @@
         "redshift_0045"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "browser-ui/terminal-lines",
@@ -1841,8 +1662,8 @@
         "redshift_0046"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "browser-ui/phone-notification",
@@ -1866,8 +1687,8 @@
         "redshift_0043"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "browser-ui/chat-thread",
@@ -1889,11 +1710,11 @@
       "renderer": "chat_thread",
       "last_used_in": [],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
+      "frequency": "signature",
       "needs": [
         "question"
       ],
-      "frequency": "signature"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
     {
       "id": "browser-ui/article-highlight",
@@ -1919,241 +1740,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4",
+      "frequency": "signature",
       "needs": [
         "quote"
       ],
-      "frequency": "signature"
-    },
-    {
-      "id": "browser-ui/ai-chat-reveal",
-      "name": "ai-chat-reveal",
-      "category": "browser-ui",
-      "title": "iPhone-чат: набор, стрим ответа и end card — ai-chat-reveal",
-      "duration_range": [
-        2.0,
-        19.4
-      ],
-      "params": {
-        "template": "chat_ai",
-        "typing": true,
-        "stream": true
-      },
-      "tags": [
-        "ui",
-        "ai",
-        "chat",
-        "reveal"
-      ],
-      "renderer": "ai_chat_reveal",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/app-showcase",
-      "name": "app-showcase",
-      "category": "browser-ui",
-      "title": "Три телефона веером: дашборд, кольцо, график — app-showcase",
-      "duration_range": [
-        2.0,
-        5.5
-      ],
-      "params": {
-        "template": "phone",
-        "showcase": true
-      },
-      "tags": [
-        "ui",
-        "app",
-        "showcase",
-        "device"
-      ],
-      "renderer": "app_showcase",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "three phones fan — demo junk, wrong for sci VO",
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/vpn-youtube-spot",
-      "name": "vpn-youtube-spot",
-      "category": "browser-ui",
-      "title": "App Store: скролл, установка и открытие приложения — vpn-youtube-spot",
-      "duration_range": [
-        2.0,
-        8.0
-      ],
-      "params": {
-        "template": "phone"
-      },
-      "tags": [
-        "ui",
-        "app",
-        "store",
-        "vpn"
-      ],
-      "renderer": "vpn_youtube_spot",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "App Store install demo — not editorial",
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/blue-sweater-intro-video",
-      "name": "blue-sweater-intro-video",
-      "category": "browser-ui",
-      "title": "AI генерирует видео: ввод промпта, загрузка, результат — blue-sweater-intro-video",
-      "duration_range": [
-        4.0,
-        12.0
-      ],
-      "params": {
-        "template": "browser"
-      },
-      "tags": [
-        "ui",
-        "ai",
-        "video",
-        "generate"
-      ],
-      "renderer": "blue_sweater",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "video-gen demo promo",
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/chatgpt-exchange",
-      "name": "chatgpt-exchange",
-      "category": "browser-ui",
-      "title": "ChatGPT: ввод промпта, поток ответа и сравнительная таблица — chatgpt-exchange",
-      "duration_range": [
-        3.0,
-        15.0
-      ],
-      "params": {
-        "prompt": "Hey what's the best tool for ai avatars",
-        "intro1": "It really depends on what you're trying to do, because “AI avatars” has split into a few different categories.",
-        "intro2": "For **most creators and marketers**, here's how I'd rank them today:",
-        "tableHeadUse": "Use case",
-        "tableHeadTool": "Best tool",
-        "tableHeadWhy": "Why",
-        "row1Use": "Overall realism",
-        "row1Tool": "HeyGen",
-        "row1Why": "Most natural facial expressions, lip sync, gestures, voice cloning and localization. Benchmark for talking head videos.",
-        "row1Chip": "Official A.I Ranking",
-        "row2Use": "Enterprise/training",
-        "row2Tool": "Synthesia",
-        "row2Why": "Better collaboration, SCORM, compliance, team workflows; less creator-focused.",
-        "row2Chip": "Official A.I Ranking",
-        "row3Use": "Mobile UGC",
-        "row3Tool": "Captions",
-        "row3Why": "Extremely fast mobile workflow and social editing. Great for Reels creators.",
-        "row3Chip": "Creator Stack",
-        "row4Use": "Real-time conversations",
-        "row4Tool": "Tavus",
-        "row4Why": "Interactive avatars that can hold live conversations.",
-        "row4Chip": "Creator Stack"
-      },
-      "tags": [
-        "ui",
-        "ai",
-        "chat",
-        "table"
-      ],
-      "renderer": "chatgpt_exchange",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/claude-exchange",
-      "name": "claude-exchange",
-      "category": "browser-ui",
-      "title": "Claude: ввод промпта, поиск в веб, стрим ответа и цитаты — claude-exchange",
-      "duration_range": [
-        3.0,
-        21.4
-      ],
-      "params": {
-        "prompt": "What's the best tool for ai avatars?",
-        "thinking": "Weighing accuracy against current market…",
-        "lead": "I'll search for the current state of this space since AI avatar tools move fast.",
-        "search": "best AI avatar video generator 2026",
-        "answer1": "It depends on what you're making, but the field has consolidated fast and one platform now covers most of it.",
-        "answer2": "**HeyGen** is where most teams land. Independent testing, not just vendor blogs, puts **Avatar IV** highest for talking-head realism, with facial micro-expressions and gesture control that hold up at a full-screen crop {HeyGen}.",
-        "answer3": "By use case, the pieces shake out roughly like this:",
-        "answer4": "**Marketing / hyper-realistic talking heads** → Avatar IV",
-        "answer5": "**Enterprise training** → Video Translate for every locale",
-        "answer6": "**UGC-style performance ads** → Instant Avatar from one selfie, then batch the variants",
-        "answer7": "**Real-time conversational / interactive** → Interactive Avatar",
-        "answer8": "**Custom digital twin from a selfie** → Instant Avatar in about five minutes"
-      },
-      "tags": [
-        "ui",
-        "ai",
-        "chat",
-        "claude"
-      ],
-      "renderer": "claude_exchange",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/message-thread-reveal",
-      "name": "message-thread-reveal",
-      "category": "browser-ui",
-      "title": "iMessage-диалог: ветка сообщений, карточка ссылки и финальная карточка — message-thread-reveal",
-      "duration_range": [
-        3.0,
-        25.8
-      ],
-      "params": {
-        "contactName": "Rachel",
-        "questionMessage": "what r u using for the launch video??",
-        "teaserMessage": "wait look 👀",
-        "cardTitle": "HyperFrames | Write HTML, render pixel-perfect video",
-        "cardDomain": "hyperframes.heygen.com",
-        "reactionMessage": "OMG IT'S HTML",
-        "reactionEmoji": "🤯🤯🤯",
-        "benefitMessage": "renders in 4K. no editor",
-        "discoveryMessage": "where did u find this",
-        "sourceMessage": "on heygen",
-        "workflowMessage": "u just write plain html tags",
-        "ownershipMessage": "the code is yours forever",
-        "installMessage": "installing rn",
-        "thanksMessage": "ty bestie 💚",
-        "ecProof": "12,000+ creators",
-        "ecCta": "Start rendering free"
-      },
-      "tags": [
-        "ui",
-        "chat",
-        "imessage",
-        "mobile"
-      ],
-      "renderer": "message_thread_reveal",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-website-to-hyperframes-v1-s.mp4"
     },
     {
       "id": "browser-ui/notes-reveal",
@@ -2194,174 +1785,8 @@
       "renderer": "notes_reveal",
       "last_used_in": [],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/notification-cascade",
-      "name": "notification-cascade",
-      "category": "browser-ui",
-      "title": "Каскад входящих push-уведомлений и финальная карточка — notification-cascade",
-      "duration_range": [
-        3.0,
-        16.0
-      ],
-      "params": {
-        "notifTitle": "New render",
-        "message1": "Launch video is ready.",
-        "message2": "All checks passed.",
-        "message3": "4K render done in 92s.",
-        "message4": "Published to the catalog.",
-        "appName": "HyperFrames",
-        "headlineTop": "SHIP VIDEO",
-        "headlineAccent": "FROM HTML",
-        "footerText": "hyperframes.heygen.com"
-      },
-      "tags": [
-        "ui",
-        "notifications",
-        "mobile",
-        "ios"
-      ],
-      "renderer": "notification_cascade",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "push notification cascade demo",
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/x-post",
-      "name": "x-post",
-      "category": "browser-ui",
-      "title": "X (Twitter): карточка твита с реакцией лайка и счетчиками — x-post",
-      "duration_range": [
-        2.5,
-        6.5
-      ],
-      "params": {
-        "displayName": "Hyperframes",
-        "handle": "@hyperframes",
-        "text": "Write HTML, render pixel-perfect video. Zero external dependencies, pure web standards. #HyperFrames",
-        "timestamp": "1:10 PM · Apr 7, 2026",
-        "replies": "34",
-        "reposts": "2.3K",
-        "likes": "10.9K",
-        "likesActive": "11.0K",
-        "views": "150K"
-      },
-      "tags": [
-        "ui",
-        "social",
-        "x",
-        "twitter",
-        "post"
-      ],
-      "renderer": "x_post",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/reddit-post",
-      "name": "reddit-post",
-      "category": "browser-ui",
-      "title": "Reddit: карточка поста с реакцией апвоута и счетчиками — reddit-post",
-      "duration_range": [
-        2.5,
-        6.5
-      ],
-      "params": {
-        "subreddit": "r/hyperframes",
-        "author": "u/developer · 3h",
-        "title": "Writing HTML to render video changed everything for our pipeline",
-        "body": "Zero external dependencies, pure web standards, and pixel-perfect 4K rendering in seconds. The whole workflow runs headlessly.",
-        "votes": "4.2k",
-        "votesActive": "4.3k",
-        "comments": "328"
-      },
-      "tags": [
-        "ui",
-        "social",
-        "reddit",
-        "post",
-        "community"
-      ],
-      "renderer": "reddit_post",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/spotify-card",
-      "name": "spotify-card",
-      "category": "browser-ui",
-      "title": "Spotify: карточка трека с обложкой и брендом — spotify-card",
-      "duration_range": [
-        2.5,
-        6.5
-      ],
-      "params": {
-        "trackName": "HyperFrames",
-        "artistName": "HeyGen",
-        "brandText": "Spotify"
-      },
-      "tags": [
-        "ui",
-        "audio",
-        "spotify",
-        "music",
-        "card"
-      ],
-      "renderer": "spotify_card",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "music track card — off-topic for sci",
-      "frequency": "variant"
-    },
-    {
-      "id": "browser-ui/macos-notification",
-      "name": "macos-notification",
-      "category": "browser-ui",
-      "title": "macOS: всплывающее системное уведомление в углу экрана — macos-notification",
-      "duration_range": [
-        2.0,
-        5.5
-      ],
-      "params": {
-        "appName": "HyperFrames",
-        "time": "now",
-        "title": "Build complete",
-        "body": "Video rendered in 1.4s with zero frame drops.",
-        "iconText": "HF"
-      },
-      "tags": [
-        "ui",
-        "desktop",
-        "macos",
-        "notification",
-        "system"
-      ],
-      "renderer": "macos_notification",
-      "last_used_in": [
-        "redshift_0042"
-      ],
-      "added": "2026-09-03",
-      "needs": [],
-      "status": "retired",
-      "retired_reason": "push notification cascade demo",
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/cut",
@@ -2382,8 +1807,8 @@
         "redshift_0044"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/whip-pan-l",
@@ -2411,8 +1836,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/whip-pan-r",
@@ -2440,8 +1865,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/zoom-punch-in",
@@ -2468,8 +1893,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/zoom-punch-out",
@@ -2496,8 +1921,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/mask-wipe-circle",
@@ -2524,8 +1949,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/mask-wipe-diagonal",
@@ -2552,8 +1977,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/light-sweep",
@@ -2577,8 +2002,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/glitch-short",
@@ -2605,8 +2030,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/paper-slide",
@@ -2633,8 +2058,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/blur-dip",
@@ -2661,8 +2086,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/white-flash",
@@ -2689,8 +2114,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "transitions/zoom-through",
@@ -2713,9 +2138,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
+      "frequency": "rare",
       "needs": [],
-      "frequency": "rare"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
     {
       "id": "transitions/cinematic-zoom",
@@ -2739,8 +2164,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/glitch",
@@ -2762,11 +2187,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "rare",
       "needs": [
         "danger",
         "negation"
-      ],
-      "frequency": "rare"
+      ]
     },
     {
       "id": "transitions/gravitational-lens",
@@ -2790,12 +2215,12 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "rare",
       "needs": [
         "discovery",
         "place",
         "superlative"
-      ],
-      "frequency": "rare"
+      ]
     },
     {
       "id": "transitions/light-leak",
@@ -2817,8 +2242,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/sdf-iris",
@@ -2840,8 +2265,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/thermal-distortion",
@@ -2863,10 +2288,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "rare",
       "needs": [
         "danger"
-      ],
-      "frequency": "rare"
+      ]
     },
     {
       "id": "transitions/whip-pan",
@@ -2888,8 +2313,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/mk-clone-wall-transition",
@@ -2913,8 +2338,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-3d",
@@ -2936,8 +2361,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-blur",
@@ -2959,8 +2384,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-cover",
@@ -2982,8 +2407,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-destruction",
@@ -3005,11 +2430,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "rare",
       "needs": [
         "danger",
         "negation"
-      ],
-      "frequency": "rare"
+      ]
     },
     {
       "id": "transitions/transitions-light",
@@ -3031,8 +2456,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-other",
@@ -3054,8 +2479,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/chromatic-radial-split",
@@ -3078,8 +2503,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/cross-warp-morph",
@@ -3102,8 +2527,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/domain-warp-dissolve",
@@ -3126,8 +2551,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/flash-through-white",
@@ -3150,8 +2575,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/ridged-burn",
@@ -3174,8 +2599,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/ripple-waves",
@@ -3198,8 +2623,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/swirl-vortex",
@@ -3222,8 +2647,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-dissolve",
@@ -3245,8 +2670,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-distortion",
@@ -3269,8 +2694,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-grid",
@@ -3293,8 +2718,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-mechanical",
@@ -3317,8 +2742,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-push",
@@ -3341,8 +2766,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-radial",
@@ -3365,8 +2790,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "transitions/transitions-scale",
@@ -3389,8 +2814,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
-      "needs": [],
-      "frequency": "rare"
+      "frequency": "rare",
+      "needs": []
     },
     {
       "id": "avatar-entry/hero-zoom-in",
@@ -3418,8 +2843,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "avatar-entry/slide-from-bottom",
@@ -3448,8 +2873,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "avatar-entry/circle-mask-grow",
@@ -3477,8 +2902,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "avatar-entry/split-slide-up",
@@ -3508,8 +2933,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "avatar-entry/flash-cut-in",
@@ -3538,8 +2963,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "avatar-entry/scale-pop",
@@ -3567,8 +2992,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/zoom-in-center",
@@ -3599,8 +3024,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/zoom-in-subject",
@@ -3632,8 +3057,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/zoom-out-reveal",
@@ -3664,8 +3089,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/pan-left",
@@ -3700,8 +3125,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/pan-right",
@@ -3736,8 +3161,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/pan-up",
@@ -3772,8 +3197,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/pan-down",
@@ -3808,8 +3233,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/diag-drift",
@@ -3844,8 +3269,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/push-tilt",
@@ -3880,8 +3305,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "kenburns/micro-parallax",
@@ -3913,8 +3338,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "parallax/text-behind-object",
@@ -3936,8 +3361,8 @@
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "parallax/two-layer-drift",
@@ -3958,8 +3383,8 @@
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "parallax/depth-push",
@@ -3981,8 +3406,8 @@
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "parallax/foreground-sweep",
@@ -4004,8 +3429,8 @@
       "renderer": "parallax",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "data-viz/bar-race-mini",
@@ -4026,10 +3451,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/line-rise",
@@ -4050,10 +3475,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/counter-roll",
@@ -4074,10 +3499,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/donut-fill",
@@ -4098,10 +3523,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/timeline-dots",
@@ -4122,10 +3547,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/compare-bars",
@@ -4148,10 +3573,10 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/stat-countup-card",
@@ -4175,11 +3600,11 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4",
+      "frequency": "variant",
       "needs": [
         "number"
       ],
-      "frequency": "variant"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-spacex-launch-v1-s.mp4"
     },
     {
       "id": "data-viz/animated-bar-chart",
@@ -4201,10 +3626,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/bar-chart-race",
@@ -4226,10 +3651,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/chart-story",
@@ -4253,10 +3678,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/conic-progress-ring",
@@ -4278,10 +3703,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/decline-chart",
@@ -4306,10 +3731,10 @@
         "redshift_0042"
       ],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/mk-line-graph",
@@ -4362,288 +3787,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/spain-map",
-      "name": "spain-map",
-      "category": "data-viz",
-      "title": "Хороплет Испании: регионы вспыхивают, MAD/PVA/NAV подсветка — spain-map",
-      "duration_range": [
-        2.0,
-        12.0
-      ],
-      "params": {
-        "title": "PIB per cápita por Comunidad Autónoma",
-        "subtitle": "Producto Interior Bruto per cápita, estimación 2024",
-        "source": "Fuente: Instituto Nacional de Estadística",
-        "highlight": [
-          "MAD",
-          "PVA",
-          "NAV"
-        ],
-        "regions": [
-          {
-            "abbr": "AND",
-            "name": "Andalucía",
-            "value": 20200
-          },
-          {
-            "abbr": "ARA",
-            "name": "Aragón",
-            "value": 30500
-          },
-          {
-            "abbr": "AST",
-            "name": "Asturias",
-            "value": 24100
-          },
-          {
-            "abbr": "BAL",
-            "name": "Illes Balears",
-            "value": 28900
-          },
-          {
-            "abbr": "CAN",
-            "name": "Canarias",
-            "value": 21500
-          },
-          {
-            "abbr": "CNT",
-            "name": "Cantabria",
-            "value": 25200
-          },
-          {
-            "abbr": "CYL",
-            "name": "Castilla y León",
-            "value": 25800
-          },
-          {
-            "abbr": "CLM",
-            "name": "Castilla-La Mancha",
-            "value": 21400
-          },
-          {
-            "abbr": "CAT",
-            "name": "Catalunya",
-            "value": 33700
-          },
-          {
-            "abbr": "VAL",
-            "name": "Comunitat Valenciana",
-            "value": 23800
-          },
-          {
-            "abbr": "EXT",
-            "name": "Extremadura",
-            "value": 19200
-          },
-          {
-            "abbr": "GAL",
-            "name": "Galicia",
-            "value": 24500
-          },
-          {
-            "abbr": "MAD",
-            "name": "Comunidad de Madrid",
-            "value": 38100
-          },
-          {
-            "abbr": "MUR",
-            "name": "Región de Murcia",
-            "value": 22100
-          },
-          {
-            "abbr": "NAV",
-            "name": "Navarra",
-            "value": 35200
-          },
-          {
-            "abbr": "PVA",
-            "name": "País Vasco",
-            "value": 36800
-          },
-          {
-            "abbr": "RIO",
-            "name": "La Rioja",
-            "value": 29800
-          },
-          {
-            "abbr": "CEU",
-            "name": "Ceuta",
-            "value": 21000
-          },
-          {
-            "abbr": "MEL",
-            "name": "Melilla",
-            "value": 19500
-          }
-        ]
-      },
-      "tags": [
-        "data",
-        "map",
-        "spain"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/star-rating-fill",
-      "name": "star-rating-fill",
-      "category": "data-viz",
-      "title": "Золотые звёзды заливаются слева направо, число считает в такт — star-rating-fill",
-      "duration_range": [
-        1.2,
-        4.0
-      ],
-      "params": {
-        "rating": 4.8,
-        "starCount": 5,
-        "showValue": true
-      },
-      "tags": [
-        "data",
-        "stars",
-        "rating"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "number"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/us-map",
-      "name": "us-map",
-      "category": "data-viz",
-      "title": "Хороплет США: штаты вспыхивают, CA/NY/TX/FL/NJ подсветка — us-map",
-      "duration_range": [
-        2.0,
-        12.0
-      ],
-      "params": {
-        "title": "Population Density by State",
-        "subtitle": "Residents per square mile, 2024 Census estimates",
-        "source": "Source: U.S. Census Bureau",
-        "highlight": [
-          "CA",
-          "NY",
-          "TX",
-          "FL",
-          "NJ"
-        ]
-      },
-      "tags": [
-        "data",
-        "map",
-        "usa"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/us-map-flow",
-      "name": "us-map-flow",
-      "category": "data-viz",
-      "title": "Дуги коридоров между городами, точки бегут по дуге — us-map-flow",
-      "duration_range": [
-        2.0,
-        12.0
-      ],
-      "params": {
-        "title": "Interstate Flow Connections",
-        "subtitle": "Relative volume of major city-to-city corridors",
-        "source": "Source: Illustrative data"
-      },
-      "tags": [
-        "data",
-        "map",
-        "flow"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/us-map-hex",
-      "name": "us-map-hex",
-      "category": "data-viz",
-      "title": "Hex grid map США: гексагоны от центра, top-5 пульс — us-map-hex",
-      "duration_range": [
-        2.0,
-        10.0
-      ],
-      "params": {
-        "title": "Median Household Income by State",
-        "subtitle": "American Community Survey, 2024",
-        "source": "Source: U.S. Census Bureau, American Community Survey 2024",
-        "highlight": [
-          "MD",
-          "NJ",
-          "MA",
-          "CT",
-          "HI"
-        ]
-      },
-      "tags": [
-        "data",
-        "map",
-        "hex"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/us-map-bubble",
-      "name": "us-map-bubble",
-      "category": "data-viz",
-      "title": "Карта США с бабблами по городам — us-map-bubble",
-      "duration_range": [
-        2.0,
-        12.0
-      ],
-      "params": {
-        "title": "Major Tech Hubs",
-        "subtitle": "Tech employment by city, 2024",
-        "source": "Source: Tech.co"
-      },
-      "tags": [
-        "data",
-        "map",
-        "bubble"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/flowchart",
@@ -4669,11 +3816,11 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number",
         "mechanism"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/oscilloscope-trace",
@@ -4693,10 +3840,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/weight-wave",
@@ -4716,156 +3863,10 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/world-map",
-      "name": "world-map",
-      "category": "data-viz",
-      "title": "Хороплет мира: страны от центра, CH/NO/US/AU/SE пульс — world-map",
-      "duration_range": [
-        2.0,
-        14.0
-      ],
-      "params": {
-        "title": "Global GDP per Capita",
-        "subtitle": "Nominal GDP per capita, 2024 IMF estimates",
-        "source": "Source: International Monetary Fund",
-        "highlight": [
-          "756",
-          "578",
-          "840",
-          "036",
-          "752"
-        ]
-      },
-      "tags": [
-        "data",
-        "map",
-        "world"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/apple-money-count",
-      "name": "apple-money-count",
-      "category": "data-viz",
-      "title": "Счёт $0→$10 000, затем веер купюр и монет — apple-money-count",
-      "duration_range": [
-        2.0,
-        5.0
-      ],
-      "params": {
-        "end_value": 10000,
-        "prefix": "$"
-      },
-      "tags": [
-        "data",
-        "number",
-        "money",
-        "count"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "number"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/north-korea-locked-down",
-      "name": "north-korea-locked-down",
-      "category": "data-viz",
-      "title": "Наезд на КНДР, красный scribble и LOCKED DOWN — north-korea-locked-down",
-      "duration_range": [
-        2.0,
-        7.0
-      ],
-      "params": {
-        "label": "LOCKED DOWN"
-      },
-      "tags": [
-        "data",
-        "map",
-        "korea",
-        "lock"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/nyc-paris-flight",
-      "name": "nyc-paris-flight",
-      "category": "data-viz",
-      "title": "Самолёт Нью-Йорк→Париж, doodle посадки и ARRIVED — nyc-paris-flight",
-      "duration_range": [
-        2.0,
-        6.0
-      ],
-      "params": {
-        "origin": "New York",
-        "dest": "Paris",
-        "origin_code": "JFK / NYC",
-        "dest_code": "CDG / FR",
-        "km": "5,837"
-      },
-      "tags": [
-        "data",
-        "map",
-        "flight",
-        "travel"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "place"
-      ],
-      "frequency": "variant"
-    },
-    {
-      "id": "data-viz/mk-progress-stat",
-      "name": "mk-progress-stat",
-      "category": "data-viz",
-      "title": "Крупная цифра считает вверх, полоса заполняется scaleX — mk-progress-stat",
-      "duration_range": [
-        2.0,
-        7.0
-      ],
-      "params": {
-        "value": 22,
-        "max": 30,
-        "suffix": "",
-        "label": "Goals reached",
-        "caption": "Great job, we are getting closer!"
-      },
-      "tags": [
-        "data",
-        "number",
-        "progress"
-      ],
-      "renderer": "dataviz",
-      "last_used_in": [],
-      "added": "2026-09-03",
-      "needs": [
-        "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "data-viz/flowchart-vertical",
@@ -4897,11 +3898,11 @@
       "renderer": "dataviz",
       "last_used_in": [],
       "added": "2026-09-03",
+      "frequency": "variant",
       "needs": [
         "number",
         "mechanism"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "outro-cta/subscribe-pulse",
@@ -4929,8 +3930,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "outro-cta/question-card",
@@ -4951,8 +3952,8 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "outro-cta/loop-back",
@@ -4973,8 +3974,8 @@
       "renderer": "footage",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "outro-cta/next-teaser",
@@ -4995,8 +3996,8 @@
       "renderer": "plaque",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "outro-cta/logo-stamp",
@@ -5017,8 +4018,8 @@
       "renderer": "fullscreen_text",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "outro-cta/logo-brand-close",
@@ -5032,11 +4033,9 @@
       "params": {
         "logo_close": true,
         "exit": "none",
-        "wordmark": "REDSHIFT",
-        "tagline": "",
-        "url": "redshift.shorts",
-        "subscribe": true,
-        "buttonText": "Subscribe"
+        "wordmark": "РЕДШИФТ",
+        "tagline": "Пиши код. Шли на орбиту.",
+        "url": "redshift.shorts"
       },
       "tags": [
         "cta",
@@ -5049,8 +4048,8 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "needs": [],
-      "frequency": "signature"
+      "frequency": "signature",
+      "needs": []
     },
     {
       "id": "hero-devices/plate-behind-back",
@@ -5076,8 +4075,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/headline-over-head",
@@ -5103,8 +4102,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/headline-behind-head",
@@ -5130,8 +4129,8 @@
         "redshift_0046"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/icons-behind-head",
@@ -5156,8 +4155,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/split-panel-right",
@@ -5185,10 +4184,10 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "comparison"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/knockout-negative",
@@ -5214,11 +4213,11 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "superlative",
         "negation"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/text-column-left",
@@ -5244,8 +4243,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/bubble-card",
@@ -5271,8 +4270,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/brand-pill",
@@ -5294,10 +4293,10 @@
       "renderer": "hero-brand-pill",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "brand"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/card-stack-top",
@@ -5323,8 +4322,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/phone-mock",
@@ -5349,8 +4348,8 @@
         "redshift_0047"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/type-slab",
@@ -5375,9 +4374,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4",
+      "frequency": "variant",
       "needs": [],
-      "frequency": "variant"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/reverse-srinika-replica.mp4"
     },
     {
       "id": "hero-devices/footage-plate-pop",
@@ -5403,9 +4402,9 @@
         "redshift_0042"
       ],
       "added": "2026-09-02",
-      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4",
+      "frequency": "variant",
       "needs": [],
-      "frequency": "variant"
+      "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-HF-heygen-stripe-v1-s.mp4"
     },
     {
       "id": "hero-devices/script-stack",
@@ -5430,8 +4429,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/chat-typing",
@@ -5456,10 +4455,10 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "question"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/chat-generate",
@@ -5485,8 +4484,8 @@
       "renderer": "hero-chat-generate",
       "last_used_in": [],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/title-behind-head",
@@ -5510,8 +4509,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     },
     {
       "id": "hero-devices/exhibit-card",
@@ -5536,10 +4535,10 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "device"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/statement-slam",
@@ -5562,12 +4561,12 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "negation",
         "superlative",
         "discovery"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/phrase-log",
@@ -5594,10 +4593,10 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "list"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/oversize-word",
@@ -5620,10 +4619,10 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "superlative"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/figure-swap",
@@ -5648,10 +4647,10 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "number"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/verdict-card",
@@ -5674,12 +4673,12 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "negation",
         "superlative",
         "discovery"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/source-paper",
@@ -5700,10 +4699,10 @@
       "renderer": "hero-paper",
       "last_used_in": [],
       "added": "2026-08-18",
+      "frequency": "variant",
       "needs": [
         "quote"
-      ],
-      "frequency": "variant"
+      ]
     },
     {
       "id": "hero-devices/bubble-typed",
@@ -5728,8 +4727,8 @@
         "redshift_0042"
       ],
       "added": "2026-08-18",
-      "needs": [],
-      "frequency": "variant"
+      "frequency": "variant",
+      "needs": []
     }
   ]
 }

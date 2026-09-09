@@ -23,5 +23,8 @@
     "redshift_0042"
   ],
   "added": "2026-09-03",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "device"
+  ]
 }

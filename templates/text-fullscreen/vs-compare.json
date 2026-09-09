@@ -5,7 +5,7 @@
   "title": "Два значения через VS",
   "duration_range": [
     1.2,
-    2.0
+    3.0
   ],
   "params": {
     "split": true
@@ -18,5 +18,8 @@
     "redshift_0044"
   ],
   "added": "2026-08-18",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "comparison"
+  ]
 }

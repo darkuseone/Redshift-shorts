@@ -43,30 +43,28 @@ class TestBlobBuilder:
 class TestIntentDetection:
     def test_keyword_matching(self, picker):
         intents = picker.index.detect_intents(
-            "лучший чат-бот для работы",
+            "заметки в apple notes",
             category="browser-ui",
             variant="A",
         )
-        assert any(it.id == "browser-ai-chat" for it in intents)
+        assert any(it.id == "browser-notes-reveal" for it in intents)
 
     def test_regex_pattern_matching(self, picker):
-        # text-beat-freeze has pattern (drop|freeze|beat|hard*cut|...)
         intents = picker.index.detect_intents(
-            "мощный бит и дроп",
+            "def calculate():\n    return 1\n",
             category="text-fullscreen",
             variant="A",
         )
-        assert any(it.id == "text-beat-freeze" for it in intents)
+        assert any(it.id == "text-dark-plus" for it in intents)
 
     def test_signals_any_matching(self, picker):
-        # dataviz-star-rating has signals_any: ['rating_like']
         intents = picker.index.detect_intents(
             "нейтральный текст",
             category="data-viz",
             variant="A",
-            signals=frozenset(["rating_like"]),
+            signals=frozenset(["mechanism"]),
         )
-        assert any(it.id == "dataviz-star-rating" for it in intents)
+        assert any(it.id == "logic-flowchart" for it in intents)
 
     def test_needs_and_filter(self, picker):
         # text-code-scroll-long requires lines_ge_7
@@ -102,15 +100,15 @@ class TestIntentDetection:
         assert not any(it.id == "text-number-slam" for it in intents_b)
 
     def test_winning_direction_sorting(self, picker):
-        # Text with both diff and beat markers: text-beat-freeze (27) > text-code-diff (24)
-        diff_text = "\n---\n+++ new\n- дроп\n+ бит\n"
+        # terminal-shell (26) > code-diff (24)
+        diff_text = "$ npm install\n---\n+++ new\n- old\n+ new\n"
         intents = picker.index.detect_intents(
             diff_text,
             category="text-fullscreen",
             variant="A",
         )
         fired_ids = [it.id for it in intents]
-        assert fired_ids.index("text-beat-freeze") < fired_ids.index("text-code-diff")
+        assert fired_ids.index("text-terminal-shell") < fired_ids.index("text-code-diff")
 
     def test_module_level_detect_intents(self, picker):
         intents1 = detect_intents(picker.index, "123", category="text-fullscreen", variant="A")
@@ -236,7 +234,7 @@ class TestEmptyTriggerNotAlwaysFire:
 
 
 class TestRareEntityGate:
-    """MUST-011: rare geo/finance/social = 0 без именованной сущности."""
+    """MUST-011 эмпирика + MUST-013: rare geo/finance/social id выпилены."""
 
     def test_empirical_kolskaya_mirov_does_not_take_world_map(self, picker):
         blob = "Кольская кора миров"
@@ -245,6 +243,7 @@ class TestRareEntityGate:
         assert "geo-world-map" not in fired
         t, _ = picker.pick("data-viz", blob=blob, variant="A")
         assert t.id != "data-viz/world-map"
+        assert picker.catalog.by_id("data-viz/world-map") is None
 
     def test_empirical_empty_cta_does_not_take_nk(self, picker):
         blob = ""
@@ -271,18 +270,18 @@ class TestRareEntityGate:
         t, _ = picker.pick("text-fullscreen", blob=blob, variant="A")
         assert t.id != "text-fullscreen/beat-freeze-cut"
 
-    def test_north_korea_entity_allows_nk_template(self, picker):
+    def test_north_korea_entity_does_not_resurrect_deleted_nk(self, picker):
         blob = "North Korea sanctions, Пхеньян"
         fired = {it.id for it in picker.index.detect_intents(
             blob, category="data-viz", variant="A")}
-        assert "geo-north-korea" in fired
+        assert "geo-north-korea" not in fired
         t, _ = picker.pick("data-viz", blob=blob, variant="A")
-        assert t.id == "data-viz/north-korea-locked-down"
+        assert t.id != "data-viz/north-korea-locked-down"
+        assert picker.catalog.by_id("data-viz/north-korea-locked-down") is None
 
-    def test_geo_generic_weight_is_zero(self, picker):
+    def test_geo_generic_intent_is_gone(self, picker):
         by_id = {it.id: it for it in picker.index.intents}
-        assert by_id["geo-generic"].weight == 0
-        assert by_id["geo-generic"].requires_entity
+        assert "geo-generic" not in by_id
         fired = picker.index.detect_intents(
             "просто карта без страны", category="data-viz", variant="A")
         assert not any(it.id == "geo-generic" for it in fired)
@@ -294,6 +293,7 @@ class TestRareEntityGate:
         assert "finance-money-count" not in fired
         t, _ = picker.pick("data-viz", blob=blob, variant="A")
         assert t.id != "data-viz/apple-money-count"
+        assert picker.catalog.by_id("data-viz/apple-money-count") is None
 
 
 class TestWeightBands:
@@ -322,12 +322,12 @@ class TestWeightBands:
         assert by_id["cta-brand-close"] == 11
         assert by_id["cta-subscribe"] == 10
         assert by_id["cta-brand-close"] > by_id["cta-subscribe"]
-        assert by_id["geo-generic"] == 0
+        assert "geo-generic" not in by_id
+        assert "text-beat-freeze" not in by_id
 
         # text-fullscreen winning direction hierarchy
         assert (
-            by_id["text-beat-freeze"]
-            > by_id["text-terminal-shell"]
+            by_id["text-terminal-shell"]
             > by_id["text-dark-plus"]
             > by_id["text-code-diff"]
             > by_id["text-code-scroll-long"]
@@ -455,7 +455,7 @@ class TestPickerChannelsAndWalk:
             "text-fullscreen",
             blob="120 миллионов",
             variant="A",
-            prefer_head=["text-fullscreen/beat-freeze-cut"],
+            prefer_head=["text-fullscreen/stack-3lines"],
             prefer_base=["text-fullscreen/dark-plus"],
         )
         assert "head" in trace.channels
@@ -464,7 +464,7 @@ class TestPickerChannelsAndWalk:
         assert "default" in trace.channels
         assert "generic" in trace.channels
 
-        assert trace.channels["head"] == ("text-fullscreen/beat-freeze-cut",)
+        assert trace.channels["head"] == ("text-fullscreen/stack-3lines",)
         assert "text-fullscreen/number-slam-card" in trace.channels["specific"]
         assert trace.channels["base"] == ("text-fullscreen/dark-plus",)
 
@@ -486,6 +486,7 @@ class TestPickerChannelsAndWalk:
         assert len(trace_text.fallback) == 10
         assert trace_text.fallback[0] == "text-fullscreen/stack-3lines"
         assert "text-fullscreen/beat-freeze-cut" not in trace_text.fallback
+        assert "text-fullscreen/news-ticker" not in trace_text.fallback
         assert "text-fullscreen/date-marker" in trace_text.fallback
 
         # transitions variant A default intent has exactly 15 templates
@@ -501,7 +502,7 @@ class TestPickerChannelsAndWalk:
     def test_tie_class_is_one_on_walk_hit(self, picker):
         _, trace = picker.pick(
             "data-viz",
-            blob=build_blob("рейс Нью-Йорк — Париж"),
+            blob=build_blob("блок-схема дерево решений алгоритм"),
             variant="A",
         )
         assert trace.won_at == 0
@@ -557,19 +558,18 @@ class TestReplacesDefault:
 
 class TestPassThrough:
     def test_exclude_skips_in_walk(self, picker):
-        # geo-flight + world-map entity, чтобы rare world-map не отрезался MUST-011
-        blob = build_blob("рейс Нью-Йорк — Париж, world atlas")
+        blob = build_blob("блок-схема дерево решений алгоритм")
         t1, trace1 = picker.pick("data-viz", blob=blob, variant="A")
-        assert t1.id == "data-viz/nyc-paris-flight"
+        assert t1.id == "data-viz/flowchart-vertical"
         assert trace1.won_at == 0
 
         t2, trace2 = picker.pick(
             "data-viz",
             blob=blob,
             variant="A",
-            exclude=["data-viz/nyc-paris-flight"],
+            exclude=["data-viz/flowchart-vertical"],
         )
-        assert t2.id == "data-viz/world-map"
+        assert t2.id == "data-viz/flowchart"
         assert trace2.won_at == 1
 
     def test_tags_and_exclude_on_transitions(self, picker):
@@ -772,31 +772,31 @@ class TestNegativeCorpus:
         assert "browser-claude-exchange" not in fired_ids
 
     def test_inherited_false_positives(self, picker):
-        # 'рейтинг' -> star-rating-fill
-        t_rate, trace_rate = picker.pick("data-viz", blob=build_blob("рейтинг доверия"), variant="A")
-        assert any(fid == "dataviz-star-rating" for fid, _ in trace_rate.fired)
-        assert t_rate.id == "data-viz/star-rating-fill"
+        t_rate, trace_rate = picker.pick(
+            "data-viz", blob=build_blob("рейтинг доверия"), variant="A")
+        assert "dataviz-star-rating" not in {fid for fid, _ in trace_rate.fired}
+        assert t_rate.id != "data-viz/star-rating-fill"
+        assert picker.catalog.by_id("data-viz/star-rating-fill") is None
 
-        # 'прогресс' -> mk-progress-stat
-        t_prog, trace_prog = picker.pick("data-viz", blob=build_blob("прогресс переговоров"), variant="A")
-        assert any(fid == "stat-progress-goals" for fid, _ in trace_prog.fired)
-        assert t_prog.id == "data-viz/mk-progress-stat"
+        t_prog, trace_prog = picker.pick(
+            "data-viz", blob=build_blob("прогресс переговоров"), variant="A")
+        assert "stat-progress-goals" not in {fid for fid, _ in trace_prog.fired}
+        assert t_prog.id != "data-viz/mk-progress-stat"
+        assert picker.catalog.by_id("data-viz/mk-progress-stat") is None
 
 
 class TestStability:
     def test_last_used_in_does_not_break_guided_choice(self, picker):
-        # Walk hit is resilient to rotation history:
-        # even if nyc-paris-flight was used recently, walk still returns it because [tid] has explicit=0
-        target = picker.catalog.by_id("data-viz/nyc-paris-flight")
+        target = picker.catalog.by_id("data-viz/flowchart-vertical")
         target.last_used_in.extend(["video_01", "video_02", "video_03", "video_04"])
 
         t, trace = picker.pick(
             "data-viz",
-            blob=build_blob("рейс Нью-Йорк — Париж"),
+            blob=build_blob("блок-схема дерево решений алгоритм"),
             variant="A",
             recent_videos=["video_04"],
         )
-        assert t.id == "data-viz/nyc-paris-flight"
+        assert t.id == "data-viz/flowchart-vertical"
         assert trace.won_at == 0
         assert trace.tie_class == 1
 
@@ -805,14 +805,14 @@ class TestCliExplain:
     def test_cli_templates_explain_guided_hit(self, capsys):
         from src.cli import main
 
-        ret = main(["templates", "--explain", "рейс Нью-Йорк — Париж", "--category", "data-viz"])
+        ret = main(["templates", "--explain", "блок-схема алгоритм", "--category", "data-viz"])
         assert ret == 0
 
         captured = capsys.readouterr()
         out = captured.out
 
         # Fired intents with weight
-        assert "geo-flight (29)" in out
+        assert "logic-flowchart (31)" in out
 
         # All 5 channels
         assert "head:" in out
@@ -822,8 +822,8 @@ class TestCliExplain:
         assert "generic:" in out
 
         # Walk with winner
-        assert "walk[0] = data-viz/nyc-paris-flight" in out
-        assert "data-viz/nyc-paris-flight" in out
+        assert "walk[0] = data-viz/flowchart-vertical" in out
+        assert "data-viz/flowchart-vertical" in out
 
         # Won at and tie class
         assert "won_at = 0" in out or "won_at: 0" in out
@@ -877,8 +877,9 @@ class TestCliExplain:
         assert "count" in data
         assert "by_category" in data
         assert "templates" in data
-        assert data["count"] == 28
-        assert "data-viz/nyc-paris-flight" in data["templates"]
+        assert data["count"] == 17
+        assert "data-viz/flowchart-vertical" in data["templates"]
+        assert "data-viz/nyc-paris-flight" not in data["templates"]
 
 
 def test_active_templates_have_frequency(picker):
@@ -923,6 +924,7 @@ def test_gen_templates_preserves_lifecycle_fields():
     src = Path("tools/gen_templates.py").read_text(encoding="utf-8")
     assert "status" in src and "retired_reason" in src and "frequency" in src
     assert "last_used_in" in src
+    assert "duration_range" in src and "needs" in src
 
 
 
@@ -1046,3 +1048,78 @@ class TestTheFrequencyLevelIsAShareNotAPriority:
             variant="B", duration=2.5, seed=3)
         assert template.id
         assert not trace.escaped
+
+
+# §9 DELETE LIST — каждый id отсутствует в живом каталоге и индексе picker.
+DELETE_TEMPLATE_IDS = (
+    "browser-ui/app-showcase",
+    "browser-ui/blue-sweater-intro-video",
+    "browser-ui/macos-notification",
+    "browser-ui/notification-cascade",
+    "browser-ui/spotify-card",
+    "browser-ui/vpn-youtube-spot",
+    "lower-thirds/instagram-follow",
+    "lower-thirds/tiktok-follow",
+    "text-fullscreen/split-flap-board",
+    "data-viz/north-korea-locked-down",
+    "data-viz/nyc-paris-flight",
+    "data-viz/spain-map",
+    "data-viz/us-map",
+    "data-viz/us-map-flow",
+    "data-viz/us-map-hex",
+    "data-viz/us-map-bubble",
+    "data-viz/world-map",
+    "data-viz/apple-money-count",
+    "data-viz/star-rating-fill",
+    "data-viz/mk-progress-stat",
+    "browser-ui/chatgpt-exchange",
+    "browser-ui/claude-exchange",
+    "browser-ui/ai-chat-reveal",
+    "browser-ui/message-thread-reveal",
+    "browser-ui/reddit-post",
+    "browser-ui/x-post",
+    "lower-thirds/yt-lower-third",
+    "text-fullscreen/beat-freeze-cut",
+    "text-fullscreen/news-ticker",
+)
+
+DELETE_INTENT_IDS = (
+    "geo-generic",
+    "geo-world-map",
+    "geo-north-korea",
+    "geo-flight",
+    "browser-ai-chat",
+    "browser-chatgpt-exchange",
+    "browser-claude-exchange",
+    "text-beat-freeze",
+    "dataviz-star-rating",
+    "finance-money-count",
+    "stat-progress-goals",
+)
+
+
+class TestDeleteList:
+    """MUST-013: §9 DELETE id нет в индексе picker и живом каталоге."""
+
+    def test_deleted_templates_absent_from_catalog_and_picker_index(self, picker):
+        catalog_ids = {t.id for t in picker.catalog.all()}
+        index_ids = {t.id for t in picker.catalog.all()}
+        for tid in DELETE_TEMPLATE_IDS:
+            assert tid not in catalog_ids, tid
+            assert picker.catalog.by_id(tid) is None
+            assert tid not in index_ids
+
+    def test_deleted_intents_absent_from_scenario_index(self, picker):
+        intent_ids = {it.id for it in picker.index.intents}
+        for iid in DELETE_INTENT_IDS:
+            assert iid not in intent_ids, iid
+        for intent in picker.index.intents:
+            leftover = set(intent.templates) & set(DELETE_TEMPLATE_IDS)
+            assert not leftover, (intent.id, leftover)
+
+    def test_deleted_json_files_gone(self):
+        root = Path(__file__).resolve().parents[1] / "templates"
+        for tid in DELETE_TEMPLATE_IDS:
+            cat, name = tid.split("/", 1)
+            path = root / cat / f"{name}.json"
+            assert not path.exists(), path

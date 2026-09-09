@@ -17,7 +17,12 @@
     "decline"
   ],
   "renderer": "dataviz",
-  "last_used_in": [],
+  "last_used_in": [
+    "redshift_0042"
+  ],
   "added": "2026-09-03",
-  "frequency": "variant"
+  "frequency": "variant",
+  "needs": [
+    "number"
+  ]
 }

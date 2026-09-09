@@ -5,7 +5,7 @@
   "title": "Цифра-удар на карточке — K3 promo",
   "duration_range": [
     0.8,
-    2.0
+    3.0
   ],
   "params": {
     "slam": true,
@@ -21,5 +21,8 @@
   "last_used_in": [],
   "added": "2026-09-02",
   "frequency": "variant",
+  "needs": [
+    "number"
+  ],
   "example_video": "https://static.heygen.ai/hyperframes-oss/docs/images/showcase/launch-k3-promo-v1-s.mp4"
 }
