@@ -109,6 +109,28 @@ def pad_slot_queries(
     return out[:cap]
 
 
+def short_side_over_cap(width: Any, height: Any, max_h: int = 1080) -> bool:
+    """True если короткая сторона > потолка скачивания (§3.6.1, MUST-018)."""
+    try:
+        w, h = int(width or 0), int(height or 0)
+    except (TypeError, ValueError):
+        return False
+    if not w or not h:
+        return False
+    return min(w, h) > int(max_h)
+
+
+def judge_blocks_stage1_dead(candidate: dict[str, Any], *,
+                             dead_ids: set[str], max_h: int = 1080) -> str | None:
+    """Почему кандидат нельзя отдавать vision. None — можно."""
+    aid = str(candidate.get("asset_id") or candidate.get("id") or "")
+    if aid and aid in dead_ids:
+        return "stage1_dead"
+    if short_side_over_cap(candidate.get("width"), candidate.get("height"), max_h):
+        return f"short_side>{max_h}"
+    return None
+
+
 def footage_pool_count(candidates: Iterable[dict[str, Any]]) -> int:
     """Кандидаты футажа без мемов — знаменатель surplus."""
     return sum(1 for c in candidates if str(c.get("origin") or "") != "meme_library")
@@ -168,7 +190,7 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
             and _license_mode(candidate.source, routing or {}) != "owner_decision"):
         return "лицензия не подтверждена (§7.2.7)"
     max_h = int(cfg.get("stock.max_download_height", 1080))
-    if candidate.height and candidate.height > max_h and candidate.width > max_h:
+    if short_side_over_cap(candidate.width, candidate.height, max_h):
         return f"разрешение выше {max_h}p — по §3.6.1 не берём"
     if candidate.kind == "video":
         if candidate.duration_sec and candidate.duration_sec < min(1.2, slot_duration * 0.6):
@@ -406,6 +428,10 @@ def run_step(ctx) -> dict[str, Any]:
                     getattr(record, "id", "") or "",
                 ])
                 theme_reason = negative_reject_reason(local_hay, negatives)
+            if not theme_reason and short_side_over_cap(
+                    getattr(record, "width", 0), getattr(record, "height", 0),
+                    max_short_side):
+                theme_reason = f"разрешение выше {max_short_side}p — по §3.6.1 не берём"
             if theme_reason:
                 stage1_rejected.append({
                     "id": record.id, "source": record.source,

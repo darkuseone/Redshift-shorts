@@ -29,8 +29,8 @@ from ..lib.query import (
     classify_intent, thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, footage_pool_count, pin_id_denied,
-    surplus_report,
+    _footage_pin_entry, _load_footage_pins, footage_pool_count,
+    judge_blocks_stage1_dead, pin_id_denied, surplus_report,
 )
 
 COHERENCE_MIN = 0.15
@@ -197,8 +197,17 @@ def run_step(ctx) -> dict[str, Any]:
     pin_entry = _footage_pin_entry(cfg, video_id)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
+    dead_ids = {str(row.get("id") or "") for row in (doc.get("stage1_rejected") or [])
+                if row.get("id")}
+    max_h = int(cfg.get("stock.max_download_height", 1080))
     by_slot: dict[int, list[dict[str, Any]]] = {}
+    skipped_stage1 = 0
     for candidate in doc["candidates"]:
+        blocked = judge_blocks_stage1_dead(
+            candidate, dead_ids=dead_ids, max_h=max_h)
+        if blocked:
+            skipped_stage1 += 1
+            continue
         by_slot.setdefault(candidate["slot_index"], []).append(candidate)
 
     palette_rules = dict(cfg.brandbook.get("color_rules", {}).get("footage_palette", {}))
@@ -574,6 +583,7 @@ def run_step(ctx) -> dict[str, Any]:
         "unfilled_slots": unfilled,
         "added_to_index": added_to_index,
         "surplus": surplus,
+        "skipped_stage1": skipped_stage1,
         "accepted": {str(k): v for k, v in sorted(accepted.items())},
         "judged": judged,
     }
