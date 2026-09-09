@@ -106,3 +106,15 @@ def test_pin_deny_prefix_matches_every_nasa_id():
     assert all(pin_id_denied(aid, deny) for aid in nasa_ids)
     assert not pin_id_denied("pexels_v25935014", deny)
     assert pin_id_denied("nasa_S74-23458", {"nasa_S74-23458"})
+
+
+def test_tag_url_coherence_reads_page_url_and_attribution():
+    """P7 кладёт URL в page_url; без него orphan с тегами pexels/video получал 0."""
+    rec = {
+        "tags": ["pexels", "video"],
+        "page_url": "https://www.pexels.com/video/25935014/",
+        "attribution": "pexels / local cache",
+        "source": "pexels",
+        "license": "Pexels License",
+    }
+    assert tag_url_coherence(rec) >= 0.15

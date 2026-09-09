@@ -97,6 +97,9 @@ def test_surplus_target_ten_slots_is_thirteen():
 
 def test_config_surplus_ratio_is_1_3(cfg):
     assert cfg.get("stock.candidate_surplus") == 1.3
+    live = load_config()
+    assert int(live.get("stock.local_candidates_per_slot")) == 24
+    assert int(live.get("stock.local_keep_per_slot")) == 2
 
 
 def _run(monkeypatch, n_slots: int, n_cands: int, spy: _Spy):
@@ -135,3 +138,37 @@ def test_surplus_met_allows_paid_critic(monkeypatch):
     assert spy.calls >= 1
     assert result["surplus"]["ok"] is True
     assert result["surplus"]["status"] == "ok"
+
+
+def test_underfilled_local_cache_reuses_prior_score(monkeypatch):
+    """MUST-017: paid critic для нового стока; кэш с prior_score принимают без него."""
+    spy = _Spy()
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", False)
+    cfg.set("providers.mode", "mock")
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+    monkeypatch.setattr(J, "build_vision_provider", lambda *a, **k: spy)
+    slots = [_slot(i) for i in range(10)]
+    candidates = []
+    for i in range(12):
+        row = _cand(i % 10, i)
+        row["origin"] = "local_cache"
+        row["prior_score"] = 0.91
+        row["url_origin"] = row["page_url"]
+        candidates.append(row)
+    surplus = surplus_report(12, 10, 1.3)
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "surplus_cache", "candidates": candidates, "surplus": surplus},
+        {"video_id": "surplus_cache", "category": "ai", "slots": slots, "blocks": []},
+    )
+    run_step(ctx)
+    result = ctx.written["accepted_assets.json"]
+    assert spy.calls == 0
+    assert result["surplus"]["status"] == "underfilled"
+    assert result["accepted_count"] >= 10
+    decisions = {row.get("decision") for row in result["judged"]
+                 if row.get("origin") == "local_cache"}
+    assert "underfilled" not in decisions

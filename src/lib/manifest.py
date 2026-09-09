@@ -242,10 +242,10 @@ def tag_url_coherence(record: "AssetRecord | dict[str, Any]") -> float:
     """
     if isinstance(record, dict):
         tags = [str(x) for x in (record.get("tags") or []) if x]
-        url = str(record.get("url_origin") or "").lower()
+        url = str(record.get("url_origin") or record.get("page_url") or "").lower()
         vision = str(record.get("vision_summary") or "").lower()
         extra = record.get("extra") or {}
-        attr = str(extra.get("attribution") or "").lower()
+        attr = str(extra.get("attribution") or record.get("attribution") or "").lower()
         source = str(record.get("source") or "").lower()
         license_ = str(record.get("license") or "").lower()
     else:

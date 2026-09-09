@@ -31,7 +31,7 @@ from ..lib.query import (
 )
 from ..p7_broll_search.search import (
     _footage_pin_entry, _load_footage_pins, footage_pool_count,
-    judge_blocks_stage1_dead, pin_id_denied, surplus_report,
+    judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_report,
 )
 
 COHERENCE_MIN = 0.15
@@ -356,8 +356,7 @@ def run_step(ctx) -> dict[str, Any]:
     pin_entry = _footage_pin_entry(cfg, video_id)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
-    dead_ids = {str(row.get("id") or "") for row in (doc.get("stage1_rejected") or [])
-                if row.get("id")}
+    dead_ids = stage1_dead_ids(doc.get("stage1_rejected") or [])
     max_h = int(cfg.get("stock.max_download_height", 1080))
     by_slot: dict[int, list[dict[str, Any]]] = {}
     skipped_stage1 = 0
@@ -530,14 +529,13 @@ def run_step(ctx) -> dict[str, Any]:
             # Вечнозелёная база вскрыла это ребром: её записи не судились ни
             # разу, у них стоит ровный SEED_SCORE 0.62 при пороге приёма 0.70,
             # и по этому пути весь засев навсегда оставался «borderline».
-            reusable = (candidate.get("prior_score")
-                        and candidate.get("prior_intent")
-                        and _same_intent(candidate.get("prior_intent", ""), intent))
+            reusable = (candidate.get("prior_score") is not None
+                        and candidate.get("origin") == "local_cache")
             # skip_live: материал уже судился раньше / есть в кэше — без API.
             if skip_live:
                 verdict_dict = skip_live_verdict(candidate, intent)
                 reused_scores += 1
-            elif candidate.get("origin") == "local_cache" and reusable:
+            elif reusable:
                 verdict_dict = {
                     "score": float(candidate["prior_score"]),
                     "reason": "оценка переиспользована из локальной базы",

@@ -9,6 +9,7 @@ from src.lib.providers.vision import VisionVerdict
 from src.lib.render.shots import slim_video
 from src.p7_broll_search.search import (
     _stage1_reject, judge_blocks_stage1_dead, short_side_over_cap,
+    stage1_dead_ids,
 )
 from src.p8_broll_judge.judge import run_step
 
@@ -77,6 +78,20 @@ def test_short_side_over_cap_is_min_side():
     assert not short_side_over_cap(1080, 1920, 1080)
     assert not short_side_over_cap(1920, 1080, 1080)
     assert not short_side_over_cap(1080, 2160, 1080)
+
+
+def test_stage1_dead_ids_skips_in_roll_duplicates():
+    """MUST-018: дубль внутри ролика не убивает клип на слоте, где он единственный."""
+    dead = stage1_dead_ids([
+        {"id": "dup_clip", "reason": "дубль pexels_x (материал из базы)"},
+        {"id": "dup_en", "reason": "visual duplicate inside roll"},
+        {"id": "fourk", "reason": "разрешение выше 1080p"},
+        {"id": "theme", "reason": "тематический отсев (junk): «syringe»"},
+    ])
+    assert "dup_clip" not in dead
+    assert "dup_en" not in dead
+    assert "fourk" in dead
+    assert "theme" in dead
 
 
 def test_stage1_rejects_4k_keeps_1080p_portrait(cfg):

@@ -27,7 +27,7 @@ import yaml
 
 from ..lib.ffmpeg import extract_frames, grade_to_palette, probe
 from ..lib.logging import get_logger
-from ..lib.manifest import FootageIndex, open_library
+from ..lib.manifest import AssetRecord, FootageIndex, open_library
 from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
 from ..lib.providers.press import build_press_provider
@@ -118,6 +118,25 @@ def short_side_over_cap(width: Any, height: Any, max_h: int = 1080) -> bool:
     if not w or not h:
         return False
     return min(w, h) > int(max_h)
+
+
+def stage1_dead_ids(rows: Iterable[dict[str, Any]] | None) -> set[str]:
+    """Id, которые нельзя судить зрением (MUST-018).
+
+    Дубль внутри ролика — не смерть клипа: тот же файл уже принят в другой
+    слот, и P8 не имеет права выкинуть его и там, где он единственный
+    кандидат. Иначе кэш из пяти клипов даёт fill_rate 0.
+    """
+    dead: set[str] = set()
+    for row in rows or ():
+        aid = str(row.get("id") or "")
+        if not aid:
+            continue
+        reason = str(row.get("reason") or "").casefold()
+        if "дубль" in reason or "duplicate" in reason:
+            continue
+        dead.add(aid)
+    return dead
 
 
 def judge_blocks_stage1_dead(candidate: dict[str, Any], *,
@@ -321,6 +340,95 @@ def _local_thematic_reject(record, *, category: str = "",
         hay, category=category, intent_kind=intent_kind, video_id=video_id)
 
 
+_ORPHAN_LICENSE = {
+    "pexels": "Pexels License",
+    "pixabay": "Pixabay Content License",
+}
+
+
+def disk_orphan_records(ctx, index: FootageIndex) -> list[AssetRecord]:
+    """Файлы в ``assets/footage/{pexels,pixabay}``, которых нет в индексе.
+
+    Прошлые прогоны оставили клипы на диске, а LRU вычистил запись. Без этой
+    доборки P7 видит пять строк индекса и оставляет слоты пустыми при freeze.
+    """
+    root = ctx.cfg.path("storage.local_root", "assets/footage")
+    found: list[AssetRecord] = []
+    for source, license_ in _ORPHAN_LICENSE.items():
+        folder = root / source
+        if not folder.is_dir():
+            continue
+        for path in sorted(folder.glob("*.mp4")):
+            asset_id = path.stem
+            if index.by_id(asset_id) is not None:
+                continue
+            rel = f"{source}/{path.name}"
+            try:
+                info = probe(path)
+            except Exception:  # noqa: BLE001
+                continue
+            found.append(AssetRecord(
+                id=asset_id, type="video", source=source, license=license_,
+                url_origin=f"https://www.{source}.com/video/{asset_id.split('_')[-1]}/",
+                tags=[source, "video"], vision_summary="",
+                score=0.72, duration_sec=float(info.duration_sec or 0.0),
+                width=int(info.width or 0), height=int(info.height or 0),
+                file=rel, extra={"attribution": f"{source} / local cache",
+                                 "orphan_ingest": True},
+            ))
+    return found
+
+
+def _local_cache_row(slot_index: int, record: AssetRecord, query: str) -> dict[str, Any]:
+    """Кандидат из локальной базы / дискового добора — с url_origin для P8."""
+    hashes = record.phashes or ([record.phash] if record.phash else [])
+    extra = record.extra or {}
+    url = record.url_origin or ""
+    return {
+        "slot_index": slot_index, "origin": "local_cache",
+        "asset_id": record.id, "source": record.source,
+        "kind": record.type, "query": query,
+        "license": record.license, "license_confirmed": True,
+        "width": record.width, "height": record.height,
+        "duration_sec": record.duration_sec,
+        "phashes": hashes,
+        "storage_key": record.file, "tags": record.tags,
+        "vision_summary": record.vision_summary, "prior_score": record.score,
+        "prior_intent": extra.get("judged_intent", ""),
+        "ai_generated": record.ai_generated, "mock": record.mock,
+        "attribution": extra.get("attribution", ""),
+        "page_url": url, "url_origin": url,
+    }
+
+
+def _local_reject_reason(record, *, category: str, intent_kind: str,
+                         video_id: str, negatives: list[str],
+                         max_short_side: int) -> str | None:
+    """Theme / negatives / resolution — одинаково для индекса и дискового добора."""
+    theme_reason = _local_thematic_reject(
+        record, category=category, intent_kind=intent_kind, video_id=video_id)
+    if not theme_reason:
+        local_hay = " ".join([
+            getattr(record, "url_origin", "") or "",
+            " ".join(getattr(record, "tags", None) or []),
+            getattr(record, "vision_summary", "") or "",
+            getattr(record, "id", "") or "",
+        ])
+        theme_reason = negative_reject_reason(local_hay, negatives)
+    if not theme_reason and short_side_over_cap(
+            getattr(record, "width", 0), getattr(record, "height", 0),
+            max_short_side):
+        theme_reason = f"разрешение выше {max_short_side}p — по §3.6.1 не берём"
+    return theme_reason
+
+
+def _local_overlap(record, queries: list[str]) -> int:
+    wanted = {w.lower() for q in queries for w in q.split() if len(w) > 2}
+    tags = {t.lower() for t in (getattr(record, "tags", None) or [])}
+    hay = f"{getattr(record, 'url_origin', '')} {getattr(record, 'vision_summary', '')}".lower()
+    return len(wanted & tags) + sum(1 for w in wanted if w in hay)
+
+
 def _article_for(slot: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any] | None:
     """Статья, на которую ссылается блок этого слота, — или ``None``.
 
@@ -401,6 +509,10 @@ def run_step(ctx) -> dict[str, Any]:
     providers = build_stock_providers(cfg, ctx.costs)
     index = FootageIndex.load(cfg)
     pin_deny, pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
+    orphans = disk_orphan_records(ctx, index)
+    if orphans:
+        ctx.warn(f"на диске {len(orphans)} клипов стока нет в индексе — добор",
+                 count=len(orphans))
 
     queries_per_slot = min(QUERY_MAX, max(3, int(cfg.get("stock.queries_per_slot", 5))))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))
@@ -469,7 +581,10 @@ def run_step(ctx) -> dict[str, Any]:
         slot_candidates: list[dict[str, Any]] = []
 
         # --- 1. локальная база (§7.2.1) --------------------------------------
-        local = index.search(_tags_for(queries), limit=6, exclude_videos=recent_videos,
+        local_limit = max(6, int(cfg.get("stock.local_candidates_per_slot", 24)))
+        keep_per_slot = max(1, int(cfg.get("stock.local_keep_per_slot", 2)))
+        local = index.search(_tags_for(queries), limit=local_limit,
+                             exclude_videos=recent_videos,
                              allow_recent=frozen)
         # Pins: hard deny + inject/boost prefer so P8 can hard-accept them.
         if pin_deny:
@@ -488,64 +603,91 @@ def run_step(ctx) -> dict[str, Any]:
                 have.add(pid)
             prefer_set = set(pin_prefer)
             local = sorted(local, key=lambda r: (0 if r.id in prefer_set else 1, -r.score))
+        taken_ids = {c.get("asset_id") for c in candidates_out}
+        category = str(plan.get("category") or "")
+        video_id = str(plan.get("video_id") or "")
+        pooled: list[tuple[Any, dict[str, Any]]] = []
         for record in local:
             # Индекс живёт в git, а файлы — во внешнем storage (§14.5). На свежем
             # клоне записи есть, а payload'а нет: предлагать такой материал нельзя,
             # иначе слот «закроется» пустотой и сборка упадёт на подготовке плана.
+            if record.id in taken_ids or pin_id_denied(record.id, pin_deny):
+                continue
             if not record.file or not ctx.storage.exists(record.file):
                 missing_in_storage.append(record.id)
                 continue
-            theme_reason = _local_thematic_reject(
-                record, category=str(plan.get("category") or ""),
-                intent_kind=intent_kind,
-                video_id=str(plan.get("video_id") or ""))
-            if not theme_reason:
-                local_hay = " ".join([
-                    getattr(record, "url_origin", "") or "",
-                    " ".join(getattr(record, "tags", None) or []),
-                    getattr(record, "vision_summary", "") or "",
-                    getattr(record, "id", "") or "",
-                ])
-                theme_reason = negative_reject_reason(local_hay, negatives)
-            if not theme_reason and short_side_over_cap(
-                    getattr(record, "width", 0), getattr(record, "height", 0),
-                    max_short_side):
-                theme_reason = f"разрешение выше {max_short_side}p — по §3.6.1 не берём"
+            theme_reason = _local_reject_reason(
+                record, category=category, intent_kind=intent_kind,
+                video_id=video_id, negatives=negatives,
+                max_short_side=max_short_side)
             if theme_reason:
                 stage1_rejected.append({
                     "id": record.id, "source": record.source,
                     "reason": theme_reason, "query": queries[0],
                 })
                 continue
-            # Кандидат из базы обязан проходить тот же дедуп, что и скачанный:
-            # без этого один и тот же кадр попадал в разные слоты и валил QC-5.
-            record_hashes = record.phashes or ([record.phash] if record.phash else [])
-            if record_hashes:
-                dup = _find_dup(record_hashes, seen_hashes, dedup_threshold)
+            pooled.append((record, _local_cache_row(slot["index"], record, queries[0])))
+
+        prefer_set = set(pin_prefer)
+        pooled.sort(key=lambda pair: (
+            0 if pair[0].id in prefer_set else 1,
+            -float(pair[0].score or 0),
+        ))
+        # Хеши помечаем только у выбранных: иначе слот 0 сжигает уникальный
+        # пул, а хвост ролика видит одни «дубли из базы».
+        for record, row in pooled:
+            if len(slot_candidates) >= keep_per_slot:
+                break
+            hashes = row.get("phashes") or []
+            if hashes:
+                dup = _find_dup(hashes, seen_hashes, dedup_threshold)
                 if dup:
-                    stage1_rejected.append({"id": record.id, "source": record.source,
-                                            "reason": f"дубль {dup} (материал из базы)",
-                                            "query": queries[0]})
+                    stage1_rejected.append({
+                        "id": record.id, "source": record.source,
+                        "reason": f"дубль {dup} (материал из базы)",
+                        "query": queries[0],
+                    })
                     continue
-                seen_hashes.append((record.id, record_hashes))
-            slot_candidates.append({
-                "slot_index": slot["index"], "origin": "local_cache",
-                "asset_id": record.id, "source": record.source,
-                "kind": record.type, "query": queries[0],
-                "license": record.license, "license_confirmed": True,
-                "width": record.width, "height": record.height,
-                "duration_sec": record.duration_sec,
-                "phashes": record.phashes or ([record.phash] if record.phash else []),
-                "storage_key": record.file, "tags": record.tags,
-                "vision_summary": record.vision_summary, "prior_score": record.score,
-                # Смысл, за который оценка записи получена. Пусто у засева и у
-                # старых записей — такой материал судится заново.
-                "prior_intent": record.extra.get("judged_intent", ""),
-                "ai_generated": record.ai_generated, "mock": record.mock,
-                "attribution": record.extra.get("attribution", ""),
-                "page_url": record.url_origin,
-            })
+                seen_hashes.append((record.id, hashes))
+            slot_candidates.append(row)
+            taken_ids.add(record.id)
             from_cache += 1
+
+        # Prefer-пины и лимит поиска занимали первые слоты одними и теми же
+        # id: хвост ролика видел только «дубль из базы». Если слот пуст —
+        # берём уникальный оставшийся клип из индекса и с диска.
+        if not slot_candidates:
+            ranked = sorted(
+                list(index.items) + list(orphans),
+                key=lambda rec: (
+                    0 if rec.id in set(pin_prefer) else 1,
+                    -_local_overlap(rec, queries),
+                    -float(rec.score or 0),
+                ),
+            )
+            for record in ranked:
+                if record.id in taken_ids or pin_id_denied(record.id, pin_deny):
+                    continue
+                if getattr(record, "quarantined", False):
+                    continue
+                if not record.file or not ctx.storage.exists(record.file):
+                    continue
+                theme_reason = _local_reject_reason(
+                    record, category=category, intent_kind=intent_kind,
+                    video_id=video_id, negatives=negatives,
+                    max_short_side=max_short_side)
+                if theme_reason:
+                    continue
+                record_hashes = record.phashes or ([record.phash] if record.phash else [])
+                if record_hashes:
+                    dup = _find_dup(record_hashes, seen_hashes, dedup_threshold)
+                    if dup:
+                        continue
+                    seen_hashes.append((record.id, record_hashes))
+                slot_candidates.append(
+                    _local_cache_row(slot["index"], record, queries[0]))
+                from_cache += 1
+                break
 
         if frozen and slot_candidates:
             candidates_out.extend(slot_candidates)
