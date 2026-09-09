@@ -462,6 +462,7 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     accent_lo = float(accent_rules.get("accent_min_frame_share", 0.02))
     accent_max = float(render_stats.get("accent_share_max") or 0.0)
     accent_measured = int(render_stats.get("accent_share_max") is not None)
+    over_cap = accent_max > accent_hi + 1e-9
     checks.append(_check(
         30, "Доля акцентного цвета в кадре",
         accent_lo <= accent_max <= accent_hi,
@@ -470,7 +471,7 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
         threshold=[accent_lo, accent_hi],
         detail=("замер по шести пробам готового файла"
                 if accent_measured else "замер не выполнен"),
-        blocking=False))
+        blocking=over_cap))
 
     blocking = [c for c in checks if c["blocking"]]
     passed_count = sum(1 for c in blocking if c["passed"])

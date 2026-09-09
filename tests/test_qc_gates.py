@@ -330,9 +330,17 @@ class TestQc30MeasuresTheAccentAtLast:
         """Ролик без акцента — такой же брак, как залитый им, просто тише."""
         assert not _check(self._with(cfg, 0.0), "QC-30")["passed"]
 
-    def test_the_gate_does_not_reject_the_video_on_its_own(self, cfg):
-        """QC-30 — мерка нового коридора: сначала цифры, потом блокировка."""
-        assert _check(self._with(cfg, 0.40), "QC-30")["blocking"] is False
+    def test_over_twelve_percent_blocks_delivery(self, cfg):
+        """MUST-024: акцент >12 % — blocking, ролик не выдаётся."""
+        check = _check(self._with(cfg, 0.40), "QC-30")
+        assert not check["passed"]
+        assert check["blocking"] is True
+
+    def test_under_floor_does_not_block_on_its_own(self, cfg):
+        """Недобор акцента всё ещё виден, но выдачу ломает только потолок."""
+        check = _check(self._with(cfg, 0.0), "QC-30")
+        assert not check["passed"]
+        assert check["blocking"] is False
 
 
 # --- Q3.7: QC-28, плотность первых секунд (§10.4) ----------------------------
@@ -382,3 +390,60 @@ class TestQc28WatchesTheFirstThreeSeconds:
                   {"t": 0.2, "status": "missing_in_library"}]
         check = _check(_run_with_sfx(cfg, _plan(), events), "QC-28")
         assert not check["passed"] and check["value"]["events"] == 0
+
+
+class TestTzMust024ConstantsAgree:
+    """Одна величина — одно число в docs, config и QC."""
+
+    def test_config_qc_and_instruction_share_the_same_caps(self, cfg):
+        from pathlib import Path
+
+        from src.p0_validate.validator import HOOK_MAX_SEC
+        from src.p12_render_qc.qc import apply_semantic_qc
+        from src.p12_render_qc.vision_qc import MISMATCH_LIMIT
+
+        instruction = Path("instruction.md").read_text(encoding="utf-8")
+        vfx = cfg.get("limits.bg_vfx_sec")
+        accent_hi = float((cfg.brandbook.get("color_rules") or {})
+                          .get("accent_max_frame_share", 0))
+
+        assert HOOK_MAX_SEC == pytest.approx(3.0)
+        assert cfg.get("limits.hook_sec") == pytest.approx(3.0)
+        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.10)
+        assert cfg.get("limits.bg_vfx_per_video") == 2
+        assert float(vfx[0]) == pytest.approx(2.0)
+        assert float(vfx[1]) == pytest.approx(5.0)
+        assert cfg.get("limits.vision_mismatch_share_max") == pytest.approx(0.10)
+        assert MISMATCH_LIMIT == pytest.approx(0.10)
+        assert cfg.get("stock.max_download_height") == 1080
+        assert cfg.get("stock.candidate_surplus") == pytest.approx(1.3)
+        assert accent_hi == pytest.approx(0.12)
+
+        assert "≤10 %" in instruction
+        assert "VFX-фон ≤2 раза, 2–5 сек" in instruction
+        assert "1080p" in instruction
+        assert "1.3×" in instruction
+        assert "mismatch_share > 10 %" in instruction
+        assert "QC-19 не отключается" in instruction
+
+        qc14 = _check(_run(cfg, _plan()), "QC-14")
+        assert qc14["threshold"] == pytest.approx(0.10)
+        qc19 = _check(_run(cfg, _plan()), "QC-19")
+        assert qc19["blocking"] is True
+
+        vision = {
+            "enabled": True, "skipped": True, "qc_skipped_semantic": True,
+            "mismatch_share": None, "mismatch_limit": 0.10,
+            "picture_matches_speech": False, "blocking": True,
+            "reason": "skip_live", "notes": [],
+        }
+        folded = apply_semantic_qc(
+            {"passed": True, "passed_count": 1, "total": 1,
+             "checks": [{"id": "QC-1", "name": "x", "passed": True,
+                         "blocking": True, "value": 1, "threshold": 1,
+                         "detail": "", "timecode_sec": None}],
+             "failed": []},
+            vision)
+        status = "ok" if folded["passed"] else "qc_failed"
+        assert folded["passed"] is False
+        assert status != "ok"
