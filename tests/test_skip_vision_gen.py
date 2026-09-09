@@ -90,6 +90,53 @@ def test_vision_qc_provider_error_is_non_blocking(tmp_path, monkeypatch):
     ctx.warn.assert_called()
 
 
+def test_vision_qc_keeps_collected_samples_after_later_429(tmp_path, monkeypatch):
+    """429 на хвосте не выкидывает уже измеренные пробы (0042: 5/6, потом skip)."""
+    from src.errors import ProviderError
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+    from src.p12_render_qc.qc import apply_semantic_qc
+
+    calls = {"n": 0}
+
+    class _Partial:
+        def judge(self, *_a, **_k):
+            calls["n"] += 1
+            if calls["n"] > 5:
+                raise ProviderError("Gemini вернул 429", status=429)
+            return V.VisionVerdict(score=0.9, reason="ok", summary="кадр",
+                                   judge="spy")
+
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *_a, **_k: _Partial())
+    frame = tmp_path / "f.jpg"
+    frame.write_bytes(b"x")
+    monkeypatch.setattr(VQ, "extract_frames", lambda *_a, **_k: [frame] * VQ.SAMPLES)
+    keys = iter(f"k{i}" for i in range(VQ.SAMPLES))
+    monkeypatch.setattr(VQ, "_verdict_key", lambda *_a, **_k: next(keys))
+
+    cfg = load_config()
+    ctx = MagicMock()
+    ctx.cfg = cfg
+    ctx.costs = MagicMock()
+    ctx.warn = MagicMock()
+    ctx.work_dir = tmp_path
+    ctx.wpath = lambda *a: tmp_path.joinpath(*map(str, a))
+
+    vision = VQ.run_vision_qc(
+        ctx, video_path=tmp_path / "v.mp4",
+        plan={"duration_sec": 12, "variant": "A",
+              "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "avatar",
+                         "role": "hook", "reason": "x"}],
+              "subtitles": []},
+    )
+    assert vision.get("qc_skipped_semantic") is not True
+    assert vision["sample_count"] == 5
+    assert vision["mismatch_share"] == 0.0
+    assert vision["blocking"] is False
+    qc = apply_semantic_qc({"checks": [], "failed": [], "passed": True}, vision)
+    assert all(c["passed"] for c in qc["checks"] if c["id"] == "QC-SEMANTIC")
+
+
 def test_thumbnail_skip_generate_goes_straight_to_ffmpeg(tmp_path, monkeypatch):
     """generation.skip: never call gemini_image/grok_image for thumbs."""
     from src.lib.ffmpeg import run as ffmpeg_run

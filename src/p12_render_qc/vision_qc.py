@@ -20,8 +20,9 @@ from pathlib import Path
 from typing import Any
 
 from ..lib.ffmpeg import extract_frames
+from ..lib.jsonio import read_json_or, write_json
 from ..lib.logging import get_logger
-from ..lib.providers.vision import build_vision_provider
+from ..lib.providers.vision import VisionVerdict, build_vision_provider
 
 _log = get_logger("vision_qc")
 
@@ -109,6 +110,48 @@ def sample_positions() -> list[float]:
     return [(i + 0.5) / SAMPLES for i in range(SAMPLES)]
 
 
+def _verdict_from_saved(data: Any) -> VisionVerdict | None:
+    if isinstance(data, VisionVerdict):
+        return data
+    if not isinstance(data, dict):
+        return None
+    return VisionVerdict(
+        score=float(data.get("score") or 0.0),
+        reason=str(data.get("reason") or ""),
+        summary=str(data.get("summary") or ""),
+        has_text=bool(data.get("has_text")),
+        has_logo=bool(data.get("has_logo")),
+        watermark=bool(data.get("watermark")),
+        stocky=bool(data.get("stocky")),
+        composition_9x16=float(data.get("composition_9x16") or 0.5),
+        quality=float(data.get("quality") or 0.5),
+        relevance=float(data.get("relevance") or 0.5),
+        judge=str(data.get("judge") or "cached"),
+        frames=int(data.get("frames") or 0),
+        per_frame_scores=list(data.get("per_frame_scores") or []),
+    )
+
+
+def _verdict_cache_path(ctx) -> Path | None:
+    work = getattr(ctx, "work_dir", None)
+    if not isinstance(work, (str, Path)):
+        return None
+    return Path(work) / "vision_verdicts.json"
+
+
+def _save_verdict_cache(ctx, cache: dict[str, Any]) -> None:
+    path = _verdict_cache_path(ctx)
+    if path is None:
+        return
+    payload = {}
+    for key, verdict in cache.items():
+        if hasattr(verdict, "to_dict"):
+            payload[key] = verdict.to_dict()
+        elif isinstance(verdict, dict):
+            payload[key] = verdict
+    write_json(path, payload)
+
+
 def _verdict_cache(ctx) -> dict[str, Any]:
     """Кэш вердиктов на одну сборку (§11.3, Q3.10).
 
@@ -119,6 +162,8 @@ def _verdict_cache(ctx) -> dict[str, Any]:
 
     Кэш живёт на контексте прогона, а не в модуле: две сборки в одном процессе
     (тесты, батч) не имеют права делиться вердиктами о разных роликах.
+    На диск пишется тот же словарь: 429 на шестой пробе 0042 иначе выкидывал
+    пять уже оплаченных судей и начинал с нуля.
 
     Замер на отрендеренном 0042 (A и B, шесть проб): **три кадра из шести**
     совпадают побитово — экономия три вызова из двенадцати, а не шесть, как
@@ -128,12 +173,20 @@ def _verdict_cache(ctx) -> dict[str, Any]:
     засчитываем: см. `_verdict_key`.
     """
     cache = getattr(ctx, "_vision_verdicts", None)
-    if cache is None:
+    if type(cache) is not dict:
         cache = {}
+        path = _verdict_cache_path(ctx)
+        if path is not None and path.exists():
+            raw = read_json_or(path, {}) or {}
+            if isinstance(raw, dict):
+                for key, data in raw.items():
+                    verdict = _verdict_from_saved(data)
+                    if verdict is not None:
+                        cache[key] = verdict
         try:
             setattr(ctx, "_vision_verdicts", cache)
         except Exception:                                # noqa: BLE001
-            return {}
+            return cache
     return cache
 
 
@@ -171,6 +224,8 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
             cfg=cfg)
 
     duration = float(plan["duration_sec"])
+    from ..errors import ProviderError
+
     try:
         provider = build_vision_provider(cfg, ctx.costs, role="primary")
         positions = sample_positions()
@@ -178,43 +233,7 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
             frames = extract_frames(
                 video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
                 positions, width=540)
-
-        samples: list[dict[str, Any]] = []
-        cache = _verdict_cache(ctx)
-        reused = 0
-        for position, frame in zip(positions, frames):
-            t = duration * position
-            shot = next((s for s in plan["shots"]
-                         if float(s["start"]) <= t < float(s["end"])), {})
-            spoken = _spoken_at(plan, t)
-            intent = shot.get("reason") or shot.get("kind", "")
-            key = _verdict_key(frame, role=str(shot.get("role", "")),
-                               spoken=spoken or "", intent=intent)
-            verdict = cache.get(key) if key else None
-            if verdict is None:
-                verdict = provider.judge(
-                    [frame], kind="final_frame",
-                    intent=f"{_expected(shot)}. Замысел кадра: {intent}",
-                    role=str(shot.get("role", "")), query=spoken or intent)
-                if key:
-                    cache[key] = verdict
-            else:
-                reused += 1
-            samples.append({
-                "t": round(t, 2),
-                "shot_index": shot.get("index"),
-                "kind": shot.get("kind"),
-                "expected": _expected(shot),
-                "spoken": spoken,
-                "score": round(verdict.score, 3),
-                "summary": verdict.summary,
-                "has_text": verdict.has_text,
-                "watermark": verdict.watermark,
-                "reason": verdict.reason,
-                "judge": verdict.judge,
-            })
-    except Exception as exc:  # noqa: BLE001 — ошибка провайдера ≠ semantic pass
-        from ..errors import ProviderError
+    except Exception as exc:  # noqa: BLE001 — нет ни одной пробы
         soft = isinstance(exc, ProviderError) or "PROVIDER" in type(exc).__name__.upper()
         msg = str(exc)[:240]
         _log.warning("смысловой QC: provider/ошибка — skip, не pass",
@@ -224,6 +243,78 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
         report = _skipped_semantic_report(
             plan, reason=msg,
             notes=[f"vision provider error (qc_skipped_semantic): {msg}"],
+            cfg=cfg)
+        report["provider_error"] = True
+        return report
+
+    samples: list[dict[str, Any]] = []
+    cache = _verdict_cache(ctx)
+    reused = 0
+    truncated_err: str | None = None
+    for position, frame in zip(positions, frames):
+        t = duration * position
+        shot = next((s for s in plan["shots"]
+                     if float(s["start"]) <= t < float(s["end"])), {})
+        spoken = _spoken_at(plan, t)
+        intent = shot.get("reason") or shot.get("kind", "")
+        key = _verdict_key(frame, role=str(shot.get("role", "")),
+                           spoken=spoken or "", intent=intent)
+        try:
+            verdict = cache.get(key) if key else None
+            if isinstance(verdict, dict):
+                verdict = _verdict_from_saved(verdict)
+            if verdict is None:
+                verdict = provider.judge(
+                    [frame], kind="final_frame",
+                    intent=f"{_expected(shot)}. Замысел кадра: {intent}",
+                    role=str(shot.get("role", "")), query=spoken or intent)
+                if key:
+                    cache[key] = verdict
+                    _save_verdict_cache(ctx, cache)
+            else:
+                reused += 1
+        except Exception as exc:  # noqa: BLE001
+            soft = isinstance(exc, ProviderError) or "PROVIDER" in type(exc).__name__.upper()
+            msg = str(exc)[:240]
+            if samples and soft:
+                truncated_err = msg
+                _log.warning(
+                    "смысловой QC: проба пропущена, считаем собранные",
+                    extra={"variant": plan.get("variant"),
+                           "have": len(samples), "err": msg})
+                ctx.warn(
+                    f"смысловой QC: {len(samples)} проб собрано, остальные — "
+                    f"ошибка провайдера: {msg}",
+                    variant=plan.get("variant"))
+                break
+            _log.warning("смысловой QC: provider/ошибка — skip, не pass",
+                         extra={"variant": plan.get("variant"), "err": msg, "soft": soft})
+            ctx.warn(f"смысловой QC пропущен из-за ошибки провайдера: {msg}",
+                     variant=plan.get("variant"))
+            report = _skipped_semantic_report(
+                plan, reason=msg,
+                notes=[f"vision provider error (qc_skipped_semantic): {msg}"],
+                cfg=cfg)
+            report["provider_error"] = True
+            return report
+        samples.append({
+            "t": round(t, 2),
+            "shot_index": shot.get("index"),
+            "kind": shot.get("kind"),
+            "expected": _expected(shot),
+            "spoken": spoken,
+            "score": round(verdict.score, 3),
+            "summary": verdict.summary,
+            "has_text": verdict.has_text,
+            "watermark": verdict.watermark,
+            "reason": verdict.reason,
+            "judge": verdict.judge,
+        })
+
+    if not samples:
+        report = _skipped_semantic_report(
+            plan, reason="нет собранных проб vision",
+            notes=["vision provider error (qc_skipped_semantic): нет проб"],
             cfg=cfg)
         report["provider_error"] = True
         return report
@@ -250,6 +341,10 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
         "blocking": blocks,
         "notes": [],
     }
+    if truncated_err:
+        report["provider_error"] = True
+        report["notes"].append(
+            f"проб {len(samples)}/{SAMPLES}: остальные — ошибка провайдера")
     if not report["picture_matches_speech"]:
         report["notes"].append(
             f"картинка расходится с речью на {mismatch_share:.0%} проб "
