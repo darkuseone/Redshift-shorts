@@ -146,6 +146,22 @@ class TestQc29PutsTheHookOnScreenInTime:
     def test_a_video_without_a_hook_shot_fails(self, cfg):
         assert not _check(_run(cfg, _plan()), "QC-29")["passed"]
 
+    def test_avatar_in_the_first_second_fails(self, cfg):
+        plan = self._hook_plan()
+        plan["shots"].insert(0, _shot(0, kind="avatar", start=0.0, end=2.0,
+                                      duration=2.0))
+        check = _check(_run(cfg, plan), "QC-29")
+        assert not check["passed"] and check["blocking"]
+        assert "лицом" in check["detail"]
+
+    def test_avatar_at_one_second_with_a_card_before_passes(self, cfg):
+        plan = _plan(shots=[
+            _shot(0, kind="fullscreen_text", hook=True, start=0.0, end=1.0,
+                  duration=1.0, content="НЕВОЗМОЖНО ПРОВЕРИТЬ", params={}),
+            _shot(1, kind="avatar", start=1.0, end=4.0, duration=3.0),
+        ])
+        assert _check(_run(cfg, plan), "QC-29")["passed"]
+
     @pytest.mark.parametrize("text", [
         "ПРИВЕТ ДРУЗЬЯ", "ПОДПИСЫВАЙСЯ НА КАНАЛ", "В ЭТОМ ВИДЕО РАЗБЕРЁМ",
         "СМОТРИ ДО КОНЦА",
@@ -225,6 +241,70 @@ class TestQc20And21And22CarryTheMegaWording:
         assert _check(_run(cfg, plan), "QC-22")["passed"]
 
 
+class TestQc14CapsGeneratedFootageAtTenPercent:
+    """MUST-007: зритель не должен видеть пачку сгенерированных кадров вместо съёмки."""
+
+    def test_nine_percent_passes(self, cfg):
+        # 4.32 / 48 = 0.09. Один план короче потолка QC-4 (5 с).
+        plan = _plan(shots=[_shot(0, duration=4.32, ai_generated=True)])
+        check = _check(_run(cfg, plan), "QC-14")
+        assert check["passed"]
+        assert check["blocking"]
+        assert check["threshold"] == pytest.approx(0.10)
+        assert check["value"] == pytest.approx(0.09, abs=1e-4)
+
+    def test_twelve_percent_fails_and_blocks(self, cfg):
+        # 2.88 + 2.88 = 5.76 / 48 = 0.12. Два коротких плана, чтобы не задеть QC-4.
+        plan = _plan(shots=[
+            _shot(0, duration=2.88, ai_generated=True),
+            _shot(1, duration=2.88, ai_generated=True),
+        ])
+        check = _check(_run(cfg, plan), "QC-14")
+        assert not check["passed"]
+        assert check["blocking"]
+        assert check["threshold"] == pytest.approx(0.10)
+        assert check["value"] == pytest.approx(0.12, abs=1e-4)
+
+    def test_config_cap_is_ten_percent(self, cfg):
+        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.10)
+
+
+class TestQc10MeasuresSubtitleDriftAgainstSpeech:
+    """MUST-026: SRT vs речь после P3, порог — верх окна слова (450 мс)."""
+
+    def test_one_second_shift_fails(self, cfg):
+        plan = _plan(
+            subtitles=[{"display": "слово", "start": 2.0, "end": 2.3}],
+            speech_words=[{"display": "слово", "start": 1.0, "end": 1.3}],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert not check["passed"]
+        assert check["blocking"]
+        assert check["value"] == pytest.approx(1000.0, abs=1.0)
+        assert check["threshold"] == 450
+
+    def test_synced_words_pass(self, cfg):
+        plan = _plan(
+            subtitles=[{"display": "слово", "start": 1.0, "end": 1.3}],
+            speech_words=[{"display": "слово", "start": 1.0, "end": 1.3}],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+
+class TestQc11ReportsClipOffsetNotMouth:
+    """MUST-026: QC-11 — avatar_clip_offset, не губы и не lip-sync."""
+
+    def test_report_text_has_no_lip_or_mouth_words(self, cfg):
+        import re
+
+        check = _check(_run(cfg, _plan()), "QC-11")
+        blob = f"{check['name']} {check.get('detail') or ''}"
+        assert check["detail"] == "avatar_clip_offset"
+        assert not re.search(r"lipsync|\blips?\b|губы|липсинк", blob, re.I)
+
+
 class TestQc30MeasuresTheAccentAtLast:
 
     def _with(self, cfg, share):
@@ -250,9 +330,17 @@ class TestQc30MeasuresTheAccentAtLast:
         """Ролик без акцента — такой же брак, как залитый им, просто тише."""
         assert not _check(self._with(cfg, 0.0), "QC-30")["passed"]
 
-    def test_the_gate_does_not_reject_the_video_on_its_own(self, cfg):
-        """QC-30 — мерка нового коридора: сначала цифры, потом блокировка."""
-        assert _check(self._with(cfg, 0.40), "QC-30")["blocking"] is False
+    def test_over_twelve_percent_blocks_delivery(self, cfg):
+        """MUST-024: акцент >12 % — blocking, ролик не выдаётся."""
+        check = _check(self._with(cfg, 0.40), "QC-30")
+        assert not check["passed"]
+        assert check["blocking"] is True
+
+    def test_under_floor_does_not_block_on_its_own(self, cfg):
+        """Недобор акцента всё ещё виден, но выдачу ломает только потолок."""
+        check = _check(self._with(cfg, 0.0), "QC-30")
+        assert not check["passed"]
+        assert check["blocking"] is False
 
 
 # --- Q3.7: QC-28, плотность первых секунд (§10.4) ----------------------------
@@ -302,3 +390,60 @@ class TestQc28WatchesTheFirstThreeSeconds:
                   {"t": 0.2, "status": "missing_in_library"}]
         check = _check(_run_with_sfx(cfg, _plan(), events), "QC-28")
         assert not check["passed"] and check["value"]["events"] == 0
+
+
+class TestTzMust024ConstantsAgree:
+    """Одна величина — одно число в docs, config и QC."""
+
+    def test_config_qc_and_instruction_share_the_same_caps(self, cfg):
+        from pathlib import Path
+
+        from src.p0_validate.validator import HOOK_MAX_SEC
+        from src.p12_render_qc.qc import apply_semantic_qc
+        from src.p12_render_qc.vision_qc import MISMATCH_LIMIT
+
+        instruction = Path("instruction.md").read_text(encoding="utf-8")
+        vfx = cfg.get("limits.bg_vfx_sec")
+        accent_hi = float((cfg.brandbook.get("color_rules") or {})
+                          .get("accent_max_frame_share", 0))
+
+        assert HOOK_MAX_SEC == pytest.approx(3.0)
+        assert cfg.get("limits.hook_sec") == pytest.approx(3.0)
+        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.10)
+        assert cfg.get("limits.bg_vfx_per_video") == 2
+        assert float(vfx[0]) == pytest.approx(2.0)
+        assert float(vfx[1]) == pytest.approx(5.0)
+        assert cfg.get("limits.vision_mismatch_share_max") == pytest.approx(0.10)
+        assert MISMATCH_LIMIT == pytest.approx(0.10)
+        assert cfg.get("stock.max_download_height") == 1080
+        assert cfg.get("stock.candidate_surplus") == pytest.approx(1.3)
+        assert accent_hi == pytest.approx(0.12)
+
+        assert "≤10 %" in instruction
+        assert "VFX-фон ≤2 раза, 2–5 сек" in instruction
+        assert "1080p" in instruction
+        assert "1.3×" in instruction
+        assert "mismatch_share > 10 %" in instruction
+        assert "QC-19 не отключается" in instruction
+
+        qc14 = _check(_run(cfg, _plan()), "QC-14")
+        assert qc14["threshold"] == pytest.approx(0.10)
+        qc19 = _check(_run(cfg, _plan()), "QC-19")
+        assert qc19["blocking"] is True
+
+        vision = {
+            "enabled": True, "skipped": True, "qc_skipped_semantic": True,
+            "mismatch_share": None, "mismatch_limit": 0.10,
+            "picture_matches_speech": False, "blocking": True,
+            "reason": "skip_live", "notes": [],
+        }
+        folded = apply_semantic_qc(
+            {"passed": True, "passed_count": 1, "total": 1,
+             "checks": [{"id": "QC-1", "name": "x", "passed": True,
+                         "blocking": True, "value": 1, "threshold": 1,
+                         "detail": "", "timecode_sec": None}],
+             "failed": []},
+            vision)
+        status = "ok" if folded["passed"] else "qc_failed"
+        assert folded["passed"] is False
+        assert status != "ok"

@@ -8,7 +8,21 @@ from src.errors import (
     BudgetExceeded, DurationOutOfRange, HookUnanswered, MissingCta, MissingHook,
     NoSource, QuoteTooLong, ValidationError,
 )
-from src.p0_validate.validator import validate_script
+from src.lib.jsonio import read_json
+from src.lib.schema import estimate_block_duration
+from src.p0_validate.validator import HOOK_MAX_SEC, validate_script
+
+# Spoken hook ≤3.0 с. 0042 на диске ~3.08 с — для прочих правил P0 режем в памяти.
+_SHORT_HOOK = "Этот ответ невозможно проверить. Совсем никак."
+_HOOK_3_1 = "Этот ответ невозможно проверить никаким опытом."
+_CHANNEL_SCRIPTS = tuple(f"redshift_00{n}.json" for n in range(42, 48))
+
+
+@pytest.fixture
+def sample_script(sample_script):
+    hook = next(b for b in sample_script["blocks"] if b.get("role") == "hook")
+    hook["text"] = _SHORT_HOOK
+    return sample_script
 
 
 def test_valid_script_passes(sample_script, cfg):
@@ -81,16 +95,27 @@ def test_no_source(sample_script, cfg):
 
 
 def test_duration_too_short(sample_script, cfg):
-    for block in sample_script["blocks"]:
-        block["text"] = "Коротко."
+    # Короткие, но разные: иначе петля бьёт PAYOFF_RESTATES_SETUP раньше длительности.
+    texts = [
+        "Удар хука.",
+        "Сетап кадра.",
+        "Факт evid.",
+        "Ход мысли.",
+        "Иной ответ на вопрос.",
+        "Конец роли.",
+    ]
+    for block, text in zip(sample_script["blocks"], texts):
+        block["text"] = text
     with pytest.raises(DurationOutOfRange) as exc:
         validate_script(sample_script, cfg)
     assert exc.value.details["estimated_sec"] < 35
 
 
 def test_duration_too_long(sample_script, cfg):
+    # Хук не раздуваем: иначе сработает HOOK_TOO_LONG раньше DURATION_OUT_OF_RANGE.
     for block in sample_script["blocks"]:
-        block["text"] = block["text"] * 4
+        if block.get("role") != "hook":
+            block["text"] = block["text"] * 4
     with pytest.raises(DurationOutOfRange):
         validate_script(sample_script, cfg)
 
@@ -131,12 +156,52 @@ def test_duplicate_block_ids(sample_script, cfg):
     assert exc.value.code == "DUPLICATE_BLOCK_ID"
 
 
+def test_hook_just_over_three_seconds_is_blocking(sample_script, cfg):
+    sample_script["blocks"][0]["text"] = _HOOK_3_1
+    duration = estimate_block_duration(_HOOK_3_1)
+    assert duration > HOOK_MAX_SEC
+    with pytest.raises(ValidationError) as exc:
+        validate_script(sample_script, cfg)
+    assert exc.value.code == "HOOK_TOO_LONG"
+    assert "вступление" in exc.value.message
+
+
+def test_hook_under_three_seconds_without_greeting_passes(sample_script, cfg):
+    sample_script["blocks"][0]["text"] = _SHORT_HOOK
+    assert estimate_block_duration(_SHORT_HOOK) <= HOOK_MAX_SEC
+    result = validate_script(sample_script, cfg)
+    assert result["_validation"]["ok"] is True
+    codes = [w["code"] for w in result["_validation"]["warnings"]]
+    assert "HOOK_TOO_LONG" not in codes
+
+
+def test_channel_scripts_with_hook_over_three_seconds_fail(cfg, repo_root):
+    """Приёмка MUST-001: spoken hook >3.0 с не получает ok. Имена — в ассерте."""
+    too_long = []
+    for name in _CHANNEL_SCRIPTS:
+        script = read_json(repo_root / "scripts" / name)
+        hook = next(b for b in script["blocks"] if b.get("role") == "hook")
+        if estimate_block_duration(hook["text"]) <= HOOK_MAX_SEC:
+            continue
+        too_long.append(name)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(script, cfg)
+        assert exc.value.code == "HOOK_TOO_LONG", name
+    assert "redshift_0047.json" in too_long
+    over_0042_0046 = [n for n in too_long if n != "redshift_0047.json"]
+    assert over_0042_0046 == [
+        "redshift_0042.json",
+        "redshift_0044.json",
+        "redshift_0045.json",
+        "redshift_0046.json",
+    ]
+
+
 class TestTheRetentionLoopHasAShape:
     """Форма петли из `script_playbook.md`.
 
-    Проверки предупреждают, а не отказывают: сценарий бывает намеренно устроен
-    иначе. Но ролик, где ответ стоит вторым блоком, собирать вслепую нельзя —
-    держать зрителя после этого нечем.
+    Петля — отказ, не предупреждение: иначе ролик с незакрытым вопросом
+    уходит в выдачу.
     """
 
     def _codes(self, script, cfg):
@@ -153,34 +218,47 @@ class TestTheRetentionLoopHasAShape:
             "в северной экспедиции, и закончилась совершенно неожиданным образом "
             "для всех участников той долгой работы."
         )
-        assert "HOOK_TOO_LONG" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "HOOK_TOO_LONG"
 
-    def test_an_answer_in_the_second_block_is_named(self, sample_script, cfg):
+    def test_an_answer_in_the_second_block_is_blocking(self, sample_script, cfg):
         blocks = sample_script["blocks"]
         twist = next(b for b in blocks if b["role"] == "twist")
         blocks.remove(twist)
         blocks.insert(1, twist)
-        assert "PAYOFF_TOO_EARLY" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "PAYOFF_TOO_EARLY"
 
-    def test_an_answer_that_only_repeats_the_setup_is_named(self, sample_script, cfg):
+    def test_an_answer_that_only_repeats_the_setup_is_blocking(self, sample_script, cfg):
         blocks = sample_script["blocks"]
         twist = next(b for b in blocks if b["role"] == "twist")
         twist["text"] = " ".join(b["text"] for b in blocks[:2])[:200]
-        assert "PAYOFF_RESTATES_SETUP" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "PAYOFF_RESTATES_SETUP"
 
-    def test_a_script_without_a_payoff_block_is_named(self, sample_script, cfg):
+    def test_a_script_without_a_payoff_block_is_blocking(self, sample_script, cfg):
         for block in sample_script["blocks"]:
             if block["role"] == "twist":
                 block["role"] = "develop"
             block.pop("answers_hook", None)
-        assert "LOOP_NO_PAYOFF_BLOCK" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code in ("LOOP_NO_PAYOFF_BLOCK", "HOOK_UNANSWERED")
 
-    def test_a_cta_that_opens_nothing_is_named(self, sample_script, cfg):
+    def test_a_cta_that_opens_nothing_is_blocking(self, sample_script, cfg):
         sample_script["cta"] = {"text": "Подписывайтесь, если было полезно.",
                                 "type": "statement"}
-        assert "CTA_CLOSES_EVERYTHING" in self._codes(sample_script, cfg)
+        with pytest.raises(ValidationError) as exc:
+            validate_script(sample_script, cfg)
+        assert exc.value.code == "CTA_CLOSES_EVERYTHING"
 
     def test_a_cta_that_promises_the_next_loop_is_quiet(self, sample_script, cfg):
         sample_script["cta"] = {"text": "В следующем ролике — что нашли на двенадцатом километре.",
                                 "type": "statement"}
-        assert "CTA_CLOSES_EVERYTHING" not in self._codes(sample_script, cfg)
+        result = validate_script(sample_script, cfg)
+        codes = [w["code"] for w in result["_validation"]["warnings"]]
+        assert "CTA_CLOSES_EVERYTHING" not in codes
+        assert result["_validation"]["ok"]

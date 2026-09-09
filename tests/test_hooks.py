@@ -34,6 +34,16 @@ from src.pipeline import RunContext
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+# 0042 на диске ~3.08 с; P0 теперь отказывает. Для прочих правил хук режем в памяти.
+_SHORT_HOOK = "Этот ответ невозможно проверить. Совсем никак."
+
+
+@pytest.fixture
+def sample_script(sample_script):
+    hook = next(b for b in sample_script["blocks"] if b.get("role") == "hook")
+    hook["text"] = _SHORT_HOOK
+    return sample_script
+
 HOOK_TEXT = "Этот ответ невозможно проверить. Вообще ничем."
 BLOCKS = [
     {"id": "h1", "role": "hook", "mode": "C", "emphasis_word": "невозможно",

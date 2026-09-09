@@ -139,8 +139,9 @@ def test_prompt_asks_for_a_photograph_not_an_illustration():
         assert banned in prompt
 
 
-def _run_generation(tmp_path, monkeypatch, cfg):
-    """Прогнать P9 на одном пустом слоте с мок-генератором."""
+def _run_generation(tmp_path, monkeypatch, cfg, *, duration=30.0,
+                    slots=None, unfilled=None):
+    """Прогнать P9 на пустых слотах с мок-генератором."""
     import json
 
     from src.lib.cache import StepCache
@@ -150,15 +151,19 @@ def _run_generation(tmp_path, monkeypatch, cfg):
 
     work = tmp_path / "work"
     work.mkdir(exist_ok=True)
-    plan = {"video_id": "redshift_0099", "duration_sec": 30.0,
-            "slots": [{"index": 3, "kind": "footage", "asset_role": "broll",
-                       "role": "develop", "duration": 3.0, "block_id": "b1",
-                       "queries": ["granite fracture macro"],
-                       "visual_intent": "Трещиноватый гранит крупным планом"}]}
+    if slots is None:
+        slots = [{"index": 3, "kind": "footage", "asset_role": "broll",
+                  "role": "develop", "duration": 3.0, "block_id": "b1",
+                  "queries": ["granite fracture macro"],
+                  "visual_intent": "Трещиноватый гранит крупным планом"}]
+        unfilled = [3]
+    plan = {"video_id": "redshift_0099", "duration_sec": duration,
+            "slots": slots, "blocks": []}
     (work / "cut_plan.json").write_text(json.dumps(plan, ensure_ascii=False),
                                         encoding="utf-8")
     (work / "accepted_assets.json").write_text(
-        json.dumps({"accepted": {}, "unfilled_slots": [3]}), encoding="utf-8")
+        json.dumps({"accepted": {}, "unfilled_slots": list(unfilled)}),
+        encoding="utf-8")
 
     cfg.set("providers.mode", "mock")
     cfg.set("paths.storage_dir", str(tmp_path / "storage"))
@@ -244,3 +249,39 @@ def test_two_slots_in_a_row_do_not_get_the_same_camera():
     assert _p(0) == _p(0), "промпт обязан быть детерминированным"
     assert _p(0) == _p(len(_LOOKS)), "оптика ходит по кругу"
     assert "not a 3d render" in _p(0)
+
+
+def test_a_fourth_slot_is_refused_when_it_would_break_the_ten_percent_cap(
+        tmp_path, monkeypatch, cfg):
+    """Четыре слота по 1.2 с на ролике в 40 с — это 12 %. Четвёртый не заказывается."""
+    from src.lib.providers.vision import VisionVerdict
+    from src.p9_generate import generate as G
+
+    class _Critic:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            return VisionVerdict(score=0.9, reason="ок", summary="кадр",
+                                 judge="critic")
+
+    monkeypatch.setattr(G, "build_vision_provider", lambda *a, **k: _Critic())
+    # Кап, не дедуп: мок-градиенты не должны сорвать проверку бюджета.
+    cfg.set("stock.dedup_hamming_max", 0)
+
+    intents = ("гранит", "лёд", "металл", "вода")
+    slots = [{
+        "index": i, "kind": "footage", "asset_role": "broll",
+        "role": "develop", "duration": 1.2, "block_id": f"b{i}",
+        "queries": [f"{name} macro texture"],
+        "visual_intent": f"{name} крупным планом",
+    } for i, name in enumerate(intents)]
+
+    report = _run_generation(
+        tmp_path, monkeypatch, cfg,
+        duration=40.0, slots=slots, unfilled=[0, 1, 2, 3])
+
+    assert report["generated"] == 3
+    doc = json.loads((tmp_path / "work" / "generated_assets.json").read_text("utf-8"))
+    assert sorted(int(k) for k in doc["generated"]) == [0, 1, 2]
+    skipped = next(item for item in doc["skipped"] if item["slot"] == 3)
+    assert "10%" in skipped["reason"]
+    assert doc["ai_footage_share"] == pytest.approx(0.09, abs=1e-4)
+    assert doc["ai_share_limit"] == pytest.approx(0.10)

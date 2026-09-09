@@ -4,7 +4,7 @@
 метаданные для публикации, отчёт QC, отчёт по кредитам и манифест использованных
 материалов с лицензиями — документ на случай спора по правам (§9.2).
 
-Провал блокирующего QC (§11.1) означает, что ролик **не выдаётся**: файл
+Провал блокирующего QC (§11.1, §11.2) означает, что ролик **не выдаётся**: файл
 переносится в ``rejected/``, а причина и таймкод пишутся в отчёт.
 """
 
@@ -30,7 +30,7 @@ from .overlays import build_overlay_renderer
 from ..lib.palette import accent_share_max
 from ..lib.phash import dhash_image, hamming
 from ..lib.ffmpeg import extract_frames
-from .qc import run_qc
+from .qc import apply_semantic_qc, run_qc
 from .vision_qc import run_vision_qc, sample_positions
 
 _log = get_logger("p12")
@@ -428,10 +428,23 @@ def run_step(ctx) -> dict[str, Any]:
                                 "qc_passed": False}
             continue
 
-        # §11.2 — смысловой QC по готовому файлу. Не блокирует выдачу: он даёт
-        # материал для правки правил, а решение о браке принимает §11.1.
-        qc["vision"] = run_vision_qc(ctx, video_path=out_file, plan=plan,
-                                     frames=qc_frames)
+        # §11.2 — смысловой QC по готовому файлу. mismatch > 10 % и skip_live
+        # блокируют выдачу так же, как §11.1.
+        vision = run_vision_qc(ctx, video_path=out_file, plan=plan,
+                               frames=qc_frames)
+        qc = apply_semantic_qc(qc, vision)
+        qc_reports[variant] = qc
+
+        if not qc["passed"]:
+            rejected = ctx.opath("rejected", out_file.name)
+            shutil.move(str(out_file), str(rejected))
+            _log.error("смысловой QC не пройден — ролик не выдан", extra={
+                "variant": variant,
+                "failed": [c["id"] for c in qc["checks"] if not c["passed"]],
+            })
+            results[variant] = {"file": None, "rejected_file": str(rejected),
+                                "qc_passed": False}
+            continue
 
         thumb = ctx.opath("thumbnail.jpg") if variant == variants[0] else \
             ctx.opath(f"thumbnail_{variant}.jpg")

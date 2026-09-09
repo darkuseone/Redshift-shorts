@@ -14,9 +14,10 @@ from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
     Slot, _avatar_runs, _avatar_share, _break_long_footage_run,
-    _enforce_shot_limits, _insert_avatar_interstitials, _longest_footage_run,
-    _needs_interstitial, _irony_emotion, _raise_avatar_share, _split_span,
-    close_gaps, compute_stats,
+    _enforce_shot_limits, _hold_face_until, _insert_avatar_interstitials,
+    _longest_footage_run, _needs_interstitial, _irony_emotion, _raise_avatar_share,
+    _split_span, close_gaps, compute_stats, AVATAR_EARLIEST_SEC, AVATAR_KINDS,
+    build_slots,
 )
 from src.p7_broll_search.search import _stage1_reject
 from src.p8_broll_judge.judge import _needs_arbitration
@@ -43,6 +44,53 @@ def test_split_span_respects_min_length():
 
 def test_split_span_short_span_untouched():
     assert _split_span(1.0, 4.0, target=2.6, min_len=1.5, max_len=5.0, words=[]) == [(1.0, 4.0)]
+
+
+def test_hold_face_splits_avatar_that_starts_at_zero():
+    out = _hold_face_until([_slot(0, 0.0, 4.0, kind="avatar", mode="A")])
+    assert [s.kind for s in out] == ["footage", "avatar"]
+    assert out[0].end == pytest.approx(AVATAR_EARLIEST_SEC)
+    assert out[1].start == pytest.approx(AVATAR_EARLIEST_SEC)
+
+
+def test_hold_face_converts_a_face_wholly_inside_the_first_second():
+    out = _hold_face_until([_slot(0, 0.0, 0.8, kind="avatar", mode="A")])
+    assert len(out) == 1 and out[0].kind == "footage"
+
+
+def test_build_slots_first_frame_is_not_avatar(cfg):
+    """Mock 0042-класса: хук avatar: on, первый слот — не лицо."""
+    blocks = []
+    words = []
+    t = 0.0
+    spec = [
+        ("h1", "hook", "A", 3.0),
+        ("s1", "setup", "A", 8.0),
+        ("e1", "evidence", "B", 8.0),
+        ("d1", "develop", "C", 10.0),
+        ("w1", "twist", "A", 8.0),
+        ("c1", "cta", "A", 5.0),
+    ]
+    for bid, role, mode, dur in spec:
+        blocks.append({
+            "id": bid, "role": role, "mode": mode, "text": "слово слово слово",
+            "overlay": {"type": "none"}, "broll_queries": ["lab"],
+            "avatar_directive": "on" if bid == "h1" else "auto",
+            "visual_intent": "",
+        })
+        words.append({"word": "слово", "start": t, "end": t + dur, "block_id": bid})
+        t += dur
+    draft = {
+        "video_id": "redshift_0042", "title": "t", "category": "science",
+        "blocks": blocks, "sources": [], "cta": {},
+        "hook": {"on_screen": "НЕЧЕМ"},
+        "music_mood": "", "music_tags": ["space"], "target_duration_sec": t,
+    }
+    built = build_slots(draft, {"duration_sec": t, "words": words}, cfg)
+    assert built["slots"]
+    assert built["slots"][0].kind not in AVATAR_KINDS
+    first_av = next(s for s in built["slots"] if s.kind in AVATAR_KINDS)
+    assert first_av.start >= AVATAR_EARLIEST_SEC - 1e-9
 
 
 def test_interstitial_required_between_blocks():

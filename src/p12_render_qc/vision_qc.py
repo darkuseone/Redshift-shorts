@@ -9,8 +9,9 @@
 3. Есть ли артефакты: битые маски, обрезанные головы, растяжение, чужие
    водяные знаки?
 
-Проверка неблокирующая: она даёт материал для правки правил и для обучения
-(§11.3), а не отменяет выдачу ролика. Блокирует только §11.1.
+``mismatch_share > limits.vision_mismatch_share_max`` — blocking: ролик не
+выдаётся. ``vision.skip_live`` не имеет права ставить semantic pass: в отчёте
+``qc_skipped_semantic``, статус не «выдан».
 """
 
 from __future__ import annotations
@@ -24,8 +25,43 @@ from ..lib.providers.vision import build_vision_provider
 
 _log = get_logger("vision_qc")
 
-MISMATCH_LIMIT = 0.10          # §11.2.1
+MISMATCH_LIMIT = 0.10          # §11.2.1; канон — limits.vision_mismatch_share_max
 SAMPLES = 6
+
+
+def _mismatch_limit(cfg) -> float:
+    return float(cfg.get("limits.vision_mismatch_share_max", MISMATCH_LIMIT))
+
+
+def semantic_blocks(*, mismatch_share: float | None, limit: float,
+                    skipped: bool) -> bool:
+    """Выдача блокируется при skip или при доле расхождений строго выше порога."""
+    if skipped:
+        return True
+    if mismatch_share is None:
+        return False
+    return mismatch_share > limit + 1e-6
+
+
+def _skipped_semantic_report(plan: dict[str, Any], *, reason: str,
+                             notes: list[str], cfg) -> dict[str, Any]:
+    """Честный skip: не pass, не mismatch_share=0.0, не status «выдан»."""
+    limit = _mismatch_limit(cfg)
+    return {
+        "enabled": True,
+        "skipped": True,
+        "qc_skipped_semantic": True,
+        "reason": reason,
+        "variant": plan.get("variant"),
+        "samples": [],
+        "sample_count": 0,
+        "mismatch_share": None,
+        "mismatch_limit": limit,
+        "picture_matches_speech": False,
+        "watermarks_found": 0,
+        "blocking": True,
+        "notes": notes,
+    }
 
 
 def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2) -> str:
@@ -124,25 +160,15 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
     if not bool(cfg.get("features.vision_qc", True)):
         return {"enabled": False, "reason": "features.vision_qc выключен"}
 
-    # skip_vision / vision.skip_live: ZERO live Gemini/Grok — §11.2 тоже.
-    # Неблокирующий QC не должен ронять весь P12 при 429/403.
+    # skip_live: ZERO live Gemini/Grok. Это не semantic pass и не выдача.
     if bool(cfg.get("vision.skip_live", False)):
         _log.warning("vision.skip_live: смысловой QC без live vision",
                      extra={"variant": plan.get("variant")})
-        return {
-            "enabled": False,
-            "skipped": True,
-            "reason": "vision.skip_live: без Gemini/Grok vision API",
-            "variant": plan.get("variant"),
-            "samples": [],
-            "sample_count": 0,
-            "mismatch_share": 0.0,
-            "mismatch_limit": MISMATCH_LIMIT,
-            "picture_matches_speech": True,
-            "watermarks_found": 0,
-            "blocking": False,
-            "notes": ["vision.skip_live: смысловой QC пропущен"],
-        }
+        return _skipped_semantic_report(
+            plan,
+            reason="vision.skip_live: без Gemini/Grok vision API",
+            notes=["vision.skip_live: смысловой QC пропущен (qc_skipped_semantic)"],
+            cfg=cfg)
 
     duration = float(plan["duration_sec"])
     try:
@@ -187,33 +213,27 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                 "reason": verdict.reason,
                 "judge": verdict.judge,
             })
-    except Exception as exc:  # noqa: BLE001 — §11.2 никогда не блокирует выдачу
+    except Exception as exc:  # noqa: BLE001 — ошибка провайдера ≠ semantic pass
         from ..errors import ProviderError
         soft = isinstance(exc, ProviderError) or "PROVIDER" in type(exc).__name__.upper()
         msg = str(exc)[:240]
-        _log.warning("смысловой QC: provider/ошибка — пропускаю без fail",
+        _log.warning("смысловой QC: provider/ошибка — skip, не pass",
                      extra={"variant": plan.get("variant"), "err": msg, "soft": soft})
         ctx.warn(f"смысловой QC пропущен из-за ошибки провайдера: {msg}",
                  variant=plan.get("variant"))
-        return {
-            "enabled": True,
-            "skipped": True,
-            "provider_error": True,
-            "reason": msg,
-            "variant": plan.get("variant"),
-            "samples": [],
-            "sample_count": 0,
-            "mismatch_share": 0.0,
-            "mismatch_limit": MISMATCH_LIMIT,
-            "picture_matches_speech": True,
-            "watermarks_found": 0,
-            "blocking": False,
-            "notes": [f"vision provider error (non-blocking): {msg}"],
-        }
+        report = _skipped_semantic_report(
+            plan, reason=msg,
+            notes=[f"vision provider error (qc_skipped_semantic): {msg}"],
+            cfg=cfg)
+        report["provider_error"] = True
+        return report
 
     mismatches = [s for s in samples if s["score"] < 0.45]
     watermarks = [s for s in samples if s["watermark"]]
     mismatch_share = len(mismatches) / max(len(samples), 1)
+    limit = _mismatch_limit(cfg)
+    blocks = semantic_blocks(mismatch_share=mismatch_share, limit=limit,
+                             skipped=False)
 
     report = {
         "enabled": True,
@@ -221,19 +241,19 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
         "samples": samples,
         "sample_count": len(samples),
         "mismatch_share": round(mismatch_share, 3),
-        "mismatch_limit": MISMATCH_LIMIT,
-        "picture_matches_speech": mismatch_share <= MISMATCH_LIMIT,
+        "mismatch_limit": limit,
+        "picture_matches_speech": not blocks,
         "watermarks_found": len(watermarks),
         # Сколько проб закрыто кэшем вместо платного вызова (Q3.10). Число в
         # отчёте, а не в логе: денежный DoD §4.4 проверяется по отчёту.
         "reused_verdicts": reused,
-        "blocking": False,
+        "blocking": blocks,
         "notes": [],
     }
     if not report["picture_matches_speech"]:
         report["notes"].append(
             f"картинка расходится с речью на {mismatch_share:.0%} проб "
-            f"(предел {MISMATCH_LIMIT:.0%}, §11.2.1)")
+            f"(предел {limit:.0%}, §11.2.1)")
     if watermarks:
         report["notes"].append(f"подозрение на водяные знаки в {len(watermarks)} пробах")
 

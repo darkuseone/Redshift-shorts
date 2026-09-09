@@ -48,6 +48,20 @@ def _hook_is_banned(text: str) -> bool:
     return any(bad in low for bad in _HOOK_BANNED_ON_SCREEN)
 
 
+def _talking_head_in_window(shots: list[dict[str, Any]],
+                            slots: list[dict[str, Any]], *,
+                            until: float) -> dict[str, Any] | None:
+    """Первый кадр-лицо, который пересекает [0, until)."""
+    for item in list(shots) + list(slots):
+        if item.get("kind") not in ("avatar", "split"):
+            continue
+        start = float(item.get("start", 0.0) or 0.0)
+        end = float(item.get("end") or (start + float(item.get("duration") or 0.0)))
+        if start < until - 1e-9 and end > 1e-9:
+            return item
+    return None
+
+
 def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
            render_stats: dict[str, Any], media, sfx_map: dict[str, Any],
            avatar_meta: dict[str, Any], accepted: dict[str, Any],
@@ -174,15 +188,22 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                          detail="подложка отсутствует" if music_lufs is None
                                 else f"{share} % от голоса (цель {music_target_lufs(cfg)} LUFS)"))
 
-    # 10. Рассинхрон субтитров ≤ 80 мс
-    drift = _subtitle_drift(plan)
-    checks.append(_check(10, "Рассинхрон субтитров", drift <= 0.080 + 1e-6,
-                         value=round(drift * 1000, 1), threshold=80))
+    # 10. Рассинхрон субтитров: SRT vs речь после P3. Потолок — верх окна
+    # слова в P4 (`speech.max_word_ms`, 450 мс), не киношные 50/80 мс.
+    drift_limit = float(cfg.get("speech.max_word_ms", 450)) / 1000.0
+    drift = _subtitle_drift(plan, speech_words=_speech_words(ctx, plan))
+    checks.append(_check(10, "Рассинхрон субтитров",
+                         drift <= drift_limit + 1e-6,
+                         value=round(drift * 1000, 1),
+                         threshold=int(round(drift_limit * 1000))))
 
-    # 11. Рассинхрон липсинка ≤ 60 мс
-    lip = _lipsync_drift(plan, avatar_meta)
-    checks.append(_check(11, "Рассинхрон липсинка", lip <= 0.060 + 1e-6,
-                         value=round(lip * 1000, 1), threshold=60))
+    # 11. Смещение выреза аватар-клипа относительно таймлайна.
+    # Это не рот и не lip-sync (LATER-003): только avatar_clip_offset.
+    offset = _avatar_clip_offset(plan, avatar_meta)
+    checks.append(_check(11, "Смещение выреза аватар-клипа",
+                         offset <= 0.060 + 1e-6,
+                         value=round(offset * 1000, 1), threshold=60,
+                         detail="avatar_clip_offset"))
 
     # 12. Материалы без лицензии
     unlicensed = [s.get("asset_id") for s in plan["shots"]
@@ -196,13 +217,13 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     checks.append(_check(13, "Тишина в конце", tail <= float(limits.get("end_silence_ms", 300)),
                          value=round(tail, 1), threshold=limits.get("end_silence_ms", 300)))
 
-    # 14. Доля AI-generated футажа ≤ 40 %
+    # 14. Доля AI-generated футажа ≤ 10 %
     ai_sec = sum(float(s["duration"]) for s in plan["shots"] if s.get("ai_generated"))
     ai_share = ai_sec / max(duration, 1e-6)
     checks.append(_check(14, "Доля AI-generated футажа",
-                         ai_share <= float(limits.get("ai_footage_share_max", 0.4)) + 1e-6,
+                         ai_share <= float(limits.get("ai_footage_share_max", 0.10)) + 1e-6,
                          value=round(ai_share, 4),
-                         threshold=limits.get("ai_footage_share_max", 0.4)))
+                         threshold=limits.get("ai_footage_share_max", 0.10)))
 
     # 15. Мемы в категории medicine
     category = script.get("meta", {}).get("category")
@@ -391,9 +412,8 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                 if not beats else ""),
         blocking=False))
 
-    # 29. Экранный хук: строка обязана быть в кадре к первой секунде и
-    # читаться за неё же. До §5 хук собирался случайно — первые кадры 0042
-    # выбрала `gap_phrase`, то есть «что вынести, когда материала нет».
+    # 29. Экранный хук: строка в кадре к первой секунде, и это не лицо.
+    # QC-29 раньше смотрел только «текст ≤1 с» и пропускал talking-head.
     hook_shot = next((s for s in shots if s.get("hook")), None)
     if hook_shot is None:
         hook_shot = next((s for s in shots
@@ -410,12 +430,26 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     # порогом в три слова забраковал бы эталонную разметку 0042 из того же ТЗ.
     hook_ok = bool(hook_shot) and hook_at <= 1.0 and 1 <= hook_words <= 7 \
         and not _hook_is_banned(hook_text)
+    face_hold = 1.0
+    face_shot = _talking_head_in_window(shots, cut_plan.get("slots") or [],
+                                        until=face_hold)
+    if face_shot is not None:
+        hook_ok = False
+    if not hook_shot:
+        hook_detail = "хук-кадра нет"
+    elif face_shot is not None:
+        hook_detail = "первая секунда занята лицом аватара"
+    else:
+        hook_detail = ""
     checks.append(_check(
-        29, "Экранный хук в первую секунду", hook_ok,
+        29, "Экранный хук в первую секунду, не talking-head", hook_ok,
         value={"at_sec": round(hook_at, 2) if hook_shot else None,
-               "words": hook_words, "text": hook_text[:48]},
-        threshold={"at_sec": 1.0, "words": [1, 7]},
-        detail=("хук-кадра нет" if not hook_shot else "")))
+               "words": hook_words, "text": hook_text[:48],
+               "face_at_sec": None if face_shot is None else round(
+                   float(face_shot.get("start", 0.0)), 2)},
+        threshold={"at_sec": 1.0, "words": [1, 7], "face_after_sec": face_hold},
+        detail=hook_detail,
+        timecode=0.0 if face_shot is not None else None))
 
     # 30. Доля акцента в кадре (§7.5). До этой волны `accent_share_max`
     # оставался нулём на пути HyperFrames: его считал только старый
@@ -428,6 +462,7 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     accent_lo = float(accent_rules.get("accent_min_frame_share", 0.02))
     accent_max = float(render_stats.get("accent_share_max") or 0.0)
     accent_measured = int(render_stats.get("accent_share_max") is not None)
+    over_cap = accent_max > accent_hi + 1e-9
     checks.append(_check(
         30, "Доля акцентного цвета в кадре",
         accent_lo <= accent_max <= accent_hi,
@@ -436,7 +471,7 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
         threshold=[accent_lo, accent_hi],
         detail=("замер по шести пробам готового файла"
                 if accent_measured else "замер не выполнен"),
-        blocking=False))
+        blocking=over_cap))
 
     blocking = [c for c in checks if c["blocking"]]
     passed_count = sum(1 for c in blocking if c["passed"])
@@ -455,6 +490,53 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     }
 
 
+def apply_semantic_qc(qc: dict[str, Any], vision: dict[str, Any] | None) -> dict[str, Any]:
+    """§11.2 входит в решение о выдаче: mismatch > порога или skip ≠ success."""
+    from .vision_qc import semantic_blocks
+
+    qc = {**qc, "checks": list(qc.get("checks") or []),
+          "failed": list(qc.get("failed") or [])}
+    if not vision:
+        return qc
+    qc["vision"] = vision
+    if (not vision.get("enabled")
+            and not vision.get("qc_skipped_semantic")
+            and not vision.get("skipped")):
+        return qc
+
+    skipped = bool(vision.get("qc_skipped_semantic") or vision.get("skipped"))
+    limit = float(vision.get("mismatch_limit")
+                  if vision.get("mismatch_limit") is not None else 0.10)
+    share = vision.get("mismatch_share")
+    blocks = semantic_blocks(mismatch_share=share, limit=limit, skipped=skipped)
+    vision["blocking"] = blocks
+    passed = not blocks
+    detail = (vision.get("reason")
+              or "; ".join(vision.get("notes") or [])
+              or ("qc_skipped_semantic" if skipped else
+                  f"mismatch_share={share}"))
+    check = {
+        "id": "QC-SEMANTIC",
+        "name": "Смысловой QC §11.2",
+        "passed": passed,
+        "value": share,
+        "threshold": limit,
+        "detail": detail,
+        "timecode_sec": None,
+        "blocking": True,
+    }
+    qc["checks"] = [c for c in qc["checks"] if c.get("id") != "QC-SEMANTIC"] + [check]
+    blocking = [c for c in qc["checks"] if c["blocking"]]
+    qc["passed"] = all(c["passed"] for c in blocking)
+    qc["passed_count"] = sum(1 for c in blocking if c["passed"])
+    qc["total"] = len(blocking)
+    qc["failed"] = [{"id": c["id"], "name": c["name"], "value": c["value"],
+                     "threshold": c["threshold"], "timecode_sec": c["timecode_sec"],
+                     "detail": c["detail"]}
+                    for c in qc["checks"] if not c["passed"]]
+    return qc
+
+
 def _shot_events(cut_plan: dict[str, Any], shot: dict[str, Any]) -> list[dict[str, Any]]:
     for slot in cut_plan["slots"]:
         if slot["index"] == shot["index"]:
@@ -462,14 +544,56 @@ def _shot_events(cut_plan: dict[str, Any], shot: dict[str, Any]) -> list[dict[st
     return []
 
 
-def _subtitle_drift(plan: dict[str, Any]) -> float:
-    """Максимальное расхождение окна субтитра с границей слова."""
+def _speech_words(ctx, plan: dict[str, Any]) -> list[dict[str, Any]]:
+    """Эталон речи после P3 remap: явный список плана или ``words.json``."""
+    explicit = plan.get("speech_words") or plan.get("words")
+    if explicit:
+        return list(explicit)
+    read_or = getattr(ctx, "read_or", None)
+    if callable(read_or):
+        doc = read_or("words.json", {}) or {}
+        if isinstance(doc, dict):
+            return list(doc.get("words") or [])
+    return []
+
+
+def _subtitle_drift(plan: dict[str, Any],
+                    speech_words: list[dict[str, Any]] | None = None) -> float:
+    """Максимальный |Δ| старта SRT-ку и соответствующего слова речи, сек.
+
+    Склейка коротких слов на экране не ломает ряд: куе забирает все речевые
+    слова, чей старт ещё лежит внутри длительности куе относительно пары.
+    Вывернутое окно — не синхрон, а брак.
+    """
+    cues = [c for c in (plan.get("subtitles") or []) if "start" in c]
+    speech = list(speech_words if speech_words is not None else
+                  (plan.get("speech_words") or []))
     worst = 0.0
-    subtitles = plan.get("subtitles", [])
-    for word in subtitles:
-        start, end = float(word["start"]), float(word["end"])
+    for cue in cues:
+        start, end = float(cue["start"]), float(cue["end"])
         if end <= start:
-            worst = max(worst, 0.2)
+            worst = max(worst, 1.0)
+
+    if not cues or not speech:
+        return worst
+
+    si = 0
+    for cue in cues:
+        if si >= len(speech):
+            break
+        c_start = float(cue["start"])
+        c_end = float(cue["end"])
+        word = speech[si]
+        w_start = float(word["start"])
+        worst = max(worst, abs(c_start - w_start))
+        cue_dur = max(0.0, c_end - c_start)
+        si += 1
+        while si < len(speech):
+            rel = float(speech[si]["start"]) - w_start
+            if rel <= cue_dur + 1e-3:
+                si += 1
+            else:
+                break
     return worst
 
 
@@ -491,12 +615,11 @@ def _subtitle_coverage(plan: dict[str, Any], duration: float) -> float:
     return visible / max(len(words), 1)
 
 
-def _lipsync_drift(plan: dict[str, Any], avatar_meta: dict[str, Any]) -> float:
-    """Рассинхрон липсинка = ошибка выреза аватар-клипа под место на таймлайне.
+def _avatar_clip_offset(plan: dict[str, Any], avatar_meta: dict[str, Any]) -> float:
+    """Смещение выреза аватар-клипа относительно места на таймлайне.
 
-    Аватар генерируется посегментно, а на таймлайн ложится кусками. Липсинк
-    разъедется ровно тогда, когда кусок вырезан не с того места сегмента,
-    поэтому проверяем именно смещение выреза, а не «похоже ли на правду».
+    Аватар генерируется посегментно и кладётся кусками. QC-11 меряет
+    ``avatar_clip_offset`` — ошибку выреза, не рот и не lip-sync.
     """
     worst = 0.0
     segments = avatar_meta.get("segments", [])
@@ -507,7 +630,6 @@ def _lipsync_drift(plan: dict[str, Any], avatar_meta: dict[str, Any]) -> float:
             continue
         offset = shot.get("avatar_offset_sec")
         if offset is None:
-            # Клип аватара не подставлен вовсе — это максимальный рассинхрон.
             return 1.0
         covering = [s for s in segments
                     if float(s["start"]) - 1e-3 <= float(shot["start"]) < float(s["end"]) + 1e-3]

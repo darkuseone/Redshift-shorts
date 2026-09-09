@@ -20,6 +20,16 @@ from src.p3_speech_opt.optimizer import (
 from src.p4_align.aligner import align_by_energy, build_srt, map_tokens_to_words
 from src.p0_validate.validator import validate_script
 
+# 0042 на диске ~3.08 с; P0 режет хук >3 с. Планировщик тестируем на легальном хуке.
+_SHORT_HOOK = "Этот ответ невозможно проверить. Совсем никак."
+
+
+@pytest.fixture
+def sample_script(sample_script):
+    hook = next(b for b in sample_script["blocks"] if b.get("role") == "hook")
+    hook["text"] = _SHORT_HOOK
+    return sample_script
+
 
 # --- нормализация текста (§4.2.5) --------------------------------------------
 
@@ -92,18 +102,35 @@ def test_plan_first_avatar_within_six_seconds(sample_script, cfg):
 
 
 def test_plan_reports_conflict_when_avatar_cannot_appear_early(sample_script, cfg):
-    """Неразрешимый конфликт §6 обязан всплыть, а не «рассосаться» молча."""
+    """Неразрешимый конфликт §6 — отказ выдачи, не warning."""
+    from src.errors import RedshiftError
+
     for block in sample_script["blocks"][:3]:
         block["avatar"] = "off"
         block["mode_hint"] = "C"
-    sample_script["blocks"][0]["text"] = (
-        "Этот ответ невозможно проверить ничем, и это самое странное свойство "
-        "всей затеи с квантовыми вычислениями сегодня."
-    )
+    validated = validate_script(sample_script, cfg)
+    with pytest.raises(RedshiftError) as exc:
+        plan(validated, cfg)
+    assert exc.value.code == "AVATAR_FIRST_APPEARANCE_LATE"
+    assert float(exc.value.details["first_avatar_sec"]) >= 7.0
+
+
+def test_plan_first_avatar_at_two_seconds_passes(sample_script, cfg):
+    sample_script["blocks"][0]["avatar"] = "off"
+    sample_script["blocks"][0]["mode_hint"] = "C"
+    sample_script["blocks"][1]["avatar"] = "on"
+    sample_script["blocks"][1]["mode_hint"] = "A"
     validated = validate_script(sample_script, cfg)
     draft = plan(validated, cfg)
-    codes = [c["code"] for c in draft["conflicts"]]
-    assert "AVATAR_FIRST_APPEARANCE_LATE" in codes
+    cursor = 0.0
+    first = None
+    for block in draft["blocks"]:
+        if block["mode"] in ("A", "B"):
+            first = cursor
+            break
+        cursor += block["_estimated_sec"]
+    assert first is not None
+    assert 1.0 <= first <= 6.0
 
 
 def test_plan_promotes_early_auto_block_to_meet_deadline(sample_script, cfg):
@@ -144,6 +171,26 @@ def test_plan_adds_tts_length_buffer(sample_script, cfg):
     draft = plan(validated, cfg)
     ratio = draft["tts_target_sec"] / draft["estimated_speech_sec"]
     assert 1.18 <= ratio <= 1.25       # §4.2.4
+
+
+def test_plan_hook_avatar_on_is_not_a_face_at_zero(sample_script, cfg):
+    """avatar: on на хуке — лицо после 1.0 с, не talking-head с нуля."""
+    from src.p1_plan.planner import AVATAR_EARLIEST_SEC, AVATAR_MODES
+
+    sample_script["blocks"][0]["avatar"] = "on"
+    sample_script["blocks"][0]["mode_hint"] = "A"
+    validated = validate_script(sample_script, cfg)
+    draft = plan(validated, cfg)
+    hook = next(b for b in draft["blocks"] if b["role"] == "hook")
+    assert hook["mode"] in AVATAR_MODES
+    cursor = 0.0
+    first = None
+    for block in draft["blocks"]:
+        if block["mode"] in AVATAR_MODES:
+            first = max(cursor, AVATAR_EARLIEST_SEC)
+            break
+        cursor += block["_estimated_sec"]
+    assert first == pytest.approx(AVATAR_EARLIEST_SEC)
 
 
 # --- P2 mock TTS --------------------------------------------------------------

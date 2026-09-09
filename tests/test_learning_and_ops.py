@@ -302,18 +302,68 @@ def test_the_channel_own_captions_are_not_foreign_text(cfg, tmp_path):
         assert verdict.has_text is False
 
 
-def test_vision_qc_is_not_blocking(repo_root):
-    """§11.2 даёт материал для правки правил, но брак определяет §11.1."""
-    path = repo_root / "output" / "redshift_0042" / "build_report.json"
-    if not path.exists():
-        pytest.skip("нет собранного ролика")
-    report = json.loads(path.read_text(encoding="utf-8"))
-    if "qc" not in report:
-        pytest.skip(f"отчёт без QC: прогон {report.get('status')} не дошёл до P12")
-    for qc in report["qc"].values():
-        vision = qc.get("vision")
-        if vision and vision.get("enabled"):
-            assert vision["blocking"] is False
+def test_vision_qc_blocks_when_mismatch_exceeds_ten_percent(cfg, tmp_path, monkeypatch):
+    """§11.2: одна проба из шести ниже порога — blocking, ролик не success."""
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+    from src.p12_render_qc.qc import apply_semantic_qc
+    from src.p12_render_qc.vision_qc import run_vision_qc
+
+    scores = iter([0.20, 0.90, 0.90, 0.90, 0.90, 0.90])
+
+    class _Spy:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            return V.VisionVerdict(score=next(scores), reason="", summary="кадр",
+                                   judge="spy")
+
+    frame = tmp_path / "f.jpg"
+    Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
+    monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
+    # Один и тот же кадр иначе кэшируется и все шесть проб получают первый score.
+    monkeypatch.setattr(VQ, "_verdict_key", lambda *a, **k: "")
+
+    plan = {"duration_sec": 12.0, "variant": "A",
+            "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "footage",
+                       "role": "body", "reason": "гранит"}],
+            "subtitles": []}
+    report = run_vision_qc(_ctx(tmp_path, cfg), video_path=tmp_path / "v.mp4",
+                           plan=plan)
+    assert report["mismatch_share"] == pytest.approx(1 / 6, abs=1e-3)
+    assert report["blocking"] is True
+    folded = apply_semantic_qc(
+        {"passed": True, "passed_count": 1, "total": 1,
+         "checks": [{"id": "QC-1", "name": "x", "passed": True, "blocking": True,
+                     "value": 1, "threshold": 1, "detail": "",
+                     "timecode_sec": None}],
+         "failed": []},
+        report)
+    assert not folded["passed"]
+
+
+def test_vision_qc_passes_when_mismatch_is_under_ten_percent(cfg, tmp_path, monkeypatch):
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+    from src.p12_render_qc.vision_qc import run_vision_qc
+
+    class _Spy:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            return V.VisionVerdict(score=0.9, reason="", summary="кадр", judge="spy")
+
+    frame = tmp_path / "f.jpg"
+    Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
+    monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
+
+    plan = {"duration_sec": 12.0, "variant": "A",
+            "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "avatar",
+                       "role": "hook", "reason": "ведущий"}],
+            "subtitles": []}
+    report = run_vision_qc(_ctx(tmp_path, cfg), video_path=tmp_path / "v.mp4",
+                           plan=plan)
+    assert report["mismatch_share"] == 0.0
+    assert report["blocking"] is False
+    assert report["picture_matches_speech"] is True
 
 
 # --- устойчивость к отсутствующим файлам (регрессия) --------------------------

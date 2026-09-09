@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Iterable
 
 from ..errors import RedshiftError
@@ -33,6 +33,8 @@ _log = get_logger("p5")
 
 AVATAR_KINDS = ("avatar", "split")
 ASSET_KINDS = ("footage", "split")     # слоты, которым нужен внешний материал
+# Интервал [0.00, 1.00) — не talking-head. Лицо с 1.0 с; хук после 1.0 с можно.
+AVATAR_EARLIEST_SEC = 1.0
 
 # Маркеры иронии для мем-вставки (§5.8: только при явном ироническом маркере)
 # Иронический маркер не только включает мем (§5.8), но и говорит, какой именно:
@@ -143,6 +145,41 @@ def close_gaps(slots: list[Slot], duration: float) -> list[Slot]:
             prev.end = nxt.start
     slots[-1].end = duration
     return slots
+
+
+def _hold_face_until(slots: list[Slot],
+                     earliest: float = AVATAR_EARLIEST_SEC) -> list[Slot]:
+    """[0, earliest) не talking-head: лицо только с 1.0 с.
+
+    Допустимы card / b-roll / title. Аватар после 1.0 с в том же хуке — можно.
+    """
+    out: list[Slot] = []
+    for slot in slots:
+        if slot.kind not in AVATAR_KINDS or slot.start >= earliest - 1e-9:
+            out.append(slot)
+            continue
+        if slot.end <= earliest + 1e-9:
+            out.append(replace(
+                slot,
+                kind="footage",
+                mode="C",
+                needs_asset=True,
+                asset_role=slot.asset_role or "broll",
+                reason="первая секунда не talking-head",
+            ))
+            continue
+        out.append(replace(
+            slot,
+            end=earliest,
+            kind="footage",
+            mode="C",
+            needs_asset=True,
+            asset_role=slot.asset_role or "broll",
+            reason="первая секунда не talking-head",
+            events=[],
+        ))
+        out.append(replace(slot, start=earliest))
+    return out
 
 
 def _find_word(words: list[dict[str, Any]], predicate) -> dict[str, Any] | None:
@@ -314,7 +351,7 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                         reason="режим C: футаж во весь кадр (§3.5)",
                     ))
 
-    slots = close_gaps(slots, duration)
+    slots = close_gaps(_hold_face_until(slots), duration)
 
     share_range = limits.get("avatar_share", [0.35, 0.60])
     share_lo, share_hi = float(share_range[0]), float(share_range[1])
@@ -347,7 +384,9 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
                                         appearances_max, notes) or fixed
         if not fixed:
             break
-        slots = close_gaps(slots, duration)
+        slots = close_gaps(_hold_face_until(slots), duration)
+
+    slots = close_gaps(_hold_face_until(slots), duration)
 
     final_share = _avatar_share(slots, duration)
     if final_share < share_lo:
@@ -400,7 +439,8 @@ class _AvatarConversion:
         """Перебивки не забираем: они и существуют затем, чтобы разорвать аватара."""
         s = self.slots[i]
         return (s.kind == "footage" and s.block_id in self.allowed
-                and "перебивка" not in s.reason)
+                and "перебивка" not in s.reason
+                and s.start >= AVATAR_EARLIEST_SEC - 1e-9)
 
     def candidates(self) -> list[int]:
         return [i for i in range(len(self.slots)) if self.is_candidate(i)]
