@@ -17,6 +17,7 @@ from typing import Any, Callable
 
 from ..lib.jsonio import read_json_or
 from ..lib.logging import get_logger
+from ..lib.palette import overlay_cyan_misuse, overlay_offbrand_fills
 from ..lib.phash import video_is_duplicate
 from ..lib.render.canvas import SafeZones
 from ..lib.render.hyperframes.templates import text_width
@@ -461,6 +462,58 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                 if accent_measured else "замер не выполнен"),
         blocking=over_cap))
 
+    # 31. Чужой hue в заливке HyperFrames-оверлея (MUST-021).
+    # Footage-палитра смотрит кадр стока; розовый/жёлтый fill плашки туда
+    # не попадает. Allowlist = цвета брендбука ± белый/ink, допуск ΔE.
+    # Каталог templates.py этим гейтом не перекрашивается.
+    brandbook = cfg.brandbook if hasattr(cfg, "brandbook") else {}
+    offbrand = overlay_offbrand_fills(plan.get("overlays") or [], brandbook)
+    off_tc = next((float(h["start"]) for h in offbrand
+                   if h.get("start") is not None), None)
+    checks.append(_check(
+        31, "Заливка оверлея вне палитры брендбука", not offbrand,
+        value=len(offbrand), threshold=0,
+        detail="; ".join(
+            f"{h.get('overlay')}:{','.join(h.get('hex') or [])}"
+            for h in offbrand[:4]),
+        timecode=off_tc))
+
+    # 32. Cyan — tech/AI-tool, не медицина и не «второй красный».
+    cyan_hits = overlay_cyan_misuse(
+        plan.get("overlays") or [], brandbook, script)
+    cyan_tc = next((float(h["start"]) for h in cyan_hits
+                    if h.get("start") is not None), None)
+    checks.append(_check(
+        32, "Cyan только на tech-слоте", not cyan_hits,
+        value=len(cyan_hits), threshold=0,
+        detail="; ".join(
+            f"{h.get('overlay')} theme={h.get('theme')}"
+            for h in cyan_hits[:4]),
+        timecode=cyan_tc))
+
+    # 33. VFX-фон = instruction §1.10: ≤2 клипа, каждый 2–5 сек.
+    # Планировщик уже режет до лимита; QC ловит план, который лимит обошёл.
+    vfx_limit = int(limits.get("bg_vfx_per_video", 2))
+    vfx_range = limits.get("bg_vfx_sec", [2.0, 5.0])
+    vfx_lo, vfx_hi = float(vfx_range[0]), float(vfx_range[-1])
+    vfx_clips = _vfx_clips(plan)
+    vfx_over = len(vfx_clips) > vfx_limit
+    vfx_bad_dur = [
+        clip for clip in vfx_clips
+        if clip.get("duration_sec") is not None
+        and not (vfx_lo - 1e-6 <= float(clip["duration_sec"]) <= vfx_hi + 1e-6)
+    ]
+    vfx_ok = (not vfx_over) and (not vfx_bad_dur)
+    checks.append(_check(
+        33, "VFX-фон: число и длительность", vfx_ok,
+        value={"count": len(vfx_clips),
+               "durations": [c.get("duration_sec") for c in vfx_clips]},
+        threshold={"count_max": vfx_limit, "sec": [vfx_lo, vfx_hi]},
+        detail=("" if vfx_ok else
+                (f"{len(vfx_clips)} клипов при потолке {vfx_limit}"
+                 if vfx_over else
+                 "длительность вне [2, 5] с"))))
+
     blocking = [c for c in checks if c["blocking"]]
     passed_count = sum(1 for c in blocking if c["passed"])
     return {
@@ -523,6 +576,54 @@ def apply_semantic_qc(qc: dict[str, Any], vision: dict[str, Any] | None) -> dict
                      "detail": c["detail"]}
                     for c in qc["checks"] if not c["passed"]]
     return qc
+
+
+def _vfx_clips(plan: dict[str, Any]) -> list[dict[str, Any]]:
+    """VFX-фоны плана: список matting/vfx и шоты с background=vfx.
+
+    Планировщик режет до лимита на сборке; QC смотрит уже собранный план,
+    иначе три клипа, проскочившие лимит, выдаются молча.
+    """
+    found: dict[Any, dict[str, Any]] = {}
+
+    def add(item: Any, *, fallback: Any = None) -> None:
+        if isinstance(item, dict):
+            key = item.get("slot", item.get("index", fallback))
+            duration = item.get("duration_sec", item.get("duration"))
+            rec = {
+                "slot": key,
+                "duration_sec": None if duration is None else float(duration),
+            }
+        else:
+            key = fallback
+            rec = {"slot": key, "duration_sec": None}
+        if key is None:
+            key = f"anon-{len(found)}"
+        prev = found.get(key)
+        if prev and prev.get("duration_sec") is not None and rec["duration_sec"] is None:
+            return
+        found[key] = rec
+
+    for bucket in (plan.get("vfx"), (plan.get("matting") or {}).get("vfx")):
+        if isinstance(bucket, int):
+            for i in range(max(0, bucket)):
+                add({"slot": f"count-{i}"})
+        elif isinstance(bucket, list):
+            for i, item in enumerate(bucket):
+                add(item, fallback=i)
+
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        flagged = (
+            str(shot.get("background") or "") == "vfx"
+            or shot.get("vfx_src")
+            or shot.get("vfx")
+        )
+        if flagged:
+            add({"slot": shot.get("index"),
+                 "duration_sec": shot.get("duration")})
+    return list(found.values())
 
 
 def _shot_events(cut_plan: dict[str, Any], shot: dict[str, Any]) -> list[dict[str, Any]]:
