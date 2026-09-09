@@ -269,6 +269,42 @@ class TestQc14CapsGeneratedFootageAtTenPercent:
         assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.10)
 
 
+class TestQc10MeasuresSubtitleDriftAgainstSpeech:
+    """MUST-026: SRT vs речь после P3, порог — верх окна слова (450 мс)."""
+
+    def test_one_second_shift_fails(self, cfg):
+        plan = _plan(
+            subtitles=[{"display": "слово", "start": 2.0, "end": 2.3}],
+            speech_words=[{"display": "слово", "start": 1.0, "end": 1.3}],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert not check["passed"]
+        assert check["blocking"]
+        assert check["value"] == pytest.approx(1000.0, abs=1.0)
+        assert check["threshold"] == 450
+
+    def test_synced_words_pass(self, cfg):
+        plan = _plan(
+            subtitles=[{"display": "слово", "start": 1.0, "end": 1.3}],
+            speech_words=[{"display": "слово", "start": 1.0, "end": 1.3}],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+
+class TestQc11ReportsClipOffsetNotMouth:
+    """MUST-026: QC-11 — avatar_clip_offset, не губы и не lip-sync."""
+
+    def test_report_text_has_no_lip_or_mouth_words(self, cfg):
+        import re
+
+        check = _check(_run(cfg, _plan()), "QC-11")
+        blob = f"{check['name']} {check.get('detail') or ''}"
+        assert check["detail"] == "avatar_clip_offset"
+        assert not re.search(r"lipsync|\blips?\b|губы|липсинк", blob, re.I)
+
+
 class TestQc30MeasuresTheAccentAtLast:
 
     def _with(self, cfg, share):

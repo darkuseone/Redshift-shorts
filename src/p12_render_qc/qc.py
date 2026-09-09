@@ -188,15 +188,22 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                          detail="подложка отсутствует" if music_lufs is None
                                 else f"{share} % от голоса (цель {music_target_lufs(cfg)} LUFS)"))
 
-    # 10. Рассинхрон субтитров ≤ 80 мс
-    drift = _subtitle_drift(plan)
-    checks.append(_check(10, "Рассинхрон субтитров", drift <= 0.080 + 1e-6,
-                         value=round(drift * 1000, 1), threshold=80))
+    # 10. Рассинхрон субтитров: SRT vs речь после P3. Потолок — верх окна
+    # слова в P4 (`speech.max_word_ms`, 450 мс), не киношные 50/80 мс.
+    drift_limit = float(cfg.get("speech.max_word_ms", 450)) / 1000.0
+    drift = _subtitle_drift(plan, speech_words=_speech_words(ctx, plan))
+    checks.append(_check(10, "Рассинхрон субтитров",
+                         drift <= drift_limit + 1e-6,
+                         value=round(drift * 1000, 1),
+                         threshold=int(round(drift_limit * 1000))))
 
-    # 11. Рассинхрон липсинка ≤ 60 мс
-    lip = _lipsync_drift(plan, avatar_meta)
-    checks.append(_check(11, "Рассинхрон липсинка", lip <= 0.060 + 1e-6,
-                         value=round(lip * 1000, 1), threshold=60))
+    # 11. Смещение выреза аватар-клипа относительно таймлайна.
+    # Это не рот и не lip-sync (LATER-003): только avatar_clip_offset.
+    offset = _avatar_clip_offset(plan, avatar_meta)
+    checks.append(_check(11, "Смещение выреза аватар-клипа",
+                         offset <= 0.060 + 1e-6,
+                         value=round(offset * 1000, 1), threshold=60,
+                         detail="avatar_clip_offset"))
 
     # 12. Материалы без лицензии
     unlicensed = [s.get("asset_id") for s in plan["shots"]
@@ -536,14 +543,56 @@ def _shot_events(cut_plan: dict[str, Any], shot: dict[str, Any]) -> list[dict[st
     return []
 
 
-def _subtitle_drift(plan: dict[str, Any]) -> float:
-    """Максимальное расхождение окна субтитра с границей слова."""
+def _speech_words(ctx, plan: dict[str, Any]) -> list[dict[str, Any]]:
+    """Эталон речи после P3 remap: явный список плана или ``words.json``."""
+    explicit = plan.get("speech_words") or plan.get("words")
+    if explicit:
+        return list(explicit)
+    read_or = getattr(ctx, "read_or", None)
+    if callable(read_or):
+        doc = read_or("words.json", {}) or {}
+        if isinstance(doc, dict):
+            return list(doc.get("words") or [])
+    return []
+
+
+def _subtitle_drift(plan: dict[str, Any],
+                    speech_words: list[dict[str, Any]] | None = None) -> float:
+    """Максимальный |Δ| старта SRT-ку и соответствующего слова речи, сек.
+
+    Склейка коротких слов на экране не ломает ряд: куе забирает все речевые
+    слова, чей старт ещё лежит внутри длительности куе относительно пары.
+    Вывернутое окно — не синхрон, а брак.
+    """
+    cues = [c for c in (plan.get("subtitles") or []) if "start" in c]
+    speech = list(speech_words if speech_words is not None else
+                  (plan.get("speech_words") or []))
     worst = 0.0
-    subtitles = plan.get("subtitles", [])
-    for word in subtitles:
-        start, end = float(word["start"]), float(word["end"])
+    for cue in cues:
+        start, end = float(cue["start"]), float(cue["end"])
         if end <= start:
-            worst = max(worst, 0.2)
+            worst = max(worst, 1.0)
+
+    if not cues or not speech:
+        return worst
+
+    si = 0
+    for cue in cues:
+        if si >= len(speech):
+            break
+        c_start = float(cue["start"])
+        c_end = float(cue["end"])
+        word = speech[si]
+        w_start = float(word["start"])
+        worst = max(worst, abs(c_start - w_start))
+        cue_dur = max(0.0, c_end - c_start)
+        si += 1
+        while si < len(speech):
+            rel = float(speech[si]["start"]) - w_start
+            if rel <= cue_dur + 1e-3:
+                si += 1
+            else:
+                break
     return worst
 
 
@@ -565,12 +614,11 @@ def _subtitle_coverage(plan: dict[str, Any], duration: float) -> float:
     return visible / max(len(words), 1)
 
 
-def _lipsync_drift(plan: dict[str, Any], avatar_meta: dict[str, Any]) -> float:
-    """Рассинхрон липсинка = ошибка выреза аватар-клипа под место на таймлайне.
+def _avatar_clip_offset(plan: dict[str, Any], avatar_meta: dict[str, Any]) -> float:
+    """Смещение выреза аватар-клипа относительно места на таймлайне.
 
-    Аватар генерируется посегментно, а на таймлайн ложится кусками. Липсинк
-    разъедется ровно тогда, когда кусок вырезан не с того места сегмента,
-    поэтому проверяем именно смещение выреза, а не «похоже ли на правду».
+    Аватар генерируется посегментно и кладётся кусками. QC-11 меряет
+    ``avatar_clip_offset`` — ошибку выреза, не рот и не lip-sync.
     """
     worst = 0.0
     segments = avatar_meta.get("segments", [])
@@ -581,7 +629,6 @@ def _lipsync_drift(plan: dict[str, Any], avatar_meta: dict[str, Any]) -> float:
             continue
         offset = shot.get("avatar_offset_sec")
         if offset is None:
-            # Клип аватара не подставлен вовсе — это максимальный рассинхрон.
             return 1.0
         covering = [s for s in segments
                     if float(s["start"]) - 1e-3 <= float(shot["start"]) < float(s["end"]) + 1e-3]
