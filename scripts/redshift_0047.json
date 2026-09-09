@@ -8,13 +8,28 @@
     "target_duration_sec": 58,
     "allow_memes": false,
     "allow_bg_vfx": true,
-    "publish_date": "2026-08-31"
+    "publish_date": "2026-08-31",
+    "hook": {
+      "on_screen": "ДВЕНАДЦАТЬ КИЛОМЕТРОВ",
+      "style": "number_slam"
+    }
   },
+  "sources": [
+    {
+      "title": "Сверхглубокое бурение: тепло, гранит и вода в коре",
+      "domain": "nature.com",
+      "url": "https://www.nature.com/articles/s43247-026-03246-z",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "snippet": "На десяти километрах термометр показал сто восемьдесят градусов — выше расчёта. Границы гранита и базальта не оказалось.",
+      "highlight_line": "сто восемьдесят градусов"
+    }
+  ],
   "blocks": [
     {
       "id": "b1",
       "role": "hook",
-      "text": "Самая глубокая дыра на Земле — двенадцать километров. Бурить перестали не из-за денег и не из-за политики.",
+      "text": "Двенадцать километров вниз. Не из-за денег.",
       "emphasis_word": "двенадцать",
       "avatar": "on",
       "visual_intent": "Тёмный кадр, буровая вышка в тумане, медленное приближение",
@@ -23,7 +38,9 @@
         "industrial borehole machinery closeup"
       ],
       "overlay": {
-        "type": "none"
+        "type": "fullscreen_text",
+        "content": "НЕ ИЗ-ЗА ДЕНЕГ",
+        "template_hint": "text-fullscreen/impact-01"
       },
       "sfx": "sub_drop",
       "meme_allowed": false,

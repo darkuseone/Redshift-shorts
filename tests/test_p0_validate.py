@@ -12,7 +12,7 @@ from src.lib.jsonio import read_json
 from src.lib.schema import estimate_block_duration
 from src.p0_validate.validator import HOOK_MAX_SEC, validate_script
 
-# Spoken hook ≤3.0 с. 0042 на диске ~3.08 с — для прочих правил P0 режем в памяти.
+# Spoken hook ≤3.0 с. Для прочих правил P0 режем хук в памяти, не раздувая 0042.
 _SHORT_HOOK = "Этот ответ невозможно проверить. Совсем никак."
 _HOOK_3_1 = "Этот ответ невозможно проверить никаким опытом."
 _CHANNEL_SCRIPTS = tuple(f"redshift_00{n}.json" for n in range(42, 48))
@@ -178,23 +178,28 @@ def test_hook_under_three_seconds_without_greeting_passes(sample_script, cfg):
 def test_channel_scripts_with_hook_over_three_seconds_fail(cfg, repo_root):
     """Приёмка MUST-001: spoken hook >3.0 с не получает ok. Имена — в ассерте."""
     too_long = []
+    fitting = []
     for name in _CHANNEL_SCRIPTS:
         script = read_json(repo_root / "scripts" / name)
         hook = next(b for b in script["blocks"] if b.get("role") == "hook")
         if estimate_block_duration(hook["text"]) <= HOOK_MAX_SEC:
+            fitting.append(name)
             continue
         too_long.append(name)
         with pytest.raises(ValidationError) as exc:
             validate_script(script, cfg)
         assert exc.value.code == "HOOK_TOO_LONG", name
-    assert "redshift_0047.json" in too_long
-    over_0042_0046 = [n for n in too_long if n != "redshift_0047.json"]
-    assert over_0042_0046 == [
-        "redshift_0042.json",
+    assert too_long == [
         "redshift_0044.json",
         "redshift_0045.json",
         "redshift_0046.json",
     ]
+    assert "redshift_0042.json" in fitting
+    assert "redshift_0047.json" in fitting
+    for name in ("redshift_0042.json", "redshift_0047.json"):
+        script = read_json(repo_root / "scripts" / name)
+        result = validate_script(script, cfg)
+        assert result["_validation"]["ok"] is True, name
 
 
 class TestTheRetentionLoopHasAShape:

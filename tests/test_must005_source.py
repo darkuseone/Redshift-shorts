@@ -47,6 +47,7 @@ def test_science_without_sources_is_no_source(sample_script, cfg):
 
 def test_0047_with_short_hook_fails_no_source(cfg, repo_root):
     script = _with_short_hook(_load_0047(repo_root), _SHORT_HOOK_0047)
+    script["sources"] = []
     assert script.get("sources") in (None, [])
     with pytest.raises(ValidationError) as exc:
         validate_script(script, cfg)
