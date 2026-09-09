@@ -302,12 +302,7 @@ class GeminiVision(VisionProvider):
                 return resp.json()
 
             try:
-                retry_kw = self._retry_kwargs("Gemini vision")
-                # 429 quota/RPM: 6×80 с на той же модели съедают лимит и
-                # оставляют §11.2 в skip. Две попытки, затем следующий Flash.
-                retry_kw["capacity_attempts"] = min(
-                    int(retry_kw.get("capacity_attempts") or 6), 2)
-                data = call_with_retry(_call, **retry_kw)
+                data = call_with_retry(_call, **self._retry_kwargs("Gemini vision"))
                 break
             except ProviderError as exc:
                 last_exc = exc
