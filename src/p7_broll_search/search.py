@@ -550,6 +550,10 @@ def run_step(ctx) -> dict[str, Any]:
     stage1_rejected: list[dict[str, Any]] = []
     candidates_out: list[dict[str, Any]] = []
     seen_hashes: list[tuple[str, list[str]]] = []
+    # Только первый кандидат слота занимает id. keep_per_slot=2 парковал
+    # неиспользованные prefer как запасные — taken_ids сжигал их, и хвост
+    # ролика (0042: криостат Grok) оставался пустым.
+    exclusive_ids: set[str] = set()
     from_cache = 0
     missing_in_storage: list[str] = []
     slot_search: list[dict[str, Any]] = []
@@ -603,7 +607,7 @@ def run_step(ctx) -> dict[str, Any]:
                 have.add(pid)
             prefer_set = set(pin_prefer)
             local = sorted(local, key=lambda r: (0 if r.id in prefer_set else 1, -r.score))
-        taken_ids = {c.get("asset_id") for c in candidates_out}
+        taken_ids = set(exclusive_ids)
         category = str(plan.get("category") or "")
         video_id = str(plan.get("video_id") or "")
         pooled: list[tuple[Any, dict[str, Any]]] = []
@@ -663,8 +667,12 @@ def run_step(ctx) -> dict[str, Any]:
                     continue
                 seen_hashes.append((record.id, hashes))
             slot_candidates.append(row)
-            taken_ids.add(record.id)
             from_cache += 1
+        if slot_candidates:
+            primary = str(slot_candidates[0].get("asset_id") or "")
+            if primary:
+                exclusive_ids.add(primary)
+                taken_ids.add(primary)
 
         # Prefer-пины и лимит поиска занимали первые слоты одними и теми же
         # id: хвост ролика видел только «дубль из базы». Если слот пуст —
@@ -710,6 +718,8 @@ def run_step(ctx) -> dict[str, Any]:
                 slot_candidates.append(
                     _local_cache_row(slot["index"], record, queries[0]))
                 from_cache += 1
+                exclusive_ids.add(record.id)
+                taken_ids.add(record.id)
                 break
 
         if frozen and slot_candidates:

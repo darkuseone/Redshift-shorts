@@ -1584,6 +1584,12 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
 # глушит субтитр на своём окне: под ней его всё равно не видно.
 _FULL_FRAME_HEROES = ("hero-slam", "hero-knockout")
 
+# ChatGPT-карточка / окно чата в середине кадра закрывают лицо, когда ведущий
+# сидит в нижней трети. Кружок уже выкинут; эти приёмы — тот же класс брака.
+_FACE_COVERING_UI = frozenset({
+    "hero-phone-mock", "hero-chat-generate", "hero-chat-typing",
+})
+
 # Приёмы, которые выкладывают реплику **не** строками, а подписью, и потому не
 # попадают под проверку по `_HERO_NEEDS`. Экспонат подписывает материал фразой
 # целиком (`detail`), и пословный субтитр ложился на неё поверх: на кадре
@@ -1976,6 +1982,11 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         if late and template.renderer == "hero-title-behind":
             blocked.append(template.id)
             continue
+        if has_alpha and template.renderer in _FACE_COVERING_UI:
+            box = content.get("head_box")
+            if box and len(box) >= 4 and int(box[1]) >= 900:
+                blocked.append(template.id)
+                continue
         # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
         # вот кем она снята. Под сгенерированным пятном она подписывала
         # «REDSHIFT / GENERATED» и тем самым объявляла зрителю ровно то, чего
@@ -3237,6 +3248,10 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
             params["series"] = series
             params["xLabels"] = [n["raw"] for n in nums[:n_take]]
             params["showValues"] = True
+        if name == "animated-bar-chart":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params["title"] = heading or str(nums[0].get("raw") or "Ошибка")
+            params["subtitle"] = "по реплике блока"
     traits = set(signals) | set(block_traits(str(block.get("text") or "")))
     return {
         "type": "dataviz", "start": start, "end": end,

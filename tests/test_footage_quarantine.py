@@ -105,6 +105,9 @@ def test_pins_file_lists_good_and_deny():
     assert "pexels_v35003022" in entry["prefer"]
     assert "pexels_v38431825" in entry["prefer"]
     assert "pixabay_v200531" in entry["prefer"]
+    assert "press_21bc8e2d72" in entry["prefer"]
+    assert "pexels_v19532053" in entry["deny"]
+    assert "pexels_v19532053" not in entry["prefer"]
 
 
 def test_pin_deny_prefix_matches_every_nasa_id():

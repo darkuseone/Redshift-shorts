@@ -282,6 +282,44 @@ def test_hero_device_catalog_has_no_face_circle_bubbles():
     assert "hero-bubble-typed" not in HERO
 
 
+def test_phone_mock_skipped_when_face_is_in_the_lower_third():
+    """ChatGPT-карточка закрывала рот, когда ведущий сидит в нижней трети."""
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _hero_device
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    for template in cat.all():
+        template.last_used_in = []
+    content = {
+        "word": "НЕЧЕМ", "title": "Квантовый чип",
+        "head": "КВАНТОВЫЙ", "tail": "ЧИП",
+        "lines": ["квантовый", "чип", "внутри", "105 кубитов"],
+        "accent_lines": [0],
+        "punch": ["квантовый", "чип"], "entries": ["квантовый"],
+        "figures": [], "face": (540, 1280),
+        "head_box": (390, 1080, 690, 1480), "brand": None, "icons": [],
+        "ask": "что внутри чипа", "answer": "105 кубитов",
+        "gen_prompt": "нарисуй квантовый процессор",
+        "caption": "квантовый чип",
+    }
+    slot = {"index": 1, "role": "setup", "duration": 3.5,
+            "start": 3.08, "end": 6.6}
+    plate = {"file": "/w/shots/a.mp4", "duration_sec": 3.0}
+    seen = set()
+    banned = {"hero-phone-mock", "hero-chat-generate", "hero-chat-typing"}
+    for seed in range(40):
+        entry = _hero_device(
+            cat, slot=slot, content=content, has_alpha=True,
+            plate_src=plate, recent_videos=[], exclude=[], seed=seed)
+        if entry:
+            seen.add(entry["renderer"])
+            assert entry["renderer"] not in banned, entry
+    assert seen
+
+
 def test_plaque_stops_at_avatar_cut():
     from src.p11_assemble.assemble import _clamp_plaques_at_avatar_cuts
 

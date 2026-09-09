@@ -30,7 +30,7 @@ from ..lib.query import (
     thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, footage_pool_count,
+    _footage_pin_entry, _load_footage_pins, _local_cache_row, footage_pool_count,
     judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_report,
 )
 
@@ -320,6 +320,131 @@ def skip_live_verdict(candidate: dict[str, Any], intent: str) -> dict[str, Any]:
         "judge": judge,
         "frames": 0,
     }
+
+
+def _slot_duration(slot: dict[str, Any]) -> float:
+    try:
+        dur = float(slot.get("end") or 0) - float(slot.get("start") or 0)
+    except (TypeError, ValueError):
+        dur = 0.0
+    return dur if dur > 0 else 3.0
+
+
+def _leftover_prefer_key(asset_id: str, slot: dict[str, Any],
+                         pin_prefer: list[str]) -> tuple[int, int]:
+    """Prefer leftover pins that match this slot's role/intent, else list order."""
+    aid = str(asset_id or "")
+    intent = str(slot.get("visual_intent") or "").lower()
+    role = str(slot.get("asset_role") or "")
+    bonus = 0
+    if aid.startswith("press_") and role == "evidence":
+        bonus = -20
+    elif "cryostat" in aid and any(
+            w in intent for w in ("криостат", "процессор", "чип", "cryostat", "chip")):
+        bonus = -15
+    elif "supercomputer" in aid and any(
+            w in intent for w in ("суперкомп", "вселенн", "supercomputer")):
+        bonus = -15
+    elif "38431825" in aid and any(
+            w in intent for w in ("финальн", "подписк", "деньг")):
+        bonus = -15
+    try:
+        rank = pin_prefer.index(aid)
+    except ValueError:
+        rank = 99
+    return (bonus, rank)
+
+
+def _fill_unfilled_from_leftover_prefers(
+        *, ctx, cfg, plan: dict[str, Any], slots_by_index: dict[int, dict[str, Any]],
+        accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
+        judged: list[dict[str, Any]], pin_prefer: list[str], pin_deny: set[str],
+        index: FootageIndex, repeat_max: int, skip_live: bool,
+        palette_rules: dict[str, Any], visible_min: float) -> int:
+    """Hard-prefer pins parked as P7 runner-ups onto later empty slots.
+
+    keep_per_slot used to mark unused prefers taken, so 0042 never showed the
+    cryostat still. This is the same pin_prefer accept, not a weak-stock fill.
+    """
+    if not pin_prefer:
+        return 0
+    asset_slots = [
+        s for s in plan.get("slots") or []
+        if s.get("needs_asset")
+        and s.get("asset_role") in ("broll", "evidence", "meme", "interstitial")
+    ]
+    unfilled = [s for s in asset_slots if int(s["index"]) not in accepted]
+    if not unfilled:
+        return 0
+    duration = float(plan.get("duration_sec") or 0.0) or sum(
+        _slot_duration(s) for s in plan.get("slots") or [])
+    ai_max = float(cfg.get("limits.ai_footage_share_max", 0.10)) * max(duration, 1e-6)
+    ai_used = 0.0
+    for idx, entry in accepted.items():
+        if entry.get("ai_generated"):
+            ai_used += _slot_duration(slots_by_index.get(int(idx), {}))
+    storage = getattr(ctx, "storage", None)
+    filled = 0
+    leftover = [
+        pid for pid in pin_prefer
+        if accepted_counts.get(pid, 0) < repeat_max and not pin_id_denied(pid, pin_deny)
+    ]
+    for slot in unfilled:
+        slot_index = int(slot["index"])
+        if leftover:
+            leftover.sort(key=lambda pid: _leftover_prefer_key(pid, slot, pin_prefer))
+        slot_dur = _slot_duration(slot)
+        intent = slot.get("visual_intent", "") or slot.get("reason", "")
+        picked_id = None
+        for pid in leftover:
+            rec = index.by_id(pid)
+            if rec is None or getattr(rec, "quarantined", False):
+                continue
+            if not rec.file:
+                continue
+            if storage is not None and not storage.exists(rec.file):
+                continue
+            if rec.ai_generated and ai_used + slot_dur > ai_max + 1e-6:
+                continue
+            candidate = _local_cache_row(slot_index, rec, intent or pid)
+            gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
+            if gate:
+                continue
+            cheap = cheap_reject_reason(
+                candidate, cfg=cfg, slot_duration=slot_dur,
+                negatives=slot_negatives(slot, plan),
+                category=str(plan.get("category") or ""),
+                intent_kind=classify_intent(
+                    intent, [candidate.get("query", "")],
+                    str(plan.get("category") or "")),
+                video_id=str(plan.get("video_id") or ""))
+            if cheap:
+                continue
+            palette = palette_verdict([], palette_rules)
+            if skip_live or candidate.get("prior_score") is not None:
+                verdict_dict = skip_live_verdict(candidate, intent)
+            else:
+                verdict_dict = {
+                    "score": float(SEED_SCORE),
+                    "reason": "pin_prefer leftover: принят без vision",
+                    "summary": candidate.get("vision_summary", ""),
+                    "judge": "pin_prefer", "frames": 0,
+                }
+            entry = {**candidate, "verdict": verdict_dict, "intent": intent,
+                     "score": float(verdict_dict["score"]), "palette": palette,
+                     "decision": "accept_prefer",
+                     "fallback_reason": "pin_prefer leftover: unused prefer onto empty slot"}
+            judged.append(entry)
+            accepted[slot_index] = entry
+            accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
+            if rec.ai_generated:
+                ai_used += slot_dur
+            picked_id = pid
+            filled += 1
+            break
+        if picked_id is not None:
+            leftover = [pid for pid in leftover if pid != picked_id]
+    return filled
 
 
 def run_step(ctx) -> dict[str, Any]:
@@ -688,6 +813,15 @@ def run_step(ctx) -> dict[str, Any]:
             aid = str(best.get("asset_id") or "")
             if aid:
                 accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
+
+    leftover_filled = _fill_unfilled_from_leftover_prefers(
+        ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
+        accepted=accepted, accepted_counts=accepted_counts, judged=judged,
+        pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
+        repeat_max=repeat_max, skip_live=skip_live,
+        palette_rules=palette_rules, visible_min=visible_min)
+    if leftover_filled:
+        _log.info("leftover prefer pins closed %s empty slot(s)", leftover_filled)
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

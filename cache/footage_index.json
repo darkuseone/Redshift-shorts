@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-09",
-  "count": 69,
+  "count": 70,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -2547,6 +2547,39 @@
       "ai_generated": true,
       "extra": {
         "attribution": "REDSHIFT / grok-image",
+        "watched": true
+      }
+    },
+    {
+      "id": "press_21bc8e2d72",
+      "type": "photo",
+      "source": "press",
+      "license": "fair-use-quote",
+      "url_origin": "https://www.nature.com/articles/s41586-024-08449-y",
+      "phash": "070be4f8fa08f0f8",
+      "tags": [
+        "nature",
+        "quantum",
+        "error",
+        "correction",
+        "willow",
+        "qubit",
+        "chart"
+      ],
+      "vision_summary": "Nature figure: Willow quantum error-correction charts, surface-code qubits, logical error vs cycle",
+      "score": 0.88,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-09",
+      "phashes": [
+        "070be4f8fa08f0f8"
+      ],
+      "width": 685,
+      "height": 271,
+      "file": "press/press_21bc8e2d72.jpg",
+      "extra": {
+        "attribution": "Nature / Google Quantum AI",
         "watched": true
       }
     }

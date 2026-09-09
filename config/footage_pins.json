@@ -3,6 +3,7 @@
     "prefer": [
       "pexels_v25935014",
       "pexels_v18069803",
+      "press_21bc8e2d72",
       "pexels_v35003022",
       "pixabay_v200531",
       "pexels_v38431825",
@@ -10,6 +11,7 @@
       "grok_supercomputer_0042"
     ],
     "deny": [
+      "pexels_v19532053",
       "pexels_v30775057",
       "pexels_v20349276",
       "pexels_v27975940",
