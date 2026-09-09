@@ -29,7 +29,8 @@ from ..lib.query import (
     classify_intent, thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, pin_id_denied,
+    _footage_pin_entry, _load_footage_pins, footage_pool_count, pin_id_denied,
+    surplus_report,
 )
 
 COHERENCE_MIN = 0.15
@@ -172,10 +173,24 @@ def run_step(ctx) -> dict[str, Any]:
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 8))
 
     skip_live = bool(cfg.get("vision.skip_live", False))
-    primary = None if skip_live else build_vision_provider(cfg, ctx.costs, role="primary")
-    arbiter = None if skip_live else build_vision_provider(cfg, ctx.costs, role="arbiter")
+    surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
+    footage_slots = [
+        s for s in plan.get("slots", [])
+        if s.get("needs_asset") and s.get("asset_role") in ("broll", "evidence", "interstitial")
+    ]
+    surplus = doc.get("surplus") or surplus_report(
+        footage_pool_count(doc.get("candidates") or []),
+        len(footage_slots), surplus_ratio)
+    paid_ok = bool(surplus.get("ok"))
+    primary = None if skip_live or not paid_ok else build_vision_provider(
+        cfg, ctx.costs, role="primary")
+    arbiter = None if skip_live or not paid_ok else build_vision_provider(
+        cfg, ctx.costs, role="arbiter")
     if skip_live:
         _log.warning("vision.skip_live: без live API — движковые гейты блокирующие")
+    elif not paid_ok:
+        _log.warning("surplus underfilled — paid critic (Gemini/Grok) не вызывается",
+                     extra=surplus)
     index = FootageIndex.load(cfg)
     video_id = str(plan.get("video_id") or "")
     pin_deny, pin_prefer = _load_footage_pins(cfg, video_id)
@@ -354,6 +369,20 @@ def run_step(ctx) -> dict[str, Any]:
                     "judge": "cache", "frames": 0,
                 }
                 reused_scores += 1
+            elif not paid_ok:
+                entry = {
+                    **candidate, "intent": intent, "score": 0.0,
+                    "decision": "underfilled",
+                    "reject_reason": (
+                        f"surplus {surplus['candidates']}/{surplus['target']} "
+                        f"< {surplus['ratio']:.1f}×; paid critic skipped"),
+                    "verdict": {
+                        "score": 0.0, "judge": "surplus_gate", "frames": 0,
+                        "reason": "underfilled: no Gemini/Grok/Magnific",
+                    },
+                }
+                judged.append(entry)
+                continue
             else:
                 frames = [Path(f) for f in candidate.get("frames", [])]
                 verdict = primary.judge(frames, intent=intent, role=role,
@@ -544,6 +573,7 @@ def run_step(ctx) -> dict[str, Any]:
         "fill_rate": round(len(accepted) / max(len(asset_slots), 1), 4),
         "unfilled_slots": unfilled,
         "added_to_index": added_to_index,
+        "surplus": surplus,
         "accepted": {str(k): v for k, v in sorted(accepted.items())},
         "judged": judged,
     }

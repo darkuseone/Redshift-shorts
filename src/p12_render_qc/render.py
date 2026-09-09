@@ -480,6 +480,12 @@ def run_step(ctx) -> dict[str, Any]:
     write_json(ctx.opath("metadata.json"), metadata)
 
     all_passed = all(r.get("qc_passed") for r in results.values())
+    candidates_doc = ctx.read_or("candidates.json", {})
+    accepted_doc = ctx.read_or("accepted_assets.json", {})
+    search_report = dict(candidates_doc.get("search") or {})
+    surplus = candidates_doc.get("surplus") or accepted_doc.get("surplus")
+    if surplus:
+        search_report["surplus"] = surplus
     report = {
         "video_id": cut_plan["video_id"],
         "status": "ok" if all_passed else "qc_failed",
@@ -498,8 +504,8 @@ def run_step(ctx) -> dict[str, Any]:
         # «почему выбран этот приём» нечем закрыть.
         "pick_traces": {v: ctx.read(f"edit_plan_{v}.json").get("pick_traces", [])
                         for v in variants},
-        # MUST-016: 3–5 EN-запросов на слот + entities + negatives.
-        "search": ctx.read_or("candidates.json", {}).get("search") or {},
+        # MUST-016/017: запросы на слот + surplus до paid critic.
+        "search": search_report,
     }
     ctx.write("build_report.json", report)
     write_json(ctx.opath("build_report.json"), report)

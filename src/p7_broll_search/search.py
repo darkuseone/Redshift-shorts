@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from pathlib import Path
 from typing import Any, Iterable
@@ -106,6 +107,31 @@ def pad_slot_queries(
             if len(out) >= QUERY_MIN:
                 break
     return out[:cap]
+
+
+def footage_pool_count(candidates: Iterable[dict[str, Any]]) -> int:
+    """Кандидаты футажа без мемов — знаменатель surplus."""
+    return sum(1 for c in candidates if str(c.get("origin") or "") != "meme_library")
+
+
+def surplus_target(slots_needing: int, ratio: float = 1.3) -> int:
+    """ceil(ratio × слотов с футажом). 10 слотов → 13 кандидатов."""
+    return math.ceil(float(ratio) * max(0, int(slots_needing)))
+
+
+def surplus_report(n_candidates: int, slots_needing: int,
+                   ratio: float = 1.3) -> dict[str, Any]:
+    """Сводка +30% запаса до Gemini/Grok/Magnific (MUST-017)."""
+    target = surplus_target(slots_needing, ratio)
+    ok = True if slots_needing <= 0 else int(n_candidates) >= target
+    return {
+        "ratio": float(ratio),
+        "slots_needing_footage": int(slots_needing),
+        "candidates": int(n_candidates),
+        "target": int(target),
+        "ok": ok,
+        "status": "ok" if ok else "underfilled",
+    }
 
 
 _log = get_logger("p7")
@@ -278,6 +304,7 @@ def run_step(ctx) -> dict[str, Any]:
     queries_per_slot = min(QUERY_MAX, max(3, int(cfg.get("stock.queries_per_slot", 5))))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))
     pool_min, pool_max = cfg.get("stock.target_pool_size", [30, 60])
+    surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
     max_downloads = int(cfg.get("magnific.max_downloads_per_video", 50))
     probe_positions = cfg.get("stock.video_probe_frames", [0.10, 0.50, 0.90])
     dedup_threshold = int(cfg.get("stock.dedup_hamming_max", 8))
@@ -639,6 +666,15 @@ def run_step(ctx) -> dict[str, Any]:
             researched += 1
             harvest(refined)
 
+        # MUST-017: запас +30% добирается дешёвым поиском, не vision/Magnific.
+        have_so_far = footage_pool_count(candidates_out) + len(slot_candidates)
+        expected_so_far = surplus_target(slots.index(slot) + 1, surplus_ratio)
+        if not frozen and have_so_far < expected_so_far:
+            extra = [q for q in _refine_queries(queries, limit=3) if q not in queries]
+            if extra:
+                harvest(extra)
+                researched += 1
+
         if not slot_candidates:
             ctx.warn(f"слот {slot['index']} ({slot['block_id']}) не получил ни одного кандидата",
                      slot=slot["index"], queries=queries)
@@ -652,12 +688,18 @@ def run_step(ctx) -> dict[str, Any]:
     meme_candidates = _pick_memes(ctx, plan, recent_videos)
     candidates_out.extend(meme_candidates)
 
+    surplus = surplus_report(
+        footage_pool_count(candidates_out), len(slots), surplus_ratio)
+    search_blob = search_report_payload(slot_search)
+    search_blob["surplus"] = surplus
+
     doc = {
         "video_id": plan["video_id"],
         "slots_needing_asset": len(slots) + len(meme_candidates),
         "meme_slots_filled": len(meme_candidates),
         "pool_size": len(candidates_out),
         "pool_target": [pool_min, pool_max],
+        "surplus": surplus,
         "downloads": downloads,
         "download_limit": max_downloads,
         "from_local_cache": from_cache,
@@ -668,7 +710,7 @@ def run_step(ctx) -> dict[str, Any]:
         "slots_from_press": press_used,
         "stage1_reject_share": round(
             len(stage1_rejected) / max(len(stage1_rejected) + len(candidates_out), 1), 4),
-        "search": search_report_payload(slot_search),
+        "search": search_blob,
         "candidates": candidates_out,
     }
     ctx.write("candidates.json", doc)
@@ -677,6 +719,11 @@ def run_step(ctx) -> dict[str, Any]:
         ctx.warn(f"{len(set(missing_in_storage))} записей индекса без файлов в storage — "
                  f"пропущены; вычистить: python -m src.cli maintenance",
                  count=len(set(missing_in_storage)))
+    if not surplus["ok"]:
+        ctx.warn(
+            f"surplus {surplus['candidates']}/{surplus['target']} "
+            f"({surplus['ratio']:.1f}×) — paid critic не вызывать",
+            **{k: surplus[k] for k in ("candidates", "target", "slots_needing_footage")})
     if len(candidates_out) < pool_min:
         ctx.warn(f"пул кандидатов {len(candidates_out)} меньше рекомендованных {pool_min} (§7.2.3)",
                  pool=len(candidates_out))
@@ -684,10 +731,11 @@ def run_step(ctx) -> dict[str, Any]:
         "slots": len(slots), "pool": len(candidates_out), "downloads": downloads,
         "from_cache": from_cache, "stage1_rejected": len(stage1_rejected),
         "researched": researched, "press": press_used,
+        "surplus": surplus["status"],
     })
     return {"pool": len(candidates_out), "downloads": downloads,
             "from_cache": from_cache, "researched": researched,
-            "press": press_used}
+            "press": press_used, "surplus": surplus["status"]}
 
 
 def _pick_memes(ctx, plan: dict[str, Any], recent_videos: list[str]) -> list[dict[str, Any]]:
