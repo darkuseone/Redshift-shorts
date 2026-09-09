@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from src.p12_render_qc.qc import QC17_TEMPLATE_OVERLAP_MAX, _hook_is_banned, run_qc
+from src.p12_render_qc.qc import QC17_TEMPLATE_OVERLAP_MAX, blocking_failed_ids, _hook_is_banned, run_qc
 
 
 class _Media:
@@ -240,6 +240,22 @@ class TestQc20And21And22CarryTheMegaWording:
         assert check["passed"]
         assert check["value"] == 0.0
 
+    def test_qc21_ignores_signature_furniture(self, cfg):
+        """Хук, CTA и плашка не раздувают долю и не заваливают гейт сами."""
+        plan = _plan(shots=[
+            _shot(0, template="intro-hooks/hook-blackout-word", grounded_on=[]),
+        ], overlays=[
+            {"type": "plaque", "template": "lower-thirds/note-pin",
+             "start": 2.0, "end": 4.0, "grounded_on": []},
+            {"type": "cta", "template": "outro-cta/logo-brand-close",
+             "start": 46.0, "end": 48.0, "grounded_on": []},
+            {"type": "dataviz", "template": self.NEEDY[0],
+             "start": 10.0, "end": 13.0, "grounded_on": ["number"]},
+        ])
+        check = _check(_run(cfg, plan), "QC-21")
+        assert check["passed"]
+        assert check["value"] == 0.0
+
     def test_qc21_counts_ungrounded_dataviz_overlay(self, cfg):
         plan = _plan(overlays=[{
             "type": "dataviz", "template": self.NEEDY[0],
@@ -320,6 +336,20 @@ class TestQc10MeasuresSubtitleDriftAgainstSpeech:
         plan = _plan(
             subtitles=[{"display": "слово", "start": 1.0, "end": 1.3}],
             speech_words=[{"display": "слово", "start": 1.0, "end": 1.3}],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_muted_hook_cues_match_the_spoken_word_not_index_zero(self, cfg):
+        """Под хуком караоке снято: первый куй — середина речи, не words[0]."""
+        plan = _plan(
+            subtitles=[{"display": "Работа", "start": 8.094, "end": 8.544}],
+            speech_words=[
+                {"display": "Этот", "start": 0.0, "end": 0.3},
+                {"display": "ответ", "start": 0.3, "end": 0.6},
+                {"display": "Работа", "start": 8.094, "end": 8.544},
+            ],
         )
         check = _check(_run(cfg, plan), "QC-10")
         assert check["passed"]
@@ -416,7 +446,7 @@ class TestQc28WatchesTheFirstThreeSeconds:
         """Звук — не брак кадра: §11.1 решает о выдаче, §10.4 только сообщает."""
         report = _run_with_sfx(cfg, _plan(), [])
         assert not _check(report, "QC-28")["blocking"]
-        assert all(c["id"] != "QC-28" for c in report["failed"]) or True
+        assert "QC-28" not in blocking_failed_ids(report)
 
     def test_events_that_were_not_placed_do_not_count(self, cfg):
         events = [{"t": 0.1, "status": "same_file_cap"},

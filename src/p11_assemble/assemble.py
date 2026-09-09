@@ -3387,6 +3387,15 @@ def _hook_signals(spec: dict[str, Any], traits: set[str], *,
     return signals
 
 
+def _shot_grounding(template: Any, block: dict[str, Any] | None) -> dict[str, Any]:
+    """Что в тексте блока оправдывает этот приём — для QC-21."""
+    traits = block_traits(str((block or {}).get("text") or ""))
+    return {
+        "traits": sorted(traits),
+        "grounded_on": sorted(matched(template.needs, traits)),
+    }
+
+
 # Рендереры хука, которые сборщик действительно кладёт в кадр. Список короче
 # каталога намеренно: `split`, `avatar` и `source_card` тоже помечены как хуки,
 # но кадр под них надо собирать иначе — сплит требует второго слоя, аватар
@@ -3849,6 +3858,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         "hook": True,
                         "accent_word": _fullscreen_accent(content, hook_block),
                         "accent_family": accent_family(hook_block),
+                        **_shot_grounding(hook_tpl, hook_block),
                         "file": bg_file,
                         "asset_id": (asset or {}).get("asset_id"),
                         "source": (asset or {}).get("source"),
@@ -3874,6 +3884,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         "template": hook_tpl.id,
                         "renderer": hook_tpl.renderer,
                         "hook": True,
+                        **_shot_grounding(hook_tpl, hook_block),
                         "file": prep["file"],
                         "asset_id": asset.get("asset_id"),
                         "source": asset.get("source"),
@@ -3938,6 +3949,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 fs_params["enter_delay"] = max(
                     float(fs_params.get("enter_delay") or 0),
                     float(onset) + 0.05 - float(slot["start"]))
+            fs_traits = block_traits(str(block.get("text") or ""))
             entry.update({
                 "content": content,
                 "template": template.id,
@@ -3947,6 +3959,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "carries_line": True,
                 "accent_word": _fullscreen_accent(content, block),
                 "accent_family": accent_family(block),
+                "traits": sorted(fs_traits) if fs_traits else [],
+                "grounded_on": sorted(matched(template.needs, fs_traits)),
                 "file": bg_file,
                 "asset_id": (asset or {}).get("asset_id"),
                 "source": (asset or {}).get("source"),

@@ -45,8 +45,8 @@ def main(argv: list[str]) -> int:
         if report.get("status") != "ok":
             _fail(problems, f"статус прогона {report.get('status')!r}, ожидался ok")
         for variant, qc in (report.get("qc") or {}).items():
-            if qc.get("total") != 19:
-                _fail(problems, f"{variant}: проверок {qc.get('total')}, §11.1 требует 19")
+            if qc.get("total") is None or int(qc.get("total") or 0) < 19:
+                _fail(problems, f"{variant}: проверок {qc.get('total')}, §11.1 требует ≥19")
             if not qc.get("passed"):
                 failed = [f["id"] for f in qc.get("failed", [])]
                 _fail(problems, f"{variant}: провалены проверки {failed}")
