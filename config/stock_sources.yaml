@@ -9,17 +9,27 @@ sources:
     license: "public-domain"          # §10.4: в основном PD
     license_check: per_item           # часть материалов NASA — чужие, проверяем
     attribution_required: false
-    notes: "Логотипы NASA нельзя использовать как знак поддержки/одобрения."
+    notes: >
+      NASA Images API — PD generally, но 3rd-party без поля прав в API.
+      Фильтр текстовых «copyright …»; не качать meatball/worm как бренд.
+      Берём ~large/~medium и короткая сторона ≤1080. SVS можно (есть width/height), 4K режем.
     api_base: "https://images-api.nasa.gov"
     media: [video, photo]
 
   esa:
-    kind: api
-    enabled: true
-    license: "ESA-CC-BY-SA-3.0-IGO"
+    kind: html
+    enabled: false                    # нет public search API; yaml не врёт про live
+    live: false
+    research_only: true
+    license: "ESA Standard Licence"
     license_check: per_item
     attribution_required: true
-    api_base: "https://www.esa.int"
+    on_screen_credit: true
+    notes: >
+      Default esa.int multimedia = ESA Standard Licence (editorial/educational
+      social OK; commercial entertainment/ads нужен written authorisation).
+      Это НЕ CC-BY-SA на весь esa.int. Публичного ESA multimedia API нет
+      (HTML dlmultimedia.esa.int). Live выключен. Космос: Hubble/Webb/ESO CC BY 4.0.
     media: [video, photo]
 
   freepik:
@@ -27,12 +37,13 @@ sources:
     enabled: true
     license: "Freepik License"
     license_check: per_item           # часть каталога свободна, часть по подписке
-    attribution_required: false
+    attribution_required: true            # free tier Freepik требует attribution
     notes: >
       Доступен по подписке Magnific тем же ключом. Скачивание из каталога не
       стоит кредитов — в отличие от генерации (от 140 кредитов за 5 сек видео),
-      поэтому идёт первым в очереди. Материал с premium: true доступен, пока
-      действует подписка; это помечается в манифесте.
+      поэтому идёт первым в очереди. Смотреть licenses[].type: free требует
+      attribution; editorial-only не в monetized Short. Материал с premium: true
+      доступен, пока действует подписка; это помечается в манифесте.
     api_base: "https://api.freepik.com/v1"
     media: [video, photo]
 
@@ -61,20 +72,68 @@ sources:
 
   mixkit:
     kind: catalog
-    enabled: true
-    license: "Mixkit Free License"
-    license_check: source_default
+    enabled: false                    # per-item не парсится → не live
+    live: false
+    license: "Mixkit per-item (videoFree | videoRestricted)"
+    license_check: per_item
     attribution_required: false
     restrictions:
-      - "бесплатно для коммерции, нельзя распространять как сток"
+      - "videoRestricted нельзя на monetized канал"
+      - "live выключен, пока нет парсера data-license (SHOULD-003)"
+    notes: >
+      Лицензия per-item: data-license=videoFree|videoRestricted. Restricted =
+      нельзя monetized. Публичного API нет. Mock остаётся для тестов; в routing
+      mixkit не вызывается.
     media: [video]
+
+  hubble:
+    kind: json
+    enabled: false                    # клиент JSON — SHOULD-004, не этот тикет
+    live: false
+    license: "CC BY 4.0"
+    license_check: source_default
+    attribution_required: true
+    on_screen_credit: true
+    notes: >
+      ESA/Hubble images JSON, CC BY 4.0. Кредит в кадре или end card, не только
+      в description. Live не включаем без клиента.
+    media: [photo, video]
+
+  webb:
+    kind: json
+    enabled: false
+    live: false
+    license: "CC BY 4.0"
+    license_check: source_default
+    attribution_required: true
+    on_screen_credit: true
+    notes: >
+      ESA/Webb images JSON, CC BY 4.0. Кредит в кадре или end card.
+      Videos JSON webb — не подтверждено, не live.
+    media: [photo]
+
+  eso:
+    kind: json
+    enabled: false
+    live: false
+    license: "CC BY 4.0"
+    license_check: source_default
+    attribution_required: true
+    on_screen_credit: true
+    notes: >
+      ESO public images/videos JSON, CC BY 4.0. Кредит в кадре или end card.
+      Сервер иногда 400 без browser UA. Live не включаем без клиента.
+    media: [photo, video]
 
   internet_archive:
     kind: api
     enabled: true
-    license: "varies"
+    license: "varies"                 # PD / CC0 / BY / BY-SA; NC/ND и пустой licenseurl — drop
     license_check: per_item           # §10.4, R-10 — попозиционно, обязательно
     attribution_required: true
+    notes: >
+      Whitelist: publicdomain, CC0, CC BY, CC BY-SA. NC/ND и пустой licenseurl
+      не подтверждены. Wikimedia per-item LicenseShortName — не этот клиент.
     api_base: "https://archive.org"
     media: [video, photo]
 
@@ -116,15 +175,15 @@ sources:
 # за 5 секунд видео против нуля за скачивание из каталога. Freepik стоит рядом
 # с бесплатными стоками, потому что он тоже каталог, а не генератор.
 routing:
-  space:      [nasa, esa, internet_archive, freepik, magnific]
-  astro:      [nasa, esa, internet_archive, freepik, magnific]
+  space:      [nasa, internet_archive, freepik, magnific]
+  astro:      [nasa, internet_archive, freepik, magnific]
   news:       [pexels, freepik, internet_archive, magnific]
   lab:        [freepik, pexels, pixabay, magnific]
   biotech:    [freepik, pexels, pixabay, magnific]
   medicine:   [freepik, pexels, pixabay, magnific]
-  city:       [pexels, freepik, mixkit, pixabay]
-  people:     [pexels, freepik, mixkit, pixabay]
-  reportage:  [pexels, freepik, mixkit, pixabay]
+  city:       [pexels, freepik, pixabay]
+  people:     [pexels, freepik, pixabay]
+  reportage:  [pexels, freepik, pixabay]
   servers:    [freepik, pexels, magnific]
   interface:  [freepik, pexels, magnific]
   archive:    [internet_archive]

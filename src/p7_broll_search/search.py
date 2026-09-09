@@ -165,9 +165,83 @@ def _load_routing(cfg) -> dict[str, Any]:
         return yaml.safe_load(fh) or {}
 
 
+def _source_enabled(name: str, routing: dict[str, Any] | None) -> bool:
+    """False when yaml says enabled: false — disabled donors stay research-only."""
+    spec = ((routing or {}).get("sources") or {}).get(name)
+    if spec is None:
+        return True
+    return bool(spec.get("enabled", True))
+
+
 def _sources_for(intent_kind: str, routing: dict[str, Any]) -> list[str]:
     table = routing.get("routing", {})
-    return list(table.get(intent_kind) or table.get("default", ["pexels"]))
+    names = list(table.get(intent_kind) or table.get("default", ["pexels"]))
+    return [n for n in names if _source_enabled(n, routing)]
+
+
+def live_unconfirmed_sources(routing: dict[str, Any] | None) -> list[str]:
+    """Live routing ∩ donors whose yaml license is unconfirmed or a known lie.
+
+    MUST-027: esa.int as CC-BY-SA and Mixkit as source_default live = ∅.
+    """
+    routing = routing or {}
+    sources = routing.get("sources") or {}
+    routed: set[str] = set()
+    for names in (routing.get("routing") or {}).values():
+        for name in names or []:
+            if _source_enabled(str(name), routing):
+                routed.add(str(name))
+    bad: list[str] = []
+    for name in sorted(routed):
+        spec = sources.get(name) or {}
+        lic = str(spec.get("license") or "")
+        if spec.get("research_only") or spec.get("live") is False:
+            bad.append(name)
+            continue
+        if spec.get("license_unconfirmed"):
+            bad.append(name)
+            continue
+        if "ESA-CC-BY-SA" in lic or (name == "esa" and "CC-BY-SA" in lic.upper()):
+            bad.append(name)
+            continue
+        if name == "mixkit" and str(spec.get("license_check") or "") != "per_item":
+            bad.append(name)
+    return bad
+
+
+def _restricted_license_reason(candidate: Any) -> str | None:
+    """Mixkit videoRestricted and similar per-item bans before download."""
+    meta = candidate.meta if isinstance(getattr(candidate, "meta", None), dict) else {}
+    data_license = str(meta.get("data-license") or meta.get("data_license") or "")
+    lic = " ".join([
+        str(getattr(candidate, "license", "") or ""),
+        data_license,
+        str(meta.get("license") or ""),
+    ]).lower()
+    compact = re.sub(r"[^a-z0-9]+", "", lic)
+    source = str(getattr(candidate, "source", "") or "").lower()
+    if "videorestricted" in compact or data_license.lower() == "videorestricted":
+        return "Mixkit Restricted — нельзя на monetized канал"
+    if source == "mixkit" and "restricted" in lic:
+        return "Mixkit Restricted — нельзя на monetized канал"
+    return None
+
+
+def missing_on_screen_credit(asset: dict[str, Any],
+                             routing: dict[str, Any] | None) -> str | None:
+    """Hubble/Webb/ESO CC BY 4.0: credit in frame/end card, not description-only."""
+    source = str((asset or {}).get("source") or "").strip()
+    spec = ((routing or {}).get("sources") or {}).get(source) or {}
+    if not spec.get("on_screen_credit"):
+        return None
+    credit = " ".join([
+        str((asset or {}).get("credit") or ""),
+        str((asset or {}).get("attribution") or ""),
+    ]).strip()
+    if credit:
+        return None
+    return (f"{source}: нужен кредит в кадре (CC BY 4.0), "
+            "не только YouTube description")
 
 
 def _license_mode(source: str, routing: dict[str, Any]) -> str:
@@ -189,6 +263,11 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
     if (not candidate.license_confirmed
             and _license_mode(candidate.source, routing or {}) != "owner_decision"):
         return "лицензия не подтверждена (§7.2.7)"
+    restricted = _restricted_license_reason(candidate)
+    if restricted:
+        return restricted
+    if not _source_enabled(str(candidate.source or ""), routing or {}):
+        return f"источник {candidate.source} выключен (research-only / нет проверенной лицензии)"
     max_h = int(cfg.get("stock.max_download_height", 1080))
     if short_side_over_cap(candidate.width, candidate.height, max_h):
         return f"разрешение выше {max_h}p — по §3.6.1 не берём"
