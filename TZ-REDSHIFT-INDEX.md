@@ -11,7 +11,7 @@
 | Класс | Кол-во | ID |
 |---|---|---|
 | MUST | 28 | MUST-001 … MUST-028 |
-| SHOULD | 8 | SHOULD-001 … SHOULD-008 |
+| SHOULD | 11 | SHOULD-001 … SHOULD-011 |
 | LATER | 6 | LATER-001 … LATER-006 |
 | DELETE (файлы шаблонов + intents) | 9 уже retired + 16 активных к выпилу/гейту | §9 GROK |
 | Новые шаблоны (только дыра ниши) | 5 кандидатов, не «на всякий случай» | §9 GROK |
@@ -34,7 +34,7 @@
 3. **DELETE + таксономия** — MUST-010 … MUST-014 + §9.
 4. **Карты / бренд / SFX карт** — MUST-015, 021, 022, 024.
 5. **Статья / топик** — MUST-023, SHOULD-005.
-6. **Живость аватара** — MUST-008, 009; жесты HeyGen — LATER-001 (**не подтверждено** API).
+6. **Живость аватара** — MUST-008, 009, 028; `motion_prompt` — SHOULD-009 (поля §8.1 GROK). Enum-жесты — LATER-001.
 
 После каждого тикета: `pytest` затронутого пакета + `python -m src.cli validate` на `scripts/redshift_0042.json` и `scripts/redshift_0047.json`.
 
@@ -77,33 +77,36 @@
 |---|---|
 | SHOULD-001 | `meta.hook` обязателен в схеме (сейчас только 0042) |
 | SHOULD-002 | Ken Burns / push_in привязка к punch-словам, не только таймер 2.5 с |
-| SHOULD-003 | Mixkit: либо живой провайдер, либо убрать из live-роутинга (сейчас MockStock даже в live) |
-| SHOULD-004 | ESA: yaml есть, live-провайдера в `stock.py` нет |
-| SHOULD-005 | RSS генетики/медицины — **после** MUST-027, URL не выдумывать |
+| SHOULD-003 | Mixkit: парсить `videoFree`/`videoRestricted` или выключить live |
+| SHOULD-004 | Hubble/Webb/ESO JSON, не выдуманный ESA API; esa.int ≠ CC-BY-SA |
+| SHOULD-005 | RSS genetics/medicine из GROK §8.1 (Nature subjects, PLOS, eLife, …) |
 | SHOULD-006 | Категории schema: physics / genetics / molecular **или** явная карта на `science` |
 | SHOULD-007 | FrequencyBudget: signature не saturates на 80% после 4 пиков так, что variant/rare не живут |
 | SHOULD-008 | Screen-templates schema (`notepad`, `patent_card`) согласовать с assemble mapping |
+| SHOULD-009 | HeyGen v3 `motion_prompt` + `expressiveness` (photo/IV); webm alpha; не enum |
+| SHOULD-010 | ElevenLabs v3: без SSML break / speed / similarity; character timestamps |
+| SHOULD-011 | Не копировать кликбейт бенчмарка; Astrum-like NASA still + in-frame credit |
 
 ## LATER
 
 | ID | Почему LATER |
 |---|---|
-| LATER-001 | Жесты / look-at / руки HeyGen — поля API **не подтверждено** |
+| LATER-001 | Нет enum/timeline жестов и camera API — не ждать |
 | LATER-002 | Смена voice_id / клонов без отдельного тикета запрещена |
 | LATER-003 | Полноценный mouth-vs-audio lip-sync (нет сигнала в текущем QC) |
 | LATER-004 | Word-locked внутренние события на всех KB (после SHOULD-002) |
 | LATER-005 | Новые оркестраторы / новый пайплайн — запрещено конституцией |
-| LATER-006 | Бенчмарк чужих Shorts / внешние лицензионные URL — субагент **не подтверждено** |
+| LATER-006 | Копировать формат Veritasium/ТОПЛЕС «потому что просмотры» |
 
 ## Топ дыр (честно, код не перечитывался повторно)
 
 1. `src/lib/render/hyperframes/templates.py` ~14k строк — не прочитан целиком; 439 off-brand hex из 876.
 2. Большинство renderer’ов HyperFrames и `compositor.py` (ffmpeg-путь) — не разобраны покадрово.
 3. `src/p9_generate` / generation provider — не полный аудит промптов.
-4. ESA в `stock_sources.yaml`, live-клиента нет — поведение на проде **частично** известно.
-5. Mixkit = MockStock в live — факт кода; лицензия Mixkit **не подтверждено** внешним субагентом.
-6. Жесты HeyGen / EL v3 gesture fields — **не подтверждено**.
-7. Каталог GLM / Grok Vision field list — **не подтверждено** (в коде `allow_xai: false`, primary/arbiter = gemini).
+4. ESA esa.int: нет public API, Standard Licence ≠ CC-BY-SA в yaml.
+5. Mixkit: MockStock в live; лицензия **per-item** Free vs Restricted (монетизация).
+6. HeyGen: `motion_prompt` есть; enum жестов **нет**; transparent = webm; v2 EOL 31.10.2026.
+7. GLM: `api.z.ai/api/paas/v4/` + GLM-4.6V-Flash; `json_object` на VLM **не подтверждено**. xAI: grok-4.6, не grok-2-vision.
 8. `template_scenarios.index.json` в репо **нет** (упоминается в старых docs).
 9. `assets/`, `cache/`, `output/` не сканировались (запрет сессии).
 10. `docs/` (vNEXT) отстаёт от `instruction.md`; часть Q2 уже в коде (FrequencyBudget, hook picker, skip_vision).
@@ -112,7 +115,7 @@
 
 - **M-HOOK** MUST-001…003, SHOULD-001
 - **M-SYNC** MUST-004…006, MUST-026
-- **M-AVATAR** MUST-008, 009, 028
+- **M-AVATAR** MUST-008, 009, 028, SHOULD-009, 010
 - **M-TEMPLATES** MUST-010…014, SHOULD-007, §9
 - **M-CARDS** MUST-015, 021
 - **M-SEARCH** MUST-016…018, SHOULD-003, 004

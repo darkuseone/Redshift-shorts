@@ -4,7 +4,7 @@
 
 Соседний индекс: `TZ-REDSHIFT-INDEX.md`.
 
-Если факт не подтверждён чтением файла в этой сессии или явным правилом заказчика — в карточке стоит **«не подтверждено»**. Внешние субагенты (лицензии стоков, бенчмарк Shorts, поля API HeyGen/EL/GLM) в этот документ **не прислали payload** — их URL, цифры каналов и списки полей API **не выдумывать**.
+Если факт не подтверждён чтением файла, правилом заказчика или §8.1 (проверка docs **2026-09-09**) — в карточке стоит **«не подтверждено»**. Не выдумывать поля API и URL сверх §8.1.
 
 ---
 
@@ -34,7 +34,7 @@
 5. Тупой поиск футажа.
 6. Слишком много шаблонов, нет смысла (world-map на «миров», NK на CTA, chat на «нейросет», beat-freeze на «бит»).
 7. Карты / VFX off-brand (жёлтый, mint, GitHub-dark, розовый 0047).
-8. Деревянный аватар (жесты API — LATER, **не подтверждено**).
+8. Деревянный аватар (геометрия — MUST-009; живность — SHOULD-009 `motion_prompt`, не enum-жесты).
 9. SFX мимо / кровати повторяются.
 10. Слишком много генерации.
 
@@ -91,12 +91,12 @@
 | G08 | 5 поиск | P7, P8 | `search.py`, `judge.py` | Запросы = script EN + CONCEPTS + role metaphors + pads. Палитра после download. Mixkit mock. Arbiter на каждый evidence/twist. дыры → text/gen | **S0** MUST-016…020 |
 | G09 | 6 шаблоны | P11, picker | `template_scenarios.json`, `templates.py`, FrequencyBudget | 204 / 105 intents; empty triggers always-fire; geo-generic weight 2 тянет NK/Spain/US | **S0** MUST-010…013 |
 | G10 | 7 бренд | HF, P12 | `templates.py` hex; QC-30; instruction changelog yellow/mint | 876 off-brand hex. Нет QC чужого hue в оверлеях HF (только footage palette + accent share) | **S0** MUST-021,013 |
-| G11 | 8 дерево | P2, P6 | `providers/avatar.py` | Нет gestures в payload. Mock RMS. API жестов **не подтверждено** | **LATER** LATER-001 |
+| G11 | 8 дерево | P2, P6 | `providers/avatar.py` | Нет `motion_prompt`/`expressiveness` в payload. Mock RMS. API: free-text `motion_prompt` (v3), enum-жестов нет (§8.1) | **S1** SHOULD-009 |
 | G12 | 9 звук | P10 | `audio_build.py`, `sfx_library.py` | Density collapse ест card SFX. Кровать не банится по соседнему ролику | **S0** MUST-022 |
 | G13 | 10 gen | P9, P12, docs | `generate.py`, QC-14, instruction §5.9, `config.yaml` | 0.35 / 40% / заказчик **10%**. Empty после 3 фейлов уже есть | **S0** MUST-007 |
 | G14 | hard-rule bypass | P12 | `vision_qc.py`, QC-17, QC-21 | Зелёный QC при мусоре на глазу | **S0** MUST-024 |
 | G15 | VFX cap drift | P11/config | instruction §1.10 vs `bg_vfx_per_video: 6` | Docs и конфиг врут друг другу | **S0** MUST-021,024 |
-| G16 | доноры | config | `sources.yaml`, `stock_sources.yaml` | Нет genetics/medicine RSS. ESA yaml без клиента. Лицензии URL **не подтверждено** | **S0** MUST-027 |
+| G16 | доноры | config | `sources.yaml`, `stock_sources.yaml` | Нет genetics/medicine RSS в yaml. ESA yaml помечает CC-BY-SA — **неверно** (Standard Licence). Mixkit per-item Restricted. Фиды §8.1 | **S0** MUST-027 |
 
 Слоты S1–S3 не открываются, пока S0 по жалобе не закрыт тестом.
 
@@ -143,6 +143,8 @@
 **Корень.** `src/p5_replan/replanner.py` (логика первого слота / `punch_in`); `src/p12_render_qc/qc.py` QC-29; сценарии с `avatar: on` на hook-блоке.
 
 **Изменение.** Правило: интервал **[0.00, 1.00)** не может быть `role=avatar` / talking-head full-frame. Допустимы: card / b-roll / title / freeze кадра, не лицо. QC-29 (или новый QC-hook-face) **blocking**, если в первую секунду лицо аватара занимает кадр. P1/P5 не планируют avatar-слот, стартующий <1.0 с.
+
+Бенчмарк §8.1: Cleo Abram / Dr Ben Miles открывают talking head и набирают просмотры — **не копировать**. Референс канала: Astrum — полнокадровый NASA-кадр с 0 с + кредит в кадре, лицо 0:100. YouTube «ровно 3 с» как платформенный порог **не публикует**; наши 3 с — playbook, не миф VidIQ.
 
 **Можно:** `planner.py`, `replanner.py`, `qc.py`, тесты.  
 **Нельзя:** запрещать аватар во всём хуке после 1.0 с; менять `compose_zoom` здесь (это MUST-009).
@@ -501,11 +503,10 @@
 
 **Изменение.**
 1. Cheap (без LLM): ≥**50%** входящего пула kill (цель 50–60%). Если cheap kill <50% на фикстуре с заведомым мусором — фильтр дырявый, тикет не закрыт.
-2. Mid: адаптер **GLM** (OpenAI-совместимый или тот клиент, что уже есть в `src/providers/` для других моделей). URL/ключ — из env, **не хардкодить endpoint из головы**. Если в репо уже есть glm/zhipu/openrouter helper — использовать; если нет — тонкий клиент в `src/providers/`, не новый оркестратор.
-3. Grey zone **только** score ∈ **[0.45, 0.70]** идёт на второй модели. Заказчик сказал Grok Vision — включить `allow_xai` **только** для этой зоны, не для всех. Пока xAI ключа нет — grey идёт на GLM-secondary **или** reject в empty; **не** молча gemini-arbiter на всё.
-4. `arbiter_max_calls` снизить (разумный потолок ≤3 на ролик, не 8). Точное число — config + тест.
-
-Поля API GLM/Grok **не подтверждено** субагентом — не выдумывать JSON schema провайдера сверх того, что уже есть для Gemini в коде (повторить паттерн существующего vision call).
+2. Mid: адаптер **GLM vision** по паттерну существующего Gemini-вызова. Endpoint intl (docs 2026-09-09): `POST https://api.z.ai/api/paas/v4/chat/completions`, `Authorization: Bearer`, OpenAI SDK `base_url="https://api.z.ai/api/paas/v4/"`. Картинка: `{"type":"image_url","image_url":{"url": <http или base64>}}`; лимит ≤5 MB, ≤6000×6000, jpg/png/jpeg. Модель по умолчанию: **GLM-4.6V-Flash** (intl Free) или `GLM-4.6V` если Flash недоступен. CN `open.bigmodel.cn` не использовать. Ключ — env, не хардкод.
+3. Grey zone **только** score ∈ **[0.45, 0.70]** идёт на второй модели. Grok: модель с официальной страницы xAI на дату тикета (на 2026-09-09 vision есть у **grok-4.6**; `grok-4-fast` / `grok-2-vision` на models page **нет** — не слать). `allow_xai` только для grey. Без ключа — GLM-secondary или empty, **не** gemini-arbiter на всё.
+4. `arbiter_max_calls` ≤3 на ролик (config + тест).
+5. `response_format: json_object` официально для **text** GLM; для 4.6V/4.5V — **не подтверждено**. Парсить JSON из текста vision, не требовать `json_schema` (его нет). Rate limit intl — **не подтверждено** (только консоль).
 
 **Можно:** judge.py, providers, config, cost_report, тесты.  
 **Нельзя:** vision до cheap; Grok на каждый evidence.
@@ -692,22 +693,25 @@
 **Жалоба:** 5  
 **Зависимости:** —
 
-**Проблема.** Нет RSS genetics/medicine. ESA в yaml, клиента нет. Mixkit в live = MockStock. Внешний аудит лицензий **не подтверждено**. Нельзя вписывать URL «из памяти».
+**Проблема.** Нет RSS genetics/medicine в yaml. `stock_sources.yaml` помечает ESA как CC-BY-SA — это **неверно**: default esa.int = ESA Standard Licence (editorial/educational social OK; commercial entertainment/ads нужен written auth). Mixkit в live = MockStock; у клипов две лицензии (`videoFree` vs `videoRestricted`). NASA PD «generally», но 3rd-party нет поля прав в API.
 
 **Корень.** `config/sources.yaml`, `config/stock_sources.yaml`, `src` stock providers.
 
-**Изменение.** Тикет = **research + yaml + тест**, не список выдуманных фидов.
-1. Для каждого нового донора: поле `license`, `attribution`, `url` только после открытия robots/terms **в diff-комментарии/доке с датой**; если не открыли — запись `status: unconfirmed` и **не** включать в live routing.
-2. ESA: либо клиент как у NASA, либо yaml `enabled: false` + SHOULD-004.
-3. Mixkit: либо не live, либо настоящий клиент после лицензии (SHOULD-003). До подтверждения — не качать mixkit как «реальный сток».
-4. Генетика/медицина: **0 новых URL в этом тикете**, если верификации нет. Тогда явный `gaps.md`/секция instruction «дырка канала» + MUST-023 TOPIC не ищет по пустому.
+**Изменение.** Влить §8.1, не выдумывать новые URL.
+1. Исправить yaml ESA: `license` не CC-BY-SA на весь esa.int; `enabled: false` для esa.int multimedia **или** только editorial-флаг + attribution «©ESA». Для космоса предпочесть **ESA/Hubble и ESA/Webb JSON** (CC BY 4.0, кредит **в кадре или end card**, не только YouTube description) и **ESO** JSON CC BY 4.0.
+2. NASA: фильтр `q=copyright` / текстовых «copyright …»; не качать meatball/worm как бренд; `~large`/`~medium` + проверка height ≤1080. NASA SVS — можно (есть `width/height`), резать 4K.
+3. Mixkit: live только с парсингом `data-license`; **reject `videoRestricted`**. Иначе оставить mock и `enabled: false` в live routing (SHOULD-003).
+4. Magnific/Freepik: смотреть `licenses[].type`; free tier **требует attribution**; editorial-only не в monetized Short без флага.
+5. Internet Archive: whitelist PD/CC0/BY/BY-SA; NC/ND и пустой `licenseurl` — drop. Wikimedia: per-item `LicenseShortName`; только WebM/OGV (свой транскод). CERN: только CC BY 4.0 subset, не default CERN terms.
+6. RSS фактов — allowlist §8.1 в `sources.yaml` (Nature subject, ScienceDaily topics, Quanta, PLOS, eLife, Space.com, Science News, NIH с оговоркой 403). **Не** включать: New Scientist (robots запрещают scraping), EurekAlert (нет рабочего RSS), science.org/cell/phys.org как screenshot-pipeline (Cloudflare). bioRxiv/medRxiv — только с меткой `preprint`.
+7. JAXA permission-gated — не добавлять. Copernicus Sentinel — можно imagery с кредитом «Contains modified Copernicus Sentinel data [Year]», API **не подтверждено** в этой сессии → не включать live без клиента.
 
-**Можно:** yaml, provider enable flags, instruction sources, тесты «disabled не зовётся».  
-**Нельзя:** выдумать Nature-clone RSS.
+**Можно:** yaml, provider flags, Hubble/Webb/ESO JSON client по паттерну существующих, тесты.  
+**Нельзя:** выдумать ESA search API; помечать весь ESA как CC-BY-SA; качать Mixkit Restricted.
 
-**Тест + CLI.** Mixkit в live-режиме не ходит во внешний HTTP (остаётся mock) **или** тест лицензионного флага. ESA disabled → 0 calls. pytest providers.
+**Тест + CLI.** ESA yaml больше не `CC-BY-SA` на esa.int. Mixkit Restricted → stage1 fail. Hubble/Webb item без on-screen credit plan → QC/report warn (кредит обязателен). RSS genetics Nature/ScienceDaily URL в yaml → HTTP 200 mock. pytest providers.
 
-**Приёмка.** Live routing ∩ `unconfirmed` = ∅. В ТЗ/instruction список дыр честный.
+**Приёмка.** Live routing ∩ `unconfirmed` = ∅. Лицензия в yaml совпадает с §8.1.
 
 ---
 
@@ -746,15 +750,23 @@
 
 ### SHOULD-003 — Mixkit live vs mock
 
-Факт: Mixkit = MockStock в live. Лицензия **не подтверждено**. Либо выкинуть из live routing, либо клиент после MUST-027. Не оставлять «кажется сток».
+Факт кода: Mixkit = MockStock в live. Лицензия **подтверждена** (2026-09-09): на item `data-license="videoFree|videoRestricted"`; Restricted = **нельзя monetized каналы**. HTML catalog, публичного API нет. 720 / 1080 / 4K файлы есть — брать ≤1080. Либо парсер + reject Restricted, либо `enabled: false` в live. Не оставлять «кажется сток».
 
-### SHOULD-004 — ESA live provider
+### SHOULD-004 — ESA / Hubble / Webb / ESO, не выдуманный ESA API
 
-Yaml обещает ESA. `stock.py` live-клиента нет. Реализовать по паттерну NASA **или** `enabled: false`. Лицензия/API **не подтверждено** — не выдумывать endpoint.
+Yaml обещает ESA. Live-клиента esa.int в `stock.py` нет. Публичного ESA multimedia API **нет** (HTML `dlmultimedia.esa.int`). Не изобретать search endpoint. Для космоса: `https://esahubble.org/images/json/`, `/videos/json/`, `https://esawebb.org/images/json/` (videos JSON webb — **не подтверждено**), ESO `https://www.eso.org/public/images/json/` и `/videos/json/` (сервер иногда 400 без browser UA). esa.int Standard Licence ≠ CC-BY-SA (MUST-027). Кредит Hubble/Webb/ESO — **в кадре или end card**, description-only явно запрещён их copyright pages.
 
-### SHOULD-005 — RSS genetics/medicine
+### SHOULD-005 — RSS genetics/medicine из §8.1
 
-Только после верификации URL (MUST-027). Пока **не подтверждено** — не заполнять yaml «известными» журналами из головы.
+Allowlist уже проверен 2026-09-09. В `sources.yaml` (после MUST-027) можно добавить, не выдумывая другие URL:
+
+- Nature: `https://www.nature.com/subjects/genetics.rss`, `.../medical-research.rss`, `.../molecular-biology.rss` (+ physics / astronomy-and-planetary-science для канала). UA-sensitive, follow 303. og:image нестабилен → screenshot/DOI card.
+- ScienceDaily: `.../rss/health_medicine/genes.xml` **404**; брать `.../rss/plants_animals/molecular_biology.xml`, `.../rss/top/health.xml`.
+- NIH: `https://www.nih.gov/news-releases/feed.xml` (с datacenter часто **403**).
+- PLOS Biology/ONE Atom, eLife `https://elifesciences.org/rss/recent.xml`.
+- bioRxiv `http://connect.biorxiv.org/biorxiv_xml.php?subject=genetics` — **PREPRINT**, не peer-reviewed.
+
+Не добавлять: New Scientist (robots запрет scraping), EurekAlert, science.org/cell как server-side screenshot.
 
 ### SHOULD-006 — категории schema
 
@@ -768,17 +780,41 @@ Variant/rare должны реально выпадать. Тикет после
 
 Схема знает `notepad`, `patent_card`, `chat_ai`; assemble — `browser, search, chat, paper, arxiv`. Согласовать имена, мёртвые — удалить из схемы.
 
+### SHOULD-009 — HeyGen `motion_prompt` / `expressiveness` (жалоба 8)
+
+**После** MUST-009 (геометрия). Docs 2026-09-09, не enum из головы.
+
+В `providers/avatar.py` сейчас: `avatar_id`, `avatar_style: normal`, `engine`, `model_version`, audio URL. v2 `engine`/`model_version` **не существуют**; это поля **v3** (`engine.type` = `avatar_iii` | `avatar_iv` (default) | `avatar_v`). v1/v2 EOL **31 Oct 2026**.
+
+Разрешено добавить:
+- `motion_prompt`: **free-text** (calm/serious/warm; wave/point/thumbs up; `look at camera` / `look off-camera`). Photo avatars: Avatar IV **и** V. Video/digital twin: **только** `avatar_v` (IV → reject). Кастомный motion ≤**10 с**, дальше loop/hold. Нет per-word timeline, нет JSON enum жестов. Preset Expression/Gesture/Gaze вкладки — **UI-only**.
+- `expressiveness`: `high` | `medium` | `low` (default `low`) — **только photo + Avatar IV**; на `avatar_v` → 400. Не слать на video twin.
+- Framing: v3 `fit` `cover`|`contain`, `aspect_ratio` `9:16`, `resolution` `1080p` → 1080×1920. Нет numeric gaze API. Cinematic Avatar (4–15 с, без script) **не** наш пайплайн.
+- Прозрачность: не `background.type: transparent` (в v2 такого type нет). v3: `output_format: "webm"` VP9 alpha; mp4 без альфы; любой `background` с webm → reject. Сверить текущий payload.
+
+Запрещено: `gesture: wave` как поле; zoom/pan/walk/props через prompt (docs: cannot); слать `expressiveness` на Avatar V.
+
+Тест: snapshot payload содержит `motion_prompt` string из роли блока (не хардкод «кубит»); video-twin + avatar_iv без prompt не 400; photo+IV может иметь expressiveness.
+
+### SHOULD-010 — ElevenLabs v3: не слать мёртвые поля
+
+Код: `stability 0.30`, `style 0.45`, `eleven_v3`. Docs 2026-09-09: у v3 **нет** Speed / Similarity / Speaker Boost; SSML `<break>` **не поддерживается** (паузы = многоточия и audio tags). `style` на v3 — **не подтверждено**. Timestamps: character-level `alignment.characters[]` + start/end seconds, word-level считать самим. Tags: `[sighs]`, `[whispers]`, `[curious]` и т.д. — не кликбейт, не `[shouts]` в quiet awe. Не менять `voice_id` (LATER-002). Тест: v3 request без `speed`/`similarity_boost`/`use_speaker_boost`; punch hold остаётся P3, не SSML.
+
+### SHOULD-011 — не копировать кликбейт бенчмарка
+
+§8.1: ТОПЛЕС жёлтое караоке, Dr Ben Miles CAPS «VACCINE FOR CANCER», Hank 100% selfie — **rejected_patterns**. Astrum/Cleo in-frame `NASA` credit — да (MUST-015). Петля раздувает public views, не engaged views (YouTube 2025–2026) — MUST-003 структурная петля, не «зациклить ради счётчика».
+
 ---
 
 ## 5. LATER
 
-### LATER-001 — жесты HeyGen / look-at / руки
+### LATER-001 — timestamped / enum жесты, camera API, viseme
 
-В `providers/avatar.py` полей нет. Список API **не подтверждено**. Запрещено «добавить `gesture: wave` наугад». Сначала прочитать актуальный HeyGen API (вне этой сессии). Жалоба 8 частично остаётся, пока нет факта.
+Структурированных gesture/expression/gaze enum, per-word gesture timeline, numeric eye-direction и camera zoom/pan в HeyGen API **нет** (2026-09-09). Free-text — SHOULD-009. Не ждать «когда появятся enum».
 
 ### LATER-002 — смена голоса / клонов
 
-`voice_pool` два клона. Без отдельного тикета заказчика не трогать `voice_id`, stability/style только если отдельный звуковой тикет.
+`voice_pool` два клона. Без отдельного тикета заказчика не трогать `voice_id`. v3 `style` **не подтверждено** — не крутить 0.45 «для эмоции» без SHOULD-010.
 
 ### LATER-003 — mouth vs audio lip-sync
 
@@ -792,9 +828,9 @@ QC-11 этого не умеет. Нужен сигнал viseme/landmarks, ко
 
 Конституция запрещает. Если всплывёт в diff — reject.
 
-### LATER-006 — внешний бенчмарк Shorts / лицензионные URL субагентов
+### LATER-006 — копировать формат чужого канала
 
-Payload субагентов **не подтверждено**. Не вносить цифры просмотров, «как у Veritasium», списки сайтов.
+Факты бенчмарка в §8.1. Запрещено закрывать тикет фразой «как у Veritasium/ТОПЛЕС». Quiet awe + brandbook.
 
 ---
 
@@ -814,7 +850,7 @@ Payload субагентов **не подтверждено**. Не вноси�
 5. **Статья / топик**  
    MUST-023 (+ SHOULD-001, SHOULD-005 по мере фактов)
 6. **Живость аватара сверх геометрии**  
-   LATER-001 только после подтверждённого API
+   SHOULD-009 (`motion_prompt`) → SHOULD-010 (EL v3 tags). Enum-жесты — LATER-001.
 
 Не начинать шаблоны до QC-ворот: иначе «красивый» picker всё равно уедет в success с хуком 7 с.
 
@@ -878,8 +914,25 @@ pytest tests/ -q --tb=short -k '<marker>'
 
 **Не сканировалось:** `assets/`, `cache/`, `output/`.
 
-**Субагенты (лицензии, Shorts benchmark, HeyGen/EL/GLM fields): не подтверждено.**  
-Не вставлять URL, цифры каналов, имена полей API из памяти модели.
+### 8.1 Внешние факты (проверка 2026-09-09)
+
+Не повторять полный dump субагентов в diff-ах. Ниже — **разрешённые** поля и URL для тикетов. Что не в таблице — не подтверждено.
+
+**HeyGen** (v2 archive 2025-10-06 + developers.heygen.com v3): `avatar_style` `normal|circle|closeUp`; v3 `engine.type` `avatar_iii|avatar_iv|avatar_v`; `motion_prompt` free-text; `expressiveness` `high|medium|low` photo+IV only; transparent = `output_format: webm`; 1080p+9:16 = 1080×1920; v2 EOL 31.10.2026. Нет enum жестов, нет `background.type: transparent`. PAYG ~$1/min standard, Avatar IV **$4/min** 1080p (help center 2026-04-21). Per-engine table `/docs/pricing` 404 — **не подтверждено**.
+
+**ElevenLabs:** v3 5000 chars; нет speed/similarity/speaker-boost/SSML break; timestamps character-level; recommended style **0** на не-v3 docs.
+
+**GLM intl:** `https://api.z.ai/api/paas/v4/`; GLM-4.6V-Flash Free; image_url ≤5MB; `json_object` для vision **не подтверждено**. **xAI:** grok-4.6 vision $2/$6 per 1M (<200k ctx); не слать grok-4-fast / grok-2-vision.
+
+**Сток (live OK с оговорками):** NASA images-api (PD generally, фильтр copyright text); NASA SVS (dims в API); Pexels `/v1/videos/search` + key, pick hd 1080; Pixabay videos medium 1080; Magnific `licenses[].type` + attribution на free; IA per `licenseurl` whitelist.
+
+**Сток осторожно:** esa.int Standard Licence ≠ CC-BY-SA; Mixkit per-item Restricted; Hubble/Webb/ESO CC BY 4.0 + **on-screen credit**; Wikimedia WebM per-item; CERN только CC-BY subset; JAXA не для monetized.
+
+**RSS allowlist:** NASA breaking_news, ESA Space_News, Nature `nature.rss` + subjects physics/astronomy-and-planetary-science/genetics/medical-research/molecular-biology, MIT TR feed, ScienceDaily top + topic xml, Science News `/feed`, Space.com `/feeds/all`, Quanta `/feed/`, PLOS atom, eLife recent.xml, esawebb/esahubble news feeds, science.nasa.gov/feed/, CERN home.cern/feed/, Live Science, Ars science, Universe Today. **Исключить из screenshot/scrape:** New Scientist, EurekAlert, science.org/cell/phys.org (CF).
+
+**Бенчмарк Shorts:** YouTube считает stayed-to-watch / AVD отдельно от loop views (engaged ≠ repeats). Референс quiet awe: Astrum 0 с NASA still + in-frame credit. Не референс: talking-head open (Cleo, Ben Miles), жёлтое караоке (ТОПЛЕС), 100% selfie (Hank). Цифра «70% viewed-vs-swiped» — сторонняя выборка 2023, не YouTube spec.
+
+**Всё ещё не подтверждено:** GLM vision `json_object`; intl GLM rate limits; HeyGen v2 1080×1920 limits; `style` на eleven_v3; esawebb videos JSON; Earth Observatory policy page после 301; NOAA-wide copyright; Copernicus API; talking_style+audio combo на v2.
 
 ---
 
@@ -961,8 +1014,14 @@ Grok **удаляет файлы + JSON index**, не comment-out. Нет 20-р�
 - always-fire шаблоны с пустым trigger
 - geo/finance/social без entity
 - менять voice_id без тикета
-- жесты HeyGen без подтверждённого API
-- URL доноров из головы
+- жесты HeyGen как enum / `gesture: wave` / camera zoom через API
+- URL доноров вне §8.1
+- grok-4-fast / grok-2-vision (нет на docs.x.ai 2026-09-09)
+- ESA yaml = CC-BY-SA на весь esa.int
+- Mixkit Restricted на monetized
+- Hubble/Webb кредит только в description
+- копировать CAPS/жёлтое караоке бенчмарка
+- SSML `<break>` на eleven_v3
 - сканировать output/assets «найти вдохновение»
 - закрывать жалобы 1–10 SHOULD-тикетами
 - Build/CI зелёный как замена приёмке тикета
@@ -978,4 +1037,4 @@ Grok **удаляет файлы + JSON index**, не comment-out. Нет 20-р�
 - 10% / 1080p / +30% / Grok-only-grey — в MUST-007, 018, 017, 019.
 - Rare шаблоны требуют entity (MUST-011) или DELETE.
 - Дыры чтения названы в §8.
-- Внешние факты субагентов: **не подтверждено**.
+- Внешние факты: §8.1 (2026-09-09). Остальное — **не подтверждено**.
