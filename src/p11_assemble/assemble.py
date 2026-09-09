@@ -24,6 +24,7 @@ from ..errors import RedshiftError
 from ..lib.beats import annotate_slots
 from ..lib.ffmpeg import probe
 from ..lib.logging import get_logger
+from ..lib.render.avatar_compose import fit_compose_zoom
 from ..lib.render.matting import assess_matte, plan_vfx_backgrounds, try_local_matting
 from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
@@ -573,6 +574,41 @@ def _face_centres(avatar_meta: dict[str, Any]) -> dict[int, tuple[int, int]]:
         for slot in seg.get("slot_indices", []):
             out[int(slot)] = centre
     return out
+
+
+def _slot_compose_fit(ctx, slot: dict[str, Any], segment: dict[str, Any] | None,
+                      width: int, height: int):
+    """MUST-009: requested compose_zoom clamped to face_band / captions."""
+    requested = float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)
+    mode = "B" if slot.get("kind") == "split" or slot.get("mode") == "B" else "A"
+    box = (segment or {}).get("face_bbox")
+    return fit_compose_zoom(
+        box, requested, brandbook=ctx.cfg.brandbook,
+        width=width, height=height, mode=mode)
+
+
+def _gaze_plaque_copy(plan: dict[str, Any]) -> str:
+    """Gaze mask card: script/source fields only. Not a regex on one noun."""
+    for blob in (plan.get("hook"), (plan.get("meta") or {}).get("hook")):
+        if isinstance(blob, dict):
+            on_screen = str(blob.get("on_screen") or "").strip()
+            if on_screen:
+                return on_screen.upper()
+    for block in plan.get("blocks") or []:
+        if block.get("role") != "hook":
+            continue
+        overlay = block.get("overlay") if isinstance(block.get("overlay"), dict) else {}
+        content = str(overlay.get("content") or "").strip()
+        if content:
+            return content.upper()
+    for source in plan.get("sources") or []:
+        if not isinstance(source, dict):
+            continue
+        for key in ("highlight_line", "snippet"):
+            line = str(source.get(key) or "").strip()
+            if line:
+                return " ".join(line.split()[:6]).upper()
+    return "ФАКТ"
 
 
 def _is_nasa_asset(asset: dict[str, Any] | None) -> bool:
@@ -2139,6 +2175,10 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
 
             dst = ctx.wpath("shots", f"avatar_{slot['index']:02d}_{int(duration * 1000)}.mp4")
             matte = matte_reports.get(int(segment["index"]))
+            fit = _slot_compose_fit(ctx, slot, segment, width, height)
+            bbox = tuple(int(v) for v in (segment.get("face_bbox") or ())) or None
+            if bbox is not None and len(bbox) != 4:
+                bbox = None
             if matte is not None and matte.usable:
                 # §7.7: matte + VFX bg. Karaoke must not be baked behind the
                 # head — leftover syllable scraps (0042). Keyword type uses
@@ -2151,16 +2191,17 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
                                str(ctx.cfg.color("bg_pure")).lstrip("#")),
                     behind_layer=None,
                     vfx_src=vfx_clips.get(slot["index"]),
-                    compose_zoom=float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0))
+                    compose_zoom=fit.zoom,
+                    face_bbox=bbox,
+                    brandbook=ctx.cfg.brandbook,
+                    mode=fit.mode)
             else:
-                # Opaque fallback: same compose_zoom via ShotSpec (source already 9:16).
-                # focus_y ~0.55 matches prepare_avatar_shot strong-zoom crop bias
-                # so opaque Avatar V plates also trim the black void above the head.
+                # Opaque fallback: fitted compose_zoom via ShotSpec (source already 9:16).
                 result = prepare_shot(ShotSpec(
                     src=avatar_src, dst=dst, duration_sec=duration,
                     width=width, height=height, fps=fps, fit="crop",
-                    focus_x=0.5, focus_y=0.55, start_sec=offset,
-                    compose_zoom=float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)))
+                    focus_x=fit.fx, focus_y=fit.fy, start_sec=offset,
+                    compose_zoom=fit.zoom))
             result["avatar_offset_sec"] = round(offset, 3)
             result["avatar_segment"] = segment["index"]
             result["matte"] = matte.to_dict() if matte else None
@@ -4167,25 +4208,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             g0 = max(a0, min(2.0, a0 + 0.05)) if a0 < 2.0 else a0
         g1 = min(a1, max(g0 + 1.6, min(a0 + 2.0, 4.8)))
         if g1 - g0 >= 1.0:
-            hook = ""
-            import re as _re_hook
-            for b in plan.get("blocks") or []:
-                body = str(b.get("text") or "")
-                m = _re_hook.search(
-                    r"(\d[\d\s]*)\s*(кубит\w*|qubit\w*)", body, _re_hook.I)
-                if m:
-                    num = m.group(1).replace(" ", "").strip()
-                    hook = f"{num} КУБИТОВ"
-                    break
-            if not hook:
-                for b in plan.get("blocks") or []:
-                    body = str(b.get("text") or "")
-                    m = _re_hook.search(r"(\d[\d\s]{0,8})", body)
-                    if m:
-                        hook = m.group(1).replace(" ", "").strip()
-                        break
-            if not hook:
-                hook = "ФАКТ"
+            hook = _gaze_plaque_copy(plan)
             overlays.append({
                 "type": "plaque",
                 "start": round(g0, 3),
