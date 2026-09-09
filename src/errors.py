@@ -88,6 +88,16 @@ class ScriptTooShort(RedshiftError):
     code = "SCRIPT_TOO_SHORT"
 
 
+class MockTtsForbidden(RedshiftError):
+    """Боевая сборка не имеет права подменять prepared-голос mock TTS.
+
+    Иначе тайминги клипов и субтитров разъезжаются (QC-10), а ElevenLabs
+    при этом не вызывается — кэш ломается бесплатно.
+    """
+
+    code = "MOCK_TTS_FORBIDDEN"
+
+
 # --- Внешние сервисы ---------------------------------------------------------
 
 class ProviderError(RedshiftError):
@@ -140,7 +150,7 @@ ALL_ERROR_CODES = sorted(
             HookUnanswered, QuoteTooLong, NoSource, FontMissingCyrillic, FontLicenseError,
             BudgetExceeded, ScriptTooShort, ProviderError, ProviderUnavailable,
             MissingCredentials, LimitReached, LibraryFrozen, QCFailed, RenderError,
-            AssetError, LicenseError,
+            AssetError, LicenseError, MockTtsForbidden,
         )
     }
     | {"MEME_IN_MEDICINE"}  # warning-код, не исключение (§8.2)
