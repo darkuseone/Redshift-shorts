@@ -146,10 +146,15 @@ jobs:
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       HEYGEN_API: ${{ secrets.HEYGEN_API }}
       HEYGEN_AVATAR_ID: ${{ secrets.HEYGEN_AVATAR_ID }}
-      # Gemini-only vision/image. XAI_API_KEY is not exported: providers.allow_xai
-      # is false and the code ignores grok even if the secret exists in the repo.
-      # Subscription CLI cannot run on Actions — only GEMINI_API_KEY (Google AI
-      # Studio / AI Pro). GOOGLE_API_KEY accepted as alias in code.
+      # Vision: GLM 5.3 primary, xAI Grok 4.6 fallback. Gemini остаётся для
+      # image gen и как явный vision.fallback=gemini, не как тихий запас.
+      # Имена секретов: GLM_API_KEY / GLM_API («GLM API» в UI), XAI_API_KEY.
+      GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
+      GLM_API: ${{ secrets.GLM_API }}
+      ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+      TOKENROUTER_API_KEY: ${{ secrets.TOKENROUTER_API_KEY }}
+      XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+      XAI_API: ${{ secrets.XAI_API }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       MAGNIFIC_API_KEY: ${{ secrets.MAGNIFIC_API_KEY }}
@@ -319,6 +324,7 @@ jobs:
           mkdir -p output
           python -m src.cli \
             --set providers.mode=${{ github.event.inputs.providers_mode }} \
+            --set vision.fallback=grok \
             ${{ github.event.inputs.heygen_source != '' && format('--set heygen.source={0}', github.event.inputs.heygen_source) || '' }} \
             ${{ github.event.inputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
             ${{ github.event.inputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \

@@ -149,8 +149,9 @@ def test_config_glm_mid_grok_grey_budget(cfg):
     assert str(cfg.get("vision.fallback")).lower() == "glm"
     assert int(cfg.get("vision.arbiter_max_calls")) <= 3
     model = str(cfg.get("vision.glm_model")).lower()
-    assert "5.3-free" in model
+    assert "5.3" in model
     assert "4.6v-flash" not in model
+    assert "5.3" in str(cfg.get("vision.glm_model_fallback", "")).lower()
     grok = str(cfg.get("vision.grok_model")).lower()
     assert grok == "grok-4.6"
     assert "grok-4-fast" not in grok
@@ -268,8 +269,8 @@ def test_missing_glm_key_does_not_crash(monkeypatch):
     cfg.set("vision.skip_live", False)
     cfg.set("providers.mode", "auto")
     for env_name in (
-        "GLM_API_KEY", "TOKENROUTER_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY",
-        "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_AI_API_KEY", "XAI_API_KEY",
+        "GLM_API_KEY", "GLM_API", "TOKENROUTER_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY",
+        "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_AI_API_KEY", "XAI_API_KEY", "XAI_API",
     ):
         monkeypatch.delenv(env_name, raising=False)
     monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
