@@ -16,7 +16,8 @@ from src.lib.providers.generation import (
     build_generation_provider,
 )
 from src.lib.providers.vision import (
-    FallbackVision, GeminiVision, GrokVision, MockVision, build_vision_provider,
+    FallbackVision, GeminiVision, GLMVision, GrokVision, MockVision,
+    build_vision_provider,
 )
 
 
@@ -35,25 +36,46 @@ def _provider_blob(provider) -> str:
 
 
 def test_config_prefers_gemini_without_xai(cfg):
-    assert str(cfg.get("vision.primary")).lower() == "gemini"
-    assert str(cfg.get("vision.fallback") or "") == ""
+    # Vision mid-critic is GLM; image generation stays Gemini-only, no xAI.
+    assert str(cfg.get("vision.primary")).lower() == "glm"
+    assert str(cfg.get("vision.arbiter")).lower() == "grok"
+    assert str(cfg.get("vision.fallback") or "").lower() == "glm"
     assert str(cfg.get("generation.source")).lower() == "gemini"
     assert str(cfg.get("generation.fallback") or "") == ""
     assert cfg.get("providers.allow_xai") is False
     assert str(cfg.get("render.thumbnail_mode")).lower() == "auto"
 
 
+def test_vision_uses_glm_when_key_present(cfg, monkeypatch):
+    monkeypatch.setenv("GLM_API_KEY", "glm-test-key")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_AI_API_KEY", raising=False)
+    monkeypatch.delenv("XAI_API_KEY", raising=False)
+    cfg.set("providers.mode", "auto")
+    provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
+    assert isinstance(provider, GLMVision)
+
+
 def test_vision_uses_gemini_when_key_present(cfg, monkeypatch):
+    """Нет GLM-ключа — Gemini остаётся запасом primary, не arbiter-на-всё."""
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+    monkeypatch.delenv("GLM_API_KEY", raising=False)
+    monkeypatch.delenv("TOKENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("ZAI_API_KEY", raising=False)
     monkeypatch.delenv("XAI_API_KEY", raising=False)
     cfg.set("providers.mode", "auto")
     provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
     assert isinstance(provider, GeminiVision)
+    assert "grok" not in _provider_blob(provider)
 
 
 def test_vision_does_not_use_grok_when_allow_xai_is_false(cfg, monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    monkeypatch.delenv("GLM_API_KEY", raising=False)
+    monkeypatch.delenv("TOKENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("ZAI_API_KEY", raising=False)
     cfg.set("providers.mode", "auto")
     cfg.set("providers.allow_xai", False)
     provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
@@ -66,6 +88,9 @@ def test_vision_without_gemini_stays_mock_when_xai_forbidden(cfg, monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_AI_API_KEY", raising=False)
+    monkeypatch.delenv("GLM_API_KEY", raising=False)
+    monkeypatch.delenv("TOKENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("ZAI_API_KEY", raising=False)
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
     cfg.set("providers.mode", "auto")
     cfg.set("providers.allow_xai", False)
@@ -75,13 +100,14 @@ def test_vision_without_gemini_stays_mock_when_xai_forbidden(cfg, monkeypatch):
 
 
 def test_vision_fallback_on_403(cfg, monkeypatch, tmp_path):
+    monkeypatch.setenv("GLM_API_KEY", "glm-test-key")
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
-    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    monkeypatch.delenv("XAI_API_KEY", raising=False)
     cfg.set("providers.mode", "auto")
-    cfg.set("providers.allow_xai", True)
-    cfg.set("vision.fallback", "grok")
+    cfg.set("vision.fallback", "gemini")
     provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
     assert isinstance(provider, FallbackVision)
+    assert "grok" not in _provider_blob(provider)
 
     frame = tmp_path / "f.jpg"
     frame.write_bytes(b"\xff\xd8\xff\xd9")
@@ -90,17 +116,36 @@ def test_vision_fallback_on_403(cfg, monkeypatch, tmp_path):
 
     def boom(*a, **k):
         calls["n"] += 1
-        raise ProviderError("Grok credits", status=403, body="spending limit")
+        raise ProviderError("GLM credits", status=403, body="spending limit")
 
     def ok(*a, **k):
         from src.lib.providers.vision import VisionVerdict
-        return VisionVerdict(score=0.8, reason="ok", judge="grok")
+        return VisionVerdict(score=0.8, reason="ok", judge="gemini")
 
     monkeypatch.setattr(provider.primary, "judge", boom)
     monkeypatch.setattr(provider.secondary, "judge", ok)
     verdict = provider.judge([frame], intent="x", role="develop", query="q")
-    assert verdict.judge == "grok"
+    assert verdict.judge == "gemini"
     assert calls["n"] == 1
+
+
+def test_primary_never_uses_grok_even_if_allow_xai(cfg, monkeypatch):
+    monkeypatch.setenv("GLM_API_KEY", "glm-test-key")
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    cfg.set("providers.mode", "auto")
+    cfg.set("providers.allow_xai", True)
+    provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
+    assert "grok" not in _provider_blob(provider)
+
+
+def test_arbiter_can_use_grok_without_global_allow_xai(cfg, monkeypatch):
+    monkeypatch.setenv("GLM_API_KEY", "glm-test-key")
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    cfg.set("providers.mode", "auto")
+    cfg.set("providers.allow_xai", False)
+    provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="arbiter")
+    assert "grok" in _provider_blob(provider)
+    assert isinstance(provider, (GrokVision, FallbackVision))
 
 
 def test_generation_prefers_gemini_key(cfg, monkeypatch):

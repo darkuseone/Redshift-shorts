@@ -1,8 +1,8 @@
 """Vision-провайдеры для трёхступенчатой оценки футажей (§7.3).
 
-Шаг 2 — основной критик (Gemini, дешевле), шаг 3 — арбитраж (Grok, лимит 8
-вызовов на ролик). Оба возвращают одинаковый вердикт, поэтому арбитраж — это
-просто повторная оценка более дорогой моделью, а не отдельный формат данных.
+Шаг 2 — mid-critic GLM (дешевле Grok). Шаг 3 — арбитраж Grok только в серой
+зоне score ∈ [0.45, 0.70], лимит 3 вызова на ролик. Вердикт у всех судей
+один и тот же, поэтому арбитраж — повторная оценка, а не другой формат.
 
 Mock-критик не выдаёт случайное число: он реально смотрит на кадр — считает
 яркость, контраст, насыщенность, плотность деталей и пригодность композиции под
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import io
 import json
 import re
 from dataclasses import dataclass, field
@@ -174,7 +175,7 @@ class MockVision(VisionProvider):
 
         self.charge("judge", len(frames), "images",
                     len(frames) * float(self.cfg.get(
-                        f"budget.price.{'grok' if 'grok' in self.judge_name else 'gemini'}_per_image", 0.0004)))
+                        f"budget.price.{_vision_price_key(self.judge_name)}_per_image", 0.0004)))
         return VisionVerdict(
             score=round(score, 4),
             reason=_mock_reason(score, relevance, quality, composition, stocky, has_text),
@@ -336,7 +337,7 @@ class GrokVision(VisionProvider):
               query: str, kind: str = "broll") -> VisionVerdict:
         import requests
 
-        model = str(self.cfg.get("vision.grok_model", "grok-4-fast"))
+        model = str(self.cfg.get("vision.grok_model", "grok-4.6"))
         base = str(self.cfg.get("vision.grok_api_base", "https://api.x.ai"))
         content: list[dict[str, Any]] = [
             {"type": "text",
@@ -364,6 +365,107 @@ class GrokVision(VisionProvider):
                     len(frames) * float(self.cfg.get("budget.price.grok_per_image", 0.006)),
                     model=model)
         return _verdict_from_json(str(text), judge="grok", frames=len(frames))
+
+
+# --- GLM (z.ai / TokenRouter) ------------------------------------------------
+
+GLM_MAX_IMAGE_BYTES = 5 * 1024 * 1024
+GLM_MAX_IMAGE_SIDE = 6000
+# CN endpoint is forbidden (MUST-019). Intl z.ai or TokenRouter only.
+_GLM_CN_HOST = "open.bigmodel.cn"
+
+
+class GLMVision(VisionProvider):
+    """Mid-critic: OpenAI-style chat.completions + image_url, JSON из текста."""
+
+    def __init__(self, cfg, costs, api_key: str) -> None:
+        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="glm")
+        self.api_key = api_key
+
+    def judge(self, frames: Sequence[Path], *, intent: str, role: str,
+              query: str, kind: str = "broll") -> VisionVerdict:
+        import requests
+
+        model = str(self.cfg.get("vision.glm_model", "z-ai/glm-5.3-free"))
+        if "4.6v-flash" in model.lower() or "4.6v flash" in model.lower():
+            raise ProviderError("GLM-4.6V-Flash запрещён: заказчик — GLM-5.3-free")
+        url = _glm_chat_url(self.cfg)
+        if _GLM_CN_HOST in url:
+            raise ProviderError("CN GLM endpoint open.bigmodel.cn запрещён")
+        content: list[dict[str, Any]] = [
+            {"type": "text",
+             "text": prompt_for(kind, intent=intent, role=role, query=query)}]
+        for frame in frames:
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": _glm_image_data_url(Path(frame))},
+            })
+        # response_format json_object / json_schema для VLM не подтверждены —
+        # JSON вырезаем из текста ответа.
+        payload = {"model": model, "messages": [{"role": "user", "content": content}],
+                   "temperature": 0.1}
+
+        def _call() -> dict[str, Any]:
+            resp = requests.post(url, json=payload,
+                                 headers={"Authorization": f"Bearer {self.api_key}"},
+                                 timeout=self._timeout())
+            if resp.status_code >= 400:
+                raise ProviderError(f"GLM вернул {resp.status_code}",
+                                    status=resp.status_code, body=resp.text[:300],
+                                    model=model)
+            return resp.json()
+
+        data = call_with_retry(_call, **self._retry_kwargs("GLM vision"))
+        text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        if isinstance(text, list):
+            text = " ".join(
+                str(part.get("text") or "") if isinstance(part, dict) else str(part)
+                for part in text)
+        self.charge("judge", len(frames), "images",
+                    len(frames) * float(self.cfg.get("budget.price.glm_per_image", 0.0)),
+                    model=model)
+        return _verdict_from_json(str(text), judge="glm", frames=len(frames))
+
+
+def _glm_chat_url(cfg) -> str:
+    base = str(cfg.get("vision.glm_api_base", "https://api.z.ai/api/paas/v4")).rstrip("/")
+    if base.endswith("/chat/completions"):
+        return base
+    return f"{base}/chat/completions"
+
+
+def _glm_image_data_url(path: Path, *, max_bytes: int = GLM_MAX_IMAGE_BYTES,
+                        max_side: int = GLM_MAX_IMAGE_SIDE) -> str:
+    """jpeg/png ≤5 MB и ≤6000×6000 — лимит intl GLM vision."""
+    with Image.open(path) as img:
+        img = img.convert("RGB")
+        width, height = img.size
+        scale = min(1.0, float(max_side) / float(max(width, height, 1)))
+        if scale < 1.0:
+            img = img.resize(
+                (max(1, int(width * scale)), max(1, int(height * scale))),
+                Image.Resampling.BILINEAR)
+        quality = 85
+        raw = b""
+        for quality in (85, 75, 65, 55, 40):
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=quality, optimize=True)
+            raw = buf.getvalue()
+            if len(raw) <= max_bytes:
+                break
+        if len(raw) > max_bytes:
+            raise ProviderError("GLM: кадр больше 5 MB после сжатия")
+    b64 = base64.b64encode(raw).decode("ascii")
+    return f"data:image/jpeg;base64,{b64}"
+
+
+def _vision_price_key(judge_name: str) -> str:
+    name = str(judge_name or "").lower()
+    if "grok" in name:
+        return "grok"
+    if "glm" in name:
+        return "glm"
+    return "gemini"
 
 
 def _verdict_from_json(text: str, *, judge: str, frames: int) -> VisionVerdict:
@@ -408,6 +510,18 @@ def _gemini_api_key(cfg) -> str | None:
     return None
 
 
+def _glm_api_key(cfg) -> str | None:
+    """GLM_API_KEY, затем TokenRouter / z.ai алиасы. Не хардкод."""
+    key = cfg.secret_for("vision.glm_api_key_env", purpose="GLM Vision")
+    if key:
+        return key
+    for env_name in ("TOKENROUTER_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY"):
+        key = cfg.secret(env_name, purpose="GLM Vision")
+        if key:
+            return key
+    return None
+
+
 def _provider_http_status(exc: BaseException) -> int | None:
     status = getattr(exc, "details", None) or {}
     if isinstance(status, dict) and status.get("status") is not None:
@@ -430,9 +544,15 @@ def _credits_or_auth_failure(exc: BaseException) -> bool:
     ))
 
 
-def _live_vision(cfg, costs, name: str) -> VisionProvider | None:
+def _live_vision(cfg, costs, name: str, *, role: str = "primary") -> VisionProvider | None:
     # Нет ключа → None (следующий в цепочке), даже при providers.mode=live.
-    # Иначе временный primary=gemini валил бы весь прогон при пустом GEMINI_API_KEY.
+    if name == "glm":
+        key = _glm_api_key(cfg)
+        if not key:
+            return None
+        if resolve_mode(cfg, api_key=key, service="glm") is ProviderMode.LIVE:
+            return GLMVision(cfg, costs, key)
+        return None
     if name == "gemini":
         key = _gemini_api_key(cfg)
         if not key:
@@ -441,7 +561,12 @@ def _live_vision(cfg, costs, name: str) -> VisionProvider | None:
             return GeminiVision(cfg, costs, key)
         return None
     if name == "grok":
-        if not bool(cfg.get("providers.allow_xai", False)):
+        # Grok — только серая зона (arbiter). Primary его не берёт, даже если
+        # providers.allow_xai=true: иначе 403-fallback утащил бы весь пул.
+        if role != "arbiter":
+            return None
+        grey_xai = bool(cfg.get("vision.grey_xai", True))
+        if not grey_xai and not bool(cfg.get("providers.allow_xai", False)):
             return None
         key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok Vision")
         if not key:
@@ -480,26 +605,37 @@ class FallbackVision(VisionProvider):
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
     """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
 
-    Default: Gemini only. ``providers.allow_xai`` must be true before grok
-    enters the chain — a hardcoded tail used to call xAI on the first Gemini
-    402/403. Empty ``vision.fallback`` is honest: there is no substitute
-    provider; refusal falls through to engine gates.
+    Mid-critic — GLM. Grok входит только в цепочку ``arbiter`` (серая зона
+    на стороне judge). Gemini — запас primary, если GLM-ключа нет; не arbiter
+    «на всё». ``providers.allow_xai`` больше не тащит grok в primary.
     """
-    preferred = str(cfg.get(f"vision.{role}", "gemini")).lower()
-    fallback = str(cfg.get("vision.fallback", "") or "").lower()
-    allow_xai = bool(cfg.get("providers.allow_xai", False))
+    preferred = str(cfg.get(f"vision.{role}", "glm" if role == "primary" else "grok")).lower()
+    fallback = str(cfg.get("vision.fallback", "glm") or "").lower()
     order: list[str] = []
-    for name in (preferred, fallback, "gemini"):
+
+    def _push(name: str) -> None:
         if name and name not in order and name != "mock":
-            if name == "grok" and not allow_xai:
-                continue
             order.append(name)
-    if allow_xai and "grok" not in order:
-        order.append("grok")
+
+    if role == "arbiter":
+        _push(preferred)
+        _push(fallback)
+        _push("glm")
+        order[:] = [n for n in order if n != "gemini"]
+        if "grok" in order and not bool(cfg.get("vision.grey_xai", True)):
+            order[:] = [n for n in order if n != "grok"]
+    else:
+        _push(preferred)
+        _push(fallback)
+        if "glm" not in order:
+            _push("glm")
+        # Живой Gemini только если GLM не поднялся — не ломаем прогон без GLM-ключа.
+        _push("gemini")
+        order[:] = [n for n in order if n != "grok"]
 
     live: list[VisionProvider] = []
     for name in order:
-        provider = _live_vision(cfg, costs, name)
+        provider = _live_vision(cfg, costs, name, role=role)
         if provider is not None:
             live.append(provider)
 
@@ -507,4 +643,4 @@ def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvide
         return FallbackVision(cfg, costs, live[0], live[1])
     if len(live) == 1:
         return live[0]
-    return MockVision(cfg, costs, judge_name=preferred or "gemini")
+    return MockVision(cfg, costs, judge_name=preferred or "glm")

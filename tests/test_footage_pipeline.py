@@ -416,12 +416,18 @@ def test_full_profile_queries_do_not_pad_newsroom():
 def test_short_sci_queries_pad_thematic_not_newsroom():
     from src.p7_broll_search.search import pad_slot_queries
 
+    slot = {"queries": ["quantum processor macro"], "visual_intent": "квантовый чип",
+            "role": "setup", "block_id": "b1"}
+    plan = {"blocks": [{"id": "b1", "text": "Это квантовый чип с кубитами."}],
+            "category": "ai"}
     out = pad_slot_queries(
         ["quantum processor macro"],
-        queries_per_slot=5, intent_kind="lab", category="ai")
+        queries_per_slot=5, intent_kind="lab", category="ai",
+        slot=slot, plan=plan)
     joined = " ".join(out).lower()
     assert "dilution refrigerator" in joined or "cryostat gold cylinder" in joined
     assert "newsroom broadcast desk" not in joined
+    assert 3 <= len(out) <= 5
 
 
 def test_queries_are_english_and_varied():
@@ -577,8 +583,9 @@ def test_arbitration_triggered_on_frame_disagreement(cfg):
     assert _needs_arbitration(_verdict(0.85, disagreement=0.4), "develop", cfg)
 
 
-def test_arbitration_triggered_for_evidence_role(cfg):
-    assert _needs_arbitration(_verdict(0.9), "evidence", cfg)
+def test_arbitration_not_triggered_for_evidence_or_twist_outside_grey(cfg):
+    assert _needs_arbitration(_verdict(0.9), "evidence", cfg) is None
+    assert _needs_arbitration(_verdict(0.92), "twist", cfg) is None
 
 
 def test_arbitration_not_triggered_for_clear_accept(cfg):

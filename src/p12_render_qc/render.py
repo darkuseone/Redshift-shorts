@@ -32,6 +32,7 @@ from ..lib.phash import dhash_image, hamming
 from ..lib.ffmpeg import extract_frames
 from .qc import apply_semantic_qc, run_qc
 from .vision_qc import run_vision_qc, sample_positions
+from ..p8_broll_judge.judge import CRITIC_METRIC_KEYS, critic_metrics_payload
 
 _log = get_logger("p12")
 
@@ -480,6 +481,18 @@ def run_step(ctx) -> dict[str, Any]:
     write_json(ctx.opath("metadata.json"), metadata)
 
     all_passed = all(r.get("qc_passed") for r in results.values())
+    candidates_doc = ctx.read_or("candidates.json", {})
+    accepted_doc = ctx.read_or("accepted_assets.json", {})
+    generated_doc = ctx.read_or("generated.json", {})
+    search_report = dict(candidates_doc.get("search") or {})
+    surplus = candidates_doc.get("surplus") or accepted_doc.get("surplus")
+    if surplus:
+        search_report["surplus"] = surplus
+    critic = critic_metrics_payload(
+        accepted_doc, generated=generated_doc, costs=ctx.costs,
+        candidates=candidates_doc)
+    cost_report = ctx.costs.to_dict()
+    cost_report.update(critic)
     report = {
         "video_id": cut_plan["video_id"],
         "status": "ok" if all_passed else "qc_failed",
@@ -492,13 +505,16 @@ def run_step(ctx) -> dict[str, Any]:
         "cost_usd": ctx.costs.total_usd,
         # Деньги по сервисам, а не одной суммой: денежный DoD §4.4 требует
         # видеть, что elevenlabs=0 и heygen=0, а не только что итог невелик.
-        "costs": ctx.costs.to_dict(),
+        "costs": cost_report,
         # Трассы подбора приёмов: `PickTrace` возвращался всеми вызовами
         # `picker.pick` и везде выбрасывался в `_`. Без него QC-25 и разбор
         # «почему выбран этот приём» нечем закрыть.
         "pick_traces": {v: ctx.read(f"edit_plan_{v}.json").get("pick_traces", [])
                         for v in variants},
+        # MUST-016/017: запросы на слот + surplus до paid critic.
+        "search": search_report,
     }
+    report.update({k: critic[k] for k in CRITIC_METRIC_KEYS})
     ctx.write("build_report.json", report)
     write_json(ctx.opath("build_report.json"), report)
     _record_run(ctx, report, cut_plan)

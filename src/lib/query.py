@@ -287,6 +287,62 @@ def topical_match_score(candidate_tags: set[str] | list[str], block_text: str,
     return round(min(1.0, hits / max(1, min(len(tags), 4))), 3)
 
 
+QUERY_MIN = 3
+QUERY_MAX = 5
+TEXTURE_FILL = "abstract macro texture slow motion"
+TEXTURE_FILL_ALT = "slow motion particles dark"
+TEXTURE_WORDS = frozenset({"abstract", "texture", "particles", "gradient"})
+# Слова, которые есть у любого стокового пада — по ним нельзя считать слот «про это».
+WEAK_PAD_WORDS = frozenset({
+    "abstract", "texture", "macro", "slow", "motion", "dark", "deep",
+    "light", "background", "closeup", "wide", "shot", "view", "night",
+    "particles", "gradient", "minimal", "red", "blue", "gold", "golden",
+    "laboratory", "screen", "data", "earth",
+})
+
+# Именованные сущности канала: триггер в тексте блока/источника → EN-ярлык для стока.
+ENTITY_TRIGGERS: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("willow",), "Willow quantum chip"),
+    (("кольск", "kola superdeep", "kola borehole"), "Kola Superdeep borehole"),
+    (("поверхностн", "surface code"), "surface code lattice"),
+    (("криостат", "cryostat", "dilution refrigerator"), "dilution refrigerator cryostat"),
+    (("jwst", "james webb", "уэбб"), "James Webb Space Telescope"),
+    (("hubble", "хаббл"), "Hubble Space Telescope"),
+    (("crispr", "криспр"), "CRISPR gene editing"),
+    (("cern", "церн", "lhc"), "CERN LHC accelerator"),
+    (("iss", "мкс"), "International Space Station"),
+)
+
+_TITLE_ENTITY_STOP = frozenset({
+    "the", "and", "for", "with", "from", "this", "that", "processor",
+    "announcement", "article", "video", "blog", "research", "technology",
+    "scientific", "paper", "below", "into", "about",
+})
+
+BASE_NEGATIVES: tuple[str, ...] = (
+    "talking head",
+    "watermark",
+    "UI screenshot",
+    "clickbait thumbnail",
+)
+STOCK_SMILE_LAB = "stock smile lab"
+MEDICINE_PROCEDURE_MARKERS = (
+    "хирург", "операц", "процедур", "скальп", "инъекц",
+    "surgery", "procedure", "incision", "injection", "scalpel",
+)
+
+NEGATIVE_ALIASES: dict[str, tuple[str, ...]] = {
+    "talking head": ("talking head", "talking-head", "talkinghead"),
+    "watermark": ("watermark", "shutterstock", "getty images"),
+    "UI screenshot": ("ui screenshot", "app screenshot", "desktop screenshot"),
+    "clickbait thumbnail": ("clickbait thumbnail", "clickbait", "youtube thumbnail"),
+    "stock smile lab": (
+        "stock smile lab", "stock smile", "smiling scientist",
+        "smiling doctor", "happy lab team",
+    ),
+}
+
+
 def _looks_english(text: str) -> bool:
     letters = re.findall(r"[a-zA-Zа-яА-ЯёЁ]", text)
     if not letters:
@@ -295,37 +351,207 @@ def _looks_english(text: str) -> bool:
     return latin / len(letters) > 0.7
 
 
-def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4) -> list[str]:
-    """3–5 запросов разной абстракции для одного слота (§7.2.2)."""
+def _query_words(text: str) -> set[str]:
+    return {w.lower() for w in re.findall(r"[a-zA-Zа-яА-ЯёЁ]{3,}", text or "")}
+
+
+def _block_of(slot: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
+    return next((b for b in plan.get("blocks", []) if b.get("id") == slot.get("block_id")), {})
+
+
+def _block_text(slot: dict[str, Any], plan: dict[str, Any]) -> str:
+    block = _block_of(slot, plan)
+    return " ".join([
+        str(slot.get("visual_intent") or ""),
+        str(block.get("text") or ""),
+        str(block.get("visual_intent") or ""),
+        " ".join(str(q) for q in (slot.get("queries") or [])),
+    ])
+
+
+def _is_medicine_procedure(slot: dict[str, Any], plan: dict[str, Any]) -> bool:
+    cat = str((plan or {}).get("category") or "").strip().lower()
+    if cat != "medicine":
+        return False
+    blob = _block_text(slot, plan).lower()
+    return any(m in blob for m in MEDICINE_PROCEDURE_MARKERS)
+
+
+def slot_negatives(slot: dict[str, Any], plan: dict[str, Any] | None = None) -> list[str]:
+    """Negatives на слот: talking head / watermark / UI / clickbait / stock smile."""
+    out = list(BASE_NEGATIVES)
+    if not _is_medicine_procedure(slot, plan or {}):
+        out.append(STOCK_SMILE_LAB)
+    return out
+
+
+def negative_reject_reason(haystack: str, negatives: Iterable[str] | None = None) -> str | None:
+    """Дешёвый отказ по negatives без vision. Phrase match по алиасам."""
+    blob = " ".join((haystack or "").split()).lower()
+    if not blob:
+        return None
+    for neg in negatives or ():
+        aliases = NEGATIVE_ALIASES.get(neg, (neg,))
+        for alias in aliases:
+            token = alias.lower().strip()
+            if token and token in blob:
+                return f"negative «{neg}»"
+    return None
+
+
+def extra_fits_slot(extra: str, tokens: set[str]) -> bool:
+    """Пад уместен только если делит сильные слова с сущностью/понятием блока."""
+    if not extra:
+        return False
+    extra_words = {w for w in re.findall(r"[a-zA-Z]{3,}", extra.lower())} - WEAK_PAD_WORDS
+    strong = {t.lower() for t in tokens} - WEAK_PAD_WORDS
+    if not extra_words:
+        return False
+    if not strong:
+        return False
+    return bool(extra_words & strong)
+
+
+def topical_tokens(slot: dict[str, Any], plan: dict[str, Any] | None = None,
+                   queries: Iterable[str] | None = None) -> set[str]:
+    """Слова, которыми пад обязан пересекаться, иначе это чужой кадр."""
+    plan = plan or {}
+    blob = _block_text(slot, plan)
+    words = _query_words(blob)
+    for phrase in _concepts_from_text(blob):
+        words.update(_query_words(phrase))
+    for ent in extract_entities(slot, plan):
+        words.update(_query_words(ent))
+    for query in queries or slot.get("queries") or []:
+        if str(query).strip().lower() == TEXTURE_FILL:
+            continue
+        words.update(_query_words(str(query)))
+    return {w for w in words if len(w) > 2}
+
+
+def _source_haystacks(slot: dict[str, Any], plan: dict[str, Any],
+                      concept_words: set[str]) -> list[str]:
+    """Источники ролика — только если слот про них или делит с ними понятия."""
+    block = _block_of(slot, plan)
+    ref = str(block.get("source_ref") or "").strip().lower()
     out: list[str] = []
+    for source in plan.get("sources") or []:
+        title = str(source.get("title") or "")
+        url = str(source.get("url") or "")
+        domain = str(source.get("domain") or "")
+        hay = " ".join([title, url, domain])
+        low = hay.lower()
+        if ref and ref in (domain.lower(), url.lower(), low):
+            out.append(hay)
+            continue
+        src_words = {w for w in _query_words(hay) if w.isascii()}
+        if concept_words and concept_words & src_words:
+            out.append(hay)
+    return out
 
-    # 1. Готовые английские запросы сценариста — самые конкретные.
-    for query in slot.get("queries") or []:
-        if _looks_english(query):
-            out.append(query.strip())
 
-    # 2. Предметные понятия, вытащенные из смысла блока и текста.
-    block = next((b for b in plan.get("blocks", []) if b["id"] == slot.get("block_id")), {})
-    source_text = " ".join([slot.get("visual_intent", ""), block.get("text", ""),
-                            block.get("visual_intent", "")])
-    out.extend(_concepts_from_text(source_text))
+def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None) -> list[str]:
+    """Именованные сущности блока: прибор, миссия, метод — на английском."""
+    plan = plan or {}
+    blob = _block_text(slot, plan)
+    concept_words = _query_words(" ".join(_concepts_from_text(blob)))
+    parts = [blob, *(_source_haystacks(slot, plan, concept_words))]
+    hay = " ".join(parts).lower()
+    found: list[str] = []
+    for triggers, label in ENTITY_TRIGGERS:
+        if any(tr in hay for tr in triggers):
+            found.append(label)
+    for haystack in parts:
+        for token in re.findall(r"\b[A-Z][a-zA-Z0-9\-]{2,}\b", haystack):
+            if token.lower() in _TITLE_ENTITY_STOP:
+                continue
+            if any(token.lower() in existing.lower() for existing in found):
+                continue
+            if token not in found:
+                found.append(token)
+    return list(dict.fromkeys(found))
 
-    # 3. Русские запросы сценариста не переводим подстрочно, но используем как
-    #    источник понятий — иначе теряется авторское намерение.
+
+def _clamp_query_count(count: int) -> int:
+    return min(QUERY_MAX, max(QUERY_MIN, int(count or QUERY_MAX)))
+
+
+def _dedupe_queries(items: Iterable[str]) -> list[str]:
+    seen: list[str] = []
+    for query in scrub_queries(list(items)):
+        query = re.sub(r"\s+", " ", query).strip()
+        if query and query.lower() not in {q.lower() for q in seen}:
+            seen.append(query)
+    return seen
+
+
+def compile_slot_search(slot: dict[str, Any], plan: dict[str, Any],
+                        *, count: int = 4) -> dict[str, Any]:
+    """Запросы + сущности + negatives одним словарём для P7 и отчёта."""
+    return {
+        "queries": build_queries(slot, plan, count=count),
+        "entities": extract_entities(slot, plan),
+        "negatives": slot_negatives(slot, plan),
+    }
+
+
+def search_report_payload(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    """Стабильная форма `build_report.search`: queries/entities/negatives по слоту."""
+    queries: dict[str, list[str]] = {}
+    entities: dict[str, list[str]] = {}
+    negatives: dict[str, list[str]] = {}
+    for entry in entries:
+        key = str(entry.get("slot_index"))
+        queries[key] = list(entry.get("queries") or [])
+        entities[key] = list(entry.get("entities") or [])
+        negatives[key] = list(entry.get("negatives") or [])
+    return {"queries": queries, "entities": entities, "negatives": negatives}
+
+
+def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4) -> list[str]:
+    """3–5 EN-запросов: сущности блока + 1–2 визуальных якоря, без чужого пада."""
+    limit = _clamp_query_count(count)
+    entities = extract_entities(slot, plan)
+    source_text = _block_text(slot, plan)
+    concepts = _concepts_from_text(source_text)
+    tokens = topical_tokens(slot, plan)
+    author_en = [q.strip() for q in (slot.get("queries") or []) if _looks_english(q)]
+    anchors = list(author_en[:2]) or list(concepts[:2])
+
+    out: list[str] = []
+    for ent in entities:
+        if anchors:
+            anchor = anchors[0]
+            if ent.lower() not in anchor.lower():
+                out.append(f"{ent} {anchor}")
+            else:
+                out.append(anchor)
+        else:
+            out.append(ent)
+        if len(entities) > 1 and len(anchors) > 1:
+            second = anchors[1]
+            if ent.lower() not in second.lower():
+                out.append(f"{ent} {second}")
+
+    out.extend(author_en)
+    out.extend(concepts)
     for query in slot.get("queries") or []:
         if not _looks_english(query):
             out.extend(_concepts_from_text(query))
 
-    # 4. Метафора по роли блока — на случай, если предметного кадра не найдётся.
-    out.extend(ROLE_METAPHORS.get(slot.get("role", ""), []))
+    for metaphor in ROLE_METAPHORS.get(slot.get("role", ""), []):
+        if extra_fits_slot(metaphor, tokens):
+            out.append(metaphor)
 
-    # 5. Фактура как последний рубеж. Space/news padding lives in P7
-    # ``pad_slot_queries`` and only fills a short ladder.
-    out.append("abstract macro texture slow motion")
+    out.append(TEXTURE_FILL)
+    seen = _dedupe_queries(out)
 
-    seen: list[str] = []
-    for query in scrub_queries(out):
-        query = re.sub(r"\s+", " ", query).strip()
-        if query and query.lower() not in {q.lower() for q in seen}:
-            seen.append(query)
-    return seen[:max(3, count)]
+    def _carries_entity(query: str) -> bool:
+        low = query.lower()
+        return any(ent.lower() in low for ent in entities)
+
+    if entities and seen and not any(_carries_entity(q) for q in seen[:limit]):
+        seen = _dedupe_queries([entities[0], *seen])
+    if len(seen) < QUERY_MIN:
+        seen = _dedupe_queries([*seen, TEXTURE_FILL, TEXTURE_FILL_ALT])
+    return seen[:limit]

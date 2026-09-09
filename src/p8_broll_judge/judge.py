@@ -1,14 +1,14 @@
 """P8: ``candidates.json`` → ``accepted_assets.json``.
 
-Трёхступенчатая оценка §7.3. Шаг 1 (дешёвая отбраковка без vision) уже отработал
-в P7 — там он экономит не только вызовы модели, но и скачивания. Здесь работают
-шаги 2 и 3:
+Трёхступенчатая оценка §7.3:
 
-* **Шаг 2 — критик со зрением.** Все прошедшие кандидаты, для видео — 3 кадра.
-  Исполнитель Gemini (дешевле). Возвращает score 0.0–1.0 и причину.
-* **Шаг 3 — арбитраж Grok.** Только спорные: score в [0.45, 0.70], либо
-  расхождение оценок кадров одного видео > 0.3, либо роль блока
-  ``evidence``/``twist``. Жёсткий лимит — 8 вызовов на ролик. Решение финальное.
+* **Шаг 1 — дешёвая отбраковка без LLM.** Metadata / negatives / theme.
+  Цель — убить ≥50 % входящего пула до зрения (MUST-019).
+* **Шаг 2 — mid-critic GLM.** Прошедшие cheap; для видео — 3 кадра.
+  Score 0.0–1.0. Без ключа — mock/empty, не exception.
+* **Шаг 3 — Grok Vision только серая зона** score ∈ [0.45, 0.70].
+  Не чаще 1 раза на клип, лимит ≤3 вызовов на ролик. Evidence/twist сами
+  по себе сюда не входят (MUST-020 снимет оставшийся helper).
 
 Пороги: ≥0.70 принять, <0.45 отклонить. Незакрытый слот уходит в генерацию (P9),
 а **не** заполняется слабым футажом — это прямое требование §7.3.
@@ -26,15 +26,73 @@ from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
-    classify_intent, thematic_reject_reason, topical_match_score,
+    classify_intent, negative_reject_reason, slot_negatives,
+    thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, pin_id_denied,
+    _footage_pin_entry, _load_footage_pins, footage_pool_count,
+    judge_blocks_stage1_dead, pin_id_denied, surplus_report,
 )
 
 COHERENCE_MIN = 0.15
 
 _log = get_logger("p8")
+
+
+def in_grey_zone(score: float, cfg) -> bool:
+    """Grok/второй уровень только при score ∈ [reject, accept] (MUST-019)."""
+    lo = float(cfg.get("vision.reject_threshold", 0.45))
+    hi = float(cfg.get("vision.accept_threshold", 0.70))
+    return lo <= float(score) <= hi
+
+
+def _candidate_hay(candidate: dict[str, Any]) -> str:
+    meta = candidate.get("meta") or {}
+    return " ".join([
+        str(candidate.get("page_url") or ""),
+        str(candidate.get("url_origin") or ""),
+        str(candidate.get("attribution") or ""),
+        str(candidate.get("query") or ""),
+        " ".join(candidate.get("tags") or []),
+        str(candidate.get("vision_summary") or ""),
+        str(candidate.get("asset_id") or ""),
+        str(candidate.get("prior_intent") or ""),
+        str(meta.get("title") or ""),
+        str(meta.get("alt") or ""),
+    ])
+
+
+def cheap_reject_reason(candidate: dict[str, Any], *, cfg,
+                        slot_duration: float = 3.0,
+                        negatives: list[str] | None = None,
+                        category: str = "", intent_kind: str = "",
+                        video_id: str = "") -> str | None:
+    """Шаг 1 без LLM: theme, negatives, watermark-строки, ultrawide, duration."""
+    hay = _candidate_hay(candidate)
+    theme = thematic_reject_reason(
+        hay, category=category, intent_kind=intent_kind, video_id=video_id)
+    if theme:
+        return theme
+    denied = negative_reject_reason(hay, negatives)
+    if denied:
+        return denied
+    lowered = hay.lower()
+    if any(bad in lowered for bad in ("watermark", "shutterstock", "getty", "preview")):
+        return "признаки водяного знака или чужого стока"
+    try:
+        width, height = int(candidate.get("width") or 0), int(candidate.get("height") or 0)
+    except (TypeError, ValueError):
+        width, height = 0, 0
+    if width and height and (width / height) > 2.6:
+        return "сверхширокий кадр: кроп 9:16 разрушит композицию"
+    kind = str(candidate.get("kind") or "video")
+    try:
+        duration = float(candidate.get("duration_sec") or 0.0)
+    except (TypeError, ValueError):
+        duration = 0.0
+    if kind == "video" and duration and duration < min(1.2, max(slot_duration, 0.1) * 0.6):
+        return f"короче слота: {duration:.1f} сек"
+    return None
 
 
 def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
@@ -46,8 +104,7 @@ def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
         return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi}]"
     if verdict.frame_disagreement > disagree:
         return f"кадры расходятся на {verdict.frame_disagreement:.2f} > {disagree}"
-    if role in ("evidence", "twist"):
-        return f"роль блока {role} — цена ошибки выше обычной"
+    # MUST-020: evidence/twist не auto-arbitrate — те же пороги, что у обычного слота.
     return None
 
 
@@ -138,6 +195,109 @@ def _engine_gate_reason(candidate: dict[str, Any], *, pin_deny: set[str],
     return None
 
 
+def _tally_vision(name: str, counters: dict[str, int]) -> None:
+    blob = str(name or "").lower()
+    if "grok" in blob:
+        counters["grok"] += 1
+    elif "glm" in blob:
+        counters["glm"] += 1
+    elif "gemini" in blob:
+        counters["gemini"] += 1
+
+
+CRITIC_METRIC_KEYS = (
+    "candidates_per_slot",
+    "killed_stage1",
+    "killed_cheap",
+    "killed_glm",
+    "grok_calls",
+    "gemini_calls",
+    "magnific_calls",
+    "gen_share",
+    "critic_cost",
+)
+
+
+def _service_call_count(costs, *names: str) -> int:
+    if costs is None:
+        return 0
+    wanted = {n.lower() for n in names}
+    entries = getattr(costs, "entries", None)
+    if entries is not None:
+        return sum(1 for e in entries
+                   if str(getattr(e, "service", "") or "").lower() in wanted)
+    data = costs.to_dict() if hasattr(costs, "to_dict") else {}
+    return sum(1 for e in (data.get("entries") or [])
+               if str(e.get("service") or "").lower() in wanted)
+
+
+def _critic_cost_usd(costs) -> float:
+    if costs is None:
+        return 0.0
+    if hasattr(costs, "by_service"):
+        by = costs.by_service()
+    else:
+        by = (costs.to_dict() if hasattr(costs, "to_dict") else {}).get("by_service") or {}
+    return round(sum(float(by.get(k, 0) or 0) for k in ("glm", "grok", "gemini")), 6)
+
+
+def _killed_glm_count(judged: list[dict[str, Any]], reject_threshold: float) -> int:
+    n = 0
+    for entry in judged:
+        verdict = entry.get("verdict") or {}
+        if "glm" not in str(verdict.get("judge") or "").lower():
+            continue
+        try:
+            score = float(verdict.get("score") or 0)
+        except (TypeError, ValueError):
+            score = 0.0
+        decision = str(entry.get("decision") or "")
+        if score < reject_threshold or decision.startswith("reject"):
+            n += 1
+    return n
+
+
+def critic_metrics_payload(accepted: dict[str, Any] | None = None, *,
+                           generated: dict[str, Any] | None = None,
+                           costs=None,
+                           candidates: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Стабильные ключи MUST-020 для build_report и cost_report."""
+    accepted = accepted or {}
+    generated = generated or {}
+    candidates = candidates or {}
+    per_slot = accepted.get("candidates_per_slot")
+    if not isinstance(per_slot, dict):
+        counts: dict[str, int] = {}
+        for row in candidates.get("candidates") or []:
+            key = str(row.get("slot_index", ""))
+            counts[key] = counts.get(key, 0) + 1
+        per_slot = counts
+    killed_stage1 = accepted.get("killed_stage1", accepted.get("skipped_stage1", 0))
+    if killed_stage1 is None:
+        killed_stage1 = len(candidates.get("stage1_rejected") or [])
+    gen_share = generated.get("ai_footage_share")
+    if gen_share is None:
+        gen_share = accepted.get("gen_share", 0.0)
+    magnific = accepted.get("magnific_calls")
+    if costs is not None:
+        magnific = _service_call_count(costs, "magnific")
+        critic_cost = _critic_cost_usd(costs)
+    else:
+        magnific = int(magnific or 0)
+        critic_cost = float(accepted.get("critic_cost") or 0.0)
+    return {
+        "candidates_per_slot": {str(k): int(v) for k, v in dict(per_slot).items()},
+        "killed_stage1": int(killed_stage1 or 0),
+        "killed_cheap": int(accepted.get("killed_cheap") or 0),
+        "killed_glm": int(accepted.get("killed_glm") or 0),
+        "grok_calls": int(accepted.get("grok_calls") or 0),
+        "gemini_calls": int(accepted.get("gemini_calls") or 0),
+        "magnific_calls": int(magnific or 0),
+        "gen_share": round(float(gen_share or 0.0), 4),
+        "critic_cost": round(float(critic_cost or 0.0), 6),
+    }
+
+
 def skip_live_verdict(candidate: dict[str, Any], intent: str) -> dict[str, Any]:
     """Honest skip_live score: never invent 0.72 above accept_threshold."""
     prior = candidate.get("prior_score")
@@ -169,21 +329,44 @@ def run_step(ctx) -> dict[str, Any]:
 
     accept_threshold = float(cfg.get("vision.accept_threshold", 0.70))
     reject_threshold = float(cfg.get("vision.reject_threshold", 0.45))
-    arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 8))
+    arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 3))
 
     skip_live = bool(cfg.get("vision.skip_live", False))
-    primary = None if skip_live else build_vision_provider(cfg, ctx.costs, role="primary")
-    arbiter = None if skip_live else build_vision_provider(cfg, ctx.costs, role="arbiter")
+    surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
+    footage_slots = [
+        s for s in plan.get("slots", [])
+        if s.get("needs_asset") and s.get("asset_role") in ("broll", "evidence", "interstitial")
+    ]
+    surplus = doc.get("surplus") or surplus_report(
+        footage_pool_count(doc.get("candidates") or []),
+        len(footage_slots), surplus_ratio)
+    paid_ok = bool(surplus.get("ok"))
+    primary = None if skip_live or not paid_ok else build_vision_provider(
+        cfg, ctx.costs, role="primary")
+    arbiter = None if skip_live or not paid_ok else build_vision_provider(
+        cfg, ctx.costs, role="arbiter")
     if skip_live:
         _log.warning("vision.skip_live: без live API — движковые гейты блокирующие")
+    elif not paid_ok:
+        _log.warning("surplus underfilled — paid critic (GLM/Grok/Magnific) не вызывается",
+                     extra=surplus)
     index = FootageIndex.load(cfg)
     video_id = str(plan.get("video_id") or "")
     pin_deny, pin_prefer = _load_footage_pins(cfg, video_id)
     pin_entry = _footage_pin_entry(cfg, video_id)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
+    dead_ids = {str(row.get("id") or "") for row in (doc.get("stage1_rejected") or [])
+                if row.get("id")}
+    max_h = int(cfg.get("stock.max_download_height", 1080))
     by_slot: dict[int, list[dict[str, Any]]] = {}
+    skipped_stage1 = 0
     for candidate in doc["candidates"]:
+        blocked = judge_blocks_stage1_dead(
+            candidate, dead_ids=dead_ids, max_h=max_h)
+        if blocked:
+            skipped_stage1 += 1
+            continue
         by_slot.setdefault(candidate["slot_index"], []).append(candidate)
 
     palette_rules = dict(cfg.brandbook.get("color_rules", {}).get("footage_palette", {}))
@@ -196,6 +379,9 @@ def run_step(ctx) -> dict[str, Any]:
         repeat_max = int(pin_entry["same_asset_max_slots"])
     repeat_penalty = float(cfg.get("stock.repeat_score_penalty", 0.12))
     arbiter_calls = 0
+    vision_counts = {"grok": 0, "glm": 0, "gemini": 0}
+    killed_cheap = 0
+    cheap_seen = 0
     reused_scores = 0
     rejected_by_palette = 0
     rejected_by_dark = 0
@@ -233,24 +419,29 @@ def run_step(ctx) -> dict[str, Any]:
             intent, [candidate.get("query", "") for candidate in by_slot[slot_index]],
             str(plan.get("category") or ""))
         category = str(plan.get("category") or "")
+        negatives = slot_negatives(slot, plan)
+        try:
+            slot_duration = float(slot.get("end") or 0) - float(slot.get("start") or 0)
+        except (TypeError, ValueError):
+            slot_duration = 0.0
+        if slot_duration <= 0:
+            slot_duration = 3.0
         gated: list[dict[str, Any]] = []
         for candidate in by_slot[slot_index]:
-            theme = thematic_reject_reason(
-                " ".join([
-                    str(candidate.get("page_url") or ""),
-                    str(candidate.get("attribution") or ""),
-                    str(candidate.get("query") or ""),
-                    " ".join(candidate.get("tags") or []),
-                    str(candidate.get("vision_summary") or ""),
-                    str(candidate.get("asset_id") or ""),
-                    str(candidate.get("prior_intent") or ""),
-                ]),
-                category=category, intent_kind=intent_kind, video_id=video_id)
-            if theme:
-                entry = {**candidate, "score": 0.0, "decision": "reject_theme",
-                         "reject_reason": theme,
-                         "verdict": {"score": 0.0, "judge": "theme_guard",
-                                     "reason": theme, "summary": "", "frames": 0}}
+            cheap_seen += 1
+            cheap = cheap_reject_reason(
+                candidate, cfg=cfg, slot_duration=slot_duration,
+                negatives=negatives, category=category,
+                intent_kind=intent_kind, video_id=video_id)
+            if cheap:
+                killed_cheap += 1
+                decision = "reject_theme" if (
+                    cheap.startswith("тематический") or cheap.startswith("sci off-theme")
+                ) else "reject_cheap"
+                entry = {**candidate, "score": 0.0, "decision": decision,
+                         "reject_reason": cheap,
+                         "verdict": {"score": 0.0, "judge": "cheap_filter",
+                                     "reason": cheap, "summary": "", "frames": 0}}
                 judged.append(entry)
                 continue
             gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
@@ -354,24 +545,53 @@ def run_step(ctx) -> dict[str, Any]:
                     "judge": "cache", "frames": 0,
                 }
                 reused_scores += 1
+            elif not paid_ok:
+                entry = {
+                    **candidate, "intent": intent, "score": 0.0,
+                    "decision": "underfilled",
+                    "reject_reason": (
+                        f"surplus {surplus['candidates']}/{surplus['target']} "
+                        f"< {surplus['ratio']:.1f}×; paid critic skipped"),
+                    "verdict": {
+                        "score": 0.0, "judge": "surplus_gate", "frames": 0,
+                        "reason": "underfilled: no Gemini/Grok/Magnific",
+                    },
+                }
+                judged.append(entry)
+                continue
             else:
                 frames = [Path(f) for f in candidate.get("frames", [])]
                 verdict = primary.judge(frames, intent=intent, role=role,
                                         query=candidate.get("query", ""))
                 verdict_dict = verdict.to_dict()
+                _tally_vision(
+                    f"{getattr(primary, 'name', '')} {verdict_dict.get('judge', '')}",
+                    vision_counts)
 
-                reason = _needs_arbitration(verdict, role, cfg)
-                if reason and arbiter_calls < arbiter_budget:
-                    arbiter_calls += 1
-                    final = arbiter.judge(frames, intent=intent, role=role,
-                                          query=candidate.get("query", ""))
-                    verdict_dict = final.to_dict()
-                    verdict_dict["arbitrated"] = True
-                    verdict_dict["arbitration_reason"] = reason
-                    verdict_dict["primary_score"] = round(verdict.score, 4)
-                elif reason:
+                # MUST-019: второй уровень / Grok только серая зона score.
+                if (in_grey_zone(verdict.score, cfg)
+                        and arbiter is not None
+                        and arbiter_calls < arbiter_budget):
+                    aid = str(candidate.get("asset_id") or "")
+                    already = bool(verdict_dict.get("arbitrated"))
+                    if not already:
+                        arbiter_calls += 1
+                        final = arbiter.judge(frames, intent=intent, role=role,
+                                              query=candidate.get("query", ""))
+                        primary_score = round(verdict.score, 4)
+                        verdict_dict = final.to_dict()
+                        verdict_dict["arbitrated"] = True
+                        verdict_dict["arbitration_reason"] = (
+                            f"score {primary_score:.2f} в серой зоне "
+                            f"[{reject_threshold:.2f}, {accept_threshold:.2f}]")
+                        verdict_dict["primary_score"] = primary_score
+                        verdict_dict["clip_id"] = aid
+                        _tally_vision(
+                            f"{getattr(arbiter, 'name', '')} {verdict_dict.get('judge', '')}",
+                            vision_counts)
+                elif in_grey_zone(verdict.score, cfg) and arbiter_calls >= arbiter_budget:
                     verdict_dict["arbitration_skipped"] = (
-                        f"{reason}; лимит арбитража {arbiter_budget} исчерпан")
+                        f"серая зона; лимит арбитража {arbiter_budget} исчерпан")
 
             # Цвет судится отдельно от смысла и бесплатно: кадры кандидата
             # уже лежат на диске. Судья со зрением оценивает соответствие
@@ -526,6 +746,25 @@ def run_step(ctx) -> dict[str, Any]:
                    if s["needs_asset"]
                    and s["asset_role"] in ("broll", "evidence", "meme", "interstitial")]
     unfilled = [i for i in asset_slots if i not in accepted]
+    candidates_per_slot = {str(i): 0 for i in asset_slots}
+    for slot_index, rows in by_slot.items():
+        candidates_per_slot[str(slot_index)] = len(rows)
+    killed_glm = _killed_glm_count(judged, reject_threshold)
+    costs = getattr(ctx, "costs", None)
+    critic = critic_metrics_payload(
+        {
+            "candidates_per_slot": candidates_per_slot,
+            "killed_stage1": skipped_stage1,
+            "killed_cheap": killed_cheap,
+            "killed_glm": killed_glm,
+            "grok_calls": vision_counts["grok"],
+            "gemini_calls": vision_counts["gemini"],
+            "magnific_calls": _service_call_count(costs, "magnific"),
+            "gen_share": 0.0,
+            "critic_cost": _critic_cost_usd(costs),
+        },
+        costs=costs,
+    )
 
     result = {
         "video_id": doc["video_id"],
@@ -533,6 +772,18 @@ def run_step(ctx) -> dict[str, Any]:
         "reject_threshold": reject_threshold,
         "arbiter_calls": arbiter_calls,
         "arbiter_budget": arbiter_budget,
+        "grok_calls": vision_counts["grok"],
+        "glm_calls": vision_counts["glm"],
+        "gemini_calls": vision_counts["gemini"],
+        "killed_cheap": killed_cheap,
+        "killed_glm": killed_glm,
+        "killed_stage1": skipped_stage1,
+        "cheap_seen": cheap_seen,
+        "cheap_kill_rate": round(killed_cheap / max(cheap_seen, 1), 4),
+        "candidates_per_slot": candidates_per_slot,
+        "magnific_calls": critic["magnific_calls"],
+        "gen_share": critic["gen_share"],
+        "critic_cost": critic["critic_cost"],
         "reused_scores": reused_scores,
         "rejected_by_palette": rejected_by_palette,
         "rejected_by_watermark": rejected_by_watermark,
@@ -544,6 +795,8 @@ def run_step(ctx) -> dict[str, Any]:
         "fill_rate": round(len(accepted) / max(len(asset_slots), 1), 4),
         "unfilled_slots": unfilled,
         "added_to_index": added_to_index,
+        "surplus": surplus,
+        "skipped_stage1": skipped_stage1,
         "accepted": {str(k): v for k, v in sorted(accepted.items())},
         "judged": judged,
     }
@@ -570,4 +823,6 @@ def run_step(ctx) -> dict[str, Any]:
         "rejected_by_dark": rejected_by_dark,
     })
     return {"accepted": len(accepted), "fill_rate": result["fill_rate"],
-            "arbiter_calls": arbiter_calls}
+            "arbiter_calls": arbiter_calls,
+            "grok_calls": vision_counts["grok"],
+            "killed_cheap": killed_cheap}
