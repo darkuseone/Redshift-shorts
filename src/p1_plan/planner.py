@@ -61,6 +61,8 @@ def music_tags_for(category: str, *, twist: bool = False) -> tuple[str, ...]:
 
 
 AVATAR_MODES = ("A", "B")   # режимы, в которых аватар присутствует в кадре
+# Первая секунда ролика не лицо. Совпадает с P5 AVATAR_EARLIEST_SEC.
+AVATAR_EARLIEST_SEC = 1.0
 
 
 def _mode_for_block(block: dict[str, Any], *, avatar_forced: str) -> str:
@@ -187,19 +189,24 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
         cursor = 0.0
         for block in blocks:
             if block["mode"] in AVATAR_MODES:
-                return cursor
+                # Режим A/B на хуке с 0 с не значит лицо в кадре: P5 держит
+                # talking-head до 1.0 с.
+                return max(cursor, AVATAR_EARLIEST_SEC)
             cursor += block["_estimated_sec"]
         return None
 
     if (_first_avatar_at() or 1e9) > first_limit:
-        # Кандидаты — блоки, целиком укладывающиеся в лимит и не запрещённые
-        # автору сценария явной директивой avatar: off.
+        # Кандидаты — блоки, которые пересекают окно [1 с, first_limit] и не
+        # запрещены директивой avatar: off. Блок целиком внутри первой секунды
+        # лицом не становится.
         cursor = 0.0
         promoted = False
         for block in blocks:
             if cursor > first_limit:
                 break
-            if block["avatar_directive"] != "off" and block["mode"] == "C":
+            block_end = cursor + block["_estimated_sec"]
+            if (block["avatar_directive"] != "off" and block["mode"] == "C"
+                    and block_end > AVATAR_EARLIEST_SEC):
                 block["mode"] = "A"
                 block["mode_reason"] = "первое появление аватара обязано быть ≤ 0:06 (§6)"
                 promoted = True

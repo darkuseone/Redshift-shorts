@@ -48,6 +48,20 @@ def _hook_is_banned(text: str) -> bool:
     return any(bad in low for bad in _HOOK_BANNED_ON_SCREEN)
 
 
+def _talking_head_in_window(shots: list[dict[str, Any]],
+                            slots: list[dict[str, Any]], *,
+                            until: float) -> dict[str, Any] | None:
+    """Первый кадр-лицо, который пересекает [0, until)."""
+    for item in list(shots) + list(slots):
+        if item.get("kind") not in ("avatar", "split"):
+            continue
+        start = float(item.get("start", 0.0) or 0.0)
+        end = float(item.get("end") or (start + float(item.get("duration") or 0.0)))
+        if start < until - 1e-9 and end > 1e-9:
+            return item
+    return None
+
+
 def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
            render_stats: dict[str, Any], media, sfx_map: dict[str, Any],
            avatar_meta: dict[str, Any], accepted: dict[str, Any],
@@ -391,9 +405,8 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                 if not beats else ""),
         blocking=False))
 
-    # 29. Экранный хук: строка обязана быть в кадре к первой секунде и
-    # читаться за неё же. До §5 хук собирался случайно — первые кадры 0042
-    # выбрала `gap_phrase`, то есть «что вынести, когда материала нет».
+    # 29. Экранный хук: строка в кадре к первой секунде, и это не лицо.
+    # QC-29 раньше смотрел только «текст ≤1 с» и пропускал talking-head.
     hook_shot = next((s for s in shots if s.get("hook")), None)
     if hook_shot is None:
         hook_shot = next((s for s in shots
@@ -410,12 +423,26 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     # порогом в три слова забраковал бы эталонную разметку 0042 из того же ТЗ.
     hook_ok = bool(hook_shot) and hook_at <= 1.0 and 1 <= hook_words <= 7 \
         and not _hook_is_banned(hook_text)
+    face_hold = 1.0
+    face_shot = _talking_head_in_window(shots, cut_plan.get("slots") or [],
+                                        until=face_hold)
+    if face_shot is not None:
+        hook_ok = False
+    if not hook_shot:
+        hook_detail = "хук-кадра нет"
+    elif face_shot is not None:
+        hook_detail = "первая секунда занята лицом аватара"
+    else:
+        hook_detail = ""
     checks.append(_check(
-        29, "Экранный хук в первую секунду", hook_ok,
+        29, "Экранный хук в первую секунду, не talking-head", hook_ok,
         value={"at_sec": round(hook_at, 2) if hook_shot else None,
-               "words": hook_words, "text": hook_text[:48]},
-        threshold={"at_sec": 1.0, "words": [1, 7]},
-        detail=("хук-кадра нет" if not hook_shot else "")))
+               "words": hook_words, "text": hook_text[:48],
+               "face_at_sec": None if face_shot is None else round(
+                   float(face_shot.get("start", 0.0)), 2)},
+        threshold={"at_sec": 1.0, "words": [1, 7], "face_after_sec": face_hold},
+        detail=hook_detail,
+        timecode=0.0 if face_shot is not None else None))
 
     # 30. Доля акцента в кадре (§7.5). До этой волны `accent_share_max`
     # оставался нулём на пути HyperFrames: его считал только старый

@@ -152,6 +152,26 @@ def test_plan_adds_tts_length_buffer(sample_script, cfg):
     assert 1.18 <= ratio <= 1.25       # §4.2.4
 
 
+def test_plan_hook_avatar_on_is_not_a_face_at_zero(sample_script, cfg):
+    """avatar: on на хуке — лицо после 1.0 с, не talking-head с нуля."""
+    from src.p1_plan.planner import AVATAR_EARLIEST_SEC, AVATAR_MODES
+
+    sample_script["blocks"][0]["avatar"] = "on"
+    sample_script["blocks"][0]["mode_hint"] = "A"
+    validated = validate_script(sample_script, cfg)
+    draft = plan(validated, cfg)
+    hook = next(b for b in draft["blocks"] if b["role"] == "hook")
+    assert hook["mode"] in AVATAR_MODES
+    cursor = 0.0
+    first = None
+    for block in draft["blocks"]:
+        if block["mode"] in AVATAR_MODES:
+            first = max(cursor, AVATAR_EARLIEST_SEC)
+            break
+        cursor += block["_estimated_sec"]
+    assert first == pytest.approx(AVATAR_EARLIEST_SEC)
+
+
 # --- P2 mock TTS --------------------------------------------------------------
 
 def test_mock_tts_is_deterministic(cfg, tmp_path):

@@ -146,6 +146,22 @@ class TestQc29PutsTheHookOnScreenInTime:
     def test_a_video_without_a_hook_shot_fails(self, cfg):
         assert not _check(_run(cfg, _plan()), "QC-29")["passed"]
 
+    def test_avatar_in_the_first_second_fails(self, cfg):
+        plan = self._hook_plan()
+        plan["shots"].insert(0, _shot(0, kind="avatar", start=0.0, end=2.0,
+                                      duration=2.0))
+        check = _check(_run(cfg, plan), "QC-29")
+        assert not check["passed"] and check["blocking"]
+        assert "лицом" in check["detail"]
+
+    def test_avatar_at_one_second_with_a_card_before_passes(self, cfg):
+        plan = _plan(shots=[
+            _shot(0, kind="fullscreen_text", hook=True, start=0.0, end=1.0,
+                  duration=1.0, content="НЕВОЗМОЖНО ПРОВЕРИТЬ", params={}),
+            _shot(1, kind="avatar", start=1.0, end=4.0, duration=3.0),
+        ])
+        assert _check(_run(cfg, plan), "QC-29")["passed"]
+
     @pytest.mark.parametrize("text", [
         "ПРИВЕТ ДРУЗЬЯ", "ПОДПИСЫВАЙСЯ НА КАНАЛ", "В ЭТОМ ВИДЕО РАЗБЕРЁМ",
         "СМОТРИ ДО КОНЦА",
