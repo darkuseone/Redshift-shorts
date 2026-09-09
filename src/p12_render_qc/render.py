@@ -498,6 +498,8 @@ def run_step(ctx) -> dict[str, Any]:
         # «почему выбран этот приём» нечем закрыть.
         "pick_traces": {v: ctx.read(f"edit_plan_{v}.json").get("pick_traces", [])
                         for v in variants},
+        # MUST-016: 3–5 EN-запросов на слот + entities + negatives.
+        "search": ctx.read_or("candidates.json", {}).get("search") or {},
     }
     ctx.write("build_report.json", report)
     write_json(ctx.opath("build_report.json"), report)

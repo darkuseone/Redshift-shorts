@@ -32,8 +32,10 @@ from ..lib.phash import phash_image
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import (
-    allow_generic_pad,
-    build_queries, classify_intent, is_sci_topic, thematic_reject_reason,
+    QUERY_MAX, QUERY_MIN, TEXTURE_FILL, TEXTURE_FILL_ALT, allow_generic_pad,
+    classify_intent, compile_slot_search, extra_fits_slot, is_sci_topic,
+    negative_reject_reason, search_report_payload, thematic_reject_reason,
+    topical_tokens,
 )
 from ..lib.render.shots import slim_video
 
@@ -61,6 +63,7 @@ def pad_slot_queries(
     category: str = "",
     slot: dict[str, Any] | None = None,
     plan: dict[str, Any] | None = None,
+    entities: Iterable[str] | None = None,
 ) -> list[str]:
     """Дополнить короткую лестницу запросов.
 
@@ -69,24 +72,40 @@ def pad_slot_queries(
     студию новостей подходят чему угодно и поэтому не подходят ничему.
     Подмешивались они **в каждый слот каждого ролика**, и ролик про квантовый
     чип честно получал галактику.
+
+    MUST-016: пад, который не делит слова с сущностью/понятием блока,
+    не добавляется. Потолок — 5 запросов.
     """
-    if len(queries) >= queries_per_slot:
-        return list(queries)
+    cap = min(QUERY_MAX, max(1, int(queries_per_slot)))
+    out = list(queries)[:cap]
+    if len(out) >= cap:
+        return out
+    tokens = topical_tokens(slot or {}, plan or {}, out)
+    for ent in entities or ():
+        tokens.update(w.lower() for w in str(ent).split() if len(w) > 2)
     extras: list[str] = []
     if is_sci_topic(category=category, intent_kind=intent_kind):
-        extras.extend(SCI_QUERY_PAD)
+        extras.extend(extra for extra in SCI_QUERY_PAD
+                      if extra_fits_slot(extra, tokens))
     if slot is None or allow_generic_pad(slot, plan, intent_kind=intent_kind,
                                          category=category):
-        extras.extend(SPACE_NEWS_PAD)
-    existing = {q.lower() for q in queries}
-    out = list(queries)
+        extras.extend(extra for extra in SPACE_NEWS_PAD
+                      if extra_fits_slot(extra, tokens))
+    existing = {q.lower() for q in out}
     for extra in extras:
-        if len(out) >= queries_per_slot:
+        if len(out) >= cap:
             break
         if extra.lower() not in existing:
             out.append(extra)
             existing.add(extra.lower())
-    return out
+    if len(out) < QUERY_MIN:
+        for fill in (TEXTURE_FILL, TEXTURE_FILL_ALT):
+            if fill.lower() not in existing:
+                out.append(fill)
+                existing.add(fill.lower())
+            if len(out) >= QUERY_MIN:
+                break
+    return out[:cap]
 
 
 _log = get_logger("p7")
@@ -114,7 +133,8 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
                    routing: dict[str, Any] | None = None,
                    category: str = "", intent_kind: str = "",
                    pin_deny: set[str] | None = None,
-                   video_id: str = "") -> str | None:
+                   video_id: str = "",
+                   negatives: Iterable[str] | None = None) -> str | None:
     """Шаг 1 §7.3 — дешёвая отбраковка без vision. Возвращает причину или None."""
     if pin_id_denied(getattr(candidate, "id", "") or "", pin_deny or set()):
         return f"pin_deny: {candidate.id}"
@@ -152,6 +172,9 @@ def _stage1_reject(candidate: StockCandidate, cfg, slot_duration: float, *,
         hay, category=category, intent_kind=intent_kind, video_id=video_id)
     if thematic:
         return thematic
+    denied = negative_reject_reason(hay, negatives)
+    if denied:
+        return denied
     return None
 
 
@@ -252,7 +275,7 @@ def run_step(ctx) -> dict[str, Any]:
     index = FootageIndex.load(cfg)
     pin_deny, pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
 
-    queries_per_slot = int(cfg.get("stock.queries_per_slot", 4))
+    queries_per_slot = min(QUERY_MAX, max(3, int(cfg.get("stock.queries_per_slot", 5))))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))
     pool_min, pool_max = cfg.get("stock.target_pool_size", [30, 60])
     max_downloads = int(cfg.get("magnific.max_downloads_per_video", 50))
@@ -289,21 +312,31 @@ def run_step(ctx) -> dict[str, Any]:
     seen_hashes: list[tuple[str, list[str]]] = []
     from_cache = 0
     missing_in_storage: list[str] = []
+    slot_search: list[dict[str, Any]] = []
 
     frames_dir = ctx.wpath("broll", "frames", ".keep").parent
 
     for slot in slots:
         intent_kind = classify_intent(slot.get("visual_intent", ""), slot.get("queries", []),
                                       plan.get("category", ""))
-        queries = build_queries(slot, plan, count=queries_per_slot)
+        compiled = compile_slot_search(slot, plan, count=queries_per_slot)
         queries = pad_slot_queries(
-            queries,
+            compiled["queries"],
             queries_per_slot=queries_per_slot,
             intent_kind=intent_kind,
             category=str(plan.get("category") or ""),
             slot=slot,
             plan=plan,
+            entities=compiled["entities"],
         )
+        negatives = list(compiled["negatives"])
+        slot_search.append({
+            "slot_index": slot["index"],
+            "block_id": slot.get("block_id"),
+            "queries": list(queries),
+            "entities": list(compiled["entities"]),
+            "negatives": negatives,
+        })
         source_order = _sources_for(intent_kind, routing)
         slot_candidates: list[dict[str, Any]] = []
 
@@ -338,6 +371,14 @@ def run_step(ctx) -> dict[str, Any]:
                 record, category=str(plan.get("category") or ""),
                 intent_kind=intent_kind,
                 video_id=str(plan.get("video_id") or ""))
+            if not theme_reason:
+                local_hay = " ".join([
+                    getattr(record, "url_origin", "") or "",
+                    " ".join(getattr(record, "tags", None) or []),
+                    getattr(record, "vision_summary", "") or "",
+                    getattr(record, "id", "") or "",
+                ])
+                theme_reason = negative_reject_reason(local_hay, negatives)
             if theme_reason:
                 stage1_rejected.append({
                     "id": record.id, "source": record.source,
@@ -526,7 +567,8 @@ def run_step(ctx) -> dict[str, Any]:
                     candidate, cfg, float(slot["duration"]), routing=routing,
                     category=str(plan.get("category") or ""),
                     intent_kind=intent_kind, pin_deny=pin_deny,
-                    video_id=str(plan.get("video_id") or ""))
+                    video_id=str(plan.get("video_id") or ""),
+                    negatives=negatives)
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": query})
@@ -568,7 +610,8 @@ def run_step(ctx) -> dict[str, Any]:
                     candidate, cfg, float(slot["duration"]), routing=routing,
                     category=str(plan.get("category") or ""),
                     intent_kind=intent_kind, pin_deny=pin_deny,
-                    video_id=str(plan.get("video_id") or ""))
+                    video_id=str(plan.get("video_id") or ""),
+                    negatives=negatives)
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
                                             "reason": reason, "query": article["url"]})
@@ -625,6 +668,7 @@ def run_step(ctx) -> dict[str, Any]:
         "slots_from_press": press_used,
         "stage1_reject_share": round(
             len(stage1_rejected) / max(len(stage1_rejected) + len(candidates_out), 1), 4),
+        "search": search_report_payload(slot_search),
         "candidates": candidates_out,
     }
     ctx.write("candidates.json", doc)
