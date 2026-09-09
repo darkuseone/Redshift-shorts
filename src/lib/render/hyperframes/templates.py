@@ -10465,7 +10465,7 @@ def fs_code_diff(ctx: "TemplateCtx") -> Piece:
         if kind != "del":
             cursor += lh
     code_h = max(y_start[-1], y_end[-1]) + lh + 16
-    filename = str(params.get("filename") or "greet.js")
+    filename = str(params.get("filename") or "").strip()
     invert = " invert" if params.get("invert") else ""
     tweens = [
         f'tl.fromTo("#{node_id}-editor",'

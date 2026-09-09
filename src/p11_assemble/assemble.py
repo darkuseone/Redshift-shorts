@@ -138,13 +138,27 @@ _SOURCE_COPY_FIELDS = (
 )
 
 
+_OVERLAY_COPY_KEYS = (
+    "content", "highlight_line", "snippet", "text", "highlight",
+    "proof_card", "on_screen", "code", "code_before", "code_after",
+    "before", "after", "filename",
+)
+
+
 def _script_source_corpus(plan: dict[str, Any]) -> str:
-    """Union of spoken blocks and authored source fields (MUST-015)."""
+    """Union of spoken blocks and authored source fields (MUST-015 / MUST-004)."""
     chunks: list[str] = []
+    meta_hook = (plan.get("meta") or {}).get("hook") or {}
+    if isinstance(meta_hook, dict):
+        chunks.append(str(meta_hook.get("on_screen") or ""))
+    plan_hook = plan.get("hook") or {}
+    if isinstance(plan_hook, dict):
+        chunks.append(str(plan_hook.get("on_screen") or ""))
     for block in plan.get("blocks") or []:
         chunks.append(str(block.get("text") or ""))
+        chunks.append(str(block.get("emphasis_word") or ""))
         overlay = block.get("overlay") or {}
-        for key in ("content", "highlight_line", "snippet", "text", "highlight"):
+        for key in _OVERLAY_COPY_KEYS:
             chunks.append(str(overlay.get(key) or ""))
     for source in plan.get("sources") or []:
         for key in _SOURCE_COPY_FIELDS:
@@ -153,15 +167,58 @@ def _script_source_corpus(plan: dict[str, Any]) -> str:
 
 
 def _copy_from_script_or_source(text: str, corpus: str) -> str:
-    """Keep card copy only when it already lives in script ∪ sources."""
+    """Keep card/terminal copy only when it already lives in script ∪ sources."""
     raw = str(text or "").strip()
     if not raw:
         return ""
-    if raw in corpus:
+    if raw in corpus or raw.lower() in corpus.lower():
         return raw
-    if raw.lower() in corpus.lower():
+    lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+    if len(lines) > 1 and all(
+            ln in corpus or ln.lower() in corpus.lower() for ln in lines):
         return raw
     return ""
+
+
+def _block_copy_corpus(block: dict[str, Any], *extras: str,
+                       plan: dict[str, Any] | None = None) -> str:
+    """Local script ∪ source union for one block (MUST-004)."""
+    overlay = block.get("overlay") if isinstance(block.get("overlay"), dict) else {}
+    chunks = [
+        str(block.get("text") or ""),
+        str(block.get("emphasis_word") or ""),
+        *[str(overlay.get(k) or "") for k in _OVERLAY_COPY_KEYS],
+        *[str(x or "") for x in extras],
+    ]
+    if plan is not None:
+        chunks.append(_script_source_corpus(plan))
+    return "\n".join(chunks)
+
+
+_ON_SCREEN_PARAM_KEYS = (
+    "content", "text", "code", "code_before", "code_after", "before", "after",
+    "filename", "highlight_line", "highlight", "snippet", "proof_card",
+    "title", "subtitle", "word", "body", "label", "name", "message",
+    "message1", "brandText", "prompt",
+)
+
+
+def overlay_on_screen_text(*nodes: dict[str, Any]) -> str:
+    """Flatten on-screen copy fields from shots/overlays for tests and QC."""
+    chunks: list[str] = []
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        chunks.append(str(node.get("content") or ""))
+        params = node.get("params") if isinstance(node.get("params"), dict) else {}
+        for key in _ON_SCREEN_PARAM_KEYS:
+            chunks.append(str(params.get(key) or ""))
+        hero = node.get("hero") if isinstance(node.get("hero"), dict) else {}
+        hero_params = hero.get("params") if isinstance(hero.get("params"), dict) else {}
+        for key in _ON_SCREEN_PARAM_KEYS:
+            chunks.append(str(hero.get(key) or ""))
+            chunks.append(str(hero_params.get(key) or ""))
+    return "\n".join(chunks)
 
 
 def _overlay_enter_ms(ctx, requested: float | None = None) -> int:
@@ -297,46 +354,35 @@ def _semantic_screen_text(block: dict[str, Any], *, fallback: str = "") -> str:
     return body
 
 
-def _rich_terminal_copy(block: dict[str, Any], phrase: str) -> tuple[str, str, str]:
-    """Многострочный «терминальный» сниппет вместо одной короткой фразы.
+def _rich_terminal_copy(block: dict[str, Any], phrase: str,
+                        *, plan: dict[str, Any] | None = None
+                        ) -> tuple[str, str, str]:
+    """Terminal copy ⊆ script ∪ sources. No invented scientific identifiers.
 
-    code_diff / code_morph / code_highlight с ``code: "5 МИНУТ"`` оставляют
-    пустое окно greet.js. Собираем before/after из фактов блока + punch.
+    code_diff / code_morph / code_highlight used to pad a short punch
+    («5 МИНУТ») with ``# willow_check`` / ``load surface_code``. Those
+    tokens are not in the VO or sources — they must not reach the frame.
+    Authored overlay.code_* wins; otherwise the spoken/on-screen phrase
+    itself is the snippet. Empty → caller drops the code template.
     """
-    body = _strip_discourse(str(block.get("text") or ""))
-    emphasis = str(block.get("emphasis_word") or "").strip()
-    punch = _norm_screen_key(phrase) or _norm_screen_key(
-        _semantic_screen_text(block))
-    nums = re.findall(r"\d+(?:[.,]\d+)?(?:\s*%|\s*кубит\w*)?", body, flags=re.I)
-    facts: list[str] = []
-    if nums:
-        facts.append(f"qubits: {nums[0].replace(' ', '')}")
-    if "ошиб" in body.lower() or "вдвое" in body.lower():
-        facts.append("error_rate: /2 per step")
+    overlay = block.get("overlay") if isinstance(block.get("overlay"), dict) else {}
+    corpus = _block_copy_corpus(block, phrase, plan=plan)
+
+    def keep(raw: str) -> str:
+        return _copy_from_script_or_source(str(raw or ""), corpus)
+
+    before = keep(overlay.get("code_before") or overlay.get("before") or "")
+    after = keep(overlay.get("code_after") or overlay.get("after") or "")
+    code = keep(overlay.get("code") or "")
+    filename = keep(overlay.get("filename") or "")
+    punch = keep(phrase) or keep(_semantic_screen_text(block))
+    if before or after:
+        return before or punch, after or before or punch, filename
+    if code:
+        return code, code, filename
     if punch:
-        facts.append(f"runtime: {punch.lower()}")
-    if "вселенн" in body.lower() or "суперкомпьютер" in body.lower():
-        facts.append("classical_eta: > universe_age")
-    if emphasis:
-        facts.append(f"signal: {emphasis}")
-    if not facts:
-        facts = [f"note: {punch or 'ok'}", "status: verified"]
-    # Keep 4–6 lines so the window has substance.
-    while len(facts) < 4:
-        facts.append(f"trace[{len(facts)}]: ok")
-    before = "\n".join([
-        "# willow_check",
-        "load surface_code",
-        *facts[:3],
-        "status: pending",
-    ])
-    after = "\n".join([
-        "# willow_check",
-        "load surface_code",
-        *facts[:4],
-        "status: PASS",
-    ])
-    return before, after, "willow_run.log"
+        return punch, punch, filename
+    return "", "", ""
 
 
 
@@ -350,7 +396,8 @@ def _attach_fs_media(fs_params: dict[str, Any], bg_file: str | None) -> dict[str
 
 
 def _fullscreen_params(template: Any, content: str,
-                       block: dict[str, Any] | None = None) -> dict[str, Any]:
+                       block: dict[str, Any] | None = None,
+                       plan: dict[str, Any] | None = None) -> dict[str, Any]:
     """Template catalog params + live shot content; never leave demo copy.
 
     Catalog JSON ships demo ``word``/``text`` (FLIGHT, BREAKING NEWS). Assemble
@@ -390,34 +437,68 @@ def _fullscreen_params(template: Any, content: str,
         else:
             params.pop("text", None)
 
-    # Code templates without real code must not invent greet.js demos: feed
-    # multi-line terminal facts when the on-screen punch is a short slogan
-    # («5 МИНУТ»), else the phrase itself. Empty → Piece().
+    # Code templates: only script ∪ source copy. Short slogans stay slogans;
+    # catalog demo code is not «enriched» with invented terminal identifiers.
+    # Empty → drop code flags so the renderer returns Piece().
     if (params.get("code_diff") or params.get("code_highlight")
             or params.get("code") or params.get("code_morph")):
-        has_shaped = any(params.get(k) for k in (
-            "code_before", "code_after", "code", "before", "after"))
-        if not has_shaped:
-            if phrase and len(phrase.split()) <= 4:
-                before, after, filename = _rich_terminal_copy(block, phrase)
-                params["code_before"] = before
-                params["code_after"] = after
-                params["code"] = f"{before}\n---\n{after}"
-                params["filename"] = filename
-                params["text"] = after
-            elif phrase:
-                params["code"] = phrase
-            else:
-                params.pop("code_diff", None)
-                params.pop("code_highlight", None)
-                params.pop("code_morph", None)
-        elif phrase and len(str(params.get("code") or "").split()) <= 4:
-            # Catalog/params already set a short slogan as code — enrich it.
-            before, after, filename = _rich_terminal_copy(block, phrase)
+        corpus = _block_copy_corpus(block, phrase, plan=plan)
+        catalog_code = str(
+            params.get("code_before") or params.get("code_after")
+            or params.get("code") or params.get("before")
+            or params.get("after") or "")
+        grounded_catalog = _copy_from_script_or_source(catalog_code, corpus)
+        before, after, filename = _rich_terminal_copy(block, phrase, plan=plan)
+        if before or after:
             params["code_before"] = before
             params["code_after"] = after
-            params["code"] = f"{before}\n---\n{after}"
-            params["filename"] = filename
+            params["code"] = (
+                f"{before}\n---\n{after}" if before != after else (before or after)
+            )
+            params["text"] = after or before
+            if filename:
+                params["filename"] = filename
+            else:
+                params.pop("filename", None)
+        elif grounded_catalog:
+            params["code"] = grounded_catalog
+            params.pop("filename", None)
+        elif phrase:
+            params["code"] = phrase
+            params["code_before"] = phrase
+            params["code_after"] = phrase
+            params["text"] = phrase
+            params.pop("filename", None)
+        else:
+            params.pop("code_diff", None)
+            params.pop("code_highlight", None)
+            params.pop("code_morph", None)
+            params.pop("filename", None)
+            params.pop("code", None)
+            params.pop("code_before", None)
+            params.pop("code_after", None)
+            params.pop("before", None)
+            params.pop("after", None)
+        for key in ("code_before", "code_after", "before", "after",
+                    "filename"):
+            kept = _copy_from_script_or_source(str(params.get(key) or ""), corpus)
+            if kept:
+                params[key] = kept
+            else:
+                params.pop(key, None)
+        before_g = str(params.get("code_before") or params.get("before") or "")
+        after_g = str(params.get("code_after") or params.get("after") or "")
+        if before_g or after_g:
+            params["code"] = (
+                f"{before_g}\n---\n{after_g}" if before_g != after_g
+                else (before_g or after_g)
+            )
+        else:
+            kept = _copy_from_script_or_source(str(params.get("code") or ""), corpus)
+            if kept:
+                params["code"] = kept
+            else:
+                params.pop("code", None)
 
     # Dark-plate readability: catalog tone=ink means black glyphs in some
     # templates; over footage we want light. Invert covers the common path.
@@ -3676,7 +3757,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     asset = assets.get(slot["index"])
                     used_templates.append(hook_tpl.id)
                     fs_params = _attach_fs_media(
-                        _fullscreen_params(hook_tpl, content, hook_block), bg_file)
+                        _fullscreen_params(hook_tpl, content, hook_block, plan), bg_file)
                     # Хук читают за секунду: задержки входа здесь нет намеренно.
                     fs_params.pop("enter_delay", None)
                     entry.update({
@@ -3773,7 +3854,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 exclude_renderers=escalation.bans(str(slot.get("beat") or "")),
             )
             used_templates.append(template.id)
-            fs_params = _fullscreen_params(template, content, block)
+            fs_params = _fullscreen_params(template, content, block, plan)
             fs_params = _attach_fs_media(fs_params, bg_file)
             if onset is not None and float(slot["start"]) + 0.15 < float(onset):
                 fs_params["enter_delay"] = max(
@@ -3904,7 +3985,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 [w for w in words_doc["words"]
                  if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
                 str(content), gap_block.get("emphasis_word"))
-            fs_params = _fullscreen_params(template, content, gap_block)
+            fs_params = _fullscreen_params(template, content, gap_block, plan)
             fs_params = _attach_fs_media(fs_params, bg_file)
             if (onset is not None and content
                     and float(slot["start"]) + 0.15 < float(onset)
