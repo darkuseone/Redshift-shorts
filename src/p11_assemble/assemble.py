@@ -3258,7 +3258,7 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
             params["series"] = series
             params["xLabels"] = [n["raw"] for n in nums[:n_take]]
             params["showValues"] = True
-    traits = set(signals) | set(block_traits(str(block.get("text") or "")))
+    traits = set(signals) | set(block_traits(str(block.get("text") or ""))) | {"number"}
     return {
         "type": "dataviz", "start": start, "end": end,
         "template": template.id, "renderer": template.renderer,
@@ -3938,6 +3938,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 fs_params["enter_delay"] = max(
                     float(fs_params.get("enter_delay") or 0),
                     float(onset) + 0.05 - float(slot["start"]))
+            fs_traits = block_traits(str(block.get("text") or ""))
             entry.update({
                 "content": content,
                 "template": template.id,
@@ -3947,6 +3948,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "carries_line": True,
                 "accent_word": _fullscreen_accent(content, block),
                 "accent_family": accent_family(block),
+                "traits": sorted(fs_traits) if fs_traits else [],
+                "grounded_on": sorted(matched(template.needs, fs_traits)),
                 "file": bg_file,
                 "asset_id": (asset or {}).get("asset_id"),
                 "source": (asset or {}).get("source"),

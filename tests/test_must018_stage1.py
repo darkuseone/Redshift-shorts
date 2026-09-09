@@ -9,6 +9,7 @@ from src.lib.providers.vision import VisionVerdict
 from src.lib.render.shots import slim_video
 from src.p7_broll_search.search import (
     _stage1_reject, judge_blocks_stage1_dead, short_side_over_cap,
+    stage1_dead_ids,
 )
 from src.p8_broll_judge.judge import run_step
 
@@ -149,6 +150,54 @@ def test_stage1_dead_and_4k_never_reach_judge(monkeypatch):
         dead, dead_ids={"fourk_clip"}, max_h=1080)
     assert judge_blocks_stage1_dead(
         sneak, dead_ids=set(), max_h=1080)
+
+
+def test_stage1_dup_reject_does_not_kill_first_slot_hit(monkeypatch):
+    """«Дубль» на хвосте слотов не делает клип мёртвым для слота, где он кандидат."""
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", True)
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+
+    hit = {
+        "slot_index": 0, "asset_id": "pexels_v18069803", "origin": "local_cache",
+        "width": 1080, "height": 1920, "query": "quantum processor",
+        "tags": ["quantum", "laboratory"], "prior_score": 0.92,
+        "prior_intent": "quantum laboratory cryostat",
+        "url_origin": "https://example.com/quantum-laboratory-cryostat",
+        "page_url": "https://example.com/quantum-laboratory-cryostat",
+        "vision_summary": "quantum laboratory cryostat",
+        "frames": [],
+    }
+    slots = [{
+        "index": 0, "kind": "footage", "role": "hook",
+        "asset_role": "broll", "needs_asset": True, "block_id": "b1",
+        "visual_intent": "quantum laboratory cryostat",
+        "start": 0.0, "end": 2.0,
+    }]
+    ctx = _Ctx(
+        cfg,
+        {
+            "video_id": "redshift_0042",
+            "candidates": [hit],
+            "stage1_rejected": [
+                {"id": "pexels_v18069803",
+                 "reason": "дубль pexels_v18069803 (материал из базы)"},
+            ],
+            "surplus": {"ok": False, "ratio": 1.3, "candidates": 1,
+                        "target": 2, "slots_needing_footage": 1,
+                        "status": "underfilled"},
+        },
+        {"video_id": "redshift_0042", "category": "ai", "slots": slots,
+         "blocks": [{"id": "b1", "text": "квантовый чип в лаборатории"}]},
+    )
+    assert "pexels_v18069803" not in stage1_dead_ids(
+        [{"id": "pexels_v18069803",
+          "reason": "дубль pexels_v18069803 (материал из базы)"}])
+    run_step(ctx)
+    accepted = ctx.written["accepted_assets.json"]["accepted"]
+    assert accepted["0"]["asset_id"] == "pexels_v18069803"
 
 
 def test_slim_video_does_not_keep_short_side_above_1080(tmp_path):
