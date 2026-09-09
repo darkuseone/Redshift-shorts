@@ -240,6 +240,22 @@ class TestQc20And21And22CarryTheMegaWording:
         assert check["passed"]
         assert check["value"] == 0.0
 
+    def test_qc21_ignores_signature_furniture(self, cfg):
+        """Хук, CTA и плашка не раздувают долю и не заваливают гейт сами."""
+        plan = _plan(shots=[
+            _shot(0, template="intro-hooks/hook-blackout-word", grounded_on=[]),
+        ], overlays=[
+            {"type": "plaque", "template": "lower-thirds/note-pin",
+             "start": 2.0, "end": 4.0, "grounded_on": []},
+            {"type": "cta", "template": "outro-cta/logo-brand-close",
+             "start": 46.0, "end": 48.0, "grounded_on": []},
+            {"type": "dataviz", "template": self.NEEDY[0],
+             "start": 10.0, "end": 13.0, "grounded_on": ["number"]},
+        ])
+        check = _check(_run(cfg, plan), "QC-21")
+        assert check["passed"]
+        assert check["value"] == 0.0
+
     def test_qc21_counts_ungrounded_dataviz_overlay(self, cfg):
         plan = _plan(overlays=[{
             "type": "dataviz", "template": self.NEEDY[0],
@@ -320,6 +336,70 @@ class TestQc10MeasuresSubtitleDriftAgainstSpeech:
         plan = _plan(
             subtitles=[{"display": "слово", "start": 1.0, "end": 1.3}],
             speech_words=[{"display": "слово", "start": 1.0, "end": 1.3}],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_muted_hook_cues_match_the_spoken_word_not_index_zero(self, cfg):
+        """Под хуком караоке снято: первый куй — середина речи, не words[0]."""
+        plan = _plan(
+            subtitles=[{"display": "Работа", "start": 8.094, "end": 8.544}],
+            speech_words=[
+                {"display": "Этот", "start": 0.0, "end": 0.3},
+                {"display": "ответ", "start": 0.3, "end": 0.6},
+                {"display": "Работа", "start": 8.094, "end": 8.544},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_a_repeated_word_matches_the_nearby_token(self, cfg):
+        """Второе «кубит» — не первое, снятое mute на 2.7 с раньше."""
+        plan = _plan(
+            subtitles=[{"display": "кубит", "start": 14.508, "end": 14.958}],
+            speech_words=[
+                {"display": "кубит", "start": 11.806, "end": 12.256},
+                {"display": "физический", "start": 13.790, "end": 14.240},
+                {"display": "кубит", "start": 14.508, "end": 14.958},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_a_glued_lead_syncs_to_the_first_spoken_token(self, cfg):
+        """«бы ты такому»: start куи — у предлога, display — у знаменательного."""
+        plan = _plan(
+            subtitles=[{
+                "display": "такому", "lead": "бы ты",
+                "start": 43.367, "end": 44.244,
+            }],
+            speech_words=[
+                {"display": "бы", "start": 43.367, "end": 43.500},
+                {"display": "ты", "start": 43.500, "end": 43.700},
+                {"display": "такому", "start": 43.700, "end": 44.244},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_cue_end_does_not_steal_the_next_word(self, cfg):
+        """Караоке: конец куи = старт следующего слова, не склейка."""
+        plan = _plan(
+            subtitles=[
+                {"display": "чем", "start": 28.72, "end": 28.884},
+                {"display": "существует", "start": 28.884, "end": 29.32},
+                {"display": "ответ", "start": 32.213, "end": 32.48},
+            ],
+            speech_words=[
+                {"display": "ответ", "start": 0.293, "end": 0.56},
+                {"display": "чем", "start": 28.72, "end": 28.884},
+                {"display": "существует", "start": 28.884, "end": 29.32},
+                {"display": "ответ", "start": 32.213, "end": 32.48},
+            ],
         )
         check = _check(_run(cfg, plan), "QC-10")
         assert check["passed"]

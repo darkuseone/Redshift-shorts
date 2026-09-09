@@ -29,9 +29,12 @@ _log = get_logger("qc")
 # Instruction числа не задаёт; код с «< 1.0» не падал почти никогда.
 # QC-6 держит 0.20 на пересечении *материала*, не шаблонов.
 QC17_TEMPLATE_OVERLAP_MAX = 0.80
-# QC-21 смотрит на приёмы кадра и содержательные оверлеи, не на хром
-# (CTA / плашка домена). Пустой needs у outro-cta иначе ронял любой ролик.
-QC21_CONTENT_OVERLAY_TYPES = frozenset({"dataviz", "source_card"})
+# QC-21 смотрит устройства смысла, не мебель кадра (хук / CTA / плашка).
+# Пустой needs у intro-hooks и outro-cta иначе ронял любой ролик.
+QC21_CONTENT_CATEGORIES = frozenset({
+    "text-fullscreen", "hero-devices", "data-viz",
+    "frames-cards", "browser-ui", "kenburns", "parallax",
+})
 
 
 def _check(check_id: int, name: str, passed: bool, *, value: Any = None,
@@ -329,18 +332,18 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
 
     # 21. Приём без основания. Need-less выбранный шаблон = ungrounded
     # (MUST-010): пустой `needs` больше не прячет приём от гейта.
-    # CTA и нижние плашки — хром (QC-16 / домен источника), не приём MEGA P1:
-    # на кэш-сборке 0042 они одни поднимали долю выше 30% при живых карточках.
-    placed = list(plan.get("shots") or [])
-    placed += [o for o in (plan.get("overlays") or [])
-               if str(o.get("type") or "") in QC21_CONTENT_OVERLAY_TYPES]
-    selected = [p for p in placed if p.get("template")]
+    # Считаем только содержательные категории: хук/CTA/плашка — мебель кадра,
+    # у них пустой needs по каталогу, и они не должны ни заваливать гейт
+    # сами, ни разбавлять долю устройств без основания.
+    placed = [*plan.get("shots", []), *plan.get("overlays", [])]
+    selected = [p for p in placed if p.get("template")
+                and _qc21_scores(str(p.get("template") or ""))]
     ungrounded = [p for p in selected if not p.get("grounded_on")]
     ungrounded_share = (len(ungrounded) / len(selected)) if selected else 0.0
     checks.append(_check(
         21, "Приёмы без основания", ungrounded_share <= 0.30,
         value=round(ungrounded_share, 3), threshold=0.30,
-        detail=f"{len(ungrounded)} из {len(selected)} выбранных приёмов "
+        detail=f"{len(ungrounded)} из {len(selected)} содержательных приёмов "
                f"без grounded_on (need-less считается)"))
 
     # 22. Выбранный приём обязан лежать в разрешённом наборе. Ступени отката
@@ -678,13 +681,66 @@ def _speech_words(ctx, plan: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _qc21_scores(template_id: str) -> bool:
+    """QC-21 смотрит устройства смысла, не мебель кадра."""
+    cat = template_id.split("/", 1)[0]
+    return cat in QC21_CONTENT_CATEGORIES
+
+
+def _cue_token(text: str) -> str:
+    raw = str(text or "").casefold().strip()
+    return raw.strip(".,:;!?…«»\"'()[]")
+
+
+def _cue_head_token(cue: dict[str, Any]) -> str:
+    """Первый произнесённый токен куи: у склейки это lead, не display."""
+    lead = str(cue.get("lead") or "").strip()
+    if lead:
+        return _cue_token(lead.split()[0])
+    return _cue_token(cue.get("display") or cue.get("word") or "")
+
+
+def _match_speech_word(speech: list[dict[str, Any]], used: list[bool],
+                       cue_start: float, cue_end: float,
+                       token: str) -> int | None:
+    """Слово речи для куи: тот же токен в окне куи, не первое вхождение в ролике."""
+    overlap: list[tuple[float, int]] = []
+    near: list[tuple[float, int]] = []
+    same: list[tuple[float, int]] = []
+    other: list[tuple[float, int]] = []
+    for i, word in enumerate(speech):
+        if used[i]:
+            continue
+        w0 = float(word["start"])
+        w1 = float(word["end"]) if word.get("end") is not None else w0
+        dt = abs(cue_start - w0)
+        w_tok = _cue_token(word.get("display") or word.get("word") or "")
+        # Граница куи — старт следующего слова, не перекрытие.
+        hits = w0 < cue_end - 1e-6 and w1 > cue_start + 1e-6
+        if token and w_tok == token:
+            if hits:
+                overlap.append((dt, i))
+            elif dt <= 0.5:
+                near.append((dt, i))
+            else:
+                same.append((dt, i))
+        else:
+            other.append((dt, i))
+    pool = overlap or near or same or other
+    if not pool:
+        return None
+    return min(pool)[1]
+
+
 def _subtitle_drift(plan: dict[str, Any],
                     speech_words: list[dict[str, Any]] | None = None) -> float:
     """Максимальный |Δ| старта SRT-ку и соответствующего слова речи, сек.
 
-    Склейка коротких слов на экране не ломает ряд: куе забирает все речевые
-    слова, чей старт ещё лежит внутри длительности куе относительно пары.
-    Вывернутое окно — не синхрон, а брак.
+    Пара ищется по тексту и времени, а не по порядковому номеру в полном
+    списке речи: под полноэкранным хуком караоке снимается, и оставшиеся
+    куи — это середина ролика, не начало words.json.
+    Склейка коротких слов на экране не ломает ряд: куе забирает речевые
+    слова, чей старт ещё лежит внутри окна куи. Вывернутое окно — брак.
     """
     cues = [c for c in (plan.get("subtitles") or []) if "start" in c]
     speech = list(speech_words if speech_words is not None else
@@ -698,21 +754,22 @@ def _subtitle_drift(plan: dict[str, Any],
     if not cues or not speech:
         return worst
 
-    si = 0
+    used = [False] * len(speech)
     for cue in cues:
-        if si >= len(speech):
-            break
         c_start = float(cue["start"])
         c_end = float(cue["end"])
-        word = speech[si]
-        w_start = float(word["start"])
-        worst = max(worst, abs(c_start - w_start))
-        cue_dur = max(0.0, c_end - c_start)
-        si += 1
-        while si < len(speech):
-            rel = float(speech[si]["start"]) - w_start
-            if rel <= cue_dur + 1e-3:
-                si += 1
+        token = _cue_head_token(cue)
+        best_i = _match_speech_word(speech, used, c_start, c_end, token)
+        if best_i is None:
+            continue
+        used[best_i] = True
+        worst = max(worst, abs(c_start - float(speech[best_i]["start"])))
+        for j in range(best_i + 1, len(speech)):
+            if used[j]:
+                continue
+            # Старт на конце куи — это уже следующее слово, не склейка.
+            if float(speech[j]["start"]) < c_end - 1e-6:
+                used[j] = True
             else:
                 break
     return worst
