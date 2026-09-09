@@ -177,7 +177,7 @@ def test_volcano_candidate_rejected_for_0042(monkeypatch):
     volcano["tags"] = ["volcano", "lava", "magma"]
     volcano["vision_summary"] = "Close-up of bright lava streams"
     volcano["url_origin"] = "https://pixabay.com/videos/id-144678/"
-    prefer = _candidate(0, "pexels_v30775057", score=0.70)
+    prefer = _candidate(0, "pexels_v18069803", score=0.70)
     ctx = _Ctx(
         cfg,
         {"video_id": "redshift_0042", "candidates": [volcano, prefer]},
@@ -188,7 +188,7 @@ def test_volcano_candidate_rejected_for_0042(monkeypatch):
     judged = result["judged"]
     volcano_row = next(j for j in judged if j["asset_id"] == "pixabay_v144678")
     assert volcano_row["decision"] in ("reject_theme", "reject_gate")
-    assert result["accepted"]["0"]["asset_id"] == "pexels_v30775057"
+    assert result["accepted"]["0"]["asset_id"] == "pexels_v18069803"
 
 
 def test_repeat_cap_falls_through_to_other_asset(monkeypatch):
