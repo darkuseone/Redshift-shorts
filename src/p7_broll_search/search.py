@@ -27,7 +27,7 @@ import yaml
 
 from ..lib.ffmpeg import extract_frames, grade_to_palette, probe
 from ..lib.logging import get_logger
-from ..lib.manifest import AssetRecord, FootageIndex, open_library
+from ..lib.manifest import AssetRecord, FootageIndex, open_library, tag_url_coherence
 from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
 from ..lib.providers.press import build_press_provider
@@ -626,6 +626,19 @@ def run_step(ctx) -> dict[str, Any]:
                     "reason": theme_reason, "query": queries[0],
                 })
                 continue
+            coherence = tag_url_coherence(record)
+            if coherence < 0.15:
+                stage1_rejected.append({
+                    "id": record.id, "source": record.source,
+                    "reason": f"tag_url_coherence {coherence:.2f} < 0.15",
+                    "query": queries[0],
+                })
+                continue
+            if frozen and float(record.score or 0) < float(
+                    cfg.get("vision.accept_threshold", 0.70)):
+                # Freeze: paid critic выключен. P8 не примет 0.55 как accept,
+                # слот останется пустым — лучше сразу отдать место добору.
+                continue
             pooled.append((record, _local_cache_row(slot["index"], record, queries[0])))
 
         prefer_set = set(pin_prefer)
@@ -677,6 +690,11 @@ def run_step(ctx) -> dict[str, Any]:
                     video_id=video_id, negatives=negatives,
                     max_short_side=max_short_side)
                 if theme_reason:
+                    continue
+                if tag_url_coherence(record) < 0.15:
+                    continue
+                if frozen and float(record.score or 0) < float(
+                        cfg.get("vision.accept_threshold", 0.70)):
                     continue
                 record_hashes = record.phashes or ([record.phash] if record.phash else [])
                 if record_hashes:
