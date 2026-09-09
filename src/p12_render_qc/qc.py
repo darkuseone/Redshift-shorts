@@ -29,9 +29,6 @@ _log = get_logger("qc")
 # Instruction числа не задаёт; код с «< 1.0» не падал почти никогда.
 # QC-6 держит 0.20 на пересечении *материала*, не шаблонов.
 QC17_TEMPLATE_OVERLAP_MAX = 0.80
-# QC-21 смотрит на приёмы кадра и содержательные оверлеи, не на хром
-# (CTA / плашка домена). Пустой needs у outro-cta иначе ронял любой ролик.
-QC21_CONTENT_OVERLAY_TYPES = frozenset({"dataviz", "source_card"})
 
 
 def _check(check_id: int, name: str, passed: bool, *, value: Any = None,
@@ -690,6 +687,18 @@ def _cue_token(text: str) -> str:
     return raw.strip(".,:;!?…«»\"'()[]")
 
 
+def _spans_overlap(a0: float, a1: float, b0: float, b1: float,
+                   *, eps: float = 1e-6) -> bool:
+    """True only if the intervals share an interior, not a single endpoint."""
+    return min(a1, b1) - max(a0, b0) > eps
+
+
+def _word_span(word: dict[str, Any]) -> tuple[float, float]:
+    start = float(word["start"])
+    end = float(word["end"]) if word.get("end") is not None else start
+    return start, end
+
+
 def _subtitle_drift(plan: dict[str, Any],
                     speech_words: list[dict[str, Any]] | None = None) -> float:
     """Максимальный |Δ| старта SRT-ку и соответствующего слова речи, сек.
@@ -697,8 +706,10 @@ def _subtitle_drift(plan: dict[str, Any],
     Пара ищется по тексту и времени, а не по порядковому номеру в полном
     списке речи: под полноэкранным хуком караоке снимается, и оставшиеся
     куи — это середина ролика, не начало words.json.
-    Склейка коротких слов на экране не ломает ряд: куе забирает речевые
-    слова, чей старт ещё лежит внутри окна куи. Вывернутое окно — брак.
+    Склейка коротких слов на экране не ломает ряд: куе забирает только
+    слова, которые пересекают окно куи по внутренности. P4 стыкует окна
+    встык (end[i] == start[i+1]) — слово, которое только касается конца
+    куи, принадлежит следующей реплике, а не этой. Вывернутое окно — брак.
     """
     cues = [c for c in (plan.get("subtitles") or []) if "start" in c]
     speech = list(speech_words if speech_words is not None else
@@ -723,12 +734,13 @@ def _subtitle_drift(plan: dict[str, Any],
         used[best_i] = True
         worst = max(worst, abs(c_start - float(speech[best_i]["start"])))
         for j in range(best_i + 1, len(speech)):
+            w0, w1 = _word_span(speech[j])
+            if w0 >= c_end - 1e-9:
+                break
             if used[j]:
                 continue
-            if float(speech[j]["start"]) <= c_end + 1e-3:
+            if _spans_overlap(w0, w1, c_start, c_end):
                 used[j] = True
-            else:
-                break
     return worst
 
 
@@ -751,11 +763,10 @@ def _match_speech_word(speech: list[dict[str, Any]], used: list[bool],
     for i, word in enumerate(speech):
         if used[i]:
             continue
-        w0 = float(word["start"])
-        w1 = float(word["end"]) if word.get("end") is not None else w0
+        w0, w1 = _word_span(word)
         dt = abs(cue_start - w0)
         w_tok = _cue_token(word.get("display") or word.get("word") or "")
-        hits = w0 < cue_end + 1e-3 and w1 > cue_start - 1e-3
+        hits = _spans_overlap(w0, w1, cue_start, cue_end)
         if token and w_tok == token:
             if hits:
                 overlap.append((dt, i))

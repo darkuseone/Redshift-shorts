@@ -389,6 +389,44 @@ class TestQc10MeasuresSubtitleDriftAgainstSpeech:
         assert check["passed"]
         assert check["value"] == pytest.approx(0.0, abs=1.0)
 
+    def test_abutting_p4_windows_do_not_steal_the_next_word(self, cfg):
+        """P4: end[i] == start[i+1]. Съесть «каждый» — ложный сдвиг на ранний «кубит»."""
+        plan = _plan(
+            subtitles=[
+                {"display": "чем", "start": 13.1945, "end": 13.4079},
+                {"display": "каждый", "start": 13.4079, "end": 13.7446},
+                {"display": "физический", "start": 13.7896, "end": 14.2396},
+                {"display": "кубит", "start": 14.5080, "end": 14.9580},
+            ],
+            speech_words=[
+                {"display": "кубит", "start": 11.8061, "end": 12.2561},
+                {"display": "чем", "start": 13.1945, "end": 13.4079},
+                {"display": "каждый", "start": 13.4079, "end": 13.7446},
+                {"display": "физический", "start": 13.7896, "end": 14.2396},
+                {"display": "кубит", "start": 14.5080, "end": 14.9580},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
+    def test_abutting_duplicate_token_keeps_the_overlapping_copy(self, cfg):
+        """«что» стыкуется с вторым «верим»; первое «верим» на 1.6 с раньше — не оно."""
+        plan = _plan(
+            subtitles=[
+                {"display": "что", "start": 41.3836, "end": 41.5970},
+                {"display": "верим", "start": 41.5970, "end": 41.9337},
+            ],
+            speech_words=[
+                {"display": "верим", "start": 39.9952, "end": 40.3319},
+                {"display": "что", "start": 41.3836, "end": 41.5970},
+                {"display": "верим", "start": 41.5970, "end": 41.9337},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
+
 
 class TestQc11ReportsClipOffsetNotMouth:
     """MUST-026: QC-11 — avatar_clip_offset, не губы и не lip-sync."""
