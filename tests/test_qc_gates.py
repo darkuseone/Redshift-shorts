@@ -227,6 +227,28 @@ class TestQc20And21And22CarryTheMegaWording:
         assert check["passed"]
         assert check["value"] == 0.2
 
+    def test_qc21_ignores_cta_chrome(self, cfg):
+        """Кнопка подписки — QC-16, не «приём без основания»."""
+        plan = _plan(
+            shots=[_shot(0, template=self.NEEDY[0], grounded_on=["number"])],
+            overlays=[{
+                "type": "cta", "template": "outro-cta/subscribe-pulse",
+                "start": 46.0, "end": 48.0,
+            }],
+        )
+        check = _check(_run(cfg, plan), "QC-21")
+        assert check["passed"]
+        assert check["value"] == 0.0
+
+    def test_qc21_counts_ungrounded_dataviz_overlay(self, cfg):
+        plan = _plan(overlays=[{
+            "type": "dataviz", "template": self.NEEDY[0],
+            "start": 1.0, "end": 3.0, "grounded_on": [],
+        }])
+        check = _check(_run(cfg, plan), "QC-21")
+        assert not check["passed"]
+        assert check["value"] == 1.0
+
     def test_qc22_catches_a_pick_that_escaped_the_allowlist(self, cfg):
         plan = _plan(pick_traces=[
             {"category": "text-fullscreen", "template": "text-fullscreen/x",

@@ -226,6 +226,13 @@ class TestFourteenEmptySlotsAreNotFourteenCaptions:
         rungs = _rungs(built)
         assert rungs["dataviz"] >= 1, f"ни одной диаграммы на числовых блоках: {rungs}"
 
+    def test_dataviz_overlays_record_the_number_they_stand_on(self, built):
+        """Без grounded_on QC-21 считал живую диаграмму «приёмом без основания»."""
+        charts = [o for o in built["overlays"] if o.get("type") == "dataviz"]
+        assert charts, "лестница не поставила ни одной диаграммы"
+        for ov in charts:
+            assert "number" in (ov.get("grounded_on") or []), ov
+
 
 class TestTheBudgetKeepsTheLadderFromSlidingToOneRung:
     """Без потолка на каждую ступень лестница даст 14 карточек вместо 14 надписей."""

@@ -304,6 +304,21 @@ def punch_moment(plan: dict[str, Any], blocks: list[dict[str, Any]],
 
 def run_step(ctx) -> dict[str, Any]:
     meta = ctx.read("tts_meta.json")
+    # Prepared-голос уже финальный: повторный рез пауз сдвинул бы speech_map
+    # относительно клипов аватара и снова дал QC-10.
+    if (str(meta.get("provider_mode") or "") == "prepared"
+            and ctx.exists("speech_map.json") and ctx.exists("voice_final.wav")):
+        speech_map = ctx.read("speech_map.json")
+        loud = speech_map.get("loudness") or {}
+        _log.info("prepared-голос: P3 не режет повторно", extra={
+            "duration_sec": speech_map.get("duration_sec"),
+        })
+        return {
+            "duration_sec": speech_map.get("duration_sec"),
+            "removed_sec": 0.0,
+            "lufs": loud.get("integrated_lufs"),
+            "reused": True,
+        }
     sr = int(meta["sample_rate"])
     audio, file_sr = load_wav(ctx.work_dir / "voice_raw.wav")
     if file_sr != sr:  # pragma: no cover

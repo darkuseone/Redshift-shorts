@@ -77,6 +77,42 @@ class TestQc7FailClosedWhenUnmeasured:
         assert "не мерили" not in (check["detail"] or "")
 
 
+class TestFfmpegOverlayPathRecordsSafeZones:
+    """Кэш-сборка 0042 ушла в ffmpeg: HyperFrames не принял grid.jpg.
+
+    QC-7 читал пустой список как «не мерили». Раскладка та же, что у
+    HyperFrames, — замер обязан появиться и на этом пути.
+    """
+
+    def test_plaque_and_captions_are_measured(self, cfg):
+        from PIL import Image
+
+        from src.lib.render.compositor import RenderStats
+        from src.lib.render.layers import Ctx
+        from src.p12_render_qc.overlays import build_overlay_renderer
+
+        plan = _plan(
+            overlays=[{
+                "type": "plaque", "start": 0.0, "end": 2.0,
+                "params": {"text": "ПЛАШКА"},
+            }],
+            subtitles=[{"display": "слово", "start": 0.0, "end": 0.4}],
+        )
+        ctx = Ctx.build(cfg)
+        stats = RenderStats()
+        render = build_overlay_renderer(ctx, plan)
+        frame = Image.new("RGB", (ctx.width, ctx.height), (18, 18, 22))
+        render(frame, 0.05, 0, stats)
+        assert stats.safe_zone_measured
+        kinds = {c.get("overlay") for c in stats.safe_zone_checks}
+        assert "plaque" in kinds
+        assert "captions" in kinds
+        bbox = (plan["overlays"][0].get("params") or {}).get("bbox")
+        assert bbox and len(bbox) == 4
+        check = _check(_run(cfg, plan, render_stats=stats.to_dict()), "QC-7")
+        assert "не мерили" not in (check["detail"] or "")
+
+
 class TestCompositionEmitsBbox:
     def test_plaque_and_captions_write_checks(self, cfg):
         plan = {

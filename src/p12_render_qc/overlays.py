@@ -11,7 +11,9 @@ from typing import Any, Callable
 
 from PIL import Image
 
-from ..lib.render.canvas import SafeZones, accent_area_share, clamp01
+from ..lib.render.canvas import (
+    SafeZones, accent_area_share, clamp01, stamp_plan_safe_zones,
+)
 from ..lib.render.layers import (
     Ctx, highlight, plaque, source_card, subscribe_button, subtitle, subtitle_baseline,
     text_behind_head,
@@ -45,6 +47,7 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
     # Индексы для быстрого поиска активного элемента.
     subtitle_index = 0
     card_bbox_cache: dict[int, tuple[int, int, int, int]] = {}
+    stamped_safe_zones = False
 
     def _shot_at(t: float) -> dict[str, Any]:
         for shot in shots:
@@ -53,7 +56,10 @@ def build_overlay_renderer(ctx: Ctx, plan: dict[str, Any], *,
         return shots[-1] if shots else {}
 
     def render(frame: Image.Image, t: float, frame_no: int, stats) -> Image.Image:
-        nonlocal subtitle_index
+        nonlocal subtitle_index, stamped_safe_zones
+        if not stamped_safe_zones:
+            stamp_plan_safe_zones(plan, ctx.brandbook, stats)
+            stamped_safe_zones = True
         canvas = frame.convert("RGBA")
         shot = _shot_at(t)
         drew = 0

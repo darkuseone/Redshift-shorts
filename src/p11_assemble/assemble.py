@@ -3258,10 +3258,13 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
             params["series"] = series
             params["xLabels"] = [n["raw"] for n in nums[:n_take]]
             params["showValues"] = True
+    traits = set(signals) | set(block_traits(str(block.get("text") or "")))
     return {
         "type": "dataviz", "start": start, "end": end,
         "template": template.id, "renderer": template.renderer,
         "params": params,
+        "traits": sorted(traits),
+        "grounded_on": sorted(matched(template.needs, traits)),
         "why": why,
     }
 
@@ -3546,6 +3549,7 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                     "url": str(source.get("url") or ""),
                 },
                 "traits": sorted(traits),
+                "grounded_on": sorted(matched(template.needs, traits)),
                 "why": "лестница §7.2, ступень 3: у блока цитата и есть источник",
             }
 
