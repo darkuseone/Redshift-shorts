@@ -19,6 +19,18 @@ REQUIRED = ("build_report.json", "cost_report.json", "metadata.json",
             "assets_manifest.json", "subtitles.srt", "voice_final.wav",
             "edit_plan_A.json", "edit_plan_B.json")
 
+# Девятнадцать — исходный набор §11.1. Волны QC-20+ и §11.2 его дополняют,
+# поэтому сверху не ограничиваем: CI mock-прогон отдаёт ~30 блокирующих.
+SECTION_11_1_MIN_CHECKS = 19
+
+
+def qc_gate_count_ok(total: object) -> bool:
+    """True, если в отчёте есть весь исходный набор §11.1."""
+    try:
+        return int(total) >= SECTION_11_1_MIN_CHECKS
+    except (TypeError, ValueError):
+        return False
+
 
 def _fail(problems: list[str], message: str) -> None:
     problems.append(message)
@@ -45,8 +57,10 @@ def main(argv: list[str]) -> int:
         if report.get("status") != "ok":
             _fail(problems, f"статус прогона {report.get('status')!r}, ожидался ok")
         for variant, qc in (report.get("qc") or {}).items():
-            if qc.get("total") != 19:
-                _fail(problems, f"{variant}: проверок {qc.get('total')}, §11.1 требует 19")
+            if not qc_gate_count_ok(qc.get("total")):
+                _fail(problems,
+                      f"{variant}: проверок {qc.get('total')}, "
+                      f"§11.1 требует ≥{SECTION_11_1_MIN_CHECKS}")
             if not qc.get("passed"):
                 failed = [f["id"] for f in qc.get("failed", [])]
                 _fail(problems, f"{variant}: провалены проверки {failed}")
