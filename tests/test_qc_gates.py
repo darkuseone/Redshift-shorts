@@ -10,9 +10,12 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
-from src.p12_render_qc.qc import _hook_is_banned, run_qc
+from src.p12_render_qc.qc import QC17_TEMPLATE_OVERLAP_MAX, _hook_is_banned, run_qc
 
 
 class _Media:
@@ -455,3 +458,53 @@ class TestTzMust024ConstantsAgree:
         status = "ok" if folded["passed"] else "qc_failed"
         assert folded["passed"] is False
         assert status != "ok"
+
+
+class TestQc17TemplateSetOverlap:
+    """MUST-014: QC-17 падает на копии набора, а не только при Jaccard == 1.0."""
+
+    def _history(self, cfg, tmp_path, templates, video_id="redshift_0001"):
+        cfg.set("paths.cache_dir", str(tmp_path / "cache"))
+        cache = Path(cfg.path("paths.cache_dir"))
+        cache.mkdir(parents=True, exist_ok=True)
+        (cache / "run_history.json").write_text(
+            json.dumps({"runs": [{"video_id": video_id, "templates": templates}]}),
+            encoding="utf-8",
+        )
+
+    def test_identical_ids_fail(self, cfg, tmp_path):
+        ids = [
+            "intro-hooks/hook-blackout-word",
+            "hero-devices/type-slab",
+            "outro-cta/logo-brand-close",
+            "kenburns/pan-left",
+        ]
+        self._history(cfg, tmp_path, ids)
+        check = _check(_run(cfg, _plan(templates_used=list(ids))), "QC-17")
+        assert not check["passed"]
+        assert check["blocking"]
+        assert check["value"] == pytest.approx(1.0)
+        assert check["threshold"] == pytest.approx(QC17_TEMPLATE_OVERLAP_MAX)
+
+    def test_near_clone_at_threshold_fails(self, cfg, tmp_path):
+        prev = [f"t/{i}" for i in range(10)]
+        current = [f"t/{i}" for i in range(9)] + ["t/x"]
+        self._history(cfg, tmp_path, prev)
+        check = _check(_run(cfg, _plan(templates_used=current)), "QC-17")
+        assert check["value"] >= QC17_TEMPLATE_OVERLAP_MAX
+        assert not check["passed"]
+
+    def test_modest_overlap_passes(self, cfg, tmp_path):
+        prev = [f"t/{i}" for i in range(10)]
+        current = [f"t/{i}" for i in range(3)] + [f"u/{i}" for i in range(7)]
+        self._history(cfg, tmp_path, prev)
+        check = _check(_run(cfg, _plan(templates_used=current)), "QC-17")
+        assert check["value"] < QC17_TEMPLATE_OVERLAP_MAX
+        assert check["passed"]
+
+    def test_no_previous_video_passes(self, cfg, tmp_path):
+        cfg.set("paths.cache_dir", str(tmp_path / "cache"))
+        Path(cfg.path("paths.cache_dir")).mkdir(parents=True, exist_ok=True)
+        check = _check(_run(cfg, _plan(templates_used=["intro-hooks/hook-blackout-word"])),
+                       "QC-17")
+        assert check["passed"]

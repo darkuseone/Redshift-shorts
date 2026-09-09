@@ -24,6 +24,11 @@ from ..lib.templates import overlap_share
 
 _log = get_logger("qc")
 
+# MUST-014: Jaccard набора шаблонов с предыдущим роликом. Fail при ≥ порога.
+# Instruction числа не задаёт; код с «< 1.0» не падал почти никогда.
+# QC-6 держит 0.20 на пересечении *материала*, не шаблонов.
+QC17_TEMPLATE_OVERLAP_MAX = 0.80
+
 
 def _check(check_id: int, name: str, passed: bool, *, value: Any = None,
            threshold: Any = None, detail: str = "", timecode: float | None = None,
@@ -245,9 +250,11 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     templates = plan.get("templates_used", [])
     prev_templates = previous[-1].get("templates", []) if previous else []
     template_overlap = overlap_share(templates, prev_templates)
+    qc17_max = float(limits.get("qc17_template_overlap_max", QC17_TEMPLATE_OVERLAP_MAX))
+    overlap_ok = (not prev_templates) or (template_overlap < qc17_max)
     checks.append(_check(17, "Набор шаблонов не повторяет предыдущий ролик",
-                         template_overlap < 1.0 - 1e-9 if prev_templates else True,
-                         value=round(template_overlap, 3), threshold="< 1.0"))
+                         overlap_ok,
+                         value=round(template_overlap, 3), threshold=qc17_max))
 
     # 18. Два аватар-сегмента подряд
     adjacent = avatar_meta.get("adjacent_without_gap", [])

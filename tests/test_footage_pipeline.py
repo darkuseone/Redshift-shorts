@@ -744,6 +744,84 @@ def test_ab_difference_is_forced_when_variants_converge(cfg):
             assert shot["transition"]["template"].startswith("transitions/")
 
 
+def test_ab_hook_hero_cta_come_from_different_pools(cfg):
+    """MUST-014: A/B расходятся по hook/hero/cta, не другим KB той же карты."""
+    from src.p11_assemble.assemble import _force_ab_difference
+
+    catalog = TemplateCatalog.load(cfg)
+    hook = "intro-hooks/hook-question-flash"
+    hero = "hero-devices/headline-over-head"
+    cta = "outro-cta/logo-brand-close"
+    shared = [hook, hero, cta]
+    shot = {
+        "index": 0, "duration": 3.0, "hook": True, "template": hook,
+        "hero": {"template": hero, "renderer": "hero-headline"},
+        "kenburns": None, "transition": None,
+    }
+    overlay = {"type": "cta", "template": cta, "renderer": "logo_brand_close"}
+    plans = {
+        "A": {"templates_used": list(shared), "shots": [dict(shot),],
+              "overlays": [dict(overlay)], "loop_seam": None},
+        "B": {"templates_used": list(shared),
+              "shots": [{**shot, "hero": dict(shot["hero"])}],
+              "overlays": [dict(overlay)], "loop_seam": None},
+    }
+
+    class _Ctx:
+        def warn(self, *a, **k):
+            pass
+
+    diff = _force_ab_difference(plans, ["A", "B"], catalog, 3, _Ctx())
+    assert diff >= 3
+    b_hook = plans["B"]["shots"][0]["template"]
+    b_hero = plans["B"]["shots"][0]["hero"]["template"]
+    b_cta = plans["B"]["overlays"][0]["template"]
+    assert b_hook != hook and b_hook.startswith("intro-hooks/")
+    assert b_hero != hero and b_hero.startswith("hero-devices/")
+    assert b_cta != cta and b_cta.startswith("outro-cta/")
+    assert b_cta != "outro-cta/loop-back"
+    assert catalog.by_id(b_hook).renderer == catalog.by_id(hook).renderer
+
+
+def test_ab_too_similar_when_pools_have_no_alternative(cfg):
+    """MUST-014: pytest AB_TOO_SIMILAR — код жив, пустой пул не разводит версии."""
+    import inspect
+
+    from src.p11_assemble.assemble import _force_ab_difference, run_step
+
+    catalog = TemplateCatalog.load(cfg)
+    hook = "intro-hooks/hook-question-flash"
+    shared = [hook]
+    plans = {
+        "A": {"templates_used": list(shared), "shots": [], "overlays": [],
+              "loop_seam": None},
+        "B": {
+            "templates_used": list(shared),
+            "shots": [{"index": 0, "duration": 3.0, "hook": True,
+                       "template": hook, "kenburns": None, "transition": None}],
+            "overlays": [],
+            "loop_seam": None,
+        },
+    }
+
+    class Frozen:
+        def by_category(self, category, include_inactive=False):
+            return [t for t in catalog.by_category(category) if t.id in shared]
+
+        def by_id(self, tid):
+            return catalog.by_id(tid)
+
+    class _Ctx:
+        def warn(self, *a, **k):
+            pass
+
+    diff = _force_ab_difference(plans, ["A", "B"], Frozen(), 3, _Ctx())
+    assert diff < 3
+    source = inspect.getsource(run_step)
+    assert 'code="AB_TOO_SIMILAR"' in source
+    assert "ab_min_template_diff" in source
+
+
 def test_generated_clips_are_visually_distinct(cfg, tmp_path):
     """QC-5 запрещает дубли в ролике, а абстрактный сгенерированный B-roll
     легко получается похожим сам на себя: разные промпты обязаны давать
