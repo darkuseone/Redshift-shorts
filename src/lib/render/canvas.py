@@ -381,6 +381,47 @@ def caption_layout_bbox(brandbook: dict[str, Any]
     return (float(safe.x_min), y0, float(safe.x_max), y1)
 
 
+def stamp_plan_safe_zones(plan: dict[str, Any], brandbook: dict[str, Any],
+                          stats: Any) -> None:
+    """Тот же замер, что HyperFrames пишет в ``safe_zone_checks``.
+
+    Покадровый ffmpeg-композитор раньше считал только долю акцента и оставлял
+    список пустым. QC-7 читает «не мерили» как провал, и кэш-сборка через
+    ffmpeg падала, хотя раскладка была той же, что у HyperFrames.
+    """
+    safe = SafeZones.from_brandbook(brandbook)
+    checks = list(getattr(stats, "safe_zone_checks", None) or [])
+    violations = list(getattr(stats, "safe_zone_violations", None) or [])
+
+    def _record(kind: str, box: tuple[float, float, float, float],
+                target: dict[str, Any] | None = None) -> None:
+        params = None
+        if target is not None:
+            params = target.get("params")
+            if not isinstance(params, dict):
+                params = {}
+                target["params"] = params
+            params["bbox"] = [round(v, 1) for v in box]
+        ok = safe.contains(box)
+        entry = {"overlay": kind, "bbox": [round(v, 1) for v in box],
+                 "ok": ok, "why": [] if ok else safe.violations(box)}
+        checks.append(entry)
+        if not ok:
+            violations.append(entry)
+
+    for ovl in plan.get("overlays") or []:
+        kind = str(ovl.get("type") or "")
+        if kind not in SAFE_ZONE_OVERLAY_TYPES:
+            continue
+        _record(kind, overlay_layout_bbox(ovl, brandbook), ovl)
+    if plan.get("subtitles"):
+        _record("captions", caption_layout_bbox(brandbook))
+
+    stats.safe_zone_checks = checks
+    stats.safe_zone_violations = violations
+    stats.safe_zone_measured = True
+
+
 def accent_area_share(layer: Image.Image, accent: RGBA, tolerance: int = 40) -> float:
     """Доля площади кадра, занятая акцентным цветом (§3.3.1: ≤10–12 %)."""
     import numpy as np
