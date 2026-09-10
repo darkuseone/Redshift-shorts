@@ -2133,12 +2133,16 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         content = {**content, "credit": real_plate["credit"]}
 
     blocked = list(exclude)
+    banned_rend = set(exclude_renderers or ())
     late = bool(
         video_duration
         and float(video_duration) > 0
         and float(slot.get("start") or 0) > LATE_HERO_BEAT * float(video_duration)
     )
     for template in catalog.by_category("hero-devices"):
+        if template.renderer in banned_rend:
+            blocked.append(template.id)
+            continue
         if "alpha" in set(template.tags) and not has_alpha:
             blocked.append(template.id)
             continue
@@ -2224,6 +2228,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
             if any(not available.get(key) for key in cand_needs):
                 continue
             if cand.renderer in _FACE_COVERING_UI:
+                continue
+            if cand.renderer in banned_rend:
                 continue
             if has_alpha and cand.renderer in (
                     "hero-slam", "hero-knockout", "hero-oversize"):

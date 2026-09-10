@@ -206,3 +206,30 @@ def test_script_overlay_beats_stale_hours_punch():
     assert len(tails) == 1
     assert float(tails[0]["start"]) >= 43.9
     assert float(tails[0]["end"]) == 45.151
+
+
+def test_exclude_renderers_blocks_slam_on_footage():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _FULL_FRAME_HEROES, _hero_device
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    content = {
+        "word": "ДЫРА", "title": "Клей", "lines": ["а", "б"],
+        "accent_lines": [0],
+        "punch": ["первая дыра", "в стене"], "entries": ["а"],
+        "figures": [], "face": (540, 570), "caption": "подпись",
+        "head": "Клей", "tail": "не принял",
+    }
+    slot = {"index": 26, "role": "twist", "duration": 1.4, "start": 62.2, "end": 63.6}
+    banned = set(_FULL_FRAME_HEROES) | {"hero-oversize"}
+    for seed in range(16):
+        entry = _hero_device(
+            cat, slot=slot, content=content, has_alpha=False,
+            plate_src={"file": "/tmp/a.mp4", "duration_sec": 1.4},
+            recent_videos=[], exclude=[], seed=seed,
+            exclude_renderers=banned)
+        if entry:
+            assert entry["renderer"] not in banned, entry
