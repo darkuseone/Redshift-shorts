@@ -406,6 +406,21 @@ def _on_screen_rules(repo_root=None) -> tuple[tuple[str, str], ...]:
     return pairs or _ON_SCREEN_PLAIN
 
 
+_NECHEM_RE = re.compile(r"нечем", re.IGNORECASE)
+
+
+def prefer_nichem_spelling(text: str) -> str:
+    """On-screen copy uses ничем (и), not нечем (е). Voice is left alone."""
+    def _case(match: re.Match[str]) -> str:
+        src = match.group(0)
+        if src.isupper():
+            return "НИЧЕМ"
+        if src[:1].isupper():
+            return "Ничем"
+        return "ничем"
+    return _NECHEM_RE.sub(_case, str(text or ""))
+
+
 def soften_on_screen_copy(text: str, *, repo_root=None) -> str:
     """Упростить жаргон для экранного текста, не трогая озвучку (§7.3).
 
@@ -419,7 +434,7 @@ def soften_on_screen_copy(text: str, *, repo_root=None) -> str:
     out = raw
     for pattern, repl in _on_screen_rules(repo_root):
         out = re.sub(pattern, repl, out)
-    return out
+    return prefer_nichem_spelling(out)
 
 
 def gloss_for_speech(text: str, *, seen: set[str] | None = None,

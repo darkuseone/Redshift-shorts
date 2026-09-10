@@ -3786,7 +3786,7 @@ _DCL_PAD_TOP = 173
 _DCL_HEADER_H = 118
 _DCL_LABEL_SIZE = 38
 _DCL_VALUE_SIZE = 118
-_DCL_VALUE_W = 280
+_DCL_VALUE_W = 360
 _DCL_PLOT_LEFT = 97
 _DCL_PLOT_TOP = 387
 _DCL_PLOT_W = 886
@@ -3873,6 +3873,18 @@ def _dcl_spec(params: dict[str, Any]) -> tuple[float, float, str] | None:
     return start, end, label
 
 
+def _dcl_fmt(value: float, unit: str = "") -> str:
+    if abs(value - round(value)) < 1e-6:
+        body = str(int(round(value)))
+    else:
+        body = f"{value:.1f}".rstrip("0").rstrip(".")
+    return f"{body}{unit}"
+
+
+def _dcl_vb_y(vb_y: float) -> float:
+    return _DCL_PLOT_TOP + (float(vb_y) / _DCL_VB_H) * _DCL_PLOT_H
+
+
 def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
     """Линия рисуется вниз, число считает вниз, фон темнеет.
 
@@ -3888,6 +3900,20 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
     if spec is None:
         return Piece()
     start_value, end_value, label = spec
+    unit = str(ctx.params.get("unit") or "").strip()
+    subtitle = str(ctx.params.get("subtitle") or "").strip()
+    source = str(ctx.params.get("source") or "").strip()
+    raw_x = ctx.params.get("x_labels") or ctx.params.get("xLabels") or []
+    x_labels = [str(item).strip() for item in raw_x if str(item).strip()] if isinstance(raw_x, (list, tuple)) else []
+    series_vals: list[float] = []
+    raw_values = ctx.params.get("values")
+    if isinstance(raw_values, (list, tuple)):
+        for item in raw_values:
+            parsed = _dcl_num(item)
+            if parsed is not None:
+                series_vals.append(parsed)
+    if len(series_vals) < 2:
+        series_vals = [start_value, end_value]
     node_id = f"dcl-{ctx.index:02d}"
     times = _dcl_times(ctx.duration)
     start = ctx.start
@@ -3912,14 +3938,14 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
         for frame in range(frames + 1):
             t = frame / frames
             progress = _dcl_power2_out(t)
-            value = int(round(start_value + (end_value - start_value) * progress))
-            text = str(value)
+            value = start_value + (end_value - start_value) * progress
+            text = _dcl_fmt(round(value), unit)
             texts.append(text)
             spans.append(f'<span id="{vid}-{frame}">{_esc(text)}</span>')
     else:
-        texts.append(str(int(round(start_value))))
+        texts.append(_dcl_fmt(round(start_value), unit))
         spans.append(f'<span id="{vid}-0">{_esc(texts[0])}</span>')
-        texts.append(str(int(round(end_value))))
+        texts.append(_dcl_fmt(round(end_value), unit))
         spans.append(f'<span id="{vid}-1">{_esc(texts[1])}</span>')
 
     tweens.append(
@@ -3933,9 +3959,10 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
     tweens.append(
         f'tl.set("#{vid}-0",{{opacity:1}},{_num(start)});')
 
-    hold_at = start + inn
-    if hold > 0:
-        hold_play = hold if hold <= 0.001 else max(0.001, hold - 0.001)
+    hold_at = start
+    draw = inn + hold
+    if draw > 0:
+        hold_play = draw if draw <= 0.001 else max(0.001, draw - 0.001)
         tweens.append(
             f'tl.fromTo("#{wid}",{{scaleX:0}},'
             f'{{scaleX:1,duration:{_num(hold_play)},'
@@ -3948,14 +3975,14 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
         for frame in range(1, frames + 1):
             if texts[frame] == texts[prev_shown]:
                 continue
-            at = hold_at + hold * (frame / frames)
+            at = hold_at + draw * (frame / frames)
             tweens.append(
                 f'tl.set("#{vid}-{prev_shown}",{{opacity:0}},{_num(at)});')
             tweens.append(
                 f'tl.set("#{vid}-{frame}",{{opacity:1}},{_num(at)});')
             prev_shown = frame
         fade_t = 1.0 - math.sqrt(max(0.0, 1.0 - _DCL_EP_AT))
-        fade_at = hold_at + hold * fade_t
+        fade_at = hold_at + draw * fade_t
         fade_dur = max(0.001, start + out_start - fade_at)
         fade_play = fade_dur if fade_dur <= 0.001 else max(0.001, fade_dur - 0.001)
         tweens.append(
@@ -3996,6 +4023,65 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
 
     value_left = 1080 - _DCL_PAD_X - _DCL_VALUE_W
     label_top = _DCL_PAD_TOP + _DCL_HEADER_H - _DCL_LABEL_SIZE
+    extra: list[str] = []
+    if source:
+        extra.append(
+            f'<div class="dcl-src" data-layout-allow-overlap="" '
+            f'style="left:{_DCL_PAD_X}px;top:{_DCL_PAD_TOP}px">'
+            f'{_esc(source)}</div>')
+    if subtitle:
+        extra.append(
+            f'<div class="dcl-sub" data-layout-allow-overlap="" '
+            f'style="left:{_DCL_PAD_X}px;top:{_DCL_PAD_TOP + 36}px">'
+            f'{_esc(subtitle)}</div>')
+    step_bits: list[str] = []
+    for i, val in enumerate(series_vals):
+        if i:
+            step_bits.append('<i>→</i>')
+        cls = " now" if i == len(series_vals) - 1 else ""
+        step_bits.append(f'<span class="dcl-step{cls}">{_esc(_dcl_fmt(val, unit))}</span>')
+    extra.append(
+        f'<div class="dcl-steps" data-layout-allow-overlap="" '
+        f'style="left:{_DCL_PAD_X}px;top:{label_top + 48}px">'
+        f'{"".join(step_bits)}</div>')
+    if len(series_vals) >= 3:
+        mid_i = len(series_vals) // 2
+        tick_vals = (
+            float(series_vals[0]),
+            float(series_vals[mid_i]),
+            float(series_vals[-1]),
+        )
+    else:
+        tick_vals = (start_value, (start_value + end_value) / 2.0, end_value)
+    for vb_y, tick in zip((55.0, 120.0, 185.0), tick_vals):
+        extra.append(
+            f'<div class="dcl-ytick" data-layout-allow-overlap="" '
+            f'style="left:{_DCL_PLOT_LEFT}px;top:{_dcl_vb_y(vb_y) - 18:.1f}px">'
+            f'{_esc(_dcl_fmt(tick, unit))}</div>')
+    n_marks = len(series_vals)
+    if n_marks >= 2:
+        lo = min(series_vals)
+        hi = max(series_vals)
+        span = hi - lo if hi != lo else 1.0
+        for i, val in enumerate(series_vals):
+            x = _DCL_PLOT_LEFT + (i / max(1, n_marks - 1)) * _DCL_PLOT_W
+            t = (hi - val) / span
+            y = _dcl_vb_y(55.0 + t * (185.0 - 55.0))
+            extra.append(
+                f'<div class="dcl-mark" data-layout-allow-overlap="" '
+                f'style="left:{x - 11:.1f}px;top:{y - 11:.1f}px"></div>')
+            extra.append(
+                f'<div class="dcl-mark-lab" data-layout-allow-overlap="" '
+                f'style="left:{x + 18:.1f}px;top:{y - 24:.1f}px">'
+                f'{_esc(_dcl_fmt(val, unit))}</div>')
+    if len(x_labels) >= 2:
+        span = max(1, len(x_labels) - 1)
+        for i, xlab in enumerate(x_labels):
+            x = _DCL_PLOT_LEFT + (i / span) * _DCL_PLOT_W
+            extra.append(
+                f'<div class="dcl-xlab" data-layout-allow-overlap="" '
+                f'style="left:{x:.1f}px;top:{_DCL_PLOT_TOP + _DCL_PLOT_H - 48}px">'
+                f'{_esc(xlab)}</div>')
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay dcl-chart" {_timing(ctx)}>'
                f'<div class="dcl-bg"></div>'
@@ -4007,6 +4093,7 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
                f'<div id="{vid}" class="dcl-cv" data-layout-allow-overlap="" '
                f'style="left:{value_left}px;top:{_DCL_PAD_TOP}px">'
                f'{"".join(spans)}</div>'
+               f'{"".join(extra)}'
                f'<div class="dcl-plot">'
                f'<svg viewBox="0 0 260 240" preserveAspectRatio="none" '
                f'aria-hidden="true">'
@@ -6417,6 +6504,29 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "color:rgba(226,232,240,0.72);font-size:38px;font-weight:600;"
         "letter-spacing:0.05em;line-height:1.1;text-overflow:ellipsis;"
         "text-transform:uppercase;white-space:nowrap}"
+        ".dcl-sub{position:absolute;width:580px;color:rgba(226,232,240,0.55);"
+        "font-size:30px;font-weight:600;letter-spacing:0.04em;line-height:1.2;"
+        "white-space:nowrap}"
+        ".dcl-src{position:absolute;width:580px;color:rgba(148,163,184,0.72);"
+        "font-size:22px;font-weight:600;letter-spacing:0.08em;line-height:1.2;"
+        "text-transform:uppercase;white-space:nowrap}"
+        ".dcl-steps{position:absolute;width:720px;color:rgba(248,250,252,0.88);"
+        "font-size:40px;font-weight:700;letter-spacing:0.02em;line-height:1.2;"
+        "font-variant-numeric:tabular-nums;white-space:nowrap}"
+        ".dcl-steps i{font-style:normal;padding:0 10px;color:rgba(148,163,184,0.7);"
+        "font-weight:600}"
+        ".dcl-steps .now{color:#fecdd3}"
+        ".dcl-ytick{position:absolute;width:180px;color:rgba(226,232,240,0.55);"
+        "font-size:32px;font-weight:600;font-variant-numeric:tabular-nums;"
+        "letter-spacing:0.02em;line-height:1}"
+        ".dcl-xlab{position:absolute;width:200px;margin-left:-100px;text-align:center;"
+        "color:rgba(226,232,240,0.55);font-size:28px;font-weight:600;"
+        "letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}"
+        ".dcl-mark{position:absolute;width:22px;height:22px;border-radius:50%;"
+        "background:#fecdd3}"
+        ".dcl-mark-lab{position:absolute;width:200px;color:#fecdd3;"
+        "font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;"
+        "letter-spacing:0.01em;line-height:1;white-space:nowrap}"
         f".dcl-cv{{position:absolute;width:{_DCL_VALUE_W}px;"
         f"height:{_DCL_HEADER_H}px;"
         "color:#f8fafc;font-family:Inter,system-ui,sans-serif;"
@@ -9164,7 +9274,13 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     duration = max(0.001, end - t0)
     out_base = 0.0 if exit_mode == "none" else _LBC_OUT_BASE
     total_base = max(0.001, _LBC_IN_BASE + out_base)
-    scale = duration / total_base if duration < total_base else 1.0
+    # Short CTA windows used to still run the 2.6s cascade: at ~1s the mark
+    # read «REDSHIF». Hold the finished wordmark for the last second+.
+    hold = 0.0
+    if duration <= 2.6 and exit_mode == "none":
+        hold = max(0.0, duration - 0.55)
+    cascade_budget = max(0.35, duration - hold) if hold else duration
+    scale = cascade_budget / total_base if cascade_budget < total_base else 1.0
     letter_dur = _LBC_LETTER * scale
     stagger_amount = _LBC_STAGGER_AMOUNT * scale
     mark_dur = _LBC_MARK_SCALE * scale

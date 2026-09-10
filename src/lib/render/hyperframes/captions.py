@@ -28,6 +28,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from ...text import prefer_nichem_spelling
 from ..text_rules import subtitle_word
 from .templates import opacity_hard_kill, text_width
 
@@ -221,7 +222,16 @@ def group_caption_phrases(
             new_block = (
                 prev_block is not None and block is not None and prev_block != block
             )
-            if new_block or gap >= pause_break_sec or len(current) >= max_words:
+            prev_y = current[-1].get("baseline_y")
+            new_y = word.get("baseline_y")
+            baseline_break = False
+            if prev_y is not None and new_y is not None:
+                try:
+                    baseline_break = abs(float(prev_y) - float(new_y)) > 1.0
+                except (TypeError, ValueError):
+                    baseline_break = False
+            if (new_block or baseline_break or gap >= pause_break_sec
+                    or len(current) >= max_words):
                 phrases.append(current)
                 current = []
         current.append(word)
@@ -429,8 +439,8 @@ def _caption_shown(word: dict[str, Any]) -> str:
 def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, Any]]:
     visible: list[dict[str, Any]] = []
     for word in raw:
-        display = subtitle_word(str(word.get("display") or ""), case_mode)
-        lead = subtitle_word(str(word.get("lead") or ""), case_mode)
+        display = prefer_nichem_spelling(subtitle_word(str(word.get("display") or ""), case_mode))
+        lead = prefer_nichem_spelling(subtitle_word(str(word.get("lead") or ""), case_mode))
         if lead and any(ch.isdigit() for ch in lead):
             display = f"{lead} {display}".strip()
             lead = ""
@@ -602,7 +612,8 @@ def clip_wipe_params(brandbook: dict[str, Any]) -> dict[str, Any]:
     subs = brandbook.get("subtitles") or {}
     safe = brandbook["safe_zones"]["work_area"]
     return {
-        "base_px": int(spec.get("base_px", subs.get("size_px_default", 88))),
+        "base_px": int(spec.get("base_px", subs.get("size_px_default", 144))),
+        "min_px": int(spec.get("min_px", 84)),
         "wipe_sec": float(spec.get("wipe_sec", 0.3)),
         "exit_sec": float(spec.get("exit_sec", 0.25)),
         "stagger_sec": float(spec.get("stagger_sec", 0.04)),
@@ -610,10 +621,10 @@ def clip_wipe_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "flash_sec": float(spec.get("flash_sec", 0.05)),
         "dim_sec": float(spec.get("dim_sec", 0.2)),
         "hold_sec": float(spec.get("hold_sec", 0.5)),
-        "max_words": int(spec.get("max_words", 6)),
+        "max_words": int(spec.get("max_words", 3)),
         "pause_break_sec": float(spec.get("pause_break_sec", 0.45)),
-        "letter_spacing_em": float(spec.get("letter_spacing_em", 0.04)),
-        "gap_em": float(spec.get("gap_em", 0.22)),
+        "letter_spacing_em": float(spec.get("letter_spacing_em", 0.02)),
+        "gap_em": float(spec.get("gap_em", 0.18)),
         "case": str(spec.get("case", "upper")),
         "dim_color": str(spec.get("dim_color", "rgba(255,255,255,0.4)")),
         "frame_w": float(safe["x_max"]) - float(safe["x_min"]),
@@ -631,19 +642,25 @@ def fit_wipe_group(
     base: int,
     letter_spacing_em: float,
     gap_em: float,
+    min_size: int = 12,
 ) -> tuple[int, list[float]]:
-    """Кегль фразы, чтобы слова в ряд влезли в рабочую зону."""
+    """Кегль фразы, чтобы слова в ряд влезли в рабочую зону.
+
+    Ниже ``min_size`` не опускаемся: группа уже ``flex-wrap``, и лучше две
+    читаемые строки, чем одна нечитаемая. Прод передаёт ``min_px`` из
+    брендбука; тесты без него оставляют старый пол 12.
+    """
     size = int(base)
-    min_size = 12
-    while size >= min_size:
+    floor = max(12, int(min_size))
+    while size >= floor:
         widths = [measure_word(t, size, letter_spacing_em) for t in texts]
         gap = size * gap_em
         total = sum(widths) + gap * max(0, len(texts) - 1)
         if total <= max_width:
             return size, widths
         size -= 2
-    widths = [measure_word(t, min_size, letter_spacing_em) for t in texts]
-    return min_size, widths
+    widths = [measure_word(t, floor, letter_spacing_em) for t in texts]
+    return floor, widths
 
 
 def build_clip_wipe(
@@ -665,6 +682,11 @@ def build_clip_wipe(
         max_words=params["max_words"],
         pause_break_sec=params["pause_break_sec"],
     )
+    overlay_cuts = [
+        float(ovl.get("start") or 0)
+        for ovl in (plan.get("overlays") or [])
+        if str(ovl.get("type") or "") in {"plaque", "cta", "dataviz", "source_card"}
+    ]
     nodes: list[str] = []
     tweens: list[str] = []
     count = 0
@@ -683,11 +705,16 @@ def build_clip_wipe(
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
+            min_size=int(params.get("min_px", 84)),
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)
         exit_span = params["exit_sec"] + params["stagger_sec"] * max(0, n - 1)
         hold_end = min(last_end + params["hold_sec"], next_start)
+        for cut in overlay_cuts:
+            if last_end < cut < hold_end + 1e-6:
+                hold_end = cut
+                break
         exit_at = min(hold_end - params["exit_sec"], next_start - exit_span)
         last_wipe = max(float(w["start"]) + params["wipe_sec"] for w in phrase)
         exit_at = max(start, last_wipe, exit_at)
@@ -799,11 +826,12 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
     colors = brandbook.get("colors") or {}
     safe = brandbook["safe_zones"]["work_area"]
     return {
-        "base_px": int(spec.get("base_px", subs.get("size_px_default", 88))),
-        "max_words": int(spec.get("max_words", 4)),
+        "base_px": int(spec.get("base_px", subs.get("size_px_default", 144))),
+        "min_px": int(spec.get("min_px", 84)),
+        "max_words": int(spec.get("max_words", 3)),
         "pause_break_sec": float(spec.get("pause_break_sec", 0.45)),
-        "letter_spacing_em": float(spec.get("letter_spacing_em", 0.04)),
-        "gap_em": float(spec.get("gap_em", 0.22)),
+        "letter_spacing_em": float(spec.get("letter_spacing_em", 0.02)),
+        "gap_em": float(spec.get("gap_em", 0.18)),
         "case": str(spec.get("case", "upper")),
         "bounce_scale": float(spec.get("bounce_scale", 1.04)),
         "bounce_out_sec": float(spec.get("bounce_out_sec", 0.15)),
@@ -880,6 +908,7 @@ def build_gradient_fill(
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
+            min_size=int(params.get("min_px", 84)),
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)
@@ -1116,6 +1145,7 @@ def build_blend_difference(
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
+            min_size=int(params.get("min_px", 84)),
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)

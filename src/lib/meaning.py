@@ -160,3 +160,30 @@ def satisfies(needs: Iterable[str], traits: Iterable[str]) -> bool:
 def matched(needs: Iterable[str], traits: Iterable[str]) -> frozenset[str]:
     """Чем именно приём оправдан в этом блоке."""
     return frozenset({str(n) for n in needs if n} & {str(t) for t in traits})
+
+
+# Need-less приём каталога не просит признаков, но QC-21 всё равно считает
+# пустой `grounded_on` браком (MUST-010). Если на самом кадре видно число или
+# цитату, которые блок произносит, основание есть — это не «обои».
+_SHOWN_EVIDENCE = frozenset({"number", "quote", "comparison", "brand", "date", "money"})
+
+
+def grounded_for(needs: Iterable[str], traits: Iterable[str],
+                 *, shown: str = "") -> list[str]:
+    """Чем оправдан выбранный приём — для поля ``grounded_on`` в плане.
+
+    Сначала пересечение ``needs`` × признаки блока. Если каталог ничего не
+    просит, берём только те признаки, которые читаются в надписи кадра и
+    одновременно есть в блоке: карточка «решена за пять минут» на блоке с
+    числом — основание, красная заглушка «наоборот» на том же блоке — нет.
+    """
+    hit = sorted(matched(needs, traits or ()))
+    if hit:
+        return hit
+    if any(str(n) for n in (needs or ())):
+        return []
+    if not str(shown or "").strip():
+        return []
+    visible = set(block_traits(shown))
+    keep = _SHOWN_EVIDENCE & set(traits or ()) & visible
+    return sorted(keep)

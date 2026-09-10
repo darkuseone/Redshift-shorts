@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from src.lib.meaning import (
-    TRAITS, TRAIT_TITLES, block_traits, explain, matched, satisfies,
+    TRAITS, TRAIT_TITLES, block_traits, explain, grounded_for, matched, satisfies,
 )
 from src.lib.templates import TemplateCatalog
 
@@ -69,6 +69,16 @@ class TestATemplateNeedsSomethingToFillIt:
 
     def test_the_match_is_named(self):
         assert matched(["number", "quote"], {"number", "place"}) == frozenset({"number"})
+
+    def test_needless_card_grounds_on_the_number_it_shows(self):
+        """QC-21: need-less fact-card with «пять минут» is not wallpaper."""
+        traits = block_traits(
+            "Задача, на которую суперкомпьютеру нужно больше времени, "
+            "чем существует вселенная, решена за пять минут.")
+        assert grounded_for([], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == ["number"]
+        assert grounded_for([], traits, shown="НАОБОРОТ") == []
+        assert grounded_for(["number"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == ["number"]
+        assert grounded_for(["quote"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == []
 
 
 class TestTheCatalogPicksByMeaning:
@@ -223,6 +233,39 @@ class TestDatavizOverlayGroundsOnTheNumber:
             _Picker(), variant="A", seed=1, recent_videos=[], used=[],
             start=1.0, end=4.0)
         assert overlay["grounded_on"] == ["number"]
+
+    def test_decline_chart_label_is_russian_when_heading_empty(self):
+        from src.lib.templates import Template
+        from src.p11_assemble.assemble import _dataviz_overlay
+
+        class _Picker:
+            def pick(self, *args, **kwargs):
+                tmpl = Template(
+                    id="data-viz/decline-chart", name="decline-chart",
+                    category="data-viz", title="", duration_range=[1.0, 4.0],
+                    params={}, tags=[], renderer="dataviz", needs=["number"])
+                return tmpl, type("T", (), {"fired": [], "walk": [], "won_at": "",
+                                            "allow_size": 1, "escaped": False,
+                                            "escape_level": ""})()
+
+        overlay = _dataviz_overlay(
+            {"block_id": "b4", "index": 8},
+            [{"value": 5.0, "raw": "пять", "suffix": ""},
+             {"value": 2.0, "raw": "вдвое", "suffix": ""}],
+            {"b4": {
+                "id": "b4",
+                "text": "ошибка падает вдвое на каждом шаге",
+                "heading": "",
+                "emphasis_word": "вдвое",
+            }},
+            _Picker(), variant="A", seed=1, recent_videos=[], used=[],
+            start=20.84, end=23.54)
+        assert overlay["params"]["label"] == "ОШИБКА"
+        assert overlay["params"]["label"] != "Retention"
+        assert overlay["params"]["values"] == [100.0, 50.0, 25.0]
+        assert overlay["params"]["unit"] == "%"
+        assert "½" in overlay["params"]["subtitle"]
+        assert overlay["params"]["x_labels"] == ["шаг 1", "шаг 2", "шаг 3"]
 
 
 class TestTheTransitionAnswersToWhatItIntroduces:

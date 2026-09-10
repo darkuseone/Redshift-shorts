@@ -30,6 +30,7 @@ from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, open_library, tag_url_coherence
 from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
+from ..lib.pin_match import ctx_words, pin_slot_prefer_key
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import (
@@ -509,6 +510,7 @@ def run_step(ctx) -> dict[str, Any]:
     providers = build_stock_providers(cfg, ctx.costs)
     index = FootageIndex.load(cfg)
     pin_deny, pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
+    words = ctx_words(ctx)
     orphans = disk_orphan_records(ctx, index)
     if orphans:
         ctx.warn(f"на диске {len(orphans)} клипов стока нет в индексе — добор",
@@ -647,6 +649,7 @@ def run_step(ctx) -> dict[str, Any]:
 
         prefer_set = set(pin_prefer)
         pooled.sort(key=lambda pair: (
+            pin_slot_prefer_key(pair[0].id, slot, pin_prefer, words=words)[0],
             0 if pair[0].id in prefer_set else 1,
             -float(pair[0].score or 0),
         ))

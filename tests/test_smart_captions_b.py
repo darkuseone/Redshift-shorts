@@ -94,11 +94,18 @@ def _six_words():
 
 
 def test_majority_mute_drops_the_whole_phrase():
-    words = _six_words()
-    # Middle three words sit under the card (indices 1–3). 3/6 → empty.
+    words = _six_words()[:3]
+    # Two of three words sit under the card → the 3-word group is gone.
     cues = _build_subtitle_cues(
-        words, punch_windows=[], mute_windows=[(18.27, 19.10)])
+        words, punch_windows=[], mute_windows=[(18.27, 18.80)])
     assert cues == []
+
+
+def test_majority_mute_keeps_the_next_phrase_group():
+    words = _six_words()
+    cues = _build_subtitle_cues(
+        words, punch_windows=[], mute_windows=[(18.0, 18.80)])
+    assert [c["display"] for c in cues] == ["связке", "падает", "вселенная"]
 
 
 def test_sparse_mute_drops_only_muted_words():
@@ -136,7 +143,7 @@ def test_carries_line_drops_the_whole_phrase():
     words = _six_words()
     cues = _build_subtitle_cues(
         words, punch_windows=[], mute_windows=[],
-        line_windows=[(18.0, 18.5)])
+        line_windows=[(18.0, 19.70)])
     assert cues == []
 
 

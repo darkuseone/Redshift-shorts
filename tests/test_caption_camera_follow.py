@@ -113,6 +113,21 @@ def test_phrases_split_on_pause_block_and_length():
     assert [len(g) for g in packed] == [12, 8]
 
 
+def test_phrases_split_when_baseline_jumps():
+    from src.lib.render.hyperframes.captions import group_caption_phrases
+
+    words = [
+        {"display": "каждый", "start": 12.63, "end": 13.04,
+         "block_id": "b3", "baseline_y": 1643.5},
+        {"display": "физический", "start": 13.08, "end": 13.53,
+         "block_id": "b3", "baseline_y": 818.4},
+    ]
+    groups = group_caption_phrases(words, max_words=3, pause_break_sec=0.45)
+    assert len(groups) == 2
+    assert [w["display"] for w in groups[0]] == ["каждый"]
+    assert [w["display"] for w in groups[1]] == ["физический"]
+
+
 def test_camera_follow_moves_the_world_not_the_clip(cfg):
     out = _follow(cfg, _words("Падение", ("в", True), "пропасть"))
     assert 'id="cf-00-world"' in out
