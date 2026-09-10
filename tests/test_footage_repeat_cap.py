@@ -502,6 +502,7 @@ def test_supercomputer_carves_onto_spoken_slot(monkeypatch):
     assert result["accepted"]["7"]["asset_id"] == "grok_cryostat_0042"
     super_entry = result["accepted"]["10"]
     assert super_entry["asset_id"] == "grok_supercomputer_0042"
+    assert super_entry.get("speech_locked") is True
     assert float(super_entry["carve_sec"]) < 2.63
     assert float(super_entry["carve_sec"]) >= 1.2
     used = 2.72 + float(super_entry["carve_sec"])

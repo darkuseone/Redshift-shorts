@@ -69,6 +69,8 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             bonus = -25
         elif role == "evidence":
             bonus = -18
+        else:
+            bonus = 6
     elif "cryostat" in aid:
         hay = speech or intent
         if any(token in hay for token in (

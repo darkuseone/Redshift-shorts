@@ -507,8 +507,11 @@ def _fill_unfilled_from_leftover_prefers(
                      "score": float(verdict_dict["score"]), "palette": palette,
                      "decision": "accept_prefer",
                      "fallback_reason": "pin_prefer leftover: unused prefer onto empty slot"}
+            if bonus < 0:
+                entry["speech_locked"] = True
             if carve_sec is not None:
                 entry["carve_sec"] = round(float(carve_sec), 3)
+                entry["speech_locked"] = True
                 entry["fallback_reason"] = (
                     "pin_prefer leftover: carved AI window onto spoken slot")
             judged.append(entry)

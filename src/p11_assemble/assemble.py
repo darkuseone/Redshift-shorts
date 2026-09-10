@@ -4063,6 +4063,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     str(blocks_by_id.get(slot["block_id"], {}).get("text") or ""),
                     str(plan.get("category") or ""))
             off_topic = float(topical) < _TOPICAL_MIN
+            # Prefer pins locked to overlapping speech (Nature figure, carved
+            # supercomputer hall) must not be discarded because the whole-block
+            # CONCEPTS table does not list that noun.
+            if off_topic and asset.get("speech_locked"):
+                off_topic = False
         if prep is None or off_topic or (asset is None
                                          and slot["kind"] not in AVATAR_KINDS):
             # Пустой слот идёт по лестнице §7.2: карточка → диаграмма →
