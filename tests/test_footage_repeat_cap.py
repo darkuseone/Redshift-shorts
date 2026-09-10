@@ -766,6 +766,40 @@ def test_empty_slot_splits_at_authored_five_minutes():
     assert out[0]["end"] == out[1]["start"]
 
 
+def test_punch_split_does_not_carve_earlier_empty_slots():
+    """Spoken «пять минут» lives in the last empty C — not in every b4 gap."""
+    from src.p11_assemble.assemble import split_empty_at_authored_punch
+
+    plan = {
+        "blocks": [{
+            "id": "b4",
+            "text": "Задача решена за пять минут.",
+            "overlay": {"type": "fullscreen_text", "content": "5 МИНУТ",
+                        "template_hint": "text-fullscreen/impact-01"},
+        }],
+    }
+    slots = [
+        {"index": 7, "start": 18.12, "end": 20.84, "duration": 2.72,
+         "block_id": "b4", "kind": "footage", "needs_asset": True},
+        {"index": 11, "start": 28.88, "end": 31.84, "duration": 2.96,
+         "block_id": "b4", "kind": "footage", "needs_asset": True,
+         "inherit_from": 10},
+    ]
+    words = [
+        {"display": "вселенная", "start": 29.4, "end": 29.85, "block_id": "b4"},
+        {"display": "пять", "start": 31.032, "end": 31.227, "block_id": "b4"},
+        {"display": "минут", "start": 31.227, "end": 31.677, "block_id": "b4"},
+    ]
+    out = split_empty_at_authored_punch(slots, plan, {}, words)
+    early = next(s for s in out if int(s["index"]) == 7)
+    assert float(early["end"]) == 20.84
+    assert not early.get("authored_punch")
+    tails = [s for s in out if s.get("authored_punch")]
+    assert len(tails) == 1
+    assert float(tails[0]["start"]) >= 28.88
+    assert tails[0].get("template_hint") == "text-fullscreen/impact-01"
+
+
 def test_inherited_hall_skips_the_emphasis_card():
     """Hall plate is the shot; «ВДВОЕ» over it was the 0042 defect."""
     from src.p11_assemble.assemble import VisualBudget, _close_empty_slot

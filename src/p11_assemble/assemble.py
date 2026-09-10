@@ -2301,8 +2301,14 @@ def split_empty_at_authored_punch(
         start = float(slot["start"])
         end = float(slot["end"])
         punch_at = float(onset)
+        # Min-hold must not pull the cut into an earlier empty slot of the
+        # same block: 0042 then split three lattice Cs and spent the FS cap
+        # on «решена за пять минут» before the spoken punch.
+        if not (start - 1e-6 <= punch_at < end + 1e-6):
+            out.append(slot)
+            continue
         if end - punch_at < punch_min and (end - start) >= first_min + punch_min:
-            punch_at = end - punch_min
+            punch_at = max(start + first_min, end - punch_min)
         hint = str(overlay.get("template_hint") or "").strip()
 
         def _stamp_punch(target: dict[str, Any]) -> None:
@@ -2311,7 +2317,7 @@ def split_empty_at_authored_punch(
                 target["template_hint"] = hint
 
         if punch_at < start + first_min or punch_at > end - first_min:
-            if start - 1e-6 <= punch_at < end + 1e-6 and (end - punch_at) >= first_min:
+            if (end - punch_at) >= first_min:
                 _stamp_punch(slot)
             out.append(slot)
             continue
@@ -4363,9 +4369,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     content = (enrich_overlay_punch(
                         raw, str(gap_block.get("text") or "")) or raw)
                     content = soften_on_screen_copy(str(content or ""))
-                    key = _norm_screen_key(content)
-                    if key:
-                        used_screen_phrases.add(key)
+                    if not _claim_screen_phrase(used_screen_phrases, content):
+                        content = ""
                 else:
                     raw = gap_phrase(words_doc["words"], slot, gap_block,
                                      used=used_screen_phrases)
