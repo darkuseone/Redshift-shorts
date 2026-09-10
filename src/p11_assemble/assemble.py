@@ -41,6 +41,7 @@ from ..lib.backdrop import tone as scene_tone
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
     punch_families_overlap, soften_on_screen_copy, spoken_onset_for_content,
+    stems_match,
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
@@ -851,6 +852,8 @@ def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
 # those words so spoken VO outside bulky cards still has captions.
 PHRASE_MUTE_RATIO = 0.50
 # Match clip-wipe grouping so a hole in the middle cannot spawn orphan words.
+# Visual gradient-fill may use a wider brandbook cap; mute stays 3-word groups
+# so a card over two words does not swallow the next phrase.
 _CAPTION_MAX_WORDS = 3
 _CAPTION_PAUSE_BREAK = 0.45
 # Fullscreen slam is visually dominant for ~a beat, not the whole B-roll hold.
@@ -1613,6 +1616,17 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     """Собрать всё, чем можно накормить приёмы, из одного блока сценария."""
     text = str(block.get("text") or "").strip()
     word = str(block.get("emphasis_word") or "").strip()
+    # Oversize/headline «МИЛЛИОН» on a Poincaré beat: the emphasis belongs to
+    # the block, not this window. Empty word drops those heroes via _HERO_NEEDS.
+    if word and words:
+        spoken = False
+        for item in words:
+            token = str(item.get("display") or item.get("word") or "")
+            if token and stems_match(word, token):
+                spoken = True
+                break
+        if not spoken:
+            word = ""
     # Big-word lines must carry speech meaning, not discourse openers like
     # «И вот ответ на вопрос» — Markus QA: answer card showed only that kicker.
     role = str(slot.get("role") or "")
@@ -2004,6 +2018,28 @@ def gap_phrase(words: list[dict[str, Any]], slot: dict[str, Any],
     return fallback
 
 
+def _sync_fullscreen_overlay_content(
+        slots: list[dict[str, Any]], plan: dict[str, Any]) -> None:
+    """Cached P5 parks a neighbour clause («За семнадцать часов») on the FS slot.
+
+    Retiming must score the *authored* overlay (СИНГУЛЯРНОСТЬ), not the stub
+    that happened to sit in ``cut_plan.json``.
+    """
+    blocks = {b["id"]: b for b in plan.get("blocks", [])}
+    for slot in slots:
+        if slot.get("kind") != "fullscreen_text":
+            continue
+        block = blocks.get(slot.get("block_id"), {})
+        overlay = block.get("overlay") or {}
+        if str(overlay.get("type") or "") != "fullscreen_text":
+            continue
+        raw = str(overlay.get("content") or "").strip()
+        if not raw:
+            continue
+        slot["content"] = (
+            enrich_overlay_punch(raw, str(block.get("text") or "")) or raw)
+
+
 def _retime_fullscreen_slots(slots: list[dict[str, Any]],
                              plan: dict[str, Any],
                              words: list[dict[str, Any]]) -> None:
@@ -2115,6 +2151,13 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         if late and template.renderer == "hero-title-behind":
             blocked.append(template.id)
             continue
+        # CTA is the host asking a question. A full-frame slam paints a black
+        # plate over the face («МАШИНАМ МОЖНО») and eats the vote beat.
+        if (str(slot.get("role") or "") == "cta"
+                and template.renderer in ("hero-slam", "hero-knockout",
+                                          "hero-oversize")):
+            blocked.append(template.id)
+            continue
         if has_alpha and template.renderer in _FACE_COVERING_UI:
             # Compose always parks the face in the lower band (1080–1480).
             # Raw HeyGen bbox is mid-frame (~684), so a y>=900 gate let
@@ -2218,9 +2261,9 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # весь кадр: дольше — и это уже не удар, а пауза в ролике.
         entry["duration"] = round(min(float(slot["duration"]),
                                       float(template.duration_range[1])), 3)
-    elif renderer == "hero-headline":
-        # Kicker+word above the crown. A 3 s hold left «МИЛЛИОН» on screen
-        # while the VO had already moved to Poincaré.
+    elif renderer in ("hero-headline", "hero-oversize"):
+        # Kicker+word above the crown, or a full-frame oversize. A 3 s hold
+        # left «МИЛЛИОН» on black while the VO had already moved to Poincaré.
         entry["duration"] = round(min(float(slot["duration"]), 1.5), 3)
     return entry
 
@@ -2340,9 +2383,6 @@ def split_empty_at_authored_punch(
     # 0.6 s flash of «решена за пять минут» is unreadable; hold a beat.
     punch_min = 1.15
     for slot in slots:
-        if assets.get(int(slot["index"])):
-            out.append(slot)
-            continue
         block = blocks.get(str(slot.get("block_id") or ""), {})
         overlay = block.get("overlay") or {}
         if str(overlay.get("type") or "") != "fullscreen_text":
@@ -2396,6 +2436,9 @@ def split_empty_at_authored_punch(
         _stamp_punch(rest)
         if first.get("inherit_from") is not None:
             rest["inherit_from"] = first["inherit_from"]
+        elif assets.get(int(first["index"])):
+            # Filled slot: keep the plate under the punch instead of a black card.
+            rest["inherit_from"] = int(first["index"])
         out.append(first)
         out.append(rest)
     return out
@@ -4254,6 +4297,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     slots = plan["slots"]
     _slot_beats(plan)
     escalation = _Escalation()
+    _sync_fullscreen_overlay_content(slots, plan)
     _retime_fullscreen_slots(slots, plan, words_doc.get("words") or [])
     shots: list[dict[str, Any]] = []
 
@@ -4382,6 +4426,16 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     hook_placed = True
                     shots.append(entry)
                     continue
+
+        if (slot.get("authored_punch")
+                and slot["kind"] not in (*AVATAR_KINDS, "fullscreen_text")):
+            punch_block = blocks_by_id.get(slot.get("block_id"), {})
+            overlay = punch_block.get("overlay") or {}
+            raw = str(overlay.get("content") or slot.get("content") or "").strip()
+            raw = enrich_overlay_punch(raw, str(punch_block.get("text") or "")) or raw
+            if raw:
+                slot["kind"] = "fullscreen_text"
+                slot["content"] = raw
 
         if slot["kind"] == "fullscreen_text":
             content = slot.get("content", "")

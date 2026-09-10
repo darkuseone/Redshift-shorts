@@ -800,6 +800,35 @@ def test_punch_split_does_not_carve_earlier_empty_slots():
     assert tails[0].get("template_hint") == "text-fullscreen/impact-01"
 
 
+def test_authored_punch_splits_filled_slot():
+    """Cached leftover on the punch beat must not skip the authored overlay."""
+    from src.p11_assemble.assemble import split_empty_at_authored_punch
+
+    plan = {
+        "blocks": [{
+            "id": "b4",
+            "text": "За конечное время — сингулярность. Вихрь как спагетти.",
+            "emphasis_word": "сингулярность",
+            "overlay": {"type": "fullscreen_text", "content": "СИНГУЛЯРНОСТЬ"},
+        }],
+    }
+    slots = [{
+        "index": 19, "start": 42.866, "end": 45.151, "duration": 2.285,
+        "block_id": "b4", "kind": "footage", "needs_asset": True,
+    }]
+    words = [
+        {"display": "энергия.", "start": 42.87, "end": 43.32, "block_id": "b4"},
+        {"display": "сингулярность.", "start": 44.70, "end": 45.15, "block_id": "b4"},
+    ]
+    assets = {19: {"asset_id": "fp_rock_surface"}}
+    out = split_empty_at_authored_punch(slots, plan, assets, words)
+    tails = [s for s in out if s.get("authored_punch")]
+    assert len(tails) == 1
+    assert tails[0]["inherit_from"] == 19
+    assert float(tails[0]["start"]) >= 43.4
+    assert float(tails[0]["end"]) == 45.151
+
+
 def test_inherited_hall_skips_the_emphasis_card():
     """Hall plate is the shot; «ВДВОЕ» over it was the 0042 defect."""
     from src.p11_assemble.assemble import VisualBudget, _close_empty_slot

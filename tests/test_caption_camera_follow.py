@@ -128,6 +128,19 @@ def test_phrases_split_when_baseline_jumps():
     assert [w["display"] for w in groups[1]] == ["физический"]
 
 
+def test_phrases_split_after_sentence_end():
+    from src.lib.render.hyperframes.captions import group_caption_phrases
+
+    words = [
+        {"display": "силой.", "start": 0.0, "end": 0.3, "block_id": "b"},
+        {"display": "Гладкий.", "start": 0.35, "end": 0.7, "block_id": "b"},
+    ]
+    groups = group_caption_phrases(words, max_words=5, pause_break_sec=0.60)
+    assert len(groups) == 2
+    assert [w["display"] for w in groups[0]] == ["силой."]
+    assert [w["display"] for w in groups[1]] == ["Гладкий."]
+
+
 def test_camera_follow_moves_the_world_not_the_clip(cfg):
     out = _follow(cfg, _words("Падение", ("в", True), "пропасть"))
     assert 'id="cf-00-world"' in out

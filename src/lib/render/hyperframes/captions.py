@@ -259,7 +259,13 @@ def group_caption_phrases(
                     baseline_break = abs(float(prev_y) - float(new_y)) > 1.0
                 except (TypeError, ValueError):
                     baseline_break = False
-            if (new_block or baseline_break or gap >= pause_break_sec
+            prev_disp = str(current[-1].get("display") or "").strip()
+            sentence_break = bool(
+                prev_disp.endswith((".", "!", "?", "…"))
+                or prev_disp.endswith(('".', "».", ".”", ".'"))
+            )
+            if (new_block or baseline_break or sentence_break
+                    or gap >= pause_break_sec
                     or len(current) >= max_words):
                 phrases.append(current)
                 current = []

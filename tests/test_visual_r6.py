@@ -79,6 +79,55 @@ def test_retime_demotes_early_intentional_fs():
     assert slots[0]["kind"] == "footage"
 
 
+def test_retime_syncs_cached_stub_to_authored_punch():
+    from src.p11_assemble.assemble import _sync_fullscreen_overlay_content
+
+    b4 = {
+        "id": "b4",
+        "text": (
+            "За семнадцать часов она переложила его в Lean. "
+            "За конечное время — сингулярность."
+        ),
+        "emphasis_word": "сингулярность",
+        "overlay": {"type": "fullscreen_text", "content": "СИНГУЛЯРНОСТЬ"},
+    }
+    slots = [{
+        "index": 15, "start": 34.579, "end": 35.779, "duration": 1.2,
+        "kind": "fullscreen_text", "block_id": "b4",
+        "content": "За семнадцать часов",
+        "reason": "полноэкранный текст (§5.2)",
+    }]
+    words = [
+        {"display": "семнадцать", "start": 34.08, "end": 34.53, "block_id": "b4"},
+        {"display": "часов", "start": 34.53, "end": 34.83, "block_id": "b4"},
+        {"display": "сингулярность.", "start": 44.70, "end": 45.15, "block_id": "b4"},
+    ]
+    plan = {"blocks": [b4]}
+    _sync_fullscreen_overlay_content(slots, plan)
+    assert slots[0]["content"] == "СИНГУЛЯРНОСТЬ"
+    _retime_fullscreen_slots(slots, plan, words)
+    assert slots[0]["kind"] == "footage"
+
+
+def test_hero_word_requires_spoken_overlap():
+    from src.p11_assemble.assemble import _hero_content
+
+    block = {
+        "emphasis_word": "миллион",
+        "text": "Миллион долларов за каждую. Пуанкаре закрыли.",
+    }
+    slot = {"start": 13.2, "end": 16.4, "role": "setup"}
+    quiet = _hero_content(block, slot, None, words=[
+        {"display": "уравнения", "start": 13.7, "end": 14.1},
+        {"display": "Навье-Стокса", "start": 14.5, "end": 14.9},
+    ])
+    assert quiet["word"] == ""
+    spoken = _hero_content(block, slot, None, words=[
+        {"display": "Миллион", "start": 7.6, "end": 8.0},
+    ])
+    assert spoken["word"].lower() == "миллион"
+
+
 def test_logo_brand_close_default_tagline_empty():
     from src.lib.render.hyperframes.templates import _LBC_DEFAULT_TAG, _lbc_copy
     assert _LBC_DEFAULT_TAG == ""
