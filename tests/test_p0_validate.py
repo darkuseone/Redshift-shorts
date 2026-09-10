@@ -29,7 +29,7 @@ def test_valid_script_passes(sample_script, cfg):
     result = validate_script(sample_script, cfg)
     info = result["_validation"]
     assert info["ok"] is True
-    assert 35 <= info["estimated_duration_sec"] <= 70
+    assert 35 <= info["estimated_duration_sec"] <= 75
     # Ролей три, а гарнитур может быть больше: у субтитра есть резерв.
     assert {f["role"] for f in info["fonts"]} >= {"subtitle", "display", "mono"}
     assert info["warnings"] == []

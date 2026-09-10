@@ -17,6 +17,7 @@ from ..errors import (
 )
 from ..lib.beats import answer_block_index
 from ..lib.costs import estimate_cost, guard_estimate
+from ..lib.duration import duration_limits
 from ..lib.fillers import discourse_hits, strip_hesitations
 from ..lib.fonts import validate_font
 from ..lib.jsonio import read_json
@@ -485,15 +486,23 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
             block["meme_allowed"] = False
 
     # --- DURATION_OUT_OF_RANGE
-    lo, hi = cfg.get("limits.duration_sec", [35, 70])
+    lo, preferred_hi, hard_hi = duration_limits(cfg)
     estimated = estimate_script_duration(script)
-    if estimated < lo or estimated > hi:
-        need = round(lo - estimated, 1) if estimated < lo else round(estimated - hi, 1)
+    if estimated < lo or estimated > hard_hi:
+        need = round(lo - estimated, 1) if estimated < lo else round(estimated - hard_hi, 1)
         raise DurationOutOfRange(
-            f"расчётный хронометраж {estimated:.1f} сек вне диапазона {lo}–{hi} сек "
+            f"расчётный хронометраж {estimated:.1f} сек вне диапазона {lo}–{hard_hi} сек "
             f"({'не хватает' if estimated < lo else 'лишних'} ~{abs(need)} сек текста)",
-            estimated_sec=estimated, min_sec=lo, max_sec=hi, delta_sec=need,
+            estimated_sec=estimated, min_sec=lo, max_sec=hard_hi, delta_sec=need,
         )
+    if estimated > preferred_hi:
+        warnings.append({
+            "code": "DURATION_LONG",
+            "message": (
+                f"расчётный хронометраж {estimated:.1f} сек длиннее желаемых "
+                f"{preferred_hi:.0f} сек (редко до {hard_hi:.0f})"
+            ),
+        })
     target = float(meta.get("target_duration_sec", estimated))
     if abs(target - estimated) > max(6.0, target * 0.2):
         warnings.append({
@@ -554,7 +563,8 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
     validated["_validation"] = {
         "ok": True,
         "estimated_duration_sec": estimated,
-        "duration_range": [lo, hi],
+        "duration_range": [lo, hard_hi],
+        "duration_preferred_sec": preferred_hi,
         "warnings": warnings,
         "fonts": fonts,
         "cost_estimate": estimate,

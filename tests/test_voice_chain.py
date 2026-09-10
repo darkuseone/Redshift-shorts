@@ -858,8 +858,12 @@ class TestVoicePool:
     def test_the_pool_holds_only_ids_the_owner_gave(self):
         from src.lib.config import load_config
 
-        pool = load_config().get("elevenlabs.voice_pool", [])
+        cfg = load_config()
+        pool = cfg.get("elevenlabs.voice_pool", [])
         assert pool == ["14NozJq5eoBmDc1FXFDq", "7fU3YUxRrVGjNaZ5dzEH"]
+        labels = cfg.get("elevenlabs.voice_labels", {})
+        assert labels[pool[0]] == "Никита 1"
+        assert labels[pool[1]] == "Никита 2"
 
     def test_without_a_pool_the_explicit_voice_still_wins(self):
         """Пустой пул не должен ломать прежний путь: явный id и env."""

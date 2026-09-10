@@ -296,7 +296,7 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
     plan = json.loads(path.read_text(encoding="utf-8"))
     stats = plan["stats"]
     assert 0.35 <= stats["avatar_share"] <= 0.60
-    assert 2 <= stats["avatar_appearances"] <= 5
+    assert 3 <= stats["avatar_appearances"] <= 7
     assert all(3.0 <= d <= 12.0 for d in stats["avatar_appearance_durations"])
     # QC-4 меряет не самый длинный слот вообще, а каждый по своему потолку:
     # 5 сек без внутренних событий, 7 — с ними.

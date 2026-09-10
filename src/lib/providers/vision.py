@@ -1,13 +1,13 @@
 """Vision-провайдеры для трёхступенчатой оценки футажей (§7.3).
 
 Шаг 2 — mid-critic GLM (дешевле Grok). Шаг 3 — арбитраж Grok только в серой
-зоне score ∈ [0.45, 0.70], лимит 3 вызова на ролик. Вердикт у всех судей
-один и тот же, поэтому арбитраж — повторная оценка, а не другой формат.
+зоне score ∈ [reject, accept] (по умолчанию 0.45–0.80), лимит 3 вызова.
+Gemini в цепочке нет, пока vision.allow_gemini не включён явно.
 
 Mock-критик не выдаёт случайное число: он реально смотрит на кадр — считает
 яркость, контраст, насыщенность, плотность деталей и пригодность композиции под
-кроп 9:16. Благодаря этому пороги §7.3 (0.45 / 0.70) и триггеры арбитража
-работают на осмысленном распределении оценок, а не на шуме.
+кроп 9:16. Благодаря этому пороги §7.3 и триггеры арбитража работают на
+осмысленном распределении оценок, а не на шуме.
 """
 
 from __future__ import annotations
@@ -606,11 +606,16 @@ def _should_fallback_vision(exc: BaseException) -> bool:
     return False
 
 
+def _gemini_allowed(cfg) -> bool:
+    """Gemini Vision только по явному флагу. Ключ в env сам по себе не включает."""
+    return bool(cfg.get("vision.allow_gemini", False))
+
+
 def _grok_allowed_for_role(cfg, *, role: str) -> bool:
-    """Arbiter — серая зона. Primary — только если явно primary/fallback=grok."""
-    if role == "arbiter":
+    """Arbiter — серая зона. QC готового ролика — Grok. Primary — явно grok."""
+    if role in ("arbiter", "qc"):
         return bool(cfg.get("vision.grey_xai", True)) or bool(
-            cfg.get("providers.allow_xai", False))
+            cfg.get("providers.allow_xai", False)) or role == "qc"
     preferred = str(cfg.get("vision.primary", "")).lower()
     fallback = str(cfg.get("vision.fallback", "")).lower()
     return preferred == "grok" or fallback == "grok"
@@ -626,6 +631,8 @@ def _live_vision(cfg, costs, name: str, *, role: str = "primary") -> VisionProvi
             return GLMVision(cfg, costs, key)
         return None
     if name == "gemini":
+        if not _gemini_allowed(cfg):
+            return None
         key = _gemini_api_key(cfg)
         if not key:
             return None
@@ -672,25 +679,31 @@ class FallbackVision(VisionProvider):
 
 
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
-    """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
+    """Судья для роли из ``vision.primary`` / ``vision.arbiter`` / ``vision.qc``.
 
-    Mid-critic — GLM. Gemini в primary только если явно ``vision.fallback``
-    или ``vision.primary`` = gemini: иначе облачный GEMINI_API_KEY уводит
-    §11.2 на 3.8. Grok в primary — только при явном ``fallback/primary=grok``.
+    Mid-critic — GLM. Спорные кадры и финальный ролик — Grok. Gemini не
+    входит в цепочку, пока ``vision.allow_gemini`` не включён явно: ключ
+    GEMINI_API_KEY в окружении сам по себе судью не переключает.
     """
-    preferred = str(cfg.get(f"vision.{role}", "glm" if role == "primary" else "grok")).lower()
+    default = "glm" if role == "primary" else "grok"
+    preferred = str(cfg.get(f"vision.{role}", default)).lower()
     fallback = str(cfg.get("vision.fallback", "glm") or "").lower()
+    allow_gemini = _gemini_allowed(cfg)
     order: list[str] = []
 
     def _push(name: str) -> None:
         if name and name not in order and name != "mock":
             order.append(name)
 
-    if role == "arbiter":
+    if role == "qc":
+        _push(preferred)
+        _push("grok")
+        _push(fallback)
+        _push("glm")
+    elif role == "arbiter":
         _push(preferred)
         _push(fallback)
         _push("glm")
-        order[:] = [n for n in order if n != "gemini"]
         if "grok" in order and not bool(cfg.get("vision.grey_xai", True)):
             order[:] = [n for n in order if n != "grok"]
     else:
@@ -698,10 +711,13 @@ def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvide
         _push(fallback)
         if "glm" not in order:
             _push("glm")
-        if preferred == "gemini" or fallback == "gemini":
-            _push("gemini")
         if preferred != "grok" and fallback != "grok":
             order[:] = [n for n in order if n != "grok"]
+
+    if not allow_gemini:
+        order[:] = [n for n in order if n != "gemini"]
+    elif preferred == "gemini" or fallback == "gemini":
+        _push("gemini")
 
     live: list[VisionProvider] = []
     for name in order:

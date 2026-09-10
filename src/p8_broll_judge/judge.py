@@ -5,13 +5,12 @@
 * **Шаг 1 — дешёвая отбраковка без LLM.** Metadata / negatives / theme.
   Цель — убить ≥50 % входящего пула до зрения (MUST-019).
 * **Шаг 2 — mid-critic GLM.** Прошедшие cheap; для видео — 3 кадра.
-  Score 0.0–1.0. Без ключа — mock/empty, не exception.
-* **Шаг 3 — Grok Vision только серая зона** score ∈ [0.45, 0.70].
-  Не чаще 1 раза на клип, лимит ≤3 вызовов на ролик. Evidence/twist сами
-  по себе сюда не входят (MUST-020 снимет оставшийся helper).
+  Score 0.0–1.0. Без ключа — mock/empty, не Gemini.
+* **Шаг 3 — Grok Vision только серая зона** score ∈ [0.45, 0.80]
+  (непонятно, что на кадре). Не чаще 1 раза на клип, лимит ≤3 вызовов.
 
-Пороги: ≥0.70 принять, <0.45 отклонить. Незакрытый слот уходит в генерацию (P9),
-а **не** заполняется слабым футажом — это прямое требование §7.3.
+Пороги: ≥0.80 принять (восемь из десяти), <0.45 отклонить. Незакрытый слот
+уходит в генерацию (P9), а **не** заполняется слабым футажом — §7.3.
 """
 
 from __future__ import annotations
@@ -41,10 +40,14 @@ _log = get_logger("p8")
 
 
 def in_grey_zone(score: float, cfg) -> bool:
-    """Grok/второй уровень только при score ∈ [reject, accept] (MUST-019)."""
+    """Grok только при score ∈ [reject, accept).
+
+    Восемь из десяти (``accept_threshold``) уже в ролик: заказчик не гоняет
+    зрение на кадр, который mid-critic уже принял. Спорное — строго ниже порога.
+    """
     lo = float(cfg.get("vision.reject_threshold", 0.45))
-    hi = float(cfg.get("vision.accept_threshold", 0.70))
-    return lo <= float(score) <= hi
+    hi = float(cfg.get("vision.accept_threshold", 0.80))
+    return lo <= float(score) < hi
 
 
 def _candidate_hay(candidate: dict[str, Any]) -> str:
@@ -99,10 +102,10 @@ def cheap_reject_reason(candidate: dict[str, Any], *, cfg,
 def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
     """Триггеры шага 3 (§7.3). Возвращает причину или None."""
     lo = float(cfg.get("vision.reject_threshold", 0.45))
-    hi = float(cfg.get("vision.accept_threshold", 0.70))
+    hi = float(cfg.get("vision.accept_threshold", 0.80))
     disagree = float(cfg.get("vision.frame_disagreement_threshold", 0.30))
-    if lo <= verdict.score <= hi:
-        return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi}]"
+    if in_grey_zone(verdict.score, cfg):
+        return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi})"
     if verdict.frame_disagreement > disagree:
         return f"кадры расходятся на {verdict.frame_disagreement:.2f} > {disagree}"
     # MUST-020: evidence/twist не auto-arbitrate — те же пороги, что у обычного слота.
@@ -569,7 +572,7 @@ def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
     cfg = ctx.cfg
 
-    accept_threshold = float(cfg.get("vision.accept_threshold", 0.70))
+    accept_threshold = float(cfg.get("vision.accept_threshold", 0.80))
     reject_threshold = float(cfg.get("vision.reject_threshold", 0.45))
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 3))
 
@@ -783,7 +786,7 @@ def run_step(ctx) -> dict[str, Any]:
             # у слотов совпал тег «space».
             #
             # Вечнозелёная база вскрыла это ребром: её записи не судились ни
-            # разу, у них стоит ровный SEED_SCORE 0.62 при пороге приёма 0.70,
+            # разу, у них стоит ровный SEED_SCORE 0.62 при пороге приёма 0.80,
             # и по этому пути весь засев навсегда оставался «borderline».
             reusable = (candidate.get("prior_score") is not None
                         and candidate.get("origin") == "local_cache")
@@ -837,7 +840,7 @@ def run_step(ctx) -> dict[str, Any]:
                         verdict_dict["arbitrated"] = True
                         verdict_dict["arbitration_reason"] = (
                             f"score {primary_score:.2f} в серой зоне "
-                            f"[{reject_threshold:.2f}, {accept_threshold:.2f}]")
+                            f"[{reject_threshold:.2f}, {accept_threshold:.2f})")
                         verdict_dict["primary_score"] = primary_score
                         verdict_dict["clip_id"] = aid
                         _tally_vision(

@@ -67,6 +67,11 @@ def test_every_missing_segment_lands_in_one_request(ctx):
         run_step(ctx)
     assert exc.value.code == "AVATAR_CLIPS_NOT_PREPARED"
     assert [s["index"] for s in _request(ctx)["segments"]] == [0, 1]
+    req = _request(ctx)
+    assert req["engine"] == "avatar_v"
+    assert req["audio_source"] == "elevenlabs"
+    assert req["generate_full_timeline"] is False
+    assert "look" in req["_how_to"].lower() or "avatar_id" in req["_how_to"]
 
 
 def test_clip_of_wrong_length_joins_the_request_instead_of_aborting(ctx):

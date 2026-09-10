@@ -10,6 +10,7 @@
     python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
     python -m src.cli maintenance
     python -m src.cli learn --video-id example --choice A
+    python -m src.cli publish --video-id example
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .errors import RedshiftError
+from .errors import QCFailed, RedshiftError
 from .lib.cache import StepCache
 from .lib.config import load_config
 from .lib.costs import CostLedger
@@ -424,6 +425,50 @@ def cmd_learn(args) -> int:
     return 0
 
 
+def cmd_publish(args) -> int:
+    """QC-passed mp4 → GitHub Release. Без QC файл не выкладываем."""
+    from .lib.release import (
+        collect_release, discover_output_ids, infer_repo, publish_github,
+    )
+
+    cfg = _load_cfg(args)
+    setup_logging(level="INFO", json_output=not args.pretty_logs)
+    output_root = Path(args.output_dir) if args.output_dir else cfg.path("paths.output_dir", "output")
+    if args.from_output:
+        video_ids = discover_output_ids(output_root)
+    elif args.video_id:
+        video_ids = [args.video_id]
+    else:
+        raise RedshiftError("нужен --video-id или --from-output", code="PUBLISH_NO_TARGET")
+    if not video_ids:
+        raise RedshiftError(
+            f"в {output_root} нет output/*/metadata.json",
+            code="PUBLISH_NO_TARGET",
+        )
+    repo = args.repo or infer_repo()
+    results = []
+    for video_id in video_ids:
+        bundle = collect_release(
+            output_root / video_id,
+            variant=args.variant,
+            notes_extra=args.notes_extra or "",
+        )
+        if args.tag:
+            bundle.tag = args.tag
+        if not bundle.qc_passed and not args.allow_failed_qc:
+            raise QCFailed(
+                f"{video_id}: QC не пройден — в Releases не кладём",
+                video_id=video_id,
+            )
+        results.append(publish_github(
+            bundle, repo=repo, dry_run=args.dry_run, draft=args.draft,
+            target=args.target, require_qc=not args.allow_failed_qc,
+        ))
+    print(json.dumps(results if len(results) > 1 else results[0],
+                     ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_templates(args) -> int:
     from .lib.templates import TemplateCatalog
 
@@ -629,6 +674,26 @@ def build_parser() -> argparse.ArgumentParser:
     learn.add_argument("--choice", required=True, choices=["A", "B"])
     learn.add_argument("--note", default=None)
     learn.set_defaults(func=cmd_learn)
+
+    pub = sub.add_parser(
+        "publish",
+        help="выложить готовый ролик в GitHub Releases (скачивание заказчиком)",
+        description="Выдача QC-passed mp4 в GitHub Releases.",
+    )
+    pub.add_argument("--video-id", default=None, help="id ролика, каталог output/<id>")
+    pub.add_argument("--from-output", action="store_true",
+                     help="все ролики с metadata.json в output/")
+    pub.add_argument("--output-dir", default=None, help="корень output/, по умолчанию из конфига")
+    pub.add_argument("--variant", default="A")
+    pub.add_argument("--repo", default=None, help="owner/repo; иначе origin / GITHUB_REPOSITORY")
+    pub.add_argument("--tag", default=None, help="тег релиза, по умолчанию video_id")
+    pub.add_argument("--target", default=None, help="commitish для нового тега")
+    pub.add_argument("--draft", action="store_true")
+    pub.add_argument("--notes-extra", default="", help="доп. абзац в описании релиза")
+    pub.add_argument("--allow-failed-qc", action="store_true",
+                     help="не использовать: QC — входной билет")
+    pub.add_argument("--dry-run", action="store_true")
+    pub.set_defaults(func=cmd_publish)
 
     tpl = sub.add_parser("templates", help="каталог шаблонов")
     tpl.add_argument("--category", default=None, help="фильтр по категории")

@@ -31,6 +31,7 @@ from ..lib.audio import (
     apply_gain_db, crossfade_concat, load_wav, measure_loudness_buffer,
     measure_loudness_file, normalize_voice, rms_envelope, save_wav, trailing_silence_ms,
 )
+from ..lib.duration import duration_limits
 from ..lib.fillers import is_hesitation
 from ..lib.logging import get_logger
 
@@ -350,10 +351,10 @@ def run_step(ctx) -> dict[str, Any]:
 
     threshold_ms = float(ctx.cfg.get("speech.pause_threshold_ms", 150))
     pause_range = tuple(ctx.cfg.get("speech.pause_target_ms", [80, 120]))
-    lo_dur, hi_dur = ctx.cfg.get("limits.duration_sec", [35, 70])
+    lo_dur, preferred_hi, hard_hi = duration_limits(ctx.cfg)
     plan = ctx.read("draft_plan.json")
     target = float(plan["target_duration_sec"])
-    target = min(max(target, lo_dur), hi_dur)
+    target = min(max(target, lo_dur), hard_hi)
     source_sec = len(audio) / sr
 
     # Пауза перед ударом (script_playbook.md §6). Все прочие паузы режутся до
@@ -389,12 +390,18 @@ def run_step(ctx) -> dict[str, Any]:
             final_sec=round(final_sec, 2), min_sec=lo_dur, deficit_sec=deficit,
             deficit_words=math.ceil(deficit * 2.3),
         )
-    if final_sec > hi_dur:
+    if final_sec > hard_hi:
         raise DurationOutOfRange(
-            f"после оптимизации речи ролик {final_sec:.1f} сек — длиннее максимума {hi_dur} сек. "
+            f"после оптимизации речи ролик {final_sec:.1f} сек — длиннее максимума {hard_hi} сек. "
             f"Паузы уже срезаны до минимума: сократите текст примерно на "
-            f"{round(final_sec - hi_dur, 1)} сек",
-            final_sec=round(final_sec, 2), max_sec=hi_dur,
+            f"{round(final_sec - hard_hi, 1)} сек",
+            final_sec=round(final_sec, 2), max_sec=hard_hi,
+        )
+    if final_sec > preferred_hi:
+        ctx.warn(
+            f"ролик {final_sec:.1f} сек длиннее желаемых {preferred_hi:.0f} "
+            f"(редко до {hard_hi:.0f})",
+            duration_sec=round(final_sec, 2),
         )
 
     # Громкость голосового слоя: −14 LUFS, True Peak ≤ −1 dBTP (§4.4). Правило
