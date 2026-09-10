@@ -1620,7 +1620,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -1655,7 +1656,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -1691,7 +1693,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -1761,7 +1764,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -1796,7 +1800,8 @@
       "score": 0.72,
       "duration_sec": 6.042,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -1831,7 +1836,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -1901,7 +1907,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2112,7 +2119,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2147,7 +2155,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2218,7 +2227,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2322,7 +2332,8 @@
       "score": 0.72,
       "duration_sec": 8.008,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2392,7 +2403,8 @@
       "score": 0.72,
       "duration_sec": 5.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2701,8 +2713,10 @@
       "vision_summary": "White ink spreading in water on black. Tags: ink, water, swirling, dark, fluid, white.",
       "score": 0.74,
       "duration_sec": 6.52,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0049"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "36b6b6b2b2921949",
