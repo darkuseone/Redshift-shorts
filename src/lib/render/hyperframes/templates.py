@@ -9164,7 +9164,13 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     duration = max(0.001, end - t0)
     out_base = 0.0 if exit_mode == "none" else _LBC_OUT_BASE
     total_base = max(0.001, _LBC_IN_BASE + out_base)
-    scale = duration / total_base if duration < total_base else 1.0
+    # Short CTA windows used to still run the 2.6s cascade: at ~1s the mark
+    # read «REDSHIF». Hold the finished wordmark for the last second+.
+    hold = 0.0
+    if duration <= 2.6 and exit_mode == "none":
+        hold = max(0.0, duration - 0.55)
+    cascade_budget = max(0.35, duration - hold) if hold else duration
+    scale = cascade_budget / total_base if cascade_budget < total_base else 1.0
     letter_dur = _LBC_LETTER * scale
     stagger_amount = _LBC_STAGGER_AMOUNT * scale
     mark_dur = _LBC_MARK_SCALE * scale
