@@ -38,6 +38,35 @@ Z_CAPTION = 40
 # Соседние фразы стыкуются встык, окно клипа включает оба конца — как шоты.
 TRACK_CAPTION_EVEN = 18
 TRACK_CAPTION_ODD = 19
+
+# After the last spoken word a phrase may sit a beat, then fade. It must not
+# stretch until the next *visible* phrase: mute windows drop karaoke in
+# between, and that left «ДНЯ» on screen for 17 seconds on 0048.
+_PHRASE_HOLD_CAP = 0.45
+
+
+def phrase_clip_span(
+    start: float,
+    last_end: float,
+    next_start: float,
+    *,
+    hold_sec: float = _PHRASE_HOLD_CAP,
+    fade_sec: float = 0.25,
+) -> tuple[float, float, float]:
+    """Return ``(end, fade_start, fade_dur)`` for one caption phrase clip.
+
+    Tight gaps (next word soon) still fill through to the next phrase.
+    A mute hole longer than ``hold_sec + fade_sec`` stays empty.
+    """
+    gap = max(0.0, next_start - last_end)
+    hold = min(max(hold_sec, 0.0), gap)
+    remain = max(0.0, gap - hold)
+    fade_dur = min(max(fade_sec, 0.0), remain) if remain > 0.04 else 0.0
+    end = last_end + hold + fade_dur
+    end = min(end, next_start)
+    end = max(end, start + 0.05)
+    fade_start = end - fade_dur if fade_dur else last_end
+    return end, fade_start, fade_dur
 # Акцент blend-difference лежит отдельным клипом: difference на родителе
 # инвертирует кровь в циан, а два клипа одной фразы не делят трек.
 TRACK_CAPTION_ACCENT_EVEN = 21
@@ -487,7 +516,7 @@ def build_camera_follow(
         next_start = (
             float(phrases[p + 1][0]["start"]) if p + 1 < len(phrases) else duration
         )
-        end = max(start + 0.05, next_start)
+        end, _, _ = phrase_clip_span(start, last_end, next_start, fade_sec=0.0)
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
         clip_id = f"cf-{p:02d}"
         world_id = f"{clip_id}-world"
@@ -912,12 +941,8 @@ def build_gradient_fill(
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)
-        gap = max(0.0, next_start - last_end)
-        fade_dur = min(params["fade_sec"], gap * 0.8) if gap > 0.04 else 0.0
-        fade_start = (next_start - fade_dur) if fade_dur else last_end
-        end = max(next_start if fade_dur else last_end, start + 0.05)
-        if p + 1 < len(phrases) and end > next_start + 1e-6:
-            end = next_start
+        end, fade_start, fade_dur = phrase_clip_span(
+            start, last_end, next_start, fade_sec=params["fade_sec"])
 
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
         clip_id = f"gf-{p:02d}"
@@ -1149,12 +1174,8 @@ def build_blend_difference(
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)
-        gap = max(0.0, next_start - last_end)
-        fade_dur = min(params["fade_sec"], gap * 0.8) if gap > 0.04 else 0.0
-        fade_start = (next_start - fade_dur) if fade_dur else last_end
-        end = max(next_start if fade_dur else last_end, start + 0.05)
-        if p + 1 < len(phrases) and end > next_start + 1e-6:
-            end = next_start
+        end, fade_start, fade_dur = phrase_clip_span(
+            start, last_end, next_start, fade_sec=params["fade_sec"])
         rise = size * params["rise_em"]
         span = max(0.08, end - start)
         enter_dur = min(enter, max(0.08, span - 0.04))

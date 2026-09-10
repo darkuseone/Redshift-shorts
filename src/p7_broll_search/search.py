@@ -526,7 +526,10 @@ def run_step(ctx) -> dict[str, Any]:
     frozen = bool(cfg.get("libraries.footage.freeze", False))
 
     # Материал из последних 5 роликов не переиспользуем при наличии альтернативы.
-    recent_videos = _recent_video_ids(ctx, limit=5)
+    # Текущий id из истории выкидываем: иначе повторный прогон того же ролика
+    # исключает собственные клипы (used_in уже содержит этот id после QC).
+    recent_videos = _recent_video_ids(
+        ctx, limit=5, current=str(plan.get("video_id") or ""))
 
     # Перебивка — тот же b-roll, только с отдельной ролью: она живёт 1.4
     # секунды и обязана быть событием, поэтому судится строже по светлоте.
@@ -693,6 +696,11 @@ def run_step(ctx) -> dict[str, Any]:
                 if record.id in taken_ids or pin_id_denied(record.id, pin_deny):
                     continue
                 if getattr(record, "quarantined", False):
+                    continue
+                # Тот же запрет, что у index.search: пустой слот не должен
+                # подбирать кадр из последних пяти роликов и валить QC-6.
+                if (not frozen and recent_videos
+                        and set(record.used_in or []) & set(recent_videos)):
                     continue
                 if not record.file or not ctx.storage.exists(record.file):
                     continue
@@ -1104,14 +1112,28 @@ def _find_dup(hashes: list[str], pool: list[tuple[str, list[str]]], threshold: i
     return None
 
 
-def _recent_video_ids(ctx, *, limit: int = 5) -> list[str]:
-    """Последние ролики — для правила «не переиспользовать в 5 подряд» (§14.4)."""
+def _recent_video_ids(ctx, *, limit: int = 5, current: str = "") -> list[str]:
+    """Последние ролики — для правила «не переиспользовать в 5 подряд» (§14.4).
+
+    ``current`` — id ролика, который сейчас собираем. Он может уже стоять
+    в ``run_history`` после проваленного QC; в пятёрку соседей он не входит.
+    """
     history_path = ctx.cfg.path("paths.cache_dir", "cache") / "run_history.json"
     from ..lib.jsonio import read_json_or
 
     history = read_json_or(history_path, {"runs": []})
-    ids = [r.get("video_id") for r in history.get("runs", []) if r.get("video_id")]
-    return ids[-limit:]
+    seen: list[str] = []
+    current_id = str(current or "")
+    for vid in reversed([
+        str(r.get("video_id") or "") for r in history.get("runs", [])
+    ]):
+        if not vid or vid == current_id or vid in seen:
+            continue
+        seen.append(vid)
+        if len(seen) >= limit:
+            break
+    seen.reverse()
+    return seen
 
 
 def _prefetch_rank(candidate, source_order: list[str], slot_duration: float) -> tuple:

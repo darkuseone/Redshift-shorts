@@ -265,7 +265,8 @@ def test_credit_is_printed_only_where_the_licence_asks_for_it():
 
     spec = {"sources": {"press": {"attribution_required": True},
                         "pexels": {"attribution_required": False},
-                        "pixabay": {"attribution_required": False}}}
+                        "pixabay": {"attribution_required": False},
+                        "freepik": {"attribution_required": True}}}
 
     press = {"source": "press", "attribution": "Nature",
              "meta": {"domain": "nature.com"}}
@@ -277,6 +278,8 @@ def test_credit_is_printed_only_where_the_licence_asks_for_it():
                          "attribution": "Pexels / Google DeepMind"}, spec) == ""
     assert _credit_line({"source": "pixabay",
                          "attribution": "Pixabay / Digital_View"}, spec) == ""
+    assert _credit_line({"source": "freepik",
+                         "attribution": "Freepik / Magnific stock"}, spec) == ""
     spec_req = {"sources": {"pexels": {"attribution_required": True}}}
     assert _credit_line({"source": "pexels", "attribution": "Иван Петров"},
                         spec_req) == "Иван Петров"

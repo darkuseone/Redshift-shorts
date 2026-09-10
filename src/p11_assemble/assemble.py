@@ -1522,7 +1522,7 @@ def _stem(word: str) -> str:
     return bare[:max(3, len(bare) - 2)]
 
 
-_STOCK_BRAND_SOURCES = ("pexels", "pixabay")
+_STOCK_BRAND_SOURCES = ("pexels", "pixabay", "freepik", "magnific")
 _ACCENT_STRIP = ".,!?;:«»\"'—–()[]"
 
 

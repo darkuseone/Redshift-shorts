@@ -712,6 +712,41 @@ def test_index_allows_recent_when_cache_frozen(tmp_path):
     assert found == ["used"]
 
 
+def test_recent_video_ids_skip_the_video_being_rebuilt(tmp_path):
+    """Повторный прогон 0048 не должен видеть сам себя в пятёрке соседей."""
+    from src.p7_broll_search.search import _recent_video_ids
+
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "run_history.json").write_text(
+        '{"runs":[{"video_id":"redshift_0042"},{"video_id":"redshift_0048"}]}',
+        encoding="utf-8",
+    )
+
+    class _Cfg:
+        def path(self, *_a, **_k):
+            return cache
+
+    class _Ctx:
+        cfg = _Cfg()
+
+    assert _recent_video_ids(_Ctx(), limit=5, current="redshift_0048") == [
+        "redshift_0042"
+    ]
+
+
+def test_empty_slot_fallback_skips_recent_used_in():
+    """Пустой слот не подбирает кадр из последних пяти — иначе QC-6."""
+    import inspect
+
+    from src.p7_broll_search import search
+
+    body = inspect.getsource(search.run_step)
+    assert "set(record.used_in or []) & set(recent_videos)" in body
+    assert "_recent_video_ids(" in body
+    assert "current=" in body
+
+
 def test_ab_difference_is_forced_when_variants_converge(cfg):
     """§15.12.2 — различие версий обеспечивается конструктивно, а не удачей сида."""
     from src.p11_assemble.assemble import _force_ab_difference
