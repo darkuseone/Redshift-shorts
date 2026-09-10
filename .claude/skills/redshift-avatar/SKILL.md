@@ -20,8 +20,11 @@ Brown» (78 луков), это и есть «аватар 5» заказчик�
 ## Посегментная генерация (§7.4.1) — главная экономия
 
 Генерируются только интервалы присутствия, **после** нарезки ElevenLabs.
-Футаж без аватара в HeyGen не отправляется. HTTP API (секрет `HEYGEN_API` в
-**GitHub Actions**). Cursor этот HTTP не вызывает.
+Футаж без аватара в HeyGen не отправляется. HTTP API — `POST /v3/videos`
+(секрет `HEYGEN_API` в **GitHub Actions**), движок `{type: avatar_v}`,
+озвучка `audio_url` с ElevenLabs wav, выход webm с альфой. Cursor этот HTTP
+не вызывает. v2 `/video/generate` не использовать: к 2026-10-31 его снимут,
+а `background: transparent` он уже отвергает.
 
 Если в Actions ключ HeyGen не сработал (401/403/квота) — `avatar_request.json`
 и **здесь** HeyGen MCP: `create_video_from_avatar` + wav сегмента, не текст.

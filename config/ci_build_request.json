@@ -2,12 +2,12 @@
   "_comment": "Заявка на боевой прогон в GitHub Actions. Cursor ролик не собирает: правка этого файла на ветке запускает workflow build-video. Релиз — только после проверки 9/10 в Cursor.",
   "script": "scripts/redshift_0049.json",
   "providers_mode": "live",
-  "from_step": "P4",
+  "from_step": "P6",
   "force": false,
   "skip_vision": false,
   "skip_generate": false,
   "publish_release": false,
   "heygen_source": "api",
-  "requested_at": "2026-09-10T15:25:00Z",
-  "reason": "0049 из кэша голоса: MIME audio/x-wav, P5 добор доли; без новой озвучки"
+  "requested_at": "2026-09-10T15:32:00Z",
+  "reason": "0049 из кэша: HeyGen v3 Avatar V + webm, голос Никиты без новой озвучки"
 }

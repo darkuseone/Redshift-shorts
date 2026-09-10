@@ -18,6 +18,7 @@ from src.lib.providers.avatar import (
     HEYGEN_AUDIO_CONTENT_TYPE,
     HeyGenAvatar,
     heygen_sniffed_audio_type,
+    heygen_v3_avatar_payload,
 )
 
 
@@ -106,3 +107,24 @@ def test_heygen_upload_true_failure_still_raises(monkeypatch, tmp_path):
         assert "500" in str(exc)
     else:
         raise AssertionError("expected ProviderError")
+
+
+def test_heygen_v3_payload_is_avatar_v_with_audio_url_not_legacy_v2():
+    payload = heygen_v3_avatar_payload(
+        avatar_id="99ccc74e764947c394cd4ef210960a6f",
+        audio_url="https://cdn.example/seg.wav",
+        engine="avatar_v",
+        motion_prompt="energetic talking-head",
+        want_alpha=True,
+    )
+    assert payload["type"] == "avatar"
+    assert payload["engine"] == {"type": "avatar_v"}
+    assert payload["audio_url"].endswith(".wav")
+    assert payload["output_format"] == "webm"
+    assert payload["aspect_ratio"] == "9:16"
+    assert payload["motion_prompt"]
+    assert "expressiveness" not in payload
+    assert "video_inputs" not in payload
+    assert "background" not in payload
+    assert "script" not in payload
+    assert "voice_id" not in payload

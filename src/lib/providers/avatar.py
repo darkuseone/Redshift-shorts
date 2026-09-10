@@ -50,6 +50,31 @@ def heygen_sniffed_audio_type(body: str) -> str | None:
     return match.group(2)
 
 
+def heygen_v3_avatar_payload(*, avatar_id: str, audio_url: str,
+                             engine: str = "avatar_v",
+                             motion_prompt: str = "",
+                             want_alpha: bool = True) -> dict[str, Any]:
+    """POST /v3/videos — Avatar V + ElevenLabs wav. Не v2 (legacy, без transparent).
+
+    ``expressiveness`` не кладём: это Avatar IV. ``background: transparent``
+    v2 отвергает. webm сам снимает фон.
+    """
+    payload: dict[str, Any] = {
+        "type": "avatar",
+        "avatar_id": avatar_id,
+        "audio_url": audio_url,
+        "aspect_ratio": "9:16",
+        "resolution": "1080p",
+        "engine": {"type": str(engine or "avatar_v")},
+    }
+    if want_alpha:
+        payload["output_format"] = "webm"
+    prompt = (motion_prompt or "").strip()
+    if prompt:
+        payload["motion_prompt"] = prompt
+    return payload
+
+
 @dataclass
 class AvatarSegment:
     index: int
@@ -256,7 +281,6 @@ class HeyGenAvatar(AvatarProvider):
         import requests
 
         base = str(self.cfg.get("heygen.api_base", "https://api.heygen.com"))
-        width, height = self.cfg.resolution
         audio_url = self._upload_audio(audio_path)
 
         # Look id: secret HEYGEN_AVATAR_ID overrides config (same pattern as voice_id_env).
@@ -268,36 +292,27 @@ class HeyGenAvatar(AvatarProvider):
         if not avatar_id:
             raise ProviderError("HeyGen avatar_id пуст (config + HEYGEN_AVATAR_ID)")
 
-        payload: dict[str, Any] = {
-            "video_inputs": [{
-                "character": {
-                    "type": "avatar",
-                    "avatar_id": avatar_id,
-                    "avatar_style": "normal",
-                },
-                "voice": {"type": "audio", "audio_url": audio_url},
-            }],
-            "dimension": {"width": width, "height": height},
-        }
-        engine = self.cfg.get("heygen.engine", None)
-        if engine:
-            payload["video_inputs"][0]["character"]["engine"] = str(engine)
-        model_version = self.cfg.get("heygen.model_version", None)
-        if model_version:
-            payload["video_inputs"][0]["character"]["model_version"] = model_version
-        if str(self.cfg.get("heygen.background", "")).startswith("transparent"):
-            # §7.7 шаг 1: сначала пробуем получить прозрачный фон от HeyGen.
-            payload["video_inputs"][0]["background"] = {"type": "transparent"}
+        want_alpha = str(self.cfg.get("heygen.background", "")).startswith("transparent")
+        payload = heygen_v3_avatar_payload(
+            avatar_id=avatar_id,
+            audio_url=audio_url,
+            engine=str(self.cfg.get("heygen.engine") or "avatar_v"),
+            motion_prompt=str(self.cfg.get("heygen.motion_prompt") or ""),
+            want_alpha=want_alpha,
+        )
 
         def _create() -> str:
-            resp = requests.post(f"{base}/v2/video/generate", json=payload,
+            resp = requests.post(f"{base}/v3/videos", json=payload,
                                  headers={"x-api-key": self.api_key,
                                           "Content-Type": "application/json"},
                                  timeout=self._timeout())
             if resp.status_code >= 400:
                 raise ProviderError(f"HeyGen generate вернул {resp.status_code}",
                                     status=resp.status_code, body=resp.text[:400])
-            video_id = (resp.json().get("data") or {}).get("video_id")
+            body = resp.json() or {}
+            nested = body.get("data")
+            data = nested if isinstance(nested, dict) else body
+            video_id = data.get("video_id") or data.get("id")
             if not video_id:
                 raise ProviderError("HeyGen не вернул video_id")
             return str(video_id)
@@ -308,21 +323,26 @@ class HeyGenAvatar(AvatarProvider):
         deadline = time.time() + float(self.cfg.get("heygen.poll_timeout_sec", 900))
         video_url = ""
         while time.time() < deadline:
-            resp = requests.get(f"{base}/v1/video_status.get", params={"video_id": video_id},
+            resp = requests.get(f"{base}/v3/videos/{video_id}",
                                 headers={"x-api-key": self.api_key}, timeout=self._timeout())
-            data = (resp.json() or {}).get("data", {})
+            body = resp.json() or {}
+            nested = body.get("data")
+            data = nested if isinstance(nested, dict) else body
             status = str(data.get("status", ""))
             if status == "completed":
-                video_url = str(data.get("video_url", ""))
+                video_url = str(data.get("video_url") or "")
                 break
             if status in ("failed", "error"):
+                detail = str(data.get("failure_message") or data.get("error") or "")[:300]
                 raise ProviderError("HeyGen сообщил об ошибке генерации",
-                                    video_id=video_id, detail=str(data.get("error"))[:300])
+                                    video_id=video_id, detail=detail)
             time.sleep(interval)
         if not video_url:
             raise ProviderError("HeyGen не завершил генерацию за отведённое время",
                                 video_id=video_id)
 
+        if want_alpha and out_path.suffix.lower() != ".webm":
+            out_path = out_path.with_suffix(".webm")
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with requests.get(video_url, stream=True, timeout=self._timeout()) as resp:
             with open(out_path, "wb") as fh:
