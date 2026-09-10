@@ -334,7 +334,7 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                                 "provider": getattr(provider, "name", "")})
             return _skipped_semantic_report(
                 plan,
-                reason="нет live GLM/Grok vision (qc_skipped_semantic)",
+                reason="нет live Grok/Gemini vision (qc_skipped_semantic)",
                 notes=["auto/live без GLM и XAI: mock-судья не закрывает §11.2"],
                 cfg=cfg)
         positions = sample_positions()

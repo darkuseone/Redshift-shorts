@@ -67,13 +67,17 @@ def record_choice(cfg, *, video_id: str, choice: str, note: str = "",
     out_dir = output_dir or (cfg.path("paths.output_dir", "output") / video_id)
     plan_a = read_json_or(out_dir / "edit_plan_A.json", None)
     plan_b = read_json_or(out_dir / "edit_plan_B.json", None)
-    if plan_a is None or plan_b is None:
+    if plan_a is None:
         work_dir = cfg.path("paths.work_dir", "work") / video_id
-        plan_a = plan_a or read_json_or(work_dir / "edit_plan_A.json", None)
+        plan_a = read_json_or(work_dir / "edit_plan_A.json", None)
         plan_b = plan_b or read_json_or(work_dir / "edit_plan_B.json", None)
-    if plan_a is None or plan_b is None:
-        raise RedshiftError(f"не найдены edit-планы прогона {video_id}",
+    if plan_a is None:
+        raise RedshiftError(f"не найден edit-план прогона {video_id}",
                             code="EDIT_PLANS_MISSING", video_id=video_id)
+    # Одна версия монтажа: B больше не собирается. Сравнение — только если
+    # старый план B ещё лежит рядом.
+    if plan_b is None:
+        plan_b = plan_a
 
     prefs_path = cfg.repo_root / "config" / "editing_preferences.json"
     prefs = read_json_or(prefs_path, {"version": 1, "runs": [], "situation_weights": {},

@@ -1,0 +1,9 @@
+{
+  "script": "scripts/redshift_00XX.json",
+  "providers_mode": "auto",
+  "from_step": "P6",
+  "heygen_source": "prepared",
+  "skip_generate": false,
+  "requested_by": "cursor",
+  "note": "фаза 2 после MCP-аватара"
+}

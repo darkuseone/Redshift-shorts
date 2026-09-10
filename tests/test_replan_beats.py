@@ -177,7 +177,7 @@ class TestTheReferenceVideoObeysTheRule:
     `TestThePickerHonoursTheBan`.
     """
 
-    @pytest.mark.parametrize("variant", ["A", "B"])
+    @pytest.mark.parametrize("variant", ["A"])
     def test_payoff_renderer_is_not_a_stretch_renderer(self, cfg, variant):
         import json
 
@@ -195,7 +195,7 @@ class TestTheReferenceVideoObeysTheRule:
         payoff = {r for b, r in rows if b == "payoff"}
         assert not (payoff & stretch), f"ответ повторяет затяжку: {payoff & stretch}"
 
-    @pytest.mark.parametrize("variant", ["A", "B"])
+    @pytest.mark.parametrize("variant", ["A"])
     def test_no_two_adjacent_stretch_shots_share_a_renderer(self, cfg, variant):
         import json
 

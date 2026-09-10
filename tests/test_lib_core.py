@@ -262,7 +262,7 @@ def test_render_is_not_fresh_without_the_videos(tmp_path):
 
     expected = tuple(p12.outputs) + p12.deliverable_paths(ctx)
     assert [p.name for p in p12.deliverable_paths(ctx)] == [
-        "redshift_0047_A.mp4", "redshift_0047_B.mp4"]
+        "redshift_0047_A.mp4"]
 
     fp = hash_obj({"p12": 1})
     ctx.cache.record("P12", fp, outputs=expected)

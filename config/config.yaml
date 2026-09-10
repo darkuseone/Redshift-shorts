@@ -15,7 +15,7 @@ project:
 # auto  — live при наличии ключа в окружении, иначе mock (с warning в лог)
 providers:
   mode: auto
-  allow_xai: false          # xAI не собирается и не вызывается (vision и image)
+  allow_xai: false          # IMAGE gen: xAI не в цепочке картинок. Vision = Grok.
   request_timeout_sec: 60
   retries: 3               # §10.5.3: 3 попытки (обычные ошибки)
   backoff_base_sec: 2.0    # экспоненциальный бэкофф 2/4/8
@@ -42,17 +42,14 @@ heygen:
   #
   # Движок — только Avatar V (`avatar_v`), как просил заказчик.
   avatar_id: "99ccc74e764947c394cd4ef210960a6f"
-  # Опциональный оверрайд лука из секрета HEYGEN_AVATAR_ID (Avatar 5 look id).
-  # Пусто/нет секрета → берём avatar_id выше (зелёная рубашка / тату).
-  avatar_id_env: HEYGEN_AVATAR_ID
+  # Look id только отсюда, не из секрета HEYGEN_AVATAR_ID (402 на live API).
+  avatar_id_env: ""
   # Движок Avatar V — иначе API молча уходит в Avatar IV.
   engine: "avatar_v"
   model_version: "avatar5"                         # §7.4: вынесено в конфиг, не хардкод
-  # Источник клипов: api — по ключу, prepared — готовые файлы из репозитория,
-  # auto — ключ есть → api, нет ключа но есть клипы → prepared, иначе заглушка.
-  # Ключ в GitHub Secrets: HEYGEN_API. Режим auto: есть ключ → live API,
-  # нет ключа но есть клипы → prepared, иначе заглушка.
-  source: auto
+  # prepared — клипы из MCP в assets/avatar_clips/<id>/. api в Actions не звать
+  # (HEYGEN_API даёт 402). auto оставлен для тестов двухфазного выбора.
+  source: prepared
   prepared_dir: assets/avatar_clips
   # Ключевание не нужно: аватар 5 отдаёт настоящую прозрачность. Проверено
   # измерением, а не на слово — 25.08, клип 1080x1920, `output_format: webm`:
@@ -131,34 +128,22 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # MUST-019: mid-critic GLM-5.3; Grok только серая зона [0.45, 0.70]
-  # и явный vision.fallback=grok (запас §11.2, не image gen).
-  # Gemini в vision — только если явно primary/fallback=gemini. Общий
-  # GEMINI_API_KEY больше не уводит судью на 3.8. Generation по-прежнему
-  # providers.allow_xai=false (xAI не в цепочке картинок).
-  primary: "glm"
+  # Critic / P8 / P12 semantic QC → Grok. Gemini только если Grok недоступен.
+  # GLM выведен. Generation по-прежнему providers.allow_xai=false.
+  primary: "grok"
   arbiter: "grok"
-  fallback: "glm"
+  fallback: "gemini"
   arbiter_max_calls: 3        # MUST-019: ≤3 на ролик, не 8
   accept_threshold: 0.70
   reject_threshold: 0.45
   frame_disagreement_threshold: 0.30
-  grey_xai: true              # Grok/xAI только как arbiter серой зоны
+  grey_xai: true              # Grok как primary и как arbiter серой зоны
   grok_api_key_env: XAI_API_KEY
   grok_model: "grok-4.6"      # не grok-4-fast / grok-2-vision
   grok_api_base: "https://api.x.ai"
   gemini_api_key_env: GEMINI_API_KEY
   gemini_model: "gemini-3.8-flash"
-  # GLM intl (docs): api.z.ai/api/paas/v4. Модель заказчика — 5.3-free
-  # (TokenRouter slug z-ai/glm-5.3-free), не GLM-4.6V-Flash.
-  # Ключ: GLM_API_KEY или GLM_API («GLM API» в GitHub Secrets),
-  # иначе TOKENROUTER_API_KEY / ZAI_API_KEY.
-  # TokenRouter host — переопределить glm_api_base на OpenAI-совместимый /v1.
-  glm_api_key_env: GLM_API_KEY
-  glm_model: "glm-5.3"
-  glm_model_fallback: "z-ai/glm-5.3-free"
-  glm_api_base: "https://api.z.ai/api/paas/v4"
-  # true = без live vision (Gemini/Grok): P8 кэш/ранг. P12 не ставит semantic
+  # true = без live vision (Grok/Gemini): P8 кэш/ранг. P12 не ставит semantic
   # pass: qc_skipped_semantic, ролик не выдаётся (MUST-006). Mock — mode=mock.
   skip_live: false
   # Запасной Flash только при стойком 503 на primary. 3.7 — предыдущий GA Flash
@@ -261,22 +246,14 @@ libraries:
   footage: { max_items: null, freeze: false, eviction: lru }
 
 storage:
-  # Библиотека отобранного материала живёт **внутри репозитория**, рядом со
-  # шрифтами, голосом и клипами ведущего. Так решил заказчик, и так правильно:
-  # прогон идёт на чужом раннере, который умирает вместе с задачей, а кэш
-  # Actions привязан к конкретному ролику и терялся уже трижды. Единственный
-  # канал, переживающий всё, — checkout.
-  #
-  # Внешнее объектное хранилище (S3) остаётся рабочей веткой кода, но по
-  # умолчанию выключено: оно требует бакета и четырёх секретов, а библиотеке
-  # такого размера это не нужно.
+  # Индекс футажа — в git. Сами файлы — S3 (REDSHIFT_S3_*), если секреты есть;
+  # иначе артефакт Actions. Библиотека не обязана жить в git.
   #
   # backend: local | s3
   backend: local
   local_root: "assets/footage"
-  # 400 МиБ — примерно 200-300 клипов по 3 секунды. Дальше LRU вытесняет самое
-  # давно не использованное. Потолок здесь не про диск, а про историю git:
-  # удалённый файл остаётся в ней навсегда, и репозиторий растёт необратимо.
+  # 400 МиБ локального кэша на раннере. Индекс — в git; сами файлы — S3
+  # (REDSHIFT_S3_*), если секреты есть, иначе артефакт Actions.
   max_bytes: 419430400
   s3:
     bucket_env: REDSHIFT_S3_BUCKET
@@ -288,13 +265,13 @@ storage:
 features:
   avatar_matting: true      # §7.7 киллсвитч
   background_vfx: true      # зависит от avatar_matting
-  ab_versions: true
+  ab_versions: false         # одна версия монтажа; B не собирается
   auto_topic_search: false  # MUST-023: явный --article-url / --topic, автопоиск не включать
   vision_qc: true           # §11.2 смысловой QC по финальному ролику
 
 limits:
   duration_sec: [35, 70]
-  avatar_share: [0.35, 0.60]
+  avatar_share: [0.35, 0.50]
   max_event_gap_sec: 2.5
   max_shot_sec: 5
   max_shot_sec_with_events: 7
@@ -335,7 +312,7 @@ limits:
   pillarbox_per_video: 2            # §3.6.5
   gradient_per_video: 1             # §3.3.5
   template_overlap_with_prev_max: 0.20  # QC-6/17
-  ab_min_template_diff: 3           # §15.12.2
+  ab_min_template_diff: 0           # A/B выключен: одна версия
 
 speech:
   pause_threshold_ms: 150           # §4.2.2 паузы >150 мс режем
@@ -382,7 +359,7 @@ render:
   audio_bitrate: "224k"
   color_primaries: "bt709"
   faststart: true
-  ab_versions: ["A", "B"]
+  ab_versions: ["A"]
   # TEMP: auto = Gemini image → Grok Imagine → ffmpeg @1s.
   # Publishable thumbs need a live image key (GEMINI_API_KEY while XAI empty).
   thumbnail_mode: "auto"
@@ -409,7 +386,6 @@ budget:
     gemini_per_image: 0.0004
     gemini_image: 0.04
     grok_per_image: 0.0060
-    glm_per_image: 0.0
     magnific_per_image: 0.08
     magnific_per_video_sec: 0.20
 

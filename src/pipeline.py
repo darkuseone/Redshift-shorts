@@ -41,7 +41,7 @@ class RunContext:
     cache: StepCache
     costs: CostLedger
     storage: StorageBackend
-    variants: tuple[str, ...] = ("A", "B")
+    variants: tuple[str, ...] = ("A",)
     dry_run: bool = False
     warnings: list[str] = field(default_factory=list)
     state: dict[str, Any] = field(default_factory=dict)

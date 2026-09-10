@@ -98,6 +98,21 @@ class MockTtsForbidden(RedshiftError):
     code = "MOCK_TTS_FORBIDDEN"
 
 
+class PaidRerunForbidden(RedshiftError):
+    """Перерендер с кэшем голоса и prepared-аватаром не вызывает paid API.
+
+    Даже ``--force`` не снимает запрет. Только явный ``--force-paid``.
+    """
+
+    code = "PAID_RERUN_FORBIDDEN"
+
+
+class SpeechChangedNewVideo(RedshiftError):
+    """Текст блоков изменился при наличии prepared-голоса — нужен новый video_id."""
+
+    code = "SPEECH_CHANGED_NEW_VIDEO"
+
+
 # --- Внешние сервисы ---------------------------------------------------------
 
 class ProviderError(RedshiftError):
@@ -150,7 +165,8 @@ ALL_ERROR_CODES = sorted(
             HookUnanswered, QuoteTooLong, NoSource, FontMissingCyrillic, FontLicenseError,
             BudgetExceeded, ScriptTooShort, ProviderError, ProviderUnavailable,
             MissingCredentials, LimitReached, LibraryFrozen, QCFailed, RenderError,
-            AssetError, LicenseError, MockTtsForbidden,
+            AssetError, LicenseError, MockTtsForbidden, PaidRerunForbidden,
+            SpeechChangedNewVideo,
         )
     }
     | {"MEME_IN_MEDICINE"}  # warning-код, не исключение (§8.2)

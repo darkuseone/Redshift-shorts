@@ -2,10 +2,11 @@
 
 Система автоматической сборки YouTube Shorts. Принимает JSON-сценарий и без
 участия человека выдаёт готовый вертикальный ролик 1080×1920 длительностью
-35–70 секунд — **в двух версиях монтажа** из одного набора материалов.
+35–70 секунд — **одну версию монтажа**.
 
 Реализация по ТЗ v2.0. Правила сборки живут в [`instruction.md`](instruction.md)
-как исполняемый документ, а не в переписке.
+как исполняемый документ (контракт Cursor↔Actions — §0), а не в переписке.
+Железные правила агента — [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
@@ -17,7 +18,8 @@ pip install -r requirements.txt
 # Проверить сценарий, ничего не потратив
 python -m src.cli validate --script scripts/redshift_0042.json
 
-# Собрать ролик. Без ключей всё работает в mock-режиме
+# Собрать ролик. Без ключей всё работает в mock-режиме.
+# Live-сборка — только GitHub Actions по заявке config/ci_build_request.json
 python -m src.cli --set providers.mode=mock run --script scripts/redshift_0042.json
 
 # Результат
@@ -31,17 +33,16 @@ ls output/redshift_0042/
 
 ```
 output/redshift_0042/
-  redshift_0042_A.mp4      # версия A, 1080×1920, 30 fps, H.264 +faststart
-  redshift_0042_B.mp4      # версия B — другие монтажные решения, тот же материал
+  redshift_0042_A.mp4      # единственная версия, 1080×1920, 30 fps, H.264 +faststart
   thumbnail.jpg
   voice_final.wav
   subtitles.srt
   metadata.json            # заголовок, описание, хештеги, отметка о синтетическом контенте
-  build_report.json        # 19 проверок QC по каждой версии
+  build_report.json        # машинные QC-гейты
+  qc_pack/                 # сетка кадров + wav хук/середина/финал для агента
   cost_report.json         # фактический расход по сервисам
   assets_manifest.json     # лицензия каждого материала — документ на случай спора
   edit_plan_A.json         # позволяет пересобрать ролик один в один без внешних API
-  edit_plan_B.json
   logs/
 ```
 
@@ -73,7 +74,7 @@ P0  Валидация сценария        P7  Поиск B-roll
 P1  Планирование кадра        P8  Трёхступенчатая оценка
 P2  TTS с запасом длины       P9  Генерация пустых слотов
 P3  Оптимизация речи          P10 SFX, подложка, микс
-P4  Выравнивание по словам    P11 Сборка edit-планов A и B
+P4  Выравнивание по словам    P11 Сборка одного edit-плана
 P5  Монтажный план            P12 Рендер, QC, артефакты
 P6  Аватар посегментно
 ```
@@ -96,7 +97,7 @@ python -m src.cli libraries                          # состояние биб
 python -m src.cli add-sfx --file whoosh.wav --id whoosh_sharp --tag whoosh
 python -m src.cli templates --category transitions   # каталог шаблонов
 python -m src.cli maintenance --dry-run              # что вытеснит LRU
-python -m src.cli learn --video-id x --choice A      # записать выбор версии
+python -m src.cli learn --video-id x --choice A      # записать предпочтение (одна версия)
 ```
 
 ## Структура
@@ -135,7 +136,7 @@ Magnific: API-путь за кредиты живёт в `config/magnific_models
 ## Тесты
 
 ```bash
-python -m pytest tests/ -q
+python -m pytest tests/ -q --ignore=tests/test_music_library.py
 ```
 
 Проверяются в том числе правила ТЗ, которые легко нарушить незаметно: доля

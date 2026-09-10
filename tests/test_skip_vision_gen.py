@@ -56,15 +56,15 @@ def test_vision_qc_skip_live_short_circuits(tmp_path, monkeypatch):
 
 
 def test_vision_qc_auto_without_live_keys_skips_semantic(tmp_path, monkeypatch):
-    """auto + только GEMINI_API_KEY не закрывает §11.2 mock-судьёй."""
+    """auto без Grok и Gemini не закрывает §11.2 mock-судьёй."""
     from src.p12_render_qc import vision_qc as VQ
 
     for env_name in (
         "GLM_API_KEY", "GLM_API", "TOKENROUTER_API_KEY", "ZAI_API_KEY",
         "Z_AI_API_KEY", "XAI_API_KEY", "XAI_API",
+        "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_AI_API_KEY",
     ):
         monkeypatch.delenv(env_name, raising=False)
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
 
     cfg = load_config(overrides=["providers.mode=auto"])
     ctx = MagicMock()

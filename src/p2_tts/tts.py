@@ -20,7 +20,7 @@ from typing import Any
 
 import numpy as np
 
-from ..errors import MockTtsForbidden
+from ..errors import MockTtsForbidden, SpeechChangedNewVideo
 from ..lib.audio import SAMPLE_RATE, crossfade_concat, load_wav, save_wav
 from ..lib.jsonio import read_json_or
 from ..lib.logging import get_logger
@@ -116,6 +116,24 @@ def _synthesize_block(provider, text: str, out_path: Path, *, speed: float) -> T
 
 def run_step(ctx) -> dict[str, Any]:
     draft = ctx.read("draft_plan.json")
+    prepared = prepared_voice_dir(ctx)
+    force_paid = bool(ctx.cfg.get("pipeline.force_paid", False))
+    mode = str(ctx.cfg.get("providers.mode", "auto")).lower()
+    # Mock CI и юнит-тесты сами синтезируют. Prepared-кэш — только auto/live.
+    if prepared is not None and not force_paid and mode != "mock":
+        prepared_draft = read_json_or(prepared / "draft_plan.json", {}) or {}
+        current = _spoken_key(draft.get("blocks") or [])
+        cached = _spoken_key((prepared_draft or {}).get("blocks") or [])
+        if current != cached:
+            raise SpeechChangedNewVideo(
+                "текст блоков изменился — нужен новый video_id, иначе липсинк умрёт",
+                video_id=ctx.video_id,
+            )
+        _log.info("paid skipped: voice cached, avatar prepared", extra={
+            "from": str(prepared), "force_paid": False,
+        })
+        return adopt_prepared_voice(ctx, prepared, draft)
+
     provider = build_tts_provider(ctx.cfg, ctx.costs)
     if provider.is_mock and combat_voice_lock(ctx):
         prepared = prepared_voice_dir(ctx)

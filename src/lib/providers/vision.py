@@ -1,8 +1,8 @@
 """Vision-провайдеры для трёхступенчатой оценки футажей (§7.3).
 
-Шаг 2 — mid-critic GLM (дешевле Grok). Шаг 3 — арбитраж Grok только в серой
-зоне score ∈ [0.45, 0.70], лимит 3 вызова на ролик. Вердикт у всех судей
-один и тот же, поэтому арбитраж — повторная оценка, а не другой формат.
+Шаг 2 — mid-critic Grok. Шаг 3 — арбитраж Grok в серой зоне
+score ∈ [0.45, 0.70], лимит 3 вызова на ролик. Gemini — только запас,
+если Grok недоступен. GLM выведен.
 
 Mock-критик не выдаёт случайное число: он реально смотрит на кадр — считает
 яркость, контраст, насыщенность, плотность деталей и пригодность композиции под
@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import io
 import json
 import re
 from dataclasses import dataclass, field
@@ -374,144 +373,10 @@ class GrokVision(VisionProvider):
         return _verdict_from_json(str(text), judge="grok", frames=len(frames))
 
 
-# --- GLM (z.ai / TokenRouter) ------------------------------------------------
-
-GLM_MAX_IMAGE_BYTES = 5 * 1024 * 1024
-GLM_MAX_IMAGE_SIDE = 6000
-# CN endpoint is forbidden (MUST-019). Intl z.ai or TokenRouter only.
-_GLM_CN_HOST = "open.bigmodel.cn"
-
-
-class GLMVision(VisionProvider):
-    """Mid-critic: OpenAI-style chat.completions + image_url, JSON из текста."""
-
-    def __init__(self, cfg, costs, api_key: str) -> None:
-        super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="glm")
-        self.api_key = api_key
-
-    def judge(self, frames: Sequence[Path], *, intent: str, role: str,
-              query: str, kind: str = "broll") -> VisionVerdict:
-        import requests
-
-        models = _glm_model_chain(self.cfg)
-        if any("4.6v-flash" in m.lower() or "4.6v flash" in m.lower() for m in models):
-            raise ProviderError("GLM-4.6V-Flash запрещён: заказчик — GLM-5.3")
-        url = _glm_chat_url(self.cfg)
-        if _GLM_CN_HOST in url:
-            raise ProviderError("CN GLM endpoint open.bigmodel.cn запрещён")
-        content: list[dict[str, Any]] = [
-            {"type": "text",
-             "text": prompt_for(kind, intent=intent, role=role, query=query)}]
-        for frame in frames:
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": _glm_image_data_url(Path(frame))},
-            })
-        # response_format json_object / json_schema для VLM не подтверждены —
-        # JSON вырезаем из текста ответа.
-        last_error: ProviderError | None = None
-        data: dict[str, Any] | None = None
-        used_model = models[0]
-        for model in models:
-            payload = {"model": model, "messages": [{"role": "user", "content": content}],
-                       "temperature": 0.1}
-
-            def _call(payload=payload, model=model) -> dict[str, Any]:
-                resp = requests.post(url, json=payload,
-                                     headers={"Authorization": f"Bearer {self.api_key}"},
-                                     timeout=self._timeout())
-                if resp.status_code >= 400:
-                    raise ProviderError(f"GLM вернул {resp.status_code}",
-                                        status=resp.status_code, body=resp.text[:300],
-                                        model=model)
-                return resp.json()
-
-            try:
-                data = call_with_retry(_call, **self._retry_kwargs("GLM vision"))
-                used_model = model
-                break
-            except ProviderError as exc:
-                last_error = exc
-                if not _glm_model_unavailable(exc):
-                    raise
-                _log.warning("GLM модель недоступна — следующая в цепочке",
-                             extra={"model": model, "err": str(exc)[:200]})
-        if data is None:
-            raise last_error or ProviderError("GLM не ответил")
-        text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-        if isinstance(text, list):
-            text = " ".join(
-                str(part.get("text") or "") if isinstance(part, dict) else str(part)
-                for part in text)
-        self.charge("judge", len(frames), "images",
-                    len(frames) * float(self.cfg.get("budget.price.glm_per_image", 0.0)),
-                    model=used_model)
-        return _verdict_from_json(str(text), judge="glm", frames=len(frames))
-
-
-def _glm_model_chain(cfg) -> list[str]:
-    """Сначала модель из конфига (5.3), затем запасной слаг z.ai / TokenRouter."""
-    primary = str(cfg.get("vision.glm_model", "glm-5.3") or "glm-5.3").strip()
-    extras = str(cfg.get("vision.glm_model_fallback", "") or "").strip()
-    chain: list[str] = []
-    for name in (primary, extras, "glm-5.3", "z-ai/glm-5.3-free"):
-        if name and name not in chain:
-            chain.append(name)
-    return chain
-
-
-def _glm_model_unavailable(exc: BaseException) -> bool:
-    """400/404 «нет такой модели» — пробуем следующий слаг, не весь запасной судья."""
-    status = _provider_http_status(exc)
-    if status not in (400, 404, 422):
-        return False
-    text = str(exc).lower()
-    if "high demand" in text or "unavailable" in text or "quota" in text:
-        return False
-    return any(token in text for token in (
-        "not found", "does not exist", "unknown model", "invalid model",
-        "not supported", "does not support", "no such model",
-    ))
-
-
-def _glm_chat_url(cfg) -> str:
-    base = str(cfg.get("vision.glm_api_base", "https://api.z.ai/api/paas/v4")).rstrip("/")
-    if base.endswith("/chat/completions"):
-        return base
-    return f"{base}/chat/completions"
-
-
-def _glm_image_data_url(path: Path, *, max_bytes: int = GLM_MAX_IMAGE_BYTES,
-                        max_side: int = GLM_MAX_IMAGE_SIDE) -> str:
-    """jpeg/png ≤5 MB и ≤6000×6000 — лимит intl GLM vision."""
-    with Image.open(path) as img:
-        img = img.convert("RGB")
-        width, height = img.size
-        scale = min(1.0, float(max_side) / float(max(width, height, 1)))
-        if scale < 1.0:
-            img = img.resize(
-                (max(1, int(width * scale)), max(1, int(height * scale))),
-                Image.Resampling.BILINEAR)
-        quality = 85
-        raw = b""
-        for quality in (85, 75, 65, 55, 40):
-            buf = io.BytesIO()
-            img.save(buf, format="JPEG", quality=quality, optimize=True)
-            raw = buf.getvalue()
-            if len(raw) <= max_bytes:
-                break
-        if len(raw) > max_bytes:
-            raise ProviderError("GLM: кадр больше 5 MB после сжатия")
-    b64 = base64.b64encode(raw).decode("ascii")
-    return f"data:image/jpeg;base64,{b64}"
-
-
 def _vision_price_key(judge_name: str) -> str:
     name = str(judge_name or "").lower()
     if "grok" in name:
         return "grok"
-    if "glm" in name:
-        return "glm"
     return "gemini"
 
 
@@ -557,24 +422,6 @@ def _gemini_api_key(cfg) -> str | None:
     return None
 
 
-def _glm_api_key(cfg) -> str | None:
-    """GLM_API_KEY, затем TokenRouter / z.ai алиасы. Не хардкод.
-
-    GitHub secret в UI часто подписан «GLM API» — это ``GLM_API``, не
-    ``GLM_API_KEY``. Оба имени ищем, значения в логи не пишем.
-    """
-    key = cfg.secret_for("vision.glm_api_key_env", purpose="GLM Vision")
-    if key:
-        return key
-    for env_name in (
-        "GLM_API", "GLMAPI", "TOKENROUTER_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY",
-    ):
-        key = cfg.secret(env_name, purpose="GLM Vision")
-        if key:
-            return key
-    return None
-
-
 def _provider_http_status(exc: BaseException) -> int | None:
     status = getattr(exc, "details", None) or {}
     if isinstance(status, dict) and status.get("status") is not None:
@@ -598,12 +445,8 @@ def _credits_or_auth_failure(exc: BaseException) -> bool:
 
 
 def _should_fallback_vision(exc: BaseException) -> bool:
-    """Сменить primary→secondary: кредиты, 401/403, исчерпанный 503, нет модели."""
-    if _credits_or_auth_failure(exc) or is_capacity_error(exc):
-        return True
-    if _glm_model_unavailable(exc):
-        return True
-    return False
+    """Сменить primary→secondary: кредиты, 401/403, исчерпанный 503."""
+    return _credits_or_auth_failure(exc) or is_capacity_error(exc)
 
 
 def _grok_allowed_for_role(cfg, *, role: str) -> bool:
@@ -619,11 +462,6 @@ def _grok_allowed_for_role(cfg, *, role: str) -> bool:
 def _live_vision(cfg, costs, name: str, *, role: str = "primary") -> VisionProvider | None:
     # Нет ключа → None (следующий в цепочке), даже при providers.mode=live.
     if name == "glm":
-        key = _glm_api_key(cfg)
-        if not key:
-            return None
-        if resolve_mode(cfg, api_key=key, service="glm") is ProviderMode.LIVE:
-            return GLMVision(cfg, costs, key)
         return None
     if name == "gemini":
         key = _gemini_api_key(cfg)
@@ -674,34 +512,32 @@ class FallbackVision(VisionProvider):
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
     """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
 
-    Mid-critic — GLM. Gemini в primary только если явно ``vision.fallback``
-    или ``vision.primary`` = gemini: иначе облачный GEMINI_API_KEY уводит
-    §11.2 на 3.8. Grok в primary — только при явном ``fallback/primary=grok``.
+    Primary — Grok. Gemini только как fallback, если Grok недоступен.
+    GLM в цепочку не ставится.
     """
-    preferred = str(cfg.get(f"vision.{role}", "glm" if role == "primary" else "grok")).lower()
-    fallback = str(cfg.get("vision.fallback", "glm") or "").lower()
+    preferred = str(cfg.get(f"vision.{role}", "grok")).lower()
+    fallback = str(cfg.get("vision.fallback", "gemini") or "").lower()
+    if preferred == "glm":
+        preferred = "grok"
+    if fallback == "glm":
+        fallback = "gemini"
     order: list[str] = []
 
     def _push(name: str) -> None:
-        if name and name not in order and name != "mock":
+        if name and name not in order and name not in ("mock", "glm"):
             order.append(name)
 
+    _push(preferred)
+    _push(fallback)
     if role == "arbiter":
-        _push(preferred)
-        _push(fallback)
-        _push("glm")
-        order[:] = [n for n in order if n != "gemini"]
+        _push("grok")
+        if fallback == "gemini":
+            _push("gemini")
         if "grok" in order and not bool(cfg.get("vision.grey_xai", True)):
             order[:] = [n for n in order if n != "grok"]
     else:
-        _push(preferred)
-        _push(fallback)
-        if "glm" not in order:
-            _push("glm")
-        if preferred == "gemini" or fallback == "gemini":
-            _push("gemini")
-        if preferred != "grok" and fallback != "grok":
-            order[:] = [n for n in order if n != "grok"]
+        _push("grok")
+        _push("gemini")
 
     live: list[VisionProvider] = []
     for name in order:
@@ -713,4 +549,4 @@ def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvide
         return FallbackVision(cfg, costs, live[0], live[1])
     if len(live) == 1:
         return live[0]
-    return MockVision(cfg, costs, judge_name=preferred or "glm")
+    return MockVision(cfg, costs, judge_name=preferred or "grok")

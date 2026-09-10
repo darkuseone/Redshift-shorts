@@ -32,7 +32,18 @@ def test_valid_script_passes(sample_script, cfg):
     assert 35 <= info["estimated_duration_sec"] <= 70
     # Ролей три, а гарнитур может быть больше: у субтитра есть резерв.
     assert {f["role"] for f in info["fonts"]} >= {"subtitle", "display", "mono"}
-    assert info["warnings"] == []
+    allowed = {"FACT_NUMBERS_TOO_FEW", "FACT_MONEY_MISSING", "ENDING_BOTH"}
+    unexpected = [w for w in info["warnings"] if w.get("code") not in allowed]
+    assert unexpected == [], unexpected
+
+
+def test_fact_numbers_and_money_warnings_clear_when_present(sample_script, cfg):
+    sample_script["blocks"][1]["text"] += (
+        " 105 кубитов, ошибка падает на 12%, бюджет $2.4 млрд."
+    )
+    codes = {w["code"] for w in validate_script(sample_script, cfg)["_validation"]["warnings"]}
+    assert "FACT_NUMBERS_TOO_FEW" not in codes
+    assert "FACT_MONEY_MISSING" not in codes
 
 
 def test_missing_hook(sample_script, cfg):
@@ -213,7 +224,12 @@ class TestTheRetentionLoopHasAShape:
         return [w["code"] for w in validate_script(script, cfg)["_validation"]["warnings"]]
 
     def test_a_working_script_says_nothing(self, sample_script, cfg):
-        assert self._codes(sample_script, cfg) == []
+        # Форма петли тихая. Цифры/деньги/XOR-финал — отдельные предупреждения
+        # контракта, не отказы; 0042 их может не закрывать.
+        loop_noise = [c for c in self._codes(sample_script, cfg) if c not in {
+            "FACT_NUMBERS_TOO_FEW", "FACT_MONEY_MISSING", "ENDING_BOTH",
+        }]
+        assert loop_noise == []
 
     def test_a_hook_that_turns_into_an_intro_is_named(self, sample_script, cfg):
         # Без «сегодня разберём» в начале: с Q1.2 это отдельный, блокирующий

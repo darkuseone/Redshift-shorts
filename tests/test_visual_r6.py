@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _words():
-    sm = json.loads((ROOT / "assets/voice/redshift_0042/speech_map.json").read_text())
+    sm = json.loads((ROOT / "tests/fixtures/redshift_0042_speech_map.json").read_text())
     out = []
     for b in sm["blocks"]:
         for w in b["words"]:

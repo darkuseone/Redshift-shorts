@@ -10,7 +10,6 @@ import pytest
 from src.errors import LibraryFrozen
 from src.lib.manifest import AssetLibrary, AssetRecord, FootageIndex
 from src.lib.query import build_queries, classify_intent, scrub_queries, thematic_reject_reason
-from src.lib.templates import TemplateCatalog
 from src.lib.providers.vision import MockVision, _verdict_from_json
 from src.p5_replan.replanner import (
     Slot, _avatar_runs, _avatar_share, _break_long_footage_run,
@@ -198,8 +197,8 @@ def test_avatar_share_is_raised_into_corridor():
     blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 6)]
     assert _avatar_share(slots, 20.0) == pytest.approx(0.20)
 
-    assert _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
-    assert 0.35 <= _avatar_share(slots, 20.0) <= 0.60
+    assert _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.50, 3.0, 12.0, [])
+    assert 0.35 <= _avatar_share(slots, 20.0) <= 0.50
 
 
 def test_avatar_share_correction_keeps_appearance_above_minimum():
@@ -211,7 +210,7 @@ def test_avatar_share_correction_keeps_appearance_above_minimum():
              _slot(3, 14, 16, block="b3"),        # сосед, которым можно дотянуть
              _slot(4, 16, 20, block="b4")]
     blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 5)]
-    assert _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
+    assert _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.50, 3.0, 12.0, [])
     assert _avatar_share(slots, 20.0) >= 0.35
     runs = _avatar_runs(slots)
     for run in runs:
@@ -227,13 +226,13 @@ def test_long_footage_run_is_broken_by_avatar():
     blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 6)]
     assert _longest_footage_run(slots)[0] == pytest.approx(16.0)
 
-    assert _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, 5, [])
+    assert _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.50, 3.0, 12.0, 5, [])
     assert _longest_footage_run(slots)[0] <= 0.40 * 20.0 + 1e-3
-    assert _avatar_share(slots, 20.0) <= 0.60
+    assert _avatar_share(slots, 20.0) <= 0.50
 
 
 def test_long_footage_run_yields_to_appearance_count_limit():
-    """§3.5 против §3.5: новое появление вывело бы их число за 2–7.
+    """§3.5 против §3.5: новое появление вывело бы их число за 2–5.
 
     Непрерывный футаж — не блокирующая проверка, число появлений строже,
     поэтому кусок остаётся длинным, а причина уходит в план.
@@ -252,7 +251,7 @@ def test_long_footage_run_yields_to_appearance_count_limit():
     blocks = [{"id": f"b{i}", "role": "develop"} for i in range(1, 14)]
     notes: list[str] = []
     assert len(_avatar_runs(slots)) == 5
-    assert not _break_long_footage_run(slots, blocks, 50.0, 0.40, 0.60, 3.0, 12.0, 5, notes)
+    assert not _break_long_footage_run(slots, blocks, 50.0, 0.40, 0.50, 3.0, 12.0, 5, notes)
     assert len(_avatar_runs(slots)) == 5
     assert notes and "число появлений" in notes[0]
 
@@ -264,7 +263,7 @@ def test_long_footage_run_untouched_when_avatar_is_off():
     blocks = [{"id": "b1", "role": "develop"},
               {"id": "b2", "role": "develop", "avatar_directive": "off"}]
     notes: list[str] = []
-    assert not _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.60, 3.0, 12.0, 5, notes)
+    assert not _break_long_footage_run(slots, blocks, 20.0, 0.40, 0.50, 3.0, 12.0, 5, notes)
     assert notes and "разорвать нечем" in notes[0]
 
 
@@ -274,7 +273,7 @@ def test_avatar_share_correction_respects_avatar_off():
              _slot(1, 4, 20, block="b2")]
     blocks = [{"id": "b1", "role": "develop"},
               {"id": "b2", "role": "develop", "avatar_directive": "off"}]
-    assert not _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
+    assert not _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.50, 3.0, 12.0, [])
     assert slots[1].kind == "footage"
 
 
@@ -284,7 +283,7 @@ def test_avatar_share_correction_does_not_overshoot_corridor():
              _slot(1, 6, 20, block="b2")]
     blocks = [{"id": "b1", "role": "develop"}, {"id": "b2", "role": "develop"}]
     # Единственный кандидат (14 сек) поднял бы долю до 100 % — брать его нельзя.
-    assert not _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.60, 3.0, 12.0, [])
+    assert not _raise_avatar_share(slots, blocks, 20.0, 0.35, 0.50, 3.0, 12.0, [])
     assert _avatar_share(slots, 20.0) == pytest.approx(0.30)
 
 
@@ -295,7 +294,7 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
         pytest.skip("нет прогона: запустите python -m src.cli run --script scripts/redshift_0042.json")
     plan = json.loads(path.read_text(encoding="utf-8"))
     stats = plan["stats"]
-    assert 0.35 <= stats["avatar_share"] <= 0.60
+    assert 0.35 <= stats["avatar_share"] <= 0.50
     assert 2 <= stats["avatar_appearances"] <= 5
     assert all(3.0 <= d <= 12.0 for d in stats["avatar_appearance_durations"])
     # QC-4 меряет не самый длинный слот вообще, а каждый по своему потолку:
@@ -747,118 +746,31 @@ def test_empty_slot_fallback_skips_recent_used_in():
     assert "current=" in body
 
 
-def test_ab_difference_is_forced_when_variants_converge(cfg):
-    """§15.12.2 — различие версий обеспечивается конструктивно, а не удачей сида."""
-    from src.p11_assemble.assemble import _force_ab_difference
-
-    catalog = TemplateCatalog.load(cfg)
-    shared = ["kenburns/pan-left", "kenburns/pan-right", "transitions/glitch-short"]
-    plans = {
-        "A": {"templates_used": list(shared), "shots": []},
-        "B": {
-            "templates_used": list(shared),
-            "shots": [
-                {"index": 0, "duration": 3.0,
-                 "kenburns": {"template": "kenburns/pan-left"}, "transition": None},
-                {"index": 1, "duration": 3.0,
-                 "kenburns": {"template": "kenburns/pan-right"}, "transition": None},
-                {"index": 2, "duration": 3.0, "kenburns": None,
-                 "transition": {"template": "transitions/glitch-short", "duration": 0.24}},
-            ],
-        },
-    }
-
-    class _Ctx:
-        def warn(self, *a, **k):
-            pass
-
-    diff = _force_ab_difference(plans, ["A", "B"], catalog, 3, _Ctx())
-    assert diff >= 3
-    assert plans["B"]["templates_used"] != shared
-    # Замены остались внутри своих категорий: Ken Burns не превратился в переход.
-    for shot in plans["B"]["shots"]:
-        if shot.get("kenburns"):
-            assert shot["kenburns"]["template"].startswith("kenburns/")
-        if shot.get("transition"):
-            assert shot["transition"]["template"].startswith("transitions/")
-
-
-def test_ab_hook_hero_cta_come_from_different_pools(cfg):
-    """MUST-014: A/B расходятся по hook/hero/cta, не другим KB той же карты."""
-    from src.p11_assemble.assemble import _force_ab_difference
-
-    catalog = TemplateCatalog.load(cfg)
-    hook = "intro-hooks/hook-question-flash"
-    hero = "hero-devices/headline-over-head"
-    cta = "outro-cta/logo-brand-close"
-    shared = [hook, hero, cta]
-    shot = {
-        "index": 0, "duration": 3.0, "hook": True, "template": hook,
-        "hero": {"template": hero, "renderer": "hero-headline"},
-        "kenburns": None, "transition": None,
-    }
-    overlay = {"type": "cta", "template": cta, "renderer": "logo_brand_close"}
-    plans = {
-        "A": {"templates_used": list(shared), "shots": [dict(shot),],
-              "overlays": [dict(overlay)], "loop_seam": None},
-        "B": {"templates_used": list(shared),
-              "shots": [{**shot, "hero": dict(shot["hero"])}],
-              "overlays": [dict(overlay)], "loop_seam": None},
-    }
-
-    class _Ctx:
-        def warn(self, *a, **k):
-            pass
-
-    diff = _force_ab_difference(plans, ["A", "B"], catalog, 3, _Ctx())
-    assert diff >= 3
-    b_hook = plans["B"]["shots"][0]["template"]
-    b_hero = plans["B"]["shots"][0]["hero"]["template"]
-    b_cta = plans["B"]["overlays"][0]["template"]
-    assert b_hook != hook and b_hook.startswith("intro-hooks/")
-    assert b_hero != hero and b_hero.startswith("hero-devices/")
-    assert b_cta != cta and b_cta.startswith("outro-cta/")
-    assert b_cta != "outro-cta/loop-back"
-    assert catalog.by_id(b_hook).renderer == catalog.by_id(hook).renderer
-
-
-def test_ab_too_similar_when_pools_have_no_alternative(cfg):
-    """MUST-014: pytest AB_TOO_SIMILAR — код жив, пустой пул не разводит версии."""
+def test_single_edit_plan_skips_ab_difference():
+    """Одна версия монтажа: AB_TOO_SIMILAR не срабатывает на единственном плане."""
     import inspect
 
-    from src.p11_assemble.assemble import _force_ab_difference, run_step
+    from src.p11_assemble.assemble import run_step
+    from src.steps import build_pipeline
 
-    catalog = TemplateCatalog.load(cfg)
-    hook = "intro-hooks/hook-question-flash"
-    shared = [hook]
-    plans = {
-        "A": {"templates_used": list(shared), "shots": [], "overlays": [],
-              "loop_seam": None},
-        "B": {
-            "templates_used": list(shared),
-            "shots": [{"index": 0, "duration": 3.0, "hook": True,
-                       "template": hook, "kenburns": None, "transition": None}],
-            "overlays": [],
-            "loop_seam": None,
-        },
-    }
-
-    class Frozen:
-        def by_category(self, category, include_inactive=False):
-            return [t for t in catalog.by_category(category) if t.id in shared]
-
-        def by_id(self, tid):
-            return catalog.by_id(tid)
-
-    class _Ctx:
-        def warn(self, *a, **k):
-            pass
-
-    diff = _force_ab_difference(plans, ["A", "B"], Frozen(), 3, _Ctx())
-    assert diff < 3
     source = inspect.getsource(run_step)
-    assert 'code="AB_TOO_SIMILAR"' in source
-    assert "ab_min_template_diff" in source
+    assert "len(variants) >= 2" in source
+    p11 = next(s for s in build_pipeline().steps if s.name == "P11")
+    assert p11.outputs == ("edit_plan_A.json",)
+    p12 = next(s for s in build_pipeline().steps if s.name == "P12")
+    assert "edit_plan_B.json" not in p12.inputs
+
+
+def test_cli_hardcodes_one_variant(cfg, tmp_path):
+    from src.cli import _make_context
+    import argparse
+
+    script = tmp_path / "s.json"
+    script.write_text("{}", encoding="utf-8")
+    args = argparse.Namespace(work_dir=str(tmp_path / "w"), output_dir=str(tmp_path / "o"),
+                              pretty_logs=True, no_cache=True, dry_run=False)
+    ctx = _make_context(args, cfg, video_id="t", script_path=script)
+    assert ctx.variants == ("A",)
 
 
 def test_generated_clips_are_visually_distinct(cfg, tmp_path):

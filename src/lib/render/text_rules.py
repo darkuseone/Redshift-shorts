@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from .number_display import format_number_display, number_word_to_digit_display
+
 TRAILING_PUNCTUATION = ",.!?;:—–…«»\"'()"
 
 
@@ -35,8 +37,14 @@ def apply_case(text: str, mode: str) -> str:
 
 
 def subtitle_word(word: str, mode: str) -> str:
-    """Полное правило для слова субтитра: чистка краёв плюс регистр."""
-    return apply_case(clean_word(word), mode)
+    """Полное правило для слова субтитра: чистка краёв, цифра вместо слова, регистр."""
+    cleaned = clean_word(word)
+    digitized = number_word_to_digit_display(cleaned)
+    if digitized != cleaned:
+        cleaned = digitized
+    else:
+        cleaned = format_number_display(cleaned)
+    return apply_case(cleaned, mode)
 
 
 # Реплика в один-два знака в кадре не живёт. На 0047 «а» стоит 88 мс, «и» — 93,

@@ -16,6 +16,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
+from .render.number_display import format_number_display, parse_ru_number_words
+
 STRESS_MARK = "́"          # комбинируемое ударение
 _VOWELS_RU = "аеёиоуыэюяАЕЁИОУЫЭЮЯ"
 
@@ -131,8 +133,16 @@ class Token:
                 "block_id": self.block_id, "emphasis": self.emphasis}
 
 
-_TOKEN_RE = re.compile(r"[^\W_]+(?:[-–][^\W_]+)*|[^\s\w]+", re.UNICODE)
+_TOKEN_RE = re.compile(
+    r"[\$€£₽]?\d+(?:[ \u00a0\u202f]?\d{3})*(?:[.,]\d+)?%?"
+    r"|[^\W_]+(?:[-–][^\W_]+)*"
+    r"|[^\s\w]+",
+    re.UNICODE,
+)
 _NUMBER_RE = re.compile(r"^\d+(?:[.,]\d+)?$")
+_NUMERIC_TOKEN_RE = re.compile(
+    r"^[\$€£₽]?\d+(?:[ \u00a0\u202f]?\d{3})*(?:[.,]\d+)?%?$"
+)
 
 
 def normalize_text(text: str, pronunciation: dict[str, Any] | None = None, *,
@@ -161,8 +171,12 @@ def normalize_text(text: str, pronunciation: dict[str, Any] | None = None, *,
             spoken_words = abbreviations[raw].split()
         elif raw in units:
             spoken_words = units[raw].split()
-        elif _NUMBER_RE.match(raw):
-            value = float(raw.replace(",", ".")) if ("," in raw or "." in raw) else int(raw)
+        elif _NUMERIC_TOKEN_RE.match(raw):
+            body = (
+                raw.lstrip("$€£₽").rstrip("%")
+                .replace(" ", "").replace("\u00a0", "").replace("\u202f", "")
+            )
+            value = float(body.replace(",", ".")) if ("," in body or "." in body) else int(body)
             spoken_words = number_to_words(value).split()
         else:
             entry = words.get(raw.lower())
@@ -188,7 +202,7 @@ def normalize_text(text: str, pronunciation: dict[str, Any] | None = None, *,
             block_id=block_id,
             emphasis=is_emphasis,
         ))
-    return tokens
+    return _digitize_subtitle_tokens(tokens)
 
 
 def spoken_text(tokens: Iterable[Token]) -> str:
@@ -201,6 +215,51 @@ def spoken_text(tokens: Iterable[Token]) -> str:
             else:
                 parts.append(word)
     return " ".join(parts)
+
+
+def _digitize_subtitle_tokens(tokens: list[Token]) -> list[Token]:
+    """Экран: цифры с узким пробелом. Речь не трогаем."""
+    out: list[Token] = []
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if _NUMERIC_TOKEN_RE.match(tok.display) or _NUMBER_RE.match(
+                tok.display.lstrip("$€£₽").rstrip("%")):
+            tok.display = format_number_display(tok.display)
+            out.append(tok)
+            i += 1
+            continue
+        run = [tok]
+        j = i + 1
+        while j < len(tokens):
+            words = [t.display for t in run] + [tokens[j].display]
+            if parse_ru_number_words(words) is None:
+                break
+            run.append(tokens[j])
+            j += 1
+        value = parse_ru_number_words([t.display for t in run])
+        first_key = str(run[0].display).lower().strip(".,!?;:—–…«»\"'()")
+        if value is not None and len(run) >= 1 and (
+                len(run) >= 2 or first_key not in (
+                    "тысяча", "тысячи", "тысяч", "миллион", "миллиона", "миллионов",
+                    "миллиард", "миллиарда", "миллиардов", "млн", "млрд",
+                    "процент", "процента", "процентов")):
+            first = run[0]
+            spoken: list[str] = []
+            for item in run:
+                spoken.extend(item.spoken)
+            suffix = ""
+            last_key = str(run[-1].display).lower().strip(".,")
+            if last_key.startswith("процент"):
+                suffix = "%"
+            first.display = format_number_display(str(int(value))) + suffix
+            first.spoken = spoken
+            out.append(first)
+            i = j
+            continue
+        out.append(tok)
+        i += 1
+    return out
 
 
 def load_pronunciation(path) -> dict[str, Any]:

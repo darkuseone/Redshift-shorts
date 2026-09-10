@@ -162,7 +162,7 @@ def test_default_caption_is_gradient_fill(cfg):
     fill = gradient_fill_params(cfg.brandbook)
     assert wipe["base_px"] >= 136 and wipe["min_px"] >= 80
     assert fill["base_px"] >= 136 and fill["min_px"] >= 80
-    assert wipe["max_words"] <= 4 and fill["max_words"] <= 4
+    assert wipe["max_words"] <= 5 and fill["max_words"] <= 5
 
 
 def test_clip_wipe_paints_digit_lead(cfg):
