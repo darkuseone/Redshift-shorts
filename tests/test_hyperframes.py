@@ -335,6 +335,26 @@ def test_opaque_avatar_gets_no_background_layer(plan, assets, brandbook):
     assert 'id="avatar-00" class="avatar"' in out
 
 
+def test_split_shot_puts_evidence_above_the_avatar(plan, assets, brandbook):
+    """Режим B: альфа-аватар не должен съедать Nature-фигуру сценой студии."""
+    plan["shots"][2]["kind"] = "split"
+    plan["shots"][2]["bg_file"] = "/w/press/figure.jpg"
+    plan["shots"][2]["credit"] = "Nature / Google Quantum AI"
+    plan["avatar"][0]["has_alpha"] = True
+    plan["avatar"][0]["slot_indices"] = [2]
+    assets["/w/press/figure.jpg"] = "assets/m099_figure.jpg"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert 'id="shot-02"' in out
+    assert "split-top" in out
+    assert "assets/m099_figure.jpg" in out
+    assert "vfx" not in out.split('id="shot-02"')[1][:400]
+    assert "credit-split" in out
+    assert 'id="avatar-00" class="avatar"' in out
+    css = build_css(brandbook, fonts={})
+    assert "z-index:21" in css
+    assert "object-fit:contain" in css
+
+
 def test_word_behind_head_needs_alpha(plan, assets, brandbook):
     """Без альфы слово оказалось бы за непрозрачным видео — его не видно."""
     plan["avatar"][0]["has_alpha"] = False

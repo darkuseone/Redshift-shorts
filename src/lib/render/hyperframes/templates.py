@@ -50,6 +50,7 @@ _log = logging.getLogger("redshift.hyperframes")
 Z_TRANSITION = 35
 # Приёмы вокруг ведущего: одни уходят ему за спину, другие ложатся поверх.
 # Значения совпадают с brand_css — там же общая карта слоёв кадра.
+Z_SHOT = 10
 Z_BEHIND_HEAD = 15
 Z_AVATAR = 20
 
@@ -6730,12 +6731,17 @@ def split_css(brandbook: dict[str, Any]) -> str:
     height = int(brandbook["canvas"]["height"])
     seam = int(height * 0.52)
     return (
-        f".split-top{{position:absolute;left:0;right:0;top:0;height:{seam}px;"
-        "overflow:hidden;z-index:10}"
+        f".split-top{{position:absolute;left:0;right:0;top:0;"
+        f"width:var(--frame-w);height:{seam}px;overflow:hidden;"
+        f"z-index:{Z_AVATAR + 1};background:#0a0c10;"
+        "object-fit:contain;object-position:center;"
+        "border-bottom:4px solid var(--color-accent)}}"
+        ".split-top-baked{object-fit:cover;object-position:center top}"
         f".split-bottom{{position:absolute;left:0;right:0;top:{seam}px;"
-        f"height:{height - seam}px;overflow:hidden;z-index:10}}"
-        ".split-top > video,.split-bottom > video{width:100%;height:100%;"
-        "object-fit:cover;display:block}"
+        f"height:{height - seam}px;overflow:hidden;z-index:{Z_SHOT}}}"
+        ".split-top > video,.split-top > img,.split-bottom > video{"
+        "width:100%;height:100%;object-fit:contain;display:block}"
+        ".credit-split{bottom:auto;top:28px}"
     )
 
 

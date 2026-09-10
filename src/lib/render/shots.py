@@ -305,6 +305,14 @@ def prepare_split_shot(*, top_src: Path, bottom_src: Path, dst: Path,
         src_w, src_h = max(info.width, 1), max(info.height, 1)
         scale = max(width / src_w, half / src_h)
         sw = math.ceil(src_w * scale / 2) * 2
+        # Cover-crop of a wide still (Nature 685×271 → 1080×960) throws away
+        # the side panels of a scientific figure. Letterbox when more than a
+        # quarter of the width would disappear — the chart has to stay whole.
+        cropped_w_share = 1.0 - (width / max(src_w * scale, 1.0))
+        if cropped_w_share > 0.25:
+            return (f"[{label}]fps={fps},"
+                    f"scale={width}:{half}:force_original_aspect_ratio=decrease,"
+                    f"pad={width}:{half}:(ow-iw)/2:(oh-ih)/2:black,setsar=1")
         sh = math.ceil(src_h * scale / 2) * 2
         x = int(round(max(0, sw - width) * 0.5))
         y = int(round(max(0, sh - half) * focus))

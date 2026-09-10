@@ -100,3 +100,11 @@ def test_0047_like_plan_does_not_use_qubit_regex_for_gaze():
     copy_text = _gaze_plaque_copy(plan)
     assert "КУБИТ" not in copy_text
     assert copy_text == "ФАКТ"
+
+
+def test_gaze_plaque_skipped_when_face_lives_in_the_lower_third():
+    from src.p11_assemble.assemble import gaze_plaque_fits_face_band
+
+    assert gaze_plaque_fits_face_band({"avatar": {"face_band_y": [1080, 1480]}}) is False
+    assert gaze_plaque_fits_face_band({"avatar": {"face_band_y": [420, 820]}}) is True
+    assert gaze_plaque_fits_face_band({}) is False

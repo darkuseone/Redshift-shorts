@@ -620,6 +620,21 @@ def show_subscribe_cta(plan: dict[str, Any]) -> bool:
     return True
 
 
+def gaze_plaque_fits_face_band(brandbook: dict[str, Any] | None) -> bool:
+    """Top note-pin sits on the eyes when the face already lives in the lower third.
+
+    The gaze card was a mask for a centred talking head. With
+    ``avatar.face_band_y`` starting at 1080 the same «top» plaque lands on
+    the mouth. Skip it there; keep it when the face still sits above the
+    lower third. Missing brandbook follows the channel default (lower third).
+    """
+    band = ((brandbook or {}).get("avatar") or {}).get("face_band_y") or [1080, 1480]
+    try:
+        return int(band[0]) < 900
+    except (TypeError, ValueError, IndexError):
+        return False
+
+
 def wants_gaze_plaque(plan: dict[str, Any]) -> bool:
     """Gaze plaque if look-at/gaze is set or an evidence card is in the script."""
     def flagged(node: Any) -> bool:
@@ -2196,6 +2211,9 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
                         divider_color="0x" + str(ctx.cfg.color("accent")).lstrip("#"))
                     prepared[slot["index"]]["avatar_offset_sec"] = round(offset, 3)
                     prepared[slot["index"]]["asset_id"] = (asset or {}).get("asset_id")
+                    # Original evidence, not the baked vstack: HyperFrames
+                    # paints this in `.split-top` over the live avatar.
+                    prepared[slot["index"]]["top_src"] = str(top_src)
                     continue
 
             dst = ctx.wpath("shots", f"avatar_{slot['index']:02d}_{int(duration * 1000)}.mp4")
@@ -4176,7 +4194,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "file": prep["dst"],
             "bg_file": (avatar_bgs.get(int(slot["index"]))
                         if slot["kind"] == "avatar"
-                        and int(slot["index"]) in alpha_slots else None),
+                        and int(slot["index"]) in alpha_slots
+                        else (str(prep.get("top_src") or "").strip() or None)
+                        if slot["kind"] == "split" else None),
             "asset_id": asset.get("asset_id") or (f"avatar_seg_{prep.get('avatar_segment')}"
                                                   if is_avatar else None),
             "source": "heygen" if is_avatar else asset.get("source"),
@@ -4234,7 +4254,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
     # First avatar gaze mask (~2–4s): informative top/center hook card, no HeyGen.
     first_avatar = next((s for s in shots if s.get("kind") == "avatar"), None)
-    if first_avatar is not None and wants_gaze_plaque(plan):
+    brandbook = getattr(getattr(ctx, "cfg", None), "brandbook", None) or {}
+    if (first_avatar is not None and wants_gaze_plaque(plan)
+            and gaze_plaque_fits_face_band(brandbook)):
         a0 = float(first_avatar["start"])
         a1 = float(first_avatar["end"])
         # Cover the early eye-line beat inside the first avatar window.

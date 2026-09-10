@@ -354,6 +354,22 @@ class CompositionBuilder:
                 marks = self._brand_marks(node_id, start, duration, TRACK_MARKS)
                 if marks:
                     nodes.append(marks)
+            elif kind == "split":
+                # Режим B: верх — доказательство, низ — живой аватар.
+                # Альфа-ветка ниже рисовала сцену студии на весь кадр, и
+                # Nature-фигура из плана на 0042 так и не попала в ролик:
+                # кредит «NATURE / GOOGLE QUANTUM AI», картинка — сетка.
+                src = (self._asset(shot.get("bg_file"))
+                       or self._asset(shot.get("file")))
+                css = "clip split-top"
+                if not self._asset(shot.get("bg_file")):
+                    css += " split-top-baked"
+                if src:
+                    nodes.append(self._media_node(
+                        node_id, src, timing, css=css))
+                else:
+                    nodes.append(self._scene_backdrop(
+                        node_id, timing, start=start, duration=duration))
             elif index in alpha_slots:
                 # Режим A с альфой: фон собирается в браузере, а не берётся
                 # сплющенным кадром — в этом и смысл переезда на HyperFrames.
@@ -971,10 +987,14 @@ class CompositionBuilder:
                 continue
             index = int(shot["index"])
             start = float(shot["start"])
+            # На сплите подпись принадлежит верхней половине. Дефолтный
+            # `.credit` сидит у полосы субтитров — после спуска лица в
+            # нижнюю треть это лоб ведущего (0042, Nature-кредит на глазах).
+            extra = " credit-split" if shot.get("kind") == "split" else ""
             # Подпись живёт вместе с кадром, но появляется чуть позже него:
             # одновременный въезд читается как часть монтажа, а не как сноска.
             nodes.append(
-                f'<div id="credit-{index:02d}" class="clip credit" '
+                f'<div id="credit-{index:02d}" class="clip credit{extra}" '
                 + _timing(start + 0.25, start + float(shot["duration"]), TRACK_OVERLAY + 5)
                 + f'>{_esc(credit)}</div>')
             self.tweens.extend(entrance_tweens(f"#credit-{index:02d}", start + 0.25,
