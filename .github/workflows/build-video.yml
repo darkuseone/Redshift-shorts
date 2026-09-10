@@ -27,12 +27,12 @@ on:
         default: false
         type: boolean
       skip_vision:
-        description: "Без live Gemini/Grok vision: P8 + P12 semantic QC; thumbs = ffmpeg"
+        description: "Без live GLM/Grok vision: P8 + P12 semantic QC; thumbs = ffmpeg"
         required: false
         default: false
         type: boolean
       skip_generate:
-        description: "Без image gen: P9 + P12 AI thumbs (сразу ffmpeg, без Gemini/Grok image)"
+        description: "Без image gen: P9 + P12 AI thumbs (сразу ffmpeg, без Grok image)"
         required: false
         default: false
         type: boolean
@@ -70,6 +70,7 @@ jobs:
     env:
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      ELEVENLABS_VOICE_ID_2: ${{ secrets.ELEVENLABS_VOICE_ID_2 }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -144,11 +145,12 @@ jobs:
       HYPERFRAMES_VERSION: "0.8.26"
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      ELEVENLABS_VOICE_ID_2: ${{ secrets.ELEVENLABS_VOICE_ID_2 }}
       HEYGEN_API: ${{ secrets.HEYGEN_API }}
       HEYGEN_AVATAR_ID: ${{ secrets.HEYGEN_AVATAR_ID }}
-      # Vision: GLM 5.3 primary, xAI Grok 4.6 fallback. Gemini остаётся для
-      # image gen и как явный vision.fallback=gemini, не как тихий запас.
-      # Имена секретов: GLM_API_KEY / GLM_API («GLM API» в UI), XAI_API_KEY.
+      # Vision: GLM 5.3 cheap critic, xAI Grok 4.6 grey + P12 QC + image gen.
+      # Gemini API в пайплайне не вызывается. Pexels — сток.
+      # Имена секретов: GLM_API_KEY / GLM_API, XAI_API_KEY, ELEVENLABS_*, PEXELS_API_KEY.
       GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
       GLM_API: ${{ secrets.GLM_API }}
       ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}

@@ -314,28 +314,28 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
     if not bool(cfg.get("features.vision_qc", True)):
         return {"enabled": False, "reason": "features.vision_qc выключен"}
 
-    # skip_live: ZERO live Gemini/Grok. Это не semantic pass и не выдача.
+    # skip_live: ZERO live Grok/GLM. Это не semantic pass и не выдача.
     if bool(cfg.get("vision.skip_live", False)):
         _log.warning("vision.skip_live: смысловой QC без live vision",
                      extra={"variant": plan.get("variant")})
         return _skipped_semantic_report(
             plan,
-            reason="vision.skip_live: без Gemini/Grok vision API",
+            reason="vision.skip_live: без Grok/GLM vision API",
             notes=["vision.skip_live: смысловой QC пропущен (qc_skipped_semantic)"],
             cfg=cfg)
 
     duration = float(plan["duration_sec"])
     try:
-        provider = build_vision_provider(cfg, ctx.costs, role="primary")
+        provider = build_vision_provider(cfg, ctx.costs, role="qc")
         mode = str(cfg.get("providers.mode", "auto")).lower()
         if getattr(provider, "is_mock", False) and mode != "mock":
-            _log.warning("смысловой QC: нет live GLM/Grok — skip, не mock-pass",
+            _log.warning("смысловой QC: нет live Grok — skip, не mock-pass",
                          extra={"variant": plan.get("variant"),
                                 "provider": getattr(provider, "name", "")})
             return _skipped_semantic_report(
                 plan,
-                reason="нет live GLM/Grok vision (qc_skipped_semantic)",
-                notes=["auto/live без GLM и XAI: mock-судья не закрывает §11.2"],
+                reason="нет live Grok vision (qc_skipped_semantic)",
+                notes=["auto/live без XAI: mock-судья не закрывает §11.2"],
                 cfg=cfg)
         positions = sample_positions()
         if frames is None:

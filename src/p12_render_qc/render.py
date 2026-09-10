@@ -83,11 +83,11 @@ def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None,
 def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
                           plan: dict[str, Any], script: dict[str, Any] | None,
                           variant: str) -> dict[str, Any]:
-    """Обложка Shorts: Gemini/Grok image, иначе кадр ffmpeg.
+    """Обложка Shorts: Grok image, иначе кадр ffmpeg.
 
-    ``render.thumbnail_mode``: ``auto`` (Gemini → Grok → ffmpeg), ``gemini``,
-    ``grok``, или ``ffmpeg``. Live image key нужен для publishable thumbs;
-    сбой/mock → прежний ffmpeg fallback на ``thumbnail_time_sec``.
+    ``render.thumbnail_mode``: ``auto`` (Grok → ffmpeg), ``grok``, ``gemini``
+    (только при generation.allow_gemini), или ``ffmpeg``. Gemini по умолчанию
+    не вызывается. Сбой/mock → ffmpeg fallback на ``thumbnail_time_sec``.
     """
     cfg = ctx.cfg
     mode = str(cfg.get("render.thumbnail_mode", "auto") or "auto").lower()

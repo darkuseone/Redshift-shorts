@@ -9,7 +9,7 @@
 
 * визуальное событие не реже 1 раза в 2.5 сек (§4.1), первое — до 0.8 сек;
 * один футаж 1.5–5 сек, до 7 сек только при внутренних событиях (§3.6.2);
-* доля аватара 35–60 % (§3.5) и 2–7 появлений по 3–12 сек;
+* доля аватара 35–60 % (§3.5) и 3–7 появлений по 3–12 сек;
 * два аватар-сегмента подряд без перебивки запрещены (§7.4.3, R-3);
 * сплит-скрин ≤25 %, один блок футажа ≤40 % хронометража (§3.5);
 * полноэкранный текст 2–4 раза по 0.8–2 сек (§5.2), подсветка 1–3 раза (§5.5);
@@ -357,7 +357,9 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
     share_range = limits.get("avatar_share", [0.35, 0.60])
     share_lo, share_hi = float(share_range[0]), float(share_range[1])
     footage_share_max = float(limits.get("footage_block_share_max", 0.40))
-    appearances_max = int(brand["avatar"].get("appearances", [2, 7])[1])
+    app_range = brand["avatar"].get("appearances", [3, 7])
+    appearances_min = int(app_range[0])
+    appearances_max = int(app_range[1] if len(app_range) > 1 else 7)
     appearance_min = float(brand["avatar"]["appearance_sec"][0])
     appearance_max = float(brand["avatar"]["appearance_sec"][1])
 
@@ -380,6 +382,10 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
         # поднять долю, а добор доли — разорвать футаж.
         fixed = _raise_avatar_share(slots, draft["blocks"], duration, share_lo, share_hi,
                                     appearance_min, appearance_max, notes)
+        fixed = _raise_appearance_count(
+            slots, draft["blocks"], duration, share_hi,
+            appearance_min, appearance_max, appearances_min, appearances_max,
+            notes) or fixed
         fixed = _break_long_footage_run(slots, draft["blocks"], duration, footage_share_max,
                                         share_hi, appearance_min, appearance_max,
                                         appearances_max, notes) or fixed
@@ -488,7 +494,9 @@ class _AvatarConversion:
             pass
         if not self.appearance_min <= self.span(group) <= self.appearance_max:
             return None
-        if sum(self.slots[j].duration for j in group) > headroom:
+        # 0.60 * 20 сек даёт 11.999…, не 12: без допуска ровно на потолке
+        # доли новое появление отбрасывается, хотя в коридор оно входит.
+        if sum(self.slots[j].duration for j in group) > headroom + 1e-6:
             return None
         return group
 
@@ -512,6 +520,73 @@ class _AvatarConversion:
         for j in reversed(group[1:]):
             del self.slots[j]
         notes.append(f"слот {head.start:.2f}–{head.end:.2f} сек отдан аватару: {reason}")
+
+
+def _raise_appearance_count(slots: list[Slot], blocks: list[dict[str, Any]], duration: float,
+                            share_hi: float, appearance_min: float, appearance_max: float,
+                            appearances_min: int, appearances_max: int,
+                            notes: list[str]) -> bool:
+    """Добрать число появлений аватара до нижней границы (3–7, заказчик)."""
+    conv = _AvatarConversion(slots, blocks, duration, share_hi, appearance_min, appearance_max)
+    if not conv.allowed:
+        return False
+    changed = False
+    guard = 0
+    while len(_avatar_runs(slots)) < appearances_min and guard < 8:
+        guard += 1
+        if len(_avatar_runs(slots)) >= appearances_max:
+            break
+        picked: list[int] | None = None
+        # Дальние от уже существующих появлений слоты — новые появления,
+        # ближние слиплись бы с соседом и не подняли бы счётчик.
+        for i in sorted(conv.candidates(),
+                        key=lambda idx: _gap_to_nearest_avatar(slots, idx),
+                        reverse=True):
+            group = conv.plan(i)
+            if group is None or conv.extends_existing(group):
+                continue
+            if _would_join_avatar_run(slots, group):
+                continue
+            picked = group
+            break
+        if picked is None:
+            notes.append(
+                f"появлений аватара {len(_avatar_runs(slots))} меньше {appearances_min}: "
+                "добирать нечем — нет свободных футажных слотов вне директивы avatar: off")
+            break
+        conv.apply(picked, f"добор числа появлений до {appearances_min} (§3.5)", notes)
+        changed = True
+    return changed
+
+
+def _gap_to_nearest_avatar(slots: list[Slot], i: int) -> float:
+    """Пауза между слотом i и ближайшим уже аватарным. inf — аватара ещё нет."""
+    s = slots[i]
+    best = float("inf")
+    for other in slots:
+        if other.kind not in AVATAR_KINDS:
+            continue
+        if s.start >= other.end:
+            gap = s.start - other.end
+        elif other.start >= s.end:
+            gap = other.start - s.end
+        else:
+            gap = 0.0
+        if gap < best:
+            best = gap
+    return best
+
+
+def _would_join_avatar_run(slots: list[Slot], group: list[int]) -> bool:
+    """Соседний футаж к уже существующему появлению не считает новым появлением."""
+    left, right = group[0] - 1, group[-1] + 1
+    if (left >= 0 and slots[left].kind in AVATAR_KINDS
+            and abs(slots[left].end - slots[group[0]].start) < 1e-6):
+        return True
+    if (right < len(slots) and slots[right].kind in AVATAR_KINDS
+            and abs(slots[group[-1]].end - slots[right].start) < 1e-6):
+        return True
+    return False
 
 
 def _longest_footage_run(slots: list[Slot]) -> tuple[float, int, int]:
@@ -548,7 +623,7 @@ def _break_long_footage_run(slots: list[Slot], blocks: list[dict[str, Any]], dur
     хвост, оставляя почти тот же кусок.
 
     Но чинить одно правило §3.5, ломая соседнее, нельзя: новое появление
-    аватара может вывести их число за 2–7. В отличие от доли аватара (QC-2)
+    аватара может вывести их число за 3–7. В отличие от доли аватара (QC-2)
     непрерывный футаж — не блокирующая проверка, поэтому при конфликте
     уступает именно он, а в план уходит запись, почему кусок остался длинным.
     """
@@ -985,7 +1060,7 @@ def compute_stats(slots: list[Slot], duration: float) -> dict[str, Any]:
             run_start = None
 
     # Появление — непрерывный участок с аватаром в кадре, а не каждый слот:
-    # соседние сплиты одного блока — это одно появление (§3.5: 2–7 появлений).
+    # соседние сплиты одного блока — это одно появление (§3.5: 3–7 появлений).
     appearances: list[tuple[float, float]] = []
     for slot in slots:
         if slot.kind not in AVATAR_KINDS:
@@ -1050,7 +1125,7 @@ def run_step(ctx) -> dict[str, Any]:
     if stats["split_share"] > float(limits.get("split_share_max", 0.25)) + 1e-3:
         warnings.append(f"сплит-скрин {stats['split_share']:.0%} > 25 % (§3.5)")
 
-    lo_app, hi_app = ctx.cfg.brand("avatar.appearances", [2, 7])
+    lo_app, hi_app = ctx.cfg.brand("avatar.appearances", [3, 7])
     if not (lo_app <= stats["avatar_appearances"] <= hi_app):
         warnings.append(
             f"появлений аватара {stats['avatar_appearances']}, требуется {lo_app}–{hi_app} (§3.5)")

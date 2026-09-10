@@ -248,6 +248,7 @@ class ElevenLabsTTS(TTSProvider):
         super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="elevenlabs")
         self.api_key = api_key
         self.voice_id = voice_id
+        _log.info("голос ролика ElevenLabs", extra={"voice": voice_label(cfg, voice_id)})
 
     def synthesize(self, text: str, out_path: Path, *, speed: float = 1.0) -> TTSResult:
         model = str(self.cfg.get("elevenlabs.model", "eleven_v3"))
@@ -397,16 +398,40 @@ def _words_from_alignment(alignment: dict[str, Any]) -> list[WordTiming]:
     return [w for w in words if w.word]
 
 
+# Подписи клонов заказчика. Id в лог не пишем — только «Никита 1» / «Никита 2».
+_NIKITA_LABELS = {
+    "14NozJq5eoBmDc1FXFDq": "Никита 1",
+    "7fU3YUxRrVGjNaZ5dzEH": "Никита 2",
+}
+
+
+def voice_label(cfg, voice_id: str) -> str:
+    """Человекочитаемое имя клона (Никита 1 / Никита 2), без id в логах."""
+    labels = cfg.get("elevenlabs.voice_labels", {}) or {}
+    if isinstance(labels, dict) and voice_id in labels:
+        return str(labels[voice_id])
+    return _NIKITA_LABELS.get(str(voice_id), "Никита")
+
+
+def _voice_pool(cfg) -> list[str]:
+    pool = [str(v).strip() for v in (cfg.get("elevenlabs.voice_pool", []) or [])
+            if str(v).strip()]
+    extra = cfg.secret_for("elevenlabs.voice_id_env_2", purpose="ElevenLabs Никита 2")
+    if extra and extra not in pool:
+        pool.append(extra)
+    return pool
+
+
 def pick_voice(cfg, video_id: str = "") -> str:
-    """Голос ролика: из пула по video_id, иначе явный, иначе из окружения.
+    """Голос ролика: Никита 1 или Никита 2 из пула по video_id.
 
     Выбор детерминированный. Случайный дал бы при пересборке другой голос, а
     пересборка обязана быть повторимой: новая озвучка стоит денег, сдвигает
     границы фраз и бракует уже снятые клипы ведущего — липсинк разъезжается.
     Тот же ролик всегда звучит одним голосом, разные ролики чередуются.
+    Озвучка всегда ElevenLabs, не голос HeyGen.
     """
-    pool = [str(v).strip() for v in (cfg.get("elevenlabs.voice_pool", []) or [])
-            if str(v).strip()]
+    pool = _voice_pool(cfg)
     if pool and video_id:
         digest = hashlib.sha256(video_id.encode("utf-8")).digest()
         return pool[digest[0] % len(pool)]

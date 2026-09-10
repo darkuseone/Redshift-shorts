@@ -455,6 +455,57 @@ def _article_for(slot: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any] |
     return None
 
 
+def _press_pages_for(slot: dict[str, Any], plan: dict[str, Any]) -> list[dict[str, Any]]:
+    """Страницы, с которых брать официальный кадр: статья блока + Wikipedia."""
+    pages: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def _add(url: str, *, domain: str = "", title: str = "") -> None:
+        key = str(url or "").strip()
+        if not key or key in seen:
+            return
+        seen.add(key)
+        pages.append({"url": key, "domain": domain, "title": title})
+
+    article = _article_for(slot, plan)
+    if article:
+        _add(str(article.get("url") or ""),
+             domain=str(article.get("domain") or ""),
+             title=str(article.get("title") or ""))
+    if slot.get("asset_role") == "evidence":
+        for source in plan.get("sources", []) or []:
+            url = str(source.get("url") or "")
+            domain = str(source.get("domain") or "").lower()
+            title = str(source.get("title") or "")
+            if "wikipedia.org" in url.lower() or "wikipedia.org" in domain:
+                _add(url, domain=domain, title=title)
+    return pages
+
+
+def _wikipedia_titles(slot: dict[str, Any], plan: dict[str, Any]) -> list[str]:
+    """Заголовки для REST Википедии: title источника и og-title статьи."""
+    if slot.get("asset_role") != "evidence":
+        return []
+    titles: list[str] = []
+    article = _article_for(slot, plan)
+    if article and article.get("title"):
+        titles.append(str(article["title"]))
+    for source in plan.get("sources", []) or []:
+        title = str(source.get("title") or "").strip()
+        url = str(source.get("url") or "")
+        if title and ("wikipedia.org" in url.lower() or article):
+            titles.append(title)
+    # Уникальные, короткие — не поисковый запрос на пол-абзаца.
+    out: list[str] = []
+    seen: set[str] = set()
+    for title in titles:
+        key = title.strip()
+        if 3 <= len(key) <= 80 and key.lower() not in seen:
+            seen.add(key.lower())
+            out.append(key)
+    return out
+
+
 def _cache_key(candidate: StockCandidate) -> str:
     ext = ".jpg" if candidate.kind == "photo" else ".mp4"
     safe = re.sub(r"[^A-Za-z0-9_.-]", "_", candidate.id)
@@ -644,7 +695,7 @@ def run_step(ctx) -> dict[str, Any]:
                 })
                 continue
             if frozen and float(record.score or 0) < float(
-                    cfg.get("vision.accept_threshold", 0.70)):
+                    cfg.get("vision.accept_threshold", 0.80)):
                 # Freeze: paid critic выключен. P8 не примет 0.55 как accept,
                 # слот останется пустым — лучше сразу отдать место добору.
                 continue
@@ -718,7 +769,7 @@ def run_step(ctx) -> dict[str, Any]:
                 if tag_url_coherence(record) < 0.15:
                     continue
                 if frozen and float(record.score or 0) < float(
-                        cfg.get("vision.accept_threshold", 0.70)):
+                        cfg.get("vision.accept_threshold", 0.80)):
                     continue
                 record_hashes = record.phashes or ([record.phash] if record.phash else [])
                 if record_hashes:
@@ -906,24 +957,34 @@ def run_step(ctx) -> dict[str, Any]:
                 if accept(providers[source], candidate, query):
                     taken += 1
 
-        # --- 2. кадр из самой статьи (§7.2, «реальный материал») -------------
-        # Заказчик просил брать материал прямо со страницы, на которую ролик и
-        # ссылается. Это идёт до стоков: слот доказательства лучше закрыть той
-        # самой статьей, чем «чем-нибудь по теме», и уж точно лучше, чем
-        # генерацией. Палитра здесь мягче: пресс-кадр — цитата в рамке
-        # источника, и требовать от него палитру канала значит не брать его
-        # никогда.
-        article = _article_for(slot, plan)
-        if press is not None and article and not slot_candidates:
-            try:
-                # Просим не один кадр, а сколько есть: у страницы og:image один,
-                # но брать надо первый **прошедший** отбор, а не первый по счёту.
-                found = press.search(article["url"], kind="photo", limit=3)
-            except Exception as exc:  # noqa: BLE001 — страница не должна ронять прогон
-                ctx.warn(f"страница источника недоступна: {exc}",
-                         slot=slot["index"], url=article["url"][:120])
-                found = []
-            for candidate in found:
+        # --- 2. кадр из самой статьи и Википедии (§7.2, «реальный материал»)
+        # Идёт даже если локальный кэш уже что-то положил: сток по теме не
+        # заменяет официальный кадр страницы, на которую ролик ссылается.
+        pages = _press_pages_for(slot, plan)
+        if press is not None and pages:
+            wiki_titles = _wikipedia_titles(slot, plan)
+            wiki_fn = getattr(press, "wikipedia_candidates", None)
+            found_press: list[Any] = []
+            for article in pages:
+                try:
+                    found_press.extend(press.search(article["url"], kind="photo", limit=3) or [])
+                except Exception as exc:  # noqa: BLE001 — страница не должна ронять прогон
+                    ctx.warn(f"страница источника недоступна: {exc}",
+                             slot=slot["index"], url=str(article["url"])[:120])
+            if callable(wiki_fn):
+                for title in wiki_titles:
+                    try:
+                        found_press.extend(wiki_fn(title, limit=2) or [])
+                    except Exception as exc:  # noqa: BLE001
+                        ctx.warn(f"wikipedia недоступна: {exc}",
+                                 slot=slot["index"], title=title[:80])
+            seen_press: set[str] = set()
+            for candidate in found_press:
+                cid = str(getattr(candidate, "id", "") or "")
+                if cid in seen_press:
+                    continue
+                seen_press.add(cid)
+                query_url = str(getattr(candidate, "page_url", "") or getattr(candidate, "query", ""))
                 reason = _stage1_reject(
                     candidate, cfg, float(slot["duration"]), routing=routing,
                     category=str(plan.get("category") or ""),
@@ -932,12 +993,14 @@ def run_step(ctx) -> dict[str, Any]:
                     negatives=negatives)
                 if reason:
                     stage1_rejected.append({"id": candidate.id, "source": candidate.source,
-                                            "reason": reason, "query": article["url"]})
+                                            "reason": reason, "query": query_url})
                     continue
-                if accept(press, candidate, article["url"], origin="press",
+                before = len(slot_candidates)
+                if accept(press, candidate, query_url, origin="press",
                           palette_max=press_palette_max, grade=True):
                     press_used += 1
-                    break
+                    if len(slot_candidates) > before:
+                        slot_candidates.insert(0, slot_candidates.pop())
 
         # --- 3. внешние стоки -------------------------------------------------
         harvest(queries)
