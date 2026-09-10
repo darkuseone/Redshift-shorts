@@ -81,6 +81,29 @@ def test_non_capacity_keeps_short_retries():
     assert sleeps == [2.0, 4.0]
 
 
+def test_auth_error_is_not_retried():
+    sleeps: list[float] = []
+    n = {"i": 0}
+
+    def boom():
+        n["i"] += 1
+        raise ProviderError(
+            "GLM вернул 401", status=401,
+            body='{"error":{"code":"401","message":"token expired or incorrect"}}',
+        )
+
+    with pytest.raises(ProviderError, match="вернул 401"):
+        call_with_retry(
+            boom,
+            attempts=3,
+            base_delay=2.0,
+            what="GLM vision",
+            sleep=sleeps.append,
+        )
+    assert n["i"] == 1
+    assert sleeps == []
+
+
 def test_config_capacity_and_flash_fallback():
     cfg = load_config()
     assert int(cfg.get("providers.capacity_retries")) == 6

@@ -685,11 +685,22 @@ def test_apply_ai_carves_splits_the_spoken_window():
 
 
 def test_carve_remainder_blocks_gap_fullscreen():
-    from src.p11_assemble.assemble import _block_gap_fullscreen
+    from src.p11_assemble.assemble import _block_gap_fullscreen, _gap_has_real_picture
 
     assert _block_gap_fullscreen({"carve_remainder": True}) is True
-    assert _block_gap_fullscreen({"reason": "перебивка между аватар-сегментами"}) is False
+    assert _block_gap_fullscreen({"reason": "перебивка между аватар-сегментами"}) is True
+    assert _block_gap_fullscreen({"asset_role": "interstitial"}) is True
     assert _block_gap_fullscreen({"kind": "footage"}) is False
+    assert _block_gap_fullscreen({"kind": "footage"}, has_picture=True) is True
+    assert _block_gap_fullscreen(
+        {"kind": "footage", "authored_punch": True}, has_picture=True) is False
+    prepared = {4: {"dst": "/tmp/lattice.mp4"}}
+    assert _gap_has_real_picture({"index": 4}, prepared, None) is True
+    assert _gap_has_real_picture({"index": 9, "inherit_from": 4}, {}, None) is True
+    assert _gap_has_real_picture(
+        {"index": 9}, {}, "/work/shots/fp_red_heartbeat_2254_crop.mp4") is True
+    assert _gap_has_real_picture(
+        {"index": 9}, {}, "/repo/assets/backdrops/grid.jpg") is False
 
 
 def test_p7_exclusive_ids_do_not_consume_runner_ups():
@@ -857,6 +868,41 @@ def test_plaster_leaves_the_hole_in_the_wall_to_cracks():
     assert cracked < 0
     assert plaster > 0
     assert rock > 0
+
+
+def test_heartbeat_is_penalized_unless_the_line_says_blood():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    name = {
+        "index": 13, "role": "develop", "asset_role": "broll",
+        "visual_intent": "страшное имя",
+        "start": 38.8, "end": 41.5,
+    }
+    blood = {
+        "index": 14, "role": "develop", "asset_role": "broll",
+        "visual_intent": "ток крови",
+        "start": 44.0, "end": 46.5,
+    }
+    pins = ["fp_red_heartbeat", "fp_water_vortex"]
+    words_name = [
+        {"display": "Страшное", "start": 38.9, "end": 39.3},
+        {"display": "имя", "start": 39.3, "end": 39.6},
+    ]
+    words_blood = [
+        {"display": "ток", "start": 44.1, "end": 44.3},
+        {"display": "крови", "start": 44.3, "end": 44.7},
+    ]
+    on_name, _ = pin_slot_prefer_key(
+        "fp_red_heartbeat", name, pins, words=words_name)
+    on_blood, _ = pin_slot_prefer_key(
+        "fp_red_heartbeat", blood, pins, words=words_blood)
+    water, _ = pin_slot_prefer_key(
+        "fp_water_vortex", name, pins, words=[
+            {"display": "жидкость", "start": 38.9, "end": 39.4},
+        ])
+    assert on_name > 0
+    assert on_blood < 0
+    assert water < 0
 
 
 def test_hall_inherits_onto_universe_speech():
@@ -1046,3 +1092,62 @@ def test_fs_overlay_neighbour_skips_the_emphasis_card():
         traits={"device"}, bg_file="/tmp/a.mp4")
     if hero:
         assert hero.get("renderer") not in set(_FULL_FRAME_HEROES) | {"hero-oversize"}
+
+
+def test_p8_rejects_a_full_frame_accent_flood(tmp_path, monkeypatch):
+    """Brand red is legal until it eats the plate — that is QC-30 on B-roll."""
+    from PIL import Image
+
+    from src.p8_broll_judge import judge as J
+
+    flooded = tmp_path / "red.png"
+    Image.new("RGB", (160, 284), (200, 69, 61)).save(flooded)
+    sane = tmp_path / "dark.png"
+    Image.new("RGB", (160, 284), (11, 19, 43)).save(sane)
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", True)
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+
+    slots = [{
+        "index": 0, "kind": "footage", "role": "develop",
+        "asset_role": "broll", "needs_asset": True,
+        "visual_intent": "как течёт жидкость",
+        "start": 0.0, "end": 2.5,
+    }]
+    candidates = [
+        {**_candidate(0, "flood_red_clip", score=0.95),
+         "frames": [str(flooded)],
+         "tags": ["abstract", "gradient"],
+         "url_origin": "https://example.com/flood-red-clip",
+         "vision_summary": "abstract red wash"},
+        {**_candidate(0, "fp_water_vortex", score=0.84),
+         "frames": [str(sane)],
+         "tags": ["water", "vortex"],
+         "url_origin": "https://www.freepik.com/video/fp_water_vortex",
+         "vision_summary": "water vortex"},
+    ]
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "accent_flood_test", "candidates": candidates},
+        {"video_id": "accent_flood_test", "category": "ai", "slots": slots},
+    )
+    run_step(ctx)
+    accepted = ctx.written["accepted_assets.json"]["accepted"]
+    assert accepted["0"]["asset_id"] == "fp_water_vortex"
+    judged = ctx.written["accepted_assets.json"]["judged"]
+    heartbeat = next(e for e in judged if e.get("asset_id") == "flood_red_clip")
+    assert heartbeat["decision"] == "reject_palette"
+    assert "QC-30" in str(heartbeat.get("reject_reason") or "")
+
+
+def test_cta_avatar_does_not_take_a_hero():
+    import inspect
+
+    from src.p11_assemble import assemble
+
+    src = inspect.getsource(assemble.build_variant)
+    assert "stacked «ШЕСТИ» on the REDSHIFT wordmark" in src
+    assert "take_hero = False" in src
+    assert '(prep or {}).get("dst")' in src
+    assert 'prep["file"]' not in src

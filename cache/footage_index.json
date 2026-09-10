@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-10",
-  "count": 105,
+  "count": 87,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -1603,1005 +1603,6 @@
       }
     },
     {
-      "id": "pexels_v7565432",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/a-cloud-of-white-paint-underwater-7565432/",
-      "phash": "0787617195cf6c34",
-      "tags": [
-        "viscous",
-        "flow",
-        "slow",
-        "motion",
-        "dark"
-      ],
-      "vision_summary": "White viscous fluid slowly diffusing in dark background",
-      "score": 0.93,
-      "duration_sec": 20.0,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-02",
-      "phashes": [
-        "0787617195cf6c34",
-        "05010a077f0f1ffd",
-        "c101fefe54032f56"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v7565432.mp4",
-      "extra": {
-        "attribution": "Pexels / MART  PRODUCTION",
-        "author": "MART  PRODUCTION",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
-      }
-    },
-    {
-      "id": "pixabay_v113379",
-      "type": "video",
-      "source": "pixabay",
-      "license": "Pixabay Content License",
-      "url_origin": "https://pixabay.com/videos/id-113379/",
-      "phash": "05ed77764c468a61",
-      "tags": [
-        "connection",
-        "science",
-        "abstract",
-        "communication",
-        "plexus",
-        "background",
-        "futuristic",
-        "network",
-        "geometric",
-        "cybernetic",
-        "concept",
-        "design",
-        "digital",
-        "line",
-        "3d",
-        "biology",
-        "chaos",
-        "connect",
-        "data",
-        "galaxy",
-        "global",
-        "beautiful wallpaper",
-        "graphic",
-        "internet",
-        "molecular",
-        "particle"
-      ],
-      "vision_summary": "Abstract glowing network of multicolored lines and nodes on black background",
-      "score": 0.78,
-      "duration_sec": 19.0,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-08",
-      "added": "2026-09-02",
-      "phashes": [
-        "05ed77764c468a61",
-        "113679931e3266ba",
-        "198c640e7bb335e1"
-      ],
-      "width": 1920,
-      "height": 1080,
-      "file": "pixabay/pixabay_v113379.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pixabay / Digital_View",
-        "author": "Digital_View",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
-        "block_reason": "yellow-green wireframe grid, off-palette for quantum"
-      }
-    },
-    {
-      "id": "pixabay_v200531",
-      "type": "video",
-      "source": "pixabay",
-      "license": "Pixabay Content License",
-      "url_origin": "https://pixabay.com/videos/id-200531/",
-      "phash": "e93f253b27bf0018",
-      "tags": [
-        "hexagons",
-        "geometric",
-        "motion",
-        "black-and-white",
-        "beautiful wallpaper",
-        "background",
-        "screensaver"
-      ],
-      "vision_summary": "flowing white hexagons on black geometric background",
-      "score": 0.55,
-      "duration_sec": 10.047,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-02",
-      "phashes": [
-        "e93f253b27bf0018",
-        "e6ce1555a7aec214",
-        "058327ad67bfa284"
-      ],
-      "width": 1920,
-      "height": 1080,
-      "file": "pixabay/pixabay_v200531.mp4",
-      "extra": {
-        "attribution": "Pixabay / clst5",
-        "author": "clst5",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
-      }
-    },
-    {
-      "id": "pexels_v34550739",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/abstract-purple-waves-and-particles-animation-34550739/",
-      "phash": "048655cba7373ba8",
-      "tags": [
-        "abstract",
-        "data",
-        "particles",
-        "quantum",
-        "visualization",
-        "tech"
-      ],
-      "vision_summary": "Purple particle wave data visualization",
-      "score": 0.9,
-      "duration_sec": 10.0,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-06",
-      "added": "2026-09-03",
-      "phashes": [
-        "048655cba7373ba8",
-        "15c69ba41b6e51a5",
-        "178313e4b52432bf"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v34550739.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / Nicola Narracci",
-        "author": "Nicola Narracci",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
-        "block_reason": "purple particle wave, off-palette for quantum"
-      }
-    },
-    {
-      "id": "pexels_v34912823",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/abstract-floating-blue-particles-on-black-background-34912823/",
-      "phash": "1c731c3200ee73dd",
-      "tags": [
-        "abstract",
-        "data",
-        "particles"
-      ],
-      "vision_summary": "Glowing abstract particles with tendrils on black background",
-      "score": 0.92,
-      "duration_sec": 10.0,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-08",
-      "added": "2026-09-03",
-      "phashes": [
-        "1c731c3200ee73dd",
-        "fc74191bc9f24827",
-        "10235dd61b2fa81f"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v34912823.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / Nicola Narracci",
-        "author": "Nicola Narracci",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
-        "block_reason": "purple microbe-like particles, off-palette for quantum"
-      }
-    },
-    {
-      "id": "pexels_v35288383",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/vibrant-abstract-particle-animation-35288383/",
-      "phash": "19d9662699992e66",
-      "tags": [
-        "abstract",
-        "data",
-        "particles",
-        "quantum",
-        "visualization"
-      ],
-      "vision_summary": "Vibrant abstract particle animation",
-      "score": 0.88,
-      "duration_sec": 10.0,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-08",
-      "added": "2026-09-03",
-      "phashes": [
-        "19d9662699992e66",
-        "cccc33338c8c6e67",
-        "1bcc3633c9cc3233"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v35288383.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / Nicola Narracci",
-        "author": "Nicola Narracci",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
-        "block_reason": "pink-yellow sparkle burst, off-palette for quantum"
-      }
-    },
-    {
-      "id": "pixabay_v113383",
-      "type": "video",
-      "source": "pixabay",
-      "license": "Pixabay Content License",
-      "url_origin": "https://pixabay.com/videos/id-113383/",
-      "phash": "c22f7da515e4c61c",
-      "tags": [
-        "connection",
-        "science",
-        "abstract",
-        "communication",
-        "plexus",
-        "background",
-        "futuristic",
-        "network",
-        "geometric",
-        "cybernetic",
-        "concept",
-        "design",
-        "digital",
-        "line",
-        "3d",
-        "biology",
-        "chaos",
-        "beautiful wallpaper",
-        "connect",
-        "data",
-        "galaxy",
-        "global",
-        "graphic",
-        "internet",
-        "molecular",
-        "particle",
-        "quantum",
-        "tech"
-      ],
-      "vision_summary": "Abstract glowing particle network mesh on black background",
-      "score": 0.85,
-      "duration_sec": 19.0,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-07",
-      "added": "2026-09-03",
-      "phashes": [
-        "c22f7da515e4c61c",
-        "116f53e47f586c02",
-        "16f66d65010c6bd3"
-      ],
-      "width": 1920,
-      "height": 1080,
-      "file": "pixabay/pixabay_v113383.mp4",
-      "extra": {
-        "attribution": "Pixabay / Digital_View",
-        "author": "Digital_View",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
-      }
-    },
-    {
-      "id": "pixabay_v144678",
-      "type": "video",
-      "source": "pixabay",
-      "license": "Pixabay Content License",
-      "url_origin": "https://pixabay.com/videos/id-144678/",
-      "phash": "f1e1d03f0fc8923a",
-      "tags": [
-        "volcano lava",
-        "explosion",
-        "volcano",
-        "lava",
-        "volcanic",
-        "hot",
-        "nature"
-      ],
-      "vision_summary": "Close-up of bright lava streams flowing slowly over dark volcanic rock",
-      "score": 0.82,
-      "duration_sec": 6.25,
-      "used_in": [
-        "redshift_0047",
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-08",
-      "added": "2026-09-03",
-      "phashes": [
-        "f1e1d03f0fc8923a",
-        "f1a1f00b47d192be",
-        "f1e1f403c7d1133a"
-      ],
-      "width": 1920,
-      "height": 1080,
-      "file": "pixabay/pixabay_v144678.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pixabay / 31906497",
-        "author": "31906497",
-        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
-        "block_reason": "volcano/lava — off-topic for redshift_0042 quantum chip"
-      }
-    },
-    {
-      "id": "pexels_v18069803",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/an-artist-s-animation-of-artificial-intelligence-ai-this-piece-explores-the-prediction-method-used-in-large-language-models-it-was-created-by-wes-cockx-as-part-of-the-visualising-ai-pr-18069803/",
-      "phash": "ed68d273298fc6a0",
-      "tags": [
-        "quantum",
-        "processor",
-        "chip",
-        "cryostat",
-        "laboratory",
-        "computer",
-        "tech"
-      ],
-      "vision_summary": "Futuristic quantum processor / AI chip render in clean lab light",
-      "score": 0.92,
-      "duration_sec": 18.042,
-      "used_in": [
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-04",
-      "phashes": [
-        "ed68d273298fc6a0",
-        "ec932cd2957a4cb8",
-        "e5d89fe4892335c8"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v18069803.mp4",
-      "extra": {
-        "attribution": "Pexels / Google DeepMind",
-        "author": "Google DeepMind",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v17356514",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/a-black-and-white-photo-of-a-guitar-17356514/",
-      "phash": "d9bc26109926e6db",
-      "tags": [
-        "camera",
-        "lens",
-        "vintage photography",
-        "macro"
-      ],
-      "vision_summary": "Close-up of a vintage camera lens",
-      "score": 0.08,
-      "duration_sec": 20.0,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-05",
-      "phashes": [
-        "d9bc26109926e6db",
-        "11d3d7521a3a9a9a",
-        "f8f8f8f8e0060e1e"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v17356514.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / Ejov Igor",
-        "author": "Ejov Igor",
-        "blocked_for_sci": true,
-        "block_reason": "thematic mismatch for quantum/lab topics"
-      }
-    },
-    {
-      "id": "pexels_v20349219",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/earth-20349219/",
-      "phash": "1b6c4cc6a4276673",
-      "tags": [
-        "earth",
-        "orbit",
-        "view"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 6.467,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-05",
-      "phashes": [
-        "1b6c4cc6a4276673",
-        "1bec4dc6a4266653",
-        "1aed4d46a42666d3"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v20349219.mp4",
-      "extra": {
-        "attribution": "Pexels / Iceberg San",
-        "author": "Iceberg San",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v18446021",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/race-day-vlog-18446021/",
-      "phash": "c7e3e238900e97c7",
-      "tags": [
-        "racing",
-        "motorsport",
-        "race car",
-        "cockpit",
-        "hose tubing"
-      ],
-      "vision_summary": "Race car cockpit switches, wiring and mechanical hoses",
-      "score": 0.05,
-      "duration_sec": 20.003,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-05",
-      "phashes": [
-        "c7e3e238900e97c7",
-        "ec680d0b133edccd",
-        "3e74c11f5aa42c9a"
-      ],
-      "width": 720,
-      "height": 1280,
-      "file": "pexels/pexels_v18446021.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / Jaxon Matthew Willis",
-        "author": "Jaxon Matthew Willis",
-        "blocked_for_sci": true,
-        "block_reason": "thematic mismatch for quantum/lab topics"
-      }
-    },
-    {
-      "id": "pexels_v19532053",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/a-man-sitting-in-front-of-a-computer-screen-19532053/",
-      "phash": "d89a9ad2d2c4e4e6",
-      "tags": [
-        "breaking",
-        "news",
-        "screen"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 19.712,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-06",
-      "phashes": [
-        "d89a9ad2d2c4e4e6",
-        "d89a92d2c6c6e4e6",
-        "d8d8d8c2e2e666e2"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v19532053.mp4",
-      "extra": {
-        "attribution": "Pexels / Hasan  ACI",
-        "author": "Hasan  ACI",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v20349634",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/b-ackho-e-20349634/",
-      "phash": "23295c30e3f79c45",
-      "tags": [
-        "galaxy",
-        "nebula"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 8.333,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-06",
-      "phashes": [
-        "23295c30e3f79c45",
-        "1646297373d68d49",
-        "fb1f000e273ff890"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v20349634.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / Iceberg San",
-        "author": "Iceberg San",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v25935014",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/an-artist-s-illustration-of-artificial-intelligence-ai-this-image-explores-how-ai-can-be-used-to-progress-the-field-of-quantum-computing-it-was-created-by-bakken-and-baeck-as-part-of-t-25935014/",
-      "phash": "ec9b8661936c93a6",
-      "tags": [
-        "quantum",
-        "computer",
-        "laboratory",
-        "wide"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 16.067,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-06",
-      "phashes": [
-        "ec9b8661936c93a6",
-        "3c363c3c13c9c3c9",
-        "eb6a9294c5c195c7"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v25935014.mp4",
-      "extra": {
-        "attribution": "Pexels / Google DeepMind",
-        "author": "Google DeepMind",
-        "judged_intent": "Ведущий представляет тему, за головой — крупное слово"
-      }
-    },
-    {
-      "id": "pexels_v20068211",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/the-ceiling-of-the-church-is-decorated-with-ornate-designs-20068211/",
-      "phash": "f38e3bc293cd7480",
-      "tags": [
-        "cryostat",
-        "golden",
-        "chandelier",
-        "laboratory"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 13.183,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-06",
-      "phashes": [
-        "f38e3bc293cd7480",
-        "f355ec54b3700b8c",
-        "232c47d5508e7d0f"
-      ],
-      "width": 720,
-      "height": 1280,
-      "file": "pexels/pexels_v20068211.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / ZEYNEP ARSLAN",
-        "author": "ZEYNEP ARSLAN",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v20757503",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/dikis-makinesi-20757503/",
-      "phash": "2dac0f1191ea7687",
-      "tags": [
-        "processor",
-        "macro",
-        "shot"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 32.032,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-06",
-      "phashes": [
-        "2dac0f1191ea7687",
-        "09a97e1682666dad",
-        "09897c36866d6d8d"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v20757503.mp4",
-      "quarantined": true,
-      "extra": {
-        "attribution": "Pexels / Emirhan Emiroğlu",
-        "author": "Emirhan Emiroğlu",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v20349276",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/earth-20349276/",
-      "phash": "c4793bc7c43913e4",
-      "tags": [
-        "earth",
-        "orbit",
-        "view"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 4.367,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": "2026-09-07",
-      "added": "2026-09-06",
-      "phashes": [
-        "c4793bc7c43913e4",
-        "c47c3bc7c43813e5",
-        "c4783bc7c43813e7"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v20349276.mp4",
-      "extra": {
-        "attribution": "Pexels / Iceberg San",
-        "author": "Iceberg San",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v27975940",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/messier106-galaxy-27975940/",
-      "phash": "189b6366cc993366",
-      "tags": [
-        "galaxy",
-        "nebula"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 12.0,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-06",
-      "phashes": [
-        "189b6366cc993366",
-        "1c993366cc993366",
-        "cc993366cc993167"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v27975940.mp4",
-      "extra": {
-        "attribution": "Pexels / Iceberg San",
-        "author": "Iceberg San",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v20436933",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/pluto-20436933/",
-      "phash": "c1e03e0fc0f0cf8f",
-      "tags": [
-        "earth",
-        "orbit",
-        "view"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 8.333,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-07",
-      "phashes": [
-        "c1e03e0fc0f0cf8f",
-        "c8e3371cd8e1c51e",
-        "c9c4363bd1c7c538"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v20436933.mp4",
-      "extra": {
-        "attribution": "Pexels / Iceberg San",
-        "author": "Iceberg San",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v30775057",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/red-liquid-heating-in-laboratory-beaker-30775057/",
-      "phash": "e8a358d785688bf1",
-      "tags": [
-        "cryostat",
-        "laboratory"
-      ],
-      "vision_summary": "",
-      "score": 0.72,
-      "duration_sec": 16.2,
-      "used_in": [
-        "redshift_0042"
-      ],
-      "last_used": null,
-      "added": "2026-09-07",
-      "phashes": [
-        "e8a358d785688bf1",
-        "e8a758d785688bf0",
-        "e8a758d785688bf0"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v30775057.mp4",
-      "extra": {
-        "attribution": "Pexels / Kleison  Leopoldino",
-        "author": "Kleison  Leopoldino",
-        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
-      }
-    },
-    {
-      "id": "pexels_v35003022",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/golden-molecular-lattice-network-35003022/",
-      "phash": "143827f979863ec4",
-      "tags": [
-        "quantum",
-        "processor",
-        "molecular",
-        "lattice",
-        "laboratory",
-        "data"
-      ],
-      "vision_summary": "Golden molecular lattice network on dark field — qubit/processor metaphor",
-      "score": 0.86,
-      "duration_sec": 10.0,
-      "used_in": [
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-09",
-      "phashes": [
-        "143827f979863ec4",
-        "c8ab2e1953514cfe",
-        "06b2e3f4d2d2bc48"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v35003022.mp4",
-      "extra": {
-        "attribution": "Pexels / local cache",
-        "watched": true
-      }
-    },
-    {
-      "id": "pexels_v38431825",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/stock-market-ticker-numbers-finance-screen-38431825/",
-      "phash": "2d7b9629b34a52c4",
-      "tags": [
-        "finance",
-        "money",
-        "numbers",
-        "data",
-        "screen",
-        "abstract"
-      ],
-      "vision_summary": "Stock-market ticker numbers on a dark finance screen — money/trust CTA",
-      "score": 0.86,
-      "duration_sec": 15.015,
-      "used_in": [
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-09",
-      "phashes": [
-        "2d7b9629b34a52c4",
-        "2d7b9629934c744c",
-        "2d7b96a91246724e"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v38431825.mp4",
-      "extra": {
-        "attribution": "Pexels / local cache",
-        "watched": true
-      }
-    },
-    {
-      "id": "grok_cryostat_0042",
-      "type": "video",
-      "source": "generated",
-      "license": "generated-owned",
-      "url_origin": "cursor://generate-image/grok_quantum_cryostat_chandelier",
-      "phash": "c64d333138e7cf41",
-      "tags": [
-        "quantum",
-        "processor",
-        "cryostat",
-        "chandelier",
-        "laboratory",
-        "golden",
-        "chip"
-      ],
-      "vision_summary": "Gold dilution-refrigerator quantum processor chandelier in a dark laboratory",
-      "score": 0.86,
-      "duration_sec": 3.0,
-      "used_in": [
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-09",
-      "phashes": [
-        "c64d333138e7cf41",
-        "c64d333038f7cdc1",
-        "c64c33303cf6cdc3"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "generated/grok_cryostat_0042.mp4",
-      "ai_generated": true,
-      "extra": {
-        "attribution": "REDSHIFT / grok-image",
-        "watched": true
-      }
-    },
-    {
-      "id": "grok_supercomputer_0042",
-      "type": "video",
-      "source": "generated",
-      "license": "generated-owned",
-      "url_origin": "cursor://generate-image/grok_supercomputer_hall",
-      "phash": "c838b3422ef6c38f",
-      "tags": [
-        "server",
-        "room",
-        "supercomputer",
-        "data",
-        "blue",
-        "light",
-        "computer"
-      ],
-      "vision_summary": "Supercomputer server room with blue light receding down the aisle",
-      "score": 0.86,
-      "duration_sec": 3.0,
-      "used_in": [
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-09",
-      "phashes": [
-        "c838b3422ef6c38f",
-        "c839b3422e76c38f",
-        "d839b3422776438f"
-      ],
-      "width": 1080,
-      "height": 1920,
-      "file": "generated/grok_supercomputer_0042.mp4",
-      "ai_generated": true,
-      "extra": {
-        "attribution": "REDSHIFT / grok-image",
-        "watched": true
-      }
-    },
-    {
-      "id": "press_21bc8e2d72",
-      "type": "photo",
-      "source": "press",
-      "license": "fair-use-quote",
-      "url_origin": "https://www.nature.com/articles/s41586-024-08449-y",
-      "phash": "070be4f8fa08f0f8",
-      "tags": [
-        "nature",
-        "quantum",
-        "error",
-        "correction",
-        "willow",
-        "qubit",
-        "chart"
-      ],
-      "vision_summary": "Nature figure: Willow quantum error-correction charts, surface-code qubits, logical error vs cycle",
-      "score": 0.88,
-      "duration_sec": 0.0,
-      "used_in": [
-        "redshift_0042",
-        "redshift_0048"
-      ],
-      "last_used": "2026-09-10",
-      "added": "2026-09-09",
-      "phashes": [
-        "070be4f8fa08f0f8"
-      ],
-      "width": 685,
-      "height": 271,
-      "file": "press/press_21bc8e2d72.jpg",
-      "extra": {
-        "attribution": "Nature / Google Quantum AI",
-        "watched": true
-      }
-    },
-    {
       "id": "fp_chalkboard_eq",
       "type": "video",
       "source": "freepik",
@@ -2619,7 +1620,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2654,7 +1656,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2690,7 +1693,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2760,7 +1764,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2795,7 +1800,8 @@
       "score": 0.72,
       "duration_sec": 6.042,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2830,7 +1836,8 @@
       "score": 0.72,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2900,7 +1907,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2935,7 +1943,8 @@
       "score": 0.82,
       "duration_sec": 5.033,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3005,7 +2014,8 @@
       "score": 0.82,
       "duration_sec": 8.008,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3073,7 +2083,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3108,7 +2119,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3143,7 +2155,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3178,7 +2191,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3213,7 +2227,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3247,8 +2262,10 @@
       "vision_summary": "Dynamic red glowing heartbeat pulse on a black background. Tags: red, heartbeat, pulse, glow, black.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0049"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "18a667999a666d91",
@@ -3315,7 +2332,8 @@
       "score": 0.72,
       "duration_sec": 8.008,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3385,7 +2403,8 @@
       "score": 0.72,
       "duration_sec": 5.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -3694,8 +2713,10 @@
       "vision_summary": "White ink spreading in water on black. Tags: ink, water, swirling, dark, fluid, white.",
       "score": 0.74,
       "duration_sec": 6.52,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0049"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "36b6b6b2b2921949",
@@ -3810,6 +2831,328 @@
       "extra": {
         "attribution": "Freepik / Magnific stock",
         "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "pixabay_v113379",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-113379/",
+      "phash": "05ed77764c468a61",
+      "tags": [
+        "connection",
+        "science",
+        "abstract",
+        "communication",
+        "plexus",
+        "background",
+        "futuristic",
+        "network",
+        "geometric",
+        "cybernetic",
+        "concept",
+        "design",
+        "digital",
+        "line",
+        "3d",
+        "biology",
+        "chaos",
+        "connect",
+        "data",
+        "galaxy",
+        "global",
+        "beautiful wallpaper",
+        "graphic",
+        "internet",
+        "molecular",
+        "particle"
+      ],
+      "vision_summary": "Abstract glowing network of multicolored lines and nodes on black background",
+      "score": 0.78,
+      "duration_sec": 19.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-02",
+      "phashes": [
+        "05ed77764c468a61",
+        "113679931e3266ba",
+        "198c640e7bb335e1"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v113379.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pixabay / Digital_View",
+        "author": "Digital_View",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "yellow-green wireframe grid, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pexels_v34550739",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-purple-waves-and-particles-animation-34550739/",
+      "phash": "048655cba7373ba8",
+      "tags": [
+        "abstract",
+        "data",
+        "particles",
+        "quantum",
+        "visualization",
+        "tech"
+      ],
+      "vision_summary": "Purple particle wave data visualization",
+      "score": 0.9,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-06",
+      "added": "2026-09-03",
+      "phashes": [
+        "048655cba7373ba8",
+        "15c69ba41b6e51a5",
+        "178313e4b52432bf"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34550739.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "purple particle wave, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pexels_v34912823",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-floating-blue-particles-on-black-background-34912823/",
+      "phash": "1c731c3200ee73dd",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Glowing abstract particles with tendrils on black background",
+      "score": 0.92,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-03",
+      "phashes": [
+        "1c731c3200ee73dd",
+        "fc74191bc9f24827",
+        "10235dd61b2fa81f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34912823.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "purple microbe-like particles, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pexels_v35288383",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/vibrant-abstract-particle-animation-35288383/",
+      "phash": "19d9662699992e66",
+      "tags": [
+        "abstract",
+        "data",
+        "particles",
+        "quantum",
+        "visualization"
+      ],
+      "vision_summary": "Vibrant abstract particle animation",
+      "score": 0.88,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-03",
+      "phashes": [
+        "19d9662699992e66",
+        "cccc33338c8c6e67",
+        "1bcc3633c9cc3233"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v35288383.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "pink-yellow sparkle burst, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pixabay_v144678",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-144678/",
+      "phash": "f1e1d03f0fc8923a",
+      "tags": [
+        "volcano lava",
+        "explosion",
+        "volcano",
+        "lava",
+        "volcanic",
+        "hot",
+        "nature"
+      ],
+      "vision_summary": "Close-up of bright lava streams flowing slowly over dark volcanic rock",
+      "score": 0.82,
+      "duration_sec": 6.25,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-03",
+      "phashes": [
+        "f1e1d03f0fc8923a",
+        "f1a1f00b47d192be",
+        "f1e1f403c7d1133a"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v144678.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pixabay / 31906497",
+        "author": "31906497",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "volcano/lava — off-topic for redshift_0042 quantum chip"
+      }
+    },
+    {
+      "id": "pexels_v20068211",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/the-ceiling-of-the-church-is-decorated-with-ornate-designs-20068211/",
+      "phash": "f38e3bc293cd7480",
+      "tags": [
+        "cryostat",
+        "golden",
+        "chandelier",
+        "laboratory"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 13.183,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "f38e3bc293cd7480",
+        "f355ec54b3700b8c",
+        "232c47d5508e7d0f"
+      ],
+      "width": 720,
+      "height": 1280,
+      "file": "pexels/pexels_v20068211.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / ZEYNEP ARSLAN",
+        "author": "ZEYNEP ARSLAN",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20349634",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/b-ackho-e-20349634/",
+      "phash": "23295c30e3f79c45",
+      "tags": [
+        "galaxy",
+        "nebula"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 8.333,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "23295c30e3f79c45",
+        "1646297373d68d49",
+        "fb1f000e273ff890"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20349634.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20757503",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/dikis-makinesi-20757503/",
+      "phash": "2dac0f1191ea7687",
+      "tags": [
+        "processor",
+        "macro",
+        "shot"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 32.032,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "2dac0f1191ea7687",
+        "09a97e1682666dad",
+        "09897c36866d6d8d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20757503.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Emirhan Emiroğlu",
+        "author": "Emirhan Emiroğlu",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
       }
     }
   ]

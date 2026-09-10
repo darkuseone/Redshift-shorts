@@ -15,6 +15,7 @@
     "обеспечение": { "stress": 6, "confirmed": true },
     "маркетинг": { "stress": 1, "confirmed": true },
     "эксперт": { "stress": 4, "confirmed": true },
+    "фурор": { "stress": 1 },
     "навье": { "stress": 1 },
     "стокса": { "stress": 1 },
     "астра": { "stress": 0 },

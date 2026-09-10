@@ -14,7 +14,7 @@ import pytest
 from src.lib.providers.press import PressProvider, meta_map
 from src.lib.providers.stock import StockCandidate
 from src.p11_assemble.assemble import _evidence_runs
-from src.p7_broll_search.search import _article_for, _license_mode, _stage1_reject
+from src.p7_broll_search.search import _article_for, _license_mode, _press_pages_for, _stage1_reject
 
 PAGE = """
 <!doctype html><html><head>
@@ -100,6 +100,39 @@ def test_relative_image_is_resolved_against_the_article(monkeypatch):
 
     candidate = provider.search("https://blog.google/technology/willow/")[0]
     assert candidate.download_url == "https://blog.google/media/hero.jpg"
+
+
+def test_jsonld_image_is_taken_when_og_image_is_missing(monkeypatch):
+    page = (
+        '<script type="application/ld+json">'
+        '{"@type":"NewsArticle","image":"https://cdn.example/official.jpg"}'
+        "</script>"
+    )
+    provider = PressProvider.__new__(PressProvider)
+    provider.name = "press"
+    monkeypatch.setattr(PressProvider, "_fetch", lambda self, url: page)
+    monkeypatch.setattr(PressProvider, "charge",
+                        lambda self, *a, **k: None, raising=False)
+    candidate = provider.search("https://openai.com/index/navier-stokes/")[0]
+    assert candidate.download_url == "https://cdn.example/official.jpg"
+
+
+def test_press_pages_include_wikipedia_source():
+    plan = {
+        "blocks": [{"id": "b3", "source_ref": "openai.com"}],
+        "sources": [
+            {"domain": "openai.com", "url": "https://openai.com/index/ns",
+             "title": "OpenAI"},
+            {"domain": "en.wikipedia.org",
+             "url": "https://en.wikipedia.org/wiki/Navier-Stokes",
+             "title": "Navier–Stokes"},
+        ],
+    }
+    pages = _press_pages_for({"block_id": "b3", "asset_role": "evidence"}, plan)
+    urls = [p["url"] for p in pages]
+    assert "https://openai.com/index/ns" in urls
+    assert any("wikipedia.org" in u for u in urls)
+    assert _press_pages_for({"block_id": "b3", "asset_role": "broll"}, plan) == []
 
 
 def test_only_the_named_source_may_skip_the_licence_check():

@@ -1,4 +1,4 @@
-"""MUST-019: cheap ≥50% kill; GLM-5.3-free mid; Grok only in grey [0.45, 0.70]."""
+"""MUST-019: cheap ≥50% kill; GLM-5.3-free mid; Grok only in grey [0.45, 0.80)."""
 
 from __future__ import annotations
 
@@ -165,8 +165,10 @@ def test_grey_zone_bounds(cfg):
     assert in_grey_zone(0.45, cfg)
     assert in_grey_zone(0.55, cfg)
     assert in_grey_zone(0.70, cfg)
-    assert not in_grey_zone(0.40, cfg)
+    assert in_grey_zone(0.79, cfg)
     assert not in_grey_zone(0.80, cfg)
+    assert not in_grey_zone(0.40, cfg)
+    assert not in_grey_zone(0.81, cfg)
 
 
 def test_cheap_kills_at_least_half_of_junk_pool(cfg):

@@ -15,7 +15,9 @@ project:
 # auto  — live при наличии ключа в окружении, иначе mock (с warning в лог)
 providers:
   mode: auto
-  allow_xai: false          # xAI не собирается и не вызывается (vision и image)
+  # Grok/xAI: серая зона футажа, смысловой QC ролика, генерация кадров.
+  # Gemini API ключ в пайплайне не используется (vision.allow_gemini / generation.allow_gemini).
+  allow_xai: true
   request_timeout_sec: 60
   retries: 3               # §10.5.3: 3 попытки (обычные ошибки)
   backoff_base_sec: 2.0    # экспоненциальный бэкофф 2/4/8
@@ -42,8 +44,9 @@ heygen:
   #
   # Движок — только Avatar V (`avatar_v`), как просил заказчик.
   avatar_id: "99ccc74e764947c394cd4ef210960a6f"
-  # Опциональный оверрайд лука из секрета HEYGEN_AVATAR_ID (Avatar 5 look id).
-  # Пусто/нет секрета → берём avatar_id выше (зелёная рубашка / тату).
+  # Look id аватара 5 — замок. Секрет HEYGEN_AVATAR_ID его не подменяет:
+  # в GitHub однажды лежал другой look, и HTTP/заявка уехали не туда.
+  # Секрет читается только если avatar_id выше пуст.
   avatar_id_env: HEYGEN_AVATAR_ID
   # Движок Avatar V — иначе API молча уходит в Avatar IV.
   engine: "avatar_v"
@@ -73,12 +76,13 @@ heygen:
   # In-compose zoom for prepared Avatar V plates where the subject sits
   # small in 9:16 (desk-wide look). Applied at shot prepare AND as CSS size
   # on HyperFrames alpha avatars (object-fit path ignored compose_zoom before).
-  # Does not rewrite assets/avatar_clips. Measured seg_00 subject ~30% tall →
-  # 3.75 was face-filling / too tight on 0042 QA. 2.7 is the requested ceiling
-  # only — MUST-009 fit_compose_zoom clamps it to face_band_y / caption safe
-  # (bottom 400). Do not raise it to "make the face larger" if that enters
-  # the subtitle strip.
-  compose_zoom: 2.7
+  # Does not rewrite assets/avatar_clips. 2.7 → 2.97 = +10% (заказчик, 0049).
+  # MUST-009 fit_compose_zoom всё ещё жмёт к face_band_y / caption safe
+  # (bottom 400): если лицо лезет в полосу субтитров, фактический зум меньше.
+  compose_zoom: 2.97
+  # Avatar V: естественный язык жестов. expressiveness здесь нельзя —
+  # это поле Avatar IV / photo. HTTP v2 generate его не шлёт; заявка MCP — да.
+  motion_prompt: "energetic talking-head: lively face, slightly bigger hand gestures, lean into the point, not frantic, not frozen"
   max_seconds_per_video: 42
   api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"
@@ -86,16 +90,20 @@ heygen:
   poll_timeout_sec: 900
 
 elevenlabs:
-  voice_id_env: ELEVENLABS_VOICE_ID    # клон голоса заказчика
+  voice_id_env: ELEVENLABS_VOICE_ID    # Никита 1/2 из GitHub Secrets, если пул пуст
+  voice_id_env_2: ELEVENLABS_VOICE_ID_2  # второй клон, если задан секретом
   voice_id: ""                          # можно задать явно; пусто → берётся из env
-  # Два клона одного голоса, почти одинаковые. Заказчик разрешил чередовать их
-  # между роликами, чтобы канал не звучал одной дорожкой. Выбор идёт по
-  # video_id, а не случайно: пересборка того же ролика обязана дать тот же
-  # голос, иначе она переозвучит его заново — за деньги и с новыми границами
-  # фраз, от которых бракуются уже снятые клипы ведущего.
+  # Никита 1 и Никита 2 — два клона голоса заказчика. Озвучка ролика всегда
+  # ElevenLabs (ключ ELEVENLABS_API_KEY в GitHub Secrets), не HeyGen TTS.
+  # Выбор идёт по video_id, а не случайно: пересборка того же ролика обязана
+  # дать тот же голос, иначе она переозвучит его заново — за деньги и с новыми
+  # границами фраз, от которых бракуются уже снятые клипы ведущего.
   voice_pool:
-    - "14NozJq5eoBmDc1FXFDq"
-    - "7fU3YUxRrVGjNaZ5dzEH"
+    - "14NozJq5eoBmDc1FXFDq"           # Никита 1
+    - "7fU3YUxRrVGjNaZ5dzEH"           # Никита 2
+  voice_labels:
+    "14NozJq5eoBmDc1FXFDq": "Никита 1"
+    "7fU3YUxRrVGjNaZ5dzEH": "Никита 2"
   model: "eleven_v3"
   fallback_model: "eleven_multilingual_v2"   # R-4
   # Формат ответа. Зависит от тарифа, а не от кода: pcm_* доступен не везде, и
@@ -112,12 +120,13 @@ elevenlabs:
   # Ниже этой полосы прогон пишет предупреждение: значит, упёрлись в тариф.
   min_bandwidth_hz: 14000
   # Характер подачи. Подбирается на слух, поэтому живёт здесь, а не в коде.
-  # stability — ровность чтения: ниже значит шире интонационный размах.
-  # На 0.45 разброс громкости готового ролика был 2.0 LU — ровная линия.
+  # stability — ровность: ниже = живее. eleven_v3 принимает только 0 / 0.5 / 1
+  # и код прижимает к ближайшему. 0.30 уезжал в 0.5 («естественный» = плоский).
+  # 0.0 — «творческий»: шире интонация, как просил заказчик на 0049.
   voice_settings:
-    stability: 0.30
+    stability: 0.0
     similarity_boost: 0.85
-    style: 0.45
+    style: 0.58
     use_speaker_boost: true
   # Темп речи ведущего относительно базового. 1.1 — на десятую быстрее: так
   # просил заказчик. Вместе со скоростью на ту же долю сдвигается плановая
@@ -131,19 +140,21 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # MUST-019: mid-critic GLM-5.3; Grok только серая зона [0.45, 0.70]
-  # и явный vision.fallback=grok (запас §11.2, не image gen).
-  # Gemini в vision — только если явно primary/fallback=gemini. Общий
-  # GEMINI_API_KEY больше не уводит судью на 3.8. Generation по-прежнему
-  # providers.allow_xai=false (xAI не в цепочке картинок).
+  # Порядок критики футажа (заказчик): дешёвые метаданные (P7) → mid-critic
+  # GLM → Grok Vision только если непонятно, что на кадре (серая зона).
+  # В ролик — score ≥ 0.80 (восемь из десяти). Gemini API не вызывается:
+  # allow_gemini=false, даже если GEMINI_API_KEY лежит в окружении.
+  # Смысловой QC готового ролика (P12) — Grok (`vision.qc`).
   primary: "glm"
   arbiter: "grok"
+  qc: "grok"
   fallback: "glm"
+  allow_gemini: false
   arbiter_max_calls: 3        # MUST-019: ≤3 на ролик, не 8
-  accept_threshold: 0.70
+  accept_threshold: 0.80
   reject_threshold: 0.45
   frame_disagreement_threshold: 0.30
-  grey_xai: true              # Grok/xAI только как arbiter серой зоны
+  grey_xai: true              # Grok/xAI только как arbiter серой зоны и P12 QC
   grok_api_key_env: XAI_API_KEY
   grok_model: "grok-4.6"      # не grok-4-fast / grok-2-vision
   grok_api_base: "https://api.x.ai"
@@ -158,7 +169,7 @@ vision:
   glm_model: "glm-5.3"
   glm_model_fallback: "z-ai/glm-5.3-free"
   glm_api_base: "https://api.z.ai/api/paas/v4"
-  # true = без live vision (Gemini/Grok): P8 кэш/ранг. P12 не ставит semantic
+  # true = без live vision (GLM/Grok): P8 кэш/ранг. P12 не ставит semantic
   # pass: qc_skipped_semantic, ролик не выдаётся (MUST-006). Mock — mode=mock.
   skip_live: false
   # Запасной Flash только при стойком 503 на primary. 3.7 — предыдущий GA Flash
@@ -167,11 +178,12 @@ vision:
   gemini_api_base: "https://generativelanguage.googleapis.com"
 
 generation:
-  # true = без image gen (Gemini/Grok/Magnific): P9 + P12 thumbs → ffmpeg
+  # true = без image gen (Grok/Magnific): P9 + P12 thumbs → ffmpeg
   skip: false
-  # Gemini-only image gen. Empty fallback: no xAI, Magnific HTTP still 404.
-  source: gemini
+  # Кадры — Grok Imagine. Gemini не в цепочке, даже если ключ есть в env.
+  source: grok
   fallback: ""
+  allow_gemini: false
   gemini_image_model: "gemini-3.1-flash-image"
   gemini_image_model_fallback: "gemini-2.5-flash-image"
   gemini_image_aspect: "9:16"
@@ -293,7 +305,8 @@ features:
   vision_qc: true           # §11.2 смысловой QC по финальному ролику
 
 limits:
-  duration_sec: [35, 70]
+  duration_sec: [35, 75]      # желаемый коридор; интереснее важнее секунд
+  duration_sec_hard: 90       # редкий максимум; выше — не выдаём
   avatar_share: [0.35, 0.60]
   max_event_gap_sec: 2.5
   max_shot_sec: 5

@@ -101,7 +101,7 @@ def test_movement_is_real_not_a_freeze(cfg, tmp_path, monkeypatch):
 def test_generation_source_is_configured_not_magnific(cfg, costs=None, **_):
     """Источник генерации берётся из конфига, а не из наличия ключа Magnific."""
     source = str(cfg.get("generation.source")).lower()
-    assert source in ("gemini", "grok"), source
+    assert source == "grok", source
     assert source != "magnific"
 
 

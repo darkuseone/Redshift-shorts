@@ -1,0 +1,13 @@
+{
+  "_comment": "Заявка на боевой прогон в GitHub Actions. Cursor ролик не собирает: правка этого файла на ветке запускает workflow build-video. Релиз — только после проверки 9/10 в Cursor.",
+  "script": "scripts/redshift_0049.json",
+  "providers_mode": "live",
+  "from_step": "P8",
+  "force": false,
+  "skip_vision": false,
+  "skip_generate": false,
+  "publish_release": false,
+  "heygen_source": "prepared",
+  "requested_at": "2026-09-10T19:12:15Z",
+  "reason": "0049 P11: cold-open читает dst не file; blackout без сток-подложки; P8 с 9:16 кропом акцента"
+}

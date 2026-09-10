@@ -22,6 +22,7 @@ _log = get_logger("retry")
 
 RETRYABLE_STATUS = (408, 425, 429, 500, 502, 503, 504)
 CAPACITY_STATUS = (429, 503)
+AUTH_STATUS = (401, 402, 403)
 _CAPACITY_MARKERS = (
     "unavailable",
     "high demand",
@@ -57,6 +58,25 @@ def is_capacity_error(exc: BaseException) -> bool:
     )
 
 
+def is_auth_error(exc: BaseException) -> bool:
+    """401/402/403 и истёкший токен — не ретраить, сразу запасной провайдер."""
+    details = getattr(exc, "details", None)
+    if not isinstance(details, dict):
+        details = {}
+    status = details.get("status")
+    try:
+        if status is not None and int(status) in AUTH_STATUS:
+            return True
+    except (TypeError, ValueError):
+        pass
+    body = str(details.get("body", "")).lower()
+    text = f"{exc} {body}".lower()
+    return any(token in text for token in (
+        "token expired", "unauthorized", "invalid api key",
+        "authentication", "insufficient_credit",
+    ))
+
+
 def call_with_retry(
     fn: Callable[[], T],
     *,
@@ -79,6 +99,8 @@ def call_with_retry(
             return fn()
         except retry_on as exc:  # noqa: PERF203 — ретрай по смыслу
             last = exc
+            if is_auth_error(exc):
+                raise
             capacity = is_capacity_error(exc)
             limit = cap_attempts if capacity else attempts
             if attempt >= limit:

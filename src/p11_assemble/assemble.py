@@ -820,7 +820,7 @@ class VisualBudget:
 
     # Потолки на ролик. `fullscreen` берётся из брендбука (`fs_cap`), поэтому
     # здесь его нет: у него уже есть свой источник правды.
-    CAPS = {"card": 4, "dataviz": 2, "source": 3, "parallax": 3, "plate": 2}
+    CAPS = {"card": 4, "dataviz": 3, "source": 3, "parallax": 3, "plate": 2}
 
     def allows(self, rung: str) -> bool:
         return int(getattr(self, rung, 0)) < int(self.CAPS.get(rung, 0))
@@ -923,9 +923,16 @@ def _caption_line_windows(
 ) -> list[tuple[float, float]]:
     """Windows where a card carries the spoken line — mute the whole phrase."""
     windows: list[tuple[float, float]] = []
+    hook_fs_blocks: set[Any] = set()
     for shot in shots:
         if shot.get("kind") == "fullscreen_text" and shot.get("content"):
-            windows.append(_fs_mute_span(shot))
+            # Karaoke under the same line as the slam is «раздвоение».
+            # Mute the whole FS shot, not just the 1.6 s beat.
+            windows.append((float(shot["start"]), float(shot["end"])))
+            if shot.get("role") == "hook" or shot.get("hook"):
+                bid = shot.get("block_id")
+                if bid:
+                    hook_fs_blocks.add(bid)
             continue
         hero = shot.get("hero") or {}
         if hero.get("carries_line") or shot.get("carries_line"):
@@ -933,6 +940,17 @@ def _caption_line_windows(
                 windows.append(_hero_line_span(shot, hero))
             else:
                 windows.append((float(shot["start"]), float(shot["end"])))
+    # Hook FS is ~1 s; the spoken hook keeps going on B-roll. Mute karaoke
+    # for the rest of that block so «ФУРОР» does not sit on «произвела фурор».
+    if hook_fs_blocks:
+        for bid in hook_fs_blocks:
+            members = [s for s in shots if s.get("block_id") == bid]
+            if not members:
+                continue
+            windows.append((
+                min(float(s["start"]) for s in members),
+                max(float(s["end"]) for s in members),
+            ))
     for ovl in overlays:
         params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
         kind = str(ovl.get("type") or "")
@@ -4051,12 +4069,25 @@ _HOOK_RENDERED = frozenset({"fullscreen_text", "footage"})
 
 
 def _hook_allows(template_id: str, renderer: str, *, slot: dict[str, Any],
-                 has_asset: bool, has_source: bool) -> bool:
+                 has_asset: bool, has_source: bool,
+                 spec: dict[str, Any] | None = None) -> bool:
     """Может ли этот кадр показать этот приём хука."""
     if renderer not in _HOOK_RENDERED:
         return False
     if renderer == "footage":
-        return has_asset
+        if not has_asset:
+            return False
+        spec = spec or {}
+        # Cold open is a silent plate before the first word. An authored
+        # on-screen line (0049 «ФУРОР», 0042 «НЕВОЗМОЖНО ПРОВЕРИТЬ») is a
+        # different hook. Once pins filled slot 0, has_asset flipped the
+        # pick to footage and P11 crashed on prep["file"] — the prepared
+        # dict stores ``dst``.
+        if str(spec.get("on_screen") or "").strip():
+            return False
+        if str(spec.get("style") or "") == "blackout_word":
+            return False
+        return True
     return True                                   # fullscreen_text — всегда
 
 
@@ -4090,7 +4121,8 @@ def _pick_hook_shot(slot: dict[str, Any], block: dict[str, Any],
     blocked = list(used_templates)
     for template in catalog.by_category("intro-hooks"):
         if not _hook_allows(template.id, template.renderer, slot=slot,
-                            has_asset=has_asset, has_source=has_source):
+                            has_asset=has_asset, has_source=has_source,
+                            spec=spec):
             blocked.append(template.id)
     if not [t for t in catalog.by_category("intro-hooks")
             if t.id not in blocked]:
@@ -4122,13 +4154,39 @@ _LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
                                       "source_card"})
 
 
-def _block_gap_fullscreen(slot: dict[str, Any]) -> bool:
+def _block_gap_fullscreen(slot: dict[str, Any], *, has_picture: bool = False) -> bool:
     """Carve remainders must not become need-less red FS (QC-21 / QC-30).
 
     The spoken AI window already used the 10 % budget; the leftover 0.9 s
     used to pick ``text-fullscreen/fact-card`` with empty ``grounded_on``.
+    Avatar interstitials (1.4 s) and slots that already have a prepared
+    plate did the same: a red card over a live picture.
     """
-    return bool(slot.get("carve_remainder"))
+    if bool(slot.get("carve_remainder")):
+        return True
+    reason = str(slot.get("reason") or "")
+    if slot.get("asset_role") == "interstitial" or "перебивка" in reason:
+        return True
+    if has_picture and not slot.get("authored_punch"):
+        return True
+    return False
+
+
+def _gap_has_real_picture(slot: dict[str, Any], prepared: dict[int, dict[str, Any]],
+                          bg_file: str | None) -> bool:
+    """True when the gap already has stock/press on disk, not a brand grid."""
+    if slot.get("inherit_from") is not None:
+        return True
+    dst = (prepared.get(int(slot["index"])) or {}).get("dst")
+    if dst:
+        return True
+    path = str(bg_file or "").replace("\\", "/")
+    if not path:
+        return False
+    name = path.rsplit("/", 1)[-1]
+    if "/backdrops/" in path or name in {"grid.jpg", "horizon.jpg"}:
+        return False
+    return True
 
 
 def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
@@ -4521,6 +4579,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 content = soften_on_screen_copy(content)
                 if content and _claim_screen_phrase(used_screen_phrases, content):
                     bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
+                    # Blackout is a black plate with one word. Stock under it
+                    # (fp_blue_bubbles on mock 0042) turned QC-30 into 40 % cyan.
+                    if hook_tpl.id == HOOK_STYLE_TEMPLATES["blackout_word"]:
+                        bg_file = None
                     asset = assets.get(slot["index"])
                     used_templates.append(hook_tpl.id)
                     fs_params = _attach_fs_media(
@@ -4556,14 +4618,15 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 # Холодное открытие: кадр до первого слова, без надписи.
                 prep = prepared.get(slot["index"])
                 asset = assets.get(slot["index"])
-                if prep is not None and asset is not None:
+                dst = str((prep or {}).get("dst") or "").strip()
+                if prep is not None and asset is not None and dst:
                     used_templates.append(hook_tpl.id)
                     entry.update({
                         "kind": "footage",
                         "template": hook_tpl.id,
                         "renderer": hook_tpl.renderer,
                         "hook": True,
-                        "file": prep["file"],
+                        "file": dst,
                         "asset_id": asset.get("asset_id"),
                         "source": asset.get("source"),
                         "license": asset.get("license"),
@@ -4731,7 +4794,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 shots.append(entry)
                 continue
             content = ""
-            if fs_count < fs_cap and not _block_gap_fullscreen(slot):
+            if fs_count < fs_cap and not _block_gap_fullscreen(
+                    slot, has_picture=_gap_has_real_picture(
+                        slot, prepared, bg_file)):
                 if slot.get("authored_punch"):
                     overlay = gap_block.get("overlay") or {}
                     raw = str(overlay.get("content") or "")
@@ -4895,6 +4960,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # Setup authored «за головой — крупное слово»; seed%2 used to skip it.
             if str(slot.get("role") or "") == "setup":
                 take_hero = True
+            # Identity close is the CTA picture. A headline behind the head
+            # stacked «ШЕСТИ» on the REDSHIFT wordmark in the same two seconds.
+            if str(slot.get("role") or "") == "cta":
+                take_hero = False
             if take_hero:
                 block = blocks_by_id.get(slot["block_id"], {})
                 hero_entry = _hero_device(

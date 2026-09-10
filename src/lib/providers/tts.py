@@ -248,6 +248,7 @@ class ElevenLabsTTS(TTSProvider):
         super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="elevenlabs")
         self.api_key = api_key
         self.voice_id = voice_id
+        _log.info("голос ролика ElevenLabs", extra={"voice": voice_label(cfg, voice_id)})
 
     def synthesize(self, text: str, out_path: Path, *, speed: float = 1.0) -> TTSResult:
         model = str(self.cfg.get("elevenlabs.model", "eleven_v3"))
@@ -270,17 +271,17 @@ class ElevenLabsTTS(TTSProvider):
 
         ``stability`` у ElevenLabs — это ровность, а не качество: чем выше, тем
         монотоннее читает. На 0.45 речь выходила плоской — измеренный разброс
-        громкости готового ролика 2.0 LU, то есть почти ровная линия, и на слух
-        «неживо». Ниже — шире интонационный размах, но растёт риск, что модель
-        уведёт произношение; 0.30 — та граница, где размах уже слышен, а голос
-        ещё узнаётся.
+        громкости готового ролика 2.0 LU. Ниже — шире интонация.
+
+        ``eleven_v3`` принимает только 0 / 0.5 / 1. Промежуточное 0.30
+        прижималось к 0.5 («естественный») — снова плоский голос. Дефолт
+        конфига 0.0, чтобы v3 оставался в «творческом» шаге.
 
         ``style`` усиливает манеру исходного голоса, ``use_speaker_boost``
-        держит тембр ближе к клону. Оба параметра раньше не отправлялись вовсе,
-        и сервис применял свои значения по умолчанию.
+        держит тембр ближе к клону.
         """
         node = self.cfg.get("elevenlabs.voice_settings", {}) or {}
-        stability = float(node.get("stability", 0.30))
+        stability = float(node.get("stability", 0.0))
         if model.startswith("eleven_v3"):
             # Прижимаем к ближайшему разрешённому, а не падаем: конфиг
             # настраивают на слух под основную модель, и запрет одной из них
@@ -290,7 +291,7 @@ class ElevenLabsTTS(TTSProvider):
         settings: dict[str, Any] = {
             "stability": stability,
             "similarity_boost": float(node.get("similarity_boost", 0.85)),
-            "style": float(node.get("style", 0.45)),
+            "style": float(node.get("style", 0.58)),
             "use_speaker_boost": bool(node.get("use_speaker_boost", True)),
             "speed": speed,
         }
@@ -397,16 +398,40 @@ def _words_from_alignment(alignment: dict[str, Any]) -> list[WordTiming]:
     return [w for w in words if w.word]
 
 
+# Подписи клонов заказчика. Id в лог не пишем — только «Никита 1» / «Никита 2».
+_NIKITA_LABELS = {
+    "14NozJq5eoBmDc1FXFDq": "Никита 1",
+    "7fU3YUxRrVGjNaZ5dzEH": "Никита 2",
+}
+
+
+def voice_label(cfg, voice_id: str) -> str:
+    """Человекочитаемое имя клона (Никита 1 / Никита 2), без id в логах."""
+    labels = cfg.get("elevenlabs.voice_labels", {}) or {}
+    if isinstance(labels, dict) and voice_id in labels:
+        return str(labels[voice_id])
+    return _NIKITA_LABELS.get(str(voice_id), "Никита")
+
+
+def _voice_pool(cfg) -> list[str]:
+    pool = [str(v).strip() for v in (cfg.get("elevenlabs.voice_pool", []) or [])
+            if str(v).strip()]
+    extra = cfg.secret_for("elevenlabs.voice_id_env_2", purpose="ElevenLabs Никита 2")
+    if extra and extra not in pool:
+        pool.append(extra)
+    return pool
+
+
 def pick_voice(cfg, video_id: str = "") -> str:
-    """Голос ролика: из пула по video_id, иначе явный, иначе из окружения.
+    """Голос ролика: Никита 1 или Никита 2 из пула по video_id.
 
     Выбор детерминированный. Случайный дал бы при пересборке другой голос, а
     пересборка обязана быть повторимой: новая озвучка стоит денег, сдвигает
     границы фраз и бракует уже снятые клипы ведущего — липсинк разъезжается.
     Тот же ролик всегда звучит одним голосом, разные ролики чередуются.
+    Озвучка всегда ElevenLabs, не голос HeyGen.
     """
-    pool = [str(v).strip() for v in (cfg.get("elevenlabs.voice_pool", []) or [])
-            if str(v).strip()]
+    pool = _voice_pool(cfg)
     if pool and video_id:
         digest = hashlib.sha256(video_id.encode("utf-8")).digest()
         return pool[digest[0] % len(pool)]

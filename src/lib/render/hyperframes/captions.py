@@ -785,9 +785,10 @@ def build_clip_wipe(
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
         clip_id = f"cw-{p:02d}"
         accent_at = _accent_index(phrase)
-        # Unique y so a leftover even-track glyph cannot sit on the odd line.
-        track_y = 0 if p % 2 == 0 else int(size * 0.42)
-        top = int(_phrase_baseline(phrase, baseline) - size / 2 + track_y)
+        # Same baseline on even/odd tracks. A 0.42·size y-shift stacked two
+        # caption rows («раздвоение субтитров»). Exclusive clip ends already
+        # keep leftover glyphs off the next phrase.
+        top = int(_phrase_baseline(phrase, baseline) - size / 2)
         word_nodes: list[str] = []
         glyph_pad = max(6, int(size * 0.12))
         for i, word in enumerate(phrase):
@@ -983,9 +984,10 @@ def build_gradient_fill(
         clip_id = f"gf-{p:02d}"
         group_id = f"{clip_id}-g"
         accent_at = _accent_index(phrase)
-        # Unique y so a leftover even-track glyph cannot sit on the odd line.
-        track_y = 0 if p % 2 == 0 else int(size * 0.42)
-        top = int(_phrase_baseline(phrase, baseline) - size / 2 + track_y)
+        # Same baseline on even/odd tracks. A 0.42·size y-shift stacked two
+        # caption rows («раздвоение субтитров»). Exclusive clip ends already
+        # keep leftover glyphs off the next phrase.
+        top = int(_phrase_baseline(phrase, baseline) - size / 2)
         word_nodes: list[str] = []
 
         for i, word in enumerate(phrase):

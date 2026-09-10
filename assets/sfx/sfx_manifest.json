@@ -4,7 +4,7 @@
   "max_items": 20,
   "count": 18,
   "frozen": false,
-  "updated": "2026-09-08",
+  "updated": "2026-09-10",
   "items": [
     {
       "id": "sfx_whoosh_sharp",
@@ -22,9 +22,10 @@
       "score": 0.0,
       "duration_sec": 1.1,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
-      "last_used": "2026-09-08",
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "whoosh_sharp.wav",
       "role": "whoosh_in",
@@ -57,9 +58,10 @@
       "score": 0.0,
       "duration_sec": 1.1,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
-      "last_used": "2026-09-08",
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "whoosh_soft.wav",
       "role": "whoosh_out",
@@ -92,9 +94,10 @@
       "score": 0.0,
       "duration_sec": 0.73,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
-      "last_used": "2026-09-08",
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "whoosh_double.wav",
       "role": "swipe",
@@ -127,9 +130,10 @@
       "score": 0.0,
       "duration_sec": 2.0,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
-      "last_used": "2026-09-08",
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "whoosh_cinematic.wav",
       "role": "boom",
@@ -229,8 +233,10 @@
       "vision_summary": "искра, разряд",
       "score": 0.0,
       "duration_sec": 0.7,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0049"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "electric_spark.wav",
       "role": "glitch",
@@ -262,9 +268,10 @@
       "score": 0.0,
       "duration_sec": 0.5,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
-      "last_used": "2026-09-08",
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "hit_punch.wav",
       "role": "hit_impact",
@@ -295,8 +302,10 @@
       "vision_summary": "выстрел тишины",
       "score": 0.0,
       "duration_sec": 0.55,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0049"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "hit_silence.wav",
       "role": "sub_drop",
@@ -427,8 +436,10 @@
       "vision_summary": "хлопок, щелчок плашки",
       "score": 0.0,
       "duration_sec": 0.228,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0049"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "snap_clap.wav",
       "role": "pop",
@@ -493,9 +504,10 @@
       "score": 0.0,
       "duration_sec": 0.736,
       "used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
-      "last_used": "2026-09-08",
+      "last_used": "2026-09-10",
       "added": "2026-09-02",
       "file": "hat_open.wav",
       "role": "reveal",

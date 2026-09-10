@@ -504,8 +504,17 @@ class FallbackGeneration(GenerationProvider):
                                            prefer_free=prefer_free)
 
 
+def _grok_generation_allowed(cfg) -> bool:
+    """Grok Imagine, если source/fallback=grok или allow_xai. Не тихий запас."""
+    preferred = str(cfg.get("generation.source", "")).lower()
+    fallback = str(cfg.get("generation.fallback", "") or "").lower()
+    return bool(cfg.get("providers.allow_xai", False)) or preferred == "grok" or fallback == "grok"
+
+
 def _live_generation(cfg, costs, source: str) -> GenerationProvider | None:
     if source == "gemini":
+        if not bool(cfg.get("generation.allow_gemini", False)):
+            return None
         key = _gemini_api_key(cfg)
         if not key:
             return None
@@ -513,9 +522,11 @@ def _live_generation(cfg, costs, source: str) -> GenerationProvider | None:
             return GeminiImageGeneration(cfg, costs, key)
         return None
     if source == "grok":
-        if not bool(cfg.get("providers.allow_xai", False)):
+        if not _grok_generation_allowed(cfg):
             return None
         key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok (генерация кадров)")
+        if not key:
+            key = cfg.secret("XAI_API", purpose="Grok (генерация кадров)")
         if not key:
             return None
         if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
@@ -534,20 +545,23 @@ def _live_generation(cfg, costs, source: str) -> GenerationProvider | None:
 def build_generation_provider(cfg, costs) -> GenerationProvider:
     """Кто закрывает пустые слоты.
 
-    Magnific HTTP-генерация выведена (404). Default source is Gemini Image;
-    empty ``generation.fallback`` and ``providers.allow_xai: false`` keep grok
-    out of the chain even when ``XAI_API_KEY`` is present.
+    Magnific HTTP-генерация выведена (404). Источник по умолчанию — Grok
+    Imagine. Gemini в цепочку не ставится, пока ``generation.allow_gemini``
+    не включён явно: ключ GEMINI_API_KEY сам по себе кадры не генерирует.
     """
-    preferred = str(cfg.get("generation.source", "gemini")).lower()
+    preferred = str(cfg.get("generation.source", "grok")).lower()
     fallback = str(cfg.get("generation.fallback", "") or "").lower()
-    allow_xai = bool(cfg.get("providers.allow_xai", False))
+    allow_gemini = bool(cfg.get("generation.allow_gemini", False))
+    grok_ok = _grok_generation_allowed(cfg)
     order: list[str] = []
-    for name in (preferred, fallback, "gemini"):
+    for name in (preferred, fallback):
         if name and name not in order and name not in ("mock", "magnific"):
-            if name == "grok" and not allow_xai:
+            if name == "grok" and not grok_ok:
+                continue
+            if name == "gemini" and not allow_gemini:
                 continue
             order.append(name)
-    if allow_xai and "grok" not in order:
+    if grok_ok and "grok" not in order:
         order.append("grok")
 
     live: list[GenerationProvider] = []

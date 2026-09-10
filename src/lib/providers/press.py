@@ -20,10 +20,11 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 from ...errors import ProviderError
 from ..logging import get_logger
@@ -46,6 +47,54 @@ _SITE_KEYS = ("og:site_name",)
 # prism.publicationdate, и без них карточка осталась бы без даты.
 _TIME_KEYS = ("article:published_time", "article:modified_time",
               "dc.date", "prism.publicationdate", "citation_online_date", "date")
+_JSONLD = re.compile(
+    r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _jsonld_images(html: str) -> list[str]:
+    """Картинки из JSON-LD: у научных пресс-релизов og:image бывает пуст, схема — нет."""
+    out: list[str] = []
+    for match in _JSONLD.finditer(html or ""):
+        raw = (match.group(1) or "").strip()
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        blobs = data if isinstance(data, list) else [data]
+        for blob in blobs:
+            if not isinstance(blob, dict):
+                continue
+            image = blob.get("image")
+            urls: list[Any] = []
+            if isinstance(image, str):
+                urls = [image]
+            elif isinstance(image, dict):
+                urls = [image.get("url") or image.get("@id")]
+            elif isinstance(image, list):
+                urls = image
+            for item in urls:
+                if isinstance(item, str) and item.strip():
+                    out.append(item.strip())
+                elif isinstance(item, dict):
+                    url = item.get("url") or item.get("@id")
+                    if url:
+                        out.append(str(url).strip())
+    return out
+
+
+def _unique_urls(urls: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for url in urls:
+        key = url.split("?")[0].rstrip("/")
+        if key and key not in seen:
+            seen.add(key)
+            out.append(url)
+    return out
 
 
 def meta_map(html: str) -> dict[str, str]:
@@ -109,31 +158,85 @@ class PressProvider(StockProvider):
             return []
         page = self._fetch(url)
         meta = meta_map(page)
-        image = next((_unescape(meta[k]) for k in _IMAGE_KEYS if meta.get(k)), "")
-        if not image:
-            _log.info("на странице нет og:image", extra={"url": url[:120]})
+        images = [
+            _unescape(meta[k]) for k in _IMAGE_KEYS if meta.get(k)
+        ]
+        images.extend(_jsonld_images(page))
+        images = _unique_urls([urljoin(url, img) for img in images if img])
+        if not images:
+            _log.info("на странице нет og:image / json-ld image", extra={"url": url[:120]})
             return []
-        image = urljoin(url, image)
         domain = urlparse(url).netloc.lower().removeprefix("www.")
         title = next((_unescape(meta[k]) for k in _TITLE_KEYS if meta.get(k)), "")
         site = next((_unescape(meta[k]) for k in _SITE_KEYS if meta.get(k)), domain)
         published = next((meta[k] for k in _TIME_KEYS if meta.get(k)), "")
 
         self.charge("search", 1, "request", 0.0)
-        digest = hashlib.sha256(image.encode("utf-8")).hexdigest()[:10]
-        return [StockCandidate(
-            id=f"press_{digest}", source="press", kind="photo", query=url,
-            download_url=image, page_url=url, preview_url=image,
-            license=self.license_name,
-            # Подтвердить лицензию издания нечем — и подтверждать нечего:
-            # решение принимает владелец канала, а не провайдер.
-            license_confirmed=False,
-            attribution=site or domain,
-            author=site or domain,
-            tags=[t for t in re.split(r"\W+", title.lower()) if len(t) > 3][:10],
-            meta={"title": title, "site_name": site, "published": published,
-                  "domain": domain},
-        )][:limit]
+        found: list[StockCandidate] = []
+        for image in images[: max(1, int(limit))]:
+            digest = hashlib.sha256(image.encode("utf-8")).hexdigest()[:10]
+            found.append(StockCandidate(
+                id=f"press_{digest}", source="press", kind="photo", query=url,
+                download_url=image, page_url=url, preview_url=image,
+                license=self.license_name,
+                license_confirmed=False,
+                attribution=site or domain,
+                author=site or domain,
+                tags=[t for t in re.split(r"\W+", title.lower()) if len(t) > 3][:10],
+                meta={"title": title, "site_name": site, "published": published,
+                      "domain": domain},
+            ))
+        return found
+
+    def wikipedia_candidates(self, title: str, *, limit: int = 2) -> list[StockCandidate]:
+        """Официальный кадр статьи в Википедии (REST summary thumbnail)."""
+        slug = str(title or "").strip()
+        if len(slug) < 3:
+            return []
+        import requests
+
+        found: list[StockCandidate] = []
+        for host in ("en.wikipedia.org", "ru.wikipedia.org"):
+            if len(found) >= limit:
+                break
+            api = f"https://{host}/api/rest_v1/page/summary/{quote(slug, safe='')}"
+
+            def _call(url: str = api) -> dict[str, Any]:
+                resp = requests.get(
+                    url, timeout=self._timeout(),
+                    headers={"User-Agent": "Mozilla/5.0 (compatible; REDSHIFT/1.0)"},
+                )
+                if resp.status_code >= 400:
+                    return {}
+                try:
+                    data = resp.json()
+                except ValueError:
+                    return {}
+                return data if isinstance(data, dict) else {}
+
+            try:
+                data = call_with_retry(_call, **self._retry_kwargs("wikipedia summary"))
+            except Exception:  # noqa: BLE001 — вики не роняет отбор стока
+                continue
+            image = str((data.get("originalimage") or {}).get("source")
+                        or (data.get("thumbnail") or {}).get("source") or "")
+            page = str(data.get("content_urls", {}).get("desktop", {}).get("page")
+                       or f"https://{host}/wiki/{quote(slug)}")
+            if not image:
+                continue
+            digest = hashlib.sha256(image.encode("utf-8")).hexdigest()[:10]
+            found.append(StockCandidate(
+                id=f"press_{digest}", source="press", kind="photo", query=page,
+                download_url=image, page_url=page, preview_url=image,
+                license=self.license_name, license_confirmed=False,
+                attribution="Wikipedia", author="Wikipedia",
+                tags=[t for t in re.split(r"\W+", slug.lower()) if len(t) > 3][:10],
+                meta={"title": data.get("title") or slug, "site_name": "Wikipedia",
+                      "published": "", "domain": host.removeprefix("www.")},
+            ))
+        if found:
+            self.charge("search", 1, "request", 0.0)
+        return found[:limit]
 
     def download(self, candidate: StockCandidate, dst: Path) -> Path:
         return self._http_download(candidate.download_url, dst)

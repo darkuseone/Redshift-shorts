@@ -3,14 +3,17 @@
 §7.4 «Аватар». Что обеспечивает шаг:
 
 1. Генерация **посегментно**, только на интервалы присутствия — это прямая
-   экономия кредитов: платим за 40 % хронометража вместо 100 %.
+   экономия кредитов: платим за 40 % хронометража вместо 100 %. Футаж без
+   аватара в HeyGen не уходит.
 2. Каждый сегмент — цельная фраза, а не обрывок: сегменты режутся по границам
    слов из ``words.json``.
-3. Липсинк строится по финальной (обрезанной) озвучке: в провайдер уходит
-   вырезанный кусок ``voice_final.wav``, а не исходный текст.
+3. Липсинк строится по финальной (обрезанной) озвучке ElevenLabs: в провайдер
+   уходит вырезанный кусок ``voice_final.wav``, а не текст и не TTS HeyGen.
 4. Правило перебивок (§7.4.3) уже применено в P5; здесь оно проверяется ещё раз
    по факту — соседние сегменты не должны стыковаться без зазора.
 5. Целевая доля 35–60 % проверяется и попадает в отчёт.
+6. Появления аватара — 3–7. HTTP HeyGen (ключ GitHub); если API недоступен —
+   заявка ``avatar_request.json`` для HeyGen MCP (Avatar V, тот же wav).
 """
 
 from __future__ import annotations
@@ -23,11 +26,41 @@ import numpy as np
 from ..lib import audio as A
 from ..lib.logging import get_logger
 from ..errors import ProviderError, RedshiftError
-from ..lib.providers.avatar import build_avatar_provider
+from ..lib.providers.avatar import build_avatar_provider, resolve_heygen_look_id
 
 _log = get_logger("p6")
 
 AVATAR_KINDS = ("avatar", "split")
+
+# Как закрыть фазу 2, если GitHub HEYGEN_API не сработал: только нарезанные
+# куски ElevenLabs, только Avatar V, look id — не group id.
+HEYGEN_MCP_HOW_TO = (
+    "Озвучка уже ElevenLabs в поле audio каждого сегмента — не синтезировать "
+    "голосом HeyGen. Если HTTP API (секрет HEYGEN_API) недоступен: HeyGen MCP "
+    "create_video_from_avatar, avatar_id = look 99ccc74e… (не group id, не HEYGEN_AVATAR_ID), "
+    "engine {type: avatar_v}, audio_asset из wav сегмента, motionPrompt из "
+    "заявки (энергичнее жесты). expressiveness не слать — это Avatar IV. "
+    "Генерировать только эти сегменты, не весь ролик. Положить клипы в "
+    "clips_dir под expected_clip и возобновить прогон с --from P6."
+)
+
+
+def _heygen_handoff_to_mcp(exc: BaseException) -> bool:
+    """401/402/403/429 и квоты — HTTP не работает, режем wav и отдаём MCP."""
+    details = getattr(exc, "details", None) or {}
+    status = None
+    if isinstance(details, dict) and details.get("status") is not None:
+        try:
+            status = int(details["status"])
+        except (TypeError, ValueError):
+            status = None
+    if status in (401, 402, 403, 429):
+        return True
+    text = str(exc).lower()
+    return any(token in text for token in (
+        "credit", "credits", "quota", "unauthorized", "authentication",
+        "insufficient", "spending limit", "payment required",
+    ))
 
 
 def merge_segments(slots: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -89,6 +122,12 @@ def run_step(ctx) -> dict[str, Any]:
         ctx.warn(f"суммарная длина аватара {total_avatar_sec:.1f} сек превышает лимит "
                  f"{max_seg} сек на ролик", total_sec=total_avatar_sec)
 
+    off_slots = [s for s in plan["slots"] if s.get("kind") not in AVATAR_KINDS]
+    _log.info("аватар только на интервалах присутствия", extra={
+        "avatar_segments": len(segments), "skipped_off_slots": len(off_slots),
+        "avatar_sec": round(total_avatar_sec, 2),
+    })
+
     out_dir = ctx.wpath("avatar", ".keep").parent
     produced: list[dict[str, Any]] = []
     _pending: list[dict[str, Any]] = []
@@ -112,11 +151,14 @@ def run_step(ctx) -> dict[str, Any]:
             # длительности роняло шаг на первом же сегменте, и заявка не
             # дописывалась: за остальными кусками речи приходилось идти вторым
             # прогоном, удалив клипы руками.
-            if code not in ("AVATAR_CLIP_NOT_PREPARED", "AVATAR_CLIP_DURATION_MISMATCH"):
+            handoff = code in ("AVATAR_CLIP_NOT_PREPARED", "AVATAR_CLIP_DURATION_MISMATCH")
+            if not handoff:
+                handoff = _heygen_handoff_to_mcp(exc)
+            if not handoff:
                 raise
             # Двухфазный конвейер: нарезка речи уже сделана и лежит на диске.
             # Дописываем заявку до конца — иначе за клипами пришлось бы ходить
-            # по одному, по прогону на сегмент.
+            # по одному, по прогону на сегмент. HTTP недоступен → MCP.
             _pending.append({
                 "index": index,
                 "audio": str(seg_audio),
@@ -124,8 +166,12 @@ def run_step(ctx) -> dict[str, Any]:
                 "block_id": segment["block_id"],
                 "text": segment.get("text", ""),
                 "expected_clip": f"seg_{index:02d}.mov",
+                "lipsync_source": "elevenlabs",
                 **({"reason": "длительность не совпала", "problem": str(exc)}
-                   if code == "AVATAR_CLIP_DURATION_MISMATCH" else {}),
+                   if code == "AVATAR_CLIP_DURATION_MISMATCH"
+                   else {"reason": "heygen_http_unavailable", "problem": str(exc)[:240]}
+                   if code not in ("AVATAR_CLIP_NOT_PREPARED", "AVATAR_CLIP_DURATION_MISMATCH")
+                   else {}),
             })
             continue
         seg_path = result.path
@@ -143,18 +189,22 @@ def run_step(ctx) -> dict[str, Any]:
         # Фаза 1 двухфазного конвейера закончилась: речь нарезана, клипов нет.
         # Заявка пишется целиком — по ней аватар генерируется снаружи одним
         # заходом, а не по сегменту за прогон.
+        look_id = resolve_heygen_look_id(cfg)
         request = {
             "video_id": plan["video_id"],
-            "avatar_id": cfg.get("heygen.avatar_id"),
+            "avatar_id": look_id,
+            "avatar_group_id": cfg.get("heygen.avatar_group_id"),
+            "engine": cfg.get("heygen.engine", "avatar_v"),
             "model_version": cfg.get("heygen.model_version"),
+            "motion_prompt": cfg.get("heygen.motion_prompt") or "",
+            "audio_source": "elevenlabs",
+            "generate_full_timeline": False,
             "clips_dir": str(cfg.path("heygen.prepared_dir", "assets/avatar_clips")
                              / str(plan["video_id"])),
             "background": cfg.get("heygen.background"),
             "resolution": list(cfg.resolution),
             "segments": _pending,
-            "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы "
-                       "в clips_dir под именами expected_clip и возобновить "
-                       "прогон с шага P6.",
+            "_how_to": HEYGEN_MCP_HOW_TO,
         }
         ctx.write("avatar_request.json", request)
         raise RedshiftError(

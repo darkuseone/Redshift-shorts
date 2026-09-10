@@ -5,6 +5,9 @@ Live: посегментная генерация через HeyGen API. Сег�
 уходит не текст, а конкретный кусок ``voice_final.wav``: только так липсинк
 совпадёт с тем, что реально звучит в ролике (§7.4.4).
 
+Look id аватара 5 берётся из ``heygen.avatar_id`` в конфиге. Секрет
+``HEYGEN_AVATAR_ID`` его не подменяет.
+
 Mock: локальный рендер говорящей фигуры, у которой раскрытие рта следует
 огибающей той же дорожки. Это не «серый прямоугольник»: лицо стоит в полосе
 ``avatar.face_band_y`` брендбука, губы движутся по звуку, и на таком клипе можно
@@ -14,6 +17,7 @@ Mock: локальный рендер говорящей фигуры, у кот
 from __future__ import annotations
 
 import math
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -31,6 +35,63 @@ from ..retry import call_with_retry
 from .base import Provider, ProviderMode, resolve_mode
 
 _log = get_logger("avatar")
+
+# libmagic на PCM WAV часто даёт audio/x-wav. HeyGen 400543 сравнивает
+# заголовок со снятым типом: «audio/wav != audio/x-wav» — это не отказ ключа.
+HEYGEN_AUDIO_CONTENT_TYPE = "audio/x-wav"
+_HEYGEN_CONTENT_TYPE_MISMATCH = re.compile(
+    r"Content type not match\s+([\w.+-]+/[\w.+-]+)\s+!=\s+([\w.+-]+/[\w.+-]+)",
+    re.IGNORECASE,
+)
+
+
+def heygen_sniffed_audio_type(body: str) -> str | None:
+    """Тип, который HeyGen снял с байтов файла (правая сторона 400543)."""
+    match = _HEYGEN_CONTENT_TYPE_MISMATCH.search(body or "")
+    if not match:
+        return None
+    return match.group(2)
+
+
+def heygen_v3_avatar_payload(*, avatar_id: str, audio_url: str,
+                             engine: str = "avatar_v",
+                             motion_prompt: str = "",
+                             want_alpha: bool = True) -> dict[str, Any]:
+    """POST /v3/videos — Avatar V + ElevenLabs wav. Не v2 (legacy, без transparent).
+
+    ``expressiveness`` не кладём: это Avatar IV. ``background: transparent``
+    v2 отвергает. webm сам снимает фон.
+    """
+    payload: dict[str, Any] = {
+        "type": "avatar",
+        "avatar_id": avatar_id,
+        "audio_url": audio_url,
+        "aspect_ratio": "9:16",
+        "resolution": "1080p",
+        "engine": {"type": str(engine or "avatar_v")},
+    }
+    if want_alpha:
+        payload["output_format"] = "webm"
+    prompt = (motion_prompt or "").strip()
+    if prompt:
+        payload["motion_prompt"] = prompt
+    return payload
+
+
+def resolve_heygen_look_id(cfg) -> str:
+    """Look id аватара 5. Config — замок; секрет чужой лук не подставляет.
+
+    ``HEYGEN_AVATAR_ID`` в GitHub Secrets однажды оказался другим look
+    (не оливковая рубашка ``99ccc74e…``). Тогда HTTP и ``avatar_request.json``
+    уехали не к аватару 5. Заказчик: всегда этот лук, всегда Avatar V.
+    Секрет читается только если ``heygen.avatar_id`` в конфиге пуст.
+    """
+    configured = str(cfg.get("heygen.avatar_id") or "").strip()
+    if configured:
+        return configured
+    return str(
+        cfg.secret_for("heygen.avatar_id_env", purpose="HeyGen avatar look") or ""
+    ).strip()
 
 
 @dataclass
@@ -196,12 +257,16 @@ class HeyGenAvatar(AvatarProvider):
     def _upload_audio(self, path: Path) -> str:
         import requests
 
-        def _call() -> str:
-            resp = requests.post(
+        payload = path.read_bytes()
+
+        def _post(content_type: str):
+            return requests.post(
                 "https://upload.heygen.com/v1/asset",
-                data=path.read_bytes(),
-                headers={"x-api-key": self.api_key, "Content-Type": "audio/wav"},
+                data=payload,
+                headers={"x-api-key": self.api_key, "Content-Type": content_type},
                 timeout=self._timeout())
+
+        def _asset_url(resp) -> str:
             if resp.status_code >= 400:
                 raise ProviderError(f"HeyGen upload вернул {resp.status_code}",
                                     status=resp.status_code, body=resp.text[:300])
@@ -210,6 +275,21 @@ class HeyGenAvatar(AvatarProvider):
             if not url:
                 raise ProviderError("HeyGen upload не вернул ссылку на ассет")
             return str(url)
+
+        def _call() -> str:
+            content_type = HEYGEN_AUDIO_CONTENT_TYPE
+            resp = _post(content_type)
+            if resp.status_code >= 400:
+                sniffed = heygen_sniffed_audio_type(resp.text)
+                if sniffed and sniffed != content_type:
+                    # 400543: заголовок не совпал со снятым типом. Это MIME,
+                    # не 401 — MCP не вызываем, повторяем с тем типом, который
+                    # сервис уже прочитал из файла.
+                    _log.info("HeyGen upload: повтор с MIME файла", extra={
+                        "sent": content_type, "sniffed": sniffed,
+                    })
+                    resp = _post(sniffed)
+            return _asset_url(resp)
 
         return call_with_retry(_call, **self._retry_kwargs("HeyGen upload"))
 
@@ -220,48 +300,33 @@ class HeyGenAvatar(AvatarProvider):
         import requests
 
         base = str(self.cfg.get("heygen.api_base", "https://api.heygen.com"))
-        width, height = self.cfg.resolution
         audio_url = self._upload_audio(audio_path)
 
-        # Look id: secret HEYGEN_AVATAR_ID overrides config (same pattern as voice_id_env).
-        avatar_id = str(
-            self.cfg.secret_for("heygen.avatar_id_env", purpose="HeyGen avatar look")
-            or self.cfg.get("heygen.avatar_id")
-            or ""
-        )
+        avatar_id = resolve_heygen_look_id(self.cfg)
         if not avatar_id:
             raise ProviderError("HeyGen avatar_id пуст (config + HEYGEN_AVATAR_ID)")
 
-        payload: dict[str, Any] = {
-            "video_inputs": [{
-                "character": {
-                    "type": "avatar",
-                    "avatar_id": avatar_id,
-                    "avatar_style": "normal",
-                },
-                "voice": {"type": "audio", "audio_url": audio_url},
-            }],
-            "dimension": {"width": width, "height": height},
-        }
-        engine = self.cfg.get("heygen.engine", None)
-        if engine:
-            payload["video_inputs"][0]["character"]["engine"] = str(engine)
-        model_version = self.cfg.get("heygen.model_version", None)
-        if model_version:
-            payload["video_inputs"][0]["character"]["model_version"] = model_version
-        if str(self.cfg.get("heygen.background", "")).startswith("transparent"):
-            # §7.7 шаг 1: сначала пробуем получить прозрачный фон от HeyGen.
-            payload["video_inputs"][0]["background"] = {"type": "transparent"}
+        want_alpha = str(self.cfg.get("heygen.background", "")).startswith("transparent")
+        payload = heygen_v3_avatar_payload(
+            avatar_id=avatar_id,
+            audio_url=audio_url,
+            engine=str(self.cfg.get("heygen.engine") or "avatar_v"),
+            motion_prompt=str(self.cfg.get("heygen.motion_prompt") or ""),
+            want_alpha=want_alpha,
+        )
 
         def _create() -> str:
-            resp = requests.post(f"{base}/v2/video/generate", json=payload,
+            resp = requests.post(f"{base}/v3/videos", json=payload,
                                  headers={"x-api-key": self.api_key,
                                           "Content-Type": "application/json"},
                                  timeout=self._timeout())
             if resp.status_code >= 400:
                 raise ProviderError(f"HeyGen generate вернул {resp.status_code}",
                                     status=resp.status_code, body=resp.text[:400])
-            video_id = (resp.json().get("data") or {}).get("video_id")
+            body = resp.json() or {}
+            nested = body.get("data")
+            data = nested if isinstance(nested, dict) else body
+            video_id = data.get("video_id") or data.get("id")
             if not video_id:
                 raise ProviderError("HeyGen не вернул video_id")
             return str(video_id)
@@ -272,21 +337,26 @@ class HeyGenAvatar(AvatarProvider):
         deadline = time.time() + float(self.cfg.get("heygen.poll_timeout_sec", 900))
         video_url = ""
         while time.time() < deadline:
-            resp = requests.get(f"{base}/v1/video_status.get", params={"video_id": video_id},
+            resp = requests.get(f"{base}/v3/videos/{video_id}",
                                 headers={"x-api-key": self.api_key}, timeout=self._timeout())
-            data = (resp.json() or {}).get("data", {})
+            body = resp.json() or {}
+            nested = body.get("data")
+            data = nested if isinstance(nested, dict) else body
             status = str(data.get("status", ""))
             if status == "completed":
-                video_url = str(data.get("video_url", ""))
+                video_url = str(data.get("video_url") or "")
                 break
             if status in ("failed", "error"):
+                detail = str(data.get("failure_message") or data.get("error") or "")[:300]
                 raise ProviderError("HeyGen сообщил об ошибке генерации",
-                                    video_id=video_id, detail=str(data.get("error"))[:300])
+                                    video_id=video_id, detail=detail)
             time.sleep(interval)
         if not video_url:
             raise ProviderError("HeyGen не завершил генерацию за отведённое время",
                                 video_id=video_id)
 
+        if want_alpha and out_path.suffix.lower() != ".webm":
+            out_path = out_path.with_suffix(".webm")
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with requests.get(video_url, stream=True, timeout=self._timeout()) as resp:
             with open(out_path, "wb") as fh:

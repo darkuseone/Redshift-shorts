@@ -89,13 +89,14 @@ def test_mode_b_face_not_under_caption_or_bottom_safe(cfg):
 
 
 def test_config_zoom_is_ceiling_not_blind_constant(cfg):
-    assert float(cfg.get("heygen.compose_zoom")) == 2.7
+    requested = float(cfg.get("heygen.compose_zoom"))
+    assert abs(requested - 2.7 * 1.1) < 0.02
     brand = cfg.brandbook
-    small = fit_compose_zoom((430, 480, 650, 640), 2.7, brandbook=brand)
-    large = fit_compose_zoom((280, 360, 800, 1100), 2.7, brandbook=brand)
+    small = fit_compose_zoom((430, 480, 650, 640), requested, brandbook=brand)
+    large = fit_compose_zoom((280, 360, 800, 1100), requested, brandbook=brand)
     assert small.zoom != large.zoom
     assert large.zoom < small.zoom
-    assert large.zoom <= 2.7 and small.zoom <= 2.7
+    assert large.zoom <= requested and small.zoom <= requested
 
 
 def test_instruction_and_qc_use_brandbook_caption_baseline(cfg):

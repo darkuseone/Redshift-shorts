@@ -190,6 +190,26 @@ def test_compute_stats_counts_appearance_not_slots():
     assert stats["avatar_appearance_durations"] == [6.0]
 
 
+def test_avatar_share_correction_extends_same_block_full_frame():
+    """Недобор короче 3 сек рядом с живым появлением: прирастить, не плодить новое.
+
+    0049: 34.2 % при пороге 35 %. Единственный свободный кусок в on-блоке —
+    меньше минимума появления. Без слияния с соседом plan() возвращал None.
+    """
+    slots = [_slot(0, 0.0, 8.0, kind="avatar", block="b1", mode="A"),
+             _slot(1, 8.0, 9.1, block="b1"),
+             _slot(2, 9.1, 23.0, block="b2")]
+    blocks = [{"id": "b1", "role": "twist"},
+              {"id": "b2", "role": "develop", "avatar_directive": "off"}]
+    notes: list[str] = []
+    assert _avatar_share(slots, 23.0) < 0.35
+    assert _raise_avatar_share(slots, blocks, 23.0, 0.35, 0.60, 3.0, 12.0, notes)
+    assert _avatar_share(slots, 23.0) >= 0.35
+    runs = _avatar_runs(slots)
+    assert len(runs) == 1
+    assert slots[runs[0][-1]].end - slots[runs[0][0]].start >= 3.0
+
+
 def test_avatar_share_is_raised_into_corridor():
     """§3.5/QC-2: недобор доли аватара исправляется в P5, а не всплывает в QC."""
     slots = [_slot(0, 0, 4, kind="avatar", block="b1", mode="A"),
@@ -296,7 +316,7 @@ def test_cut_plan_of_sample_run_satisfies_hard_rules(repo_root):
     plan = json.loads(path.read_text(encoding="utf-8"))
     stats = plan["stats"]
     assert 0.35 <= stats["avatar_share"] <= 0.60
-    assert 2 <= stats["avatar_appearances"] <= 5
+    assert 3 <= stats["avatar_appearances"] <= 7
     assert all(3.0 <= d <= 12.0 for d in stats["avatar_appearance_durations"])
     # QC-4 меряет не самый длинный слот вообще, а каждый по своему потолку:
     # 5 сек без внутренних событий, 7 — с ними.

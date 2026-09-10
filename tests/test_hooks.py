@@ -115,9 +115,9 @@ def hook_ctx(cfg, tmp_path):
         storage=build_storage(cfg))
 
 
-def _build(ctx, plan):
+def _build(ctx, plan, *, assets=None, prepared=None):
     return build_variant(
-        ctx, plan, _words(plan), assets={}, prepared={},
+        ctx, plan, _words(plan), assets=assets or {}, prepared=prepared or {},
         catalog=TemplateCatalog.load(ctx.cfg), avatar_meta={"segments": []},
         sfx_map={}, variant="B", recent_videos=[])
 
@@ -284,6 +284,40 @@ class TestTheHookLandsBeforeTheFirstSecond:
         built = _build(hook_ctx, _plan(hook={"on_screen": "НЕВОЗМОЖНО ПРОВЕРИТЬ"}))
         assert built["shots"][0].get("hook") is True
         assert "хук" in str(built["shots"][0].get("why") or "")
+
+    def test_blackout_wins_even_when_slot_zero_has_stock(self, hook_ctx, tmp_path):
+        """Pins on slot 0 must not flip the hook to a silent cold open."""
+        plate = tmp_path / "bubbles.jpg"
+        plate.write_bytes(b"not-an-image")
+        assets = {0: {"asset_id": "fp_blue_bubbles", "source": "freepik",
+                      "license": "Freepik License"}}
+        prepared = {0: {"dst": str(plate), "duration_sec": 2.5}}
+        built = _build(
+            hook_ctx,
+            _plan(hook={"on_screen": "НЕВОЗМОЖНО ПРОВЕРИТЬ",
+                        "style": "blackout_word"}),
+            assets=assets, prepared=prepared)
+        first = built["shots"][0]
+        assert first["template"] == HOOK_STYLE_TEMPLATES["blackout_word"]
+        assert first.get("file") in (None, "")
+        assert "НЕВОЗМОЖНО" in str(first.get("content") or "").upper()
+
+    def test_cold_open_reads_prepared_dst_not_file(self, hook_ctx, tmp_path):
+        """Prepared shots store ``dst``. ``file`` crashed live 0049 at P11."""
+        plate = tmp_path / "chip.jpg"
+        plate.write_bytes(b"not-an-image")
+        assets = {0: {"asset_id": "fp_chip", "source": "freepik",
+                      "license": "Freepik License"}}
+        prepared = {0: {"dst": str(plate), "duration_sec": 2.5}}
+        built = _build(
+            hook_ctx,
+            _plan(hook={"style": "cold_open",
+                        "cold_open_query": "quantum processor macro"}),
+            assets=assets, prepared=prepared)
+        first = built["shots"][0]
+        assert first["template"] == HOOK_STYLE_TEMPLATES["cold_open"]
+        assert first["file"] == str(plate)
+        assert first.get("hook") is True
 
 
 class TestTheRecordOfUnreachabilityIsGone:

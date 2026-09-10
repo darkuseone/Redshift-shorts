@@ -5,13 +5,12 @@
 * **Шаг 1 — дешёвая отбраковка без LLM.** Metadata / negatives / theme.
   Цель — убить ≥50 % входящего пула до зрения (MUST-019).
 * **Шаг 2 — mid-critic GLM.** Прошедшие cheap; для видео — 3 кадра.
-  Score 0.0–1.0. Без ключа — mock/empty, не exception.
-* **Шаг 3 — Grok Vision только серая зона** score ∈ [0.45, 0.70].
-  Не чаще 1 раза на клип, лимит ≤3 вызовов на ролик. Evidence/twist сами
-  по себе сюда не входят (MUST-020 снимет оставшийся helper).
+  Score 0.0–1.0. Без ключа — mock/empty, не Gemini.
+* **Шаг 3 — Grok Vision только серая зона** score ∈ [0.45, 0.80]
+  (непонятно, что на кадре). Не чаще 1 раза на клип, лимит ≤3 вызовов.
 
-Пороги: ≥0.70 принять, <0.45 отклонить. Незакрытый слот уходит в генерацию (P9),
-а **не** заполняется слабым футажом — это прямое требование §7.3.
+Пороги: ≥0.80 принять (восемь из десяти), <0.45 отклонить. Незакрытый слот
+уходит в генерацию (P9), а **не** заполняется слабым футажом — §7.3.
 """
 
 from __future__ import annotations
@@ -23,7 +22,7 @@ from typing import Any
 from ..lib.footage_seed import SEED_SCORE
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
-from ..lib.palette import frame_light, palette_verdict
+from ..lib.palette import accent_cap_verdict, frame_light, palette_verdict
 from ..lib.pin_match import ctx_words, pin_slot_prefer_key
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
@@ -41,10 +40,14 @@ _log = get_logger("p8")
 
 
 def in_grey_zone(score: float, cfg) -> bool:
-    """Grok/второй уровень только при score ∈ [reject, accept] (MUST-019)."""
+    """Grok только при score ∈ [reject, accept).
+
+    Восемь из десяти (``accept_threshold``) уже в ролик: заказчик не гоняет
+    зрение на кадр, который mid-critic уже принял. Спорное — строго ниже порога.
+    """
     lo = float(cfg.get("vision.reject_threshold", 0.45))
-    hi = float(cfg.get("vision.accept_threshold", 0.70))
-    return lo <= float(score) <= hi
+    hi = float(cfg.get("vision.accept_threshold", 0.80))
+    return lo <= float(score) < hi
 
 
 def _candidate_hay(candidate: dict[str, Any]) -> str:
@@ -99,10 +102,10 @@ def cheap_reject_reason(candidate: dict[str, Any], *, cfg,
 def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
     """Триггеры шага 3 (§7.3). Возвращает причину или None."""
     lo = float(cfg.get("vision.reject_threshold", 0.45))
-    hi = float(cfg.get("vision.accept_threshold", 0.70))
+    hi = float(cfg.get("vision.accept_threshold", 0.80))
     disagree = float(cfg.get("vision.frame_disagreement_threshold", 0.30))
-    if lo <= verdict.score <= hi:
-        return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi}]"
+    if in_grey_zone(verdict.score, cfg):
+        return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi})"
     if verdict.frame_disagreement > disagree:
         return f"кадры расходятся на {verdict.frame_disagreement:.2f} > {disagree}"
     # MUST-020: evidence/twist не auto-arbitrate — те же пороги, что у обычного слота.
@@ -173,6 +176,23 @@ def _prefer_rank(asset_id: str, pin_prefer: list[str]) -> int | None:
         return pin_prefer.index(aid)
     except ValueError:
         return None
+
+
+def _color_gate(frames: list, palette_rules: dict[str, Any],
+                accent_hi: float) -> tuple[dict[str, Any], dict[str, Any], str | None]:
+    """Palette (off-brand hue) and accent budget (too much on-brand red/cyan).
+
+    QC-30 samples the finished file. P8 used to accept a heartbeat clip
+    because red is in the brandbook, then the full-frame 9:16 plate painted
+    16 % of the frame and the cut landed in ``rejected/``.
+    """
+    palette = palette_verdict(frames, palette_rules)
+    accent = accent_cap_verdict(frames, accent_hi)
+    if not palette.get("passed", True):
+        return palette, accent, str(palette.get("reason") or "палитра канала")
+    if not accent.get("passed", True):
+        return palette, accent, str(accent.get("reason") or "акцент")
+    return palette, accent, None
 
 
 def _engine_gate_reason(candidate: dict[str, Any], *, pin_deny: set[str],
@@ -569,7 +589,7 @@ def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
     cfg = ctx.cfg
 
-    accept_threshold = float(cfg.get("vision.accept_threshold", 0.70))
+    accept_threshold = float(cfg.get("vision.accept_threshold", 0.80))
     reject_threshold = float(cfg.get("vision.reject_threshold", 0.45))
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 3))
 
@@ -612,6 +632,8 @@ def run_step(ctx) -> dict[str, Any]:
         by_slot.setdefault(candidate["slot_index"], []).append(candidate)
 
     palette_rules = dict(cfg.brandbook.get("color_rules", {}).get("footage_palette", {}))
+    accent_hi = float(cfg.brandbook.get("color_rules", {}).get(
+        "accent_max_frame_share", 0.12))
 
     judged: list[dict[str, Any]] = []
     accepted: dict[int, dict[str, Any]] = {}
@@ -716,9 +738,10 @@ def run_step(ctx) -> dict[str, Any]:
                     str(candidate.get("asset_id") or ""), slot,
                     pin_prefer, words)[0] > 0:
                 continue
-            palette = palette_verdict(
-                [Path(f) for f in candidate.get("frames", [])], palette_rules)
-            light = (frame_light([Path(f) for f in candidate.get("frames", [])])
+            color_frames = [Path(f) for f in candidate.get("frames", [])]
+            palette, accent, color_reason = _color_gate(
+                color_frames, palette_rules, accent_hi)
+            light = (frame_light(color_frames)
                      if slot.get("asset_role") == "interstitial" else None)
             if skip_live or candidate.get("prior_score") is not None:
                 verdict_dict = skip_live_verdict(candidate, intent)
@@ -731,7 +754,8 @@ def run_step(ctx) -> dict[str, Any]:
                     "judge": "pin_prefer", "frames": 0,
                 }
             entry = {**candidate, "verdict": verdict_dict, "intent": intent,
-                     "score": float(verdict_dict["score"]), "palette": palette}
+                     "score": float(verdict_dict["score"]), "palette": palette,
+                     "accent": accent}
             if light is not None:
                 entry["light"] = light
             if light is not None and light["visible_share"] < visible_min:
@@ -742,9 +766,9 @@ def run_step(ctx) -> dict[str, Any]:
                 rejected_by_dark += 1
                 judged.append(entry)
                 continue
-            if not palette["passed"]:
+            if color_reason:
                 entry["decision"] = "reject_palette"
-                entry["reject_reason"] = palette["reason"]
+                entry["reject_reason"] = color_reason
                 rejected_by_palette += 1
                 judged.append(entry)
                 continue
@@ -783,7 +807,7 @@ def run_step(ctx) -> dict[str, Any]:
             # у слотов совпал тег «space».
             #
             # Вечнозелёная база вскрыла это ребром: её записи не судились ни
-            # разу, у них стоит ровный SEED_SCORE 0.62 при пороге приёма 0.70,
+            # разу, у них стоит ровный SEED_SCORE 0.62 при пороге приёма 0.80,
             # и по этому пути весь засев навсегда оставался «borderline».
             reusable = (candidate.get("prior_score") is not None
                         and candidate.get("origin") == "local_cache")
@@ -837,7 +861,7 @@ def run_step(ctx) -> dict[str, Any]:
                         verdict_dict["arbitrated"] = True
                         verdict_dict["arbitration_reason"] = (
                             f"score {primary_score:.2f} в серой зоне "
-                            f"[{reject_threshold:.2f}, {accept_threshold:.2f}]")
+                            f"[{reject_threshold:.2f}, {accept_threshold:.2f})")
                         verdict_dict["primary_score"] = primary_score
                         verdict_dict["clip_id"] = aid
                         _tally_vision(
@@ -850,9 +874,11 @@ def run_step(ctx) -> dict[str, Any]:
             # Цвет судится отдельно от смысла и бесплатно: кадры кандидата
             # уже лежат на диске. Судья со зрением оценивает соответствие
             # речи и про палитру канала не знает — на 0047 он принял стену из
-            # ярко-розовых кубов по запросу «dark red gradient».
-            palette = palette_verdict(
-                [Path(f) for f in candidate.get("frames", [])], palette_rules)
+            # ярко-розовых кубов по запросу «dark red gradient». Акцент —
+            # тот же проход: красный в брендбуке законен, пока не заливает кадр.
+            color_frames = [Path(f) for f in candidate.get("frames", [])]
+            palette, accent, color_reason = _color_gate(
+                color_frames, palette_rules, accent_hi)
 
             # Светлота судится только у перебивки. Общий порог зарезал бы
             # ночную эстетику канала: в базе восемь клипов из сорока четырёх
@@ -860,11 +886,12 @@ def run_step(ctx) -> dict[str, Any]:
             # Перебивка — другое: 1.4 секунды, ради того чтобы в кадре что-то
             # произошло. В 0047 на 40.5 и 50.0 сек там оказался субтитр на
             # пустоте, средняя яркость 17.7 и 20.1 из 255.
-            light = (frame_light([Path(f) for f in candidate.get("frames", [])])
+            light = (frame_light(color_frames)
                      if slot.get("asset_role") == "interstitial" else None)
 
             entry = {**candidate, "verdict": verdict_dict, "intent": intent,
-                     "score": float(verdict_dict["score"]), "palette": palette}
+                     "score": float(verdict_dict["score"]), "palette": palette,
+                     "accent": accent}
             if light is not None:
                 entry["light"] = light
             entry["decision"] = (
@@ -885,16 +912,17 @@ def run_step(ctx) -> dict[str, Any]:
                     "visible_share": light["visible_share"]})
                 judged.append(entry)
                 continue
-            if not palette["passed"]:
+            if color_reason:
                 # Отказ, а не штраф к оценке: §7.3 велит незакрытый слот
                 # отправлять в генерацию, а не затыкать слабым материалом.
                 # Кадр не той палитры — ровно такой слабый материал.
                 entry["decision"] = "reject_palette"
-                entry["reject_reason"] = palette["reason"]
+                entry["reject_reason"] = color_reason
                 rejected_by_palette += 1
                 _log.info("кандидат отклонён по палитре", extra={
                     "slot": slot_index, "asset": candidate.get("asset_id"),
-                    "off_share": palette["off_share"]})
+                    "off_share": palette.get("off_share"),
+                    "accent": (accent or {}).get("max")})
             mark = watermark_reject_reason(entry.get("verdict"), candidate)
             if mark and entry["decision"] not in ("reject_palette", "reject_dark"):
                 entry["decision"] = "reject_watermark"

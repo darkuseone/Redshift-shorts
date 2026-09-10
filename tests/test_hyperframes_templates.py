@@ -7269,20 +7269,21 @@ def test_a_generated_picture_gets_no_museum_label():
                "caption": "Скважину закрыли в девяносто втором", "lines": ["а", "б"],
                "punch": ["а", "б"], "entries": ["а"], "figures": [], "face": (540, 570)}
     slot = {"index": 3, "role": "develop", "duration": 5.0, "start": 0.0, "end": 5.0}
-    picked = set()
-    for generated in (True, False):
-        plate = {"file": "/w/a.mp4", "duration_sec": 5.0, "credit": "NASA",
-                 "ai_generated": generated}
-        for seed in range(40):
-            entry = _hero_device(catalog, slot=slot, content=content,
-                                 has_alpha=True, plate_src=plate,
-                                 recent_videos=[], exclude=[], seed=seed)
-            if entry and generated:
-                assert entry["renderer"] != "hero-exhibit", entry["template"]
-            if entry and not generated:
-                picked.add(entry["renderer"])
-    # И обратное: на настоящем материале приём из каталога не исчез.
-    assert "hero-exhibit" in picked
+    others = [t.id for t in catalog.by_category("hero-devices")
+              if t.renderer != "hero-exhibit"]
+    assert any(t.renderer == "hero-exhibit" for t in catalog.by_category("hero-devices"))
+    real = _hero_device(
+        catalog, slot=slot, content=content, has_alpha=True,
+        plate_src={"file": "/w/a.mp4", "duration_sec": 5.0, "credit": "NASA",
+                   "ai_generated": False},
+        recent_videos=[], exclude=others, seed=1)
+    assert real and real["renderer"] == "hero-exhibit", real
+    generated = _hero_device(
+        catalog, slot=slot, content=content, has_alpha=True,
+        plate_src={"file": "/w/a.mp4", "duration_sec": 5.0, "credit": "NASA",
+                   "ai_generated": True},
+        recent_videos=[], exclude=others, seed=1)
+    assert not generated or generated["renderer"] != "hero-exhibit"
 
 def test_split_flap_board():
     piece = render_fullscreen(_fs_ctx(renderer="split_flap_board", word="FLIGHT"))

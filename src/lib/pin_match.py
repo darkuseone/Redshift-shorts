@@ -153,6 +153,24 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                 bonus = 14
             elif any(token in hay for token in ("lean", "код", "проверя")):
                 bonus = -10
+        elif any(token in aid_l for token in (
+                "red_heartbeat", "red_pulse", "red_gradient")):
+            # ECG / red wash is on-brand hue and still blows QC-30 as a plate.
+            if any(token in hay for token in ("кров", "сердц", "пульс")):
+                bonus = -8
+            else:
+                bonus = 22
+        elif any(token in aid_l for token in (
+                "water_vortex", "river_current", "blue_ink")):
+            if any(token in hay for token in (
+                    "вод", "жидк", "поток", "труб", "крыл", "погод",
+                    "самолёт", "кров")):
+                bonus = -18
+            elif hole:
+                bonus = 10
+        elif any(token in aid_l for token in ("green_glitch", "matrix_code")):
+            if any(token in hay for token in ("фурор", "openai")):
+                bonus = 16
     try:
         rank = list(pin_prefer).index(aid)
     except ValueError:

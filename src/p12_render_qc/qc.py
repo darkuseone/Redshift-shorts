@@ -15,6 +15,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Callable
 
+from ..lib.duration import duration_limits
 from ..lib.jsonio import read_json_or
 from ..lib.logging import get_logger
 from ..lib.palette import overlay_cyan_misuse, overlay_offbrand_fills
@@ -79,10 +80,20 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     stats = cut_plan.get("stats", {})
     loudness = sfx_map.get("loudness", {})
 
-    # 1. Длительность 35–70 сек
-    lo, hi = limits.get("duration_sec", [35, 70])
-    checks.append(_check(1, "Длительность", lo <= duration <= hi,
-                         value=round(duration, 2), threshold=[lo, hi]))
+    # 1. Длительность: 35–75 желательно, жёсткий потолок 90
+    lo, preferred_hi, hard_hi = duration_limits(cfg)
+    in_hard = lo <= duration <= hard_hi
+    checks.append(_check(1, "Длительность", in_hard,
+                         value=round(duration, 2),
+                         threshold=[lo, hard_hi],
+                         detail="" if in_hard else f"вне {lo:.0f}–{hard_hi:.0f} сек"))
+    if in_hard and duration > preferred_hi:
+        checks.append(_check(
+            1, "Длительность (желаемый коридор)", False,
+            value=round(duration, 2), threshold=[lo, preferred_hi],
+            detail=f"длиннее желаемых {preferred_hi:.0f} сек, редко до {hard_hi:.0f}",
+            blocking=False,
+        ))
 
     # 2. Доля аватара 35–60 %
     share_lo, share_hi = limits.get("avatar_share", [0.35, 0.60])

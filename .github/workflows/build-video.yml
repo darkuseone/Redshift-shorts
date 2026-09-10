@@ -5,6 +5,12 @@ name: build-video
 # (редактирование секретов встроено в форматтер логов, см. src/lib/logging.py).
 
 on:
+  # Cursor сюда не собирает ролик. Боевой прогон — только этот workflow.
+  # workflow_dispatch — руками в UI. Пуш заявки — агент без права
+  # actions:write (токен Cursor на dispatch отвечает 403).
+  push:
+    paths:
+      - "config/ci_build_request.json"
   workflow_dispatch:
     inputs:
       script:
@@ -27,14 +33,19 @@ on:
         default: false
         type: boolean
       skip_vision:
-        description: "Без live Gemini/Grok vision: P8 + P12 semantic QC; thumbs = ffmpeg"
+        description: "Без live GLM/Grok vision: P8 + P12 semantic QC; thumbs = ffmpeg"
         required: false
         default: false
         type: boolean
       skip_generate:
-        description: "Без image gen: P9 + P12 AI thumbs (сразу ffmpeg, без Gemini/Grok image)"
+        description: "Без image gen: P9 + P12 AI thumbs (сразу ffmpeg, без Grok image)"
         required: false
         default: false
+        type: boolean
+      publish_release:
+        description: "После QC выложить mp4 в GitHub Releases (скачивание с страницы релизов)"
+        required: false
+        default: true
         type: boolean
       heygen_source:
         description: "Источник аватара: auto|api|prepared (пусто = из config.yaml)"
@@ -55,7 +66,7 @@ on:
         default: ""
 
 concurrency:
-  group: build-video-${{ github.event.inputs.script }}
+  group: build-video-${{ github.event.inputs.script || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -70,6 +81,7 @@ jobs:
     env:
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      ELEVENLABS_VOICE_ID_2: ${{ secrets.ELEVENLABS_VOICE_ID_2 }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -144,11 +156,12 @@ jobs:
       HYPERFRAMES_VERSION: "0.8.26"
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      ELEVENLABS_VOICE_ID_2: ${{ secrets.ELEVENLABS_VOICE_ID_2 }}
       HEYGEN_API: ${{ secrets.HEYGEN_API }}
       HEYGEN_AVATAR_ID: ${{ secrets.HEYGEN_AVATAR_ID }}
-      # Vision: GLM 5.3 primary, xAI Grok 4.6 fallback. Gemini остаётся для
-      # image gen и как явный vision.fallback=gemini, не как тихий запас.
-      # Имена секретов: GLM_API_KEY / GLM_API («GLM API» в UI), XAI_API_KEY.
+      # Vision: GLM 5.3 cheap critic, xAI Grok 4.6 grey + P12 QC + image gen.
+      # Gemini API в пайплайне не вызывается. Pexels — сток.
+      # Имена секретов: GLM_API_KEY / GLM_API, XAI_API_KEY, ELEVENLABS_*, PEXELS_API_KEY.
       GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
       GLM_API: ${{ secrets.GLM_API }}
       ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
@@ -167,6 +180,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Параметры прогона
+        env:
+          IN_SCRIPT: ${{ github.event.inputs.script }}
+          IN_PROVIDERS_MODE: ${{ github.event.inputs.providers_mode }}
+          IN_FROM_STEP: ${{ github.event.inputs.from_step }}
+          IN_FORCE: ${{ github.event.inputs.force }}
+          IN_SKIP_VISION: ${{ github.event.inputs.skip_vision }}
+          IN_SKIP_GENERATE: ${{ github.event.inputs.skip_generate }}
+          IN_PUBLISH_RELEASE: ${{ github.event.inputs.publish_release }}
+          IN_HEYGEN_SOURCE: ${{ github.event.inputs.heygen_source }}
+        run: |
+          set -euo pipefail
+          python3 tools/resolve_ci_build_request.py | tee /tmp/build_req.env | tee -a "$GITHUB_ENV"
+          echo "прогон:" && cat /tmp/build_req.env
 
       - uses: actions/setup-python@v5
         with:
@@ -249,7 +277,7 @@ jobs:
         run: python -m src.cli fonts-check
 
       - name: Валидация сценария
-        run: python -m src.cli validate --script "${{ github.event.inputs.script }}"
+        run: python -m src.cli validate --script "${{ env.BUILD_SCRIPT }}"
 
       # Голос и клипы ведущего рождаются парой: клипы липсинка сгенерированы под
       # конкретную озвучку, и разойтись им нельзя. Клипы лежат в git, а голос
@@ -263,7 +291,7 @@ jobs:
       - name: Засеять work/ готовым голосом
         run: |
           set -euo pipefail
-          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          video_id=$(python -c "import json; print(json.load(open('${{ env.BUILD_SCRIPT }}', encoding='utf-8'))['meta']['video_id'])")
           seed="assets/voice/$video_id"
           if [ -d "$seed" ]; then
             mkdir -p "work/$video_id"
@@ -295,7 +323,7 @@ jobs:
           echo "key=$key" >> "$GITHUB_OUTPUT"
           echo "ключ кэша по речи: $key"
         env:
-          SCRIPT: ${{ github.event.inputs.script }}
+          SCRIPT: ${{ env.BUILD_SCRIPT }}
 
       # Три ключа восстановления, от точного к общему. Первый — по речи, второй
       # — прежний формат по всему файлу сценария: без него кэш, сохранённый до
@@ -311,26 +339,26 @@ jobs:
           key: redshift-work-${{ steps.speech_key.outputs.key }}-${{ github.run_id }}
           restore-keys: |
             redshift-work-${{ steps.speech_key.outputs.key }}-
-            redshift-work-${{ hashFiles(github.event.inputs.script) }}-
+            redshift-work-${{ hashFiles(env.BUILD_SCRIPT) }}-
             redshift-work-
 
       - name: Сборка ролика (A и B)
         run: |
           set -o pipefail
-          # Журнал сборки пишется рядом с выводом: логи Actions читаются через
-          # API кусками с конца, и строка с ошибкой в них не попадает — на
-          # прогоне 33666703565 три попытки вытащить её не дали ничего.
-          # Файл же уезжает в артефакт и в Summary целиком.
+          # Mid-critic в конфиге — GLM. Секрет GLM в GitHub сейчас 401
+          # (token expired). Пока ключ мёртвый — сразу Grok, без трёх
+          # бесполезных ретраев. Gemini не вызываем.
           mkdir -p output
           python -m src.cli \
-            --set providers.mode=${{ github.event.inputs.providers_mode }} \
+            --set providers.mode=${{ env.BUILD_PROVIDERS_MODE }} \
+            --set vision.primary=grok \
             --set vision.fallback=grok \
-            ${{ github.event.inputs.heygen_source != '' && format('--set heygen.source={0}', github.event.inputs.heygen_source) || '' }} \
-            ${{ github.event.inputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
-            ${{ github.event.inputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \
-            run --script "${{ github.event.inputs.script }}" \
-            ${{ github.event.inputs.from_step != '' && format('--from {0}', github.event.inputs.from_step) || '' }} \
-            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            ${{ env.BUILD_HEYGEN_SOURCE != '' && format('--set heygen.source={0}', env.BUILD_HEYGEN_SOURCE) || '' }} \
+            ${{ env.BUILD_SKIP_VISION == 'true' && '--set vision.skip_live=true' || '' }} \
+            ${{ env.BUILD_SKIP_GENERATE == 'true' && '--set generation.skip=true' || '' }} \
+            run --script "${{ env.BUILD_SCRIPT }}" \
+            ${{ env.BUILD_FROM_STEP != '' && format('--from {0}', env.BUILD_FROM_STEP) || '' }} \
+            ${{ env.BUILD_FORCE == 'true' && '--force' || '' }} \
             2>&1 | tee output/build.log
 
       # Кэш сохраняется явно и обязательно на любом исходе. Единый actions/cache
@@ -367,7 +395,7 @@ jobs:
         if: success()
         run: |
           set -euo pipefail
-          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          video_id=$(python -c "import json; print(json.load(open('${{ env.BUILD_SCRIPT }}', encoding='utf-8'))['meta']['video_id'])")
           out="assets/preview/$video_id"
           rm -rf "$out" && mkdir -p "$out"
           for f in output/"$video_id"/*.mp4; do
@@ -404,7 +432,7 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          video_id=$(python -c "import json; print(json.load(open('${{ env.BUILD_SCRIPT }}', encoding='utf-8'))['meta']['video_id'])")
           src="work/$video_id"
           dst="assets/voice/$video_id"
           if [ -f "$src/voice_final.wav" ]; then
@@ -429,6 +457,12 @@ jobs:
           from pathlib import Path
           src, dst = Path(sys.argv[1]), Path(sys.argv[2])
           req = json.loads((src / "avatar_request.json").read_text(encoding="utf-8"))
+          # Look id аватара 5 — из config, не из секрета HEYGEN_AVATAR_ID в work/.
+          from src.lib.config import load_config
+          from src.lib.providers.avatar import resolve_heygen_look_id
+          req["avatar_id"] = resolve_heygen_look_id(load_config())
+          (dst / "avatar_request.json").write_text(
+              json.dumps(req, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           for seg in req.get("segments", []):
               name = f"seg_{int(seg['index']):02d}.wav"
               wav = src / "avatar" / name
@@ -487,9 +521,11 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
-      # Фаза 1 двухфазного конвейера: ключа HeyGen у прогона нет, поэтому P6
-      # останавливается и оставляет заявку с нарезанными кусками речи. По ним
-      # аватар генерируется снаружи через MCP-коннектор и возвращается в репо.
+      # Фаза 1 двухфазного конвейера: если секрет HEYGEN_API в Actions не
+      # сработал, P6 оставляет заявку с нарезанными кусками ElevenLabs.
+      # Аватар 5 / Avatar V тогда снимает Cursor по MCP и кладёт клипы в
+      # репозиторий. Следующий прогон — from_step P6, heygen_source=prepared.
+      # Avatar IV не используется.
       - name: Выложить заявку на аватар
         if: failure()
         uses: actions/upload-artifact@v4
@@ -504,6 +540,16 @@ jobs:
             work/*/validated_script.json
           retention-days: 14
           if-no-files-found: ignore
+
+      - name: GitHub Release
+        if: success() && env.BUILD_PUBLISH_RELEASE != 'false' && env.BUILD_PROVIDERS_MODE != 'mock'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python -m src.cli publish --from-output --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}"
+          echo "Релиз: https://github.com/${{ github.repository }}/releases" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Итог в Summary
         if: always()

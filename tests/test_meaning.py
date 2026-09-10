@@ -48,6 +48,7 @@ class TestTheTextTellsWhatCanBeShown:
         assert "negation" not in block_traits("Это не только глубина, но и жара")
         assert "negation" in block_traits("Дело не в деньгах")
         assert "negation" in block_traits("Бурить перестали")
+        assert "negation" in block_traits("Ничем")
 
     def test_traits_read_as_a_sentence(self):
         text = explain(block_traits("Рекорд: двенадцать километров"))
@@ -79,6 +80,13 @@ class TestATemplateNeedsSomethingToFillIt:
         assert grounded_for([], traits, shown="НАОБОРОТ") == []
         assert grounded_for(["number"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == ["number"]
         assert grounded_for(["quote"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == []
+
+    def test_needless_card_grounds_on_the_negation_it_shows(self):
+        """QC-21: «Ничем» на хуке-отрицании — удар, не обои."""
+        traits = block_traits("Этот ответ невозможно проверить. Ничем.")
+        assert "negation" in traits
+        assert grounded_for([], traits, shown="Ничем") == ["negation"]
+        assert grounded_for([], traits, shown="НАОБОРОТ") == []
 
 
 class TestTheCatalogPicksByMeaning:

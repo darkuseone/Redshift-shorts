@@ -617,8 +617,8 @@ def test_voice_settings_come_from_config_and_ask_for_expression():
 
     settings = provider._voice_settings(1.1, model="eleven_multilingual_v2")
     assert settings["speed"] == 1.1
-    assert settings["stability"] <= 0.35, "ровность выше — речь снова плоская"
-    assert settings["style"] > 0, "манера исходного голоса не усиливается"
+    assert settings["stability"] <= 0.05, "v3-соседний дефолт должен быть творческим, не 0.5"
+    assert settings["style"] >= 0.5, "манера исходного голоса не усиливается"
     assert settings["use_speaker_boost"] is True
 
     cfg.data["elevenlabs"]["voice_settings"]["stability"] = 0.7
@@ -643,6 +643,9 @@ def test_v3_gets_a_stability_it_will_actually_accept():
         got = provider._voice_settings(1.0, model="eleven_v3")["stability"]
         assert got == expected, f"{asked} → {got}, ждали {expected}"
         assert got in ElevenLabsTTS.V3_STABILITY_STEPS
+
+    provider.cfg = load_config()
+    assert provider._voice_settings(1.0, model="eleven_v3")["stability"] == 0.0
 
 
 def test_hesitations_are_cut_but_meaning_is_never_touched():
@@ -858,8 +861,12 @@ class TestVoicePool:
     def test_the_pool_holds_only_ids_the_owner_gave(self):
         from src.lib.config import load_config
 
-        pool = load_config().get("elevenlabs.voice_pool", [])
+        cfg = load_config()
+        pool = cfg.get("elevenlabs.voice_pool", [])
         assert pool == ["14NozJq5eoBmDc1FXFDq", "7fU3YUxRrVGjNaZ5dzEH"]
+        labels = cfg.get("elevenlabs.voice_labels", {})
+        assert labels[pool[0]] == "Никита 1"
+        assert labels[pool[1]] == "Никита 2"
 
     def test_without_a_pool_the_explicit_voice_still_wins(self):
         """Пустой пул не должен ломать прежний путь: явный id и env."""
