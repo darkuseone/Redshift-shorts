@@ -1011,14 +1011,27 @@ def _word_is_muted(
 
 
 def _phrase_hits_windows(phrase: list[dict[str, Any]],
-                         windows: list[tuple[float, float]]) -> bool:
+                         windows: list[tuple[float, float]],
+                         *, min_overlap: float = 0.05) -> bool:
+    """True when a word substantially overlaps a mute/line window.
+
+    A 3 ms kiss at the slot join used to swallow «дэ: трёхмерный поток»
+    because ``поток`` ended on the next hero's start (0048).
+    """
     if not windows:
         return False
-    return any(
-        float(word["start"]) < end and float(word["end"]) > start
-        for word in phrase
-        for start, end in windows
-    )
+    floor = max(0.0, float(min_overlap))
+    for word in phrase:
+        try:
+            ws = float(word["start"])
+            we = float(word["end"])
+        except (TypeError, ValueError, KeyError):
+            continue
+        for start, end in windows:
+            overlap = min(we, end) - max(ws, start)
+            if overlap >= floor:
+                return True
+    return False
 
 
 # Какое семейство акцента у блока (MEGA D-9). Красный — про чувство и миф,
@@ -1195,7 +1208,7 @@ def _wrap_lines(text: str, *, width: int = 13, limit: int = 4) -> list[str]:
     """
     words, lines, current = text.split(), [], ""
     for word in words:
-        if current.endswith((".", "!", "?", "…")):
+        if current.endswith((".", "!", "?", "…", ",", ";", ":")):
             lines.append(current)
             current = word
             if len(lines) == limit:

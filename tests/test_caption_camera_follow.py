@@ -158,6 +158,27 @@ def test_cleaned_caption_words_still_split_after_a_period():
     assert groups[0][0]["display"] != groups[1][0]["display"]
 
 
+def test_phrases_split_after_a_comma_clause():
+    """«спагетти, которое» must not wrap as one karaoke line."""
+    from src.lib.render.hyperframes.captions import (
+        _visible_words, group_caption_phrases,
+    )
+
+    raw = [
+        {"display": "Вихрь", "start": 45.75, "end": 45.90, "block_id": "b4"},
+        {"display": "как", "start": 45.90, "end": 46.04, "block_id": "b4"},
+        {"display": "спагетти,", "start": 46.04, "end": 46.49, "block_id": "b4"},
+        {"display": "которое", "start": 46.55, "end": 47.00, "block_id": "b4"},
+        {"display": "сжимается.", "start": 47.31, "end": 47.76, "block_id": "b4"},
+    ]
+    visible = _visible_words(raw, "upper")
+    assert visible[2]["clause_end"] is True
+    groups = group_caption_phrases(visible, max_words=5, pause_break_sec=0.60)
+    joined = [" ".join(w["display"] for w in g) for g in groups]
+    assert any("СПАГЕТТИ" in line and "КОТОРОЕ" not in line for line in joined)
+    assert any("КОТОРОЕ" in line for line in joined)
+
+
 def test_camera_follow_moves_the_world_not_the_clip(cfg):
     out = _follow(cfg, _words("Падение", ("в", True), "пропасть"))
     assert 'id="cf-00-world"' in out

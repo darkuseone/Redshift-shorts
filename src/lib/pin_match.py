@@ -102,19 +102,57 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
         wall = any(token in aid_l for token in (
             "cracked", "peeling", "plaster", "rock_surface"))
         staple = "stapling" in aid_l or "staple" in aid_l
+        hole = any(token in hay for token in ("дыр", "глух", "стен", "трещин"))
+        busy = any(token in hay for token in (
+            "агент", "сообщен", "публик", "спагетти", "вихр", "час", "lean"))
+        flow = any(token in hay for token in (
+            "поток", "вихр", "спагетти", "сингуляр", "жидкост", "пункт"))
+        hours = any(token in hay for token in ("час", "восем", "агент", "lean"))
         if wall:
             # 0048: drought/crack plates parked on «88 часов / 2.7 млн», while
-            # the twist said «дыра в стене / глухой».
-            if any(token in hay for token in ("дыр", "глух", "стен", "трещин")):
-                bonus = -18
-            elif any(token in hay for token in (
-                    "агент", "сообщен", "публик", "спагетти", "вихр")):
+            # the twist said «дыра в стене / глухой». Smooth plaster is a wall,
+            # not a hole — leftover then parks cracked/peeling on the twist.
+            cracked_like = any(token in aid_l for token in ("cracked", "peeling"))
+            if hole:
+                if cracked_like:
+                    bonus = -22
+                elif "plaster" in aid_l:
+                    bonus = 4
+                else:
+                    bonus = -10
+            elif busy:
                 bonus = 10
         elif staple:
             if any(token in hay for token in ("публик", "документ", "бумаг")):
                 bonus = -12
-            elif any(token in hay for token in ("дыр", "глух", "стен", "трещин")):
+            elif hole:
                 bonus = 18
+        elif any(token in aid_l for token in ("chalkboard_eq", "writing_equations")):
+            if hours:
+                bonus = -16
+            elif hole or flow:
+                bonus = 10
+        elif "blackboard" in aid_l:
+            # Walking body on the board — Gemini 0.4 on the 88-hours probe.
+            if hours:
+                bonus = 12
+        elif "white_ink" in aid_l:
+            if "поток" in hay:
+                bonus = -22
+            elif flow:
+                bonus = -16
+            elif hours:
+                bonus = 12
+        elif "sand_ripples" in aid_l:
+            if any(token in hay for token in ("вихр", "спагетти", "сингуляр")):
+                bonus = -18
+            elif hours:
+                bonus = 12
+        elif any(token in aid_l for token in ("typing", "desk_code")):
+            if flow:
+                bonus = 14
+            elif any(token in hay for token in ("lean", "код", "проверя")):
+                bonus = -10
     try:
         rank = list(pin_prefer).index(aid)
     except ValueError:

@@ -195,6 +195,14 @@ def test_wrap_lines_does_not_glue_the_next_sentence():
     assert lines[1].startswith("Пункты")
 
 
+def test_wrap_lines_breaks_after_a_comma_clause():
+    from src.p11_assemble.assemble import _wrap_lines
+
+    lines = _wrap_lines("вихрь как спагетти, которое сжимается", width=40)
+    assert any(line.rstrip().endswith(",") for line in lines)
+    assert not any("спагетти, которое" in line for line in lines)
+
+
 def test_logo_brand_close_default_tagline_empty():
     from src.lib.render.hyperframes.templates import _LBC_DEFAULT_TAG, _lbc_copy
     assert _LBC_DEFAULT_TAG == ""

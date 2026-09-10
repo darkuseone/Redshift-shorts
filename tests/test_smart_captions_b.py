@@ -149,6 +149,24 @@ def test_carries_line_drops_the_whole_phrase():
     assert cues == []
 
 
+def test_line_window_kiss_does_not_swallow_the_previous_phrase():
+    """0048: «поток» ended on the next hero start and muted «дэ: трёхмерный»."""
+    words = [
+        {"display": "дэ:", "start": 39.66, "end": 39.92, "block_id": "b4",
+         "emphasis": False},
+        {"display": "трёхмерный", "start": 39.92, "end": 40.37, "block_id": "b4",
+         "emphasis": False},
+        {"display": "поток", "start": 40.37, "end": 40.76, "block_id": "b4",
+         "emphasis": False},
+    ]
+    cues = _build_subtitle_cues(
+        words, punch_windows=[], mute_windows=[],
+        line_windows=[(40.757, 42.87)])
+    shown = [c["display"] for c in cues]
+    assert "трёхмерный" in shown
+    assert "дэ:" in shown or any(c.get("lead") for c in cues)
+
+
 def test_slam_hero_still_mutes_its_own_window():
     from src.p11_assemble.assemble import _caption_mute_windows
 

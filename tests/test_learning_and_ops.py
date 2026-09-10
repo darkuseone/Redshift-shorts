@@ -354,6 +354,39 @@ def test_vision_qc_reads_words_json_not_muted_cues(cfg, tmp_path, monkeypatch):
     assert report["mismatch_share"] == 0.0
 
 
+def test_picture_copy_includes_on_screen_karaoke(cfg, tmp_path, monkeypatch):
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+
+    asked: list[dict] = []
+
+    class _Spy:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            asked.append({"intent": intent, "role": role, "query": query, "kind": kind})
+            return V.VisionVerdict(score=0.9, reason="", summary="кадр", judge="spy")
+
+    frame = tmp_path / "f.jpg"
+    Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
+    monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
+
+    ctx = _ctx(tmp_path, cfg)
+    ctx.write("words.json", {"words": [
+        {"display": "часов", "start": 5.0, "end": 5.5},
+    ]})
+    plan = {
+        "duration_sec": 12.0, "variant": "A",
+        "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "footage",
+                   "role": "evidence", "reason": "доска"}],
+        "subtitles": [{"display": "ВОСЕМЬДЕСЯТ ВОСЕМЬ ЧАСОВ",
+                       "start": 5.0, "end": 7.0}],
+        "overlays": [],
+    }
+    report = run_vision_qc(ctx, video_path=tmp_path / "v.mp4", plan=plan)
+    assert any("ВОСЕМЬДЕСЯТ" in a["query"] for a in asked)
+    assert report["mismatch_share"] == 0.0
+
+
 def test_the_channel_own_captions_are_not_foreign_text(cfg, tmp_path):
     """Субтитр канала — не «текст в кадре» (§11.2.2).
 

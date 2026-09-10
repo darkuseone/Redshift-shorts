@@ -268,7 +268,12 @@ def group_caption_phrases(
                 or prev_disp.endswith((".", "!", "?", "…"))
                 or prev_disp.endswith(('".', "».", ".”", ".'"))
             )
-            if (new_block or baseline_break or sentence_break
+            # Comma/colon after two+ words: «спагетти, которое» used to wrap
+            # as СПАГЕТТИКОТОРОЕ on the same karaoke line (0048).
+            clause_break = bool(
+                current[-1].get("clause_end") and len(current) >= 2
+            )
+            if (new_block or baseline_break or sentence_break or clause_break
                     or gap >= pause_break_sec
                     or len(current) >= max_words):
                 phrases.append(current)
@@ -486,6 +491,9 @@ def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, 
             stripped.endswith((".", "!", "?", "…"))
             or stripped.endswith(('".', "».", ".”", ".'"))
         )
+        clause_end = (not sentence_end) and bool(
+            stripped.endswith((",", ";", ":"))
+        )
         display = prefer_nichem_spelling(subtitle_word(raw_disp, case_mode))
         lead = prefer_nichem_spelling(subtitle_word(str(word.get("lead") or ""), case_mode))
         if lead and any(ch.isdigit() for ch in lead):
@@ -497,6 +505,7 @@ def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, 
         item["display"] = display
         item["lead"] = lead
         item["sentence_end"] = sentence_end
+        item["clause_end"] = clause_end
         visible.append(item)
     return visible
 
@@ -962,12 +971,21 @@ def build_gradient_fill(
         n = len(phrase)
         end, fade_start, fade_dur = phrase_clip_span(
             start, last_end, next_start, fade_sec=params["fade_sec"])
+        if p + 1 < len(phrases):
+            # Exclusive end so even/odd tracks never share a frame at the join
+            # (clip visibility includes both endpoints). One frame at 30 fps.
+            end = min(end, next_start - (1.0 / 30.0))
+            end = max(end, start + 0.05)
+            if fade_dur:
+                fade_start = min(fade_start, end)
 
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
         clip_id = f"gf-{p:02d}"
         group_id = f"{clip_id}-g"
         accent_at = _accent_index(phrase)
-        top = int(_phrase_baseline(phrase, baseline) - size / 2)
+        # Unique y so a leftover even-track glyph cannot sit on the odd line.
+        track_y = 0 if p % 2 == 0 else int(size * 0.42)
+        top = int(_phrase_baseline(phrase, baseline) - size / 2 + track_y)
         word_nodes: list[str] = []
 
         for i, word in enumerate(phrase):

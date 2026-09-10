@@ -781,6 +781,64 @@ def test_stapler_prefers_publish_speech_not_the_deaf_wall():
     assert on_wall > 0
 
 
+def test_white_ink_locks_onto_flow_speech_not_typing():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    flow = {
+        "index": 17, "role": "develop", "asset_role": "broll",
+        "start": 38.1, "end": 40.8,
+    }
+    words = [
+        {"display": "Пункты", "start": 39.05, "end": 39.36},
+        {"display": "трёхмерный", "start": 39.92, "end": 40.37},
+        {"display": "поток", "start": 40.37, "end": 40.76},
+    ]
+    pins = ["fp_white_ink", "fp_typing_hands"]
+    ink, _ = pin_slot_prefer_key("fp_white_ink", flow, pins, words=words)
+    typing, _ = pin_slot_prefer_key("fp_typing_hands", flow, pins, words=words)
+    assert ink < 0
+    assert typing > 0
+
+
+def test_chalkboard_eq_locks_onto_eighty_eight_hours():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    hours = {
+        "index": 12, "role": "evidence", "asset_role": "broll",
+        "start": 26.5, "end": 29.0,
+    }
+    words = [
+        {"display": "агентов", "start": 26.6, "end": 27.1},
+        {"display": "восемьдесят", "start": 27.2, "end": 27.7},
+        {"display": "восемь", "start": 28.2, "end": 28.5},
+        {"display": "часов", "start": 28.5, "end": 28.9},
+    ]
+    pins = ["fp_chalkboard_eq", "fp_blackboard_close"]
+    eq, _ = pin_slot_prefer_key("fp_chalkboard_eq", hours, pins, words=words)
+    body, _ = pin_slot_prefer_key("fp_blackboard_close", hours, pins, words=words)
+    assert eq < 0
+    assert body > 0
+
+
+def test_plaster_leaves_the_hole_in_the_wall_to_cracks():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    twist = {
+        "index": 26, "role": "twist", "asset_role": "interstitial",
+        "start": 62.2, "end": 63.6,
+    }
+    words = [
+        {"display": "дыра", "start": 62.3, "end": 62.7},
+        {"display": "стене", "start": 62.7, "end": 63.1},
+        {"display": "глухой", "start": 63.1, "end": 63.5},
+    ]
+    pins = ["fp_cracked_wall", "fp_plaster_wall"]
+    cracked, _ = pin_slot_prefer_key("fp_cracked_wall", twist, pins, words=words)
+    plaster, _ = pin_slot_prefer_key("fp_plaster_wall", twist, pins, words=words)
+    assert cracked < 0
+    assert plaster > 0
+
+
 def test_hall_inherits_onto_universe_speech():
     from src.p11_assemble.assemble import inherit_ai_plates_onto_speech
 
