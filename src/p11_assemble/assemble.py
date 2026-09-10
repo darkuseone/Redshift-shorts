@@ -4155,7 +4155,8 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
             has_alpha=False, plate_src=plate_src,
             recent_videos=recent_videos, exclude=used_templates,
             seed=seed + int(slot["index"]), picker=picker, variant=variant,
-            block=block, video_duration=float(plan["duration_sec"]))
+            block=block, video_duration=float(plan["duration_sec"]),
+            exclude_renderers=frozenset(_FULL_FRAME_HEROES) | {"hero-oversize"})
         if hero:
             budget.take("card")
             used_templates.append(hero["template"])
