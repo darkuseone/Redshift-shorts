@@ -922,7 +922,7 @@ def _caption_line_windows(
     windows: list[tuple[float, float]] = []
     for shot in shots:
         if shot.get("kind") == "fullscreen_text" and shot.get("content"):
-            windows.append((float(shot["start"]), float(shot["end"])))
+            windows.append(_fs_mute_span(shot))
             continue
         hero = shot.get("hero") or {}
         if hero.get("carries_line") or shot.get("carries_line"):
@@ -947,17 +947,20 @@ def _caption_mute_windows(
     windows: list[tuple[float, float]] = []
     for shot in shots:
         if shot.get("kind") == "fullscreen_text":
-            windows.append((float(shot["start"]), float(shot["end"])))
+            windows.append(_fs_mute_span(shot))
             continue
         hero = shot.get("hero") or {}
         renderer = str(hero.get("renderer") or "")
         bulky = bool(hero.get("covers_frame")) or renderer in _BULKY_HERO_MUTE
-        carries = bool(hero.get("carries_line"))
-        if not bulky and not carries:
+        # Mid-frame type (title-behind, oversize) still covers karaoke.
+        # Behind-head kickers (hero-headline) do not — punch-family mute
+        # drops the overlapping word; the rest of the VO stays captioned.
+        text_zone = renderer in _TEXT_ZONE_HEROES and renderer != "hero-headline"
+        if not bulky and not text_zone:
             continue
         windows.append(_hero_line_span(shot, hero))
     bulky_ovl = {"source_card", "browser", "chatgpt_exchange", "claude_exchange",
-                 "ai_chat_reveal", "app_showcase", "dataviz"}
+                 "ai_chat_reveal", "app_showcase"}
     for ovl in overlays:
         kind = str(ovl.get("type") or "")
         renderer = str(ovl.get("renderer") or "")
@@ -2174,6 +2177,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
             cand_needs = _HERO_NEEDS.get(cand.renderer, ())
             if any(not available.get(key) for key in cand_needs):
                 continue
+            if has_alpha and cand.renderer in _FACE_COVERING_UI:
+                continue
             picked = cand
             break
         if picked is None:
@@ -2213,6 +2218,10 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         # весь кадр: дольше — и это уже не удар, а пауза в ролике.
         entry["duration"] = round(min(float(slot["duration"]),
                                       float(template.duration_range[1])), 3)
+    elif renderer == "hero-headline":
+        # Kicker+word above the crown. A 3 s hold left «МИЛЛИОН» on screen
+        # while the VO had already moved to Poincaré.
+        entry["duration"] = round(min(float(slot["duration"]), 1.5), 3)
     return entry
 
 
@@ -2935,6 +2944,21 @@ def _comparable_stats(nums: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return ranked[:1]
 
 
+_COUNTUP_SCALE_SUFFIX = {"млн": 1e6, "тыс.": 1e3, "тыс": 1e3, "млрд": 1e9}
+
+
+def _countup_suffix(num: dict[str, Any]) -> str:
+    """Avoid «2 000 000 млн» when the value already includes the scale."""
+    raw = str(num.get("suffix") or "").strip()
+    if not raw:
+        return ""
+    key = raw.lower().rstrip(".")
+    scale = _COUNTUP_SCALE_SUFFIX.get(raw) or _COUNTUP_SCALE_SUFFIX.get(key)
+    if scale and abs(float(num.get("value") or 0)) + 1e-6 >= scale:
+        return ""
+    return f" {raw}"
+
+
 def _stats_from_text(text: str) -> list[dict[str, Any]]:
     """Числа из реплики блока. Годы 1900–2100 отбрасываем, если есть другие."""
     found: list[dict[str, Any]] = []
@@ -3651,7 +3675,7 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
             "flows": flows,
         }
     elif name in ("stat-countup-card", "counter-roll") or len(nums) == 1:
-        suffix = f" {nums[0]['suffix']}" if nums[0]["suffix"] else ""
+        suffix = _countup_suffix(nums[0])
         params: dict[str, Any] = {
             "value": nums[0]["value"], "suffix": suffix,
             "label": nums[0]["raw"],
@@ -4509,6 +4533,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     content = soften_on_screen_copy(str(content or ""))
                     if not _claim_screen_phrase(used_screen_phrases, content):
                         content = ""
+                elif str((gap_block.get("overlay") or {}).get("type") or "") == "fullscreen_text":
+                    # Authored punch owns the FS budget for this block.
+                    # Auto «За семнадцать часов» stole the card from СИНГУЛЯРНОСТЬ.
+                    content = ""
                 else:
                     raw = gap_phrase(words_doc["words"], slot, gap_block,
                                      used=used_screen_phrases)
@@ -4672,7 +4700,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                                if float(w["end"]) > float(slot["start"])
                                and float(w["start"]) < float(slot["end"])],
                         head_box=head_boxes.get(int(slot["index"]))),
-                    has_alpha=int(slot["index"]) in alpha_slots,
+                    has_alpha=(int(slot["index"]) in alpha_slots
+                               or slot["kind"] == "avatar"),
                     plate_src=_plate_source(slot, slots, prepared, assets),
                     recent_videos=recent_videos, exclude=used_templates + peer_block,
                     seed=seed, picker=picker, variant=variant, block=block,
@@ -4684,11 +4713,13 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         entry.update({
             "file": prep["dst"],
-            "bg_file": (avatar_bgs.get(int(slot["index"]))
-                        if slot["kind"] == "avatar"
-                        and int(slot["index"]) in alpha_slots
-                        else (str(prep.get("top_src") or "").strip() or None)
-                        if slot["kind"] == "split" else None),
+            "bg_file": (
+                (avatar_bgs.get(int(slot["index"]))
+                 or avatar_bgs.get(int(slot.get("inherit_from") or -1)))
+                if slot["kind"] == "avatar"
+                else (str(prep.get("top_src") or "").strip() or None)
+                if slot["kind"] == "split" else None
+            ),
             "asset_id": asset.get("asset_id") or (f"avatar_seg_{prep.get('avatar_segment')}"
                                                   if is_avatar else None),
             "source": "heygen" if is_avatar else asset.get("source"),

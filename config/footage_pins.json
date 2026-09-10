@@ -51,7 +51,6 @@
     "prefer": [
       "fp_chalkboard_eq",
       "fp_writing_equations",
-      "fp_spaghetti_strands",
       "fp_cracked_wall",
       "fp_server_room",
       "fp_code_editor",
@@ -97,6 +96,7 @@
       "fp_blue_bubbles",
       "fp_river_current",
       "fp_formula_particles",
+      "fp_spaghetti_strands",
       "pexels_v12271136",
       "pexels_v16655793",
       "pexels_v16727463",

@@ -426,6 +426,8 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         f"color:{color};line-height:1.15;white-space:nowrap;"
         f"transform-origin:50% 50%;{shadow}}}"
         ".gf-word svg{display:block;overflow:visible;position:absolute;left:0;top:0;z-index:1}"
+        ".gf-word .lead{font-style:normal;font-size:inherit;font-weight:inherit;"
+        "display:inline;color:inherit;text-shadow:inherit}"
         ".gf-base{display:block}"
         ".gf-wipe-r{transform-origin:0px 50%;transform-box:fill-box}"
         ".gf-ink{font-family:var(--font-display);font-weight:700;"

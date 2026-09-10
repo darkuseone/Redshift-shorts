@@ -87,12 +87,12 @@
       "avatar": "off",
       "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры",
       "broll_queries": [
-        "gpu cluster server aisle datacenter",
-        "formula particles math equation glow",
-        "computer code animation programming screen",
-        "cpp code syntax editor programming",
+        "mathematician writing equations chalkboard lecture",
         "stapling documents paper stack desk",
-        "old books library wooden shelves"
+        "old books library wooden shelves",
+        "gpu cluster server aisle datacenter",
+        "white ink water swirling dark",
+        "hands typing keyboard neon code"
       ],
       "overlay": {
         "type": "highlight",
@@ -113,7 +113,6 @@
       "visual_intent": "Вихрь жидкости сверху, спагетти-метафора, код доказательства на экране",
       "broll_queries": [
         "sand dune ripples wind texture closeup",
-        "spaghetti pasta strands noodles dry",
         "code editor source programming ide",
         "white ink water swirling dark",
         "hands typing keyboard neon code",

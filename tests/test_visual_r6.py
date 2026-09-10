@@ -43,6 +43,14 @@ def test_enrich_expands_short_stub():
     assert "решена" in out.lower()
 
 
+def test_enrich_keeps_long_single_word_punch():
+    assert enrich_overlay_punch(
+        "СИНГУЛЯРНОСТЬ",
+        "За семнадцать часов она переложила его в Lean. "
+        "За конечное время — сингулярность.",
+    ) == "СИНГУЛЯРНОСТЬ"
+
+
 def test_punch_family_overlap_nechem():
     assert punch_families_overlap("ПРОВЕРИТЬ НЕЧЕМ", "нечем")
     assert punch_families_overlap("Вообще ничем", "НЕЧЕМ")

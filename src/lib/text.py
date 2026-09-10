@@ -300,6 +300,11 @@ def enrich_overlay_punch(content: str, block_text: str, *,
     alpha_tokens = [t for t in tokens if len(_bare_word(t)) >= 3 and not t.isdigit()]
     if len(alpha_tokens) >= 2:
         return raw
+    # Long single-word punches already read as the line. Expanding
+    # «СИНГУЛЯРНОСТЬ» picked «За семнадцать часов» from a neighbouring clause.
+    if (len(tokens) == 1 and len(_bare_word(tokens[0])) >= 6
+            and not any(ch.isdigit() for ch in tokens[0])):
+        return raw
     needle = tokens[-1]
     if len(_bare_word(needle)) < 3:
         return raw

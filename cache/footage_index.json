@@ -3487,8 +3487,10 @@
       "vision_summary": "Hourglass sand flowing on a dark background. Tags: hourglass, sand, time, clock, hours.",
       "score": 0.74,
       "duration_sec": 6.52,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "13c4ece31838e78e",
@@ -3553,8 +3555,10 @@
       "vision_summary": "Close-up of rusted metal with bolts. Tags: rust, metal, texture, bolts, wall.",
       "score": 0.74,
       "duration_sec": 6.5,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "32bd0f388e233cb4",
@@ -3586,8 +3590,10 @@
       "vision_summary": "Office analog clock, hands advancing. Tags: clock, time, hours, analog, ticking.",
       "score": 0.74,
       "duration_sec": 6.5,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "33c9c9de93872648",
@@ -3652,8 +3658,10 @@
       "vision_summary": "Cracked concrete surface texture. Tags: cracked, concrete, texture, wall, fissure.",
       "score": 0.74,
       "duration_sec": 6.506,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "e23c7b4d49d4e512",
@@ -3753,8 +3761,10 @@
       "vision_summary": "Corroded wall render with exposed metal mesh. Tags: corroded, wall, mesh, metal, decay, fissure.",
       "score": 0.74,
       "duration_sec": 6.506,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "f6498a304f724ccf",

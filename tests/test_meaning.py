@@ -323,6 +323,13 @@ class TestDatavizOverlayGroundsOnTheNumber:
         assert len(collapsed) == 1
         assert collapsed[0]["value"] == 88.0
 
+    def test_scaled_countup_does_not_double_the_suffix(self):
+        from src.p11_assemble.assemble import _countup_suffix
+
+        assert _countup_suffix({"value": 2_000_000.0, "suffix": "млн"}) == ""
+        assert _countup_suffix({"value": 2.0, "suffix": "млн"}) == " млн"
+        assert _countup_suffix({"value": 17.0, "suffix": ""}) == ""
+
     def test_bar_chart_title_follows_the_spoken_language(self):
         from src.lib.templates import Template
         from src.p11_assemble.assemble import _dataviz_overlay
