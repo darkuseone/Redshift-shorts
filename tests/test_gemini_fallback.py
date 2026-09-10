@@ -192,6 +192,40 @@ def test_vision_fallback_on_403(cfg, monkeypatch, tmp_path):
     assert calls["n"] == 1
 
 
+def test_vision_fallback_on_wrapped_retry_401(cfg, monkeypatch, tmp_path):
+    """call_with_retry прячет status=401 — запасной судья всё равно обязан включиться."""
+    monkeypatch.setenv("GLM_API_KEY", "glm-test-key")
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    cfg.set("providers.mode", "auto")
+    cfg.set("vision.fallback", "grok")
+    provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
+    assert isinstance(provider, FallbackVision)
+
+    frame = tmp_path / "f.jpg"
+    frame.write_bytes(b"\xff\xd8\xff\xd9")
+
+    def boom(*a, **k):
+        inner = ProviderError(
+            "GLM вернул 401", status=401,
+            body='{"error":{"code":"401","message":"token expired or incorrect"}}',
+        )
+        raise ProviderError(
+            "GLM vision: исчерпаны 3 попытки",
+            cause="ProviderError",
+            detail=str(inner)[:500],
+        ) from inner
+
+    def ok(*a, **k):
+        from src.lib.providers.vision import VisionVerdict
+        return VisionVerdict(score=0.81, reason="ok", judge="grok")
+
+    monkeypatch.setattr(provider.primary, "judge", boom)
+    monkeypatch.setattr(provider.secondary, "judge", ok)
+    verdict = provider.judge([frame], intent="x", role="develop", query="q")
+    assert verdict.judge == "grok"
+
+
 def test_primary_never_uses_grok_even_if_allow_xai(cfg, monkeypatch):
     monkeypatch.setenv("GLM_API_KEY", "glm-test-key")
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")

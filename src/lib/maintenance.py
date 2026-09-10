@@ -40,11 +40,18 @@ def run_maintenance(cfg, *, dry_run: bool = True) -> dict[str, Any]:
         removed = evict_lru(storage, max_bytes=max_bytes, protected=protected)
         if removed:
             removed_set = set(removed)
-            index.items = [item for item in index.items if item.file not in removed_set]
+            index.items = [
+                item for item in index.items
+                if item.file not in removed_set or getattr(item, "quarantined", False)
+            ]
             index.save()
 
-    orphans = [item.id for item in index.items
-               if item.file and not storage.exists(item.file)]
+    orphans = [
+        item.id for item in index.items
+        if item.file
+        and not getattr(item, "quarantined", False)
+        and not storage.exists(item.file)
+    ]
     if orphans and not dry_run:
         orphan_set = set(orphans)
         index.items = [item for item in index.items if item.id not in orphan_set]

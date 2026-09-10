@@ -575,6 +575,28 @@ def test_maintenance_removes_orphan_index_entries(cfg, tmp_path, monkeypatch):
     assert "ghost" in report["orphans_removed"]
 
 
+def test_maintenance_keeps_quarantined_orphan_index_rows(cfg, tmp_path, monkeypatch):
+    """Карантин в индексе — замок, даже если файл уже вытеснен с диска."""
+    from src.lib.manifest import AssetRecord, FootageIndex
+
+    index_path = tmp_path / "cache" / "footage_index.json"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index = FootageIndex(index_path)
+    index.add(AssetRecord(id="poison", type="video", source="pexels",
+                          file="pexels/poison.mp4", quarantined=True))
+    index.save()
+
+    monkeypatch.setattr(cfg, "path", lambda dotted, default=None: (
+        tmp_path / "cache" if "cache" in dotted else tmp_path / "store"))
+    cfg.set("storage.local_root", str(tmp_path / "store"))
+    report = run_maintenance(cfg, dry_run=False)
+    assert "poison" not in report["orphans_removed"]
+    kept = FootageIndex(index_path)
+    rec = kept.by_id("poison")
+    assert rec is not None
+    assert rec.quarantined
+
+
 def test_mock_material_never_enters_the_shared_library(tmp_path, cfg):
     """Синтетика мок-прогона в общей базе — чистый вред.
 

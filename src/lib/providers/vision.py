@@ -576,12 +576,23 @@ def _glm_api_key(cfg) -> str | None:
 
 
 def _provider_http_status(exc: BaseException) -> int | None:
-    status = getattr(exc, "details", None) or {}
-    if isinstance(status, dict) and status.get("status") is not None:
-        try:
-            return int(status["status"])
-        except (TypeError, ValueError):
-            return None
+    """HTTP-код с самой ошибки и с ``__cause__``.
+
+    ``call_with_retry`` оборачивает 401 в «исчерпаны 3 попытки» без поля
+    ``status``. Прогон 34497235326: GLM ``token expired``, Grok в цепочке
+    был, но FallbackVision не увидел 401 и не переключился.
+    """
+    seen: set[int] = set()
+    cur: BaseException | None = exc
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        details = getattr(cur, "details", None) or {}
+        if isinstance(details, dict) and details.get("status") is not None:
+            try:
+                return int(details["status"])
+            except (TypeError, ValueError):
+                pass
+        cur = getattr(cur, "__cause__", None) or getattr(cur, "__context__", None)
     return None
 
 
@@ -590,10 +601,21 @@ def _credits_or_auth_failure(exc: BaseException) -> bool:
     status = _provider_http_status(exc)
     if status in (401, 402, 403):
         return True
-    text = str(exc).lower()
-    return any(token in text for token in (
+    details = getattr(exc, "details", None) or {}
+    extra = ""
+    if isinstance(details, dict):
+        extra = f"{details.get('detail', '')} {details.get('body', '')}"
+    text = f"{exc} {extra}".lower()
+    if any(token in text for token in (
         "credit", "credits", "spending limit", "quota", "insufficient",
-        "billing", "payment required",
+        "billing", "payment required", "token expired", "unauthorized",
+        "invalid api key",
+    )):
+        return True
+    return any(marker in text for marker in (
+        "вернул 401", " returned 401", "status': 401", '"status": 401',
+        "вернул 402", " returned 402", "status': 402", '"status": 402',
+        "вернул 403", " returned 403", "status': 403", '"status": 403',
     ))
 
 

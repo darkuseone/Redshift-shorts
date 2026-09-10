@@ -457,6 +457,12 @@ jobs:
           from pathlib import Path
           src, dst = Path(sys.argv[1]), Path(sys.argv[2])
           req = json.loads((src / "avatar_request.json").read_text(encoding="utf-8"))
+          # Look id аватара 5 — из config, не из секрета HEYGEN_AVATAR_ID в work/.
+          from src.lib.config import load_config
+          from src.lib.providers.avatar import resolve_heygen_look_id
+          req["avatar_id"] = resolve_heygen_look_id(load_config())
+          (dst / "avatar_request.json").write_text(
+              json.dumps(req, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           for seg in req.get("segments", []):
               name = f"seg_{int(seg['index']):02d}.wav"
               wav = src / "avatar" / name

@@ -466,6 +466,7 @@ semantic pass: в отчёте `qc_skipped_semantic`, статус не «выд
 | 2026-09-10 | HeyGen generate — `POST /v3/videos`, Avatar V, webm; v2 не шлёт `background: transparent` | прогон 34494945916: ключ живой, v2 отверг transparent; v2 снимут 2026-10-31 |
 | 2026-09-10 | Look id аватара 5 — из config; секрет `HEYGEN_AVATAR_ID` его не подменяет | секрет содержал другой look; заказчик: всегда `99ccc74e…`, всегда Avatar V |
 | 2026-09-10 | 402 на GitHub `HEYGEN_API` → клипы Avatar V по MCP, затем Actions `heygen_source: prepared` | другой кошелёк; Cursor ролик не собирает |
+| 2026-09-10 | GLM 401 после ретрая переключает primary на Grok; карантин индекса не вычищается как orphan | прогон 34497235326: token expired, запасной судья не включился |
 
 
 
