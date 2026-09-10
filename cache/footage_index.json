@@ -1936,7 +1936,8 @@
       "score": 0.82,
       "duration_sec": 5.033,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2006,7 +2007,8 @@
       "score": 0.82,
       "duration_sec": 8.008,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2074,7 +2076,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2179,7 +2182,8 @@
       "score": 0.82,
       "duration_sec": 8.0,
       "used_in": [
-        "redshift_0048"
+        "redshift_0048",
+        "redshift_0049"
       ],
       "last_used": "2026-09-10",
       "added": "2026-09-10",
@@ -2248,8 +2252,10 @@
       "vision_summary": "Dynamic red glowing heartbeat pulse on a black background. Tags: red, heartbeat, pulse, glow, black.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0049"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "18a667999a666d91",
