@@ -1625,12 +1625,24 @@ def _emphasis_spoken_in_slot(
             w_end = float(item.get("end"))
         except (TypeError, ValueError):
             continue
-        # Touching the slot edge is not overlap: the punch word ending at
-        # 45.151 must not feed the following 45.151–48.151 card.
-        if w_end <= start or w_start >= end:
+        # Touching the cut is not overlap. Word end 45.1514 vs slot start
+        # 45.151 is 0.4 ms of rounding, not a second delivery of the punch.
+        overlap = min(w_end, end) - max(w_start, start)
+        if overlap <= 0.05:
             continue
         return True
     return False
+
+
+def _authored_punch_end(plan: dict[str, Any], block_id: str) -> float | None:
+    """End of the authored fullscreen punch in this block, if any."""
+    ends = [
+        float(slot["end"])
+        for slot in (plan.get("slots") or [])
+        if slot.get("authored_punch")
+        and str(slot.get("block_id") or "") == str(block_id or "")
+    ]
+    return max(ends) if ends else None
 
 
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
@@ -4174,21 +4186,20 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     #    `has_alpha=False`: аватара в этом кадре нет, и всё, что рисуется под
     #    ним, оказалось бы за непрозрачным видео. Отбор по `_HERO_NEEDS` сам
     #    отбросит приёмы, которым нечем наполниться.
-    slot_words = [
-        w for w in (words or [])
-        if float(w.get("end") or 0) > float(slot["start"])
-        and float(w.get("start") or 0) < float(slot["end"])
-    ]
-    content = _hero_content(
-        block, slot, brand_icons,
-        title=str(plan.get("title") or ""), words=slot_words)
-    # Card rung is for the spoken emphasis in *this* window. After the
-    # authored punch the remainder still carries the block word, and
-    # hero-split reprinted СИНГУЛЯРНОСТЬ over «вихрь как спагетти».
-    if content.get("word") and budget.allows("card"):
+    punch_end = _authored_punch_end(
+        plan, str((block or {}).get("id") or slot.get("block_id") or ""))
+    after_punch = (
+        punch_end is not None
+        and float(slot["start"]) + 0.05 >= punch_end)
+    # After the authored FS punch the remainder still belongs to this block.
+    # A card here reprinted «Сама Астра / доказательство» over the spaghetti
+    # line. Leave the plate: the punch already spent the card.
+    if (not after_punch and block.get("emphasis_word") and budget.allows("card")):
         hero = _hero_device(
             catalog, slot=slot,
-            content=content,
+            content=_hero_content(
+                block, slot, brand_icons,
+                title=str(plan.get("title") or ""), words=words),
             has_alpha=False, plate_src=plate_src,
             recent_videos=recent_videos, exclude=used_templates,
             seed=seed + int(slot["index"]), picker=picker, variant=variant,

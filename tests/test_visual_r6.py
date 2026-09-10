@@ -147,6 +147,24 @@ def test_hero_word_clears_when_slot_has_no_speech():
         {"display": "сингулярность.", "start": 44.701, "end": 45.151},
     ])
     assert touching["word"] == ""
+    rounding = _hero_content(block, slot, None, words=[
+        {"display": "сингулярность.", "start": 44.7014, "end": 45.1514},
+    ])
+    assert rounding["word"] == ""
+
+
+def test_authored_punch_end_reads_split_slot():
+    from src.p11_assemble.assemble import _authored_punch_end
+
+    plan = {"slots": [
+        {"block_id": "b4", "start": 42.866, "end": 44.001},
+        {"block_id": "b4", "start": 44.001, "end": 45.151, "authored_punch": True},
+        {"block_id": "b4", "start": 45.151, "end": 48.151},
+        {"block_id": "b5", "start": 48.151, "end": 52.0, "authored_punch": True},
+    ]}
+    assert _authored_punch_end(plan, "b4") == 45.151
+    assert _authored_punch_end(plan, "b5") == 52.0
+    assert _authored_punch_end(plan, "b3") is None
 
 
 def test_logo_brand_close_default_tagline_empty():
