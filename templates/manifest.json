@@ -41,7 +41,9 @@
         "flash"
       ],
       "renderer": "fullscreen_text",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0049"
+      ],
       "added": "2026-08-18",
       "frequency": "variant",
       "needs": [
@@ -318,7 +320,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -599,7 +602,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4139,7 +4143,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4183,7 +4188,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
