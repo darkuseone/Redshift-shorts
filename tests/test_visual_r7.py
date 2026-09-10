@@ -56,6 +56,10 @@ def test_plaque_brandbook_is_glass_not_opaque():
     assert float(bb["plaque"]["bg_alpha"]) <= 0.6
     assert int(bb["plaque"].get("glass_blur_px") or 0) >= 12
     assert float(bb["fullscreen_text"]["scrim_alpha"]) <= 0.45
+    from src.lib.render.hyperframes.brand_css import build_css
+    css = build_css(bb, {"display": "Oswald-Bold.ttf"})
+    assert ".plaque.source-chip{" in css
+    assert "max-width:340px" in css
 
 
 def test_invert_fact_and_slam_cards_use_glass_css():
@@ -381,7 +385,49 @@ def test_ticker_plate_is_skipped_for_non_cta_empty_slot():
     assert plate["file"] == "/tmp/lattice.mp4"
 
 
-def test_source_plaque_covers_the_nature_split():
+def test_on_screen_spelling_is_nichem():
+    from src.lib.text import prefer_nichem_spelling, soften_on_screen_copy
+
+    assert prefer_nichem_spelling("НЕЧЕМ") == "НИЧЕМ"
+    assert prefer_nichem_spelling("Проверить нечем") == "Проверить ничем"
+    assert soften_on_screen_copy("НЕЧЕМ") == "НИЧЕМ"
+    out = soften_on_screen_copy("Проверить нечем")
+    assert "ничем" in out.lower()
+    assert "нечем" not in out.lower()
+
+
+def test_script_0042_spells_nichem_on_screen():
+    script = json.loads((ROOT / "scripts/redshift_0042.json").read_text())
+    hook = next(b for b in script["blocks"] if b["id"] == "b1")
+    assert hook["overlay"]["content"] == "НИЧЕМ"
+    twist = next(b for b in script["blocks"] if b["id"] == "b5")
+    assert "ничем" in twist["overlay"]["content"].lower()
+    assert "нечем" not in twist["overlay"]["content"].lower()
+
+
+def test_source_chip_does_not_mute_captions():
+    from src.p11_assemble.assemble import _plaque_covers_captions
+
+    assert not _plaque_covers_captions({
+        "type": "plaque", "template": "lower-thirds/source-domain",
+        "params": {"source_chip": True, "position": "bottom",
+                   "direction": "left"},
+    })
+
+
+def test_source_chip_bbox_is_bottom_left(cfg):
+    from src.lib.render.canvas import overlay_layout_bbox
+
+    box = overlay_layout_bbox({
+        "type": "plaque",
+        "template": "lower-thirds/source-domain",
+        "params": {"source_chip": True},
+    }, cfg.brandbook)
+    assert box[2] - box[0] <= 360
+    assert box[3] - box[1] <= 90
+    assert box[0] <= 90
+    safe = cfg.brandbook["safe_zones"]["work_area"]
+    assert box[3] <= float(safe["y_max"]) + 1e-6
     from src.p11_assemble.assemble import _clamp_end_before_next_avatar
 
     shots = [

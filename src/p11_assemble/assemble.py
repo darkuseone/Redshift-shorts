@@ -866,13 +866,15 @@ _BULKY_HERO_MUTE = frozenset({
 
 
 def _plaque_covers_captions(ovl: dict[str, Any]) -> bool:
-    """Top/note-pin plaques sit above the caption band — do not mute VO."""
+    """Top/note-pin/source-chip plaques sit off the caption band — do not mute VO."""
     params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
     pos = str(params.get("position") or "").lower()
-    if pos in ("top", "tl", "tr"):
+    if pos in ("top", "tl", "tr", "bl", "bottom-left"):
+        return False
+    if params.get("source_chip"):
         return False
     template = str(ovl.get("template") or "")
-    if "note-pin" in template:
+    if "note-pin" in template or "source-domain" in template:
         return False
     return True
 
@@ -3129,8 +3131,11 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             end=plaque_end,
             params={"text": domain, "subtitle": "источник",
                     "name": domain, "role": "источник",
+                    "source_chip": True,
+                    "position": "bottom",
+                    "direction": "left",
                     **{k: v for k, v in plaque_template.params.items()
-                       if k in ("position", "direction", "accent_underline",
+                       if k in ("accent_underline",
                                 "clean_bar", "dark_card")}},
             why="§5.4: плашка с доменом источника",
             enter_ms=enter_ms,
@@ -3174,6 +3179,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         used.append(template.id)
         # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
         content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
+        content = soften_on_screen_copy(content)
         b_start = float(block_slots[0]["start"])
         b_end = float(block_slots[-1]["end"])
         bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
@@ -3297,6 +3303,15 @@ def _dataviz_label(block: dict[str, Any], *,
     return english_fallback
 
 
+def _error_step_series(block: dict[str, Any]) -> list[float] | None:
+    """Error halves each surface-code step — not the 'five minutes' count."""
+    text = f"{block.get('text') or ''} {block.get('heading') or ''}"
+    if re.search(r"ошибк", text, re.I) and re.search(
+            r"вдвое|в два раза|половин", text, re.I):
+        return [100.0, 50.0, 25.0]
+    return None
+
+
 def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
                      blocks: dict[str, Any], picker: TemplatePicker, *,
                      variant: str, seed: int, recent_videos: list[str],
@@ -3375,12 +3390,26 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
         start_v = float(nums[0]["value"])
         end_v = float(nums[1]["value"]) if len(nums) >= 2 else start_v
         block = blocks.get(slot["block_id"], {})
-        params = {
-            "start_value": start_v,
-            "end_value": end_v,
-            "label": _dataviz_label(block),
-            "values": [start_v, end_v],
-        }
+        series = _error_step_series(block)
+        if series:
+            start_v, end_v = series[0], series[-1]
+            params = {
+                "start_value": start_v,
+                "end_value": end_v,
+                "values": series,
+                "label": _dataviz_label(block),
+                "subtitle": "×½ на каждом шаге",
+                "unit": "%",
+                "x_labels": ["шаг 1", "шаг 2", "шаг 3"],
+                "source": "поверхностный код",
+            }
+        else:
+            params = {
+                "start_value": start_v,
+                "end_value": end_v,
+                "label": _dataviz_label(block),
+                "values": [start_v, end_v],
+            }
     elif name == "conic-progress-ring":
         val = float(nums[0]["value"])
         suffix = str(nums[0]["suffix"]) if nums[0].get("suffix") else "%"

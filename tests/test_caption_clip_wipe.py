@@ -55,6 +55,14 @@ def test_fit_group_shrinks_to_work_area():
     assert sum(widths) <= 740
 
 
+def test_fit_group_floor_stays_readable():
+    size, _widths = fit_wipe_group(
+        ["ПРОФЕССИОНАЛЬНОЕ", "ВИДЕО", "СОБИРАЕТСЯ"],
+        max_width=740, base=124, letter_spacing_em=0.02, gap_em=0.18,
+        min_size=52)
+    assert size >= 52
+
+
 def test_fit_group_keeps_long_ru_word_inside_safe_width():
     size, widths = fit_wipe_group(
         ["ЛОГИЧЕСКИЙ"],
@@ -149,6 +157,12 @@ def test_default_caption_is_gradient_fill(cfg):
     assert cfg.brand("subtitles.caption") == "gradient-fill"
     for gesture in ("gradient_fill", "clip_wipe", "camera_follow", "blend_difference"):
         assert cfg.brand(f"subtitles.{gesture}"), f"жест {gesture} пропал из брендбука"
+    from src.lib.render.hyperframes.captions import clip_wipe_params, gradient_fill_params
+    wipe = clip_wipe_params(cfg.brandbook)
+    fill = gradient_fill_params(cfg.brandbook)
+    assert wipe["base_px"] >= 110 and wipe["min_px"] >= 48
+    assert fill["base_px"] >= 110 and fill["min_px"] >= 48
+    assert wipe["max_words"] <= 4 and fill["max_words"] <= 4
 
 
 def test_clip_wipe_paints_digit_lead(cfg):

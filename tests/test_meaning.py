@@ -262,6 +262,10 @@ class TestDatavizOverlayGroundsOnTheNumber:
             start=20.84, end=23.54)
         assert overlay["params"]["label"] == "ОШИБКА"
         assert overlay["params"]["label"] != "Retention"
+        assert overlay["params"]["values"] == [100.0, 50.0, 25.0]
+        assert overlay["params"]["unit"] == "%"
+        assert "½" in overlay["params"]["subtitle"]
+        assert overlay["params"]["x_labels"] == ["шаг 1", "шаг 2", "шаг 3"]
 
 
 class TestTheTransitionAnswersToWhatItIntroduces:

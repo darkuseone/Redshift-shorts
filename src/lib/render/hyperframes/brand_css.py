@@ -352,6 +352,11 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".plaque .kicker{display:block;font-size:28px;"
         f"color:var(--color-{str(plaque.get('kicker', 'muted')).replace('_', '-')});"
         "margin-top:8px;font-weight:700}"
+        # Source chip: compact credit, always bottom-left — not a hero card.
+        ".plaque.source-chip{right:auto;width:max-content;max-width:340px;"
+        f"bottom:{height - int(safe['y_max']) + 24}px;padding:8px 14px;"
+        "border-radius:14px;font-size:22px;font-weight:700;line-height:1.15}"
+        ".plaque.source-chip .kicker{font-size:14px;margin-top:2px;font-weight:600}"
     )
     # Карточка источника прижимается снизу к полосе субтитров, а не ставится по
     # верхней координате: высота у неё content-driven, и при длинном заголовке

@@ -47,7 +47,7 @@
       ],
       "overlay": {
         "type": "fullscreen_text",
-        "content": "НЕЧЕМ",
+        "content": "НИЧЕМ",
         "template_hint": "text-fullscreen/impact-02"
       },
       "sfx": "hit_impact",
@@ -126,7 +126,7 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "Проверить нечем",
+        "content": "Проверить ничем",
         "template_hint": "lower-thirds/note-pin"
       },
       "sfx": "sub_drop",

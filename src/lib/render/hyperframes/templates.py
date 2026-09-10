@@ -3873,6 +3873,18 @@ def _dcl_spec(params: dict[str, Any]) -> tuple[float, float, str] | None:
     return start, end, label
 
 
+def _dcl_fmt(value: float, unit: str = "") -> str:
+    if abs(value - round(value)) < 1e-6:
+        body = str(int(round(value)))
+    else:
+        body = f"{value:.1f}".rstrip("0").rstrip(".")
+    return f"{body}{unit}"
+
+
+def _dcl_vb_y(vb_y: float) -> float:
+    return _DCL_PLOT_TOP + (float(vb_y) / _DCL_VB_H) * _DCL_PLOT_H
+
+
 def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
     """Линия рисуется вниз, число считает вниз, фон темнеет.
 
@@ -3888,6 +3900,20 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
     if spec is None:
         return Piece()
     start_value, end_value, label = spec
+    unit = str(ctx.params.get("unit") or "").strip()
+    subtitle = str(ctx.params.get("subtitle") or "").strip()
+    source = str(ctx.params.get("source") or "").strip()
+    raw_x = ctx.params.get("x_labels") or ctx.params.get("xLabels") or []
+    x_labels = [str(item).strip() for item in raw_x if str(item).strip()] if isinstance(raw_x, (list, tuple)) else []
+    series_vals: list[float] = []
+    raw_values = ctx.params.get("values")
+    if isinstance(raw_values, (list, tuple)):
+        for item in raw_values:
+            parsed = _dcl_num(item)
+            if parsed is not None:
+                series_vals.append(parsed)
+    if len(series_vals) < 2:
+        series_vals = [start_value, end_value]
     node_id = f"dcl-{ctx.index:02d}"
     times = _dcl_times(ctx.duration)
     start = ctx.start
@@ -3997,6 +4023,46 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
 
     value_left = 1080 - _DCL_PAD_X - _DCL_VALUE_W
     label_top = _DCL_PAD_TOP + _DCL_HEADER_H - _DCL_LABEL_SIZE
+    extra: list[str] = []
+    if source:
+        extra.append(
+            f'<div class="dcl-src" data-layout-allow-overlap="" '
+            f'style="left:{_DCL_PAD_X}px;top:{_DCL_PAD_TOP}px">'
+            f'{_esc(source)}</div>')
+    if subtitle:
+        extra.append(
+            f'<div class="dcl-sub" data-layout-allow-overlap="" '
+            f'style="left:{_DCL_PAD_X}px;top:{_DCL_PAD_TOP + 36}px">'
+            f'{_esc(subtitle)}</div>')
+    step_bits: list[str] = []
+    for i, val in enumerate(series_vals):
+        if i:
+            step_bits.append('<i>→</i>')
+        cls = " now" if i == len(series_vals) - 1 else ""
+        step_bits.append(f'<span class="dcl-step{cls}">{_esc(_dcl_fmt(val, unit))}</span>')
+    extra.append(
+        f'<div class="dcl-steps" data-layout-allow-overlap="" '
+        f'style="left:{_DCL_PAD_X}px;top:{label_top + 48}px">'
+        f'{"".join(step_bits)}</div>')
+    if unit:
+        extra.append(
+            f'<div class="dcl-unit" data-layout-allow-overlap="" '
+            f'style="left:{value_left}px;top:{_DCL_PAD_TOP + _DCL_HEADER_H - 28}px">'
+            f'{_esc(unit)}</div>')
+    tick_vals = (start_value, (start_value + end_value) / 2.0, end_value)
+    for vb_y, tick in zip((55.0, 120.0, 185.0), tick_vals):
+        extra.append(
+            f'<div class="dcl-ytick" data-layout-allow-overlap="" '
+            f'style="left:{_DCL_PLOT_LEFT}px;top:{_dcl_vb_y(vb_y) - 18:.1f}px">'
+            f'{_esc(_dcl_fmt(tick, unit))}</div>')
+    if len(x_labels) >= 2:
+        span = max(1, len(x_labels) - 1)
+        for i, xlab in enumerate(x_labels):
+            x = _DCL_PLOT_LEFT + (i / span) * _DCL_PLOT_W
+            extra.append(
+                f'<div class="dcl-xlab" data-layout-allow-overlap="" '
+                f'style="left:{x:.1f}px;top:{_DCL_PLOT_TOP + _DCL_PLOT_H - 48}px">'
+                f'{_esc(xlab)}</div>')
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay dcl-chart" {_timing(ctx)}>'
                f'<div class="dcl-bg"></div>'
@@ -4008,6 +4074,7 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
                f'<div id="{vid}" class="dcl-cv" data-layout-allow-overlap="" '
                f'style="left:{value_left}px;top:{_DCL_PAD_TOP}px">'
                f'{"".join(spans)}</div>'
+               f'{"".join(extra)}'
                f'<div class="dcl-plot">'
                f'<svg viewBox="0 0 260 240" preserveAspectRatio="none" '
                f'aria-hidden="true">'
@@ -6418,6 +6485,26 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "color:rgba(226,232,240,0.72);font-size:38px;font-weight:600;"
         "letter-spacing:0.05em;line-height:1.1;text-overflow:ellipsis;"
         "text-transform:uppercase;white-space:nowrap}"
+        ".dcl-sub{position:absolute;width:580px;color:rgba(226,232,240,0.55);"
+        "font-size:26px;font-weight:600;letter-spacing:0.04em;line-height:1.2;"
+        "white-space:nowrap}"
+        ".dcl-src{position:absolute;width:580px;color:rgba(148,163,184,0.72);"
+        "font-size:20px;font-weight:600;letter-spacing:0.08em;line-height:1.2;"
+        "text-transform:uppercase;white-space:nowrap}"
+        ".dcl-steps{position:absolute;width:640px;color:rgba(248,250,252,0.88);"
+        "font-size:32px;font-weight:700;letter-spacing:0.02em;line-height:1.2;"
+        "font-variant-numeric:tabular-nums;white-space:nowrap}"
+        ".dcl-steps i{font-style:normal;padding:0 10px;color:rgba(148,163,184,0.7);"
+        "font-weight:600}"
+        ".dcl-steps .now{color:#fecdd3}"
+        ".dcl-unit{position:absolute;width:80px;color:rgba(248,250,252,0.72);"
+        "font-size:36px;font-weight:700;text-align:right;line-height:1}"
+        ".dcl-ytick{position:absolute;width:160px;color:rgba(226,232,240,0.55);"
+        "font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;"
+        "letter-spacing:0.02em;line-height:1}"
+        ".dcl-xlab{position:absolute;width:180px;margin-left:-90px;text-align:center;"
+        "color:rgba(226,232,240,0.55);font-size:24px;font-weight:600;"
+        "letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}"
         f".dcl-cv{{position:absolute;width:{_DCL_VALUE_W}px;"
         f"height:{_DCL_HEADER_H}px;"
         "color:#f8fafc;font-family:Inter,system-ui,sans-serif;"
