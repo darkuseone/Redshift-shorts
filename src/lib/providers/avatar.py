@@ -14,6 +14,7 @@ Mock: локальный рендер говорящей фигуры, у кот
 from __future__ import annotations
 
 import math
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -31,6 +32,22 @@ from ..retry import call_with_retry
 from .base import Provider, ProviderMode, resolve_mode
 
 _log = get_logger("avatar")
+
+# libmagic на PCM WAV часто даёт audio/x-wav. HeyGen 400543 сравнивает
+# заголовок со снятым типом: «audio/wav != audio/x-wav» — это не отказ ключа.
+HEYGEN_AUDIO_CONTENT_TYPE = "audio/x-wav"
+_HEYGEN_CONTENT_TYPE_MISMATCH = re.compile(
+    r"Content type not match\s+([\w.+-]+/[\w.+-]+)\s+!=\s+([\w.+-]+/[\w.+-]+)",
+    re.IGNORECASE,
+)
+
+
+def heygen_sniffed_audio_type(body: str) -> str | None:
+    """Тип, который HeyGen снял с байтов файла (правая сторона 400543)."""
+    match = _HEYGEN_CONTENT_TYPE_MISMATCH.search(body or "")
+    if not match:
+        return None
+    return match.group(2)
 
 
 @dataclass
@@ -196,12 +213,16 @@ class HeyGenAvatar(AvatarProvider):
     def _upload_audio(self, path: Path) -> str:
         import requests
 
-        def _call() -> str:
-            resp = requests.post(
+        payload = path.read_bytes()
+
+        def _post(content_type: str):
+            return requests.post(
                 "https://upload.heygen.com/v1/asset",
-                data=path.read_bytes(),
-                headers={"x-api-key": self.api_key, "Content-Type": "audio/wav"},
+                data=payload,
+                headers={"x-api-key": self.api_key, "Content-Type": content_type},
                 timeout=self._timeout())
+
+        def _asset_url(resp) -> str:
             if resp.status_code >= 400:
                 raise ProviderError(f"HeyGen upload вернул {resp.status_code}",
                                     status=resp.status_code, body=resp.text[:300])
@@ -210,6 +231,21 @@ class HeyGenAvatar(AvatarProvider):
             if not url:
                 raise ProviderError("HeyGen upload не вернул ссылку на ассет")
             return str(url)
+
+        def _call() -> str:
+            content_type = HEYGEN_AUDIO_CONTENT_TYPE
+            resp = _post(content_type)
+            if resp.status_code >= 400:
+                sniffed = heygen_sniffed_audio_type(resp.text)
+                if sniffed and sniffed != content_type:
+                    # 400543: заголовок не совпал со снятым типом. Это MIME,
+                    # не 401 — MCP не вызываем, повторяем с тем типом, который
+                    # сервис уже прочитал из файла.
+                    _log.info("HeyGen upload: повтор с MIME файла", extra={
+                        "sent": content_type, "sniffed": sniffed,
+                    })
+                    resp = _post(sniffed)
+            return _asset_url(resp)
 
         return call_with_retry(_call, **self._retry_kwargs("HeyGen upload"))
 

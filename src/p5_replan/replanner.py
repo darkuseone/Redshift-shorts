@@ -27,7 +27,7 @@ from ..lib.beats import annotate_slots
 from ..lib.logging import get_logger
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
-    sync_overlays_from_script,
+    sync_avatar_directive_from_script, sync_overlays_from_script,
 )
 
 _log = get_logger("p5")
@@ -452,27 +452,61 @@ class _AvatarConversion:
     def candidates(self) -> list[int]:
         return [i for i in range(len(self.slots)) if self.is_candidate(i)]
 
+    def _merges_with(self, neighbor: Slot, kind: str, block_id: str) -> bool:
+        """Сосед входит в то же появление — без новой генерации HeyGen.
+
+        Сплит к сплиту того же блока: верх кадра и так меняется. Полнокадровый
+        аватар к такому же в том же блоке: иначе недобор 0.5 сек (0049) нельзя
+        закрыть — plan() требовал новые 3 сек с нуля, а свободный кусок короче.
+        Разные блоки не сливаются: там §7.4.3 всё равно поставит перебивку.
+        """
+        if neighbor.block_id != block_id:
+            return False
+        if neighbor.kind == "split" and kind == "split":
+            return True
+        return neighbor.kind == kind == "avatar"
+
     def span(self, group: list[int]) -> float:
         """Длина появления, если слоты group сольются в один аватарный слот.
 
-        Слипание засчитывается только там, где §7.4.3 не потребует перебивку:
-        внутри одного блока и только между двумя сплитами. Иначе аватар соседа
-        отделён перебивкой и в это появление не входит.
+        Слипание засчитывается только там, где §7.4.3 не потребует перебивку.
         """
         slots = self.slots
         block_id = slots[group[0]].block_id
         kind = self._target_kind(block_id)
         start, end = slots[group[0]].start, slots[group[-1]].end
         left, right = group[0] - 1, group[-1] + 1
-        if (left >= 0 and slots[left].kind == "split" and kind == "split"
-                and slots[left].block_id == block_id
-                and abs(slots[left].end - start) < 1e-6):
+        if (left >= 0 and abs(slots[left].end - start) < 1e-6
+                and self._merges_with(slots[left], kind, block_id)):
             start = slots[left].start
-        if (right < len(slots) and slots[right].kind == "split" and kind == "split"
-                and slots[right].block_id == block_id
-                and abs(slots[right].start - end) < 1e-6):
+        if (right < len(slots) and abs(slots[right].start - end) < 1e-6
+                and self._merges_with(slots[right], kind, block_id)):
             end = slots[right].end
         return end - start
+
+    def _absorb_neighbors(self, group: list[int]) -> list[int]:
+        """Включить в группу соседей, которых span() уже считает тем же появлением.
+
+        Иначе apply() оставляет два полнокадровых слота подряд, и перебивка
+        вырежет из аватара больше, чем добор только что вернул.
+        """
+        kind = self._target_kind(self.slots[group[0]].block_id)
+        block_id = self.slots[group[0]].block_id
+        group = sorted(group)
+        changed = True
+        while changed:
+            changed = False
+            left, right = group[0] - 1, group[-1] + 1
+            if (left >= 0 and abs(self.slots[left].end - self.slots[group[0]].start) < 1e-6
+                    and self._merges_with(self.slots[left], kind, block_id)):
+                group = [left, *group]
+                changed = True
+            if (right < len(self.slots)
+                    and abs(self.slots[group[-1]].end - self.slots[right].start) < 1e-6
+                    and self._merges_with(self.slots[right], kind, block_id)):
+                group = [*group, right]
+                changed = True
+        return group
 
     def _grow(self, group: list[int]) -> bool:
         """Дотянуть группу соседним футажом того же блока до минимума появления."""
@@ -492,17 +526,19 @@ class _AvatarConversion:
         group = [i]
         while self.span(group) < self.appearance_min and self._grow(group):
             pass
+        group = self._absorb_neighbors(group)
         if not self.appearance_min <= self.span(group) <= self.appearance_max:
             return None
-        # 0.60 * 20 сек даёт 11.999…, не 12: без допуска ровно на потолке
-        # доли новое появление отбрасывается, хотя в коридор оно входит.
-        if sum(self.slots[j].duration for j in group) > headroom + 1e-6:
+        # В долю идёт только новый футаж: уже живой аватар в группе — не расход.
+        added = sum(self.slots[j].duration for j in group
+                    if self.slots[j].kind not in AVATAR_KINDS)
+        if added > headroom + 1e-6:
             return None
         return group
 
     def extends_existing(self, group: list[int]) -> bool:
         """Прирастает ли группа к уже существующему появлению, не создавая нового."""
-        return self.span(group) > sum(self.slots[j].duration for j in group) + 1e-6
+        return any(self.slots[j].kind in AVATAR_KINDS for j in group)
 
     def apply(self, group: list[int], reason: str, notes: list[str]) -> None:
         """Слить группу в один аватарный слот.
@@ -1097,6 +1133,7 @@ def compute_stats(slots: list[Slot], duration: float) -> dict[str, Any]:
 def run_step(ctx) -> dict[str, Any]:
     draft = ctx.read("draft_plan.json")
     sync_overlays_from_script(draft, ctx.cfg.repo_root)
+    sync_avatar_directive_from_script(draft, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
 
     built = build_slots(draft, words_doc, ctx.cfg)

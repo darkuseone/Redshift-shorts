@@ -347,6 +347,33 @@ def punch_families_overlap(a: str, b: str) -> bool:
     return bool(punch_stems(a) & punch_stems(b))
 
 
+def _authored_script_blocks(
+        plan: dict[str, Any],
+        repo_root=None,
+        script: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
+    """Блоки ``scripts/<video_id>.json`` — чтобы P5/P11 не жили на stale P0."""
+    import json
+    from pathlib import Path
+
+    if script is None:
+        meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
+        video_id = str(plan.get("video_id") or meta.get("video_id") or "").strip()
+        if not video_id or repo_root is None:
+            return {}
+        path = Path(repo_root) / "scripts" / f"{video_id}.json"
+        if not path.is_file():
+            return {}
+        try:
+            script = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            return {}
+    return {
+        str(block.get("id") or ""): block
+        for block in (script.get("blocks") or [])
+        if isinstance(block, dict)
+    }
+
+
 def sync_overlays_from_script(
         plan: dict[str, Any],
         repo_root=None,
@@ -358,26 +385,9 @@ def sync_overlays_from_script(
     «СИНГУЛЯРНОСТЬ». Enrich then parked the punch on «семнадцать часов».
     Authored type/content/hint win; other overlay keys stay.
     """
-    import json
-    from pathlib import Path
-
-    if script is None:
-        meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
-        video_id = str(plan.get("video_id") or meta.get("video_id") or "").strip()
-        if not video_id or repo_root is None:
-            return 0
-        path = Path(repo_root) / "scripts" / f"{video_id}.json"
-        if not path.is_file():
-            return 0
-        try:
-            script = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError, TypeError):
-            return 0
-    src_blocks = {
-        str(block.get("id") or ""): block
-        for block in (script.get("blocks") or [])
-        if isinstance(block, dict)
-    }
+    src_blocks = _authored_script_blocks(plan, repo_root, script)
+    if not src_blocks:
+        return 0
     updated = 0
     for block in plan.get("blocks") or []:
         if not isinstance(block, dict):
@@ -398,6 +408,34 @@ def sync_overlays_from_script(
                 changed = True
         if changed:
             block["overlay"] = current
+            updated += 1
+    return updated
+
+
+def sync_avatar_directive_from_script(
+        plan: dict[str, Any],
+        repo_root=None,
+        *,
+        script: dict[str, Any] | None = None) -> int:
+    """``avatar: off`` из P1 не должен переживать правку сценария.
+
+    0049: доля 34.2 % при QC-2 ≥35 %. Develop был ``off``, добирать было
+    нечем — свободные слоты только в запрещённых блоках и перебивках.
+    ``auto`` в сценарии даёт P5 взять кусок футажа, не переозвучивая.
+    """
+    src_blocks = _authored_script_blocks(plan, repo_root, script)
+    if not src_blocks:
+        return 0
+    updated = 0
+    for block in plan.get("blocks") or []:
+        if not isinstance(block, dict):
+            continue
+        src = src_blocks.get(str(block.get("id") or ""))
+        if not src or "avatar" not in src:
+            continue
+        directive = str(src.get("avatar") or "auto")
+        if block.get("avatar_directive") != directive:
+            block["avatar_directive"] = directive
             updated += 1
     return updated
 

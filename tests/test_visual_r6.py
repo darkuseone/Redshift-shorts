@@ -235,6 +235,18 @@ def test_sync_overlays_from_script_restores_punch():
     assert plan["blocks"][0]["overlay"]["content"] == "СИНГУЛЯРНОСТЬ"
 
 
+def test_sync_avatar_directive_from_script_lifts_stale_off():
+    from src.lib.text import sync_avatar_directive_from_script
+
+    plan = {
+        "video_id": "redshift_0049",
+        "blocks": [{"id": "b4", "avatar_directive": "off"}],
+    }
+    script = {"blocks": [{"id": "b4", "avatar": "auto"}]}
+    assert sync_avatar_directive_from_script(plan, script=script) == 1
+    assert plan["blocks"][0]["avatar_directive"] == "auto"
+
+
 def test_script_overlay_beats_stale_hours_punch():
     """Stale «88 ЧАСОВ» must not park the card on «семнадцать часов»."""
     from src.lib.text import sync_overlays_from_script
