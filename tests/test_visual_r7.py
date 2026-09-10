@@ -356,11 +356,12 @@ def test_nasa_plate_is_skipped_for_empty_slot_bg(tmp_path):
     assert _plate_source(slots[1], slots, prepared, assets) is None
 
 
-def test_compose_zoom_unchanged_for_0042_r7():
-    # Steering: do not touch avatar/zoom this run (native 9:16 is NEXT videos).
+def test_compose_zoom_plus_ten_percent_for_0049():
+    # Owner: avatar +10% vs 2.7. MUST-009 still clamps to face_band / captions.
     import yaml
     cfg = yaml.safe_load((ROOT / "config/config.yaml").read_text())
-    assert float(cfg["heygen"]["compose_zoom"]) == 2.7
+    zoom = float(cfg["heygen"]["compose_zoom"])
+    assert abs(zoom - 2.7 * 1.1) < 0.02
 
 
 def test_ticker_plate_is_skipped_for_non_cta_empty_slot():

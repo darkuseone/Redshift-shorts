@@ -222,7 +222,7 @@
     "gradient_fill": {
       "base_px": 144,
       "min_px": 84,
-      "max_words": 5,
+      "max_words": 4,
       "pause_break_sec": 0.60,
       "letter_spacing_em": 0.02,
       "gap_em": 0.18,
@@ -235,7 +235,7 @@
       "enter_sec": 0.6,
       "rise_em": 0.42,
       "fade_sec": 0.25,
-      "max_words": 5,
+      "max_words": 4,
       "mode": "difference"
     },
     "camera_follow": {
@@ -264,7 +264,7 @@
       "flash_sec": 0.05,
       "dim_sec": 0.2,
       "hold_sec": 0.5,
-      "max_words": 5,
+      "max_words": 4,
       "pause_break_sec": 0.60,
       "letter_spacing_em": 0.02,
       "gap_em": 0.18,

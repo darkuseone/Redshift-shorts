@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "video_id": "redshift_0049",
+    "title": "OpenAI закрыла одну из семи задач математики",
+    "topic": "OpenAI: доказательство по уравнениям Навье-Стокса простым языком",
+    "category": "ai",
+    "language": "ru",
+    "target_duration_sec": 68,
+    "allow_memes": false,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-09-10",
+    "music_mood": "tense",
+    "cta": true,
+    "notes": "Пересъём 0048: живой хук, Никита live, не mock/prepared. Практика и вау, не жаргон с первой секунды.",
+    "hook": {
+      "on_screen": "ФУРОР",
+      "style": "blackout_word"
+    }
+  },
+  "sources": [
+    {
+      "title": "On the Navier–Stokes Millennium Prize Problem",
+      "domain": "openai.com",
+      "url": "https://openai.com/index/navier-stokes-solution/",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "published": "8 сентября 2026",
+      "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство. Астра за семнадцать часов переложила его в Lean.",
+      "highlight_line": "сильнее GPT-6 Astra"
+    },
+    {
+      "title": "Millennium Prize Problems",
+      "domain": "claymath.org",
+      "url": "https://www.claymath.org/millennium-problems/",
+      "show_on_screen": false,
+      "screen_template": "search",
+      "snippet": "Семь задач тысячелетия. Миллион долларов за каждую. Навье-Стокс в списке с двухтысячного года."
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "OpenAI произвела фурор.",
+      "emphasis_word": "фурор",
+      "avatar": "off",
+      "visual_intent": "Удар: официальный кадр OpenAI или статья, огромное слово ФУРОР. Не штукатурка и не мох.",
+      "broll_queries": [
+        "openai logo headquarters building",
+        "computer science research lab screens",
+        "supercomputer data center aisle lights"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ФУРОР",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "emotion"
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "В математике новой моделью закрыла одну из семи задач, которые четверть века никто не брал. Миллион долларов за каждую. Это не мелки на доске. Это формулы, по которым считают воду, воздух и кровь.",
+      "emphasis_word": "миллион",
+      "avatar": "on",
+      "visual_intent": "Ведущий с энергией называет ставку. За головой — семь и миллион. Потом живая вода, не абстрактная доска.",
+      "broll_queries": [
+        "water flowing glass slow motion",
+        "wind tunnel airplane wing smoke",
+        "weather radar storm screen",
+        "blood cells microscope flow"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "$1 000 000",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A",
+      "emphasis_family": "number"
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Восьмого сентября две тысячи двадцать шесть OpenAI выкладывает работу. Искал не чат, а внутренняя модель сильнее GPT-шесть Астра. Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений.",
+      "emphasis_word": "Астра",
+      "avatar": "off",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "broll_queries": [
+        "hands typing keyboard code editor",
+        "gpu cluster server aisle datacenter",
+        "research paper document desk",
+        "code editor source programming ide"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "сильнее GPT-6 Astra",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "source_ref": "openai.com",
+      "mode_hint": "C",
+      "emphasis_family": "source"
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Сама Астра доказательство не искала. Семнадцать часов она переложила его в Lean — язык, где компьютер проверяет каждый шаг, как касса проверяет чек. Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода, крыло самолёта, трубы в доме, ток крови. Если формула врёт — самолёт не извиняется.",
+      "emphasis_word": "Lean",
+      "avatar": "off",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "broll_queries": [
+        "weather radar storm satellite",
+        "airplane wing in flight clouds",
+        "industrial pipes water plant",
+        "blood flow medical animation microscope",
+        "code editor proof lean theorem"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ПОГОДА · САМОЛЁТ · КРОВЬ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "data_beep",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "Только приз Клея — за уравнения без внешней силы. Этот пункт они не закрыли. Клей решение не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия. Это первая дыра в стене, которую четверть века считали глухой.",
+      "emphasis_word": "дыра",
+      "avatar": "on",
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "broll_queries": [
+        "cracked concrete wall fissure closeup",
+        "clay mathematics institute building",
+        "stone wall texture crack light"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "sub_drop",
+      "answers_hook": true,
+      "mode_hint": "A",
+      "emphasis_family": "myth"
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Какую из оставшихся шести разберём следующей?",
+      "emphasis_word": "шести",
+      "avatar": "on",
+      "visual_intent": "Ведущий кивает на продолжение, кнопка подписки в последние две секунды.",
+      "broll_queries": [
+        "open notebook mathematics desk",
+        "city night lights traffic flow"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "mode_hint": "A",
+      "emphasis_family": "emotion"
+    }
+  ],
+  "cta": {
+    "text": "Какую из оставшихся шести разберём следующей?",
+    "type": "part2_cliff"
+  }
+}

@@ -38,9 +38,10 @@ HEYGEN_MCP_HOW_TO = (
     "Озвучка уже ElevenLabs в поле audio каждого сегмента — не синтезировать "
     "голосом HeyGen. Если HTTP API (секрет HEYGEN_API) недоступен: HeyGen MCP "
     "create_video_from_avatar, avatar_id = look id (не avatar_group_id), "
-    "engine {type: avatar_v}, audio_asset из wav сегмента. Генерировать только "
-    "эти сегменты, не весь ролик. Положить клипы в clips_dir под expected_clip "
-    "и возобновить прогон с --from P6."
+    "engine {type: avatar_v}, audio_asset из wav сегмента, motionPrompt из "
+    "заявки (энергичнее жесты). expressiveness не слать — это Avatar IV. "
+    "Генерировать только эти сегменты, не весь ролик. Положить клипы в "
+    "clips_dir под expected_clip и возобновить прогон с --from P6."
 )
 
 
@@ -198,6 +199,7 @@ def run_step(ctx) -> dict[str, Any]:
             "avatar_group_id": cfg.get("heygen.avatar_group_id"),
             "engine": cfg.get("heygen.engine", "avatar_v"),
             "model_version": cfg.get("heygen.model_version"),
+            "motion_prompt": cfg.get("heygen.motion_prompt") or "",
             "audio_source": "elevenlabs",
             "generate_full_timeline": False,
             "clips_dir": str(cfg.path("heygen.prepared_dir", "assets/avatar_clips")

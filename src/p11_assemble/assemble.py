@@ -820,7 +820,7 @@ class VisualBudget:
 
     # Потолки на ролик. `fullscreen` берётся из брендбука (`fs_cap`), поэтому
     # здесь его нет: у него уже есть свой источник правды.
-    CAPS = {"card": 4, "dataviz": 2, "source": 3, "parallax": 3, "plate": 2}
+    CAPS = {"card": 4, "dataviz": 3, "source": 3, "parallax": 3, "plate": 2}
 
     def allows(self, rung: str) -> bool:
         return int(getattr(self, rung, 0)) < int(self.CAPS.get(rung, 0))
@@ -923,9 +923,16 @@ def _caption_line_windows(
 ) -> list[tuple[float, float]]:
     """Windows where a card carries the spoken line — mute the whole phrase."""
     windows: list[tuple[float, float]] = []
+    hook_fs_blocks: set[Any] = set()
     for shot in shots:
         if shot.get("kind") == "fullscreen_text" and shot.get("content"):
-            windows.append(_fs_mute_span(shot))
+            # Karaoke under the same line as the slam is «раздвоение».
+            # Mute the whole FS shot, not just the 1.6 s beat.
+            windows.append((float(shot["start"]), float(shot["end"])))
+            if shot.get("role") == "hook" or shot.get("hook"):
+                bid = shot.get("block_id")
+                if bid:
+                    hook_fs_blocks.add(bid)
             continue
         hero = shot.get("hero") or {}
         if hero.get("carries_line") or shot.get("carries_line"):
@@ -933,6 +940,17 @@ def _caption_line_windows(
                 windows.append(_hero_line_span(shot, hero))
             else:
                 windows.append((float(shot["start"]), float(shot["end"])))
+    # Hook FS is ~1 s; the spoken hook keeps going on B-roll. Mute karaoke
+    # for the rest of that block so «ФУРОР» does not sit on «произвела фурор».
+    if hook_fs_blocks:
+        for bid in hook_fs_blocks:
+            members = [s for s in shots if s.get("block_id") == bid]
+            if not members:
+                continue
+            windows.append((
+                min(float(s["start"]) for s in members),
+                max(float(s["end"]) for s in members),
+            ))
     for ovl in overlays:
         params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
         kind = str(ovl.get("type") or "")

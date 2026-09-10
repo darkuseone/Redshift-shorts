@@ -271,17 +271,17 @@ class ElevenLabsTTS(TTSProvider):
 
         ``stability`` у ElevenLabs — это ровность, а не качество: чем выше, тем
         монотоннее читает. На 0.45 речь выходила плоской — измеренный разброс
-        громкости готового ролика 2.0 LU, то есть почти ровная линия, и на слух
-        «неживо». Ниже — шире интонационный размах, но растёт риск, что модель
-        уведёт произношение; 0.30 — та граница, где размах уже слышен, а голос
-        ещё узнаётся.
+        громкости готового ролика 2.0 LU. Ниже — шире интонация.
+
+        ``eleven_v3`` принимает только 0 / 0.5 / 1. Промежуточное 0.30
+        прижималось к 0.5 («естественный») — снова плоский голос. Дефолт
+        конфига 0.0, чтобы v3 оставался в «творческом» шаге.
 
         ``style`` усиливает манеру исходного голоса, ``use_speaker_boost``
-        держит тембр ближе к клону. Оба параметра раньше не отправлялись вовсе,
-        и сервис применял свои значения по умолчанию.
+        держит тембр ближе к клону.
         """
         node = self.cfg.get("elevenlabs.voice_settings", {}) or {}
-        stability = float(node.get("stability", 0.30))
+        stability = float(node.get("stability", 0.0))
         if model.startswith("eleven_v3"):
             # Прижимаем к ближайшему разрешённому, а не падаем: конфиг
             # настраивают на слух под основную модель, и запрет одной из них
@@ -291,7 +291,7 @@ class ElevenLabsTTS(TTSProvider):
         settings: dict[str, Any] = {
             "stability": stability,
             "similarity_boost": float(node.get("similarity_boost", 0.85)),
-            "style": float(node.get("style", 0.45)),
+            "style": float(node.get("style", 0.58)),
             "use_speaker_boost": bool(node.get("use_speaker_boost", True)),
             "speed": speed,
         }

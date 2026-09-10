@@ -165,6 +165,28 @@ def test_default_caption_is_gradient_fill(cfg):
     assert wipe["max_words"] <= 4 and fill["max_words"] <= 4
 
 
+def test_caption_phrases_share_one_baseline_not_a_second_row(cfg):
+    """Even/odd tracks used to sit 0.42·size apart — that read as doubled subs."""
+    from src.lib.render.hyperframes.captions import build_gradient_fill
+
+    plan = {
+        "subtitles": [
+            {"display": "раз", "start": 0.0, "end": 0.3, "block_id": "b1"},
+            {"display": "два", "start": 0.3, "end": 0.5, "block_id": "b1"},
+            {"display": "три", "start": 1.4, "end": 1.7, "block_id": "b1"},
+            {"display": "четыре", "start": 1.7, "end": 2.0, "block_id": "b1"},
+        ],
+        "subtitle_style": {"baseline_y": 1180},
+    }
+    nodes, _tweens, _count = build_gradient_fill(plan, cfg.brandbook, duration=5.0)
+    blob = "".join(nodes)
+    tops = [int(v) for v in re.findall(r"top:(\d+)px", blob)]
+    assert len(tops) >= 2
+    # Odd track used to add 0.42·size (~60 px at 144 px type). That is the
+    # doubled row. Same-baseline tops may differ by half a size-step, not 60.
+    assert max(tops) - min(tops) < 40, tops
+
+
 def test_clip_wipe_paints_digit_lead(cfg):
     from src.lib.render.hyperframes.captions import build_clip_wipe
 
@@ -213,10 +235,11 @@ def test_consecutive_clip_wipe_groups_hard_kill_previous(cfg):
     # Exclusive clip end: first group must not hold through the next start.
     first_dur = float(re.search(r'id="cw-00"[^>]*data-duration="([\d.]+)"', nodes[0]).group(1))
     assert first_dur < 2.0
-    # Unique y so even/odd leftovers cannot occupy the same baseline.
+    # Same baseline: a y-shift stacked two caption rows («раздвоение»).
+    # Leftovers are killed by exclusive clip end + opacity-0, not by a second line.
     tops = [int(v) for v in re.findall(r"top:(\d+)px", "\n".join(nodes))]
     assert len(tops) == 2
-    assert tops[0] != tops[1]
+    assert abs(tops[0] - tops[1]) < 40, tops
 
 
 def test_clip_wipe_hold_stops_before_plaque(cfg):

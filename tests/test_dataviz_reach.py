@@ -101,7 +101,7 @@ class TestTheChartBudgetIsTwo:
 
     def test_the_cap_matches_the_ladder_budget(self):
         """Потолок один на оба пути: и на лестницу, и на общий проход."""
-        assert VisualBudget.CAPS["dataviz"] == 2
+        assert VisualBudget.CAPS["dataviz"] == 3
 
     def test_the_two_paths_share_one_counter(self):
         """Лестница и общий проход считают в один счётчик, а не в два.

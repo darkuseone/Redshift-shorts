@@ -75,12 +75,13 @@ heygen:
   # In-compose zoom for prepared Avatar V plates where the subject sits
   # small in 9:16 (desk-wide look). Applied at shot prepare AND as CSS size
   # on HyperFrames alpha avatars (object-fit path ignored compose_zoom before).
-  # Does not rewrite assets/avatar_clips. Measured seg_00 subject ~30% tall →
-  # 3.75 was face-filling / too tight on 0042 QA. 2.7 is the requested ceiling
-  # only — MUST-009 fit_compose_zoom clamps it to face_band_y / caption safe
-  # (bottom 400). Do not raise it to "make the face larger" if that enters
-  # the subtitle strip.
-  compose_zoom: 2.7
+  # Does not rewrite assets/avatar_clips. 2.7 → 2.97 = +10% (заказчик, 0049).
+  # MUST-009 fit_compose_zoom всё ещё жмёт к face_band_y / caption safe
+  # (bottom 400): если лицо лезет в полосу субтитров, фактический зум меньше.
+  compose_zoom: 2.97
+  # Avatar V: естественный язык жестов. expressiveness здесь нельзя —
+  # это поле Avatar IV / photo. HTTP v2 generate его не шлёт; заявка MCP — да.
+  motion_prompt: "energetic talking-head: lively face, slightly bigger hand gestures, lean into the point, not frantic, not frozen"
   max_seconds_per_video: 42
   api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"
@@ -118,12 +119,13 @@ elevenlabs:
   # Ниже этой полосы прогон пишет предупреждение: значит, упёрлись в тариф.
   min_bandwidth_hz: 14000
   # Характер подачи. Подбирается на слух, поэтому живёт здесь, а не в коде.
-  # stability — ровность чтения: ниже значит шире интонационный размах.
-  # На 0.45 разброс громкости готового ролика был 2.0 LU — ровная линия.
+  # stability — ровность: ниже = живее. eleven_v3 принимает только 0 / 0.5 / 1
+  # и код прижимает к ближайшему. 0.30 уезжал в 0.5 («естественный» = плоский).
+  # 0.0 — «творческий»: шире интонация, как просил заказчик на 0049.
   voice_settings:
-    stability: 0.30
+    stability: 0.0
     similarity_boost: 0.85
-    style: 0.45
+    style: 0.58
     use_speaker_boost: true
   # Темп речи ведущего относительно базового. 1.1 — на десятую быстрее: так
   # просил заказчик. Вместе со скоростью на ту же долю сдвигается плановая

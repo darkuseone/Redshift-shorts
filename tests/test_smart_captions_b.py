@@ -117,7 +117,7 @@ def test_sparse_mute_drops_only_muted_words():
         "Чем", "кубитов", "связке", "падает", "вселенная"]
 
 
-def test_fullscreen_mutes_the_slam_beat_not_the_whole_hold():
+def test_fullscreen_line_mute_covers_the_whole_shot():
     from src.p11_assemble.assemble import (
         FS_MUTE_SEC, _caption_line_windows, _caption_mute_windows,
     )
@@ -125,7 +125,20 @@ def test_fullscreen_mutes_the_slam_beat_not_the_whole_hold():
     shots = [{"kind": "fullscreen_text", "start": 8.0, "end": 10.5,
               "content": "РАБОТА ОПУБЛИКОВАНА В NATURE", "params": {}}]
     assert _caption_mute_windows(shots, []) == [(8.0, 8.0 + FS_MUTE_SEC)]
-    assert _caption_line_windows(shots, []) == [(8.0, 8.0 + FS_MUTE_SEC)]
+    assert _caption_line_windows(shots, []) == [(8.0, 10.5)]
+
+
+def test_hook_fullscreen_mutes_karaoke_for_the_whole_hook_block():
+    from src.p11_assemble.assemble import _caption_line_windows
+
+    shots = [
+        {"kind": "fullscreen_text", "start": 0.0, "end": 0.93, "content": "ФУРОР",
+         "role": "hook", "block_id": "b1", "hook": True, "params": {}},
+        {"kind": "footage", "start": 0.93, "end": 3.2, "role": "hook",
+         "block_id": "b1"},
+    ]
+    windows = _caption_line_windows(shots, [])
+    assert any(s <= 0.01 and e >= 3.19 for s, e in windows)
 
 
 def test_title_behind_carries_line_mutes_its_window():
