@@ -10,52 +10,12 @@
   ],
   "segments": [
     {
-      "index": 0,
-      "audio": "/workspace/work/redshift_0048/avatar/seg_00.wav",
-      "duration_sec": 4.245,
-      "block_id": "b2",
-      "text": "Две тысячи год. Институт Клей вешает семь задач тысячелетия. Миллион",
-      "expected_clip": "seg_00.mov"
-    },
-    {
-      "index": 1,
-      "audio": "/workspace/work/redshift_0048/avatar/seg_01.wav",
-      "duration_sec": 3.199,
-      "block_id": "b2",
-      "text": "за каждую. Пуанкаре закрыли. Остальные висели",
-      "expected_clip": "seg_01.mov"
-    },
-    {
-      "index": 2,
-      "audio": "/workspace/work/redshift_0048/avatar/seg_02.wav",
-      "duration_sec": 3.216,
-      "block_id": "b2",
-      "text": "том числе уравнения Навье-Стокса — как течёт жидкость.",
-      "expected_clip": "seg_02.mov"
-    },
-    {
-      "index": 3,
-      "audio": "/workspace/work/redshift_0048/avatar/seg_03.wav",
-      "duration_sec": 3.859,
-      "block_id": "b5",
-      "text": "Но приз Клея — за уравнения без внешней силы. Пункты а и бэ всё",
-      "expected_clip": "seg_03.mov"
-    },
-    {
-      "index": 4,
-      "audio": "/workspace/work/redshift_0048/avatar/seg_04.wav",
-      "duration_sec": 3.467,
-      "block_id": "b5",
-      "text": "решение не принял. OpenAI миллион не берёт.",
-      "expected_clip": "seg_04.mov"
-    },
-    {
-      "index": 5,
-      "audio": "/workspace/work/redshift_0048/avatar/seg_05.wav",
-      "duration_sec": 5.352,
-      "block_id": "b5",
-      "text": "Астра решила всё ». Три дня — первая дыра в стене, которую четверть века считали глухой. Машинам",
-      "expected_clip": "seg_05.mov"
+      "index": 6,
+      "audio": "/workspace/work/redshift_0048/avatar/seg_06.wav",
+      "duration_sec": 4.372,
+      "block_id": "b6",
+      "text": "Машинам можно отдавать задачи на миллион? Жми да или нет.",
+      "expected_clip": "seg_06.mov"
     }
   ],
   "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы в clips_dir под именами expected_clip и возобновить прогон с шага P6."

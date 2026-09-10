@@ -975,16 +975,44 @@ def test_chat_window_appears_only_on_a_real_question():
 
 
 def test_chat_window_fires_once_per_script():
-    """Плотность: по одному вопросу на сценарий, и все — в блоке призыва."""
+    """Плотность: по одному окну переписки на сценарий — в блоке призыва.
+
+    Хук ``question_flash`` держит вопрос на весь кадр. Это не окно чата, знак
+    вопроса в первой реплике для него законен.
+    """
     import glob
     import json
 
     from src.p11_assemble.assemble import _question
 
     for path in sorted(glob.glob("scripts/redshift_00*.json")):
-        blocks = json.load(open(path, encoding="utf-8"))["blocks"]
+        data = json.load(open(path, encoding="utf-8"))
+        blocks = data["blocks"]
         asking = [b["id"] for b in blocks if _question(b["text"])]
+        hook = (data.get("meta") or {}).get("hook") or {}
+        if hook.get("style") == "question_flash":
+            asking = [i for i in asking if i != "b1"]
         assert len(asking) == 1, f"{path}: окон переписки {len(asking)}, ждали одно"
+        assert asking[0] == blocks[-1]["id"], f"{path}: вопрос не в призыве"
+
+
+def test_generation_window_stays_silent_on_current_scripts():
+    """Окно генерации молчит, пока сценарий не про генерацию картинки.
+
+    Категория ``ai`` может говорить «GPT» в репортаже — это не промпт. Окно
+    всё равно не ставим: у 0048 на этом месте статья OpenAI в браузере.
+    """
+    import glob
+    import json
+
+    from src.p11_assemble.assemble import _gen_prompt
+
+    for path in sorted(glob.glob("scripts/redshift_00*.json")):
+        data = json.load(open(path, encoding="utf-8"))
+        if (data.get("meta") or {}).get("category") == "ai":
+            continue
+        blocks = data["blocks"]
+        assert not [b["id"] for b in blocks if _gen_prompt(b)], path
 
 
 # --- окно генерации: только там, где речь о генерации -------------------------
@@ -1005,18 +1033,6 @@ def test_generation_window_needs_the_topic_not_the_length():
     assert _gen_prompt(block).islower()
     assert _gen_prompt({"text": "Модель Вселенной пересобрали дважды."}) == ""
     assert _gen_prompt({"text": ""}) == ""
-
-
-def test_generation_window_stays_silent_on_current_scripts():
-    """Ни один сценарий репозитория не про ИИ — и окна генерации в них нет."""
-    import glob
-    import json
-
-    from src.p11_assemble.assemble import _gen_prompt
-
-    for path in sorted(glob.glob("scripts/redshift_00*.json")):
-        blocks = json.load(open(path, encoding="utf-8"))["blocks"]
-        assert not [b["id"] for b in blocks if _gen_prompt(b)], path
 
 
 # --- акцент в полноэкранной фразе --------------------------------------------
