@@ -118,7 +118,9 @@ def run_step(ctx) -> dict[str, Any]:
     draft = ctx.read("draft_plan.json")
     prepared = prepared_voice_dir(ctx)
     force_paid = bool(ctx.cfg.get("pipeline.force_paid", False))
-    if prepared is not None and not force_paid:
+    mode = str(ctx.cfg.get("providers.mode", "auto")).lower()
+    # Mock CI и юнит-тесты сами синтезируют. Prepared-кэш — только auto/live.
+    if prepared is not None and not force_paid and mode != "mock":
         prepared_draft = read_json_or(prepared / "draft_plan.json", {}) or {}
         current = _spoken_key(draft.get("blocks") or [])
         cached = _spoken_key((prepared_draft or {}).get("blocks") or [])

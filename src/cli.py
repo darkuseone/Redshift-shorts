@@ -47,6 +47,7 @@ def enforce_paid_rerun_guard(cfg, args, *, video_id: str) -> None:
         return
     voice = _voice_seed_path(cfg, video_id)
     if not voice.is_file():
+        cfg.set("pipeline.paid_skipped", False)
         return
     source = str(cfg.get("heygen.source", "prepared")).lower()
     cfg.set("heygen.source", "prepared")

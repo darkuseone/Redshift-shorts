@@ -55,6 +55,8 @@ def test_speech_digits_stay_digits_on_screen():
     assert "$2.4" in displays
     assert "12%" in displays
     assert "2024" in displays
+    assert "млрд" in displays
+    assert "1 000 000 000" not in displays
     assert "сто пять" not in displays
     assert "двенадцать процентов" not in displays
 

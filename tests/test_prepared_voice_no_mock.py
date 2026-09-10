@@ -7,7 +7,7 @@ import json
 import numpy as np
 import pytest
 
-from src.errors import MockTtsForbidden
+from src.errors import SpeechChangedNewVideo
 from src.lib import audio as A
 from src.lib.cache import StepCache
 from src.lib.config import load_config
@@ -84,7 +84,7 @@ def test_combat_build_rejects_stale_prepared_voice(tmp_path):
     ctx = _ctx(tmp_path, cfg)
     write_json(ctx.work_dir / "draft_plan.json",
                _draft("Этот ответ невозможно проверить. Ничем."))
-    with pytest.raises(MockTtsForbidden):
+    with pytest.raises(SpeechChangedNewVideo):
         p2(ctx)
 
 

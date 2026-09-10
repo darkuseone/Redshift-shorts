@@ -23,6 +23,10 @@ from ..lib.jsonio import read_json
 from ..lib.logging import get_logger
 from ..lib.endings import last_ending_type, next_ending_type, repeats_previous
 from ..lib.render.number_display import extract_fact_numbers, has_money_number
+from ..lib.schema import (
+    CTA_LEGACY, SCRIPT_SCHEMA, count_words, estimate_block_duration,
+    estimate_script_duration, extract_quotes,
+)
 
 _log = get_logger("p0")
 

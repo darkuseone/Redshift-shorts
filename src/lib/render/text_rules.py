@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from .number_display import format_number_display, number_word_to_digit_display
 
+TRAILING_PUNCTUATION = ",.!?;:—–…«»\"'()"
+
 
 def clean_word(word: str) -> str:
     """Убрать краевую пунктуацию: на экране слово, а не кусок предложения."""

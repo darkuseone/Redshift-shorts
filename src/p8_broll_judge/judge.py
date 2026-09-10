@@ -198,6 +198,8 @@ def _engine_gate_reason(candidate: dict[str, Any], *, pin_deny: set[str],
 
 def _tally_vision(name: str, counters: dict[str, int]) -> None:
     blob = str(name or "").lower()
+    if "mock" in blob:
+        return
     if "grok" in blob:
         counters["grok"] += 1
     elif "glm" in blob:
