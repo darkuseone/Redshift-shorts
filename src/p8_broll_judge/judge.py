@@ -339,6 +339,12 @@ def _leftover_prefer_key(asset_id: str, slot: dict[str, Any],
     return pin_slot_prefer_key(asset_id, slot, pin_prefer, words=words)
 
 
+def _prefer_penalized(asset_id: str, slot: dict[str, Any], pin_prefer: list[str],
+                      words: list[dict[str, Any]] | None) -> bool:
+    """True when this prefer pin is scored as a mismatch on the slot."""
+    return _leftover_prefer_key(asset_id, slot, pin_prefer, words)[0] > 0
+
+
 def _rebalance_prefers_onto_speech(
         *, accepted: dict[int, dict[str, Any]],
         pin_prefer: list[str], slots_by_index: dict[int, dict[str, Any]],
@@ -348,11 +354,25 @@ def _rebalance_prefers_onto_speech(
     Exclusive P7 assignment can park the Nature figure on a later evidence
     split and the ticker on «работа опубликована в Nature». Swapping does not
     change AI screen time: both slots stay the same length.
+
+    A swap that would land a pin on a penalized slot is refused: the ticker
+    used to leave evidence (+12) for the interstitial (+8) because 8 < 12,
+    then the drop pass unaccepted it and left the twist cut empty.
     """
-    if len(accepted) < 2 or not pin_prefer:
+    if not pin_prefer:
         return 0
     swaps = 0
     prefer_set = set(pin_prefer)
+    fill_roles = ("broll", "evidence", "meme", "interstitial")
+
+    def _empty_destinations() -> list[int]:
+        return [
+            int(idx) for idx, slot in slots_by_index.items()
+            if int(idx) not in accepted
+            and slot.get("needs_asset")
+            and slot.get("asset_role") in fill_roles
+        ]
+
     indices = [idx for idx in accepted
                if str(accepted[idx].get("asset_id") or "") in prefer_set]
     improved = True
@@ -374,27 +394,44 @@ def _rebalance_prefers_onto_speech(
                 )
                 if after >= before:
                     continue
-                if _hook_mismatch(aid_a, slot_b, pin_prefer, words) or \
-                        _hook_mismatch(aid_b, slot_a, pin_prefer, words):
+                if _prefer_penalized(aid_a, slot_b, pin_prefer, words) or \
+                        _prefer_penalized(aid_b, slot_a, pin_prefer, words):
                     continue
                 accepted[idx_a], accepted[idx_b] = accepted[idx_b], accepted[idx_a]
                 accepted[idx_a]["slot_index"] = int(idx_a)
                 accepted[idx_b]["slot_index"] = int(idx_b)
                 swaps += 1
                 improved = True
+
+    # Occupied-only swaps cannot park the ticker on an empty CTA. Move a
+    # penalized pin onto the empty slot whose speech it actually matches.
+    for idx in list(accepted):
+        aid = str(accepted[idx].get("asset_id") or "")
+        if aid not in prefer_set:
+            continue
+        slot = slots_by_index.get(int(idx), {})
+        cur = _leftover_prefer_key(aid, slot, pin_prefer, words)[0]
+        best_idx: int | None = None
+        best_sc = cur
+        for dest_idx in _empty_destinations():
+            dest = slots_by_index.get(int(dest_idx), {})
+            sc = _leftover_prefer_key(aid, dest, pin_prefer, words)[0]
+            if sc >= best_sc or sc > 0:
+                continue
+            best_idx = int(dest_idx)
+            best_sc = sc
+        if best_idx is None:
+            continue
+        accepted[best_idx] = accepted.pop(idx)
+        accepted[best_idx]["slot_index"] = int(best_idx)
+        swaps += 1
     return swaps
 
 
 def _hook_mismatch(asset_id: str, slot: dict[str, Any], pin_prefer: list[str],
                    words: list[dict[str, Any]] | None) -> bool:
-    """True when moving this pin onto the hook would be off-theme."""
-    try:
-        start = float(slot.get("start") or 0.0)
-    except (TypeError, ValueError):
-        start = 0.0
-    if str(slot.get("role") or "") != "hook" and start >= 3.0:
-        return False
-    return _leftover_prefer_key(asset_id, slot, pin_prefer, words)[0] >= 0
+    """True when this pin does not belong on the destination slot."""
+    return _prefer_penalized(asset_id, slot, pin_prefer, words)
 
 
 def _drop_mismatched_prefers(
@@ -729,6 +766,14 @@ def run_step(ctx) -> dict[str, Any]:
 
         if best is None:
           for candidate in gated:
+            if _prefer_rank(candidate.get("asset_id"), pin_prefer) is not None \
+                    and _prefer_penalized(
+                        str(candidate.get("asset_id") or ""), slot,
+                        pin_prefer, words):
+                # Prefer pins with a positive speech penalty (ticker on
+                # evidence / hook) must not sneak in via skip_live scoring.
+                # Leftover fill parks them on the spoken money/CTA window.
+                continue
             # Материал из локальной базы уже оценивался — платить второй раз
             # за тот же кадр нельзя (§7.2.1, идемпотентность §7.6). Но оценка
             # принадлежит паре «кадр + смысл слота», а не кадру: судья отвечал

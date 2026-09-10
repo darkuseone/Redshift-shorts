@@ -733,6 +733,11 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
                   assets: dict[int, dict[str, Any]], ctx, plan: dict[str, Any]
                   ) -> str | None:
     """Prepared dst, nearest non-NASA plate, or a brand grid — never invent text."""
+    inherit = slot.get("inherit_from")
+    if inherit is not None:
+        inherited = prepared.get(int(inherit))
+        if inherited is not None and inherited.get("dst"):
+            return str(inherited["dst"])
     prep = prepared.get(slot["index"])
     if prep is not None and prep.get("dst"):
         asset = assets.get(slot["index"])
@@ -2116,6 +2121,8 @@ def apply_ai_carves(slots: list[dict[str, Any]],
         rest["duration"] = round(end - rest["start"], 3)
         rest["needs_asset"] = True
         rest["reason"] = "остаток слота после окна AI-prefer"
+        rest["carve_remainder"] = True
+        rest["inherit_from"] = idx
         rest["events"] = [
             ev for ev in (rest.get("events") or [])
             if float(ev.get("t") or 0) >= float(rest["start"]) - 1e-6
@@ -3553,6 +3560,15 @@ _LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
                                       "source_card"})
 
 
+def _block_gap_fullscreen(slot: dict[str, Any]) -> bool:
+    """Carve remainders must not become need-less red FS (QC-21 / QC-30).
+
+    The spoken AI window already used the 10 % budget; the leftover 0.9 s
+    used to pick ``text-fullscreen/fact-card`` with empty ``grounded_on``.
+    """
+    return bool(slot.get("carve_remainder"))
+
+
 def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                       budget: VisualBudget, picker: TemplatePicker,
                       catalog: TemplateCatalog, plan: dict[str, Any],
@@ -3645,13 +3661,20 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     # варианта — настоящая картинка из библиотеки; сгенерированную сюда не
     # берём, у неё своя мерка доли AI.
     still = (plate_src and not plate_src.get("ai_generated")) or bool(bg_file)
-    if still and float(slot["duration"]) >= 1.5 and budget.allows("parallax"):
+    # Avatar interstitials are 1.4 s by cut rules; the 1.5 s gate sent them
+    # to a need-less red fullscreen and blew QC-21 / QC-30 on 0042.
+    reason = str(slot.get("reason") or "")
+    interstitial = (
+        slot.get("asset_role") == "interstitial" or "перебивка" in reason)
+    parallax_min = 1.35 if interstitial else 1.5
+    if still and float(slot["duration"]) >= parallax_min and budget.allows("parallax"):
         budget.take("parallax")
         return "parallax", None, {
             "type": "motion", "start": float(slot["start"]),
             "end": float(slot["end"]), "renderer": "parallax",
             "shift_pct": 0.04,
-            "why": "лестница §7.2, ступень 4: есть кадр под приём и слот ≥ 1.5 с",
+            "why": "лестница §7.2, ступень 4: есть кадр под приём и слот ≥ "
+                   f"{parallax_min:g} с",
         }
 
     # 1. Карточка-ключ — акцентное слово блока, по возможности с медиа. Идёт
@@ -4108,7 +4131,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 shots.append(entry)
                 continue
             content = ""
-            if fs_count < fs_cap:
+            if fs_count < fs_cap and not _block_gap_fullscreen(slot):
                 raw = gap_phrase(words_doc["words"], slot, gap_block,
                                  used=used_screen_phrases)
                 content = soften_on_screen_copy(str(raw or ""))

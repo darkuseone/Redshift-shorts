@@ -421,6 +421,158 @@ def test_press_beats_ticker_on_nature_speech(monkeypatch):
     assert result["accepted"]["0"]["asset_id"] != "pexels_v38431825"
 
 
+def test_ticker_does_not_empty_the_lattice_interstitial(monkeypatch):
+    """Rebalance must not swap ticker onto the twist cut, then drop it.
+
+    Evidence +12 → interstitial +8 looks like an improvement. After the drop
+    pass the interstitial was empty and became a red fullscreen (QC-21/30).
+    Lattice stays on the cut; ticker waits for «деньги».
+    """
+    from src.lib.manifest import AssetRecord
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", True)
+    cfg.set("stock.same_asset_max_slots", 1)
+
+    class _PinIndex:
+        def __init__(self):
+            self._items = {
+                "press_21bc8e2d72": AssetRecord(
+                    id="press_21bc8e2d72", type="image", source="press",
+                    license="fair-use-quote",
+                    url_origin="https://www.nature.com/articles/s41586-024-08449-y",
+                    tags=["nature", "quantum", "figure"],
+                    vision_summary="Nature figure: Willow error-correction charts",
+                    score=0.86, duration_sec=0.0, width=685, height=271,
+                    file="press/press_21bc8e2d72.jpg"),
+                "pexels_v35003022": AssetRecord(
+                    id="pexels_v35003022", type="video", source="pexels",
+                    license="Pexels License",
+                    url_origin="https://www.pexels.com/video/gold-lattice-35003022/",
+                    tags=["lattice", "quantum"],
+                    vision_summary="gold quantum lattice",
+                    score=0.88, duration_sec=8.0, width=1080, height=1920,
+                    file="pexels/pexels_v35003022.mp4"),
+                "pexels_v38431825": AssetRecord(
+                    id="pexels_v38431825", type="video", source="pexels",
+                    license="Pexels License",
+                    url_origin="https://www.pexels.com/video/stock-market-ticker-38431825/",
+                    tags=["ticker", "finance"],
+                    vision_summary="stock market ticker numbers",
+                    score=0.92, duration_sec=8.0, width=1080, height=1920,
+                    file="pexels/pexels_v38431825.mp4"),
+            }
+
+        def by_id(self, asset_id):
+            return self._items.get(asset_id)
+
+        def mark_used(self, *a, **k):
+            return None
+
+        def add(self, record):
+            return record
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _PinIndex()))
+
+    slots = [
+        {
+            "index": 2, "kind": "footage", "role": "setup",
+            "asset_role": "interstitial", "needs_asset": True,
+            "visual_intent": "Ведущий представляет тему",
+            "start": 6.6, "end": 8.0, "block_id": "b2",
+            "reason": "перебивка между аватар-сегментами (§7.4.3, R-3)",
+        },
+        {
+            "index": 3, "kind": "split", "role": "evidence",
+            "asset_role": "evidence", "needs_asset": True,
+            "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
+            "start": 8.0, "end": 10.52, "block_id": "b3",
+        },
+        {
+            "index": 4, "kind": "split", "role": "evidence",
+            "asset_role": "evidence", "needs_asset": True,
+            "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
+            "start": 10.52, "end": 13.04, "block_id": "b3",
+        },
+        {
+            "index": 15, "kind": "footage", "role": "cta",
+            "asset_role": "broll", "needs_asset": True,
+            "visual_intent": "Финальный кадр, кнопка подписки",
+            "start": 40.79, "end": 44.51, "block_id": "b6",
+        },
+    ]
+    candidates = [
+        _candidate(2, "pexels_v35003022", score=0.88),
+        _candidate(2, "pexels_v38431825", score=0.92),
+        _candidate(3, "press_21bc8e2d72", score=0.80),
+        _candidate(3, "pexels_v38431825", score=0.92),
+        _candidate(4, "pexels_v38431825", score=0.92),
+    ]
+    for row in candidates:
+        if row["asset_id"].startswith("press_"):
+            row["tags"] = ["nature", "quantum", "figure"]
+            row["url_origin"] = "https://www.nature.com/articles/s41586-024-08449-y"
+            row["vision_summary"] = "Nature figure"
+        elif "38431825" in row["asset_id"]:
+            row["tags"] = ["ticker", "finance"]
+            row["url_origin"] = "https://www.pexels.com/video/stock-market-ticker-38431825/"
+            row["vision_summary"] = "stock market ticker numbers"
+        else:
+            row["tags"] = ["lattice", "quantum"]
+            row["url_origin"] = "https://www.pexels.com/video/gold-lattice-35003022/"
+            row["vision_summary"] = "gold quantum lattice"
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "redshift_0042", "candidates": candidates},
+        {"video_id": "redshift_0042", "category": "ai", "duration_sec": 44.5,
+         "slots": slots},
+        words={"words": [
+            {"display": "квантовый", "start": 6.8, "end": 7.3},
+            {"display": "опубликована", "start": 8.4, "end": 8.9},
+            {"display": "Nature", "start": 9.12, "end": 9.57},
+            {"display": "внутри", "start": 11.0, "end": 11.4},
+            {"display": "деньги", "start": 42.6, "end": 43.0},
+        ]},
+    )
+    run_step(ctx)
+    accepted = ctx.written["accepted_assets.json"]["accepted"]
+    assert accepted["2"]["asset_id"] == "pexels_v35003022"
+    assert accepted["3"]["asset_id"] == "press_21bc8e2d72"
+    assert accepted["15"]["asset_id"] == "pexels_v38431825"
+    assert accepted.get("4", {}).get("asset_id") != "pexels_v38431825"
+    assert accepted["2"]["asset_id"] != "pexels_v38431825"
+
+
+def test_rebalance_refuses_a_penalized_destination():
+    from src.p8_broll_judge.judge import _rebalance_prefers_onto_speech
+
+    pin_prefer = ["pexels_v35003022", "pexels_v38431825"]
+    accepted = {
+        2: {"asset_id": "pexels_v35003022", "slot_index": 2},
+        4: {"asset_id": "pexels_v38431825", "slot_index": 4},
+    }
+    slots = {
+        2: {"index": 2, "asset_role": "interstitial", "start": 6.6, "end": 8.0,
+            "needs_asset": True},
+        4: {"index": 4, "asset_role": "evidence", "start": 10.52, "end": 13.04,
+            "needs_asset": True},
+        15: {"index": 15, "asset_role": "broll", "start": 40.79, "end": 44.51,
+             "needs_asset": True, "role": "cta"},
+    }
+    words = [{"display": "деньги", "start": 42.6, "end": 43.0}]
+    swapped = _rebalance_prefers_onto_speech(
+        accepted=accepted, pin_prefer=pin_prefer,
+        slots_by_index=slots, words=words)
+    assert swapped >= 1
+    assert accepted[2]["asset_id"] == "pexels_v35003022"
+    assert 4 not in accepted
+    assert accepted[15]["asset_id"] == "pexels_v38431825"
+
+
 def test_supercomputer_carves_onto_spoken_slot(monkeypatch):
     """Hall clip covers «суперкомпьютеру» without blowing the 10 % AI cap."""
     from src.lib.manifest import AssetRecord
@@ -527,7 +679,17 @@ def test_apply_ai_carves_splits_the_spoken_window():
     assert out[1]["start"] == out[0]["end"]
     assert out[1]["end"] == 28.88
     assert out[1]["index"] != 10
+    assert out[1]["carve_remainder"] is True
+    assert out[1]["inherit_from"] == 10
     assert all(float(ev["t"]) < out[0]["end"] for ev in out[0]["events"])
+
+
+def test_carve_remainder_blocks_gap_fullscreen():
+    from src.p11_assemble.assemble import _block_gap_fullscreen
+
+    assert _block_gap_fullscreen({"carve_remainder": True}) is True
+    assert _block_gap_fullscreen({"reason": "перебивка между аватар-сегментами"}) is False
+    assert _block_gap_fullscreen({"kind": "footage"}) is False
 
 
 def test_p7_exclusive_ids_do_not_consume_runner_ups():
