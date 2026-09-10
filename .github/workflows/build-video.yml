@@ -36,6 +36,11 @@ on:
         required: false
         default: false
         type: boolean
+      publish_release:
+        description: "После QC выложить mp4 в GitHub Releases (скачивание с страницы релизов)"
+        required: false
+        default: true
+        type: boolean
       heygen_source:
         description: "Источник аватара: auto|api|prepared (пусто = из config.yaml)"
         required: false
@@ -506,6 +511,16 @@ jobs:
             work/*/validated_script.json
           retention-days: 14
           if-no-files-found: ignore
+
+      - name: GitHub Release
+        if: success() && github.event.inputs.publish_release != 'false' && github.event.inputs.providers_mode != 'mock'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python -m src.cli publish --from-output --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}"
+          echo "Релиз: https://github.com/${{ github.repository }}/releases" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Итог в Summary
         if: always()
