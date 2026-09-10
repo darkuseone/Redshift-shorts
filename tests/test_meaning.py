@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from src.lib.meaning import (
-    TRAITS, TRAIT_TITLES, block_traits, explain, matched, satisfies,
+    TRAITS, TRAIT_TITLES, block_traits, explain, grounded_for, matched, satisfies,
 )
 from src.lib.templates import TemplateCatalog
 
@@ -69,6 +69,16 @@ class TestATemplateNeedsSomethingToFillIt:
 
     def test_the_match_is_named(self):
         assert matched(["number", "quote"], {"number", "place"}) == frozenset({"number"})
+
+    def test_needless_card_grounds_on_the_number_it_shows(self):
+        """QC-21: need-less fact-card with «пять минут» is not wallpaper."""
+        traits = block_traits(
+            "Задача, на которую суперкомпьютеру нужно больше времени, "
+            "чем существует вселенная, решена за пять минут.")
+        assert grounded_for([], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == ["number"]
+        assert grounded_for([], traits, shown="НАОБОРОТ") == []
+        assert grounded_for(["number"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == ["number"]
+        assert grounded_for(["quote"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == []
 
 
 class TestTheCatalogPicksByMeaning:

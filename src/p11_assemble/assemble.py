@@ -43,7 +43,7 @@ from ..lib.text import (
     punch_families_overlap, soften_on_screen_copy, spoken_onset_for_content,
 )
 from ..lib.glyphs import match_glyphs
-from ..lib.meaning import block_traits, explain, matched
+from ..lib.meaning import block_traits, explain, grounded_for, matched
 from ..lib.query import topical_match_score
 from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
@@ -1999,13 +1999,14 @@ def _retime_fullscreen_slots(slots: list[dict[str, Any]],
 
 
 
-def explain_choice(template: Any, traits: Iterable[str]) -> str:
+def explain_choice(template: Any, traits: Iterable[str],
+                   *, shown: str = "") -> str:
     """Почему именно этот приём здесь — словами, а не «роль блока».
 
     Одна формулировка на все категории: строка уходит в edit-план и в отчёт
     сборки, и читать её будет человек, а не разбор.
     """
-    hit = matched(template.needs, traits)
+    hit = grounded_for(template.needs, traits, shown=shown)
     if hit:
         return f"приём оправдан: {explain(hit)}"
     return "приём без смысловых требований: держит кадр, не спорит с речью"
@@ -2133,12 +2134,14 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     if late:
         params["clear_crown"] = True
 
+    shown = " ".join(str(content.get(key) or "") for key in (
+        "word", "title", "head", "tail", "punch", "kicker", "caption"))
     entry: dict[str, Any] = {
         "template": template.id, "renderer": renderer, "params": params,
         "file": None, "duration": None,
         "traits": sorted(traits or ()),
-        "grounded_on": sorted(matched(template.needs, traits or ())),
-        "why": explain_choice(template, traits or ()),
+        "grounded_on": grounded_for(template.needs, traits or (), shown=shown),
+        "why": explain_choice(template, traits or (), shown=shown),
         **hero_mutes_subtitle(renderer),
     }
     if real_plate and renderer == "hero-chat-generate":
@@ -2271,6 +2274,9 @@ def split_empty_at_authored_punch(
     blocks = {str(b.get("id") or ""): b for b in plan.get("blocks") or []}
     max_idx = max((int(s["index"]) for s in slots), default=0)
     out: list[dict[str, Any]] = []
+    first_min = 0.55
+    # 0.6 s flash of «решена за пять минут» is unreadable; hold a beat.
+    punch_min = 1.15
     for slot in slots:
         if assets.get(int(slot["index"])):
             out.append(slot)
@@ -2295,9 +2301,18 @@ def split_empty_at_authored_punch(
         start = float(slot["start"])
         end = float(slot["end"])
         punch_at = float(onset)
-        if punch_at < start + 0.55 or punch_at > end - 0.55:
-            if start - 1e-6 <= punch_at < end + 1e-6 and (end - punch_at) >= 0.55:
-                slot["authored_punch"] = True
+        if end - punch_at < punch_min and (end - start) >= first_min + punch_min:
+            punch_at = end - punch_min
+        hint = str(overlay.get("template_hint") or "").strip()
+
+        def _stamp_punch(target: dict[str, Any]) -> None:
+            target["authored_punch"] = True
+            if hint:
+                target["template_hint"] = hint
+
+        if punch_at < start + first_min or punch_at > end - first_min:
+            if start - 1e-6 <= punch_at < end + 1e-6 and (end - punch_at) >= first_min:
+                _stamp_punch(slot)
             out.append(slot)
             continue
         first = copy.deepcopy(slot)
@@ -2309,8 +2324,8 @@ def split_empty_at_authored_punch(
         rest["start"] = punch_at
         rest["end"] = end
         rest["duration"] = round(end - punch_at, 3)
-        rest["authored_punch"] = True
         rest["needs_asset"] = True
+        _stamp_punch(rest)
         if first.get("inherit_from") is not None:
             rest["inherit_from"] = first["inherit_from"]
         out.append(first)
@@ -3802,6 +3817,10 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     window_ok = end - start >= 1.2
     if slot.get("authored_punch"):
         return "", None, None
+    # Inherited hall/plate is already the picture. A huge emphasis word on
+    # top of the supercomputer shot was the 0042 defect («ВДВОЕ» over the hall).
+    if slot.get("inherit_from") is not None:
+        return "inherit", None, None
 
     # 2. Данные — когда блок назвал число. Идёт первой: число больше нечем
     #    показать, а карточка и текст умеют говорить о чём угодно.
@@ -4226,11 +4245,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")
             s_content = str(content or "")
             signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
-            head = [p for p in (preferred, slot.get("template_hint")) if p]
+            overlay_hint = str((block.get("overlay") or {}).get("template_hint") or "")
+            head = [p for p in (preferred, slot.get("template_hint"), overlay_hint) if p]
+            fs_traits = block_traits(str(block.get("text") or ""))
             template, _ = picker.pick(
                 "text-fullscreen",
                 blob=s_content,
                 signals=signals,
+                traits=fs_traits,
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
@@ -4246,7 +4268,6 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 fs_params["enter_delay"] = max(
                     float(fs_params.get("enter_delay") or 0),
                     float(onset) + 0.05 - float(slot["start"]))
-            fs_traits = block_traits(str(block.get("text") or ""))
             entry.update({
                 "content": content,
                 "template": template.id,
@@ -4257,7 +4278,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "accent_word": _fullscreen_accent(content, block),
                 "accent_family": accent_family(block),
                 "traits": sorted(fs_traits) if fs_traits else [],
-                "grounded_on": sorted(matched(template.needs, fs_traits)),
+                "grounded_on": grounded_for(
+                    template.needs, fs_traits, shown=str(content or "")),
+                "why_template": explain_choice(
+                    template, fs_traits, shown=str(content or "")),
                 "file": bg_file,
                 "asset_id": (asset or {}).get("asset_id"),
                 "source": (asset or {}).get("source"),
@@ -4333,16 +4357,26 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 continue
             content = ""
             if fs_count < fs_cap and not _block_gap_fullscreen(slot):
-                raw = gap_phrase(words_doc["words"], slot, gap_block,
-                                 used=used_screen_phrases)
-                content = soften_on_screen_copy(str(raw or ""))
-                key = _norm_screen_key(content)
-                raw_key = _norm_screen_key(raw)
-                # Soften must not recreate a slogan already on screen.
-                if key and key in used_screen_phrases and key != raw_key:
-                    content = ""
-                elif key:
-                    used_screen_phrases.add(key)
+                if slot.get("authored_punch"):
+                    overlay = gap_block.get("overlay") or {}
+                    raw = str(overlay.get("content") or "")
+                    content = (enrich_overlay_punch(
+                        raw, str(gap_block.get("text") or "")) or raw)
+                    content = soften_on_screen_copy(str(content or ""))
+                    key = _norm_screen_key(content)
+                    if key:
+                        used_screen_phrases.add(key)
+                else:
+                    raw = gap_phrase(words_doc["words"], slot, gap_block,
+                                     used=used_screen_phrases)
+                    content = soften_on_screen_copy(str(raw or ""))
+                    key = _norm_screen_key(content)
+                    raw_key = _norm_screen_key(raw)
+                    # Soften must not recreate a slogan already on screen.
+                    if key and key in used_screen_phrases and key != raw_key:
+                        content = ""
+                    elif key:
+                        used_screen_phrases.add(key)
             if fs_count >= fs_cap or not content:
                 entry.update({
                     "kind": "footage",
@@ -4360,7 +4394,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             s_content = str(content or "")
             signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")
-            head = [p for p in (preferred, slot.get("template_hint")) if p]
+            overlay_hint = str((gap_block.get("overlay") or {}).get("template_hint") or "")
+            head = [p for p in (preferred, slot.get("template_hint"), overlay_hint) if p]
             template, _ = picker.pick(
                 "text-fullscreen",
                 blob=s_content or str(gap_block.get("text") or ""),
@@ -4398,8 +4433,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 "accent_word": _fullscreen_accent(content, gap_block),
                 "accent_family": accent_family(gap_block),
                 "traits": sorted(gap_traits) if gap_traits else [],
-                "grounded_on": sorted(matched(template.needs, gap_traits)) if gap_traits else [],
-                "why_template": explain_choice(template, gap_traits) if gap_traits else "",
+                "grounded_on": grounded_for(
+                    template.needs, gap_traits, shown=str(content or "")),
+                "why_template": explain_choice(
+                    template, gap_traits, shown=str(content or "")),
                 "file": bg_file,
                 "asset_id": None,
                 "gap_reason": "материал не найден: кадр закрыт словом блока",

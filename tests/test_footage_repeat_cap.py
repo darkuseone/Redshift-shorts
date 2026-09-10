@@ -761,5 +761,28 @@ def test_empty_slot_splits_at_authored_five_minutes():
     assert out[0]["inherit_from"] == 10
     assert out[1]["authored_punch"] is True
     assert out[1]["inherit_from"] == 10
-    assert 31.0 <= float(out[1]["start"]) <= 31.35
+    assert float(out[1]["start"]) > 29.85
+    assert float(out[1]["end"]) - float(out[1]["start"]) >= 1.14
     assert out[0]["end"] == out[1]["start"]
+
+
+def test_inherited_hall_skips_the_emphasis_card():
+    """Hall plate is the shot; «ВДВОЕ» over it was the 0042 defect."""
+    from src.p11_assemble.assemble import VisualBudget, _close_empty_slot
+
+    rung, hero, overlay = _close_empty_slot(
+        {"index": 11, "start": 28.88, "end": 31.23, "duration": 2.35,
+         "inherit_from": 10, "block_id": "b4", "beat": ""},
+        {"id": "b4",
+         "text": "ошибка падает вдвое. решена за пять минут.",
+         "emphasis_word": "вдвое"},
+        budget=VisualBudget(),
+        picker=None,
+        catalog=None,
+        plan={"duration_sec": 44, "title": "", "sources": []},
+        variant="A", seed=1, recent_videos=[], used_templates=[],
+        brand_icons=None, words=[], plate_src=None,
+        traits={"number", "comparison"}, bg_file="/tmp/hall.mp4")
+    assert rung == "inherit"
+    assert hero is None
+    assert overlay is None
