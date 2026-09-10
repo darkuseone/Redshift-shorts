@@ -42,3 +42,16 @@ python -m pytest -q --ignore=tests/test_music_library.py
 
 Секреты живут только в GitHub Actions secrets, в логах редактируются и в
 артефакты не попадают. Не выводить их в консоль ни при каких обстоятельствах.
+
+## Где собирается ролик
+
+Боевой прогон — **только GitHub Actions** (`build-video`). Cursor не вызывает
+ElevenLabs, HeyGen HTTP, Pexels, GLM, Grok. Ключи в Cursor не просить и не
+подставлять.
+
+Cursor: сценарий + пуш + заявка `config/ci_build_request.json` (это и есть
+старт сборки) + проверка mp4 на 9/10. Ниже девятки — пересборка в Actions
+из кэша.
+
+Исключение: если в Actions не сработал **только** ключ HeyGen — аватар 5 /
+Avatar V по MCP на нарезанных wav, затем снова Actions. Avatar IV нельзя.

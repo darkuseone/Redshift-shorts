@@ -50,8 +50,8 @@ TTS произносит «сто пять», субтитр показывае�
 
 ## Голос заказчика — только ElevenLabs
 
-Озвучка **всегда** с GitHub Secrets: `ELEVENLABS_API_KEY` и клон **Никита 1**
-или **Никита 2** (`elevenlabs.voice_pool` / `ELEVENLABS_VOICE_ID`). HeyGen TTS
+Озвучка **всегда** с GitHub Secrets в **GitHub Actions**: `ELEVENLABS_API_KEY`
+и клон **Никита 1** или **Никита 2**. Cursor live TTS не вызывает. HeyGen TTS
 не используется: в аватар уходит нарезанный `voice_final.wav`.
 
 Выбор клона детерминированный по `video_id`. Случайный выбор при пересборке
