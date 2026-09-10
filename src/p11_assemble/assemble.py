@@ -3043,6 +3043,18 @@ def _stats_from_words(text: str) -> list[dict[str, Any]]:
             prev["raw"] = f"{prev['raw']} {part['raw']}"
             prev["end"] = part["end"]
             continue
+        # «два миллиона семьсот тысяч» is 2.7e6, not 2e6 then 700_000.
+        # The first token already has a scale suffix, so the сто-пять glue
+        # above refuses it. Smaller scale sitting against a larger one is
+        # still one numeral.
+        if (prev is not None and adjacent
+                and prev.get("suffix") in {"млн", "млрд"}
+                and part.get("suffix") in {"тыс.", "млн"}
+                and part["value"] < prev["value"]):
+            prev["value"] += part["value"]
+            prev["raw"] = f"{prev['raw']} {part['raw']}"
+            prev["end"] = part["end"]
+            continue
         out.append(part)
     for part in out:
         part.pop("at", None)

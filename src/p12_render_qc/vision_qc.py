@@ -64,18 +64,68 @@ def _skipped_semantic_report(plan: dict[str, Any], *, reason: str,
     }
 
 
-def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2) -> str:
-    """Что произносится вокруг момента t — эталон для сверки с картинкой."""
-    words: list[str] = []
+def _speech_timeline(plan: dict[str, Any], ctx: Any = None) -> list[dict[str, Any]]:
+    """Word timings: plan first, then ``words.json``. Karaoke is not the VO."""
+    explicit = plan.get("speech_words")
+    if not explicit:
+        words = plan.get("words")
+        if (isinstance(words, list) and words and isinstance(words[0], dict)
+                and "start" in words[0]):
+            explicit = words
+    if explicit:
+        return list(explicit)
+    read_or = getattr(ctx, "read_or", None) if ctx is not None else None
+    if callable(read_or):
+        doc = read_or("words.json", {}) or {}
+        if isinstance(doc, dict):
+            return list(doc.get("words") or [])
+    return []
+
+
+def _token_in_window(item: dict[str, Any], t: float, window: float) -> bool:
+    """True when a cue/word overlaps [t − window, t + window]."""
+    try:
+        start = float(item.get("start") or 0.0)
+        end = float(item["end"]) if item.get("end") is not None else start
+    except (TypeError, ValueError):
+        return False
+    return end >= t - window and start <= t + window
+
+
+def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2,
+               speech: list[dict[str, Any]] | None = None) -> str:
+    """Что произносится вокруг момента t — эталон для сверки с картинкой.
+
+    Караоке под source_card/dataviz выключается, поэтому ``subtitles`` в плане
+    в этот момент пустые. Судья тогда видел статью OpenAI и думал, что речи
+    нет. Эталон — тайминги VO (``words.json`` / ``speech_words``), субтитры
+    только запасной путь.
+    """
+    tokens: list[str] = []
+    timeline = speech if speech is not None else _speech_timeline(plan)
+    if timeline:
+        for word in timeline:
+            if not _token_in_window(word, t, window):
+                continue
+            lead = str(word.get("lead") or "").strip()
+            display = str(word.get("display") or word.get("word") or "").strip()
+            if lead and display:
+                tokens.append(f"{lead} {display}")
+            elif lead:
+                tokens.append(lead)
+            elif display:
+                tokens.append(display)
+        if tokens:
+            return " ".join(tokens)
     for cue in plan.get("subtitles", []):
-        if abs(float(cue["start"]) - t) > window:
+        if not _token_in_window(cue, t, window):
             continue
         # Приклеенное начало реплики — тоже произнесённые слова, и без них
         # эталон теряет отрицание: «не в бюджет» превращается в «бюджет».
         if cue.get("lead"):
-            words.append(str(cue["lead"]))
-        words.append(str(cue["display"]))
-    return " ".join(words)
+            tokens.append(str(cue["lead"]))
+        tokens.append(str(cue["display"]))
+    return " ".join(tokens)
 
 
 # Что в кадре по замыслу — по виду кадра. Судья без этого честно ставил 0.15
@@ -90,12 +140,44 @@ _EXPECTED = {
 }
 
 
-def _expected(shot: dict[str, Any]) -> str:
+_OVERLAY_INTENT = {
+    "source_card": "карточка источника статьи — так и задумано",
+    "dataviz": "числовая плашка по речи — так и задумано",
+}
+
+
+def _overlay_intent(plan: dict[str, Any] | None, t: float | None) -> str:
+    """Overlays covering t, so the judge does not treat a source card as noise."""
+    if plan is None or t is None:
+        return ""
+    bits: list[str] = []
+    for ovl in plan.get("overlays") or []:
+        if not isinstance(ovl, dict):
+            continue
+        if not _token_in_window(ovl, t, 0.0):
+            continue
+        kind = str(ovl.get("type") or "")
+        note = _OVERLAY_INTENT.get(kind)
+        if note:
+            bits.append(note)
+        if kind == "source_card":
+            params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
+            domain = str(params.get("domain") or "")
+            if domain:
+                bits.append(f"домен {domain}")
+    return "; ".join(bits)
+
+
+def _expected(shot: dict[str, Any], *, plan: dict[str, Any] | None = None,
+              t: float | None = None) -> str:
     kind = str(shot.get("kind") or "")
     expected = _EXPECTED.get(kind, _EXPECTED["footage"])
     hero = (shot.get("hero") or {}).get("device")
     if hero:
         expected += f"; поверх — приём «{hero}»"
+    overlay = _overlay_intent(plan, t)
+    if overlay:
+        expected += f"; {overlay}"
     return expected
 
 
@@ -189,6 +271,7 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                 video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
                 positions, width=540)
 
+        speech = _speech_timeline(plan, ctx)
         samples: list[dict[str, Any]] = []
         cache = _verdict_cache(ctx)
         reused = 0
@@ -196,15 +279,16 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
             t = duration * position
             shot = next((s for s in plan["shots"]
                          if float(s["start"]) <= t < float(s["end"])), {})
-            spoken = _spoken_at(plan, t)
+            spoken = _spoken_at(plan, t, speech=speech)
             intent = shot.get("reason") or shot.get("kind", "")
+            pictured = _expected(shot, plan=plan, t=t)
             key = _verdict_key(frame, role=str(shot.get("role", "")),
                                spoken=spoken or "", intent=intent)
             verdict = cache.get(key) if key else None
             if verdict is None:
                 verdict = provider.judge(
                     [frame], kind="final_frame",
-                    intent=f"{_expected(shot)}. Замысел кадра: {intent}",
+                    intent=f"{pictured}. Замысел кадра: {intent}",
                     role=str(shot.get("role", "")), query=spoken or intent)
                 if key:
                     cache[key] = verdict
@@ -214,7 +298,7 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                 "t": round(t, 2),
                 "shot_index": shot.get("index"),
                 "kind": shot.get("kind"),
-                "expected": _expected(shot),
+                "expected": pictured,
                 "spoken": spoken,
                 "score": round(verdict.score, 3),
                 "summary": verdict.summary,

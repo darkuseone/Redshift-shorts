@@ -720,6 +720,67 @@ def test_cryostat_leftover_skips_nature_evidence():
     assert bonus > 0
 
 
+def test_cracked_wall_locks_onto_hole_in_the_wall_speech():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    twist = {
+        "index": 24, "role": "twist", "asset_role": "interstitial",
+        "visual_intent": "ведущий закрывает хук",
+        "start": 56.9, "end": 58.3,
+    }
+    words = [
+        {"display": "дыра", "start": 57.0, "end": 57.4},
+        {"display": "стене", "start": 57.4, "end": 57.8},
+    ]
+    bonus, _ = pin_slot_prefer_key(
+        "fp_cracked_wall", twist, ["fp_cracked_wall"], words=words)
+    assert bonus < 0
+
+
+def test_cracked_earth_leaves_agent_count_speech():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    evidence = {
+        "index": 12, "role": "evidence", "asset_role": "broll",
+        "start": 26.5, "end": 29.0,
+    }
+    words = [
+        {"display": "агентов", "start": 26.6, "end": 27.1},
+        {"display": "восемьдесят", "start": 27.2, "end": 27.7},
+    ]
+    bonus, _ = pin_slot_prefer_key(
+        "fp_cracked_earth", evidence, ["fp_cracked_earth"], words=words)
+    assert bonus > 0
+
+
+def test_stapler_prefers_publish_speech_not_the_deaf_wall():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    article = {
+        "index": 8, "role": "evidence", "asset_role": "evidence",
+        "start": 16.4, "end": 19.8,
+    }
+    wall = {
+        "index": 26, "role": "twist", "asset_role": "interstitial",
+        "start": 62.2, "end": 63.6,
+    }
+    publish = [
+        {"display": "публикует", "start": 16.5, "end": 17.0},
+        {"display": "работу", "start": 17.0, "end": 17.5},
+    ]
+    deaf = [
+        {"display": "считали", "start": 62.3, "end": 62.7},
+        {"display": "глухой", "start": 62.7, "end": 63.2},
+    ]
+    pins = ["fp_stapling_docs"]
+    on_article, _ = pin_slot_prefer_key(
+        "fp_stapling_docs", article, pins, words=publish)
+    on_wall, _ = pin_slot_prefer_key(
+        "fp_stapling_docs", wall, pins, words=deaf)
+    assert on_article < 0
+    assert on_wall > 0
+
+
 def test_hall_inherits_onto_universe_speech():
     from src.p11_assemble.assemble import inherit_ai_plates_onto_speech
 

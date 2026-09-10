@@ -42,6 +42,13 @@ class TestNumbersSpelledOutAreStillNumbers:
         """«Сто пять» — это сто пять, а не сто и пять."""
         assert _values("Внутри процессора сто пять кубитов") == [105.0]
 
+    def test_millions_and_thousands_glue_into_one_number(self):
+        """«два миллиона семьсот тысяч» — 2.7e6, не два столбика 2e6 и 700_000."""
+        assert _stats_from_words(
+            "Два миллиона семьсот тысяч сообщений"
+        )[0]["value"] == 2_700_000.0
+        assert _values("Два миллиона семьсот тысяч сообщений")[0] == 2_700_000.0
+
     def test_separate_numbers_stay_separate(self):
         """Склейка работает только вплотную, иначе она выдумывает числа."""
         assert _values("Сто кубитов и пять лет") == [100.0, 5.0]

@@ -96,6 +96,25 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             # Ticker is a money shot. Equal-bonus score order used to put it
             # on the hook, then rebalance kept it there to get it off evidence.
             bonus = 8
+    else:
+        aid_l = aid.lower()
+        hay = speech or intent
+        wall = any(token in aid_l for token in (
+            "cracked", "peeling", "plaster", "rock_surface"))
+        staple = "stapling" in aid_l or "staple" in aid_l
+        if wall:
+            # 0048: drought/crack plates parked on «88 часов / 2.7 млн», while
+            # the twist said «дыра в стене / глухой».
+            if any(token in hay for token in ("дыр", "глух", "стен", "трещин")):
+                bonus = -18
+            elif any(token in hay for token in (
+                    "агент", "сообщен", "публик", "спагетти", "вихр")):
+                bonus = 10
+        elif staple:
+            if any(token in hay for token in ("публик", "документ", "бумаг")):
+                bonus = -12
+            elif any(token in hay for token in ("дыр", "глух", "стен", "трещин")):
+                bonus = 18
     try:
         rank = list(pin_prefer).index(aid)
     except ValueError:
