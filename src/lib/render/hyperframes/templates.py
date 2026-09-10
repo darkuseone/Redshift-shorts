@@ -3939,13 +3939,13 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
             t = frame / frames
             progress = _dcl_power2_out(t)
             value = start_value + (end_value - start_value) * progress
-            text = _dcl_fmt(value, unit)
+            text = _dcl_fmt(round(value), unit)
             texts.append(text)
             spans.append(f'<span id="{vid}-{frame}">{_esc(text)}</span>')
     else:
-        texts.append(_dcl_fmt(start_value, unit))
+        texts.append(_dcl_fmt(round(start_value), unit))
         spans.append(f'<span id="{vid}-0">{_esc(texts[0])}</span>')
-        texts.append(_dcl_fmt(end_value, unit))
+        texts.append(_dcl_fmt(round(end_value), unit))
         spans.append(f'<span id="{vid}-1">{_esc(texts[1])}</span>')
 
     tweens.append(

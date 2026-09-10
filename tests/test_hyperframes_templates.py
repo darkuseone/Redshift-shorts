@@ -792,6 +792,7 @@ def test_decline_chart_shows_error_steps_and_axes(ctx):
     assert "поверхностный код" in node
     assert "100%" in node and "50%" in node and "25%" in node
     assert "62.5" not in node
+    assert ".1%" not in node and ".6%" not in node
     assert "шаг 1" in node and "шаг 3" in node
     assert "dcl-ytick" in node and "dcl-xlab" in node
     assert "dcl-mark" in node and "dcl-mark-lab" in node

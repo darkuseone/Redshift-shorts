@@ -1097,6 +1097,26 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
     return drop_orphan_short_cues(subtitles)
 
 
+def _split_top_letterboxes(
+    shot: dict[str, Any], *, frame_w: float = 1080.0, frame_h: float = 1920.0,
+) -> bool:
+    """Wide proof (Nature figure) letterboxes in the top half; portrait fills it."""
+    src = str(shot.get("bg_file") or shot.get("top_src") or "").strip()
+    path = Path(src) if src else None
+    if path is None or not path.is_file():
+        return True
+    try:
+        info = probe(path)
+    except Exception:
+        return True
+    half = frame_h / 2.0
+    src_w = max(float(info.width or 0), 1.0)
+    src_h = max(float(info.height or 0), 1.0)
+    scale = max(frame_w / src_w, half / src_h)
+    cropped_w_share = 1.0 - (frame_w / max(src_w * scale, 1.0))
+    return cropped_w_share > 0.25
+
+
 def _stamp_subtitle_baselines(
     subtitles: list[dict[str, Any]],
     shots: list[dict[str, Any]],
@@ -1106,20 +1126,25 @@ def _stamp_subtitle_baselines(
 
     Split-top is 52% of the frame with object-fit contain, so a wide Nature
     figure letterboxes. Drop cues into that lower black bar — off the paper,
-    above the avatar seam — instead of the mid-paper avatar-shift line.
+    above the avatar seam. A portrait top fills the half: those cues sit on
+    the avatar chest instead of the figure.
     """
     height = 1920.0
     if isinstance(brandbook, dict):
         height = float((brandbook.get("canvas") or {}).get("height") or height)
     seam = height * 0.52
-    split_y = seam - 180.0
+    letterbox_y = seam - 180.0
+    portrait_y = seam + 0.70 * (height - seam)
     ordered = sorted(shots, key=lambda s: float(s.get("start") or 0))
     for cue in subtitles:
         t = (float(cue.get("start") or 0) + float(cue.get("end") or 0)) / 2.0
         for shot in ordered:
             if float(shot.get("start") or 0) - 1e-6 <= t < float(shot.get("end") or 0) + 1e-6:
                 if str(shot.get("kind") or "") == "split":
-                    cue["baseline_y"] = split_y
+                    cue["baseline_y"] = (
+                        letterbox_y if _split_top_letterboxes(
+                            shot, frame_w=1080.0, frame_h=height)
+                        else portrait_y)
                 break
 
 

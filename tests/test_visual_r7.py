@@ -457,3 +457,19 @@ def test_split_karaoke_sits_under_the_paper_letterbox():
     assert 700 <= subs[0]["baseline_y"] <= 900
     assert "baseline_y" not in subs[1]
     assert "baseline_y" not in subs[2]
+
+
+def test_portrait_split_karaoke_sits_on_avatar_chest(tmp_path):
+    from PIL import Image
+    from src.p11_assemble.assemble import _stamp_subtitle_baselines
+
+    portrait = tmp_path / "portrait.jpg"
+    Image.new("RGB", (1080, 1920), "black").save(portrait)
+    subs = [{"display": "ПРОЖИЛ", "start": 11.5, "end": 11.9}]
+    shots = [{"kind": "split", "start": 10.5, "end": 13.0,
+              "bg_file": str(portrait)}]
+    _stamp_subtitle_baselines(subs, shots, {"canvas": {"height": 1920}})
+    y = subs[0]["baseline_y"]
+    seam = 1920 * 0.52
+    assert y > seam
+    assert y >= 1500
