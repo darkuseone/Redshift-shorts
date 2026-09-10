@@ -40,10 +40,14 @@ _log = get_logger("p8")
 
 
 def in_grey_zone(score: float, cfg) -> bool:
-    """Grok/второй уровень только при score ∈ [reject, accept] (MUST-019)."""
+    """Grok только при score ∈ [reject, accept).
+
+    Восемь из десяти (``accept_threshold``) уже в ролик: заказчик не гоняет
+    зрение на кадр, который mid-critic уже принял. Спорное — строго ниже порога.
+    """
     lo = float(cfg.get("vision.reject_threshold", 0.45))
     hi = float(cfg.get("vision.accept_threshold", 0.80))
-    return lo <= float(score) <= hi
+    return lo <= float(score) < hi
 
 
 def _candidate_hay(candidate: dict[str, Any]) -> str:
@@ -100,8 +104,8 @@ def _needs_arbitration(verdict: VisionVerdict, role: str, cfg) -> str | None:
     lo = float(cfg.get("vision.reject_threshold", 0.45))
     hi = float(cfg.get("vision.accept_threshold", 0.80))
     disagree = float(cfg.get("vision.frame_disagreement_threshold", 0.30))
-    if lo <= verdict.score <= hi:
-        return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi}]"
+    if in_grey_zone(verdict.score, cfg):
+        return f"score {verdict.score:.2f} в спорной зоне [{lo}, {hi})"
     if verdict.frame_disagreement > disagree:
         return f"кадры расходятся на {verdict.frame_disagreement:.2f} > {disagree}"
     # MUST-020: evidence/twist не auto-arbitrate — те же пороги, что у обычного слота.
@@ -836,7 +840,7 @@ def run_step(ctx) -> dict[str, Any]:
                         verdict_dict["arbitrated"] = True
                         verdict_dict["arbitration_reason"] = (
                             f"score {primary_score:.2f} в серой зоне "
-                            f"[{reject_threshold:.2f}, {accept_threshold:.2f}]")
+                            f"[{reject_threshold:.2f}, {accept_threshold:.2f})")
                         verdict_dict["primary_score"] = primary_score
                         verdict_dict["clip_id"] = aid
                         _tally_vision(

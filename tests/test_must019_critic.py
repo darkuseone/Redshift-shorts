@@ -1,4 +1,4 @@
-"""MUST-019: cheap ≥50% kill; GLM-5.3-free mid; Grok only in grey [0.45, 0.80]."""
+"""MUST-019: cheap ≥50% kill; GLM-5.3-free mid; Grok only in grey [0.45, 0.80)."""
 
 from __future__ import annotations
 
@@ -165,7 +165,8 @@ def test_grey_zone_bounds(cfg):
     assert in_grey_zone(0.45, cfg)
     assert in_grey_zone(0.55, cfg)
     assert in_grey_zone(0.70, cfg)
-    assert in_grey_zone(0.80, cfg)
+    assert in_grey_zone(0.79, cfg)
+    assert not in_grey_zone(0.80, cfg)
     assert not in_grey_zone(0.40, cfg)
     assert not in_grey_zone(0.81, cfg)
 
@@ -240,11 +241,11 @@ def test_score_outside_grey_does_not_call_grok(monkeypatch):
     assert grok40.calls == 0
     assert result40["grok_calls"] == 0
 
-    glm81, grok81 = _Spy(0.81, "glm"), _Spy(0.99, "grok")
-    result81 = _run(monkeypatch, [_good(1)], glm=glm81, grok=grok81)
-    assert glm81.calls == 1
-    assert grok81.calls == 0
-    assert result81["grok_calls"] == 0
+    glm80, grok80 = _Spy(0.80, "glm"), _Spy(0.99, "grok")
+    result80 = _run(monkeypatch, [_good(1)], glm=glm80, grok=grok80)
+    assert glm80.calls == 1
+    assert grok80.calls == 0
+    assert result80["grok_calls"] == 0
 
 
 def test_grey_score_calls_second_level_at_most_once_per_clip(monkeypatch):
