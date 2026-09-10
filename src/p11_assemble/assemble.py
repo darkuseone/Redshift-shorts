@@ -4142,11 +4142,6 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                    f"{parallax_min:g} с",
         }
 
-    # Authored FS punch owns the big word. A neighbour empty C used to slam
-    # «СИНГУЛЯРНОСТЬ» 1 s early and oversize it again after the VO.
-    if str((block.get("overlay") or {}).get("type") or "") == "fullscreen_text":
-        return "", None, None
-
     # 1. Карточка-ключ — акцентное слово блока, по возможности с медиа. Идёт
     #    последней среди приёмов: подходит любому блоку, поэтому раньше она
     #    забирала потолок у ступеней, которым блок нужен особенный.

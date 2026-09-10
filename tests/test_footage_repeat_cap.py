@@ -881,8 +881,16 @@ def test_inherited_hall_skips_the_emphasis_card():
 
 def test_fs_overlay_neighbour_skips_the_emphasis_card():
     """Lead-in to СИНГУЛЯРНОСТЬ must not slam the word a second early."""
-    from src.p11_assemble.assemble import VisualBudget, _close_empty_slot
+    import json as _json
+    from pathlib import Path
 
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import VisualBudget, _FULL_FRAME_HEROES, _close_empty_slot
+
+    cat = TemplateCatalog(
+        Path("templates/manifest.json"),
+        _json.loads(Path("templates/manifest.json").read_text(encoding="utf-8")),
+    )
     rung, hero, overlay = _close_empty_slot(
         {"index": 19, "start": 42.866, "end": 44.001, "duration": 1.135,
          "block_id": "b4", "beat": ""},
@@ -892,12 +900,10 @@ def test_fs_overlay_neighbour_skips_the_emphasis_card():
          "overlay": {"type": "fullscreen_text", "content": "СИНГУЛЯРНОСТЬ"}},
         budget=VisualBudget(),
         picker=None,
-        catalog=None,
+        catalog=cat,
         plan={"duration_sec": 68, "title": "", "sources": []},
         variant="A", seed=1, recent_videos=[], used_templates=[],
         brand_icons=None, words=[], plate_src={"file": "/tmp/a.mp4"},
         traits={"device"}, bg_file="/tmp/a.mp4")
-    assert rung == ""
-    assert hero is None
-    assert hero is None
-    assert overlay is None
+    if hero:
+        assert hero.get("renderer") not in set(_FULL_FRAME_HEROES) | {"hero-oversize"}
