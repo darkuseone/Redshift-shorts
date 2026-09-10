@@ -857,11 +857,9 @@
       ],
       "templates": [
         "hero-devices/text-column-left",
-        "hero-devices/bubble-card",
         "hero-devices/type-slab",
         "hero-devices/script-stack",
-        "hero-devices/phrase-log",
-        "hero-devices/bubble-typed"
+        "hero-devices/phrase-log"
       ],
       "weight": 20,
       "variants": [

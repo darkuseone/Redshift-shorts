@@ -177,7 +177,7 @@ def test_volcano_candidate_rejected_for_0042(monkeypatch):
     volcano["tags"] = ["volcano", "lava", "magma"]
     volcano["vision_summary"] = "Close-up of bright lava streams"
     volcano["url_origin"] = "https://pixabay.com/videos/id-144678/"
-    prefer = _candidate(0, "pexels_v30775057", score=0.70)
+    prefer = _candidate(0, "pexels_v18069803", score=0.70)
     ctx = _Ctx(
         cfg,
         {"video_id": "redshift_0042", "candidates": [volcano, prefer]},
@@ -188,7 +188,7 @@ def test_volcano_candidate_rejected_for_0042(monkeypatch):
     judged = result["judged"]
     volcano_row = next(j for j in judged if j["asset_id"] == "pixabay_v144678")
     assert volcano_row["decision"] in ("reject_theme", "reject_gate")
-    assert result["accepted"]["0"]["asset_id"] == "pexels_v30775057"
+    assert result["accepted"]["0"]["asset_id"] == "pexels_v18069803"
 
 
 def test_repeat_cap_falls_through_to_other_asset(monkeypatch):
@@ -223,3 +223,87 @@ def test_repeat_cap_falls_through_to_other_asset(monkeypatch):
     assert accepted_ids.count("sparkle_clip") <= 2
     assert any(aid.startswith("other_") for aid in accepted_ids)
     assert len(result["accepted"]) == 5
+
+
+def test_leftover_prefer_fills_empty_later_slot(monkeypatch):
+    """Runner-up prefer of slot 0 must still close a later empty slot."""
+    from src.lib.manifest import AssetRecord
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", True)
+    cfg.set("stock.same_asset_max_slots", 1)
+
+    class _PinIndex:
+        def __init__(self):
+            self._items = {
+                "pexels_v25935014": AssetRecord(
+                    id="pexels_v25935014", type="video", source="pexels",
+                    license="Pexels License",
+                    url_origin="https://example.com/quantum-laboratory-cryostat",
+                    tags=["quantum", "laboratory"],
+                    vision_summary="quantum laboratory cryostat",
+                    score=0.86, duration_sec=3.0, width=1080, height=1920,
+                    file="pexels/pexels_v25935014.mp4"),
+                "grok_cryostat_0042": AssetRecord(
+                    id="grok_cryostat_0042", type="video", source="generated",
+                    license="generated-owned",
+                    url_origin="cursor://generate-image/grok_quantum_cryostat",
+                    tags=["quantum", "cryostat", "processor"],
+                    vision_summary="gold dilution refrigerator quantum processor",
+                    score=0.86, duration_sec=3.0, width=1080, height=1920,
+                    file="generated/grok_cryostat_0042.mp4",
+                    ai_generated=True),
+            }
+
+        def by_id(self, asset_id):
+            return self._items.get(asset_id)
+
+        def mark_used(self, *a, **k):
+            return None
+
+        def add(self, record):
+            return record
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _PinIndex()))
+
+    slots = [
+        {
+            "index": 0, "kind": "footage", "role": "hook",
+            "asset_role": "broll", "needs_asset": True,
+            "visual_intent": "quantum chip cryostat",
+            "start": 0.0, "end": 2.0,
+        },
+        {
+            "index": 1, "kind": "footage", "role": "develop",
+            "asset_role": "broll", "needs_asset": True,
+            "visual_intent": "Холодный кадр квантового процессора в криостате",
+            "start": 2.0, "end": 3.4,
+        },
+    ]
+    candidates = [_candidate(0, "pexels_v25935014", score=0.86)]
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "redshift_0042", "candidates": candidates},
+        {"video_id": "redshift_0042", "category": "ai", "duration_sec": 44.5,
+         "slots": slots},
+    )
+    run_step(ctx)
+    result = ctx.written["accepted_assets.json"]
+    assert result["accepted"]["0"]["asset_id"] == "pexels_v25935014"
+    assert result["accepted"]["1"]["asset_id"] == "grok_cryostat_0042"
+    assert result["accepted"]["1"]["decision"] == "accept_prefer"
+    assert "1" not in {str(i) for i in result["unfilled_slots"]}
+
+
+def test_p7_exclusive_ids_do_not_consume_runner_ups():
+    import inspect
+
+    from src.p7_broll_search import search
+
+    body = inspect.getsource(search.run_step)
+    assert "exclusive_ids" in body
+    assert "taken_ids = set(exclusive_ids)" in body

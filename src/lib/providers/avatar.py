@@ -7,7 +7,7 @@ Live: посегментная генерация через HeyGen API. Сег�
 
 Mock: локальный рендер говорящей фигуры, у которой раскрытие рта следует
 огибающей той же дорожки. Это не «серый прямоугольник»: лицо стоит в полосе
-y ∈ [350, 750], как требует §3.5, губы движутся по звуку, и на таком клипе можно
+``avatar.face_band_y`` брендбука, губы движутся по звуку, и на таком клипе можно
 честно проверять QC-11 (рассинхрон липсинка) и правило кадрирования.
 """
 
@@ -91,9 +91,8 @@ class MockAvatar(AvatarProvider):
         env = rms_envelope(mono, sr, window_ms=25.0)
         env = env / (float(np.percentile(env, 97)) or 1.0)
 
-        # §3.5: лицо обязано жить в верхней трети, иначе центральные субтитры
-        # лягут на него.
-        face_top, face_bottom = self.cfg.brand("avatar.face_band_y", [350, 750])
+        # §3.5: лицо в нижней трети, субтитры над ним.
+        face_top, face_bottom = self.cfg.brand("avatar.face_band_y", [1080, 1480])
         head_cx = width // 2
         head_cy = int((face_top + face_bottom) / 2)
         head_r = int((face_bottom - face_top) / 2)
@@ -380,7 +379,7 @@ def measured_face_bbox(cfg, clip: Path, info, *, at: float,
         measured = ff_head_box(clip, at_sec=at)
         if measured:
             return measured
-    face_top, face_bottom = cfg.brand("avatar.face_band_y", [350, 750])
+    face_top, face_bottom = cfg.brand("avatar.face_band_y", [1080, 1480])
     return (int(info.width * 0.30), int(face_top),
             int(info.width * 0.70), int(face_bottom))
 

@@ -28,6 +28,10 @@ _CAPACITY_MARKERS = (
     "resource_exhausted",
     "try again later",
     "resource exhausted",
+    "exceeded your current quota",
+    "quota exceeded",
+    "rate-limits",
+    "rate limit",
 )
 
 
@@ -46,8 +50,11 @@ def is_capacity_error(exc: BaseException) -> bool:
     text = f"{exc} {body}".lower()
     if any(marker in text for marker in _CAPACITY_MARKERS):
         return True
-    # Явный код в теле ответа Gemini JSON.
-    return '"code": 503' in text or " returned 503" in text or "вернул 503" in text
+    # Явный код в теле ответа Gemini JSON (в т.ч. обёртка «исчерпаны N попытки»).
+    return (
+        '"code": 503' in text or " returned 503" in text or "вернул 503" in text
+        or '"code": 429' in text or " returned 429" in text or "вернул 429" in text
+    )
 
 
 def call_with_retry(

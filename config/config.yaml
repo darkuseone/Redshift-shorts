@@ -131,8 +131,10 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # MUST-019: mid-critic GLM-5.3-free; Grok только серая зона [0.45, 0.70].
-  # Gemini — запас primary, если GLM-ключа нет. Generation по-прежнему
+  # MUST-019: mid-critic GLM-5.3; Grok только серая зона [0.45, 0.70]
+  # и явный vision.fallback=grok (запас §11.2, не image gen).
+  # Gemini в vision — только если явно primary/fallback=gemini. Общий
+  # GEMINI_API_KEY больше не уводит судью на 3.8. Generation по-прежнему
   # providers.allow_xai=false (xAI не в цепочке картинок).
   primary: "glm"
   arbiter: "grok"
@@ -149,10 +151,12 @@ vision:
   gemini_model: "gemini-3.8-flash"
   # GLM intl (docs): api.z.ai/api/paas/v4. Модель заказчика — 5.3-free
   # (TokenRouter slug z-ai/glm-5.3-free), не GLM-4.6V-Flash.
-  # Ключ: GLM_API_KEY, иначе TOKENROUTER_API_KEY / ZAI_API_KEY.
+  # Ключ: GLM_API_KEY или GLM_API («GLM API» в GitHub Secrets),
+  # иначе TOKENROUTER_API_KEY / ZAI_API_KEY.
   # TokenRouter host — переопределить glm_api_base на OpenAI-совместимый /v1.
   glm_api_key_env: GLM_API_KEY
-  glm_model: "z-ai/glm-5.3-free"
+  glm_model: "glm-5.3"
+  glm_model_fallback: "z-ai/glm-5.3-free"
   glm_api_base: "https://api.z.ai/api/paas/v4"
   # true = без live vision (Gemini/Grok): P8 кэш/ранг. P12 не ставит semantic
   # pass: qc_skipped_semantic, ролик не выдаётся (MUST-006). Mock — mode=mock.
@@ -231,6 +235,12 @@ stock:
   # Запас кандидатов до платной критики: на слот нужно ≥ 1.3× годных, иначе
   # добор дешёвым поиском, не vision (MUST-018 / MUST-024).
   candidate_surplus: 1.3
+  # Локальная база на слот: 6 клипов при same_asset_max_slots=1 оставляли
+  # хвост ролика пустым — prefer-пины занимали первые слоты, остальные
+  # видели только дубли. 24 — окно поиска; в candidates.json на слот
+  # кладём local_keep_per_slot, иначе слот 0 сжигает все уникальные id.
+  local_candidates_per_slot: 24
+  local_keep_per_slot: 2
   # Вес принимаемого материала. Хранилище лежит в репозитории, и клип на 45 МБ
   # остаётся в истории git навсегда. Прогон 0047 положил 27 клипов на 369 МБ —
   # при том, что самый длинный слот ролика 6.4 сек, футаж всегда играет с нуля,

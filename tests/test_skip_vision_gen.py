@@ -55,6 +55,34 @@ def test_vision_qc_skip_live_short_circuits(tmp_path, monkeypatch):
     assert called["build"] == 0
 
 
+def test_vision_qc_auto_without_live_keys_skips_semantic(tmp_path, monkeypatch):
+    """auto + только GEMINI_API_KEY не закрывает §11.2 mock-судьёй."""
+    from src.p12_render_qc import vision_qc as VQ
+
+    for env_name in (
+        "GLM_API_KEY", "GLM_API", "TOKENROUTER_API_KEY", "ZAI_API_KEY",
+        "Z_AI_API_KEY", "XAI_API_KEY", "XAI_API",
+    ):
+        monkeypatch.delenv(env_name, raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+
+    cfg = load_config(overrides=["providers.mode=auto"])
+    ctx = MagicMock()
+    ctx.cfg = cfg
+    ctx.costs = MagicMock()
+    ctx.warn = MagicMock()
+    ctx.wpath = lambda *a: tmp_path.joinpath(*map(str, a))
+
+    report = VQ.run_vision_qc(
+        ctx, video_path=tmp_path / "v.mp4",
+        plan={"duration_sec": 10, "variant": "A", "shots": [], "subtitles": []},
+    )
+    assert report.get("qc_skipped_semantic") is True
+    assert report["blocking"] is True
+    assert report["picture_matches_speech"] is False
+    assert report["mismatch_share"] is None
+
+
 def test_vision_qc_provider_error_is_non_blocking(tmp_path, monkeypatch):
     """§11.2 never hard-fails the job on 429/403 provider errors."""
     from src.errors import ProviderError

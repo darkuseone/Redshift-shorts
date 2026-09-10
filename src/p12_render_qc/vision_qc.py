@@ -173,6 +173,16 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
     duration = float(plan["duration_sec"])
     try:
         provider = build_vision_provider(cfg, ctx.costs, role="primary")
+        mode = str(cfg.get("providers.mode", "auto")).lower()
+        if getattr(provider, "is_mock", False) and mode != "mock":
+            _log.warning("смысловой QC: нет live GLM/Grok — skip, не mock-pass",
+                         extra={"variant": plan.get("variant"),
+                                "provider": getattr(provider, "name", "")})
+            return _skipped_semantic_report(
+                plan,
+                reason="нет live GLM/Grok vision (qc_skipped_semantic)",
+                notes=["auto/live без GLM и XAI: mock-судья не закрывает §11.2"],
+                cfg=cfg)
         positions = sample_positions()
         if frames is None:
             frames = extract_frames(

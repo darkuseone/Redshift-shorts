@@ -393,9 +393,9 @@ class GLMVision(VisionProvider):
               query: str, kind: str = "broll") -> VisionVerdict:
         import requests
 
-        model = str(self.cfg.get("vision.glm_model", "z-ai/glm-5.3-free"))
-        if "4.6v-flash" in model.lower() or "4.6v flash" in model.lower():
-            raise ProviderError("GLM-4.6V-Flash запрещён: заказчик — GLM-5.3-free")
+        models = _glm_model_chain(self.cfg)
+        if any("4.6v-flash" in m.lower() or "4.6v flash" in m.lower() for m in models):
+            raise ProviderError("GLM-4.6V-Flash запрещён: заказчик — GLM-5.3")
         url = _glm_chat_url(self.cfg)
         if _GLM_CN_HOST in url:
             raise ProviderError("CN GLM endpoint open.bigmodel.cn запрещён")
@@ -409,20 +409,35 @@ class GLMVision(VisionProvider):
             })
         # response_format json_object / json_schema для VLM не подтверждены —
         # JSON вырезаем из текста ответа.
-        payload = {"model": model, "messages": [{"role": "user", "content": content}],
-                   "temperature": 0.1}
+        last_error: ProviderError | None = None
+        data: dict[str, Any] | None = None
+        used_model = models[0]
+        for model in models:
+            payload = {"model": model, "messages": [{"role": "user", "content": content}],
+                       "temperature": 0.1}
 
-        def _call() -> dict[str, Any]:
-            resp = requests.post(url, json=payload,
-                                 headers={"Authorization": f"Bearer {self.api_key}"},
-                                 timeout=self._timeout())
-            if resp.status_code >= 400:
-                raise ProviderError(f"GLM вернул {resp.status_code}",
-                                    status=resp.status_code, body=resp.text[:300],
-                                    model=model)
-            return resp.json()
+            def _call(payload=payload, model=model) -> dict[str, Any]:
+                resp = requests.post(url, json=payload,
+                                     headers={"Authorization": f"Bearer {self.api_key}"},
+                                     timeout=self._timeout())
+                if resp.status_code >= 400:
+                    raise ProviderError(f"GLM вернул {resp.status_code}",
+                                        status=resp.status_code, body=resp.text[:300],
+                                        model=model)
+                return resp.json()
 
-        data = call_with_retry(_call, **self._retry_kwargs("GLM vision"))
+            try:
+                data = call_with_retry(_call, **self._retry_kwargs("GLM vision"))
+                used_model = model
+                break
+            except ProviderError as exc:
+                last_error = exc
+                if not _glm_model_unavailable(exc):
+                    raise
+                _log.warning("GLM модель недоступна — следующая в цепочке",
+                             extra={"model": model, "err": str(exc)[:200]})
+        if data is None:
+            raise last_error or ProviderError("GLM не ответил")
         text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
         if isinstance(text, list):
             text = " ".join(
@@ -430,8 +445,33 @@ class GLMVision(VisionProvider):
                 for part in text)
         self.charge("judge", len(frames), "images",
                     len(frames) * float(self.cfg.get("budget.price.glm_per_image", 0.0)),
-                    model=model)
+                    model=used_model)
         return _verdict_from_json(str(text), judge="glm", frames=len(frames))
+
+
+def _glm_model_chain(cfg) -> list[str]:
+    """Сначала модель из конфига (5.3), затем запасной слаг z.ai / TokenRouter."""
+    primary = str(cfg.get("vision.glm_model", "glm-5.3") or "glm-5.3").strip()
+    extras = str(cfg.get("vision.glm_model_fallback", "") or "").strip()
+    chain: list[str] = []
+    for name in (primary, extras, "glm-5.3", "z-ai/glm-5.3-free"):
+        if name and name not in chain:
+            chain.append(name)
+    return chain
+
+
+def _glm_model_unavailable(exc: BaseException) -> bool:
+    """400/404 «нет такой модели» — пробуем следующий слаг, не весь запасной судья."""
+    status = _provider_http_status(exc)
+    if status not in (400, 404, 422):
+        return False
+    text = str(exc).lower()
+    if "high demand" in text or "unavailable" in text or "quota" in text:
+        return False
+    return any(token in text for token in (
+        "not found", "does not exist", "unknown model", "invalid model",
+        "not supported", "does not support", "no such model",
+    ))
 
 
 def _glm_chat_url(cfg) -> str:
@@ -518,11 +558,17 @@ def _gemini_api_key(cfg) -> str | None:
 
 
 def _glm_api_key(cfg) -> str | None:
-    """GLM_API_KEY, затем TokenRouter / z.ai алиасы. Не хардкод."""
+    """GLM_API_KEY, затем TokenRouter / z.ai алиасы. Не хардкод.
+
+    GitHub secret в UI часто подписан «GLM API» — это ``GLM_API``, не
+    ``GLM_API_KEY``. Оба имени ищем, значения в логи не пишем.
+    """
     key = cfg.secret_for("vision.glm_api_key_env", purpose="GLM Vision")
     if key:
         return key
-    for env_name in ("TOKENROUTER_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY"):
+    for env_name in (
+        "GLM_API", "GLMAPI", "TOKENROUTER_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY",
+    ):
         key = cfg.secret(env_name, purpose="GLM Vision")
         if key:
             return key
@@ -551,6 +597,25 @@ def _credits_or_auth_failure(exc: BaseException) -> bool:
     ))
 
 
+def _should_fallback_vision(exc: BaseException) -> bool:
+    """Сменить primary→secondary: кредиты, 401/403, исчерпанный 503, нет модели."""
+    if _credits_or_auth_failure(exc) or is_capacity_error(exc):
+        return True
+    if _glm_model_unavailable(exc):
+        return True
+    return False
+
+
+def _grok_allowed_for_role(cfg, *, role: str) -> bool:
+    """Arbiter — серая зона. Primary — только если явно primary/fallback=grok."""
+    if role == "arbiter":
+        return bool(cfg.get("vision.grey_xai", True)) or bool(
+            cfg.get("providers.allow_xai", False))
+    preferred = str(cfg.get("vision.primary", "")).lower()
+    fallback = str(cfg.get("vision.fallback", "")).lower()
+    return preferred == "grok" or fallback == "grok"
+
+
 def _live_vision(cfg, costs, name: str, *, role: str = "primary") -> VisionProvider | None:
     # Нет ключа → None (следующий в цепочке), даже при providers.mode=live.
     if name == "glm":
@@ -568,14 +633,11 @@ def _live_vision(cfg, costs, name: str, *, role: str = "primary") -> VisionProvi
             return GeminiVision(cfg, costs, key)
         return None
     if name == "grok":
-        # Grok — только серая зона (arbiter). Primary его не берёт, даже если
-        # providers.allow_xai=true: иначе 403-fallback утащил бы весь пул.
-        if role != "arbiter":
-            return None
-        grey_xai = bool(cfg.get("vision.grey_xai", True))
-        if not grey_xai and not bool(cfg.get("providers.allow_xai", False)):
+        if not _grok_allowed_for_role(cfg, role=role):
             return None
         key = cfg.secret_for("vision.grok_api_key_env", purpose="Grok Vision")
+        if not key:
+            key = cfg.secret("XAI_API", purpose="Grok Vision")
         if not key:
             return None
         if resolve_mode(cfg, api_key=key, service="grok") is ProviderMode.LIVE:
@@ -585,7 +647,7 @@ def _live_vision(cfg, costs, name: str, *, role: str = "primary") -> VisionProvi
 
 
 class FallbackVision(VisionProvider):
-    """Основной судья + запасной при 401/402/403 / исчерпанных кредитах."""
+    """Основной судья + запасной при отказе primary (кредиты / модель / 503)."""
 
     def __init__(self, cfg, costs, primary: VisionProvider, secondary: VisionProvider) -> None:
         super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE,
@@ -599,7 +661,7 @@ class FallbackVision(VisionProvider):
             return self.primary.judge(frames, intent=intent, role=role,
                                       query=query, kind=kind)
         except ProviderError as exc:
-            if not _credits_or_auth_failure(exc):
+            if not _should_fallback_vision(exc):
                 raise
             _log.warning("vision primary отказал — запасной судья",
                          extra={"primary": self.primary.name,
@@ -612,9 +674,9 @@ class FallbackVision(VisionProvider):
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
     """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
 
-    Mid-critic — GLM. Grok входит только в цепочку ``arbiter`` (серая зона
-    на стороне judge). Gemini — запас primary, если GLM-ключа нет; не arbiter
-    «на всё». ``providers.allow_xai`` больше не тащит grok в primary.
+    Mid-critic — GLM. Gemini в primary только если явно ``vision.fallback``
+    или ``vision.primary`` = gemini: иначе облачный GEMINI_API_KEY уводит
+    §11.2 на 3.8. Grok в primary — только при явном ``fallback/primary=grok``.
     """
     preferred = str(cfg.get(f"vision.{role}", "glm" if role == "primary" else "grok")).lower()
     fallback = str(cfg.get("vision.fallback", "glm") or "").lower()
@@ -636,9 +698,10 @@ def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvide
         _push(fallback)
         if "glm" not in order:
             _push("glm")
-        # Живой Gemini только если GLM не поднялся — не ломаем прогон без GLM-ключа.
-        _push("gemini")
-        order[:] = [n for n in order if n != "grok"]
+        if preferred == "gemini" or fallback == "gemini":
+            _push("gemini")
+        if preferred != "grok" and fallback != "grok":
+            order[:] = [n for n in order if n != "grok"]
 
     live: list[VisionProvider] = []
     for name in order:

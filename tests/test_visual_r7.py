@@ -267,7 +267,23 @@ def test_source_card_anchors_off_avatar():
     assert cards[0]["start"] >= 10.0
 
 
-def test_hero_device_skips_face_covering_bubbles_on_avatar():
+def test_hero_device_catalog_has_no_face_circle_bubbles():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.lib.render.hyperframes.templates import HERO
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    ids = {t.id for t in cat.all()}
+    assert "hero-devices/bubble-card" not in ids
+    assert "hero-devices/bubble-typed" not in ids
+    assert "hero-bubble-card" not in HERO
+    assert "hero-bubble-typed" not in HERO
+
+
+def test_phone_mock_skipped_when_face_is_in_the_lower_third():
+    """ChatGPT-карточка закрывала рот, когда ведущий сидит в нижней трети."""
     import json as _json
 
     from src.lib.templates import TemplateCatalog
@@ -275,27 +291,34 @@ def test_hero_device_skips_face_covering_bubbles_on_avatar():
 
     path = ROOT / "templates" / "manifest.json"
     cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    for template in cat.all():
+        template.last_used_in = []
     content = {
-        "word": "ЧИП", "title": "Квантовый чип",
+        "word": "НЕЧЕМ", "title": "Квантовый чип",
         "head": "КВАНТОВЫЙ", "tail": "ЧИП",
-        "lines": ["квантовый", "чип"], "accent_lines": [0],
+        "lines": ["квантовый", "чип", "внутри", "105 кубитов"],
+        "accent_lines": [0],
         "punch": ["квантовый", "чип"], "entries": ["квантовый"],
-        "figures": [], "face": (540, 570),
-        "head_box": (200, 620, 880, 1400), "brand": None, "icons": [],
+        "figures": [], "face": (540, 1280),
+        "head_box": (390, 1080, 690, 1480), "brand": None, "icons": [],
+        "ask": "что внутри чипа", "answer": "105 кубитов",
+        "gen_prompt": "нарисуй квантовый процессор",
+        "caption": "квантовый чип",
     }
-    slot = {"index": 3, "role": "twist", "duration": 4.0,
-            "start": 12.0, "end": 16.0, "kind": "avatar"}
+    slot = {"index": 1, "role": "setup", "duration": 3.5,
+            "start": 3.08, "end": 6.6}
+    plate = {"file": "/w/shots/a.mp4", "duration_sec": 3.0}
     seen = set()
-    for seed in range(40):
-        entry = _hero_device(
-            cat, slot=slot, content=content, has_alpha=True,
-            plate_src=None, recent_videos=[], exclude=[], seed=seed,
-            video_duration=40.0)
-        if entry:
-            seen.add(entry["renderer"])
-            assert entry["renderer"] not in (
-                "hero-bubble-typed", "hero-bubble-card"), entry
-            assert entry.get("template") != "hero-devices/bubble-typed"
+    banned = {"hero-phone-mock", "hero-chat-generate", "hero-chat-typing"}
+    for head_box in ((390, 1080, 690, 1480), (438, 684, 606, 912), None):
+        content["head_box"] = head_box
+        for seed in range(24):
+            entry = _hero_device(
+                cat, slot=slot, content=content, has_alpha=True,
+                plate_src=plate, recent_videos=[], exclude=[], seed=seed)
+            if entry:
+                seen.add(entry["renderer"])
+                assert entry["renderer"] not in banned, (head_box, entry)
     assert seen
 
 

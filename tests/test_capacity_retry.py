@@ -25,6 +25,18 @@ def test_is_capacity_error_detects_gemini_503():
     assert not is_capacity_error(ProviderError("bad request", status=400))
 
 
+def test_is_capacity_error_detects_wrapped_429_quota():
+    """Обёртка call_with_retry не несёт status — fallback на 3.7 иначе не стартует."""
+    wrapped = ProviderError(
+        "Gemini vision: исчерпаны 6 попытки",
+        cause="ProviderError",
+        detail="[PROVIDER_ERROR] Gemini вернул 429 | {'status': 429, 'body': "
+               '\'{"error":{"code":429,"message":"You exceeded your current quota"}}\'}',
+    )
+    assert is_capacity_error(wrapped)
+    assert wrapped.details.get("status") is None
+
+
 def test_capacity_backoff_uses_longer_delays():
     sleeps: list[float] = []
     n = {"i": 0}

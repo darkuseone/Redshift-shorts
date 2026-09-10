@@ -68,10 +68,6 @@ def _load_yaml(path) -> dict:
 AVATAR_KINDS = ("avatar", "split")
 # White disk of circle-mask-grow sits opaque on the presenter's face.
 AVATAR_ENTRY_DENY = ("avatar-entry/circle-mask-grow",)
-# Opaque full-width bubble cards cover the talking head — skip on avatar.
-_FACE_COVERING_BUBBLES = frozenset({
-    "hero-bubble-typed", "hero-bubble-card",
-})
 
 
 def degrade_split_without_top(slot: dict[str, Any]) -> dict[str, Any]:
@@ -90,7 +86,7 @@ def _transition_exclude(category: str, used: list[str]) -> list[str]:
     return list(used) + ["transitions/cut"] + extra
 
 
-_FACE_ZONE_BOTTOM = 1150
+_FACE_ZONE_BOTTOM = 1080
 _COMPACT_CARD_MIN_PX = 260
 _LATIN_COPY_RATIO = 0.60
 _DOMAIN_OR_URL = re.compile(
@@ -283,8 +279,11 @@ def _source_card_room_px(brandbook: dict[str, Any] | None) -> int:
     size = subs.get("size_px") or [84, 104]
     size_hi = int(size[1] if isinstance(size, (list, tuple)) and len(size) > 1
                   else (size[0] if size else 104))
-    subtitle_top = int(subs.get("baseline_y_default", 1180)) - size_hi // 2 - 30
-    return int(subtitle_top - _FACE_ZONE_BOTTOM)
+    subtitle_top = int(subs.get("baseline_y_avatar_shift")
+                       or subs.get("baseline_y_default", 1180)) - size_hi // 2 - 30
+    face_floor = int(((brandbook.get("avatar") or {}).get("face_band_y")
+                      or [_FACE_ZONE_BOTTOM, 1480])[0])
+    return int(subtitle_top - face_floor)
 
 
 # --- приёмы вокруг ведущего (§5.3, референсы заказчика) ------------------------
@@ -621,6 +620,21 @@ def show_subscribe_cta(plan: dict[str, Any]) -> bool:
     return True
 
 
+def gaze_plaque_fits_face_band(brandbook: dict[str, Any] | None) -> bool:
+    """Top note-pin sits on the eyes when the face already lives in the lower third.
+
+    The gaze card was a mask for a centred talking head. With
+    ``avatar.face_band_y`` starting at 1080 the same «top» plaque lands on
+    the mouth. Skip it there; keep it when the face still sits above the
+    lower third. Missing brandbook follows the channel default (lower third).
+    """
+    band = ((brandbook or {}).get("avatar") or {}).get("face_band_y") or [1080, 1480]
+    try:
+        return int(band[0]) < 900
+    except (TypeError, ValueError, IndexError):
+        return False
+
+
 def wants_gaze_plaque(plan: dict[str, Any]) -> bool:
     """Gaze plaque if look-at/gaze is set or an evidence card is in the script."""
     def flagged(node: Any) -> bool:
@@ -807,7 +821,6 @@ LATE_HERO_BEAT = 0.60
 # kickers and above-crown headlines do not mute spoken VO.
 _BULKY_HERO_MUTE = frozenset({
     "hero-slam", "hero-knockout", "hero-oversize", "hero-split", "hero-exhibit",
-    "hero-bubble-typed", "hero-bubble-card",
 })
 
 
@@ -1053,7 +1066,6 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-split": ("word",),
     "hero-knockout": ("word",),
     "hero-text-column": ("lines",),
-    "hero-bubble-card": ("lines",),
     "hero-brand-pill": ("brand",),
     "hero-card-stack": ("title", "plate"),
     "hero-phone-mock": ("lines",),
@@ -1070,7 +1082,6 @@ _HERO_NEEDS: dict[str, tuple[str, ...]] = {
     "hero-figure": ("figures",),
     "hero-verdict": ("punch",),
     "hero-paper": ("source", "quote"),
-    "hero-bubble-typed": ("entries",),
 }
 
 
@@ -1588,6 +1599,12 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
 # глушит субтитр на своём окне: под ней его всё равно не видно.
 _FULL_FRAME_HEROES = ("hero-slam", "hero-knockout")
 
+# ChatGPT-карточка / окно чата в середине кадра закрывают лицо, когда ведущий
+# сидит в нижней трети. Кружок уже выкинут; эти приёмы — тот же класс брака.
+_FACE_COVERING_UI = frozenset({
+    "hero-phone-mock", "hero-chat-generate", "hero-chat-typing",
+})
+
 # Приёмы, которые выкладывают реплику **не** строками, а подписью, и потому не
 # попадают под проверку по `_HERO_NEEDS`. Экспонат подписывает материал фразой
 # целиком (`detail`), и пословный субтитр ложился на неё поверх: на кадре
@@ -1657,20 +1674,8 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
         params["head_half"] = max(int(box[2]) - int(box[0]),
                                   int(box[3]) - int(box[1])) // 2
     if content.get("face"):
-        # Круг садится на лицо, выбивка — тоже: её буквы видны только там, где
+        # Выбивка целит в светлую полосу лица: буквы видны только там, где
         # за ними светлее заливки.
-        if renderer in ("hero-bubble-card", "hero-bubble-typed"):
-            params["face_cx"], params["face_cy"] = content["face"]
-            if content.get("head_box"):
-                # Круг считается от коробки головы: по фиксированному диаметру
-                # он срезал щёки и подбородок. Центр — тоже её, а не лица:
-                # радиус описан вокруг головы, и если посадить его на середину
-                # лица, макушка вылезет ровно на разницу между ними.
-                box = content["head_box"]
-                params["head_w"] = int(box[2]) - int(box[0])
-                params["head_h"] = int(box[3]) - int(box[1])
-                params["face_cx"] = (int(box[0]) + int(box[2])) // 2
-                params["face_cy"] = (int(box[1]) + int(box[3])) // 2
         if renderer == "hero-knockout":
             params["face_cy"] = content["face"][1]
             if content.get("head_box"):
@@ -1992,9 +1997,10 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         if late and template.renderer == "hero-title-behind":
             blocked.append(template.id)
             continue
-        # Full-width bubble cards sit on the talking head (0042: only forehead
-        # visible). Side bubble is not in the catalog — skip the family.
-        if template.renderer in _FACE_COVERING_BUBBLES:
+        if has_alpha and template.renderer in _FACE_COVERING_UI:
+            # Compose always parks the face in the lower band (1080–1480).
+            # Raw HeyGen bbox is mid-frame (~684), so a y>=900 gate let
+            # ChatGPT-карточка закрыть уже сдвинутый рот (0042 t04).
             blocked.append(template.id)
             continue
         # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
@@ -2205,6 +2211,9 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
                         divider_color="0x" + str(ctx.cfg.color("accent")).lstrip("#"))
                     prepared[slot["index"]]["avatar_offset_sec"] = round(offset, 3)
                     prepared[slot["index"]]["asset_id"] = (asset or {}).get("asset_id")
+                    # Original evidence, not the baked vstack: HyperFrames
+                    # paints this in `.split-top` over the live avatar.
+                    prepared[slot["index"]]["top_src"] = str(top_src)
                     continue
 
             dst = ctx.wpath("shots", f"avatar_{slot['index']:02d}_{int(duration * 1000)}.mp4")
@@ -3258,6 +3267,10 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
             params["series"] = series
             params["xLabels"] = [n["raw"] for n in nums[:n_take]]
             params["showValues"] = True
+        if name == "animated-bar-chart":
+            heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+            params["title"] = heading or str(nums[0].get("raw") or "Ошибка")
+            params["subtitle"] = "по реплике блока"
     traits = set(signals) | set(block_traits(str(block.get("text") or "")))
     return {
         "type": "dataviz", "start": start, "end": end,
@@ -4181,7 +4194,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "file": prep["dst"],
             "bg_file": (avatar_bgs.get(int(slot["index"]))
                         if slot["kind"] == "avatar"
-                        and int(slot["index"]) in alpha_slots else None),
+                        and int(slot["index"]) in alpha_slots
+                        else (str(prep.get("top_src") or "").strip() or None)
+                        if slot["kind"] == "split" else None),
             "asset_id": asset.get("asset_id") or (f"avatar_seg_{prep.get('avatar_segment')}"
                                                   if is_avatar else None),
             "source": "heygen" if is_avatar else asset.get("source"),
@@ -4239,7 +4254,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
     # First avatar gaze mask (~2–4s): informative top/center hook card, no HeyGen.
     first_avatar = next((s for s in shots if s.get("kind") == "avatar"), None)
-    if first_avatar is not None and wants_gaze_plaque(plan):
+    brandbook = getattr(getattr(ctx, "cfg", None), "brandbook", None) or {}
+    if (first_avatar is not None and wants_gaze_plaque(plan)
+            and gaze_plaque_fits_face_band(brandbook)):
         a0 = float(first_avatar["start"])
         a1 = float(first_avatar["end"])
         # Cover the early eye-line beat inside the first avatar window.
@@ -4334,7 +4351,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                          category=str(plan.get("category") or ""))},
         "subtitle_style": {
             "mode": ctx.cfg.brand("subtitles.readability_mode", "stroke"),
-            "baseline_y": ctx.cfg.brand("subtitles.baseline_y_default", 1180),
+            "baseline_y": (
+                ctx.cfg.brand("subtitles.baseline_y_avatar_shift", 720)
+                if (avatar_meta.get("segments") or [])
+                else ctx.cfg.brand("subtitles.baseline_y_default", 1180)
+            ),
             "caption": pick_caption_style(plan, ctx.cfg.brandbook),
         },
         "avatar_compose_zoom": compose_zoom,

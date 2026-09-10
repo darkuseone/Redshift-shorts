@@ -58,6 +58,32 @@ def test_a_still_on_top_of_a_split_finishes(tmp_path, still, clip):
     assert took < 60, f"сборка заняла {took:.0f} с — похоже на зависание"
 
 
+def test_an_ultrawide_figure_on_a_split_keeps_both_edges(tmp_path, clip):
+    """Nature-фигура 685×271 при cover-кропе теряла боковые панели.
+
+    Красный слева и синий справа обязаны остаться в верхней половине:
+    letterbox, а не вырез центра.
+    """
+    still = tmp_path / "figure.jpg"
+    img = Image.new("RGB", (800, 200), (255, 255, 255))
+    for x in range(80):
+        for y in range(200):
+            img.putpixel((x, y), (220, 30, 30))
+            img.putpixel((800 - 1 - x, y), (30, 40, 200))
+    img.save(still, quality=95)
+    dst = tmp_path / "split.mp4"
+    prepare_split_shot(top_src=still, bottom_src=clip, dst=dst, duration_sec=1.0,
+                       width=1080, height=1920, fps=30)
+    frame_path = tmp_path / "frame.jpg"
+    run(["-y", "-ss", "0.2", "-i", str(dst), "-frames:v", "1",
+         str(frame_path)], what="кадр сплита")
+    frame = Image.open(frame_path)
+    left = frame.getpixel((40, 480))
+    right = frame.getpixel((1040, 480))
+    assert left[0] > left[2] + 40, left
+    assert right[2] > right[0] + 40, right
+
+
 def test_a_still_in_both_halves_finishes(tmp_path, still):
     """Два снимка — два повода зациклиться, и оба обязаны кончиться."""
     dst = tmp_path / "split_two.mp4"

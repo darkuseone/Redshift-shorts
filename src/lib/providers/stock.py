@@ -524,31 +524,34 @@ class InternetArchiveStock(StockProvider):
 def build_stock_providers(cfg, costs) -> dict[str, StockProvider]:
     """Собрать словарь source → провайдер согласно режиму и наличию ключей."""
     providers: dict[str, StockProvider] = {}
+    mode = str(cfg.get("providers.mode", "auto")).lower()
+
+    def _keyed(name: str, key: str | None, live_cls):
+        if mode == "mock":
+            providers[name] = MockStock(cfg, costs, name=name)
+            return
+        if key:
+            providers[name] = live_cls(cfg, costs, key)
+            return
+        if mode == "live":
+            resolve_mode(cfg, api_key=key, service=name)
+        _log.info("ключа нет — mock-сток в боевом режиме не подставляется",
+                  extra={"source": name})
 
     pexels_key = cfg.secret_for("stock.pexels_api_key_env", purpose="Pexels")
-    if resolve_mode(cfg, api_key=pexels_key, service="pexels") is ProviderMode.LIVE:
-        providers["pexels"] = PexelsStock(cfg, costs, pexels_key or "")
-    else:
-        providers["pexels"] = MockStock(cfg, costs, name="pexels")
+    _keyed("pexels", pexels_key, PexelsStock)
 
     pixabay_key = cfg.secret_for("stock.pixabay_api_key_env", purpose="Pixabay")
-    if resolve_mode(cfg, api_key=pixabay_key, service="pixabay") is ProviderMode.LIVE:
-        providers["pixabay"] = PixabayStock(cfg, costs, pixabay_key or "")
-    else:
-        providers["pixabay"] = MockStock(cfg, costs, name="pixabay")
+    _keyed("pixabay", pixabay_key, PixabayStock)
 
     # Freepik по подписке Magnific: скачивание из каталога не стоит кредитов,
     # в отличие от генерации (от 140 кредитов за 5 сек видео). Поэтому он идёт
     # первым источником, а генерация закрывает дыры (§7.2).
     freepik_key = cfg.secret_for("stock.freepik_api_key_env", purpose="Freepik / Magnific")
-    if resolve_mode(cfg, api_key=freepik_key, service="freepik") is ProviderMode.LIVE:
-        providers["freepik"] = FreepikStock(cfg, costs, freepik_key or "")
-    else:
-        providers["freepik"] = MockStock(cfg, costs, name="freepik")
+    _keyed("freepik", freepik_key, FreepikStock)
 
     # NASA и Internet Archive работают без ключа, но в mock-режиме их всё равно
     # подменяем: providers.mode=mock означает «ни одного внешнего вызова».
-    mode = str(cfg.get("providers.mode", "auto")).lower()
     if mode == "mock":
         providers["nasa"] = MockStock(cfg, costs, name="nasa")
         providers["internet_archive"] = MockStock(cfg, costs, name="internet_archive")

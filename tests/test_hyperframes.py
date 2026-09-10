@@ -335,6 +335,26 @@ def test_opaque_avatar_gets_no_background_layer(plan, assets, brandbook):
     assert 'id="avatar-00" class="avatar"' in out
 
 
+def test_split_shot_puts_evidence_above_the_avatar(plan, assets, brandbook):
+    """Режим B: альфа-аватар не должен съедать Nature-фигуру сценой студии."""
+    plan["shots"][2]["kind"] = "split"
+    plan["shots"][2]["bg_file"] = "/w/press/figure.jpg"
+    plan["shots"][2]["credit"] = "Nature / Google Quantum AI"
+    plan["avatar"][0]["has_alpha"] = True
+    plan["avatar"][0]["slot_indices"] = [2]
+    assets["/w/press/figure.jpg"] = "assets/m099_figure.jpg"
+    out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
+    assert 'id="shot-02"' in out
+    assert "split-top" in out
+    assert "assets/m099_figure.jpg" in out
+    assert "vfx" not in out.split('id="shot-02"')[1][:400]
+    assert "credit-split" in out
+    assert 'id="avatar-00" class="avatar"' in out
+    css = build_css(brandbook, fonts={})
+    assert "z-index:21" in css
+    assert "object-fit:contain" in css
+
+
 def test_word_behind_head_needs_alpha(plan, assets, brandbook):
     """Без альфы слово оказалось бы за непрозрачным видео — его не видно."""
     plan["avatar"][0]["has_alpha"] = False
@@ -2280,22 +2300,20 @@ def test_hero_media_path_outside_the_project_is_dropped(plan, assets, brandbook)
     assert "hero-brand-pill" in out, "приём обязан остаться, потеряв только иконку"
 
 
-def test_bubble_cuts_the_circle_with_a_mask_not_a_radius(plan, assets, brandbook):
-    """Продюсер рисует кадры видео в коробку, игнорируя border-radius.
+def test_circle_hole_bubble_templates_are_gone_from_composition(plan, assets, brandbook):
+    """Заказчик: кружок-дырка на лице не вмещает голову — приём удалён."""
+    from src.lib.render.hyperframes.templates import HERO
 
-    Проверено зумом: второе видео со скруглением давало квадрат. Круг режется
-    SVG-маской, и сквозь дырку виден сам аватар — второе видео не нужно.
-    """
     plan["shots"][2]["hero"] = {
         "template": "hero-devices/bubble-card", "renderer": "hero-bubble-card",
         "params": {"lines": ["ни одна компания"], "face_cx": 540, "face_cy": 550},
         "file": None, "duration": None, "carries_line": True,
     }
     out = CompositionBuilder(plan, brandbook, assets).build("assets/mix.wav")
-    assert "<mask" in out and "<circle" in out
-    assert out.count('class="clip hero-bubble-card"') == 1
-    # Ведущий приближается внутри дырки — иначе это заслонка, а не смена плана.
-    assert any('"#avatar-00"' in l and "scale" in l for l in out.splitlines())
+    assert "hero-bubble-card" not in out
+    assert "hero-bubble-typed" not in out
+    assert "hero-bubble-card" not in HERO
+    assert "hero-bubble-typed" not in HERO
 
 
 # --- тайминг: округление не имеет права создавать наезд ------------------------
@@ -2715,7 +2733,7 @@ class TestChannelSurfacesAreDark:
     FOREIGN = (
         "source-card", "chat-thread", "article-scroll", "paper-reveal",
         "hero-phone-mock", "hero-chat-typing", "hero-chat-generate", "hero-paper",
-        "hero-bubble-card", "hero-bubble-typed", "ex-frame", "hero-plate",
+        "ex-frame", "hero-plate",
         "hero-verdict", "tr-flash", "tr-mask-circle", "tr-mask-diagonal",
         "pm-row", "ct-skeleton", "ct-answer", "cg-canvas", "url", "bar",
         # Не плита, а чернила: пылинка приёма «текст рассыпается» на тёмном

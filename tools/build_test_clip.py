@@ -16,7 +16,7 @@ QC-отчёта здесь тоже нет: проба судится глаза
 Запуск:
 
     python tools/build_test_clip.py clip.webm --text "реплика, которую он говорит" \\
-        --devices hero-paper,hero-bubble-typed -o test.mp4
+        --devices hero-paper,hero-type-slab -o test.mp4
 
 Реплика обязана совпадать с тем, что в клипе произносится: по ней считаются
 тайминги слов, и разойдясь, субтитр уедет. Вместо `--text` можно отдать блок
@@ -56,7 +56,7 @@ from src.p11_assemble.assemble import (                                # noqa: E
 )
 
 # Приёмы по умолчанию — те, что показывают и материал источника, и речь.
-DEFAULT_DEVICES = ("hero-paper", "hero-bubble-typed")
+DEFAULT_DEVICES = ("hero-paper", "hero-type-slab")
 
 
 def _voice_track(clip: Path, dst: Path) -> tuple[Path, float, float]:
