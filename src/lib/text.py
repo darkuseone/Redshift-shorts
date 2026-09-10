@@ -347,6 +347,61 @@ def punch_families_overlap(a: str, b: str) -> bool:
     return bool(punch_stems(a) & punch_stems(b))
 
 
+def sync_overlays_from_script(
+        plan: dict[str, Any],
+        repo_root=None,
+        *,
+        script: dict[str, Any] | None = None) -> int:
+    """Cut/draft overlays can drift from ``scripts/*.json`` (stale P0 cache).
+
+    0048 kept «88 ЧАСОВ» on b4 after the script moved the card to
+    «СИНГУЛЯРНОСТЬ». Enrich then parked the punch on «семнадцать часов».
+    Authored type/content/hint win; other overlay keys stay.
+    """
+    import json
+    from pathlib import Path
+
+    if script is None:
+        meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
+        video_id = str(plan.get("video_id") or meta.get("video_id") or "").strip()
+        if not video_id or repo_root is None:
+            return 0
+        path = Path(repo_root) / "scripts" / f"{video_id}.json"
+        if not path.is_file():
+            return 0
+        try:
+            script = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            return 0
+    src_blocks = {
+        str(block.get("id") or ""): block
+        for block in (script.get("blocks") or [])
+        if isinstance(block, dict)
+    }
+    updated = 0
+    for block in plan.get("blocks") or []:
+        if not isinstance(block, dict):
+            continue
+        src = src_blocks.get(str(block.get("id") or ""))
+        if not src:
+            continue
+        overlay = src.get("overlay")
+        if not isinstance(overlay, dict) or not overlay.get("type"):
+            continue
+        current = dict(block.get("overlay") or {})
+        changed = False
+        for key in ("type", "content", "template_hint"):
+            if key not in overlay:
+                continue
+            if current.get(key) != overlay.get(key):
+                current[key] = overlay[key]
+                changed = True
+        if changed:
+            block["overlay"] = current
+            updated += 1
+    return updated
+
+
 def spoken_onset_for_content(words: list[dict[str, Any]], content: str,
                              emphasis_word: str | None = None,
                              *, default: float | None = None) -> float | None:

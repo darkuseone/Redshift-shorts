@@ -41,7 +41,7 @@ from ..lib.backdrop import tone as scene_tone
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
     punch_families_overlap, soften_on_screen_copy, spoken_onset_for_content,
-    stems_match,
+    stems_match, sync_overlays_from_script,
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
@@ -2158,10 +2158,13 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                                           "hero-oversize")):
             blocked.append(template.id)
             continue
-        if has_alpha and template.renderer in _FACE_COVERING_UI:
-            # Compose always parks the face in the lower band (1080–1480).
-            # Raw HeyGen bbox is mid-frame (~684), so a y>=900 gate let
-            # ChatGPT-карточка закрыть уже сдвинутый рот (0042 t04).
+        if has_alpha and template.renderer in (
+                "hero-slam", "hero-knockout", "hero-oversize"):
+            blocked.append(template.id)
+            continue
+        if template.renderer in _FACE_COVERING_UI:
+            # ChatGPT-карточка закрывает лицо на аватаре и врёт «чат» на
+            # пустой перебивке. Не ставим ни там, ни там.
             blocked.append(template.id)
             continue
         # Музейная табличка — утверждение о материале: вот вещь, вот её имя,
@@ -2220,7 +2223,10 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
             cand_needs = _HERO_NEEDS.get(cand.renderer, ())
             if any(not available.get(key) for key in cand_needs):
                 continue
-            if has_alpha and cand.renderer in _FACE_COVERING_UI:
+            if cand.renderer in _FACE_COVERING_UI:
+                continue
+            if has_alpha and cand.renderer in (
+                    "hero-slam", "hero-knockout", "hero-oversize"):
                 continue
             picked = cand
             break
@@ -2377,7 +2383,8 @@ def split_empty_at_authored_punch(
     the hall hold the universe line and the tail become the punch card.
     """
     blocks = {str(b.get("id") or ""): b for b in plan.get("blocks") or []}
-    max_idx = max((int(s["index"]) for s in slots), default=0)
+    used_idx = {int(s["index"]) for s in slots}
+    max_idx = max(used_idx, default=0)
     out: list[dict[str, Any]] = []
     first_min = 0.55
     # 0.6 s flash of «решена за пять минут» is unreadable; hold a beat.
@@ -2409,6 +2416,24 @@ def split_empty_at_authored_punch(
         if not (start - 1e-6 <= punch_at < end + 1e-6):
             out.append(slot)
             continue
+        # Million-dollar FS is already the next slot. Splitting the host
+        # shot parked authored_punch on the face (0048 index 28).
+        if str(slot.get("kind") or "") in AVATAR_KINDS:
+            neighbors = [
+                other for other in slots
+                if other is not slot
+                and str(other.get("block_id") or "") == str(slot.get("block_id") or "")
+                and str(other.get("kind") or "") == "fullscreen_text"
+            ]
+            if any(
+                abs(float(other.get("start") or 0) - punch_at) <= 0.35
+                or (float(other.get("start") or 0) - 1e-6
+                    <= punch_at
+                    < float(other.get("end") or 0) + 1e-6)
+                for other in neighbors
+            ):
+                out.append(slot)
+                continue
         if end - punch_at < punch_min and (end - start) >= first_min + punch_min:
             punch_at = max(start + first_min, end - punch_min)
         hint = str(overlay.get("template_hint") or "").strip()
@@ -2428,7 +2453,10 @@ def split_empty_at_authored_punch(
         first["duration"] = round(punch_at - start, 3)
         rest = copy.deepcopy(slot)
         max_idx += 1
+        while max_idx in used_idx:
+            max_idx += 1
         rest["index"] = max_idx
+        used_idx.add(max_idx)
         rest["start"] = punch_at
         rest["end"] = end
         rest["duration"] = round(end - punch_at, 3)
@@ -4436,6 +4464,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             if raw:
                 slot["kind"] = "fullscreen_text"
                 slot["content"] = raw
+                entry["kind"] = "fullscreen_text"
+                entry["content"] = raw
 
         if slot["kind"] == "fullscreen_text":
             content = slot.get("content", "")
@@ -4491,6 +4521,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     float(fs_params.get("enter_delay") or 0),
                     float(onset) + 0.05 - float(slot["start"]))
             entry.update({
+                "kind": "fullscreen_text",
                 "content": content,
                 "template": template.id,
                 "renderer": template.renderer,
@@ -5108,7 +5139,8 @@ def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
 
 
 def run_step(ctx) -> dict[str, Any]:
-    plan = ctx.read("cut_plan.json")
+    plan = copy.deepcopy(ctx.read("cut_plan.json"))
+    sync_overlays_from_script(plan, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
     accepted_doc = ctx.read("accepted_assets.json")
     generated_doc = ctx.read("generated_assets.json")

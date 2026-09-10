@@ -134,3 +134,63 @@ def test_logo_brand_close_default_tagline_empty():
     wm, tag, url = _lbc_copy({"wordmark": "REDSHIFT", "tagline": "", "url": "redshift.shorts"})
     assert tag == ""
     assert url == "redshift.shorts"
+
+
+def test_sync_overlays_from_script_restores_punch():
+    from src.lib.text import sync_overlays_from_script
+
+    plan = {
+        "video_id": "redshift_0048",
+        "blocks": [{
+            "id": "b4",
+            "overlay": {"type": "fullscreen_text", "content": "88 ЧАСОВ"},
+        }],
+    }
+    script = {
+        "blocks": [{
+            "id": "b4",
+            "overlay": {
+                "type": "fullscreen_text",
+                "content": "СИНГУЛЯРНОСТЬ",
+                "template_hint": "text-fullscreen/impact-01",
+            },
+        }],
+    }
+    assert sync_overlays_from_script(plan, script=script) == 1
+    assert plan["blocks"][0]["overlay"]["content"] == "СИНГУЛЯРНОСТЬ"
+
+
+def test_script_overlay_beats_stale_hours_punch():
+    """Stale «88 ЧАСОВ» must not park the card on «семнадцать часов»."""
+    from src.lib.text import sync_overlays_from_script
+    from src.p11_assemble.assemble import split_empty_at_authored_punch
+
+    plan = {
+        "blocks": [{
+            "id": "b4",
+            "text": (
+                "За семнадцать часов она переложила его в Lean. "
+                "За конечное время — сингулярность."
+            ),
+            "emphasis_word": "сингулярность",
+            "overlay": {"type": "fullscreen_text", "content": "88 ЧАСОВ"},
+        }],
+    }
+    sync_overlays_from_script(plan, script={"blocks": [{
+        "id": "b4",
+        "overlay": {"type": "fullscreen_text", "content": "СИНГУЛЯРНОСТЬ"},
+    }]})
+    slots = [{
+        "index": 19, "start": 42.866, "end": 45.151, "duration": 2.285,
+        "block_id": "b4", "kind": "footage", "needs_asset": True,
+    }]
+    words = [
+        {"display": "часов", "start": 34.53, "end": 34.83, "block_id": "b4"},
+        {"display": "сингулярность.", "start": 44.70, "end": 45.15, "block_id": "b4"},
+    ]
+    out = split_empty_at_authored_punch(
+        slots, plan, {19: {"asset_id": "fp_rock_surface"}}, words)
+    tails = [s for s in out if s.get("authored_punch")]
+    assert len(tails) == 1
+    assert float(tails[0]["start"]) >= 43.9
+    assert float(tails[0]["end"]) == 45.151

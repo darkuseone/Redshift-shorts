@@ -829,6 +829,36 @@ def test_authored_punch_splits_filled_slot():
     assert float(tails[0]["end"]) == 45.151
 
 
+def test_punch_split_skips_avatar_when_fs_slot_follows():
+    """$1M card is already the next slot — do not carve the host shot."""
+    from src.p11_assemble.assemble import split_empty_at_authored_punch
+
+    plan = {
+        "blocks": [{
+            "id": "b2",
+            "text": "Миллион долларов за каждую.",
+            "emphasis_word": "миллион",
+            "overlay": {"type": "fullscreen_text", "content": "$1 000 000"},
+        }],
+    }
+    slots = [
+        {"index": 3, "start": 3.421, "end": 7.666, "duration": 4.245,
+         "block_id": "b2", "kind": "avatar", "needs_asset": False},
+        {"index": 4, "start": 7.666, "end": 8.866, "duration": 1.2,
+         "block_id": "b2", "kind": "fullscreen_text", "content": "$1 000 000",
+         "needs_asset": True},
+    ]
+    words = [
+        {"display": "миллион", "start": 7.616, "end": 8.066, "block_id": "b2"},
+    ]
+    out = split_empty_at_authored_punch(slots, plan, {}, words)
+    assert len(out) == 2
+    avatar = next(s for s in out if s["kind"] == "avatar")
+    assert float(avatar["start"]) == 3.421
+    assert float(avatar["end"]) == 7.666
+    assert not avatar.get("authored_punch")
+
+
 def test_inherited_hall_skips_the_emphasis_card():
     """Hall plate is the shot; «ВДВОЕ» over it was the 0042 defect."""
     from src.p11_assemble.assemble import VisualBudget, _close_empty_slot

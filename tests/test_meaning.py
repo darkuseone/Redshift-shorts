@@ -138,15 +138,16 @@ class TestThePlanSaysWhyEachDeviceIsThere:
         # показать) и смысл (`needs` — оправдан ли он этим блоком). Здесь
         # проверяется второй, поэтому наполнение дано всем.
         content = {"word": "ГЛУБИНА", "title": "Кольская", "lines": ["а", "б"],
-                   "punch": ["а", "б"], "entries": ["а"], "figures": [],
+                   "punch": ["а", "б"], "entries": ["а"], "figures": ["12 км"],
                    "face": (540, 570), "caption": "подпись",
                    "ask": "что будет, если бурить дальше", "answer": "ствол затянет",
                    "head": "Кольская", "tail": "перестала бурить"}
         slot = {"index": 3, "role": "develop", "duration": 5.0, "start": 0.0, "end": 5.0}
-        block = {"id": "b4", "text": "Что будет, если бурить дальше?"}
+        block = {"id": "b4", "text": "Ствол ушёл на двенадцать километров."}
         reasons = set()
-        # Chat-окно на аватаре закрывает лицо в нижней трети — has_alpha=False:
-        # проверяем, что «задан вопрос» всё ещё доходит до why у приёма.
+        # Chat-окно больше не герой: оно закрывает лицо и врёт «чат» на
+        # пустой перебивке. Основание why проверяем на числе — figure-swap
+        # остаётся в пуле.
         for seed in range(24):
             entry = _hero_device(cat, slot=slot, content=content, has_alpha=False,
                                  plate_src=None, recent_videos=[], exclude=[],
@@ -156,7 +157,7 @@ class TestThePlanSaysWhyEachDeviceIsThere:
                 assert entry["traits"] == sorted(block_traits(block["text"]))
                 reasons.add(entry["why"])
         assert reasons, "приём не выбрался ни разу"
-        assert any("задан вопрос" in r for r in reasons), sorted(reasons)
+        assert any("названо число" in r for r in reasons), sorted(reasons)
 
 
 class TestTheSourceCardSurvivesTheMerge:
