@@ -1,0 +1,96 @@
+{
+  "video_id": "redshift_0049",
+  "avatar_id": "3799c0f8f9c846468efedc9680eeac6e",
+  "avatar_group_id": "d0573be250724c23bed61037f1c7490d",
+  "engine": "avatar_v",
+  "model_version": "avatar5",
+  "motion_prompt": "energetic talking-head: lively face, slightly bigger hand gestures, lean into the point, not frantic, not frozen",
+  "audio_source": "elevenlabs",
+  "generate_full_timeline": false,
+  "clips_dir": "/home/runner/work/Redshift-shorts/Redshift-shorts/assets/avatar_clips/redshift_0049",
+  "background": "transparent_if_available",
+  "resolution": [
+    1080,
+    1920
+  ],
+  "segments": [
+    {
+      "index": 0,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0049/avatar/seg_00.wav",
+      "duration_sec": 5.175,
+      "block_id": "b2",
+      "text": "В математике новой моделью закрыла одну из семи задач, которые четверть века никто не брал. Миллион",
+      "expected_clip": "seg_00.mov",
+      "lipsync_source": "elevenlabs",
+      "reason": "heygen_http_unavailable",
+      "problem": "[PROVIDER_ERROR] HeyGen generate: исчерпаны 3 попытки | {'cause': 'ProviderError', 'detail': '[PROVIDER_ERROR] HeyGen generate вернул 402 | {\\'status\\': 402, \\'body\\': \\'{\"error\":{\"code\":\"insufficient_credit\",\"doc_url\":\"https://developers.h"
+    },
+    {
+      "index": 1,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0049/avatar/seg_01.wav",
+      "duration_sec": 5.492,
+      "block_id": "b2",
+      "text": "каждую. Это не мелки на доске. Это формулы, по которым считают воду, воздух и кровь. Восьмого",
+      "expected_clip": "seg_01.mov",
+      "lipsync_source": "elevenlabs",
+      "reason": "heygen_http_unavailable",
+      "problem": "[PROVIDER_ERROR] HeyGen generate: исчерпаны 3 попытки | {'cause': 'ProviderError', 'detail': '[PROVIDER_ERROR] HeyGen generate вернул 402 | {\\'status\\': 402, \\'body\\': \\'{\"error\":{\"code\":\"insufficient_credit\",\"doc_url\":\"https://developers.h"
+    },
+    {
+      "index": 2,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0049/avatar/seg_02.wav",
+      "duration_sec": 4.945,
+      "block_id": "b4",
+      "text": "Семнадцать часов она переложила его в Lean — язык, где компьютер проверяет каждый шаг,",
+      "expected_clip": "seg_02.mov",
+      "lipsync_source": "elevenlabs",
+      "reason": "heygen_http_unavailable",
+      "problem": "[PROVIDER_ERROR] HeyGen generate: исчерпаны 3 попытки | {'cause': 'ProviderError', 'detail': '[PROVIDER_ERROR] HeyGen generate вернул 402 | {\\'status\\': 402, \\'body\\': \\'{\"error\":{\"code\":\"insufficient_credit\",\"doc_url\":\"https://developers.h"
+    },
+    {
+      "index": 3,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0049/avatar/seg_03.wav",
+      "duration_sec": 3.461,
+      "block_id": "b5",
+      "text": "Только приз Клея — за уравнения без внешней силы. Этот",
+      "expected_clip": "seg_03.mov",
+      "lipsync_source": "elevenlabs",
+      "reason": "heygen_http_unavailable",
+      "problem": "[PROVIDER_ERROR] HeyGen generate: исчерпаны 3 попытки | {'cause': 'ProviderError', 'detail': '[PROVIDER_ERROR] HeyGen generate вернул 402 | {\\'status\\': 402, \\'body\\': \\'{\"error\":{\"code\":\"insufficient_credit\",\"doc_url\":\"https://developers.h"
+    },
+    {
+      "index": 4,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0049/avatar/seg_04.wav",
+      "duration_sec": 3.874,
+      "block_id": "b5",
+      "text": "Клей решение не принял. Миллион OpenAI не берёт.",
+      "expected_clip": "seg_04.mov",
+      "lipsync_source": "elevenlabs",
+      "reason": "heygen_http_unavailable",
+      "problem": "[PROVIDER_ERROR] HeyGen generate: исчерпаны 3 попытки | {'cause': 'ProviderError', 'detail': '[PROVIDER_ERROR] HeyGen generate вернул 402 | {\\'status\\': 402, \\'body\\': \\'{\"error\":{\"code\":\"insufficient_credit\",\"doc_url\":\"https://developers.h"
+    },
+    {
+      "index": 5,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0049/avatar/seg_05.wav",
+      "duration_sec": 3.632,
+      "block_id": "b5",
+      "text": "тысячелетия. Это первая дыра в стене, которую четверть",
+      "expected_clip": "seg_05.mov",
+      "lipsync_source": "elevenlabs",
+      "reason": "heygen_http_unavailable",
+      "problem": "[PROVIDER_ERROR] HeyGen generate: исчерпаны 3 попытки | {'cause': 'ProviderError', 'detail': '[PROVIDER_ERROR] HeyGen generate вернул 402 | {\\'status\\': 402, \\'body\\': \\'{\"error\":{\"code\":\"insufficient_credit\",\"doc_url\":\"https://developers.h"
+    },
+    {
+      "index": 6,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0049/avatar/seg_06.wav",
+      "duration_sec": 2.45,
+      "block_id": "b6",
+      "text": "Какую из оставшихся шести разберём следующей?",
+      "expected_clip": "seg_06.mov",
+      "lipsync_source": "elevenlabs",
+      "reason": "heygen_http_unavailable",
+      "problem": "[PROVIDER_ERROR] HeyGen generate: исчерпаны 3 попытки | {'cause': 'ProviderError', 'detail': '[PROVIDER_ERROR] HeyGen generate вернул 402 | {\\'status\\': 402, \\'body\\': \\'{\"error\":{\"code\":\"insufficient_credit\",\"doc_url\":\"https://developers.h"
+    }
+  ],
+  "_how_to": "Озвучка уже ElevenLabs в поле audio каждого сегмента — не синтезировать голосом HeyGen. Если HTTP API (секрет HEYGEN_API) недоступен: HeyGen MCP create_video_from_avatar, avatar_id = look id (не avatar_group_id), engine {type: avatar_v}, audio_asset из wav сегмента, motionPrompt из заявки (энергичнее жесты). expressiveness не слать — это Avatar IV. Генерировать только эти сегменты, не весь ролик. Положить клипы в clips_dir под expected_clip и возобновить прогон с --from P6."
+}
