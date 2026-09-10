@@ -427,8 +427,22 @@ class TestQc10MeasuresSubtitleDriftAgainstSpeech:
         assert check["passed"]
         assert check["value"] == pytest.approx(0.0, abs=1.0)
 
-
-class TestQc11ReportsClipOffsetNotMouth:
+    def test_quotes_glued_to_the_spoken_word_do_not_count_as_drift(self, cfg):
+        """P3 keeps « on ``не «``; glued lead is ``не``. Same token, same start."""
+        plan = _plan(
+            subtitles=[{
+                "display": "Астра", "lead": "не",
+                "start": 57.726, "end": 58.276,
+            }],
+            speech_words=[
+                {"display": "не", "start": 54.319, "end": 54.497},
+                {"display": "не «", "start": 57.726, "end": 57.920},
+                {"display": "Астра", "start": 57.920, "end": 58.276},
+            ],
+        )
+        check = _check(_run(cfg, plan), "QC-10")
+        assert check["passed"]
+        assert check["value"] == pytest.approx(0.0, abs=1.0)
     """MUST-026: QC-11 — avatar_clip_offset, не губы и не lip-sync."""
 
     def test_report_text_has_no_lip_or_mouth_words(self, cfg):

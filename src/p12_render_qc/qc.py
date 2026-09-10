@@ -683,8 +683,15 @@ def _qc21_scores(template_id: str) -> bool:
 
 
 def _cue_token(text: str) -> str:
+    """Normalize a cue/speech token so quotes glued to the word still match.
+
+    P3 keeps opening « on ``не «``; glued karaoke lead is just ``не``.
+    Strip leftover punctuation, then whitespace, or QC-10 pairs the cue
+    with an earlier copy of the same word.
+    """
     raw = str(text or "").casefold().strip()
-    return raw.strip(".,:;!?…«»\"'()[]")
+    raw = raw.strip(".,:;!?…«»\"'()[]—–-")
+    return raw.strip()
 
 
 def _spans_overlap(a0: float, a1: float, b0: float, b1: float,

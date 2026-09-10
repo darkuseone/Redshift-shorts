@@ -152,6 +152,29 @@ def test_stage1_rejects_talking_head_negative(cfg):
     assert clean is None
 
 
+def test_fissure_does_not_summon_the_iss():
+    script = _script("redshift_0048.json")
+    plan = _plan_from_script(script)
+    block = next(b for b in script["blocks"] if b["id"] == "b5")
+    slot = _slot_from_block(block, 4)
+    compiled = compile_slot_search(slot, plan, count=5)
+    blob = " ".join(compiled["queries"]).lower()
+    assert "international space station" not in blob
+    assert not any("iss " in q.lower() or q.lower().startswith("iss")
+                   for q in compiled["queries"]), compiled["queries"]
+    assert "International Space Station" not in compiled["entities"]
+
+
+def test_0048_twist_queries_are_not_prefixed_with_openai():
+    script = _script("redshift_0048.json")
+    plan = _plan_from_script(script)
+    block = next(b for b in script["blocks"] if b["id"] == "b5")
+    slot = _slot_from_block(block, 4)
+    compiled = compile_slot_search(slot, plan, count=5)
+    for query in compiled["queries"]:
+        assert not query.lower().startswith("openai"), compiled["queries"]
+
+
 def test_negative_reject_reason_matches_aliases():
     assert negative_reject_reason("youtube thumbnail clickbait face",
                                   ["clickbait thumbnail"])

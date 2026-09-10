@@ -1,0 +1,22 @@
+{
+  "video_id": "redshift_0048",
+  "avatar_id": "99ccc74e764947c394cd4ef210960a6f",
+  "model_version": "avatar5",
+  "clips_dir": "/workspace/assets/avatar_clips/redshift_0048",
+  "background": "transparent_if_available",
+  "resolution": [
+    1080,
+    1920
+  ],
+  "segments": [
+    {
+      "index": 6,
+      "audio": "/workspace/work/redshift_0048/avatar/seg_06.wav",
+      "duration_sec": 4.372,
+      "block_id": "b6",
+      "text": "Машинам можно отдавать задачи на миллион? Жми да или нет.",
+      "expected_clip": "seg_06.mov"
+    }
+  ],
+  "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы в clips_dir под именами expected_clip и возобновить прогон с шага P6."
+}

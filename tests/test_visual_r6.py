@@ -43,6 +43,14 @@ def test_enrich_expands_short_stub():
     assert "решена" in out.lower()
 
 
+def test_enrich_keeps_long_single_word_punch():
+    assert enrich_overlay_punch(
+        "СИНГУЛЯРНОСТЬ",
+        "За семнадцать часов она переложила его в Lean. "
+        "За конечное время — сингулярность.",
+    ) == "СИНГУЛЯРНОСТЬ"
+
+
 def test_punch_family_overlap_nechem():
     assert punch_families_overlap("ПРОВЕРИТЬ НЕЧЕМ", "нечем")
     assert punch_families_overlap("Вообще ничем", "НЕЧЕМ")
@@ -71,9 +79,220 @@ def test_retime_demotes_early_intentional_fs():
     assert slots[0]["kind"] == "footage"
 
 
+def test_retime_syncs_cached_stub_to_authored_punch():
+    from src.p11_assemble.assemble import _sync_fullscreen_overlay_content
+
+    b4 = {
+        "id": "b4",
+        "text": (
+            "За семнадцать часов она переложила его в Lean. "
+            "За конечное время — сингулярность."
+        ),
+        "emphasis_word": "сингулярность",
+        "overlay": {"type": "fullscreen_text", "content": "СИНГУЛЯРНОСТЬ"},
+    }
+    slots = [{
+        "index": 15, "start": 34.579, "end": 35.779, "duration": 1.2,
+        "kind": "fullscreen_text", "block_id": "b4",
+        "content": "За семнадцать часов",
+        "reason": "полноэкранный текст (§5.2)",
+    }]
+    words = [
+        {"display": "семнадцать", "start": 34.08, "end": 34.53, "block_id": "b4"},
+        {"display": "часов", "start": 34.53, "end": 34.83, "block_id": "b4"},
+        {"display": "сингулярность.", "start": 44.70, "end": 45.15, "block_id": "b4"},
+    ]
+    plan = {"blocks": [b4]}
+    _sync_fullscreen_overlay_content(slots, plan)
+    assert slots[0]["content"] == "СИНГУЛЯРНОСТЬ"
+    _retime_fullscreen_slots(slots, plan, words)
+    assert slots[0]["kind"] == "footage"
+
+
+def test_hero_word_requires_spoken_overlap():
+    from src.p11_assemble.assemble import _hero_content
+
+    block = {
+        "emphasis_word": "миллион",
+        "text": "Миллион долларов за каждую. Пуанкаре закрыли.",
+    }
+    slot = {"start": 13.2, "end": 16.4, "role": "setup"}
+    quiet = _hero_content(block, slot, None, words=[
+        {"display": "уравнения", "start": 13.7, "end": 14.1},
+        {"display": "Навье-Стокса", "start": 14.5, "end": 14.9},
+    ])
+    assert quiet["word"] == ""
+    elsewhere = _hero_content(block, slot, None, words=[
+        {"display": "Миллион", "start": 7.6, "end": 8.0},
+    ])
+    assert elsewhere["word"] == ""
+    spoken = _hero_content(block, {"start": 7.4, "end": 8.9, "role": "setup"},
+                           None, words=[
+        {"display": "Миллион", "start": 7.6, "end": 8.0},
+    ])
+    assert spoken["word"].lower() == "миллион"
+
+
+def test_hero_word_clears_when_slot_has_no_speech():
+    from src.p11_assemble.assemble import _hero_content
+
+    block = {
+        "emphasis_word": "сингулярность",
+        "text": "За конечное время — сингулярность.",
+    }
+    slot = {"start": 45.151, "end": 48.151, "role": "develop"}
+    quiet = _hero_content(block, slot, None, words=[])
+    assert quiet["word"] == ""
+    touching = _hero_content(block, slot, None, words=[
+        {"display": "сингулярность.", "start": 44.701, "end": 45.151},
+    ])
+    assert touching["word"] == ""
+    rounding = _hero_content(block, slot, None, words=[
+        {"display": "сингулярность.", "start": 44.7014, "end": 45.1514},
+    ])
+    assert rounding["word"] == ""
+
+
+def test_authored_punch_end_reads_split_slot():
+    from src.p11_assemble.assemble import _authored_punch_end
+
+    plan = {"slots": [
+        {"block_id": "b4", "start": 42.866, "end": 44.001},
+        {"block_id": "b4", "start": 44.001, "end": 45.151, "authored_punch": True},
+        {"block_id": "b4", "start": 45.151, "end": 48.151},
+        {"block_id": "b5", "start": 48.151, "end": 52.0, "authored_punch": True},
+    ]}
+    assert _authored_punch_end(plan, "b4") == 45.151
+    assert _authored_punch_end(plan, "b5") == 52.0
+    assert _authored_punch_end(plan, "b3") is None
+
+
+def test_hero_lines_follow_spoken_window():
+    from src.p11_assemble.assemble import _hero_content
+
+    block = {
+        "emphasis_word": "миллион",
+        "text": (
+            "Две тысячи год. Институт Клей вешает семь задач тысячелетия. "
+            "Миллион долларов за каждую. Пуанкаре закрыли."
+        ),
+    }
+    slot = {"start": 9.5, "end": 12.0, "role": "setup"}
+    content = _hero_content(block, slot, None, words=[
+        {"display": "Пуанкаре", "start": 9.55, "end": 10.0},
+        {"display": "закрыли.", "start": 10.3, "end": 10.8},
+    ])
+    blob = " ".join(content["lines"]).lower()
+    assert "пуанкаре" in blob
+    assert "две тысячи" not in blob
+
+
+def test_wrap_lines_does_not_glue_the_next_sentence():
+    from src.p11_assemble.assemble import _wrap_lines
+
+    lines = _wrap_lines("силы. Пункты а и бэ всё ещё открыты")
+    assert lines[0] == "силы."
+    assert lines[1].startswith("Пункты")
+
+
+def test_wrap_lines_breaks_after_a_comma_clause():
+    from src.p11_assemble.assemble import _wrap_lines
+
+    lines = _wrap_lines("вихрь как спагетти, которое сжимается", width=40)
+    assert any(line.rstrip().endswith(",") for line in lines)
+    assert not any("спагетти, которое" in line for line in lines)
+
+
 def test_logo_brand_close_default_tagline_empty():
     from src.lib.render.hyperframes.templates import _LBC_DEFAULT_TAG, _lbc_copy
     assert _LBC_DEFAULT_TAG == ""
     wm, tag, url = _lbc_copy({"wordmark": "REDSHIFT", "tagline": "", "url": "redshift.shorts"})
     assert tag == ""
     assert url == "redshift.shorts"
+
+
+def test_sync_overlays_from_script_restores_punch():
+    from src.lib.text import sync_overlays_from_script
+
+    plan = {
+        "video_id": "redshift_0048",
+        "blocks": [{
+            "id": "b4",
+            "overlay": {"type": "fullscreen_text", "content": "88 ЧАСОВ"},
+        }],
+    }
+    script = {
+        "blocks": [{
+            "id": "b4",
+            "overlay": {
+                "type": "fullscreen_text",
+                "content": "СИНГУЛЯРНОСТЬ",
+                "template_hint": "text-fullscreen/impact-01",
+            },
+        }],
+    }
+    assert sync_overlays_from_script(plan, script=script) == 1
+    assert plan["blocks"][0]["overlay"]["content"] == "СИНГУЛЯРНОСТЬ"
+
+
+def test_script_overlay_beats_stale_hours_punch():
+    """Stale «88 ЧАСОВ» must not park the card on «семнадцать часов»."""
+    from src.lib.text import sync_overlays_from_script
+    from src.p11_assemble.assemble import split_empty_at_authored_punch
+
+    plan = {
+        "blocks": [{
+            "id": "b4",
+            "text": (
+                "За семнадцать часов она переложила его в Lean. "
+                "За конечное время — сингулярность."
+            ),
+            "emphasis_word": "сингулярность",
+            "overlay": {"type": "fullscreen_text", "content": "88 ЧАСОВ"},
+        }],
+    }
+    sync_overlays_from_script(plan, script={"blocks": [{
+        "id": "b4",
+        "overlay": {"type": "fullscreen_text", "content": "СИНГУЛЯРНОСТЬ"},
+    }]})
+    slots = [{
+        "index": 19, "start": 42.866, "end": 45.151, "duration": 2.285,
+        "block_id": "b4", "kind": "footage", "needs_asset": True,
+    }]
+    words = [
+        {"display": "часов", "start": 34.53, "end": 34.83, "block_id": "b4"},
+        {"display": "сингулярность.", "start": 44.70, "end": 45.15, "block_id": "b4"},
+    ]
+    out = split_empty_at_authored_punch(
+        slots, plan, {19: {"asset_id": "fp_rock_surface"}}, words)
+    tails = [s for s in out if s.get("authored_punch")]
+    assert len(tails) == 1
+    assert float(tails[0]["start"]) >= 43.9
+    assert float(tails[0]["end"]) == 45.151
+
+
+def test_exclude_renderers_blocks_slam_on_footage():
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _FULL_FRAME_HEROES, _hero_device
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    content = {
+        "word": "ДЫРА", "title": "Клей", "lines": ["а", "б"],
+        "accent_lines": [0],
+        "punch": ["первая дыра", "в стене"], "entries": ["а"],
+        "figures": [], "face": (540, 570), "caption": "подпись",
+        "head": "Клей", "tail": "не принял",
+    }
+    slot = {"index": 26, "role": "twist", "duration": 1.4, "start": 62.2, "end": 63.6}
+    banned = set(_FULL_FRAME_HEROES) | {"hero-oversize"}
+    for seed in range(16):
+        entry = _hero_device(
+            cat, slot=slot, content=content, has_alpha=False,
+            plate_src={"file": "/tmp/a.mp4", "duration_sec": 1.4},
+            recent_videos=[], exclude=[], seed=seed,
+            exclude_renderers=banned)
+        if entry:
+            assert entry["renderer"] not in banned, entry

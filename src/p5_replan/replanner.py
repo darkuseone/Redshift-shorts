@@ -27,6 +27,7 @@ from ..lib.beats import annotate_slots
 from ..lib.logging import get_logger
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
+    sync_overlays_from_script,
 )
 
 _log = get_logger("p5")
@@ -1020,6 +1021,7 @@ def compute_stats(slots: list[Slot], duration: float) -> dict[str, Any]:
 
 def run_step(ctx) -> dict[str, Any]:
     draft = ctx.read("draft_plan.json")
+    sync_overlays_from_script(draft, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
 
     built = build_slots(draft, words_doc, ctx.cfg)

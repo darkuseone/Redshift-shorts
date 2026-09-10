@@ -720,6 +720,7 @@ def test_decline_chart_draws_mask_not_dash(ctx):
     assert "dcl-gloom" in node and "dcl-wipe" in node and "dcl-ep" in node
     assert "Retention" in node
     assert ">82<" in node and ">34<" in node
+    assert "dcl-steps" in node and "dcl-ytick" in node
     assert "dv-bar" not in node
     assert "dv-donut" not in node
     assert "abc-" not in node
@@ -770,6 +771,34 @@ def test_decline_chart_draws_mask_not_dash(ctx):
     assert abs(times["out_start"] - 3.55) < 1e-9
     short = _dcl_times(0.22)
     assert short["out_start"] + 0.001 <= 0.22 + 1e-9
+
+
+def test_decline_chart_shows_error_steps_and_axes(ctx):
+    piece = render_dataviz("data-viz/decline-chart", TemplateCtx(
+        index=ctx.index, start=ctx.start, duration=4.0, target=ctx.target,
+        track=6, params={
+            "start_value": 100,
+            "end_value": 25,
+            "values": [100, 50, 25],
+            "label": "ОШИБКА",
+            "subtitle": "×½ на каждом шаге",
+            "unit": "%",
+            "x_labels": ["шаг 1", "шаг 2", "шаг 3"],
+            "source": "поверхностный код",
+        }))
+    node = piece.nodes[0]
+    assert "ОШИБКА" in node
+    assert "×½ на каждом шаге" in node
+    assert "поверхностный код" in node
+    assert "100%" in node and "50%" in node and "25%" in node
+    assert "62.5" not in node
+    assert ".1%" not in node and ".6%" not in node
+    assert "шаг 1" in node and "шаг 3" in node
+    assert "dcl-ytick" in node and "dcl-xlab" in node
+    assert "dcl-mark" in node and "dcl-mark-lab" in node
+    assert 'class="dcl-unit"' not in node
+    times = _dcl_times(4.0)
+    assert abs(times["in"] - 0.55) < 1e-9
 
 
 def test_decline_chart_keeps_catalog_line_and_ambient():
@@ -2969,6 +2998,23 @@ def test_logo_brand_close_exit_and_hidden_lines():
     assert "invert" in paper.nodes[0]
 
 
+def test_logo_brand_close_finishes_wordmark_inside_short_cta():
+    """Last 2s identity close must hold full REDSHIFT, not mid-cascade REDSHIF."""
+    piece = render_fullscreen(_fs_ctx(
+        wordmark="REDSHIFT", tagline="", url="redshift.shorts",
+        renderer="logo_brand_close", logo_close=True, exit="none",
+        subscribe=False, duration=2.0))
+    last = None
+    for tween in piece.tweens:
+        if "-c7\"" in tween and "fromTo" in tween:
+            last = tween
+            break
+    assert last is not None
+    at = float(last.rstrip(");").rsplit(",", 1)[1])
+    dur = float(re.search(r"duration:([0-9.]+)", last).group(1))
+    assert at + dur <= 3.0 + 0.7
+
+
 def test_particle_text_dissolve_wipes_with_scale_and_precomputed_dust():
     """Каталог: canvas onUpdate и clip-path. Здесь scaleX и span с x/y, LCG."""
     piece = render_fullscreen(_fs_ctx(
@@ -5091,6 +5137,16 @@ def test_avatar_entry_denies_circle_mask_grow():
     exclude = _transition_exclude("avatar-entry", ["hero-zoom-in"])
     assert "avatar-entry/circle-mask-grow" in exclude
     assert "avatar-entry/circle-mask-grow" not in _transition_exclude(
+        "transitions", [])
+
+
+def test_cta_denies_clone_wall_red_card():
+    from src.p11_assemble.assemble import CTA_TRANSITION_DENY, _transition_exclude
+
+    assert "transitions/mk-clone-wall-transition" in CTA_TRANSITION_DENY
+    exclude = _transition_exclude("transitions", [], role="cta")
+    assert "transitions/mk-clone-wall-transition" in exclude
+    assert "transitions/mk-clone-wall-transition" not in _transition_exclude(
         "transitions", [])
 
 

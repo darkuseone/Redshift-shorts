@@ -55,6 +55,14 @@ def test_fit_group_shrinks_to_work_area():
     assert sum(widths) <= 740
 
 
+def test_fit_group_floor_stays_readable():
+    size, _widths = fit_wipe_group(
+        ["ПРОФЕССИОНАЛЬНОЕ", "ВИДЕО", "СОБИРАЕТСЯ"],
+        max_width=740, base=124, letter_spacing_em=0.02, gap_em=0.18,
+        min_size=84)
+    assert size >= 84
+
+
 def test_fit_group_keeps_long_ru_word_inside_safe_width():
     size, widths = fit_wipe_group(
         ["ЛОГИЧЕСКИЙ"],
@@ -149,6 +157,12 @@ def test_default_caption_is_gradient_fill(cfg):
     assert cfg.brand("subtitles.caption") == "gradient-fill"
     for gesture in ("gradient_fill", "clip_wipe", "camera_follow", "blend_difference"):
         assert cfg.brand(f"subtitles.{gesture}"), f"жест {gesture} пропал из брендбука"
+    from src.lib.render.hyperframes.captions import clip_wipe_params, gradient_fill_params
+    wipe = clip_wipe_params(cfg.brandbook)
+    fill = gradient_fill_params(cfg.brandbook)
+    assert wipe["base_px"] >= 136 and wipe["min_px"] >= 80
+    assert fill["base_px"] >= 136 and fill["min_px"] >= 80
+    assert wipe["max_words"] <= 4 and fill["max_words"] <= 4
 
 
 def test_clip_wipe_paints_digit_lead(cfg):
@@ -203,6 +217,25 @@ def test_consecutive_clip_wipe_groups_hard_kill_previous(cfg):
     tops = [int(v) for v in re.findall(r"top:(\d+)px", "\n".join(nodes))]
     assert len(tops) == 2
     assert tops[0] != tops[1]
+
+
+def test_clip_wipe_hold_stops_before_plaque(cfg):
+    from src.lib.render.hyperframes.captions import build_clip_wipe
+
+    plan = {
+        "subtitles": [
+            {"display": "можем", "start": 36.38, "end": 36.72, "block_id": "b5"},
+        ],
+        "overlays": [
+            {"type": "plaque", "start": 36.89, "end": 37.61,
+             "template": "lower-thirds/note-pin"},
+        ],
+        "subtitle_style": {"caption": "clip-wipe"},
+    }
+    nodes, _tweens, count = build_clip_wipe(plan, cfg.brandbook, duration=44.0)
+    assert count == 1
+    dur = float(re.search(r'data-duration="([\d.]+)"', nodes[0]).group(1))
+    assert dur < 0.70
 
 
 def test_single_word_clip_wipe_is_centered(cfg):

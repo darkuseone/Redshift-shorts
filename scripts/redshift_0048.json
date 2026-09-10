@@ -1,0 +1,179 @@
+{
+    "meta": {
+    "video_id": "redshift_0048",
+    "title": "Какую из семи задач закрыли за три дня",
+    "topic": "OpenAI: внутренний агент и GPT-6 Astra по уравнениям Навье-Стокса",
+    "category": "ai",
+    "language": "ru",
+    "target_duration_sec": 58,
+    "allow_memes": false,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-09-10",
+    "cta": true,
+    "hook": {
+      "on_screen": "КАКУЮ ИЗ СЕМИ?",
+      "style": "question_flash"
+    }
+  },
+  "sources": [
+    {
+      "title": "On the Navier–Stokes Millennium Prize Problem",
+      "domain": "openai.com",
+      "url": "https://openai.com/index/navier-stokes-solution/",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "published": "8 сентября 2026",
+      "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство. Астра за семнадцать часов переложила его в Lean.",
+      "highlight_line": "сильнее GPT-6 Astra"
+    },
+    {
+      "title": "Millennium Prize Problems",
+      "domain": "claymath.org",
+      "url": "https://www.claymath.org/millennium-problems/",
+      "show_on_screen": false,
+      "screen_template": "search",
+      "snippet": "Семь задач тысячелетия. Миллион долларов за каждую. Навье-Стокс в списке с двухтысячного года."
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Какую из семи задач закрыли за три дня?",
+      "emphasis_word": "семи",
+      "avatar": "off",
+      "visual_intent": "Тёмный кадр: мел на доске, формулы жидкости, удар вопросом",
+      "broll_queries": [
+        "plaster wall texture shadow diagonal",
+        "peeling wall grunge texture crack",
+        "chalkboard class classroom math"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "КАКУЮ ИЗ СЕМИ?",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "emotion"
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Две тысячи год. Институт Клей вешает семь задач тысячелетия. Миллион долларов за каждую. Пуанкаре закрыли. Остальные висели четверть века. В том числе уравнения Навье-Стокса — как течёт жидкость.",
+      "emphasis_word": "миллион",
+      "avatar": "on",
+      "visual_intent": "Ведущий называет ставки, за головой — семь и миллион",
+      "broll_queries": [
+        "mathematician writing equations chalkboard lecture",
+        "chalkboard equations formula blackboard math",
+        "blackboard close equations formula math"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "$1 000 000",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A",
+      "emphasis_family": "number"
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Восьмого сентября две тысячи двадцать шесть OpenAI публикует работу. Внутренний агент нашёл доказательство. Модель сильнее GPT-шесть Астра. Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений.",
+      "emphasis_word": "Астра",
+      "avatar": "off",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры",
+      "broll_queries": [
+        "mathematician writing equations chalkboard lecture",
+        "stapling documents paper stack desk",
+        "old books library wooden shelves",
+        "gpu cluster server aisle datacenter",
+        "white ink water swirling dark",
+        "hands typing keyboard neon code"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "сильнее GPT-6 Astra",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "source_ref": "openai.com",
+      "mode_hint": "C",
+      "emphasis_family": "source"
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Сама Астра доказательство не искала. За семнадцать часов она переложила его в Lean — язык, где машина проверяет каждый шаг. Пункты цэ и дэ: трёхмерный поток с внешней силой. Гладкий. Конечная энергия. За конечное время — сингулярность. Вихрь как спагетти, которое сжимается.",
+      "emphasis_word": "сингулярность",
+      "avatar": "off",
+      "visual_intent": "Вихрь жидкости сверху, спагетти-метафора, код доказательства на экране",
+      "broll_queries": [
+        "sand dune ripples wind texture closeup",
+        "code editor source programming ide",
+        "white ink water swirling dark",
+        "hands typing keyboard neon code",
+        "dark keyboard fingers keys closeup",
+        "hourglass sand flowing black",
+        "analog clock closeup ticking"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "СИНГУЛЯРНОСТЬ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "data_beep",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "Но приз Клея — за уравнения без внешней силы. Пункты а и бэ всё ещё открыты. Клей решение не принял. OpenAI миллион не берёт. Три дня — не «Астра решила всё». Три дня — первая дыра в стене, которую четверть века считали глухой.",
+      "emphasis_word": "дыра",
+      "avatar": "on",
+      "visual_intent": "Ведущий крупно закрывает хук: не тот пункт, не тот приз, не та модель",
+      "broll_queries": [
+        "cracked concrete wall vine fissure",
+        "rock stone surface texture fissure",
+        "cracked earth drought soil texture",
+        "corroded wall exposed metal mesh",
+        "rust metal texture bolts closeup"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "sub_drop",
+      "answers_hook": true,
+      "mode_hint": "A",
+      "emphasis_family": "myth"
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Машинам можно отдавать задачи на миллион? Жми да или нет.",
+      "emphasis_word": "можно",
+      "avatar": "on",
+      "visual_intent": "Ведущий задаёт голосование, красный фон, кнопка подписки",
+      "broll_queries": [
+        "rust metal texture wall closeup",
+        "old books library wooden shelves",
+        "cracked concrete surface texture"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "mode_hint": "C",
+      "emphasis_family": "emotion"
+    }
+  ],
+  "cta": {
+    "text": "Машинам можно отдавать задачи на миллион? Жми да или нет.",
+    "type": "binary_vote"
+  }
+}

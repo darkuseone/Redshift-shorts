@@ -153,6 +153,40 @@ def test_cosmic_topic_picks_clip_wipe_without_space_category(cfg):
     assert pick_caption_style(plan, cfg.brandbook) == "clip-wipe"
 
 
+def test_gradient_fill_does_not_hold_across_mute_hole(cfg):
+    """Muted karaoke used to stretch «ДНЯ» until the next visible phrase."""
+    words = [
+        {"display": "дня", "start": 2.99, "end": 3.29,
+         "emphasis": True, "block_id": "b1"},
+        {"display": "модель", "start": 19.8, "end": 20.2,
+         "emphasis": False, "block_id": "b3"},
+    ]
+    out = _fill(cfg, words, duration_sec=68.0)
+    match = re.search(r'id="gf-00"[^>]*data-duration="([\d.]+)"', out)
+    assert match, out[:400]
+    assert float(match.group(1)) < 1.2
+
+
+def test_adjacent_gradient_phrases_do_not_share_a_frame(cfg):
+    words = [
+        {"display": "вихрь", "start": 1.00, "end": 1.20,
+         "emphasis": False, "block_id": "b4"},
+        {"display": "как", "start": 1.20, "end": 1.35,
+         "emphasis": False, "block_id": "b4"},
+        {"display": "спагетти,", "start": 1.35, "end": 1.70,
+         "emphasis": False, "block_id": "b4"},
+        {"display": "которое", "start": 1.76, "end": 2.10,
+         "emphasis": False, "block_id": "b4"},
+    ]
+    out = _fill(cfg, words, duration_sec=4.0)
+    starts = re.findall(r'id="gf-0(\d)"[^>]*data-start="([\d.]+)"', out)
+    durs = re.findall(r'id="gf-0(\d)"[^>]*data-duration="([\d.]+)"', out)
+    assert len(starts) >= 2 and len(durs) >= 2
+    end0 = float(starts[0][1]) + float(durs[0][1])
+    start1 = float(starts[1][1])
+    assert end0 <= start1 + 1e-6
+
+
 def test_ai_topic_stays_on_gradient_fill(cfg):
     plan = {
         "category": "ai",

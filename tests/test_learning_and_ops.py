@@ -283,6 +283,129 @@ def test_the_final_frame_is_not_judged_as_raw_stock(cfg, tmp_path, monkeypatch):
     assert report["samples"][0]["expected"]
 
 
+def test_spoken_at_uses_word_timings_when_karaoke_is_muted():
+    """Source-card mute drops karaoke; VO is still in words.json."""
+    from src.p12_render_qc.vision_qc import _spoken_at
+
+    plan = {
+        "subtitles": [{"display": "позже", "start": 19.85, "end": 20.2}],
+        "speech_words": [
+            {"display": "OpenAI", "start": 16.4, "end": 16.9},
+            {"display": "публикует", "start": 16.9, "end": 17.4},
+            {"display": "работу", "start": 17.4, "end": 17.9},
+        ],
+    }
+    spoken = _spoken_at(plan, 17.0)
+    assert "публикует" in spoken
+    assert "позже" not in spoken
+
+
+def test_spoken_at_drops_the_previous_sentence_tail():
+    from src.p12_render_qc.vision_qc import _spoken_at
+
+    plan = {
+        "speech_words": [
+            {"display": "жидкость.", "start": 15.86, "end": 16.19},
+            {"display": "Восьмого", "start": 16.42, "end": 16.87},
+            {"display": "сентября", "start": 16.97, "end": 17.42},
+        ],
+    }
+    spoken = _spoken_at(plan, 17.0)
+    assert "сентября" in spoken
+    assert "жидкость" not in spoken
+
+
+def test_vision_qc_reads_words_json_not_muted_cues(cfg, tmp_path, monkeypatch):
+    """§11.2: muted karaoke must not empty the spoken window under a source card."""
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+
+    asked: list[dict] = []
+
+    class _Spy:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            asked.append({"intent": intent, "role": role, "query": query, "kind": kind})
+            return V.VisionVerdict(score=0.9, reason="", summary="кадр", judge="spy")
+
+    frame = tmp_path / "f.jpg"
+    Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
+    monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
+
+    ctx = _ctx(tmp_path, cfg)
+    ctx.write("words.json", {"words": [
+        {"display": "публикует", "start": 5.0, "end": 5.5},
+        {"display": "работу", "start": 5.5, "end": 6.0},
+    ]})
+    plan = {
+        "duration_sec": 12.0, "variant": "A",
+        "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "footage",
+                   "role": "evidence", "reason": "статья OpenAI"}],
+        "subtitles": [],
+        "overlays": [{
+            "type": "source_card", "start": 0.0, "end": 12.0,
+            "params": {"domain": "openai.com"},
+        }],
+    }
+    report = run_vision_qc(ctx, video_path=tmp_path / "v.mp4", plan=plan)
+    assert any("публикует" in a["query"] for a in asked)
+    assert any("openai.com" in a["query"] for a in asked)
+    assert any("карточка источника" in a["intent"] for a in asked)
+    assert report["mismatch_share"] == 0.0
+
+
+def test_picture_copy_includes_on_screen_karaoke(cfg, tmp_path, monkeypatch):
+    from src.lib.providers import vision as V
+    from src.p12_render_qc import vision_qc as VQ
+
+    asked: list[dict] = []
+
+    class _Spy:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            asked.append({"intent": intent, "role": role, "query": query, "kind": kind})
+            return V.VisionVerdict(score=0.9, reason="", summary="кадр", judge="spy")
+
+    frame = tmp_path / "f.jpg"
+    Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
+    monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
+
+    ctx = _ctx(tmp_path, cfg)
+    ctx.write("words.json", {"words": [
+        {"display": "часов", "start": 5.0, "end": 5.5},
+    ]})
+    plan = {
+        "duration_sec": 12.0, "variant": "A",
+        "shots": [{"index": 0, "start": 0.0, "end": 12.0, "kind": "footage",
+                   "role": "evidence", "reason": "доска"}],
+        "subtitles": [{"display": "ВОСЕМЬДЕСЯТ ВОСЕМЬ ЧАСОВ",
+                       "start": 5.0, "end": 7.0}],
+        "overlays": [],
+    }
+    report = run_vision_qc(ctx, video_path=tmp_path / "v.mp4", plan=plan)
+    assert any("ВОСЕМЬДЕСЯТ" in a["query"] for a in asked)
+    assert report["mismatch_share"] == 0.0
+
+
+def test_cracked_plate_on_deaf_wall_speech_is_the_metaphor():
+    from src.p12_render_qc.vision_qc import _expected, _picture_copy
+
+    shot = {"kind": "footage", "asset_id": "fp_cracked_concrete",
+            "start": 62.23, "end": 63.63}
+    plan = {
+        "subtitles": [
+            {"display": "века", "start": 62.12, "end": 62.48},
+            {"display": "считали", "start": 62.48, "end": 62.93},
+            {"display": "глухой.", "start": 63.05, "end": 63.40},
+        ],
+        "overlays": [],
+    }
+    copy = _picture_copy(shot, plan, 62.33)
+    assert "глухой" in copy.lower()
+    pictured = _expected(shot, plan=plan, t=62.33, spoken="четверть века считали")
+    assert "метафора" in pictured
+
+
 def test_the_channel_own_captions_are_not_foreign_text(cfg, tmp_path):
     """Субтитр канала — не «текст в кадре» (§11.2.2).
 

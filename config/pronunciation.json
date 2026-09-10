@@ -14,11 +14,20 @@
     "феномен": { "stress": 5, "confirmed": true },
     "обеспечение": { "stress": 6, "confirmed": true },
     "маркетинг": { "stress": 1, "confirmed": true },
-    "эксперт": { "stress": 4, "confirmed": true }
+    "эксперт": { "stress": 4, "confirmed": true },
+    "навье": { "stress": 1 },
+    "стокса": { "stress": 1 },
+    "астра": { "stress": 0 },
+    "lean": { "say_as": "лин" },
+    "клей": { "stress": 2 },
+    "пуанкаре": { "say_as": "пуанкарэ", "stress": 7 },
+    "сингулярность": { "stress": 8 }
   },
   "abbreviations": {
     "ИИ": "искусственный интеллект",
     "AI": "эй ай",
+    "GPT": "джи-пи-ти",
+    "OpenAI": "опен эй ай",
     "NASA": "НАСА",
     "ESA": "И-Эс-Эй",
     "GPU": "джи-пи-ю",

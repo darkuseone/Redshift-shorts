@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from src.lib.meaning import (
-    TRAITS, TRAIT_TITLES, block_traits, explain, matched, satisfies,
+    TRAITS, TRAIT_TITLES, block_traits, explain, grounded_for, matched, satisfies,
 )
 from src.lib.templates import TemplateCatalog
 
@@ -70,6 +70,16 @@ class TestATemplateNeedsSomethingToFillIt:
     def test_the_match_is_named(self):
         assert matched(["number", "quote"], {"number", "place"}) == frozenset({"number"})
 
+    def test_needless_card_grounds_on_the_number_it_shows(self):
+        """QC-21: need-less fact-card with «пять минут» is not wallpaper."""
+        traits = block_traits(
+            "Задача, на которую суперкомпьютеру нужно больше времени, "
+            "чем существует вселенная, решена за пять минут.")
+        assert grounded_for([], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == ["number"]
+        assert grounded_for([], traits, shown="НАОБОРОТ") == []
+        assert grounded_for(["number"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == ["number"]
+        assert grounded_for(["quote"], traits, shown="РЕШЕНА ЗА ПЯТЬ МИНУТ") == []
+
 
 class TestTheCatalogPicksByMeaning:
     def test_a_chart_needs_a_number(self, catalog):
@@ -128,15 +138,16 @@ class TestThePlanSaysWhyEachDeviceIsThere:
         # показать) и смысл (`needs` — оправдан ли он этим блоком). Здесь
         # проверяется второй, поэтому наполнение дано всем.
         content = {"word": "ГЛУБИНА", "title": "Кольская", "lines": ["а", "б"],
-                   "punch": ["а", "б"], "entries": ["а"], "figures": [],
+                   "punch": ["а", "б"], "entries": ["а"], "figures": ["12 км"],
                    "face": (540, 570), "caption": "подпись",
                    "ask": "что будет, если бурить дальше", "answer": "ствол затянет",
                    "head": "Кольская", "tail": "перестала бурить"}
         slot = {"index": 3, "role": "develop", "duration": 5.0, "start": 0.0, "end": 5.0}
-        block = {"id": "b4", "text": "Что будет, если бурить дальше?"}
+        block = {"id": "b4", "text": "Ствол ушёл на двенадцать километров."}
         reasons = set()
-        # Chat-окно на аватаре закрывает лицо в нижней трети — has_alpha=False:
-        # проверяем, что «задан вопрос» всё ещё доходит до why у приёма.
+        # Chat-окно больше не герой: оно закрывает лицо и врёт «чат» на
+        # пустой перебивке. Основание why проверяем на числе — figure-swap
+        # остаётся в пуле.
         for seed in range(24):
             entry = _hero_device(cat, slot=slot, content=content, has_alpha=False,
                                  plate_src=None, recent_videos=[], exclude=[],
@@ -146,7 +157,7 @@ class TestThePlanSaysWhyEachDeviceIsThere:
                 assert entry["traits"] == sorted(block_traits(block["text"]))
                 reasons.add(entry["why"])
         assert reasons, "приём не выбрался ни разу"
-        assert any("задан вопрос" in r for r in reasons), sorted(reasons)
+        assert any("названо число" in r for r in reasons), sorted(reasons)
 
 
 class TestTheSourceCardSurvivesTheMerge:
@@ -198,6 +209,30 @@ class TestTheSourceCardSurvivesTheMerge:
         card = next(o for o in self._overlays("A") if o["type"] == "source_card")
         assert "quote" in card["grounded_on"], card["why"]
 
+    def test_a_browser_article_is_not_drawn_as_chat(self):
+        from pathlib import Path
+        import json as _json
+
+        from src.lib.templates import TemplateCatalog
+        from src.p11_assemble.assemble import _build_overlays
+
+        path = Path(__file__).resolve().parents[1] / "templates" / "manifest.json"
+        cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+        plan = self._plan()
+        plan["sources"][0]["screen_template"] = "browser"
+        plan["sources"][0]["domain"] = "openai.com"
+        plan["sources"][0]["url"] = "https://openai.com/index/navier-stokes-solution/"
+        for seed in range(16):
+            overlays = _build_overlays(
+                None, plan, [], cat, variant="A", seed=seed,
+                recent_videos=[], used=[])
+            cards = [o for o in overlays if o.get("type") == "source_card"]
+            assert cards, seed
+            assert cards[0]["template"] not in {
+                "browser-ui/chat-thread", "browser-ui/chat-ai-typing",
+            }, cards[0]["template"]
+            assert cards[0]["renderer"] != "chat_thread", cards[0]
+
 
 class TestDatavizOverlayGroundsOnTheNumber:
     """Диаграмма ставится из-за числа в блоке — QC-21 должен это видеть."""
@@ -223,6 +258,109 @@ class TestDatavizOverlayGroundsOnTheNumber:
             _Picker(), variant="A", seed=1, recent_videos=[], used=[],
             start=1.0, end=4.0)
         assert overlay["grounded_on"] == ["number"]
+
+    def test_decline_chart_label_is_russian_when_heading_empty(self):
+        from src.lib.templates import Template
+        from src.p11_assemble.assemble import _dataviz_overlay
+
+        class _Picker:
+            def pick(self, *args, **kwargs):
+                tmpl = Template(
+                    id="data-viz/decline-chart", name="decline-chart",
+                    category="data-viz", title="", duration_range=[1.0, 4.0],
+                    params={}, tags=[], renderer="dataviz", needs=["number"])
+                return tmpl, type("T", (), {"fired": [], "walk": [], "won_at": "",
+                                            "allow_size": 1, "escaped": False,
+                                            "escape_level": ""})()
+
+        overlay = _dataviz_overlay(
+            {"block_id": "b4", "index": 8},
+            [{"value": 5.0, "raw": "пять", "suffix": ""},
+             {"value": 2.0, "raw": "вдвое", "suffix": ""}],
+            {"b4": {
+                "id": "b4",
+                "text": "ошибка падает вдвое на каждом шаге",
+                "heading": "",
+                "emphasis_word": "вдвое",
+            }},
+            _Picker(), variant="A", seed=1, recent_videos=[], used=[],
+            start=20.84, end=23.54)
+        assert overlay["params"]["label"] == "ОШИБКА"
+        assert overlay["params"]["label"] != "Retention"
+        assert overlay["params"]["values"] == [100.0, 50.0, 25.0]
+        assert overlay["params"]["unit"] == "%"
+        assert "½" in overlay["params"]["subtitle"]
+        assert overlay["params"]["x_labels"] == ["шаг 1", "шаг 2", "шаг 3"]
+
+    def test_mixed_units_collapse_to_one_kpi(self):
+        from src.p11_assemble.assemble import _comparable_stats
+
+        collapsed = _comparable_stats([
+            {"value": 10000.0, "raw": "десять тысяч", "suffix": "тыс."},
+            {"value": 88.0, "raw": "восемьдесят восемь", "suffix": ""},
+            {"value": 2_700_000.0, "raw": "два миллиона", "suffix": "млн"},
+        ])
+        assert len(collapsed) == 1
+        assert collapsed[0]["value"] == 2_700_000.0
+
+    def test_same_scale_stays_a_series(self):
+        from src.p11_assemble.assemble import _comparable_stats
+
+        series = _comparable_stats([
+            {"value": 12.0, "raw": "двенадцать", "suffix": "%"},
+            {"value": 40.0, "raw": "сорок", "suffix": "%"},
+            {"value": 80.0, "raw": "восемьдесят", "suffix": "%"},
+        ])
+        assert [n["value"] for n in series] == [12.0, 40.0, 80.0]
+
+    def test_unitless_year_fragments_collapse_to_one_kpi(self):
+        from src.p11_assemble.assemble import _comparable_stats
+
+        collapsed = _comparable_stats([
+            {"value": 26.0, "raw": "двадцать шесть", "suffix": ""},
+            {"value": 6.0, "raw": "шесть", "suffix": ""},
+            {"value": 88.0, "raw": "восемьдесят восемь", "suffix": ""},
+        ])
+        assert len(collapsed) == 1
+        assert collapsed[0]["value"] == 88.0
+
+    def test_scaled_countup_does_not_double_the_suffix(self):
+        from src.p11_assemble.assemble import _countup_suffix
+
+        assert _countup_suffix({"value": 2_000_000.0, "suffix": "млн"}) == ""
+        assert _countup_suffix({"value": 2.0, "suffix": "млн"}) == " млн"
+        assert _countup_suffix({"value": 17.0, "suffix": ""}) == ""
+
+    def test_bar_chart_title_follows_the_spoken_language(self):
+        from src.lib.templates import Template
+        from src.p11_assemble.assemble import _dataviz_overlay
+
+        class _Picker:
+            def pick(self, *args, **kwargs):
+                tmpl = Template(
+                    id="data-viz/bar-chart-race", name="bar-chart-race",
+                    category="data-viz", title="", duration_range=[1.0, 4.0],
+                    params={}, tags=[], renderer="dataviz", needs=["number"])
+                return tmpl, type("T", (), {"fired": [], "walk": [], "won_at": "",
+                                            "allow_size": 1, "escaped": False,
+                                            "escape_level": ""})()
+
+        overlay = _dataviz_overlay(
+            {"block_id": "b3", "index": 4},
+            [{"value": 12.0, "raw": "двенадцать", "suffix": "%"},
+             {"value": 40.0, "raw": "сорок", "suffix": "%"},
+             {"value": 80.0, "raw": "восемьдесят", "suffix": "%"},
+             {"value": 95.0, "raw": "девяносто пять", "suffix": "%"}],
+            {"b3": {
+                "id": "b3",
+                "text": "ошибка падает с двенадцати до девяноста пяти процентов",
+                "heading": "",
+                "emphasis_word": "ошибка",
+            }},
+            _Picker(), variant="A", seed=1, recent_videos=[], used=[],
+            start=16.0, end=19.0)
+        assert overlay["params"]["title"] != "Streaming Subscribers by Service"
+        assert overlay["params"]["title"] == "ОШИБКА"
 
 
 class TestTheTransitionAnswersToWhatItIntroduces:

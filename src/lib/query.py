@@ -65,12 +65,12 @@ CONCEPTS: dict[str, list[str]] = {
 
 # Метафорические опоры по роли блока — когда предметного кадра нет.
 ROLE_METAPHORS: dict[str, list[str]] = {
-    "hook": ["abstract dark texture macro", "slow motion particles dark", "deep space stars"],
-    "setup": ["technology abstract background", "macro texture technology", "server room blue light"],
+    "hook": ["abstract dark texture macro", "slow motion particles dark", "cracked wall texture"],
+    "setup": ["technology abstract background", "macro texture technology", "chalkboard equations"],
     "evidence": ["documents on desk", "screen with data closeup", "news article screen", "newsroom broadcast desk"],
-    "develop": ["abstract data particles", "geometric motion background", "galaxy nebula"],
-    "twist": ["dramatic dark abstract", "light through darkness", "solar flare sun"],
-    "cta": ["abstract gradient motion", "minimal red abstract background", "earth orbit view"],
+    "develop": ["abstract data particles", "geometric motion background", "code on screen"],
+    "twist": ["dramatic dark abstract", "light through darkness", "cracked concrete texture"],
+    "cta": ["abstract gradient motion", "minimal dark abstract background", "textured wall closeup"],
 }
 
 CATEGORY_HINT: dict[str, str] = {
@@ -314,11 +314,29 @@ ENTITY_TRIGGERS: tuple[tuple[tuple[str, ...], str], ...] = (
     (("iss", "мкс"), "International Space Station"),
 )
 
+# TitleCase from the block, not from source titles (OpenAI / GPT leak onto
+# every slot that shares a word with openai.com).
 _TITLE_ENTITY_STOP = frozenset({
     "the", "and", "for", "with", "from", "this", "that", "processor",
     "announcement", "article", "video", "blog", "research", "technology",
     "scientific", "paper", "below", "into", "about",
+    "openai", "gpt", "astra", "microsoft", "google", "anthropic", "meta",
 })
+
+
+def _trigger_in_hay(trigger: str, hay: str) -> bool:
+    """Substring match, but short ASCII tokens need a word boundary.
+
+    ``iss`` in ``fissure`` used to stamp International Space Station onto
+    cracked-wall slots and send NASA queries that return nothing.
+    """
+    token = (trigger or "").strip().lower()
+    if not token:
+        return False
+    if token.isascii() and len(token) <= 3:
+        return re.search(rf"(?<![a-z0-9]){re.escape(token)}(?![a-z0-9])", hay) is not None
+    return token in hay
+
 
 BASE_NEGATIVES: tuple[str, ...] = (
     "talking head",
@@ -460,16 +478,17 @@ def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None) -
     hay = " ".join(parts).lower()
     found: list[str] = []
     for triggers, label in ENTITY_TRIGGERS:
-        if any(tr in hay for tr in triggers):
+        if any(_trigger_in_hay(tr, hay) for tr in triggers):
             found.append(label)
-    for haystack in parts:
-        for token in re.findall(r"\b[A-Z][a-zA-Z0-9\-]{2,}\b", haystack):
-            if token.lower() in _TITLE_ENTITY_STOP:
-                continue
-            if any(token.lower() in existing.lower() for existing in found):
-                continue
-            if token not in found:
-                found.append(token)
+    # TitleCase only from the spoken/visual blob — source titles stamp
+    # publisher brands onto every related slot.
+    for token in re.findall(r"\b[A-Z][a-zA-Z0-9\-]{2,}\b", blob):
+        if token.lower() in _TITLE_ENTITY_STOP:
+            continue
+        if any(token.lower() in existing.lower() for existing in found):
+            continue
+        if token not in found:
+            found.append(token)
     return list(dict.fromkeys(found))
 
 

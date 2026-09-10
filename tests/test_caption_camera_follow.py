@@ -113,6 +113,72 @@ def test_phrases_split_on_pause_block_and_length():
     assert [len(g) for g in packed] == [12, 8]
 
 
+def test_phrases_split_when_baseline_jumps():
+    from src.lib.render.hyperframes.captions import group_caption_phrases
+
+    words = [
+        {"display": "каждый", "start": 12.63, "end": 13.04,
+         "block_id": "b3", "baseline_y": 1643.5},
+        {"display": "физический", "start": 13.08, "end": 13.53,
+         "block_id": "b3", "baseline_y": 818.4},
+    ]
+    groups = group_caption_phrases(words, max_words=3, pause_break_sec=0.45)
+    assert len(groups) == 2
+    assert [w["display"] for w in groups[0]] == ["каждый"]
+    assert [w["display"] for w in groups[1]] == ["физический"]
+
+
+def test_phrases_split_after_sentence_end():
+    from src.lib.render.hyperframes.captions import group_caption_phrases
+
+    words = [
+        {"display": "силой.", "start": 0.0, "end": 0.3, "block_id": "b"},
+        {"display": "Гладкий.", "start": 0.35, "end": 0.7, "block_id": "b"},
+    ]
+    groups = group_caption_phrases(words, max_words=5, pause_break_sec=0.60)
+    assert len(groups) == 2
+    assert [w["display"] for w in groups[0]] == ["силой."]
+    assert [w["display"] for w in groups[1]] == ["Гладкий."]
+
+
+def test_cleaned_caption_words_still_split_after_a_period():
+    """subtitle_word strips the period; phrase grouping must still break."""
+    from src.lib.render.hyperframes.captions import (
+        _visible_words, group_caption_phrases,
+    )
+
+    raw = [
+        {"display": "силой.", "start": 0.0, "end": 0.3, "block_id": "b"},
+        {"display": "Пункты", "start": 0.35, "end": 0.7, "block_id": "b"},
+    ]
+    visible = _visible_words(raw, "upper")
+    assert visible[0]["sentence_end"] is True
+    groups = group_caption_phrases(visible, max_words=5, pause_break_sec=0.60)
+    assert len(groups) == 2
+    assert groups[0][0]["display"] != groups[1][0]["display"]
+
+
+def test_phrases_split_after_a_comma_clause():
+    """«спагетти, которое» must not wrap as one karaoke line."""
+    from src.lib.render.hyperframes.captions import (
+        _visible_words, group_caption_phrases,
+    )
+
+    raw = [
+        {"display": "Вихрь", "start": 45.75, "end": 45.90, "block_id": "b4"},
+        {"display": "как", "start": 45.90, "end": 46.04, "block_id": "b4"},
+        {"display": "спагетти,", "start": 46.04, "end": 46.49, "block_id": "b4"},
+        {"display": "которое", "start": 46.55, "end": 47.00, "block_id": "b4"},
+        {"display": "сжимается.", "start": 47.31, "end": 47.76, "block_id": "b4"},
+    ]
+    visible = _visible_words(raw, "upper")
+    assert visible[2]["clause_end"] is True
+    groups = group_caption_phrases(visible, max_words=5, pause_break_sec=0.60)
+    joined = [" ".join(w["display"] for w in g) for g in groups]
+    assert any("СПАГЕТТИ" in line and "КОТОРОЕ" not in line for line in joined)
+    assert any("КОТОРОЕ" in line for line in joined)
+
+
 def test_camera_follow_moves_the_world_not_the_clip(cfg):
     out = _follow(cfg, _words("Падение", ("в", True), "пропасть"))
     assert 'id="cf-00-world"' in out

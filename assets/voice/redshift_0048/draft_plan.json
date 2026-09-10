@@ -1,0 +1,1667 @@
+{
+  "video_id": "redshift_0048",
+  "title": "Какую из семи задач закрыли за три дня",
+  "category": "ai",
+  "language": "ru",
+  "target_duration_sec": 58.0,
+  "estimated_speech_sec": 65.799,
+  "tts_length_buffer_pct": 22.0,
+  "tts_target_sec": 80.275,
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Какую из семи задач закрыли за три дня?",
+      "spoken_text": "Какую из семи задач закрыли за три дня?",
+      "tokens": [
+        {
+          "display": "Какую",
+          "spoken": [
+            "Какую"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "из",
+          "spoken": [
+            "из"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "семи",
+          "spoken": [
+            "семи"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": true
+        },
+        {
+          "display": "задач",
+          "spoken": [
+            "задач"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "закрыли",
+          "spoken": [
+            "закрыли"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "за",
+          "spoken": [
+            "за"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "три",
+          "spoken": [
+            "три"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "дня?",
+          "spoken": [
+            "дня",
+            "?"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "семи",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Тёмный кадр: мел на доске, формулы жидкости, удар вопросом",
+      "broll_queries": [
+        "chalkboard mathematical equations closeup",
+        "fluid dynamics formula blackboard"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "КАКУЮ ИЗ СЕМИ?",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 2.653,
+      "planned_start_sec": 0.0,
+      "planned_end_sec": 2.653
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Две тысячи год. Институт Клей вешает семь задач тысячелетия. Миллион долларов за каждую. Пуанкаре закрыли. Остальные висели четверть века. В том числе уравнения Навье-Стокса — как течёт жидкость.",
+      "spoken_text": "Две тысячи год. Институт Кле́й вешает семь задач тысячелетия. Миллион долларов за каждую. пуанкарэ закрыли. Остальные висели четверть века. В том числе уравнения Навье-Стокса — как течёт жидкость.",
+      "tokens": [
+        {
+          "display": "Две",
+          "spoken": [
+            "Две"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "тысячи",
+          "spoken": [
+            "тысячи"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "год.",
+          "spoken": [
+            "год",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Институт",
+          "spoken": [
+            "Институт"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Клей",
+          "spoken": [
+            "Кле́й"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "вешает",
+          "spoken": [
+            "вешает"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "семь",
+          "spoken": [
+            "семь"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "задач",
+          "spoken": [
+            "задач"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "тысячелетия.",
+          "spoken": [
+            "тысячелетия",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Миллион",
+          "spoken": [
+            "Миллион"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": true
+        },
+        {
+          "display": "долларов",
+          "spoken": [
+            "долларов"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "за",
+          "spoken": [
+            "за"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "каждую.",
+          "spoken": [
+            "каждую",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Пуанкаре",
+          "spoken": [
+            "пуанкарэ"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "закрыли.",
+          "spoken": [
+            "закрыли",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Остальные",
+          "spoken": [
+            "Остальные"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "висели",
+          "spoken": [
+            "висели"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "четверть",
+          "spoken": [
+            "четверть"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "века.",
+          "spoken": [
+            "века",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "В",
+          "spoken": [
+            "В"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "том",
+          "spoken": [
+            "том"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "числе",
+          "spoken": [
+            "числе"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "уравнения",
+          "spoken": [
+            "уравнения"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Навье-Стокса —",
+          "spoken": [
+            "Навье-Стокса",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "как",
+          "spoken": [
+            "как"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "течёт",
+          "spoken": [
+            "течёт"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "жидкость.",
+          "spoken": [
+            "жидкость",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "миллион",
+      "answers_hook": false,
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Ведущий называет ставки, за головой — семь и миллион",
+      "broll_queries": [
+        "mathematician writing equations chalkboard",
+        "university lecture hall empty desks"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "$1 000 000",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "whoosh_in",
+      "meme_allowed": true,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 12.827,
+      "planned_start_sec": 2.653,
+      "planned_end_sec": 15.48
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Восьмого сентября две тысячи двадцать шесть OpenAI публикует работу. Внутренний агент нашёл доказательство. Модель сильнее GPT-шесть Астра. Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений.",
+      "spoken_text": "Восьмого сентября две тысячи двадцать шесть опен эй ай публикует работу. Внутренний агент нашёл доказательство. Модель сильнее GPT-шесть А́стра. Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений.",
+      "tokens": [
+        {
+          "display": "Восьмого",
+          "spoken": [
+            "Восьмого"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "сентября",
+          "spoken": [
+            "сентября"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "две",
+          "spoken": [
+            "две"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "тысячи",
+          "spoken": [
+            "тысячи"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "двадцать",
+          "spoken": [
+            "двадцать"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "шесть",
+          "spoken": [
+            "шесть"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "OpenAI",
+          "spoken": [
+            "опен",
+            "эй",
+            "ай"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "публикует",
+          "spoken": [
+            "публикует"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "работу.",
+          "spoken": [
+            "работу",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Внутренний",
+          "spoken": [
+            "Внутренний"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "агент",
+          "spoken": [
+            "агент"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "нашёл",
+          "spoken": [
+            "нашёл"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "доказательство.",
+          "spoken": [
+            "доказательство",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Модель",
+          "spoken": [
+            "Модель"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "сильнее",
+          "spoken": [
+            "сильнее"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "GPT-шесть",
+          "spoken": [
+            "GPT-шесть"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Астра.",
+          "spoken": [
+            "А́стра",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": true
+        },
+        {
+          "display": "Десять",
+          "spoken": [
+            "Десять"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "тысяч",
+          "spoken": [
+            "тысяч"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "агентов.",
+          "spoken": [
+            "агентов",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Восемьдесят",
+          "spoken": [
+            "Восемьдесят"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "восемь",
+          "spoken": [
+            "восемь"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "часов.",
+          "spoken": [
+            "часов",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Два",
+          "spoken": [
+            "Два"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "миллиона",
+          "spoken": [
+            "миллиона"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "семьсот",
+          "spoken": [
+            "семьсот"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "тысяч",
+          "spoken": [
+            "тысяч"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "сообщений.",
+          "spoken": [
+            "сообщений",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "Астра",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры",
+      "broll_queries": [
+        "researcher reading article laptop dark",
+        "gpu cluster server room blue light"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "сильнее GPT-6 Astra",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "meme_allowed": true,
+      "source_ref": "openai.com",
+      "gaze": false,
+      "_estimated_sec": 13.879,
+      "planned_start_sec": 15.48,
+      "planned_end_sec": 29.359
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Сама Астра доказательство не искала. За семнадцать часов она переложила его в Lean — язык, где машина проверяет каждый шаг. Пункты цэ и дэ: трёхмерный поток с внешней силой. Гладкий. Конечная энергия. За конечное время — сингулярность. Вихрь как спагетти, которое сжимается.",
+      "spoken_text": "Сама А́стра доказательство не искала. За семнадцать часов она переложила его в лин — язык, где машина проверяет каждый шаг. Пункты цэ и дэ: трёхмерный поток с внешней силой. Гладкий. Конечная энергия. За конечное время — сингулярно́сть. Вихрь как спагетти, которое сжимается.",
+      "tokens": [
+        {
+          "display": "Сама",
+          "spoken": [
+            "Сама"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Астра",
+          "spoken": [
+            "А́стра"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "доказательство",
+          "spoken": [
+            "доказательство"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "искала.",
+          "spoken": [
+            "искала",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "За",
+          "spoken": [
+            "За"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "семнадцать",
+          "spoken": [
+            "семнадцать"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "часов",
+          "spoken": [
+            "часов"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "она",
+          "spoken": [
+            "она"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "переложила",
+          "spoken": [
+            "переложила"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "его",
+          "spoken": [
+            "его"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Lean —",
+          "spoken": [
+            "лин",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "язык,",
+          "spoken": [
+            "язык",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "где",
+          "spoken": [
+            "где"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "машина",
+          "spoken": [
+            "машина"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "проверяет",
+          "spoken": [
+            "проверяет"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "каждый",
+          "spoken": [
+            "каждый"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "шаг.",
+          "spoken": [
+            "шаг",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Пункты",
+          "spoken": [
+            "Пункты"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "цэ",
+          "spoken": [
+            "цэ"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "дэ:",
+          "spoken": [
+            "дэ",
+            ":"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "трёхмерный",
+          "spoken": [
+            "трёхмерный"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "поток",
+          "spoken": [
+            "поток"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "с",
+          "spoken": [
+            "с"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "внешней",
+          "spoken": [
+            "внешней"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "силой.",
+          "spoken": [
+            "силой",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Гладкий.",
+          "spoken": [
+            "Гладкий",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Конечная",
+          "spoken": [
+            "Конечная"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "энергия.",
+          "spoken": [
+            "энергия",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "За",
+          "spoken": [
+            "За"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "конечное",
+          "spoken": [
+            "конечное"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "время —",
+          "spoken": [
+            "время",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "сингулярность.",
+          "spoken": [
+            "сингулярно́сть",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": true
+        },
+        {
+          "display": "Вихрь",
+          "spoken": [
+            "Вихрь"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "как",
+          "spoken": [
+            "как"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "спагетти,",
+          "spoken": [
+            "спагетти",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "которое",
+          "spoken": [
+            "которое"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "сжимается.",
+          "spoken": [
+            "сжимается",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "сингулярность",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Вихрь жидкости сверху, спагетти-метафора, код доказательства на экране",
+      "broll_queries": [
+        "overhead turbulent water vortex whirlpool",
+        "spaghetti swirling closeup slow motion",
+        "code editor proof assistant dark theme"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "88 ЧАСОВ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "sfx": "data_beep",
+      "meme_allowed": true,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 17.942,
+      "planned_start_sec": 29.359,
+      "planned_end_sec": 47.301
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "text": "Но приз Клея — за уравнения без внешней силы. Пункты а и бэ всё ещё открыты. Клей решение не принял. OpenAI миллион не берёт. Три дня — не «Астра решила всё». Три дня — первая дыра в стене, которую четверть века считали глухой.",
+      "spoken_text": "Но приз Клея — за уравнения без внешней силы. Пункты а и бэ всё ещё открыты. Кле́й решение не принял. опен эй ай миллион не берёт. Три дня — не « А́стра решила всё ». Три дня — первая дыра в стене, которую четверть века считали глухой.",
+      "tokens": [
+        {
+          "display": "Но",
+          "spoken": [
+            "Но"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "приз",
+          "spoken": [
+            "приз"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Клея —",
+          "spoken": [
+            "Клея",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "за",
+          "spoken": [
+            "за"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "уравнения",
+          "spoken": [
+            "уравнения"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "без",
+          "spoken": [
+            "без"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "внешней",
+          "spoken": [
+            "внешней"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "силы.",
+          "spoken": [
+            "силы",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Пункты",
+          "spoken": [
+            "Пункты"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "а",
+          "spoken": [
+            "а"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "бэ",
+          "spoken": [
+            "бэ"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "всё",
+          "spoken": [
+            "всё"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "ещё",
+          "spoken": [
+            "ещё"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "открыты.",
+          "spoken": [
+            "открыты",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Клей",
+          "spoken": [
+            "Кле́й"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "решение",
+          "spoken": [
+            "решение"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "принял.",
+          "spoken": [
+            "принял",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "OpenAI",
+          "spoken": [
+            "опен",
+            "эй",
+            "ай"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "миллион",
+          "spoken": [
+            "миллион"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "берёт.",
+          "spoken": [
+            "берёт",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Три",
+          "spoken": [
+            "Три"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "дня —",
+          "spoken": [
+            "дня",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "не «",
+          "spoken": [
+            "не",
+            "«"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Астра",
+          "spoken": [
+            "А́стра"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "решила",
+          "spoken": [
+            "решила"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "всё ».",
+          "spoken": [
+            "всё",
+            "»."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Три",
+          "spoken": [
+            "Три"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "дня —",
+          "spoken": [
+            "дня",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "первая",
+          "spoken": [
+            "первая"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "дыра",
+          "spoken": [
+            "дыра"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": true
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "стене,",
+          "spoken": [
+            "стене",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "которую",
+          "spoken": [
+            "которую"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "четверть",
+          "spoken": [
+            "четверть"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "века",
+          "spoken": [
+            "века"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "считали",
+          "spoken": [
+            "считали"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "глухой.",
+          "spoken": [
+            "глухой",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "дыра",
+      "answers_hook": true,
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Ведущий крупно закрывает хук: не тот пункт, не тот приз, не та модель",
+      "broll_queries": [
+        "cracked concrete wall closeup dramatic light"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "Приз не за это",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "sfx": "sub_drop",
+      "meme_allowed": true,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 14.674,
+      "planned_start_sec": 47.301,
+      "planned_end_sec": 61.975
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "text": "Машинам можно отдавать задачи на миллион? Жми да или нет.",
+      "spoken_text": "Машинам можно отдавать задачи на миллион? Жми да или нет.",
+      "tokens": [
+        {
+          "display": "Машинам",
+          "spoken": [
+            "Машинам"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "можно",
+          "spoken": [
+            "можно"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": true
+        },
+        {
+          "display": "отдавать",
+          "spoken": [
+            "отдавать"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "задачи",
+          "spoken": [
+            "задачи"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "на",
+          "spoken": [
+            "на"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "миллион?",
+          "spoken": [
+            "миллион",
+            "?"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "Жми",
+          "spoken": [
+            "Жми"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "да",
+          "spoken": [
+            "да"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "или",
+          "spoken": [
+            "или"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "нет.",
+          "spoken": [
+            "нет",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "можно",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Финальный кадр, кнопка подписки, вопрос на голосование",
+      "broll_queries": [
+        "abstract red gradient background"
+      ],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "subscribe_ping",
+      "meme_allowed": true,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 3.824,
+      "planned_start_sec": 61.975,
+      "planned_end_sec": 65.799
+    }
+  ],
+  "avatar": {
+    "planned_share": 0.418,
+    "planned_sec": 27.501,
+    "appearances": 2,
+    "avatar_id": "99ccc74e764947c394cd4ef210960a6f"
+  },
+  "planned_counts": {
+    "fullscreen_text": 3,
+    "fullscreen_text_scripted": 3,
+    "highlight": 1,
+    "highlight_scripted": 1,
+    "memes": 1,
+    "bg_vfx": 2
+  },
+  "music_mood": "",
+  "music_tags": [
+    "tense",
+    "driving",
+    "strings"
+  ],
+  "sources": [
+    {
+      "title": "On the Navier–Stokes Millennium Prize Problem",
+      "domain": "openai.com",
+      "url": "https://openai.com/index/navier-stokes-solution/",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "published": "8 сентября 2026",
+      "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство. Астра за семнадцать часов переложила его в Lean.",
+      "highlight_line": "сильнее GPT-6 Astra"
+    },
+    {
+      "title": "Millennium Prize Problems",
+      "domain": "claymath.org",
+      "url": "https://www.claymath.org/millennium-problems/",
+      "show_on_screen": false,
+      "screen_template": "search",
+      "snippet": "Семь задач тысячелетия. Миллион долларов за каждую. Навье-Стокс в списке с двухтысячного года."
+    }
+  ],
+  "cta": {
+    "text": "Машинам можно отдавать задачи на миллион? Жми да или нет.",
+    "type": "binary_vote"
+  },
+  "hook": {
+    "on_screen": "КАКУЮ ИЗ СЕМИ?",
+    "style": "question_flash"
+  },
+  "show_subscribe": true,
+  "modes_by_block": {
+    "b1": "C",
+    "b2": "A",
+    "b3": "C",
+    "b4": "C",
+    "b5": "A",
+    "b6": "C"
+  },
+  "conflicts": []
+}

@@ -64,18 +64,122 @@ def _skipped_semantic_report(plan: dict[str, Any], *, reason: str,
     }
 
 
-def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2) -> str:
-    """Что произносится вокруг момента t — эталон для сверки с картинкой."""
-    words: list[str] = []
+def _speech_timeline(plan: dict[str, Any], ctx: Any = None) -> list[dict[str, Any]]:
+    """Word timings: plan first, then ``words.json``. Karaoke is not the VO."""
+    explicit = plan.get("speech_words")
+    if not explicit:
+        words = plan.get("words")
+        if (isinstance(words, list) and words and isinstance(words[0], dict)
+                and "start" in words[0]):
+            explicit = words
+    if explicit:
+        return list(explicit)
+    read_or = getattr(ctx, "read_or", None) if ctx is not None else None
+    if callable(read_or):
+        doc = read_or("words.json", {}) or {}
+        if isinstance(doc, dict):
+            return list(doc.get("words") or [])
+    return []
+
+
+def _token_in_window(item: dict[str, Any], t: float, window: float) -> bool:
+    """True when a cue/word overlaps [t − window, t + window]."""
+    try:
+        start = float(item.get("start") or 0.0)
+        end = float(item["end"]) if item.get("end") is not None else start
+    except (TypeError, ValueError):
+        return False
+    return end >= t - window and start <= t + window
+
+
+def _spoken_tokens(timeline: list[dict[str, Any]], t: float,
+                   window: float) -> list[str]:
+    tokens: list[str] = []
+    for word in timeline:
+        if not _token_in_window(word, t, window):
+            continue
+        lead = str(word.get("lead") or "").strip()
+        display = str(word.get("display") or word.get("word") or "").strip()
+        if lead and display:
+            tokens.append(f"{lead} {display}")
+        elif lead:
+            tokens.append(lead)
+        elif display:
+            tokens.append(display)
+    return tokens
+
+
+def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2,
+               speech: list[dict[str, Any]] | None = None) -> str:
+    """Что произносится вокруг момента t — эталон для сверки с картинкой.
+
+    Караоке под source_card/dataviz выключается, поэтому ``subtitles`` в плане
+    в этот момент пустые. Судья тогда видел статью OpenAI и думал, что речи
+    нет. Эталон — тайминги VO (``words.json`` / ``speech_words``), субтитры
+    только запасной путь.
+
+    Узкое окно сначала: на 17-й секунде 0048 широкое ±1.2 с захватывало
+    хвост «течёт жидкость» и отравляло карточку openai.com.
+    """
+    tokens: list[str] = []
+    timeline = speech if speech is not None else _speech_timeline(plan)
+    if timeline:
+        tokens = _spoken_tokens(timeline, t, min(window, 0.5))
+        if not tokens:
+            tokens = _spoken_tokens(timeline, t, window)
+        if tokens:
+            return " ".join(tokens)
     for cue in plan.get("subtitles", []):
-        if abs(float(cue["start"]) - t) > window:
+        if not _token_in_window(cue, t, window):
             continue
         # Приклеенное начало реплики — тоже произнесённые слова, и без них
         # эталон теряет отрицание: «не в бюджет» превращается в «бюджет».
         if cue.get("lead"):
-            words.append(str(cue["lead"]))
-        words.append(str(cue["display"]))
-    return " ".join(words)
+            tokens.append(str(cue["lead"]))
+        tokens.append(str(cue["display"]))
+    return " ".join(tokens)
+
+
+def _picture_copy(shot: dict[str, Any], plan: dict[str, Any], t: float) -> str:
+    """On-screen copy covering t — the judge should see the card, not only VO."""
+    bits: list[str] = []
+    content = shot.get("content")
+    if content:
+        bits.append(str(content))
+    hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else {}
+    params = hero.get("params") if isinstance(hero.get("params"), dict) else {}
+    for key in ("word", "title", "text", "content", "kicker"):
+        val = params.get(key)
+        if isinstance(val, list):
+            bits.extend(str(x) for x in val if x)
+        elif val:
+            bits.append(str(val))
+    lines = params.get("lines")
+    if isinstance(lines, list):
+        bits.extend(str(x) for x in lines if x)
+    for ovl in plan.get("overlays") or []:
+        if not isinstance(ovl, dict) or not _token_in_window(ovl, t, 0.0):
+            continue
+        oparams = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
+        for key in ("title", "domain", "text", "highlight", "label", "content"):
+            val = oparams.get(key) or ovl.get(key)
+            if val:
+                bits.append(str(val))
+    # Karaoke on this frame. Phrase clips stay up for the whole group, so a
+    # tight word window missed «глухой» on the 0048 wall cut while the line
+    # was still painted.
+    for cue in plan.get("subtitles") or []:
+        if not isinstance(cue, dict) or not _token_in_window(cue, t, 1.0):
+            continue
+        lead = str(cue.get("lead") or "").strip()
+        display = str(cue.get("display") or "").strip()
+        if lead and display:
+            bits.append(f"{lead} {display}")
+        elif display:
+            bits.append(display)
+        elif lead:
+            bits.append(lead)
+    return " ".join(bits)
 
 
 # Что в кадре по замыслу — по виду кадра. Судья без этого честно ставил 0.15
@@ -90,12 +194,62 @@ _EXPECTED = {
 }
 
 
-def _expected(shot: dict[str, Any]) -> str:
+_OVERLAY_INTENT = {
+    "source_card": "карточка источника статьи — так и задумано",
+    "dataviz": "числовая плашка по речи — так и задумано",
+}
+
+_WALL_PLATE = ("cracked", "peeling", "plaster", "rock", "wall")
+_WALL_SPEECH = ("дыр", "глух", "стен", "трещин")
+
+
+def _wall_metaphor_intent(shot: dict[str, Any], hay: str) -> str:
+    """Cracked/peeling plates on «дыра / глухой» are the metaphor, not filler."""
+    aid = str(shot.get("asset_id") or shot.get("file") or "").lower()
+    if not any(token in aid for token in _WALL_PLATE):
+        return ""
+    blob = hay.lower()
+    if any(token in blob for token in _WALL_SPEECH):
+        return "метафора глухой или дырявой стены по речи — так и задумано"
+    return ""
+
+
+def _overlay_intent(plan: dict[str, Any] | None, t: float | None) -> str:
+    """Overlays covering t, so the judge does not treat a source card as noise."""
+    if plan is None or t is None:
+        return ""
+    bits: list[str] = []
+    for ovl in plan.get("overlays") or []:
+        if not isinstance(ovl, dict):
+            continue
+        if not _token_in_window(ovl, t, 0.0):
+            continue
+        kind = str(ovl.get("type") or "")
+        note = _OVERLAY_INTENT.get(kind)
+        if note:
+            bits.append(note)
+        if kind == "source_card":
+            params = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
+            domain = str(params.get("domain") or "")
+            if domain:
+                bits.append(f"домен {domain}")
+    return "; ".join(bits)
+
+
+def _expected(shot: dict[str, Any], *, plan: dict[str, Any] | None = None,
+              t: float | None = None, spoken: str = "") -> str:
     kind = str(shot.get("kind") or "")
     expected = _EXPECTED.get(kind, _EXPECTED["footage"])
     hero = (shot.get("hero") or {}).get("device")
     if hero:
         expected += f"; поверх — приём «{hero}»"
+    overlay = _overlay_intent(plan, t)
+    if overlay:
+        expected += f"; {overlay}"
+    copy = _picture_copy(shot, plan, t) if plan is not None and t is not None else ""
+    wall = _wall_metaphor_intent(shot, f"{spoken} {copy}")
+    if wall:
+        expected += f"; {wall}"
     return expected
 
 
@@ -189,6 +343,7 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                 video_path, ctx.wpath("qc", plan.get("variant", "A"), ".k").parent,
                 positions, width=540)
 
+        speech = _speech_timeline(plan, ctx)
         samples: list[dict[str, Any]] = []
         cache = _verdict_cache(ctx)
         reused = 0
@@ -196,16 +351,19 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
             t = duration * position
             shot = next((s for s in plan["shots"]
                          if float(s["start"]) <= t < float(s["end"])), {})
-            spoken = _spoken_at(plan, t)
+            spoken = _spoken_at(plan, t, speech=speech)
+            on_screen = _picture_copy(shot, plan, t)
+            query = " ".join(part for part in (spoken, on_screen) if part).strip()
             intent = shot.get("reason") or shot.get("kind", "")
+            pictured = _expected(shot, plan=plan, t=t, spoken=spoken)
             key = _verdict_key(frame, role=str(shot.get("role", "")),
-                               spoken=spoken or "", intent=intent)
+                               spoken=query or "", intent=intent)
             verdict = cache.get(key) if key else None
             if verdict is None:
                 verdict = provider.judge(
                     [frame], kind="final_frame",
-                    intent=f"{_expected(shot)}. Замысел кадра: {intent}",
-                    role=str(shot.get("role", "")), query=spoken or intent)
+                    intent=f"{pictured}. Замысел кадра: {intent}",
+                    role=str(shot.get("role", "")), query=query or intent)
                 if key:
                     cache[key] = verdict
             else:
@@ -214,7 +372,7 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
                 "t": round(t, 2),
                 "shot_index": shot.get("index"),
                 "kind": shot.get("kind"),
-                "expected": _expected(shot),
+                "expected": pictured,
                 "spoken": spoken,
                 "score": round(verdict.score, 3),
                 "summary": verdict.summary,

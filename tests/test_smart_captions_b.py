@@ -94,11 +94,18 @@ def _six_words():
 
 
 def test_majority_mute_drops_the_whole_phrase():
-    words = _six_words()
-    # Middle three words sit under the card (indices 1–3). 3/6 → empty.
+    words = _six_words()[:3]
+    # Two of three words sit under the card → the 3-word group is gone.
     cues = _build_subtitle_cues(
-        words, punch_windows=[], mute_windows=[(18.27, 19.10)])
+        words, punch_windows=[], mute_windows=[(18.27, 18.80)])
     assert cues == []
+
+
+def test_majority_mute_keeps_the_next_phrase_group():
+    words = _six_words()
+    cues = _build_subtitle_cues(
+        words, punch_windows=[], mute_windows=[(18.0, 18.80)])
+    assert [c["display"] for c in cues] == ["связке", "падает", "вселенная"]
 
 
 def test_sparse_mute_drops_only_muted_words():
@@ -110,13 +117,15 @@ def test_sparse_mute_drops_only_muted_words():
         "Чем", "кубитов", "связке", "падает", "вселенная"]
 
 
-def test_fullscreen_mutes_the_whole_shot():
-    from src.p11_assemble.assemble import _caption_line_windows, _caption_mute_windows
+def test_fullscreen_mutes_the_slam_beat_not_the_whole_hold():
+    from src.p11_assemble.assemble import (
+        FS_MUTE_SEC, _caption_line_windows, _caption_mute_windows,
+    )
 
     shots = [{"kind": "fullscreen_text", "start": 8.0, "end": 10.5,
               "content": "РАБОТА ОПУБЛИКОВАНА В NATURE", "params": {}}]
-    assert _caption_mute_windows(shots, []) == [(8.0, 10.5)]
-    assert _caption_line_windows(shots, []) == [(8.0, 10.5)]
+    assert _caption_mute_windows(shots, []) == [(8.0, 8.0 + FS_MUTE_SEC)]
+    assert _caption_line_windows(shots, []) == [(8.0, 8.0 + FS_MUTE_SEC)]
 
 
 def test_title_behind_carries_line_mutes_its_window():
@@ -136,8 +145,26 @@ def test_carries_line_drops_the_whole_phrase():
     words = _six_words()
     cues = _build_subtitle_cues(
         words, punch_windows=[], mute_windows=[],
-        line_windows=[(18.0, 18.5)])
+        line_windows=[(18.0, 19.70)])
     assert cues == []
+
+
+def test_line_window_kiss_does_not_swallow_the_previous_phrase():
+    """0048: «поток» ended on the next hero start and muted «дэ: трёхмерный»."""
+    words = [
+        {"display": "дэ:", "start": 39.66, "end": 39.92, "block_id": "b4",
+         "emphasis": False},
+        {"display": "трёхмерный", "start": 39.92, "end": 40.37, "block_id": "b4",
+         "emphasis": False},
+        {"display": "поток", "start": 40.37, "end": 40.76, "block_id": "b4",
+         "emphasis": False},
+    ]
+    cues = _build_subtitle_cues(
+        words, punch_windows=[], mute_windows=[],
+        line_windows=[(40.757, 42.87)])
+    shown = [c["display"] for c in cues]
+    assert "трёхмерный" in shown
+    assert "дэ:" in shown or any(c.get("lead") for c in cues)
 
 
 def test_slam_hero_still_mutes_its_own_window():
@@ -164,6 +191,29 @@ def test_digit_token_stays_in_display_not_lead():
     shown = [c["display"] for c in cues]
     assert "105" in shown
     assert not any(str(c.get("lead") or "") == "105" for c in cues)
+
+
+def test_dataviz_card_does_not_mute_captions():
+    from src.p11_assemble.assemble import _caption_mute_windows
+
+    overlays = [{
+        "type": "dataviz", "start": 21.5, "end": 23.6,
+        "template": "data-viz/stat-countup-card", "renderer": "dataviz",
+        "params": {"value": 2_700_000.0, "suffix": "", "label": "два миллиона"},
+    }]
+    assert _caption_mute_windows([], overlays) == []
+
+
+def test_headline_kicker_does_not_mute_the_whole_avatar_shot():
+    from src.p11_assemble.assemble import _caption_mute_windows
+
+    shots = [{
+        "kind": "avatar", "start": 8.8, "end": 12.0,
+        "hero": {"renderer": "hero-headline", "carries_line": True,
+                 "covers_frame": False, "duration": 1.5,
+                 "params": {"word": "МИЛЛИОН", "kicker": "С ЧЕГО НАЧАЛОСЬ"}},
+    }]
+    assert _caption_mute_windows(shots, []) == []
 
 
 def test_top_note_pin_does_not_mute_captions():

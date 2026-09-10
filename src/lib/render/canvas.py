@@ -365,7 +365,16 @@ def overlay_layout_bbox(overlay: dict[str, Any],
     height = heights.get(kind, float(safe.y_max - safe.y_min))
     y1 = float(safe.y_max)
     y0 = max(float(safe.y_min), y1 - height)
-    return (float(safe.x_min), y0, float(safe.x_max), y1)
+    x0 = float(safe.x_min)
+    x1 = float(safe.x_max)
+    if kind == "plaque" and (
+            params.get("source_chip")
+            or "source-domain" in str(overlay.get("template") or "")):
+        width = 260.0
+        height = 56.0
+        y0 = max(float(safe.y_min), y1 - height)
+        x1 = min(float(safe.x_max), x0 + width)
+    return (x0, y0, x1, y1)
 
 
 def caption_layout_bbox(brandbook: dict[str, Any], *,

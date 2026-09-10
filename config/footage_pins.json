@@ -46,5 +46,55 @@
       "pixabay_v144678"
     ],
     "same_asset_max_slots": 1
+  },
+  "redshift_0048": {
+    "prefer": [
+      "fp_chalkboard_eq",
+      "fp_writing_equations",
+      "fp_cracked_wall",
+      "fp_code_editor",
+      "fp_plaster_wall",
+      "fp_peeling_wall",
+      "fp_rock_surface",
+      "fp_desk_code",
+      "fp_chalkboard_class",
+      "fp_typing_hands",
+      "fp_cracked_earth",
+      "fp_blackboard_close",
+      "fp_library_books",
+      "fp_rust_metal",
+      "fp_quad_formula",
+      "fp_cracked_concrete",
+      "fp_white_ink",
+      "fp_sand_ripples",
+      "fp_corroded_mesh",
+      "fp_stapling_docs"
+    ],
+    "deny": [
+      "pexels_*",
+      "pixabay_*",
+      "press_21bc8e2d72",
+      "grok_supercomputer_0042",
+      "grok_cryostat_0042",
+      "meme_014_сарказм",
+      "nasa_*",
+      "ia_*",
+      "fp_red_gradient",
+      "fp_red_pulse",
+      "fp_red_heartbeat",
+      "fp_water_vortex",
+      "fp_blue_bubbles",
+      "fp_river_current",
+      "fp_formula_particles",
+      "fp_spaghetti_strands",
+      "fp_cpp_code",
+      "fp_green_glitch",
+      "fp_server_room",
+      "fp_blue_ink",
+      "fp_hourglass_sand",
+      "fp_analog_clock",
+      "fp_matrix_code"
+    ],
+    "same_asset_max_slots": 1
   }
 }

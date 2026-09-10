@@ -858,7 +858,10 @@ class CompositionBuilder:
             kicker = (params.get("subtitle") or params.get("kicker")
                       or params.get("domain"))
             extra = f'<span class="kicker">{_esc(kicker)}</span>' if kicker else ""
-            return (f'<div id="{node_id}" class="clip overlay plaque" __TIMING__>'
+            cls = "clip overlay plaque"
+            if params.get("source_chip"):
+                cls += " source-chip"
+            return (f'<div id="{node_id}" class="{cls}" __TIMING__>'
                     f'{content}{extra}</div>')
         if kind == "cta":
             # Тот же разнобой ключей: план пишет `text`, и без него кнопка

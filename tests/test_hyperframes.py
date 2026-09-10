@@ -2558,10 +2558,16 @@ class TestOverlaysCarryTheirText:
                            "params": {"text": "Проверить нечем", "position": "middle"}})
         assert "Проверить нечем" in body
 
-    def test_a_plaque_shows_its_kicker(self):
-        body = self._body({"type": "plaque",
-                           "params": {"text": "nature.com", "subtitle": "источник"}})
-        assert "nature.com" in body and "источник" in body
+    def test_a_source_plaque_is_a_small_chip(self):
+        body = self._body({
+            "type": "plaque",
+            "template": "lower-thirds/source-domain",
+            "params": {"text": "nature.com", "subtitle": "источник",
+                       "source_chip": True, "position": "bottom"},
+        })
+        assert "source-chip" in body
+        assert "nature.com" in body
+        assert "источник" in body
 
     def test_the_button_shows_the_requested_word(self):
         """Без ключа кнопка молча показывала запасное «Подпишись»."""
