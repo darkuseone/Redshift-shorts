@@ -56,18 +56,21 @@
       "fp_cracked_wall",
       "fp_server_room",
       "fp_code_editor",
-      "fp_red_gradient",
       "fp_cpp_code",
       "fp_green_glitch",
       "fp_plaster_wall",
       "fp_peeling_wall",
-      "fp_red_pulse",
       "fp_blue_bubbles",
       "fp_formula_particles",
       "fp_river_current",
       "fp_rock_surface",
       "fp_desk_code",
-      "fp_red_heartbeat"
+      "fp_chalkboard_class",
+      "fp_typing_hands",
+      "fp_blue_ink",
+      "fp_cracked_earth",
+      "fp_matrix_code",
+      "fp_blackboard_close"
     ],
     "deny": [
       "pexels_v7565432",
@@ -79,7 +82,18 @@
       "grok_supercomputer_0042",
       "grok_cryostat_0042",
       "meme_014_сарказм",
-      "nasa_*"
+      "nasa_*",
+      "ia_*",
+      "fp_red_gradient",
+      "fp_red_pulse",
+      "fp_red_heartbeat",
+      "pexels_v12271136",
+      "pexels_v16655793",
+      "pexels_v16727463",
+      "pexels_v16945380",
+      "pexels_v17356513",
+      "pexels_v19162466",
+      "pexels_v28613453"
     ],
     "same_asset_max_slots": 1
   }

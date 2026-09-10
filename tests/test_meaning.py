@@ -267,6 +267,58 @@ class TestDatavizOverlayGroundsOnTheNumber:
         assert "½" in overlay["params"]["subtitle"]
         assert overlay["params"]["x_labels"] == ["шаг 1", "шаг 2", "шаг 3"]
 
+    def test_mixed_units_collapse_to_one_kpi(self):
+        from src.p11_assemble.assemble import _comparable_stats
+
+        collapsed = _comparable_stats([
+            {"value": 10000.0, "raw": "десять тысяч", "suffix": "тыс."},
+            {"value": 88.0, "raw": "восемьдесят восемь", "suffix": ""},
+            {"value": 2_700_000.0, "raw": "два миллиона", "suffix": "млн"},
+        ])
+        assert len(collapsed) == 1
+        assert collapsed[0]["value"] == 2_700_000.0
+
+    def test_same_scale_stays_a_series(self):
+        from src.p11_assemble.assemble import _comparable_stats
+
+        series = _comparable_stats([
+            {"value": 12.0, "raw": "двенадцать", "suffix": "%"},
+            {"value": 40.0, "raw": "сорок", "suffix": "%"},
+            {"value": 80.0, "raw": "восемьдесят", "suffix": "%"},
+        ])
+        assert [n["value"] for n in series] == [12.0, 40.0, 80.0]
+
+    def test_bar_chart_title_follows_the_spoken_language(self):
+        from src.lib.templates import Template
+        from src.p11_assemble.assemble import _dataviz_overlay
+
+        class _Picker:
+            def pick(self, *args, **kwargs):
+                tmpl = Template(
+                    id="data-viz/bar-chart-race", name="bar-chart-race",
+                    category="data-viz", title="", duration_range=[1.0, 4.0],
+                    params={}, tags=[], renderer="dataviz", needs=["number"])
+                return tmpl, type("T", (), {"fired": [], "walk": [], "won_at": "",
+                                            "allow_size": 1, "escaped": False,
+                                            "escape_level": ""})()
+
+        overlay = _dataviz_overlay(
+            {"block_id": "b3", "index": 4},
+            [{"value": 12.0, "raw": "двенадцать", "suffix": "%"},
+             {"value": 40.0, "raw": "сорок", "suffix": "%"},
+             {"value": 80.0, "raw": "восемьдесят", "suffix": "%"},
+             {"value": 95.0, "raw": "девяносто пять", "suffix": "%"}],
+            {"b3": {
+                "id": "b3",
+                "text": "ошибка падает с двенадцати до девяноста пяти процентов",
+                "heading": "",
+                "emphasis_word": "ошибка",
+            }},
+            _Picker(), variant="A", seed=1, recent_videos=[], used=[],
+            start=16.0, end=19.0)
+        assert overlay["params"]["title"] != "Streaming Subscribers by Service"
+        assert overlay["params"]["title"] == "ОШИБКА"
+
 
 class TestTheTransitionAnswersToWhatItIntroduces:
     """Переход отвечает за то, что вводит, — и не ставится просто так.

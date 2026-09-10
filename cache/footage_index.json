@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-10",
-  "count": 89,
+  "count": 95,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -2899,8 +2899,10 @@
       "vision_summary": "A C++ source file in a dark IDE with highlighted syntax and line numbers. Tags: cpp, code, syntax, editor, programming.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "cc9118c4ce3be6e6",
@@ -2932,8 +2934,10 @@
       "vision_summary": "Abstract green digital glitch lines on a black background. Tags: green, glitch, digital, lines, matrix.",
       "score": 0.82,
       "duration_sec": 5.033,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "c0013e7e07cf38cf",
@@ -2965,8 +2969,10 @@
       "vision_summary": "Rough plastered wall texture with a dramatic diagonal shadow. Tags: plaster, wall, texture, shadow, diagonal.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "cadd2400859f9ff8",
@@ -2998,8 +3004,10 @@
       "vision_summary": "Peeling grunge wall texture with cracks. Tags: peeling, wall, grunge, texture, crack.",
       "score": 0.82,
       "duration_sec": 8.008,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "f18e086f29dc4af1",
@@ -3064,8 +3072,10 @@
       "vision_summary": "Macro view of blue fluid with bubbles. Tags: blue, fluid, bubbles, liquid, macro.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "c3311f0c7b63dc61",
@@ -3130,8 +3140,10 @@
       "vision_summary": "Churning white water flowing rapidly through a river. Tags: river, current, water, rapids, flow.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "f7c5c14a6a0b8ada",
@@ -3240,6 +3252,203 @@
       "width": 1080,
       "height": 1920,
       "file": "freepik/fp_red_heartbeat.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_chalkboard_class",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/1195994",
+      "phash": "",
+      "tags": [
+        "chalkboard",
+        "class",
+        "classroom",
+        "math"
+      ],
+      "vision_summary": "Classroom chalkboard during math class. Tags: chalkboard, class, classroom, math.",
+      "score": 0.72,
+      "duration_sec": 5.56,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "cd828fead5c6b460",
+        "c9808bcad3c7be45",
+        "ecc183abd1c2bf50"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_chalkboard_class.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_typing_hands",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/2489951",
+      "phash": "",
+      "tags": [
+        "hands",
+        "typing",
+        "keyboard",
+        "neon",
+        "code"
+      ],
+      "vision_summary": "Hands typing on a backlit keyboard. Tags: hands, typing, keyboard, neon, code.",
+      "score": 0.72,
+      "duration_sec": 8.008,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "df623f80c5d03d07",
+        "de623f81c5f03d24",
+        "db603fc0e5711fa0"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_typing_hands.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_matrix_code",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/3573854",
+      "phash": "",
+      "tags": [
+        "dark",
+        "keyboard",
+        "fingers",
+        "keys",
+        "closeup"
+      ],
+      "vision_summary": "Dark close-up of fingers on a keyboard. Tags: dark, keyboard, fingers, keys, closeup.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "2c53a5395798c2ec",
+        "2c52a4399689c3fd",
+        "2c52a529578967f4"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_matrix_code.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_blue_ink",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8698566",
+      "phash": "",
+      "tags": [
+        "blue",
+        "ink",
+        "water",
+        "swirling",
+        "fluid"
+      ],
+      "vision_summary": "Blue ink dropping and swirling in water. Tags: blue, ink, water, swirling, fluid.",
+      "score": 0.72,
+      "duration_sec": 5.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "2aaaaaa5b515a5aa",
+        "0ccb6d0e31cdccb1",
+        "3596d99ac484c66d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_blue_ink.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_cracked_earth",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/3615886",
+      "phash": "",
+      "tags": [
+        "cracked",
+        "earth",
+        "drought",
+        "soil",
+        "texture"
+      ],
+      "vision_summary": "Vertical cracked dry earth texture. Tags: cracked, earth, drought, soil, texture.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "f00b567eb0c3927c",
+        "fa80cf17f400bf0e",
+        "0d8fba3831676545"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_cracked_earth.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_blackboard_close",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/5260301",
+      "phash": "",
+      "tags": [
+        "blackboard",
+        "close",
+        "equations",
+        "formula",
+        "math"
+      ],
+      "vision_summary": "Mathematics equations filling a blackboard. Tags: blackboard, close, equations, formula, math.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "20915f3f3b814a6e",
+        "269b690c9633cd4d",
+        "2a95a253d33ad52a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_blackboard_close.mp4",
       "extra": {
         "attribution": "Freepik / Magnific stock",
         "seed_topic": "0048-navier-stokes"

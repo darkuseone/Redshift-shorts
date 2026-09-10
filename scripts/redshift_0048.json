@@ -44,7 +44,9 @@
       "avatar": "off",
       "visual_intent": "Тёмный кадр: мел на доске, формулы жидкости, удар вопросом",
       "broll_queries": [
-        "chalkboard equations formula blackboard math"
+        "plaster wall texture shadow diagonal",
+        "peeling wall grunge texture crack",
+        "chalkboard class classroom math"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -64,7 +66,9 @@
       "avatar": "on",
       "visual_intent": "Ведущий называет ставки, за головой — семь и миллион",
       "broll_queries": [
-        "mathematician writing equations chalkboard lecture"
+        "mathematician writing equations chalkboard lecture",
+        "chalkboard equations formula blackboard math",
+        "blackboard close equations formula math"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -83,7 +87,10 @@
       "avatar": "off",
       "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры",
       "broll_queries": [
-        "gpu cluster server aisle datacenter"
+        "gpu cluster server aisle datacenter",
+        "formula particles math equation glow",
+        "computer code animation programming screen",
+        "cpp code syntax editor programming"
       ],
       "overlay": {
         "type": "highlight",
@@ -105,11 +112,14 @@
       "broll_queries": [
         "overhead turbulent water vortex whirlpool bubbles",
         "spaghetti pasta strands noodles dry",
-        "code editor source programming ide"
+        "code editor source programming ide",
+        "blue ink water swirling fluid",
+        "hands typing keyboard neon code",
+        "dark keyboard fingers keys closeup"
       ],
       "overlay": {
         "type": "fullscreen_text",
-        "content": "88 ЧАСОВ",
+        "content": "СИНГУЛЯРНОСТЬ",
         "template_hint": "text-fullscreen/impact-01"
       },
       "sfx": "data_beep",
@@ -125,7 +135,10 @@
       "avatar": "on",
       "visual_intent": "Ведущий крупно закрывает хук: не тот пункт, не тот приз, не та модель",
       "broll_queries": [
-        "cracked concrete wall vine fissure"
+        "cracked concrete wall vine fissure",
+        "rock stone surface texture fissure",
+        "cracked earth drought soil texture",
+        "green glitch digital lines matrix"
       ],
       "overlay": {
         "type": "none"
@@ -143,7 +156,8 @@
       "avatar": "on",
       "visual_intent": "Ведущий задаёт голосование, красный фон, кнопка подписки",
       "broll_queries": [
-        "red pulse energy glow abstract heartbeat"
+        "blue fluid bubbles liquid macro",
+        "river current water rapids flow"
       ],
       "overlay": {
         "type": "none"

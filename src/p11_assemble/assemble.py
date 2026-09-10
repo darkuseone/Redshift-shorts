@@ -2893,6 +2893,42 @@ def _stats_from_words(text: str) -> list[dict[str, Any]]:
     return out
 
 
+def _comparable_stats(nums: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep a bar/line series only when the numbers share one dimension.
+
+    «Десять тысяч агентов, восемьдесят восемь часов, два миллиона сообщений»
+    is three units. Charting them as Streaming-style bars is a lie. Mixed
+    suffixes, or a 100× spread with empty suffixes, collapse to one KPI.
+    """
+    if len(nums) <= 1:
+        return list(nums)
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for item in nums:
+        key = str(item.get("suffix") or "").strip().lower()
+        groups.setdefault(key, []).append(item)
+    best = max(
+        groups.values(),
+        key=lambda group: (
+            len(group),
+            max(abs(float(n["value"])) for n in group),
+        ),
+    )
+    if len(best) >= 2:
+        vals = [abs(float(n["value"])) for n in best]
+        positive = [v for v in vals if v > 0]
+        if positive and max(vals) / min(positive) <= 100.0:
+            return best
+    ranked = sorted(
+        nums,
+        key=lambda n: (
+            1 if str(n.get("suffix") or "").strip() else 0,
+            abs(float(n["value"])),
+        ),
+        reverse=True,
+    )
+    return ranked[:1]
+
+
 def _stats_from_text(text: str) -> list[dict[str, Any]]:
     """Числа из реплики блока. Годы 1900–2100 отбрасываем, если есть другие."""
     found: list[dict[str, Any]] = []
@@ -2934,6 +2970,14 @@ def _evidence_runs(slots: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
             runs.append([slot])
     return runs
 
+
+
+# A published article is not a chat log. Rotation still picked chat-thread
+# for openai.com on 0048 A and covered the paper with a fake messenger.
+_BROWSER_NOT_CHAT = (
+    "browser-ui/chat-thread",
+    "browser-ui/chat-ai-typing",
+)
 
 
 def _hint_from_screen_template(screen: str | None) -> str | None:
@@ -3015,7 +3059,10 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             variant=variant,
             duration=float(anchor["duration"]),
             recent_videos=recent_videos,
-            exclude=used,
+            exclude=list(used) + (
+                list(_BROWSER_NOT_CHAT)
+                if str(source.get("screen_template") or "").lower() == "browser"
+                else []),
             seed=seed + i,
             prefer_head=head,
         )
@@ -3376,6 +3423,7 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
     восьми шаблонов подобраны по одному, и вторая их редакция разошлась бы
     с первой на первом же новом приёме.
     """
+    nums = _comparable_stats(list(nums))
     pct = str(nums[0].get("suffix") or "").lstrip().startswith("%")
     declining = (len(nums) >= 2
                  and float(nums[1]["value"]) < float(nums[0]["value"]))
@@ -3614,9 +3662,8 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
             params["value_prefix"] = ""
             params["value_suffix"] = (
                 f" {nums[0]['suffix']}" if nums[0].get("suffix") else "")
-            params["title"] = str(
-                blocks.get(slot["block_id"], {}).get("heading")
-                or "Streaming Subscribers by Service")
+            # Catalog demo title must never reach a live Russian cut.
+            params["title"] = _dataviz_label(blocks.get(slot["block_id"], {}))
         if name == "chart-story":
             params["unit"] = (
                 str(nums[0]["suffix"]) if nums[0].get("suffix") else "%")
