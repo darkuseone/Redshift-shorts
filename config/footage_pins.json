@@ -71,12 +71,9 @@
       "fp_stapling_docs"
     ],
     "deny": [
-      "pexels_v7565432",
-      "pexels_v18069803",
+      "pexels_*",
+      "pixabay_*",
       "press_21bc8e2d72",
-      "pexels_v35003022",
-      "pexels_v38431825",
-      "pixabay_v200531",
       "grok_supercomputer_0042",
       "grok_cryostat_0042",
       "meme_014_сарказм",
@@ -96,14 +93,7 @@
       "fp_blue_ink",
       "fp_hourglass_sand",
       "fp_analog_clock",
-      "fp_matrix_code",
-      "pexels_v12271136",
-      "pexels_v16655793",
-      "pexels_v16727463",
-      "pexels_v16945380",
-      "pexels_v17356513",
-      "pexels_v19162466",
-      "pexels_v28613453"
+      "fp_matrix_code"
     ],
     "same_asset_max_slots": 1
   }
