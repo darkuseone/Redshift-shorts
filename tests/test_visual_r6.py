@@ -167,6 +167,26 @@ def test_authored_punch_end_reads_split_slot():
     assert _authored_punch_end(plan, "b3") is None
 
 
+def test_hero_lines_follow_spoken_window():
+    from src.p11_assemble.assemble import _hero_content
+
+    block = {
+        "emphasis_word": "миллион",
+        "text": (
+            "Две тысячи год. Институт Клей вешает семь задач тысячелетия. "
+            "Миллион долларов за каждую. Пуанкаре закрыли."
+        ),
+    }
+    slot = {"start": 9.5, "end": 12.0, "role": "setup"}
+    content = _hero_content(block, slot, None, words=[
+        {"display": "Пуанкаре", "start": 9.55, "end": 10.0},
+        {"display": "закрыли.", "start": 10.3, "end": 10.8},
+    ])
+    blob = " ".join(content["lines"]).lower()
+    assert "пуанкаре" in blob
+    assert "две тысячи" not in blob
+
+
 def test_logo_brand_close_default_tagline_empty():
     from src.lib.render.hyperframes.templates import _LBC_DEFAULT_TAG, _lbc_copy
     assert _LBC_DEFAULT_TAG == ""

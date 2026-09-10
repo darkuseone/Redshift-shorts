@@ -1634,15 +1634,47 @@ def _emphasis_spoken_in_slot(
     return False
 
 
-def _authored_punch_end(plan: dict[str, Any], block_id: str) -> float | None:
-    """End of the authored fullscreen punch in this block, if any."""
-    ends = [
-        float(slot["end"])
+def _spoken_window_text(
+        words: list[dict[str, Any]] | None,
+        slot: dict[str, Any]) -> str:
+    """Words actually said in this slot, in order. Empty if no speech map."""
+    if not words:
+        return ""
+    start = float(slot.get("start") or 0.0)
+    end = float(slot.get("end") or 0.0)
+    bits: list[str] = []
+    for item in words:
+        try:
+            w_start = float(item.get("start"))
+            w_end = float(item.get("end"))
+        except (TypeError, ValueError):
+            continue
+        if w_end <= start + 0.05 or w_start >= end - 0.05:
+            continue
+        token = str(item.get("display") or item.get("word") or "").strip()
+        if token:
+            bits.append(token)
+    return " ".join(bits)
+
+
+def _authored_punch_span(
+        plan: dict[str, Any], block_id: str) -> tuple[float, float] | None:
+    """Start/end of the authored fullscreen punch in this block, if any."""
+    spans = [
+        (float(slot["start"]), float(slot["end"]))
         for slot in (plan.get("slots") or [])
         if slot.get("authored_punch")
         and str(slot.get("block_id") or "") == str(block_id or "")
     ]
-    return max(ends) if ends else None
+    if not spans:
+        return None
+    return min(s[0] for s in spans), max(s[1] for s in spans)
+
+
+def _authored_punch_end(plan: dict[str, Any], block_id: str) -> float | None:
+    """End of the authored fullscreen punch in this block, if any."""
+    span = _authored_punch_span(plan, block_id)
+    return None if span is None else span[1]
 
 
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
@@ -1674,6 +1706,11 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         text_for_lines = semantic or _strip_discourse(text) or text
     else:
         text_for_lines = _strip_discourse(text) if _DISCOURSE_PREFIX.match(text) else text
+    window_text = _spoken_window_text(words, slot)
+    if window_text:
+        # Column/stack must track this shot's VO, not the block opening.
+        # 0048 printed «ДВЕ ТЫСЯЧИ ГОД» over Poincaré / Navier–Stokes.
+        text_for_lines = window_text
     lines = _wrap_lines(text_for_lines)
     accent = [i for i, line in enumerate(lines)
               if word and word.lower() in line.lower()]
@@ -1720,7 +1757,7 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
         "accent_lines": accent,
         # Заголовок карточки — начало реплики, а не акцентное слово: одно слово
         # крупно уже занято выбивкой и заголовком над головой.
-        "title": " ".join(text.split()[:3]).strip(".,!?;:").upper(),
+        "title": " ".join(text_for_lines.split()[:3]).strip(".,!?;:").upper(),
         # Запрос в переписке — только если реплика и правда спрашивает.
         # Резать по счёту слов нельзя: обрывок «Это и» на месте вопроса
         # читается как сбой набора, а не как реплика.
@@ -4169,7 +4206,7 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     reason = str(slot.get("reason") or "")
     interstitial = (
         slot.get("asset_role") == "interstitial" or "перебивка" in reason)
-    parallax_min = 1.35 if interstitial else 1.5
+    parallax_min = 1.2 if interstitial else 1.2
     if still and float(slot["duration"]) >= parallax_min and budget.allows("parallax"):
         budget.take("parallax")
         return "parallax", None, {
@@ -4186,15 +4223,21 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     #    `has_alpha=False`: аватара в этом кадре нет, и всё, что рисуется под
     #    ним, оказалось бы за непрозрачным видео. Отбор по `_HERO_NEEDS` сам
     #    отбросит приёмы, которым нечем наполниться.
-    punch_end = _authored_punch_end(
+    punch_span = _authored_punch_span(
         plan, str((block or {}).get("id") or slot.get("block_id") or ""))
-    after_punch = (
-        punch_end is not None
-        and float(slot["start"]) + 0.05 >= punch_end)
-    # After the authored FS punch the remainder still belongs to this block.
-    # A card here reprinted «Сама Астра / доказательство» over the spaghetti
-    # line. Leave the plate: the punch already spent the card.
-    if (not after_punch and block.get("emphasis_word") and budget.allows("card")):
+    skip_card = False
+    if punch_span is not None:
+        punch_start, punch_end = punch_span
+        start = float(slot["start"])
+        end = float(slot["end"])
+        after_punch = start + 0.05 >= punch_end
+        before_punch = end + 0.05 >= punch_start and start < punch_start
+        skip_card = after_punch or before_punch
+    # After/before the authored FS punch the remainder still belongs to this
+    # block. A card here reprinted «Сама Астра / доказательство» over the
+    # formula, then over the spaghetti line. Leave the plate: the punch
+    # already spent the card.
+    if (not skip_card and block.get("emphasis_word") and budget.allows("card")):
         hero = _hero_device(
             catalog, slot=slot,
             content=_hero_content(
