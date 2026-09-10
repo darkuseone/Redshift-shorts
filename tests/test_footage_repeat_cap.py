@@ -1149,3 +1149,5 @@ def test_cta_avatar_does_not_take_a_hero():
     src = inspect.getsource(assemble.build_variant)
     assert "stacked «ШЕСТИ» on the REDSHIFT wordmark" in src
     assert "take_hero = False" in src
+    assert '(prep or {}).get("dst")' in src
+    assert 'prep["file"]' not in src

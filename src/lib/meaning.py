@@ -57,7 +57,8 @@ TRAIT_PATTERNS: dict[str, str] = {
     # «не совсем». Признаком считается отрицание по существу — то, вокруг
     # чего строится реплика.
     "negation": (r"дело не в|не из-за|не потому|не так,? как|так и не\b|\bнет\b|"
-                 r"никт\w+|ничего|нельзя|невозможн\w*|перестал\w*|отказал\w*|"
+                 r"никт\w+|ничего|ничем|никому|никогда|нельзя|невозможн\w*|"
+                 r"перестал\w*|отказал\w*|"
                  r"провал\w*|не сработал\w*|не нашли|не смогли|не удалось"),
     # Превосходная степень: рекорд, впервые, единственный.
     "superlative": (r"самы[йяоеы]\w*|впервые|единственн\w+|рекорд\w*|крупнейш\w+|"
@@ -165,7 +166,9 @@ def matched(needs: Iterable[str], traits: Iterable[str]) -> frozenset[str]:
 # Need-less приём каталога не просит признаков, но QC-21 всё равно считает
 # пустой `grounded_on` браком (MUST-010). Если на самом кадре видно число или
 # цитату, которые блок произносит, основание есть — это не «обои».
-_SHOWN_EVIDENCE = frozenset({"number", "quote", "comparison", "brand", "date", "money"})
+_SHOWN_EVIDENCE = frozenset({
+    "number", "quote", "comparison", "brand", "date", "money", "negation",
+})
 
 
 def grounded_for(needs: Iterable[str], traits: Iterable[str],

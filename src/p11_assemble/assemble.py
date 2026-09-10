@@ -4069,12 +4069,25 @@ _HOOK_RENDERED = frozenset({"fullscreen_text", "footage"})
 
 
 def _hook_allows(template_id: str, renderer: str, *, slot: dict[str, Any],
-                 has_asset: bool, has_source: bool) -> bool:
+                 has_asset: bool, has_source: bool,
+                 spec: dict[str, Any] | None = None) -> bool:
     """Может ли этот кадр показать этот приём хука."""
     if renderer not in _HOOK_RENDERED:
         return False
     if renderer == "footage":
-        return has_asset
+        if not has_asset:
+            return False
+        spec = spec or {}
+        # Cold open is a silent plate before the first word. An authored
+        # on-screen line (0049 «ФУРОР», 0042 «НЕВОЗМОЖНО ПРОВЕРИТЬ») is a
+        # different hook. Once pins filled slot 0, has_asset flipped the
+        # pick to footage and P11 crashed on prep["file"] — the prepared
+        # dict stores ``dst``.
+        if str(spec.get("on_screen") or "").strip():
+            return False
+        if str(spec.get("style") or "") == "blackout_word":
+            return False
+        return True
     return True                                   # fullscreen_text — всегда
 
 
@@ -4108,7 +4121,8 @@ def _pick_hook_shot(slot: dict[str, Any], block: dict[str, Any],
     blocked = list(used_templates)
     for template in catalog.by_category("intro-hooks"):
         if not _hook_allows(template.id, template.renderer, slot=slot,
-                            has_asset=has_asset, has_source=has_source):
+                            has_asset=has_asset, has_source=has_source,
+                            spec=spec):
             blocked.append(template.id)
     if not [t for t in catalog.by_category("intro-hooks")
             if t.id not in blocked]:
@@ -4565,6 +4579,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 content = soften_on_screen_copy(content)
                 if content and _claim_screen_phrase(used_screen_phrases, content):
                     bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
+                    # Blackout is a black plate with one word. Stock under it
+                    # (fp_blue_bubbles on mock 0042) turned QC-30 into 40 % cyan.
+                    if hook_tpl.id == HOOK_STYLE_TEMPLATES["blackout_word"]:
+                        bg_file = None
                     asset = assets.get(slot["index"])
                     used_templates.append(hook_tpl.id)
                     fs_params = _attach_fs_media(
@@ -4600,14 +4618,15 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 # Холодное открытие: кадр до первого слова, без надписи.
                 prep = prepared.get(slot["index"])
                 asset = assets.get(slot["index"])
-                if prep is not None and asset is not None:
+                dst = str((prep or {}).get("dst") or "").strip()
+                if prep is not None and asset is not None and dst:
                     used_templates.append(hook_tpl.id)
                     entry.update({
                         "kind": "footage",
                         "template": hook_tpl.id,
                         "renderer": hook_tpl.renderer,
                         "hook": True,
-                        "file": prep["file"],
+                        "file": dst,
                         "asset_id": asset.get("asset_id"),
                         "source": asset.get("source"),
                         "license": asset.get("license"),

@@ -240,6 +240,16 @@ class TestTheAccentShareIsFinallyMeasured:
         assert out["max"] > 0.12
         assert "QC-30" in out["reason"]
 
+    def test_a_landscape_cyan_column_fails_after_9x16_crop(self):
+        """Wide stills squash under resize and hide the flood QC-30 sees."""
+        from src.lib.palette import accent_cap_verdict, accent_share
+        img = Image.new("RGB", (320, 180), (11, 19, 43))
+        img.paste(Image.new("RGB", (100, 180), (54, 239, 255)), (110, 0))
+        share = accent_share(img)
+        assert share["cyan"] > 0.12, share
+        out = accent_cap_verdict([img], 0.12)
+        assert out["measured"] and not out["passed"]
+
     def test_no_frames_do_not_fail_the_cap_verdict(self, tmp_path):
         from src.lib.palette import accent_cap_verdict
         out = accent_cap_verdict([tmp_path / "missing.png"], 0.12)

@@ -36,6 +36,32 @@ from PIL import Image
 SAMPLE = (160, 284)
 
 
+def _cover_9x16(image: Image.Image, size: tuple[int, int] = SAMPLE) -> Image.Image:
+    """Centre-crop to 9:16 like the compositor, then downscale.
+
+    ``Image.resize`` to portrait squashes a landscape still and dilutes a
+    cyan column that the 9:16 plate keeps. QC-30 samples the finished
+    file; P8 must see the same frame. ``fp_blue_bubbles`` passed P8 as a
+    wide still and failed QC-30 at 40 % cyan on the crop.
+    """
+    tw, th = size
+    rgb = image.convert("RGB")
+    w, h = rgb.size
+    if w <= 0 or h <= 0:
+        return rgb.resize(size)
+    target = tw / float(th)
+    ratio = w / float(h)
+    if ratio > target + 1e-6:
+        new_w = max(1, int(round(h * target)))
+        left = max(0, (w - new_w) // 2)
+        rgb = rgb.crop((left, 0, min(w, left + new_w), h))
+    elif ratio < target - 1e-6:
+        new_h = max(1, int(round(w / target)))
+        top = max(0, (h - new_h) // 2)
+        rgb = rgb.crop((0, top, w, min(h, top + new_h)))
+    return rgb.resize(size)
+
+
 def _hsv(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Оттенок в градусах, насыщенность и яркость. Быстрее поточечного HSV."""
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
@@ -144,7 +170,7 @@ def accent_share(image: Image.Image | Path | str,
     """
     if not isinstance(image, Image.Image):
         image = Image.open(image)
-    rgb = np.asarray(image.convert("RGB").resize(SAMPLE), dtype=np.float32) / 255.0
+    rgb = np.asarray(_cover_9x16(image), dtype=np.float32) / 255.0
     hue, sat, value = _hsv(rgb)
     out: dict[str, float] = {}
     for name, spec in (corridors or ACCENT_CORRIDORS).items():

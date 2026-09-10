@@ -98,6 +98,8 @@ def test_pins_file_lists_good_and_deny():
     assert "pexels_v34550739" not in entry["prefer"]
     assert "pexels_v35288383" not in entry["prefer"]
     assert "pixabay_v113383" not in entry["prefer"]
+    assert "fp_blue_bubbles" in entry["deny"]
+    assert "fp_blue_bubbles" not in entry["prefer"]
     assert "pexels_v16727463" in entry["deny"]
     assert "pexels_v19162466" in entry["deny"]
     assert "pexels_v28613453" in entry["deny"]
