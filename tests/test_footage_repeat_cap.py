@@ -328,6 +328,14 @@ def test_press_beats_ticker_on_nature_speech(monkeypatch):
                     vision_summary="Nature figure: Willow error-correction charts",
                     score=0.86, duration_sec=0.0, width=685, height=271,
                     file="press/press_21bc8e2d72.jpg"),
+                "pexels_v18069803": AssetRecord(
+                    id="pexels_v18069803", type="video", source="pexels",
+                    license="Pexels License",
+                    url_origin="https://www.pexels.com/video/quantum-chip-18069803/",
+                    tags=["quantum", "chip"],
+                    vision_summary="quantum processor chip macro",
+                    score=0.90, duration_sec=8.0, width=1080, height=1920,
+                    file="pexels/pexels_v18069803.mp4"),
                 "pexels_v38431825": AssetRecord(
                     id="pexels_v38431825", type="video", source="pexels",
                     license="Pexels License",
@@ -354,6 +362,12 @@ def test_press_beats_ticker_on_nature_speech(monkeypatch):
 
     slots = [
         {
+            "index": 0, "kind": "footage", "role": "hook",
+            "asset_role": "broll", "needs_asset": True,
+            "visual_intent": "Холодный кадр квантового процессора в криостате, крупно",
+            "start": 0.0, "end": 3.08, "block_id": "b1",
+        },
+        {
             "index": 3, "kind": "split", "role": "evidence",
             "asset_role": "evidence", "needs_asset": True,
             "visual_intent": "Скриншот статьи в браузере, подсветка ключевой строки",
@@ -366,25 +380,32 @@ def test_press_beats_ticker_on_nature_speech(monkeypatch):
             "start": 13.04, "end": 15.58, "block_id": "b3",
         },
     ]
-    candidates = [
-        _candidate(3, "pexels_v38431825", score=0.92),
-        _candidate(3, "press_21bc8e2d72", score=0.80),
-        _candidate(5, "pexels_v38431825", score=0.92),
-        _candidate(5, "press_21bc8e2d72", score=0.80),
-    ]
+    candidates = []
+    for idx in (0, 3, 5):
+        candidates.extend([
+            _candidate(idx, "pexels_v38431825", score=0.92),
+            _candidate(idx, "press_21bc8e2d72", score=0.80),
+            _candidate(idx, "pexels_v18069803", score=0.90),
+        ])
     for row in candidates:
         if row["asset_id"].startswith("press_"):
             row["tags"] = ["nature", "quantum", "figure"]
             row["url_origin"] = "https://www.nature.com/articles/s41586-024-08449-y"
             row["vision_summary"] = "Nature figure: Willow error-correction charts"
-        else:
+        elif "38431825" in row["asset_id"]:
             row["tags"] = ["ticker", "finance"]
             row["url_origin"] = "https://www.pexels.com/video/stock-market-ticker-38431825/"
             row["vision_summary"] = "stock market ticker numbers"
+        else:
+            row["tags"] = ["quantum", "chip"]
+            row["url_origin"] = "https://www.pexels.com/video/quantum-chip-18069803/"
+            row["vision_summary"] = "quantum processor chip macro"
     words = {"words": [
+        {"display": "невозможно", "start": 0.4, "end": 0.9},
         {"display": "опубликована", "start": 8.4, "end": 8.9},
         {"display": "Nature", "start": 9.12, "end": 9.57},
         {"display": "внутри", "start": 13.2, "end": 13.6},
+        {"display": "деньги", "start": 42.6, "end": 43.0},
     ]}
     ctx = _Ctx(
         cfg,
@@ -397,6 +418,7 @@ def test_press_beats_ticker_on_nature_speech(monkeypatch):
     result = ctx.written["accepted_assets.json"]
     assert result["accepted"]["3"]["asset_id"] == "press_21bc8e2d72"
     assert result["accepted"]["3"]["asset_id"] != "pexels_v38431825"
+    assert result["accepted"]["0"]["asset_id"] != "pexels_v38431825"
 
 
 def test_supercomputer_carves_onto_spoken_slot(monkeypatch):

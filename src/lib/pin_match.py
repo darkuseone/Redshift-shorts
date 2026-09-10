@@ -86,6 +86,10 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             bonus = -15
         elif role == "evidence":
             bonus = 12
+        else:
+            # Ticker is a money shot. Equal-bonus score order used to put it
+            # on the hook, then rebalance kept it there to get it off evidence.
+            bonus = 8
     try:
         rank = list(pin_prefer).index(aid)
     except ValueError:

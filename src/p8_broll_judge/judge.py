@@ -374,12 +374,46 @@ def _rebalance_prefers_onto_speech(
                 )
                 if after >= before:
                     continue
+                if _hook_mismatch(aid_a, slot_b, pin_prefer, words) or \
+                        _hook_mismatch(aid_b, slot_a, pin_prefer, words):
+                    continue
                 accepted[idx_a], accepted[idx_b] = accepted[idx_b], accepted[idx_a]
                 accepted[idx_a]["slot_index"] = int(idx_a)
                 accepted[idx_b]["slot_index"] = int(idx_b)
                 swaps += 1
                 improved = True
     return swaps
+
+
+def _hook_mismatch(asset_id: str, slot: dict[str, Any], pin_prefer: list[str],
+                   words: list[dict[str, Any]] | None) -> bool:
+    """True when moving this pin onto the hook would be off-theme."""
+    try:
+        start = float(slot.get("start") or 0.0)
+    except (TypeError, ValueError):
+        start = 0.0
+    if str(slot.get("role") or "") != "hook" and start >= 3.0:
+        return False
+    return _leftover_prefer_key(asset_id, slot, pin_prefer, words)[0] >= 0
+
+
+def _drop_mismatched_prefers(
+        *, accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
+        pin_prefer: list[str], slots_by_index: dict[int, dict[str, Any]],
+        words: list[dict[str, Any]] | None) -> int:
+    """Unaccept prefer pins that still sit on a penalized slot after swaps."""
+    dropped = 0
+    for idx in list(accepted):
+        aid = str(accepted[idx].get("asset_id") or "")
+        if aid not in set(pin_prefer):
+            continue
+        slot = slots_by_index.get(int(idx), {})
+        if _leftover_prefer_key(aid, slot, pin_prefer, words)[0] <= 0:
+            continue
+        accepted_counts[aid] = max(0, int(accepted_counts.get(aid, 1)) - 1)
+        del accepted[idx]
+        dropped += 1
+    return dropped
 
 
 def _fill_unfilled_from_leftover_prefers(
@@ -876,6 +910,16 @@ def run_step(ctx) -> dict[str, Any]:
         slots_by_index=slots_by_index, words=words)
     if swapped:
         _log.info("rebalanced %s prefer pin pair(s) onto spoken slots", swapped)
+    dropped = _drop_mismatched_prefers(
+        accepted=accepted, accepted_counts=accepted_counts,
+        pin_prefer=pin_prefer, slots_by_index=slots_by_index, words=words)
+    if dropped:
+        leftover_filled += _fill_unfilled_from_leftover_prefers(
+            ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
+            accepted=accepted, accepted_counts=accepted_counts, judged=judged,
+            pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
+            repeat_max=repeat_max, skip_live=skip_live,
+            palette_rules=palette_rules, visible_min=visible_min, words=words)
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

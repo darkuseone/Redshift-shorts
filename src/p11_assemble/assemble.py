@@ -1688,7 +1688,9 @@ def hero_params(renderer: str, base: dict[str, Any], content: dict[str, Any],
                 params["head_top"] = int(box[1])
                 params["head_h"] = int(box[3]) - int(box[1])
     if renderer == "hero-brand-pill":
-        params.update(content["brand"])
+        brand = content.get("brand") or {}
+        if isinstance(brand, dict):
+            params.update(brand)
     if renderer in ("hero-card-stack", "hero-exhibit"):
         params["title"] = content["title"]
     if renderer == "hero-exhibit":
@@ -2035,6 +2037,9 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         exclude_renderers=exclude_renderers,
     )
     renderer = template.renderer
+    needs = _HERO_NEEDS.get(renderer, ())
+    if any(not available.get(key) for key in needs):
+        return None
     params = hero_params(renderer, template.params, content, slot)
     if late:
         params["clear_crown"] = True
