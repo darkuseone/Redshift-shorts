@@ -6735,7 +6735,7 @@ def split_css(brandbook: dict[str, Any]) -> str:
         f"width:var(--frame-w);height:{seam}px;overflow:hidden;"
         f"z-index:{Z_AVATAR + 1};background:#0a0c10;"
         "object-fit:contain;object-position:center;"
-        "border-bottom:4px solid var(--color-accent)}}"
+        "border-bottom:4px solid var(--color-accent)}"
         ".split-top-baked{object-fit:cover;object-position:center top}"
         f".split-bottom{{position:absolute;left:0;right:0;top:{seam}px;"
         f"height:{height - seam}px;overflow:hidden;z-index:{Z_SHOT}}}"
