@@ -69,6 +69,13 @@ def _load_yaml(path) -> dict:
 AVATAR_KINDS = ("avatar", "split")
 # White disk of circle-mask-grow sits opaque on the presenter's face.
 AVATAR_ENTRY_DENY = ("avatar-entry/circle-mask-grow",)
+# Full-frame accent card. QC-30 samples the CTA shot head; this wipe is 77 % red.
+CTA_TRANSITION_DENY = (
+    "transitions/mk-clone-wall-transition",
+    "transitions/transitions-cover",
+    "transitions/transitions-3d",
+    "transitions/transitions-other",
+)
 
 
 def degrade_split_without_top(slot: dict[str, Any]) -> dict[str, Any]:
@@ -81,9 +88,16 @@ def degrade_split_without_top(slot: dict[str, Any]) -> dict[str, Any]:
     return slot
 
 
-def _transition_exclude(category: str, used: list[str]) -> list[str]:
-    """Exclude list for the transition picker; avatar-entry hard-denies the white disk."""
+def _transition_exclude(category: str, used: list[str], *, role: str = "") -> list[str]:
+    """Exclude list for the transition picker; avatar-entry hard-denies the white disk.
+
+    The CTA shot starts where QC-30's last file probe lands (~11/12 of the
+    cut). Clone-wall paints a brand-red card over that frame; keep it off
+    the identity close so the ticker stays the picture.
+    """
     extra = list(AVATAR_ENTRY_DENY) if category == "avatar-entry" else []
+    if str(role or "") == "cta":
+        extra.extend(CTA_TRANSITION_DENY)
     return list(used) + ["transitions/cut"] + extra
 
 
@@ -4230,30 +4244,38 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
 
         transition_entry: dict[str, Any] | None = None
         if slot.get("transition_in") == "dynamic":
-            category = "avatar-entry" if slot["kind"] in AVATAR_KINDS else "transitions"
-            preferred = prefs.get(f"transition@{slot['role']}")
-            head = [preferred] if preferred else []
-            exclude = _transition_exclude(category, used_templates)
-            tr, _ = picker.pick(
-                category,
-                variant=variant,
-                duration=0.24,
-                recent_videos=recent_videos,
-                exclude=exclude,
-                prefer_head=head,
-                tags={"dynamic", "entry"},
-                seed=seed + slot["index"] * 3,
-            )
-            if category == "avatar-entry" and tr.id in AVATAR_ENTRY_DENY:
+            if str(slot.get("role") or "") == "cta":
+                # Identity close must show the money shot, not a catalog wipe.
+                # The last QC-30 probe is ~40.8 s of a 44.5 s cut — the CTA
+                # head. Clone-wall's red card was 0.77 of that frame.
                 transition_entry = {"template": "transitions/cut", "renderer": "cut",
                                     "duration": 0.0, "params": {}}
             else:
-                used_templates.append(tr.id)
-                transition_entry = {
-                    "template": tr.id, "renderer": tr.renderer,
-                    "duration": max(0.16, min(0.32, float(tr.duration_range[1] or 0.24))),
-                    "params": {**tr.params, "seed": seed + slot["index"]},
-                }
+                category = "avatar-entry" if slot["kind"] in AVATAR_KINDS else "transitions"
+                preferred = prefs.get(f"transition@{slot['role']}")
+                head = [preferred] if preferred else []
+                exclude = _transition_exclude(
+                    category, used_templates, role=str(slot.get("role") or ""))
+                tr, _ = picker.pick(
+                    category,
+                    variant=variant,
+                    duration=0.24,
+                    recent_videos=recent_videos,
+                    exclude=exclude,
+                    prefer_head=head,
+                    tags={"dynamic", "entry"},
+                    seed=seed + slot["index"] * 3,
+                )
+                if category == "avatar-entry" and tr.id in AVATAR_ENTRY_DENY:
+                    transition_entry = {"template": "transitions/cut", "renderer": "cut",
+                                        "duration": 0.0, "params": {}}
+                else:
+                    used_templates.append(tr.id)
+                    transition_entry = {
+                        "template": tr.id, "renderer": tr.renderer,
+                        "duration": max(0.16, min(0.32, float(tr.duration_range[1] or 0.24))),
+                        "params": {**tr.params, "seed": seed + slot["index"]},
+                    }
         else:
             transition_entry = {"template": "transitions/cut", "renderer": "cut",
                                 "duration": 0.0, "params": {}}

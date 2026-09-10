@@ -5111,6 +5111,16 @@ def test_avatar_entry_denies_circle_mask_grow():
         "transitions", [])
 
 
+def test_cta_denies_clone_wall_red_card():
+    from src.p11_assemble.assemble import CTA_TRANSITION_DENY, _transition_exclude
+
+    assert "transitions/mk-clone-wall-transition" in CTA_TRANSITION_DENY
+    exclude = _transition_exclude("transitions", [], role="cta")
+    assert "transitions/mk-clone-wall-transition" in exclude
+    assert "transitions/mk-clone-wall-transition" not in _transition_exclude(
+        "transitions", [])
+
+
 def test_sdf_iris_keeps_catalog_teal_and_gold():
     from src.lib.config import load_config
 
