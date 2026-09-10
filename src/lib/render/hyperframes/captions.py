@@ -222,7 +222,16 @@ def group_caption_phrases(
             new_block = (
                 prev_block is not None and block is not None and prev_block != block
             )
-            if new_block or gap >= pause_break_sec or len(current) >= max_words:
+            prev_y = current[-1].get("baseline_y")
+            new_y = word.get("baseline_y")
+            baseline_break = False
+            if prev_y is not None and new_y is not None:
+                try:
+                    baseline_break = abs(float(prev_y) - float(new_y)) > 1.0
+                except (TypeError, ValueError):
+                    baseline_break = False
+            if (new_block or baseline_break or gap >= pause_break_sec
+                    or len(current) >= max_words):
                 phrases.append(current)
                 current = []
         current.append(word)
@@ -673,6 +682,11 @@ def build_clip_wipe(
         max_words=params["max_words"],
         pause_break_sec=params["pause_break_sec"],
     )
+    overlay_cuts = [
+        float(ovl.get("start") or 0)
+        for ovl in (plan.get("overlays") or [])
+        if str(ovl.get("type") or "") in {"plaque", "cta", "dataviz", "source_card"}
+    ]
     nodes: list[str] = []
     tweens: list[str] = []
     count = 0
@@ -697,6 +711,10 @@ def build_clip_wipe(
         n = len(phrase)
         exit_span = params["exit_sec"] + params["stagger_sec"] * max(0, n - 1)
         hold_end = min(last_end + params["hold_sec"], next_start)
+        for cut in overlay_cuts:
+            if last_end < cut < hold_end + 1e-6:
+                hold_end = cut
+                break
         exit_at = min(hold_end - params["exit_sec"], next_start - exit_span)
         last_wipe = max(float(w["start"]) + params["wipe_sec"] for w in phrase)
         exit_at = max(start, last_wipe, exit_at)

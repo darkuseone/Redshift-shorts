@@ -219,6 +219,25 @@ def test_consecutive_clip_wipe_groups_hard_kill_previous(cfg):
     assert tops[0] != tops[1]
 
 
+def test_clip_wipe_hold_stops_before_plaque(cfg):
+    from src.lib.render.hyperframes.captions import build_clip_wipe
+
+    plan = {
+        "subtitles": [
+            {"display": "можем", "start": 36.38, "end": 36.72, "block_id": "b5"},
+        ],
+        "overlays": [
+            {"type": "plaque", "start": 36.89, "end": 37.61,
+             "template": "lower-thirds/note-pin"},
+        ],
+        "subtitle_style": {"caption": "clip-wipe"},
+    }
+    nodes, _tweens, count = build_clip_wipe(plan, cfg.brandbook, duration=44.0)
+    assert count == 1
+    dur = float(re.search(r'data-duration="([\d.]+)"', nodes[0]).group(1))
+    assert dur < 0.70
+
+
 def test_single_word_clip_wipe_is_centered(cfg):
     """A one-word leftover must still sit on the full safe-width, centered."""
     from src.lib.render.hyperframes.captions import build_clip_wipe, clip_wipe_params
