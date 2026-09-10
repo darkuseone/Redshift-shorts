@@ -1,0 +1,1363 @@
+{
+  "video_id": "redshift_0049",
+  "sample_rate": 48000,
+  "source_duration_sec": 73.82,
+  "duration_sec": 70.312,
+  "removed_sec": 3.508,
+  "target_duration_sec": 68.0,
+  "pause_threshold_ms": 150.0,
+  "pause_target_ms_range": [
+    80,
+    120
+  ],
+  "pause_ratio": 0.0,
+  "punch_hold": {
+    "block_id": "b5",
+    "word": "дыра",
+    "src_sec": 67.96,
+    "matched_emphasis": true,
+    "hold_ms": 320.0,
+    "at_sec": 64.861
+  },
+  "gain_applied_db": 4.62,
+  "loudness": {
+    "integrated_lufs": -14.0,
+    "true_peak_dbtp": -3.23,
+    "trailing_silence_ms": 0.0
+  },
+  "cuts": [
+    {
+      "kind": "pause",
+      "src_start": 1.92,
+      "src_end": 2.14,
+      "kept_sec": 0.0816,
+      "removed_sec": 0.1384
+    },
+    {
+      "kind": "breath",
+      "src_start": 7.18,
+      "src_end": 7.54,
+      "kept_sec": 0.0849,
+      "removed_sec": 0.2751
+    },
+    {
+      "kind": "breath",
+      "src_start": 9.34,
+      "src_end": 9.52,
+      "kept_sec": 0.0807,
+      "removed_sec": 0.0993
+    },
+    {
+      "kind": "pause",
+      "src_start": 14.3,
+      "src_end": 14.52,
+      "kept_sec": 0.0816,
+      "removed_sec": 0.1384
+    },
+    {
+      "kind": "breath",
+      "src_start": 16.84,
+      "src_end": 17.0,
+      "kept_sec": 0.0802,
+      "removed_sec": 0.0798
+    },
+    {
+      "kind": "breath",
+      "src_start": 19.0,
+      "src_end": 19.24,
+      "kept_sec": 0.0821,
+      "removed_sec": 0.1579
+    },
+    {
+      "kind": "breath",
+      "src_start": 22.76,
+      "src_end": 22.92,
+      "kept_sec": 0.0802,
+      "removed_sec": 0.0798
+    },
+    {
+      "kind": "breath",
+      "src_start": 23.56,
+      "src_end": 23.96,
+      "kept_sec": 0.0859,
+      "removed_sec": 0.3141
+    },
+    {
+      "kind": "pause",
+      "src_start": 29.8,
+      "src_end": 30.02,
+      "kept_sec": 0.0816,
+      "removed_sec": 0.1384
+    },
+    {
+      "kind": "breath",
+      "src_start": 34.74,
+      "src_end": 35.08,
+      "kept_sec": 0.0845,
+      "removed_sec": 0.2555
+    },
+    {
+      "kind": "breath",
+      "src_start": 39.46,
+      "src_end": 39.68,
+      "kept_sec": 0.0816,
+      "removed_sec": 0.1384
+    },
+    {
+      "kind": "breath",
+      "src_start": 44.58,
+      "src_end": 44.8,
+      "kept_sec": 0.0816,
+      "removed_sec": 0.1384
+    },
+    {
+      "kind": "breath",
+      "src_start": 47.54,
+      "src_end": 47.82,
+      "kept_sec": 0.0831,
+      "removed_sec": 0.1969
+    },
+    {
+      "kind": "breath",
+      "src_start": 51.94,
+      "src_end": 52.1,
+      "kept_sec": 0.0802,
+      "removed_sec": 0.0798
+    },
+    {
+      "kind": "breath",
+      "src_start": 53.46,
+      "src_end": 53.76,
+      "kept_sec": 0.0835,
+      "removed_sec": 0.2165
+    },
+    {
+      "kind": "pause",
+      "src_start": 55.06,
+      "src_end": 55.28,
+      "kept_sec": 0.0816,
+      "removed_sec": 0.1384
+    },
+    {
+      "kind": "breath",
+      "src_start": 56.24,
+      "src_end": 56.667,
+      "kept_sec": 0.0865,
+      "removed_sec": 0.3405
+    },
+    {
+      "kind": "breath",
+      "src_start": 60.4,
+      "src_end": 60.6,
+      "kept_sec": 0.0812,
+      "removed_sec": 0.1188
+    },
+    {
+      "kind": "breath",
+      "src_start": 62.16,
+      "src_end": 62.48,
+      "kept_sec": 0.084,
+      "removed_sec": 0.236
+    },
+    {
+      "kind": "breath",
+      "src_start": 66.88,
+      "src_end": 67.06,
+      "kept_sec": 0.0807,
+      "removed_sec": 0.0993
+    },
+    {
+      "kind": "punch_hold",
+      "src_start": 67.92,
+      "src_end": 67.96,
+      "kept_sec": 0.04,
+      "removed_sec": 0.0,
+      "added_sec": 0.28
+    },
+    {
+      "kind": "pause",
+      "src_start": 70.88,
+      "src_end": 71.1,
+      "kept_sec": 0.0816,
+      "removed_sec": 0.1384
+    }
+  ],
+  "segments": [
+    {
+      "src_start": 0.0,
+      "src_end": 1.92,
+      "dst_start": 0.0,
+      "dst_end": 1.92,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 1.925,
+      "src_end": 2.0066,
+      "dst_start": 1.92,
+      "dst_end": 2.0016,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 2.14,
+      "src_end": 7.18,
+      "dst_start": 2.0016,
+      "dst_end": 7.0416,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 7.2957,
+      "src_end": 7.3806,
+      "dst_start": 7.0416,
+      "dst_end": 7.1266,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 7.54,
+      "src_end": 9.34,
+      "dst_start": 7.1266,
+      "dst_end": 8.9266,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 9.4356,
+      "src_end": 9.5163,
+      "dst_start": 8.9266,
+      "dst_end": 9.0073,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 9.52,
+      "src_end": 14.3,
+      "dst_start": 9.0073,
+      "dst_end": 13.7873,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 14.305,
+      "src_end": 14.3866,
+      "dst_start": 13.7873,
+      "dst_end": 13.8689,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 14.52,
+      "src_end": 16.84,
+      "dst_start": 13.8689,
+      "dst_end": 16.1889,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 16.9198,
+      "src_end": 17.0,
+      "dst_start": 16.1889,
+      "dst_end": 16.2692,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 17.0,
+      "src_end": 19.0,
+      "dst_start": 16.2692,
+      "dst_end": 18.2692,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 19.0733,
+      "src_end": 19.1554,
+      "dst_start": 18.2692,
+      "dst_end": 18.3513,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 19.24,
+      "src_end": 22.76,
+      "dst_start": 18.3513,
+      "dst_end": 21.8713,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 22.8375,
+      "src_end": 22.9178,
+      "dst_start": 21.8713,
+      "dst_end": 21.9515,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 22.92,
+      "src_end": 23.56,
+      "dst_start": 21.9515,
+      "dst_end": 22.5915,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 23.662,
+      "src_end": 23.7479,
+      "dst_start": 22.5915,
+      "dst_end": 22.6774,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 23.96,
+      "src_end": 29.8,
+      "dst_start": 22.6774,
+      "dst_end": 28.5174,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 29.805,
+      "src_end": 29.8866,
+      "dst_start": 28.5174,
+      "dst_end": 28.5991,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 30.02,
+      "src_end": 34.74,
+      "dst_start": 28.5991,
+      "dst_end": 33.3191,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 34.937,
+      "src_end": 35.0215,
+      "dst_start": 33.3191,
+      "dst_end": 33.4035,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 35.08,
+      "src_end": 39.46,
+      "dst_start": 33.4035,
+      "dst_end": 37.7835,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 39.5676,
+      "src_end": 39.6493,
+      "dst_start": 37.7835,
+      "dst_end": 37.8652,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 39.68,
+      "src_end": 44.58,
+      "dst_start": 37.8652,
+      "dst_end": 42.7652,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 44.6771,
+      "src_end": 44.7588,
+      "dst_start": 42.7652,
+      "dst_end": 42.8468,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 44.8,
+      "src_end": 47.54,
+      "dst_start": 42.8468,
+      "dst_end": 45.5868,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 47.6632,
+      "src_end": 47.7462,
+      "dst_start": 45.5868,
+      "dst_end": 45.6699,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 47.82,
+      "src_end": 51.94,
+      "dst_start": 45.6699,
+      "dst_end": 49.7899,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 52.0198,
+      "src_end": 52.1,
+      "dst_start": 49.7899,
+      "dst_end": 49.8701,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 52.1,
+      "src_end": 53.46,
+      "dst_start": 49.8701,
+      "dst_end": 51.2301,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 53.6677,
+      "src_end": 53.7513,
+      "dst_start": 51.2301,
+      "dst_end": 51.3136,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 53.76,
+      "src_end": 55.06,
+      "dst_start": 51.3136,
+      "dst_end": 52.6136,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 55.065,
+      "src_end": 55.1466,
+      "dst_start": 52.6136,
+      "dst_end": 52.6953,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 55.28,
+      "src_end": 56.24,
+      "dst_start": 52.6953,
+      "dst_end": 53.6553,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 56.58,
+      "src_end": 56.6665,
+      "dst_start": 53.6553,
+      "dst_end": 53.7418,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 56.667,
+      "src_end": 60.4,
+      "dst_start": 53.7418,
+      "dst_end": 57.4748,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 60.5188,
+      "src_end": 60.6,
+      "dst_start": 57.4748,
+      "dst_end": 57.556,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 60.6,
+      "src_end": 62.16,
+      "dst_start": 57.556,
+      "dst_end": 59.116,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 62.2422,
+      "src_end": 62.3262,
+      "dst_start": 59.116,
+      "dst_end": 59.2,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 62.48,
+      "src_end": 66.88,
+      "dst_start": 59.2,
+      "dst_end": 63.6,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 66.952,
+      "src_end": 67.0327,
+      "dst_start": 63.6,
+      "dst_end": 63.6807,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 67.06,
+      "src_end": 67.92,
+      "dst_start": 63.6807,
+      "dst_end": 64.5407,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 67.92,
+      "src_end": 67.96,
+      "dst_start": 64.5407,
+      "dst_end": 64.8607,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 67.96,
+      "src_end": 70.88,
+      "dst_start": 64.8607,
+      "dst_end": 67.7807,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 70.885,
+      "src_end": 70.9666,
+      "dst_start": 67.7807,
+      "dst_end": 67.8623,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 71.1,
+      "src_end": 73.82,
+      "dst_start": 67.8623,
+      "dst_end": 70.5823,
+      "attenuate_db": 0.0
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "start": 0.0,
+      "end": 1.92,
+      "words": [
+        {
+          "word": "опен",
+          "start": 0.0,
+          "end": 0.4
+        },
+        {
+          "word": "эй",
+          "start": 0.44,
+          "end": 0.56
+        },
+        {
+          "word": "ай",
+          "start": 0.58,
+          "end": 0.64
+        },
+        {
+          "word": "произвела",
+          "start": 0.707,
+          "end": 1.28
+        },
+        {
+          "word": "фу́рор",
+          "start": 1.4,
+          "end": 1.92
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "start": 2.0016,
+      "end": 13.7873,
+      "words": [
+        {
+          "word": "В",
+          "start": 2.0016,
+          "end": 2.1216
+        },
+        {
+          "word": "математике",
+          "start": 2.1516,
+          "end": 2.7216
+        },
+        {
+          "word": "новой",
+          "start": 2.7816,
+          "end": 3.0416
+        },
+        {
+          "word": "моделью",
+          "start": 3.0986,
+          "end": 3.5216
+        },
+        {
+          "word": "закрыла",
+          "start": 3.5746,
+          "end": 4.0016
+        },
+        {
+          "word": "одну",
+          "start": 4.0496,
+          "end": 4.2416
+        },
+        {
+          "word": "из",
+          "start": 4.2686,
+          "end": 4.3216
+        },
+        {
+          "word": "семи",
+          "start": 4.3616,
+          "end": 4.5616
+        },
+        {
+          "word": "задач",
+          "start": 4.6216,
+          "end": 5.2016
+        },
+        {
+          "word": "которые",
+          "start": 5.2416,
+          "end": 5.5216
+        },
+        {
+          "word": "четверть",
+          "start": 5.5676,
+          "end": 5.9216
+        },
+        {
+          "word": "века",
+          "start": 5.9696,
+          "end": 6.1616
+        },
+        {
+          "word": "никто",
+          "start": 6.2146,
+          "end": 6.4816
+        },
+        {
+          "word": "не",
+          "start": 6.5086,
+          "end": 6.5616
+        },
+        {
+          "word": "брал",
+          "start": 6.6016,
+          "end": 7.0416
+        },
+        {
+          "word": "Миллион",
+          "start": 7.1266,
+          "end": 7.7266
+        },
+        {
+          "word": "долларов",
+          "start": 7.7666,
+          "end": 8.1266
+        },
+        {
+          "word": "за",
+          "start": 8.1536,
+          "end": 8.2066
+        },
+        {
+          "word": "каждую",
+          "start": 8.2866,
+          "end": 8.9266
+        },
+        {
+          "word": "Это",
+          "start": 9.0073,
+          "end": 9.5473
+        },
+        {
+          "word": "не",
+          "start": 9.5743,
+          "end": 9.6273
+        },
+        {
+          "word": "мелки",
+          "start": 9.6873,
+          "end": 9.9473
+        },
+        {
+          "word": "на",
+          "start": 9.9743,
+          "end": 10.0273
+        },
+        {
+          "word": "доске",
+          "start": 10.1073,
+          "end": 10.5873
+        },
+        {
+          "word": "Это",
+          "start": 10.6873,
+          "end": 10.9873
+        },
+        {
+          "word": "формулы",
+          "start": 11.0513,
+          "end": 11.5073
+        },
+        {
+          "word": "по",
+          "start": 11.5203,
+          "end": 11.5473
+        },
+        {
+          "word": "которым",
+          "start": 11.5973,
+          "end": 11.9473
+        },
+        {
+          "word": "считают",
+          "start": 11.9953,
+          "end": 12.4273
+        },
+        {
+          "word": "воду",
+          "start": 12.4913,
+          "end": 12.9473
+        },
+        {
+          "word": "воздух",
+          "start": 12.9763,
+          "end": 13.1473
+        },
+        {
+          "word": "и",
+          "start": 13.1873,
+          "end": 13.2273
+        },
+        {
+          "word": "кровь",
+          "start": 13.2913,
+          "end": 13.7873
+        }
+      ]
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "start": 13.8689,
+      "end": 28.5174,
+      "words": [
+        {
+          "word": "Восьмого",
+          "start": 13.8689,
+          "end": 14.2419
+        },
+        {
+          "word": "сентября",
+          "start": 14.2959,
+          "end": 14.7849
+        },
+        {
+          "word": "две",
+          "start": 14.8469,
+          "end": 14.9889
+        },
+        {
+          "word": "тысячи",
+          "start": 15.0289,
+          "end": 15.3889
+        },
+        {
+          "word": "двадцать",
+          "start": 15.5329,
+          "end": 15.9489
+        },
+        {
+          "word": "шесть",
+          "start": 16.0289,
+          "end": 16.1889
+        },
+        {
+          "word": "опен",
+          "start": 16.2692,
+          "end": 16.7492
+        },
+        {
+          "word": "эй",
+          "start": 16.7892,
+          "end": 16.8692
+        },
+        {
+          "word": "ай",
+          "start": 16.8892,
+          "end": 16.9892
+        },
+        {
+          "word": "выкладывает",
+          "start": 17.0422,
+          "end": 17.6292
+        },
+        {
+          "word": "работу",
+          "start": 17.7092,
+          "end": 18.2692
+        },
+        {
+          "word": "Искал",
+          "start": 18.3513,
+          "end": 18.9113
+        },
+        {
+          "word": "не",
+          "start": 18.9643,
+          "end": 19.0713
+        },
+        {
+          "word": "чат",
+          "start": 19.1513,
+          "end": 19.5513
+        },
+        {
+          "word": "а",
+          "start": 19.5913,
+          "end": 19.6313
+        },
+        {
+          "word": "внутренняя",
+          "start": 19.6843,
+          "end": 20.3913
+        },
+        {
+          "word": "модель",
+          "start": 20.4203,
+          "end": 20.5913
+        },
+        {
+          "word": "сильнее",
+          "start": 20.6393,
+          "end": 21.0713
+        },
+        {
+          "word": "GPT-шесть",
+          "start": 21.1913,
+          "end": 21.8713
+        },
+        {
+          "word": "А́стра",
+          "start": 21.9515,
+          "end": 22.5915
+        },
+        {
+          "word": "Десять",
+          "start": 22.6774,
+          "end": 23.4374
+        },
+        {
+          "word": "тысяч",
+          "start": 23.4704,
+          "end": 23.6374
+        },
+        {
+          "word": "агентов",
+          "start": 23.6904,
+          "end": 24.4374
+        },
+        {
+          "word": "Восемьдесят",
+          "start": 24.5174,
+          "end": 25.0774
+        },
+        {
+          "word": "восемь",
+          "start": 25.1374,
+          "end": 25.6774
+        },
+        {
+          "word": "часов",
+          "start": 25.7244,
+          "end": 26.1974
+        },
+        {
+          "word": "Два",
+          "start": 26.2374,
+          "end": 26.3574
+        },
+        {
+          "word": "миллиона",
+          "start": 26.4104,
+          "end": 26.9174
+        },
+        {
+          "word": "семьсот",
+          "start": 26.9574,
+          "end": 27.3174
+        },
+        {
+          "word": "тысяч",
+          "start": 27.3844,
+          "end": 27.7174
+        },
+        {
+          "word": "сообщений",
+          "start": 27.7974,
+          "end": 28.5174
+        }
+      ]
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "start": 28.5991,
+      "end": 52.6136,
+      "words": [
+        {
+          "word": "Сама",
+          "start": 28.5991,
+          "end": 28.8391
+        },
+        {
+          "word": "А́стра",
+          "start": 28.9191,
+          "end": 29.3191
+        },
+        {
+          "word": "доказательство",
+          "start": 29.3591,
+          "end": 30.0391
+        },
+        {
+          "word": "не",
+          "start": 30.0661,
+          "end": 30.1191
+        },
+        {
+          "word": "искала",
+          "start": 30.1991,
+          "end": 30.8391
+        },
+        {
+          "word": "Семнадцать",
+          "start": 30.9391,
+          "end": 31.4791
+        },
+        {
+          "word": "часов",
+          "start": 31.5461,
+          "end": 31.8791
+        },
+        {
+          "word": "она",
+          "start": 31.9391,
+          "end": 32.1191
+        },
+        {
+          "word": "переложила",
+          "start": 32.1721,
+          "end": 32.6791
+        },
+        {
+          "word": "его",
+          "start": 32.7391,
+          "end": 32.9191
+        },
+        {
+          "word": "в",
+          "start": 32.9591,
+          "end": 32.9991
+        },
+        {
+          "word": "лин",
+          "start": 33.0391,
+          "end": 33.3191
+        },
+        {
+          "word": "язык",
+          "start": 33.4035,
+          "end": 34.3435
+        },
+        {
+          "word": "где",
+          "start": 34.3835,
+          "end": 34.5035
+        },
+        {
+          "word": "компьютер",
+          "start": 34.5515,
+          "end": 34.9835
+        },
+        {
+          "word": "проверяет",
+          "start": 35.0295,
+          "end": 35.4635
+        },
+        {
+          "word": "каждый",
+          "start": 35.5095,
+          "end": 35.7835
+        },
+        {
+          "word": "шаг",
+          "start": 35.8835,
+          "end": 36.3435
+        },
+        {
+          "word": "как",
+          "start": 36.4035,
+          "end": 36.5835
+        },
+        {
+          "word": "касса",
+          "start": 36.6235,
+          "end": 36.9035
+        },
+        {
+          "word": "проверяет",
+          "start": 36.9375,
+          "end": 37.3035
+        },
+        {
+          "word": "чек",
+          "start": 37.3835,
+          "end": 37.7835
+        },
+        {
+          "word": "Называются",
+          "start": 37.8652,
+          "end": 38.8452
+        },
+        {
+          "word": "уравнения",
+          "start": 38.8852,
+          "end": 39.4052
+        },
+        {
+          "word": "Навье-Стокса",
+          "start": 39.5252,
+          "end": 40.6852
+        },
+        {
+          "word": "Страшное",
+          "start": 40.8182,
+          "end": 41.4852
+        },
+        {
+          "word": "имя",
+          "start": 41.5652,
+          "end": 41.8852
+        },
+        {
+          "word": "простой",
+          "start": 41.9252,
+          "end": 42.2052
+        },
+        {
+          "word": "смысл",
+          "start": 42.2582,
+          "end": 42.7652
+        },
+        {
+          "word": "как",
+          "start": 42.8468,
+          "end": 43.5068
+        },
+        {
+          "word": "течёт",
+          "start": 43.5668,
+          "end": 43.9068
+        },
+        {
+          "word": "жидкость",
+          "start": 43.9468,
+          "end": 44.4668
+        },
+        {
+          "word": "когда",
+          "start": 44.4938,
+          "end": 44.6268
+        },
+        {
+          "word": "её",
+          "start": 44.6798,
+          "end": 44.7868
+        },
+        {
+          "word": "толкают",
+          "start": 44.8468,
+          "end": 45.5868
+        },
+        {
+          "word": "Погода",
+          "start": 45.6699,
+          "end": 46.5099
+        },
+        {
+          "word": "крыло",
+          "start": 46.5499,
+          "end": 46.8299
+        },
+        {
+          "word": "самолёта",
+          "start": 46.8899,
+          "end": 47.5499
+        },
+        {
+          "word": "трубы",
+          "start": 47.6899,
+          "end": 48.2699
+        },
+        {
+          "word": "в",
+          "start": 48.3099,
+          "end": 48.3499
+        },
+        {
+          "word": "доме",
+          "start": 48.4299,
+          "end": 48.8699
+        },
+        {
+          "word": "ток",
+          "start": 48.9299,
+          "end": 49.1499
+        },
+        {
+          "word": "крови",
+          "start": 49.2429,
+          "end": 49.7899
+        },
+        {
+          "word": "Если",
+          "start": 49.8701,
+          "end": 50.5101
+        },
+        {
+          "word": "формула",
+          "start": 50.5631,
+          "end": 50.9101
+        },
+        {
+          "word": "врёт",
+          "start": 50.9501,
+          "end": 51.2301
+        },
+        {
+          "word": "самолёт",
+          "start": 51.3136,
+          "end": 51.6536
+        },
+        {
+          "word": "не",
+          "start": 51.7066,
+          "end": 51.8136
+        },
+        {
+          "word": "извиняется",
+          "start": 51.8406,
+          "end": 52.6136
+        }
+      ]
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "start": 52.6953,
+      "end": 67.7807,
+      "words": [
+        {
+          "word": "Только",
+          "start": 52.6953,
+          "end": 53.0153
+        },
+        {
+          "word": "приз",
+          "start": 53.0633,
+          "end": 53.2553
+        },
+        {
+          "word": "Клея",
+          "start": 53.2953,
+          "end": 53.6553
+        },
+        {
+          "word": "за",
+          "start": 53.7418,
+          "end": 53.7948
+        },
+        {
+          "word": "уравнения",
+          "start": 53.8348,
+          "end": 54.3548
+        },
+        {
+          "word": "без",
+          "start": 54.3948,
+          "end": 54.5148
+        },
+        {
+          "word": "внешней",
+          "start": 54.5548,
+          "end": 54.9148
+        },
+        {
+          "word": "силы",
+          "start": 54.9948,
+          "end": 55.3948
+        },
+        {
+          "word": "Этот",
+          "start": 55.5388,
+          "end": 56.1148
+        },
+        {
+          "word": "пункт",
+          "start": 56.1678,
+          "end": 56.4348
+        },
+        {
+          "word": "они",
+          "start": 56.4948,
+          "end": 56.6748
+        },
+        {
+          "word": "не",
+          "start": 56.7018,
+          "end": 56.7548
+        },
+        {
+          "word": "закрыли",
+          "start": 56.8218,
+          "end": 57.4748
+        },
+        {
+          "word": "Кле́й",
+          "start": 57.556,
+          "end": 57.996
+        },
+        {
+          "word": "решение",
+          "start": 58.056,
+          "end": 58.476
+        },
+        {
+          "word": "не",
+          "start": 58.503,
+          "end": 58.556
+        },
+        {
+          "word": "принял",
+          "start": 58.62,
+          "end": 59.116
+        },
+        {
+          "word": "Миллион",
+          "start": 59.2,
+          "end": 59.84
+        },
+        {
+          "word": "опен",
+          "start": 59.92,
+          "end": 60.24
+        },
+        {
+          "word": "эй",
+          "start": 60.32,
+          "end": 60.48
+        },
+        {
+          "word": "ай",
+          "start": 60.56,
+          "end": 60.72
+        },
+        {
+          "word": "не",
+          "start": 60.773,
+          "end": 60.88
+        },
+        {
+          "word": "берёт",
+          "start": 60.92,
+          "end": 61.44
+        },
+        {
+          "word": "Это",
+          "start": 61.54,
+          "end": 61.84
+        },
+        {
+          "word": "не",
+          "start": 61.867,
+          "end": 61.92
+        },
+        {
+          "word": "закрыли",
+          "start": 61.973,
+          "end": 62.32
+        },
+        {
+          "word": "задачу",
+          "start": 62.38,
+          "end": 62.84
+        },
+        {
+          "word": "тысячелетия",
+          "start": 62.873,
+          "end": 63.6
+        },
+        {
+          "word": "Это",
+          "start": 63.6807,
+          "end": 64.2207
+        },
+        {
+          "word": "первая",
+          "start": 64.2687,
+          "end": 64.5407
+        },
+        {
+          "word": "дыра",
+          "start": 64.8607,
+          "end": 65.0607
+        },
+        {
+          "word": "в",
+          "start": 65.1007,
+          "end": 65.1407
+        },
+        {
+          "word": "стене",
+          "start": 65.1887,
+          "end": 65.4607
+        },
+        {
+          "word": "которую",
+          "start": 65.5207,
+          "end": 65.9407
+        },
+        {
+          "word": "четверть",
+          "start": 65.9977,
+          "end": 66.5007
+        },
+        {
+          "word": "века",
+          "start": 66.5487,
+          "end": 66.7407
+        },
+        {
+          "word": "считали",
+          "start": 66.7887,
+          "end": 67.1407
+        },
+        {
+          "word": "глухой",
+          "start": 67.2007,
+          "end": 67.7807
+        }
+      ]
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "start": 67.8623,
+      "end": 70.5823,
+      "words": [
+        {
+          "word": "Какую",
+          "start": 67.8623,
+          "end": 68.1823
+        },
+        {
+          "word": "из",
+          "start": 68.2353,
+          "end": 68.3423
+        },
+        {
+          "word": "оставшихся",
+          "start": 68.3953,
+          "end": 68.9023
+        },
+        {
+          "word": "шести",
+          "start": 68.9823,
+          "end": 69.3023
+        },
+        {
+          "word": "разберём",
+          "start": 69.3623,
+          "end": 69.7823
+        },
+        {
+          "word": "следующей",
+          "start": 69.8423,
+          "end": 70.5823
+        }
+      ]
+    }
+  ],
+  "provider_mode": "live"
+}
