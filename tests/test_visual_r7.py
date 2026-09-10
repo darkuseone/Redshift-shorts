@@ -59,7 +59,7 @@ def test_plaque_brandbook_is_glass_not_opaque():
     from src.lib.render.hyperframes.brand_css import build_css
     css = build_css(bb, {"display": "Oswald-Bold.ttf"})
     assert ".plaque.source-chip{" in css
-    assert "max-width:340px" in css
+    assert "max-width:260px" in css
 
 
 def test_invert_fact_and_slam_cards_use_glass_css():
@@ -423,8 +423,8 @@ def test_source_chip_bbox_is_bottom_left(cfg):
         "template": "lower-thirds/source-domain",
         "params": {"source_chip": True},
     }, cfg.brandbook)
-    assert box[2] - box[0] <= 360
-    assert box[3] - box[1] <= 90
+    assert box[2] - box[0] <= 270
+    assert box[3] - box[1] <= 64
     assert box[0] <= 90
     safe = cfg.brandbook["safe_zones"]["work_area"]
     assert box[3] <= float(safe["y_max"]) + 1e-6
@@ -437,3 +437,23 @@ def test_source_chip_bbox_is_bottom_left(cfg):
     ]
     end = _clamp_end_before_next_avatar(8.35, 10.55, shots)
     assert end == 10.55
+
+
+def test_split_karaoke_sits_under_the_paper_letterbox():
+    from src.p11_assemble.assemble import _stamp_subtitle_baselines
+
+    subs = [
+        {"display": "ОПУБЛИКОВАНА", "start": 8.2, "end": 8.8},
+        {"display": "КУБИТОВ", "start": 4.0, "end": 4.5},
+        {"display": "СУПЕРКОМПЬЮТЕРУ", "start": 22.0, "end": 22.6},
+    ]
+    shots = [
+        {"kind": "avatar", "start": 3.0, "end": 6.6},
+        {"kind": "split", "start": 8.0, "end": 15.5},
+        {"kind": "footage", "start": 20.8, "end": 30.6},
+    ]
+    _stamp_subtitle_baselines(subs, shots, {"canvas": {"height": 1920}})
+    assert abs(subs[0]["baseline_y"] - (1920 * 0.52 - 180)) < 1e-6
+    assert 700 <= subs[0]["baseline_y"] <= 900
+    assert "baseline_y" not in subs[1]
+    assert "baseline_y" not in subs[2]

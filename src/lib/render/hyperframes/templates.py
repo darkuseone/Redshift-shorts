@@ -3786,7 +3786,7 @@ _DCL_PAD_TOP = 173
 _DCL_HEADER_H = 118
 _DCL_LABEL_SIZE = 38
 _DCL_VALUE_SIZE = 118
-_DCL_VALUE_W = 280
+_DCL_VALUE_W = 360
 _DCL_PLOT_LEFT = 97
 _DCL_PLOT_TOP = 387
 _DCL_PLOT_W = 886
@@ -3938,14 +3938,14 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
         for frame in range(frames + 1):
             t = frame / frames
             progress = _dcl_power2_out(t)
-            value = int(round(start_value + (end_value - start_value) * progress))
-            text = str(value)
+            value = start_value + (end_value - start_value) * progress
+            text = _dcl_fmt(value, unit)
             texts.append(text)
             spans.append(f'<span id="{vid}-{frame}">{_esc(text)}</span>')
     else:
-        texts.append(str(int(round(start_value))))
+        texts.append(_dcl_fmt(start_value, unit))
         spans.append(f'<span id="{vid}-0">{_esc(texts[0])}</span>')
-        texts.append(str(int(round(end_value))))
+        texts.append(_dcl_fmt(end_value, unit))
         spans.append(f'<span id="{vid}-1">{_esc(texts[1])}</span>')
 
     tweens.append(
@@ -4044,17 +4044,36 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
         f'<div class="dcl-steps" data-layout-allow-overlap="" '
         f'style="left:{_DCL_PAD_X}px;top:{label_top + 48}px">'
         f'{"".join(step_bits)}</div>')
-    if unit:
-        extra.append(
-            f'<div class="dcl-unit" data-layout-allow-overlap="" '
-            f'style="left:{value_left}px;top:{_DCL_PAD_TOP + _DCL_HEADER_H - 28}px">'
-            f'{_esc(unit)}</div>')
-    tick_vals = (start_value, (start_value + end_value) / 2.0, end_value)
+    if len(series_vals) >= 3:
+        mid_i = len(series_vals) // 2
+        tick_vals = (
+            float(series_vals[0]),
+            float(series_vals[mid_i]),
+            float(series_vals[-1]),
+        )
+    else:
+        tick_vals = (start_value, (start_value + end_value) / 2.0, end_value)
     for vb_y, tick in zip((55.0, 120.0, 185.0), tick_vals):
         extra.append(
             f'<div class="dcl-ytick" data-layout-allow-overlap="" '
             f'style="left:{_DCL_PLOT_LEFT}px;top:{_dcl_vb_y(vb_y) - 18:.1f}px">'
             f'{_esc(_dcl_fmt(tick, unit))}</div>')
+    n_marks = len(series_vals)
+    if n_marks >= 2:
+        lo = min(series_vals)
+        hi = max(series_vals)
+        span = hi - lo if hi != lo else 1.0
+        for i, val in enumerate(series_vals):
+            x = _DCL_PLOT_LEFT + (i / max(1, n_marks - 1)) * _DCL_PLOT_W
+            t = (hi - val) / span
+            y = _dcl_vb_y(55.0 + t * (185.0 - 55.0))
+            extra.append(
+                f'<div class="dcl-mark" data-layout-allow-overlap="" '
+                f'style="left:{x - 11:.1f}px;top:{y - 11:.1f}px"></div>')
+            extra.append(
+                f'<div class="dcl-mark-lab" data-layout-allow-overlap="" '
+                f'style="left:{x + 18:.1f}px;top:{y - 24:.1f}px">'
+                f'{_esc(_dcl_fmt(val, unit))}</div>')
     if len(x_labels) >= 2:
         span = max(1, len(x_labels) - 1)
         for i, xlab in enumerate(x_labels):
@@ -6486,25 +6505,28 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "letter-spacing:0.05em;line-height:1.1;text-overflow:ellipsis;"
         "text-transform:uppercase;white-space:nowrap}"
         ".dcl-sub{position:absolute;width:580px;color:rgba(226,232,240,0.55);"
-        "font-size:26px;font-weight:600;letter-spacing:0.04em;line-height:1.2;"
+        "font-size:30px;font-weight:600;letter-spacing:0.04em;line-height:1.2;"
         "white-space:nowrap}"
         ".dcl-src{position:absolute;width:580px;color:rgba(148,163,184,0.72);"
-        "font-size:20px;font-weight:600;letter-spacing:0.08em;line-height:1.2;"
+        "font-size:22px;font-weight:600;letter-spacing:0.08em;line-height:1.2;"
         "text-transform:uppercase;white-space:nowrap}"
-        ".dcl-steps{position:absolute;width:640px;color:rgba(248,250,252,0.88);"
-        "font-size:32px;font-weight:700;letter-spacing:0.02em;line-height:1.2;"
+        ".dcl-steps{position:absolute;width:720px;color:rgba(248,250,252,0.88);"
+        "font-size:40px;font-weight:700;letter-spacing:0.02em;line-height:1.2;"
         "font-variant-numeric:tabular-nums;white-space:nowrap}"
         ".dcl-steps i{font-style:normal;padding:0 10px;color:rgba(148,163,184,0.7);"
         "font-weight:600}"
         ".dcl-steps .now{color:#fecdd3}"
-        ".dcl-unit{position:absolute;width:80px;color:rgba(248,250,252,0.72);"
-        "font-size:36px;font-weight:700;text-align:right;line-height:1}"
-        ".dcl-ytick{position:absolute;width:160px;color:rgba(226,232,240,0.55);"
-        "font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;"
+        ".dcl-ytick{position:absolute;width:180px;color:rgba(226,232,240,0.55);"
+        "font-size:32px;font-weight:600;font-variant-numeric:tabular-nums;"
         "letter-spacing:0.02em;line-height:1}"
-        ".dcl-xlab{position:absolute;width:180px;margin-left:-90px;text-align:center;"
-        "color:rgba(226,232,240,0.55);font-size:24px;font-weight:600;"
+        ".dcl-xlab{position:absolute;width:200px;margin-left:-100px;text-align:center;"
+        "color:rgba(226,232,240,0.55);font-size:28px;font-weight:600;"
         "letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}"
+        ".dcl-mark{position:absolute;width:22px;height:22px;border-radius:50%;"
+        "background:#fecdd3}"
+        ".dcl-mark-lab{position:absolute;width:200px;color:#fecdd3;"
+        "font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;"
+        "letter-spacing:0.01em;line-height:1;white-space:nowrap}"
         f".dcl-cv{{position:absolute;width:{_DCL_VALUE_W}px;"
         f"height:{_DCL_HEADER_H}px;"
         "color:#f8fafc;font-family:Inter,system-ui,sans-serif;"

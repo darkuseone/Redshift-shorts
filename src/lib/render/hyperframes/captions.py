@@ -603,8 +603,8 @@ def clip_wipe_params(brandbook: dict[str, Any]) -> dict[str, Any]:
     subs = brandbook.get("subtitles") or {}
     safe = brandbook["safe_zones"]["work_area"]
     return {
-        "base_px": int(spec.get("base_px", subs.get("size_px_default", 124))),
-        "min_px": int(spec.get("min_px", 52)),
+        "base_px": int(spec.get("base_px", subs.get("size_px_default", 144))),
+        "min_px": int(spec.get("min_px", 84)),
         "wipe_sec": float(spec.get("wipe_sec", 0.3)),
         "exit_sec": float(spec.get("exit_sec", 0.25)),
         "stagger_sec": float(spec.get("stagger_sec", 0.04)),
@@ -691,7 +691,7 @@ def build_clip_wipe(
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
-            min_size=int(params.get("min_px", 52)),
+            min_size=int(params.get("min_px", 84)),
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)
@@ -808,8 +808,8 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
     colors = brandbook.get("colors") or {}
     safe = brandbook["safe_zones"]["work_area"]
     return {
-        "base_px": int(spec.get("base_px", subs.get("size_px_default", 124))),
-        "min_px": int(spec.get("min_px", 52)),
+        "base_px": int(spec.get("base_px", subs.get("size_px_default", 144))),
+        "min_px": int(spec.get("min_px", 84)),
         "max_words": int(spec.get("max_words", 3)),
         "pause_break_sec": float(spec.get("pause_break_sec", 0.45)),
         "letter_spacing_em": float(spec.get("letter_spacing_em", 0.02)),
@@ -890,7 +890,7 @@ def build_gradient_fill(
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
-            min_size=int(params.get("min_px", 52)),
+            min_size=int(params.get("min_px", 84)),
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)
@@ -1127,7 +1127,7 @@ def build_blend_difference(
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
-            min_size=int(params.get("min_px", 52)),
+            min_size=int(params.get("min_px", 84)),
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)

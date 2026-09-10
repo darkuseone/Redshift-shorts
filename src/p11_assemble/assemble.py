@@ -851,7 +851,7 @@ def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
 # those words so spoken VO outside bulky cards still has captions.
 PHRASE_MUTE_RATIO = 0.50
 # Match clip-wipe grouping so a hole in the middle cannot spawn orphan words.
-_CAPTION_MAX_WORDS = 6
+_CAPTION_MAX_WORDS = 3
 _CAPTION_PAUSE_BREAK = 0.45
 # Fullscreen slam is visually dominant for ~a beat, not the whole B-roll hold.
 FS_MUTE_SEC = 1.6
@@ -1095,6 +1095,32 @@ def _build_subtitle_cues(words: list[dict[str, Any]], *,
             cue["display"] = f"{lead} {cue['display']}".strip()
             cue["lead"] = ""
     return drop_orphan_short_cues(subtitles)
+
+
+def _stamp_subtitle_baselines(
+    subtitles: list[dict[str, Any]],
+    shots: list[dict[str, Any]],
+    brandbook: dict[str, Any] | None = None,
+) -> None:
+    """On a 50/50 split, karaoke at the avatar-shift band paints the paper.
+
+    Split-top is 52% of the frame with object-fit contain, so a wide Nature
+    figure letterboxes. Drop cues into that lower black bar — off the paper,
+    above the avatar seam — instead of the mid-paper avatar-shift line.
+    """
+    height = 1920.0
+    if isinstance(brandbook, dict):
+        height = float((brandbook.get("canvas") or {}).get("height") or height)
+    seam = height * 0.52
+    split_y = seam - 180.0
+    ordered = sorted(shots, key=lambda s: float(s.get("start") or 0))
+    for cue in subtitles:
+        t = (float(cue.get("start") or 0) + float(cue.get("end") or 0)) / 2.0
+        for shot in ordered:
+            if float(shot.get("start") or 0) - 1e-6 <= t < float(shot.get("end") or 0) + 1e-6:
+                if str(shot.get("kind") or "") == "split":
+                    cue["baseline_y"] = split_y
+                break
 
 
 # Что приёму нужно на входе. Без этого он рисует пустоту поверх ведущего, и
@@ -4707,6 +4733,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         family_by_block={b["id"]: accent_family(b)
                          for b in plan.get("blocks", [])},
     )
+    _stamp_subtitle_baselines(subtitles, shots, brandbook)
 
     # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон
     # держится весь ролик и посреди него не меняется.

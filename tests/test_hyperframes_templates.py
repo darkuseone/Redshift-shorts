@@ -791,8 +791,11 @@ def test_decline_chart_shows_error_steps_and_axes(ctx):
     assert "×½ на каждом шаге" in node
     assert "поверхностный код" in node
     assert "100%" in node and "50%" in node and "25%" in node
+    assert "62.5" not in node
     assert "шаг 1" in node and "шаг 3" in node
     assert "dcl-ytick" in node and "dcl-xlab" in node
+    assert "dcl-mark" in node and "dcl-mark-lab" in node
+    assert 'class="dcl-unit"' not in node
     times = _dcl_times(4.0)
     assert abs(times["in"] - 0.55) < 1e-9
 

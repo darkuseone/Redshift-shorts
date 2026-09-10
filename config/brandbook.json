@@ -147,10 +147,10 @@
     "face_bbox_shift_trigger_y": 900,
     "font_role": "subtitle",
     "size_px": [
-      112,
-      136
+      128,
+      156
     ],
-    "size_px_default": 124,
+    "size_px_default": 144,
     "max_block_width_px": 900,
     "color": "#FFFFFF",
     "readability_mode": "glow",
@@ -220,8 +220,8 @@
     },
     "caption": "gradient-fill",
     "gradient_fill": {
-      "base_px": 124,
-      "min_px": 52,
+      "base_px": 144,
+      "min_px": 84,
       "max_words": 3,
       "pause_break_sec": 0.45,
       "letter_spacing_em": 0.02,
@@ -255,8 +255,8 @@
       "case": "upper"
     },
     "clip_wipe": {
-      "base_px": 124,
-      "min_px": 52,
+      "base_px": 144,
+      "min_px": 84,
       "wipe_sec": 0.3,
       "exit_sec": 0.25,
       "stagger_sec": 0.04,

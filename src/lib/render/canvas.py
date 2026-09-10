@@ -370,8 +370,8 @@ def overlay_layout_bbox(overlay: dict[str, Any],
     if kind == "plaque" and (
             params.get("source_chip")
             or "source-domain" in str(overlay.get("template") or "")):
-        width = 340.0
-        height = 72.0
+        width = 260.0
+        height = 56.0
         y0 = max(float(safe.y_min), y1 - height)
         x1 = min(float(safe.x_max), x0 + width)
     return (x0, y0, x1, y1)
