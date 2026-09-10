@@ -2969,6 +2969,23 @@ def test_logo_brand_close_exit_and_hidden_lines():
     assert "invert" in paper.nodes[0]
 
 
+def test_logo_brand_close_finishes_wordmark_inside_short_cta():
+    """Last 2s identity close must hold full REDSHIFT, not mid-cascade REDSHIF."""
+    piece = render_fullscreen(_fs_ctx(
+        wordmark="REDSHIFT", tagline="", url="redshift.shorts",
+        renderer="logo_brand_close", logo_close=True, exit="none",
+        subscribe=False, duration=2.0))
+    last = None
+    for tween in piece.tweens:
+        if "-c7\"" in tween and "fromTo" in tween:
+            last = tween
+            break
+    assert last is not None
+    at = float(last.rstrip(");").rsplit(",", 1)[1])
+    dur = float(re.search(r"duration:([0-9.]+)", last).group(1))
+    assert at + dur <= 3.0 + 0.7
+
+
 def test_particle_text_dissolve_wipes_with_scale_and_precomputed_dust():
     """Каталог: canvas onUpdate и clip-path. Здесь scaleX и span с x/y, LCG."""
     piece = render_fullscreen(_fs_ctx(

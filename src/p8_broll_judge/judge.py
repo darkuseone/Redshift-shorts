@@ -24,6 +24,7 @@ from ..lib.footage_seed import SEED_SCORE
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
+from ..lib.pin_match import ctx_words, pin_slot_prefer_key
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
     classify_intent, negative_reject_reason, slot_negatives,
@@ -331,28 +332,54 @@ def _slot_duration(slot: dict[str, Any]) -> float:
 
 
 def _leftover_prefer_key(asset_id: str, slot: dict[str, Any],
-                         pin_prefer: list[str]) -> tuple[int, int]:
-    """Prefer leftover pins that match this slot's role/intent, else list order."""
-    aid = str(asset_id or "")
-    intent = str(slot.get("visual_intent") or "").lower()
-    role = str(slot.get("asset_role") or "")
-    bonus = 0
-    if aid.startswith("press_") and role == "evidence":
-        bonus = -20
-    elif "cryostat" in aid and any(
-            w in intent for w in ("криостат", "процессор", "чип", "cryostat", "chip")):
-        bonus = -15
-    elif "supercomputer" in aid and any(
-            w in intent for w in ("суперкомп", "вселенн", "supercomputer")):
-        bonus = -15
-    elif "38431825" in aid and any(
-            w in intent for w in ("финальн", "подписк", "деньг")):
-        bonus = -15
-    try:
-        rank = pin_prefer.index(aid)
-    except ValueError:
-        rank = 99
-    return (bonus, rank)
+                         pin_prefer: list[str],
+                         words: list[dict[str, Any]] | None = None,
+                         ) -> tuple[int, int]:
+    """Prefer leftover pins that match this slot's spoken window, else list order."""
+    return pin_slot_prefer_key(asset_id, slot, pin_prefer, words=words)
+
+
+def _rebalance_prefers_onto_speech(
+        *, accepted: dict[int, dict[str, Any]],
+        pin_prefer: list[str], slots_by_index: dict[int, dict[str, Any]],
+        words: list[dict[str, Any]] | None) -> int:
+    """Swap already-accepted prefer pins onto the slot whose speech they match.
+
+    Exclusive P7 assignment can park the Nature figure on a later evidence
+    split and the ticker on «работа опубликована в Nature». Swapping does not
+    change AI screen time: both slots stay the same length.
+    """
+    if len(accepted) < 2 or not pin_prefer:
+        return 0
+    swaps = 0
+    prefer_set = set(pin_prefer)
+    indices = [idx for idx in accepted
+               if str(accepted[idx].get("asset_id") or "") in prefer_set]
+    improved = True
+    while improved:
+        improved = False
+        for i, idx_a in enumerate(indices):
+            for idx_b in indices[i + 1:]:
+                slot_a = slots_by_index.get(int(idx_a), {})
+                slot_b = slots_by_index.get(int(idx_b), {})
+                aid_a = str(accepted[idx_a].get("asset_id") or "")
+                aid_b = str(accepted[idx_b].get("asset_id") or "")
+                before = (
+                    _leftover_prefer_key(aid_a, slot_a, pin_prefer, words)[0]
+                    + _leftover_prefer_key(aid_b, slot_b, pin_prefer, words)[0]
+                )
+                after = (
+                    _leftover_prefer_key(aid_a, slot_b, pin_prefer, words)[0]
+                    + _leftover_prefer_key(aid_b, slot_a, pin_prefer, words)[0]
+                )
+                if after >= before:
+                    continue
+                accepted[idx_a], accepted[idx_b] = accepted[idx_b], accepted[idx_a]
+                accepted[idx_a]["slot_index"] = int(idx_a)
+                accepted[idx_b]["slot_index"] = int(idx_b)
+                swaps += 1
+                improved = True
+    return swaps
 
 
 def _fill_unfilled_from_leftover_prefers(
@@ -360,7 +387,8 @@ def _fill_unfilled_from_leftover_prefers(
         accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
         judged: list[dict[str, Any]], pin_prefer: list[str], pin_deny: set[str],
         index: FootageIndex, repeat_max: int, skip_live: bool,
-        palette_rules: dict[str, Any], visible_min: float) -> int:
+        palette_rules: dict[str, Any], visible_min: float,
+        words: list[dict[str, Any]] | None = None) -> int:
     """Hard-prefer pins parked as P7 runner-ups onto later empty slots.
 
     keep_per_slot used to mark unused prefers taken, so 0042 never showed the
@@ -392,7 +420,8 @@ def _fill_unfilled_from_leftover_prefers(
     for slot in unfilled:
         slot_index = int(slot["index"])
         if leftover:
-            leftover.sort(key=lambda pid: _leftover_prefer_key(pid, slot, pin_prefer))
+            leftover.sort(key=lambda pid: _leftover_prefer_key(
+                pid, slot, pin_prefer, words))
         slot_dur = _slot_duration(slot)
         intent = slot.get("visual_intent", "") or slot.get("reason", "")
         picked_id = None
@@ -404,8 +433,18 @@ def _fill_unfilled_from_leftover_prefers(
                 continue
             if storage is not None and not storage.exists(rec.file):
                 continue
-            if rec.ai_generated and ai_used + slot_dur > ai_max + 1e-6:
+            bonus = _leftover_prefer_key(pid, slot, pin_prefer, words)[0]
+            if bonus > 0:
                 continue
+            carve_sec: float | None = None
+            if rec.ai_generated:
+                remain = ai_max - ai_used
+                if slot_dur > remain + 1e-6:
+                    # Spoken match + leftover AI that cannot cover the whole
+                    # slot: keep a short window so QC-14 stays under 10 %.
+                    if bonus >= 0 or remain < 1.2:
+                        continue
+                    carve_sec = remain
             candidate = _local_cache_row(slot_index, rec, intent or pid)
             gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
             if gate:
@@ -434,11 +473,15 @@ def _fill_unfilled_from_leftover_prefers(
                      "score": float(verdict_dict["score"]), "palette": palette,
                      "decision": "accept_prefer",
                      "fallback_reason": "pin_prefer leftover: unused prefer onto empty slot"}
+            if carve_sec is not None:
+                entry["carve_sec"] = round(float(carve_sec), 3)
+                entry["fallback_reason"] = (
+                    "pin_prefer leftover: carved AI window onto spoken slot")
             judged.append(entry)
             accepted[slot_index] = entry
             accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
             if rec.ai_generated:
-                ai_used += slot_dur
+                ai_used += float(carve_sec) if carve_sec is not None else slot_dur
             picked_id = pid
             filled += 1
             break
@@ -458,6 +501,7 @@ def run_step(ctx) -> dict[str, Any]:
 
     skip_live = bool(cfg.get("vision.skip_live", False))
     surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
+    words = ctx_words(ctx)
     footage_slots = [
         s for s in plan.get("slots", [])
         if s.get("needs_asset") and s.get("asset_role") in ("broll", "evidence", "interstitial")
@@ -587,11 +631,16 @@ def run_step(ctx) -> dict[str, Any]:
         prefer_gated = sorted(
             (c for c in gated
              if _prefer_rank(c.get("asset_id"), pin_prefer) is not None),
-            key=lambda c: int(_prefer_rank(c.get("asset_id"), pin_prefer) or 0),
+            key=lambda c: _leftover_prefer_key(
+                str(c.get("asset_id") or ""), slot, pin_prefer, words),
         )
         best: dict[str, Any] | None = None
         for candidate in prefer_gated:
             if not _under_repeat_cap(candidate):
+                continue
+            if _leftover_prefer_key(
+                    str(candidate.get("asset_id") or ""), slot,
+                    pin_prefer, words)[0] > 0:
                 continue
             palette = palette_verdict(
                 [Path(f) for f in candidate.get("frames", [])], palette_rules)
@@ -819,9 +868,14 @@ def run_step(ctx) -> dict[str, Any]:
         accepted=accepted, accepted_counts=accepted_counts, judged=judged,
         pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
         repeat_max=repeat_max, skip_live=skip_live,
-        palette_rules=palette_rules, visible_min=visible_min)
+        palette_rules=palette_rules, visible_min=visible_min, words=words)
     if leftover_filled:
         _log.info("leftover prefer pins closed %s empty slot(s)", leftover_filled)
+    swapped = _rebalance_prefers_onto_speech(
+        accepted=accepted, pin_prefer=pin_prefer,
+        slots_by_index=slots_by_index, words=words)
+    if swapped:
+        _log.info("rebalanced %s prefer pin pair(s) onto spoken slots", swapped)
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

@@ -224,6 +224,35 @@ class TestDatavizOverlayGroundsOnTheNumber:
             start=1.0, end=4.0)
         assert overlay["grounded_on"] == ["number"]
 
+    def test_decline_chart_label_is_russian_when_heading_empty(self):
+        from src.lib.templates import Template
+        from src.p11_assemble.assemble import _dataviz_overlay
+
+        class _Picker:
+            def pick(self, *args, **kwargs):
+                tmpl = Template(
+                    id="data-viz/decline-chart", name="decline-chart",
+                    category="data-viz", title="", duration_range=[1.0, 4.0],
+                    params={}, tags=[], renderer="dataviz", needs=["number"])
+                return tmpl, type("T", (), {"fired": [], "walk": [], "won_at": "",
+                                            "allow_size": 1, "escaped": False,
+                                            "escape_level": ""})()
+
+        overlay = _dataviz_overlay(
+            {"block_id": "b4", "index": 8},
+            [{"value": 5.0, "raw": "пять", "suffix": ""},
+             {"value": 2.0, "raw": "вдвое", "suffix": ""}],
+            {"b4": {
+                "id": "b4",
+                "text": "ошибка падает вдвое на каждом шаге",
+                "heading": "",
+                "emphasis_word": "вдвое",
+            }},
+            _Picker(), variant="A", seed=1, recent_videos=[], used=[],
+            start=20.84, end=23.54)
+        assert overlay["params"]["label"] == "ОШИБКА"
+        assert overlay["params"]["label"] != "Retention"
+
 
 class TestTheTransitionAnswersToWhatItIntroduces:
     """Переход отвечает за то, что вводит, — и не ставится просто так.

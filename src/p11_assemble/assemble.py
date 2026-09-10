@@ -14,6 +14,7 @@ Edit-план — самодостаточный документ: §9.1 тре�
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import re
 from dataclasses import dataclass
@@ -2075,6 +2076,54 @@ def _asset_for_slot(slot: dict[str, Any], accepted: dict[str, Any],
     return accepted.get(key) or generated.get(key)
 
 
+def apply_ai_carves(slots: list[dict[str, Any]],
+                    assets: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Split a slot whose accepted AI pin only covers a spoken window.
+
+    P8 stores ``carve_sec`` when leftover AI would blow QC-14 on the full
+    slot. The prefix keeps the pin; the remainder inherits like an empty C.
+    """
+    max_idx = max((int(s["index"]) for s in slots), default=0)
+    out: list[dict[str, Any]] = []
+    for slot in slots:
+        idx = int(slot["index"])
+        asset = assets.get(idx)
+        try:
+            carve = float((asset or {}).get("carve_sec") or 0.0)
+        except (TypeError, ValueError):
+            carve = 0.0
+        start = float(slot["start"])
+        end = float(slot["end"])
+        dur = end - start
+        if asset is None or carve < 1.15 or carve >= dur - 0.2:
+            out.append(slot)
+            continue
+        first = copy.deepcopy(slot)
+        first["end"] = start + carve
+        first["duration"] = round(carve, 3)
+        reason = str(slot.get("reason") or "").strip()
+        first["reason"] = (reason + "; окно AI-prefer под речь").strip("; ")
+        rest = copy.deepcopy(slot)
+        max_idx += 1
+        rest["index"] = max_idx
+        rest["start"] = first["end"]
+        rest["end"] = end
+        rest["duration"] = round(end - rest["start"], 3)
+        rest["needs_asset"] = True
+        rest["reason"] = "остаток слота после окна AI-prefer"
+        rest["events"] = [
+            ev for ev in (rest.get("events") or [])
+            if float(ev.get("t") or 0) >= float(rest["start"]) - 1e-6
+        ]
+        first["events"] = [
+            ev for ev in (first.get("events") or [])
+            if float(ev.get("t") or 0) < float(first["end"]) - 1e-6
+        ]
+        out.append(first)
+        out.append(rest)
+    return out
+
+
 def _rotate_assets(slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]],
                    shift: int, *, ai_budget_sec: float | None = None,
                    ) -> dict[int, dict[str, Any]]:
@@ -3007,6 +3056,23 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     return overlays
 
 
+def _dataviz_label(block: dict[str, Any], *,
+                   english_fallback: str = "Retention") -> str:
+    """Chart chrome follows the spoken language; never default English on Russian copy."""
+    heading = str(block.get("heading") or "").strip()
+    if heading:
+        return heading
+    text = str(block.get("text") or "")
+    if re.search(r"[А-Яа-яЁё]", text):
+        if re.search(r"ошибк", text, re.I):
+            return "ОШИБКА"
+        emph = str(block.get("emphasis_word") or "").strip()
+        if emph:
+            return emph.upper()
+        return "ДАННЫЕ"
+    return english_fallback
+
+
 def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
                      blocks: dict[str, Any], picker: TemplatePicker, *,
                      variant: str, seed: int, recent_videos: list[str],
@@ -3084,11 +3150,11 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
     if name == "decline-chart":
         start_v = float(nums[0]["value"])
         end_v = float(nums[1]["value"]) if len(nums) >= 2 else start_v
-        heading = str(blocks.get(slot["block_id"], {}).get("heading") or "")
+        block = blocks.get(slot["block_id"], {})
         params = {
             "start_value": start_v,
             "end_value": end_v,
-            "label": heading or "Retention",
+            "label": _dataviz_label(block),
             "values": [start_v, end_v],
         }
     elif name == "conic-progress-ring":
@@ -4546,6 +4612,9 @@ def run_step(ctx) -> dict[str, Any]:
         asset = _asset_for_slot(slot, accepted, generated)
         if asset is not None:
             base_assets[slot["index"]] = asset
+
+    plan = dict(plan)
+    plan["slots"] = apply_ai_carves(plan["slots"], base_assets)
 
     recent_videos = _recent_video_ids(ctx, limit=3)
     pillarbox_limit = int(ctx.cfg.get("limits.pillarbox_per_video", 2))
