@@ -16,7 +16,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
-STRESS_MARK = "́"          # комбинируемое ударение
+from .render.number_display import format_number_display, parse_ru_number_words
 _VOWELS_RU = "аеёиоуыэюяАЕЁИОУЫЭЮЯ"
 
 _ONES = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять",
@@ -188,7 +188,7 @@ def normalize_text(text: str, pronunciation: dict[str, Any] | None = None, *,
             block_id=block_id,
             emphasis=is_emphasis,
         ))
-    return tokens
+    return _digitize_subtitle_tokens(tokens)
 
 
 def spoken_text(tokens: Iterable[Token]) -> str:
@@ -201,6 +201,49 @@ def spoken_text(tokens: Iterable[Token]) -> str:
             else:
                 parts.append(word)
     return " ".join(parts)
+
+
+def _digitize_subtitle_tokens(tokens: list[Token]) -> list[Token]:
+    """Экран: цифры с узким пробелом. Речь не трогаем."""
+    out: list[Token] = []
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if _NUMBER_RE.match(tok.display.lstrip("$€£₽").rstrip("%")):
+            tok.display = format_number_display(tok.display)
+            out.append(tok)
+            i += 1
+            continue
+        run = [tok]
+        j = i + 1
+        while j < len(tokens):
+            words = [t.display for t in run] + [tokens[j].display]
+            if parse_ru_number_words(words) is None:
+                break
+            run.append(tokens[j])
+            j += 1
+        value = parse_ru_number_words([t.display for t in run])
+        if value is not None and len(run) >= 1 and (
+                len(run) >= 2 or str(run[0].display).lower() not in (
+                    "тысяча", "тысячи", "тысяч", "миллион", "миллиона", "миллионов",
+                    "миллиард", "миллиарда", "миллиардов", "млн", "млрд",
+                    "процент", "процента", "процентов")):
+            first = run[0]
+            spoken: list[str] = []
+            for item in run:
+                spoken.extend(item.spoken)
+            suffix = ""
+            last_key = str(run[-1].display).lower().strip(".,")
+            if last_key.startswith("процент"):
+                suffix = "%"
+            first.display = format_number_display(str(int(value))) + suffix
+            first.spoken = spoken
+            out.append(first)
+            i = j
+            continue
+        out.append(tok)
+        i += 1
+    return out
 
 
 def load_pronunciation(path) -> dict[str, Any]:

@@ -84,11 +84,16 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     checks.append(_check(1, "Длительность", lo <= duration <= hi,
                          value=round(duration, 2), threshold=[lo, hi]))
 
-    # 2. Доля аватара 35–60 %
-    share_lo, share_hi = limits.get("avatar_share", [0.35, 0.60])
+    # 2. Доля аватара 35–50 %, появлений ≤5
+    share_lo, share_hi = limits.get("avatar_share", [0.35, 0.50])
     avatar_share = float(avatar_meta.get("share", stats.get("avatar_share", 0.0)))
-    checks.append(_check(2, "Доля аватара", share_lo <= avatar_share <= share_hi,
-                         value=round(avatar_share, 4), threshold=[share_lo, share_hi]))
+    appearances = int(stats.get("avatar_appearances") or avatar_meta.get("appearances") or 0)
+    hi_app = int((ctx.cfg.brand("avatar.appearances", [2, 5]) or [2, 5])[1])
+    share_ok = share_lo <= avatar_share <= share_hi
+    app_ok = appearances <= hi_app
+    checks.append(_check(2, "Доля и число появлений аватара", share_ok and app_ok,
+                         value={"share": round(avatar_share, 4), "appearances": appearances},
+                         threshold={"share": [share_lo, share_hi], "appearances_max": hi_app}))
 
     # 3. Максимальный интервал без события ≤ 2.5 сек
     max_gap = float(stats.get("max_event_gap_sec", 99))
@@ -263,13 +268,19 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                          not (category == "medicine" and memes),
                          value=len(memes) if category == "medicine" else 0, threshold=0))
 
-    # 16. Кнопка подписки в последние 2 сек
+    # 16. Финал: loop-вопрос ИЛИ Subscribe, не оба
     tail_sec = float(limits.get("cta_tail_sec", 2.0))
     cta = [o for o in plan.get("overlays", []) if o["type"] == "cta"]
-    cta_ok = any(float(o["end"]) >= duration - 0.15 and
-                 float(o["start"]) <= duration - tail_sec + 0.35 for o in cta)
-    checks.append(_check(16, "Кнопка подписки в последние 2 сек", cta_ok,
-                         value=len(cta), threshold=1,
+    has_overlay = any(float(o["end"]) >= duration - 0.15 and
+                      float(o["start"]) <= duration - tail_sec + 0.35 for o in cta)
+    has_subscribe = any(bool((o.get("params") or {}).get("subscribe")) for o in cta)
+    cta_type = str((cut_plan.get("cta") or plan.get("cta") or {}).get("type") or "")
+    is_loop = bool(plan.get("loop_seam")) or cta_type in {
+        "open_question", "visual_loop_seam", "part2_cliff"}
+    ending_ok = has_overlay and ((has_subscribe and not is_loop) or (is_loop and not has_subscribe))
+    checks.append(_check(16, "Финал: loop или subscribe, не оба", ending_ok,
+                         value={"subscribe": has_subscribe, "loop": is_loop, "cta_type": cta_type},
+                         threshold="xor",
                          timecode=duration - tail_sec))
 
     # 17. Повтор набора шаблонов с предыдущим роликом

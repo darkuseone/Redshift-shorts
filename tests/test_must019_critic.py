@@ -1,11 +1,10 @@
-"""MUST-019: cheap ≥50% kill; GLM-5.3-free mid; Grok only in grey [0.45, 0.70]."""
+"""MUST-019: cheap ≥50% kill; Grok mid-critic; arbiter only in grey [0.45, 0.70]."""
 
 from __future__ import annotations
 
-from src.errors import ProviderError
 from src.lib.config import load_config
 from src.lib.costs import CostLedger
-from src.lib.providers.vision import GLMVision, VisionVerdict
+from src.lib.providers.vision import GrokVision, VisionVerdict
 from src.p8_broll_judge.judge import cheap_reject_reason, in_grey_zone, run_step
 
 
@@ -143,22 +142,16 @@ def _surplus(n: int) -> dict:
     }
 
 
-def test_config_glm_mid_grok_grey_budget(cfg):
-    assert str(cfg.get("vision.primary")).lower() == "glm"
+def test_config_grok_mid_grok_grey_budget(cfg):
+    assert str(cfg.get("vision.primary")).lower() == "grok"
     assert str(cfg.get("vision.arbiter")).lower() == "grok"
-    assert str(cfg.get("vision.fallback")).lower() == "glm"
+    assert str(cfg.get("vision.fallback")).lower() == "gemini"
     assert int(cfg.get("vision.arbiter_max_calls")) <= 3
-    model = str(cfg.get("vision.glm_model")).lower()
-    assert "5.3" in model
-    assert "4.6v-flash" not in model
-    assert "5.3" in str(cfg.get("vision.glm_model_fallback", "")).lower()
     grok = str(cfg.get("vision.grok_model")).lower()
     assert grok == "grok-4.6"
     assert "grok-4-fast" not in grok
     assert "grok-2-vision" not in grok
-    base = str(cfg.get("vision.glm_api_base")).lower()
-    assert "open.bigmodel.cn" not in base
-    assert "api.z.ai" in base or "tokenrouter" in base
+    assert cfg.get("vision.glm_model", None) in (None, "")
 
 
 def test_grey_zone_bounds(cfg):
@@ -262,7 +255,7 @@ def test_grey_score_calls_second_level_at_most_once_per_clip(monkeypatch):
     assert result["arbiter_calls"] <= result["arbiter_budget"] <= 3
 
 
-def test_missing_glm_key_does_not_crash(monkeypatch):
+def test_missing_vision_key_does_not_crash(monkeypatch):
     from src.p8_broll_judge import judge as J
 
     cfg = load_config()
@@ -286,7 +279,7 @@ def test_missing_glm_key_does_not_crash(monkeypatch):
     assert result["grok_calls"] == 0
 
 
-def test_glm_payload_has_no_json_object_response_format(cfg, monkeypatch, tmp_path):
+def test_grok_payload_has_no_json_object_response_format(cfg, monkeypatch, tmp_path):
     from PIL import Image
 
     frame = tmp_path / "f.jpg"
@@ -311,35 +304,20 @@ def test_glm_payload_has_no_json_object_response_format(cfg, monkeypatch, tmp_pa
         captured["headers"] = headers
         return _Resp()
 
-    monkeypatch.setenv("GLM_API_KEY", "glm-test-key")
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
     cfg.set("providers.mode", "live")
     import src.lib.providers.vision as V
     monkeypatch.setattr(V, "call_with_retry", lambda fn, **k: fn())
     import requests
     monkeypatch.setattr(requests, "post", fake_post)
-    judge = GLMVision(cfg, CostLedger(video_id="t"), api_key="glm-test-key")
+    judge = GrokVision(cfg, CostLedger(video_id="t"), api_key="xai-test-key")
     verdict = judge.judge([frame], intent="chip", role="develop", query="willow")
     assert verdict.score == 0.81
-    assert verdict.judge == "glm"
+    assert verdict.judge == "grok"
     payload = captured["json"]
     assert isinstance(payload, dict)
     assert "response_format" not in payload
-    assert "json_object" not in str(payload).lower()
-    assert "json_schema" not in str(payload).lower()
-    assert payload["model"] == cfg.get("vision.glm_model")
-    assert "open.bigmodel.cn" not in str(captured["url"])
+    assert payload["model"] == cfg.get("vision.grok_model")
+    assert "api.x.ai" in str(captured["url"])
     content = payload["messages"][0]["content"]
     assert any(part.get("type") == "image_url" for part in content)
-
-
-def test_glm_rejects_flash_model(cfg, tmp_path):
-    cfg.set("vision.glm_model", "GLM-4.6V-Flash")
-    judge = GLMVision(cfg, CostLedger(video_id="t"), api_key="k")
-    frame = tmp_path / "f.jpg"
-    frame.write_bytes(b"\xff\xd8\xff\xd9")
-    try:
-        judge.judge([frame], intent="x", role="develop", query="q")
-    except ProviderError as exc:
-        assert "4.6V-Flash" in str(exc) or "5.3-free" in str(exc)
-    else:
-        raise AssertionError("Flash model must be rejected")

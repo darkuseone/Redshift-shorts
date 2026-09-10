@@ -32,7 +32,9 @@ def test_valid_script_passes(sample_script, cfg):
     assert 35 <= info["estimated_duration_sec"] <= 70
     # Ролей три, а гарнитур может быть больше: у субтитра есть резерв.
     assert {f["role"] for f in info["fonts"]} >= {"subtitle", "display", "mono"}
-    assert info["warnings"] == []
+    allowed = {"FACT_NUMBERS_TOO_FEW", "FACT_MONEY_MISSING", "ENDING_BOTH"}
+    unexpected = [w for w in info["warnings"] if w.get("code") not in allowed]
+    assert unexpected == [], unexpected
 
 
 def test_missing_hook(sample_script, cfg):

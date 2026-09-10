@@ -148,7 +148,7 @@ def test_source_api_without_a_key_is_a_configuration_error(cfg, costs, monkeypat
     cfg.set("providers.mode", "live")
     cfg.set("heygen.source", "api")
     with pytest.raises(MissingCredentials):
-        build_avatar_provider(cfg, costs, video_id="redshift_0046")
+        build_avatar_provider(cfg, costs, video_id="no_seed_video")
 
 
 def test_mock_mode_overrides_any_avatar_source(cfg, costs, tmp_path, monkeypatch):

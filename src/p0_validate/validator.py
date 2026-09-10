@@ -22,10 +22,7 @@ from ..lib.fonts import validate_font
 from ..lib.jsonio import read_json
 from ..lib.logging import get_logger
 from ..lib.endings import last_ending_type, next_ending_type, repeats_previous
-from ..lib.schema import (
-    CTA_LEGACY, SCRIPT_SCHEMA, count_words, estimate_block_duration,
-    estimate_script_duration, extract_quotes,
-)
+from ..lib.render.number_display import extract_fact_numbers, has_money_number
 
 _log = get_logger("p0")
 
@@ -472,6 +469,37 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
             category=category, source_ref=dangling[0],
         )
     warnings.extend(_check_source_snippets(sources))
+
+    spoken_blob = " ".join(str(b.get("text") or "") for b in blocks)
+    overlay_blob = " ".join(
+        str((b.get("overlay") or {}).get("content") or "") for b in blocks)
+    numbers = extract_fact_numbers(spoken_blob + " " + overlay_blob)
+    if len(numbers) < 3:
+        warnings.append({
+            "code": "FACT_NUMBERS_TOO_FEW",
+            "message": "в ролике меньше трёх конкретных цифр (нужно ≥3, P1/P5)",
+            "found": numbers,
+        })
+    money_blob = spoken_blob + " " + str((script.get("cta") or {}).get("text") or "")
+    if not has_money_number(money_blob) and not any(
+            has_money_number(str(b.get("text") or "")) for b in blocks):
+        # «деньги» без суммы не считается; нужна цифра цены/убытка/бюджета.
+        if not re.search(r"\d", money_blob) or not re.search(
+                r"\$|млрд|млн|руб|доллар|бюджет|убыт|выигрыш|цен[аеуы]", money_blob, re.I):
+            warnings.append({
+                "code": "FACT_MONEY_MISSING",
+                "message": "нет цифры про деньги/цену/убыток/выигрыш/бюджет",
+            })
+
+    cta_doc = script.get("cta") if isinstance(script.get("cta"), dict) else {}
+    cta_type = str(cta_doc.get("type") or "")
+    loop_ending = cta_type in {"open_question", "visual_loop_seam"}
+    want_subscribe = bool(meta.get("show_subscribe")) or cta_type == "soft_subscribe"
+    if loop_ending and want_subscribe:
+        warnings.append({
+            "code": "ENDING_BOTH",
+            "message": "финал: loop-вопрос ИЛИ YouTube Subscribe, не оба сразу",
+        })
 
     # --- MEME_IN_MEDICINE: не отказ, а принудительное выключение (§8.2)
     if category == "medicine" and meta.get("allow_memes", True):

@@ -74,15 +74,15 @@ def build_pipeline() -> Pipeline:
         Step("P10", "Аудио: SFX, музыкальная подложка, микс", p10,
              inputs=("cut_plan.json", "voice_final.wav"),
              outputs=("sfx_map.json", "music_bed.wav", "mix.wav")),
-        Step("P11", "Сборка edit-планов A и B", p11,
+        Step("P11", "Сборка одного edit-плана", p11,
              inputs=("cut_plan.json", "accepted_assets.json", "generated_assets.json",
                      "avatar_meta.json", "sfx_map.json", "words.json"),
-             outputs=("edit_plan_A.json", "edit_plan_B.json"),
+             outputs=("edit_plan_A.json",),
              # templates/manifest.json сюда не входит: его пишет сам P11
              # (состояние ротации), и шаг стал бы вечно несвежим.
              config_inputs=("config/brandbook.json", "config/editing_preferences.json")),
         Step("P12", "Рендер, QC, артефакты", p12,
-             inputs=("edit_plan_A.json", "edit_plan_B.json", "mix.wav"),
+             inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),
              # Отчёт лежит в рабочем каталоге, а ролики — в выдаче, и она
              # прогон не переживает. Без этой строки возобновление с P12

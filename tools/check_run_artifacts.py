@@ -17,7 +17,7 @@ from pathlib import Path
 
 REQUIRED = ("build_report.json", "cost_report.json", "metadata.json",
             "assets_manifest.json", "subtitles.srt", "voice_final.wav",
-            "edit_plan_A.json", "edit_plan_B.json")
+            "edit_plan_A.json")
 
 # Девятнадцать — исходный набор §11.1. Волны QC-20+ и §11.2 его дополняют,
 # поэтому сверху не ограничиваем: CI mock-прогон отдаёт ~30 блокирующих.

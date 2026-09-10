@@ -202,6 +202,41 @@ def probe(path: str | Path) -> MediaInfo:
     )
 
 
+def extract_frames_at(src: str | Path, out_dir: str | Path, timestamps: Iterable[float],
+                      *, width: int = 640) -> list[Path]:
+    """Кадры по абсолютным секундам — плотная сетка QC-пакета агента."""
+    info = probe(src)
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    duration = info.duration_sec or 0.0
+    result: list[Path] = []
+    still = int(info.nb_frames or 0) == 1 and duration <= 0.2
+    stamps = [0.0] if still else list(timestamps)
+    for idx, ts in enumerate(stamps):
+        at = 0.0 if still or not duration else max(0.0, min(float(ts), max(duration - 0.05, 0.0)))
+        out = out_dir / f"frame_{idx:03d}_{at:.2f}s.jpg"
+        seek = [] if still else ["-ss", f"{at:.3f}"]
+        run(["-y", *seek, "-i", str(src), "-frames:v", "1",
+             "-vf", f"scale={width}:-2", "-q:v", "4", str(out)],
+            what="extract_frame_at")
+        if out.exists():
+            result.append(out)
+    return result
+
+
+def extract_audio_clip(src: str | Path, dest: str | Path, *,
+                       start_sec: float, duration_sec: float) -> Path:
+    """Короткий wav для слуха агента: хук / середина / финал."""
+    dest = Path(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    run(
+        ["-y", "-ss", f"{max(0.0, start_sec):.3f}", "-t", f"{max(0.2, duration_sec):.3f}",
+         "-i", str(src), "-vn", "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le", str(dest)],
+        what="qc_audio_clip",
+    )
+    return dest
+
+
 def extract_frames(src: str | Path, out_dir: str | Path, positions: Iterable[float],
                    *, width: int = 640) -> list[Path]:
     """Кадры по относительным позициям (0..1) — вход для vision-критика (§7.3)."""

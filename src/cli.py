@@ -21,7 +21,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .errors import RedshiftError
+from .errors import PaidRerunForbidden, RedshiftError
 from .lib.cache import StepCache
 from .lib.config import load_config
 from .lib.costs import CostLedger
@@ -32,6 +32,34 @@ from .pipeline import RunContext
 from .steps import PIPELINE_STEPS, build_pipeline
 
 _log = get_logger("cli")
+PAID_SKIPPED_MSG = "paid skipped: voice cached, avatar prepared"
+
+
+def _voice_seed_path(cfg, video_id: str) -> Path:
+    return Path(cfg.repo_root) / "assets" / "voice" / video_id / "voice_final.wav"
+
+
+def enforce_paid_rerun_guard(cfg, args, *, video_id: str) -> None:
+    """P2 и live-HeyGen запрещены на перерендере с кэшем, кроме --force-paid."""
+    force_paid = bool(getattr(args, "force_paid", False))
+    cfg.set("pipeline.force_paid", force_paid)
+    if force_paid:
+        return
+    voice = _voice_seed_path(cfg, video_id)
+    if not voice.is_file():
+        return
+    source = str(cfg.get("heygen.source", "prepared")).lower()
+    cfg.set("heygen.source", "prepared")
+    cfg.set("pipeline.paid_skipped", True)
+    _log.info(PAID_SKIPPED_MSG, extra={
+        "video_id": video_id, "heygen_was": source, "force": bool(getattr(args, "force", False)),
+    })
+    if source == "api" and not force_paid:
+        raise PaidRerunForbidden(
+            "live HeyGen запрещён: голос уже в assets/voice, нужен heygen.source=prepared "
+            "или явный --force-paid",
+            video_id=video_id,
+        )
 
 
 def _make_context(args, cfg, *, video_id: str, script_path: Path) -> RunContext:
@@ -52,7 +80,8 @@ def _make_context(args, cfg, *, video_id: str, script_path: Path) -> RunContext:
         hard_stop=bool(cfg.get("budget.hard_stop_on_exceed", True)),
         video_id=video_id,
     )
-    variants = tuple(cfg.get("render.ab_versions", ["A", "B"])) if cfg.get("features.ab_versions", True) else ("A",)
+    # Контракт: одна версия монтажа. B не собирается.
+    variants = ("A",)
     return RunContext(
         video_id=video_id,
         cfg=cfg,
@@ -108,6 +137,7 @@ def cmd_run(args) -> int:
     script = read_json(script_path)
     script = _ingest_if_requested(script, args, cfg)
     video_id = script.get("meta", {}).get("video_id") or script_path.stem
+    enforce_paid_rerun_guard(cfg, args, video_id=video_id)
     ctx = _make_context(args, cfg, video_id=video_id, script_path=script_path)
     if getattr(args, "article_url", None) or getattr(args, "topic", None):
         ctx.script_path = ctx.write("ingested_script.json", script)
@@ -562,6 +592,10 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--to", dest="to_step", choices=PIPELINE_STEPS, default=None)
     run.add_argument("--only", nargs="+", choices=PIPELINE_STEPS, default=None)
     run.add_argument("--force", action="store_true", help="игнорировать кэш шагов")
+    run.add_argument(
+        "--force-paid", action="store_true",
+        help="явно разрешить новый ElevenLabs/HeyGen (в заявке Cursor быть не должно)",
+    )
     run.add_argument("--no-cache", action="store_true")
     run.add_argument("--dry-run", action="store_true")
     _add_ingest_flags(run)
@@ -624,9 +658,10 @@ def build_parser() -> argparse.ArgumentParser:
     mnt.add_argument("--dry-run", action="store_true")
     mnt.set_defaults(func=cmd_maintenance)
 
-    learn = sub.add_parser("learn", help="записать выбор версии A/B")
+    learn = sub.add_parser("learn", help="записать предпочтение монтажа (одна версия)")
     learn.add_argument("--video-id", required=True)
-    learn.add_argument("--choice", required=True, choices=["A", "B"])
+    learn.add_argument("--choice", required=True, default="A",
+                       help="метка прогона; B больше не собирается")
     learn.add_argument("--note", default=None)
     learn.set_defaults(func=cmd_learn)
 
@@ -634,7 +669,7 @@ def build_parser() -> argparse.ArgumentParser:
     tpl.add_argument("--category", default=None, help="фильтр по категории")
     tpl.add_argument("--verbose", action="store_true", help="полная информация о шаблонах")
     tpl.add_argument("--explain", default=None, metavar="TEXT", help="объяснить сценарный выбор шаблона для текста")
-    tpl.add_argument("--variant", default="A", choices=["A", "B"], help="версия сборки (A или B)")
+    tpl.add_argument("--variant", default="A", help="метка плана (всегда A)")
     tpl.set_defaults(func=cmd_templates)
 
     st = sub.add_parser("steps", help="контракты шагов пайплайна")

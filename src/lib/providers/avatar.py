@@ -223,14 +223,10 @@ class HeyGenAvatar(AvatarProvider):
         width, height = self.cfg.resolution
         audio_url = self._upload_audio(audio_path)
 
-        # Look id: secret HEYGEN_AVATAR_ID overrides config (same pattern as voice_id_env).
-        avatar_id = str(
-            self.cfg.secret_for("heygen.avatar_id_env", purpose="HeyGen avatar look")
-            or self.cfg.get("heygen.avatar_id")
-            or ""
-        )
+        # Look id только из config heygen.avatar_id, не из секрета.
+        avatar_id = str(self.cfg.get("heygen.avatar_id") or "")
         if not avatar_id:
-            raise ProviderError("HeyGen avatar_id пуст (config + HEYGEN_AVATAR_ID)")
+            raise ProviderError("HeyGen avatar_id пуст (config heygen.avatar_id)")
 
         payload: dict[str, Any] = {
             "video_inputs": [{
@@ -320,13 +316,23 @@ def build_avatar_provider(cfg, costs, *, video_id: str = "") -> AvatarProvider:
     выбрать самому: ключ есть → API, ключа нет, но клипы лежат → prepared,
     иначе заглушка.
     """
-    source = str(cfg.get("heygen.source", "auto")).lower()
+    source = str(cfg.get("heygen.source", "prepared")).lower()
     clips_dir = _prepared_dir(cfg, video_id)
 
     # Mock-режим отменяет любой источник: он означает «никаких внешних
     # зависимостей», и требовать заранее подготовленные клипы в нём бессмысленно.
     if str(cfg.get("providers.mode", "auto")).lower() == "mock":
         return MockAvatar(cfg, costs)
+
+    force_paid = bool(cfg.get("pipeline.force_paid", False))
+    voice_seed = (
+        Path(cfg.repo_root) / "assets" / "voice" / video_id / "voice_final.wav"
+        if video_id else None
+    )
+    if (not force_paid and voice_seed is not None and voice_seed.is_file()
+            and source == "api"):
+        _log.info("paid skipped: voice cached, avatar prepared")
+        source = "prepared"
 
     if source == "prepared":
         return PreparedAvatar(cfg, costs, clips_dir)

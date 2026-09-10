@@ -18,16 +18,16 @@ on:
         type: choice
         options: [auto, live, mock]
       from_step:
-        description: "Возобновить с шага (P0…P12), пусто = с начала"
+        description: "Возобновить с шага (P0…P12), пусто = фаза 1 с начала"
         required: false
         default: ""
       force:
-        description: "Игнорировать кэш шагов"
+        description: "Игнорировать кэш шагов (не включает paid API)"
         required: false
         default: false
         type: boolean
       skip_vision:
-        description: "Без live Gemini/Grok vision: P8 + P12 semantic QC; thumbs = ffmpeg"
+        description: "Без live Grok/Gemini vision: P8 + P12 semantic QC; thumbs = ffmpeg"
         required: false
         default: false
         type: boolean
@@ -37,9 +37,9 @@ on:
         default: false
         type: boolean
       heygen_source:
-        description: "Источник аватара: auto|api|prepared (пусто = из config.yaml)"
+        description: "Источник аватара: prepared (по умолчанию) | auto | api"
         required: false
-        default: ""
+        default: "prepared"
       voice_probe:
         description: "Только проба голоса: что TTS отдаёт на этом тарифе (цент вместо прогона)"
         required: false
@@ -53,9 +53,12 @@ on:
         description: "Модель синтеза для пробы (пусто = как в конфиге)"
         required: false
         default: ""
+  push:
+    paths:
+      - "config/ci_build_request.json"
 
 concurrency:
-  group: build-video-${{ github.event.inputs.script }}
+  group: build-video-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -64,7 +67,7 @@ jobs:
   # правка не влита, спросить сервис можно отсюда: это тот же цент, и сборка при
   # этом не запускается вовсе.
   probe:
-    if: github.event.inputs.voice_probe == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.voice_probe == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -125,18 +128,13 @@ jobs:
           if-no-files-found: ignore
 
   build:
-    if: github.event.inputs.voice_probe != 'true'
+    if: github.event_name == 'push' || github.event.inputs.voice_probe != 'true'
     runs-on: ubuntu-latest
-    # Прогон коммитит в ветку превью ролика, библиотеки и индексы. По умолчанию
-    # токен задачи только читает, и пуш возвращал 403 «Permission denied to
-    # github-actions[bot]» — прежний `git push || echo` это прятал, и превью
-    # молча никуда не уезжало (прогон №33513667380).
+    # Фаза 1 коммитит голос и заявку на клипы. mp4 в git не кладётся —
+    # только артефакт Actions / S3. contents:write нужен для voice + avatar_request.
     permissions:
       contents: write
-    # Весь путь P4-P12 за один прогон: поиск футажа около 40 минут, рендер двух
-    # версий ещё 20. На кэш между прогонами опираться нельзя — он терялся даже
-    # через три минуты после сохранения, — поэтому сборка должна укладываться
-    # целиком, а не по частям.
+    # Один edit-план, один mp4. Поиск футажа ~40 мин, рендер одной версии ~10.
     timeout-minutes: 150
     env:
       # Версия движка рендера пиньнится: та же, что в package.json.
@@ -145,14 +143,8 @@ jobs:
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       HEYGEN_API: ${{ secrets.HEYGEN_API }}
-      HEYGEN_AVATAR_ID: ${{ secrets.HEYGEN_AVATAR_ID }}
-      # Vision: GLM 5.3 primary, xAI Grok 4.6 fallback. Gemini остаётся для
-      # image gen и как явный vision.fallback=gemini, не как тихий запас.
-      # Имена секретов: GLM_API_KEY / GLM_API («GLM API» в UI), XAI_API_KEY.
-      GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
-      GLM_API: ${{ secrets.GLM_API }}
-      ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-      TOKENROUTER_API_KEY: ${{ secrets.TOKENROUTER_API_KEY }}
+      # Look id только из config.yaml (heygen.avatar_id), не из секрета.
+      # Vision: Grok primary, Gemini только если Grok недоступен. GLM выведен.
       XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
       XAI_API: ${{ secrets.XAI_API }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -167,6 +159,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # Cursor не умеет workflow_dispatch токеном агента. Заявка в git —
+      # единственный триггер станка с feature-ветки. --force-paid из JSON
+      # игнорируется (tools/ci_build_request.py).
+      - name: Параметры сборки
+        id: request
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_SCRIPT: ${{ github.event.inputs.script }}
+          INPUT_MODE: ${{ github.event.inputs.providers_mode }}
+          INPUT_FROM: ${{ github.event.inputs.from_step }}
+          INPUT_HEYGEN: ${{ github.event.inputs.heygen_source }}
+          INPUT_SKIP_GENERATE: ${{ github.event.inputs.skip_generate }}
+          INPUT_SKIP_VISION: ${{ github.event.inputs.skip_vision }}
+          INPUT_FORCE: ${{ github.event.inputs.force }}
+        run: python3 tools/ci_build_request.py
 
       - uses: actions/setup-python@v5
         with:
@@ -249,7 +257,7 @@ jobs:
         run: python -m src.cli fonts-check
 
       - name: Валидация сценария
-        run: python -m src.cli validate --script "${{ github.event.inputs.script }}"
+        run: python -m src.cli validate --script "${{ steps.request.outputs.script }}"
 
       # Голос и клипы ведущего рождаются парой: клипы липсинка сгенерированы под
       # конкретную озвучку, и разойтись им нельзя. Клипы лежат в git, а голос
@@ -263,7 +271,7 @@ jobs:
       - name: Засеять work/ готовым голосом
         run: |
           set -euo pipefail
-          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          video_id=$(python -c "import json; print(json.load(open('${{ steps.request.outputs.script }}', encoding='utf-8'))['meta']['video_id'])")
           seed="assets/voice/$video_id"
           if [ -d "$seed" ]; then
             mkdir -p "work/$video_id"
@@ -295,7 +303,7 @@ jobs:
           echo "key=$key" >> "$GITHUB_OUTPUT"
           echo "ключ кэша по речи: $key"
         env:
-          SCRIPT: ${{ github.event.inputs.script }}
+          SCRIPT: ${{ steps.request.outputs.script }}
 
       # Три ключа восстановления, от точного к общему. Первый — по речи, второй
       # — прежний формат по всему файлу сценария: без него кэш, сохранённый до
@@ -311,10 +319,10 @@ jobs:
           key: redshift-work-${{ steps.speech_key.outputs.key }}-${{ github.run_id }}
           restore-keys: |
             redshift-work-${{ steps.speech_key.outputs.key }}-
-            redshift-work-${{ hashFiles(github.event.inputs.script) }}-
+            redshift-work-${{ hashFiles(steps.request.outputs.script) }}-
             redshift-work-
 
-      - name: Сборка ролика (A и B)
+      - name: Сборка ролика
         run: |
           set -o pipefail
           # Журнал сборки пишется рядом с выводом: логи Actions читаются через
@@ -323,14 +331,14 @@ jobs:
           # Файл же уезжает в артефакт и в Summary целиком.
           mkdir -p output
           python -m src.cli \
-            --set providers.mode=${{ github.event.inputs.providers_mode }} \
-            --set vision.fallback=grok \
-            ${{ github.event.inputs.heygen_source != '' && format('--set heygen.source={0}', github.event.inputs.heygen_source) || '' }} \
-            ${{ github.event.inputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
-            ${{ github.event.inputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \
-            run --script "${{ github.event.inputs.script }}" \
-            ${{ github.event.inputs.from_step != '' && format('--from {0}', github.event.inputs.from_step) || '' }} \
-            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            --set providers.mode=${{ steps.request.outputs.providers_mode }} \
+            --set vision.primary=grok \
+            --set heygen.source=prepared \
+            ${{ steps.request.outputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
+            ${{ steps.request.outputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \
+            run --script "${{ steps.request.outputs.script }}" \
+            ${{ steps.request.outputs.from_step != '' && format('--from {0}', steps.request.outputs.from_step) || '' }} \
+            ${{ steps.request.outputs.force == 'true' && '--force' || '' }} \
             2>&1 | tee output/build.log
 
       # Кэш сохраняется явно и обязательно на любом исходе. Единый actions/cache
@@ -352,59 +360,36 @@ jobs:
             .redshift_cache
           key: redshift-work-${{ steps.speech_key.outputs.key }}-${{ github.run_id }}
 
-      # Артефакт Actions заказчику недоступен — ни скачать, ни открыть. Поэтому
-      # рядом с ним кладётся лёгкое превью: 720p, CRF 30, звук 96k. Обе версии
-      # вместе весят около десяти мегабайт, живут в репозитории рядом с голосом
-      # и клипами ведущего и доезжают до чата, где их наконец можно посмотреть.
-      # Каждый прогон перезаписывает превью своего ролика — репозиторий от
-      # этого не растёт.
-      #
-      # 540p было мало: на превью прогона №33515561869 обводка субтитров (6-8 px
-      # по §4.2) сжималась до трёх пикселей, тёмно-красный сливался с белым, и
-      # слово читалось красным — дефект, которого в самом ролике нет. Отсюда и
-      # lanczos: он держит край буквы при уменьшении вдвое, а не размывает его.
-      - name: Лёгкое превью ролика
+      # mp4 в git не кладётся. QC-пакет (сетка кадров + wav хук/середина/финал)
+      # уезжает артефактом вместе с роликом.
+      - name: Состав QC-пакета
         if: success()
         run: |
           set -euo pipefail
-          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
-          out="assets/preview/$video_id"
-          rm -rf "$out" && mkdir -p "$out"
-          for f in output/"$video_id"/*.mp4; do
-            [ -f "$f" ] || continue
-            ffmpeg -v error -y -i "$f" -vf "scale=720:-2:flags=lanczos" \
-              -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p \
-              -c:a aac -b:a 96k -movflags +faststart \
-              "$out/$(basename "$f")"
+          for d in output/*/qc_pack; do
+            [ -d "$d" ] || continue
+            echo "=== $d ==="
+            find "$d" -type f | sed 's|^|  |'
           done
-          cp output/"$video_id"/thumbnail*.jpg "$out"/ 2>/dev/null || true
-          cp output/"$video_id"/build_report.json "$out"/ 2>/dev/null || true
-          cp output/"$video_id"/subtitles.srt "$out"/ 2>/dev/null || true
-          du -sh "$out" && ls -la "$out"
 
-      # Библиотека материала живёт в репозитории, и её потолок держится не
-      # обещанием, а вытеснением: без этого шага она росла бы каждым прогоном,
-      # а удалённое из git не возвращается — история растёт необратимо.
-      - name: Вытеснить лишнее из библиотеки материала
+      # LRU кэша футажа на раннере. В git файлы библиотеки больше не кладём.
+      - name: Вытеснить лишнее из локального кэша материала
         if: always()
         run: python -m src.cli maintenance 2>&1 | tail -20 || true
 
       # Голос переживает прогон только в кэше, а кэш терялся уже трижды. Пара
       # «голос + клипы ведущего» при этом неразрывна: переозвучка сдвигает
       # границы фраз, и P6 бракует все клипы разом. Поэтому голос уезжает в
-      # репозиторий тем же коммитом, что и превью, — и следующий прогон берёт
-      # его шагом «Засеять work/ готовым голосом», ничего не тратя.
+      # репозиторий тем же коммитом, что и заявка на клипы.
       # `always()`, а не `success()`: фаза 1 двухфазного конвейера заканчивается
       # падением **всегда** — P6 останавливает прогон, потому что клипов ведущего
       # ещё нет. Ровно в этот момент голос и заявка на клипы и нужны в
-      # репозитории: без них следующий прогон озвучивает заново, а заявку не
-      # прочитать никак — артефакт Actions отсюда не скачать. Так и вышло на
-      # прогоне №33540770086: голос переозвучен, заявка осталась в артефакте.
+      # репозитории.
       - name: Готовый голос и заявка на клипы — в репозиторий
         if: always()
         run: |
           set -euo pipefail
-          video_id=$(python -c "import json; print(json.load(open('${{ github.event.inputs.script }}', encoding='utf-8'))['meta']['video_id'])")
+          video_id=$(python -c "import json; print(json.load(open('${{ steps.request.outputs.script }}', encoding='utf-8'))['meta']['video_id'])")
           src="work/$video_id"
           dst="assets/voice/$video_id"
           if [ -f "$src/voice_final.wav" ]; then
@@ -417,9 +402,6 @@ jobs:
           else
             echo "голоса в work/ нет — нечего сохранять"
           fi
-          # Заявка на клипы и куски речи ровно под те сегменты, которых не
-          # хватает. Целиком набор сегментов сюда не кладётся: он весит восемь
-          # мегабайт на ролик, а нужен один-два куска.
           if [ -f "$src/avatar_request.json" ]; then
             clips="assets/avatar_clips/$video_id"
             mkdir -p "$clips"
@@ -439,24 +421,24 @@ jobs:
           fi
 
       # Тоже `always()`: коммитить после падения фазы 1 есть что — голос и
-      # заявку на клипы. Без изменений шаг молча выходит.
-      - name: Превью, библиотеки и индексы в коммит
+      # заявку на клипы. mp4 и сырой сток в коммит не входят.
+      - name: Голос и заявка на клипы в коммит
         if: always()
         run: |
           set -euo pipefail
           git config user.name  "redshift-bot"
           git config user.email "redshift-bot@users.noreply.github.com"
-          git add -A assets config/editing_preferences.json config/pronunciation.json \
-                     templates/manifest.json cache/footage_index.json instruction.md \
-                     rejected_patterns.md || true
+          git add assets/voice assets/avatar_clips \
+                  config/editing_preferences.json config/pronunciation.json \
+                  templates/manifest.json cache/footage_index.json \
+                  instruction.md rejected_patterns.md || true
+          # mp4 никогда не в git (превью и сток — артефакт / S3).
+          git diff --cached --name-only -z | grep -zE '\.mp4$' | xargs -0 -r git restore --staged --
           if git diff --cached --quiet; then
             echo "нечего коммитить"
             exit 0
           fi
-          git commit -m "chore(run): превью ролика, библиотеки и индексы после прогона"
-          # Ветка за время прогона уходит вперёд — прогон идёт час, а правки
-          # продолжаются. Прежний `git push || echo` это прятал: пуш прогона
-          # №33478384709 не прошёл молча, и превью не доехало бы никуда.
+          git commit -m "chore(run): голос и заявка на клипы после фазы 1"
           branch="${GITHUB_REF_NAME}"
           for attempt in 1 2 3 4; do
             if git fetch origin "$branch" \
@@ -469,7 +451,7 @@ jobs:
             echo "пуш не прошёл, попытка $attempt"
             sleep $((attempt * 5))
           done
-          echo "::error::не удалось запушить превью и индексы"
+          echo "::error::не удалось запушить голос и заявку на клипы"
           exit 1
 
       - name: Выложить артефакты
@@ -481,8 +463,10 @@ jobs:
             output/build.log
             output/**/*.mp4
             output/**/*.jpg
+            output/**/*.wav
             output/**/*.srt
             output/**/*.json
+            output/**/qc_pack/**
             output/**/logs/**
           retention-days: 14
           if-no-files-found: warn
@@ -509,16 +493,13 @@ jobs:
         if: always()
         run: |
           echo "## REDSHIFT — результат прогона" >> $GITHUB_STEP_SUMMARY
-          # Ошибка — первое, что нужно видеть, и видеть без раскопок в логах.
+          echo "- заявка: \`${{ steps.request.outputs.script }}\` from_step=\`${{ steps.request.outputs.from_step }}\` heygen=prepared vision=grok" >> $GITHUB_STEP_SUMMARY
+          echo "- версий монтажа: **одна**" >> $GITHUB_STEP_SUMMARY
           if [ -f output/build.log ] && grep -q '"code":' output/build.log; then
             echo "### Прогон упал" >> $GITHUB_STEP_SUMMARY
             echo '```json' >> $GITHUB_STEP_SUMMARY
             sed -n '/^{$/,$p' output/build.log | head -60 >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            # И в самый конец журнала задачи. Лог Actions читается через API
-            # окном с конца: ошибка, случившаяся в середине прогона, в это
-            # окно не попадает, а повторённая последним шагом — попадает
-            # всегда. Ради этого шаг и стоит последним.
             echo "===== ОШИБКА ПРОГОНА (повтор в конец журнала) ====="
             sed -n '/^{$/,$p' output/build.log | head -60
           fi
@@ -531,7 +512,7 @@ jobs:
           print(f"- статус: **{data.get('status','?')}**")
           for variant, qc in (data.get("qc") or {}).items():
               status = "✅" if qc.get("passed") else "❌"
-              print(f"- версия {variant}: {status} QC "
+              print(f"- QC: {status} "
                     f"({qc.get('passed_count','?')}/{qc.get('total','?')} проверок)")
           PY
           done

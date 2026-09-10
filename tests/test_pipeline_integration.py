@@ -173,7 +173,7 @@ def test_run_output_has_all_artifacts(repo_root):
     if not (out / "build_report.json").exists():
         pytest.skip("нет собранного ролика")
     expected = ["metadata.json", "assets_manifest.json", "cost_report.json",
-                "subtitles.srt", "voice_final.wav", "edit_plan_A.json", "edit_plan_B.json"]
+                "subtitles.srt", "voice_final.wav", "edit_plan_A.json"]
     missing = [name for name in expected if not (out / name).exists()]
     assert not missing, f"нет артефактов §9: {missing}"
 

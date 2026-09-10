@@ -1,15 +1,11 @@
-"""P11: всё предыдущее → ``edit_plan_A.json`` и ``edit_plan_B.json``.
+"""P11: предыдущие шаги → ``edit_plan_A.json`` (одна версия монтажа).
 
 Edit-план — самодостаточный документ: §9.1 требует, чтобы по нему можно было
 **пересобрать ролик один в один без обращений к внешним API**. Поэтому в нём
 лежат локальные пути подготовленных планов, все параметры анимации, тексты
 оверлеев и пословные тайминги — ничего не догружается на рендере.
 
-Версии A и B (§4.5) собираются из **одного набора материалов** и различаются
-монтажными решениями: hook / hero / cta из разных пулов категории, порядком
-вставок внутри блока, Ken Burns, переходами, оформлением полноэкранного
-текста, наличием мема. §15.12.2 требует различия минимум в 3 шаблонных
-позициях, и это проверяется, а не декларируется.
+Версия B не собирается: один edit-план, один mp4.
 """
 
 from __future__ import annotations
@@ -628,11 +624,17 @@ def _gaze_plaque_copy(plan: dict[str, Any]) -> str:
 
 
 def show_subscribe_cta(plan: dict[str, Any]) -> bool:
-    """Subscribe button: explicit flag, never a video_id special case."""
+    """Subscribe XOR loop-вопрос: не оба сразу."""
     if plan.get("show_subscribe") is False:
         return False
     meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
     if meta.get("cta") is False or meta.get("show_subscribe") is False:
+        return False
+    cta = plan.get("cta") if isinstance(plan.get("cta"), dict) else {}
+    kind = str(cta.get("type") or "")
+    if kind in {"open_question", "visual_loop_seam", "part2_cliff"}:
+        return False
+    if plan.get("loop_seam"):
         return False
     return True
 

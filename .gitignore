@@ -15,22 +15,27 @@ render/remotion/out/
 render/remotion/.remotion/
 
 # --- Runtime output ---
-# Сборки роликов не хранятся в репозитории (§14.5) — только в artifacts/storage.
+# Сборки роликов не хранятся в репозитории — только в artifacts/S3.
 /output/**
 !/output/.gitkeep
 
-# Рабочие каталоги прогонов (промежуточные JSON, wav, mp4 шагов пайплайна)
+# Рабочие каталоги прогонов
 /work/
 /.redshift_cache/
 
-# Кэш футажей: в репозитории живёт только индекс (§14.5, K-12)
+# Кэш футажей: в репозитории живёт только индекс
 /cache/**
 !/cache/.gitkeep
 !/cache/footage_index.json
 
-# Библиотека отобранного материала — наоборот, живёт в репозитории целиком:
-# раннер умирает вместе с задачей, кэш Actions привязан к ролику и терялся уже
-# трижды, а checkout переживает всё. См. assets/footage/README.md.
+# Сырой сток и превью mp4 — не в git. Индекс footage — cache/footage_index.json.
+/assets/footage/**
+!/assets/footage/README.md
+/assets/preview/
+
+# mp4 нигде, кроме тестов-фикстур. Клипы аватара — webm/mov/wav.
+*.mp4
+!tests/**/*.mp4
 
 # Локальные секреты
 .env

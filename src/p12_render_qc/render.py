@@ -1,11 +1,6 @@
-"""P12: edit-планы → MP4, QC, артефакты прогона (§9, §11).
+"""P12: edit-план → MP4, QC, артефакты прогона (§9, §11).
 
-Шаг выдаёт всё, что перечислено в §9: два ролика, обложку, звук, субтитры,
-метаданные для публикации, отчёт QC, отчёт по кредитам и манифест использованных
-материалов с лицензиями — документ на случай спора по правам (§9.2).
-
-Провал блокирующего QC (§11.1, §11.2) означает, что ролик **не выдаётся**: файл
-переносится в ``rejected/``, а причина и таймкод пишутся в отчёт.
+Одна версия монтажа. Провал блокирующего QC — ролик не выдаётся.
 """
 
 from __future__ import annotations
@@ -27,6 +22,7 @@ from ..lib.render.compositor import Compositor
 from ..lib.render.hyperframes import HyperFramesCompositor
 from ..lib.render.layers import Ctx
 from .overlays import build_overlay_renderer
+from .qc_pack import build_qc_pack
 from ..lib.palette import accent_share_max
 from ..lib.phash import dhash_image, hamming
 from ..lib.ffmpeg import extract_frames
@@ -461,6 +457,15 @@ def run_step(ctx) -> dict[str, Any]:
             "qc_passed": True,
             "render_stats": stats.to_dict(),
         }
+        mix = ctx.work_dir / "mix.wav"
+        try:
+            results[variant]["qc_pack"] = build_qc_pack(
+                ctx, video_path=out_file, plan=plan,
+                mix_path=mix if mix.is_file() else None,
+                loudness=sfx_map.get("loudness") or {},
+                variant=variant)
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("QC-пакет не собран", extra={"err": str(exc)[:240]})
         _log.info("рендер завершён", extra={
             "variant": variant, "sec": round(info.duration_sec, 2),
             "mb": round(out_file.stat().st_size / 1e6, 1),

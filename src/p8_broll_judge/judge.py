@@ -4,9 +4,9 @@
 
 * **Шаг 1 — дешёвая отбраковка без LLM.** Metadata / negatives / theme.
   Цель — убить ≥50 % входящего пула до зрения (MUST-019).
-* **Шаг 2 — mid-critic GLM.** Прошедшие cheap; для видео — 3 кадра.
+* **Шаг 2 — mid-critic Grok.** Прошедшие cheap; для видео — 3 кадра.
   Score 0.0–1.0. Без ключа — mock/empty, не exception.
-* **Шаг 3 — Grok Vision только серая зона** score ∈ [0.45, 0.70].
+* **Шаг 3 — Grok Vision серая зона** score ∈ [0.45, 0.70].
   Не чаще 1 раза на клип, лимит ≤3 вызовов на ролик. Evidence/twist сами
   по себе сюда не входят (MUST-020 снимет оставшийся helper).
 
@@ -243,10 +243,14 @@ def _critic_cost_usd(costs) -> float:
 
 
 def _killed_glm_count(judged: list[dict[str, Any]], reject_threshold: float) -> int:
+    """Отбраковка mid-critic (ключ killed_glm сохранён для MUST-020)."""
     n = 0
     for entry in judged:
         verdict = entry.get("verdict") or {}
-        if "glm" not in str(verdict.get("judge") or "").lower():
+        judge = str(verdict.get("judge") or "").lower()
+        if not judge or judge in ("library", "cache"):
+            continue
+        if verdict.get("arbitrated"):
             continue
         try:
             score = float(verdict.get("score") or 0)
@@ -591,7 +595,7 @@ def run_step(ctx) -> dict[str, Any]:
     if skip_live:
         _log.warning("vision.skip_live: без live API — движковые гейты блокирующие")
     elif not paid_ok:
-        _log.warning("surplus underfilled — paid critic (GLM/Grok/Magnific) не вызывается",
+        _log.warning("surplus underfilled — paid critic (Grok/Gemini/Magnific) не вызывается",
                      extra=surplus)
     index = FootageIndex.load(cfg)
     video_id = str(plan.get("video_id") or "")
