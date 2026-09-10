@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-10",
-  "count": 95,
+  "count": 105,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -3107,8 +3107,10 @@
       "vision_summary": "White formula particles with glowing math symbols on a dark field. Tags: formula, particles, math, equation, glow.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "1d62629d9d62629d",
@@ -3175,8 +3177,10 @@
       "vision_summary": "Rock surface texture with fissures. Tags: rock, stone, surface, texture, fissure.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "00da242adb7ed28f",
@@ -3208,8 +3212,10 @@
       "vision_summary": "Computer code animation over a blurred wooden table. Tags: computer, code, animation, programming, screen.",
       "score": 0.82,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "1c188d9a73ee5269",
@@ -3273,8 +3279,10 @@
       "vision_summary": "Classroom chalkboard during math class. Tags: chalkboard, class, classroom, math.",
       "score": 0.72,
       "duration_sec": 5.56,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "cd828fead5c6b460",
@@ -3306,8 +3314,10 @@
       "vision_summary": "Hands typing on a backlit keyboard. Tags: hands, typing, keyboard, neon, code.",
       "score": 0.72,
       "duration_sec": 8.008,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "df623f80c5d03d07",
@@ -3339,8 +3349,10 @@
       "vision_summary": "Dark close-up of fingers on a keyboard. Tags: dark, keyboard, fingers, keys, closeup.",
       "score": 0.72,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "2c53a5395798c2ec",
@@ -3372,8 +3384,10 @@
       "vision_summary": "Blue ink dropping and swirling in water. Tags: blue, ink, water, swirling, fluid.",
       "score": 0.72,
       "duration_sec": 5.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "2aaaaaa5b515a5aa",
@@ -3405,8 +3419,10 @@
       "vision_summary": "Vertical cracked dry earth texture. Tags: cracked, earth, drought, soil, texture.",
       "score": 0.72,
       "duration_sec": 8.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
       "added": "2026-09-10",
       "phashes": [
         "f00b567eb0c3927c",
@@ -3449,6 +3465,338 @@
       "width": 1080,
       "height": 1920,
       "file": "freepik/fp_blackboard_close.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_hourglass_sand",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8072505",
+      "phash": "13c4ece31838e78e",
+      "tags": [
+        "hourglass",
+        "sand",
+        "time",
+        "clock",
+        "hours"
+      ],
+      "vision_summary": "Hourglass sand flowing on a dark background. Tags: hourglass, sand, time, clock, hours.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "13c4ece31838e78e",
+        "13c4ece31838e78e",
+        "13c4ece31838e78e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_hourglass_sand.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_library_books",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8514401",
+      "phash": "0297b2cc293dd6b2",
+      "tags": [
+        "books",
+        "library",
+        "shelves",
+        "paper",
+        "documents"
+      ],
+      "vision_summary": "Old library books on wooden shelves. Tags: books, library, shelves, paper, documents.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "0297b2cc293dd6b2",
+        "0297b24d2957d25d",
+        "129399493bd63969"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_library_books.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_rust_metal",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8083841",
+      "phash": "32bd0f388e233cb4",
+      "tags": [
+        "rust",
+        "metal",
+        "texture",
+        "bolts",
+        "wall"
+      ],
+      "vision_summary": "Close-up of rusted metal with bolts. Tags: rust, metal, texture, bolts, wall.",
+      "score": 0.74,
+      "duration_sec": 6.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "32bd0f388e233cb4",
+        "23f08e6031d9b78e",
+        "23f0ced33898c699"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_rust_metal.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_analog_clock",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8387087",
+      "phash": "33c9c9de93872648",
+      "tags": [
+        "clock",
+        "time",
+        "hours",
+        "analog",
+        "ticking"
+      ],
+      "vision_summary": "Office analog clock, hands advancing. Tags: clock, time, hours, analog, ticking.",
+      "score": 0.74,
+      "duration_sec": 6.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "33c9c9de93872648",
+        "13c5cc8e23f3acc2",
+        "d6ad4cc623953ec2"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_analog_clock.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_quad_formula",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8516522",
+      "phash": "e0a9f8b674966992",
+      "tags": [
+        "chalkboard",
+        "formula",
+        "math",
+        "equations",
+        "board"
+      ],
+      "vision_summary": "Chalkboard with quadratic formula, camera moving in. Tags: chalkboard, formula, math, equations, board.",
+      "score": 0.74,
+      "duration_sec": 6.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "e0a9f8b674966992",
+        "3299a522754fd32c",
+        "3299a4a27d4ce27c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_quad_formula.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_cracked_concrete",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8979144",
+      "phash": "e23c7b4d49d4e512",
+      "tags": [
+        "cracked",
+        "concrete",
+        "texture",
+        "wall",
+        "fissure"
+      ],
+      "vision_summary": "Cracked concrete surface texture. Tags: cracked, concrete, texture, wall, fissure.",
+      "score": 0.74,
+      "duration_sec": 6.506,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "e23c7b4d49d4e512",
+        "ef0852787accad46",
+        "d64e219f33f74224"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_cracked_concrete.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_white_ink",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8072130",
+      "phash": "36b6b6b2b2921949",
+      "tags": [
+        "ink",
+        "water",
+        "swirling",
+        "dark",
+        "fluid",
+        "white"
+      ],
+      "vision_summary": "White ink spreading in water on black. Tags: ink, water, swirling, dark, fluid, white.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "36b6b6b2b2921949",
+        "164e713067c3cd36",
+        "262e30627be9ec43"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_white_ink.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_sand_ripples",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/7720025",
+      "phash": "02cd5224dba67b55",
+      "tags": [
+        "sand",
+        "ripples",
+        "dune",
+        "texture",
+        "wind"
+      ],
+      "vision_summary": "Close-up of wind-carved sand ripples. Tags: sand, ripples, dune, texture, wind.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "02cd5224dba67b55",
+        "28d7740bf48b605b",
+        "0af54e21ce914f74"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_sand_ripples.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_corroded_mesh",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/7795128",
+      "phash": "f6498a304f724ccf",
+      "tags": [
+        "corroded",
+        "wall",
+        "mesh",
+        "metal",
+        "decay",
+        "fissure"
+      ],
+      "vision_summary": "Corroded wall render with exposed metal mesh. Tags: corroded, wall, mesh, metal, decay, fissure.",
+      "score": 0.74,
+      "duration_sec": 6.506,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "f6498a304f724ccf",
+        "f964c41b213e73e1",
+        "2738d94632292edb"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_corroded_mesh.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_stapling_docs",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/4898665",
+      "phash": "0cde47b0da2cf01e",
+      "tags": [
+        "documents",
+        "paper",
+        "stapling",
+        "desk",
+        "stack"
+      ],
+      "vision_summary": "Hands stapling and organizing documents. Tags: documents, paper, stapling, desk, stack.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "0cde47b0da2cf01e",
+        "1018ccfef309955b",
+        "1cdcb7076361d09c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_stapling_docs.mp4",
       "extra": {
         "attribution": "Freepik / Magnific stock",
         "seed_topic": "0048-navier-stokes"

@@ -2916,7 +2916,13 @@ def _comparable_stats(nums: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if len(best) >= 2:
         vals = [abs(float(n["value"])) for n in best]
         positive = [v for v in vals if v > 0]
-        if positive and max(vals) / min(positive) <= 100.0:
+        # Same unit (%, часов) may span two orders. Unitless fragments
+        # like 26 / 6 / 88 from «две тысячи двадцать шесть / GPT-шесть /
+        # восемьдесят восемь часов» are not one series — 0048 drew them
+        # as a line chart labelled «Renders».
+        empty_suffix = not str(best[0].get("suffix") or "").strip()
+        spread_cap = 8.0 if empty_suffix else 100.0
+        if positive and max(vals) / min(positive) <= spread_cap:
             return best
     ranked = sorted(
         nums,
@@ -3051,6 +3057,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             source.get("domain"),
             source.get("screen_template"),
         )
+        browser_article = str(source.get("screen_template") or "").lower() == "browser"
         card_template, _ = picker.pick(
             card_category,
             blob=blob,
@@ -3059,13 +3066,17 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             variant=variant,
             duration=float(anchor["duration"]),
             recent_videos=recent_videos,
-            exclude=list(used) + (
-                list(_BROWSER_NOT_CHAT)
-                if str(source.get("screen_template") or "").lower() == "browser"
-                else []),
+            exclude=list(used) + (list(_BROWSER_NOT_CHAT) if browser_article else []),
             seed=seed + i,
             prefer_head=head,
+            exclude_renderers=("chat_thread",) if browser_article else (),
         )
+        # Rotation still returned chat-thread on 0048 A after exclude: the
+        # pool emptied and exclude was soft-dropped. A paper is a browser.
+        if browser_article and card_template.id in _BROWSER_NOT_CHAT:
+            forced = catalog.by_id("browser-ui/browser-scroll")
+            if forced is not None:
+                card_template = forced
         used.append(card_template.id)
         card_start = float(anchor["start"])
         card_end = min(card_start + 3.4, float(run[-1]["end"]))

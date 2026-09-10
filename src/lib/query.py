@@ -65,12 +65,12 @@ CONCEPTS: dict[str, list[str]] = {
 
 # Метафорические опоры по роли блока — когда предметного кадра нет.
 ROLE_METAPHORS: dict[str, list[str]] = {
-    "hook": ["abstract dark texture macro", "slow motion particles dark", "deep space stars"],
-    "setup": ["technology abstract background", "macro texture technology", "server room blue light"],
+    "hook": ["abstract dark texture macro", "slow motion particles dark", "cracked wall texture"],
+    "setup": ["technology abstract background", "macro texture technology", "chalkboard equations"],
     "evidence": ["documents on desk", "screen with data closeup", "news article screen", "newsroom broadcast desk"],
-    "develop": ["abstract data particles", "geometric motion background", "galaxy nebula"],
-    "twist": ["dramatic dark abstract", "light through darkness", "solar flare sun"],
-    "cta": ["abstract gradient motion", "minimal red abstract background", "earth orbit view"],
+    "develop": ["abstract data particles", "geometric motion background", "code on screen"],
+    "twist": ["dramatic dark abstract", "light through darkness", "cracked concrete texture"],
+    "cta": ["abstract gradient motion", "minimal dark abstract background", "textured wall closeup"],
 }
 
 CATEGORY_HINT: dict[str, str] = {

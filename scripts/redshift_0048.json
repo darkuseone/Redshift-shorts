@@ -90,7 +90,9 @@
         "gpu cluster server aisle datacenter",
         "formula particles math equation glow",
         "computer code animation programming screen",
-        "cpp code syntax editor programming"
+        "cpp code syntax editor programming",
+        "stapling documents paper stack desk",
+        "old books library wooden shelves"
       ],
       "overlay": {
         "type": "highlight",
@@ -110,12 +112,14 @@
       "avatar": "off",
       "visual_intent": "Вихрь жидкости сверху, спагетти-метафора, код доказательства на экране",
       "broll_queries": [
-        "overhead turbulent water vortex whirlpool bubbles",
+        "sand dune ripples wind texture closeup",
         "spaghetti pasta strands noodles dry",
         "code editor source programming ide",
-        "blue ink water swirling fluid",
+        "white ink water swirling dark",
         "hands typing keyboard neon code",
-        "dark keyboard fingers keys closeup"
+        "dark keyboard fingers keys closeup",
+        "hourglass sand flowing black",
+        "analog clock closeup ticking"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -138,7 +142,8 @@
         "cracked concrete wall vine fissure",
         "rock stone surface texture fissure",
         "cracked earth drought soil texture",
-        "green glitch digital lines matrix"
+        "corroded wall exposed metal mesh",
+        "rust metal texture bolts closeup"
       ],
       "overlay": {
         "type": "none"
@@ -156,8 +161,9 @@
       "avatar": "on",
       "visual_intent": "Ведущий задаёт голосование, красный фон, кнопка подписки",
       "broll_queries": [
-        "blue fluid bubbles liquid macro",
-        "river current water rapids flow"
+        "rust metal texture wall closeup",
+        "old books library wooden shelves",
+        "cracked concrete surface texture"
       ],
       "overlay": {
         "type": "none"

@@ -208,6 +208,30 @@ class TestTheSourceCardSurvivesTheMerge:
         card = next(o for o in self._overlays("A") if o["type"] == "source_card")
         assert "quote" in card["grounded_on"], card["why"]
 
+    def test_a_browser_article_is_not_drawn_as_chat(self):
+        from pathlib import Path
+        import json as _json
+
+        from src.lib.templates import TemplateCatalog
+        from src.p11_assemble.assemble import _build_overlays
+
+        path = Path(__file__).resolve().parents[1] / "templates" / "manifest.json"
+        cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+        plan = self._plan()
+        plan["sources"][0]["screen_template"] = "browser"
+        plan["sources"][0]["domain"] = "openai.com"
+        plan["sources"][0]["url"] = "https://openai.com/index/navier-stokes-solution/"
+        for seed in range(16):
+            overlays = _build_overlays(
+                None, plan, [], cat, variant="A", seed=seed,
+                recent_videos=[], used=[])
+            cards = [o for o in overlays if o.get("type") == "source_card"]
+            assert cards, seed
+            assert cards[0]["template"] not in {
+                "browser-ui/chat-thread", "browser-ui/chat-ai-typing",
+            }, cards[0]["template"]
+            assert cards[0]["renderer"] != "chat_thread", cards[0]
+
 
 class TestDatavizOverlayGroundsOnTheNumber:
     """Диаграмма ставится из-за числа в блоке — QC-21 должен это видеть."""
@@ -287,6 +311,17 @@ class TestDatavizOverlayGroundsOnTheNumber:
             {"value": 80.0, "raw": "восемьдесят", "suffix": "%"},
         ])
         assert [n["value"] for n in series] == [12.0, 40.0, 80.0]
+
+    def test_unitless_year_fragments_collapse_to_one_kpi(self):
+        from src.p11_assemble.assemble import _comparable_stats
+
+        collapsed = _comparable_stats([
+            {"value": 26.0, "raw": "двадцать шесть", "suffix": ""},
+            {"value": 6.0, "raw": "шесть", "suffix": ""},
+            {"value": 88.0, "raw": "восемьдесят восемь", "suffix": ""},
+        ])
+        assert len(collapsed) == 1
+        assert collapsed[0]["value"] == 88.0
 
     def test_bar_chart_title_follows_the_spoken_language(self):
         from src.lib.templates import Template
