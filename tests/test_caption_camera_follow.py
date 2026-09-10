@@ -141,6 +141,23 @@ def test_phrases_split_after_sentence_end():
     assert [w["display"] for w in groups[1]] == ["Гладкий."]
 
 
+def test_cleaned_caption_words_still_split_after_a_period():
+    """subtitle_word strips the period; phrase grouping must still break."""
+    from src.lib.render.hyperframes.captions import (
+        _visible_words, group_caption_phrases,
+    )
+
+    raw = [
+        {"display": "силой.", "start": 0.0, "end": 0.3, "block_id": "b"},
+        {"display": "Пункты", "start": 0.35, "end": 0.7, "block_id": "b"},
+    ]
+    visible = _visible_words(raw, "upper")
+    assert visible[0]["sentence_end"] is True
+    groups = group_caption_phrases(visible, max_words=5, pause_break_sec=0.60)
+    assert len(groups) == 2
+    assert groups[0][0]["display"] != groups[1][0]["display"]
+
+
 def test_camera_follow_moves_the_world_not_the_clip(cfg):
     out = _follow(cfg, _words("Падение", ("в", True), "пропасть"))
     assert 'id="cf-00-world"' in out

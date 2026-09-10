@@ -92,6 +92,23 @@ def _token_in_window(item: dict[str, Any], t: float, window: float) -> bool:
     return end >= t - window and start <= t + window
 
 
+def _spoken_tokens(timeline: list[dict[str, Any]], t: float,
+                   window: float) -> list[str]:
+    tokens: list[str] = []
+    for word in timeline:
+        if not _token_in_window(word, t, window):
+            continue
+        lead = str(word.get("lead") or "").strip()
+        display = str(word.get("display") or word.get("word") or "").strip()
+        if lead and display:
+            tokens.append(f"{lead} {display}")
+        elif lead:
+            tokens.append(lead)
+        elif display:
+            tokens.append(display)
+    return tokens
+
+
 def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2,
                speech: list[dict[str, Any]] | None = None) -> str:
     """Что произносится вокруг момента t — эталон для сверки с картинкой.
@@ -100,21 +117,16 @@ def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2,
     в этот момент пустые. Судья тогда видел статью OpenAI и думал, что речи
     нет. Эталон — тайминги VO (``words.json`` / ``speech_words``), субтитры
     только запасной путь.
+
+    Узкое окно сначала: на 17-й секунде 0048 широкое ±1.2 с захватывало
+    хвост «течёт жидкость» и отравляло карточку openai.com.
     """
     tokens: list[str] = []
     timeline = speech if speech is not None else _speech_timeline(plan)
     if timeline:
-        for word in timeline:
-            if not _token_in_window(word, t, window):
-                continue
-            lead = str(word.get("lead") or "").strip()
-            display = str(word.get("display") or word.get("word") or "").strip()
-            if lead and display:
-                tokens.append(f"{lead} {display}")
-            elif lead:
-                tokens.append(lead)
-            elif display:
-                tokens.append(display)
+        tokens = _spoken_tokens(timeline, t, min(window, 0.5))
+        if not tokens:
+            tokens = _spoken_tokens(timeline, t, window)
         if tokens:
             return " ".join(tokens)
     for cue in plan.get("subtitles", []):
@@ -126,6 +138,34 @@ def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2,
             tokens.append(str(cue["lead"]))
         tokens.append(str(cue["display"]))
     return " ".join(tokens)
+
+
+def _picture_copy(shot: dict[str, Any], plan: dict[str, Any], t: float) -> str:
+    """On-screen copy covering t — the judge should see the card, not only VO."""
+    bits: list[str] = []
+    content = shot.get("content")
+    if content:
+        bits.append(str(content))
+    hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else {}
+    params = hero.get("params") if isinstance(hero.get("params"), dict) else {}
+    for key in ("word", "title", "text", "content", "kicker"):
+        val = params.get(key)
+        if isinstance(val, list):
+            bits.extend(str(x) for x in val if x)
+        elif val:
+            bits.append(str(val))
+    lines = params.get("lines")
+    if isinstance(lines, list):
+        bits.extend(str(x) for x in lines if x)
+    for ovl in plan.get("overlays") or []:
+        if not isinstance(ovl, dict) or not _token_in_window(ovl, t, 0.0):
+            continue
+        oparams = ovl.get("params") if isinstance(ovl.get("params"), dict) else {}
+        for key in ("title", "domain", "text", "highlight", "label", "content"):
+            val = oparams.get(key) or ovl.get(key)
+            if val:
+                bits.append(str(val))
+    return " ".join(bits)
 
 
 # Что в кадре по замыслу — по виду кадра. Судья без этого честно ставил 0.15
@@ -280,16 +320,18 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
             shot = next((s for s in plan["shots"]
                          if float(s["start"]) <= t < float(s["end"])), {})
             spoken = _spoken_at(plan, t, speech=speech)
+            on_screen = _picture_copy(shot, plan, t)
+            query = " ".join(part for part in (spoken, on_screen) if part).strip()
             intent = shot.get("reason") or shot.get("kind", "")
             pictured = _expected(shot, plan=plan, t=t)
             key = _verdict_key(frame, role=str(shot.get("role", "")),
-                               spoken=spoken or "", intent=intent)
+                               spoken=query or "", intent=intent)
             verdict = cache.get(key) if key else None
             if verdict is None:
                 verdict = provider.judge(
                     [frame], kind="final_frame",
                     intent=f"{pictured}. Замысел кадра: {intent}",
-                    role=str(shot.get("role", "")), query=spoken or intent)
+                    role=str(shot.get("role", "")), query=query or intent)
                 if key:
                     cache[key] = verdict
             else:

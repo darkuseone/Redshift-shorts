@@ -1195,6 +1195,12 @@ def _wrap_lines(text: str, *, width: int = 13, limit: int = 4) -> list[str]:
     """
     words, lines, current = text.split(), [], ""
     for word in words:
+        if current.endswith((".", "!", "?", "…")):
+            lines.append(current)
+            current = word
+            if len(lines) == limit:
+                break
+            continue
         candidate = f"{current} {word}".strip()
         if len(candidate) > width and current:
             lines.append(current)

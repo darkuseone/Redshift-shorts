@@ -260,8 +260,12 @@ def group_caption_phrases(
                 except (TypeError, ValueError):
                     baseline_break = False
             prev_disp = str(current[-1].get("display") or "").strip()
+            # `_visible_words` strips the period before grouping. Without the
+            # flag, «силой.» + «Гладкий.» became one karaoke phrase (0048
+            # printed СИЛЫПУНКТЫ / ШАГ ПУНКТЫ).
             sentence_break = bool(
-                prev_disp.endswith((".", "!", "?", "…"))
+                current[-1].get("sentence_end")
+                or prev_disp.endswith((".", "!", "?", "…"))
                 or prev_disp.endswith(('".', "».", ".”", ".'"))
             )
             if (new_block or baseline_break or sentence_break
@@ -476,7 +480,13 @@ def _caption_shown(word: dict[str, Any]) -> str:
 def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, Any]]:
     visible: list[dict[str, Any]] = []
     for word in raw:
-        display = prefer_nichem_spelling(subtitle_word(str(word.get("display") or ""), case_mode))
+        raw_disp = str(word.get("display") or "")
+        stripped = raw_disp.strip()
+        sentence_end = bool(
+            stripped.endswith((".", "!", "?", "…"))
+            or stripped.endswith(('".', "».", ".”", ".'"))
+        )
+        display = prefer_nichem_spelling(subtitle_word(raw_disp, case_mode))
         lead = prefer_nichem_spelling(subtitle_word(str(word.get("lead") or ""), case_mode))
         if lead and any(ch.isdigit() for ch in lead):
             display = f"{lead} {display}".strip()
@@ -486,6 +496,7 @@ def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, 
         item = dict(word)
         item["display"] = display
         item["lead"] = lead
+        item["sentence_end"] = sentence_end
         visible.append(item)
     return visible
 

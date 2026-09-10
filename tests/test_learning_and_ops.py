@@ -300,6 +300,21 @@ def test_spoken_at_uses_word_timings_when_karaoke_is_muted():
     assert "позже" not in spoken
 
 
+def test_spoken_at_drops_the_previous_sentence_tail():
+    from src.p12_render_qc.vision_qc import _spoken_at
+
+    plan = {
+        "speech_words": [
+            {"display": "жидкость.", "start": 15.86, "end": 16.19},
+            {"display": "Восьмого", "start": 16.42, "end": 16.87},
+            {"display": "сентября", "start": 16.97, "end": 17.42},
+        ],
+    }
+    spoken = _spoken_at(plan, 17.0)
+    assert "сентября" in spoken
+    assert "жидкость" not in spoken
+
+
 def test_vision_qc_reads_words_json_not_muted_cues(cfg, tmp_path, monkeypatch):
     """§11.2: muted karaoke must not empty the spoken window under a source card."""
     from src.lib.providers import vision as V
@@ -334,6 +349,7 @@ def test_vision_qc_reads_words_json_not_muted_cues(cfg, tmp_path, monkeypatch):
     }
     report = run_vision_qc(ctx, video_path=tmp_path / "v.mp4", plan=plan)
     assert any("публикует" in a["query"] for a in asked)
+    assert any("openai.com" in a["query"] for a in asked)
     assert any("карточка источника" in a["intent"] for a in asked)
     assert report["mismatch_share"] == 0.0
 

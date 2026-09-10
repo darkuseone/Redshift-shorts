@@ -187,6 +187,14 @@ def test_hero_lines_follow_spoken_window():
     assert "две тысячи" not in blob
 
 
+def test_wrap_lines_does_not_glue_the_next_sentence():
+    from src.p11_assemble.assemble import _wrap_lines
+
+    lines = _wrap_lines("силы. Пункты а и бэ всё ещё открыты")
+    assert lines[0] == "силы."
+    assert lines[1].startswith("Пункты")
+
+
 def test_logo_brand_close_default_tagline_empty():
     from src.lib.render.hyperframes.templates import _LBC_DEFAULT_TAG, _lbc_copy
     assert _LBC_DEFAULT_TAG == ""
