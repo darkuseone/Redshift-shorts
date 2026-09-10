@@ -8,6 +8,6 @@
   "skip_generate": false,
   "publish_release": false,
   "heygen_source": "prepared",
-  "requested_at": "2026-09-10T16:15:00Z",
-  "reason": "0049 из кэша с P8: critic Grok (GLM 401), аватар prepared, TTS ElevenLabs без переозвучки"
+  "requested_at": "2026-09-10T17:22:00Z",
+  "reason": "0049 P8: QC-30 heartbeat 16% красного; акцент-гейт, пины вода/код, CTA без героя на wordmark"
 }
