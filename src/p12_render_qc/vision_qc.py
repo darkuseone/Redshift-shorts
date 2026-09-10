@@ -165,10 +165,11 @@ def _picture_copy(shot: dict[str, Any], plan: dict[str, Any], t: float) -> str:
             val = oparams.get(key) or ovl.get(key)
             if val:
                 bits.append(str(val))
-    # Karaoke on this frame — the judge otherwise scores a chalkboard +
-    # «ВОСЕМЬДЕСЯТ ВОСЕМЬ ЧАСОВ» as a mismatch with spoken «восемь часов».
+    # Karaoke on this frame. Phrase clips stay up for the whole group, so a
+    # tight word window missed «глухой» on the 0048 wall cut while the line
+    # was still painted.
     for cue in plan.get("subtitles") or []:
-        if not isinstance(cue, dict) or not _token_in_window(cue, t, 0.15):
+        if not isinstance(cue, dict) or not _token_in_window(cue, t, 1.0):
             continue
         lead = str(cue.get("lead") or "").strip()
         display = str(cue.get("display") or "").strip()
@@ -198,6 +199,20 @@ _OVERLAY_INTENT = {
     "dataviz": "числовая плашка по речи — так и задумано",
 }
 
+_WALL_PLATE = ("cracked", "peeling", "plaster", "rock", "wall")
+_WALL_SPEECH = ("дыр", "глух", "стен", "трещин")
+
+
+def _wall_metaphor_intent(shot: dict[str, Any], hay: str) -> str:
+    """Cracked/peeling plates on «дыра / глухой» are the metaphor, not filler."""
+    aid = str(shot.get("asset_id") or shot.get("file") or "").lower()
+    if not any(token in aid for token in _WALL_PLATE):
+        return ""
+    blob = hay.lower()
+    if any(token in blob for token in _WALL_SPEECH):
+        return "метафора глухой или дырявой стены по речи — так и задумано"
+    return ""
+
 
 def _overlay_intent(plan: dict[str, Any] | None, t: float | None) -> str:
     """Overlays covering t, so the judge does not treat a source card as noise."""
@@ -222,7 +237,7 @@ def _overlay_intent(plan: dict[str, Any] | None, t: float | None) -> str:
 
 
 def _expected(shot: dict[str, Any], *, plan: dict[str, Any] | None = None,
-              t: float | None = None) -> str:
+              t: float | None = None, spoken: str = "") -> str:
     kind = str(shot.get("kind") or "")
     expected = _EXPECTED.get(kind, _EXPECTED["footage"])
     hero = (shot.get("hero") or {}).get("device")
@@ -231,6 +246,10 @@ def _expected(shot: dict[str, Any], *, plan: dict[str, Any] | None = None,
     overlay = _overlay_intent(plan, t)
     if overlay:
         expected += f"; {overlay}"
+    copy = _picture_copy(shot, plan, t) if plan is not None and t is not None else ""
+    wall = _wall_metaphor_intent(shot, f"{spoken} {copy}")
+    if wall:
+        expected += f"; {wall}"
     return expected
 
 
@@ -336,7 +355,7 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
             on_screen = _picture_copy(shot, plan, t)
             query = " ".join(part for part in (spoken, on_screen) if part).strip()
             intent = shot.get("reason") or shot.get("kind", "")
-            pictured = _expected(shot, plan=plan, t=t)
+            pictured = _expected(shot, plan=plan, t=t, spoken=spoken)
             key = _verdict_key(frame, role=str(shot.get("role", "")),
                                spoken=query or "", intent=intent)
             verdict = cache.get(key) if key else None

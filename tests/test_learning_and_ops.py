@@ -387,6 +387,25 @@ def test_picture_copy_includes_on_screen_karaoke(cfg, tmp_path, monkeypatch):
     assert report["mismatch_share"] == 0.0
 
 
+def test_cracked_plate_on_deaf_wall_speech_is_the_metaphor():
+    from src.p12_render_qc.vision_qc import _expected, _picture_copy
+
+    shot = {"kind": "footage", "asset_id": "fp_cracked_concrete",
+            "start": 62.23, "end": 63.63}
+    plan = {
+        "subtitles": [
+            {"display": "века", "start": 62.12, "end": 62.48},
+            {"display": "считали", "start": 62.48, "end": 62.93},
+            {"display": "глухой.", "start": 63.05, "end": 63.40},
+        ],
+        "overlays": [],
+    }
+    copy = _picture_copy(shot, plan, 62.33)
+    assert "глухой" in copy.lower()
+    pictured = _expected(shot, plan=plan, t=62.33, spoken="четверть века считали")
+    assert "метафора" in pictured
+
+
 def test_the_channel_own_captions_are_not_foreign_text(cfg, tmp_path):
     """Субтитр канала — не «текст в кадре» (§11.2.2).
 
