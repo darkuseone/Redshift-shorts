@@ -1608,6 +1608,31 @@ def _fullscreen_accent(content: str, block: dict[str, Any]) -> str | None:
     return max((w.strip(_ACCENT_STRIP) for w in words), key=len)
 
 
+def _emphasis_spoken_in_slot(
+        words: list[dict[str, Any]] | None,
+        start: float,
+        end: float,
+        needle: str) -> bool:
+    """True only if ``needle`` is actually said inside ``[start, end)``."""
+    if not needle or words is None:
+        return False
+    for item in words:
+        token = str(item.get("display") or item.get("word") or "")
+        if not token or not stems_match(needle, token):
+            continue
+        try:
+            w_start = float(item.get("start"))
+            w_end = float(item.get("end"))
+        except (TypeError, ValueError):
+            continue
+        # Touching the slot edge is not overlap: the punch word ending at
+        # 45.151 must not feed the following 45.151–48.151 card.
+        if w_end <= start or w_start >= end:
+            continue
+        return True
+    return False
+
+
 def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
                   face: tuple[int, int] | None = None,
                   title: str = "",
@@ -1618,14 +1643,15 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     word = str(block.get("emphasis_word") or "").strip()
     # Oversize/headline «МИЛЛИОН» on a Poincaré beat: the emphasis belongs to
     # the block, not this window. Empty word drops those heroes via _HERO_NEEDS.
+    # ``words is None`` keeps the word (caller did not pass a speech map).
+    # An empty or out-of-window list clears it — including the post-punch
+    # remainder that still inherits the block's emphasis.
     if word and words is not None:
-        spoken = False
-        for item in words:
-            token = str(item.get("display") or item.get("word") or "")
-            if token and stems_match(word, token):
-                spoken = True
-                break
-        if not spoken:
+        if not _emphasis_spoken_in_slot(
+                words,
+                float(slot.get("start") or 0.0),
+                float(slot.get("end") or 0.0),
+                word):
             word = ""
     # Big-word lines must carry speech meaning, not discourse openers like
     # «И вот ответ на вопрос» — Markus QA: answer card showed only that kicker.
@@ -4148,11 +4174,21 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     #    `has_alpha=False`: аватара в этом кадре нет, и всё, что рисуется под
     #    ним, оказалось бы за непрозрачным видео. Отбор по `_HERO_NEEDS` сам
     #    отбросит приёмы, которым нечем наполниться.
-    if block.get("emphasis_word") and budget.allows("card"):
+    slot_words = [
+        w for w in (words or [])
+        if float(w.get("end") or 0) > float(slot["start"])
+        and float(w.get("start") or 0) < float(slot["end"])
+    ]
+    content = _hero_content(
+        block, slot, brand_icons,
+        title=str(plan.get("title") or ""), words=slot_words)
+    # Card rung is for the spoken emphasis in *this* window. After the
+    # authored punch the remainder still carries the block word, and
+    # hero-split reprinted СИНГУЛЯРНОСТЬ over «вихрь как спагетти».
+    if content.get("word") and budget.allows("card"):
         hero = _hero_device(
             catalog, slot=slot,
-            content=_hero_content(block, slot, brand_icons,
-                                  title=str(plan.get("title") or ""), words=words),
+            content=content,
             has_alpha=False, plate_src=plate_src,
             recent_videos=recent_videos, exclude=used_templates,
             seed=seed + int(slot["index"]), picker=picker, variant=variant,

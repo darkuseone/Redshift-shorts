@@ -122,7 +122,12 @@ def test_hero_word_requires_spoken_overlap():
         {"display": "Навье-Стокса", "start": 14.5, "end": 14.9},
     ])
     assert quiet["word"] == ""
-    spoken = _hero_content(block, slot, None, words=[
+    elsewhere = _hero_content(block, slot, None, words=[
+        {"display": "Миллион", "start": 7.6, "end": 8.0},
+    ])
+    assert elsewhere["word"] == ""
+    spoken = _hero_content(block, {"start": 7.4, "end": 8.9, "role": "setup"},
+                           None, words=[
         {"display": "Миллион", "start": 7.6, "end": 8.0},
     ])
     assert spoken["word"].lower() == "миллион"
@@ -138,6 +143,10 @@ def test_hero_word_clears_when_slot_has_no_speech():
     slot = {"start": 45.151, "end": 48.151, "role": "develop"}
     quiet = _hero_content(block, slot, None, words=[])
     assert quiet["word"] == ""
+    touching = _hero_content(block, slot, None, words=[
+        {"display": "сингулярность.", "start": 44.701, "end": 45.151},
+    ])
+    assert touching["word"] == ""
 
 
 def test_logo_brand_close_default_tagline_empty():
