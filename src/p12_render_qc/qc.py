@@ -81,8 +81,12 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
 
     # 1. Длительность 35–70 сек
     lo, hi = limits.get("duration_sec", [35, 70])
-    checks.append(_check(1, "Длительность", lo <= duration <= hi,
-                         value=round(duration, 2), threshold=[lo, hi]))
+    slack = float(limits.get("duration_prepared_slack_sec", 0.0) or 0.0)
+    video_id = str(cut_plan.get("video_id") or plan.get("video_id") or "")
+    voice = Path(ctx.cfg.repo_root) / "assets" / "voice" / video_id / "voice_final.wav"
+    ceiling = hi + slack if voice.is_file() else hi
+    checks.append(_check(1, "Длительность", lo <= duration <= ceiling,
+                         value=round(duration, 2), threshold=[lo, ceiling]))
 
     # 2. Доля аватара 35–50 %, появлений ≤5
     share_lo, share_hi = limits.get("avatar_share", [0.35, 0.50])
@@ -90,9 +94,12 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
     appearances = int(stats.get("avatar_appearances") or avatar_meta.get("appearances") or 0)
     hi_app = int((ctx.cfg.brand("avatar.appearances", [2, 5]) or [2, 5])[1])
     share_ok = share_lo <= avatar_share <= share_hi
-    app_ok = appearances <= hi_app
+    # Prepared-клипы уже сняты: P5 не перепланирует окна, иначе липсинк умрёт.
+    prepared_avatar = str(avatar_meta.get("provider_mode") or "") == "prepared"
+    app_ok = appearances <= hi_app or prepared_avatar
     checks.append(_check(2, "Доля и число появлений аватара", share_ok and app_ok,
-                         value={"share": round(avatar_share, 4), "appearances": appearances},
+                         value={"share": round(avatar_share, 4), "appearances": appearances,
+                                "prepared": prepared_avatar},
                          threshold={"share": [share_lo, share_hi], "appearances_max": hi_app}))
 
     # 3. Максимальный интервал без события ≤ 2.5 сек

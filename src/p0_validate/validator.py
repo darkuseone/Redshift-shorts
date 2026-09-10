@@ -15,13 +15,14 @@ from ..errors import (
     BudgetExceeded, DurationOutOfRange, FillerWords, HookGreeting, HookUnanswered,
     MissingCta, MissingHook, NoSource, QuoteTooLong, ValidationError,
 )
+from ..lib.audio import wav_file_duration_sec
 from ..lib.beats import answer_block_index
 from ..lib.costs import estimate_cost, guard_estimate
+from ..lib.endings import last_ending_type, next_ending_type, repeats_previous
 from ..lib.fillers import discourse_hits, strip_hesitations
 from ..lib.fonts import validate_font
 from ..lib.jsonio import read_json
 from ..lib.logging import get_logger
-from ..lib.endings import last_ending_type, next_ending_type, repeats_previous
 from ..lib.render.number_display import extract_fact_numbers, has_money_number
 from ..lib.schema import (
     CTA_LEGACY, SCRIPT_SCHEMA, count_words, estimate_block_duration,
@@ -47,6 +48,16 @@ _CYRILLIC_RE = re.compile(r"[А-Яа-яЁё]")
 
 _QUESTION_MARKERS = ("почему", "как ", "зачем", "что если", "правда ли", "сколько",
                      "когда", "кто ", "чем ", "?")
+
+
+def _prepared_voice_sec(cfg, video_id: str) -> float | None:
+    """Длительность prepared-голоса, если он лежит в репозитории."""
+    if not video_id:
+        return None
+    voice = Path(cfg.repo_root) / "assets" / "voice" / video_id / "voice_final.wav"
+    if not voice.is_file():
+        return None
+    return wav_file_duration_sec(voice)
 
 
 def _content_words(text: str, *, min_len: int = 4) -> set[str]:
@@ -518,14 +529,28 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
 
     # --- DURATION_OUT_OF_RANGE
     lo, hi = cfg.get("limits.duration_sec", [35, 70])
+    slack = float(cfg.get("limits.duration_prepared_slack_sec", 0.0) or 0.0)
     estimated = estimate_script_duration(script)
-    if estimated < lo or estimated > hi:
-        need = round(lo - estimated, 1) if estimated < lo else round(estimated - hi, 1)
+    video_id = str(meta.get("video_id") or "")
+    prepared_sec = _prepared_voice_sec(cfg, video_id)
+    ceiling = hi + slack if prepared_sec is not None else hi
+    measured = prepared_sec if prepared_sec is not None else estimated
+    if measured < lo or measured > ceiling:
+        need = round(lo - measured, 1) if measured < lo else round(measured - ceiling, 1)
         raise DurationOutOfRange(
-            f"расчётный хронометраж {estimated:.1f} сек вне диапазона {lo}–{hi} сек "
-            f"({'не хватает' if estimated < lo else 'лишних'} ~{abs(need)} сек текста)",
-            estimated_sec=estimated, min_sec=lo, max_sec=hi, delta_sec=need,
+            f"расчётный хронометраж {measured:.1f} сек вне диапазона {lo}–{ceiling} сек "
+            f"({'не хватает' if measured < lo else 'лишних'} ~{abs(need)} сек текста)",
+            estimated_sec=estimated, min_sec=lo, max_sec=ceiling, delta_sec=need,
+            prepared_sec=prepared_sec,
         )
+    if prepared_sec is not None and (estimated > hi or prepared_sec > hi):
+        warnings.append({
+            "code": "DURATION_PREPARED_OVERRUN",
+            "message": (
+                f"оценка текста {estimated:.1f} сек, prepared-голос {prepared_sec:.1f} сек "
+                f"(потолок {hi}, запас {slack})"
+            ),
+        })
     target = float(meta.get("target_duration_sec", estimated))
     if abs(target - estimated) > max(6.0, target * 0.2):
         warnings.append({

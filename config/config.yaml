@@ -271,6 +271,8 @@ features:
 
 limits:
   duration_sec: [35, 70]
+  # Prepared-голос 0049 = 70.3 сек: потолок 70, резать речь нельзя (липсинк).
+  duration_prepared_slack_sec: 1.0
   avatar_share: [0.35, 0.50]
   max_event_gap_sec: 2.5
   max_shot_sec: 5

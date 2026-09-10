@@ -646,3 +646,28 @@ class TestQc17TemplateSetOverlap:
         check = _check(_run(cfg, _plan(templates_used=["intro-hooks/hook-blackout-word"])),
                        "QC-17")
         assert check["passed"]
+
+
+class TestQc2PreparedAppearances:
+    """Снятые Avatar V окна не перепланируются под лимит 5 появлений."""
+
+    def _qc2(self, cfg, *, appearances: int, mode: str, share: float = 0.41):
+        class _Ctx:
+            warnings: list = []
+        _Ctx.cfg = cfg
+        report = run_qc(
+            _Ctx(), plan=_plan(),
+            cut_plan={"video_id": "x", "slots": [],
+                      "stats": {"avatar_appearances": appearances}},
+            render_stats={"accent_share_max": 0.06, "accent_by_family": {}},
+            media=_Media(), sfx_map={"events": [], "loudness": {}},
+            avatar_meta={"segments": [], "share": share, "provider_mode": mode},
+            accepted={}, generated={}, script={"blocks": []},
+        )
+        return next(c for c in report["checks"] if c["id"] == "QC-2")
+
+    def test_seven_prepared_windows_pass(self, cfg):
+        assert self._qc2(cfg, appearances=7, mode="prepared")["passed"]
+
+    def test_seven_live_windows_fail(self, cfg):
+        assert not self._qc2(cfg, appearances=7, mode="live")["passed"]
