@@ -116,7 +116,7 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             if hole:
                 if cracked_like:
                     bonus = -22
-                elif "plaster" in aid_l:
+                elif "plaster" in aid_l or "rock_surface" in aid_l:
                     bonus = 4
                 else:
                     bonus = -10
@@ -134,7 +134,7 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                 bonus = 10
         elif "blackboard" in aid_l:
             # Walking body on the board — Gemini 0.4 on the 88-hours probe.
-            if hours:
+            if hours or flow:
                 bonus = 12
         elif "white_ink" in aid_l:
             if "поток" in hay:
@@ -144,7 +144,7 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             elif hours:
                 bonus = 12
         elif "sand_ripples" in aid_l:
-            if any(token in hay for token in ("вихр", "спагетти", "сингуляр")):
+            if any(token in hay for token in ("вихр", "спагетти")):
                 bonus = -18
             elif hours:
                 bonus = 12

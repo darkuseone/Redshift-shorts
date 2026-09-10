@@ -820,6 +820,24 @@ def test_chalkboard_eq_locks_onto_eighty_eight_hours():
     assert body > 0
 
 
+def test_sand_ripples_locks_onto_spaghetti_not_the_walking_board():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    vortex = {
+        "index": 20, "role": "develop", "asset_role": "broll",
+        "start": 45.15, "end": 48.15,
+    }
+    words = [
+        {"display": "Вихрь", "start": 45.75, "end": 45.90},
+        {"display": "спагетти,", "start": 46.04, "end": 46.49},
+    ]
+    pins = ["fp_sand_ripples", "fp_blackboard_close"]
+    sand, _ = pin_slot_prefer_key("fp_sand_ripples", vortex, pins, words=words)
+    board, _ = pin_slot_prefer_key("fp_blackboard_close", vortex, pins, words=words)
+    assert sand < 0
+    assert board > 0
+
+
 def test_plaster_leaves_the_hole_in_the_wall_to_cracks():
     from src.lib.pin_match import pin_slot_prefer_key
 
@@ -835,8 +853,10 @@ def test_plaster_leaves_the_hole_in_the_wall_to_cracks():
     pins = ["fp_cracked_wall", "fp_plaster_wall"]
     cracked, _ = pin_slot_prefer_key("fp_cracked_wall", twist, pins, words=words)
     plaster, _ = pin_slot_prefer_key("fp_plaster_wall", twist, pins, words=words)
+    rock, _ = pin_slot_prefer_key("fp_rock_surface", twist, pins, words=words)
     assert cracked < 0
     assert plaster > 0
+    assert rock > 0
 
 
 def test_hall_inherits_onto_universe_speech():
