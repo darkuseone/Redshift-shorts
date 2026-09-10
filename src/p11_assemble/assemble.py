@@ -4227,16 +4227,10 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
         plan, str((block or {}).get("id") or slot.get("block_id") or ""))
     skip_card = False
     if punch_span is not None:
-        punch_start, punch_end = punch_span
-        start = float(slot["start"])
-        end = float(slot["end"])
-        after_punch = start + 0.05 >= punch_end
-        before_punch = end + 0.05 >= punch_start and start < punch_start
-        skip_card = after_punch or before_punch
-    # After/before the authored FS punch the remainder still belongs to this
-    # block. A card here reprinted «Сама Астра / доказательство» over the
-    # formula, then over the spaghetti line. Leave the plate: the punch
-    # already spent the card.
+        _punch_start, punch_end = punch_span
+        skip_card = float(slot["start"]) + 0.05 >= punch_end
+    # After the authored FS punch the remainder still belongs to this block.
+    # A card here reprinted the block opening over the spaghetti line.
     if (not skip_card and block.get("emphasis_word") and budget.allows("card")):
         hero = _hero_device(
             catalog, slot=slot,
