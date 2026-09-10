@@ -231,6 +231,20 @@ class TestTheAccentShareIsFinallyMeasured:
         share = accent_share(img)["total"]
         assert 0.02 <= share <= 0.12, share
 
+    def test_a_flooded_frame_fails_the_cap_verdict(self):
+        """P8 must see the same 12 % ceiling QC-30 uses on the finished file."""
+        from src.lib.palette import accent_cap_verdict
+        flooded = self._flat((200, 69, 61))
+        out = accent_cap_verdict([flooded], 0.12)
+        assert out["measured"] and not out["passed"]
+        assert out["max"] > 0.12
+        assert "QC-30" in out["reason"]
+
+    def test_no_frames_do_not_fail_the_cap_verdict(self, tmp_path):
+        from src.lib.palette import accent_cap_verdict
+        out = accent_cap_verdict([tmp_path / "missing.png"], 0.12)
+        assert out["passed"] and not out["measured"]
+
 
 class TestTheAccentBudgetIsDeclaredOnBothSides:
 

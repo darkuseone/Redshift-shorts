@@ -96,5 +96,36 @@
       "fp_matrix_code"
     ],
     "same_asset_max_slots": 1
+  },
+  "redshift_0049": {
+    "prefer": [
+      "fp_server_room",
+      "fp_code_editor",
+      "fp_desk_code",
+      "fp_typing_hands",
+      "fp_cpp_code",
+      "fp_formula_particles",
+      "fp_chalkboard_eq",
+      "fp_writing_equations",
+      "fp_water_vortex",
+      "fp_river_current",
+      "fp_blue_ink",
+      "fp_white_ink",
+      "fp_cracked_wall",
+      "fp_peeling_wall"
+    ],
+    "deny": [
+      "fp_red_heartbeat",
+      "fp_red_pulse",
+      "fp_red_gradient",
+      "fp_blue_bubbles",
+      "fp_rock_surface",
+      "fp_plaster_wall",
+      "fp_green_glitch",
+      "fp_matrix_code",
+      "nasa_*",
+      "pexels_v7565432"
+    ],
+    "same_asset_max_slots": 1
   }
 }

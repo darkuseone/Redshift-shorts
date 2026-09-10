@@ -4140,13 +4140,39 @@ _LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
                                       "source_card"})
 
 
-def _block_gap_fullscreen(slot: dict[str, Any]) -> bool:
+def _block_gap_fullscreen(slot: dict[str, Any], *, has_picture: bool = False) -> bool:
     """Carve remainders must not become need-less red FS (QC-21 / QC-30).
 
     The spoken AI window already used the 10 % budget; the leftover 0.9 s
     used to pick ``text-fullscreen/fact-card`` with empty ``grounded_on``.
+    Avatar interstitials (1.4 s) and slots that already have a prepared
+    plate did the same: a red card over a live picture.
     """
-    return bool(slot.get("carve_remainder"))
+    if bool(slot.get("carve_remainder")):
+        return True
+    reason = str(slot.get("reason") or "")
+    if slot.get("asset_role") == "interstitial" or "перебивка" in reason:
+        return True
+    if has_picture and not slot.get("authored_punch"):
+        return True
+    return False
+
+
+def _gap_has_real_picture(slot: dict[str, Any], prepared: dict[int, dict[str, Any]],
+                          bg_file: str | None) -> bool:
+    """True when the gap already has stock/press on disk, not a brand grid."""
+    if slot.get("inherit_from") is not None:
+        return True
+    dst = (prepared.get(int(slot["index"])) or {}).get("dst")
+    if dst:
+        return True
+    path = str(bg_file or "").replace("\\", "/")
+    if not path:
+        return False
+    name = path.rsplit("/", 1)[-1]
+    if "/backdrops/" in path or name in {"grid.jpg", "horizon.jpg"}:
+        return False
+    return True
 
 
 def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
@@ -4749,7 +4775,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 shots.append(entry)
                 continue
             content = ""
-            if fs_count < fs_cap and not _block_gap_fullscreen(slot):
+            if fs_count < fs_cap and not _block_gap_fullscreen(
+                    slot, has_picture=_gap_has_real_picture(
+                        slot, prepared, bg_file)):
                 if slot.get("authored_punch"):
                     overlay = gap_block.get("overlay") or {}
                     raw = str(overlay.get("content") or "")
@@ -4913,6 +4941,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # Setup authored «за головой — крупное слово»; seed%2 used to skip it.
             if str(slot.get("role") or "") == "setup":
                 take_hero = True
+            # Identity close is the CTA picture. A headline behind the head
+            # stacked «ШЕСТИ» on the REDSHIFT wordmark in the same two seconds.
+            if str(slot.get("role") or "") == "cta":
+                take_hero = False
             if take_hero:
                 block = blocks_by_id.get(slot["block_id"], {})
                 hero_entry = _hero_device(

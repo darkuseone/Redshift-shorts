@@ -177,6 +177,33 @@ def accent_share_max(frames: Sequence[Image.Image | Path | str],
     }
 
 
+def accent_cap_verdict(frames: Sequence[Image.Image | Path | str],
+                       cap: float) -> dict[str, Any]:
+    """Full-frame B-roll may not exceed the accent budget QC-30 measures.
+
+    Off-palette pink is a different gate. Brand red and cyan are legal until
+    they eat the frame: the heartbeat clip sat on 16 % red as a 9:16 plate
+    and failed QC-30. No frames to measure is not a rejection — the cheap
+    path still has nothing to show the gate.
+    """
+    live = [f for f in frames
+            if isinstance(f, Image.Image) or Path(f).exists()]
+    if not live:
+        return {"measured": False, "max": 0.0, "red": 0.0, "cyan": 0.0,
+                "passed": True, "reason": ""}
+    measured = accent_share_max(live)
+    over = float(measured["max"]) > float(cap) + 1e-9
+    return {
+        "measured": True,
+        "max": measured["max"],
+        "red": measured["red"],
+        "cyan": measured["cyan"],
+        "passed": not over,
+        "reason": (f"акцент {measured['max']:.0%} кадра при пределе "
+                   f"{float(cap):.0%} (§7.5 / QC-30)" if over else ""),
+    }
+
+
 def palette_verdict(frames: Sequence[Image.Image | Path | str],
                     rules: dict[str, Any]) -> dict[str, Any]:
     """Приговор кадрам кандидата: худший кадр решает за весь клип.

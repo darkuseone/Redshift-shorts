@@ -108,6 +108,15 @@ def test_pins_file_lists_good_and_deny():
     assert "press_21bc8e2d72" in entry["prefer"]
     assert "pexels_v19532053" in entry["deny"]
     assert "pexels_v19532053" not in entry["prefer"]
+    forty_nine = pins["redshift_0049"]
+    assert "fp_server_room" in forty_nine["prefer"]
+    assert "fp_water_vortex" in forty_nine["prefer"]
+    assert "fp_cracked_wall" in forty_nine["prefer"]
+    assert "fp_red_heartbeat" in forty_nine["deny"]
+    assert "fp_blue_bubbles" in forty_nine["deny"]
+    assert "fp_rock_surface" in forty_nine["deny"]
+    assert "fp_red_heartbeat" not in forty_nine["prefer"]
+    assert int(forty_nine.get("same_asset_max_slots") or 0) == 1
 
 
 def test_pin_deny_prefix_matches_every_nasa_id():
