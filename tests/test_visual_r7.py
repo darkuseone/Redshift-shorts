@@ -357,3 +357,37 @@ def test_compose_zoom_unchanged_for_0042_r7():
     import yaml
     cfg = yaml.safe_load((ROOT / "config/config.yaml").read_text())
     assert float(cfg["heygen"]["compose_zoom"]) == 2.7
+
+
+def test_ticker_plate_is_skipped_for_non_cta_empty_slot():
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [
+        {"index": 2, "kind": "footage", "block_id": "b4", "role": "develop"},
+        {"index": 9, "kind": "footage", "block_id": "b4", "role": "develop"},
+        {"index": 16, "kind": "footage", "block_id": "b6", "role": "cta"},
+    ]
+    prepared = {
+        2: {"dst": "/tmp/lattice.mp4", "duration_sec": 1.4},
+        16: {"dst": "/tmp/ticker.mp4", "duration_sec": 3.7},
+    }
+    assets = {
+        2: {"asset_id": "pexels_v35003022", "source": "pexels", "tags": ["lattice"]},
+        16: {"asset_id": "pexels_v38431825", "source": "pexels",
+             "tags": ["ticker", "finance"]},
+    }
+    plate = _plate_source(slots[1], slots, prepared, assets)
+    assert plate is not None
+    assert plate["file"] == "/tmp/lattice.mp4"
+
+
+def test_source_plaque_covers_the_nature_split():
+    from src.p11_assemble.assemble import _clamp_end_before_next_avatar
+
+    shots = [
+        {"kind": "split", "start": 8.0, "end": 10.52},
+        {"kind": "split", "start": 10.52, "end": 13.04},
+        {"kind": "avatar", "start": 31.84, "end": 36.21},
+    ]
+    end = _clamp_end_before_next_avatar(8.35, 10.55, shots)
+    assert end == 10.55

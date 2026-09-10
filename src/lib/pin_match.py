@@ -74,8 +74,12 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
     elif "cryostat" in aid:
         hay = speech or intent
         if any(token in hay for token in (
-                "криостат", "процессор", "чип", "cryostat", "chip")):
+                "криостат", "процессор", "чип", "cryostat", "chip",
+                "нуле", "абсолют")):
             bonus = -15
+        elif role == "evidence":
+            # Leftover fill used to park the gold fridge on Nature «внутри».
+            bonus = 8
     elif "supercomputer" in aid:
         if any(token in speech for token in (
                 "суперкомп", "вселенн", "supercomputer")):

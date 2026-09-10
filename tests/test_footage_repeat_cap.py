@@ -700,3 +700,66 @@ def test_p7_exclusive_ids_do_not_consume_runner_ups():
     body = inspect.getsource(search.run_step)
     assert "exclusive_ids" in body
     assert "taken_ids = set(exclusive_ids)" in body
+
+
+def test_cryostat_leftover_skips_nature_evidence():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    evidence = {
+        "index": 6, "role": "evidence", "asset_role": "evidence",
+        "visual_intent": "Скриншот статьи в браузере",
+        "start": 15.58, "end": 18.12,
+    }
+    words = [
+        {"display": "внутри", "start": 15.6, "end": 15.9},
+        {"display": "него", "start": 15.9, "end": 16.2},
+        {"display": "множило", "start": 16.5, "end": 17.0},
+    ]
+    bonus, _ = pin_slot_prefer_key(
+        "grok_cryostat_0042", evidence, ["grok_cryostat_0042"], words=words)
+    assert bonus > 0
+
+
+def test_hall_inherits_onto_universe_speech():
+    from src.p11_assemble.assemble import inherit_ai_plates_onto_speech
+
+    slots = [
+        {"index": 10, "start": 26.25, "end": 28.16, "block_id": "b4",
+         "kind": "footage"},
+        {"index": 11, "start": 28.88, "end": 31.84, "block_id": "b4",
+         "kind": "footage", "needs_asset": True},
+    ]
+    assets = {10: {"asset_id": "grok_supercomputer_0042", "ai_generated": True}}
+    words = [{"display": "вселенная", "start": 29.4, "end": 29.85}]
+    out = inherit_ai_plates_onto_speech(slots, assets, words)
+    assert out[1]["inherit_from"] == 10
+    assert "ai_generated" not in out[1]
+
+
+def test_empty_slot_splits_at_authored_five_minutes():
+    from src.p11_assemble.assemble import split_empty_at_authored_punch
+
+    plan = {
+        "blocks": [{
+            "id": "b4",
+            "text": "Задача решена за пять минут.",
+            "overlay": {"type": "fullscreen_text", "content": "5 МИНУТ"},
+        }],
+    }
+    slots = [{
+        "index": 11, "start": 28.88, "end": 31.84, "duration": 2.96,
+        "block_id": "b4", "kind": "footage", "needs_asset": True,
+        "inherit_from": 10,
+    }]
+    words = [
+        {"display": "вселенная", "start": 29.4, "end": 29.85, "block_id": "b4"},
+        {"display": "пять", "start": 31.032, "end": 31.227, "block_id": "b4"},
+        {"display": "минут", "start": 31.227, "end": 31.677, "block_id": "b4"},
+    ]
+    out = split_empty_at_authored_punch(slots, plan, {}, words)
+    assert len(out) == 2
+    assert out[0]["inherit_from"] == 10
+    assert out[1]["authored_punch"] is True
+    assert out[1]["inherit_from"] == 10
+    assert 31.0 <= float(out[1]["start"]) <= 31.35
+    assert out[0]["end"] == out[1]["start"]

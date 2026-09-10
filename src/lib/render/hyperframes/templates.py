@@ -3933,9 +3933,10 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
     tweens.append(
         f'tl.set("#{vid}-0",{{opacity:1}},{_num(start)});')
 
-    hold_at = start + inn
-    if hold > 0:
-        hold_play = hold if hold <= 0.001 else max(0.001, hold - 0.001)
+    hold_at = start
+    draw = inn + hold
+    if draw > 0:
+        hold_play = draw if draw <= 0.001 else max(0.001, draw - 0.001)
         tweens.append(
             f'tl.fromTo("#{wid}",{{scaleX:0}},'
             f'{{scaleX:1,duration:{_num(hold_play)},'
@@ -3948,14 +3949,14 @@ def dv_decline_chart(ctx: "TemplateCtx") -> Piece:
         for frame in range(1, frames + 1):
             if texts[frame] == texts[prev_shown]:
                 continue
-            at = hold_at + hold * (frame / frames)
+            at = hold_at + draw * (frame / frames)
             tweens.append(
                 f'tl.set("#{vid}-{prev_shown}",{{opacity:0}},{_num(at)});')
             tweens.append(
                 f'tl.set("#{vid}-{frame}",{{opacity:1}},{_num(at)});')
             prev_shown = frame
         fade_t = 1.0 - math.sqrt(max(0.0, 1.0 - _DCL_EP_AT))
-        fade_at = hold_at + hold * fade_t
+        fade_at = hold_at + draw * fade_t
         fade_dur = max(0.001, start + out_start - fade_at)
         fade_play = fade_dur if fade_dur <= 0.001 else max(0.001, fade_dur - 0.001)
         tweens.append(

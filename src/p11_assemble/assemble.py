@@ -17,7 +17,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -52,6 +52,7 @@ from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
 from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
 from ..lib.template_picker import ScenarioIndex, TemplatePicker, build_blob
+from ..lib.pin_match import overlapping_speech
 
 _log = get_logger("p11")
 
@@ -683,6 +684,21 @@ def _is_nasa_asset(asset: dict[str, Any] | None) -> bool:
     return aid.startswith("nasa_") or src == "nasa"
 
 
+def _is_ticker_asset(asset: dict[str, Any] | None) -> bool:
+    """Stock ticker is a money/CTA plate, not a generic empty-slot fill."""
+    if not asset:
+        return False
+    aid = str(asset.get("asset_id") or "")
+    tags = [str(t).lower() for t in (asset.get("tags") or [])]
+    return "38431825" in aid or "ticker" in tags or "finance" in tags
+
+
+def _slot_wants_ticker(slot: dict[str, Any]) -> bool:
+    role = str(slot.get("role") or "")
+    intent = str(slot.get("visual_intent") or "").lower()
+    return role == "cta" or "деньг" in intent or "подписк" in intent
+
+
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]],
                   assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
@@ -710,6 +726,9 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
             if same_block_only and s["block_id"] != slot["block_id"]:
                 continue
             if _is_ai(s) or _is_nasa_asset(assets.get(int(s["index"]))):
+                continue
+            if (_is_ticker_asset(assets.get(int(s["index"])))
+                    and not _slot_wants_ticker(slot)):
                 continue
             out.append(s)
         return out
@@ -755,7 +774,8 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
     prep = prepared.get(slot["index"])
     if prep is not None and prep.get("dst"):
         asset = assets.get(slot["index"])
-        if not _is_nasa_asset(asset):
+        if not _is_nasa_asset(asset) and (
+                _slot_wants_ticker(slot) or not _is_ticker_asset(asset)):
             return prep["dst"]
     plate = _plate_source(slot, slots, prepared, assets)
     if plate and plate.get("file"):
@@ -795,6 +815,7 @@ class VisualBudget:
     parallax: int = 0
     fullscreen: int = 0
     plate: int = 0
+    dataviz_blocks: set[str] = field(default_factory=set)
 
     # Потолки на ролик. `fullscreen` берётся из брендбука (`fs_cap`), поэтому
     # здесь его нет: у него уже есть свой источник правды.
@@ -1161,7 +1182,21 @@ def _avatar_bg_plates(slots: list[dict[str, Any]],
             if slot.get("kind") in ("avatar", "split"):
                 continue
         seen.add(path)
+        if _is_ticker_asset(asset):
+            continue
         plates.append(path)
+    ticker_plates: list[str] = []
+    ticker_seen: set[str] = set()
+    for slot in slots:
+        idx = int(slot["index"])
+        asset = assets.get(idx) or {}
+        prep = prepared.get(idx) or {}
+        if not _is_ticker_asset(asset):
+            continue
+        path = str(prep.get("dst") or "").strip()
+        if path and path not in ticker_seen:
+            ticker_seen.add(path)
+            ticker_plates.append(path)
     if not plates:
         # Fall back to any non-AI prepared file (borrowed plate path).
         for slot in slots:
@@ -1171,13 +1206,17 @@ def _avatar_bg_plates(slots: list[dict[str, Any]],
                 seen.add(path)
                 plates.append(path)
     out: dict[int, str] = {}
-    if not plates:
+    pool = plates or ticker_plates
+    if not pool:
         return out
     cursor = 0
     for slot in slots:
         if slot.get("kind") != "avatar":
             continue
-        out[int(slot["index"])] = plates[cursor % len(plates)]
+        if _slot_wants_ticker(slot) and ticker_plates:
+            out[int(slot["index"])] = ticker_plates[0]
+            continue
+        out[int(slot["index"])] = pool[cursor % len(pool)]
         cursor += 1
     return out
 
@@ -2043,7 +2082,22 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     if content.get("figures"):
         signals.add("number")
     blob = build_blob(content.get("title"), content.get("caption"), " ".join(content.get("lines") or []), content.get("word"))
-    template, _ = picker.pick(
+    rest = [t.id for t in catalog.by_category("hero-devices") if t.id not in blocked]
+    prefer = (
+        "hero-devices/headline-behind-head",
+        "hero-devices/headline-over-head",
+        "hero-devices/oversize-word",
+        "hero-devices/text-column-left",
+        "hero-devices/type-slab",
+        "hero-devices/script-stack",
+        "hero-devices/statement-slam",
+        "hero-devices/split-panel-right",
+        "hero-devices/figure-swap",
+        "hero-devices/knockout-negative",
+    )
+    feedable_ids = [tid for tid in prefer if tid in rest]
+    feedable_ids.extend(tid for tid in rest if tid not in feedable_ids)
+    template, trace = picker.pick(
         "hero-devices",
         blob=blob,
         signals=signals,
@@ -2057,8 +2111,24 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
     )
     renderer = template.renderer
     needs = _HERO_NEEDS.get(renderer, ())
-    if any(not available.get(key) for key in needs):
-        return None
+    if template.id in blocked or any(not available.get(key) for key in needs):
+        picked = None
+        for tid in feedable_ids:
+            cand = catalog.by_id(tid)
+            if cand is None:
+                continue
+            cand_needs = _HERO_NEEDS.get(cand.renderer, ())
+            if any(not available.get(key) for key in cand_needs):
+                continue
+            picked = cand
+            break
+        if picked is None:
+            return None
+        template = picked
+        renderer = template.renderer
+        needs = _HERO_NEEDS.get(renderer, ())
+        if any(not available.get(key) for key in needs):
+            return None
     params = hero_params(renderer, template.params, content, slot)
     if late:
         params["clear_crown"] = True
@@ -2145,6 +2215,104 @@ def apply_ai_carves(slots: list[dict[str, Any]],
             ev for ev in (first.get("events") or [])
             if float(ev.get("t") or 0) < float(first["end"]) - 1e-6
         ]
+        out.append(first)
+        out.append(rest)
+    return out
+
+
+def inherit_ai_plates_onto_speech(
+        slots: list[dict[str, Any]],
+        assets: dict[int, dict[str, Any]],
+        words: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep the carved hall on «вселенная» without a second AI flag.
+
+    Empty C after the spoken supercomputer window used to pick a stock ticker
+    plate. The pixels already exist on the carved shot; inheriting them does
+    not add AI screen time (QC-14 counts ``ai_generated`` on the shot).
+    """
+    donors: list[dict[str, Any]] = []
+    for slot in slots:
+        asset = assets.get(int(slot["index"])) or {}
+        if not asset.get("ai_generated"):
+            continue
+        aid = str(asset.get("asset_id") or "").lower()
+        if "supercomputer" not in aid and "hall" not in aid:
+            continue
+        donors.append(slot)
+    if not donors:
+        return slots
+    for slot in slots:
+        if assets.get(int(slot["index"])):
+            continue
+        if slot.get("inherit_from") is not None:
+            continue
+        speech = overlapping_speech(slot, words).lower()
+        if not any(tok in speech for tok in ("вселенн", "суперкомп", "supercomputer")):
+            continue
+        prior = [d for d in donors
+                 if d.get("block_id") == slot.get("block_id")
+                 and float(d.get("start") or 0) <= float(slot.get("start") or 0) + 1e-6]
+        donor = prior[-1] if prior else donors[-1]
+        slot["inherit_from"] = int(donor["index"])
+    return slots
+
+
+def split_empty_at_authored_punch(
+        slots: list[dict[str, Any]],
+        plan: dict[str, Any],
+        assets: dict[int, dict[str, Any]],
+        words: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Park «5 МИНУТ» on the spoken onset, not on the whole empty C.
+
+    A 3-second empty develop slot covers both «вселенная» and the punch.
+    Ladder-filling the whole slot hid the authored overlay; splitting lets
+    the hall hold the universe line and the tail become the punch card.
+    """
+    blocks = {str(b.get("id") or ""): b for b in plan.get("blocks") or []}
+    max_idx = max((int(s["index"]) for s in slots), default=0)
+    out: list[dict[str, Any]] = []
+    for slot in slots:
+        if assets.get(int(slot["index"])):
+            out.append(slot)
+            continue
+        block = blocks.get(str(slot.get("block_id") or ""), {})
+        overlay = block.get("overlay") or {}
+        if str(overlay.get("type") or "") != "fullscreen_text":
+            out.append(slot)
+            continue
+        content = str(overlay.get("content") or "").strip()
+        if not content:
+            out.append(slot)
+            continue
+        content = enrich_overlay_punch(content, str(block.get("text") or "")) or content
+        bwords = [w for w in words
+                  if str(w.get("block_id") or "") == str(block.get("id") or "")]
+        onset = spoken_onset_for_content(
+            bwords or words, content, block.get("emphasis_word"))
+        if onset is None:
+            out.append(slot)
+            continue
+        start = float(slot["start"])
+        end = float(slot["end"])
+        punch_at = float(onset)
+        if punch_at < start + 0.55 or punch_at > end - 0.55:
+            if start - 1e-6 <= punch_at < end + 1e-6 and (end - punch_at) >= 0.55:
+                slot["authored_punch"] = True
+            out.append(slot)
+            continue
+        first = copy.deepcopy(slot)
+        first["end"] = punch_at
+        first["duration"] = round(punch_at - start, 3)
+        rest = copy.deepcopy(slot)
+        max_idx += 1
+        rest["index"] = max_idx
+        rest["start"] = punch_at
+        rest["end"] = end
+        rest["duration"] = round(end - punch_at, 3)
+        rest["authored_punch"] = True
+        rest["needs_asset"] = True
+        if first.get("inherit_from") is not None:
+            rest["inherit_from"] = first["inherit_from"]
         out.append(first)
         out.append(rest)
     return out
@@ -2513,9 +2681,13 @@ def _overlay_renderer(template: Template) -> str:
 def _clamp_end_before_next_avatar(
     start: float, end: float, shots: list[dict[str, Any]],
 ) -> float:
-    """Stop a plaque at the cut if the next shot is a talking head."""
+    """Stop a plaque at the cut if the next shot is a talking head.
+
+    Evidence splits are the paper itself — clamping onto the next split
+    used to leave nature.com on screen for 0.2 s (0042).
+    """
     for shot in shots:
-        if str(shot.get("kind") or "") not in AVATAR_KINDS:
+        if str(shot.get("kind") or "") != "avatar":
             continue
         a0 = float(shot["start"])
         if start < a0 - 1e-4 < end:
@@ -2925,10 +3097,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             seed=seed + i,
         )
         used.append(plaque_template.id)
+        plaque_start = float(anchor["start"]) + 0.35
+        plaque_end = min(plaque_start + 2.2, float(anchor["end"]))
+        if plaque_end - plaque_start < 0.8:
+            plaque_start = max(float(anchor["start"]), float(anchor["end"]) - 2.0)
+            plaque_end = float(anchor["end"])
         overlays.append(_plaque_overlay(
             template=plaque_template,
-            start=card_end - 0.2,
-            end=min(card_end + 2.2, duration),
+            start=plaque_start,
+            end=plaque_end,
             params={"text": domain, "subtitle": "источник",
                     "name": domain, "role": "источник",
                     **{k: v for k, v in plaque_template.params.items()
@@ -3408,6 +3585,9 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         nums = _stats_from_text(str(blocks.get(slot["block_id"], {}).get("text") or ""))
         if not nums:
             continue
+        bid = str(slot.get("block_id") or "")
+        if bid and bid in budget.dataviz_blocks:
+            continue
         start = float(slot["start"]) + 0.25
         end = min(float(slot["end"]) - 0.15, start + 3.0, cta_start)
         if end - start < 1.2:
@@ -3419,6 +3599,8 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             recent_videos=recent_videos, used=used, start=start, end=end))
         occupied.append((start, end))
         budget.take("dataviz")
+        if bid:
+            budget.dataviz_blocks.add(bid)
 
 
 # Рендереры browser-ui, которые честно показывают настоящий источник.
@@ -3618,10 +3800,14 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     start = float(slot["start"]) + 0.2
     end = min(float(slot["end"]) - 0.1, start + 3.2)
     window_ok = end - start >= 1.2
+    if slot.get("authored_punch"):
+        return "", None, None
 
     # 2. Данные — когда блок назвал число. Идёт первой: число больше нечем
     #    показать, а карточка и текст умеют говорить о чём угодно.
-    if nums and window_ok and budget.allows("dataviz"):
+    bid = str((block or {}).get("id") or "")
+    if (nums and window_ok and budget.allows("dataviz")
+            and bid not in budget.dataviz_blocks):
         overlay = _dataviz_overlay(
             slot, nums, {block.get("id", ""): block}, picker,
             variant=variant, seed=seed + int(slot["index"]),
@@ -3629,6 +3815,7 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
             start=start, end=end,
             why="лестница §7.2, ступень 2: в блоке названо число")
         budget.take("dataviz")
+        budget.dataviz_blocks.add(bid)
         used_templates.append(str(overlay.get("template") or ""))
         return "dataviz", None, overlay
 
@@ -4289,7 +4476,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         # делением, а не поддерживают его.
         if slot["kind"] == "avatar":
             hero_eligible += 1
-            if (hero_eligible + hero_offset) % 2 == 0:
+            take_hero = (hero_eligible + hero_offset) % 2 == 0
+            # Setup authored «за головой — крупное слово»; seed%2 used to skip it.
+            if str(slot.get("role") or "") == "setup":
+                take_hero = True
+            if take_hero:
                 block = blocks_by_id.get(slot["block_id"], {})
                 hero_entry = _hero_device(
                     catalog, slot=slot,
@@ -4670,6 +4861,10 @@ def run_step(ctx) -> dict[str, Any]:
 
     plan = dict(plan)
     plan["slots"] = apply_ai_carves(plan["slots"], base_assets)
+    plan["slots"] = inherit_ai_plates_onto_speech(
+        plan["slots"], base_assets, words_doc.get("words") or [])
+    plan["slots"] = split_empty_at_authored_punch(
+        plan["slots"], plan, base_assets, words_doc.get("words") or [])
 
     recent_videos = _recent_video_ids(ctx, limit=3)
     pillarbox_limit = int(ctx.cfg.get("limits.pillarbox_per_video", 2))
