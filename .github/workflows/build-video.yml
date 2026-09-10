@@ -345,13 +345,13 @@ jobs:
       - name: Сборка ролика (A и B)
         run: |
           set -o pipefail
-          # Журнал сборки пишется рядом с выводом: логи Actions читаются через
-          # API кусками с конца, и строка с ошибкой в них не попадает — на
-          # прогоне 33666703565 три попытки вытащить её не дали ничего.
-          # Файл же уезжает в артефакт и в Summary целиком.
+          # Mid-critic в конфиге — GLM. Секрет GLM в GitHub сейчас 401
+          # (token expired). Пока ключ мёртвый — сразу Grok, без трёх
+          # бесполезных ретраев. Gemini не вызываем.
           mkdir -p output
           python -m src.cli \
             --set providers.mode=${{ env.BUILD_PROVIDERS_MODE }} \
+            --set vision.primary=grok \
             --set vision.fallback=grok \
             ${{ env.BUILD_HEYGEN_SOURCE != '' && format('--set heygen.source={0}', env.BUILD_HEYGEN_SOURCE) || '' }} \
             ${{ env.BUILD_SKIP_VISION == 'true' && '--set vision.skip_live=true' || '' }} \

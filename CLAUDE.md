@@ -60,3 +60,7 @@ Cursor: сценарий + пуш + заявка + проверка mp4 на 9/1
 `assets/avatar_clips/<id>/`, затем снова Actions с `heygen_source: prepared`.
 Avatar IV нельзя. 400 MIME при живом ключе — чинить код и перезапускать
 Actions из кэша, не MCP.
+
+GLM: если ключ мёртвый (401) — не ретраить, сразу Grok (`XAI_API_KEY`).
+Озвучка только ElevenLabs в Actions (запас +18…25 %, P3 режет паузы). HeyGen
+TTS нельзя. Аватар — только на кусках присутствия после нарезки.

@@ -8,6 +8,6 @@
   "skip_generate": false,
   "publish_release": false,
   "heygen_source": "prepared",
-  "requested_at": "2026-09-10T16:10:00Z",
-  "reason": "0049 из кэша с P8: GLM 401 → Grok; аватар prepared, без нового TTS"
+  "requested_at": "2026-09-10T16:15:00Z",
+  "reason": "0049 из кэша с P8: critic Grok (GLM 401), аватар prepared, TTS ElevenLabs без переозвучки"
 }
