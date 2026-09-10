@@ -877,5 +877,27 @@ def test_inherited_hall_skips_the_emphasis_card():
         brand_icons=None, words=[], plate_src=None,
         traits={"number", "comparison"}, bg_file="/tmp/hall.mp4")
     assert rung == "inherit"
+
+
+def test_fs_overlay_neighbour_skips_the_emphasis_card():
+    """Lead-in to СИНГУЛЯРНОСТЬ must not slam the word a second early."""
+    from src.p11_assemble.assemble import VisualBudget, _close_empty_slot
+
+    rung, hero, overlay = _close_empty_slot(
+        {"index": 19, "start": 42.866, "end": 44.001, "duration": 1.135,
+         "block_id": "b4", "beat": ""},
+        {"id": "b4",
+         "text": "За конечное время — сингулярность.",
+         "emphasis_word": "сингулярность",
+         "overlay": {"type": "fullscreen_text", "content": "СИНГУЛЯРНОСТЬ"}},
+        budget=VisualBudget(),
+        picker=None,
+        catalog=None,
+        plan={"duration_sec": 68, "title": "", "sources": []},
+        variant="A", seed=1, recent_videos=[], used_templates=[],
+        brand_icons=None, words=[], plate_src={"file": "/tmp/a.mp4"},
+        traits={"device"}, bg_file="/tmp/a.mp4")
+    assert rung == ""
+    assert hero is None
     assert hero is None
     assert overlay is None

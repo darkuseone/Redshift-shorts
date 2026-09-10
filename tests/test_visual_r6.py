@@ -128,6 +128,18 @@ def test_hero_word_requires_spoken_overlap():
     assert spoken["word"].lower() == "миллион"
 
 
+def test_hero_word_clears_when_slot_has_no_speech():
+    from src.p11_assemble.assemble import _hero_content
+
+    block = {
+        "emphasis_word": "сингулярность",
+        "text": "За конечное время — сингулярность.",
+    }
+    slot = {"start": 45.151, "end": 48.151, "role": "develop"}
+    quiet = _hero_content(block, slot, None, words=[])
+    assert quiet["word"] == ""
+
+
 def test_logo_brand_close_default_tagline_empty():
     from src.lib.render.hyperframes.templates import _LBC_DEFAULT_TAG, _lbc_copy
     assert _LBC_DEFAULT_TAG == ""

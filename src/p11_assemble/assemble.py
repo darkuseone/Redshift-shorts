@@ -1618,7 +1618,7 @@ def _hero_content(block: dict[str, Any], slot: dict[str, Any], icons,
     word = str(block.get("emphasis_word") or "").strip()
     # Oversize/headline «МИЛЛИОН» on a Poincaré beat: the emphasis belongs to
     # the block, not this window. Empty word drops those heroes via _HERO_NEEDS.
-    if word and words:
+    if word and words is not None:
         spoken = False
         for item in words:
             token = str(item.get("display") or item.get("word") or "")
@@ -4135,6 +4135,11 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
             "why": "лестница §7.2, ступень 4: есть кадр под приём и слот ≥ "
                    f"{parallax_min:g} с",
         }
+
+    # Authored FS punch owns the big word. A neighbour empty C used to slam
+    # «СИНГУЛЯРНОСТЬ» 1 s early and oversize it again after the VO.
+    if str((block.get("overlay") or {}).get("type") or "") == "fullscreen_text":
+        return "", None, None
 
     # 1. Карточка-ключ — акцентное слово блока, по возможности с медиа. Идёт
     #    последней среди приёмов: подходит любому блоку, поэтому раньше она
