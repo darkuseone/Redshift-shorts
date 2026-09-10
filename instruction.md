@@ -41,13 +41,14 @@
 | Cursor | сценарий, правки кода, пуш, заявка `config/ci_build_request.json`, просмотр mp4 на **9/10** | live TTS, live футаж, live рендер «потому что так быстрее» |
 
 Ключи лежат **только** в GitHub Secrets. В Cursor их нет и не должно быть.
+`python -m src.cli run` live в Cursor запрещён, даже «чтобы проверить».
 
 Как запускается сборка:
 
-1. Агент пушит код в ветку.
-2. Пишет `config/ci_build_request.json` (сценарий, `providers_mode: live`, `heygen_source: api`, `publish_release: false`) и пушит — это стартует `build-video`. Либо человек жмёт workflow_dispatch в UI.
+1. Агент пушит код в ветку. Если правки чата ещё не на GitHub — сначала пуш, потом заявка. Локально ролик не собирается.
+2. Пишет `config/ci_build_request.json` (сценарий, `providers_mode: live`, `heygen_source: api` или `prepared` после MCP, `publish_release: false`) и пушит — это стартует `build-video`. Либо человек жмёт workflow_dispatch в UI.
 3. Готовый mp4 едет сюда артефактом `redshift-output` и превью в `assets/preview/`. Агент смотрит хук, удержание, футаж, VFX, звук. **Ниже 9/10 — не релиз**, а новый прогон из кэша (`from_step`, без новой оплаты TTS/HeyGen, если они уже верные).
-4. Единственный live-вызов в Cursor: **секрет HeyGen в Actions не сработал** (401/403/квота). Тогда только сегменты из `avatar_request.json`, только **аватар 5** (`heygen.avatar_id` / лук `99ccc74e…`), только **Avatar V**, озвучка уже ElevenLabs в wav. Клипы коммитятся в `assets/avatar_clips/<id>/`, следующий прогон Actions — `--from P6` и `heygen_source: prepared`. Avatar IV запрещён. **400/400543 (MIME) — не отказ ключа:** чинить HTTP и перезапускать Actions из кэша, MCP не вызывать.
+4. Единственный live-вызов в Cursor: **секрет HeyGen в Actions не сработал** (401/403/квота). Тогда только сегменты из `avatar_request.json`, только **аватар 5** (лук `99ccc74e…` из `heygen.avatar_id`, не секрет `HEYGEN_AVATAR_ID`, не group id), только **Avatar V**, озвучка уже ElevenLabs в wav. Клипы коммитятся в `assets/avatar_clips/<id>/`, следующий прогон Actions — `--from P6` и `heygen_source: prepared`. Avatar IV запрещён. **400/400543 (MIME) — не отказ ключа:** чинить HTTP и перезапускать Actions из кэша, MCP не вызывать.
 
 `workflow_dispatch` из Cursor часто отвечает 403 — это нормально: заявка в git заменяет кнопку.
 
@@ -463,6 +464,8 @@ semantic pass: в отчёте `qc_skipped_semantic`, статус не «выд
 | 2026-09-10 | HeyGen upload шлёт `audio/x-wav` и при 400543 повторяет со снятым типом | прогон 34493460154: ключ живой, MIME `audio/wav != audio/x-wav`; это не MCP |
 | 2026-09-10 | P5 подхватывает `avatar` из сценария; полнокадровый добор прирастает к своему блоку | 0049: 34.2 % при QC-2 ≥35 % — develop был off, короткий футаж рядом с лицом не сливался |
 | 2026-09-10 | HeyGen generate — `POST /v3/videos`, Avatar V, webm; v2 не шлёт `background: transparent` | прогон 34494945916: ключ живой, v2 отверг transparent; v2 снимут 2026-10-31 |
+| 2026-09-10 | Look id аватара 5 — из config; секрет `HEYGEN_AVATAR_ID` его не подменяет | секрет содержал другой look; заказчик: всегда `99ccc74e…`, всегда Avatar V |
+| 2026-09-10 | 402 на GitHub `HEYGEN_API` → клипы Avatar V по MCP, затем Actions `heygen_source: prepared` | другой кошелёк; Cursor ролик не собирает |
 
 
 

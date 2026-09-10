@@ -28,7 +28,8 @@ Brown» (78 луков), это и есть «аватар 5» заказчик�
 
 Если в Actions ключ HeyGen не сработал (401/403/квота) — `avatar_request.json`
 и **здесь** HeyGen MCP: `create_video_from_avatar` + wav сегмента, не текст.
-Только **аватар 5**, только **Avatar V**. Avatar IV запрещён.
+Только **аватар 5**, лук `99ccc74e…` из конфига (не секрет `HEYGEN_AVATAR_ID`,
+не group id), только **Avatar V**. Avatar IV запрещён.
 
 400/400543 (`Content type not match audio/wav != audio/x-wav`) — ключ живой,
 это MIME. Чинить заголовок в HTTP и перезапускать Actions из кэша. MCP нет.

@@ -5,6 +5,9 @@ Live: посегментная генерация через HeyGen API. Сег�
 уходит не текст, а конкретный кусок ``voice_final.wav``: только так липсинк
 совпадёт с тем, что реально звучит в ролике (§7.4.4).
 
+Look id аватара 5 берётся из ``heygen.avatar_id`` в конфиге. Секрет
+``HEYGEN_AVATAR_ID`` его не подменяет.
+
 Mock: локальный рендер говорящей фигуры, у которой раскрытие рта следует
 огибающей той же дорожки. Это не «серый прямоугольник»: лицо стоит в полосе
 ``avatar.face_band_y`` брендбука, губы движутся по звуку, и на таком клипе можно
@@ -73,6 +76,22 @@ def heygen_v3_avatar_payload(*, avatar_id: str, audio_url: str,
     if prompt:
         payload["motion_prompt"] = prompt
     return payload
+
+
+def resolve_heygen_look_id(cfg) -> str:
+    """Look id аватара 5. Config — замок; секрет чужой лук не подставляет.
+
+    ``HEYGEN_AVATAR_ID`` в GitHub Secrets однажды оказался другим look
+    (не оливковая рубашка ``99ccc74e…``). Тогда HTTP и ``avatar_request.json``
+    уехали не к аватару 5. Заказчик: всегда этот лук, всегда Avatar V.
+    Секрет читается только если ``heygen.avatar_id`` в конфиге пуст.
+    """
+    configured = str(cfg.get("heygen.avatar_id") or "").strip()
+    if configured:
+        return configured
+    return str(
+        cfg.secret_for("heygen.avatar_id_env", purpose="HeyGen avatar look") or ""
+    ).strip()
 
 
 @dataclass
@@ -283,12 +302,7 @@ class HeyGenAvatar(AvatarProvider):
         base = str(self.cfg.get("heygen.api_base", "https://api.heygen.com"))
         audio_url = self._upload_audio(audio_path)
 
-        # Look id: secret HEYGEN_AVATAR_ID overrides config (same pattern as voice_id_env).
-        avatar_id = str(
-            self.cfg.secret_for("heygen.avatar_id_env", purpose="HeyGen avatar look")
-            or self.cfg.get("heygen.avatar_id")
-            or ""
-        )
+        avatar_id = resolve_heygen_look_id(self.cfg)
         if not avatar_id:
             raise ProviderError("HeyGen avatar_id пуст (config + HEYGEN_AVATAR_ID)")
 

@@ -44,8 +44,9 @@ heygen:
   #
   # Движок — только Avatar V (`avatar_v`), как просил заказчик.
   avatar_id: "99ccc74e764947c394cd4ef210960a6f"
-  # Опциональный оверрайд лука из секрета HEYGEN_AVATAR_ID (Avatar 5 look id).
-  # Пусто/нет секрета → берём avatar_id выше (зелёная рубашка / тату).
+  # Look id аватара 5 — замок. Секрет HEYGEN_AVATAR_ID его не подменяет:
+  # в GitHub однажды лежал другой look, и HTTP/заявка уехали не туда.
+  # Секрет читается только если avatar_id выше пуст.
   avatar_id_env: HEYGEN_AVATAR_ID
   # Движок Avatar V — иначе API молча уходит в Avatar IV.
   engine: "avatar_v"

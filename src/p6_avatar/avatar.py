@@ -26,7 +26,7 @@ import numpy as np
 from ..lib import audio as A
 from ..lib.logging import get_logger
 from ..errors import ProviderError, RedshiftError
-from ..lib.providers.avatar import build_avatar_provider
+from ..lib.providers.avatar import build_avatar_provider, resolve_heygen_look_id
 
 _log = get_logger("p6")
 
@@ -37,7 +37,7 @@ AVATAR_KINDS = ("avatar", "split")
 HEYGEN_MCP_HOW_TO = (
     "Озвучка уже ElevenLabs в поле audio каждого сегмента — не синтезировать "
     "голосом HeyGen. Если HTTP API (секрет HEYGEN_API) недоступен: HeyGen MCP "
-    "create_video_from_avatar, avatar_id = look id (не avatar_group_id), "
+    "create_video_from_avatar, avatar_id = look 99ccc74e… (не group id, не HEYGEN_AVATAR_ID), "
     "engine {type: avatar_v}, audio_asset из wav сегмента, motionPrompt из "
     "заявки (энергичнее жесты). expressiveness не слать — это Avatar IV. "
     "Генерировать только эти сегменты, не весь ролик. Положить клипы в "
@@ -189,10 +189,7 @@ def run_step(ctx) -> dict[str, Any]:
         # Фаза 1 двухфазного конвейера закончилась: речь нарезана, клипов нет.
         # Заявка пишется целиком — по ней аватар генерируется снаружи одним
         # заходом, а не по сегменту за прогон.
-        look_id = str(
-            cfg.secret_for("heygen.avatar_id_env", purpose="HeyGen avatar look")
-            or cfg.get("heygen.avatar_id") or ""
-        )
+        look_id = resolve_heygen_look_id(cfg)
         request = {
             "video_id": plan["video_id"],
             "avatar_id": look_id,

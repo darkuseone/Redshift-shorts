@@ -19,6 +19,7 @@ from src.lib.providers.avatar import (
     HeyGenAvatar,
     heygen_sniffed_audio_type,
     heygen_v3_avatar_payload,
+    resolve_heygen_look_id,
 )
 
 
@@ -128,3 +129,33 @@ def test_heygen_v3_payload_is_avatar_v_with_audio_url_not_legacy_v2():
     assert "background" not in payload
     assert "script" not in payload
     assert "voice_id" not in payload
+
+
+AVATAR5_LOOK = "99ccc74e764947c394cd4ef210960a6f"
+
+
+def test_heygen_look_id_is_locked_avatar5_in_config():
+    cfg = load_config()
+    assert cfg.get("heygen.avatar_id") == AVATAR5_LOOK
+    assert cfg.get("heygen.engine") == "avatar_v"
+
+
+def test_heygen_look_id_ignores_secret_override(monkeypatch):
+    cfg = load_config()
+
+    def _wrong_secret(name, purpose=""):
+        return "3799c0f8f9c846468efedc9680eeac6e"
+
+    monkeypatch.setattr(cfg, "secret_for", _wrong_secret)
+    assert resolve_heygen_look_id(cfg) == AVATAR5_LOOK
+
+
+def test_redshift_0049_prepared_avatar_clips_exist():
+    from pathlib import Path
+
+    clips = Path("assets/avatar_clips/redshift_0049")
+    for index in range(7):
+        webm = clips / f"seg_{index:02d}.webm"
+        wav = clips / f"seg_{index:02d}.wav"
+        assert webm.is_file() and webm.stat().st_size > 0, webm
+        assert wav.is_file() and wav.stat().st_size > 0, wav

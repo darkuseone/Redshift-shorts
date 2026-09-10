@@ -47,12 +47,16 @@ python -m pytest -q --ignore=tests/test_music_library.py
 
 Боевой прогон — **только GitHub Actions** (`build-video`). Cursor не вызывает
 ElevenLabs, HeyGen HTTP, Pexels, GLM, Grok. Ключи в Cursor не просить и не
-подставлять.
+подставлять. `python -m src.cli run` live здесь запрещён, даже «чтобы проверить».
 
-Cursor: сценарий + пуш + заявка `config/ci_build_request.json` (это и есть
-старт сборки) + проверка mp4 на 9/10. Ниже девятки — пересборка в Actions
-из кэша.
+Перед сборкой ветка на GitHub должна содержать правки чата. Незапушенное —
+сначала `git push`. Сборка стартует пушем `config/ci_build_request.json`.
 
-Исключение: если в Actions не сработал **только** ключ HeyGen (401/403/квота) — аватар 5 /
-Avatar V по MCP на нарезанных wav, затем снова Actions. Avatar IV нельзя.
-400 MIME при живом ключе — чинить код и перезапускать Actions из кэша, не MCP.
+Cursor: сценарий + пуш + заявка + проверка mp4 на 9/10. Ниже девятки —
+пересборка в Actions из кэша (`from_step`, без новой оплаты TTS/HeyGen).
+
+Исключение: если в Actions не сработал **только** ключ HeyGen (401/403/квота) —
+аватар 5 / лук `99ccc74e…` / Avatar V по MCP на нарезанных wav, клипы в
+`assets/avatar_clips/<id>/`, затем снова Actions с `heygen_source: prepared`.
+Avatar IV нельзя. 400 MIME при живом ключе — чинить код и перезапускать
+Actions из кэша, не MCP.
