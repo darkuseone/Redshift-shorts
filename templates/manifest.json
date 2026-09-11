@@ -598,7 +598,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -5408,7 +5409,8 @@
       "renderer": "hero-plate",
       "last_used_in": [
         "redshift_0046",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -5443,7 +5445,8 @@
       "renderer": "hero-headline",
       "last_used_in": [
         "redshift_0046",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -5630,7 +5633,8 @@
       "renderer": "hero-text-column",
       "last_used_in": [
         "redshift_0046",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -6064,7 +6068,8 @@
       "renderer": "hero-log",
       "last_used_in": [
         "redshift_0047",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
