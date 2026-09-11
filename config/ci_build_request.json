@@ -6,5 +6,5 @@
   "skip_generate": true,
   "skip_vision": true,
   "requested_by": "cursor",
-  "note": "0049 P11 SLOT=FILE. Locks: 17.58 press_c8e1aa428b ≥5.2с; 29.3 pexels_v34459460; 41.02 LOCK pexels_v10884417 exclusive; 52.73 pexels_v37695140; 64.45 pexels_v12908964; 5.8 brand plate не press. P8 live=0. P12 live xAI=0 (skip_vision). Без TTS/HeyGen/Gemini image. Без P7."
+  "note": "0049 P11 round2 SLOT=FILE. Locks: 5.8/7.18 brand не press; 17.58 press_c8e1aa428b ≥5.2с; 29.3 pexels_v34459460; 41.02 LOCK pexels_v10884417 exclusive; 52.73 pexels_v37695140; 64.45 pexels_v12908964. P12 local semantic (brief+locks), live xAI=0. P8 live=0. Без TTS/HeyGen/Gemini image. Без P7."
 }
