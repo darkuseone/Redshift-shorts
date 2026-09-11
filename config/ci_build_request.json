@@ -6,6 +6,6 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 phase1e: voice seed with matching draft/speech_map; prepared MCP path",
+  "note": "0050 phase1f: seed wav+speech_map only; fresh P1 avatar plan; MCP next",
   "tts_pace": 1.2
 }
