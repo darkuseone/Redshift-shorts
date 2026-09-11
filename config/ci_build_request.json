@@ -1,10 +1,10 @@
 {
   "script": "scripts/redshift_0049.json",
   "providers_mode": "auto",
-  "from_step": "P7",
+  "from_step": "P11",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0049 P7: leftover жидкости на Навье-Стокса до live; пустой слот не берёт typing соседа; не dataviz на fluid-запросы. xAI: leftover без Grok, P12 6 проб если QC-12/30 зелёные. Без TTS/HeyGen/Gemini image."
+  "note": "0049 P11: brief окна речи ветирует лестницу; пустой Навье-Стокса не dataviz/browser/клава, плита вода/крыло. Вода уже в accepted. xAI: P8=0, P12 6 проб если QC-12/30 зелёные. Без TTS/HeyGen/Gemini image."
 }
