@@ -1325,6 +1325,21 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
     return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
 
 
+def _avatar_bg_denied(brief: dict[str, Any], hay: str) -> bool:
+    """Avatar plates follow the spoken family; open windows skip foreign stock.
+
+    leftover_stock_off_topic must not use this gate: concept-less VO used to
+    keep leftover (QC-12). 0049 64.45 still put a wing behind «дыра в стене».
+    """
+    if brief_reject_reason(brief, hay):
+        return True
+    if str(brief.get("kind") or "") != "open":
+        return False
+    blob = str(hay or "")
+    return (_hay_has_marker(blob, FLUID_QUERY_MARKERS)
+            or _hay_has_marker(blob, CODE_QUERY_MARKERS))
+
+
 def _avatar_bg_plates(slots: list[dict[str, Any]],
                        prepared: dict[int, dict[str, Any]],
                        assets: dict[int, dict[str, Any]],
@@ -1399,7 +1414,7 @@ def _avatar_bg_plates(slots: list[dict[str, Any]],
         picked: str | None = None
         for step in range(len(pool)):
             path, hay = pool[(cursor + step) % len(pool)]
-            if brief_reject_reason(brief, hay):
+            if _avatar_bg_denied(brief, hay):
                 continue
             picked = path
             cursor = cursor + step + 1

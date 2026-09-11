@@ -125,7 +125,10 @@ def _spoken_at(plan: dict[str, Any], t: float, window: float = 1.2,
     timeline = speech if speech is not None else _speech_timeline(plan)
     if timeline:
         tokens = _spoken_tokens(timeline, t, min(window, 0.5))
-        if not tokens:
+        # One leftover adjective («Страшное») must not hide «Навье-Стокса»
+        # from the water plate at 41.02 — but two tokens already start a
+        # new sentence, so 0048's card stays unpoisoned by «жидкость».
+        if len(tokens) < 2:
             tokens = _spoken_tokens(timeline, t, window)
         if tokens:
             return " ".join(tokens)

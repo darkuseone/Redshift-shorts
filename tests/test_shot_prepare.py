@@ -253,6 +253,52 @@ def test_avatar_bg_skips_html_code_on_clay_prize():
     assert out[19] == "/tmp/library.mp4"
 
 
+def test_avatar_bg_skips_water_on_clay_and_wing_on_wall():
+    """34590417259: dam behind Clay (52.73), wing behind «дыра в стене» (64.45)."""
+    from src.p11_assemble.assemble import _avatar_bg_plates
+
+    slots = [
+        {"index": 8, "kind": "footage", "start": 23.5, "end": 25.7},
+        {"index": 10, "kind": "footage", "start": 28.6, "end": 31.4},
+        {"index": 9, "kind": "footage", "start": 25.7, "end": 28.6},
+        {"index": 19, "kind": "avatar", "start": 52.7, "end": 56.2},
+        {"index": 23, "kind": "avatar", "start": 62.8, "end": 66.5},
+    ]
+    prepared = {
+        8: {"dst": "/tmp/water.mp4"},
+        10: {"dst": "/tmp/wing.mp4"},
+        9: {"dst": "/tmp/library.mp4"},
+    }
+    assets = {
+        8: {
+            "page_url": "https://www.pexels.com/video/water-flowing-through-a-discharge-pipe-10884417/",
+            "query": "industrial pipes water plant",
+        },
+        10: {
+            "page_url": "https://www.pexels.com/video/a-view-of-the-clouds-from-an-airplane-16865644/",
+            "query": "airplane wing in flight clouds",
+        },
+        9: {
+            "page_url": "https://www.pexels.com/video/quiet-library-aisle-with-rows-of-books-37695140/",
+            "query": "quiet library aisle books",
+        },
+    }
+    words = [
+        {"display": "Только", "start": 52.70, "end": 53.02},
+        {"display": "приз", "start": 53.06, "end": 53.30},
+        {"display": "Клея", "start": 53.30, "end": 53.66},
+        {"display": "уравнения", "start": 53.84, "end": 54.29},
+        {"display": "Это", "start": 63.68, "end": 64.13},
+        {"display": "первая", "start": 64.27, "end": 64.54},
+        {"display": "дыра", "start": 64.86, "end": 65.10},
+        {"display": "в", "start": 65.10, "end": 65.19},
+        {"display": "стене,", "start": 65.19, "end": 65.46},
+    ]
+    out = _avatar_bg_plates(slots, prepared, assets, plan={}, words=words)
+    assert out[19] == "/tmp/library.mp4"
+    assert out[23] == "/tmp/library.mp4"
+
+
 def test_fullscreen_cap_reads_brandbook_limit():
     from src.lib.config import load_config
     from src.p11_assemble.assemble import _fullscreen_cap

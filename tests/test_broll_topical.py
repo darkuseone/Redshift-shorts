@@ -521,6 +521,40 @@ def test_fluid_empty_slot_ladder_is_not_dataviz():
     assert hero is None
 
 
+def test_lean_empty_slot_ladder_is_not_dataviz():
+    """34590417259 29.30: mk-line-graph «17 / стокса» on «Астра не искала»."""
+    from src.p11_assemble.assemble import VisualBudget, _close_empty_slot
+
+    slot = {
+        "index": 10, "start": 28.599, "end": 31.389, "duration": 2.79,
+        "kind": "footage", "role": "develop", "block_id": "b4", "beat": "",
+    }
+    block = {
+        "id": "b4",
+        "text": "Сама Астра доказательство не искала. Семнадцать часов. "
+                "Называются уравнения Навье-Стокса.",
+        "emphasis_word": "семнадцать",
+    }
+    words = [
+        {"display": "Сама", "start": 28.6, "end": 28.9},
+        {"display": "Астра", "start": 28.9, "end": 29.3},
+        {"display": "доказательство", "start": 29.4, "end": 29.8},
+        {"display": "не", "start": 30.0, "end": 30.2},
+        {"display": "искала.", "start": 30.2, "end": 30.6},
+        {"display": "Семнадцать", "start": 30.9, "end": 31.4},
+    ]
+    rung, hero, overlay = _close_empty_slot(
+        slot, block,
+        budget=VisualBudget(),
+        picker=None, catalog=None,
+        plan={"duration_sec": 70, "title": "", "sources": []},
+        variant="A", seed=1, recent_videos=[], used_templates=[],
+        brand_icons=None, words=words, plate_src=None,
+        traits={"number", "brand"}, bg_file="/tmp/typing.mp4")
+    assert rung != "dataviz"
+    assert overlay is None or overlay.get("type") != "dataviz"
+
+
 def test_window_traits_ignore_semnadtsat_outside_the_spoken_window():
     from src.lib.meaning import window_traits
     from src.lib.query import spoken_slot_text
@@ -592,6 +626,8 @@ def test_astra_window_rejects_airplane_brief():
         brief, "airplane wing in flight clouds pexels_v16865644")
     assert not brief_reject_reason(
         brief, "code editor formal proof theorem prover")
+    assert brief_reject_reason(
+        brief, "typing", rung="dataviz", template="data-viz/mk-line-graph")
 
 
 def test_clay_paper_window_rejects_html_code():
@@ -612,6 +648,11 @@ def test_clay_paper_window_rejects_html_code():
         "colorful-html-code-on-computer-monitor-34459460/"
     )
     assert brief_reject_reason(brief, hay)
+    water = (
+        "https://www.pexels.com/video/"
+        "water-flowing-through-a-discharge-pipe-10884417/"
+    )
+    assert brief_reject_reason(brief, water)
 
 
 def test_query_mismatch_marks_regular_accept_off_topic():

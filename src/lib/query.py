@@ -709,18 +709,27 @@ def brief_reject_reason(
         return denied
     kind = str(brief.get("kind") or "")
     blob = hay.lower()
+    rung_s = str(rung or "").lower()
+    tpl = str(template or "").lower()
+    dataviz_rung = (
+        rung_s == "dataviz"
+        or any(m in tpl for m in ("dataviz", "data-viz", "mk-line", "line-graph"))
+        or _hay_has_marker(blob, DATAVIZ_DENY_MARKERS)
+    )
     if kind == "lean":
+        if dataviz_rung:
+            return "brief veto: dataviz on lean window"
         if _hay_has_marker(blob, FLUID_QUERY_MARKERS):
             return "brief veto: fluid footage on lean window"
         return None
     if kind == "paper":
         if _hay_has_marker(blob, CODE_QUERY_MARKERS):
             return "brief veto: code/keyboard on paper window"
+        if _hay_has_marker(blob, FLUID_QUERY_MARKERS):
+            return "brief veto: fluid footage on paper window"
         return None
     if kind != "fluid":
         return None
-    rung_s = str(rung or "").lower()
-    tpl = str(template or "").lower()
     if rung_s in FLUID_LADDER_FORBIDDEN_RUNGS:
         return f"brief veto: fluid slot rejects ladder {rung_s}"
     if any(marker in tpl for marker in (
