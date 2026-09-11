@@ -1,256 +1,3815 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-11",
-  "count": 7,
+  "updated": "2026-09-10",
+  "count": 105,
   "items": [
     {
-      "id": "pexels_v30471022",
-      "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/man-reading-newspaper-at-modern-cafe-table-30471022/",
-      "phash": "ceae904552791f4e",
+      "id": "nasa_PIA12110",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA12110",
+      "phash": "ee801957c67829cf",
       "tags": [
-        "news",
-        "article",
-        "screen"
+        "galaxy",
+        "galaxies",
+        "deep",
+        "field",
+        "space",
+        "universe",
+        "cosmos",
+        "stars",
+        "starfield",
+        "Hubble Space Telescope"
       ],
-      "vision_summary": "Мужчина в куртке Columbia за столом читает бумажную газету Information",
-      "score": 0.12,
-      "duration_sec": 8.9,
-      "used_in": [
-        "redshift_0049"
-      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
       "last_used": null,
-      "added": "2026-09-11",
+      "added": "2026-09-01",
       "phashes": [
-        "ceae904552791f4e",
-        "efae92445a59854e",
-        "cbae9e54d2693512"
+        "ee801957c67829cf"
       ],
-      "width": 1080,
-      "height": 1920,
-      "file": "pexels/pexels_v30471022.mp4",
+      "width": 1246,
+      "height": 1280,
+      "file": "seed/galaxy/nasa_PIA12110.jpg",
       "extra": {
-        "attribution": "Pexels / Esra Afşar",
-        "author": "Esra Afşar",
-        "judged_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток."
+        "attribution": "NASA / STScI (Hubble)",
+        "seed_topic": "galaxy"
       }
     },
     {
-      "id": "pexels_v34459460",
+      "id": "nasa_astronomers-set-a-new-galaxy-distance-record_17389972462_o",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-astronomers-set-a-new-galaxy-distance-record_17389972462_o",
+      "phash": "1966669999666699",
+      "tags": [
+        "galaxy",
+        "galaxies",
+        "deep",
+        "field",
+        "space",
+        "universe",
+        "cosmos",
+        "stars",
+        "starfield",
+        "Hubble",
+        "HST",
+        "Hubble Space Telescope"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "1966669999666699"
+      ],
+      "width": 1280,
+      "height": 1280,
+      "file": "seed/galaxy/nasa_astronomers-set-a-new-galaxy-distance-record_17389972462_o.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "galaxy"
+      }
+    },
+    {
+      "id": "nasa_0203046",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-0203046",
+      "phash": "e1e1e03c1e1f0f87",
+      "tags": [
+        "galaxy",
+        "galaxies",
+        "deep",
+        "field",
+        "space",
+        "universe",
+        "cosmos",
+        "stars",
+        "starfield",
+        "Hubble Space Telescope",
+        "HST",
+        "Advanced Camera for Surveys",
+        "ACS",
+        "Galaxy",
+        "Tadpole"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "e1e1e03c1e1f0f87"
+      ],
+      "width": 1756,
+      "height": 1920,
+      "file": "seed/galaxy/nasa_0203046.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "galaxy"
+      }
+    },
+    {
+      "id": "nasa_PIA03515",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA03515",
+      "phash": "16cc698ece1a2d2d",
+      "tags": [
+        "nebula",
+        "star",
+        "forming",
+        "region",
+        "space",
+        "gas",
+        "dust",
+        "Carina Nebula",
+        "Spitzer Space Telescope"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "16cc698ece1a2d2d"
+      ],
+      "width": 1920,
+      "height": 1508,
+      "file": "seed/nebula/nasa_PIA03515.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "nebula"
+      }
+    },
+    {
+      "id": "nasa_PIA14415",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA14415",
+      "phash": "c5e13e3cc4583b9c",
+      "tags": [
+        "nebula",
+        "star",
+        "forming",
+        "region",
+        "space",
+        "gas",
+        "dust",
+        "Chandra X-ray Observatory,Hubble Space Telescope,Spitzer Space T"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "c5e13e3cc4583b9c"
+      ],
+      "width": 1920,
+      "height": 1536,
+      "file": "seed/nebula/nasa_PIA14415.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "nebula"
+      }
+    },
+    {
+      "id": "nasa_PIA13118",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA13118",
+      "phash": "c93c6699e8671cc9",
+      "tags": [
+        "nebula",
+        "star",
+        "forming",
+        "region",
+        "space",
+        "gas",
+        "dust",
+        "Wide-field Infrared Survey Explorer WISE"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "c93c6699e8671cc9"
+      ],
+      "width": 1919,
+      "height": 1577,
+      "file": "seed/nebula/nasa_PIA13118.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "nebula"
+      }
+    },
+    {
+      "id": "nasa_iss061e003881",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss061e003881",
+      "phash": "d12ea6d919a66699",
+      "tags": [
+        "earth",
+        "orbit",
+        "space",
+        "station",
+        "planet",
+        "atmosphere",
+        "horizon",
+        "globe"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-06",
+      "added": "2026-09-01",
+      "phashes": [
+        "d12ea6d919a66699"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/earth-orbit/nasa_iss061e003881.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "earth-orbit"
+      }
+    },
+    {
+      "id": "nasa_iss002e9767",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss002e9767",
+      "phash": "d939a6e666d189c8",
+      "tags": [
+        "earth",
+        "orbit",
+        "space",
+        "station",
+        "planet",
+        "atmosphere",
+        "horizon",
+        "globe"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-06",
+      "added": "2026-09-01",
+      "phashes": [
+        "d939a6e666d189c8"
+      ],
+      "width": 1920,
+      "height": 1312,
+      "file": "seed/earth-orbit/nasa_iss002e9767.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "earth-orbit"
+      }
+    },
+    {
+      "id": "nasa_iss037e024908",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss037e024908",
+      "phash": "cc1be626e4987cc9",
+      "tags": [
+        "earth",
+        "orbit",
+        "space",
+        "station",
+        "planet",
+        "atmosphere",
+        "horizon",
+        "globe",
+        "SOLAR ARRAYS  EARTH OBSERVATIONS (FROM SPACE)  EXPEDITION 37",
+        "TWEETED PHOTO",
+        "SOCIAL MEDIA"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "cc1be626e4987cc9"
+      ],
+      "width": 1275,
+      "height": 1920,
+      "file": "seed/earth-orbit/nasa_iss037e024908.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "earth-orbit"
+      }
+    },
+    {
+      "id": "nasa_S74-23458",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-S74-23458",
+      "phash": "15d25a9b6a78251e",
+      "tags": [
+        "sun",
+        "solar",
+        "flare",
+        "corona",
+        "plasma",
+        "star"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-01",
+      "phashes": [
+        "15d25a9b6a78251e"
+      ],
+      "width": 1920,
+      "height": 1511,
+      "file": "seed/sun/nasa_S74-23458.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "sun",
+        "blocked_for_sci": true,
+        "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
+      }
+    },
+    {
+      "id": "nasa_AFRC2017-0233-007",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-AFRC2017-0233-007",
+      "phash": "1e3361cc67339893",
+      "tags": [
+        "sun",
+        "solar",
+        "flare",
+        "corona",
+        "plasma",
+        "star",
+        "Sun",
+        "Total Solar Eclipse",
+        "Partial Solar Eclipse",
+        "G-III",
+        "Gulfstream III",
+        "Armstrong Flight Research Center",
+        "AFRC"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "1e3361cc67339893"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/sun/nasa_AFRC2017-0233-007.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / AFRC",
+        "seed_topic": "sun",
+        "blocked_for_sci": true,
+        "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
+      }
+    },
+    {
+      "id": "nasa_AFRC2017-0233-008",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-AFRC2017-0233-008",
+      "phash": "183361cc66b39967",
+      "tags": [
+        "sun",
+        "solar",
+        "flare",
+        "corona",
+        "plasma",
+        "star",
+        "Sun",
+        "Total Solar Eclipse",
+        "Partial Solar Eclipse",
+        "G-III",
+        "Gulfstream III",
+        "Armstrong Flight Research Center",
+        "AFRC"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "183361cc66b39967"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/sun/nasa_AFRC2017-0233-008.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / AFRC",
+        "seed_topic": "sun",
+        "blocked_for_sci": true,
+        "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
+      }
+    },
+    {
+      "id": "nasa_as08-14-2506",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-as08-14-2506",
+      "phash": "176a68a5c794da19",
+      "tags": [
+        "moon",
+        "lunar",
+        "surface",
+        "crater",
+        "apollo",
+        "regolith",
+        "APOLLO 8",
+        "APOLLO PROJECT",
+        "LUNAR CRATERS",
+        "LUNAR GEOLOGY",
+        "LUNAR PHOTOGRAPHS",
+        "LUNAR SURFACE",
+        "LUNAR TOPOGRAPHY",
+        "MOON",
+        "ONBOARD ACTIVITIES",
+        "PHOTOGRAPHY"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "176a68a5c794da19"
+      ],
+      "width": 1920,
+      "height": 1920,
+      "file": "seed/moon/nasa_as08-14-2506.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "moon",
+        "blocked_for_sci": true,
+        "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
+      }
+    },
+    {
+      "id": "nasa_as15-88-12002",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-as15-88-12002",
+      "phash": "04f94bc65f807c87",
+      "tags": [
+        "moon",
+        "lunar",
+        "surface",
+        "crater",
+        "apollo",
+        "regolith",
+        "APOLLO 15 FLIGHT",
+        "APOLLO PROJECT",
+        "CRATERS",
+        "LUNAR EXPLORATION",
+        "LUNAR SURFACE",
+        "LUNAR TOPOGRAPHY",
+        "MOON"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "04f94bc65f807c87"
+      ],
+      "width": 1920,
+      "height": 1912,
+      "file": "seed/moon/nasa_as15-88-12002.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "moon",
+        "blocked_for_sci": true,
+        "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
+      }
+    },
+    {
+      "id": "nasa_as08-13-2344",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-as08-13-2344",
+      "phash": "153a604f58b3b7a4",
+      "tags": [
+        "moon",
+        "lunar",
+        "surface",
+        "crater",
+        "apollo",
+        "regolith",
+        "APOLLO 8",
+        "APOLLO PROJECT",
+        "CRATERS",
+        "LUNAR EXPLORATION",
+        "LUNAR SURFACE",
+        "MOON",
+        "ONBOARD ACTIVITIES",
+        "PHOTOGRAPHY"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "153a604f58b3b7a4"
+      ],
+      "width": 1851,
+      "height": 1920,
+      "file": "seed/moon/nasa_as08-13-2344.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "moon",
+        "blocked_for_sci": true,
+        "block_reason": "planetary/solar NASA still — off-topic for quantum/AI"
+      }
+    },
+    {
+      "id": "nasa_Artemis II at the pad sunset 01282026_3",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-Artemis II at the pad sunset 01282026_3",
+      "phash": "11da6eb49349c8da",
+      "tags": [
+        "rocket",
+        "launch",
+        "pad",
+        "engine",
+        "flame",
+        "liftoff",
+        "spacecraft",
+        "Space Launch System",
+        "SLS",
+        "Artemis II",
+        "Kennedy Space Center",
+        "Sunset"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "11da6eb49349c8da"
+      ],
+      "width": 1920,
+      "height": 1441,
+      "file": "seed/rocket/nasa_Artemis II at the pad sunset 01282026_3.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "rocket"
+      }
+    },
+    {
+      "id": "nasa_Artemis II at the pad sunsetting jet in background 01292026_6",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-Artemis II at the pad sunsetting jet in background 01292026_6",
+      "phash": "ec19b3366646cc4d",
+      "tags": [
+        "rocket",
+        "launch",
+        "pad",
+        "engine",
+        "flame",
+        "liftoff",
+        "spacecraft",
+        "Kennedy Space Center",
+        "SLS",
+        "Space Launch System",
+        "Artemis II",
+        "Sunset"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "ec19b3366646cc4d"
+      ],
+      "width": 1280,
+      "height": 1920,
+      "file": "seed/rocket/nasa_Artemis II at the pad sunsetting jet in background 01292026_6.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "rocket"
+      }
+    },
+    {
+      "id": "nasa_Artemis II at the pad sunsetting jet in background 01292026_11",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-Artemis II at the pad sunsetting jet in background 01292026_11",
+      "phash": "e31c31c31ce30df6",
+      "tags": [
+        "rocket",
+        "launch",
+        "pad",
+        "engine",
+        "flame",
+        "liftoff",
+        "spacecraft",
+        "Artemis II",
+        "Space Launch System",
+        "SLS",
+        "Kennedy Space Center",
+        "Sunset"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "e31c31c31ce30df6"
+      ],
+      "width": 1920,
+      "height": 1282,
+      "file": "seed/rocket/nasa_Artemis II at the pad sunsetting jet in background 01292026_11.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "rocket"
+      }
+    },
+    {
+      "id": "nasa_GSFC_20171208_Archive_e000122",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-GSFC_20171208_Archive_e000122",
+      "phash": "119749aeacf4dc90",
+      "tags": [
+        "ice",
+        "antarctic",
+        "arctic",
+        "glacier",
+        "sheet",
+        "frozen",
+        "snow",
+        "polar",
+        "NASA’s Aerial Survey of Polar Ice Expands Its Arctic Reach"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "119749aeacf4dc90"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/ice/nasa_GSFC_20171208_Archive_e000122.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "ice"
+      }
+    },
+    {
+      "id": "nasa_GSFC_20171208_Archive_e000121",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-GSFC_20171208_Archive_e000121",
+      "phash": "ef8a90c42d1d5b72",
+      "tags": [
+        "ice",
+        "antarctic",
+        "arctic",
+        "glacier",
+        "sheet",
+        "frozen",
+        "snow",
+        "polar",
+        "NASA’s Aerial Survey of Polar Ice Expands Its Arctic Reach"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-01",
+      "phashes": [
+        "ef8a90c42d1d5b72"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/ice/nasa_GSFC_20171208_Archive_e000121.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "ice"
+      }
+    },
+    {
+      "id": "nasa_iss066e137375",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss066e137375",
+      "phash": "c966c83d29d71dc4",
+      "tags": [
+        "desert",
+        "dunes",
+        "sand",
+        "arid",
+        "dry",
+        "tundra"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "c966c83d29d71dc4"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/desert/nasa_iss066e137375.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "desert"
+      }
+    },
+    {
+      "id": "nasa_iss070e030577",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss070e030577",
+      "phash": "c1b150dd1f4d518f",
+      "tags": [
+        "desert",
+        "dunes",
+        "sand",
+        "arid",
+        "dry",
+        "tundra"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "c1b150dd1f4d518f"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/desert/nasa_iss070e030577.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "desert"
+      }
+    },
+    {
+      "id": "nasa_iss066e137392",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss066e137392",
+      "phash": "178f609529b245f5",
+      "tags": [
+        "desert",
+        "dunes",
+        "sand",
+        "arid",
+        "dry",
+        "tundra"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "178f609529b245f5"
+      ],
+      "width": 1920,
+      "height": 1280,
+      "file": "seed/desert/nasa_iss066e137392.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "desert"
+      }
+    },
+    {
+      "id": "nasa_PIA14052",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA14052",
+      "phash": "30e6dfc07f10262d",
+      "tags": [
+        "laboratory",
+        "lab",
+        "clean",
+        "room",
+        "engineer",
+        "science",
+        "research",
+        "instrument",
+        "Aquarius"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "30e6dfc07f10262d"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/lab/nasa_PIA14052.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "lab"
+      }
+    },
+    {
+      "id": "nasa_PIA14053",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA14053",
+      "phash": "0c979a3c35dbc03a",
+      "tags": [
+        "laboratory",
+        "lab",
+        "clean",
+        "room",
+        "engineer",
+        "science",
+        "research",
+        "instrument",
+        "Aquarius"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "0c979a3c35dbc03a"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/lab/nasa_PIA14053.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "lab"
+      }
+    },
+    {
+      "id": "nasa_PIA13308",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA13308",
+      "phash": "f45c462ab99eb189",
+      "tags": [
+        "laboratory",
+        "lab",
+        "clean",
+        "room",
+        "engineer",
+        "science",
+        "research",
+        "instrument",
+        "Mars Science Laboratory MSL"
+      ],
+      "vision_summary": "",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-02",
+      "phashes": [
+        "f45c462ab99eb189"
+      ],
+      "width": 1920,
+      "height": 1277,
+      "file": "seed/lab/nasa_PIA13308.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "lab",
+        "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
+      }
+    },
+    {
+      "id": "nasa_PIA20602",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA20602",
+      "phash": "ee96b1694e1299ac",
+      "tags": [
+        "mars",
+        "surface",
+        "rover",
+        "planet",
+        "desert",
+        "crater",
+        "Mars",
+        "Mars Science Laboratory MSL",
+        "Curiosity self-portrait"
+      ],
+      "vision_summary": "Curiosity Self-Portrait at Okoruso Drill Hole",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "ee96b1694e1299ac"
+      ],
+      "width": 1430,
+      "height": 1919,
+      "file": "seed/mars/nasa_PIA20602.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "mars",
+        "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
+      }
+    },
+    {
+      "id": "nasa_PIA20603",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA20603",
+      "phash": "ce96b3a96c12139d",
+      "tags": [
+        "mars",
+        "surface",
+        "rover",
+        "planet",
+        "desert",
+        "crater",
+        "Mars",
+        "Mars Science Laboratory MSL"
+      ],
+      "vision_summary": "Curiosity Self-Portrait at Okoruso Drill Hole",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "ce96b3a96c12139d"
+      ],
+      "width": 1496,
+      "height": 1919,
+      "file": "seed/mars/nasa_PIA20603.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "mars",
+        "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
+      }
+    },
+    {
+      "id": "nasa_PIA19142",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA19142",
+      "phash": "17cad984b631293d",
+      "tags": [
+        "mars",
+        "surface",
+        "rover",
+        "planet",
+        "desert",
+        "crater",
+        "Mars",
+        "Mars Science Laboratory MSL"
+      ],
+      "vision_summary": "Curiosity Self-Portrait at Mojave Site on Mount Sharp",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "17cad984b631293d"
+      ],
+      "width": 1920,
+      "height": 983,
+      "file": "seed/mars/nasa_PIA19142.jpg",
+      "quarantined": true,
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "mars",
+        "block_reason": "mars/MSL rover still — off-theme for quantum/lab"
+      }
+    },
+    {
+      "id": "nasa_GSFC_20171208_Archive_e000495",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-GSFC_20171208_Archive_e000495",
+      "phash": "e9c6a83ec1364db2",
+      "tags": [
+        "telescope",
+        "observatory",
+        "dome",
+        "mirror",
+        "astronomy",
+        "James Webb Space Telescope Mirror Halfway Complete",
+        "nasa",
+        "jwst",
+        "jameswebbspacetelescope",
+        "nasagoddard"
+      ],
+      "vision_summary": "James Webb Space Telescope Mirror Halfway Complete",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "e9c6a83ec1364db2"
+      ],
+      "width": 1277,
+      "height": 1920,
+      "file": "seed/telescope/nasa_GSFC_20171208_Archive_e000495.jpg",
+      "extra": {
+        "attribution": "NASA / GSFC",
+        "seed_topic": "telescope"
+      }
+    },
+    {
+      "id": "nasa_PIA23310",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA23310",
+      "phash": "cc3af3c196c8a393",
+      "tags": [
+        "machine",
+        "machinery",
+        "facility",
+        "tunnel",
+        "test",
+        "engineering",
+        "industrial",
+        "metal",
+        "Mariner"
+      ],
+      "vision_summary": "Mariner 1 in JPL's Spacecraft Assembly Facility",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "cc3af3c196c8a393"
+      ],
+      "width": 1920,
+      "height": 1815,
+      "file": "seed/machine/nasa_PIA23310.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "machine"
+      }
+    },
+    {
+      "id": "nasa_PIA23519",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA23519",
+      "phash": "3aa1a1de4c2f3651",
+      "tags": [
+        "machine",
+        "machinery",
+        "facility",
+        "tunnel",
+        "test",
+        "engineering",
+        "industrial",
+        "metal",
+        "Mars 2020 Rover"
+      ],
+      "vision_summary": "High Bay 1 in JPL's Spacecraft Assembly Facility",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "3aa1a1de4c2f3651"
+      ],
+      "width": 1920,
+      "height": 1277,
+      "file": "seed/machine/nasa_PIA23519.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "machine"
+      }
+    },
+    {
+      "id": "nasa_CXBN2_Students_ELaNa17",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-CXBN2_Students_ELaNa17",
+      "phash": "16ebb392b9e48c44",
+      "tags": [
+        "machine",
+        "machinery",
+        "facility",
+        "tunnel",
+        "test",
+        "engineering",
+        "industrial",
+        "metal",
+        "CSLI",
+        "CubeSat",
+        "Technology",
+        "AES",
+        "ELaNa XVII"
+      ],
+      "vision_summary": "CXBN-2 CubeSat Integration Team in the Morehead State University Spacecraft Integration and Assembly Facility",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "16ebb392b9e48c44"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/machine/nasa_CXBN2_Students_ELaNa17.jpg",
+      "extra": {
+        "attribution": "NASA / HQ",
+        "seed_topic": "machine"
+      }
+    },
+    {
+      "id": "nasa_PIA24803",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA24803",
+      "phash": "df893c3620e39c6c",
+      "tags": [
+        "drill",
+        "drilling",
+        "rig",
+        "core",
+        "sample",
+        "borehole",
+        "geology",
+        "rock",
+        "Mars 2020",
+        "Mars"
+      ],
+      "vision_summary": "Perseverance's Drill After Cleaning Operation",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "df893c3620e39c6c"
+      ],
+      "width": 1280,
+      "height": 956,
+      "file": "seed/drill/nasa_PIA24803.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "drill"
+      }
+    },
+    {
+      "id": "nasa_PIA24806",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA24806",
+      "phash": "123c2de173878ecc",
+      "tags": [
+        "drill",
+        "drilling",
+        "rig",
+        "core",
+        "sample",
+        "borehole",
+        "geology",
+        "rock",
+        "Mars 2020",
+        "Mars"
+      ],
+      "vision_summary": "Perseverance's First Cored Mars Rock in Sample Tube",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": "2026-09-03",
+      "added": "2026-09-02",
+      "phashes": [
+        "123c2de173878ecc"
+      ],
+      "width": 1920,
+      "height": 1440,
+      "file": "seed/drill/nasa_PIA24806.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "drill"
+      }
+    },
+    {
+      "id": "nasa_PIA12348",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-PIA12348",
+      "phash": "c22d65fabe0d09d2",
+      "tags": [
+        "black",
+        "hole",
+        "accretion",
+        "disk",
+        "singularity",
+        "gravity",
+        "Chandra X-ray Observatory,Hubble Space Telescope,Spitzer Space T",
+        "milky way"
+      ],
+      "vision_summary": "Great Observatories Unique Views of the Milky Way",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "c22d65fabe0d09d2"
+      ],
+      "width": 1920,
+      "height": 959,
+      "file": "seed/black-hole/nasa_PIA12348.jpg",
+      "extra": {
+        "attribution": "NASA / JPL",
+        "seed_topic": "black-hole"
+      }
+    },
+    {
+      "id": "nasa_KSC-2009-2435",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-KSC-2009-2435",
+      "phash": "3e949fd860588ed8",
+      "tags": [
+        "telescope",
+        "observatory",
+        "dome",
+        "mirror",
+        "astronomy",
+        "SIC&DH, Hubble, MULE, carrier"
+      ],
+      "vision_summary": "KSC-2009-2435",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "3e949fd860588ed8"
+      ],
+      "width": 1285,
+      "height": 1920,
+      "file": "seed/telescope/nasa_KSC-2009-2435.jpg",
+      "extra": {
+        "attribution": "NASA / KSC",
+        "seed_topic": "telescope"
+      }
+    },
+    {
+      "id": "nasa_KSC-2009-2432",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-KSC-2009-2432",
+      "phash": "f8d1b7608f20e6a9",
+      "tags": [
+        "telescope",
+        "observatory",
+        "dome",
+        "mirror",
+        "astronomy",
+        "SIC&DH, Hubble, MULE, carrier"
+      ],
+      "vision_summary": "KSC-2009-2432",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "f8d1b7608f20e6a9"
+      ],
+      "width": 1920,
+      "height": 1285,
+      "file": "seed/telescope/nasa_KSC-2009-2432.jpg",
+      "extra": {
+        "attribution": "NASA / KSC",
+        "seed_topic": "telescope"
+      }
+    },
+    {
+      "id": "nasa_iss020e009048",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss020e009048",
+      "phash": "f1c68699996c853b",
+      "tags": [
+        "volcano",
+        "eruption",
+        "lava",
+        "magma",
+        "crater",
+        "ash"
+      ],
+      "vision_summary": "Earth Observations taken by the Expedition 20 crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "f1c68699996c853b"
+      ],
+      "width": 1920,
+      "height": 1311,
+      "file": "seed/volcano/nasa_iss020e009048.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "volcano"
+      }
+    },
+    {
+      "id": "nasa_iss011e08489",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss011e08489",
+      "phash": "eec6e6b8d8343131",
+      "tags": [
+        "volcano",
+        "eruption",
+        "lava",
+        "magma",
+        "crater",
+        "ash"
+      ],
+      "vision_summary": "Earth Obsersation taken by the Expedition 11 crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "eec6e6b8d8343131"
+      ],
+      "width": 1920,
+      "height": 1271,
+      "file": "seed/volcano/nasa_iss011e08489.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "volcano"
+      }
+    },
+    {
+      "id": "nasa_iss011e08490",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss011e08490",
+      "phash": "e88c3396ced92663",
+      "tags": [
+        "volcano",
+        "eruption",
+        "lava",
+        "magma",
+        "crater",
+        "ash"
+      ],
+      "vision_summary": "Earth Obsersation taken by the Expedition 11 crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "e88c3396ced92663"
+      ],
+      "width": 1920,
+      "height": 1271,
+      "file": "seed/volcano/nasa_iss011e08490.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "volcano"
+      }
+    },
+    {
+      "id": "nasa_iss005e15375",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-iss005e15375",
+      "phash": "d0ff844f81719a4e",
+      "tags": [
+        "ocean",
+        "sea",
+        "water",
+        "storm",
+        "hurricane",
+        "wave"
+      ],
+      "vision_summary": "Crew Earth Observations (CEO) by Expedition Five Crew",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [
+        "redshift_0047"
+      ],
+      "last_used": "2026-09-02",
+      "added": "2026-09-02",
+      "phashes": [
+        "d0ff844f81719a4e"
+      ],
+      "width": 1920,
+      "height": 1307,
+      "file": "seed/ocean/nasa_iss005e15375.jpg",
+      "extra": {
+        "attribution": "NASA / JSC",
+        "seed_topic": "ocean"
+      }
+    },
+    {
+      "id": "nasa_0401559",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-0401559",
+      "phash": "35b6cac0353ccec2",
+      "tags": [
+        "ocean",
+        "sea",
+        "water",
+        "storm",
+        "hurricane",
+        "wave",
+        "Fincke",
+        "Expedition 9",
+        "Hurricane Ivan",
+        "International Space Station",
+        "ISS"
+      ],
+      "vision_summary": "Earth Science",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "35b6cac0353ccec2"
+      ],
+      "width": 1251,
+      "height": 1920,
+      "file": "seed/ocean/nasa_0401559.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "ocean"
+      }
+    },
+    {
+      "id": "nasa_0401558",
+      "type": "photo",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://images.nasa.gov/details-0401558",
+      "phash": "0270cc6333f933b3",
+      "tags": [
+        "ocean",
+        "sea",
+        "water",
+        "storm",
+        "hurricane",
+        "wave",
+        "Fincke",
+        "Expedition 9",
+        "Hurricane Ivan",
+        "Caribbean",
+        "International Space Station",
+        "ISS"
+      ],
+      "vision_summary": "Earth Science",
+      "score": 0.62,
+      "duration_sec": 0.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-02",
+      "phashes": [
+        "0270cc6333f933b3"
+      ],
+      "width": 1920,
+      "height": 1264,
+      "file": "seed/ocean/nasa_0401558.jpg",
+      "extra": {
+        "attribution": "NASA / MSFC",
+        "seed_topic": "ocean"
+      }
+    },
+    {
+      "id": "pexels_v7565432",
       "type": "video",
       "source": "pexels",
       "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/colorful-html-code-on-computer-monitor-34459460/",
-      "phash": "cc2671cc9e63638e",
+      "url_origin": "https://www.pexels.com/video/a-cloud-of-white-paint-underwater-7565432/",
+      "phash": "0787617195cf6c34",
       "tags": [
-        "gpt-",
+        "viscous",
+        "flow",
+        "slow",
+        "motion",
+        "dark"
+      ],
+      "vision_summary": "White viscous fluid slowly diffusing in dark background",
+      "score": 0.93,
+      "duration_sec": 20.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-02",
+      "phashes": [
+        "0787617195cf6c34",
+        "05010a077f0f1ffd",
+        "c101fefe54032f56"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v7565432.mp4",
+      "extra": {
+        "attribution": "Pexels / MART  PRODUCTION",
+        "author": "MART  PRODUCTION",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v113379",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-113379/",
+      "phash": "05ed77764c468a61",
+      "tags": [
+        "connection",
+        "science",
+        "abstract",
+        "communication",
+        "plexus",
+        "background",
+        "futuristic",
+        "network",
+        "geometric",
+        "cybernetic",
+        "concept",
+        "design",
+        "digital",
+        "line",
+        "3d",
+        "biology",
+        "chaos",
+        "connect",
+        "data",
+        "galaxy",
+        "global",
+        "beautiful wallpaper",
+        "graphic",
+        "internet",
+        "molecular",
+        "particle"
+      ],
+      "vision_summary": "Abstract glowing network of multicolored lines and nodes on black background",
+      "score": 0.78,
+      "duration_sec": 19.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-02",
+      "phashes": [
+        "05ed77764c468a61",
+        "113679931e3266ba",
+        "198c640e7bb335e1"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v113379.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pixabay / Digital_View",
+        "author": "Digital_View",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "yellow-green wireframe grid, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pixabay_v200531",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-200531/",
+      "phash": "e93f253b27bf0018",
+      "tags": [
+        "hexagons",
+        "geometric",
+        "motion",
+        "black-and-white",
+        "beautiful wallpaper",
+        "background",
+        "screensaver"
+      ],
+      "vision_summary": "flowing white hexagons on black geometric background",
+      "score": 0.55,
+      "duration_sec": 10.047,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-02",
+      "phashes": [
+        "e93f253b27bf0018",
+        "e6ce1555a7aec214",
+        "058327ad67bfa284"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v200531.mp4",
+      "extra": {
+        "attribution": "Pixabay / clst5",
+        "author": "clst5",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pexels_v34550739",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-purple-waves-and-particles-animation-34550739/",
+      "phash": "048655cba7373ba8",
+      "tags": [
+        "abstract",
+        "data",
+        "particles",
+        "quantum",
+        "visualization",
+        "tech"
+      ],
+      "vision_summary": "Purple particle wave data visualization",
+      "score": 0.9,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-06",
+      "added": "2026-09-03",
+      "phashes": [
+        "048655cba7373ba8",
+        "15c69ba41b6e51a5",
+        "178313e4b52432bf"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34550739.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "purple particle wave, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pexels_v34912823",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/abstract-floating-blue-particles-on-black-background-34912823/",
+      "phash": "1c731c3200ee73dd",
+      "tags": [
+        "abstract",
+        "data",
+        "particles"
+      ],
+      "vision_summary": "Glowing abstract particles with tendrils on black background",
+      "score": 0.92,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-03",
+      "phashes": [
+        "1c731c3200ee73dd",
+        "fc74191bc9f24827",
+        "10235dd61b2fa81f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v34912823.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "purple microbe-like particles, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pexels_v35288383",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/vibrant-abstract-particle-animation-35288383/",
+      "phash": "19d9662699992e66",
+      "tags": [
+        "abstract",
+        "data",
+        "particles",
+        "quantum",
+        "visualization"
+      ],
+      "vision_summary": "Vibrant abstract particle animation",
+      "score": 0.88,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-03",
+      "phashes": [
+        "19d9662699992e66",
+        "cccc33338c8c6e67",
+        "1bcc3633c9cc3233"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v35288383.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Nicola Narracci",
+        "author": "Nicola Narracci",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "pink-yellow sparkle burst, off-palette for quantum"
+      }
+    },
+    {
+      "id": "pixabay_v113383",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-113383/",
+      "phash": "c22f7da515e4c61c",
+      "tags": [
+        "connection",
+        "science",
+        "abstract",
+        "communication",
+        "plexus",
+        "background",
+        "futuristic",
+        "network",
+        "geometric",
+        "cybernetic",
+        "concept",
+        "design",
+        "digital",
+        "line",
+        "3d",
+        "biology",
+        "chaos",
+        "beautiful wallpaper",
+        "connect",
+        "data",
+        "galaxy",
+        "global",
+        "graphic",
+        "internet",
+        "molecular",
+        "particle",
+        "quantum",
+        "tech"
+      ],
+      "vision_summary": "Abstract glowing particle network mesh on black background",
+      "score": 0.85,
+      "duration_sec": 19.0,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-07",
+      "added": "2026-09-03",
+      "phashes": [
+        "c22f7da515e4c61c",
+        "116f53e47f586c02",
+        "16f66d65010c6bd3"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v113383.mp4",
+      "extra": {
+        "attribution": "Pixabay / Digital_View",
+        "author": "Digital_View",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон"
+      }
+    },
+    {
+      "id": "pixabay_v144678",
+      "type": "video",
+      "source": "pixabay",
+      "license": "Pixabay Content License",
+      "url_origin": "https://pixabay.com/videos/id-144678/",
+      "phash": "f1e1d03f0fc8923a",
+      "tags": [
+        "volcano lava",
+        "explosion",
+        "volcano",
+        "lava",
+        "volcanic",
+        "hot",
+        "nature"
+      ],
+      "vision_summary": "Close-up of bright lava streams flowing slowly over dark volcanic rock",
+      "score": 0.82,
+      "duration_sec": 6.25,
+      "used_in": [
+        "redshift_0047",
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-08",
+      "added": "2026-09-03",
+      "phashes": [
+        "f1e1d03f0fc8923a",
+        "f1a1f00b47d192be",
+        "f1e1f403c7d1133a"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "file": "pixabay/pixabay_v144678.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pixabay / 31906497",
+        "author": "31906497",
+        "judged_intent": "Медленное течение вязкого вещества, тёмный фон",
+        "block_reason": "volcano/lava — off-topic for redshift_0042 quantum chip"
+      }
+    },
+    {
+      "id": "pexels_v18069803",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/an-artist-s-animation-of-artificial-intelligence-ai-this-piece-explores-the-prediction-method-used-in-large-language-models-it-was-created-by-wes-cockx-as-part-of-the-visualising-ai-pr-18069803/",
+      "phash": "ed68d273298fc6a0",
+      "tags": [
+        "quantum",
+        "processor",
+        "chip",
+        "cryostat",
+        "laboratory",
+        "computer",
+        "tech"
+      ],
+      "vision_summary": "Futuristic quantum processor / AI chip render in clean lab light",
+      "score": 0.92,
+      "duration_sec": 18.042,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-04",
+      "phashes": [
+        "ed68d273298fc6a0",
+        "ec932cd2957a4cb8",
+        "e5d89fe4892335c8"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v18069803.mp4",
+      "extra": {
+        "attribution": "Pexels / Google DeepMind",
+        "author": "Google DeepMind",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v17356514",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/a-black-and-white-photo-of-a-guitar-17356514/",
+      "phash": "d9bc26109926e6db",
+      "tags": [
+        "camera",
+        "lens",
+        "vintage photography",
+        "macro"
+      ],
+      "vision_summary": "Close-up of a vintage camera lens",
+      "score": 0.08,
+      "duration_sec": 20.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-05",
+      "phashes": [
+        "d9bc26109926e6db",
+        "11d3d7521a3a9a9a",
+        "f8f8f8f8e0060e1e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v17356514.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Ejov Igor",
+        "author": "Ejov Igor",
+        "blocked_for_sci": true,
+        "block_reason": "thematic mismatch for quantum/lab topics"
+      }
+    },
+    {
+      "id": "pexels_v20349219",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/earth-20349219/",
+      "phash": "1b6c4cc6a4276673",
+      "tags": [
+        "earth",
+        "orbit",
+        "view"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 6.467,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-05",
+      "phashes": [
+        "1b6c4cc6a4276673",
+        "1bec4dc6a4266653",
+        "1aed4d46a42666d3"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20349219.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v18446021",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/race-day-vlog-18446021/",
+      "phash": "c7e3e238900e97c7",
+      "tags": [
+        "racing",
+        "motorsport",
+        "race car",
+        "cockpit",
+        "hose tubing"
+      ],
+      "vision_summary": "Race car cockpit switches, wiring and mechanical hoses",
+      "score": 0.05,
+      "duration_sec": 20.003,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-05",
+      "phashes": [
+        "c7e3e238900e97c7",
+        "ec680d0b133edccd",
+        "3e74c11f5aa42c9a"
+      ],
+      "width": 720,
+      "height": 1280,
+      "file": "pexels/pexels_v18446021.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Jaxon Matthew Willis",
+        "author": "Jaxon Matthew Willis",
+        "blocked_for_sci": true,
+        "block_reason": "thematic mismatch for quantum/lab topics"
+      }
+    },
+    {
+      "id": "pexels_v19532053",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/a-man-sitting-in-front-of-a-computer-screen-19532053/",
+      "phash": "d89a9ad2d2c4e4e6",
+      "tags": [
+        "breaking",
+        "news",
+        "screen"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 19.712,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "d89a9ad2d2c4e4e6",
+        "d89a92d2c6c6e4e6",
+        "d8d8d8c2e2e666e2"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v19532053.mp4",
+      "extra": {
+        "attribution": "Pexels / Hasan  ACI",
+        "author": "Hasan  ACI",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20349634",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/b-ackho-e-20349634/",
+      "phash": "23295c30e3f79c45",
+      "tags": [
+        "galaxy",
+        "nebula"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 8.333,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "23295c30e3f79c45",
+        "1646297373d68d49",
+        "fb1f000e273ff890"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20349634.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v25935014",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/an-artist-s-illustration-of-artificial-intelligence-ai-this-image-explores-how-ai-can-be-used-to-progress-the-field-of-quantum-computing-it-was-created-by-bakken-and-baeck-as-part-of-t-25935014/",
+      "phash": "ec9b8661936c93a6",
+      "tags": [
+        "quantum",
+        "computer",
+        "laboratory",
+        "wide"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 16.067,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-06",
+      "phashes": [
+        "ec9b8661936c93a6",
+        "3c363c3c13c9c3c9",
+        "eb6a9294c5c195c7"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v25935014.mp4",
+      "extra": {
+        "attribution": "Pexels / Google DeepMind",
+        "author": "Google DeepMind",
+        "judged_intent": "Ведущий представляет тему, за головой — крупное слово"
+      }
+    },
+    {
+      "id": "pexels_v20068211",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/the-ceiling-of-the-church-is-decorated-with-ornate-designs-20068211/",
+      "phash": "f38e3bc293cd7480",
+      "tags": [
+        "cryostat",
+        "golden",
+        "chandelier",
+        "laboratory"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 13.183,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "f38e3bc293cd7480",
+        "f355ec54b3700b8c",
+        "232c47d5508e7d0f"
+      ],
+      "width": 720,
+      "height": 1280,
+      "file": "pexels/pexels_v20068211.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / ZEYNEP ARSLAN",
+        "author": "ZEYNEP ARSLAN",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20757503",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/dikis-makinesi-20757503/",
+      "phash": "2dac0f1191ea7687",
+      "tags": [
+        "processor",
+        "macro",
+        "shot"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 32.032,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "2dac0f1191ea7687",
+        "09a97e1682666dad",
+        "09897c36866d6d8d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20757503.mp4",
+      "quarantined": true,
+      "extra": {
+        "attribution": "Pexels / Emirhan Emiroğlu",
+        "author": "Emirhan Emiroğlu",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20349276",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/earth-20349276/",
+      "phash": "c4793bc7c43913e4",
+      "tags": [
+        "earth",
+        "orbit",
+        "view"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 4.367,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": "2026-09-07",
+      "added": "2026-09-06",
+      "phashes": [
+        "c4793bc7c43913e4",
+        "c47c3bc7c43813e5",
+        "c4783bc7c43813e7"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20349276.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v27975940",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/messier106-galaxy-27975940/",
+      "phash": "189b6366cc993366",
+      "tags": [
+        "galaxy",
+        "nebula"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 12.0,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-06",
+      "phashes": [
+        "189b6366cc993366",
+        "1c993366cc993366",
+        "cc993366cc993167"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v27975940.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v20436933",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/pluto-20436933/",
+      "phash": "c1e03e0fc0f0cf8f",
+      "tags": [
+        "earth",
+        "orbit",
+        "view"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 8.333,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-07",
+      "phashes": [
+        "c1e03e0fc0f0cf8f",
+        "c8e3371cd8e1c51e",
+        "c9c4363bd1c7c538"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v20436933.mp4",
+      "extra": {
+        "attribution": "Pexels / Iceberg San",
+        "author": "Iceberg San",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v30775057",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/red-liquid-heating-in-laboratory-beaker-30775057/",
+      "phash": "e8a358d785688bf1",
+      "tags": [
+        "cryostat",
+        "laboratory"
+      ],
+      "vision_summary": "",
+      "score": 0.72,
+      "duration_sec": 16.2,
+      "used_in": [
+        "redshift_0042"
+      ],
+      "last_used": null,
+      "added": "2026-09-07",
+      "phashes": [
+        "e8a358d785688bf1",
+        "e8a758d785688bf0",
+        "e8a758d785688bf0"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v30775057.mp4",
+      "extra": {
+        "attribution": "Pexels / Kleison  Leopoldino",
+        "author": "Kleison  Leopoldino",
+        "judged_intent": "Холодный кадр квантового процессора в криостате, крупно"
+      }
+    },
+    {
+      "id": "pexels_v35003022",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/golden-molecular-lattice-network-35003022/",
+      "phash": "143827f979863ec4",
+      "tags": [
+        "quantum",
+        "processor",
+        "molecular",
+        "lattice",
+        "laboratory",
+        "data"
+      ],
+      "vision_summary": "Golden molecular lattice network on dark field — qubit/processor metaphor",
+      "score": 0.86,
+      "duration_sec": 10.0,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-09",
+      "phashes": [
+        "143827f979863ec4",
+        "c8ab2e1953514cfe",
+        "06b2e3f4d2d2bc48"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v35003022.mp4",
+      "extra": {
+        "attribution": "Pexels / local cache",
+        "watched": true
+      }
+    },
+    {
+      "id": "pexels_v38431825",
+      "type": "video",
+      "source": "pexels",
+      "license": "Pexels License",
+      "url_origin": "https://www.pexels.com/video/stock-market-ticker-numbers-finance-screen-38431825/",
+      "phash": "2d7b9629b34a52c4",
+      "tags": [
+        "finance",
+        "money",
+        "numbers",
+        "data",
+        "screen",
+        "abstract"
+      ],
+      "vision_summary": "Stock-market ticker numbers on a dark finance screen — money/trust CTA",
+      "score": 0.86,
+      "duration_sec": 15.015,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-09",
+      "phashes": [
+        "2d7b9629b34a52c4",
+        "2d7b9629934c744c",
+        "2d7b96a91246724e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "pexels/pexels_v38431825.mp4",
+      "extra": {
+        "attribution": "Pexels / local cache",
+        "watched": true
+      }
+    },
+    {
+      "id": "grok_cryostat_0042",
+      "type": "video",
+      "source": "generated",
+      "license": "generated-owned",
+      "url_origin": "cursor://generate-image/grok_quantum_cryostat_chandelier",
+      "phash": "c64d333138e7cf41",
+      "tags": [
+        "quantum",
+        "processor",
+        "cryostat",
+        "chandelier",
+        "laboratory",
+        "golden",
+        "chip"
+      ],
+      "vision_summary": "Gold dilution-refrigerator quantum processor chandelier in a dark laboratory",
+      "score": 0.86,
+      "duration_sec": 3.0,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-09",
+      "phashes": [
+        "c64d333138e7cf41",
+        "c64d333038f7cdc1",
+        "c64c33303cf6cdc3"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/grok_cryostat_0042.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / grok-image",
+        "watched": true
+      }
+    },
+    {
+      "id": "grok_supercomputer_0042",
+      "type": "video",
+      "source": "generated",
+      "license": "generated-owned",
+      "url_origin": "cursor://generate-image/grok_supercomputer_hall",
+      "phash": "c838b3422ef6c38f",
+      "tags": [
+        "server",
+        "room",
+        "supercomputer",
+        "data",
+        "blue",
+        "light",
+        "computer"
+      ],
+      "vision_summary": "Supercomputer server room with blue light receding down the aisle",
+      "score": 0.86,
+      "duration_sec": 3.0,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-09",
+      "phashes": [
+        "c838b3422ef6c38f",
+        "c839b3422e76c38f",
+        "d839b3422776438f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "generated/grok_supercomputer_0042.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / grok-image",
+        "watched": true
+      }
+    },
+    {
+      "id": "press_21bc8e2d72",
+      "type": "photo",
+      "source": "press",
+      "license": "fair-use-quote",
+      "url_origin": "https://www.nature.com/articles/s41586-024-08449-y",
+      "phash": "070be4f8fa08f0f8",
+      "tags": [
+        "nature",
+        "quantum",
+        "error",
+        "correction",
+        "willow",
+        "qubit",
+        "chart"
+      ],
+      "vision_summary": "Nature figure: Willow quantum error-correction charts, surface-code qubits, logical error vs cycle",
+      "score": 0.88,
+      "duration_sec": 0.0,
+      "used_in": [
+        "redshift_0042",
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-09",
+      "phashes": [
+        "070be4f8fa08f0f8"
+      ],
+      "width": 685,
+      "height": 271,
+      "file": "press/press_21bc8e2d72.jpg",
+      "extra": {
+        "attribution": "Nature / Google Quantum AI",
+        "watched": true
+      }
+    },
+    {
+      "id": "fp_chalkboard_eq",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_chalkboard_eq",
+      "phash": "",
+      "tags": [
+        "chalkboard",
+        "equations",
+        "formula",
+        "blackboard",
+        "math"
+      ],
+      "vision_summary": "Green chalkboard filling with mathematical equations. Tags: chalkboard, equations, formula, blackboard, math.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "eba419c269701d7b",
+        "eb8418e6653a1c7b",
+        "eb8418e6cd3217e9"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_chalkboard_eq.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_writing_equations",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_writing_equations",
+      "phash": "",
+      "tags": [
+        "mathematician",
+        "writing",
+        "equations",
+        "chalkboard",
+        "lecture"
+      ],
+      "vision_summary": "Person writing complex equations on a chalkboard, side angle. Tags: mathematician, writing, equations, chalkboard, lecture.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "3689c699d6c44ae9",
+        "36d8a51aa71cc59a",
+        "2be225aa6a49a6b5"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_writing_equations.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_water_vortex",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_water_vortex",
+      "phash": "",
+      "tags": [
+        "overhead",
+        "turbulent",
+        "water",
+        "vortex",
+        "whirlpool",
+        "bubbles"
+      ],
+      "vision_summary": "Overhead swirling water with bubbles, portrait vortex. Tags: overhead, turbulent, water, vortex, whirlpool, bubbles.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "1da2a48d97997266",
+        "d2a4cd8198bfacb8",
+        "0c32ae91de77c0d4"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_water_vortex.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_spaghetti_strands",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_spaghetti_strands",
+      "phash": "",
+      "tags": [
+        "spaghetti",
+        "pasta",
+        "strands",
+        "noodles",
+        "dry"
+      ],
+      "vision_summary": "Top-down dry spaghetti strands, portrait. Tags: spaghetti, pasta, strands, noodles, dry.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "cd32ab8582edf413",
+        "caa9b458740cf5f4",
+        "d595247396f17119"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_spaghetti_strands.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_cracked_wall",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_cracked_wall",
+      "phash": "",
+      "tags": [
+        "cracked",
+        "concrete",
+        "wall",
+        "vine",
+        "fissure"
+      ],
+      "vision_summary": "Vine and shadow on a cracked concrete wall. Tags: cracked, concrete, wall, vine, fissure.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "14de5b4a4b66625a",
+        "069e5b5a19996c33",
+        "049e5676549b1dc9"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_cracked_wall.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_server_room",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_server_room",
+      "phash": "",
+      "tags": [
+        "gpu",
+        "cluster",
+        "server",
+        "aisle",
+        "datacenter"
+      ],
+      "vision_summary": "Tracking shot through a blue-lit server room aisle. Tags: gpu, cluster, server, aisle, datacenter.",
+      "score": 0.72,
+      "duration_sec": 6.042,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "e51bf66947e001d6",
+        "139d7c42ec4342ee",
+        "09737b946697702a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_server_room.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_code_editor",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_code_editor",
+      "phash": "",
+      "tags": [
         "code",
         "editor",
         "source",
         "programming",
         "ide"
       ],
-      "vision_summary": "Тёмный экран IDE с JSX/React-кодом карточек, поиска и фильтров, снятый с монитора",
-      "score": 0.14,
-      "duration_sec": 8.08,
+      "vision_summary": "Portrait code editor pulling back to reveal source lines. Tags: code, editor, source, programming, ide.",
+      "score": 0.72,
+      "duration_sec": 8.0,
       "used_in": [
-        "redshift_0049"
+        "redshift_0048"
       ],
-      "last_used": null,
-      "added": "2026-09-11",
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
       "phashes": [
-        "cc2671cc9e63638e",
-        "cc27733970319c37",
-        "cc1a666699cc6673"
+        "ec3fcc731f4039c0",
+        "db665926095e219f",
+        "f77d407c613403bc"
       ],
       "width": 1080,
       "height": 1920,
-      "file": "pexels/pexels_v34459460.mp4",
+      "file": "freepik/fp_code_editor.mp4",
       "extra": {
-        "attribution": "Pexels / Jakub Zerdzicki",
-        "author": "Jakub Zerdzicki",
-        "judged_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток."
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
       }
     },
     {
-      "id": "pexels_v10884417",
+      "id": "fp_red_gradient",
       "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/water-flowing-through-a-discharge-pipe-10884417/",
-      "phash": "052b7ab09d8fc2e1",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_red_gradient",
+      "phash": "",
       "tags": [
-        "industrial",
-        "pipes",
+        "abstract",
+        "red",
+        "gradient",
+        "background",
+        "backdrop"
+      ],
+      "vision_summary": "Deep red abstract moving backdrop. Tags: abstract, red, gradient, background, backdrop.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "11dc1d7c72141b4f",
+        "c0d92c7f74a11e4d",
+        "c4d3145b5de358c3"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_red_gradient.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_cpp_code",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_cpp_code",
+      "phash": "",
+      "tags": [
+        "cpp",
+        "code",
+        "syntax",
+        "editor",
+        "programming"
+      ],
+      "vision_summary": "A C++ source file in a dark IDE with highlighted syntax and line numbers. Tags: cpp, code, syntax, editor, programming.",
+      "score": 0.82,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "cc9118c4ce3be6e6",
+        "cd0cf37330e33ec0",
+        "186fe5986a303dac"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_cpp_code.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_green_glitch",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_green_glitch",
+      "phash": "",
+      "tags": [
+        "green",
+        "glitch",
+        "digital",
+        "lines",
+        "matrix"
+      ],
+      "vision_summary": "Abstract green digital glitch lines on a black background. Tags: green, glitch, digital, lines, matrix.",
+      "score": 0.82,
+      "duration_sec": 5.033,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "c0013e7e07cf38cf",
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_green_glitch.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_plaster_wall",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_plaster_wall",
+      "phash": "",
+      "tags": [
+        "plaster",
+        "wall",
+        "texture",
+        "shadow",
+        "diagonal"
+      ],
+      "vision_summary": "Rough plastered wall texture with a dramatic diagonal shadow. Tags: plaster, wall, texture, shadow, diagonal.",
+      "score": 0.82,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "cadd2400859f9ff8",
+        "ebd7c500010f5dbd",
+        "eadff5c10429471c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_plaster_wall.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_peeling_wall",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_peeling_wall",
+      "phash": "",
+      "tags": [
+        "peeling",
+        "wall",
+        "grunge",
+        "texture",
+        "crack"
+      ],
+      "vision_summary": "Peeling grunge wall texture with cracks. Tags: peeling, wall, grunge, texture, crack.",
+      "score": 0.82,
+      "duration_sec": 8.008,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "f18e086f29dc4af1",
+        "ea99b27448eb3c86",
+        "14ef802b7e9dc2c8"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_peeling_wall.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_red_pulse",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_red_pulse",
+      "phash": "",
+      "tags": [
+        "red",
+        "pulse",
+        "energy",
+        "glow",
+        "abstract"
+      ],
+      "vision_summary": "Abstract red light pulse expanding and contracting on black. Tags: red, pulse, energy, glow, abstract.",
+      "score": 0.82,
+      "duration_sec": 8.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "2aadb5955552aa4a",
+        "c08b3f69c0371f2d",
+        "2aaaaaaaaa555555"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_red_pulse.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_blue_bubbles",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_blue_bubbles",
+      "phash": "",
+      "tags": [
+        "blue",
+        "fluid",
+        "bubbles",
+        "liquid",
+        "macro"
+      ],
+      "vision_summary": "Macro view of blue fluid with bubbles. Tags: blue, fluid, bubbles, liquid, macro.",
+      "score": 0.82,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "c3311f0c7b63dc61",
+        "d2311f0c3b63dc63",
+        "c6311f0c3b63dc63"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_blue_bubbles.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_formula_particles",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_formula_particles",
+      "phash": "",
+      "tags": [
+        "formula",
+        "particles",
+        "math",
+        "equation",
+        "glow"
+      ],
+      "vision_summary": "White formula particles with glowing math symbols on a dark field. Tags: formula, particles, math, equation, glow.",
+      "score": 0.82,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "1d62629d9d62629d",
+        "d807656c9f982567",
+        "e83c17e398c3363c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_formula_particles.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_river_current",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_river_current",
+      "phash": "",
+      "tags": [
+        "river",
+        "current",
         "water",
-        "plant"
+        "rapids",
+        "flow"
       ],
-      "vision_summary": "Бурный сброс пенящейся воды из трубы бетонной плотины",
-      "score": 0.46,
-      "duration_sec": 46.678,
+      "vision_summary": "Churning white water flowing rapidly through a river. Tags: river, current, water, rapids, flow.",
+      "score": 0.82,
+      "duration_sec": 8.0,
       "used_in": [
-        "redshift_0049"
+        "redshift_0048"
       ],
-      "last_used": null,
-      "added": "2026-09-11",
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
       "phashes": [
-        "052b7ab09d8fc2e1",
-        "152a6ab4968fc3e1",
-        "152a78b49e8fc361"
+        "f7c5c14a6a0b8ada",
+        "f6d4824e682797d4",
+        "d7d381036f119357"
       ],
       "width": 1080,
       "height": 1920,
-      "file": "pexels/pexels_v10884417.mp4",
+      "file": "freepik/fp_river_current.mp4",
       "extra": {
-        "attribution": "Pexels / Diego da Silva",
-        "author": "Diego da Silva",
-        "judged_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток."
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
       }
     },
     {
-      "id": "pexels_v16865644",
+      "id": "fp_rock_surface",
       "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/a-view-of-the-clouds-from-an-airplane-16865644/",
-      "phash": "16a9768f38e00d5e",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_rock_surface",
+      "phash": "",
       "tags": [
-        "lean",
-        "airplane",
-        "wing",
-        "flight",
-        "clouds"
+        "rock",
+        "stone",
+        "surface",
+        "texture",
+        "fissure"
       ],
-      "vision_summary": "крыло пассажирского самолёта над облаками и полями с теплицами",
-      "score": 0.38,
-      "duration_sec": 42.815,
+      "vision_summary": "Rock surface texture with fissures. Tags: rock, stone, surface, texture, fissure.",
+      "score": 0.82,
+      "duration_sec": 8.0,
       "used_in": [
-        "redshift_0049"
+        "redshift_0048"
       ],
-      "last_used": null,
-      "added": "2026-09-11",
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
       "phashes": [
-        "16a9768f38e00d5e",
-        "3e8308370eb9acd3",
-        "16241ded1ac93bc9"
+        "00da242adb7ed28f",
+        "0e877474da5398c9",
+        "0c784c9d3d275c5a"
       ],
       "width": 1080,
       "height": 1920,
-      "file": "pexels/pexels_v16865644.mp4",
+      "file": "freepik/fp_rock_surface.mp4",
       "extra": {
-        "attribution": "Pexels / Venkatesan P",
-        "author": "Venkatesan P",
-        "judged_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры."
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
       }
     },
     {
-      "id": "pexels_v12893579",
+      "id": "fp_desk_code",
       "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/hands-typing-on-laptop-keyboard-12893579/",
-      "phash": "cc0c93db19c383b7",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_desk_code",
+      "phash": "",
       "tags": [
-        "gpt-",
+        "computer",
+        "code",
+        "animation",
+        "programming",
+        "screen"
+      ],
+      "vision_summary": "Computer code animation over a blurred wooden table. Tags: computer, code, animation, programming, screen.",
+      "score": 0.82,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "1c188d9a73ee5269",
+        "db02e00ee33c34df",
+        "da02e21d6f343ee8"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_desk_code.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_red_heartbeat",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/fp_red_heartbeat",
+      "phash": "",
+      "tags": [
+        "red",
+        "heartbeat",
+        "pulse",
+        "glow",
+        "black"
+      ],
+      "vision_summary": "Dynamic red glowing heartbeat pulse on a black background. Tags: red, heartbeat, pulse, glow, black.",
+      "score": 0.82,
+      "duration_sec": 8.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "18a667999a666d91",
+        "1ce66399964e48b5",
+        "18a667999a666cb1"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_red_heartbeat.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_chalkboard_class",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/1195994",
+      "phash": "",
+      "tags": [
+        "chalkboard",
+        "class",
+        "classroom",
+        "math"
+      ],
+      "vision_summary": "Classroom chalkboard during math class. Tags: chalkboard, class, classroom, math.",
+      "score": 0.72,
+      "duration_sec": 5.56,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "cd828fead5c6b460",
+        "c9808bcad3c7be45",
+        "ecc183abd1c2bf50"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_chalkboard_class.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_typing_hands",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/2489951",
+      "phash": "",
+      "tags": [
         "hands",
         "typing",
         "keyboard",
-        "code",
-        "editor"
+        "neon",
+        "code"
       ],
-      "vision_summary": "Руки у ноутбука с редактором HTML/JS-кода, а не статья OpenAI в браузере",
-      "score": 0.18,
-      "duration_sec": 10.01,
+      "vision_summary": "Hands typing on a backlit keyboard. Tags: hands, typing, keyboard, neon, code.",
+      "score": 0.72,
+      "duration_sec": 8.008,
       "used_in": [
-        "redshift_0049"
+        "redshift_0048"
       ],
-      "last_used": null,
-      "added": "2026-09-11",
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
       "phashes": [
-        "cc0c93db19c383b7",
-        "d909b24e3ec6a3b1",
-        "d9098a4e3bc2a3bb"
+        "df623f80c5d03d07",
+        "de623f81c5f03d24",
+        "db603fc0e5711fa0"
       ],
       "width": 1080,
       "height": 1920,
-      "file": "pexels/pexels_v12893579.mp4",
+      "file": "freepik/fp_typing_hands.mp4",
       "extra": {
-        "attribution": "Pexels / Mizuno K",
-        "author": "Mizuno K",
-        "judged_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры."
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
       }
     },
     {
-      "id": "pexels_v19004433",
+      "id": "fp_matrix_code",
       "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/sky-view-airplane-plane-windows-windows-seat-coolplaces4k-19004433/",
-      "phash": "d4ab34c912a75975",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/3573854",
+      "phash": "",
       "tags": [
-        "airplane",
-        "wing",
-        "flight",
-        "clouds"
+        "dark",
+        "keyboard",
+        "fingers",
+        "keys",
+        "closeup"
       ],
-      "vision_summary": "",
-      "score": 0.0,
-      "duration_sec": 88.213,
+      "vision_summary": "Dark close-up of fingers on a keyboard. Tags: dark, keyboard, fingers, keys, closeup.",
+      "score": 0.72,
+      "duration_sec": 8.0,
       "used_in": [
-        "redshift_0049"
+        "redshift_0048"
       ],
-      "last_used": null,
-      "added": "2026-09-11",
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
       "phashes": [
-        "d4ab34c912a75975",
-        "d0af74cb30ae5934",
-        "d0a774cb34ee1964"
+        "2c53a5395798c2ec",
+        "2c52a4399689c3fd",
+        "2c52a529578967f4"
       ],
       "width": 1080,
       "height": 1920,
-      "file": "pexels/pexels_v19004433.mp4",
+      "file": "freepik/fp_matrix_code.mp4",
       "extra": {
-        "attribution": "Pexels / CoolPlaces4K  JC",
-        "author": "CoolPlaces4K  JC",
-        "judged_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры."
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
       }
     },
     {
-      "id": "pexels_v34719410",
+      "id": "fp_blue_ink",
       "type": "video",
-      "source": "pexels",
-      "license": "Pexels License",
-      "url_origin": "https://www.pexels.com/video/close-up-of-a-business-document-signing-34719410/",
-      "phash": "07790ad91b1b8d87",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8698566",
+      "phash": "",
       "tags": [
-        "research",
+        "blue",
+        "ink",
+        "water",
+        "swirling",
+        "fluid"
+      ],
+      "vision_summary": "Blue ink dropping and swirling in water. Tags: blue, ink, water, swirling, fluid.",
+      "score": 0.72,
+      "duration_sec": 5.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "2aaaaaa5b515a5aa",
+        "0ccb6d0e31cdccb1",
+        "3596d99ac484c66d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_blue_ink.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_cracked_earth",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/3615886",
+      "phash": "",
+      "tags": [
+        "cracked",
+        "earth",
+        "drought",
+        "soil",
+        "texture"
+      ],
+      "vision_summary": "Vertical cracked dry earth texture. Tags: cracked, earth, drought, soil, texture.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "f00b567eb0c3927c",
+        "fa80cf17f400bf0e",
+        "0d8fba3831676545"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_cracked_earth.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_blackboard_close",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/5260301",
+      "phash": "",
+      "tags": [
+        "blackboard",
+        "close",
+        "equations",
+        "formula",
+        "math"
+      ],
+      "vision_summary": "Mathematics equations filling a blackboard. Tags: blackboard, close, equations, formula, math.",
+      "score": 0.72,
+      "duration_sec": 8.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "20915f3f3b814a6e",
+        "269b690c9633cd4d",
+        "2a95a253d33ad52a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_blackboard_close.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_hourglass_sand",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8072505",
+      "phash": "13c4ece31838e78e",
+      "tags": [
+        "hourglass",
+        "sand",
+        "time",
+        "clock",
+        "hours"
+      ],
+      "vision_summary": "Hourglass sand flowing on a dark background. Tags: hourglass, sand, time, clock, hours.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "13c4ece31838e78e",
+        "13c4ece31838e78e",
+        "13c4ece31838e78e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_hourglass_sand.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_library_books",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8514401",
+      "phash": "0297b2cc293dd6b2",
+      "tags": [
+        "books",
+        "library",
+        "shelves",
         "paper",
-        "document",
-        "desk"
+        "documents"
       ],
-      "vision_summary": "",
-      "score": 0.0,
-      "duration_sec": 20.32,
-      "used_in": [
-        "redshift_0049"
-      ],
+      "vision_summary": "Old library books on wooden shelves. Tags: books, library, shelves, paper, documents.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
       "last_used": null,
-      "added": "2026-09-11",
+      "added": "2026-09-10",
       "phashes": [
-        "07790ad91b1b8d87",
-        "03717fd8119a9e85",
-        "036a7ad81f9b1f80"
+        "0297b2cc293dd6b2",
+        "0297b24d2957d25d",
+        "129399493bd63969"
       ],
       "width": 1080,
       "height": 1920,
-      "file": "pexels/pexels_v34719410.mp4",
+      "file": "freepik/fp_library_books.mp4",
       "extra": {
-        "attribution": "Pexels / Jakub Zerdzicki",
-        "author": "Jakub Zerdzicki",
-        "judged_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор."
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_rust_metal",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8083841",
+      "phash": "32bd0f388e233cb4",
+      "tags": [
+        "rust",
+        "metal",
+        "texture",
+        "bolts",
+        "wall"
+      ],
+      "vision_summary": "Close-up of rusted metal with bolts. Tags: rust, metal, texture, bolts, wall.",
+      "score": 0.74,
+      "duration_sec": 6.5,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "32bd0f388e233cb4",
+        "23f08e6031d9b78e",
+        "23f0ced33898c699"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_rust_metal.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_analog_clock",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8387087",
+      "phash": "33c9c9de93872648",
+      "tags": [
+        "clock",
+        "time",
+        "hours",
+        "analog",
+        "ticking"
+      ],
+      "vision_summary": "Office analog clock, hands advancing. Tags: clock, time, hours, analog, ticking.",
+      "score": 0.74,
+      "duration_sec": 6.5,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "33c9c9de93872648",
+        "13c5cc8e23f3acc2",
+        "d6ad4cc623953ec2"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_analog_clock.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_quad_formula",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8516522",
+      "phash": "e0a9f8b674966992",
+      "tags": [
+        "chalkboard",
+        "formula",
+        "math",
+        "equations",
+        "board"
+      ],
+      "vision_summary": "Chalkboard with quadratic formula, camera moving in. Tags: chalkboard, formula, math, equations, board.",
+      "score": 0.74,
+      "duration_sec": 6.5,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "e0a9f8b674966992",
+        "3299a522754fd32c",
+        "3299a4a27d4ce27c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_quad_formula.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_cracked_concrete",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8979144",
+      "phash": "e23c7b4d49d4e512",
+      "tags": [
+        "cracked",
+        "concrete",
+        "texture",
+        "wall",
+        "fissure"
+      ],
+      "vision_summary": "Cracked concrete surface texture. Tags: cracked, concrete, texture, wall, fissure.",
+      "score": 0.74,
+      "duration_sec": 6.506,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "e23c7b4d49d4e512",
+        "ef0852787accad46",
+        "d64e219f33f74224"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_cracked_concrete.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_white_ink",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/8072130",
+      "phash": "36b6b6b2b2921949",
+      "tags": [
+        "ink",
+        "water",
+        "swirling",
+        "dark",
+        "fluid",
+        "white"
+      ],
+      "vision_summary": "White ink spreading in water on black. Tags: ink, water, swirling, dark, fluid, white.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "36b6b6b2b2921949",
+        "164e713067c3cd36",
+        "262e30627be9ec43"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_white_ink.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_sand_ripples",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/7720025",
+      "phash": "02cd5224dba67b55",
+      "tags": [
+        "sand",
+        "ripples",
+        "dune",
+        "texture",
+        "wind"
+      ],
+      "vision_summary": "Close-up of wind-carved sand ripples. Tags: sand, ripples, dune, texture, wind.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "02cd5224dba67b55",
+        "28d7740bf48b605b",
+        "0af54e21ce914f74"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_sand_ripples.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_corroded_mesh",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/7795128",
+      "phash": "f6498a304f724ccf",
+      "tags": [
+        "corroded",
+        "wall",
+        "mesh",
+        "metal",
+        "decay",
+        "fissure"
+      ],
+      "vision_summary": "Corroded wall render with exposed metal mesh. Tags: corroded, wall, mesh, metal, decay, fissure.",
+      "score": 0.74,
+      "duration_sec": 6.506,
+      "used_in": [
+        "redshift_0048"
+      ],
+      "last_used": "2026-09-10",
+      "added": "2026-09-10",
+      "phashes": [
+        "f6498a304f724ccf",
+        "f964c41b213e73e1",
+        "2738d94632292edb"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_corroded_mesh.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "fp_stapling_docs",
+      "type": "video",
+      "source": "freepik",
+      "license": "Freepik License",
+      "url_origin": "https://www.freepik.com/video/4898665",
+      "phash": "0cde47b0da2cf01e",
+      "tags": [
+        "documents",
+        "paper",
+        "stapling",
+        "desk",
+        "stack"
+      ],
+      "vision_summary": "Hands stapling and organizing documents. Tags: documents, paper, stapling, desk, stack.",
+      "score": 0.74,
+      "duration_sec": 6.52,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-10",
+      "phashes": [
+        "0cde47b0da2cf01e",
+        "1018ccfef309955b",
+        "1cdcb7076361d09c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "freepik/fp_stapling_docs.mp4",
+      "extra": {
+        "attribution": "Freepik / Magnific stock",
+        "seed_topic": "0048-navier-stokes"
       }
     }
   ]
