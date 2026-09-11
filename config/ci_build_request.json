@@ -6,5 +6,5 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0049 P7: brief по spoken window, pin openai card, deny keyboard на NS. xAI только кэш/финалисты, не полный critic. Без TTS/HeyGen/Gemini image."
+  "note": "0049 P7: leftover жидкости на Навье-Стокса до live; пустой слот не берёт typing соседа; не dataviz на fluid-запросы. xAI: leftover без Grok, P12 6 проб если QC-12/30 зелёные. Без TTS/HeyGen/Gemini image."
 }
