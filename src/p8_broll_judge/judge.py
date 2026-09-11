@@ -13,9 +13,10 @@
 Пороги: ≥0.70 принять, <0.45 отклонить. Незакрытый слот уходит в генерацию (P9),
 а **не** заполняется слабым футажом — это прямое требование §7.3.
 
-Исключение после того, как критик уже отработал: оставшиеся дыры закрываются
-уже скачанным клипом (``accept_stock_leftover``). Иначе P9 на квоте 429
-отдаёт все слоты лестнице P11, и QC-24 роняет ролик голыми плитами.
+Исключение: скачанный клип, который уже совпадает с окном речи, паркуется
+как ``accept_stock_leftover`` **до** live vision — иначе Grok платят за
+отказ воде на «Навье-Стокса», и слот всё равно идёт на лестницу. После
+критика тот же проход закрывает оставшиеся дыры из judged-пула.
 """
 
 from __future__ import annotations
@@ -32,7 +33,8 @@ from ..lib.palette import frame_light, palette_verdict
 from ..lib.pin_match import ctx_words, pin_slot_prefer_key
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
-    classify_intent, leftover_query_fits_slot, negative_reject_reason,
+    FLUID_QUERY_MARKERS, _hay_has_marker, classify_intent,
+    leftover_query_fits_slot, negative_reject_reason,
     slot_negatives, slot_visual_brief, brief_deny_reason, spoken_slot_text,
     thematic_reject_reason, topical_match_score,
 )
@@ -897,6 +899,15 @@ def run_step(ctx) -> dict[str, Any]:
             slot_duration = 3.0
         brief = slot_visual_brief(slot, plan, words)
         spoken = str(brief.get("spoken") or "")
+        vision_intent = intent
+        if brief.get("spoken") or brief.get("visual_en"):
+            vision_intent = " ".join(
+                part for part in (
+                    brief.get("visual_ru"),
+                    brief.get("visual_en"),
+                    f"Речь: {brief['spoken']}" if brief.get("spoken") else "",
+                ) if part
+            ) or intent
         gated: list[dict[str, Any]] = []
         for candidate in by_slot[slot_index]:
             cheap_seen += 1
@@ -944,6 +955,75 @@ def run_step(ctx) -> dict[str, Any]:
                     "reject_reason": "slot already filled from previous accept",
                     "verdict": {"score": 0.0, "judge": "prior_kept",
                                 "reason": "not rescored", "summary": "", "frames": 0},
+                })
+            continue
+
+        def _leftover_before_live_ok(row: dict[str, Any]) -> bool:
+            if not _row_has_media(row):
+                return False
+            aid = str(row.get("asset_id") or "")
+            if not aid or pin_id_denied(aid, pin_deny):
+                return False
+            if accepted_counts.get(aid, 0) >= repeat_max:
+                return False
+            if brief_deny_reason(brief, _candidate_hay(row)):
+                return False
+            query = str(row.get("query") or "")
+            if not query:
+                return not brief.get("deny")
+            return leftover_query_fits_slot(query, slot, plan, words=words)
+
+        leftover_now = None
+        leftover_ranked = sorted(
+            gated,
+            key=lambda row: (
+                int(_hay_has_marker(str(row.get("query") or ""),
+                                    FLUID_QUERY_MARKERS)),
+                float(row.get("score") or row.get("prior_score") or 0),
+            ),
+            reverse=True,
+        )
+        for row in leftover_ranked:
+            if _leftover_before_live_ok(row):
+                leftover_now = row
+                break
+        if leftover_now is not None:
+            aid = str(leftover_now.get("asset_id") or "")
+            entry = {
+                **leftover_now,
+                "slot_index": slot_index,
+                "leftover_from_slot": slot_index,
+                "intent": vision_intent,
+                "decision": "accept_stock_leftover",
+                "score": float(
+                    leftover_now.get("score")
+                    or leftover_now.get("prior_score") or 0.5),
+                "fallback_reason": (
+                    "downloaded clip matches spoken window; parked before live vision"),
+                "verdict": {
+                    "score": float(
+                        leftover_now.get("score")
+                        or leftover_now.get("prior_score") or 0.5),
+                    "judge": "leftover_before_live",
+                    "reason": "spoken-window leftover, no live vision",
+                    "summary": leftover_now.get("vision_summary") or "",
+                    "frames": 0,
+                },
+            }
+            judged.append(entry)
+            accepted[slot_index] = entry
+            if aid:
+                accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
+            for candidate in gated:
+                if str(candidate.get("asset_id") or "") == aid:
+                    continue
+                judged.append({
+                    **candidate, "score": float(candidate.get("score") or 0),
+                    "decision": "unused_prior_kept",
+                    "reject_reason": "slot filled from leftover before live",
+                    "verdict": {"score": 0.0, "judge": "leftover_before_live",
+                                "reason": "peer not parked", "summary": "",
+                                "frames": 0},
                 })
             continue
 
@@ -1102,7 +1182,7 @@ def run_step(ctx) -> dict[str, Any]:
                 continue
             else:
                 frames = [Path(f) for f in candidate.get("frames", [])]
-                verdict = primary.judge(frames, intent=intent, role=role,
+                verdict = primary.judge(frames, intent=vision_intent, role=role,
                                         query=candidate.get("query", ""))
                 verdict_dict = verdict.to_dict()
                 _tally_vision(
@@ -1117,7 +1197,7 @@ def run_step(ctx) -> dict[str, Any]:
                     already = bool(verdict_dict.get("arbitrated"))
                     if not already:
                         arbiter_calls += 1
-                        final = arbiter.judge(frames, intent=intent, role=role,
+                        final = arbiter.judge(frames, intent=vision_intent, role=role,
                                               query=candidate.get("query", ""))
                         primary_score = round(verdict.score, 4)
                         verdict_dict = final.to_dict()

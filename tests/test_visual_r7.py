@@ -468,6 +468,45 @@ def test_ticker_plate_is_skipped_for_non_cta_empty_slot():
     assert plate["file"] == "/tmp/lattice.mp4"
 
 
+def test_fluid_empty_slot_skips_typing_neighbor_plate():
+    """0049 41.02: empty NS slot parallaxed the Lean typing crop."""
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [
+        {"index": 12, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 36.3, "end": 38.9},
+        {"index": 13, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 38.9, "end": 41.6},
+        {"index": 8, "kind": "footage", "block_id": "b4", "role": "evidence",
+         "start": 23.5, "end": 25.7},
+    ]
+    prepared = {
+        12: {"dst": "/tmp/pexels_v12893579_crop.mp4", "duration_sec": 2.5},
+        8: {"dst": "/tmp/pexels_v10884417_crop.mp4", "duration_sec": 2.2},
+    }
+    assets = {
+        12: {
+            "asset_id": "pexels_v12893579",
+            "query": "hands typing keyboard code editor",
+            "page_url": "https://www.pexels.com/video/hands-typing-on-laptop-keyboard-12893579/",
+            "source": "pexels",
+        },
+        8: {
+            "asset_id": "pexels_v10884417",
+            "query": "industrial pipes water plant",
+            "page_url": "https://www.pexels.com/video/water-flowing-through-pipes-10884417/",
+            "source": "pexels",
+        },
+    }
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    plate = _plate_source(slots[1], slots, prepared, assets, plan={}, words=words)
+    assert plate is not None
+    assert plate["file"] == "/tmp/pexels_v10884417_crop.mp4"
+
+
 def test_on_screen_spelling_is_nichem():
     from src.lib.text import prefer_nichem_spelling, soften_on_screen_copy
 

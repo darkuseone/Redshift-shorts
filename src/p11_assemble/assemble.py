@@ -41,7 +41,11 @@ from ..lib.text import (
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
-from ..lib.query import leftover_query_fits_slot, slot_topical_text, slot_visual_brief, brief_deny_reason, topical_match_score
+from ..lib.query import (
+    CODE_QUERY_MARKERS, FLUID_QUERY_MARKERS, _hay_has_marker,
+    leftover_query_fits_slot, slot_topical_text, slot_visual_brief,
+    brief_deny_reason, topical_match_score,
+)
 from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
@@ -702,9 +706,23 @@ def _slot_wants_ticker(slot: dict[str, Any]) -> bool:
     return role == "cta" or "деньг" in intent or "подписк" in intent
 
 
+def _plate_asset_hay(asset: dict[str, Any] | None, dst: str = "") -> str:
+    asset = asset or {}
+    return " ".join([
+        str(asset.get("query") or ""),
+        " ".join(str(t) for t in (asset.get("tags") or [])),
+        str(asset.get("page_url") or ""),
+        str(asset.get("asset_id") or ""),
+        str(dst or ""),
+    ])
+
+
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]],
-                  assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
+                  assets: dict[int, dict[str, Any]] | None = None,
+                  plan: dict[str, Any] | None = None,
+                  words: Iterable[dict[str, Any]] | None = None,
+                  ) -> dict[str, Any] | None:
     """Nearest real (non-AI, non-NASA) footage for hero/fullscreen plates.
 
     Prefer same-block stock/press; if that block has no real media (empty P7/P9
@@ -712,12 +730,25 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
     so plate-needing heroes still show a topical still instead of an empty panel.
     NASA archive stills are skipped — empty slots take a brand plate instead.
     AI-only pools return None — heroes then skip plate templates.
+    Keyboard/code neighbour files are skipped when this window is fluids.
     """
     index = int(slot["index"])
     assets = assets or {}
+    brief = slot_visual_brief(slot, plan or {}, words)
 
     def _is_ai(s: dict[str, Any]) -> bool:
         return bool((assets.get(int(s["index"])) or {}).get("ai_generated"))
+
+    def _denied_for_this_window(s: dict[str, Any]) -> bool:
+        src_asset = assets.get(int(s["index"])) or {}
+        dst = str((prepared.get(int(s["index"])) or {}).get("dst") or "")
+        hay = _plate_asset_hay(src_asset, dst)
+        if brief_deny_reason(brief, hay):
+            return True
+        query = str(src_asset.get("query") or "")
+        if query and brief.get("kind") in ("fluid", "paper"):
+            return not leftover_query_fits_slot(query, slot, plan or {}, words)
+        return False
 
     def _pool(same_block_only: bool) -> list[dict[str, Any]]:
         out = []
@@ -732,6 +763,8 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                 continue
             if (_is_ticker_asset(assets.get(int(s["index"])))
                     and not _slot_wants_ticker(slot)):
+                continue
+            if _denied_for_this_window(s):
                 continue
             out.append(s)
         return out
@@ -777,22 +810,16 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
             return str(inherited["dst"])
     prep = prepared.get(slot["index"])
     asset = assets.get(slot["index"])
+    brief = slot_visual_brief(slot, plan, words)
     if prep is not None and prep.get("dst"):
-        denied = False
+        hay = _plate_asset_hay(asset, str(prep.get("dst") or ""))
+        denied = bool(brief_deny_reason(brief, hay))
         if asset is not None:
-            brief = slot_visual_brief(slot, plan, words)
-            hay = " ".join([
-                str(asset.get("query") or ""),
-                " ".join(str(t) for t in (asset.get("tags") or [])),
-                str(asset.get("page_url") or ""),
-                str(asset.get("asset_id") or ""),
-            ])
-            denied = bool(brief_deny_reason(brief, hay)
-                          or leftover_stock_off_topic(asset, slot, plan, words))
+            denied = denied or leftover_stock_off_topic(asset, slot, plan, words)
         if not denied and not _is_nasa_asset(asset) and (
                 _slot_wants_ticker(slot) or not _is_ticker_asset(asset)):
             return prep["dst"]
-    plate = _plate_source(slot, slots, prepared, assets)
+    plate = _plate_source(slot, slots, prepared, assets, plan=plan, words=words)
     if plate and plate.get("file"):
         return str(plate["file"])
     return _brand_plate_file(ctx, plan)
@@ -3997,6 +4024,13 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         if slot_visual_brief(slot, plan, words).get("kind") == "fluid":
             # 0049 41.02: mk-line-graph «Renders» over Navier–Stokes speech.
             continue
+        queries = [str(q) for q in (slot.get("queries") or []) if str(q).strip()]
+        fluid_q = sum(1 for q in queries if _hay_has_marker(q, FLUID_QUERY_MARKERS))
+        code_q = sum(1 for q in queries if _hay_has_marker(q, CODE_QUERY_MARKERS))
+        if fluid_q > code_q:
+            # Airplane keep-prior on «Астра не искала» still sits under a red
+            # graph at the 29.30 QC-30 sample if we only gate on spoken kind.
+            continue
         nums = _stats_from_text(str(blocks.get(slot["block_id"], {}).get("text") or ""))
         if not nums:
             continue
@@ -4870,7 +4904,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 words=[w for w in words_doc["words"]
                        if float(w["end"]) > float(slot["start"])
                        and float(w["start"]) < float(slot["end"])],
-                plate_src=_plate_source(slot, slots, prepared, assets),
+                plate_src=_plate_source(
+                    slot, slots, prepared, assets, plan=plan,
+                    words=words_doc.get("words") or []),
                 traits=gap_traits, bg_file=bg_file)
             if rung:
                 entry.update({
@@ -4940,7 +4976,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     words=[w for w in words_doc["words"]
                            if float(w["end"]) > float(slot["start"])
                            and float(w["start"]) < float(slot["end"])],
-                    plate_src=_plate_source(slot, slots, prepared, assets),
+                    plate_src=_plate_source(
+                        slot, slots, prepared, assets, plan=plan,
+                        words=words_doc.get("words") or []),
                     bg_file=bg_file,
                     prev_shot=shots[-1] if shots else None))
                 shots.append(entry)

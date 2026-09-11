@@ -444,16 +444,33 @@ def leftover_query_fits_slot(
         query: str, slot: dict[str, Any],
         plan: dict[str, Any] | None = None,
         words: Iterable[dict[str, Any]] | None = None) -> bool:
-    """Leftover is legal when the query matches this window's speech.
+    """Leftover is legal when the query matches this window's speech family.
 
-    English Pexels queries never share tokens with Russian VO. If this window
-    has no CONCEPTS, leftover is not judged (same as topical_match_score=1.0).
-    If CONCEPTS fire (навье, lean), a keyboard query must not sit on fluids.
+    English Pexels queries almost never share tokens with Russian VO.
+    ``topical_match_score`` against CONCEPTS[«навье»] only (fluid / water /
+    turbulence) therefore dropped airplane / pipes / blood / radar leftovers
+    on «Навье-Стокса» — the same pictures the brief asked for. Family markers
+    keep that set; CODE markers still die on a fluid/paper window.
     """
+    q = str(query or "")
     spoken = spoken_slot_text(slot, words)
+    kind = classify_spoken_window(spoken)
+    if kind == "fluid":
+        if _hay_has_marker(q, CODE_QUERY_MARKERS):
+            return False
+        if _hay_has_marker(q, FLUID_QUERY_MARKERS):
+            return True
+    elif kind == "lean":
+        if _hay_has_marker(q, FLUID_QUERY_MARKERS):
+            return False
+        if _hay_has_marker(q, CODE_QUERY_MARKERS):
+            return True
+    elif kind == "paper":
+        if _hay_has_marker(q, CODE_QUERY_MARKERS):
+            return False
     if spoken:
-        return topical_match_score(_query_words(str(query or "")), spoken) >= 0.35
-    return extra_fits_slot(str(query or ""), leftover_dest_tokens(slot, plan, words))
+        return topical_match_score(_query_words(q), spoken) >= 0.35
+    return extra_fits_slot(q, leftover_dest_tokens(slot, plan, words))
 
 
 def spoken_slot_text(slot: dict[str, Any],
@@ -520,7 +537,7 @@ def slot_topical_text(
 
 
 KEYBOARD_DENY = (
-    "keyboard", "mechanical keyboard", "hands typing", "code editor",
+    "keyboard", "mechanical keyboard", "hands typing", "typing", "code editor",
 )
 CODE_QUERY_MARKERS = (
     "keyboard", "typing", "code editor", "programming ide", "theorem prover",
@@ -558,14 +575,25 @@ def _hay_has_marker(text: str, markers: Iterable[str]) -> bool:
     return any(m in blob for m in markers)
 
 
+def _token_in_speech(blob: str, token: str) -> bool:
+    """Stem match that does not fire «крыл» inside «закрыли»."""
+    token = str(token or "").lower()
+    blob = str(blob or "").lower()
+    if not token or not blob:
+        return False
+    if token.isascii():
+        return re.search(rf"\b{re.escape(token)}\b", blob) is not None
+    return re.search(rf"(?<![а-яёa-z0-9]){re.escape(token)}", blob) is not None
+
+
 def classify_spoken_window(spoken: str) -> str:
     """One visual family for this VO window — not the whole block."""
     blob = str(spoken or "").lower()
     if not blob:
         return "open"
-    fluid = sum(1 for t in FLUID_SPEECH if t in blob)
-    lean = sum(1 for t in LEAN_SPEECH if t in blob)
-    paper = sum(1 for t in OPENAI_SPEECH if t in blob)
+    fluid = sum(1 for t in FLUID_SPEECH if _token_in_speech(blob, t))
+    lean = sum(1 for t in LEAN_SPEECH if _token_in_speech(blob, t))
+    paper = sum(1 for t in OPENAI_SPEECH if _token_in_speech(blob, t))
     if fluid and fluid >= lean:
         return "fluid"
     if lean:

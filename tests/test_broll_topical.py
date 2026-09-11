@@ -258,6 +258,31 @@ class TestLeftoverQueryGate:
         assert "lean" not in {t.lower() for t in tokens}
         assert "navier" in tokens or "fluid" in tokens or "stokes" in tokens
 
+    def test_airplane_leftover_fits_navier_speech_without_krylo(self):
+        """CONCEPTS[навье] is water/turbulence — wing/pipes still belong here."""
+        slot = _slot(index=13, start=38.8, end=41.6)
+        words = [
+            {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+            {"display": "Страшное", "start": 40.8, "end": 41.3},
+        ]
+        assert leftover_query_fits_slot(
+            "airplane wing in flight clouds", slot, {}, words)
+        assert leftover_query_fits_slot(
+            "industrial pipes water plant", slot, {}, words)
+        assert leftover_query_fits_slot(
+            "blood cells flowing microscope", slot, {}, words)
+        assert leftover_query_fits_slot(
+            "weather radar storm satellite", slot, {}, words)
+        assert not leftover_query_fits_slot(
+            "hands typing keyboard code editor", slot, {}, words)
+
+    def test_zakryli_is_not_a_wing_fluid_window(self):
+        from src.lib.query import classify_spoken_window
+        assert classify_spoken_window("пункт они не закрыли. Клей") == "open"
+        assert classify_spoken_window(
+            "уравнения Навье-Стокса. Страшное") == "fluid"
+        assert classify_spoken_window("крыло самолёта, ток крови.") == "fluid"
+
 
 class TestSpokenWindowBrief:
     def test_navier_window_drops_keyboard_queries(self):
@@ -347,6 +372,42 @@ def test_append_dataviz_skips_fluid_spoken_window():
     words = [
         {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
         {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    overlays: list = []
+    _append_dataviz(
+        plan, overlays, catalog=None, variant="A", seed=1,
+        recent_videos=[], used=[], picker=None,
+        budget=VisualBudget(), words=words)
+    assert overlays == []
+
+
+def test_append_dataviz_skips_fluid_majority_queries_on_open_speech():
+    """0049 29.30: airplane keep-prior + mk-line-graph blew QC-30."""
+    from src.p11_assemble.assemble import VisualBudget, _append_dataviz
+
+    plan = {
+        "duration_sec": 50.0,
+        "cta_window": [48.0, 50.0],
+        "slots": [{
+            "index": 10, "start": 28.6, "end": 31.4, "duration": 2.8,
+            "kind": "footage", "role": "develop", "block_id": "b4",
+            "queries": [
+                "weather radar storm satellite",
+                "airplane wing in flight clouds",
+                "industrial pipes water plant",
+                "blood flow medical animation microscope",
+                "code editor proof lean theorem",
+            ],
+        }],
+        "blocks": [{
+            "id": "b4",
+            "text": "Сама Астра доказательство не искала. Семнадцать часов.",
+        }],
+    }
+    words = [
+        {"display": "Сама", "start": 28.6, "end": 28.9},
+        {"display": "Астра", "start": 28.9, "end": 29.3},
+        {"display": "доказательство", "start": 29.4, "end": 29.8},
     ]
     overlays: list = []
     _append_dataviz(

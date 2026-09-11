@@ -258,7 +258,6 @@ def test_critic_reject_leftover_fills_from_downloaded_files(monkeypatch, tmp_pat
     )
     run_step(ctx)
     result = ctx.written["accepted_assets.json"]
-    assert spy.calls >= 1
     assert result["surplus"]["ok"] is True
     assert result["accepted_count"] == n_slots
     leftover = [
