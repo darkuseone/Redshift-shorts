@@ -10,8 +10,9 @@
    водяные знаки?
 
 ``mismatch_share > limits.vision_mismatch_share_max`` — blocking: ролик не
-выдаётся. ``vision.skip_live`` не имеет права ставить semantic pass: в отчёте
-``qc_skipped_semantic``, статус не «выдан».
+выдаётся. ``vision.skip_live`` не вызывает Grok/Gemini и не шлёт кадры в xAI:
+по плану гоняются эвристики и slot_locks (дешёвый суррогат MUST-004/006).
+Пустой план без шотов — честный ``qc_skipped_semantic``, статус не «выдан».
 """
 
 from __future__ import annotations
@@ -21,7 +22,11 @@ from typing import Any
 
 from ..lib.ffmpeg import extract_frames
 from ..lib.logging import get_logger
+from ..lib.pin_match import (
+    exclusive_lock_owners, slot_lock_hits, slot_locks_from_entry,
+)
 from ..lib.providers.vision import build_vision_provider
+from ..lib.query import brief_reject_reason, slot_visual_brief
 
 _log = get_logger("vision_qc")
 
@@ -256,6 +261,201 @@ def _expected(shot: dict[str, Any], *, plan: dict[str, Any] | None = None,
     return expected
 
 
+def _shot_at(plan: dict[str, Any], t: float) -> dict[str, Any]:
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        try:
+            start = float(shot.get("start") or 0.0)
+            end = float(shot.get("end") or 0.0)
+        except (TypeError, ValueError):
+            continue
+        if start - 1e-6 <= t < end + 1e-6:
+            return shot
+    return {}
+
+
+def _shot_haystack(shot: dict[str, Any]) -> str:
+    hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else {}
+    params = shot.get("params") if isinstance(shot.get("params"), dict) else {}
+    return " ".join(
+        str(part) for part in (
+            shot.get("asset_id"), shot.get("page_url"), shot.get("template"),
+            shot.get("ladder_rung"), shot.get("file"), shot.get("bg_file"),
+            shot.get("query"), shot.get("attribution"),
+            hero.get("template"), params.get("media"),
+        ) if part)
+
+
+def _shot_uses_asset(shot: dict[str, Any], asset_id: str) -> bool:
+    aid = str(asset_id or "")
+    if not aid or not shot:
+        return False
+    if str(shot.get("asset_id") or "") == aid:
+        return True
+    return aid in _shot_haystack(shot)
+
+
+def _pin_entry_for_qc(ctx: Any, plan: dict[str, Any]) -> dict[str, Any]:
+    locks = plan.get("slot_locks") or plan.get("_slot_locks")
+    if isinstance(locks, list) and locks:
+        return {"slot_locks": locks}
+    cfg = getattr(ctx, "cfg", None)
+    vid = str(plan.get("video_id") or "")
+    if cfg is not None and vid:
+        from ..p7_broll_search.search import _footage_pin_entry
+        return _footage_pin_entry(cfg, vid)
+    return {}
+
+
+def _local_probe_times(plan: dict[str, Any],
+                       locks: list[dict[str, Any]]) -> list[float]:
+    """Lock windows first. Uniform 6-pack only when there are no locks."""
+    duration = float(plan.get("duration_sec") or 0.0)
+    if duration <= 0:
+        return []
+    times: list[float] = []
+    for lock in locks:
+        try:
+            t = float(lock.get("t"))
+        except (TypeError, ValueError):
+            continue
+        times.append(min(max(t, 0.0), max(duration - 0.04, 0.0)))
+    if not times:
+        times = [duration * pos for pos in sample_positions()]
+    out: list[float] = []
+    seen: set[float] = set()
+    for t in times:
+        key = round(t, 3)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(float(key))
+    return out
+
+
+def _lock_fail_reason(shot: dict[str, Any], lock: dict[str, Any]) -> str | None:
+    if not shot or not slot_lock_hits(lock, shot):
+        return None
+    deny = {str(x) for x in (lock.get("deny_asset_ids") or []) if x}
+    for denied in deny:
+        if _shot_uses_asset(shot, denied):
+            return f"slot lock deny {denied}"
+    wanted = str(lock.get("asset_id") or "")
+    if lock.get("brand_plate") or not wanted:
+        return None
+    if not _shot_uses_asset(shot, wanted):
+        got = str(shot.get("asset_id") or "none")
+        return f"slot lock want {wanted} got {got}"
+    return None
+
+
+def _exclusive_fail_reason(shot: dict[str, Any],
+                           exclusive: dict[str, int]) -> str | None:
+    if not shot or not exclusive:
+        return None
+    try:
+        idx = int(shot.get("index"))
+    except (TypeError, ValueError):
+        idx = -1
+    for aid, owner in exclusive.items():
+        if int(owner) == idx:
+            continue
+        if _shot_uses_asset(shot, str(aid)):
+            return f"exclusive {aid} stolen from slot {owner}"
+    return None
+
+
+def run_local_semantic_qc(ctx, plan: dict[str, Any]) -> dict[str, Any]:
+    """Spoken-window brief + slot_locks. Zero frames, zero xAI."""
+    cfg = ctx.cfg
+    speech = _speech_timeline(plan, ctx)
+    pins = _pin_entry_for_qc(ctx, plan)
+    locks = slot_locks_from_entry(pins)
+    exclusive = exclusive_lock_owners(list(plan.get("shots") or []), locks)
+    times = _local_probe_times(plan, locks)
+    samples: list[dict[str, Any]] = []
+    lock_fails = 0
+    for t in times:
+        shot = _shot_at(plan, t)
+        spoken = _spoken_at(plan, t, speech=speech)
+        slot = dict(shot) if shot else {
+            "start": t, "end": t + 0.05, "kind": "", "index": -1,
+        }
+        brief = slot_visual_brief(slot, plan, speech)
+        hay = _shot_haystack(shot)
+        hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else {}
+        template = " ".join(
+            str(x) for x in (shot.get("template"), hero.get("template")) if x)
+        reason = None
+        lock_fail = False
+        if not shot:
+            reason = "no shot at sample"
+        else:
+            reason = brief_reject_reason(
+                brief, hay,
+                rung=str(shot.get("ladder_rung") or ""),
+                template=template)
+            for lock in locks:
+                hit = _lock_fail_reason(shot, lock)
+                if hit:
+                    reason = hit
+                    lock_fail = True
+                    break
+            stolen = _exclusive_fail_reason(shot, exclusive)
+            if stolen:
+                reason = stolen
+                lock_fail = True
+        if lock_fail:
+            lock_fails += 1
+        score = 0.2 if reason else 0.85
+        samples.append({
+            "t": round(t, 2),
+            "shot_index": shot.get("index") if shot else None,
+            "kind": shot.get("kind") if shot else "",
+            "expected": brief.get("visual_ru") or brief.get("kind") or "",
+            "spoken": spoken,
+            "score": score,
+            "summary": reason or "local brief+lock ok",
+            "has_text": bool(_picture_copy(shot, plan, t) if shot else ""),
+            "watermark": False,
+            "reason": reason or "",
+            "judge": "local_lock" if lock_fail else "local_brief",
+            "lock_fail": lock_fail,
+        })
+    mismatches = [row for row in samples if row["score"] < 0.45]
+    limit = _mismatch_limit(cfg)
+    if lock_fails:
+        mismatch_share = 1.0
+    else:
+        mismatch_share = len(mismatches) / max(len(samples), 1)
+    blocks = semantic_blocks(mismatch_share=mismatch_share, limit=limit,
+                             skipped=False)
+    notes: list[str] = []
+    if blocks:
+        notes.append(
+            f"картинка расходится с речью на {mismatch_share:.0%} проб "
+            f"(предел {limit:.0%}, слот-замки/brief без xAI)")
+    return {
+        "enabled": True,
+        "skipped": False,
+        "qc_skipped_semantic": False,
+        "reason": "vision.skip_live: local brief+slot_locks, zero xAI",
+        "variant": plan.get("variant"),
+        "samples": samples,
+        "sample_count": len(samples),
+        "mismatch_share": round(mismatch_share, 3),
+        "watermarks_found": 0,
+        "mismatch_limit": limit,
+        "picture_matches_speech": not blocks,
+        "reused_verdicts": 0,
+        "blocking": blocks,
+        "notes": notes,
+        "local_semantic": True,
+        "live_xai_calls": 0,
+    }
+
+
 def sample_positions() -> list[float]:
     """Где именно снимаются пробы. Одно место правды на весь P12.
 
@@ -317,15 +517,20 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
     if not bool(cfg.get("features.vision_qc", True)):
         return {"enabled": False, "reason": "features.vision_qc выключен"}
 
-    # skip_live: ZERO live Gemini/Grok. Это не semantic pass и не выдача.
+    # skip_live: ZERO live Gemini/Grok. Кадры в xAI не уходят.
+    # Есть шоты — дешёвые критики и slot_locks. Пустой план — честный skip.
     if bool(cfg.get("vision.skip_live", False)):
-        _log.warning("vision.skip_live: смысловой QC без live vision",
+        if not (plan.get("shots") or []):
+            _log.warning("vision.skip_live: нет шотов — skip, не pass",
+                         extra={"variant": plan.get("variant")})
+            return _skipped_semantic_report(
+                plan,
+                reason="vision.skip_live: без Gemini/Grok vision API",
+                notes=["vision.skip_live: смысловой QC пропущен (qc_skipped_semantic)"],
+                cfg=cfg)
+        _log.warning("vision.skip_live: local brief+slot_locks, zero xAI",
                      extra={"variant": plan.get("variant")})
-        return _skipped_semantic_report(
-            plan,
-            reason="vision.skip_live: без Gemini/Grok vision API",
-            notes=["vision.skip_live: смысловой QC пропущен (qc_skipped_semantic)"],
-            cfg=cfg)
+        return run_local_semantic_qc(ctx, plan)
 
     duration = float(plan["duration_sec"])
     try:

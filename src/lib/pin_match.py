@@ -194,6 +194,8 @@ def slot_lock_hits(lock: dict[str, Any], slot: dict[str, Any]) -> bool:
         return False
     if kind == "footage" and slot_kind in ("avatar", "split"):
         return False
+    if kind == "fullscreen_text" and slot_kind != "fullscreen_text":
+        return False
     try:
         min_dur = float(lock.get("min_duration") or 0.0)
     except (TypeError, ValueError):
@@ -202,6 +204,34 @@ def slot_lock_hits(lock: dict[str, Any], slot: dict[str, Any]) -> bool:
         half = min_dur / 2.0
         return end > (t - half) and start < (t + half)
     return start - 1e-6 <= t < end + 1e-6
+
+
+def plan_slot_locks(plan: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Locks stashed on the in-memory plan, or copied into the edit_plan."""
+    raw = (plan or {}).get("_slot_locks") or (plan or {}).get("slot_locks") or []
+    if not isinstance(raw, list):
+        return []
+    return [item for item in raw if isinstance(item, dict) and "t" in item]
+
+
+def slot_lock_deny_ids(
+        slot: dict[str, Any],
+        locks: list[dict[str, Any]] | None) -> set[str]:
+    """asset_ids this slot must not inherit — from overlapping locks only."""
+    denied: set[str] = set()
+    for lock in locks or []:
+        if slot_lock_hits(lock, slot):
+            denied.update(str(x) for x in (lock.get("deny_asset_ids") or []) if x)
+    return denied
+
+
+def slot_lock_brand_plate(
+        slot: dict[str, Any],
+        locks: list[dict[str, Any]] | None) -> bool:
+    """True when a hitting lock says brand grid, not a neighbour plate."""
+    return any(
+        slot_lock_hits(lock, slot) and lock.get("brand_plate")
+        for lock in locks or [])
 
 
 def exclusive_lock_owners(

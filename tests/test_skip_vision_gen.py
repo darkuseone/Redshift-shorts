@@ -339,3 +339,177 @@ def test_skip_live_is_not_a_shipped_semantic_success(tmp_path, monkeypatch):
     assert status != "ok"
     assert "success" not in status
     assert folded.get("vision")
+
+
+def _skip_ctx(tmp_path, monkeypatch, *, skip_live=True):
+    from src.p12_render_qc import vision_qc as VQ
+    from src.lib.config import load_config
+
+    called = {"build": 0, "frames": 0}
+
+    def _boom_provider(*_a, **_k):
+        called["build"] += 1
+        raise AssertionError("build_vision_provider must not run under skip_live")
+
+    def _boom_frames(*_a, **_k):
+        called["frames"] += 1
+        raise AssertionError("extract_frames must not run under skip_live")
+
+    monkeypatch.setattr(VQ, "build_vision_provider", _boom_provider)
+    monkeypatch.setattr(VQ, "extract_frames", _boom_frames)
+    cfg = load_config(overrides=["vision.skip_live=true"] if skip_live else [])
+    ctx = MagicMock()
+    ctx.cfg = cfg
+    ctx.costs = MagicMock()
+    ctx.warn = MagicMock()
+    ctx.wpath = lambda *a: tmp_path.joinpath(*map(str, a))
+    ctx.read_or = lambda *_a, **_k: {}
+    return ctx, called
+
+
+def test_skip_live_with_shots_runs_local_not_xai(tmp_path, monkeypatch):
+    from src.p12_render_qc import vision_qc as VQ
+    from src.p12_render_qc.qc import apply_semantic_qc
+
+    ctx, called = _skip_ctx(tmp_path, monkeypatch)
+    plan = {
+        "video_id": "redshift_0049",
+        "duration_sec": 70.0,
+        "variant": "A",
+        "shots": [
+            {"index": 1, "start": 2.0, "end": 7.2, "kind": "avatar",
+             "asset_id": "avatar_seg_0", "file": "avatar.mp4", "bg_file": None},
+            {"index": 2, "start": 7.17, "end": 8.4, "kind": "fullscreen_text",
+             "content": "$1 000 000", "file": "assets/backdrops/grid.jpg",
+             "params": {"content": "$1 000 000"}},
+            {"index": 5, "start": 16.0, "end": 21.0, "kind": "footage",
+             "asset_id": "press_c8e1aa428b",
+             "file": "shots/press_c8e1aa428b_crop.mp4",
+             "page_url": "https://openai.com/index/navier-stokes-solution/"},
+            {"index": 10, "start": 28.6, "end": 31.4, "kind": "footage",
+             "asset_id": "pexels_v34459460",
+             "file": "shots/pexels_v34459460_crop.mp4",
+             "page_url": "https://www.pexels.com/video/colorful-html-code-on-computer-monitor-34459460/",
+             "template": "kenburns/pan-left"},
+            {"index": 13, "start": 38.8, "end": 41.6, "kind": "footage",
+             "asset_id": "pexels_v10884417",
+             "file": "shots/pexels_v10884417_crop.mp4",
+             "page_url": "https://www.pexels.com/video/water-flowing-through-a-discharge-pipe-10884417/"},
+            {"index": 19, "start": 52.6, "end": 56.2, "kind": "avatar",
+             "asset_id": "pexels_v37695140",
+             "file": "avatar_19.mp4",
+             "bg_file": "shots/bg_pexels_v37695140_crop.mp4",
+             "page_url": "https://www.pexels.com/video/quiet-library-aisle-with-rows-of-books-37695140/"},
+            {"index": 23, "start": 62.8, "end": 66.5, "kind": "avatar",
+             "asset_id": "pexels_v12908964",
+             "file": "avatar_23.mp4",
+             "bg_file": "shots/bg_pexels_v12908964_crop.mp4",
+             "page_url": "https://www.pexels.com/video/woman-looking-at-documents-while-working-from-home-12908964/"},
+        ],
+        "slot_locks": [
+            {"t": 5.8, "kind": "avatar", "brand_plate": True,
+             "deny_asset_ids": ["press_c8e1aa428b"]},
+            {"t": 7.18, "kind": "fullscreen_text", "brand_plate": True,
+             "deny_asset_ids": ["press_c8e1aa428b"]},
+            {"t": 17.58, "kind": "footage", "asset_id": "press_c8e1aa428b",
+             "min_duration": 5.2},
+            {"t": 29.3, "kind": "footage", "asset_id": "pexels_v34459460"},
+            {"t": 41.02, "kind": "footage", "asset_id": "pexels_v10884417",
+             "exclusive": True},
+            {"t": 52.73, "kind": "avatar", "asset_id": "pexels_v37695140",
+             "deny_asset_ids": ["pexels_v10884417"]},
+            {"t": 64.45, "kind": "avatar", "asset_id": "pexels_v12908964",
+             "deny_asset_ids": ["pexels_v16865644", "pexels_v10884417"]},
+        ],
+        "speech_words": [
+            {"display": "миллион", "start": 5.6, "end": 6.0},
+            {"display": "OpenAI", "start": 17.4, "end": 17.7},
+            {"display": "выкладывает", "start": 17.7, "end": 18.2},
+            {"display": "Астра", "start": 29.1, "end": 29.4},
+            {"display": "Lean", "start": 29.5, "end": 29.9},
+            {"display": "Навье-Стокса", "start": 40.8, "end": 41.3},
+            {"display": "жидкость", "start": 41.3, "end": 41.7},
+            {"display": "приз", "start": 52.5, "end": 52.7},
+            {"display": "Клея", "start": 52.7, "end": 53.1},
+            {"display": "дыра", "start": 64.2, "end": 64.5},
+            {"display": "стене", "start": 64.6, "end": 64.9},
+        ],
+        "subtitles": [],
+    }
+    vision = VQ.run_vision_qc(ctx, video_path=tmp_path / "v.mp4", plan=plan)
+    folded = apply_semantic_qc(_ok_qc(), vision)
+    assert called["build"] == 0
+    assert called["frames"] == 0
+    assert vision.get("local_semantic") is True
+    assert vision.get("live_xai_calls") == 0
+    assert vision.get("qc_skipped_semantic") is not True
+    assert vision["mismatch_share"] == 0.0
+    assert vision["picture_matches_speech"] is True
+    assert folded["passed"] is True
+
+
+def test_skip_live_dataviz_on_astra_is_mismatch(tmp_path, monkeypatch):
+    from src.p12_render_qc import vision_qc as VQ
+
+    ctx, called = _skip_ctx(tmp_path, monkeypatch)
+    plan = {
+        "video_id": "redshift_0049",
+        "duration_sec": 40.0,
+        "variant": "A",
+        "shots": [{
+            "index": 10, "start": 28.0, "end": 32.0, "kind": "footage",
+            "asset_id": "mk-line-graph",
+            "template": "data-viz/mk-line-graph",
+            "ladder_rung": "dataviz",
+            "file": "shots/graph.mp4",
+        }],
+        "slot_locks": [
+            {"t": 29.3, "kind": "footage", "asset_id": "pexels_v34459460"},
+        ],
+        "speech_words": [
+            {"display": "Астра", "start": 29.1, "end": 29.4},
+            {"display": "Lean", "start": 29.5, "end": 29.9},
+        ],
+        "subtitles": [],
+    }
+    vision = VQ.run_vision_qc(ctx, video_path=tmp_path / "v.mp4", plan=plan)
+    assert called["build"] == 0
+    assert called["frames"] == 0
+    assert vision["blocking"] is True
+    assert vision["mismatch_share"] == 1.0
+    assert any("lock" in str(s.get("reason") or "") or "dataviz" in str(s.get("reason") or "")
+               for s in vision.get("samples") or [])
+
+
+def test_skip_live_stolen_water_on_clay_is_mismatch(tmp_path, monkeypatch):
+    from src.p12_render_qc import vision_qc as VQ
+
+    ctx, called = _skip_ctx(tmp_path, monkeypatch)
+    plan = {
+        "video_id": "redshift_0049",
+        "duration_sec": 70.0,
+        "variant": "A",
+        "shots": [
+            {"index": 13, "start": 38.8, "end": 41.6, "kind": "footage",
+             "asset_id": "pexels_v10884417",
+             "file": "shots/pexels_v10884417_crop.mp4"},
+            {"index": 19, "start": 52.6, "end": 56.2, "kind": "avatar",
+             "asset_id": "pexels_v10884417",
+             "bg_file": "shots/bg_pexels_v10884417_crop.mp4"},
+        ],
+        "slot_locks": [
+            {"t": 41.02, "kind": "footage", "asset_id": "pexels_v10884417",
+             "exclusive": True},
+            {"t": 52.73, "kind": "avatar", "asset_id": "pexels_v37695140",
+             "deny_asset_ids": ["pexels_v10884417"]},
+        ],
+        "speech_words": [
+            {"display": "Навье-Стокса", "start": 40.8, "end": 41.3},
+            {"display": "Клея", "start": 52.7, "end": 53.1},
+        ],
+        "subtitles": [],
+    }
+    vision = VQ.run_vision_qc(ctx, video_path=tmp_path / "v.mp4", plan=plan)
+    assert called["build"] == 0
+    assert vision["blocking"] is True
+    assert vision["mismatch_share"] == 1.0

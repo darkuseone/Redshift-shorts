@@ -113,6 +113,13 @@
         "deny_asset_ids": ["press_c8e1aa428b"]
       },
       {
+        "t": 7.18,
+        "kind": "fullscreen_text",
+        "asset_id": null,
+        "brand_plate": true,
+        "deny_asset_ids": ["press_c8e1aa428b"]
+      },
+      {
         "t": 17.58,
         "kind": "footage",
         "asset_id": "press_c8e1aa428b",

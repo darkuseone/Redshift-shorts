@@ -57,6 +57,7 @@ from ..lib.templates import TemplateCatalog, Template, diff_count
 from ..lib.template_picker import ScenarioIndex, TemplatePicker, build_blob
 from ..lib.pin_match import (
     overlapping_speech, apply_slot_locks, exclusive_lock_owners,
+    plan_slot_locks, slot_lock_brand_plate, slot_lock_deny_ids,
     slot_locks_from_entry,
 )
 from ..p7_broll_search.search import _footage_pin_entry
@@ -757,9 +758,14 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
     AI-only pools return None — heroes then skip plate templates.
     Keyboard/code neighbour files are skipped when this window is fluids.
     Avatar slots do not inherit a neighbour plate (own file or brand grid).
+    A brand_plate / deny lock is SLOT=FILE: the $1M card must not steal press.
     """
     if str(slot.get("kind") or "") in AVATAR_KINDS:
         return None
+    locks = plan_slot_locks(plan)
+    if slot_lock_brand_plate(slot, locks):
+        return None
+    lock_denied = slot_lock_deny_ids(slot, locks)
     index = int(slot["index"])
     assets = assets or {}
     brief = slot_visual_brief(slot, plan or {}, words)
@@ -797,6 +803,8 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
             src_aid = str((assets.get(int(s["index"])) or {}).get("asset_id") or "")
             owners = (plan or {}).get("_exclusive_owners") or {}
             if src_aid and src_aid in owners and owners[src_aid] != index:
+                continue
+            if src_aid and src_aid in lock_denied:
                 continue
             out.append(s)
         return out
@@ -850,11 +858,17 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
                   words: Iterable[dict[str, Any]] | None = None,
                   ) -> str | None:
     """Prepared dst, nearest non-NASA plate, or a brand grid — never invent text."""
+    locks = plan_slot_locks(plan)
+    if slot_lock_brand_plate(slot, locks):
+        return _brand_plate_file(ctx, plan)
+    lock_denied = slot_lock_deny_ids(slot, locks)
     inherit = slot.get("inherit_from")
     if inherit is not None:
         owners = (plan or {}).get("_exclusive_owners") or {}
         inherited_aid = str((assets.get(int(inherit)) or {}).get("asset_id") or "")
         if inherited_aid and inherited_aid in owners and owners[inherited_aid] != int(slot["index"]):
+            inherit = None
+        if inherited_aid and inherited_aid in lock_denied:
             inherit = None
     if inherit is not None:
         inherited = prepared.get(int(inherit))
@@ -863,7 +877,8 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
     prep = prepared.get(slot["index"])
     asset = assets.get(slot["index"])
     brief = slot_visual_brief(slot, plan, words)
-    if prep is not None and prep.get("dst"):
+    own_aid = str((asset or {}).get("asset_id") or "")
+    if prep is not None and prep.get("dst") and own_aid not in lock_denied:
         hay = _plate_asset_hay(asset, str(prep.get("dst") or ""))
         denied = bool(brief_reject_reason(brief, hay))
         if asset is not None:
@@ -4727,8 +4742,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     peer_block = [str(x) for x in peer_exclude if x]
     slots = plan["slots"]
     pin_entry = _footage_pin_entry(getattr(ctx, "cfg", None), str(plan.get("video_id") or ""))
+    plan["_slot_locks"] = slot_locks_from_entry(pin_entry)
     plan["_exclusive_owners"] = exclusive_lock_owners(
-        slots, slot_locks_from_entry(pin_entry))
+        slots, plan["_slot_locks"])
     _slot_beats(plan)
     escalation = _Escalation()
     _sync_fullscreen_overlay_content(slots, plan)
@@ -5436,6 +5452,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         "preferences_applied": sorted(prefs) if prefs else [],
         "cta_window": plan.get("cta_window"),
         "stats": plan.get("stats", {}),
+        "slot_locks": list(plan.get("_slot_locks") or []),
     }
 
 
@@ -5642,8 +5659,9 @@ def run_step(ctx) -> dict[str, Any]:
         plan["slots"], plan, base_assets, words_doc.get("words") or [])
     base_assets = apply_slot_locks(
         plan["slots"], base_assets, pin_entry, extra_pool=extra_pool)
+    plan["_slot_locks"] = slot_locks_from_entry(pin_entry)
     plan["_exclusive_owners"] = exclusive_lock_owners(
-        plan["slots"], slot_locks_from_entry(pin_entry))
+        plan["slots"], plan["_slot_locks"])
 
     recent_videos = _recent_video_ids(ctx, limit=3)
     pillarbox_limit = int(ctx.cfg.get("limits.pillarbox_per_video", 2))

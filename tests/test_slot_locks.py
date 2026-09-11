@@ -80,6 +80,8 @@ def test_0049_pins_are_per_slot_not_global_prefer():
     assert by_t[52.73]["asset_id"] == "pexels_v37695140"
     assert by_t[64.45]["asset_id"] == "pexels_v12908964"
     assert by_t[5.8].get("brand_plate") is True
+    assert by_t[7.18].get("brand_plate") is True
+    assert "press_c8e1aa428b" in (by_t[7.18].get("deny_asset_ids") or [])
 
 
 def test_lock_navier_stokes_is_water_pipe():
@@ -223,3 +225,28 @@ def test_fluid_fallback_skips_wing_when_water_missing():
     aid = str((out.get(int(ns["index"])) or {}).get("asset_id") or "")
     assert aid == "pexels_v_blood_flow"
     assert aid != "pexels_v16865644"
+
+
+def test_million_card_does_not_inherit_press():
+    """$1M fullscreen is brand plate — neighbour OpenAI article stays off."""
+    slots = [
+        {"index": 2, "kind": "fullscreen_text", "block_id": "b2",
+         "start": 7.177, "end": 8.377},
+        {"index": 5, "kind": "footage", "block_id": "b3",
+         "start": 13.87, "end": 16.27},
+    ]
+    prepared = {5: {"dst": "/tmp/press.mp4", "duration_sec": 2.5}}
+    assets = {5: {
+        "asset_id": "press_c8e1aa428b",
+        "source": "press",
+        "page_url": "https://openai.com/index/navier-stokes-solution/",
+    }}
+    plan = {
+        "_slot_locks": [{
+            "t": 7.18,
+            "kind": "fullscreen_text",
+            "brand_plate": True,
+            "deny_asset_ids": ["press_c8e1aa428b"],
+        }],
+    }
+    assert _plate_source(slots[0], slots, prepared, assets, plan=plan) is None

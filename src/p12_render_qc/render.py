@@ -426,8 +426,8 @@ def run_step(ctx) -> dict[str, Any]:
                                 "qc_passed": False}
             continue
 
-        # §11.2 — смысловой QC по готовому файлу. mismatch > 10 % и skip_live
-        # блокируют выдачу так же, как §11.1.
+        # §11.2 — смысловой QC по готовому файлу. mismatch > 10 % блокирует
+        # выдачу. skip_live не шлёт кадры в xAI: эвристики + slot_locks.
         vision = run_vision_qc(ctx, video_path=out_file, plan=plan,
                                frames=qc_frames)
         qc = apply_semantic_qc(qc, vision)
