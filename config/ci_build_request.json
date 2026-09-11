@@ -5,5 +5,5 @@
   "heygen_source": "prepared",
   "skip_generate": true,
   "requested_by": "cursor",
-  "note": "пересборка 0049 с P11: leftover/topical по VO-окну, source_card 5.2с, без TTS/HeyGen/P8/P9"
+  "note": "пересборка 0049 с P11: leftover без CONCEPTS не выметает сток, inherit копирует лицензию, без TTS/HeyGen"
 }
