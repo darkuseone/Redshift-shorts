@@ -1,11 +1,11 @@
 {
   "script": "scripts/redshift_0050.json",
   "providers_mode": "live",
-  "from_step": "P0",
+  "from_step": "P6",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 phase1g: avatar off wins mode_hint; only b2+b6 on; MCP next",
+  "note": "0050 phase3: MCP avatar clips committed; resume P6 prepared. No Grok montage.",
   "tts_pace": 1.2
 }

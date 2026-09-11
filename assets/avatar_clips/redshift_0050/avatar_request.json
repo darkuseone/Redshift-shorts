@@ -1,0 +1,54 @@
+{
+  "video_id": "redshift_0050",
+  "avatar_id": "99ccc74e764947c394cd4ef210960a6f",
+  "model_version": "avatar5",
+  "clips_dir": "/workspace/repos/Redshift-shorts/assets/avatar_clips/redshift_0050",
+  "background": "transparent_if_available",
+  "resolution": [
+    1080,
+    1920
+  ],
+  "segments": [
+    {
+      "index": 0,
+      "audio": "assets/avatar_clips/redshift_0050/audio/seg_00.wav",
+      "duration_sec": 4.094,
+      "block_id": "b2",
+      "text": "модель без чата закрыла кусок этой задачи. 7 задач тысячелетия.",
+      "expected_clip": "seg_00.webm"
+    },
+    {
+      "index": 1,
+      "audio": "assets/avatar_clips/redshift_0050/audio/seg_01.wav",
+      "duration_sec": 5.871,
+      "block_id": "b2",
+      "text": "долларов за каждую. Четверть века. Это формулы воды, воздуха и крови — не мелки на доске. Восьмого",
+      "expected_clip": "seg_01.webm"
+    },
+    {
+      "index": 2,
+      "audio": "assets/avatar_clips/redshift_0050/audio/seg_02.wav",
+      "duration_sec": 0.256,
+      "block_id": "b6",
+      "text": "Lean проверяет",
+      "expected_clip": "seg_02.webm"
+    },
+    {
+      "index": 3,
+      "audio": "assets/avatar_clips/redshift_0050/audio/seg_03.wav",
+      "duration_sec": 4.921,
+      "block_id": "b6",
+      "text": "шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI",
+      "expected_clip": "seg_03.webm"
+    },
+    {
+      "index": 4,
+      "audio": "assets/avatar_clips/redshift_0050/audio/seg_04.wav",
+      "duration_sec": 6.452,
+      "block_id": "b6",
+      "text": "Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
+      "expected_clip": "seg_04.webm"
+    }
+  ],
+  "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы в clips_dir под именами expected_clip и возобновить прогон с шага P6."
+}
