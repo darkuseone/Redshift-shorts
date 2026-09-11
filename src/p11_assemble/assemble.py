@@ -4133,6 +4133,67 @@ def _block_gap_fullscreen(slot: dict[str, Any]) -> bool:
     return bool(slot.get("carve_remainder"))
 
 
+def _overflow_beyond_plate_cap(
+        slot: dict[str, Any], block: dict[str, Any], *,
+        picker: TemplatePicker, catalog: TemplateCatalog,
+        plan: dict[str, Any], variant: str, seed: int,
+        recent_videos: list[str], used_templates: list[str],
+        brand_icons, words: list[dict[str, Any]],
+        plate_src: dict[str, Any] | None, bg_file: str | None,
+        prev_shot: dict[str, Any] | None,
+        ) -> dict[str, Any]:
+    """QC-24: третью голую плиту не выпускаем — карточка сверх потолка или hold.
+
+    ``VisualBudget.plate`` = 2. Раньше ``take("plate")`` вызывался без
+    ``allows()``, и 0049 получил восемь одинаковых ``grid.jpg``. Кадр всё
+    равно нужно закрыть: другой hero-шаблон (QC-25: не чаще двух раз) или
+    файл предыдущего шота без маркера ``plate without text``.
+    """
+    punch_span = _authored_punch_span(
+        plan, str((block or {}).get("id") or slot.get("block_id") or ""))
+    skip_card = False
+    if punch_span is not None:
+        _punch_start, punch_end = punch_span
+        skip_card = float(slot["start"]) + 0.05 >= punch_end
+    hero = None
+    if not skip_card and (block or {}).get("emphasis_word"):
+        hero = _hero_device(
+            catalog, slot=slot,
+            content=_hero_content(
+                block, slot, brand_icons,
+                title=str(plan.get("title") or ""), words=words),
+            has_alpha=False, plate_src=plate_src,
+            recent_videos=recent_videos, exclude=used_templates,
+            seed=seed + int(slot["index"]) + 97, picker=picker, variant=variant,
+            block=block, video_duration=float(plan["duration_sec"]),
+            exclude_renderers=frozenset(_FULL_FRAME_HEROES) | {"hero-oversize"})
+    if hero:
+        used_templates.append(str(hero.get("template") or ""))
+        hero = dict(hero)
+        hero["why"] = (
+            "лестница §7.2, сверх потолка плит: карточка вместо голой плиты")
+        return {
+            "kind": "footage",
+            "file": bg_file,
+            "asset_id": None,
+            "gap_reason": "материал не найден: кадр закрыт приёмом (card)",
+            "ladder_rung": "card",
+            "hero": hero,
+        }
+    inherit_file = bg_file
+    inherit_asset = None
+    if prev_shot and prev_shot.get("file"):
+        inherit_file = prev_shot.get("file")
+        inherit_asset = prev_shot.get("asset_id")
+    return {
+        "kind": "footage",
+        "file": inherit_file,
+        "asset_id": inherit_asset,
+        "gap_reason": "plate cap: hold previous frame",
+        "ladder_rung": "inherit",
+    }
+
+
 def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                       budget: VisualBudget, picker: TemplatePicker,
                       catalog: TemplateCatalog, plan: dict[str, Any],
@@ -4758,16 +4819,30 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     elif key:
                         used_screen_phrases.add(key)
             if fs_count >= fs_cap or not content:
-                entry.update({
-                    "kind": "footage",
-                    "file": bg_file,
-                    "asset_id": None,
-                    "gap_reason": ("fullscreen cap: plate without text"
-                                   if fs_count >= fs_cap
-                                   else "no unique phrase: plate without text"),
-                    "ladder_rung": "plate",
-                })
-                budget.take("plate")
+                if budget.allows("plate"):
+                    entry.update({
+                        "kind": "footage",
+                        "file": bg_file,
+                        "asset_id": None,
+                        "gap_reason": ("fullscreen cap: plate without text"
+                                       if fs_count >= fs_cap
+                                       else "no unique phrase: plate without text"),
+                        "ladder_rung": "plate",
+                    })
+                    budget.take("plate")
+                    shots.append(entry)
+                    continue
+                entry.update(_overflow_beyond_plate_cap(
+                    slot, gap_block, picker=picker, catalog=catalog,
+                    plan=plan, variant=variant, seed=seed,
+                    recent_videos=recent_videos, used_templates=used_templates,
+                    brand_icons=brand_icons,
+                    words=[w for w in words_doc["words"]
+                           if float(w["end"]) > float(slot["start"])
+                           and float(w["start"]) < float(slot["end"])],
+                    plate_src=_plate_source(slot, slots, prepared, assets),
+                    bg_file=bg_file,
+                    prev_shot=shots[-1] if shots else None))
                 shots.append(entry)
                 continue
             gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()

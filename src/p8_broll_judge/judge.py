@@ -12,6 +12,10 @@
 
 Пороги: ≥0.70 принять, <0.45 отклонить. Незакрытый слот уходит в генерацию (P9),
 а **не** заполняется слабым футажом — это прямое требование §7.3.
+
+Исключение после того, как критик уже отработал: оставшиеся дыры закрываются
+уже скачанным клипом (``accept_stock_leftover``). Иначе P9 на квоте 429
+отдаёт все слоты лестнице P11, и QC-24 роняет ролик голыми плитами.
 """
 
 from __future__ import annotations
@@ -570,6 +574,113 @@ def _fill_unfilled_from_leftover_prefers(
     return filled
 
 
+def _row_has_media(row: dict[str, Any]) -> bool:
+    """Скачанный клип: путь, ключ storage или кадры для судьи."""
+    if str(row.get("local_file") or "").strip():
+        return True
+    if str(row.get("storage_key") or "").strip():
+        return True
+    return bool(row.get("frames"))
+
+
+_LEFTOVER_STOCK_BLOCK = frozenset({
+    "underfilled",
+    "reject_palette",
+    "reject_watermark",
+    "reject_dark",
+    "reject_cheap",
+    "reject_theme",
+    "reject_gate",
+})
+
+
+def _fill_unfilled_from_judged_stock(
+        *, plan: dict[str, Any], accepted: dict[int, dict[str, Any]],
+        accepted_counts: dict[str, int], judged: list[dict[str, Any]],
+        repeat_max: int, skip_live: bool, paid_ok: bool,
+        pin_deny: set[str]) -> int:
+    """После критика закрыть пустые footage-слоты уже скачанным клипом.
+
+    §7.3 шлёт незакрытый слот в P9, а не слабым футажом. Когда Grok ставит
+    всем < 0.70 и бюджет арбитража не исчерпан, ``accept_fallback`` молчит,
+    слоты уходят в генерацию, Gemini 429 — и P11 рисует одинаковые плиты
+    (QC-24). Этот проход не зовёт API: берёт файлы, которые P7 уже скачал.
+    Без ``local_file`` / ``storage_key`` / кадров слот не трогаем — тонкий
+    пул MUST-017 по-прежнему идёт на лестницу, а не в слабый сток.
+    """
+    if skip_live or not paid_ok:
+        return 0
+    roles = ("broll", "evidence", "interstitial")
+    unfilled = [
+        s for s in plan.get("slots") or []
+        if s.get("needs_asset")
+        and s.get("asset_role") in roles
+        and int(s["index"]) not in accepted
+    ]
+    if not unfilled:
+        return 0
+
+    def _usable(row: dict[str, Any]) -> bool:
+        if row.get("decision") in _LEFTOVER_STOCK_BLOCK:
+            return False
+        if row.get("origin") == "meme_library":
+            return False
+        if not _row_has_media(row):
+            return False
+        aid = str(row.get("asset_id") or "")
+        if not aid or pin_id_denied(aid, pin_deny):
+            return False
+        if accepted_counts.get(aid, 0) >= repeat_max:
+            return False
+        if row.get("has_watermark"):
+            return False
+        return True
+
+    pool = [row for row in judged if _usable(row)]
+    if not pool:
+        return 0
+    filled = 0
+    for slot in unfilled:
+        slot_index = int(slot["index"])
+        same: list[dict[str, Any]] = []
+        others: list[dict[str, Any]] = []
+        for row in pool:
+            if not _usable(row):
+                continue
+            try:
+                origin_slot = int(row.get("slot_index"))
+            except (TypeError, ValueError):
+                origin_slot = -1
+            if origin_slot == slot_index:
+                same.append(row)
+            else:
+                others.append(row)
+        same.sort(key=lambda r: float(r.get("score") or 0), reverse=True)
+        others.sort(key=lambda r: (
+            -float(r.get("score") or 0),
+            abs(int(r.get("slot_index") or 0) - slot_index),
+        ))
+        pick = next(iter(same), None) or next(iter(others), None)
+        if pick is None:
+            continue
+        intent = slot.get("visual_intent", "") or slot.get("reason", "")
+        entry = {
+            **pick,
+            "slot_index": slot_index,
+            "intent": intent,
+            "decision": "accept_stock_leftover",
+            "fallback_reason": (
+                "critic rejected the pool; leftover downloaded clip onto empty slot"),
+        }
+        judged.append(entry)
+        accepted[slot_index] = entry
+        aid = str(entry.get("asset_id") or "")
+        if aid:
+            accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
+        filled += 1
+    return filled
+
+
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
@@ -973,6 +1084,13 @@ def run_step(ctx) -> dict[str, Any]:
             pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
             repeat_max=repeat_max, skip_live=skip_live,
             palette_rules=palette_rules, visible_min=visible_min, words=words)
+
+    stock_filled = _fill_unfilled_from_judged_stock(
+        plan=plan, accepted=accepted, accepted_counts=accepted_counts,
+        judged=judged, repeat_max=repeat_max, skip_live=skip_live,
+        paid_ok=paid_ok, pin_deny=pin_deny)
+    if stock_filled:
+        _log.info("leftover stock closed %s empty slot(s)", stock_filled)
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

@@ -123,7 +123,7 @@ def _words(plan: dict) -> dict:
     сборку, а собственную выдумку.
     """
     words = []
-    for block, slot in zip(BLOCKS, plan["slots"]):
+    for block, slot in zip(plan["blocks"], plan["slots"]):
         parts = block["text"].split()
         step = slot["duration"] / max(len(parts), 1)
         for j, part in enumerate(parts):
@@ -263,6 +263,71 @@ class TestTheBudgetKeepsTheLadderFromSlidingToOneRung:
             assert taken <= 10, "потолок карточки не останавливает лестницу"
         assert taken == VisualBudget.CAPS["card"]
         assert not budget.allows("card")
+
+
+_GENERIC_EMPHASIS = (
+    "холод", "шум", "предел", "инженеры", "лаборатория",
+    "вспышка", "тишина", "порядок", "проверка", "экран",
+    "кристалл", "вакуум", "кабель", "датчик", "корпус",
+    "поток", "контур", "сплав", "резонатор", "матрица",
+)
+
+
+def _generic_empty_plan(n: int = 20) -> dict:
+    """Много пустых слотов без чисел и источников — лестница сползает к плитам."""
+    blocks = []
+    slots = []
+    for i in range(n):
+        word = _GENERIC_EMPHASIS[i % len(_GENERIC_EMPHASIS)]
+        bid = f"p{i:02d}"
+        blocks.append({
+            "id": bid, "role": "body", "mode": "C", "emphasis_word": word,
+            "text": f"{word.capitalize()} держит кадр без величины и без ссылки.",
+        })
+        start = round(i * 3.0, 3)
+        end = round(start + 3.0, 3)
+        slots.append({
+            "index": i, "start": start, "end": end, "duration": 3.0,
+            "kind": "footage", "block_id": bid, "role": "body",
+            "mode": "C", "visual_intent": "", "queries": [], "content": "",
+            "transition_in": "cut", "events": [], "needs_asset": True,
+            "asset_role": "broll", "template_hint": "", "meme_emotion": "",
+            "reason": "режим C: футаж во весь кадр (§3.5)",
+        })
+    return {
+        "video_id": "redshift_9049", "title": "Пустые слоты без стока",
+        "fps": 30, "duration_sec": float(n * 3.0),
+        "target_duration_sec": float(n * 3.0),
+        "music_mood": "tension", "music_tags": [], "category": "science",
+        "sources": [],
+        "cta": {"text": "Доверил бы ты такому ответу свои деньги?", "type": "question"},
+        "cta_window": [float(n * 3.0 - 2.0), float(n * 3.0)],
+        "hook_window": [0.0, 5.0],
+        "avatar_id": "", "stats": {}, "notes": [], "slots": slots,
+        "avatar_segments": [], "blocks": blocks,
+    }
+
+
+class TestPlateCapDoesNotEmitBarePlatesPastTwo:
+    """QC-24: третья голая плита не должна появиться в плане."""
+
+    def test_twenty_empty_generic_slots_stay_within_two_plates(self, gap_ctx):
+        plan = _generic_empty_plan(20)
+        catalog = TemplateCatalog.load(gap_ctx.cfg)
+        built = build_variant(
+            gap_ctx, plan, _words(plan),
+            assets={}, prepared={}, catalog=catalog,
+            avatar_meta={"segments": []}, sfx_map={},
+            variant="B", recent_videos=[])
+        plates = [
+            shot for shot in built["shots"]
+            if "plate without text" in str(shot.get("gap_reason") or "")
+        ]
+        rungs = _rungs(built)
+        assert len(plates) <= 2, (
+            f"голых плит {len(plates)}, потолок QC-24 = 2: {rungs}")
+        assert rungs["plate"] <= 2, f"ступень plate {rungs['plate']}: {rungs}"
+        assert len(built["shots"]) == 20
 
 
 class TestTheLadderNeverInventsADocument:
