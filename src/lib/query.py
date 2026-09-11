@@ -458,6 +458,11 @@ def leftover_query_fits_slot(
     if kind == "fluid":
         if _hay_has_marker(q, CODE_QUERY_MARKERS):
             return False
+        if _hay_has_marker(q, DATAVIZ_DENY_MARKERS):
+            return False
+        if (_hay_has_marker(q, PASSENGER_CABIN_MARKERS)
+                and not _hay_has_marker(q, FLUID_STRONG_MARKERS)):
+            return False
         if _hay_has_marker(q, FLUID_QUERY_MARKERS):
             return True
     elif kind == "lean":
@@ -543,10 +548,29 @@ CODE_QUERY_MARKERS = (
     "keyboard", "typing", "code editor", "programming ide", "theorem prover",
     "proof lean", "source programming",
 )
+# Not bare «lean»: it matches «clean». Dataviz/code close-ups on a fluid window.
+FLUID_CODE_DENY = (
+    "dataviz", "data-viz", "line-graph", "mk-line", "stat-countup",
+    "proof lean", "theorem prover", "programming ide", "code-closeup",
+    "source programming", "code editor",
+)
+DATAVIZ_DENY_MARKERS = (
+    "dataviz", "data-viz", "data visualization", "line-graph", "line graph",
+    "mk-line", "stat-countup", "chart data",
+)
 FLUID_QUERY_MARKERS = (
     "weather", "radar", "airplane", "wing", "blood", "pipes", "water",
     "turbulence", "storm", "microscope", "fluid", "vapor",
 )
+FLUID_STRONG_MARKERS = (
+    "water", "pipes", "pipe", "wing", "blood", "radar", "turbulence",
+    "fluid", "vapor", "storm", "microscope",
+)
+# Passenger cabin stills tagged «airplane» are not airflow / wing / water.
+PASSENGER_CABIN_MARKERS = (
+    "window", "seat", "cabin", "passenger", "coolplaces",
+)
+FLUID_LADDER_FORBIDDEN_RUNGS = frozenset({"dataviz", "source", "card"})
 FLUID_SPEECH = (
     "навье", "жидкост", "погод", "самолёт", "крыл", "труб", "крови", "кровь",
     "течёт",
@@ -637,7 +661,7 @@ def slot_visual_brief(
     if kind == "fluid":
         visual_ru = "как течёт жидкость"
         visual_en = "water turbulence airplane wing blood pipes"
-        deny = list(KEYBOARD_DENY)
+        deny = list(dict.fromkeys([*KEYBOARD_DENY, *FLUID_CODE_DENY]))
         if not queries:
             queries = list(DEFAULT_FLUID_QUERIES)
     elif kind == "lean":
@@ -667,6 +691,40 @@ def brief_deny_reason(brief: dict[str, Any], haystack: str) -> str | None:
     for token in brief.get("deny") or ():
         if token and token.lower() in blob:
             return f"brief deny: {token}"
+    return None
+
+
+def brief_reject_reason(
+        brief: dict[str, Any], haystack: str, *,
+        rung: str = "", template: str = "") -> str | None:
+    """One veto for search, cheap critic, and the P11 ladder.
+
+    A critic that cannot stop dataviz/code from closing a fluid slot is
+    decoration: 0049 41.02 put mk-line-graph on «Навье-Стокса» after P8.
+    """
+    hay = " ".join(
+        part for part in (haystack, rung, template) if str(part or "").strip())
+    denied = brief_deny_reason(brief, hay)
+    if denied:
+        return denied
+    if str(brief.get("kind") or "") != "fluid":
+        return None
+    rung_s = str(rung or "").lower()
+    tpl = str(template or "").lower()
+    if rung_s in FLUID_LADDER_FORBIDDEN_RUNGS:
+        return f"brief veto: fluid slot rejects ladder {rung_s}"
+    if any(marker in tpl for marker in (
+            "dataviz", "data-viz", "mk-line", "browser-ui",
+            "code-editor", "line-graph")):
+        return f"brief veto: fluid slot rejects template {template}"
+    blob = hay.lower()
+    if _hay_has_marker(blob, CODE_QUERY_MARKERS):
+        return "brief veto: code/keyboard on fluid window"
+    if _hay_has_marker(blob, DATAVIZ_DENY_MARKERS):
+        return "brief veto: dataviz on fluid window"
+    if (_hay_has_marker(blob, PASSENGER_CABIN_MARKERS)
+            and not _hay_has_marker(blob, FLUID_STRONG_MARKERS)):
+        return "brief veto: cabin leftover on fluid window"
     return None
 
 

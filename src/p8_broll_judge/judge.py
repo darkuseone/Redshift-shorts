@@ -35,8 +35,8 @@ from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
     FLUID_QUERY_MARKERS, _hay_has_marker, classify_intent,
     leftover_query_fits_slot, negative_reject_reason,
-    slot_negatives, slot_visual_brief, brief_deny_reason, spoken_slot_text,
-    thematic_reject_reason, topical_match_score,
+    slot_negatives, slot_visual_brief, brief_reject_reason,
+    spoken_slot_text, thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
     _footage_pin_entry, _load_footage_pins, _local_cache_row,
@@ -96,7 +96,7 @@ def prior_accepted_ok(
     if decision.startswith("reject") or decision in ("underfilled",):
         return False
     brief = slot_visual_brief(slot, plan, words)
-    if brief_deny_reason(brief, _candidate_hay(entry)):
+    if brief_reject_reason(brief, _candidate_hay(entry)):
         return False
     if decision == "accept_stock_leftover":
         query = str(entry.get("query") or "")
@@ -133,9 +133,18 @@ def cheap_reject_reason(candidate: dict[str, Any], *, cfg,
                         slot_duration: float = 3.0,
                         negatives: list[str] | None = None,
                         category: str = "", intent_kind: str = "",
-                        video_id: str = "") -> str | None:
-    """Шаг 1 без LLM: theme, negatives, watermark-строки, ultrawide, duration."""
+                        video_id: str = "",
+                        brief: dict[str, Any] | None = None) -> str | None:
+    """Шаг 1 без LLM: theme, negatives, watermark-строки, ultrawide, duration.
+
+    ``brief`` is the spoken window: keyboard/dataviz on a fluid slot fail
+    here so Grok is never asked to score them.
+    """
     hay = _candidate_hay(candidate)
+    if brief:
+        denied = brief_reject_reason(brief, hay)
+        if denied:
+            return denied
     theme = thematic_reject_reason(
         hay, category=category, intent_kind=intent_kind, video_id=video_id)
     if theme:
@@ -592,6 +601,7 @@ def _fill_unfilled_from_leftover_prefers(
             gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
             if gate:
                 continue
+            brief = slot_visual_brief(slot, plan, words)
             cheap = cheap_reject_reason(
                 candidate, cfg=cfg, slot_duration=slot_dur,
                 negatives=slot_negatives(slot, plan),
@@ -599,7 +609,8 @@ def _fill_unfilled_from_leftover_prefers(
                 intent_kind=classify_intent(
                     intent, [candidate.get("query", "")],
                     str(plan.get("category") or "")),
-                video_id=str(plan.get("video_id") or ""))
+                video_id=str(plan.get("video_id") or ""),
+                brief=brief)
             if cheap:
                 continue
             palette = palette_verdict([], palette_rules)
@@ -733,7 +744,7 @@ def _fill_unfilled_from_judged_stock(
                 " ".join(str(t) for t in (row.get("tags") or [])),
                 str(row.get("page_url") or ""),
             ])
-            if brief_deny_reason(brief, hay):
+            if brief_reject_reason(brief, hay):
                 return False
             query = str(row.get("query") or "")
             if not query:
@@ -914,9 +925,9 @@ def run_step(ctx) -> dict[str, Any]:
             cheap = cheap_reject_reason(
                 candidate, cfg=cfg, slot_duration=slot_duration,
                 negatives=negatives, category=category,
-                intent_kind=intent_kind, video_id=video_id)
+                intent_kind=intent_kind, video_id=video_id, brief=brief)
             if not cheap:
-                cheap = brief_deny_reason(brief, _candidate_hay(candidate))
+                cheap = brief_reject_reason(brief, _candidate_hay(candidate))
             if cheap:
                 killed_cheap += 1
                 decision = "reject_theme" if (
@@ -966,7 +977,7 @@ def run_step(ctx) -> dict[str, Any]:
                 return False
             if accepted_counts.get(aid, 0) >= repeat_max:
                 return False
-            if brief_deny_reason(brief, _candidate_hay(row)):
+            if brief_reject_reason(brief, _candidate_hay(row)):
                 return False
             query = str(row.get("query") or "")
             if not query:

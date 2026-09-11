@@ -275,6 +275,10 @@ class TestLeftoverQueryGate:
             "weather radar storm satellite", slot, {}, words)
         assert not leftover_query_fits_slot(
             "hands typing keyboard code editor", slot, {}, words)
+        assert not leftover_query_fits_slot(
+            "sky view airplane plane windows seat", slot, {}, words)
+        assert leftover_query_fits_slot(
+            "airplane wing in flight clouds", slot, {}, words)
 
     def test_zakryli_is_not_a_wing_fluid_window(self):
         from src.lib.query import classify_spoken_window
@@ -287,8 +291,8 @@ class TestLeftoverQueryGate:
 class TestSpokenWindowBrief:
     def test_navier_window_drops_keyboard_queries(self):
         from src.lib.query import (
-            brief_deny_reason, classify_spoken_window, queries_for_spoken_window,
-            slot_visual_brief,
+            brief_deny_reason, brief_reject_reason, classify_spoken_window,
+            queries_for_spoken_window, slot_visual_brief,
         )
         spoken = "Называются уравнения Навье-Стокса. Страшное имя."
         assert classify_spoken_window(spoken) == "fluid"
@@ -310,6 +314,12 @@ class TestSpokenWindowBrief:
         assert brief["kind"] == "fluid"
         assert brief_deny_reason(brief, "mechanical keyboard hands typing")
         assert not brief_deny_reason(brief, "industrial pipes water plant")
+        assert brief_reject_reason(brief, "mk-line-graph dataviz", rung="dataviz")
+        assert brief_reject_reason(
+            brief, "browser-ui/browser-scroll", rung="source",
+            template="browser-ui/browser-scroll")
+        assert not brief_reject_reason(
+            brief, "industrial pipes water plant", rung="parallax")
 
     def test_openai_paper_window_denies_keyboard_leftover(self):
         slot = _slot(index=5, start=16.2, end=18.8)
@@ -415,3 +425,113 @@ def test_append_dataviz_skips_fluid_majority_queries_on_open_speech():
         recent_videos=[], used=[], picker=None,
         budget=VisualBudget(), words=words)
     assert overlays == []
+
+
+def test_cheap_critic_fails_keyboard_on_navier_even_if_block_has_lean():
+    """P8 must see the spoken window, not b4's Lean+fluids mix."""
+    from src.lib.config import load_config
+    from src.lib.query import slot_visual_brief
+    from src.p8_broll_judge.judge import cheap_reject_reason
+
+    slot = _slot(index=13, start=38.8, end=41.6)
+    plan = {"blocks": [{
+        "id": "b1",
+        "text": "Проверка в Lean. Называются уравнения Навье-Стокса.",
+    }]}
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    brief = slot_visual_brief(slot, plan, words)
+    assert brief["kind"] == "fluid"
+    keyboard = {
+        "query": "hands typing keyboard code editor",
+        "tags": ["keyboard", "tech", "code"],
+        "page_url": "https://www.pexels.com/video/black-mechanical-keyboard-32259631/",
+        "asset_id": "pexels_v32259631",
+    }
+    dataviz = {
+        "query": "data visualization line graph dashboard",
+        "tags": ["dataviz", "chart"],
+        "page_url": "https://example.com/mk-line-graph",
+    }
+    water = {
+        "query": "industrial pipes water plant",
+        "tags": ["water", "pipes"],
+        "page_url": "https://www.pexels.com/video/water-flowing-through-a-discharge-pipe-10884417/",
+    }
+    cfg = load_config()
+    assert cheap_reject_reason(keyboard, cfg=cfg, brief=brief)
+    assert cheap_reject_reason(dataviz, cfg=cfg, brief=brief)
+    assert cheap_reject_reason(water, cfg=cfg, brief=brief) is None
+
+
+def test_fluid_empty_slot_ladder_is_not_dataviz():
+    """Empty pool + spoken «Навье-Стокса» must not close with the ladder chart."""
+    from src.p11_assemble.assemble import VisualBudget, _close_empty_slot
+
+    slot = {
+        "index": 13, "start": 38.885, "end": 41.565, "duration": 2.68,
+        "kind": "footage", "role": "develop", "block_id": "b4", "beat": "",
+    }
+    block = {
+        "id": "b4",
+        "text": "Семнадцать часов. Называются уравнения Навье-Стокса. Страшное имя.",
+        "emphasis_word": "семнадцать",
+    }
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    rung, hero, overlay = _close_empty_slot(
+        slot, block,
+        budget=VisualBudget(),
+        picker=None, catalog=None,
+        plan={"duration_sec": 70, "title": "", "sources": [
+            {"domain": "openai.com", "title": "Astra", "snippet": "Lean"}]},
+        variant="A", seed=1, recent_videos=[], used_templates=[],
+        brand_icons=None, words=words, plate_src=None,
+        traits={"number", "brand"}, bg_file=None)
+    assert rung != "dataviz"
+    assert rung != "source"
+    assert overlay is None or overlay.get("type") not in {"dataviz", "source_card"}
+    assert hero is None
+
+
+def test_window_traits_ignore_semnadtsat_outside_the_spoken_window():
+    from src.lib.meaning import window_traits
+    from src.lib.query import spoken_slot_text
+
+    slot = _slot(index=13, start=38.8, end=41.6)
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    spoken = spoken_slot_text(slot, words)
+    traits = window_traits(spoken)
+    assert "number" not in traits
+
+
+def test_press_card_stays_off_navier_speech():
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    ns = {"index": 13, "role": "develop", "asset_role": "broll",
+          "start": 38.8, "end": 41.6}
+    article = {"index": 5, "role": "evidence", "asset_role": "evidence",
+               "start": 16.2, "end": 18.8}
+    pins = ["press_c8e1aa428b", "pexels_v10884417"]
+    on_ns, _ = pin_slot_prefer_key(
+        "press_c8e1aa428b", ns, pins,
+        words=[{"display": "Навье-Стокса.", "start": 39.5, "end": 40.0}])
+    on_article, _ = pin_slot_prefer_key(
+        "press_c8e1aa428b", article, pins,
+        words=[{"display": "OpenAI", "start": 16.3, "end": 16.7},
+               {"display": "выкладывает", "start": 17.0, "end": 17.5}])
+    water_ns, _ = pin_slot_prefer_key(
+        "pexels_v10884417", ns, pins,
+        words=[{"display": "Навье-Стокса.", "start": 39.5, "end": 40.0}])
+    assert on_ns > 0
+    assert on_article < 0
+    assert water_ns < 0
+
+

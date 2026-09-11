@@ -65,12 +65,22 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
     intent = str(slot.get("visual_intent") or "").lower()
     bonus = 0
     if aid.startswith("press_"):
-        if any(token in speech for token in ("nature", "опублик")):
+        # OpenAI card belongs on the article window, not on «Навье-Стокса».
+        if any(token in speech for token in (
+                "nature", "опублик", "openai", "выкладыва")):
             bonus = -25
         elif role == "evidence":
             bonus = -18
         else:
             bonus = 6
+    elif any(token in aid for token in ("10884417", "16865644")):
+        hay = speech or intent
+        if any(token in hay for token in (
+                "навье", "жидкост", "крыло", "труб", "крови", "кровь",
+                "погод", "течёт")):
+            bonus = -22
+        elif any(token in hay for token in ("lean", "openai", "выкладыва")):
+            bonus = 14
     elif "cryostat" in aid:
         hay = speech or intent
         if any(token in hay for token in (

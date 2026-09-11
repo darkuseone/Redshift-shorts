@@ -40,11 +40,13 @@ from ..lib.text import (
     stems_match, sync_overlays_from_script,
 )
 from ..lib.glyphs import match_glyphs
-from ..lib.meaning import block_traits, explain, grounded_for, matched
+from ..lib.meaning import block_traits, explain, grounded_for, matched, window_traits
 from ..lib.query import (
-    CODE_QUERY_MARKERS, FLUID_QUERY_MARKERS, _hay_has_marker,
+    CODE_QUERY_MARKERS, FLUID_QUERY_MARKERS, FLUID_STRONG_MARKERS,
+    PASSENGER_CABIN_MARKERS, _hay_has_marker,
     leftover_query_fits_slot, slot_topical_text, slot_visual_brief,
-    brief_deny_reason, topical_match_score,
+    brief_reject_reason, spoken_slot_text,
+    topical_match_score,
 )
 from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
@@ -717,6 +719,15 @@ def _plate_asset_hay(asset: dict[str, Any] | None, dst: str = "") -> str:
     ])
 
 
+def _fluid_still_rank(hay: str, index_distance: int) -> tuple[int, int, int]:
+    """Water/wing/pipes beat a same-block airplane window on a fluid hole."""
+    hay_l = str(hay or "").lower()
+    strong = _hay_has_marker(hay_l, FLUID_STRONG_MARKERS)
+    cabin = (_hay_has_marker(hay_l, PASSENGER_CABIN_MARKERS)
+             and not strong)
+    return (0 if strong else 1, 1 if cabin else 0, index_distance)
+
+
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]],
                   assets: dict[int, dict[str, Any]] | None = None,
@@ -743,7 +754,7 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
         src_asset = assets.get(int(s["index"])) or {}
         dst = str((prepared.get(int(s["index"])) or {}).get("dst") or "")
         hay = _plate_asset_hay(src_asset, dst)
-        if brief_deny_reason(brief, hay):
+        if brief_reject_reason(brief, hay):
             return True
         query = str(src_asset.get("query") or "")
         if query and brief.get("kind") in ("fluid", "paper"):
@@ -770,15 +781,30 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
         return out
 
     pool = _pool(True) or _pool(False)
+    if brief.get("kind") == "fluid":
+        wide = _pool(False)
+        if wide:
+            pool = wide
     if not pool:
         return None
-    nearest = min(pool, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
+    if brief.get("kind") == "fluid":
+        def _rank(s: dict[str, Any]) -> tuple[int, int, int]:
+            src_asset = assets.get(int(s["index"])) or {}
+            dst = str((prepared.get(int(s["index"])) or {}).get("dst") or "")
+            hay = _plate_asset_hay(src_asset, dst)
+            return _fluid_still_rank(hay, abs(int(s["index"]) - index))
+        nearest = min(pool, key=_rank)
+    else:
+        nearest = min(pool, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
     prep = prepared[int(nearest["index"])]
     # Credit travels with the plate asset so exhibit/BL caption name the frame shown.
     asset = assets.get(int(nearest["index"])) or {}
     credit = str(asset.get("attribution") or asset.get("source") or "").strip()
     return {"file": prep["dst"], "duration_sec": float(prep.get("duration_sec") or 0.0),
-            "credit": credit, "ai_generated": bool(asset.get("ai_generated"))}
+            "credit": credit, "ai_generated": bool(asset.get("ai_generated")),
+            "query": str(asset.get("query") or ""),
+            "page_url": str(asset.get("page_url") or ""),
+            "asset_id": str(asset.get("asset_id") or "")}
 
 
 def _brand_plate_file(ctx, plan: dict[str, Any]) -> str | None:
@@ -813,7 +839,7 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
     brief = slot_visual_brief(slot, plan, words)
     if prep is not None and prep.get("dst"):
         hay = _plate_asset_hay(asset, str(prep.get("dst") or ""))
-        denied = bool(brief_deny_reason(brief, hay))
+        denied = bool(brief_reject_reason(brief, hay))
         if asset is not None:
             denied = denied or leftover_stock_off_topic(asset, slot, plan, words)
         if not denied and not _is_nasa_asset(asset) and (
@@ -4221,7 +4247,7 @@ def leftover_stock_off_topic(
         str(asset.get("asset_id") or ""),
     ])
     brief = slot_visual_brief(slot, plan, words)
-    if brief_deny_reason(brief, hay):
+    if brief_reject_reason(brief, hay):
         return True
     if not query:
         return False
@@ -4356,8 +4382,17 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     # 2. Данные — когда блок назвал число. Идёт первой: число больше нечем
     #    показать, а карточка и текст умеют говорить о чём угодно.
     bid = str((block or {}).get("id") or "")
-    fluid_window = slot_visual_brief(slot, plan, words).get("kind") == "fluid"
-    if (not fluid_window and nums and window_ok and budget.allows("dataviz")
+    brief = slot_visual_brief(slot, plan, words)
+    still_hay = " ".join([
+        str((plate_src or {}).get("file") or ""),
+        str((plate_src or {}).get("query") or ""),
+        str((plate_src or {}).get("page_url") or ""),
+        str((plate_src or {}).get("asset_id") or ""),
+        str(bg_file or ""),
+    ])
+    if (not brief_reject_reason(brief, still_hay, rung="dataviz",
+                                template="data-viz/mk-line-graph")
+            and nums and window_ok and budget.allows("dataviz")
             and bid not in budget.dataviz_blocks):
         overlay = _dataviz_overlay(
             slot, nums, {block.get("id", ""): block}, picker,
@@ -4381,7 +4416,10 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     sources = [s for s in (plan.get("sources") or []) if s.get("domain")]
     source = sources[budget.source] if budget.source < len(sources) else None
     if (source and window_ok and budget.allows("source")
-            and {"quote", "brand", "device"} & set(traits)):
+            and {"quote", "brand", "device"} & set(traits)
+            and not brief_reject_reason(
+                brief, still_hay, rung="source",
+                template="browser-ui/browser-scroll")):
         template, _ = picker.pick(
             "browser-ui",
             blob=build_blob(block.get("text"), block.get("heading")),
@@ -4419,7 +4457,8 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     interstitial = (
         slot.get("asset_role") == "interstitial" or "перебивка" in reason)
     parallax_min = 1.2 if interstitial else 1.2
-    if still and float(slot["duration"]) >= parallax_min and budget.allows("parallax"):
+    if (still and float(slot["duration"]) >= parallax_min and budget.allows("parallax")
+            and not brief_reject_reason(brief, still_hay, rung="parallax")):
         budget.take("parallax")
         return "parallax", None, {
             "type": "motion", "start": float(slot["start"]),
@@ -4443,7 +4482,8 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
         skip_card = float(slot["start"]) + 0.05 >= punch_end
     # After the authored FS punch the remainder still belongs to this block.
     # A card here reprinted the block opening over the spaghetti line.
-    if (not skip_card and block.get("emphasis_word") and budget.allows("card")):
+    if (not skip_card and block.get("emphasis_word") and budget.allows("card")
+            and not brief_reject_reason(brief, still_hay, rung="card")):
         hero = _hero_device(
             catalog, slot=slot,
             content=_hero_content(
@@ -4867,17 +4907,22 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # Empty tags are unknown, not a reject: leftover_stock_off_topic
             # still drops a keyboard leftover on «Навье-Стокса».
             tags = asset.get("tags") or []
-            if tags:
-                topical = topical_match_score(
-                    tags,
-                    slot_topical_text(slot, plan, words_for_slot),
-                    str(plan.get("category") or ""))
-                off_topic = float(topical) < _TOPICAL_MIN
-            if off_topic and asset.get("speech_locked"):
-                off_topic = False
             if leftover_stock_off_topic(
                     asset, slot, plan, words=words_for_slot):
                 off_topic = True
+            else:
+                query = str(asset.get("query") or "")
+                if query and leftover_query_fits_slot(
+                        query, slot, plan, words=words_for_slot):
+                    off_topic = False
+                elif tags:
+                    topical = topical_match_score(
+                        tags,
+                        slot_topical_text(slot, plan, words_for_slot),
+                        str(plan.get("category") or ""))
+                    off_topic = float(topical) < _TOPICAL_MIN
+                if off_topic and asset.get("speech_locked"):
+                    off_topic = False
             brief = slot_visual_brief(slot, plan, words_for_slot)
             hay = " ".join([
                 str(asset.get("query") or ""),
@@ -4885,7 +4930,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 str(asset.get("page_url") or ""),
                 str(asset.get("asset_id") or ""),
             ])
-            if brief_deny_reason(brief, hay):
+            if brief_reject_reason(brief, hay):
                 off_topic = True
         if prep is None or off_topic or (asset is None
                                          and slot["kind"] not in AVATAR_KINDS):
@@ -4895,7 +4940,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan,
                                    words_doc.get("words") or [])
             gap_block = blocks_by_id.get(slot["block_id"], {})
-            gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
+            spoken = spoken_slot_text(slot, words_doc.get("words") or [])
+            gap_traits = set(window_traits(spoken)) if spoken else (
+                block_traits(str(gap_block.get("text") or "")) if gap_block else set())
             rung, hero_dev, overlay_dev = _close_empty_slot(
                 slot, gap_block, budget=budget, picker=picker, catalog=catalog,
                 plan=plan, variant=variant, seed=seed,
@@ -4930,7 +4977,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 shots.append(entry)
                 continue
             content = ""
-            if fs_count < fs_cap and not _block_gap_fullscreen(slot):
+            fluid_gap = slot_visual_brief(
+                slot, plan, words_doc.get("words") or []).get("kind") == "fluid"
+            if (fs_count < fs_cap and not _block_gap_fullscreen(slot)
+                    and not fluid_gap):
                 if slot.get("authored_punch"):
                     overlay = gap_block.get("overlay") or {}
                     raw = str(overlay.get("content") or "")
@@ -4983,7 +5033,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     prev_shot=shots[-1] if shots else None))
                 shots.append(entry)
                 continue
-            gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
+            spoken_fs = spoken_slot_text(slot, words_doc.get("words") or [])
+            gap_traits = set(window_traits(spoken_fs)) if spoken_fs else (
+                block_traits(str(gap_block.get("text") or "")) if gap_block else set())
             s_content = str(content or "")
             signals = {"lines_ge_7"} if s_content.count("\n") >= 7 else {"lines_lt_7"}
             preferred = prefs.get(f"fullscreen_text@{slot['role']}")

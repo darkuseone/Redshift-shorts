@@ -507,6 +507,45 @@ def test_fluid_empty_slot_skips_typing_neighbor_plate():
     assert plate["file"] == "/tmp/pexels_v10884417_crop.mp4"
 
 
+def test_fluid_empty_slot_prefers_water_over_cabin_window():
+    """0049 41.02 parallaxed pexels_v19004433 (airplane window) over pipes."""
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [
+        {"index": 13, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 38.9, "end": 41.6},
+        {"index": 15, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 43.9, "end": 46.8},
+        {"index": 8, "kind": "footage", "block_id": "b3", "role": "evidence",
+         "start": 23.5, "end": 25.7},
+    ]
+    prepared = {
+        15: {"dst": "/tmp/pexels_v19004433_crop.mp4", "duration_sec": 2.6},
+        8: {"dst": "/tmp/pexels_v10884417_crop.mp4", "duration_sec": 2.2},
+    }
+    assets = {
+        15: {
+            "asset_id": "pexels_v19004433",
+            "query": "sky view airplane plane windows seat",
+            "page_url": "https://www.pexels.com/video/sky-view-airplane-plane-windows-windows-seat-coolplaces4k-19004433/",
+            "source": "pexels",
+        },
+        8: {
+            "asset_id": "pexels_v10884417",
+            "query": "industrial pipes water plant",
+            "page_url": "https://www.pexels.com/video/water-flowing-through-pipes-10884417/",
+            "source": "pexels",
+        },
+    }
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    plate = _plate_source(slots[0], slots, prepared, assets, plan={}, words=words)
+    assert plate is not None
+    assert plate["file"] == "/tmp/pexels_v10884417_crop.mp4"
+
+
 def test_on_screen_spelling_is_nichem():
     from src.lib.text import prefer_nichem_spelling, soften_on_screen_copy
 
