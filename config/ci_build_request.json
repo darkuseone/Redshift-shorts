@@ -6,6 +6,6 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 phase1: voice committed; heygen prepared so P6 emits full avatar_request for MCP (not Actions HEYGEN_API). Then MCP clips → P6 resume.",
+  "note": "0050 phase1b: avatar_share 20-40%, CTA avatar off; emit avatar_request for MCP",
   "tts_pace": 1.2
 }

@@ -130,7 +130,7 @@
       "role": "develop",
       "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода. Крыло самолёта. Трубы в доме. Ток крови. Если формула врёт — самолёт не извиняется.",
       "emphasis_word": "жидкость",
-      "avatar": "auto",
+      "avatar": "on",
       "visual_intent": "Один пункт жизни — один кадр: погода, крыло, трубы, кровь. Не коллаж всех слов на одной карточке.",
       "broll_queries": [
         "weather radar storm satellite screen",
@@ -174,7 +174,7 @@
       "role": "cta",
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
-      "avatar": "on",
+      "avatar": "off",
       "visual_intent": "REDSHIFT ровно без точки + аватар или живой кадр. Не косой текст.",
       "broll_queries": [
         "open notebook mathematics desk warm light",

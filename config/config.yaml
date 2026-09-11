@@ -271,7 +271,7 @@ features:
 
 limits:
   duration_sec: [35, 70]
-  avatar_share: [0.35, 0.50]
+  avatar_share: [0.20, 0.40]  # TZ-0050: 20–40%, not 35–50%
   max_event_gap_sec: 2.5
   max_shot_sec: 5
   max_shot_sec_with_events: 7
