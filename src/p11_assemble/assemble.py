@@ -41,7 +41,7 @@ from ..lib.text import (
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
-from ..lib.query import leftover_query_fits_slot, topical_match_score
+from ..lib.query import leftover_query_fits_slot, slot_topical_text, topical_match_score
 from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
@@ -3301,7 +3301,9 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_template = forced
         used.append(card_template.id)
         card_start = float(anchor["start"])
-        card_end = min(card_start + 3.4, float(run[-1]["end"]))
+        # Hold through a mute hole after the proof beat so leftover office
+        # stock cannot sit uncovered at a semantic QC probe (0049 at 17.58s).
+        card_end = min(card_start + 5.2, float(run[-1]["end"]))
         for later in run:
             if float(later["start"]) <= card_start + 1e-4:
                 continue
@@ -4136,25 +4138,19 @@ _TOPICAL_MIN = 0.35
 
 def leftover_stock_off_topic(
         asset: dict[str, Any], slot: dict[str, Any],
-        plan: dict[str, Any]) -> bool:
-    """Cross-slot leftover whose query does not share tokens with this line.
+        plan: dict[str, Any],
+        words: Iterable[dict[str, Any]] | None = None) -> bool:
+    """Leftover whose query does not share tokens with speech in this window.
 
-    Same-slot leftover (``leftover_from_slot`` equals this index) stays. Cached
-    leftover without that field still has to pass the query gate — otherwise
-    a datacenter clip parked on fluids survives a ``--from P11`` rebuild.
+    Same-slot leftover is not exempt: a coding clip parked on b4 because the
+    block also mentions Lean still shows a keyboard on «Навье-Стокса».
     """
     if str(asset.get("decision") or "") != "accept_stock_leftover":
         return False
-    src = asset.get("leftover_from_slot")
-    try:
-        if src is not None and int(src) == int(slot.get("index")):
-            return False
-    except (TypeError, ValueError):
-        pass
     query = str(asset.get("query") or "")
     if not query:
         return False
-    return not leftover_query_fits_slot(query, slot, plan)
+    return not leftover_query_fits_slot(query, slot, plan, words=words)
 
 
 _LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
@@ -4779,19 +4775,22 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         # расхождение раньше, чем успевает прочитать субтитр.
         off_topic = False
         if asset is not None and slot["kind"] not in AVATAR_KINDS:
-            topical = asset.get("topical")
-            if topical is None:
-                topical = topical_match_score(
-                    asset.get("tags") or [],
-                    str(blocks_by_id.get(slot["block_id"], {}).get("text") or ""),
-                    str(plan.get("category") or ""))
+            words_for_slot = words_doc.get("words") or []
+            # Recompute against the spoken window even if P8 stamped a
+            # whole-block topical score: Lean in b4 must not keep a keyboard
+            # on «Навье-Стокса».
+            topical = topical_match_score(
+                asset.get("tags") or [],
+                slot_topical_text(slot, plan, words_for_slot),
+                str(plan.get("category") or ""))
             off_topic = float(topical) < _TOPICAL_MIN
             # Prefer pins locked to overlapping speech (Nature figure, carved
             # supercomputer hall) must not be discarded because the whole-block
             # CONCEPTS table does not list that noun.
             if off_topic and asset.get("speech_locked"):
                 off_topic = False
-            if leftover_stock_off_topic(asset, slot, plan):
+            if leftover_stock_off_topic(
+                    asset, slot, plan, words=words_for_slot):
                 off_topic = True
         if prep is None or off_topic or (asset is None
                                          and slot["kind"] not in AVATAR_KINDS):

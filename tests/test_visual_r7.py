@@ -271,6 +271,43 @@ def test_source_card_anchors_off_avatar():
     assert cards[0]["start"] >= 10.0
 
 
+def test_source_card_holds_through_mute_hole():
+    """0049 semantic probe 17.58 sat 0.3s after a 3.4s card; hold 5.2s."""
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _build_overlays
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    plan = {
+        "video_id": "card_hold_test",
+        "duration_sec": 20.0,
+        "cta_window": [18.0, 20.0],
+        "sources": [{
+            "title": "On the Navier–Stokes Millennium Prize Problem",
+            "domain": "openai.com",
+            "url": "https://openai.com/index/navier-stokes-solution/",
+            "show_on_screen": True,
+            "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство.",
+            "highlight_line": "сильнее GPT-6 Astra",
+        }],
+        "blocks": [{"id": "b3", "role": "evidence",
+                    "text": "OpenAI выкладывает работу."}],
+        "slots": [
+            {"index": 0, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "footage",
+             "start": 13.869, "end": 20.0, "duration": 6.131},
+        ],
+    }
+    overlays = _build_overlays(None, plan, [], cat, variant="A",
+                               seed=1, recent_videos=[], used=[])
+    cards = [o for o in overlays if o["type"] == "source_card"]
+    assert cards
+    assert abs(cards[0]["start"] - 13.869) < 1e-6
+    assert abs(cards[0]["end"] - (13.869 + 5.2)) < 1e-6
+
+
 def test_hero_device_catalog_has_no_face_circle_bubbles():
     import json as _json
 

@@ -19,7 +19,8 @@ from pathlib import Path
 import pytest
 
 from src.lib.query import (
-    CONCEPTS, allow_generic_pad, leftover_query_fits_slot, topical_match_score,
+    CONCEPTS, allow_generic_pad, leftover_dest_tokens, leftover_query_fits_slot,
+    slot_topical_text, topical_match_score,
 )
 from src.p7_broll_search.search import SPACE_NEWS_PAD, pad_slot_queries
 from src.p8_broll_judge.judge import watermark_reject_reason
@@ -185,3 +186,54 @@ class TestLeftoverQueryGate:
             "query": "weather radar storm satellite",
         }
         assert not leftover_stock_off_topic(asset, slot, {})
+
+    def test_p11_drops_keyboard_leftover_on_navier_speech(self):
+        """Same-slot leftover still dies if this window is fluids, not Lean."""
+        slot = _slot(
+            index=13, start=38.8, end=41.6,
+            visual_intent="код Lean и живая практика",
+            queries=["code editor proof lean theorem",
+                     "weather radar storm satellite"],
+        )
+        words = [
+            {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+            {"display": "Страшное", "start": 40.8, "end": 41.3},
+            {"display": "имя,", "start": 41.5, "end": 41.9},
+        ]
+        asset = {
+            "decision": "accept_stock_leftover",
+            "leftover_from_slot": 13,
+            "query": "hands typing keyboard code editor",
+        }
+        assert leftover_stock_off_topic(asset, slot, {}, words=words)
+
+    def test_spoken_window_beats_whole_block_lean_on_tags(self):
+        """P11 used the whole b4 text, so keyboard tags passed via Lean."""
+        slot = _slot(index=13, start=38.8, end=41.6)
+        words = [
+            {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+            {"display": "Страшное", "start": 40.8, "end": 41.3},
+            {"display": "имя,", "start": 41.5, "end": 41.9},
+        ]
+        tags = {"keyboard", "office", "typing", "code", "editor", "computer"}
+        block = ("Сама Астра переложила его в Lean. "
+                 "Называются уравнения Навье-Стокса. Страшное имя.")
+        assert topical_match_score(tags, block) >= 0.35
+        spoken = slot_topical_text(slot, {}, words)
+        assert topical_match_score(tags, spoken) < 0.35
+
+    def test_leftover_dest_ignores_mixed_slot_queries_when_speech_covers(self):
+        slot = _slot(
+            index=13, start=38.8, end=41.6,
+            visual_intent="код Lean и живая практика",
+            queries=["code editor proof lean theorem",
+                     "weather radar storm satellite"],
+        )
+        words = [
+            {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+            {"display": "Страшное", "start": 40.8, "end": 41.3},
+        ]
+        tokens = leftover_dest_tokens(slot, {}, words)
+        assert "editor" not in tokens
+        assert "lean" not in {t.lower() for t in tokens}
+        assert "navier" in tokens or "fluid" in tokens or "stokes" in tokens

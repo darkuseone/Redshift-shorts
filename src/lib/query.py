@@ -442,9 +442,73 @@ def extra_fits_slot(extra: str, tokens: set[str]) -> bool:
 
 def leftover_query_fits_slot(
         query: str, slot: dict[str, Any],
-        plan: dict[str, Any] | None = None) -> bool:
-    """Cross-slot leftover is legal only when the search query shares tokens."""
-    return extra_fits_slot(str(query or ""), topical_tokens(slot, plan))
+        plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> bool:
+    """Leftover is legal only when the search query shares tokens with speech."""
+    return extra_fits_slot(str(query or ""), leftover_dest_tokens(slot, plan, words))
+
+
+def spoken_slot_text(slot: dict[str, Any],
+                     words: Iterable[dict[str, Any]] | None = None) -> str:
+    """VO covering this slot — not the whole block's mixed query ladder."""
+    try:
+        start = float(slot.get("start") or 0)
+        end = float(slot.get("end") or 0)
+    except (TypeError, ValueError):
+        return ""
+    bits: list[str] = []
+    for word in words or []:
+        try:
+            ws = float(word.get("start") or 0)
+            we = float(word["end"]) if word.get("end") is not None else ws
+        except (TypeError, ValueError):
+            continue
+        if we < start or ws > end:
+            continue
+        bits.append(str(word.get("display") or word.get("word") or "").strip())
+    return " ".join(b for b in bits if b)
+
+
+def leftover_intent_text(slot: dict[str, Any],
+                         plan: dict[str, Any] | None = None) -> str:
+    """Block speech + intent, without the slot's mixed English query ladder."""
+    block = _block_of(slot, plan or {})
+    return " ".join([
+        str(slot.get("visual_intent") or ""),
+        str(block.get("text") or ""),
+        str(block.get("visual_intent") or ""),
+    ]).strip()
+
+
+def leftover_dest_tokens(
+        slot: dict[str, Any], plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> set[str]:
+    """Dest for leftover: spoken window first, else intent — never slot queries.
+
+    Block ``b4`` queries mix Lean code with weather/blood. A keyboard leftover
+    then looks topical while the VO says «страшное имя».
+    """
+    spoken = spoken_slot_text(slot, words)
+    blob = spoken or leftover_intent_text(slot, plan)
+    tokens = _query_words(blob)
+    for phrase in _concepts_from_text(blob):
+        tokens.update(_query_words(phrase))
+    return {w for w in tokens if len(w) > 2}
+
+
+def slot_topical_text(
+        slot: dict[str, Any], plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> str:
+    """Text topical_match_score should see: this window's VO, else block speech.
+
+    Whole-block text on b4 contains both Lean and Navier–Stokes, so a keyboard
+    clip scores as on-topic while the viewer hears «страшное имя».
+    Visual intent is not speech — it must not keep a Lean clip on fluids.
+    """
+    spoken = spoken_slot_text(slot, words)
+    if spoken:
+        return spoken
+    return str(_block_of(slot, plan or {}).get("text") or "")
 
 
 def topical_tokens(slot: dict[str, Any], plan: dict[str, Any] | None = None,

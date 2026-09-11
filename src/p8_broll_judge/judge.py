@@ -598,7 +598,8 @@ def _fill_unfilled_from_judged_stock(
         *, plan: dict[str, Any], accepted: dict[int, dict[str, Any]],
         accepted_counts: dict[str, int], judged: list[dict[str, Any]],
         repeat_max: int, skip_live: bool, paid_ok: bool,
-        pin_deny: set[str]) -> int:
+        pin_deny: set[str],
+        words: list[dict[str, Any]] | None = None) -> int:
     """После критика закрыть пустые footage-слоты уже скачанным клипом.
 
     §7.3 шлёт незакрытый слот в P9, а не слабым футажом. Когда Grok ставит
@@ -665,7 +666,7 @@ def _fill_unfilled_from_judged_stock(
         if pick is None:
             for row in others:
                 query = str(row.get("query") or "")
-                if leftover_query_fits_slot(query, slot, plan):
+                if leftover_query_fits_slot(query, slot, plan, words=words):
                     pick = row
                     try:
                         leftover_from = int(row.get("slot_index") or -1)
@@ -1100,7 +1101,7 @@ def run_step(ctx) -> dict[str, Any]:
     stock_filled = _fill_unfilled_from_judged_stock(
         plan=plan, accepted=accepted, accepted_counts=accepted_counts,
         judged=judged, repeat_max=repeat_max, skip_live=skip_live,
-        paid_ok=paid_ok, pin_deny=pin_deny)
+        paid_ok=paid_ok, pin_deny=pin_deny, words=words)
     if stock_filled:
         _log.info("leftover stock closed %s empty slot(s)", stock_filled)
 
