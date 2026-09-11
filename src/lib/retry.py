@@ -35,6 +35,28 @@ _CAPACITY_MARKERS = (
 )
 
 
+_QUOTA_EXHAUSTED_MARKERS = (
+    "exceeded your current quota",
+    "quota exceeded",
+    "insufficient_quota",
+    "insufficient_credit",
+    "spending limit",
+    "plan_upgrade_required",
+    "trial_limit_exceeded",
+)
+
+
+def is_quota_exhausted(exc: BaseException) -> bool:
+    """Исчерпан биллинговый лимит — ретраи не вернут квоту."""
+    details = getattr(exc, "details", None)
+    if not isinstance(details, dict):
+        details = {}
+    body = str(details.get("body", "")).lower()
+    detail = str(details.get("detail", "")).lower()
+    text = f"{exc} {body} {detail}".lower()
+    return any(marker in text for marker in _QUOTA_EXHAUSTED_MARKERS)
+
+
 def is_capacity_error(exc: BaseException) -> bool:
     """503/UNAVAILABLE/high demand (и схожий rate-limit 429)."""
     details = getattr(exc, "details", None)
@@ -79,6 +101,8 @@ def call_with_retry(
             return fn()
         except retry_on as exc:  # noqa: PERF203 — ретрай по смыслу
             last = exc
+            if is_quota_exhausted(exc):
+                break
             capacity = is_capacity_error(exc)
             limit = cap_attempts if capacity else attempts
             if attempt >= limit:

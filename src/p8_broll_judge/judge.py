@@ -31,8 +31,8 @@ from ..lib.query import (
     thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, _local_cache_row, footage_pool_count,
-    judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_report,
+    _footage_pin_entry, _load_footage_pins, _local_cache_row,
+    judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_from_pool,
 )
 
 COHERENCE_MIN = 0.15
@@ -586,9 +586,8 @@ def run_step(ctx) -> dict[str, Any]:
         s for s in plan.get("slots", [])
         if s.get("needs_asset") and s.get("asset_role") in ("broll", "evidence", "interstitial")
     ]
-    surplus = doc.get("surplus") or surplus_report(
-        footage_pool_count(doc.get("candidates") or []),
-        len(footage_slots), surplus_ratio)
+    surplus = surplus_from_pool(
+        doc.get("candidates") or [], footage_slots, surplus_ratio)
     paid_ok = bool(surplus.get("ok"))
     primary = None if skip_live or not paid_ok else build_vision_provider(
         cfg, ctx.costs, role="primary")
@@ -1030,6 +1029,15 @@ def run_step(ctx) -> dict[str, Any]:
                    if s["needs_asset"]
                    and s["asset_role"] in ("broll", "evidence", "meme", "interstitial")]
     unfilled = [i for i in asset_slots if i not in accepted]
+    # MUST-017: тонкий пул не добирают генерацией. Пустые слоты — лестница P11,
+    # а не Gemini image на все 17 дыр (квота 429 роняла весь прогон).
+    surplus_blocks_generation = bool(not paid_ok and not skip_live)
+    if surplus_blocks_generation:
+        generate_slots: list[int] = []
+        ladder_slots = list(unfilled)
+    else:
+        generate_slots = list(unfilled)
+        ladder_slots = []
     candidates_per_slot = {str(i): 0 for i in asset_slots}
     for slot_index, rows in by_slot.items():
         candidates_per_slot[str(slot_index)] = len(rows)
@@ -1077,7 +1085,9 @@ def run_step(ctx) -> dict[str, Any]:
         "slots_total": len(asset_slots),
         "slots_filled": len(accepted),
         "fill_rate": round(len(accepted) / max(len(asset_slots), 1), 4),
-        "unfilled_slots": unfilled,
+        "unfilled_slots": generate_slots,
+        "ladder_slots": ladder_slots,
+        "surplus_blocks_generation": surplus_blocks_generation,
         "added_to_index": added_to_index,
         "surplus": surplus,
         "skipped_stage1": skipped_stage1,
@@ -1086,9 +1096,14 @@ def run_step(ctx) -> dict[str, Any]:
     }
     ctx.write("accepted_assets.json", result)
 
-    if unfilled:
-        ctx.warn(f"{len(unfilled)} слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
-                 slots=unfilled)
+    if surplus_blocks_generation and unfilled:
+        ctx.warn(
+            f"surplus underfilled — {len(unfilled)} слотов на лестницу P11, "
+            "без генерации P9 (MUST-017)",
+            slots=unfilled)
+    elif generate_slots:
+        ctx.warn(f"{len(generate_slots)} слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
+                 slots=generate_slots)
     if rejected_by_dark:
         ctx.warn(f"{rejected_by_dark} кандидатов отклонены как слишком тёмные для "
                  f"перебивки (порог {visible_min:.0%} видимого кадра)")

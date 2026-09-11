@@ -156,24 +156,76 @@ def footage_pool_count(candidates: Iterable[dict[str, Any]]) -> int:
     return sum(1 for c in candidates if str(c.get("origin") or "") != "meme_library")
 
 
+def slots_judgable_count(candidates: Iterable[dict[str, Any]],
+                         slot_indexes: Iterable[int]) -> int:
+    """Слоты, у которых есть хотя бы один кандидат футажа.
+
+    Пустой слот критику смотреть нечего — он уйдёт в P9/лестницу P11.
+    Если считать его в знаменателе 1.3×, один недобор (22/23) блокирует
+    судью на всех слотах, где пул как раз есть.
+    """
+    needed = {int(i) for i in slot_indexes}
+    have: set[int] = set()
+    for candidate in candidates:
+        if str(candidate.get("origin") or "") == "meme_library":
+            continue
+        try:
+            idx = int(candidate.get("slot_index"))
+        except (TypeError, ValueError):
+            continue
+        if idx in needed:
+            have.add(idx)
+    return len(have)
+
+
 def surplus_target(slots_needing: int, ratio: float = 1.3) -> int:
     """ceil(ratio × слотов с футажом). 10 слотов → 13 кандидатов."""
     return math.ceil(float(ratio) * max(0, int(slots_needing)))
 
 
 def surplus_report(n_candidates: int, slots_needing: int,
-                   ratio: float = 1.3) -> dict[str, Any]:
-    """Сводка +30% запаса до Gemini/Grok/Magnific (MUST-017)."""
-    target = surplus_target(slots_needing, ratio)
-    ok = True if slots_needing <= 0 else int(n_candidates) >= target
+                   ratio: float = 1.3, *,
+                   slots_judgable: int | None = None) -> dict[str, Any]:
+    """Сводка +30% запаса до Gemini/Grok/Magnific (MUST-017).
+
+    Target считает слоты, по которым есть что судить. Пустые слоты не
+    надувают порог: MUST-017 запрещает добирать запас генерацией, а не
+    запрещает смотреть уже скачанный пул.
+    """
+    needing = max(0, int(slots_needing))
+    if slots_judgable is None:
+        judgable = needing
+    else:
+        judgable = max(0, min(int(slots_judgable), needing))
+    target = surplus_target(judgable, ratio)
+    ok = True if judgable <= 0 else int(n_candidates) >= target
     return {
         "ratio": float(ratio),
-        "slots_needing_footage": int(slots_needing),
+        "slots_needing_footage": needing,
+        "slots_judgable": judgable,
         "candidates": int(n_candidates),
         "target": int(target),
         "ok": ok,
         "status": "ok" if ok else "underfilled",
     }
+
+
+def surplus_from_pool(candidates: Iterable[dict[str, Any]],
+                      footage_slots: Iterable[dict[str, Any]],
+                      ratio: float = 1.3) -> dict[str, Any]:
+    """Пересчёт surplus по текущему пулу — не верить устаревшему полю в JSON."""
+    slots = list(footage_slots)
+    indexes = []
+    for slot in slots:
+        try:
+            indexes.append(int(slot["index"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+    rows = list(candidates)
+    return surplus_report(
+        footage_pool_count(rows), len(slots), ratio,
+        slots_judgable=slots_judgable_count(rows, indexes),
+    )
 
 
 _log = get_logger("p7")
@@ -979,8 +1031,7 @@ def run_step(ctx) -> dict[str, Any]:
     meme_candidates = _pick_memes(ctx, plan, recent_videos)
     candidates_out.extend(meme_candidates)
 
-    surplus = surplus_report(
-        footage_pool_count(candidates_out), len(slots), surplus_ratio)
+    surplus = surplus_from_pool(candidates_out, slots, surplus_ratio)
     search_blob = search_report_payload(slot_search)
     search_blob["surplus"] = surplus
 

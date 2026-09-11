@@ -93,6 +93,19 @@ def test_surplus_target_ten_slots_is_thirteen():
     assert surplus_report(12, 10, 1.3)["ok"] is False
     assert surplus_report(13, 10, 1.3)["ok"] is True
     assert surplus_report(13, 10, 1.3)["status"] == "ok"
+    assert surplus_report(13, 10, 1.3)["slots_judgable"] == 10
+
+
+def test_empty_slots_do_not_inflate_surplus_target():
+    """Дыры b4/b5 не должны блокировать критика на слотах, где пул есть."""
+    filled = surplus_report(22, 17, 1.3, slots_judgable=13)
+    assert filled["target"] == 17
+    assert filled["ok"] is True
+    assert filled["slots_needing_footage"] == 17
+    assert filled["slots_judgable"] == 13
+    thin = surplus_report(22, 17, 1.3, slots_judgable=17)
+    assert thin["target"] == 23
+    assert thin["ok"] is False
 
 
 def test_config_surplus_ratio_is_1_3(cfg):
@@ -130,6 +143,35 @@ def test_underfilled_pool_does_not_call_paid_critic(monkeypatch):
     decisions = {row.get("decision") for row in result["judged"]}
     assert "underfilled" in decisions
     assert result["accepted_count"] == 0
+    assert result["surplus_blocks_generation"] is True
+    assert result["unfilled_slots"] == []
+    assert result["ladder_slots"] == list(range(10))
+
+
+def test_empty_slots_do_not_block_critic_on_the_rest(monkeypatch):
+    """22 кандидата на 13 слотах при 17 дырах: critic зовётся, P9 не сжигает квоту."""
+    spy = _Spy()
+    from src.p8_broll_judge import judge as J
+
+    cfg = load_config()
+    cfg.set("vision.skip_live", False)
+    cfg.set("providers.mode", "mock")
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+    monkeypatch.setattr(J, "build_vision_provider", lambda *a, **k: spy)
+    slots = [_slot(i) for i in range(17)]
+    candidates = [_cand(i % 13, i) for i in range(22)]
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "surplus_holes", "candidates": candidates},
+        {"video_id": "surplus_holes", "category": "ai", "slots": slots, "blocks": []},
+    )
+    run_step(ctx)
+    result = ctx.written["accepted_assets.json"]
+    assert spy.calls >= 1
+    assert result["surplus"]["ok"] is True
+    assert result["surplus"]["slots_judgable"] == 13
+    assert result["surplus"]["target"] == 17
+    assert result["surplus_blocks_generation"] is False
 
 
 def test_surplus_met_allows_paid_critic(monkeypatch):

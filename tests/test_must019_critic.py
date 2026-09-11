@@ -193,6 +193,7 @@ def _run(monkeypatch, candidates, *, glm: _Spy, grok: _Spy, mode: str = "mock"):
     cfg = load_config()
     cfg.set("vision.skip_live", False)
     cfg.set("providers.mode", mode)
+    cfg.set("stock.candidate_surplus", 1.0)
     monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
 
     def _build(_cfg, _costs, *, role="primary"):
