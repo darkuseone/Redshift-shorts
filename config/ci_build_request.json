@@ -1,9 +1,9 @@
 {
   "script": "scripts/redshift_0049.json",
   "providers_mode": "auto",
-  "from_step": "P7",
+  "from_step": "P8",
   "heygen_source": "prepared",
   "skip_generate": false,
   "requested_by": "cursor",
-  "note": "пересборка 0049 с P7: surplus по слотам с кандидатами, P9 не роняет прогон на 429"
+  "note": "пересборка 0049 с P8: leftover сток после отказа критика, без новой TTS/HeyGen"
 }
