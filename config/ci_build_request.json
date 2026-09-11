@@ -1,9 +1,9 @@
 {
   "script": "scripts/redshift_0049.json",
   "providers_mode": "auto",
-  "from_step": "P8",
+  "from_step": "P11",
   "heygen_source": "prepared",
-  "skip_generate": false,
+  "skip_generate": true,
   "requested_by": "cursor",
-  "note": "пересборка 0049 с P8: leftover сток после отказа критика, без новой TTS/HeyGen"
+  "note": "пересборка 0049 с P11: gradient-fill hard-kill и leftover off-topic, без TTS/HeyGen/P8/P9"
 }
