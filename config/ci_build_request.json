@@ -2,10 +2,10 @@
   "script": "scripts/redshift_0050.json",
   "providers_mode": "live",
   "from_step": "P0",
-  "heygen_source": "api",
+  "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 с нуля. Не 0049 prepared. Голос+аватар+P7 live. Vision только 3 кадра финалистов. pace 1.2. Assumption: heygen_source=api maps to live Avatar V via HEYGEN_API secret; workflow patched to honor request.",
+  "note": "0050 phase1: voice committed; heygen prepared so P6 emits full avatar_request for MCP (not Actions HEYGEN_API). Then MCP clips → P6 resume.",
   "tts_pace": 1.2
 }
