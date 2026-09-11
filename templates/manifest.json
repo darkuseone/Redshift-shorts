@@ -899,7 +899,8 @@
       ],
       "renderer": "per_word_crossfade",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-09-02",
       "frequency": "signature",
@@ -3815,7 +3816,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -5804,7 +5806,8 @@
       ],
       "renderer": "hero-plate-pop",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-09-02",
       "frequency": "variant",
@@ -5839,7 +5842,8 @@
       "renderer": "hero-script-stack",
       "last_used_in": [
         "redshift_0047",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0049"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
