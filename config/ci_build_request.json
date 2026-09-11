@@ -1,11 +1,11 @@
 {
   "script": "scripts/redshift_0050.json",
   "providers_mode": "live",
-  "from_step": "P6",
+  "from_step": "P7",
   "heygen_source": "prepared",
-  "skip_generate": true,
+  "skip_generate": false,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 phase3: MCP avatar clips committed; resume P6 prepared. No Grok montage.",
+  "note": "0050 phase3b: fill empty broll (QC-24 bare plates); avatar prepared already; gen on",
   "tts_pace": 1.2
 }

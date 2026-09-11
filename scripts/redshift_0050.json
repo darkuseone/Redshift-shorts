@@ -111,10 +111,10 @@
       "avatar": "off",
       "visual_intent": "Отдельные тёмные карточки цифр на живом фоне: 10 000, 88 Ч, 2 700 000, 17 Ч · LEAN. Не белые плашки. Не HTML Hello JS.",
       "broll_queries": [
-        "server rack blinking lights closeup",
-        "lean theorem prover code proof screen",
+        "server rack blinking lights closeup dark",
+        "code editor dark theme scrolling proof",
         "mathematics proof whiteboard equations dark",
-        "digital counter numbers dashboard ui"
+        "digital counter numbers dashboard ui dark"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -154,10 +154,10 @@
       "avatar": "on",
       "visual_intent": "Документы / институт Clay. Штамп REJECT или свет в щели двери. НЕ cracked wall / бетон / глина.",
       "broll_queries": [
-        "university institute classical building facade",
+        "university institute classical building facade night",
         "official documents stamp desk paperwork",
         "door light gap dark room cinematic",
-        "rejected stamp paper closeup"
+        "rubber stamp rejected paper closeup"
       ],
       "overlay": {
         "type": "fullscreen_text",
