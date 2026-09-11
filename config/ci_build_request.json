@@ -4,7 +4,7 @@
   "from_step": "P11",
   "heygen_source": "prepared",
   "skip_generate": true,
-  "skip_vision": false,
+  "skip_vision": true,
   "requested_by": "cursor",
-  "note": "0049 P11: 34590417259 QC-SEMANTIC 4/6. 41.02 вода ок. 29.30 lean без mk-line-graph. 52.73 paper без плотины. 64.45 open без крыла. P12: одно слово → окно ±1.2. xAI: P8=0, P12 6 проб если QC-12/30 зелёные. Без TTS/HeyGen/Gemini image."
+  "note": "0049 P11 SLOT=FILE. Locks: 17.58 press_c8e1aa428b ≥5.2с; 29.3 pexels_v34459460; 41.02 LOCK pexels_v10884417 exclusive; 52.73 pexels_v37695140; 64.45 pexels_v12908964; 5.8 brand plate не press. P8 live=0. P12 live xAI=0 (skip_vision). Без TTS/HeyGen/Gemini image. Без P7."
 }
