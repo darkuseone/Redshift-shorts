@@ -286,6 +286,10 @@ class TestLeftoverQueryGate:
         assert classify_spoken_window(
             "уравнения Навье-Стокса. Страшное") == "fluid"
         assert classify_spoken_window("крыло самолёта, ток крови.") == "fluid"
+        assert classify_spoken_window(
+            "Сама Астра доказательство не искала.") == "lean"
+        assert classify_spoken_window(
+            "Только приз Клея — за уравнения") == "paper"
 
 
 class TestSpokenWindowBrief:
@@ -361,6 +365,25 @@ class TestSpokenWindowBrief:
             "score": 0.86,
         }
         assert prior_accepted_ok(entry, slot, {}, words, set())
+
+
+    def test_prior_accept_airplane_dropped_on_astra(self):
+        from src.p8_broll_judge.judge import prior_accepted_ok
+        slot = _slot(index=10, start=28.6, end=31.4)
+        words = [
+            {"display": "Сама", "start": 28.6, "end": 28.9},
+            {"display": "Астра", "start": 28.9, "end": 29.3},
+            {"display": "доказательство", "start": 29.4, "end": 29.8},
+        ]
+        entry = {
+            "asset_id": "pexels_v16865644",
+            "decision": "accept",
+            "query": "airplane wing in flight clouds",
+            "tags": ["airplane", "clouds"],
+            "page_url": "https://www.pexels.com/video/a-view-of-the-clouds-from-an-airplane-16865644/",
+            "score": 0.86,
+        }
+        assert not prior_accepted_ok(entry, slot, {}, words, set())
 
 
 def test_append_dataviz_skips_fluid_spoken_window():
@@ -533,5 +556,75 @@ def test_press_card_stays_off_navier_speech():
     assert on_ns > 0
     assert on_article < 0
     assert water_ns < 0
+
+
+def test_cabin_url_not_laundered_by_wing_query():
+    """34587674751: P7 query «airplane wing» parked cabin pexels_v19004433 on NS."""
+    from src.lib.query import brief_reject_reason, slot_visual_brief
+
+    slot = _slot(index=13, start=38.8, end=41.6)
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    brief = slot_visual_brief(slot, {}, words)
+    hay = " ".join([
+        "airplane wing in flight clouds",
+        "https://www.pexels.com/video/sky-view-airplane-plane-windows-windows-seat-coolplaces4k-19004433/",
+        "pexels_v19004433",
+    ])
+    assert brief["kind"] == "fluid"
+    assert brief_reject_reason(brief, hay)
+
+
+def test_astra_window_rejects_airplane_brief():
+    from src.lib.query import brief_reject_reason, slot_visual_brief
+
+    slot = _slot(index=10, start=28.6, end=31.4)
+    words = [
+        {"display": "Сама", "start": 28.6, "end": 28.9},
+        {"display": "Астра", "start": 28.9, "end": 29.3},
+        {"display": "доказательство", "start": 29.4, "end": 29.8},
+    ]
+    brief = slot_visual_brief(slot, {}, words)
+    assert brief["kind"] == "lean"
+    assert brief_reject_reason(
+        brief, "airplane wing in flight clouds pexels_v16865644")
+    assert not brief_reject_reason(
+        brief, "code editor formal proof theorem prover")
+
+
+def test_clay_paper_window_rejects_html_code():
+    from src.lib.query import brief_reject_reason, slot_visual_brief
+
+    slot = _slot(index=19, start=52.7, end=56.2, kind="avatar")
+    words = [
+        {"display": "Только", "start": 52.70, "end": 53.02},
+        {"display": "приз", "start": 53.06, "end": 53.30},
+        {"display": "Клея", "start": 53.30, "end": 53.66},
+        {"display": "за", "start": 53.74, "end": 53.84},
+        {"display": "уравнения", "start": 53.84, "end": 54.29},
+    ]
+    brief = slot_visual_brief(slot, {}, words)
+    assert brief["kind"] == "paper"
+    hay = (
+        "https://www.pexels.com/video/"
+        "colorful-html-code-on-computer-monitor-34459460/"
+    )
+    assert brief_reject_reason(brief, hay)
+
+
+def test_query_mismatch_marks_regular_accept_off_topic():
+    """Empty-concept speech used to score 1.0 and keep any tagged clip."""
+    slot = _slot(index=10, start=28.6, end=31.4)
+    words = [
+        {"display": "Сама", "start": 28.6, "end": 28.9},
+        {"display": "Астра", "start": 28.9, "end": 29.3},
+        {"display": "доказательство", "start": 29.4, "end": 29.8},
+    ]
+    assert not leftover_query_fits_slot(
+        "airplane wing in flight clouds", slot, {}, words)
+    assert leftover_query_fits_slot(
+        "code editor formal proof theorem prover", slot, {}, words)
 
 

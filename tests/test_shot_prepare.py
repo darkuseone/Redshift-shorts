@@ -218,6 +218,41 @@ def test_avatar_bg_plates_round_robin():
     assert out[1] != out[3] or len(set(out.values())) == 1
 
 
+def test_avatar_bg_skips_html_code_on_clay_prize():
+    """34587674751 52.73: JS monitor behind «приз Клея — за уравнения»."""
+    from src.p11_assemble.assemble import _avatar_bg_plates
+
+    slots = [
+        {"index": 8, "kind": "footage", "start": 21.0, "end": 23.5},
+        {"index": 9, "kind": "footage", "start": 25.7, "end": 28.6},
+        {"index": 19, "kind": "avatar", "start": 52.7, "end": 56.2},
+    ]
+    prepared = {
+        8: {"dst": "/tmp/html_code.mp4"},
+        9: {"dst": "/tmp/library.mp4"},
+    }
+    assets = {
+        8: {
+            "asset_id": "pexels_v34459460",
+            "query": "html code computer monitor",
+            "page_url": "https://www.pexels.com/video/colorful-html-code-on-computer-monitor-34459460/",
+        },
+        9: {
+            "asset_id": "pexels_v37695140",
+            "query": "quiet library aisle books",
+            "page_url": "https://www.pexels.com/video/quiet-library-aisle-with-rows-of-books-37695140/",
+        },
+    }
+    words = [
+        {"display": "Только", "start": 52.70, "end": 53.02},
+        {"display": "приз", "start": 53.06, "end": 53.30},
+        {"display": "Клея", "start": 53.30, "end": 53.66},
+        {"display": "уравнения", "start": 53.84, "end": 54.29},
+    ]
+    out = _avatar_bg_plates(slots, prepared, assets, plan={}, words=words)
+    assert out[19] == "/tmp/library.mp4"
+
+
 def test_fullscreen_cap_reads_brandbook_limit():
     from src.lib.config import load_config
     from src.p11_assemble.assemble import _fullscreen_cap

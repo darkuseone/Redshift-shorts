@@ -719,13 +719,23 @@ def _plate_asset_hay(asset: dict[str, Any] | None, dst: str = "") -> str:
     ])
 
 
+_FLUID_WATER_MARKERS = (
+    "water", "pipes", "pipe", "blood", "radar", "turbulence",
+    "fluid", "vapor", "storm", "microscope",
+)
+
+
 def _fluid_still_rank(hay: str, index_distance: int) -> tuple[int, int, int]:
-    """Water/wing/pipes beat a same-block airplane window on a fluid hole."""
+    """Water/pipes beat wing; cabin stays last on a fluid hole."""
     hay_l = str(hay or "").lower()
+    waterish = _hay_has_marker(hay_l, _FLUID_WATER_MARKERS)
     strong = _hay_has_marker(hay_l, FLUID_STRONG_MARKERS)
-    cabin = (_hay_has_marker(hay_l, PASSENGER_CABIN_MARKERS)
-             and not strong)
-    return (0 if strong else 1, 1 if cabin else 0, index_distance)
+    cabin = _hay_has_marker(hay_l, PASSENGER_CABIN_MARKERS)
+    return (
+        0 if waterish else 1 if strong else 2,
+        1 if cabin else 0,
+        index_distance,
+    )
 
 
 def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
@@ -1317,14 +1327,19 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
 
 def _avatar_bg_plates(slots: list[dict[str, Any]],
                        prepared: dict[int, dict[str, Any]],
-                       assets: dict[int, dict[str, Any]]) -> dict[int, str]:
+                       assets: dict[int, dict[str, Any]],
+                       plan: dict[str, Any] | None = None,
+                       words: Iterable[dict[str, Any]] | None = None,
+                       ) -> dict[int, str]:
     """Real (non-AI) footage paths for alpha talking-head backgrounds.
 
     HyperFrames alpha avatars used a single static scene plate for the whole
     cut — background never changed. Round-robin distinct prepared plates so
     each avatar beat gets interesting B-roll behind the transparent subject.
+    The spoken window still vetoes the plate: HTML/JS behind «приз Клея»
+    is a P12 miss, same as a keyboard on «Навье-Стокса».
     """
-    plates: list[str] = []
+    plates: list[tuple[str, str]] = []
     seen: set[str] = set()
     for slot in slots:
         idx = int(slot["index"])
@@ -1342,7 +1357,7 @@ def _avatar_bg_plates(slots: list[dict[str, Any]],
         seen.add(path)
         if _is_ticker_asset(asset):
             continue
-        plates.append(path)
+        plates.append((path, _plate_asset_hay(asset, path)))
     ticker_plates: list[str] = []
     ticker_seen: set[str] = set()
     for slot in slots:
@@ -1358,24 +1373,41 @@ def _avatar_bg_plates(slots: list[dict[str, Any]],
     if not plates:
         # Fall back to any non-AI prepared file (borrowed plate path).
         for slot in slots:
-            plate = _plate_source(slot, slots, prepared, assets)
+            plate = _plate_source(
+                slot, slots, prepared, assets, plan=plan, words=words)
             path = str((plate or {}).get("file") or "").strip()
             if path and path not in seen:
                 seen.add(path)
-                plates.append(path)
+                plates.append((path, _plate_asset_hay(
+                    assets.get(int(slot["index"])) or {}, path)))
     out: dict[int, str] = {}
-    pool = plates or ticker_plates
-    if not pool:
+    pool = plates
+    ticker_pool = ticker_plates
+    if not pool and not ticker_pool:
         return out
     cursor = 0
     for slot in slots:
         if slot.get("kind") != "avatar":
             continue
-        if _slot_wants_ticker(slot) and ticker_plates:
-            out[int(slot["index"])] = ticker_plates[0]
+        if _slot_wants_ticker(slot) and ticker_pool:
+            out[int(slot["index"])] = ticker_pool[0]
             continue
-        out[int(slot["index"])] = pool[cursor % len(pool)]
-        cursor += 1
+        if not pool:
+            out[int(slot["index"])] = ticker_pool[0]
+            continue
+        brief = slot_visual_brief(slot, plan or {}, words)
+        picked: str | None = None
+        for step in range(len(pool)):
+            path, hay = pool[(cursor + step) % len(pool)]
+            if brief_reject_reason(brief, hay):
+                continue
+            picked = path
+            cursor = cursor + step + 1
+            break
+        if picked is None:
+            picked = pool[cursor % len(pool)][0]
+            cursor += 1
+        out[int(slot["index"])] = picked
     return out
 
 
@@ -4679,7 +4711,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     alpha_slots = _alpha_slots(avatar_meta)
     face_centres = _face_centres(avatar_meta)
     head_boxes = _head_boxes(avatar_meta)
-    avatar_bgs = _avatar_bg_plates(slots, prepared, assets)
+    avatar_bgs = _avatar_bg_plates(
+        slots, prepared, assets,
+        plan=plan, words=words_doc.get("words") or [])
     compose_zoom = float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
     # Dedup on-screen slogans across intentional FS + gap FS (0042: «5 МИНУТ»).
@@ -4912,9 +4946,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 off_topic = True
             else:
                 query = str(asset.get("query") or "")
-                if query and leftover_query_fits_slot(
-                        query, slot, plan, words=words_for_slot):
-                    off_topic = False
+                if query:
+                    off_topic = not leftover_query_fits_slot(
+                        query, slot, plan, words=words_for_slot)
                 elif tags:
                     topical = topical_match_score(
                         tags,
@@ -5176,7 +5210,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         head_box=head_boxes.get(int(slot["index"]))),
                     has_alpha=(int(slot["index"]) in alpha_slots
                                or slot["kind"] == "avatar"),
-                    plate_src=_plate_source(slot, slots, prepared, assets),
+                    plate_src=_plate_source(
+                        slot, slots, prepared, assets, plan=plan,
+                        words=words_doc.get("words") or []),
                     recent_videos=recent_videos, exclude=used_templates + peer_block,
                     seed=seed, picker=picker, variant=variant, block=block,
                     video_duration=float(plan["duration_sec"]),

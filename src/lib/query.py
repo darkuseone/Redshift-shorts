@@ -460,8 +460,8 @@ def leftover_query_fits_slot(
             return False
         if _hay_has_marker(q, DATAVIZ_DENY_MARKERS):
             return False
-        if (_hay_has_marker(q, PASSENGER_CABIN_MARKERS)
-                and not _hay_has_marker(q, FLUID_STRONG_MARKERS)):
+        # Search query «airplane wing» must not launder a cabin listing.
+        if _hay_has_marker(q, PASSENGER_CABIN_MARKERS):
             return False
         if _hay_has_marker(q, FLUID_QUERY_MARKERS):
             return True
@@ -546,7 +546,7 @@ KEYBOARD_DENY = (
 )
 CODE_QUERY_MARKERS = (
     "keyboard", "typing", "code editor", "programming ide", "theorem prover",
-    "proof lean", "source programming",
+    "proof lean", "source programming", "html-code", "html code",
 )
 # Not bare «lean»: it matches «clean». Dataviz/code close-ups on a fluid window.
 FLUID_CODE_DENY = (
@@ -575,8 +575,8 @@ FLUID_SPEECH = (
     "навье", "жидкост", "погод", "самолёт", "крыл", "труб", "крови", "кровь",
     "течёт",
 )
-LEAN_SPEECH = ("lean",)
-OPENAI_SPEECH = ("openai", "выкладыва", "агент")
+LEAN_SPEECH = ("lean", "астра", "доказательств")
+OPENAI_SPEECH = ("openai", "выкладыва", "агент", "клея")
 DEFAULT_FLUID_QUERIES = (
     "slow motion water turbulence",
     "airplane wing vapor",
@@ -707,7 +707,17 @@ def brief_reject_reason(
     denied = brief_deny_reason(brief, hay)
     if denied:
         return denied
-    if str(brief.get("kind") or "") != "fluid":
+    kind = str(brief.get("kind") or "")
+    blob = hay.lower()
+    if kind == "lean":
+        if _hay_has_marker(blob, FLUID_QUERY_MARKERS):
+            return "brief veto: fluid footage on lean window"
+        return None
+    if kind == "paper":
+        if _hay_has_marker(blob, CODE_QUERY_MARKERS):
+            return "brief veto: code/keyboard on paper window"
+        return None
+    if kind != "fluid":
         return None
     rung_s = str(rung or "").lower()
     tpl = str(template or "").lower()
@@ -717,13 +727,12 @@ def brief_reject_reason(
             "dataviz", "data-viz", "mk-line", "browser-ui",
             "code-editor", "line-graph")):
         return f"brief veto: fluid slot rejects template {template}"
-    blob = hay.lower()
     if _hay_has_marker(blob, CODE_QUERY_MARKERS):
         return "brief veto: code/keyboard on fluid window"
     if _hay_has_marker(blob, DATAVIZ_DENY_MARKERS):
         return "brief veto: dataviz on fluid window"
-    if (_hay_has_marker(blob, PASSENGER_CABIN_MARKERS)
-            and not _hay_has_marker(blob, FLUID_STRONG_MARKERS)):
+    # Cabin URL/tags stay cabin even when the P7 query said «wing».
+    if _hay_has_marker(blob, PASSENGER_CABIN_MARKERS):
         return "brief veto: cabin leftover on fluid window"
     return None
 

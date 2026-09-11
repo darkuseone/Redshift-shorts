@@ -98,11 +98,10 @@ def prior_accepted_ok(
     brief = slot_visual_brief(slot, plan, words)
     if brief_reject_reason(brief, _candidate_hay(entry)):
         return False
-    if decision == "accept_stock_leftover":
-        query = str(entry.get("query") or "")
-        if query and not leftover_query_fits_slot(
-                query, slot, plan, words=words):
-            return False
+    query = str(entry.get("query") or "")
+    if query and not leftover_query_fits_slot(
+            query, slot, plan, words=words):
+        return False
     return True
 
 
