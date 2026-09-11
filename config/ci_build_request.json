@@ -1,9 +1,10 @@
 {
   "script": "scripts/redshift_0049.json",
   "providers_mode": "auto",
-  "from_step": "P11",
+  "from_step": "P7",
   "heygen_source": "prepared",
   "skip_generate": true,
+  "skip_vision": false,
   "requested_by": "cursor",
-  "note": "пересборка 0049 с P11: leftover без CONCEPTS не выметает сток, inherit копирует лицензию, без TTS/HeyGen"
+  "note": "0049 P7: brief по spoken window, pin openai card, deny keyboard на NS. xAI только кэш/финалисты, не полный critic. Без TTS/HeyGen/Gemini image."
 }
