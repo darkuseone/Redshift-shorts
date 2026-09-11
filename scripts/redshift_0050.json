@@ -130,7 +130,7 @@
       "role": "develop",
       "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода. Крыло самолёта. Трубы в доме. Ток крови. Если формула врёт — самолёт не извиняется.",
       "emphasis_word": "жидкость",
-      "avatar": "on",
+      "avatar": "off",
       "visual_intent": "Один пункт жизни — один кадр: погода, крыло, трубы, кровь. Не коллаж всех слов на одной карточке.",
       "broll_queries": [
         "weather radar storm satellite screen",
@@ -186,7 +186,6 @@
         "template_hint": "text-fullscreen/label-strip"
       },
       "sfx": "subscribe_ping",
-      "mode_hint": "A",
       "emphasis_family": "emotion"
     }
   ],

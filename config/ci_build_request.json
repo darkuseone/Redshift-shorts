@@ -6,6 +6,6 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 phase1f: seed wav+speech_map only; fresh P1 avatar plan; MCP next",
+  "note": "0050 phase1g: avatar off wins mode_hint; only b2+b6 on; MCP next",
   "tts_pace": 1.2
 }
