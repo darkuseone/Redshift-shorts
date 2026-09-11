@@ -444,7 +444,15 @@ def leftover_query_fits_slot(
         query: str, slot: dict[str, Any],
         plan: dict[str, Any] | None = None,
         words: Iterable[dict[str, Any]] | None = None) -> bool:
-    """Leftover is legal only when the search query shares tokens with speech."""
+    """Leftover is legal when the query matches this window's speech.
+
+    English Pexels queries never share tokens with Russian VO. If this window
+    has no CONCEPTS, leftover is not judged (same as topical_match_score=1.0).
+    If CONCEPTS fire (навье, lean), a keyboard query must not sit on fluids.
+    """
+    spoken = spoken_slot_text(slot, words)
+    if spoken:
+        return topical_match_score(_query_words(str(query or "")), spoken) >= 0.35
     return extra_fits_slot(str(query or ""), leftover_dest_tokens(slot, plan, words))
 
 

@@ -207,6 +207,24 @@ class TestLeftoverQueryGate:
         }
         assert leftover_stock_off_topic(asset, slot, {}, words=words)
 
+    def test_leftover_without_concepts_is_kept(self):
+        """English leftover vs Russian VO with no CONCEPTS is not a massacre.
+
+        extra_fits_slot required Latin∩dest; dest was Russian, so P11 emptied
+        every leftover slot onto the ladder and died on QC-12.
+        """
+        slot = _slot(index=5, start=16.2, end=18.8)
+        words = [
+            {"display": "OpenAI", "start": 16.27, "end": 16.72},
+            {"display": "выкладывает", "start": 16.8, "end": 17.3},
+            {"display": "работу.", "start": 17.4, "end": 17.9},
+        ]
+        asset = {
+            "decision": "accept_stock_leftover",
+            "query": "hands typing keyboard code editor",
+        }
+        assert not leftover_stock_off_topic(asset, slot, {}, words=words)
+
     def test_spoken_window_beats_whole_block_lean_on_tags(self):
         """P11 used the whole b4 text, so keyboard tags passed via Lean."""
         slot = _slot(index=13, start=38.8, end=41.6)

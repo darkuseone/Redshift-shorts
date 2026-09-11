@@ -330,6 +330,30 @@ class TestPlateCapDoesNotEmitBarePlatesPastTwo:
         assert len(built["shots"]) == 20
 
 
+    def test_hold_previous_frame_copies_license(self):
+        """QC-12: inherit of avatar_seg_* without license blocked 0049."""
+        from src.p11_assemble.assemble import _overflow_beyond_plate_cap
+
+        out = _overflow_beyond_plate_cap(
+            {"index": 22, "start": 56.0, "end": 57.4, "duration": 1.4,
+             "block_id": "b5"},
+            {},
+            picker=None, catalog=None, plan={"title": "", "duration_sec": 70.0},
+            variant="A", seed=1, recent_videos=[], used_templates=[],
+            brand_icons=None, words=[], plate_src=None, bg_file=None,
+            prev_shot={
+                "file": "/tmp/avatar_seg_4.mp4",
+                "asset_id": "avatar_seg_4",
+                "license": "HeyGen ToS (цифровой двойник заказчика)",
+                "source": "heygen",
+                "attribution": "",
+            },
+        )
+        assert out["gap_reason"] == "plate cap: hold previous frame"
+        assert out["asset_id"] == "avatar_seg_4"
+        assert out["license"] == "HeyGen ToS (цифровой двойник заказчика)"
+
+
 class TestTheLadderNeverInventsADocument:
     """Окно статьи рисуется только под настоящий источник из плана."""
 

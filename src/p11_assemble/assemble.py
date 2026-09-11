@@ -4215,13 +4215,22 @@ def _overflow_beyond_plate_cap(
         }
     inherit_file = bg_file
     inherit_asset = None
+    inherit_license = None
+    inherit_source = None
+    inherit_attribution = ""
     if prev_shot and prev_shot.get("file"):
         inherit_file = prev_shot.get("file")
         inherit_asset = prev_shot.get("asset_id")
+        inherit_license = prev_shot.get("license")
+        inherit_source = prev_shot.get("source")
+        inherit_attribution = prev_shot.get("attribution") or ""
     return {
         "kind": "footage",
         "file": inherit_file,
         "asset_id": inherit_asset,
+        "license": inherit_license,
+        "source": inherit_source,
+        "attribution": inherit_attribution,
         "gap_reason": "plate cap: hold previous frame",
         "ladder_rung": "inherit",
     }
@@ -4776,17 +4785,16 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         off_topic = False
         if asset is not None and slot["kind"] not in AVATAR_KINDS:
             words_for_slot = words_doc.get("words") or []
-            # Recompute against the spoken window even if P8 stamped a
-            # whole-block topical score: Lean in b4 must not keep a keyboard
-            # on «Навье-Стокса».
-            topical = topical_match_score(
-                asset.get("tags") or [],
-                slot_topical_text(slot, plan, words_for_slot),
-                str(plan.get("category") or ""))
-            off_topic = float(topical) < _TOPICAL_MIN
-            # Prefer pins locked to overlapping speech (Nature figure, carved
-            # supercomputer hall) must not be discarded because the whole-block
-            # CONCEPTS table does not list that noun.
+            # Tags vs this window's VO — not the whole block (Lean+fluids).
+            # Empty tags are unknown, not a reject: leftover_stock_off_topic
+            # still drops a keyboard leftover on «Навье-Стокса».
+            tags = asset.get("tags") or []
+            if tags:
+                topical = topical_match_score(
+                    tags,
+                    slot_topical_text(slot, plan, words_for_slot),
+                    str(plan.get("category") or ""))
+                off_topic = float(topical) < _TOPICAL_MIN
             if off_topic and asset.get("speech_locked"):
                 off_topic = False
             if leftover_stock_off_topic(
