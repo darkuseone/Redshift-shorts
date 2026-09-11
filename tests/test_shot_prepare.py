@@ -199,23 +199,30 @@ def test_hero_mutes_heavy_template_text():
         assert flags["carries_line"] or flags["covers_frame"], renderer
 
 
-def test_avatar_bg_plates_round_robin():
+def test_avatar_bg_plates_own_slot_only():
+    """Avatar bg is this slot's file. Neighbour plates are not inherited."""
     from src.p11_assemble.assemble import _avatar_bg_plates
     slots = [
-        {"index": 0, "kind": "footage"},
-        {"index": 1, "kind": "avatar"},
-        {"index": 2, "kind": "footage"},
-        {"index": 3, "kind": "avatar"},
+        {"index": 0, "kind": "footage", "start": 0.0, "end": 2.0},
+        {"index": 1, "kind": "avatar", "start": 2.0, "end": 4.0},
+        {"index": 2, "kind": "footage", "start": 4.0, "end": 6.0},
+        {"index": 3, "kind": "avatar", "start": 6.0, "end": 8.0},
     ]
     prepared = {
         0: {"dst": "/tmp/a.mp4"},
+        1: {"dst": "/tmp/avatar1.mp4", "bg_src": "/tmp/a.mp4"},
         2: {"dst": "/tmp/b.mp4"},
+        3: {"dst": "/tmp/avatar3.mp4"},
     }
-    assets = {0: {}, 2: {}}
+    assets = {
+        0: {"asset_id": "stock_a"},
+        1: {"asset_id": "stock_a"},
+        2: {"asset_id": "stock_b"},
+        3: {},
+    }
     out = _avatar_bg_plates(slots, prepared, assets)
-    assert out[1] in {"/tmp/a.mp4", "/tmp/b.mp4"}
-    assert out[3] in {"/tmp/a.mp4", "/tmp/b.mp4"}
-    assert out[1] != out[3] or len(set(out.values())) == 1
+    assert out[1] == "/tmp/a.mp4"
+    assert 3 not in out
 
 
 def test_avatar_bg_skips_html_code_on_clay_prize():
@@ -230,6 +237,7 @@ def test_avatar_bg_skips_html_code_on_clay_prize():
     prepared = {
         8: {"dst": "/tmp/html_code.mp4"},
         9: {"dst": "/tmp/library.mp4"},
+        19: {"dst": "/tmp/avatar19.mp4", "bg_src": "/tmp/library.mp4"},
     }
     assets = {
         8: {
@@ -241,6 +249,12 @@ def test_avatar_bg_skips_html_code_on_clay_prize():
             "asset_id": "pexels_v37695140",
             "query": "quiet library aisle books",
             "page_url": "https://www.pexels.com/video/quiet-library-aisle-with-rows-of-books-37695140/",
+        },
+        19: {
+            "asset_id": "pexels_v37695140",
+            "query": "quiet library aisle books",
+            "page_url": "https://www.pexels.com/video/quiet-library-aisle-with-rows-of-books-37695140/",
+            "slot_lock": True,
         },
     }
     words = [
@@ -268,19 +282,36 @@ def test_avatar_bg_skips_water_on_clay_and_wing_on_wall():
         8: {"dst": "/tmp/water.mp4"},
         10: {"dst": "/tmp/wing.mp4"},
         9: {"dst": "/tmp/library.mp4"},
+        19: {"dst": "/tmp/avatar19.mp4", "bg_src": "/tmp/library.mp4"},
+        23: {"dst": "/tmp/avatar23.mp4", "bg_src": "/tmp/docs.mp4"},
     }
     assets = {
         8: {
             "page_url": "https://www.pexels.com/video/water-flowing-through-a-discharge-pipe-10884417/",
             "query": "industrial pipes water plant",
+            "asset_id": "pexels_v10884417",
         },
         10: {
             "page_url": "https://www.pexels.com/video/a-view-of-the-clouds-from-an-airplane-16865644/",
             "query": "airplane wing in flight clouds",
+            "asset_id": "pexels_v16865644",
         },
         9: {
             "page_url": "https://www.pexels.com/video/quiet-library-aisle-with-rows-of-books-37695140/",
             "query": "quiet library aisle books",
+            "asset_id": "pexels_v37695140",
+        },
+        19: {
+            "asset_id": "pexels_v37695140",
+            "query": "quiet library aisle books",
+            "page_url": "https://www.pexels.com/video/quiet-library-aisle-with-rows-of-books-37695140/",
+            "slot_lock": True,
+        },
+        23: {
+            "asset_id": "pexels_v12908964",
+            "query": "documents on desk paper",
+            "page_url": "https://www.pexels.com/video/documents-12908964/",
+            "slot_lock": True,
         },
     }
     words = [
@@ -296,7 +327,9 @@ def test_avatar_bg_skips_water_on_clay_and_wing_on_wall():
     ]
     out = _avatar_bg_plates(slots, prepared, assets, plan={}, words=words)
     assert out[19] == "/tmp/library.mp4"
-    assert out[23] == "/tmp/library.mp4"
+    assert out[23] == "/tmp/docs.mp4"
+    assert out[19] != "/tmp/water.mp4"
+    assert out[23] != "/tmp/wing.mp4"
 
 
 def test_fullscreen_cap_reads_brandbook_limit():

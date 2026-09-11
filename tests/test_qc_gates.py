@@ -565,13 +565,13 @@ class TestTzMust024ConstantsAgree:
         assert cfg.get("limits.vision_mismatch_share_max") == pytest.approx(0.10)
         assert MISMATCH_LIMIT == pytest.approx(0.10)
         assert cfg.get("stock.max_download_height") == 1080
-        assert cfg.get("stock.candidate_surplus") == pytest.approx(1.3)
+        assert cfg.get("stock.candidate_surplus") == pytest.approx(2.0)
         assert accent_hi == pytest.approx(0.12)
 
         assert "≤10 %" in instruction
         assert "VFX-фон ≤2 раза, 2–5 сек" in instruction
         assert "1080p" in instruction
-        assert "1.3×" in instruction
+        assert "2.0×" in instruction
         assert "mismatch_share > 10 %" in instruction
         assert "QC-19 не отключается" in instruction
 

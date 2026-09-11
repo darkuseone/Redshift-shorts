@@ -161,7 +161,7 @@ def slots_judgable_count(candidates: Iterable[dict[str, Any]],
     """Слоты, у которых есть хотя бы один кандидат футажа.
 
     Пустой слот критику смотреть нечего — он уйдёт в P9/лестницу P11.
-    Если считать его в знаменателе 1.3×, один недобор (22/23) блокирует
+    Если считать его в знаменателе 2.0×, один недобор (22/23) блокирует
     судью на всех слотах, где пул как раз есть.
     """
     needed = {int(i) for i in slot_indexes}
@@ -186,7 +186,7 @@ def surplus_target(slots_needing: int, ratio: float = 1.3) -> int:
 def surplus_report(n_candidates: int, slots_needing: int,
                    ratio: float = 1.3, *,
                    slots_judgable: int | None = None) -> dict[str, Any]:
-    """Сводка +30% запаса до Gemini/Grok/Magnific (MUST-017).
+    """Сводка ×2 запаса до Gemini/Grok/Magnific (MUST-017, запас не +30%).
 
     Target считает слоты, по которым есть что судить. Пустые слоты не
     надувают порог: MUST-017 запрещает добирать запас генерацией, а не
@@ -571,7 +571,7 @@ def run_step(ctx) -> dict[str, Any]:
     queries_per_slot = min(QUERY_MAX, max(3, int(cfg.get("stock.queries_per_slot", 5))))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))
     pool_min, pool_max = cfg.get("stock.target_pool_size", [30, 60])
-    surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
+    surplus_ratio = float(cfg.get("stock.candidate_surplus", 2.0))
     max_downloads = int(cfg.get("magnific.max_downloads_per_video", 50))
     probe_positions = cfg.get("stock.video_probe_frames", [0.10, 0.50, 0.90])
     dedup_threshold = int(cfg.get("stock.dedup_hamming_max", 8))
@@ -1017,7 +1017,7 @@ def run_step(ctx) -> dict[str, Any]:
             researched += 1
             harvest(refined)
 
-        # MUST-017: запас +30% добирается дешёвым поиском, не vision/Magnific.
+        # MUST-017: запас ×2 добирается дешёвым поиском, не vision/Magnific.
         have_so_far = footage_pool_count(candidates_out) + len(slot_candidates)
         expected_so_far = surplus_target(slots.index(slot) + 1, surplus_ratio)
         if not frozen and have_so_far < expected_so_far:

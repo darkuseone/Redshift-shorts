@@ -1,4 +1,4 @@
-"""MUST-017: +30% surplus кандидатов до Gemini/Grok/Magnific."""
+"""MUST-017: ×2 surplus кандидатов до Gemini/Grok/Magnific."""
 
 from __future__ import annotations
 
@@ -89,11 +89,14 @@ def _plan_and_pool(n_slots: int, n_cands: int):
 
 def test_surplus_target_ten_slots_is_thirteen():
     assert surplus_target(10, 1.3) == 13
+    assert surplus_target(10, 2.0) == 20
     assert surplus_report(12, 10, 1.3)["status"] == "underfilled"
     assert surplus_report(12, 10, 1.3)["ok"] is False
     assert surplus_report(13, 10, 1.3)["ok"] is True
     assert surplus_report(13, 10, 1.3)["status"] == "ok"
     assert surplus_report(13, 10, 1.3)["slots_judgable"] == 10
+    assert surplus_report(19, 10, 2.0)["ok"] is False
+    assert surplus_report(20, 10, 2.0)["ok"] is True
 
 
 def test_empty_slots_do_not_inflate_surplus_target():
@@ -108,8 +111,8 @@ def test_empty_slots_do_not_inflate_surplus_target():
     assert thin["ok"] is False
 
 
-def test_config_surplus_ratio_is_1_3(cfg):
-    assert cfg.get("stock.candidate_surplus") == 1.3
+def test_config_surplus_ratio_is_2_0(cfg):
+    assert cfg.get("stock.candidate_surplus") == 2.0
     live = load_config()
     assert int(live.get("stock.local_candidates_per_slot")) == 24
     assert int(live.get("stock.local_keep_per_slot")) == 2
@@ -139,7 +142,7 @@ def test_underfilled_pool_does_not_call_paid_critic(monkeypatch):
     result = _run(monkeypatch, 10, 12, spy)
     assert spy.calls == 0
     assert result["surplus"]["status"] == "underfilled"
-    assert result["surplus"]["target"] == 13
+    assert result["surplus"]["target"] == 20
     decisions = {row.get("decision") for row in result["judged"]}
     assert "underfilled" in decisions
     assert result["accepted_count"] == 0
@@ -149,7 +152,7 @@ def test_underfilled_pool_does_not_call_paid_critic(monkeypatch):
 
 
 def test_empty_slots_do_not_block_critic_on_the_rest(monkeypatch):
-    """22 кандидата на 13 слотах при 17 дырах: critic зовётся, P9 не сжигает квоту."""
+    """26 кандидатов на 13 слотах при 17 дырах: critic зовётся, P9 не сжигает квоту."""
     spy = _Spy()
     from src.p8_broll_judge import judge as J
 
@@ -159,7 +162,7 @@ def test_empty_slots_do_not_block_critic_on_the_rest(monkeypatch):
     monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
     monkeypatch.setattr(J, "build_vision_provider", lambda *a, **k: spy)
     slots = [_slot(i) for i in range(17)]
-    candidates = [_cand(i % 13, i) for i in range(22)]
+    candidates = [_cand(i % 13, i) for i in range(26)]
     ctx = _Ctx(
         cfg,
         {"video_id": "surplus_holes", "candidates": candidates},
@@ -170,13 +173,13 @@ def test_empty_slots_do_not_block_critic_on_the_rest(monkeypatch):
     assert spy.calls >= 1
     assert result["surplus"]["ok"] is True
     assert result["surplus"]["slots_judgable"] == 13
-    assert result["surplus"]["target"] == 17
+    assert result["surplus"]["target"] == 26
     assert result["surplus_blocks_generation"] is False
 
 
 def test_surplus_met_allows_paid_critic(monkeypatch):
     spy = _Spy()
-    result = _run(monkeypatch, 10, 13, spy)
+    result = _run(monkeypatch, 10, 20, spy)
     assert spy.calls >= 1
     assert result["surplus"]["ok"] is True
     assert result["surplus"]["status"] == "ok"
@@ -324,7 +327,7 @@ def test_leftover_does_not_park_cross_topic_stock(monkeypatch, tmp_path):
 def test_critic_reject_without_files_does_not_leftover_fill(monkeypatch):
     """Без скачанного файла leftover не подменяет генерацию / лестницу."""
     spy = _LowSpy()
-    result = _run(monkeypatch, 10, 13, spy)
+    result = _run(monkeypatch, 10, 20, spy)
     assert spy.calls >= 1
     assert result["surplus"]["ok"] is True
     assert result["accepted_count"] == 0

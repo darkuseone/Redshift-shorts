@@ -98,14 +98,56 @@
     "same_asset_max_slots": 1
   },
   "redshift_0049": {
-    "prefer": [
-      "press_c8e1aa428b",
-      "pexels_v10884417",
-      "pexels_v16865644"
-    ],
+    "prefer": [],
     "deny": [
-      "pexels_v32259631"
+      "pexels_v32259631",
+      "pexels_v19004433"
     ],
-    "same_asset_max_slots": 1
+    "same_asset_max_slots": 1,
+    "slot_locks": [
+      {
+        "t": 5.8,
+        "kind": "avatar",
+        "asset_id": null,
+        "brand_plate": true,
+        "deny_asset_ids": ["press_c8e1aa428b"]
+      },
+      {
+        "t": 17.58,
+        "kind": "footage",
+        "asset_id": "press_c8e1aa428b",
+        "min_duration": 5.2
+      },
+      {
+        "t": 29.3,
+        "kind": "footage",
+        "asset_id": "pexels_v34459460",
+        "fallback_asset_ids": ["pexels_v12893579"]
+      },
+      {
+        "t": 41.02,
+        "kind": "footage",
+        "asset_id": "pexels_v10884417",
+        "exclusive": true,
+        "fallback_kind": "fluid"
+      },
+      {
+        "t": 52.73,
+        "kind": "avatar",
+        "asset_id": "pexels_v37695140",
+        "deny_asset_ids": ["pexels_v10884417", "pexels_v16865644"]
+      },
+      {
+        "t": 64.45,
+        "kind": "avatar",
+        "asset_id": "pexels_v12908964",
+        "fallback_asset_ids": ["pexels_v34719410", "pexels_v37695140"],
+        "deny_asset_ids": [
+          "pexels_v16865644",
+          "pexels_v10884417",
+          "press_c8e1aa428b"
+        ]
+      }
+    ]
   }
 }

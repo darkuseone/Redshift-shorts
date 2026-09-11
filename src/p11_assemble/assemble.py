@@ -55,7 +55,11 @@ from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
 from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
 from ..lib.templates import TemplateCatalog, Template, diff_count
 from ..lib.template_picker import ScenarioIndex, TemplatePicker, build_blob
-from ..lib.pin_match import overlapping_speech
+from ..lib.pin_match import (
+    overlapping_speech, apply_slot_locks, exclusive_lock_owners,
+    slot_locks_from_entry,
+)
+from ..p7_broll_search.search import _footage_pin_entry
 
 _log = get_logger("p11")
 
@@ -752,7 +756,10 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
     NASA archive stills are skipped — empty slots take a brand plate instead.
     AI-only pools return None — heroes then skip plate templates.
     Keyboard/code neighbour files are skipped when this window is fluids.
+    Avatar slots do not inherit a neighbour plate (own file or brand grid).
     """
+    if str(slot.get("kind") or "") in AVATAR_KINDS:
+        return None
     index = int(slot["index"])
     assets = assets or {}
     brief = slot_visual_brief(slot, plan or {}, words)
@@ -786,6 +793,10 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                     and not _slot_wants_ticker(slot)):
                 continue
             if _denied_for_this_window(s):
+                continue
+            src_aid = str((assets.get(int(s["index"])) or {}).get("asset_id") or "")
+            owners = (plan or {}).get("_exclusive_owners") or {}
+            if src_aid and src_aid in owners and owners[src_aid] != index:
                 continue
             out.append(s)
         return out
@@ -840,6 +851,11 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
                   ) -> str | None:
     """Prepared dst, nearest non-NASA plate, or a brand grid — never invent text."""
     inherit = slot.get("inherit_from")
+    if inherit is not None:
+        owners = (plan or {}).get("_exclusive_owners") or {}
+        inherited_aid = str((assets.get(int(inherit)) or {}).get("asset_id") or "")
+        if inherited_aid and inherited_aid in owners and owners[inherited_aid] != int(slot["index"]):
+            inherit = None
     if inherit is not None:
         inherited = prepared.get(int(inherit))
         if inherited is not None and inherited.get("dst"):
@@ -1340,89 +1356,61 @@ def _avatar_bg_denied(brief: dict[str, Any], hay: str) -> bool:
             or _hay_has_marker(blob, CODE_QUERY_MARKERS))
 
 
+def _prepared_path_for_asset_id(
+        asset_id: str,
+        prepared: dict[int, dict[str, Any]],
+        assets: dict[int, dict[str, Any]],
+        slots: list[dict[str, Any]]) -> str | None:
+    """Prepared footage dst for this id. Avatar dst is the face clip — skip it."""
+    aid = str(asset_id or "")
+    if not aid:
+        return None
+    for slot in slots:
+        if str(slot.get("kind") or "") in AVATAR_KINDS:
+            continue
+        idx = int(slot["index"])
+        if str((assets.get(idx) or {}).get("asset_id") or "") != aid:
+            continue
+        path = str((prepared.get(idx) or {}).get("dst") or "").strip()
+        if path:
+            return path
+    return None
+
+
 def _avatar_bg_plates(slots: list[dict[str, Any]],
                        prepared: dict[int, dict[str, Any]],
                        assets: dict[int, dict[str, Any]],
                        plan: dict[str, Any] | None = None,
                        words: Iterable[dict[str, Any]] | None = None,
                        ) -> dict[int, str]:
-    """Real (non-AI) footage paths for alpha talking-head backgrounds.
+    """B-roll behind an alpha talking-head: this slot's asset only.
 
-    HyperFrames alpha avatars used a single static scene plate for the whole
-    cut — background never changed. Round-robin distinct prepared plates so
-    each avatar beat gets interesting B-roll behind the transparent subject.
-    The spoken window still vetoes the plate: HTML/JS behind «приз Клея»
-    is a P12 miss, same as a keyboard on «Навье-Стокса».
+    Round-robin of neighbour dst parked water on Clay and a wing on
+    «дыра в стене». A locked/own asset_id uses that file; otherwise the
+    compositor keeps the brand plate. Neighbour inheritance is forbidden.
     """
-    plates: list[tuple[str, str]] = []
-    seen: set[str] = set()
-    for slot in slots:
-        idx = int(slot["index"])
-        asset = assets.get(idx) or {}
-        prep = prepared.get(idx) or {}
-        if asset.get("ai_generated"):
-            continue
-        path = str(prep.get("dst") or "").strip()
-        if not path or path in seen:
-            continue
-        if slot.get("kind") not in ("footage", "meme", "fullscreen_text"):
-            # Prefer footage/meme/fullscreen plates; skip baked avatar composites.
-            if slot.get("kind") in ("avatar", "split"):
-                continue
-        seen.add(path)
-        if _is_ticker_asset(asset):
-            continue
-        plates.append((path, _plate_asset_hay(asset, path)))
-    ticker_plates: list[str] = []
-    ticker_seen: set[str] = set()
-    for slot in slots:
-        idx = int(slot["index"])
-        asset = assets.get(idx) or {}
-        prep = prepared.get(idx) or {}
-        if not _is_ticker_asset(asset):
-            continue
-        path = str(prep.get("dst") or "").strip()
-        if path and path not in ticker_seen:
-            ticker_seen.add(path)
-            ticker_plates.append(path)
-    if not plates:
-        # Fall back to any non-AI prepared file (borrowed plate path).
-        for slot in slots:
-            plate = _plate_source(
-                slot, slots, prepared, assets, plan=plan, words=words)
-            path = str((plate or {}).get("file") or "").strip()
-            if path and path not in seen:
-                seen.add(path)
-                plates.append((path, _plate_asset_hay(
-                    assets.get(int(slot["index"])) or {}, path)))
     out: dict[int, str] = {}
-    pool = plates
-    ticker_pool = ticker_plates
-    if not pool and not ticker_pool:
-        return out
-    cursor = 0
+    exclusive = (plan or {}).get("_exclusive_owners") or {}
     for slot in slots:
         if slot.get("kind") != "avatar":
             continue
-        if _slot_wants_ticker(slot) and ticker_pool:
-            out[int(slot["index"])] = ticker_pool[0]
+        idx = int(slot["index"])
+        own = assets.get(idx) or {}
+        aid = str(own.get("asset_id") or "")
+        if not aid:
             continue
-        if not pool:
-            out[int(slot["index"])] = ticker_pool[0]
+        if aid in exclusive and exclusive[aid] != idx:
+            continue
+        path = str((prepared.get(idx) or {}).get("bg_src") or "").strip()
+        if not path:
+            path = _prepared_path_for_asset_id(aid, prepared, assets, slots) or ""
+        if not path:
             continue
         brief = slot_visual_brief(slot, plan or {}, words)
-        picked: str | None = None
-        for step in range(len(pool)):
-            path, hay = pool[(cursor + step) % len(pool)]
-            if _avatar_bg_denied(brief, hay):
-                continue
-            picked = path
-            cursor = cursor + step + 1
-            break
-        if picked is None:
-            picked = pool[cursor % len(pool)][0]
-            cursor += 1
-        out[int(slot["index"])] = picked
+        hay = _plate_asset_hay(own, path)
+        if _avatar_bg_denied(brief, hay):
+            continue
+        out[idx] = path
     return out
 
 
@@ -2770,6 +2758,40 @@ def _segment_for_slot(slot: dict[str, Any], segments: list[dict[str, Any]]
     return None
 
 
+def _resolve_asset_src(ctx, asset: dict[str, Any] | None) -> Path | None:
+    """Local file or storage key — no download of a new stock id."""
+    if not asset:
+        return None
+    local_file = str(asset.get("local_file") or "").strip()
+    src = Path(local_file) if local_file else None
+    if src is not None and src.is_file():
+        return src
+    key = str(asset.get("storage_key") or "").strip()
+    if key and ctx.storage.exists(key):
+        dst = ctx.wpath("broll", "raw", Path(key).name)
+        if not dst.is_file():
+            ctx.storage.get(key, dst)
+        if dst.is_file():
+            return dst
+    return None
+
+
+def _prepare_own_bg_clip(
+        ctx, src: Path, duration: float, *,
+        width: int, height: int, fps: int,
+        cache: dict[tuple, dict[str, Any]]) -> dict[str, Any] | None:
+    cache_key = (str(src), round(float(duration), 3), "crop")
+    if cache_key in cache:
+        return cache[cache_key]
+    dst = ctx.wpath("shots", f"bg_{src.stem}_{int(duration * 1000)}_crop.mp4")
+    result = prepare_shot(ShotSpec(
+        src=src, dst=dst, duration_sec=round(float(duration), 3),
+        width=width, height=height, fps=fps, fit="crop",
+        focus_x=0.5, focus_y=0.5))
+    cache[cache_key] = result
+    return result
+
+
 def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str, Any]],
                    pillarbox_limit: int,
                    avatar_segments: list[dict[str, Any]] | None = None,
@@ -2872,6 +2894,13 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
             result["avatar_offset_sec"] = round(offset, 3)
             result["avatar_segment"] = segment["index"]
             result["matte"] = matte.to_dict() if matte else None
+            bg_src = _resolve_asset_src(ctx, assets.get(slot["index"]))
+            if bg_src is not None:
+                plate = _prepare_own_bg_clip(
+                    ctx, bg_src, duration, width=width, height=height, fps=fps,
+                    cache=cache)
+                if plate:
+                    result["bg_src"] = plate["dst"]
             prepared[slot["index"]] = result
             continue
 
@@ -2919,7 +2948,8 @@ def _prepare_shots(ctx, slots: list[dict[str, Any]], assets: dict[int, dict[str,
 
 
 
-def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
+def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any],
+                     assets: dict[int, dict[str, Any]] | None = None,
                      ) -> tuple[dict[int, Any], dict[str, Path], dict[int, Path], dict[str, Any]]:
     """§7.7 — маска аватара, текст за головой и VFX-фон.
 
@@ -2970,42 +3000,20 @@ def _prepare_matting(ctx, plan: dict[str, Any], avatar_meta: dict[str, Any]
         candidates = plan_vfx_backgrounds(
             [s for s in plan["slots"] if s["index"] in avatar_slot_idxs],
             limit=limit, duration_range=(float(lo), float(hi)))
-        # Stock plates from accepted assets for this cut (dict slot→entry).
-        stock_paths: list[Path] = []
-        try:
-            accepted_doc = ctx.read("accepted_assets.json")
-        except Exception:  # noqa: BLE001
-            accepted_doc = {}
-        accepted_map = accepted_doc.get("accepted") or {}
-        items = (list(accepted_map.values()) if isinstance(accepted_map, dict)
-                 else list(accepted_map or []))
-        for item in items:
-            if not isinstance(item, dict) or item.get("ai_generated"):
-                continue
-            if _is_nasa_asset(item):
-                continue
-            local = str(item.get("local_file") or "").strip()
-            if local and Path(local).is_file():
-                stock_paths.append(Path(local))
-                continue
-            key = str(item.get("storage_key") or "").strip()
-            if key and ctx.storage.exists(key):
-                dst = ctx.wpath("broll", "raw", Path(key).name)
-                if not dst.is_file():
-                    ctx.storage.get(key, dst)
-                if dst.is_file():
-                    stock_paths.append(dst)
-        cursor = 0
+        # Own-slot stock only. Round-robin of every accepted file parked the
+        # Navier-Stokes pipe behind Clay and the OpenAI card behind the hook.
+        assets = assets or {}
         for slot_index in candidates:
             slot = next(s for s in plan["slots"] if s["index"] == slot_index)
-            if stock_paths:
-                vfx_clips[slot_index] = stock_paths[cursor % len(stock_paths)]
-                cursor += 1
+            own_src = _resolve_asset_src(ctx, assets.get(int(slot_index)))
+            if own_src is not None:
+                vfx_clips[slot_index] = own_src
                 summary["vfx"].append({"slot": slot_index, "source": "stock",
-                                       "duration_sec": round(float(slot["duration"]), 2)})
+                                       "duration_sec": round(float(slot["duration"]), 2),
+                                       "asset_id": str(
+                                           (assets.get(int(slot_index)) or {})
+                                           .get("asset_id") or "")})
                 continue
-            # Last resort: skip (brand gradient under avatar) — do NOT spend
-            # Magnific/Kling credits on abstract VFX for talking-head BGs.
             ctx.warn("нет сток-плиты для фона аватара — градиент брендбука",
                      slot=slot_index)
 
@@ -4366,7 +4374,12 @@ def _overflow_beyond_plate_cap(
     inherit_license = None
     inherit_source = None
     inherit_attribution = ""
-    if prev_shot and prev_shot.get("file"):
+    exclusive = (plan or {}).get("_exclusive_owners") or {}
+    prev_aid = str((prev_shot or {}).get("asset_id") or "")
+    steal_ok = not (
+        prev_aid and prev_aid in exclusive
+        and exclusive[prev_aid] != int(slot["index"]))
+    if steal_ok and prev_shot and prev_shot.get("file"):
         inherit_file = prev_shot.get("file")
         inherit_asset = prev_shot.get("asset_id")
         inherit_license = prev_shot.get("license")
@@ -4713,6 +4726,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     used_templates: list[str] = []
     peer_block = [str(x) for x in peer_exclude if x]
     slots = plan["slots"]
+    pin_entry = _footage_pin_entry(getattr(ctx, "cfg", None), str(plan.get("video_id") or ""))
+    plan["_exclusive_owners"] = exclusive_lock_owners(
+        slots, slot_locks_from_entry(pin_entry))
     _slot_beats(plan)
     escalation = _Escalation()
     _sync_fullscreen_overlay_content(slots, plan)
@@ -4951,36 +4967,39 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         # расхождение раньше, чем успевает прочитать субтитр.
         off_topic = False
         if asset is not None and slot["kind"] not in AVATAR_KINDS:
-            words_for_slot = words_doc.get("words") or []
-            # Tags vs this window's VO — not the whole block (Lean+fluids).
-            # Empty tags are unknown, not a reject: leftover_stock_off_topic
-            # still drops a keyboard leftover on «Навье-Стокса».
-            tags = asset.get("tags") or []
-            if leftover_stock_off_topic(
-                    asset, slot, plan, words=words_for_slot):
-                off_topic = True
+            if asset.get("slot_lock"):
+                off_topic = False
             else:
-                query = str(asset.get("query") or "")
-                if query:
-                    off_topic = not leftover_query_fits_slot(
-                        query, slot, plan, words=words_for_slot)
-                elif tags:
-                    topical = topical_match_score(
-                        tags,
-                        slot_topical_text(slot, plan, words_for_slot),
-                        str(plan.get("category") or ""))
-                    off_topic = float(topical) < _TOPICAL_MIN
-                if off_topic and asset.get("speech_locked"):
-                    off_topic = False
-            brief = slot_visual_brief(slot, plan, words_for_slot)
-            hay = " ".join([
-                str(asset.get("query") or ""),
-                " ".join(str(t) for t in (asset.get("tags") or [])),
-                str(asset.get("page_url") or ""),
-                str(asset.get("asset_id") or ""),
-            ])
-            if brief_reject_reason(brief, hay):
-                off_topic = True
+                words_for_slot = words_doc.get("words") or []
+                # Tags vs this window's VO — not the whole block (Lean+fluids).
+                # Empty tags are unknown, not a reject: leftover_stock_off_topic
+                # still drops a keyboard leftover on «Навье-Стокса».
+                tags = asset.get("tags") or []
+                if leftover_stock_off_topic(
+                        asset, slot, plan, words=words_for_slot):
+                    off_topic = True
+                else:
+                    query = str(asset.get("query") or "")
+                    if query:
+                        off_topic = not leftover_query_fits_slot(
+                            query, slot, plan, words=words_for_slot)
+                    elif tags:
+                        topical = topical_match_score(
+                            tags,
+                            slot_topical_text(slot, plan, words_for_slot),
+                            str(plan.get("category") or ""))
+                        off_topic = float(topical) < _TOPICAL_MIN
+                    if off_topic and asset.get("speech_locked"):
+                        off_topic = False
+                brief = slot_visual_brief(slot, plan, words_for_slot)
+                hay = " ".join([
+                    str(asset.get("query") or ""),
+                    " ".join(str(t) for t in (asset.get("tags") or [])),
+                    str(asset.get("page_url") or ""),
+                    str(asset.get("asset_id") or ""),
+                ])
+                if brief_reject_reason(brief, hay):
+                    off_topic = True
         if prep is None or off_topic or (asset is None
                                          and slot["kind"] not in AVATAR_KINDS):
             # Пустой слот идёт по лестнице §7.2: карточка → диаграмма →
@@ -5225,9 +5244,12 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         head_box=head_boxes.get(int(slot["index"]))),
                     has_alpha=(int(slot["index"]) in alpha_slots
                                or slot["kind"] == "avatar"),
-                    plate_src=_plate_source(
-                        slot, slots, prepared, assets, plan=plan,
-                        words=words_doc.get("words") or []),
+                    plate_src=(
+                        None if slot["kind"] == "avatar"
+                        else _plate_source(
+                            slot, slots, prepared, assets, plan=plan,
+                            words=words_doc.get("words") or [])
+                    ),
                     recent_videos=recent_videos, exclude=used_templates + peer_block,
                     seed=seed, picker=picker, variant=variant, block=block,
                     video_duration=float(plan["duration_sec"]),
@@ -5239,8 +5261,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
         entry.update({
             "file": prep["dst"],
             "bg_file": (
-                (avatar_bgs.get(int(slot["index"]))
-                 or avatar_bgs.get(int(slot.get("inherit_from") or -1)))
+                avatar_bgs.get(int(slot["index"]))
                 if slot["kind"] == "avatar"
                 else (str(prep.get("top_src") or "").strip() or None)
                 if slot["kind"] == "split" else None
@@ -5591,11 +5612,27 @@ def run_step(ctx) -> dict[str, Any]:
 
     accepted = accepted_doc.get("accepted", {})
     generated = generated_doc.get("generated", {})
+    pin_entry = _footage_pin_entry(ctx.cfg, str(plan.get("video_id") or ""))
+    extra_pool: list[dict[str, Any]] = []
+    accepted_map = accepted if isinstance(accepted, dict) else {}
+    extra_pool.extend(
+        item for item in (
+            list(accepted_map.values()) if isinstance(accepted_map, dict)
+            else list(accepted_map or []))
+        if isinstance(item, dict))
+    gen_map = generated if isinstance(generated, dict) else {}
+    extra_pool.extend(
+        item for item in (
+            list(gen_map.values()) if isinstance(gen_map, dict)
+            else list(gen_map or []))
+        if isinstance(item, dict))
     base_assets: dict[int, dict[str, Any]] = {}
     for slot in plan["slots"]:
         asset = _asset_for_slot(slot, accepted, generated)
         if asset is not None:
             base_assets[slot["index"]] = asset
+    base_assets = apply_slot_locks(
+        plan["slots"], base_assets, pin_entry, extra_pool=extra_pool)
 
     plan = dict(plan)
     plan["slots"] = apply_ai_carves(plan["slots"], base_assets)
@@ -5603,12 +5640,16 @@ def run_step(ctx) -> dict[str, Any]:
         plan["slots"], base_assets, words_doc.get("words") or [])
     plan["slots"] = split_empty_at_authored_punch(
         plan["slots"], plan, base_assets, words_doc.get("words") or [])
+    base_assets = apply_slot_locks(
+        plan["slots"], base_assets, pin_entry, extra_pool=extra_pool)
+    plan["_exclusive_owners"] = exclusive_lock_owners(
+        plan["slots"], slot_locks_from_entry(pin_entry))
 
     recent_videos = _recent_video_ids(ctx, limit=3)
     pillarbox_limit = int(ctx.cfg.get("limits.pillarbox_per_video", 2))
     preferences = _load_preferences(ctx)
     matte_reports, behind_layers, vfx_clips, matte_summary = _prepare_matting(
-        ctx, plan, avatar_meta)
+        ctx, plan, avatar_meta, base_assets)
 
     variants = list(ctx.variants)
     plans: dict[str, dict[str, Any]] = {}
@@ -5621,6 +5662,8 @@ def run_step(ctx) -> dict[str, Any]:
             float(plan["duration_sec"])
         assets = _rotate_assets(plan["slots"], base_assets, shift=offset,
                                 ai_budget_sec=ai_budget)
+        assets = apply_slot_locks(
+            plan["slots"], assets, pin_entry, extra_pool=extra_pool)
         prepared = _prepare_shots(ctx, plan["slots"], assets, pillarbox_limit,
                                   avatar_segments=avatar_meta.get("segments", []),
                                   matte_reports=matte_reports,

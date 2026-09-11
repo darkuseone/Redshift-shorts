@@ -30,7 +30,7 @@ from ..lib.footage_seed import SEED_SCORE
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
-from ..lib.pin_match import ctx_words, pin_slot_prefer_key
+from ..lib.pin_match import ctx_words, pin_slot_prefer_key, apply_slot_locks
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
     FLUID_QUERY_MARKERS, _hay_has_marker, classify_intent,
@@ -793,7 +793,7 @@ def run_step(ctx) -> dict[str, Any]:
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 3))
 
     skip_live = bool(cfg.get("vision.skip_live", False))
-    surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
+    surplus_ratio = float(cfg.get("stock.candidate_surplus", 2.0))
     words = ctx_words(ctx)
     spoken_scores = _ctx_read_or(ctx, "vision_spoken_scores.json", {})
     if not isinstance(spoken_scores, dict):
@@ -1359,6 +1359,18 @@ def run_step(ctx) -> dict[str, Any]:
         paid_ok=paid_ok, pin_deny=pin_deny, words=words)
     if stock_filled:
         _log.info("leftover stock closed %s empty slot(s)", stock_filled)
+
+    locked = apply_slot_locks(
+        plan["slots"], accepted, pin_entry,
+        extra_pool=[row for row in judged if isinstance(row, dict)])
+    if locked is not accepted:
+        accepted.clear()
+        accepted.update(locked)
+        accepted_counts.clear()
+        for entry in accepted.values():
+            aid = str(entry.get("asset_id") or "")
+            if aid:
+                accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0
