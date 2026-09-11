@@ -452,11 +452,18 @@ def test_split_karaoke_sits_under_the_paper_letterbox():
         {"kind": "split", "start": 8.0, "end": 15.5},
         {"kind": "footage", "start": 20.8, "end": 30.6},
     ]
-    _stamp_subtitle_baselines(subs, shots, {"canvas": {"height": 1920}})
+    brand = {
+        "canvas": {"height": 1920},
+        "subtitles": {
+            "baseline_y_default": 1180,
+            "baseline_y_avatar_shift": 720,
+        },
+    }
+    _stamp_subtitle_baselines(subs, shots, brand)
     assert abs(subs[0]["baseline_y"] - (1920 * 0.52 - 180)) < 1e-6
     assert 700 <= subs[0]["baseline_y"] <= 900
     assert "baseline_y" not in subs[1]
-    assert "baseline_y" not in subs[2]
+    assert subs[2]["baseline_y"] == 1180
 
 
 def test_portrait_split_karaoke_sits_on_avatar_chest(tmp_path):

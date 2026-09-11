@@ -31,8 +31,8 @@ from ..lib.palette import frame_light, palette_verdict
 from ..lib.pin_match import ctx_words, pin_slot_prefer_key
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
-    classify_intent, negative_reject_reason, slot_negatives,
-    thematic_reject_reason, topical_match_score,
+    classify_intent, leftover_query_fits_slot, negative_reject_reason,
+    slot_negatives, thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
     _footage_pin_entry, _load_footage_pins, _local_cache_row,
@@ -660,13 +660,25 @@ def _fill_unfilled_from_judged_stock(
             -float(r.get("score") or 0),
             abs(int(r.get("slot_index") or 0) - slot_index),
         ))
-        pick = next(iter(same), None) or next(iter(others), None)
+        pick = next(iter(same), None)
+        leftover_from = slot_index if pick is not None else None
+        if pick is None:
+            for row in others:
+                query = str(row.get("query") or "")
+                if leftover_query_fits_slot(query, slot, plan):
+                    pick = row
+                    try:
+                        leftover_from = int(row.get("slot_index") or -1)
+                    except (TypeError, ValueError):
+                        leftover_from = -1
+                    break
         if pick is None:
             continue
         intent = slot.get("visual_intent", "") or slot.get("reason", "")
         entry = {
             **pick,
             "slot_index": slot_index,
+            "leftover_from_slot": leftover_from,
             "intent": intent,
             "decision": "accept_stock_leftover",
             "fallback_reason": (

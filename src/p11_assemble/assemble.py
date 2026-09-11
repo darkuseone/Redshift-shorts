@@ -41,7 +41,7 @@ from ..lib.text import (
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
-from ..lib.query import topical_match_score
+from ..lib.query import leftover_query_fits_slot, topical_match_score
 from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
@@ -1143,16 +1143,26 @@ def _stamp_subtitle_baselines(
     shots: list[dict[str, Any]],
     brandbook: dict[str, Any] | None = None,
 ) -> None:
-    """On a 50/50 split, karaoke at the avatar-shift band paints the paper.
+    """Karaoke Y: split letterbox, avatar-shift on the presenter, lower-third on footage.
 
     Split-top is 52% of the frame with object-fit contain, so a wide Nature
     figure letterboxes. Drop cues into that lower black bar — off the paper,
     above the avatar seam. A portrait top fills the half: those cues sit on
     the avatar chest instead of the figure.
+
+    Plan-level ``subtitle_style.baseline_y`` is the avatar shift whenever the
+    film has segments. Footage/C-mode karaoke must not inherit that center
+    band — it becomes a title wall over B-roll.
     """
     height = 1920.0
+    default_fs = 1180.0
     if isinstance(brandbook, dict):
         height = float((brandbook.get("canvas") or {}).get("height") or height)
+        subs = brandbook.get("subtitles") or {}
+        try:
+            default_fs = float(subs.get("baseline_y_default") or default_fs)
+        except (TypeError, ValueError):
+            pass
     seam = height * 0.52
     letterbox_y = seam - 180.0
     portrait_y = seam + 0.70 * (height - seam)
@@ -1161,11 +1171,14 @@ def _stamp_subtitle_baselines(
         t = (float(cue.get("start") or 0) + float(cue.get("end") or 0)) / 2.0
         for shot in ordered:
             if float(shot.get("start") or 0) - 1e-6 <= t < float(shot.get("end") or 0) + 1e-6:
-                if str(shot.get("kind") or "") == "split":
+                kind = str(shot.get("kind") or "")
+                if kind == "split":
                     cue["baseline_y"] = (
                         letterbox_y if _split_top_letterboxes(
                             shot, frame_w=1080.0, frame_h=height)
                         else portrait_y)
+                elif kind not in AVATAR_KINDS:
+                    cue["baseline_y"] = default_fs
                 break
 
 
@@ -2362,8 +2375,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
                                     "hero-exhibit", "hero-plate-pop"):
         # Plate heroes follow the plate length so the panel does not hang empty.
         entry["file"] = real_plate["file"]
-        entry["duration"] = round(min(float(slot["duration"]),
-                                      real_plate["duration_sec"]), 3)
+        plate_dur = float(real_plate.get("duration_sec") or slot["duration"])
+        entry["duration"] = round(min(float(slot["duration"]), plate_dur), 3)
     if renderer in _FULL_FRAME_HEROES:
         # Заливка закрывает ведущего целиком и потому живёт секунду-две, а не
         # весь кадр: дольше — и это уже не удар, а пауза в ролике.
@@ -4120,6 +4133,30 @@ def _pick_hook_shot(slot: dict[str, Any], block: dict[str, Any],
 # что у судьи в P8: два места с одним смыслом не должны расходиться.
 _TOPICAL_MIN = 0.35
 
+
+def leftover_stock_off_topic(
+        asset: dict[str, Any], slot: dict[str, Any],
+        plan: dict[str, Any]) -> bool:
+    """Cross-slot leftover whose query does not share tokens with this line.
+
+    Same-slot leftover (``leftover_from_slot`` equals this index) stays. Cached
+    leftover without that field still has to pass the query gate — otherwise
+    a datacenter clip parked on fluids survives a ``--from P11`` rebuild.
+    """
+    if str(asset.get("decision") or "") != "accept_stock_leftover":
+        return False
+    src = asset.get("leftover_from_slot")
+    try:
+        if src is not None and int(src) == int(slot.get("index")):
+            return False
+    except (TypeError, ValueError):
+        pass
+    query = str(asset.get("query") or "")
+    if not query:
+        return False
+    return not leftover_query_fits_slot(query, slot, plan)
+
+
 _LADDER_SOURCE_RENDERERS = frozenset({"article_scroll", "paper_reveal",
                                       "source_card"})
 
@@ -4754,6 +4791,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             # CONCEPTS table does not list that noun.
             if off_topic and asset.get("speech_locked"):
                 off_topic = False
+            if leftover_stock_off_topic(asset, slot, plan):
+                off_topic = True
         if prep is None or off_topic or (asset is None
                                          and slot["kind"] not in AVATAR_KINDS):
             # Пустой слот идёт по лестнице §7.2: карточка → диаграмма →

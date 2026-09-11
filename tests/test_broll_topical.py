@@ -18,9 +18,12 @@ from pathlib import Path
 
 import pytest
 
-from src.lib.query import CONCEPTS, allow_generic_pad, topical_match_score
+from src.lib.query import (
+    CONCEPTS, allow_generic_pad, leftover_query_fits_slot, topical_match_score,
+)
 from src.p7_broll_search.search import SPACE_NEWS_PAD, pad_slot_queries
 from src.p8_broll_judge.judge import watermark_reject_reason
+from src.p11_assemble.assemble import leftover_stock_off_topic
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -143,3 +146,42 @@ class TestTheConceptsRevision:
         """`processor macro shot` тянул со стока столы и ноутбуки."""
         assert "processor macro shot" not in CONCEPTS["процессор"]
         assert "computer hardware closeup" not in CONCEPTS["процессор"]
+
+    def test_navier_stokes_block_has_fluid_concepts(self):
+        assert "weather radar storm satellite" in CONCEPTS["погод"]
+        text = "Называются уравнения Навье-Стокса. Погода, крыло самолёта, ток крови."
+        assert topical_match_score({"datacenter", "server", "racks"}, text) < 0.35
+        assert topical_match_score({"weather", "radar", "storm"}, text) >= 0.35
+
+
+class TestLeftoverQueryGate:
+
+    def test_same_topic_leftover_fits(self):
+        slot = _slot(visual_intent="quantum laboratory cryostat",
+                     queries=["quantum processor macro chip"])
+        assert leftover_query_fits_slot("quantum processor macro", slot, {})
+
+    def test_datacenter_does_not_fit_fluids(self):
+        slot = _slot(visual_intent="weather radar airplane wing blood",
+                     queries=["weather radar storm satellite"])
+        assert not leftover_query_fits_slot("gpu cluster server aisle datacenter",
+                                            slot, {})
+
+    def test_p11_drops_cross_slot_leftover_without_from_field(self):
+        slot = _slot(index=12, visual_intent="weather radar airplane wing blood",
+                     queries=["weather radar storm satellite"])
+        asset = {
+            "decision": "accept_stock_leftover",
+            "query": "gpu cluster server aisle datacenter",
+        }
+        assert leftover_stock_off_topic(asset, slot, {})
+
+    def test_p11_keeps_same_slot_leftover(self):
+        slot = _slot(index=5, visual_intent="weather radar airplane wing blood",
+                     queries=["weather radar storm satellite"])
+        asset = {
+            "decision": "accept_stock_leftover",
+            "leftover_from_slot": 5,
+            "query": "weather radar storm satellite",
+        }
+        assert not leftover_stock_off_topic(asset, slot, {})

@@ -1035,6 +1035,15 @@ def build_gradient_fill(
             f'width:{int(params["frame_w"])}px;gap:0">'
             f'{"".join(word_nodes)}</div></div>'
         )
+        # Tweens sit on the inner group, never the clip: the engine owns clip
+        # visibility. Even/odd tracks still leave uncleared glyphs, and a mute
+        # hole (karaoke starts late) showed every future phrase as a 3D wall.
+        if start > 1e-6:
+            tweens.append(f'tl.set("#{group_id}",{{opacity:0}},0);')
+        tweens.append(f'tl.set("#{group_id}",{{opacity:1}},{_num(start)});')
+        if p > 0:
+            for prev in range(p):
+                tweens.append(opacity_hard_kill(f"#gf-{prev:02d}-g", start))
 
         for i, word in enumerate(phrase):
             wid = f"{clip_id}-w{i}"
@@ -1060,9 +1069,7 @@ def build_gradient_fill(
                 f'tl.to("#{group_id}",{{opacity:0,duration:{_num(fade_dur)},'
                 f'ease:"power1.out"}},{_num(fade_start)});'
             )
-        tweens.append(
-            f'tl.set("#{group_id}",{{opacity:0}},{_num(end)});'
-        )
+        tweens.append(opacity_hard_kill(f"#{group_id}", end))
 
     return nodes, tweens, count
 

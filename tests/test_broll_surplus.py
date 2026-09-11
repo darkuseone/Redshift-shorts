@@ -270,6 +270,56 @@ def test_critic_reject_leftover_fills_from_downloaded_files(monkeypatch, tmp_pat
     assert len({entry["asset_id"] for entry in result["accepted"].values()}) == n_slots
     assert result["unfilled_slots"] == []
     assert result["surplus_blocks_generation"] is False
+    assert all("leftover_from_slot" in entry for entry in leftover)
+
+
+def test_leftover_does_not_park_cross_topic_stock(monkeypatch, tmp_path):
+    """Datacenter leftover must not fill a fluids slot."""
+    from PIL import Image
+
+    from src.p8_broll_judge import judge as J
+
+    spy = _LowSpy()
+    cfg = load_config()
+    cfg.set("vision.skip_live", False)
+    cfg.set("providers.mode", "mock")
+    cfg.set("stock.same_asset_max_slots", 1)
+    monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
+    monkeypatch.setattr(J, "build_vision_provider", lambda *a, **k: spy)
+
+    slots = [
+        {**_slot(0), "visual_intent": "quantum laboratory cryostat",
+         "queries": ["quantum processor macro chip"], "block_id": "b3"},
+        {**_slot(1), "visual_intent": "weather radar airplane wing blood",
+         "queries": ["weather radar storm satellite"], "block_id": "b4"},
+    ]
+    candidates = []
+    for i in range(4):
+        row = _cand(0, i)
+        media = tmp_path / f"{row['asset_id']}.jpg"
+        Image.new("RGB", (32, 32), (18, 18, 18)).save(media, format="JPEG")
+        row["local_file"] = str(media)
+        row["storage_key"] = f"stock/{row['asset_id']}.mp4"
+        row["frames"] = [str(media)]
+        candidates.append(row)
+    ctx = _Ctx(
+        cfg,
+        {"video_id": "leftover_topic", "candidates": candidates},
+        {"video_id": "leftover_topic", "category": "ai", "slots": slots,
+         "blocks": [
+             {"id": "b3", "text": "OpenAI выкладывает работу про Астру."},
+             {"id": "b4", "text": "Погода, крыло самолёта, ток крови."},
+         ]},
+    )
+    run_step(ctx)
+    result = ctx.written["accepted_assets.json"]
+    leftover = [
+        entry for entry in result["accepted"].values()
+        if entry.get("decision") == "accept_stock_leftover"
+    ]
+    assert 0 in {int(k) for k in result["accepted"]} or leftover
+    assert 1 not in {int(k) for k in result["accepted"]}
+    assert 1 in result["unfilled_slots"]
 
 
 def test_critic_reject_without_files_does_not_leftover_fill(monkeypatch):

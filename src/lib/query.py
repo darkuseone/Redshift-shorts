@@ -61,6 +61,15 @@ CONCEPTS: dict[str, list[str]] = {
               "glitch abstract dark", "error warning screen"],
     "время": ["clock time lapse", "hourglass macro"],
     "вселен": ["universe deep space", "cosmic web visualization"],
+    "навье": ["fluid turbulence water flow", "navier stokes simulation"],
+    "жидкост": ["liquid pouring slow motion", "water flowing glass"],
+    "погод": ["weather radar storm satellite", "storm clouds timelapse"],
+    "самолёт": ["airplane wing in flight clouds", "aircraft flying sky"],
+    "крыл": ["airplane wing airflow", "wind tunnel smoke wing"],
+    "труб": ["industrial pipes water plant", "pipeline valves factory"],
+    "крови": ["blood cells microscope flow"],
+    "кровь": ["blood stream medical animation"],
+    "lean": ["code editor formal proof", "theorem prover computer"],
 }
 
 # Метафорические опоры по роли блока — когда предметного кадра нет.
@@ -429,6 +438,13 @@ def extra_fits_slot(extra: str, tokens: set[str]) -> bool:
     if not strong:
         return False
     return bool(extra_words & strong)
+
+
+def leftover_query_fits_slot(
+        query: str, slot: dict[str, Any],
+        plan: dict[str, Any] | None = None) -> bool:
+    """Cross-slot leftover is legal only when the search query shares tokens."""
+    return extra_fits_slot(str(query or ""), topical_tokens(slot, plan))
 
 
 def topical_tokens(slot: dict[str, Any], plan: dict[str, Any] | None = None,
