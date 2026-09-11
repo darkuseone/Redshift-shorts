@@ -273,9 +273,13 @@ jobs:
           set -euo pipefail
           video_id=$(python -c "import json; print(json.load(open('${{ steps.request.outputs.script }}', encoding='utf-8'))['meta']['video_id'])")
           seed="assets/voice/$video_id"
-          if [ -d "$seed" ]; then
+          if [ -d "$seed" ] && [ -f "$seed/voice_final.wav" ]; then
             mkdir -p "work/$video_id"
-            cp -v "$seed"/voice_final.wav "$seed"/*.json "work/$video_id"/
+            cp -v "$seed/voice_final.wav" "work/$video_id"/
+            # json рядом с голосом опционален (пустой *.json раньше ронял шаг)
+            shopt -s nullglob
+            for f in "$seed"/*.json; do cp -v "$f" "work/$video_id"/; done
+            shopt -u nullglob
             echo "голос взят из репозитория: $seed"
           else
             echo "готового голоса для $video_id нет — P2 озвучит заново"

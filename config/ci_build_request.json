@@ -6,6 +6,6 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 phase1c: deleted work cache; seed voice_final only; fresh P1-P5 then MCP",
+  "note": "0050 phase1d: seed wav-only fix; fresh P1-P5; MCP next",
   "tts_pace": 1.2
 }
