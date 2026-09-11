@@ -1021,7 +1021,9 @@
       "requires": [],
       "forbids": [],
       "cooldown_videos": 1,
-      "brand_ok": true
+      "brand_ok": true,
+      "status": "retired",
+      "retired_reason": "TZ-0050: oblique/tilt text banned (IMG_6485 pattern)"
     },
     {
       "id": "text-fullscreen/code-3d-extrude",
@@ -4355,7 +4357,9 @@
       "requires": [],
       "forbids": [],
       "cooldown_videos": 3,
-      "brand_ok": true
+      "brand_ok": true,
+      "status": "retired",
+      "retired_reason": "TZ-0050: oblique/tilt text banned (IMG_6485 pattern)"
     },
     {
       "id": "kenburns/micro-parallax",

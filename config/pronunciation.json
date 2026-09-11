@@ -2,26 +2,117 @@
   "_comment": "Словарь ударений и произношений для русского TTS (§4.2.5, R-5). key — слово в нижнем регистре без ударения. `stress` — индекс ударной гласной (0-based по буквам слова). `say_as` — принудительная замена для TTS (транслитерация, развёртка аббревиатур). `confirmed` — вариант прослушан и подтверждён человеком.",
   "version": 1,
   "words": {
-    "квантовый": { "stress": 1, "confirmed": true },
-    "чип": { "stress": 1, "confirmed": true },
-    "процессор": { "stress": 6, "confirmed": true },
-    "нейросеть": { "stress": 7, "confirmed": true },
-    "алгоритм": { "stress": 6, "confirmed": true },
-    "кубит": { "stress": 3, "confirmed": true },
-    "кубитов": { "stress": 3, "confirmed": true },
-    "телескоп": { "stress": 6, "confirmed": true },
-    "запущен": { "stress": 2, "confirmed": true },
-    "феномен": { "stress": 5, "confirmed": true },
-    "обеспечение": { "stress": 6, "confirmed": true },
-    "маркетинг": { "stress": 1, "confirmed": true },
-    "эксперт": { "stress": 4, "confirmed": true },
-    "навье": { "stress": 1 },
-    "стокса": { "stress": 1 },
-    "астра": { "stress": 0 },
-    "lean": { "say_as": "лин" },
-    "клей": { "stress": 2 },
-    "пуанкаре": { "say_as": "пуанкарэ", "stress": 7 },
-    "сингулярность": { "stress": 8 }
+    "квантовый": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "чип": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "процессор": {
+      "stress": 6,
+      "confirmed": true
+    },
+    "нейросеть": {
+      "stress": 7,
+      "confirmed": true
+    },
+    "алгоритм": {
+      "stress": 6,
+      "confirmed": true
+    },
+    "кубит": {
+      "stress": 3,
+      "confirmed": true
+    },
+    "кубитов": {
+      "stress": 3,
+      "confirmed": true
+    },
+    "телескоп": {
+      "stress": 6,
+      "confirmed": true
+    },
+    "запущен": {
+      "stress": 2,
+      "confirmed": true
+    },
+    "феномен": {
+      "stress": 5,
+      "confirmed": true
+    },
+    "обеспечение": {
+      "stress": 6,
+      "confirmed": true
+    },
+    "маркетинг": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "эксперт": {
+      "stress": 4,
+      "confirmed": true
+    },
+    "навье": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "стокса": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "астра": {
+      "stress": 0,
+      "confirmed": true
+    },
+    "lean": {
+      "say_as": "лин",
+      "confirmed": true
+    },
+    "клей": {
+      "stress": 2,
+      "confirmed": true
+    },
+    "пуанкаре": {
+      "say_as": "пуанкарэ",
+      "stress": 7
+    },
+    "сингулярность": {
+      "stress": 8
+    },
+    "фурор": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "миллион": {
+      "stress": 6,
+      "confirmed": true
+    },
+    "восемьдесят": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "восемь": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "сентября": {
+      "stress": 6,
+      "confirmed": true
+    },
+    "тысяча": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "двадцать": {
+      "stress": 1,
+      "confirmed": true
+    },
+    "четверть": {
+      "stress": 1,
+      "confirmed": true
+    }
   },
   "abbreviations": {
     "ИИ": "искусственный интеллект",

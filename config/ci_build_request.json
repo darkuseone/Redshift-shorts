@@ -1,0 +1,11 @@
+{
+  "script": "scripts/redshift_0050.json",
+  "providers_mode": "live",
+  "from_step": "P0",
+  "heygen_source": "api",
+  "skip_generate": true,
+  "skip_vision": false,
+  "requested_by": "cursor",
+  "note": "0050 с нуля. Не 0049 prepared. Голос+аватар+P7 live. Vision только 3 кадра финалистов. pace 1.2. Assumption: heygen_source=api maps to live Avatar V via HEYGEN_API secret; workflow patched to honor request.",
+  "tts_pace": 1.2
+}

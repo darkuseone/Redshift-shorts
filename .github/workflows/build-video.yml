@@ -330,10 +330,17 @@ jobs:
           # прогоне 33666703565 три попытки вытащить её не дали ничего.
           # Файл же уезжает в артефакт и в Summary целиком.
           mkdir -p output
+          HEYGEN_SRC="${{ steps.request.outputs.heygen_source }}"
+          if [ -z "$HEYGEN_SRC" ]; then HEYGEN_SRC=prepared; fi
+          PACE_ARGS=()
+          if [ -n "${{ steps.request.outputs.tts_pace }}" ]; then
+            PACE_ARGS=(--set elevenlabs.pace=${{ steps.request.outputs.tts_pace }})
+          fi
           python -m src.cli \
             --set providers.mode=${{ steps.request.outputs.providers_mode }} \
             --set vision.primary=grok \
-            --set heygen.source=prepared \
+            --set heygen.source="$HEYGEN_SRC" \
+            "${PACE_ARGS[@]}" \
             ${{ steps.request.outputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
             ${{ steps.request.outputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \
             run --script "${{ steps.request.outputs.script }}" \
