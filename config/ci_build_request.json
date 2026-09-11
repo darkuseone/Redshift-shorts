@@ -6,5 +6,5 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0049 P11: brief окна речи ветирует лестницу; пустой Навье-Стокса не dataviz/browser/клава, плита вода/крыло. Вода уже в accepted. xAI: P8=0, P12 6 проб если QC-12/30 зелёные. Без TTS/HeyGen/Gemini image."
+  "note": "0049 P11: 34587674751 QC-SEMANTIC 2/6. 17.58 карточка жива. 29.30 крыло на Астру → lean veto. 41.02 кабина 19004433 с query wing → плита вода. 52.73 html на Клея → paper veto фона аватара. xAI: P8=0, P12 6 проб если QC-12/30 зелёные. Без TTS/HeyGen/Gemini image."
 }
