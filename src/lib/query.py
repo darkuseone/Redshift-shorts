@@ -61,6 +61,15 @@ CONCEPTS: dict[str, list[str]] = {
               "glitch abstract dark", "error warning screen"],
     "время": ["clock time lapse", "hourglass macro"],
     "вселен": ["universe deep space", "cosmic web visualization"],
+    "навье": ["fluid turbulence water flow", "navier stokes simulation"],
+    "жидкост": ["liquid pouring slow motion", "water flowing glass"],
+    "погод": ["weather radar storm satellite", "storm clouds timelapse"],
+    "самолёт": ["airplane wing in flight clouds", "aircraft flying sky"],
+    "крыл": ["airplane wing airflow", "wind tunnel smoke wing"],
+    "труб": ["industrial pipes water plant", "pipeline valves factory"],
+    "крови": ["blood cells microscope flow"],
+    "кровь": ["blood stream medical animation"],
+    "lean": ["code editor formal proof", "theorem prover computer"],
 }
 
 # Метафорические опоры по роли блока — когда предметного кадра нет.
@@ -431,6 +440,312 @@ def extra_fits_slot(extra: str, tokens: set[str]) -> bool:
     return bool(extra_words & strong)
 
 
+def leftover_query_fits_slot(
+        query: str, slot: dict[str, Any],
+        plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> bool:
+    """Leftover is legal when the query matches this window's speech family.
+
+    English Pexels queries almost never share tokens with Russian VO.
+    ``topical_match_score`` against CONCEPTS[«навье»] only (fluid / water /
+    turbulence) therefore dropped airplane / pipes / blood / radar leftovers
+    on «Навье-Стокса» — the same pictures the brief asked for. Family markers
+    keep that set; CODE markers still die on a fluid/paper window.
+    """
+    q = str(query or "")
+    spoken = spoken_slot_text(slot, words)
+    kind = classify_spoken_window(spoken)
+    if kind == "fluid":
+        if _hay_has_marker(q, CODE_QUERY_MARKERS):
+            return False
+        if _hay_has_marker(q, DATAVIZ_DENY_MARKERS):
+            return False
+        # Search query «airplane wing» must not launder a cabin listing.
+        if _hay_has_marker(q, PASSENGER_CABIN_MARKERS):
+            return False
+        if _hay_has_marker(q, FLUID_QUERY_MARKERS):
+            return True
+    elif kind == "lean":
+        if _hay_has_marker(q, FLUID_QUERY_MARKERS):
+            return False
+        if _hay_has_marker(q, CODE_QUERY_MARKERS):
+            return True
+    elif kind == "paper":
+        if _hay_has_marker(q, CODE_QUERY_MARKERS):
+            return False
+    if spoken:
+        return topical_match_score(_query_words(q), spoken) >= 0.35
+    return extra_fits_slot(q, leftover_dest_tokens(slot, plan, words))
+
+
+def spoken_slot_text(slot: dict[str, Any],
+                     words: Iterable[dict[str, Any]] | None = None) -> str:
+    """VO covering this slot — not the whole block's mixed query ladder."""
+    try:
+        start = float(slot.get("start") or 0)
+        end = float(slot.get("end") or 0)
+    except (TypeError, ValueError):
+        return ""
+    bits: list[str] = []
+    for word in words or []:
+        try:
+            ws = float(word.get("start") or 0)
+            we = float(word["end"]) if word.get("end") is not None else ws
+        except (TypeError, ValueError):
+            continue
+        if we < start or ws > end:
+            continue
+        bits.append(str(word.get("display") or word.get("word") or "").strip())
+    return " ".join(b for b in bits if b)
+
+
+def leftover_intent_text(slot: dict[str, Any],
+                         plan: dict[str, Any] | None = None) -> str:
+    """Block speech + intent, without the slot's mixed English query ladder."""
+    block = _block_of(slot, plan or {})
+    return " ".join([
+        str(slot.get("visual_intent") or ""),
+        str(block.get("text") or ""),
+        str(block.get("visual_intent") or ""),
+    ]).strip()
+
+
+def leftover_dest_tokens(
+        slot: dict[str, Any], plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> set[str]:
+    """Dest for leftover: spoken window first, else intent — never slot queries.
+
+    Block ``b4`` queries mix Lean code with weather/blood. A keyboard leftover
+    then looks topical while the VO says «страшное имя».
+    """
+    spoken = spoken_slot_text(slot, words)
+    blob = spoken or leftover_intent_text(slot, plan)
+    tokens = _query_words(blob)
+    for phrase in _concepts_from_text(blob):
+        tokens.update(_query_words(phrase))
+    return {w for w in tokens if len(w) > 2}
+
+
+def slot_topical_text(
+        slot: dict[str, Any], plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> str:
+    """Text topical_match_score should see: this window's VO, else block speech.
+
+    Whole-block text on b4 contains both Lean and Navier–Stokes, so a keyboard
+    clip scores as on-topic while the viewer hears «страшное имя».
+    Visual intent is not speech — it must not keep a Lean clip on fluids.
+    """
+    spoken = spoken_slot_text(slot, words)
+    if spoken:
+        return spoken
+    return str(_block_of(slot, plan or {}).get("text") or "")
+
+
+KEYBOARD_DENY = (
+    "keyboard", "mechanical keyboard", "hands typing", "typing", "code editor",
+)
+CODE_QUERY_MARKERS = (
+    "keyboard", "typing", "code editor", "programming ide", "theorem prover",
+    "proof lean", "source programming", "html-code", "html code",
+)
+# Not bare «lean»: it matches «clean». Dataviz/code close-ups on a fluid window.
+FLUID_CODE_DENY = (
+    "dataviz", "data-viz", "line-graph", "mk-line", "stat-countup",
+    "proof lean", "theorem prover", "programming ide", "code-closeup",
+    "source programming", "code editor",
+)
+DATAVIZ_DENY_MARKERS = (
+    "dataviz", "data-viz", "data visualization", "line-graph", "line graph",
+    "mk-line", "stat-countup", "chart data",
+)
+FLUID_QUERY_MARKERS = (
+    "weather", "radar", "airplane", "wing", "blood", "pipes", "water",
+    "turbulence", "storm", "microscope", "fluid", "vapor",
+)
+FLUID_STRONG_MARKERS = (
+    "water", "pipes", "pipe", "wing", "blood", "radar", "turbulence",
+    "fluid", "vapor", "storm", "microscope",
+)
+# Passenger cabin stills tagged «airplane» are not airflow / wing / water.
+PASSENGER_CABIN_MARKERS = (
+    "window", "seat", "cabin", "passenger", "coolplaces",
+)
+FLUID_LADDER_FORBIDDEN_RUNGS = frozenset({"dataviz", "source", "card"})
+FLUID_SPEECH = (
+    "навье", "жидкост", "погод", "самолёт", "крыл", "труб", "крови", "кровь",
+    "течёт",
+)
+LEAN_SPEECH = ("lean", "астра", "доказательств")
+OPENAI_SPEECH = ("openai", "выкладыва", "агент", "клея")
+DEFAULT_FLUID_QUERIES = (
+    "slow motion water turbulence",
+    "airplane wing vapor",
+    "weather radar storm",
+    "blood cells flowing microscope",
+    "industrial pipes water plant",
+)
+DEFAULT_LEAN_QUERIES = (
+    "code editor formal proof",
+    "theorem prover computer",
+)
+DEFAULT_PAPER_QUERIES = (
+    "research paper document desk",
+    "scientific article on screen",
+)
+
+
+def _hay_has_marker(text: str, markers: Iterable[str]) -> bool:
+    blob = str(text or "").lower()
+    return any(m in blob for m in markers)
+
+
+def _token_in_speech(blob: str, token: str) -> bool:
+    """Stem match that does not fire «крыл» inside «закрыли»."""
+    token = str(token or "").lower()
+    blob = str(blob or "").lower()
+    if not token or not blob:
+        return False
+    if token.isascii():
+        return re.search(rf"\b{re.escape(token)}\b", blob) is not None
+    return re.search(rf"(?<![а-яёa-z0-9]){re.escape(token)}", blob) is not None
+
+
+def classify_spoken_window(spoken: str) -> str:
+    """One visual family for this VO window — not the whole block."""
+    blob = str(spoken or "").lower()
+    if not blob:
+        return "open"
+    fluid = sum(1 for t in FLUID_SPEECH if _token_in_speech(blob, t))
+    lean = sum(1 for t in LEAN_SPEECH if _token_in_speech(blob, t))
+    paper = sum(1 for t in OPENAI_SPEECH if _token_in_speech(blob, t))
+    if fluid and fluid >= lean:
+        return "fluid"
+    if lean:
+        return "lean"
+    if paper:
+        return "paper"
+    return "open"
+
+
+def queries_for_spoken_window(
+        authored: Iterable[str], spoken: str) -> list[str]:
+    """Keep only EN queries that match this window's visible object."""
+    kind = classify_spoken_window(spoken)
+    authored_list = [str(q).strip() for q in authored if str(q).strip()]
+    if kind == "fluid":
+        kept = [q for q in authored_list
+                if not _hay_has_marker(q, CODE_QUERY_MARKERS)]
+        return kept or list(DEFAULT_FLUID_QUERIES)
+    if kind == "lean":
+        kept = [q for q in authored_list
+                if not _hay_has_marker(q, FLUID_QUERY_MARKERS)]
+        return kept or list(DEFAULT_LEAN_QUERIES)
+    if kind == "paper":
+        kept = [q for q in authored_list
+                if not _hay_has_marker(q, CODE_QUERY_MARKERS)]
+        return kept or list(DEFAULT_PAPER_QUERIES)
+    return authored_list
+
+
+def slot_visual_brief(
+        slot: dict[str, Any], plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """A spoken window + what to show + deny list (brief A/B/C)."""
+    spoken = spoken_slot_text(slot, words)
+    kind = classify_spoken_window(spoken)
+    authored = list(slot.get("queries") or [])
+    queries = queries_for_spoken_window(authored, spoken)
+    deny: list[str] = []
+    visual_ru = ""
+    visual_en = ""
+    if kind == "fluid":
+        visual_ru = "как течёт жидкость"
+        visual_en = "water turbulence airplane wing blood pipes"
+        deny = list(dict.fromkeys([*KEYBOARD_DENY, *FLUID_CODE_DENY]))
+        if not queries:
+            queries = list(DEFAULT_FLUID_QUERIES)
+    elif kind == "lean":
+        visual_ru = "проверка шагов в коде"
+        visual_en = "code editor formal proof"
+    elif kind == "paper":
+        visual_ru = "статья OpenAI в браузере"
+        visual_en = "official paper in browser"
+        deny = list(KEYBOARD_DENY)
+        if not queries:
+            queries = list(DEFAULT_PAPER_QUERIES)
+    return {
+        "spoken": spoken,
+        "kind": kind,
+        "visual_ru": visual_ru,
+        "visual_en": visual_en,
+        "queries": _dedupe_queries(queries)[:QUERY_MAX],
+        "deny": deny,
+    }
+
+
+def brief_deny_reason(brief: dict[str, Any], haystack: str) -> str | None:
+    """Cheap reject: keyboard hay on a fluid/paper window."""
+    blob = str(haystack or "").lower()
+    if not blob:
+        return None
+    for token in brief.get("deny") or ():
+        if token and token.lower() in blob:
+            return f"brief deny: {token}"
+    return None
+
+
+def brief_reject_reason(
+        brief: dict[str, Any], haystack: str, *,
+        rung: str = "", template: str = "") -> str | None:
+    """One veto for search, cheap critic, and the P11 ladder.
+
+    A critic that cannot stop dataviz/code from closing a fluid slot is
+    decoration: 0049 41.02 put mk-line-graph on «Навье-Стокса» after P8.
+    """
+    hay = " ".join(
+        part for part in (haystack, rung, template) if str(part or "").strip())
+    denied = brief_deny_reason(brief, hay)
+    if denied:
+        return denied
+    kind = str(brief.get("kind") or "")
+    blob = hay.lower()
+    rung_s = str(rung or "").lower()
+    tpl = str(template or "").lower()
+    dataviz_rung = (
+        rung_s == "dataviz"
+        or any(m in tpl for m in ("dataviz", "data-viz", "mk-line", "line-graph"))
+        or _hay_has_marker(blob, DATAVIZ_DENY_MARKERS)
+    )
+    if kind == "lean":
+        if dataviz_rung:
+            return "brief veto: dataviz on lean window"
+        if _hay_has_marker(blob, FLUID_QUERY_MARKERS):
+            return "brief veto: fluid footage on lean window"
+        return None
+    if kind == "paper":
+        if _hay_has_marker(blob, CODE_QUERY_MARKERS):
+            return "brief veto: code/keyboard on paper window"
+        if _hay_has_marker(blob, FLUID_QUERY_MARKERS):
+            return "brief veto: fluid footage on paper window"
+        return None
+    if kind != "fluid":
+        return None
+    if rung_s in FLUID_LADDER_FORBIDDEN_RUNGS:
+        return f"brief veto: fluid slot rejects ladder {rung_s}"
+    if any(marker in tpl for marker in (
+            "dataviz", "data-viz", "mk-line", "browser-ui",
+            "code-editor", "line-graph")):
+        return f"brief veto: fluid slot rejects template {template}"
+    if _hay_has_marker(blob, CODE_QUERY_MARKERS):
+        return "brief veto: code/keyboard on fluid window"
+    if _hay_has_marker(blob, DATAVIZ_DENY_MARKERS):
+        return "brief veto: dataviz on fluid window"
+    # Cabin URL/tags stay cabin even when the P7 query said «wing».
+    if _hay_has_marker(blob, PASSENGER_CABIN_MARKERS):
+        return "brief veto: cabin leftover on fluid window"
+    return None
+
+
 def topical_tokens(slot: dict[str, Any], plan: dict[str, Any] | None = None,
                    queries: Iterable[str] | None = None) -> set[str]:
     """Слова, которыми пад обязан пересекаться, иначе это чужой кадр."""
@@ -469,10 +784,11 @@ def _source_haystacks(slot: dict[str, Any], plan: dict[str, Any],
     return out
 
 
-def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None) -> list[str]:
-    """Именованные сущности блока: прибор, миссия, метод — на английском."""
+def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None,
+                     words: Iterable[dict[str, Any]] | None = None) -> list[str]:
+    """Именованные сущности окна речи, иначе блока: прибор, миссия, метод."""
     plan = plan or {}
-    blob = _block_text(slot, plan)
+    blob = spoken_slot_text(slot, words) or _block_text(slot, plan)
     concept_words = _query_words(" ".join(_concepts_from_text(blob)))
     parts = [blob, *(_source_haystacks(slot, plan, concept_words))]
     hay = " ".join(parts).lower()
@@ -506,12 +822,29 @@ def _dedupe_queries(items: Iterable[str]) -> list[str]:
 
 
 def compile_slot_search(slot: dict[str, Any], plan: dict[str, Any],
-                        *, count: int = 4) -> dict[str, Any]:
+                        *, count: int = 4,
+                        words: Iterable[dict[str, Any]] | None = None,
+                        ) -> dict[str, Any]:
     """Запросы + сущности + negatives одним словарём для P7 и отчёта."""
+    brief = slot_visual_brief(slot, plan, words)
+    negatives = list(slot_negatives(slot, plan))
+    for token in brief.get("deny") or []:
+        if token not in negatives:
+            negatives.append(token)
+    queries = build_queries(slot, plan, count=count, words=words)
+    spoken = str(brief.get("spoken") or "")
+    if spoken:
+        filtered = queries_for_spoken_window(queries, spoken)
+        if len(filtered) >= QUERY_MIN:
+            queries = filtered
+        elif filtered:
+            pad = [q for q in (brief.get("queries") or []) if q not in filtered]
+            queries = _dedupe_queries([*filtered, *pad])
     return {
-        "queries": build_queries(slot, plan, count=count),
-        "entities": extract_entities(slot, plan),
-        "negatives": slot_negatives(slot, plan),
+        "queries": queries[: _clamp_query_count(count)],
+        "entities": extract_entities(slot, plan, words),
+        "negatives": negatives,
+        "brief": brief,
     }
 
 
@@ -528,14 +861,17 @@ def search_report_payload(entries: list[dict[str, Any]]) -> dict[str, Any]:
     return {"queries": queries, "entities": entities, "negatives": negatives}
 
 
-def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4) -> list[str]:
+def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4,
+                  words: Iterable[dict[str, Any]] | None = None) -> list[str]:
     """3–5 EN-запросов: сущности блока + 1–2 визуальных якоря, без чужого пада."""
     limit = _clamp_query_count(count)
-    entities = extract_entities(slot, plan)
-    source_text = _block_text(slot, plan)
+    brief = slot_visual_brief(slot, plan, words)
+    entities = extract_entities(slot, plan, words)
+    source_text = brief.get("spoken") or _block_text(slot, plan)
     concepts = _concepts_from_text(source_text)
     tokens = topical_tokens(slot, plan)
-    author_en = [q.strip() for q in (slot.get("queries") or []) if _looks_english(q)]
+    author_en = [q.strip() for q in (brief.get("queries") or slot.get("queries") or [])
+                 if _looks_english(q)]
     anchors = list(author_en[:2]) or list(concepts[:2])
 
     out: list[str] = []

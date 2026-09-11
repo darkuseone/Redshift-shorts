@@ -63,6 +63,15 @@ def load_wav(path: str | Path) -> tuple[np.ndarray, int]:
     return data, sr
 
 
+def wav_file_duration_sec(path: str | Path) -> float:
+    """Длительность WAV по заголовку, без загрузки сэмплов."""
+    with wave.open(str(path), "rb") as wf:
+        rate = wf.getframerate()
+        if rate <= 0:
+            return 0.0
+        return wf.getnframes() / float(rate)
+
+
 def save_wav(path: str | Path, data: np.ndarray, sr: int = SAMPLE_RATE) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

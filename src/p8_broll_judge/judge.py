@@ -12,10 +12,16 @@
 
 Пороги: ≥0.70 принять, <0.45 отклонить. Незакрытый слот уходит в генерацию (P9),
 а **не** заполняется слабым футажом — это прямое требование §7.3.
+
+Исключение: скачанный клип, который уже совпадает с окном речи, паркуется
+как ``accept_stock_leftover`` **до** live vision — иначе Grok платят за
+отказ воде на «Навье-Стокса», и слот всё равно идёт на лестницу. После
+критика тот же проход закрывает оставшиеся дыры из judged-пула.
 """
 
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 from typing import Any
@@ -24,20 +30,79 @@ from ..lib.footage_seed import SEED_SCORE
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
-from ..lib.pin_match import ctx_words, pin_slot_prefer_key
+from ..lib.pin_match import ctx_words, pin_slot_prefer_key, apply_slot_locks
 from ..lib.providers.vision import VisionVerdict, build_vision_provider
 from ..lib.query import (
-    classify_intent, negative_reject_reason, slot_negatives,
-    thematic_reject_reason, topical_match_score,
+    FLUID_QUERY_MARKERS, _hay_has_marker, classify_intent,
+    leftover_query_fits_slot, negative_reject_reason,
+    slot_negatives, slot_visual_brief, brief_reject_reason,
+    spoken_slot_text, thematic_reject_reason, topical_match_score,
 )
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, _local_cache_row, footage_pool_count,
-    judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_report,
+    _footage_pin_entry, _load_footage_pins, _local_cache_row,
+    judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_from_pool,
 )
 
 COHERENCE_MIN = 0.15
+LIVE_VISION_PER_SLOT = 2
 
 _log = get_logger("p8")
+
+
+def _spoken_score_key(asset_id: str, spoken: str) -> str:
+    raw = f"{asset_id}|{str(spoken or '').strip().lower()}".encode("utf-8")
+    return hashlib.sha1(raw).hexdigest()
+
+
+def _ctx_read_or(ctx, name: str, default: Any) -> Any:
+    fn = getattr(ctx, "read_or", None)
+    if callable(fn):
+        try:
+            return fn(name, default)
+        except Exception:  # noqa: BLE001 — test ctxs may raise KeyError
+            return default
+    return default
+
+
+def _prior_accepted_map(doc: dict[str, Any] | None) -> dict[int, dict[str, Any]]:
+    raw = (doc or {}).get("accepted") or {}
+    out: dict[int, dict[str, Any]] = {}
+    if not isinstance(raw, dict):
+        return out
+    for key, entry in raw.items():
+        if not isinstance(entry, dict):
+            continue
+        try:
+            out[int(key)] = entry
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def prior_accepted_ok(
+        entry: dict[str, Any] | None, slot: dict[str, Any],
+        plan: dict[str, Any], words: Any, pin_deny: set[str]) -> bool:
+    """Keep a previous accept: same file + still matches this spoken window.
+
+    Re-scoring a kept clip is paid Grok for a verdict we already have.
+    Leftover keyboard on «Навье-Стокса» is not kept — brief deny / leftover gate.
+    """
+    if not isinstance(entry, dict):
+        return False
+    aid = str(entry.get("asset_id") or "")
+    if not aid or pin_id_denied(aid, pin_deny):
+        return False
+    decision = str(entry.get("decision") or "")
+    if decision.startswith("reject") or decision in ("underfilled",):
+        return False
+    brief = slot_visual_brief(slot, plan, words)
+    if brief_reject_reason(brief, _candidate_hay(entry)):
+        return False
+    query = str(entry.get("query") or "")
+    if query and not leftover_query_fits_slot(
+            query, slot, plan, words=words):
+        return False
+    return True
 
 
 def in_grey_zone(score: float, cfg) -> bool:
@@ -67,9 +132,18 @@ def cheap_reject_reason(candidate: dict[str, Any], *, cfg,
                         slot_duration: float = 3.0,
                         negatives: list[str] | None = None,
                         category: str = "", intent_kind: str = "",
-                        video_id: str = "") -> str | None:
-    """Шаг 1 без LLM: theme, negatives, watermark-строки, ultrawide, duration."""
+                        video_id: str = "",
+                        brief: dict[str, Any] | None = None) -> str | None:
+    """Шаг 1 без LLM: theme, negatives, watermark-строки, ultrawide, duration.
+
+    ``brief`` is the spoken window: keyboard/dataviz on a fluid slot fail
+    here so Grok is never asked to score them.
+    """
     hay = _candidate_hay(candidate)
+    if brief:
+        denied = brief_reject_reason(brief, hay)
+        if denied:
+            return denied
     theme = thematic_reject_reason(
         hay, category=category, intent_kind=intent_kind, video_id=video_id)
     if theme:
@@ -526,6 +600,7 @@ def _fill_unfilled_from_leftover_prefers(
             gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
             if gate:
                 continue
+            brief = slot_visual_brief(slot, plan, words)
             cheap = cheap_reject_reason(
                 candidate, cfg=cfg, slot_duration=slot_dur,
                 negatives=slot_negatives(slot, plan),
@@ -533,7 +608,8 @@ def _fill_unfilled_from_leftover_prefers(
                 intent_kind=classify_intent(
                     intent, [candidate.get("query", "")],
                     str(plan.get("category") or "")),
-                video_id=str(plan.get("video_id") or ""))
+                video_id=str(plan.get("video_id") or ""),
+                brief=brief)
             if cheap:
                 continue
             palette = palette_verdict([], palette_rules)
@@ -570,6 +646,143 @@ def _fill_unfilled_from_leftover_prefers(
     return filled
 
 
+def _row_has_media(row: dict[str, Any]) -> bool:
+    """Скачанный клип: путь, ключ storage или кадры для судьи."""
+    if str(row.get("local_file") or "").strip():
+        return True
+    if str(row.get("storage_key") or "").strip():
+        return True
+    return bool(row.get("frames"))
+
+
+_LEFTOVER_STOCK_BLOCK = frozenset({
+    "underfilled",
+    "reject_palette",
+    "reject_watermark",
+    "reject_dark",
+    "reject_cheap",
+    "reject_theme",
+    "reject_gate",
+})
+
+
+def _fill_unfilled_from_judged_stock(
+        *, plan: dict[str, Any], accepted: dict[int, dict[str, Any]],
+        accepted_counts: dict[str, int], judged: list[dict[str, Any]],
+        repeat_max: int, skip_live: bool, paid_ok: bool,
+        pin_deny: set[str],
+        words: list[dict[str, Any]] | None = None) -> int:
+    """После критика закрыть пустые footage-слоты уже скачанным клипом.
+
+    §7.3 шлёт незакрытый слот в P9, а не слабым футажом. Когда Grok ставит
+    всем < 0.70 и бюджет арбитража не исчерпан, ``accept_fallback`` молчит,
+    слоты уходят в генерацию, Gemini 429 — и P11 рисует одинаковые плиты
+    (QC-24). Этот проход не зовёт API: берёт файлы, которые P7 уже скачал.
+    Без ``local_file`` / ``storage_key`` / кадров слот не трогаем — тонкий
+    пул MUST-017 по-прежнему идёт на лестницу, а не в слабый сток.
+    """
+    if skip_live or not paid_ok:
+        return 0
+    roles = ("broll", "evidence", "interstitial")
+    unfilled = [
+        s for s in plan.get("slots") or []
+        if s.get("needs_asset")
+        and s.get("asset_role") in roles
+        and int(s["index"]) not in accepted
+    ]
+    if not unfilled:
+        return 0
+
+    def _usable(row: dict[str, Any]) -> bool:
+        if row.get("decision") in _LEFTOVER_STOCK_BLOCK:
+            return False
+        if row.get("origin") == "meme_library":
+            return False
+        if not _row_has_media(row):
+            return False
+        aid = str(row.get("asset_id") or "")
+        if not aid or pin_id_denied(aid, pin_deny):
+            return False
+        if accepted_counts.get(aid, 0) >= repeat_max:
+            return False
+        if row.get("has_watermark"):
+            return False
+        return True
+
+    pool = [row for row in judged if _usable(row)]
+    if not pool:
+        return 0
+    filled = 0
+    for slot in unfilled:
+        slot_index = int(slot["index"])
+        same: list[dict[str, Any]] = []
+        others: list[dict[str, Any]] = []
+        for row in pool:
+            if not _usable(row):
+                continue
+            try:
+                origin_slot = int(row.get("slot_index"))
+            except (TypeError, ValueError):
+                origin_slot = -1
+            if origin_slot == slot_index:
+                same.append(row)
+            else:
+                others.append(row)
+        same.sort(key=lambda r: float(r.get("score") or 0), reverse=True)
+        others.sort(key=lambda r: (
+            -float(r.get("score") or 0),
+            abs(int(r.get("slot_index") or 0) - slot_index),
+        ))
+        pick = next(iter(same), None)
+        leftover_from = slot_index if pick is not None else None
+        brief = slot_visual_brief(slot, plan, words)
+
+        def _leftover_ok(row: dict[str, Any]) -> bool:
+            hay = " ".join([
+                str(row.get("query") or ""),
+                " ".join(str(t) for t in (row.get("tags") or [])),
+                str(row.get("page_url") or ""),
+            ])
+            if brief_reject_reason(brief, hay):
+                return False
+            query = str(row.get("query") or "")
+            if not query:
+                return not brief.get("deny")
+            return leftover_query_fits_slot(query, slot, plan, words=words)
+
+        if pick is not None and not _leftover_ok(pick):
+            pick = None
+            leftover_from = None
+        if pick is None:
+            for row in others:
+                if _leftover_ok(row):
+                    pick = row
+                    try:
+                        leftover_from = int(row.get("slot_index") or -1)
+                    except (TypeError, ValueError):
+                        leftover_from = -1
+                    break
+        if pick is None:
+            continue
+        intent = slot.get("visual_intent", "") or slot.get("reason", "")
+        entry = {
+            **pick,
+            "slot_index": slot_index,
+            "leftover_from_slot": leftover_from,
+            "intent": intent,
+            "decision": "accept_stock_leftover",
+            "fallback_reason": (
+                "critic rejected the pool; leftover downloaded clip onto empty slot"),
+        }
+        judged.append(entry)
+        accepted[slot_index] = entry
+        aid = str(entry.get("asset_id") or "")
+        if aid:
+            accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
+        filled += 1
+    return filled
+
+
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
@@ -580,15 +793,22 @@ def run_step(ctx) -> dict[str, Any]:
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 3))
 
     skip_live = bool(cfg.get("vision.skip_live", False))
-    surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
+    surplus_ratio = float(cfg.get("stock.candidate_surplus", 2.0))
     words = ctx_words(ctx)
+    spoken_scores = _ctx_read_or(ctx, "vision_spoken_scores.json", {})
+    if not isinstance(spoken_scores, dict):
+        spoken_scores = {}
+    prev_accepted = _prior_accepted_map(
+        _ctx_read_or(ctx, "accepted_assets.json", {}))
+    if prev_accepted:
+        # Rerender: do not spend arbiter budget on clips we already scored.
+        arbiter_budget = 0
     footage_slots = [
         s for s in plan.get("slots", [])
         if s.get("needs_asset") and s.get("asset_role") in ("broll", "evidence", "interstitial")
     ]
-    surplus = doc.get("surplus") or surplus_report(
-        footage_pool_count(doc.get("candidates") or []),
-        len(footage_slots), surplus_ratio)
+    surplus = surplus_from_pool(
+        doc.get("candidates") or [], footage_slots, surplus_ratio)
     paid_ok = bool(surplus.get("ok"))
     primary = None if skip_live or not paid_ok else build_vision_provider(
         cfg, ctx.costs, role="primary")
@@ -605,6 +825,19 @@ def run_step(ctx) -> dict[str, Any]:
     pin_entry = _footage_pin_entry(cfg, video_id)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
+    for slot_index, entry in prev_accepted.items():
+        slot = slots_by_index.get(slot_index) or {}
+        spoken = spoken_slot_text(slot, words)
+        aid = str(entry.get("asset_id") or "")
+        if not aid or entry.get("score") is None:
+            continue
+        spoken_scores.setdefault(_spoken_score_key(aid, spoken), {
+            "score": float(entry["score"]),
+            "reason": "previous accept cache",
+            "summary": str((entry.get("verdict") or {}).get("summary") or ""),
+            "judge": "cache",
+            "frames": 0,
+        })
     dead_ids = stage1_dead_ids(doc.get("stage1_rejected") or [])
     max_h = int(cfg.get("stock.max_download_height", 1080))
     by_slot: dict[int, list[dict[str, Any]]] = {}
@@ -674,13 +907,26 @@ def run_step(ctx) -> dict[str, Any]:
             slot_duration = 0.0
         if slot_duration <= 0:
             slot_duration = 3.0
+        brief = slot_visual_brief(slot, plan, words)
+        spoken = str(brief.get("spoken") or "")
+        vision_intent = intent
+        if brief.get("spoken") or brief.get("visual_en"):
+            vision_intent = " ".join(
+                part for part in (
+                    brief.get("visual_ru"),
+                    brief.get("visual_en"),
+                    f"Речь: {brief['spoken']}" if brief.get("spoken") else "",
+                ) if part
+            ) or intent
         gated: list[dict[str, Any]] = []
         for candidate in by_slot[slot_index]:
             cheap_seen += 1
             cheap = cheap_reject_reason(
                 candidate, cfg=cfg, slot_duration=slot_duration,
                 negatives=negatives, category=category,
-                intent_kind=intent_kind, video_id=video_id)
+                intent_kind=intent_kind, video_id=video_id, brief=brief)
+            if not cheap:
+                cheap = brief_reject_reason(brief, _candidate_hay(candidate))
             if cheap:
                 killed_cheap += 1
                 decision = "reject_theme" if (
@@ -701,6 +947,112 @@ def run_step(ctx) -> dict[str, Any]:
                 judged.append(entry)
                 continue
             gated.append(candidate)
+
+        prior = prev_accepted.get(slot_index)
+        if prior_accepted_ok(prior, slot, plan, words, pin_deny):
+            accepted[slot_index] = prior
+            aid = str(prior.get("asset_id") or "")
+            if aid:
+                accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
+            judged.append(prior)
+            reused_scores += 1
+            for candidate in gated:
+                if str(candidate.get("asset_id") or "") == aid:
+                    continue
+                judged.append({
+                    **candidate, "score": float(candidate.get("score") or 0),
+                    "decision": "unused_prior_kept",
+                    "reject_reason": "slot already filled from previous accept",
+                    "verdict": {"score": 0.0, "judge": "prior_kept",
+                                "reason": "not rescored", "summary": "", "frames": 0},
+                })
+            continue
+
+        def _leftover_before_live_ok(row: dict[str, Any]) -> bool:
+            if not _row_has_media(row):
+                return False
+            aid = str(row.get("asset_id") or "")
+            if not aid or pin_id_denied(aid, pin_deny):
+                return False
+            if accepted_counts.get(aid, 0) >= repeat_max:
+                return False
+            if brief_reject_reason(brief, _candidate_hay(row)):
+                return False
+            query = str(row.get("query") or "")
+            if not query:
+                return not brief.get("deny")
+            return leftover_query_fits_slot(query, slot, plan, words=words)
+
+        leftover_now = None
+        leftover_ranked = sorted(
+            gated,
+            key=lambda row: (
+                int(_hay_has_marker(str(row.get("query") or ""),
+                                    FLUID_QUERY_MARKERS)),
+                float(row.get("score") or row.get("prior_score") or 0),
+            ),
+            reverse=True,
+        )
+        for row in leftover_ranked:
+            if _leftover_before_live_ok(row):
+                leftover_now = row
+                break
+        if leftover_now is not None:
+            aid = str(leftover_now.get("asset_id") or "")
+            entry = {
+                **leftover_now,
+                "slot_index": slot_index,
+                "leftover_from_slot": slot_index,
+                "intent": vision_intent,
+                "decision": "accept_stock_leftover",
+                "score": float(
+                    leftover_now.get("score")
+                    or leftover_now.get("prior_score") or 0.5),
+                "fallback_reason": (
+                    "downloaded clip matches spoken window; parked before live vision"),
+                "verdict": {
+                    "score": float(
+                        leftover_now.get("score")
+                        or leftover_now.get("prior_score") or 0.5),
+                    "judge": "leftover_before_live",
+                    "reason": "spoken-window leftover, no live vision",
+                    "summary": leftover_now.get("vision_summary") or "",
+                    "frames": 0,
+                },
+            }
+            judged.append(entry)
+            accepted[slot_index] = entry
+            if aid:
+                accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
+            for candidate in gated:
+                if str(candidate.get("asset_id") or "") == aid:
+                    continue
+                judged.append({
+                    **candidate, "score": float(candidate.get("score") or 0),
+                    "decision": "unused_prior_kept",
+                    "reject_reason": "slot filled from leftover before live",
+                    "verdict": {"score": 0.0, "judge": "leftover_before_live",
+                                "reason": "peer not parked", "summary": "",
+                                "frames": 0},
+                })
+            continue
+
+        live_ids: set[str] = set()
+        if not skip_live:
+            fresh: list[dict[str, Any]] = []
+            for candidate in gated:
+                aid = str(candidate.get("asset_id") or "")
+                ckey = _spoken_score_key(aid, spoken)
+                if candidate.get("prior_score") is not None or ckey in spoken_scores:
+                    continue
+                fresh.append(candidate)
+            fresh.sort(key=lambda c: topical_match_score(
+                set(c.get("tags") or []) or {
+                    w for w in str(c.get("query") or "").lower().split() if len(w) > 2
+                },
+                spoken), reverse=True)
+            live_ids = {str(c.get("asset_id") or "")
+                        for c in fresh[:LIVE_VISION_PER_SLOT] if c.get("asset_id")}
 
         def _under_repeat_cap(entry: dict[str, Any]) -> bool:
             aid = str(entry.get("asset_id") or "")
@@ -793,6 +1145,9 @@ def run_step(ctx) -> dict[str, Any]:
             # и по этому пути весь засев навсегда оставался «borderline».
             reusable = (candidate.get("prior_score") is not None
                         and candidate.get("origin") == "local_cache")
+            aid = str(candidate.get("asset_id") or "")
+            ckey = _spoken_score_key(aid, spoken)
+            cached = spoken_scores.get(ckey)
             # skip_live: материал уже судился раньше / есть в кэше — без API.
             if skip_live:
                 verdict_dict = skip_live_verdict(candidate, intent)
@@ -804,6 +1159,9 @@ def run_step(ctx) -> dict[str, Any]:
                     "summary": candidate.get("vision_summary", ""),
                     "judge": "cache", "frames": 0,
                 }
+                reused_scores += 1
+            elif isinstance(cached, dict) and cached.get("score") is not None:
+                verdict_dict = dict(cached)
                 reused_scores += 1
             elif not paid_ok:
                 entry = {
@@ -819,9 +1177,22 @@ def run_step(ctx) -> dict[str, Any]:
                 }
                 judged.append(entry)
                 continue
+            elif aid not in live_ids:
+                entry = {
+                    **candidate, "intent": intent, "score": 0.0,
+                    "decision": "reject",
+                    "reject_reason": (
+                        f"не финалист слота (лимит {LIVE_VISION_PER_SLOT} live vision)"),
+                    "verdict": {
+                        "score": 0.0, "judge": "finalist_cap", "frames": 0,
+                        "reason": "live vision only on slot finalists",
+                    },
+                }
+                judged.append(entry)
+                continue
             else:
                 frames = [Path(f) for f in candidate.get("frames", [])]
-                verdict = primary.judge(frames, intent=intent, role=role,
+                verdict = primary.judge(frames, intent=vision_intent, role=role,
                                         query=candidate.get("query", ""))
                 verdict_dict = verdict.to_dict()
                 _tally_vision(
@@ -836,7 +1207,7 @@ def run_step(ctx) -> dict[str, Any]:
                     already = bool(verdict_dict.get("arbitrated"))
                     if not already:
                         arbiter_calls += 1
-                        final = arbiter.judge(frames, intent=intent, role=role,
+                        final = arbiter.judge(frames, intent=vision_intent, role=role,
                                               query=candidate.get("query", ""))
                         primary_score = round(verdict.score, 4)
                         verdict_dict = final.to_dict()
@@ -852,6 +1223,13 @@ def run_step(ctx) -> dict[str, Any]:
                 elif in_grey_zone(verdict.score, cfg) and arbiter_calls >= arbiter_budget:
                     verdict_dict["arbitration_skipped"] = (
                         f"серая зона; лимит арбитража {arbiter_budget} исчерпан")
+                spoken_scores[ckey] = {
+                    "score": float(verdict_dict.get("score") or 0),
+                    "reason": str(verdict_dict.get("reason") or ""),
+                    "summary": str(verdict_dict.get("summary") or ""),
+                    "judge": str(verdict_dict.get("judge") or ""),
+                    "frames": int(verdict_dict.get("frames") or 0),
+                }
 
             # Цвет судится отдельно от смысла и бесплатно: кадры кандидата
             # уже лежат на диске. Судья со зрением оценивает соответствие
@@ -975,6 +1353,25 @@ def run_step(ctx) -> dict[str, Any]:
             repeat_max=repeat_max, skip_live=skip_live,
             palette_rules=palette_rules, visible_min=visible_min, words=words)
 
+    stock_filled = _fill_unfilled_from_judged_stock(
+        plan=plan, accepted=accepted, accepted_counts=accepted_counts,
+        judged=judged, repeat_max=repeat_max, skip_live=skip_live,
+        paid_ok=paid_ok, pin_deny=pin_deny, words=words)
+    if stock_filled:
+        _log.info("leftover stock closed %s empty slot(s)", stock_filled)
+
+    locked = apply_slot_locks(
+        plan["slots"], accepted, pin_entry,
+        extra_pool=[row for row in judged if isinstance(row, dict)])
+    if locked is not accepted:
+        accepted.clear()
+        accepted.update(locked)
+        accepted_counts.clear()
+        for entry in accepted.values():
+            aid = str(entry.get("asset_id") or "")
+            if aid:
+                accepted_counts[aid] = accepted_counts.get(aid, 0) + 1
+
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0
     memes_used: list[str] = []
@@ -1030,6 +1427,15 @@ def run_step(ctx) -> dict[str, Any]:
                    if s["needs_asset"]
                    and s["asset_role"] in ("broll", "evidence", "meme", "interstitial")]
     unfilled = [i for i in asset_slots if i not in accepted]
+    # MUST-017: тонкий пул не добирают генерацией. Пустые слоты — лестница P11,
+    # а не Gemini image на все 17 дыр (квота 429 роняла весь прогон).
+    surplus_blocks_generation = bool(not paid_ok and not skip_live)
+    if surplus_blocks_generation:
+        generate_slots: list[int] = []
+        ladder_slots = list(unfilled)
+    else:
+        generate_slots = list(unfilled)
+        ladder_slots = []
     candidates_per_slot = {str(i): 0 for i in asset_slots}
     for slot_index, rows in by_slot.items():
         candidates_per_slot[str(slot_index)] = len(rows)
@@ -1077,18 +1483,26 @@ def run_step(ctx) -> dict[str, Any]:
         "slots_total": len(asset_slots),
         "slots_filled": len(accepted),
         "fill_rate": round(len(accepted) / max(len(asset_slots), 1), 4),
-        "unfilled_slots": unfilled,
+        "unfilled_slots": generate_slots,
+        "ladder_slots": ladder_slots,
+        "surplus_blocks_generation": surplus_blocks_generation,
         "added_to_index": added_to_index,
         "surplus": surplus,
         "skipped_stage1": skipped_stage1,
         "accepted": {str(k): v for k, v in sorted(accepted.items())},
         "judged": judged,
     }
+    ctx.write("vision_spoken_scores.json", spoken_scores)
     ctx.write("accepted_assets.json", result)
 
-    if unfilled:
-        ctx.warn(f"{len(unfilled)} слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
-                 slots=unfilled)
+    if surplus_blocks_generation and unfilled:
+        ctx.warn(
+            f"surplus underfilled — {len(unfilled)} слотов на лестницу P11, "
+            "без генерации P9 (MUST-017)",
+            slots=unfilled)
+    elif generate_slots:
+        ctx.warn(f"{len(generate_slots)} слотов не закрыты футажом — уйдут в генерацию P9 (§7.3)",
+                 slots=generate_slots)
     if rejected_by_dark:
         ctx.warn(f"{rejected_by_dark} кандидатов отклонены как слишком тёмные для "
                  f"перебивки (порог {visible_min:.0%} видимого кадра)")

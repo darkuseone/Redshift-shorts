@@ -36,8 +36,8 @@ from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import (
     QUERY_MAX, QUERY_MIN, TEXTURE_FILL, TEXTURE_FILL_ALT, allow_generic_pad,
     classify_intent, compile_slot_search, extra_fits_slot, is_sci_topic,
-    negative_reject_reason, search_report_payload, thematic_reject_reason,
-    topical_tokens,
+    negative_reject_reason, queries_for_spoken_window, search_report_payload,
+    thematic_reject_reason, topical_tokens,
 )
 from ..lib.render.shots import slim_video
 
@@ -156,24 +156,76 @@ def footage_pool_count(candidates: Iterable[dict[str, Any]]) -> int:
     return sum(1 for c in candidates if str(c.get("origin") or "") != "meme_library")
 
 
+def slots_judgable_count(candidates: Iterable[dict[str, Any]],
+                         slot_indexes: Iterable[int]) -> int:
+    """Слоты, у которых есть хотя бы один кандидат футажа.
+
+    Пустой слот критику смотреть нечего — он уйдёт в P9/лестницу P11.
+    Если считать его в знаменателе 2.0×, один недобор (22/23) блокирует
+    судью на всех слотах, где пул как раз есть.
+    """
+    needed = {int(i) for i in slot_indexes}
+    have: set[int] = set()
+    for candidate in candidates:
+        if str(candidate.get("origin") or "") == "meme_library":
+            continue
+        try:
+            idx = int(candidate.get("slot_index"))
+        except (TypeError, ValueError):
+            continue
+        if idx in needed:
+            have.add(idx)
+    return len(have)
+
+
 def surplus_target(slots_needing: int, ratio: float = 1.3) -> int:
     """ceil(ratio × слотов с футажом). 10 слотов → 13 кандидатов."""
     return math.ceil(float(ratio) * max(0, int(slots_needing)))
 
 
 def surplus_report(n_candidates: int, slots_needing: int,
-                   ratio: float = 1.3) -> dict[str, Any]:
-    """Сводка +30% запаса до Gemini/Grok/Magnific (MUST-017)."""
-    target = surplus_target(slots_needing, ratio)
-    ok = True if slots_needing <= 0 else int(n_candidates) >= target
+                   ratio: float = 1.3, *,
+                   slots_judgable: int | None = None) -> dict[str, Any]:
+    """Сводка ×2 запаса до Gemini/Grok/Magnific (MUST-017, запас не +30%).
+
+    Target считает слоты, по которым есть что судить. Пустые слоты не
+    надувают порог: MUST-017 запрещает добирать запас генерацией, а не
+    запрещает смотреть уже скачанный пул.
+    """
+    needing = max(0, int(slots_needing))
+    if slots_judgable is None:
+        judgable = needing
+    else:
+        judgable = max(0, min(int(slots_judgable), needing))
+    target = surplus_target(judgable, ratio)
+    ok = True if judgable <= 0 else int(n_candidates) >= target
     return {
         "ratio": float(ratio),
-        "slots_needing_footage": int(slots_needing),
+        "slots_needing_footage": needing,
+        "slots_judgable": judgable,
         "candidates": int(n_candidates),
         "target": int(target),
         "ok": ok,
         "status": "ok" if ok else "underfilled",
     }
+
+
+def surplus_from_pool(candidates: Iterable[dict[str, Any]],
+                      footage_slots: Iterable[dict[str, Any]],
+                      ratio: float = 1.3) -> dict[str, Any]:
+    """Пересчёт surplus по текущему пулу — не верить устаревшему полю в JSON."""
+    slots = list(footage_slots)
+    indexes = []
+    for slot in slots:
+        try:
+            indexes.append(int(slot["index"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+    rows = list(candidates)
+    return surplus_report(
+        footage_pool_count(rows), len(slots), ratio,
+        slots_judgable=slots_judgable_count(rows, indexes),
+    )
 
 
 _log = get_logger("p7")
@@ -519,7 +571,7 @@ def run_step(ctx) -> dict[str, Any]:
     queries_per_slot = min(QUERY_MAX, max(3, int(cfg.get("stock.queries_per_slot", 5))))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))
     pool_min, pool_max = cfg.get("stock.target_pool_size", [30, 60])
-    surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
+    surplus_ratio = float(cfg.get("stock.candidate_surplus", 2.0))
     max_downloads = int(cfg.get("magnific.max_downloads_per_video", 50))
     probe_positions = cfg.get("stock.video_probe_frames", [0.10, 0.50, 0.90])
     dedup_threshold = int(cfg.get("stock.dedup_hamming_max", 8))
@@ -566,18 +618,26 @@ def run_step(ctx) -> dict[str, Any]:
     frames_dir = ctx.wpath("broll", "frames", ".keep").parent
 
     for slot in slots:
-        intent_kind = classify_intent(slot.get("visual_intent", ""), slot.get("queries", []),
-                                      plan.get("category", ""))
-        compiled = compile_slot_search(slot, plan, count=queries_per_slot)
+        compiled = compile_slot_search(
+            slot, plan, count=queries_per_slot, words=words)
+        search_slot = dict(slot)
+        if compiled.get("brief", {}).get("queries"):
+            search_slot["queries"] = list(compiled["brief"]["queries"])
+        intent_kind = classify_intent(
+            search_slot.get("visual_intent", ""), search_slot.get("queries", []),
+            plan.get("category", ""))
         queries = pad_slot_queries(
             compiled["queries"],
             queries_per_slot=queries_per_slot,
             intent_kind=intent_kind,
             category=str(plan.get("category") or ""),
-            slot=slot,
+            slot=search_slot,
             plan=plan,
             entities=compiled["entities"],
         )
+        spoken = str((compiled.get("brief") or {}).get("spoken") or "")
+        if spoken:
+            queries = queries_for_spoken_window(queries, spoken) or queries
         negatives = list(compiled["negatives"])
         slot_search.append({
             "slot_index": slot["index"],
@@ -957,7 +1017,7 @@ def run_step(ctx) -> dict[str, Any]:
             researched += 1
             harvest(refined)
 
-        # MUST-017: запас +30% добирается дешёвым поиском, не vision/Magnific.
+        # MUST-017: запас ×2 добирается дешёвым поиском, не vision/Magnific.
         have_so_far = footage_pool_count(candidates_out) + len(slot_candidates)
         expected_so_far = surplus_target(slots.index(slot) + 1, surplus_ratio)
         if not frozen and have_so_far < expected_so_far:
@@ -979,8 +1039,7 @@ def run_step(ctx) -> dict[str, Any]:
     meme_candidates = _pick_memes(ctx, plan, recent_videos)
     candidates_out.extend(meme_candidates)
 
-    surplus = surplus_report(
-        footage_pool_count(candidates_out), len(slots), surplus_ratio)
+    surplus = surplus_from_pool(candidates_out, slots, surplus_ratio)
     search_blob = search_report_payload(slot_search)
     search_blob["surplus"] = surplus
 

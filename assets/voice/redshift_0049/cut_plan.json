@@ -1,0 +1,1097 @@
+{
+  "video_id": "redshift_0049",
+  "title": "OpenAI закрыла одну из семи задач математики",
+  "fps": 30,
+  "duration_sec": 70.312,
+  "target_duration_sec": 68.0,
+  "music_mood": "tense",
+  "music_tags": [
+    "tense",
+    "driving",
+    "strings"
+  ],
+  "category": "ai",
+  "sources": [
+    {
+      "title": "On the Navier–Stokes Millennium Prize Problem",
+      "domain": "openai.com",
+      "url": "https://openai.com/index/navier-stokes-solution/",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "published": "8 сентября 2026",
+      "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство. Астра за семнадцать часов переложила его в Lean.",
+      "highlight_line": "сильнее GPT-6 Astra"
+    },
+    {
+      "title": "Millennium Prize Problems",
+      "domain": "claymath.org",
+      "url": "https://www.claymath.org/millennium-problems/",
+      "show_on_screen": false,
+      "screen_template": "search",
+      "snippet": "Семь задач тысячелетия. Миллион долларов за каждую. Навье-Стокс в списке с двухтысячного года."
+    }
+  ],
+  "cta": {
+    "text": "Какую из оставшихся шести разберём следующей?",
+    "type": "part2_cliff"
+  },
+  "show_subscribe": true,
+  "cta_window": [
+    68.312,
+    70.312
+  ],
+  "hook_window": [
+    0.0,
+    3.0
+  ],
+  "hook": {
+    "on_screen": "ФУРОР",
+    "style": "blackout_word"
+  },
+  "avatar_id": "99ccc74e764947c394cd4ef210960a6f",
+  "stats": {
+    "duration_sec": 70.312,
+    "slot_count": 26,
+    "avatar_sec": 29.029,
+    "avatar_share": 0.4129,
+    "avatar_appearances": 7,
+    "avatar_appearance_durations": [
+      5.17,
+      5.49,
+      4.95,
+      3.46,
+      3.87,
+      3.63,
+      2.45
+    ],
+    "first_avatar_sec": 2.002,
+    "split_share": 0.0,
+    "longest_footage_block_sec": 17.52,
+    "longest_footage_block_share": 0.2492,
+    "max_shot_sec": 5.492,
+    "max_event_gap_sec": 2.4,
+    "first_event_sec": 0.0,
+    "event_count": 44,
+    "cut_share": 0.7692,
+    "fullscreen_text_count": 2,
+    "meme_count": 0,
+    "asset_slots": 17,
+    "beats": {
+      "hit": 1,
+      "question": 3,
+      "stretch": 15,
+      "payoff": 6,
+      "residue": 1
+    }
+  },
+  "notes": [
+    "в первый план добавлено событие до 0.8 сек (§4.1)",
+    "восстановлен из edit_plan_A прогона 34519064610, окна аватара как у prepared-клипов"
+  ],
+  "slots": [
+    {
+      "index": 0,
+      "start": 0.0,
+      "end": 2.002,
+      "duration": 2.002,
+      "kind": "fullscreen_text",
+      "block_id": "b1",
+      "role": "hook",
+      "mode": "C",
+      "visual_intent": "Удар: официальный кадр OpenAI или статья, огромное слово ФУРОР. Не штукатурка и не мох.",
+      "queries": [],
+      "content": "ФУРОР",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 0.0,
+          "kind": "shot_change"
+        },
+        {
+          "t": 0.6,
+          "kind": "punch_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "text-fullscreen/impact-02",
+      "meme_emotion": "",
+      "beat": "hit",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 1,
+      "start": 2.002,
+      "end": 7.177,
+      "duration": 5.175,
+      "kind": "avatar",
+      "block_id": "b2",
+      "role": "setup",
+      "mode": "A",
+      "visual_intent": "Ведущий с энергией называет ставку. За головой — семь и миллион. Потом живая вода, не абстрактная доска.",
+      "queries": [],
+      "content": "",
+      "transition_in": "dynamic",
+      "events": [
+        {
+          "t": 2.002,
+          "kind": "shot_change"
+        },
+        {
+          "t": 4.002,
+          "kind": "push_in"
+        },
+        {
+          "t": 6.002,
+          "kind": "push_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "question",
+      "reason": "режим A: аватар во весь кадр (§3.5)"
+    },
+    {
+      "index": 2,
+      "start": 7.177,
+      "end": 8.377,
+      "duration": 1.2,
+      "kind": "fullscreen_text",
+      "block_id": "b2",
+      "role": "setup",
+      "mode": "A",
+      "visual_intent": "Ведущий с энергией называет ставку. За головой — семь и миллион. Потом живая вода, не абстрактная доска.",
+      "queries": [],
+      "content": "$1 000 000",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 7.177,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "question",
+      "reason": "полноэкранный текст (§5.2)"
+    },
+    {
+      "index": 3,
+      "start": 8.377,
+      "end": 13.869,
+      "duration": 5.492,
+      "kind": "avatar",
+      "block_id": "b2",
+      "role": "setup",
+      "mode": "A",
+      "visual_intent": "Ведущий с энергией называет ставку. За головой — семь и миллион. Потом живая вода, не абстрактная доска.",
+      "queries": [],
+      "content": "",
+      "transition_in": "dynamic",
+      "events": [
+        {
+          "t": 8.377,
+          "kind": "shot_change"
+        },
+        {
+          "t": 10.377,
+          "kind": "push_in"
+        },
+        {
+          "t": 12.377,
+          "kind": "push_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "question",
+      "reason": "режим A: аватар во весь кадр (§3.5)"
+    },
+    {
+      "index": 4,
+      "start": 13.869,
+      "end": 16.269,
+      "duration": 2.4,
+      "kind": "footage",
+      "block_id": "b3",
+      "role": "evidence",
+      "mode": "C",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "queries": [
+        "hands typing keyboard code editor",
+        "gpu cluster server aisle datacenter",
+        "research paper document desk",
+        "code editor source programming ide"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 13.869,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "evidence",
+      "template_hint": "browser-ui/browser-scroll",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 5,
+      "start": 16.269,
+      "end": 18.801,
+      "duration": 2.532,
+      "kind": "footage",
+      "block_id": "b3",
+      "role": "evidence",
+      "mode": "C",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "queries": [
+        "gpu cluster server aisle datacenter",
+        "hands typing keyboard code editor",
+        "research paper document desk",
+        "code editor source programming ide"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 16.269,
+          "kind": "shot_change"
+        },
+        {
+          "t": 18.269,
+          "kind": "kenburns_restart"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "evidence",
+      "template_hint": "browser-ui/browser-scroll",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 6,
+      "start": 18.801,
+      "end": 21.071,
+      "duration": 2.27,
+      "kind": "footage",
+      "block_id": "b3",
+      "role": "evidence",
+      "mode": "C",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "queries": [
+        "research paper document desk",
+        "hands typing keyboard code editor",
+        "gpu cluster server aisle datacenter",
+        "code editor source programming ide"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 18.801,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "evidence",
+      "template_hint": "browser-ui/browser-scroll",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 7,
+      "start": 21.071,
+      "end": 23.47,
+      "duration": 2.399,
+      "kind": "footage",
+      "block_id": "b3",
+      "role": "evidence",
+      "mode": "C",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "queries": [
+        "code editor source programming ide",
+        "hands typing keyboard code editor",
+        "gpu cluster server aisle datacenter",
+        "research paper document desk"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 21.071,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "evidence",
+      "template_hint": "browser-ui/browser-scroll",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 8,
+      "start": 23.47,
+      "end": 25.724,
+      "duration": 2.254,
+      "kind": "footage",
+      "block_id": "b3",
+      "role": "evidence",
+      "mode": "C",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "queries": [
+        "hands typing keyboard code editor",
+        "gpu cluster server aisle datacenter",
+        "research paper document desk",
+        "code editor source programming ide"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 23.47,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "evidence",
+      "template_hint": "browser-ui/browser-scroll",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 9,
+      "start": 25.724,
+      "end": 28.599,
+      "duration": 2.875,
+      "kind": "footage",
+      "block_id": "b3",
+      "role": "evidence",
+      "mode": "C",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "queries": [
+        "gpu cluster server aisle datacenter",
+        "hands typing keyboard code editor",
+        "research paper document desk",
+        "code editor source programming ide"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 25.724,
+          "kind": "shot_change"
+        },
+        {
+          "t": 27.724,
+          "kind": "kenburns_restart"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "evidence",
+      "template_hint": "browser-ui/browser-scroll",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 10,
+      "start": 28.599,
+      "end": 31.389,
+      "duration": 2.79,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "weather radar storm satellite",
+        "airplane wing in flight clouds",
+        "industrial pipes water plant",
+        "blood flow medical animation microscope",
+        "code editor proof lean theorem"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 28.599,
+          "kind": "shot_change"
+        },
+        {
+          "t": 30.599,
+          "kind": "kenburns_restart"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 11,
+      "start": 31.389,
+      "end": 36.334,
+      "duration": 4.945,
+      "kind": "avatar",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "A",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [],
+      "content": "",
+      "transition_in": "dynamic",
+      "events": [
+        {
+          "t": 31.389,
+          "kind": "shot_change"
+        },
+        {
+          "t": 33.389,
+          "kind": "push_in"
+        },
+        {
+          "t": 35.389,
+          "kind": "push_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "добор доли аватара до 35% по факту таймингов (§3.5)"
+    },
+    {
+      "index": 12,
+      "start": 36.334,
+      "end": 38.885,
+      "duration": 2.551,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "airplane wing in flight clouds",
+        "weather radar storm satellite",
+        "industrial pipes water plant",
+        "blood flow medical animation microscope",
+        "code editor proof lean theorem"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 36.334,
+          "kind": "shot_change"
+        },
+        {
+          "t": 38.334,
+          "kind": "kenburns_restart"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 13,
+      "start": 38.885,
+      "end": 41.565,
+      "duration": 2.68,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "industrial pipes water plant",
+        "weather radar storm satellite",
+        "airplane wing in flight clouds",
+        "blood flow medical animation microscope",
+        "code editor proof lean theorem"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 38.885,
+          "kind": "shot_change"
+        },
+        {
+          "t": 40.885,
+          "kind": "kenburns_restart"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 14,
+      "start": 41.565,
+      "end": 43.947,
+      "duration": 2.382,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "blood flow medical animation microscope",
+        "weather radar storm satellite",
+        "airplane wing in flight clouds",
+        "industrial pipes water plant",
+        "code editor proof lean theorem"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 41.565,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 15,
+      "start": 43.947,
+      "end": 46.83,
+      "duration": 2.883,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "code editor proof lean theorem",
+        "weather radar storm satellite",
+        "airplane wing in flight clouds",
+        "industrial pipes water plant",
+        "blood flow medical animation microscope"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 43.947,
+          "kind": "shot_change"
+        },
+        {
+          "t": 45.947,
+          "kind": "kenburns_restart"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 16,
+      "start": 46.83,
+      "end": 49.293,
+      "duration": 2.463,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "weather radar storm satellite",
+        "airplane wing in flight clouds",
+        "industrial pipes water plant",
+        "blood flow medical animation microscope",
+        "code editor proof lean theorem"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 46.83,
+          "kind": "shot_change"
+        },
+        {
+          "t": 48.83,
+          "kind": "kenburns_restart"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 17,
+      "start": 49.293,
+      "end": 50.493,
+      "duration": 1.2,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "airplane wing in flight clouds",
+        "weather radar storm satellite",
+        "industrial pipes water plant",
+        "blood flow medical animation microscope",
+        "code editor proof lean theorem"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 49.293,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "полноэкранный текст (§5.2)"
+    },
+    {
+      "index": 18,
+      "start": 50.493,
+      "end": 52.695,
+      "duration": 2.202,
+      "kind": "footage",
+      "block_id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "queries": [
+        "industrial pipes water plant",
+        "weather radar storm satellite",
+        "airplane wing in flight clouds",
+        "blood flow medical animation microscope",
+        "code editor proof lean theorem"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 50.493,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "text-fullscreen/impact-01",
+      "meme_emotion": "",
+      "beat": "stretch",
+      "reason": "режим C: футаж во весь кадр (§3.5)"
+    },
+    {
+      "index": 19,
+      "start": 52.695,
+      "end": 56.156,
+      "duration": 3.461,
+      "kind": "avatar",
+      "block_id": "b5",
+      "role": "twist",
+      "mode": "A",
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "queries": [],
+      "content": "",
+      "transition_in": "dynamic",
+      "events": [
+        {
+          "t": 52.695,
+          "kind": "shot_change"
+        },
+        {
+          "t": 54.695,
+          "kind": "push_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "",
+      "meme_emotion": "",
+      "beat": "payoff",
+      "reason": "режим A: аватар во весь кадр (§3.5)"
+    },
+    {
+      "index": 20,
+      "start": 56.156,
+      "end": 57.556,
+      "duration": 1.4,
+      "kind": "footage",
+      "block_id": "b5",
+      "role": "twist",
+      "mode": "C",
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "queries": [
+        "cracked concrete wall fissure closeup",
+        "clay mathematics institute building",
+        "stone wall texture crack light"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 56.156,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "",
+      "meme_emotion": "",
+      "beat": "payoff",
+      "reason": "перебивка между аватар-сегментами (§7.4.3, R-3)"
+    },
+    {
+      "index": 21,
+      "start": 57.556,
+      "end": 61.43,
+      "duration": 3.874,
+      "kind": "avatar",
+      "block_id": "b5",
+      "role": "twist",
+      "mode": "A",
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "queries": [],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 57.556,
+          "kind": "shot_change"
+        },
+        {
+          "t": 59.556,
+          "kind": "push_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "",
+      "meme_emotion": "",
+      "beat": "payoff",
+      "reason": "режим A: аватар во весь кадр (§3.5)"
+    },
+    {
+      "index": 22,
+      "start": 61.43,
+      "end": 62.83,
+      "duration": 1.4,
+      "kind": "footage",
+      "block_id": "b5",
+      "role": "twist",
+      "mode": "C",
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "queries": [
+        "clay mathematics institute building",
+        "cracked concrete wall fissure closeup",
+        "stone wall texture crack light"
+      ],
+      "content": "",
+      "transition_in": "dynamic",
+      "events": [
+        {
+          "t": 61.43,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "",
+      "meme_emotion": "",
+      "beat": "payoff",
+      "reason": "перебивка между аватар-сегментами (§7.4.3, R-3)"
+    },
+    {
+      "index": 23,
+      "start": 62.83,
+      "end": 66.462,
+      "duration": 3.632,
+      "kind": "avatar",
+      "block_id": "b5",
+      "role": "twist",
+      "mode": "A",
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "queries": [],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 62.83,
+          "kind": "shot_change"
+        },
+        {
+          "t": 64.83,
+          "kind": "push_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "",
+      "meme_emotion": "",
+      "beat": "payoff",
+      "reason": "режим A: аватар во весь кадр (§3.5)"
+    },
+    {
+      "index": 24,
+      "start": 66.462,
+      "end": 67.862,
+      "duration": 1.4,
+      "kind": "footage",
+      "block_id": "b5",
+      "role": "twist",
+      "mode": "C",
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "queries": [
+        "stone wall texture crack light",
+        "cracked concrete wall fissure closeup",
+        "clay mathematics institute building"
+      ],
+      "content": "",
+      "transition_in": "cut",
+      "events": [
+        {
+          "t": 66.462,
+          "kind": "shot_change"
+        }
+      ],
+      "needs_asset": true,
+      "asset_role": "broll",
+      "template_hint": "",
+      "meme_emotion": "",
+      "beat": "payoff",
+      "reason": "перебивка между аватар-сегментами (§7.4.3, R-3)"
+    },
+    {
+      "index": 25,
+      "start": 67.862,
+      "end": 70.312,
+      "duration": 2.45,
+      "kind": "avatar",
+      "block_id": "b6",
+      "role": "cta",
+      "mode": "A",
+      "visual_intent": "Ведущий кивает на продолжение, кнопка подписки в последние две секунды.",
+      "queries": [],
+      "content": "",
+      "transition_in": "dynamic",
+      "events": [
+        {
+          "t": 67.862,
+          "kind": "shot_change"
+        },
+        {
+          "t": 69.862,
+          "kind": "push_in"
+        }
+      ],
+      "needs_asset": false,
+      "asset_role": "",
+      "template_hint": "",
+      "meme_emotion": "",
+      "beat": "residue",
+      "reason": "режим A: аватар во весь кадр (§3.5)"
+    }
+  ],
+  "avatar_segments": [
+    {
+      "index": 0,
+      "slot_index": 1,
+      "start": 2.002,
+      "end": 7.177,
+      "duration": 5.175,
+      "block_id": "b2",
+      "mode": "A",
+      "kind": "avatar"
+    },
+    {
+      "index": 1,
+      "slot_index": 3,
+      "start": 8.377,
+      "end": 13.869,
+      "duration": 5.492,
+      "block_id": "b2",
+      "mode": "A",
+      "kind": "avatar"
+    },
+    {
+      "index": 2,
+      "slot_index": 11,
+      "start": 31.389,
+      "end": 36.334,
+      "duration": 4.945,
+      "block_id": "b4",
+      "mode": "A",
+      "kind": "avatar"
+    },
+    {
+      "index": 3,
+      "slot_index": 19,
+      "start": 52.695,
+      "end": 56.156,
+      "duration": 3.461,
+      "block_id": "b5",
+      "mode": "A",
+      "kind": "avatar"
+    },
+    {
+      "index": 4,
+      "slot_index": 21,
+      "start": 57.556,
+      "end": 61.43,
+      "duration": 3.874,
+      "block_id": "b5",
+      "mode": "A",
+      "kind": "avatar"
+    },
+    {
+      "index": 5,
+      "slot_index": 23,
+      "start": 62.83,
+      "end": 66.462,
+      "duration": 3.632,
+      "block_id": "b5",
+      "mode": "A",
+      "kind": "avatar"
+    },
+    {
+      "index": 6,
+      "slot_index": 25,
+      "start": 67.862,
+      "end": 70.312,
+      "duration": 2.45,
+      "block_id": "b6",
+      "mode": "A",
+      "kind": "avatar"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "mode": "C",
+      "text": "OpenAI произвела фурор.",
+      "spoken_text": "опен эй ай произвела фу́рор.",
+      "sfx": "hit_impact",
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ФУРОР",
+        "template_hint": "text-fullscreen/impact-02"
+      },
+      "source_ref": null,
+      "visual_intent": "Удар: официальный кадр OpenAI или статья, огромное слово ФУРОР. Не штукатурка и не мох.",
+      "emphasis_word": "фурор"
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "mode": "A",
+      "text": "В математике новой моделью закрыла одну из семи задач, которые четверть века никто не брал. Миллион долларов за каждую. Это не мелки на доске. Это формулы, по которым считают воду, воздух и кровь.",
+      "spoken_text": "В математике новой моделью закрыла одну из семи задач, которые четверть века никто не брал. Миллион долларов за каждую. Это не мелки на доске. Это формулы, по которым считают воду, воздух и кровь.",
+      "sfx": "whoosh_in",
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "$1 000 000",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "source_ref": null,
+      "visual_intent": "Ведущий с энергией называет ставку. За головой — семь и миллион. Потом живая вода, не абстрактная доска.",
+      "emphasis_word": "миллион"
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "mode": "C",
+      "text": "Восьмого сентября две тысячи двадцать шесть OpenAI выкладывает работу. Искал не чат, а внутренняя модель сильнее GPT-шесть Астра. Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений.",
+      "spoken_text": "Восьмого сентября две тысячи двадцать шесть опен эй ай выкладывает работу. Искал не чат, а внутренняя модель сильнее GPT-шесть А́стра. Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений.",
+      "sfx": "ui_click",
+      "overlay": {
+        "type": "highlight",
+        "content": "сильнее GPT-6 Astra",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "source_ref": "openai.com",
+      "visual_intent": "Статья OpenAI в браузере, подсветка строки про модель сильнее Астры. Официальный og-кадр, не сток.",
+      "emphasis_word": "Астра"
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "mode": "C",
+      "text": "Сама Астра доказательство не искала. Семнадцать часов она переложила его в Lean — язык, где компьютер проверяет каждый шаг, как касса проверяет чек. Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода, крыло самолёта, трубы в доме, ток крови. Если формула врёт — самолёт не извиняется.",
+      "spoken_text": "Сама А́стра доказательство не искала. Семнадцать часов она переложила его в лин — язык, где компьютер проверяет каждый шаг, как касса проверяет чек. Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода, крыло самолёта, трубы в доме, ток крови. Если формула врёт — самолёт не извиняется.",
+      "sfx": "data_beep",
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "ПОГОДА · САМОЛЁТ · КРОВЬ",
+        "template_hint": "text-fullscreen/impact-01"
+      },
+      "source_ref": null,
+      "visual_intent": "Живая практика: радар погоды, крыло, трубы, кровь. Затем код Lean. Больше графики чисел, меньше пустой текстуры.",
+      "emphasis_word": "Lean"
+    },
+    {
+      "id": "b5",
+      "role": "twist",
+      "mode": "A",
+      "text": "Только приз Клея — за уравнения без внешней силы. Этот пункт они не закрыли. Клей решение не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия. Это первая дыра в стене, которую четверть века считали глухой.",
+      "spoken_text": "Только приз Клея — за уравнения без внешней силы. Этот пункт они не закрыли. Кле́й решение не принял. Миллион опен эй ай не берёт. Это не закрыли задачу тысячелетия. Это первая дыра в стене, которую четверть века считали глухой.",
+      "sfx": "sub_drop",
+      "overlay": {
+        "type": "none"
+      },
+      "source_ref": null,
+      "visual_intent": "Ведущий закрывает хук крупно: вау был настоящий, миллион — нет. Энергичнее, не лектор.",
+      "emphasis_word": "дыра"
+    },
+    {
+      "id": "b6",
+      "role": "cta",
+      "mode": "A",
+      "text": "Какую из оставшихся шести разберём следующей?",
+      "spoken_text": "Какую из оставшихся шести разберём следующей?",
+      "sfx": "subscribe_ping",
+      "overlay": {
+        "type": "none"
+      },
+      "source_ref": null,
+      "visual_intent": "Ведущий кивает на продолжение, кнопка подписки в последние две секунды.",
+      "emphasis_word": "шести"
+    }
+  ]
+}

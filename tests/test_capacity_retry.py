@@ -9,7 +9,7 @@ import pytest
 from src.errors import ProviderError
 from src.lib.config import load_config
 from src.lib.costs import CostLedger
-from src.lib.retry import call_with_retry, is_capacity_error
+from src.lib.retry import call_with_retry, is_capacity_error, is_quota_exhausted
 from src.lib.providers import vision as V
 from src.lib.providers.vision import GeminiVision, VisionVerdict
 
@@ -34,7 +34,34 @@ def test_is_capacity_error_detects_wrapped_429_quota():
                '\'{"error":{"code":429,"message":"You exceeded your current quota"}}\'}',
     )
     assert is_capacity_error(wrapped)
+    assert is_quota_exhausted(wrapped)
     assert wrapped.details.get("status") is None
+
+
+def test_quota_exhausted_does_not_retry():
+    sleeps: list[float] = []
+    n = {"i": 0}
+
+    def boom():
+        n["i"] += 1
+        raise ProviderError(
+            "Gemini image вернул 429",
+            status=429,
+            body='{"error":{"code":429,"message":"You exceeded your current quota"}}',
+        )
+
+    with pytest.raises(ProviderError, match="исчерпаны"):
+        call_with_retry(
+            boom,
+            attempts=3,
+            base_delay=2.0,
+            capacity_attempts=6,
+            capacity_base_delay=5.0,
+            what="Gemini image",
+            sleep=sleeps.append,
+        )
+    assert n["i"] == 1
+    assert sleeps == []
 
 
 def test_capacity_backoff_uses_longer_delays():

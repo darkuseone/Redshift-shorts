@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .query import PASSENGER_CABIN_MARKERS, _hay_has_marker
+
 
 def ctx_words(ctx: Any) -> list[dict[str, Any]]:
     """Word timings from the pipeline context; empty when the step has none."""
@@ -65,12 +67,22 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
     intent = str(slot.get("visual_intent") or "").lower()
     bonus = 0
     if aid.startswith("press_"):
-        if any(token in speech for token in ("nature", "опублик")):
+        # OpenAI card belongs on the article window, not on «Навье-Стокса».
+        if any(token in speech for token in (
+                "nature", "опублик", "openai", "выкладыва")):
             bonus = -25
         elif role == "evidence":
             bonus = -18
         else:
             bonus = 6
+    elif any(token in aid for token in ("10884417", "16865644")):
+        hay = speech or intent
+        if any(token in hay for token in (
+                "навье", "жидкост", "крыло", "труб", "крови", "кровь",
+                "погод", "течёт")):
+            bonus = -22
+        elif any(token in hay for token in ("lean", "openai", "выкладыва")):
+            bonus = 14
     elif "cryostat" in aid:
         hay = speech or intent
         if any(token in hay for token in (
@@ -158,3 +170,207 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
     except ValueError:
         rank = 99
     return (bonus, rank)
+
+
+def slot_locks_from_entry(entry: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Per-slot file locks. Prefer/deny lists are not a substitute."""
+    raw = (entry or {}).get("slot_locks") or (entry or {}).get("slots") or []
+    if not isinstance(raw, list):
+        return []
+    return [item for item in raw if isinstance(item, dict) and "t" in item]
+
+
+def slot_lock_hits(lock: dict[str, Any], slot: dict[str, Any]) -> bool:
+    """True when this lock's time window covers the slot."""
+    try:
+        t = float(lock.get("t"))
+        start = float(slot.get("start") or 0.0)
+        end = float(slot.get("end") or 0.0)
+    except (TypeError, ValueError):
+        return False
+    kind = str(lock.get("kind") or "").strip()
+    slot_kind = str(slot.get("kind") or "")
+    if kind == "avatar" and slot_kind not in ("avatar", "split"):
+        return False
+    if kind == "footage" and slot_kind in ("avatar", "split"):
+        return False
+    if kind == "fullscreen_text" and slot_kind != "fullscreen_text":
+        return False
+    try:
+        min_dur = float(lock.get("min_duration") or 0.0)
+    except (TypeError, ValueError):
+        min_dur = 0.0
+    if min_dur > 0:
+        half = min_dur / 2.0
+        return end > (t - half) and start < (t + half)
+    return start - 1e-6 <= t < end + 1e-6
+
+
+def plan_slot_locks(plan: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Locks stashed on the in-memory plan, or copied into the edit_plan."""
+    raw = (plan or {}).get("_slot_locks") or (plan or {}).get("slot_locks") or []
+    if not isinstance(raw, list):
+        return []
+    return [item for item in raw if isinstance(item, dict) and "t" in item]
+
+
+def slot_lock_deny_ids(
+        slot: dict[str, Any],
+        locks: list[dict[str, Any]] | None) -> set[str]:
+    """asset_ids this slot must not inherit — from overlapping locks only."""
+    denied: set[str] = set()
+    for lock in locks or []:
+        if slot_lock_hits(lock, slot):
+            denied.update(str(x) for x in (lock.get("deny_asset_ids") or []) if x)
+    return denied
+
+
+def slot_lock_brand_plate(
+        slot: dict[str, Any],
+        locks: list[dict[str, Any]] | None) -> bool:
+    """True when a hitting lock says brand grid, not a neighbour plate."""
+    return any(
+        slot_lock_hits(lock, slot) and lock.get("brand_plate")
+        for lock in locks or [])
+
+
+def exclusive_lock_owners(
+        slots: list[dict[str, Any]],
+        locks: list[dict[str, Any]]) -> dict[str, int]:
+    """asset_id → slot index that exclusively owns that file."""
+    owners: dict[str, int] = {}
+    for lock in locks:
+        if not lock.get("exclusive"):
+            continue
+        aid = str(lock.get("asset_id") or "")
+        if not aid:
+            continue
+        for slot in slots:
+            if slot_lock_hits(lock, slot):
+                owners[aid] = int(slot["index"])
+                break
+    return owners
+
+
+def _lock_asset_hay(asset: dict[str, Any]) -> str:
+    return " ".join([
+        str(asset.get("query") or ""),
+        " ".join(str(t) for t in (asset.get("tags") or [])),
+        str(asset.get("page_url") or ""),
+        str(asset.get("asset_id") or ""),
+    ])
+
+
+def _fluid_fallback_rank(hay: str) -> tuple[int, int]:
+    """Water/pipes first; cabin last. Wing is fluid-family but not NS water."""
+    hay_l = str(hay or "").lower()
+    water = _hay_has_marker(hay_l, ("water", "pipes", "pipe", "turbulence"))
+    cabin = _hay_has_marker(hay_l, PASSENGER_CABIN_MARKERS)
+    wing = _hay_has_marker(hay_l, ("wing", "airplane"))
+    return (0 if water else 1 if not wing else 2, 1 if cabin else 0)
+
+
+def resolve_locked_asset(
+        lock: dict[str, Any],
+        pool: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Pick the locked id from already-accepted files. No download."""
+    wanted: list[str] = []
+    aid = lock.get("asset_id")
+    if aid:
+        wanted.append(str(aid))
+    for extra in lock.get("fallback_asset_ids") or []:
+        if extra:
+            wanted.append(str(extra))
+    by_id: dict[str, dict[str, Any]] = {}
+    for item in pool:
+        if not isinstance(item, dict):
+            continue
+        key = str(item.get("asset_id") or "")
+        if key and key not in by_id:
+            by_id[key] = item
+    for key in wanted:
+        if key in by_id:
+            return by_id[key]
+    if str(lock.get("fallback_kind") or "") != "fluid":
+        return None
+    ranked: list[tuple[tuple[int, int], dict[str, Any]]] = []
+    waterish = ("water", "pipes", "pipe", "turbulence", "blood", "radar")
+    for item in pool:
+        if not isinstance(item, dict):
+            continue
+        hay = _lock_asset_hay(item)
+        if not _hay_has_marker(hay, waterish):
+            continue
+        if _hay_has_marker(hay, ("wing", "airplane")) and not _hay_has_marker(
+                hay, ("water", "pipes", "pipe")):
+            continue
+        ranked.append((_fluid_fallback_rank(hay), item))
+    if not ranked:
+        return None
+    ranked.sort(key=lambda row: row[0])
+    return ranked[0][1]
+
+
+def apply_slot_locks(
+        slots: list[dict[str, Any]],
+        assets: dict[int, dict[str, Any]],
+        entry: dict[str, Any] | None,
+        extra_pool: list[dict[str, Any]] | None = None,
+        ) -> dict[int, dict[str, Any]]:
+    """Force locked asset_id onto overlapping slots. P11 glues; it does not re-pick.
+
+    Empty ``asset_id`` + ``brand_plate`` clears the slot (avatar uses a brand
+    grid, not a neighbour plate). Exclusive ids are removed from every slot
+    that does not own that lock.
+    """
+    locks = slot_locks_from_entry(entry)
+    if not locks:
+        return assets
+    out: dict[int, dict[str, Any]] = {}
+    for key, value in assets.items():
+        if value:
+            out[int(key)] = value
+    pool = list(out.values())
+    if extra_pool:
+        pool.extend(item for item in extra_pool if isinstance(item, dict))
+    for lock in locks:
+        deny = {str(x) for x in (lock.get("deny_asset_ids") or []) if x}
+        brand = bool(lock.get("brand_plate")) or (
+            not lock.get("asset_id") and str(lock.get("kind") or "") == "avatar")
+        resolved = None if brand else resolve_locked_asset(lock, pool)
+        for slot in slots:
+            if not slot_lock_hits(lock, slot):
+                continue
+            idx = int(slot["index"])
+            current = out.get(idx)
+            if current and str(current.get("asset_id") or "") in deny:
+                out.pop(idx, None)
+            if brand:
+                out.pop(idx, None)
+                continue
+            if resolved is None:
+                continue
+            if str(resolved.get("asset_id") or "") in deny:
+                continue
+            copied = dict(resolved)
+            copied["slot_index"] = idx
+            copied["slot_lock"] = True
+            copied["speech_locked"] = True
+            out[idx] = copied
+    for idx, asset in list(out.items()):
+        aid = str(asset.get("asset_id") or "")
+        keep = False
+        owned = False
+        for lock in locks:
+            if not lock.get("exclusive"):
+                continue
+            if str(lock.get("asset_id") or "") != aid:
+                continue
+            owned = True
+            slot = next((s for s in slots if int(s["index"]) == int(idx)), None)
+            if slot is not None and slot_lock_hits(lock, slot):
+                keep = True
+                break
+        if owned and not keep:
+            out.pop(idx, None)
+    return out

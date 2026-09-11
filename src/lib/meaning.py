@@ -130,6 +130,15 @@ def block_traits(text: str) -> frozenset[str]:
     return frozenset(name for name, rx in _COMPILED.items() if rx.search(body))
 
 
+def window_traits(spoken: str) -> frozenset[str]:
+    """Признаки окна речи, не всего блока.
+
+    ``b4`` смешивает Lean, «семнадцать» и Навье-Стокса. Лестница, которая
+    читает ``block.text``, ставит график на «страшное имя».
+    """
+    return block_traits(spoken)
+
+
 def traits_of_block(block: dict[str, Any]) -> frozenset[str]:
     """Признаки блока плана: текст плюс то, что уже посчитано раньше."""
     saved = block.get("traits")

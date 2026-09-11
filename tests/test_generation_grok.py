@@ -285,3 +285,87 @@ def test_a_fourth_slot_is_refused_when_it_would_break_the_ten_percent_cap(
     assert "10%" in skipped["reason"]
     assert doc["ai_footage_share"] == pytest.approx(0.09, abs=1e-4)
     assert doc["ai_share_limit"] == pytest.approx(0.10)
+
+
+def test_p9_quota_error_skips_remaining_slots(tmp_path, monkeypatch, cfg):
+    """Gemini 429 не роняет пайплайн: слот пустой, остальные на лестницу P11."""
+    from src.errors import ProviderError
+    from src.lib.providers.vision import VisionVerdict
+    from src.p9_generate import generate as G
+
+    class _Critic:
+        def judge(self, frames, *, intent, role, query, kind="broll"):
+            return VisionVerdict(score=0.9, reason="ок", summary="кадр",
+                                 judge="critic")
+
+    class _Boom:
+        def generate(self, *a, **k):
+            raise ProviderError(
+                "Gemini image: исчерпаны 6 попытки",
+                detail="You exceeded your current quota",
+            )
+
+    monkeypatch.setattr(G, "build_vision_provider", lambda *a, **k: _Critic())
+    monkeypatch.setattr(G, "build_generation_provider", lambda *a, **k: _Boom())
+
+    slots = [{
+        "index": i, "kind": "footage", "asset_role": "broll",
+        "role": "develop", "duration": 1.2, "block_id": f"b{i}",
+        "queries": ["granite macro"],
+        "visual_intent": "гранит",
+    } for i in range(3)]
+
+    report = _run_generation(
+        tmp_path, monkeypatch, cfg,
+        duration=40.0, slots=slots, unfilled=[0, 1, 2])
+
+    assert report["generated"] == 0
+    doc = json.loads((tmp_path / "work" / "generated_assets.json").read_text("utf-8"))
+    assert doc["generated_count"] == 0
+    assert {item["slot"] for item in doc["skipped"]} == {0, 1, 2}
+    assert "квота" in doc["skipped"][1]["reason"] or "лимит" in doc["skipped"][1]["reason"]
+
+
+def test_p9_surplus_gate_does_not_call_image_gen(tmp_path, monkeypatch, cfg):
+    from src.p9_generate import generate as G
+
+    def _boom(*_a, **_k):
+        raise AssertionError("generation must not run when surplus blocks it")
+
+    monkeypatch.setattr(G, "build_generation_provider", _boom)
+    monkeypatch.setattr(G, "build_vision_provider", _boom)
+
+    work = tmp_path / "work"
+    work.mkdir(exist_ok=True)
+    plan = {"video_id": "redshift_0099", "duration_sec": 40.0,
+            "slots": [{"index": 3, "kind": "footage", "asset_role": "broll",
+                       "role": "develop", "duration": 3.0, "block_id": "b1",
+                       "queries": ["x"], "visual_intent": "x"}],
+            "blocks": []}
+    (work / "cut_plan.json").write_text(json.dumps(plan, ensure_ascii=False),
+                                        encoding="utf-8")
+    (work / "accepted_assets.json").write_text(json.dumps({
+        "accepted": {},
+        "unfilled_slots": [],
+        "ladder_slots": [3],
+        "surplus_blocks_generation": True,
+    }), encoding="utf-8")
+
+    from src.lib.cache import StepCache
+    from src.lib.storage import build_storage
+    from src.pipeline import RunContext
+
+    cfg.set("providers.mode", "mock")
+    cfg.set("paths.storage_dir", str(tmp_path / "storage"))
+    cfg.set("paths.cache_dir", str(tmp_path / "cache"))
+    ctx = RunContext(video_id="redshift_0099", cfg=cfg, work_dir=work,
+                     output_dir=tmp_path / "out", script_path=tmp_path / "s.json",
+                     cache=StepCache(work), costs=CostLedger(video_id="redshift_0099"),
+                     storage=build_storage(cfg))
+    (tmp_path / "out").mkdir(exist_ok=True)
+    report = G.run_step(ctx)
+    assert report["generated"] == 0
+    doc = json.loads((work / "generated_assets.json").read_text(encoding="utf-8"))
+    assert doc["skip"] is True
+    assert doc["skipped"][0]["slot"] == 3
+    assert "MUST-017" in doc["skipped"][0]["reason"]

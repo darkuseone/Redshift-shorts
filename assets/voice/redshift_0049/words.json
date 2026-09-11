@@ -1,0 +1,2093 @@
+{
+  "video_id": "redshift_0049",
+  "duration_sec": 70.312,
+  "stats": {
+    "count": 156,
+    "avg_ms": 339.1,
+    "min_ms": 77.0,
+    "max_ms": 450.0,
+    "below_min_count": 40,
+    "emphasis_count": 21,
+    "emphasis_from_script": 6,
+    "emphasis_added": 15,
+    "inexact_blocks": [],
+    "sources": [
+      "provider"
+    ]
+  },
+  "words": [
+    {
+      "index": 0,
+      "display": "OpenAI",
+      "start": 0.0,
+      "end": 0.45,
+      "block_id": "b1",
+      "role": "hook",
+      "emphasis": false,
+      "spoken": [
+        "опен",
+        "эй",
+        "ай"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 1,
+      "display": "произвела",
+      "start": 0.707,
+      "end": 1.157,
+      "block_id": "b1",
+      "role": "hook",
+      "emphasis": false,
+      "spoken": [
+        "произвела"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 2,
+      "display": "фурор.",
+      "start": 1.4,
+      "end": 1.85,
+      "block_id": "b1",
+      "role": "hook",
+      "emphasis": true,
+      "spoken": [
+        "фу́рор",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 3,
+      "display": "В",
+      "start": 2.0016,
+      "end": 2.1516,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "В"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 4,
+      "display": "математике",
+      "start": 2.1516,
+      "end": 2.6016,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "математике"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 5,
+      "display": "новой",
+      "start": 2.7816,
+      "end": 3.0416,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "новой"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 6,
+      "display": "моделью",
+      "start": 3.0986,
+      "end": 3.5216,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "моделью"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 7,
+      "display": "закрыла",
+      "start": 3.5746,
+      "end": 4.0016,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "закрыла"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 8,
+      "display": "одну",
+      "start": 4.0496,
+      "end": 4.2686,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "одну"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 9,
+      "display": "из",
+      "start": 4.2686,
+      "end": 4.3616,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "из"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 10,
+      "display": "семи",
+      "start": 4.3616,
+      "end": 4.6116,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "семи"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 11,
+      "display": "задач,",
+      "start": 4.6216,
+      "end": 5.0716,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": true,
+      "spoken": [
+        "задач",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 12,
+      "display": "которые",
+      "start": 5.2416,
+      "end": 5.5216,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "которые"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 13,
+      "display": "четверть",
+      "start": 5.5676,
+      "end": 5.9216,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "четверть"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 14,
+      "display": "века",
+      "start": 5.9696,
+      "end": 6.2146,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "века"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 15,
+      "display": "никто",
+      "start": 6.2146,
+      "end": 6.4816,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "никто"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 16,
+      "display": "не",
+      "start": 6.5086,
+      "end": 6.6016,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 17,
+      "display": "брал.",
+      "start": 6.6016,
+      "end": 7.0416,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "брал",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 18,
+      "display": "Миллион",
+      "start": 7.1266,
+      "end": 7.5766,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": true,
+      "spoken": [
+        "Миллион"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 19,
+      "display": "долларов",
+      "start": 7.7666,
+      "end": 8.1266,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "долларов"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 20,
+      "display": "за",
+      "start": 8.1536,
+      "end": 8.2866,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "за"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 21,
+      "display": "каждую.",
+      "start": 8.2866,
+      "end": 8.7366,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "каждую",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 22,
+      "display": "Это",
+      "start": 9.0073,
+      "end": 9.4573,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "Это"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 23,
+      "display": "не",
+      "start": 9.5743,
+      "end": 9.6873,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 24,
+      "display": "мелки",
+      "start": 9.6873,
+      "end": 9.9473,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": true,
+      "spoken": [
+        "мелки"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 25,
+      "display": "на",
+      "start": 9.9743,
+      "end": 10.1073,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "на"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 26,
+      "display": "доске.",
+      "start": 10.1073,
+      "end": 10.5573,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "доске",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 27,
+      "display": "Это",
+      "start": 10.6873,
+      "end": 10.9873,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "Это"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 28,
+      "display": "формулы,",
+      "start": 11.0513,
+      "end": 11.5013,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "формулы",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 29,
+      "display": "по",
+      "start": 11.5203,
+      "end": 11.5973,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "по"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 30,
+      "display": "которым",
+      "start": 11.5973,
+      "end": 11.9473,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": true,
+      "spoken": [
+        "которым"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 31,
+      "display": "считают",
+      "start": 11.9953,
+      "end": 12.4273,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "считают"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 32,
+      "display": "воду,",
+      "start": 12.4913,
+      "end": 12.9413,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "воду",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 33,
+      "display": "воздух",
+      "start": 12.9763,
+      "end": 13.1873,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "воздух"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 34,
+      "display": "и",
+      "start": 13.1873,
+      "end": 13.2913,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "и"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 35,
+      "display": "кровь.",
+      "start": 13.2913,
+      "end": 13.7413,
+      "block_id": "b2",
+      "role": "setup",
+      "emphasis": false,
+      "spoken": [
+        "кровь",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 36,
+      "display": "Восьмого",
+      "start": 13.8689,
+      "end": 14.2419,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": true,
+      "spoken": [
+        "Восьмого"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 37,
+      "display": "сентября",
+      "start": 14.2959,
+      "end": 14.7459,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "сентября"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 38,
+      "display": "две",
+      "start": 14.8469,
+      "end": 15.0289,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "две"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 39,
+      "display": "тысячи",
+      "start": 15.0289,
+      "end": 15.3889,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "тысячи"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 40,
+      "display": "двадцать",
+      "start": 15.5329,
+      "end": 15.9489,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "двадцать"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 41,
+      "display": "шесть",
+      "start": 16.0289,
+      "end": 16.2692,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "шесть"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 42,
+      "display": "OpenAI",
+      "start": 16.2692,
+      "end": 16.7192,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "опен",
+        "эй",
+        "ай"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 43,
+      "display": "выкладывает",
+      "start": 17.0422,
+      "end": 17.4922,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": true,
+      "spoken": [
+        "выкладывает"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 44,
+      "display": "работу.",
+      "start": 17.7092,
+      "end": 18.1592,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "работу",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 45,
+      "display": "Искал",
+      "start": 18.3513,
+      "end": 18.8013,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "Искал"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 46,
+      "display": "не",
+      "start": 18.9643,
+      "end": 19.1513,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 47,
+      "display": "чат,",
+      "start": 19.1513,
+      "end": 19.5513,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "чат",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 48,
+      "display": "а",
+      "start": 19.5913,
+      "end": 19.6843,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "а"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 49,
+      "display": "внутренняя",
+      "start": 19.6843,
+      "end": 20.1343,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "внутренняя"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 50,
+      "display": "модель",
+      "start": 20.4203,
+      "end": 20.6393,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "модель"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 51,
+      "display": "сильнее",
+      "start": 20.6393,
+      "end": 21.0713,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "сильнее"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 52,
+      "display": "GPT-шесть",
+      "start": 21.1913,
+      "end": 21.6413,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "GPT-шесть"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 53,
+      "display": "Астра.",
+      "start": 21.9515,
+      "end": 22.4015,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": true,
+      "spoken": [
+        "А́стра",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 54,
+      "display": "Десять",
+      "start": 22.6774,
+      "end": 23.1274,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "Десять"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 55,
+      "display": "тысяч",
+      "start": 23.4704,
+      "end": 23.6904,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "тысяч"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 56,
+      "display": "агентов.",
+      "start": 23.6904,
+      "end": 24.1404,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "агентов",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 57,
+      "display": "Восемьдесят",
+      "start": 24.5174,
+      "end": 24.9674,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "Восемьдесят"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 58,
+      "display": "восемь",
+      "start": 25.1374,
+      "end": 25.5874,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "восемь"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 59,
+      "display": "часов.",
+      "start": 25.7244,
+      "end": 26.1744,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "часов",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 60,
+      "display": "Два",
+      "start": 26.2374,
+      "end": 26.4104,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "Два"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 61,
+      "display": "миллиона",
+      "start": 26.4104,
+      "end": 26.8604,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": true,
+      "spoken": [
+        "миллиона"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 62,
+      "display": "семьсот",
+      "start": 26.9574,
+      "end": 27.3174,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "семьсот"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 63,
+      "display": "тысяч",
+      "start": 27.3844,
+      "end": 27.7174,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "тысяч"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 64,
+      "display": "сообщений.",
+      "start": 27.7974,
+      "end": 28.2474,
+      "block_id": "b3",
+      "role": "evidence",
+      "emphasis": false,
+      "spoken": [
+        "сообщений",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 65,
+      "display": "Сама",
+      "start": 28.5991,
+      "end": 28.8491,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "Сама"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 66,
+      "display": "Астра",
+      "start": 28.9191,
+      "end": 29.3191,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "А́стра"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 67,
+      "display": "доказательство",
+      "start": 29.3591,
+      "end": 29.8091,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": true,
+      "spoken": [
+        "доказательство"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 68,
+      "display": "не",
+      "start": 30.0661,
+      "end": 30.1991,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 69,
+      "display": "искала.",
+      "start": 30.1991,
+      "end": 30.6491,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "искала",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 70,
+      "display": "Семнадцать",
+      "start": 30.9391,
+      "end": 31.3891,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "Семнадцать"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 71,
+      "display": "часов",
+      "start": 31.5461,
+      "end": 31.8791,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "часов"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 72,
+      "display": "она",
+      "start": 31.9391,
+      "end": 32.1721,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "она"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 73,
+      "display": "переложила",
+      "start": 32.1721,
+      "end": 32.6221,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "переложила"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 74,
+      "display": "его",
+      "start": 32.7391,
+      "end": 32.9591,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "его"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 75,
+      "display": "в",
+      "start": 32.9591,
+      "end": 33.0391,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "в"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 76,
+      "display": "Lean —",
+      "start": 33.0391,
+      "end": 33.3191,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": true,
+      "spoken": [
+        "лин",
+        "—"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 77,
+      "display": "язык,",
+      "start": 33.4035,
+      "end": 33.8535,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "язык",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 78,
+      "display": "где",
+      "start": 34.3835,
+      "end": 34.5515,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "где"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 79,
+      "display": "компьютер",
+      "start": 34.5515,
+      "end": 34.9835,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "компьютер"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 80,
+      "display": "проверяет",
+      "start": 35.0295,
+      "end": 35.4635,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "проверяет"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 81,
+      "display": "каждый",
+      "start": 35.5095,
+      "end": 35.7835,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "каждый"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 82,
+      "display": "шаг,",
+      "start": 35.8835,
+      "end": 36.3335,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "шаг",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 83,
+      "display": "как",
+      "start": 36.4035,
+      "end": 36.6235,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "как"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 84,
+      "display": "касса",
+      "start": 36.6235,
+      "end": 36.9035,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": true,
+      "spoken": [
+        "касса"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 85,
+      "display": "проверяет",
+      "start": 36.9375,
+      "end": 37.3035,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "проверяет"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 86,
+      "display": "чек.",
+      "start": 37.3835,
+      "end": 37.7835,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "чек",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 87,
+      "display": "Называются",
+      "start": 37.8652,
+      "end": 38.3152,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "Называются"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 88,
+      "display": "уравнения",
+      "start": 38.8852,
+      "end": 39.3352,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "уравнения"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 89,
+      "display": "Навье-Стокса.",
+      "start": 39.5252,
+      "end": 39.9752,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "Навье-Стокса",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 90,
+      "display": "Страшное",
+      "start": 40.8182,
+      "end": 41.2682,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": true,
+      "spoken": [
+        "Страшное"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 91,
+      "display": "имя,",
+      "start": 41.5652,
+      "end": 41.8852,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "имя",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 92,
+      "display": "простой",
+      "start": 41.9252,
+      "end": 42.2052,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "простой"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 93,
+      "display": "смысл:",
+      "start": 42.2582,
+      "end": 42.7082,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "смысл",
+        ":"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 94,
+      "display": "как",
+      "start": 42.8468,
+      "end": 43.2968,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "как"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 95,
+      "display": "течёт",
+      "start": 43.5668,
+      "end": 43.9068,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "течёт"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 96,
+      "display": "жидкость,",
+      "start": 43.9468,
+      "end": 44.3968,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": true,
+      "spoken": [
+        "жидкость",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 97,
+      "display": "когда",
+      "start": 44.4938,
+      "end": 44.6798,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "когда"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 98,
+      "display": "её",
+      "start": 44.6798,
+      "end": 44.8468,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "её"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 99,
+      "display": "толкают.",
+      "start": 44.8468,
+      "end": 45.2968,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "толкают",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 100,
+      "display": "Погода,",
+      "start": 45.6699,
+      "end": 46.1199,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "Погода",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 101,
+      "display": "крыло",
+      "start": 46.5499,
+      "end": 46.8299,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "крыло"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 102,
+      "display": "самолёта,",
+      "start": 46.8899,
+      "end": 47.3399,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": true,
+      "spoken": [
+        "самолёта",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 103,
+      "display": "трубы",
+      "start": 47.6899,
+      "end": 48.1399,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "трубы"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 104,
+      "display": "в",
+      "start": 48.3099,
+      "end": 48.4299,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "в"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 105,
+      "display": "доме,",
+      "start": 48.4299,
+      "end": 48.8699,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "доме",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 106,
+      "display": "ток",
+      "start": 48.9299,
+      "end": 49.1799,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "ток"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 107,
+      "display": "крови.",
+      "start": 49.2429,
+      "end": 49.6929,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "крови",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 108,
+      "display": "Если",
+      "start": 49.8701,
+      "end": 50.3201,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "Если"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 109,
+      "display": "формула",
+      "start": 50.5631,
+      "end": 50.9101,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": true,
+      "spoken": [
+        "формула"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 110,
+      "display": "врёт —",
+      "start": 50.9501,
+      "end": 51.2301,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "врёт",
+        "—"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 111,
+      "display": "самолёт",
+      "start": 51.3136,
+      "end": 51.6536,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "самолёт"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 112,
+      "display": "не",
+      "start": 51.7066,
+      "end": 51.8406,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 113,
+      "display": "извиняется.",
+      "start": 51.8406,
+      "end": 52.2906,
+      "block_id": "b4",
+      "role": "develop",
+      "emphasis": false,
+      "spoken": [
+        "извиняется",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 114,
+      "display": "Только",
+      "start": 52.6953,
+      "end": 53.0153,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "Только"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 115,
+      "display": "приз",
+      "start": 53.0633,
+      "end": 53.2953,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "приз"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 116,
+      "display": "Клея —",
+      "start": 53.2953,
+      "end": 53.6553,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "Клея",
+        "—"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 117,
+      "display": "за",
+      "start": 53.7418,
+      "end": 53.8348,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "за"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 118,
+      "display": "уравнения",
+      "start": 53.8348,
+      "end": 54.2848,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": true,
+      "spoken": [
+        "уравнения"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 119,
+      "display": "без",
+      "start": 54.3948,
+      "end": 54.5548,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "без"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 120,
+      "display": "внешней",
+      "start": 54.5548,
+      "end": 54.9148,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "внешней"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 121,
+      "display": "силы.",
+      "start": 54.9948,
+      "end": 55.3948,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "силы",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 122,
+      "display": "Этот",
+      "start": 55.5388,
+      "end": 55.9888,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "Этот"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 123,
+      "display": "пункт",
+      "start": 56.1678,
+      "end": 56.4348,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "пункт"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 124,
+      "display": "они",
+      "start": 56.4948,
+      "end": 56.7018,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "они"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 125,
+      "display": "не",
+      "start": 56.7018,
+      "end": 56.8218,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 126,
+      "display": "закрыли.",
+      "start": 56.8218,
+      "end": 57.2718,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": true,
+      "spoken": [
+        "закрыли",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 127,
+      "display": "Клей",
+      "start": 57.556,
+      "end": 57.996,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "Кле́й"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 128,
+      "display": "решение",
+      "start": 58.056,
+      "end": 58.476,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "решение"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 129,
+      "display": "не",
+      "start": 58.503,
+      "end": 58.62,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 130,
+      "display": "принял.",
+      "start": 58.62,
+      "end": 59.07,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "принял",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 131,
+      "display": "Миллион",
+      "start": 59.2,
+      "end": 59.65,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "Миллион"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 132,
+      "display": "OpenAI",
+      "start": 59.92,
+      "end": 60.37,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": true,
+      "spoken": [
+        "опен",
+        "эй",
+        "ай"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 133,
+      "display": "не",
+      "start": 60.773,
+      "end": 60.92,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 134,
+      "display": "берёт.",
+      "start": 60.92,
+      "end": 61.37,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "берёт",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 135,
+      "display": "Это",
+      "start": 61.54,
+      "end": 61.84,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "Это"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 136,
+      "display": "не",
+      "start": 61.867,
+      "end": 61.973,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "не"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 137,
+      "display": "закрыли",
+      "start": 61.973,
+      "end": 62.32,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "закрыли"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 138,
+      "display": "задачу",
+      "start": 62.38,
+      "end": 62.83,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "задачу"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 139,
+      "display": "тысячелетия.",
+      "start": 62.873,
+      "end": 63.323,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "тысячелетия",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 140,
+      "display": "Это",
+      "start": 63.6807,
+      "end": 64.1307,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "Это"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 141,
+      "display": "первая",
+      "start": 64.2687,
+      "end": 64.5407,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "первая"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 142,
+      "display": "дыра",
+      "start": 64.8607,
+      "end": 65.1007,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": true,
+      "spoken": [
+        "дыра"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 143,
+      "display": "в",
+      "start": 65.1007,
+      "end": 65.1887,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "в"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 144,
+      "display": "стене,",
+      "start": 65.1887,
+      "end": 65.4607,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "стене",
+        ","
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 145,
+      "display": "которую",
+      "start": 65.5207,
+      "end": 65.9407,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "которую"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 146,
+      "display": "четверть",
+      "start": 65.9977,
+      "end": 66.4477,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "четверть"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 147,
+      "display": "века",
+      "start": 66.5487,
+      "end": 66.7887,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "века"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 148,
+      "display": "считали",
+      "start": 66.7887,
+      "end": 67.1407,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "считали"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 149,
+      "display": "глухой.",
+      "start": 67.2007,
+      "end": 67.6507,
+      "block_id": "b5",
+      "role": "twist",
+      "emphasis": false,
+      "spoken": [
+        "глухой",
+        "."
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 150,
+      "display": "Какую",
+      "start": 67.8623,
+      "end": 68.1823,
+      "block_id": "b6",
+      "role": "cta",
+      "emphasis": false,
+      "spoken": [
+        "Какую"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 151,
+      "display": "из",
+      "start": 68.2353,
+      "end": 68.3953,
+      "block_id": "b6",
+      "role": "cta",
+      "emphasis": false,
+      "spoken": [
+        "из"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 152,
+      "display": "оставшихся",
+      "start": 68.3953,
+      "end": 68.8453,
+      "block_id": "b6",
+      "role": "cta",
+      "emphasis": false,
+      "spoken": [
+        "оставшихся"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 153,
+      "display": "шести",
+      "start": 68.9823,
+      "end": 69.3023,
+      "block_id": "b6",
+      "role": "cta",
+      "emphasis": true,
+      "spoken": [
+        "шести"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 154,
+      "display": "разберём",
+      "start": 69.3623,
+      "end": 69.7823,
+      "block_id": "b6",
+      "role": "cta",
+      "emphasis": false,
+      "spoken": [
+        "разберём"
+      ],
+      "source": "provider"
+    },
+    {
+      "index": 155,
+      "display": "следующей?",
+      "start": 69.8423,
+      "end": 70.2923,
+      "block_id": "b6",
+      "role": "cta",
+      "emphasis": false,
+      "spoken": [
+        "следующей",
+        "?"
+      ],
+      "source": "provider"
+    }
+  ]
+}

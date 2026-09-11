@@ -187,6 +187,35 @@ def test_adjacent_gradient_phrases_do_not_share_a_frame(cfg):
     assert end0 <= start1 + 1e-6
 
 
+def test_consecutive_gradient_fill_groups_hard_kill_previous(cfg):
+    """A new phrase must hide the previous group so glyphs cannot stack."""
+    from src.lib.render.hyperframes.captions import build_gradient_fill
+
+    plan = {
+        "subtitles": [
+            {"display": "один", "start": 1.0, "end": 1.4, "block_id": "b1"},
+            {"display": "два", "start": 1.5, "end": 1.9, "block_id": "b1"},
+            {"display": "три", "start": 3.0, "end": 3.4, "block_id": "b2"},
+            {"display": "четыре", "start": 3.5, "end": 3.9, "block_id": "b2"},
+        ],
+        "subtitle_style": {"caption": "gradient-fill"},
+    }
+    nodes, tweens, count = build_gradient_fill(plan, cfg.brandbook, duration=10.0)
+    assert count == 4
+    assert len(nodes) == 2
+    assert 'id="gf-00-g"' in nodes[0]
+    assert 'id="gf-01-g"' in nodes[1]
+    blob = "\n".join(tweens)
+    compact = blob.replace(" ", "")
+    # Future phrases stay hidden through a mute hole (0049 at 17.58s).
+    assert 'tl.set("#gf-01-g",{opacity:0},0)' in compact
+    assert 'tl.set("#gf-01-g",{opacity:1},3)' in compact
+    # Previous group is killed at the next phrase start (3.0).
+    assert 'tl.set("#gf-00-g",{opacity:0},3)' in compact
+    assert 'tl.set("#gf-00-g",{opacity:0}' in blob
+    assert 'tl.set("#gf-01-g",{opacity:0}' in blob
+
+
 def test_ai_topic_stays_on_gradient_fill(cfg):
     plan = {
         "category": "ai",

@@ -131,6 +131,21 @@ def test_duration_too_long(sample_script, cfg):
         validate_script(sample_script, cfg)
 
 
+def test_prepared_voice_allows_small_overrun(sample_script, cfg, monkeypatch):
+    """0049: текст чуть длиннее 70 сек, голос уже снят — не переозвучивать."""
+    for block in sample_script["blocks"]:
+        if block.get("role") != "hook":
+            block["text"] = block["text"] * 4
+    with pytest.raises(DurationOutOfRange):
+        validate_script(sample_script, cfg)
+
+    monkeypatch.setattr(
+        "src.p0_validate.validator._prepared_voice_sec", lambda cfg, video_id: 70.3)
+    result = validate_script(sample_script, cfg)
+    codes = {w["code"] for w in result["_validation"]["warnings"]}
+    assert "DURATION_PREPARED_OVERRUN" in codes
+
+
 def test_meme_in_medicine_forces_off_with_warning(sample_script, cfg):
     sample_script["meta"]["category"] = "medicine"
     sample_script["meta"]["allow_memes"] = True

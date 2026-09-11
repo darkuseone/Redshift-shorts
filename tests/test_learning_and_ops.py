@@ -315,6 +315,22 @@ def test_spoken_at_drops_the_previous_sentence_tail():
     assert "жидкость" not in spoken
 
 
+def test_spoken_at_expands_single_token_to_navier_window():
+    """34590417259: ±0.5s at 41.02 is only «Страшное»; water then looks off-topic."""
+    from src.p12_render_qc.vision_qc import _spoken_at
+
+    plan = {
+        "speech_words": [
+            {"display": "Навье-Стокса.", "start": 39.525, "end": 39.975},
+            {"display": "Страшное", "start": 40.818, "end": 41.268},
+            {"display": "имя,", "start": 41.565, "end": 41.885},
+        ],
+    }
+    spoken = _spoken_at(plan, 41.02)
+    assert "Страшное" in spoken
+    assert "Навье-Стокса" in spoken
+
+
 def test_vision_qc_reads_words_json_not_muted_cues(cfg, tmp_path, monkeypatch):
     """§11.2: muted karaoke must not empty the spoken window under a source card."""
     from src.lib.providers import vision as V

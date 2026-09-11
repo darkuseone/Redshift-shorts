@@ -193,6 +193,7 @@ def _run(monkeypatch, candidates, *, glm: _Spy, grok: _Spy, mode: str = "mock"):
     cfg = load_config()
     cfg.set("vision.skip_live", False)
     cfg.set("providers.mode", mode)
+    cfg.set("stock.candidate_surplus", 1.0)
     monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
 
     def _build(_cfg, _costs, *, role="primary"):
@@ -220,7 +221,8 @@ def test_cheap_filter_runs_before_vision_on_junk_pool(monkeypatch):
     judged_good = {row["asset_id"] for row in result["judged"]
                    if str(row.get("asset_id") or "").startswith("good_")}
     assert judged_good == {f"good_{i}" for i in range(4)}
-    assert glm.calls == 4
+    from src.p8_broll_judge.judge import LIVE_VISION_PER_SLOT
+    assert glm.calls == LIVE_VISION_PER_SLOT
     assert grok.calls == 0
     assert result["grok_calls"] == 0
 

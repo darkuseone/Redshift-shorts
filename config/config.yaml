@@ -217,9 +217,10 @@ stock:
   queries_per_slot: 5              # MUST-016: 3–5 EN-запросов на слот, не больше
   target_pool_size: [50, 100]      # larger pool so avatar BGs + templates both get plates
   max_download_height: 1080        # §3.6.1: строго до 1080p, выше не брать
-  # Запас кандидатов до платной критики: на слот нужно ≥ 1.3× годных, иначе
-  # добор дешёвым поиском, не vision (MUST-018 / MUST-024).
-  candidate_surplus: 1.3
+  # Запас кандидатов до платной критики: ≥ 2.0× по слотам, у которых уже
+  # есть кандидат. Пустой слот в знаменатель не входит. Раньше 1.3× (+30%)
+  # оставлял слишком тонкий пул, и спор шёл в Grok.
+  candidate_surplus: 2.0
   # Локальная база на слот: 6 клипов при same_asset_max_slots=1 оставляли
   # хвост ролика пустым — prefer-пины занимали первые слоты, остальные
   # видели только дубли. 24 — окно поиска; в candidates.json на слот
@@ -271,6 +272,8 @@ features:
 
 limits:
   duration_sec: [35, 70]
+  # Prepared-голос 0049 = 70.3 сек: потолок 70, резать речь нельзя (липсинк).
+  duration_prepared_slack_sec: 1.0
   avatar_share: [0.35, 0.50]
   max_event_gap_sec: 2.5
   max_shot_sec: 5

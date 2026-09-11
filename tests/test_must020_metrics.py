@@ -89,6 +89,7 @@ def _run(monkeypatch, *, glm_score: float, grok: _Spy, role: str = "evidence"):
     cfg = load_config()
     cfg.set("vision.skip_live", False)
     cfg.set("providers.mode", "mock")
+    cfg.set("stock.candidate_surplus", 1.0)
     glm = _Spy(glm_score, "glm")
     monkeypatch.setattr(J.FootageIndex, "load", classmethod(lambda cls, cfg: _Index()))
     monkeypatch.setattr(

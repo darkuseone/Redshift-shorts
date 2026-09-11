@@ -271,6 +271,89 @@ def test_source_card_anchors_off_avatar():
     assert cards[0]["start"] >= 10.0
 
 
+def test_source_card_holds_through_mute_hole():
+    """0049 semantic probe 17.58 sat 0.3s after a 3.4s card; hold 5.2s."""
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _build_overlays
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    plan = {
+        "video_id": "card_hold_test",
+        "duration_sec": 20.0,
+        "cta_window": [18.0, 20.0],
+        "sources": [{
+            "title": "On the Navier–Stokes Millennium Prize Problem",
+            "domain": "openai.com",
+            "url": "https://openai.com/index/navier-stokes-solution/",
+            "show_on_screen": True,
+            "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство.",
+            "highlight_line": "сильнее GPT-6 Astra",
+        }],
+        "blocks": [{"id": "b3", "role": "evidence",
+                    "text": "OpenAI выкладывает работу."}],
+        "slots": [
+            {"index": 0, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "footage",
+             "start": 13.869, "end": 20.0, "duration": 6.131},
+        ],
+    }
+    overlays = _build_overlays(None, plan, [], cat, variant="A",
+                               seed=1, recent_videos=[], used=[])
+    cards = [o for o in overlays if o["type"] == "source_card"]
+    assert cards
+    assert abs(cards[0]["start"] - 13.869) < 1e-6
+    assert abs(cards[0]["end"] - (13.869 + 5.2)) < 1e-6
+
+
+def test_source_card_covers_spoken_phrase_plus_tail():
+    """0049: card lives through «OpenAI выкладывает работу» + 1s, ≥5.2s."""
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _build_overlays
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    plan = {
+        "video_id": "card_phrase_test",
+        "duration_sec": 28.0,
+        "cta_window": [26.0, 28.0],
+        "sources": [{
+            "title": "On the Navier–Stokes Millennium Prize Problem",
+            "domain": "openai.com",
+            "url": "https://openai.com/index/navier-stokes-solution/",
+            "show_on_screen": True,
+            "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство.",
+            "highlight_line": "сильнее GPT-6 Astra",
+        }],
+        "blocks": [{"id": "b3", "role": "evidence",
+                    "text": "OpenAI выкладывает работу."}],
+        "slots": [
+            {"index": 0, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "footage",
+             "start": 13.869, "end": 28.0, "duration": 14.131},
+        ],
+    }
+    words = [
+        {"display": "OpenAI", "start": 16.269, "end": 16.719},
+        {"display": "выкладывает", "start": 17.042, "end": 17.492},
+        {"display": "работу.", "start": 17.709, "end": 18.159},
+        {"display": "агентов.", "start": 22.0, "end": 22.4},
+    ]
+    overlays = _build_overlays(None, plan, words, cat, variant="A",
+                               seed=1, recent_videos=[], used=[])
+    cards = [o for o in overlays if o["type"] == "source_card"]
+    assert cards
+    assert cards[0]["start"] == 13.869
+    assert cards[0]["end"] >= 18.159 + 1.0 - 1e-6
+    assert cards[0]["end"] - cards[0]["start"] >= 5.2 - 1e-6
+    assert cards[0]["end"] < 22.0
+    assert cards[0]["end"] > 17.58
+
+
 def test_hero_device_catalog_has_no_face_circle_bubbles():
     import json as _json
 
@@ -385,6 +468,123 @@ def test_ticker_plate_is_skipped_for_non_cta_empty_slot():
     assert plate["file"] == "/tmp/lattice.mp4"
 
 
+def test_fluid_empty_slot_skips_typing_neighbor_plate():
+    """0049 41.02: empty NS slot parallaxed the Lean typing crop."""
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [
+        {"index": 12, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 36.3, "end": 38.9},
+        {"index": 13, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 38.9, "end": 41.6},
+        {"index": 8, "kind": "footage", "block_id": "b4", "role": "evidence",
+         "start": 23.5, "end": 25.7},
+    ]
+    prepared = {
+        12: {"dst": "/tmp/pexels_v12893579_crop.mp4", "duration_sec": 2.5},
+        8: {"dst": "/tmp/pexels_v10884417_crop.mp4", "duration_sec": 2.2},
+    }
+    assets = {
+        12: {
+            "asset_id": "pexels_v12893579",
+            "query": "hands typing keyboard code editor",
+            "page_url": "https://www.pexels.com/video/hands-typing-on-laptop-keyboard-12893579/",
+            "source": "pexels",
+        },
+        8: {
+            "asset_id": "pexels_v10884417",
+            "query": "industrial pipes water plant",
+            "page_url": "https://www.pexels.com/video/water-flowing-through-pipes-10884417/",
+            "source": "pexels",
+        },
+    }
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    plate = _plate_source(slots[1], slots, prepared, assets, plan={}, words=words)
+    assert plate is not None
+    assert plate["file"] == "/tmp/pexels_v10884417_crop.mp4"
+
+
+def test_fluid_empty_slot_prefers_water_over_cabin_window():
+    """0049 41.02 parallaxed pexels_v19004433 (airplane window) over pipes."""
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [
+        {"index": 13, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 38.9, "end": 41.6},
+        {"index": 15, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 43.9, "end": 46.8},
+        {"index": 8, "kind": "footage", "block_id": "b3", "role": "evidence",
+         "start": 23.5, "end": 25.7},
+    ]
+    prepared = {
+        15: {"dst": "/tmp/pexels_v19004433_crop.mp4", "duration_sec": 2.6},
+        8: {"dst": "/tmp/pexels_v10884417_crop.mp4", "duration_sec": 2.2},
+    }
+    assets = {
+        15: {
+            "asset_id": "pexels_v19004433",
+            "query": "sky view airplane plane windows seat",
+            "page_url": "https://www.pexels.com/video/sky-view-airplane-plane-windows-windows-seat-coolplaces4k-19004433/",
+            "source": "pexels",
+        },
+        8: {
+            "asset_id": "pexels_v10884417",
+            "query": "industrial pipes water plant",
+            "page_url": "https://www.pexels.com/video/water-flowing-through-pipes-10884417/",
+            "source": "pexels",
+        },
+    }
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    plate = _plate_source(slots[0], slots, prepared, assets, plan={}, words=words)
+    assert plate is not None
+    assert plate["file"] == "/tmp/pexels_v10884417_crop.mp4"
+
+
+def test_fluid_empty_slot_prefers_water_over_wing():
+    """same_asset_max_slots=1 parks the unique wing earlier; NS hole wants pipes."""
+    from src.p11_assemble.assemble import _plate_source
+
+    slots = [
+        {"index": 10, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 28.6, "end": 31.4},
+        {"index": 13, "kind": "footage", "block_id": "b4", "role": "develop",
+         "start": 38.9, "end": 41.6},
+        {"index": 8, "kind": "footage", "block_id": "b3", "role": "evidence",
+         "start": 23.5, "end": 25.7},
+    ]
+    prepared = {
+        10: {"dst": "/tmp/pexels_v16865644_crop.mp4", "duration_sec": 2.8},
+        8: {"dst": "/tmp/pexels_v10884417_crop.mp4", "duration_sec": 2.2},
+    }
+    assets = {
+        10: {
+            "asset_id": "pexels_v16865644",
+            "query": "airplane wing in flight clouds",
+            "page_url": "https://www.pexels.com/video/a-view-of-the-clouds-from-an-airplane-16865644/",
+            "source": "pexels",
+        },
+        8: {
+            "asset_id": "pexels_v10884417",
+            "query": "industrial pipes water plant",
+            "page_url": "https://www.pexels.com/video/water-flowing-through-pipes-10884417/",
+            "source": "pexels",
+        },
+    }
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    plate = _plate_source(slots[1], slots, prepared, assets, plan={}, words=words)
+    assert plate is not None
+    assert plate["file"] == "/tmp/pexels_v10884417_crop.mp4"
+
+
 def test_on_screen_spelling_is_nichem():
     from src.lib.text import prefer_nichem_spelling, soften_on_screen_copy
 
@@ -452,11 +652,18 @@ def test_split_karaoke_sits_under_the_paper_letterbox():
         {"kind": "split", "start": 8.0, "end": 15.5},
         {"kind": "footage", "start": 20.8, "end": 30.6},
     ]
-    _stamp_subtitle_baselines(subs, shots, {"canvas": {"height": 1920}})
+    brand = {
+        "canvas": {"height": 1920},
+        "subtitles": {
+            "baseline_y_default": 1180,
+            "baseline_y_avatar_shift": 720,
+        },
+    }
+    _stamp_subtitle_baselines(subs, shots, brand)
     assert abs(subs[0]["baseline_y"] - (1920 * 0.52 - 180)) < 1e-6
     assert 700 <= subs[0]["baseline_y"] <= 900
     assert "baseline_y" not in subs[1]
-    assert "baseline_y" not in subs[2]
+    assert subs[2]["baseline_y"] == 1180
 
 
 def test_portrait_split_karaoke_sits_on_avatar_chest(tmp_path):

@@ -433,7 +433,9 @@ jobs:
                   templates/manifest.json cache/footage_index.json \
                   instruction.md rejected_patterns.md || true
           # mp4 никогда не в git (превью и сток — артефакт / S3).
-          git diff --cached --name-only -z | grep -zE '\.mp4$' | xargs -0 -r git restore --staged --
+          # grep без совпадений даёт 1; pipefail иначе валит шаг, когда в
+          # индексе только json без ролика.
+          git diff --cached --name-only -z | grep -zE '\.mp4$' | xargs -0 -r git restore --staged -- || true
           if git diff --cached --quiet; then
             echo "нечего коммитить"
             exit 0

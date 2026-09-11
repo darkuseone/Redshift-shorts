@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..errors import ProviderError
 from ..lib.ffmpeg import extract_frames, probe
 from ..lib.logging import get_logger
 from ..lib.manifest import FootageIndex
@@ -24,6 +25,7 @@ from ..lib.phash import phash_image
 from ..lib.providers.generation import build_generation_provider
 from ..lib.providers.vision import build_vision_provider
 from ..lib.query import build_queries
+from ..lib.retry import is_quota_exhausted
 
 _log = get_logger("p9")
 
@@ -82,6 +84,46 @@ _LOOKS = (
 )
 
 
+def _provider_stop(exc: BaseException) -> bool:
+    """Квота/биллинг/401 — остальные слоты тоже не заказываем."""
+    if is_quota_exhausted(exc):
+        return True
+    details = getattr(exc, "details", None) or {}
+    status = details.get("status") if isinstance(details, dict) else None
+    try:
+        if status is not None and int(status) in (401, 402, 403):
+            return True
+    except (TypeError, ValueError):
+        pass
+    text = str(exc).lower()
+    return any(token in text for token in (
+        "credit", "credits", "billing", "payment required", "insufficient",
+    ))
+
+
+def _write_skipped_generation(ctx, plan: dict[str, Any], accepted_doc: dict[str, Any],
+                              skipped: list[dict[str, Any]], *, skip: bool = False) -> dict[str, Any]:
+    duration = float(plan.get("duration_sec") or 1.0)
+    result = {
+        "video_id": plan.get("video_id") or accepted_doc.get("video_id"),
+        "generated_count": 0,
+        "skipped": skipped,
+        "paid_model_used": 0,
+        "ai_footage_sec": 0.0,
+        "ai_footage_share": 0.0,
+        "ai_share_limit": float(ctx.cfg.get("limits.ai_footage_share_max", 0.10)),
+        "generated": {},
+        "skip": skip,
+    }
+    ctx.write("generated_assets.json", result)
+    for item in skipped:
+        ctx.warn(f"слот {item['slot']} остался пустым: {item['reason']}",
+                 slot=item["slot"])
+    _log.warning("P9 без генерации",
+                 extra={"unfilled": len(skipped), "duration": duration, "skip": skip})
+    return {"generated": 0, "skipped": len(skipped), "ai_share": 0.0}
+
+
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
     accepted_doc = ctx.read("accepted_assets.json")
@@ -95,25 +137,14 @@ def run_step(ctx) -> dict[str, Any]:
             "slot": slot_index,
             "reason": "generation.skip: без Gemini/Grok image gen — слот оставлен пустым",
         } for slot_index in unfilled]
-        duration = float(plan.get("duration_sec") or 1.0)
-        result = {
-            "video_id": plan.get("video_id") or accepted_doc.get("video_id"),
-            "generated_count": 0,
-            "skipped": skipped,
-            "paid_model_used": 0,
-            "ai_footage_sec": 0.0,
-            "ai_footage_share": 0.0,
-            "ai_share_limit": float(cfg.get("limits.ai_footage_share_max", 0.10)),
-            "generated": {},
-            "skip": True,
-        }
-        ctx.write("generated_assets.json", result)
-        for item in skipped:
-            ctx.warn(f"слот {item['slot']} остался пустым: {item['reason']}",
-                     slot=item["slot"])
-        _log.warning("generation.skip: P9 без API",
-                     extra={"unfilled": len(unfilled), "duration": duration})
-        return {"generated": 0, "skipped": len(skipped), "ai_share": 0.0}
+        return _write_skipped_generation(ctx, plan, accepted_doc, skipped, skip=True)
+    if bool(accepted_doc.get("surplus_blocks_generation")):
+        ladder = list(accepted_doc.get("ladder_slots") or unfilled)
+        skipped = [{
+            "slot": slot_index,
+            "reason": "surplus underfilled: MUST-017 — без генерации, лестница P11",
+        } for slot_index in ladder]
+        return _write_skipped_generation(ctx, plan, accepted_doc, skipped, skip=True)
     duration = float(plan["duration_sec"])
     ai_share_max = float(cfg.get("limits.ai_footage_share_max", 0.10))
     paid_share_limit = float(cfg.get("magnific.paid_model_share_limit", 0.07))
@@ -155,10 +186,17 @@ def run_step(ctx) -> dict[str, Any]:
     generated: dict[str, Any] = {}
     skipped: list[dict[str, Any]] = []
     paid_used = 0
+    stop_generation = False
 
     for slot_index in unfilled:
         slot = slots_by_index.get(slot_index)
         if slot is None:
+            continue
+        if stop_generation:
+            skipped.append({
+                "slot": slot_index,
+                "reason": "генерация остановлена: квота или лимит провайдера — слот на лестницу P11",
+            })
             continue
         if slot.get("asset_role") == "meme":
             # §14.3: мем не генерируется. Пустой мем-слот — это сигнал наполнить
@@ -193,35 +231,46 @@ def run_step(ctx) -> dict[str, Any]:
         hashes: list[str] = []
         info = None
         rejected_attempts: list[str] = []
-        for attempt in range(GENERATION_ATTEMPTS):
-            prompt = base_prompt if attempt == 0 else f"{base_prompt}. Variation {attempt}: {VARIATIONS[attempt % len(VARIATIONS)]}"
-            candidate = provider.generate(prompt, out, kind="video",
-                                          duration_sec=max(slot_duration + 0.6, 2.0),
-                                          prefer_free=use_free)
-            candidate_info = probe(candidate.path)
-            candidate_frames = extract_frames(
-                candidate.path, ctx.wpath("broll", "frames", candidate.id, ".keep").parent,
-                cfg.get("stock.video_probe_frames", [0.1, 0.5, 0.9]))
-            candidate_hashes = [phash_image(f) for f in candidate_frames]
+        try:
+            for attempt in range(GENERATION_ATTEMPTS):
+                prompt = base_prompt if attempt == 0 else f"{base_prompt}. Variation {attempt}: {VARIATIONS[attempt % len(VARIATIONS)]}"
+                candidate = provider.generate(prompt, out, kind="video",
+                                              duration_sec=max(slot_duration + 0.6, 2.0),
+                                              prefer_free=use_free)
+                candidate_info = probe(candidate.path)
+                candidate_frames = extract_frames(
+                    candidate.path, ctx.wpath("broll", "frames", candidate.id, ".keep").parent,
+                    cfg.get("stock.video_probe_frames", [0.1, 0.5, 0.9]))
+                candidate_hashes = [phash_image(f) for f in candidate_frames]
 
-            duplicate = _find_duplicate(candidate_hashes, seen_hashes, dedup_threshold)
-            if duplicate is not None:
-                rejected_attempts.append(f"похож на {duplicate}")
-                continue
+                duplicate = _find_duplicate(candidate_hashes, seen_hashes, dedup_threshold)
+                if duplicate is not None:
+                    rejected_attempts.append(f"похож на {duplicate}")
+                    continue
 
-            verdict = critic.judge(
-                candidate_frames,
-                intent=str(slot.get("visual_intent") or slot.get("reason") or ""),
-                role=str(slot.get("role") or ""), query=prompt)
-            if verdict.score < min_score:
-                rejected_attempts.append(
-                    f"судья {verdict.score:.2f} < {min_score:.2f}: {verdict.reason[:120]}")
-                continue
+                verdict = critic.judge(
+                    candidate_frames,
+                    intent=str(slot.get("visual_intent") or slot.get("reason") or ""),
+                    role=str(slot.get("role") or ""), query=prompt)
+                if verdict.score < min_score:
+                    rejected_attempts.append(
+                        f"судья {verdict.score:.2f} < {min_score:.2f}: {verdict.reason[:120]}")
+                    continue
 
-            asset, info, hashes = candidate, candidate_info, candidate_hashes
-            frames = candidate_frames
-            asset_verdict = verdict
-            break
+                asset, info, hashes = candidate, candidate_info, candidate_hashes
+                frames = candidate_frames
+                asset_verdict = verdict
+                break
+        except ProviderError as exc:
+            skipped.append({
+                "slot": slot_index,
+                "reason": (f"генерация недоступна ({exc}) — слот оставлен пустым"),
+            })
+            if _provider_stop(exc):
+                stop_generation = True
+                _log.warning("P9: квота/лимит — остальные слоты без генерации",
+                             extra={"slot": slot_index, "err": str(exc)[:200]})
+            continue
 
         if asset is None:
             # Пустой слот честнее плохого кадра: его видно в отчёте, а слабую
