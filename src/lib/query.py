@@ -727,8 +727,15 @@ def compile_slot_search(slot: dict[str, Any], plan: dict[str, Any],
     for token in brief.get("deny") or []:
         if token not in negatives:
             negatives.append(token)
-    queries = brief.get("queries") or build_queries(
-        slot, plan, count=count, words=words)
+    queries = build_queries(slot, plan, count=count, words=words)
+    spoken = str(brief.get("spoken") or "")
+    if spoken:
+        filtered = queries_for_spoken_window(queries, spoken)
+        if len(filtered) >= QUERY_MIN:
+            queries = filtered
+        elif filtered:
+            pad = [q for q in (brief.get("queries") or []) if q not in filtered]
+            queries = _dedupe_queries([*filtered, *pad])
     return {
         "queries": queries[: _clamp_query_count(count)],
         "entities": extract_entities(slot, plan, words),
