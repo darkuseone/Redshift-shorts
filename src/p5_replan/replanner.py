@@ -394,7 +394,7 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
         notes.append(f"доля аватара {final_share:.1%} осталась ниже {share_lo:.0%}: "
                      f"добирать нечем — свободных футажных слотов в блоках без "
                      f"директивы avatar: off не осталось")
-    _assign_queries(slots, draft)
+    _assign_queries(slots, draft, words=all_words)
     _add_internal_events(slots, max_gap, float(limits.get("first_event_sec", 0.8)), notes)
     _assign_transitions(slots, cfg, notes)
 
@@ -900,8 +900,11 @@ def _enforce_shot_limits(slots: list[Slot], max_shot: float, max_shot_ev: float,
     return out
 
 
-def _assign_queries(slots: list[Slot], draft: dict[str, Any]) -> None:
-    """Раздать поисковые запросы блока по его футажным слотам (по кругу)."""
+def _assign_queries(slots: list[Slot], draft: dict[str, Any],
+                    words: list[dict[str, Any]] | None = None) -> None:
+    """Раздать поисковые запросы по spoken window слота, не по каше блока."""
+    from ..lib.query import queries_for_spoken_window, spoken_slot_text
+
     by_block: dict[str, list[Slot]] = {}
     for slot in slots:
         if slot.needs_asset and slot.asset_role in ("broll", "evidence", "interstitial"):
@@ -914,8 +917,11 @@ def _assign_queries(slots: list[Slot], draft: dict[str, Any]) -> None:
         if not queries:
             queries = [block.get("visual_intent") or block.get("text", "")[:80]]
         for i, slot in enumerate(block_slots):
-            primary = queries[i % len(queries)]
-            slot.queries = [primary] + [q for q in queries if q != primary]
+            spoken = spoken_slot_text(
+                {"start": slot.start, "end": slot.end}, words)
+            filtered = queries_for_spoken_window(queries, spoken) or queries
+            primary = filtered[i % len(filtered)]
+            slot.queries = [primary] + [q for q in filtered if q != primary]
 
 
 def _add_internal_events(slots: list[Slot], max_gap: float, first_event_sec: float,

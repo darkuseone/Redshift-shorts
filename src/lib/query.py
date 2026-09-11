@@ -519,6 +519,129 @@ def slot_topical_text(
     return str(_block_of(slot, plan or {}).get("text") or "")
 
 
+KEYBOARD_DENY = (
+    "keyboard", "mechanical keyboard", "hands typing", "code editor",
+)
+CODE_QUERY_MARKERS = (
+    "keyboard", "typing", "code editor", "programming ide", "theorem prover",
+    "proof lean", "source programming",
+)
+FLUID_QUERY_MARKERS = (
+    "weather", "radar", "airplane", "wing", "blood", "pipes", "water",
+    "turbulence", "storm", "microscope", "fluid", "vapor",
+)
+FLUID_SPEECH = (
+    "навье", "жидкост", "погод", "самолёт", "крыл", "труб", "крови", "кровь",
+    "течёт",
+)
+LEAN_SPEECH = ("lean",)
+OPENAI_SPEECH = ("openai", "выкладыва", "агент")
+DEFAULT_FLUID_QUERIES = (
+    "slow motion water turbulence",
+    "airplane wing vapor",
+    "weather radar storm",
+    "blood cells flowing microscope",
+    "industrial pipes water plant",
+)
+DEFAULT_LEAN_QUERIES = (
+    "code editor formal proof",
+    "theorem prover computer",
+)
+DEFAULT_PAPER_QUERIES = (
+    "research paper document desk",
+    "scientific article on screen",
+)
+
+
+def _hay_has_marker(text: str, markers: Iterable[str]) -> bool:
+    blob = str(text or "").lower()
+    return any(m in blob for m in markers)
+
+
+def classify_spoken_window(spoken: str) -> str:
+    """One visual family for this VO window — not the whole block."""
+    blob = str(spoken or "").lower()
+    if not blob:
+        return "open"
+    fluid = sum(1 for t in FLUID_SPEECH if t in blob)
+    lean = sum(1 for t in LEAN_SPEECH if t in blob)
+    paper = sum(1 for t in OPENAI_SPEECH if t in blob)
+    if fluid and fluid >= lean:
+        return "fluid"
+    if lean:
+        return "lean"
+    if paper:
+        return "paper"
+    return "open"
+
+
+def queries_for_spoken_window(
+        authored: Iterable[str], spoken: str) -> list[str]:
+    """Keep only EN queries that match this window's visible object."""
+    kind = classify_spoken_window(spoken)
+    authored_list = [str(q).strip() for q in authored if str(q).strip()]
+    if kind == "fluid":
+        kept = [q for q in authored_list
+                if not _hay_has_marker(q, CODE_QUERY_MARKERS)]
+        return kept or list(DEFAULT_FLUID_QUERIES)
+    if kind == "lean":
+        kept = [q for q in authored_list
+                if not _hay_has_marker(q, FLUID_QUERY_MARKERS)]
+        return kept or list(DEFAULT_LEAN_QUERIES)
+    if kind == "paper":
+        kept = [q for q in authored_list
+                if not _hay_has_marker(q, CODE_QUERY_MARKERS)]
+        return kept or list(DEFAULT_PAPER_QUERIES)
+    return authored_list
+
+
+def slot_visual_brief(
+        slot: dict[str, Any], plan: dict[str, Any] | None = None,
+        words: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """A spoken window + what to show + deny list (brief A/B/C)."""
+    spoken = spoken_slot_text(slot, words)
+    kind = classify_spoken_window(spoken)
+    authored = list(slot.get("queries") or [])
+    queries = queries_for_spoken_window(authored, spoken)
+    deny: list[str] = []
+    visual_ru = ""
+    visual_en = ""
+    if kind == "fluid":
+        visual_ru = "как течёт жидкость"
+        visual_en = "water turbulence airplane wing blood pipes"
+        deny = list(KEYBOARD_DENY)
+        if not queries:
+            queries = list(DEFAULT_FLUID_QUERIES)
+    elif kind == "lean":
+        visual_ru = "проверка шагов в коде"
+        visual_en = "code editor formal proof"
+    elif kind == "paper":
+        visual_ru = "статья OpenAI в браузере"
+        visual_en = "official paper in browser"
+        deny = list(KEYBOARD_DENY)
+        if not queries:
+            queries = list(DEFAULT_PAPER_QUERIES)
+    return {
+        "spoken": spoken,
+        "kind": kind,
+        "visual_ru": visual_ru,
+        "visual_en": visual_en,
+        "queries": _dedupe_queries(queries)[:QUERY_MAX],
+        "deny": deny,
+    }
+
+
+def brief_deny_reason(brief: dict[str, Any], haystack: str) -> str | None:
+    """Cheap reject: keyboard hay on a fluid/paper window."""
+    blob = str(haystack or "").lower()
+    if not blob:
+        return None
+    for token in brief.get("deny") or ():
+        if token and token.lower() in blob:
+            return f"brief deny: {token}"
+    return None
+
+
 def topical_tokens(slot: dict[str, Any], plan: dict[str, Any] | None = None,
                    queries: Iterable[str] | None = None) -> set[str]:
     """Слова, которыми пад обязан пересекаться, иначе это чужой кадр."""
@@ -557,10 +680,11 @@ def _source_haystacks(slot: dict[str, Any], plan: dict[str, Any],
     return out
 
 
-def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None) -> list[str]:
-    """Именованные сущности блока: прибор, миссия, метод — на английском."""
+def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None,
+                     words: Iterable[dict[str, Any]] | None = None) -> list[str]:
+    """Именованные сущности окна речи, иначе блока: прибор, миссия, метод."""
     plan = plan or {}
-    blob = _block_text(slot, plan)
+    blob = spoken_slot_text(slot, words) or _block_text(slot, plan)
     concept_words = _query_words(" ".join(_concepts_from_text(blob)))
     parts = [blob, *(_source_haystacks(slot, plan, concept_words))]
     hay = " ".join(parts).lower()
@@ -594,12 +718,22 @@ def _dedupe_queries(items: Iterable[str]) -> list[str]:
 
 
 def compile_slot_search(slot: dict[str, Any], plan: dict[str, Any],
-                        *, count: int = 4) -> dict[str, Any]:
+                        *, count: int = 4,
+                        words: Iterable[dict[str, Any]] | None = None,
+                        ) -> dict[str, Any]:
     """Запросы + сущности + negatives одним словарём для P7 и отчёта."""
+    brief = slot_visual_brief(slot, plan, words)
+    negatives = list(slot_negatives(slot, plan))
+    for token in brief.get("deny") or []:
+        if token not in negatives:
+            negatives.append(token)
+    queries = brief.get("queries") or build_queries(
+        slot, plan, count=count, words=words)
     return {
-        "queries": build_queries(slot, plan, count=count),
-        "entities": extract_entities(slot, plan),
-        "negatives": slot_negatives(slot, plan),
+        "queries": queries[: _clamp_query_count(count)],
+        "entities": extract_entities(slot, plan, words),
+        "negatives": negatives,
+        "brief": brief,
     }
 
 
@@ -616,14 +750,17 @@ def search_report_payload(entries: list[dict[str, Any]]) -> dict[str, Any]:
     return {"queries": queries, "entities": entities, "negatives": negatives}
 
 
-def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4) -> list[str]:
+def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4,
+                  words: Iterable[dict[str, Any]] | None = None) -> list[str]:
     """3–5 EN-запросов: сущности блока + 1–2 визуальных якоря, без чужого пада."""
     limit = _clamp_query_count(count)
-    entities = extract_entities(slot, plan)
-    source_text = _block_text(slot, plan)
+    brief = slot_visual_brief(slot, plan, words)
+    entities = extract_entities(slot, plan, words)
+    source_text = brief.get("spoken") or _block_text(slot, plan)
     concepts = _concepts_from_text(source_text)
     tokens = topical_tokens(slot, plan)
-    author_en = [q.strip() for q in (slot.get("queries") or []) if _looks_english(q)]
+    author_en = [q.strip() for q in (brief.get("queries") or slot.get("queries") or [])
+                 if _looks_english(q)]
     anchors = list(author_en[:2]) or list(concepts[:2])
 
     out: list[str] = []

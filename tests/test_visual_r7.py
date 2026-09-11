@@ -308,6 +308,52 @@ def test_source_card_holds_through_mute_hole():
     assert abs(cards[0]["end"] - (13.869 + 5.2)) < 1e-6
 
 
+def test_source_card_covers_spoken_phrase_plus_tail():
+    """0049: card lives through «OpenAI выкладывает работу» + 1s, ≥5.2s."""
+    import json as _json
+
+    from src.lib.templates import TemplateCatalog
+    from src.p11_assemble.assemble import _build_overlays
+
+    path = ROOT / "templates" / "manifest.json"
+    cat = TemplateCatalog(path, _json.loads(path.read_text(encoding="utf-8")))
+    plan = {
+        "video_id": "card_phrase_test",
+        "duration_sec": 28.0,
+        "cta_window": [26.0, 28.0],
+        "sources": [{
+            "title": "On the Navier–Stokes Millennium Prize Problem",
+            "domain": "openai.com",
+            "url": "https://openai.com/index/navier-stokes-solution/",
+            "show_on_screen": True,
+            "snippet": "Внутренняя модель сильнее GPT-6 Astra нашла доказательство.",
+            "highlight_line": "сильнее GPT-6 Astra",
+        }],
+        "blocks": [{"id": "b3", "role": "evidence",
+                    "text": "OpenAI выкладывает работу."}],
+        "slots": [
+            {"index": 0, "block_id": "b3", "role": "evidence",
+             "asset_role": "evidence", "kind": "footage",
+             "start": 13.869, "end": 28.0, "duration": 14.131},
+        ],
+    }
+    words = [
+        {"display": "OpenAI", "start": 16.269, "end": 16.719},
+        {"display": "выкладывает", "start": 17.042, "end": 17.492},
+        {"display": "работу.", "start": 17.709, "end": 18.159},
+        {"display": "агентов.", "start": 22.0, "end": 22.4},
+    ]
+    overlays = _build_overlays(None, plan, words, cat, variant="A",
+                               seed=1, recent_videos=[], used=[])
+    cards = [o for o in overlays if o["type"] == "source_card"]
+    assert cards
+    assert cards[0]["start"] == 13.869
+    assert cards[0]["end"] >= 18.159 + 1.0 - 1e-6
+    assert cards[0]["end"] - cards[0]["start"] >= 5.2 - 1e-6
+    assert cards[0]["end"] < 22.0
+    assert cards[0]["end"] > 17.58
+
+
 def test_hero_device_catalog_has_no_face_circle_bubbles():
     import json as _json
 

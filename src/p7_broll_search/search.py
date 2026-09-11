@@ -36,8 +36,8 @@ from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import (
     QUERY_MAX, QUERY_MIN, TEXTURE_FILL, TEXTURE_FILL_ALT, allow_generic_pad,
     classify_intent, compile_slot_search, extra_fits_slot, is_sci_topic,
-    negative_reject_reason, search_report_payload, thematic_reject_reason,
-    topical_tokens,
+    negative_reject_reason, queries_for_spoken_window, search_report_payload,
+    thematic_reject_reason, topical_tokens,
 )
 from ..lib.render.shots import slim_video
 
@@ -618,18 +618,26 @@ def run_step(ctx) -> dict[str, Any]:
     frames_dir = ctx.wpath("broll", "frames", ".keep").parent
 
     for slot in slots:
-        intent_kind = classify_intent(slot.get("visual_intent", ""), slot.get("queries", []),
-                                      plan.get("category", ""))
-        compiled = compile_slot_search(slot, plan, count=queries_per_slot)
+        compiled = compile_slot_search(
+            slot, plan, count=queries_per_slot, words=words)
+        search_slot = dict(slot)
+        if compiled.get("brief", {}).get("queries"):
+            search_slot["queries"] = list(compiled["brief"]["queries"])
+        intent_kind = classify_intent(
+            search_slot.get("visual_intent", ""), search_slot.get("queries", []),
+            plan.get("category", ""))
         queries = pad_slot_queries(
             compiled["queries"],
             queries_per_slot=queries_per_slot,
             intent_kind=intent_kind,
             category=str(plan.get("category") or ""),
-            slot=slot,
+            slot=search_slot,
             plan=plan,
             entities=compiled["entities"],
         )
+        spoken = str((compiled.get("brief") or {}).get("spoken") or "")
+        if spoken:
+            queries = queries_for_spoken_window(queries, spoken) or queries
         negatives = list(compiled["negatives"])
         slot_search.append({
             "slot_index": slot["index"],

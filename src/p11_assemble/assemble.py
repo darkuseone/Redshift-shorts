@@ -41,7 +41,7 @@ from ..lib.text import (
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
-from ..lib.query import leftover_query_fits_slot, slot_topical_text, topical_match_score
+from ..lib.query import leftover_query_fits_slot, slot_topical_text, slot_visual_brief, brief_deny_reason, topical_match_score
 from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
@@ -766,7 +766,8 @@ def _brand_plate_file(ctx, plan: dict[str, Any]) -> str | None:
 
 def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
                   prepared: dict[int, dict[str, Any]],
-                  assets: dict[int, dict[str, Any]], ctx, plan: dict[str, Any]
+                  assets: dict[int, dict[str, Any]], ctx, plan: dict[str, Any],
+                  words: Iterable[dict[str, Any]] | None = None,
                   ) -> str | None:
     """Prepared dst, nearest non-NASA plate, or a brand grid — never invent text."""
     inherit = slot.get("inherit_from")
@@ -775,9 +776,20 @@ def _slot_bg_file(slot: dict[str, Any], slots: list[dict[str, Any]],
         if inherited is not None and inherited.get("dst"):
             return str(inherited["dst"])
     prep = prepared.get(slot["index"])
+    asset = assets.get(slot["index"])
     if prep is not None and prep.get("dst"):
-        asset = assets.get(slot["index"])
-        if not _is_nasa_asset(asset) and (
+        denied = False
+        if asset is not None:
+            brief = slot_visual_brief(slot, plan, words)
+            hay = " ".join([
+                str(asset.get("query") or ""),
+                " ".join(str(t) for t in (asset.get("tags") or [])),
+                str(asset.get("page_url") or ""),
+                str(asset.get("asset_id") or ""),
+            ])
+            denied = bool(brief_deny_reason(brief, hay)
+                          or leftover_stock_off_topic(asset, slot, plan, words))
+        if not denied and not _is_nasa_asset(asset) and (
                 _slot_wants_ticker(slot) or not _is_ticker_asset(asset)):
             return prep["dst"]
     plate = _plate_source(slot, slots, prepared, assets)
@@ -3301,9 +3313,25 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 card_template = forced
         used.append(card_template.id)
         card_start = float(anchor["start"])
-        # Hold through a mute hole after the proof beat so leftover office
-        # stock cannot sit uncovered at a semantic QC probe (0049 at 17.58s).
-        card_end = min(card_start + 5.2, float(run[-1]["end"]))
+        run_end = float(run[-1]["end"])
+        spoken_end = card_start
+        run_t0 = float(run[0]["start"])
+        for word in words:
+            try:
+                ws = float(word.get("start") or 0)
+                we = float(word["end"]) if word.get("end") is not None else ws
+            except (TypeError, ValueError):
+                continue
+            if we < run_t0 or ws > run_end:
+                continue
+            display = str(word.get("display") or word.get("word") or "").lower()
+            # Phrase about the source itself — not the whole evidence run
+            # (10k agents / Lean would stretch the card over fluids).
+            if any(tok in display for tok in ("openai", "выкладыва", "работ")):
+                spoken_end = max(spoken_end, we)
+        # Full spoken window of the proof phrase + ≥1s tail, never under 5.2s.
+        # 0049: 3.4s card died at 17.27, probe 17.58 saw a coding monitor.
+        card_end = min(run_end, max(card_start + 5.2, spoken_end + 1.0))
         for later in run:
             if float(later["start"]) <= card_start + 1e-4:
                 continue
@@ -3475,7 +3503,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         ))
 
     _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
-                    budget=budget,
+                    budget=budget, words=words,
                     recent_videos=recent_videos, used=used, picker=picker)
 
     # Плашки из overlay-указаний сценария (lower_third).
@@ -3938,7 +3966,8 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
                     picker: TemplatePicker | None = None,
-                    budget: "VisualBudget | None" = None) -> None:
+                    budget: "VisualBudget | None" = None,
+                    words: Iterable[dict[str, Any]] | None = None) -> None:
     """Оверлеи с числом — до двух на ролик (§8.2, бюджет `VisualBudget`).
 
     Роли шире, чем `evidence`/`develop`: на 0042 число живёт в `setup`
@@ -3964,6 +3993,9 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
         if slot.get("role") not in ("setup", "evidence", "develop", "twist"):
             continue
         if slot["kind"] not in ("footage", "meme"):
+            continue
+        if slot_visual_brief(slot, plan, words).get("kind") == "fluid":
+            # 0049 41.02: mk-line-graph «Renders» over Navier–Stokes speech.
             continue
         nums = _stats_from_text(str(blocks.get(slot["block_id"], {}).get("text") or ""))
         if not nums:
@@ -4148,6 +4180,15 @@ def leftover_stock_off_topic(
     if str(asset.get("decision") or "") != "accept_stock_leftover":
         return False
     query = str(asset.get("query") or "")
+    hay = " ".join([
+        query,
+        " ".join(str(t) for t in (asset.get("tags") or [])),
+        str(asset.get("page_url") or ""),
+        str(asset.get("asset_id") or ""),
+    ])
+    brief = slot_visual_brief(slot, plan, words)
+    if brief_deny_reason(brief, hay):
+        return True
     if not query:
         return False
     return not leftover_query_fits_slot(query, slot, plan, words=words)
@@ -4281,7 +4322,8 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     # 2. Данные — когда блок назвал число. Идёт первой: число больше нечем
     #    показать, а карточка и текст умеют говорить о чём угодно.
     bid = str((block or {}).get("id") or "")
-    if (nums and window_ok and budget.allows("dataviz")
+    fluid_window = slot_visual_brief(slot, plan, words).get("kind") == "fluid"
+    if (not fluid_window and nums and window_ok and budget.allows("dataviz")
             and bid not in budget.dataviz_blocks):
         overlay = _dataviz_overlay(
             slot, nums, {block.get("id", ""): block}, picker,
@@ -4625,7 +4667,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                                   or "").strip()
                 content = soften_on_screen_copy(content)
                 if content and _claim_screen_phrase(used_screen_phrases, content):
-                    bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
+                    bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan,
+                                            words_doc.get("words") or [])
                     asset = assets.get(slot["index"])
                     used_templates.append(hook_tpl.id)
                     fs_params = _attach_fs_media(
@@ -4704,7 +4747,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                  if str(w.get("block_id") or "") == str(slot.get("block_id") or "")],
                 str(content), block.get("emphasis_word"))
             content = soften_on_screen_copy(str(content or ""))
-            bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
+            bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan,
+                                   words_doc.get("words") or [])
             # Cap + uniqueness: skip duplicate Nature / НАОБОРОТ; over-cap → plate.
             if fs_count >= fs_cap or not _claim_screen_phrase(used_screen_phrases, content):
                 entry.update({
@@ -4800,12 +4844,22 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             if leftover_stock_off_topic(
                     asset, slot, plan, words=words_for_slot):
                 off_topic = True
+            brief = slot_visual_brief(slot, plan, words_for_slot)
+            hay = " ".join([
+                str(asset.get("query") or ""),
+                " ".join(str(t) for t in (asset.get("tags") or [])),
+                str(asset.get("page_url") or ""),
+                str(asset.get("asset_id") or ""),
+            ])
+            if brief_deny_reason(brief, hay):
+                off_topic = True
         if prep is None or off_topic or (asset is None
                                          and slot["kind"] not in AVATAR_KINDS):
             # Пустой слот идёт по лестнице §7.2: карточка → диаграмма →
             # источник → полноэкранный текст → плита. Раньше веток было две,
             # и на 0042 четырнадцать кадров из двадцати закрылись надписью.
-            bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan)
+            bg_file = _slot_bg_file(slot, slots, prepared, assets, ctx, plan,
+                                   words_doc.get("words") or [])
             gap_block = blocks_by_id.get(slot["block_id"], {})
             gap_traits = block_traits(str(gap_block.get("text") or "")) if gap_block else set()
             rung, hero_dev, overlay_dev = _close_empty_slot(

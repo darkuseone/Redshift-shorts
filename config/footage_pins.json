@@ -96,5 +96,14 @@
       "fp_matrix_code"
     ],
     "same_asset_max_slots": 1
+  },
+  "redshift_0049": {
+    "prefer": [
+      "press_c8e1aa428b"
+    ],
+    "deny": [
+      "pexels_v32259631"
+    ],
+    "same_asset_max_slots": 1
   }
 }

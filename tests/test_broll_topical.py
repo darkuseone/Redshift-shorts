@@ -213,11 +213,13 @@ class TestLeftoverQueryGate:
         extra_fits_slot required Latin∩dest; dest was Russian, so P11 emptied
         every leftover slot onto the ladder and died on QC-12.
         """
-        slot = _slot(index=5, start=16.2, end=18.8)
+        slot = _slot(index=5, start=2.0, end=6.0)
         words = [
-            {"display": "OpenAI", "start": 16.27, "end": 16.72},
-            {"display": "выкладывает", "start": 16.8, "end": 17.3},
-            {"display": "работу.", "start": 17.4, "end": 17.9},
+            {"display": "четверть", "start": 2.1, "end": 2.4},
+            {"display": "века", "start": 2.5, "end": 2.8},
+            {"display": "никто", "start": 2.9, "end": 3.2},
+            {"display": "не", "start": 3.3, "end": 3.4},
+            {"display": "брал.", "start": 3.5, "end": 3.9},
         ]
         asset = {
             "decision": "accept_stock_leftover",
@@ -255,3 +257,100 @@ class TestLeftoverQueryGate:
         assert "editor" not in tokens
         assert "lean" not in {t.lower() for t in tokens}
         assert "navier" in tokens or "fluid" in tokens or "stokes" in tokens
+
+
+class TestSpokenWindowBrief:
+    def test_navier_window_drops_keyboard_queries(self):
+        from src.lib.query import (
+            brief_deny_reason, classify_spoken_window, queries_for_spoken_window,
+            slot_visual_brief,
+        )
+        spoken = "Называются уравнения Навье-Стокса. Страшное имя."
+        assert classify_spoken_window(spoken) == "fluid"
+        kept = queries_for_spoken_window(
+            ["code editor proof lean theorem",
+             "industrial pipes water plant",
+             "hands typing keyboard code editor"],
+            spoken)
+        assert all("keyboard" not in q.lower() for q in kept)
+        assert all("lean" not in q.lower() for q in kept)
+        assert any("pipes" in q.lower() or "water" in q.lower() for q in kept)
+        slot = _slot(index=13, start=38.8, end=41.6,
+                     queries=["code editor proof lean theorem"])
+        words = [
+            {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+            {"display": "Страшное", "start": 40.8, "end": 41.3},
+        ]
+        brief = slot_visual_brief(slot, {}, words)
+        assert brief["kind"] == "fluid"
+        assert brief_deny_reason(brief, "mechanical keyboard hands typing")
+        assert not brief_deny_reason(brief, "industrial pipes water plant")
+
+    def test_openai_paper_window_denies_keyboard_leftover(self):
+        slot = _slot(index=5, start=16.2, end=18.8)
+        words = [
+            {"display": "OpenAI", "start": 16.27, "end": 16.72},
+            {"display": "выкладывает", "start": 17.04, "end": 17.49},
+            {"display": "работу.", "start": 17.71, "end": 18.16},
+        ]
+        asset = {
+            "decision": "accept_stock_leftover",
+            "query": "hands typing keyboard code editor",
+            "page_url": "https://www.pexels.com/video/hands-typing-on-laptop-keyboard-12893579/",
+        }
+        assert leftover_stock_off_topic(asset, slot, {}, words=words)
+
+    def test_prior_accept_keyboard_not_kept_on_navier(self):
+        from src.p8_broll_judge.judge import prior_accepted_ok
+        slot = _slot(index=13, start=38.8, end=41.6)
+        words = [{"display": "Навье-Стокса.", "start": 39.5, "end": 40.0}]
+        entry = {
+            "asset_id": "pexels_v32259631",
+            "decision": "accept_stock_leftover",
+            "query": "hands typing keyboard code editor",
+            "page_url": "https://www.pexels.com/video/black-mechanical-keyboard-32259631/",
+            "score": 0.4,
+        }
+        assert not prior_accepted_ok(entry, slot, {}, words, set())
+
+    def test_prior_accept_kept_when_still_on_topic(self):
+        from src.p8_broll_judge.judge import prior_accepted_ok
+        slot = _slot(index=10, start=28.5, end=31.3)
+        words = [{"display": "самолёт", "start": 29.0, "end": 29.4}]
+        entry = {
+            "asset_id": "pexels_v16865644",
+            "decision": "accept",
+            "query": "airplane wing in flight clouds",
+            "tags": ["airplane", "clouds"],
+            "page_url": "https://www.pexels.com/video/a-view-of-the-clouds-from-an-airplane-16865644/",
+            "score": 0.86,
+        }
+        assert prior_accepted_ok(entry, slot, {}, words, set())
+
+
+def test_append_dataviz_skips_fluid_spoken_window():
+    """0049 41.02 put mk-line-graph on «Навье-Стокса» because b4 has numbers."""
+    from src.p11_assemble.assemble import VisualBudget, _append_dataviz
+
+    plan = {
+        "duration_sec": 50.0,
+        "cta_window": [48.0, 50.0],
+        "slots": [{
+            "index": 13, "start": 38.885, "end": 41.565, "duration": 2.68,
+            "kind": "footage", "role": "develop", "block_id": "b4",
+        }],
+        "blocks": [{
+            "id": "b4",
+            "text": "Семнадцать часов. Называются уравнения Навье-Стокса.",
+        }],
+    }
+    words = [
+        {"display": "Навье-Стокса.", "start": 39.5, "end": 40.0},
+        {"display": "Страшное", "start": 40.8, "end": 41.3},
+    ]
+    overlays: list = []
+    _append_dataviz(
+        plan, overlays, catalog=None, variant="A", seed=1,
+        recent_videos=[], used=[], picker=None,
+        budget=VisualBudget(), words=words)
+    assert overlays == []
