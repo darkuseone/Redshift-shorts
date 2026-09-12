@@ -326,6 +326,12 @@ _TITLE_ENTITY_STOP = frozenset({
     "announcement", "article", "video", "blog", "research", "technology",
     "scientific", "paper", "below", "into", "about",
     "openai", "gpt", "astra", "microsoft", "google", "anthropic", "meta",
+    # Director notes / overlay labels. 0050 QC-24: TitleCase from visual_intent
+    # prefixed stock search («One weather radar», «REDSHIFT city night»).
+    "one", "dark", "russian", "html", "clay", "reject", "redshift",
+    "latin", "cyrillic", "fluids", "stamp", "not", "then", "beat",
+    "card", "thin", "collage", "sentence", "wordmark", "identity",
+    "oblique", "particle", "plate", "paperwork", "close",
 })
 
 
@@ -497,9 +503,15 @@ def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None) -
     for triggers, label in ENTITY_TRIGGERS:
         if any(_trigger_in_hay(tr, hay) for tr in triggers):
             found.append(label)
-    # TitleCase only from the spoken/visual blob — source titles stamp
-    # publisher brands onto every related slot.
-    for token in re.findall(r"\b[A-Z][a-zA-Z0-9\-]{2,}\b", blob):
+    # TitleCase only from spoken text + author queries. visual_intent is
+    # director copy («One beat», «CLAY: REJECT», «REDSHIFT Latin») and must
+    # not become a stock prefix.
+    block = _block_of(slot, plan)
+    title_src = " ".join([
+        str(block.get("text") or ""),
+        " ".join(str(q) for q in (slot.get("queries") or [])),
+    ])
+    for token in re.findall(r"\b[A-Z][a-zA-Z0-9\-]{2,}\b", title_src):
         if token.lower() in _TITLE_ENTITY_STOP:
             continue
         if any(token.lower() in existing.lower() for existing in found):
@@ -553,10 +565,18 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
     concepts = _concepts_from_text(source_text)
     tokens = topical_tokens(slot, plan)
     author_en = [q.strip() for q in (slot.get("queries") or []) if _looks_english(q)]
+    author_tokens = _query_words(" ".join(author_en))
     anchors = list(author_en[:2]) or list(concepts[:2])
 
     out: list[str] = []
+    # Author phrases first so entity prefixes cannot spend the per-slot
+    # download budget on «One weather radar» / «Lean rubber stamp».
+    out.extend(author_en)
     for ent in entities:
+        if str(ent).lower() in _TITLE_ENTITY_STOP:
+            continue
+        if author_en and not extra_fits_slot(str(ent), author_tokens):
+            continue
         if anchors:
             anchor = anchors[0]
             if ent.lower() not in anchor.lower():
@@ -570,7 +590,6 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
             if ent.lower() not in second.lower():
                 out.append(f"{ent} {second}")
 
-    out.extend(author_en)
     out.extend(concepts)
     for query in slot.get("queries") or []:
         if not _looks_english(query):
@@ -593,7 +612,14 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
         return any(ent.lower() in low for ent in entities)
 
     if entities and seen and not any(_carries_entity(q) for q in seen[:limit]):
-        seen = _dedupe_queries([entities[0], *seen])
+        lead = next(
+            (ent for ent in entities
+             if str(ent).lower() not in _TITLE_ENTITY_STOP
+             and extra_fits_slot(str(ent), author_tokens or tokens)),
+            None,
+        )
+        if lead:
+            seen = _dedupe_queries([lead, *seen])
     if len(seen) < QUERY_MIN:
         seen = _dedupe_queries([*seen, TEXTURE_FILL, TEXTURE_FILL_ALT])
     return seen[:limit]

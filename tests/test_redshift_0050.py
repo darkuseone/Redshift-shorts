@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from src.lib.pin_match import (
@@ -81,7 +82,9 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     assert by_id["b6"]["overlay"]["type"] == "lower_third"
     assert by_id["b6"]["overlay"]["content"] == "CLAY: REJECT"
     assert "НЕТ" not in by_id["b6"]["overlay"]["content"]
+    assert by_id["b7"]["overlay"]["type"] == "lower_third"
     assert by_id["b7"]["overlay"]["content"] == "REDSHIFT"
+    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
     assert "РЕДШИФТ" not in by_id["b7"]["overlay"]["content"]
     assert not by_id["b7"]["overlay"]["content"].endswith(".")
     assert "bigtext-mask-footage" not in by_id["b7"]["overlay"].get("template_hint", "")
@@ -111,6 +114,9 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
         "freepik_6468280", "freepik_2341975", "freepik_2989050",
         "freepik_5504514", "freepik_7749931", "freepik_3449792",
         "freepik_3543840",
+        "pexels_v15168364", "pexels_v18866692", "pexels_v28709421",
+        "pexels_v28838439", "pexels_v11048629", "pexels_v28055604",
+        "pexels_v29380116",
         "fp_white_ink", "fp_sand_ripples",
     ):
         assert aid in prefer, aid
@@ -321,9 +327,9 @@ def test_0050_beat_pins_lock_speech_and_cta_city():
 def test_0050_filter_queries_keeps_matching_beat():
     queries = [
         "weather radar storm satellite screen",
-        "airplane wing in flight above clouds",
-        "industrial water pipes plant valves",
-        "blood cells artery microscope slow motion",
+        "airplane wing in flight clouds",
+        "industrial water pipes valves factory",
+            "red blood cells under microscope",
     ]
     assert filter_queries_for_beat(queries, "wing") == [queries[1]]
     assert filter_queries_for_beat(queries, "blood") == [queries[3]]
@@ -356,6 +362,50 @@ def test_0050_authored_overlay_blocks_gap_phrase():
     assert not _authored_overlay_owns_gap_fs({"overlay": {"type": "lower_third"}})
 
 
+def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
+    script = _script()
+    plan = {
+        "blocks": script["blocks"],
+        "sources": script.get("sources") or [],
+        "category": "ai",
+        "video_id": "redshift_0050",
+        "meta": script.get("meta") or {},
+    }
+    poison = ("one ", "dark ", "russian ", "html ", "clay ", "reject ",
+              "redshift ", "latin ", "cyrillic ", "fluids ")
+    by_id = {block["id"]: block for block in script["blocks"]}
+    for block_id in ("b5", "b6", "b7"):
+        block = by_id[block_id]
+        intent = str(block.get("visual_intent") or "")
+        assert not re.search(r"\b(?:One|Dark|Russian|HTML|CLAY|REJECT|REDSHIFT|Latin|Cyrillic)\b", intent), intent
+        slot = {
+            "index": 14,
+            "block_id": block["id"],
+            "role": block.get("role", ""),
+            "queries": list(block.get("broll_queries") or []),
+            "visual_intent": intent,
+        }
+        for beat in ("weather", "wing", "pipes", "blood", "stamp", "city", "notebook"):
+            filtered = filter_queries_for_beat(list(slot["queries"]), beat)
+            search_slot = dict(slot)
+            search_slot["queries"] = filtered
+            compiled = compile_slot_search(search_slot, plan, count=5)
+            blob = " ".join(compiled["queries"]).lower()
+            for prefix in poison:
+                assert not any(
+                    q.lower().startswith(prefix) for q in compiled["queries"]
+                ), (block_id, beat, compiled["queries"])
+            assert "one weather" not in blob
+            assert "russian weather" not in blob
+            assert "redshift city" not in blob
+            assert "latin city" not in blob
+            assert "clay official" not in blob
+            assert "clay rubber" not in blob
+    assert "rubber stamp" in " ".join(by_id["b6"]["broll_queries"]).lower()
+    assert by_id["b5"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+    assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+
+
 def test_0050_ci_request_is_p7_prepared_skip_generate():
     req = json.loads((REPO / "config" / "ci_build_request.json").read_text(encoding="utf-8"))
     assert req["script"] == "scripts/redshift_0050.json"
@@ -364,3 +414,4 @@ def test_0050_ci_request_is_p7_prepared_skip_generate():
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
     assert "QC-24" in req["note"]
+    assert "skip_generate true" in req["note"]
