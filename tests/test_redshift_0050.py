@@ -94,7 +94,7 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
         assert "bigtext-mask-footage" not in ov.get("template_hint", "")
     assert len({v[0] for v in labels.values()}) == 5
     assert by_id["b6"]["overlay"]["type"] == "lower_third"
-    assert by_id["b6"]["overlay"]["content"] == "CLAY REJECT"
+    assert by_id["b6"]["overlay"]["content"] == "REJECTED"
     assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
     assert "НЕТ" not in by_id["b6"]["overlay"]["content"]
     assert by_id["b7"]["overlay"]["type"] == "lower_third"
@@ -459,8 +459,9 @@ def test_0050_ci_request_is_p7_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert "QC-24" in req["note"]
-    assert "skip_generate true" in req["note"]
+    assert "round9" in req["note"]
+    assert "gap_reason" in req["note"]
+    assert "REJECTED" in req["note"]
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():

@@ -3019,13 +3019,41 @@ def _clamp_end_before_next_avatar(
     return end
 
 
+
+def _clear_plate_gap_when_covered(shots, overlays):
+    """QC-24 reads gap_reason; clear when a text-bearing overlay covers the shot."""
+    covers = []
+    for ov in overlays or []:
+        t = str(ov.get('type') or '')
+        if t not in ('plaque', 'cta', 'fullscreen_text', 'accent', 'source_card'):
+            continue
+        covers.append((float(ov['start']), float(ov['end'])))
+    for s in shots or []:
+        gr = str(s.get('gap_reason') or '')
+        if 'plate without text' not in gr:
+            continue
+        a, b = float(s.get('start') or 0), float(s.get('end') or 0)
+        mid = (a + b) / 2.0
+        # cover if any overlay spans the midpoint (or ≥50% of shot)
+        if any(o0 - 1e-3 <= mid <= o1 + 1e-3 for o0, o1 in covers):
+            # strip only the plate-without-text marker; keep other reasons if useful
+            s['gap_reason'] = gr.replace('no unique phrase: plate without text', '').replace('fullscreen cap or duplicate phrase: plate without text', '').replace('fullscreen cap: plate without text', '').strip(' ;')
+            if not s['gap_reason']:
+                s.pop('gap_reason', None)
+            elif 'plate without text' in s['gap_reason']:
+                s['gap_reason'] = s['gap_reason'].replace('plate without text', '').strip(' ;:') or None
+                if not s.get('gap_reason'):
+                    s.pop('gap_reason', None)
+    return shots
+
+
 def _clamp_plaques_at_avatar_cuts(
     overlays: list[dict[str, Any]],
     shots: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Plaque/note-pin must not carry across a cut onto an avatar chest.
 
-    Latin authored lower-thirds (WEATHER / CLAY REJECT / FOLLOWUP) keep
+    Latin authored lower-thirds (WEATHER / REJECTED / FOLLOWUP) keep
     full-block timing so QC-24 bare plates between avatar cuts stay covered.
     """
     for ovl in overlays:
@@ -3604,7 +3632,16 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             if float(s["end"]) <= start or float(s["start"]) >= plaque_end:
                 continue
             sc = str(s.get("content") or "")
-            if sc and punch_families_overlap(sc, str(content)):
+            if not sc:
+                continue
+            # Latin plaques only collide with FS on identical text (same as
+            # plaque-plaque). Punch-stem overlap would drop e.g. CLAY REJECT
+            # vs fullscreen «CLAY: НЕТ».
+            if latin:
+                if sc.strip() == str(content).strip():
+                    conflict = True
+                    break
+            elif punch_families_overlap(sc, str(content)):
                 conflict = True
                 break
         if not conflict:
@@ -5108,6 +5145,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             })
 
     overlays = _clamp_plaques_at_avatar_cuts(overlays, shots)
+    shots = _clear_plate_gap_when_covered(shots, overlays)
 
     # Smart captions: punch-family mute stays. Card mute is only bulky type
     # (FS slam beat, punch/slam heroes, source cards, CTA) — not behind-head

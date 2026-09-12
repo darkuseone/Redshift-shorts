@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from src.lib.text import enrich_overlay_punch, is_latin_overlay_label
+from src.lib.text import (
+    enrich_overlay_punch, is_latin_overlay_label, punch_families_overlap,
+)
 
 
 @pytest.mark.parametrize("label", [
-    "WEATHER", "AIRFOIL", "PLASMA", "FOLLOWUP", "CLAY REJECT",
+    "WEATHER", "AIRFOIL", "PLASMA", "FOLLOWUP", "CLAY REJECT", "REJECTED",
     "FLUIDS", "VALVES",
 ])
 def test_is_latin_overlay_label_accepts_ascii_labels(label):
@@ -23,7 +25,7 @@ def test_is_latin_overlay_label_rejects_empty_and_cyrillic(label):
 
 
 @pytest.mark.parametrize("label", [
-    "WEATHER", "AIRFOIL", "PLASMA", "FOLLOWUP", "CLAY REJECT",
+    "WEATHER", "AIRFOIL", "PLASMA", "FOLLOWUP", "CLAY REJECT", "REJECTED",
 ])
 def test_enrich_overlay_punch_does_not_expand_latin_labels(label):
     block = (
@@ -39,7 +41,7 @@ def test_latin_plaque_skips_avatar_clamp():
     overlays = [{
         "type": "plaque", "start": 55.21, "end": 56.61,
         "template": "lower-thirds/dark-card",
-        "params": {"text": "CLAY REJECT", "content": "CLAY REJECT"},
+        "params": {"text": "REJECTED", "content": "REJECTED"},
     }]
     shots = [
         {"kind": "avatar", "start": 54.0, "end": 55.21},
@@ -64,3 +66,43 @@ def test_cyrillic_plaque_still_clamps_at_avatar():
     ]
     out = _clamp_plaques_at_avatar_cuts(overlays, shots)
     assert out[0]["end"] == 37.6
+
+
+def test_punch_overlap_clay_vs_clay_reject_but_identity_differs():
+    """Punch stems fire clay/clay; latin FS path must use identity, not stems."""
+    fs = "CLAY: НЕТ"
+    plaque = "CLAY REJECT"
+    assert punch_families_overlap(fs, plaque)
+    assert fs.strip() != plaque.strip()
+    # REJECTED avoids stem clash entirely (belt-and-suspenders with code fix).
+    assert not punch_families_overlap(fs, "REJECTED")
+
+
+def test_clear_plate_gap_when_covered_strips_marker():
+    from src.p11_assemble.assemble import _clear_plate_gap_when_covered
+
+    shots = [
+        {
+            "kind": "footage", "start": 45.43, "end": 48.83,
+            "gap_reason": "no unique phrase: plate without text",
+        },
+        {
+            "kind": "footage", "start": 63.06, "end": 65.86,
+            "gap_reason": "fullscreen cap or duplicate phrase: plate without text",
+        },
+        {
+            "kind": "footage", "start": 10.0, "end": 12.0,
+            "gap_reason": "no unique phrase: plate without text",
+        },
+    ]
+    overlays = [
+        {"type": "plaque", "start": 45.43, "end": 48.83,
+         "params": {"text": "PLASMA"}},
+        {"type": "plaque", "start": 63.06, "end": 65.86,
+         "params": {"text": "FOLLOWUP"}},
+    ]
+    out = _clear_plate_gap_when_covered(shots, overlays)
+    assert "gap_reason" not in out[0]
+    assert "gap_reason" not in out[1]
+    # uncovered shot keeps the reason
+    assert out[2].get("gap_reason") == "no unique phrase: plate without text"
