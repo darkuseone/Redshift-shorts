@@ -6,5 +6,5 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "round8: latin plaque full-block no avatar clamp for QC-24; skip_generate true"
+  "note": "round9: clear gap_reason when plaque covers; latin FS conflict identity; b6 REJECTED"
 }
