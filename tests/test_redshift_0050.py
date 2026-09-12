@@ -56,7 +56,10 @@ def _pins() -> dict:
 def test_0050_spoken_text_is_byte_identical():
     script = _script()
     got = {block["id"]: block["text"] for block in script["blocks"]}
-    assert got == SPOKEN
+    b5_ids = ("b5", "b5b", "b5c", "b5d", "b5e")
+    assert " ".join(got[i] for i in b5_ids) == SPOKEN["b5"]
+    for key in ("b1", "b2", "b3", "b4", "b6", "b7"):
+        assert got[key] == SPOKEN[key]
     assert script["cta"]["text"] == SPOKEN["b7"]
 
 
@@ -75,10 +78,18 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     assert "ШЕСТЬ" not in by_id["b3"]["overlay"]["content"]
     assert by_id["b4"]["overlay"]["content"] == "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN"
     assert "80 8" not in by_id["b4"]["overlay"]["content"]
-    assert by_id["b5"]["overlay"]["type"] == "lower_third"
-    assert by_id["b5"]["overlay"]["content"] == "FLUIDS"
-    assert by_id["b5"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
-    assert "bigtext-mask-footage" not in by_id["b5"]["overlay"].get("template_hint", "")
+    labels = {
+        "b5": "FLUIDS", "b5b": "RADAR", "b5c": "WING",
+        "b5d": "PIPES", "b5e": "BLOOD",
+    }
+    for bid, label in labels.items():
+        ov = by_id[bid]["overlay"]
+        assert ov["type"] == "lower_third"
+        assert ov["content"] == label
+        assert ov["content"].strip()
+        assert ov["template_hint"] == "lower-thirds/dark-card"
+        assert "bigtext-mask-footage" not in ov.get("template_hint", "")
+    assert len(set(labels.values())) == 5
     assert by_id["b6"]["overlay"]["type"] == "lower_third"
     assert by_id["b6"]["overlay"]["content"] == "CLAY: REJECT"
     assert "НЕТ" not in by_id["b6"]["overlay"]["content"]
@@ -100,6 +111,10 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     entry = pins["redshift_0050"]
     prefer = entry["prefer"]
     deny = entry["deny"]
+    assert prefer[:4] == [
+        "magnific_0050_weather", "magnific_0050_wing",
+        "magnific_0050_pipes", "magnific_0050_blood",
+    ]
     for aid in (
         "fp_water_vortex", "fp_river_current", "fp_blue_ink", "pexels_v7565432",
         "fp_server_room", "grok_supercomputer_0042", "freepik_5200850",
@@ -130,7 +145,7 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
         "fp_cracked_concrete", "fp_cracked_earth", "fp_rock_surface",
         "fp_corroded_mesh", "pixabay_v144678",
         "grok_cryostat_0042", "pexels_v20068211", "pexels_v30775057",
-        "freepik_136238",
+        "freepik_136238", "pexels_v25242933",
     ):
         assert aid in deny, aid
         assert aid not in prefer
@@ -138,6 +153,7 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     assert pin_id_denied("nasa_PIA13308", set(deny))
     assert pin_id_denied("nasa_S74-23458", set(deny))
     assert pin_id_denied("freepik_136238", set(deny))
+    assert pin_id_denied("pexels_v25242933", set(deny))
 
 
 def test_0050_sync_broll_from_script_copies_queries_and_hook():
@@ -261,11 +277,15 @@ def test_p7_p8_config_inputs_include_footage_pins():
 def test_0050_queries_name_life_beats_not_red_particles():
     script = _script()
     by_id = {block["id"]: block for block in script["blocks"]}
-    b5 = " ".join(by_id["b5"]["broll_queries"]).lower()
-    assert "weather radar" in b5
-    assert "airplane wing" in b5
-    assert "pipes" in b5
-    assert "blood" in b5
+    blob = " ".join(
+        " ".join(by_id[i]["broll_queries"])
+        for i in ("b5", "b5b", "b5c", "b5d", "b5e")
+    ).lower()
+    assert "weather radar" in blob
+    assert "airplane wing" in blob
+    assert "pipes" in blob
+    assert "blood" in blob
+    assert "vortex" in " ".join(by_id["b5"]["broll_queries"]).lower()
     b7 = " ".join(by_id["b7"]["broll_queries"]).lower()
     assert "city night" in b7
     assert "notebook" in b7
@@ -274,16 +294,24 @@ def test_0050_queries_name_life_beats_not_red_particles():
 
 
 def test_0050_beat_pins_lock_speech_and_cta_city():
-    ns_open = {
+    fluids = {
         "index": 13, "role": "develop", "asset_role": "broll",
-        "visual_intent": "One beat one shot: weather radar",
-        "start": 37.0, "end": 40.0,
+        "visual_intent": "flowing liquid current",
+        "start": 34.6, "end": 41.3,
     }
-    weather_words = [
-        {"display": "Называются", "start": 37.1, "end": 37.5},
-        {"display": "уравнения", "start": 37.5, "end": 38.0},
-        {"display": "Навье-Стокса", "start": 38.0, "end": 38.8},
-        {"display": "жидкость", "start": 39.0, "end": 39.5},
+    fluids_words = [
+        {"display": "Называются", "start": 34.6, "end": 35.1},
+        {"display": "уравнения", "start": 35.2, "end": 35.6},
+        {"display": "Навье-Стокса", "start": 35.7, "end": 36.6},
+        {"display": "жидкость", "start": 39.7, "end": 40.2},
+    ]
+    radar = {
+        "index": 14, "role": "develop", "asset_role": "broll",
+        "visual_intent": "weather radar storm satellite screen",
+        "start": 41.3, "end": 42.4,
+    }
+    radar_words = [
+        {"display": "Погода", "start": 41.4, "end": 42.3},
     ]
     blood = {
         "index": 16, "role": "develop", "asset_role": "broll",
@@ -304,22 +332,30 @@ def test_0050_beat_pins_lock_speech_and_cta_city():
         {"display": "шести", "start": 64.0, "end": 64.4},
     ]
     prefer = [
+        "magnific_0050_weather", "magnific_0050_blood",
         "fp_water_vortex", "freepik_4175316", "freepik_6468280",
         "freepik_5504514", "fp_stapling_docs",
     ]
-    weather_bonus, _ = pin_slot_prefer_key(
-        "freepik_4175316", ns_open, prefer, words=weather_words)
-    water_on_ns, _ = pin_slot_prefer_key(
-        "fp_water_vortex", ns_open, prefer, words=weather_words)
+    mag_weather_on_fluids, _ = pin_slot_prefer_key(
+        "magnific_0050_weather", fluids, prefer, words=fluids_words)
+    water_on_fluids, _ = pin_slot_prefer_key(
+        "fp_water_vortex", fluids, prefer, words=fluids_words)
+    mag_weather, _ = pin_slot_prefer_key(
+        "magnific_0050_weather", radar, prefer, words=radar_words)
+    water_on_radar, _ = pin_slot_prefer_key(
+        "fp_water_vortex", radar, prefer, words=radar_words)
     blood_bonus, _ = pin_slot_prefer_key(
-        "freepik_6468280", blood, prefer, words=blood_words)
+        "magnific_0050_blood", blood, prefer, words=blood_words)
     city_bonus, _ = pin_slot_prefer_key(
         "freepik_5504514", cta, prefer, words=cta_words)
-    assert slot_visual_beat(ns_open, weather_words) == "weather"
+    assert slot_visual_beat(fluids, fluids_words) == "fluids"
+    assert slot_visual_beat(radar, radar_words) == "weather"
     assert slot_visual_beat(blood, blood_words) == "blood"
     assert slot_visual_beat(cta, cta_words) == "city"
-    assert weather_bonus < 0
-    assert water_on_ns > 0
+    assert mag_weather_on_fluids > 0
+    assert water_on_fluids < 0
+    assert mag_weather < 0
+    assert water_on_radar > 0
     assert blood_bonus < 0
     assert city_bonus < 0
 
@@ -337,7 +373,9 @@ def test_0050_filter_queries_keeps_matching_beat():
 
 
 def test_0050_cta_wordmark_latin_never_cyrillic():
-    from src.p11_assemble.assemble import _cta_wordmark, _template_excludes_for
+    from src.p11_assemble.assemble import (
+        _cta_close_style, _cta_wordmark, _template_excludes_for,
+    )
 
     plan = {
         "video_id": "redshift_0050",
@@ -345,6 +383,9 @@ def test_0050_cta_wordmark_latin_never_cyrillic():
     }
     assert _cta_wordmark(plan, "РЕДШИФТ") == "REDSHIFT"
     assert _cta_wordmark(plan, "РЕДШИФТ.") == "REDSHIFT"
+    style = _cta_close_style(plan)
+    assert style["invert"] is False
+    assert style["tone"] != "paper"
     bans = _template_excludes_for(plan)
     assert "text-fullscreen/bigtext-mask-footage" in bans
 
@@ -374,7 +415,7 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
     poison = ("one ", "dark ", "russian ", "html ", "clay ", "reject ",
               "redshift ", "latin ", "cyrillic ", "fluids ")
     by_id = {block["id"]: block for block in script["blocks"]}
-    for block_id in ("b5", "b6", "b7"):
+    for block_id in ("b5", "b5b", "b5c", "b5d", "b5e", "b6", "b7"):
         block = by_id[block_id]
         intent = str(block.get("visual_intent") or "")
         assert not re.search(r"\b(?:One|Dark|Russian|HTML|CLAY|REJECT|REDSHIFT|Latin|Cyrillic)\b", intent), intent
@@ -385,7 +426,7 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
             "queries": list(block.get("broll_queries") or []),
             "visual_intent": intent,
         }
-        for beat in ("weather", "wing", "pipes", "blood", "stamp", "city", "notebook"):
+        for beat in ("fluids", "weather", "wing", "pipes", "blood", "stamp", "city", "notebook"):
             filtered = filter_queries_for_beat(list(slot["queries"]), beat)
             search_slot = dict(slot)
             search_slot["queries"] = filtered
@@ -403,6 +444,7 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
             assert "clay rubber" not in blob
     assert "rubber stamp" in " ".join(by_id["b6"]["broll_queries"]).lower()
     assert by_id["b5"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+    assert by_id["b5b"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
     assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
 
 
@@ -415,3 +457,62 @@ def test_0050_ci_request_is_p7_prepared_skip_generate():
     assert req["providers_mode"] == "live"
     assert "QC-24" in req["note"]
     assert "skip_generate true" in req["note"]
+
+
+def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
+    from src.lib.text import remap_split_blocks_from_script, sync_overlays_from_script
+
+    script = _script()
+    plan = {
+        "video_id": "redshift_0050",
+        "blocks": [{
+            "id": "b5",
+            "role": "develop",
+            "text": SPOKEN["b5"],
+            "overlay": {"type": "lower_third", "content": "FLUIDS"},
+        }],
+        "slots": [
+            {"block_id": "b5", "start": 34.6, "end": 41.3, "queries": ["old"]},
+            {"block_id": "b5", "start": 41.3, "end": 42.4, "queries": ["old"]},
+            {"block_id": "b5", "start": 42.4, "end": 43.7, "queries": ["old"]},
+            {"block_id": "b5", "start": 43.7, "end": 44.7, "queries": ["old"]},
+            {"block_id": "b5", "start": 44.7, "end": 48.5, "queries": ["old"]},
+        ],
+    }
+    words = [
+        {"display": "жидкость", "start": 39.7, "end": 40.2},
+        {"display": "Погода", "start": 41.4, "end": 42.3},
+        {"display": "Крыло", "start": 42.5, "end": 42.8},
+        {"display": "Трубы", "start": 43.8, "end": 44.0},
+        {"display": "крови", "start": 45.0, "end": 45.5},
+    ]
+    assert remap_split_blocks_from_script(plan, script, words=words) >= 1
+    ids = [b["id"] for b in plan["blocks"]]
+    assert ids == ["b5", "b5b", "b5c", "b5d", "b5e"]
+    slot_ids = [s["block_id"] for s in plan["slots"]]
+    assert slot_ids == ["b5", "b5b", "b5c", "b5d", "b5e"]
+    sync_overlays_from_script(plan, script=script, words=words)
+    contents = [b["overlay"]["content"] for b in plan["blocks"]]
+    assert contents == ["FLUIDS", "RADAR", "WING", "PIPES", "BLOOD"]
+
+
+def test_0050_footage_index_has_magnific_plates():
+    from src.lib.manifest import FootageIndex, tag_url_coherence
+
+    idx = FootageIndex(REPO / "cache" / "footage_index.json")
+    for aid, tag in (
+        ("magnific_0050_weather", "radar"),
+        ("magnific_0050_wing", "wing"),
+        ("magnific_0050_pipes", "pipes"),
+        ("magnific_0050_blood", "blood"),
+    ):
+        rec = idx.by_id(aid)
+        assert rec is not None, aid
+        assert rec.source == "magnific"
+        assert rec.ai_generated is True
+        assert rec.width == 1080 and rec.height == 1920
+        assert rec.duration_sec == 4.0
+        assert rec.file == f"magnific/{aid}.mp4"
+        assert tag in rec.tags
+        assert rec.vision_summary
+        assert tag_url_coherence(rec) >= 0.15

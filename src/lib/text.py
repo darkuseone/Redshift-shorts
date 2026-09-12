@@ -430,11 +430,133 @@ def _load_script_for_plan(
     return loaded if isinstance(loaded, dict) else None
 
 
+def _norm_spoken(text: str) -> str:
+    return " ".join(str(text or "").split())
+
+
+def _spoken_tokens(text: str) -> set[str]:
+    return {m.group(0).lower() for m in re.finditer(
+        r"[^\W\d_]{2,}", str(text or ""), flags=re.UNICODE)}
+
+
+def remap_split_blocks_from_script(
+        plan: dict[str, Any],
+        script: dict[str, Any],
+        *,
+        words: list[dict[str, Any]] | None = None) -> int:
+    """Apply consecutive script splits onto a stale P5/P7 cut_plan.
+
+    ``--from P7`` keeps ``cut_plan.json`` with one long b5. Unique overlay
+    phrases live on the sliced script blocks, so leftover C-shots reused
+    FLUIDS until QC-24 plates. Children whose texts concat to a plan block
+    replace it; slots of that id are reassigned by overlapping speech.
+    """
+    script_blocks = [
+        block for block in (script.get("blocks") or [])
+        if isinstance(block, dict) and str(block.get("id") or "")
+    ]
+    plan_blocks = [
+        block for block in (plan.get("blocks") or [])
+        if isinstance(block, dict)
+    ]
+    if not script_blocks or not plan_blocks:
+        return 0
+    from .pin_match import overlapping_speech
+
+    si = 0
+    new_blocks: list[dict[str, Any]] = []
+    updated = 0
+    used: set[str] = set()
+    for pblock in plan_blocks:
+        ptext = _norm_spoken(pblock.get("text") or pblock.get("spoken_text") or "")
+        run: list[dict[str, Any]] = []
+        found = False
+        if ptext:
+            for i in range(len(script_blocks)):
+                if str(script_blocks[i].get("id") or "") in used:
+                    continue
+                trial: list[dict[str, Any]] = []
+                for child in script_blocks[i:]:
+                    cid = str(child.get("id") or "")
+                    if cid in used:
+                        break
+                    trial.append(child)
+                    acc = _norm_spoken(" ".join(
+                        str(block.get("text") or "") for block in trial))
+                    if acc == ptext:
+                        run = trial
+                        found = True
+                        break
+                    if not ptext.startswith(acc):
+                        break
+                if found:
+                    break
+        if found and len(run) > 1:
+            old_id = str(pblock.get("id") or "")
+            for child in run:
+                merged = dict(pblock)
+                merged.update(child)
+                new_blocks.append(merged)
+                used.add(str(child.get("id") or ""))
+            updated += _reassign_split_slots(
+                plan.get("slots") or [], old_id, run, words,
+                overlapping_speech)
+        else:
+            new_blocks.append(pblock)
+            if found and run:
+                used.add(str(run[0].get("id") or ""))
+            else:
+                pid = str(pblock.get("id") or "")
+                if pid:
+                    used.add(pid)
+    if updated or new_blocks != plan_blocks:
+        plan["blocks"] = new_blocks
+    return updated
+
+
+def _reassign_split_slots(
+        slots: list[dict[str, Any]],
+        old_id: str,
+        children: list[dict[str, Any]],
+        words: list[dict[str, Any]] | None,
+        overlapping_speech) -> int:
+    owned = [slot for slot in slots
+             if isinstance(slot, dict) and str(slot.get("block_id") or "") == old_id]
+    if not owned or not children:
+        return 0
+    owned.sort(key=lambda slot: float(slot.get("start") or 0))
+    unused = list(children)
+    updated = 0
+    last_id = str(children[-1].get("id") or old_id)
+    for slot in owned:
+        speech = overlapping_speech(slot, words) if words else ""
+        speech_toks = _spoken_tokens(speech)
+        pick = None
+        best = -1
+        pool = unused or children
+        for child in pool:
+            score = len(speech_toks & _spoken_tokens(str(child.get("text") or "")))
+            if score > best:
+                best = score
+                pick = child
+        if pick is None or (speech_toks and best <= 0 and unused):
+            pick = unused[0] if unused else children[0]
+        cid = str(pick.get("id") or last_id)
+        if unused and pick in unused:
+            unused.remove(pick)
+        if str(slot.get("block_id") or "") != cid:
+            slot["block_id"] = cid
+            updated += 1
+        last_id = cid
+    return updated
+
+
 def sync_broll_from_script(
         plan: dict[str, Any],
         repo_root=None,
         *,
-        script: dict[str, Any] | None = None) -> int:
+        script: dict[str, Any] | None = None,
+        words: list[dict[str, Any]] | None = None) -> int:
     """Copy visual_intent / broll_queries / hook onto a stale cut_plan (P7 remount).
 
     Overlay type/content is ``sync_overlays_from_script``. Queries live on
@@ -444,12 +566,12 @@ def sync_broll_from_script(
     script = _load_script_for_plan(plan, repo_root, script)
     if not script:
         return 0
+    updated = remap_split_blocks_from_script(plan, script, words=words)
     src_blocks = {
         str(block.get("id") or ""): block
         for block in (script.get("blocks") or [])
         if isinstance(block, dict)
     }
-    updated = 0
     for block in plan.get("blocks") or []:
         if not isinstance(block, dict):
             continue
@@ -498,7 +620,8 @@ def sync_overlays_from_script(
         plan: dict[str, Any],
         repo_root=None,
         *,
-        script: dict[str, Any] | None = None) -> int:
+        script: dict[str, Any] | None = None,
+        words: list[dict[str, Any]] | None = None) -> int:
     """Cut/draft overlays can drift from ``scripts/*.json`` (stale P0 cache).
 
     0048 kept «88 ЧАСОВ» on b4 after the script moved the card to
@@ -508,12 +631,12 @@ def sync_overlays_from_script(
     script = _load_script_for_plan(plan, repo_root, script)
     if not script:
         return 0
+    updated = remap_split_blocks_from_script(plan, script, words=words)
     src_blocks = {
         str(block.get("id") or ""): block
         for block in (script.get("blocks") or [])
         if isinstance(block, dict)
     }
-    updated = 0
     for block in plan.get("blocks") or []:
         if not isinstance(block, dict):
             continue

@@ -875,6 +875,13 @@ def _cta_wordmark(plan: dict[str, Any], catalog_wordmark: str = "") -> str:
     return mark.rstrip(".")
 
 
+def _cta_close_style(plan: dict[str, Any]) -> dict[str, Any]:
+    """Identity close: 0050 keeps stock under the mark (QC-30 paper invert)."""
+    if str(plan.get("video_id") or "") == "redshift_0050":
+        return {"logo_close": True, "invert": False, "tone": "ink"}
+    return {"logo_close": True, "invert": True, "tone": "paper"}
+
+
 def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
     """Per-video template bans from editing_preferences + 0050 hard bans."""
     vid = str(plan.get("video_id") or "")
@@ -3634,15 +3641,13 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     cta_params = dict(cta_template.params)
     show_subscribe = show_subscribe_cta(plan)
     cta_params.update({
-        "logo_close": True,
         "wordmark": _cta_wordmark(plan, str(cta_params.get("wordmark") or "")),
         "tagline": "",  # 0042 r6: drop «Write code. Ship to orbit.»
         "url": str(cta_params.get("url") or "redshift.shorts"),
         "subscribe": show_subscribe,
         "buttonText": "Subscribe" if show_subscribe else "",
-        "invert": True,
-        "tone": "paper",
         "exit": "none",
+        **_cta_close_style(plan),
     })
     if seam:
         # Подпись поверх шва — мелкая и прижатая к низу: она не должна попасть
@@ -5326,9 +5331,10 @@ def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
 
 def run_step(ctx) -> dict[str, Any]:
     plan = copy.deepcopy(ctx.read("cut_plan.json"))
-    sync_overlays_from_script(plan, ctx.cfg.repo_root)
-    sync_broll_from_script(plan, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
+    words = list(words_doc.get("words") or [])
+    sync_overlays_from_script(plan, ctx.cfg.repo_root, words=words)
+    sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
     accepted_doc = ctx.read("accepted_assets.json")
     generated_doc = ctx.read("generated_assets.json")
     avatar_meta = ctx.read_or("avatar_meta.json", {"segments": []})

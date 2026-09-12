@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-      "notes": "0050 QC-24 round3: spoken text frozen; plain stock queries; b5–b7 dark cards; Pexels/Freepik pins; skip_generate true.",
+      "notes": "0050 QC-24 round4: spoken text frozen; b5 sliced into unique Latin dark-cards; magnific weather/wing/pipes/blood pins; skip_generate true.",
     "hook": {
       "on_screen": "$1 000 000",
       "style": "number_slam"
@@ -127,15 +127,14 @@
     {
       "id": "b5",
       "role": "develop",
-      "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода. Крыло самолёта. Трубы в доме. Ток крови. Если формула врёт — самолёт не извиняется.",
+      "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают.",
       "emphasis_word": "жидкость",
       "avatar": "off",
-      "visual_intent": "weather radar, then airplane wing, then industrial pipes, then blood cells. dark catalog card with a short latin label and thin accent — not a collage, not a long russian sentence, not html.",
+      "visual_intent": "flowing liquid current underwater or ink swirl. catalog card with a short overlay label and thin accent.",
       "broll_queries": [
-        "weather radar storm satellite screen",
-        "airplane wing in flight clouds",
-        "industrial water pipes valves factory",
-        "red blood cells under microscope"
+        "water vortex flow slow motion underwater",
+        "blue ink swirling liquid macro",
+        "clear water flow glass tank slow motion"
       ],
       "overlay": {
         "type": "lower_third",
@@ -148,12 +147,88 @@
       "emphasis_family": "tech"
     },
     {
+      "id": "b5b",
+      "role": "develop",
+      "text": "Погода.",
+      "emphasis_word": "Погода",
+      "avatar": "off",
+      "visual_intent": "weather radar storm satellite screen. catalog card with a short overlay label and thin accent.",
+      "broll_queries": [
+        "weather radar storm satellite screen"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "RADAR",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5c",
+      "role": "develop",
+      "text": "Крыло самолёта.",
+      "emphasis_word": "Крыло",
+      "avatar": "off",
+      "visual_intent": "airplane wing in flight clouds. catalog card with a short overlay label and thin accent.",
+      "broll_queries": [
+        "airplane wing in flight clouds"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "WING",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5d",
+      "role": "develop",
+      "text": "Трубы в доме.",
+      "emphasis_word": "Трубы",
+      "avatar": "off",
+      "visual_intent": "industrial water pipes valves factory. catalog card with a short overlay label and thin accent.",
+      "broll_queries": [
+        "industrial water pipes valves factory"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "PIPES",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5e",
+      "role": "develop",
+      "text": "Ток крови. Если формула врёт — самолёт не извиняется.",
+      "emphasis_word": "крови",
+      "avatar": "off",
+      "visual_intent": "red blood cells under microscope. catalog card with a short overlay label and thin accent.",
+      "broll_queries": [
+        "red blood cells under microscope"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "BLOOD",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
       "id": "b6",
       "role": "twist",
       "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
       "emphasis_word": "не принял",
       "avatar": "on",
-      "visual_intent": "rubber stamp on declined papers and a dark catalog card with a thin accent. paperwork on a desk, not a bare plate, not cracked walls, not a clay pit.",
+      "visual_intent": "rubber stamp on declined papers and a catalog card with a thin accent. paperwork on a desk, not a bare plate, not cracked walls, not a clay pit.",
       "broll_queries": [
         "rubber stamp rejected declined documents desk",
         "stapling stack of papers closeup",
@@ -175,7 +250,7 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "identity close over a city night aerial or an open notebook. latin wordmark, no trailing dot, no cyrillic. not oblique type, not a red particle plate.",
+      "visual_intent": "city night traffic lights aerial or open notebook mathematics desk. catalog card with a short latin label and thin accent, no trailing dot.",
       "broll_queries": [
         "city night traffic lights aerial",
         "open notebook mathematics desk warm light"

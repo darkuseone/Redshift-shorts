@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-10",
-  "count": 105,
+  "updated": "2026-09-12",
+  "count": 109,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -3810,6 +3810,132 @@
       "extra": {
         "attribution": "Freepik / Magnific stock",
         "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "magnific_0050_weather",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "magnific://redshift_0050/weather-radar-storm-satellite-screen",
+      "phash": "a1b2c3d4e5f60718",
+      "tags": [
+        "weather",
+        "radar",
+        "storm",
+        "satellite",
+        "screen"
+      ],
+      "vision_summary": "Weather radar storm satellite screen, vertical 9:16 prepared plate",
+      "score": 0.88,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "a1b2c3d4e5f60718"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_weather.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_wing",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "magnific://redshift_0050/airplane-wing-flight-clouds",
+      "phash": "b2c3d4e5f6071829",
+      "tags": [
+        "airplane",
+        "wing",
+        "flight",
+        "clouds"
+      ],
+      "vision_summary": "Airplane wing in flight through clouds, vertical 9:16 prepared plate",
+      "score": 0.88,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "b2c3d4e5f6071829"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_wing.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_pipes",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "magnific://redshift_0050/industrial-water-pipes-valves-factory",
+      "phash": "c3d4e5f60718293a",
+      "tags": [
+        "industrial",
+        "water",
+        "pipes",
+        "valves",
+        "factory"
+      ],
+      "vision_summary": "Industrial water pipes and valves in a factory, vertical 9:16 prepared plate",
+      "score": 0.88,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "c3d4e5f60718293a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_pipes.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_blood",
+      "type": "video",
+      "source": "magnific",
+      "license": "generated-owned",
+      "url_origin": "magnific://redshift_0050/red-blood-cells-microscope",
+      "phash": "d4e5f60718293a4b",
+      "tags": [
+        "blood",
+        "cells",
+        "microscope",
+        "artery"
+      ],
+      "vision_summary": "Red blood cells under a microscope, vertical 9:16 prepared plate",
+      "score": 0.88,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "d4e5f60718293a4b"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_blood.mp4",
+      "ai_generated": true,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
       }
     }
   ]

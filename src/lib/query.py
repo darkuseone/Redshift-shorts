@@ -332,6 +332,7 @@ _TITLE_ENTITY_STOP = frozenset({
     "latin", "cyrillic", "fluids", "stamp", "not", "then", "beat",
     "card", "thin", "collage", "sentence", "wordmark", "identity",
     "oblique", "particle", "plate", "paperwork", "close",
+    "radar", "wing", "pipes", "blood", "fluids",
 })
 
 

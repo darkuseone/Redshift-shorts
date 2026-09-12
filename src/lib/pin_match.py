@@ -50,22 +50,23 @@ def overlapping_speech(slot: dict[str, Any],
 
 
 # 0050 life-beats: speech first, then role. Opening «Навье-Стокса / жидкость»
-# maps to weather so those slots are not left with bonus 0 (no remote pin).
+# is fluids (water pins), not weather — weather is only «Погода».
 _BEAT_SPEECH: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("blood", ("кров", "blood", "artery", "клетк")),
-    ("wing", ("крыл", "самолёт", "самолет", "airplane", "wing")),
+    ("blood", ("кров", "blood", "artery", "клетк", "извиня")),
+    ("wing", ("крыл", "airplane", "wing")),
     ("pipes", ("труб", "pipe", "valve", "industrial")),
     ("weather", ("погод", "radar", "storm", "weather", "satellite")),
+    ("fluids", ("навье", "уравнен", "жидкост", "стокс", "течёт", "течет", "толка")),
     ("stamp", ("клей", "приня", "reject", "stamp", "документ", "бумаг")),
     ("city", ("город", "ноч", "aerial", "traffic")),
     ("notebook", ("notebook", "тетрад", "записн")),
-    ("ns_open", ("навье", "уравнен", "жидкост", "стокс")),
 )
 _BEAT_QUERY: dict[str, tuple[str, ...]] = {
     "weather": ("weather", "radar", "storm", "satellite"),
     "wing": ("airplane", "wing", "flight", "aircraft", "cloud"),
     "pipes": ("pipe", "valve", "industrial"),
     "blood": ("blood", "artery", "cell"),
+    "fluids": ("fluid", "liquid", "vortex", "water", "current", "ink", "flow"),
     "stamp": ("stamp", "document", "paperwork", "stapling", "paper", "notebook"),
     "city": ("city", "night", "aerial", "traffic", "notebook"),
     "notebook": ("notebook",),
@@ -80,7 +81,7 @@ def slot_visual_beat(slot: dict[str, Any],
     role = str(slot.get("role") or "")
     for beat, tokens in _BEAT_SPEECH:
         if any(token in speech for token in tokens):
-            return "weather" if beat == "ns_open" else beat
+            return beat
     if role == "twist" and any(token in intent for token in (
             "stamp", "reject", "clay", "paperwork", "документ")):
         return "stamp"
@@ -166,6 +167,18 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             bonus = 8
     else:
         hay = speech or intent
+        if "magnific_0050_" in aid_l:
+            beat = slot_visual_beat(slot, words)
+            kind = aid_l.rsplit("_", 1)[-1]
+            if kind and kind == beat:
+                bonus = -22
+            else:
+                bonus = 10
+            try:
+                rank = list(pin_prefer).index(aid)
+            except ValueError:
+                rank = 99
+            return (bonus, rank)
         wall = any(token in aid_l for token in (
             "cracked", "peeling", "plaster", "rock_surface"))
         staple = "stapling" in aid_l or "staple" in aid_l
@@ -182,16 +195,10 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             blob = hook_blob if block_role == "hook" else hay
             # Develop «жидкость» is the Navier–Stokes life-beat, not the
             # setup river. Leave those slots for weather/wing/pipes/blood.
-            ns_develop = (
-                block_role == "develop"
-                and any(token in speech for token in (
-                    "навье", "уравнен", "жидкост", "погод", "крыл",
-                    "труб", "кров"))
-                and not any(token in speech for token in ("вод ", "воды", "реч"))
-            )
-            if ns_develop:
+            beat = slot_visual_beat(slot, words)
+            if beat in ("weather", "wing", "pipes", "blood"):
                 bonus = 8
-            elif any(token in blob for token in (
+            elif beat == "fluids" or any(token in blob for token in (
                     "вод", "теч", "жидкост", "water", "vortex", "river",
                     "flowing", "ink")):
                 bonus = -18
@@ -258,7 +265,7 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             beat = slot_visual_beat(slot, words)
             if beat == "weather" or any(token in speech for token in (
                     "погод", "radar", "storm", "weather", "satellite",
-                    "навье", "уравнен", "жидкост")):
+                    "погод")):
                 bonus = -18
         elif any(token in aid_l for token in ("8816084", "6468157", "2321764")):
             beat = slot_visual_beat(slot, words)

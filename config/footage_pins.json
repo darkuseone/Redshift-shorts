@@ -99,6 +99,10 @@
   },
   "redshift_0050": {
     "prefer": [
+      "magnific_0050_weather",
+      "magnific_0050_wing",
+      "magnific_0050_pipes",
+      "magnific_0050_blood",
       "fp_water_vortex",
       "fp_river_current",
       "fp_blue_ink",
@@ -143,6 +147,7 @@
       "fp_sand_ripples"
     ],
     "deny": [
+      "pexels_v25242933",
       "nasa_*",
       "press_21bc8e2d72",
       "fp_cracked_wall",

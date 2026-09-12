@@ -508,13 +508,13 @@ def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
 
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
-    sync_broll_from_script(plan, ctx.cfg.repo_root)
+    words = ctx_words(ctx)
+    sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
     cfg = ctx.cfg
     routing = _load_routing(cfg)
     providers = build_stock_providers(cfg, ctx.costs)
     index = FootageIndex.load(cfg)
     pin_deny, pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
-    words = ctx_words(ctx)
     orphans = disk_orphan_records(ctx, index)
     if orphans:
         ctx.warn(f"на диске {len(orphans)} клипов стока нет в индексе — добор",

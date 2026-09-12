@@ -574,7 +574,8 @@ def _fill_unfilled_from_leftover_prefers(
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
-    sync_broll_from_script(plan, ctx.cfg.repo_root)
+    words = ctx_words(ctx)
+    sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
     cfg = ctx.cfg
 
     accept_threshold = float(cfg.get("vision.accept_threshold", 0.70))
@@ -583,7 +584,6 @@ def run_step(ctx) -> dict[str, Any]:
 
     skip_live = bool(cfg.get("vision.skip_live", False))
     surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
-    words = ctx_words(ctx)
     footage_slots = [
         s for s in plan.get("slots", [])
         if s.get("needs_asset") and s.get("asset_role") in ("broll", "evidence", "interstitial")
