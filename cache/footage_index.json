@@ -3816,17 +3816,16 @@
       "id": "magnific_0050_weather",
       "type": "video",
       "source": "magnific",
-      "license": "generated-owned",
+      "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_weather.mp4",
       "phash": "a1b2c3d4e5f60718",
       "tags": [
         "weather",
         "radar",
-        "storm",
         "satellite",
-        "screen"
+        "stormscreen"
       ],
-      "vision_summary": "Weather radar storm satellite screen, vertical 9:16 prepared plate",
+      "vision_summary": "Weather radar satellite screen only, vertical 9:16 prepared owned plate",
       "score": 0.88,
       "duration_sec": 4.0,
       "used_in": [],
@@ -3838,7 +3837,7 @@
       "width": 1080,
       "height": 1920,
       "file": "magnific/magnific_0050_weather.mp4",
-      "ai_generated": true,
+      "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific Nano Banana 2",
         "watched": true
@@ -3848,16 +3847,16 @@
       "id": "magnific_0050_wing",
       "type": "video",
       "source": "magnific",
-      "license": "generated-owned",
+      "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_wing.mp4",
       "phash": "b2c3d4e5f6071829",
       "tags": [
         "airplane",
-        "wing",
-        "flight",
-        "clouds"
+        "winglet",
+        "airfoil",
+        "flightclouds"
       ],
-      "vision_summary": "Airplane wing in flight through clouds, vertical 9:16 prepared plate",
+      "vision_summary": "Airplane winglet airfoil flightclouds, vertical 9:16 prepared owned plate",
       "score": 0.88,
       "duration_sec": 4.0,
       "used_in": [],
@@ -3869,7 +3868,7 @@
       "width": 1080,
       "height": 1920,
       "file": "magnific/magnific_0050_wing.mp4",
-      "ai_generated": true,
+      "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific Nano Banana 2",
         "watched": true
@@ -3879,17 +3878,15 @@
       "id": "magnific_0050_pipes",
       "type": "video",
       "source": "magnific",
-      "license": "generated-owned",
+      "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_pipes.mp4",
       "phash": "c3d4e5f60718293a",
       "tags": [
-        "industrial",
-        "water",
-        "pipes",
+        "pipework",
         "valves",
-        "factory"
+        "factorypipes"
       ],
-      "vision_summary": "Industrial water pipes and valves in a factory, vertical 9:16 prepared plate",
+      "vision_summary": "Factory pipework valves factorypipes, vertical 9:16 prepared owned plate",
       "score": 0.88,
       "duration_sec": 4.0,
       "used_in": [],
@@ -3901,7 +3898,7 @@
       "width": 1080,
       "height": 1920,
       "file": "magnific/magnific_0050_pipes.mp4",
-      "ai_generated": true,
+      "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific Nano Banana 2",
         "watched": true
@@ -3911,17 +3908,15 @@
       "id": "magnific_0050_blood",
       "type": "video",
       "source": "magnific",
-      "license": "generated-owned",
+      "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_blood.mp4",
       "phash": "d4e5f60718293a4b",
       "tags": [
-        "blood",
-        "cells",
+        "bloodcells",
         "microscope",
-        "artery",
-        "plasma"
+        "plasmaflow"
       ],
-      "vision_summary": "Red blood cells under a microscope, vertical 9:16 prepared plate",
+      "vision_summary": "Bloodcells microscope plasmaflow, vertical 9:16 prepared owned plate",
       "score": 0.88,
       "duration_sec": 4.0,
       "used_in": [],
@@ -3933,7 +3928,7 @@
       "width": 1080,
       "height": 1920,
       "file": "magnific/magnific_0050_blood.mp4",
-      "ai_generated": true,
+      "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific Nano Banana 2",
         "watched": true
