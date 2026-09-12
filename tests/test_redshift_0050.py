@@ -79,23 +79,27 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     assert by_id["b4"]["overlay"]["content"] == "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN"
     assert "80 8" not in by_id["b4"]["overlay"]["content"]
     labels = {
-        "b5": "FLUIDS", "b5b": "RADAR", "b5c": "WING",
-        "b5d": "PIPES", "b5e": "BLOOD",
+        "b5": ("FLUIDS", "lower-thirds/dark-card"),
+        "b5b": ("WEATHER", "lower-thirds/clean-bar"),
+        "b5c": ("AIRFOIL", "lower-thirds/accent-underline"),
+        "b5d": ("VALVES", "lower-thirds/note-pin"),
+        "b5e": ("PLASMA", "lower-thirds/metric-badge"),
     }
-    for bid, label in labels.items():
+    for bid, (label, hint) in labels.items():
         ov = by_id[bid]["overlay"]
         assert ov["type"] == "lower_third"
         assert ov["content"] == label
         assert ov["content"].strip()
-        assert ov["template_hint"] == "lower-thirds/dark-card"
+        assert ov["template_hint"] == hint
         assert "bigtext-mask-footage" not in ov.get("template_hint", "")
-    assert len(set(labels.values())) == 5
+    assert len({v[0] for v in labels.values()}) == 5
     assert by_id["b6"]["overlay"]["type"] == "lower_third"
-    assert by_id["b6"]["overlay"]["content"] == "CLAY: REJECT"
+    assert by_id["b6"]["overlay"]["content"] == "CLAY REJECT"
+    assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
     assert "НЕТ" not in by_id["b6"]["overlay"]["content"]
     assert by_id["b7"]["overlay"]["type"] == "lower_third"
-    assert by_id["b7"]["overlay"]["content"] == "REDSHIFT"
-    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+    assert by_id["b7"]["overlay"]["content"] == "FOLLOWUP"
+    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/clean-bar"
     assert "РЕДШИФТ" not in by_id["b7"]["overlay"]["content"]
     assert not by_id["b7"]["overlay"]["content"].endswith(".")
     assert "bigtext-mask-footage" not in by_id["b7"]["overlay"].get("template_hint", "")
@@ -444,7 +448,7 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
             assert "clay rubber" not in blob
     assert "rubber stamp" in " ".join(by_id["b6"]["broll_queries"]).lower()
     assert by_id["b5"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
-    assert by_id["b5b"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+    assert by_id["b5b"]["overlay"]["template_hint"] == "lower-thirds/clean-bar"
     assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
 
 
@@ -493,7 +497,7 @@ def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
     assert slot_ids == ["b5", "b5b", "b5c", "b5d", "b5e"]
     sync_overlays_from_script(plan, script=script, words=words)
     contents = [b["overlay"]["content"] for b in plan["blocks"]]
-    assert contents == ["FLUIDS", "RADAR", "WING", "PIPES", "BLOOD"]
+    assert contents == ["FLUIDS", "WEATHER", "AIRFOIL", "VALVES", "PLASMA"]
 
 
 def test_0050_footage_index_has_magnific_plates():

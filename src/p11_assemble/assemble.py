@@ -36,7 +36,8 @@ from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
-    punch_families_overlap, soften_on_screen_copy, spoken_onset_for_content,
+    is_latin_overlay_label, punch_families_overlap, soften_on_screen_copy,
+    spoken_onset_for_content,
     stems_match, sync_broll_from_script, sync_overlays_from_script,
 )
 from ..lib.glyphs import match_glyphs
@@ -3022,11 +3023,19 @@ def _clamp_plaques_at_avatar_cuts(
     overlays: list[dict[str, Any]],
     shots: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Plaque/note-pin must not carry across a cut onto an avatar chest."""
+    """Plaque/note-pin must not carry across a cut onto an avatar chest.
+
+    Latin authored lower-thirds (WEATHER / CLAY REJECT / FOLLOWUP) keep
+    full-block timing so QC-24 bare plates between avatar cuts stay covered.
+    """
     for ovl in overlays:
         kind = str(ovl.get("type") or "")
         template = str(ovl.get("template") or "")
         if kind != "plaque" and "note-pin" not in template:
+            continue
+        params = ovl.get("params") or {}
+        label = str(params.get("text") or params.get("content") or "")
+        if is_latin_overlay_label(label):
             continue
         ovl["end"] = round(
             _clamp_end_before_next_avatar(
@@ -3562,21 +3571,30 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             seed=seed + 7,
         )
         used.append(template.id)
+        latin = is_latin_overlay_label(content)
         # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
-        content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
-        content = soften_on_screen_copy(content)
+        # Latin authored labels keep verbatim copy and full-block timing (QC-24).
+        if not latin:
+            content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
+            content = soften_on_screen_copy(content)
         b_start = float(block_slots[0]["start"])
         b_end = float(block_slots[-1]["end"])
-        bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
-        anchor = find_spoken_anchor(bwords or words, content, block.get("emphasis_word"))
-        if anchor is not None:
-            start = accent_card_start(anchor, block_start=b_start, delay_sec=0.05)
+        if latin:
+            start = b_start
+            plaque_end = b_end
         else:
-            start = b_start + 0.4
-        start = min(start, max(b_start, b_end - 1.2))
-        plaque_end = min(start + 2.6, b_end)
-        plaque_end = _clamp_end_before_next_avatar(
-            start, plaque_end, plan.get("slots") or [])
+            bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
+            anchor = find_spoken_anchor(bwords or words, content, block.get("emphasis_word"))
+            if anchor is not None:
+                start = accent_card_start(anchor, block_start=b_start, delay_sec=0.05)
+            else:
+                start = b_start + 0.4
+            start = min(start, max(b_start, b_end - 1.2))
+            plaque_end = min(start + 2.6, b_end)
+            plaque_end = _clamp_end_before_next_avatar(
+                start, plaque_end, plan.get("slots") or [])
+        if plaque_end - start < 0.35:
+            continue
         # Suppress plaque when a punch-family FS/accent card already owns
         # the beat (0042 r6: triple НЕЧЕМ = card + plaque + captions).
         conflict = False
@@ -3594,15 +3612,23 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 if ov.get("type") not in ("fullscreen_text", "accent", "cta"):
                     # also check shots-to-be: use slot content above
                     pass
-            # Also suppress if any earlier overlay plaque same family
+            # Also suppress if any earlier overlay plaque same family.
+            # Latin labels only collide on identical text (not punch stems).
             for ov in overlays:
                 if ov.get("type") != "plaque":
                     continue
                 pt = str((ov.get("params") or {}).get("text") or "")
-                if pt and punch_families_overlap(pt, str(content)):
-                    if float(ov["end"]) > start and float(ov["start"]) < plaque_end:
+                if not pt:
+                    continue
+                if float(ov["end"]) <= start or float(ov["start"]) >= plaque_end:
+                    continue
+                if latin:
+                    if pt.strip() == str(content).strip():
                         conflict = True
                         break
+                elif punch_families_overlap(pt, str(content)):
+                    conflict = True
+                    break
         if conflict:
             continue
         overlays.append(_plaque_overlay(

@@ -340,6 +340,20 @@ def accent_card_start(anchor: dict[str, Any], *, block_start: float,
     return max(float(block_start), onset + delay)
 
 
+
+def is_latin_overlay_label(content: str) -> bool:
+    """True when on-screen label letters are ASCII-only (WEATHER, CLAY REJECT).
+
+    Authored Latin plaques must stay verbatim — enrich must not expand them
+    from neighbouring Russian clause windows.
+    """
+    raw = str(content or "").strip()
+    if not raw:
+        return False
+    letters = [ch for ch in raw if ch.isalpha()]
+    return bool(letters) and all(ch.isascii() for ch in letters)
+
+
 def enrich_overlay_punch(content: str, block_text: str, *,
                          max_words: int = 4) -> str:
     """Короткий stub («НЕЧЕМ») → окно клаузы, где этот удар реально несёт смысл.
@@ -347,8 +361,11 @@ def enrich_overlay_punch(content: str, block_text: str, *,
     Authored multi-token overlays («Проверить нечем») stay as-is when they
     already read as a clause; only ultra-short stubs (≤1 real word, or a
     digit+unit like «5 МИНУТ») get expanded from block text.
+    Latin authored labels (WEATHER / PLASMA / CLAY REJECT) stay verbatim.
     """
     raw = str(content or "").strip()
+    if is_latin_overlay_label(raw):
+        return raw
     text = str(block_text or "").strip()
     if not raw or not text:
         return raw
