@@ -406,6 +406,94 @@ def punch_families_overlap(a: str, b: str) -> bool:
     return bool(punch_stems(a) & punch_stems(b))
 
 
+def _load_script_for_plan(
+        plan: dict[str, Any],
+        repo_root=None,
+        script: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """Load ``scripts/<video_id>.json`` for remount self-heal, or use ``script``."""
+    if script is not None:
+        return script
+    import json
+    from pathlib import Path
+
+    meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
+    video_id = str(plan.get("video_id") or meta.get("video_id") or "").strip()
+    if not video_id or repo_root is None:
+        return None
+    path = Path(repo_root) / "scripts" / f"{video_id}.json"
+    if not path.is_file():
+        return None
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+def sync_broll_from_script(
+        plan: dict[str, Any],
+        repo_root=None,
+        *,
+        script: dict[str, Any] | None = None) -> int:
+    """Copy visual_intent / broll_queries / hook onto a stale cut_plan (P7 remount).
+
+    Overlay type/content is ``sync_overlays_from_script``. Queries live on
+    slots as ``queries``; P7 searches those, not the script file, unless we
+    copy them here first.
+    """
+    script = _load_script_for_plan(plan, repo_root, script)
+    if not script:
+        return 0
+    src_blocks = {
+        str(block.get("id") or ""): block
+        for block in (script.get("blocks") or [])
+        if isinstance(block, dict)
+    }
+    updated = 0
+    for block in plan.get("blocks") or []:
+        if not isinstance(block, dict):
+            continue
+        src = src_blocks.get(str(block.get("id") or ""))
+        if not src:
+            continue
+        for key in ("visual_intent", "broll_queries"):
+            if key not in src:
+                continue
+            if block.get(key) != src.get(key):
+                block[key] = src[key]
+                updated += 1
+    for slot in plan.get("slots") or []:
+        if not isinstance(slot, dict):
+            continue
+        src = src_blocks.get(str(slot.get("block_id") or ""))
+        if not src:
+            continue
+        changed = False
+        intent = src.get("visual_intent")
+        if intent is not None and slot.get("visual_intent") != intent:
+            slot["visual_intent"] = intent
+            changed = True
+        queries = src.get("broll_queries")
+        if queries is not None and list(slot.get("queries") or []) != list(queries):
+            slot["queries"] = list(queries)
+            changed = True
+        if changed:
+            updated += 1
+    src_hook = (script.get("meta") or {}).get("hook")
+    if isinstance(src_hook, dict):
+        hook = plan.get("hook")
+        if not isinstance(hook, dict):
+            hook = {}
+            plan["hook"] = hook
+        for key in ("on_screen", "style"):
+            if key not in src_hook:
+                continue
+            if hook.get(key) != src_hook.get(key):
+                hook[key] = src_hook[key]
+                updated += 1
+    return updated
+
+
 def sync_overlays_from_script(
         plan: dict[str, Any],
         repo_root=None,
@@ -417,21 +505,9 @@ def sync_overlays_from_script(
     «СИНГУЛЯРНОСТЬ». Enrich then parked the punch on «семнадцать часов».
     Authored type/content/hint win; other overlay keys stay.
     """
-    import json
-    from pathlib import Path
-
-    if script is None:
-        meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
-        video_id = str(plan.get("video_id") or meta.get("video_id") or "").strip()
-        if not video_id or repo_root is None:
-            return 0
-        path = Path(repo_root) / "scripts" / f"{video_id}.json"
-        if not path.is_file():
-            return 0
-        try:
-            script = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError, TypeError):
-            return 0
+    script = _load_script_for_plan(plan, repo_root, script)
+    if not script:
+        return 0
     src_blocks = {
         str(block.get("id") or ""): block
         for block in (script.get("blocks") or [])

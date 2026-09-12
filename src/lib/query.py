@@ -50,6 +50,11 @@ CONCEPTS: dict[str, list[str]] = {
     "данн": ["data visualization abstract", "data center servers", "analytics dashboard"],
     "график": ["chart data visualization", "rising graph abstract"],
     "сервер": ["server room blue light", "data center corridor"],
+    "вод": ["flowing water slow motion", "river current aerial", "water vortex underwater"],
+    "жидкост": ["liquid flow slow motion", "fluid dynamics visualization"],
+    "крыл": ["airplane wing in flight", "aircraft wing over clouds"],
+    "труб": ["industrial pipes valves", "factory pipework closeup"],
+    "погод": ["weather radar storm screen", "satellite weather map"],
     "статья": ["scientific paper on screen", "reading article laptop"],
     "патент": ["patent document closeup", "technical drawing blueprint"],
     "деньг": ["financial charts screen", "stock market data"],
@@ -343,6 +348,7 @@ BASE_NEGATIVES: tuple[str, ...] = (
     "watermark",
     "UI screenshot",
     "clickbait thumbnail",
+    "html tutorial",
 )
 STOCK_SMILE_LAB = "stock smile lab"
 MEDICINE_PROCEDURE_MARKERS = (
@@ -355,6 +361,14 @@ NEGATIVE_ALIASES: dict[str, tuple[str, ...]] = {
     "watermark": ("watermark", "shutterstock", "getty images"),
     "UI screenshot": ("ui screenshot", "app screenshot", "desktop screenshot"),
     "clickbait thumbnail": ("clickbait thumbnail", "clickbait", "youtube thumbnail"),
+    "html tutorial": (
+        "html tutorial", "hello world javascript", "hello js",
+        "learn javascript", "html css tutorial", "coding tutorial beginner",
+    ),
+    "cracked wall": (
+        "cracked wall", "cracked concrete", "peeling wall", "plaster wall",
+        "cracked earth",
+    ),
     "stock smile lab": (
         "stock smile lab", "stock smile", "smiling scientist",
         "smiling doctor", "happy lab team",
@@ -401,6 +415,9 @@ def slot_negatives(slot: dict[str, Any], plan: dict[str, Any] | None = None) -> 
     out = list(BASE_NEGATIVES)
     if not _is_medicine_procedure(slot, plan or {}):
         out.append(STOCK_SMILE_LAB)
+    video_id = str((plan or {}).get("video_id") or "")
+    if video_id == "redshift_0050":
+        out.append("cracked wall")
     return out
 
 
@@ -559,7 +576,12 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
         if not _looks_english(query):
             out.extend(_concepts_from_text(query))
 
+    video_id = str(plan.get("video_id") or "")
+    skip_cracked = video_id == "redshift_0050"
     for metaphor in ROLE_METAPHORS.get(slot.get("role", ""), []):
+        low = metaphor.lower()
+        if skip_cracked and ("cracked" in low or " wall" in f" {low}"):
+            continue
         if extra_fits_slot(metaphor, tokens):
             out.append(metaphor)
 

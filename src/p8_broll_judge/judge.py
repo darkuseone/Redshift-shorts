@@ -30,6 +30,7 @@ from ..lib.query import (
     classify_intent, negative_reject_reason, slot_negatives,
     thematic_reject_reason, topical_match_score,
 )
+from ..lib.text import sync_broll_from_script
 from ..p7_broll_search.search import (
     _footage_pin_entry, _load_footage_pins, _local_cache_row, footage_pool_count,
     judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_report,
@@ -573,6 +574,7 @@ def _fill_unfilled_from_leftover_prefers(
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
+    sync_broll_from_script(plan, ctx.cfg.repo_root)
     cfg = ctx.cfg
 
     accept_threshold = float(cfg.get("vision.accept_threshold", 0.70))

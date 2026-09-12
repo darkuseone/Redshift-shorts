@@ -1,11 +1,10 @@
 {
   "script": "scripts/redshift_0050.json",
   "providers_mode": "live",
-  "from_step": "P0",
+  "from_step": "P7",
   "heygen_source": "prepared",
-  "skip_generate": false,
+  "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "0050 full rebuild: prepared MCP avatar, live stock+gen, fix QC-24 plates",
-  "tts_pace": 1.2
+  "note": "0050 remount: keep paid wav+webm; pins fill slots; no TTS/HeyGen/P9 generate. from P7."
 }

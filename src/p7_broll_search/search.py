@@ -40,6 +40,7 @@ from ..lib.query import (
     topical_tokens,
 )
 from ..lib.render.shots import slim_video
+from ..lib.text import sync_broll_from_script
 
 SCI_QUERY_PAD = (
     "dilution refrigerator",
@@ -505,6 +506,7 @@ def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
 
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
+    sync_broll_from_script(plan, ctx.cfg.repo_root)
     cfg = ctx.cfg
     routing = _load_routing(cfg)
     providers = build_stock_providers(cfg, ctx.costs)
@@ -559,6 +561,7 @@ def run_step(ctx) -> dict[str, Any]:
     # неиспользованные prefer как запасные — taken_ids сжигал их, и хвост
     # ролика (0042: криостат Grok) оставался пустым.
     exclusive_ids: set[str] = set()
+    remote_pin_tried: set[str] = set()
     from_cache = 0
     missing_in_storage: list[str] = []
     slot_search: list[dict[str, Any]] = []
@@ -938,6 +941,33 @@ def run_step(ctx) -> dict[str, Any]:
                           palette_max=press_palette_max, grade=True):
                     press_used += 1
                     break
+
+        # Prefer Freepik IDs that are not in the local index: download by id
+        # only when pin_match says this slot is the one (bonus < 0).
+        fp_provider = providers.get("freepik")
+        if fp_provider is not None and pin_prefer:
+            for pid in pin_prefer:
+                if not pid.startswith("freepik_") or pid in remote_pin_tried:
+                    continue
+                if pin_id_denied(pid, pin_deny):
+                    continue
+                if any(str(row.get("asset_id") or "") == pid
+                       for row in slot_candidates):
+                    continue
+                rec = index.by_id(pid)
+                if rec is not None and rec.file and ctx.storage.exists(rec.file):
+                    continue
+                bonus = pin_slot_prefer_key(pid, slot, pin_prefer, words=words)[0]
+                if bonus >= 0:
+                    continue
+                remote_pin_tried.add(pid)
+                cand = StockCandidate(
+                    id=pid, source="freepik", kind="video", query=pid,
+                    license=getattr(fp_provider, "license_name", "") or "Freepik",
+                    license_confirmed=True, attribution="Freepik",
+                )
+                if accept(fp_provider, cand, queries[0] if queries else pid):
+                    exclusive_ids.add(pid)
 
         # --- 3. внешние стоки -------------------------------------------------
         harvest(queries)

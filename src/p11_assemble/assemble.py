@@ -37,7 +37,7 @@ from ..lib.backdrop import tone as scene_tone
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
     punch_families_overlap, soften_on_screen_copy, spoken_onset_for_content,
-    stems_match, sync_overlays_from_script,
+    stems_match, sync_broll_from_script, sync_overlays_from_script,
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
@@ -5265,6 +5265,7 @@ def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
 def run_step(ctx) -> dict[str, Any]:
     plan = copy.deepcopy(ctx.read("cut_plan.json"))
     sync_overlays_from_script(plan, ctx.cfg.repo_root)
+    sync_broll_from_script(plan, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
     accepted_doc = ctx.read("accepted_assets.json")
     generated_doc = ctx.read("generated_assets.json")

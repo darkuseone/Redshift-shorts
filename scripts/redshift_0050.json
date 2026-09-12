@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 per TZ-REDSHIFT-0050.md. Not 0049 prepared. Hook without big RU word. Pace 1.2. Avatar live Avatar V look 99ccc74e.",
+    "notes": "0050 remount: spoken text frozen; overlay/pins/P7 only. Caption-gradient-fill. Avatar off in hook. No blackout RU word.",
     "hook": {
       "on_screen": "$1 000 000",
       "style": "number_slam"
@@ -44,11 +44,11 @@
       "text": "Миллион долларов. Четверть века никто не брал.",
       "emphasis_word": "миллион",
       "avatar": "off",
-      "visual_intent": "Движение с кадра 0: датацентр или вода или официальный OpenAI. Цифра $1 000 000 или бренд OpenAI. НЕ большое русское слово.",
+      "visual_intent": "Motion from frame 0: data-center aisle or flowing water or OpenAI press still. Overlay $1 000 000. No big Russian word. Avatar off.",
       "broll_queries": [
-        "openai headquarters exterior modern building",
-        "supercomputer data center aisle blue lights",
-        "water flowing glass slow motion clear"
+        "data center server aisle blue lights moving",
+        "water vortex flow slow motion underwater",
+        "modern glass headquarters exterior night"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -66,15 +66,15 @@
       "text": "Восьмого сентября модель без чата закрыла кусок этой задачи. Семь задач тысячелетия. Миллион долларов за каждую. Четверть века. Это формулы воды, воздуха и крови — не мелки на доске.",
       "emphasis_word": "семь",
       "avatar": "on",
-      "visual_intent": "Одна карточка $1 000 000, потом живая вода. Не два соседних $1M. Не абстрактная доска.",
+      "visual_intent": "Live water / river current after the hook $1 000 000 card. One stake card: 7 · $1 000 000 · 25 Y. Not a second prize plate.",
       "broll_queries": [
-        "water flowing river current aerial",
-        "wind tunnel airplane wing smoke",
-        "blood cells microscope flow red"
+        "river current aerial flowing water",
+        "blue ink swirling liquid macro",
+        "clear water flow glass tank slow motion"
       ],
       "overlay": {
         "type": "fullscreen_text",
-        "content": "7 · $1 000 000 · 25 ЛЕТ",
+        "content": "7 · $1 000 000 · 25 Y",
         "template_hint": "text-fullscreen/fact-card"
       },
       "sfx": "whoosh_in",
@@ -87,11 +87,11 @@
       "text": "Восьмого сентября две тысячи двадцать шесть OpenAI выкладывает работу. Искал не чат, а внутренняя модель сильнее GPT-6 Astra.",
       "emphasis_word": "Astra",
       "avatar": "off",
-      "visual_intent": "Карточка статьи openai.com + GPT-6 ASTRA тремя строками без предлога А. Source-card в углу без красного.",
+      "visual_intent": "openai.com article card + GPT-6 ASTRA. Source-chip corner, no red. GPU cluster / server aisle behind. Not a Nature figure.",
       "broll_queries": [
-        "gpu cluster server aisle datacenter night",
-        "research paper document desk closeup",
-        "code editor dark theme programming"
+        "gpu cluster server room night aisle",
+        "supercomputer hall dark blue lights",
+        "research paper on screen browser article"
       ],
       "overlay": {
         "type": "highlight",
@@ -109,12 +109,11 @@
       "text": "Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений. Семнадцать часов переложили доказательство в Lean.",
       "emphasis_word": "Lean",
       "avatar": "off",
-      "visual_intent": "Отдельные тёмные карточки цифр на живом фоне: 10 000, 88 Ч, 2 700 000, 17 Ч · LEAN. Не белые плашки. Не HTML Hello JS.",
+      "visual_intent": "Dark translucent number cards on live footage: 10 000, 88 Ч, 2 700 000, 17 Ч LEAN. Lean = proof code editor, not HTML hello-js. Chalkboard for hours.",
       "broll_queries": [
-        "server rack blinking lights closeup dark",
-        "code editor dark theme scrolling proof",
-        "mathematics proof whiteboard equations dark",
-        "digital counter numbers dashboard ui dark"
+        "chalkboard writing equations closeup dark",
+        "lean proof code editor dark theme scrolling",
+        "stock market money numbers ticker screen"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -131,12 +130,12 @@
       "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода. Крыло самолёта. Трубы в доме. Ток крови. Если формула врёт — самолёт не извиняется.",
       "emphasis_word": "жидкость",
       "avatar": "off",
-      "visual_intent": "Один пункт жизни — один кадр: погода, крыло, трубы, кровь. Не коллаж всех слов на одной карточке.",
+      "visual_intent": "One life beat per shot: weather radar, airplane wing, industrial pipes, blood flow. Not a collage of all words. Not HTML tutorial.",
       "broll_queries": [
         "weather radar storm satellite screen",
-        "airplane wing in flight clouds",
+        "airplane wing in flight above clouds",
         "industrial water pipes plant valves",
-        "blood flow medical animation microscope"
+        "blood flow artery visualization slow motion"
       ],
       "overlay": {
         "type": "none"
@@ -152,16 +151,15 @@
       "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
       "emphasis_word": "не принял",
       "avatar": "on",
-      "visual_intent": "Документы / институт Clay. Штамп REJECT или свет в щели двери. НЕ cracked wall / бетон / глина.",
+      "visual_intent": "Clay institute documents, stamp REJECT, door-gap light. Not concrete, not a drought plate, not a clay pit.",
       "broll_queries": [
-        "university institute classical building facade night",
-        "official documents stamp desk paperwork",
-        "door light gap dark room cinematic",
-        "rubber stamp rejected paper closeup"
+        "official documents stamp paperwork desk",
+        "stapling stack of papers closeup",
+        "classical institute facade night columns"
       ],
       "overlay": {
         "type": "fullscreen_text",
-        "content": "CLAY: НЕТ",
+        "content": "CLAY: REJECT",
         "template_hint": "text-fullscreen/fact-card"
       },
       "sfx": "sub_drop",
@@ -175,10 +173,10 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "REDSHIFT ровно без точки + аватар или живой кадр. Не косой текст.",
+      "visual_intent": "REDSHIFT wordmark latin, no trailing dot. Identity close. Live night motion, not oblique type.",
       "broll_queries": [
-        "open notebook mathematics desk warm light",
-        "city night lights traffic flow aerial"
+        "city night lights traffic flow aerial",
+        "dark abstract motion red accent particles"
       ],
       "overlay": {
         "type": "fullscreen_text",

@@ -96,5 +96,51 @@
       "fp_matrix_code"
     ],
     "same_asset_max_slots": 1
+  },
+  "redshift_0050": {
+    "prefer": [
+      "fp_water_vortex",
+      "fp_river_current",
+      "fp_blue_ink",
+      "fp_server_room",
+      "grok_supercomputer_0042",
+      "freepik_5200850",
+      "freepik_8945319",
+      "freepik_682745",
+      "freepik_4175316",
+      "freepik_3497298",
+      "freepik_136238",
+      "freepik_8816084",
+      "freepik_6468157",
+      "freepik_2321764",
+      "fp_code_editor",
+      "fp_desk_code",
+      "freepik_9127165",
+      "fp_chalkboard_eq",
+      "fp_writing_equations",
+      "fp_quad_formula",
+      "pexels_v38431825",
+      "fp_stapling_docs",
+      "fp_library_books",
+      "fp_white_ink",
+      "fp_sand_ripples",
+      "pexels_v7565432"
+    ],
+    "deny": [
+      "nasa_*",
+      "press_21bc8e2d72",
+      "fp_cracked_wall",
+      "fp_plaster_wall",
+      "fp_peeling_wall",
+      "fp_cracked_concrete",
+      "fp_cracked_earth",
+      "fp_rock_surface",
+      "fp_corroded_mesh",
+      "pixabay_v144678",
+      "grok_cryostat_0042",
+      "pexels_v20068211",
+      "pexels_v30775057"
+    ],
+    "same_asset_max_slots": 1
   }
 }

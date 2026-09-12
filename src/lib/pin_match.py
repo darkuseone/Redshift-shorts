@@ -60,12 +60,17 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
     «внутри него».
     """
     aid = str(asset_id or "")
+    aid_l = aid.lower()
     role = str(slot.get("asset_role") or "")
+    block_role = str(slot.get("role") or "")
     speech = overlapping_speech(slot, words).lower()
     intent = str(slot.get("visual_intent") or "").lower()
+    hook_blob = f"{speech} {intent}".strip()
     bonus = 0
     if aid.startswith("press_"):
-        if any(token in speech for token in ("nature", "опублик")):
+        press_blob = hook_blob if block_role == "hook" else speech
+        if any(token in press_blob for token in (
+                "nature", "опублик", "openai", "астра", "выклад", "gpt-6", "astra")):
             bonus = -25
         elif role == "evidence":
             bonus = -18
@@ -80,16 +85,29 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
         elif role == "evidence":
             # Leftover fill used to park the gold fridge on Nature «внутри».
             bonus = 8
-    elif "supercomputer" in aid:
+    elif ("supercomputer" in aid or "server_room" in aid_l
+          or any(token in aid for token in ("5200850", "1914869", "8112758"))):
+        blob = hook_blob if block_role == "hook" else (speech or intent)
         if any(token in speech for token in (
                 "суперкомп", "вселенн", "supercomputer")):
             bonus = -20
+        elif any(token in blob for token in (
+                "суперкомп", "вселенн", "supercomputer", "сервер",
+                "датацентр", "data-center", "data center", "cluster", "gpu")):
+            bonus = -16
         elif any(token in intent for token in (
                 "суперкомп", "вселенн", "supercomputer")):
             bonus = -15
     elif "38431825" in aid:
-        if any(token in speech for token in ("финальн", "подписк", "деньг")):
+        if block_role == "hook":
+            # Hook already carries $1 000 000 as type; ticker would duplicate.
+            bonus = 8
+        elif any(token in speech for token in (
+                "финальн", "подписк", "деньг", "миллион", "доллар")):
             bonus = -15
+        elif any(token in intent for token in (
+                "ticker", "money numbers", "stock market")):
+            bonus = -14
         elif role == "evidence":
             bonus = 12
         else:
@@ -97,7 +115,6 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             # on the hook, then rebalance kept it there to get it off evidence.
             bonus = 8
     else:
-        aid_l = aid.lower()
         hay = speech or intent
         wall = any(token in aid_l for token in (
             "cracked", "peeling", "plaster", "rock_surface"))
@@ -108,7 +125,18 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
         flow = any(token in hay for token in (
             "поток", "вихр", "спагетти", "сингуляр", "жидкост", "пункт"))
         hours = any(token in hay for token in ("час", "восем", "агент", "lean"))
-        if wall:
+        water = any(token in aid_l for token in (
+            "water_vortex", "river_current", "blue_ink", "7565432",
+            "3111227", "1257662"))
+        if water:
+            blob = hook_blob if block_role == "hook" else hay
+            if any(token in blob for token in (
+                    "вод", "теч", "жидкост", "water", "vortex", "river",
+                    "flowing", "ink")):
+                bonus = -18
+            elif hours:
+                bonus = 8
+        elif wall:
             # 0048: drought/crack plates parked on «88 часов / 2.7 млн», while
             # the twist said «дыра в стене / глухой». Smooth plaster is a wall,
             # not a hole — leftover then parks cracked/peeling on the twist.
@@ -123,11 +151,14 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             elif busy:
                 bonus = 10
         elif staple:
-            if any(token in hay for token in ("публик", "документ", "бумаг")):
+            if any(token in hay for token in (
+                    "публик", "документ", "бумаг", "клей", "clay", "приня",
+                    "reject")):
                 bonus = -12
             elif hole:
                 bonus = 18
-        elif any(token in aid_l for token in ("chalkboard_eq", "writing_equations")):
+        elif any(token in aid_l for token in (
+                "chalkboard_eq", "writing_equations", "quad_formula")):
             if hours:
                 bonus = -16
             elif hole or flow:
@@ -148,11 +179,32 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                 bonus = -18
             elif hours:
                 bonus = 12
-        elif any(token in aid_l for token in ("typing", "desk_code")):
+        elif any(token in aid_l for token in (
+                "typing", "desk_code", "code_editor", "9127165", "7800435",
+                "9115967")):
             if flow:
                 bonus = 14
             elif any(token in hay for token in ("lean", "код", "проверя")):
                 bonus = -10
+        elif any(token in aid_l for token in ("8945319", "682745")):
+            blob = hook_blob if block_role == "hook" else hay
+            if any(token in blob for token in (
+                    "крыл", "самолёт", "самолет", "airplane", "wing", "flight")):
+                bonus = -18
+        elif any(token in aid_l for token in ("4175316", "3497298", "136238")):
+            if any(token in hay for token in (
+                    "погод", "radar", "storm", "weather", "satellite")):
+                bonus = -18
+        elif any(token in aid_l for token in ("8816084", "6468157", "2321764")):
+            if any(token in hay for token in (
+                    "труб", "pipe", "valve", "industrial")):
+                bonus = -18
+        elif "library_books" in aid_l:
+            if any(token in hay for token in (
+                    "клей", "clay", "документ", "книг", "institute")):
+                bonus = -12
+            elif hole:
+                bonus = 10
     try:
         rank = list(pin_prefer).index(aid)
     except ValueError:
