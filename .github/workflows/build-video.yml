@@ -290,41 +290,7 @@ jobs:
             # words.json из speech_map — чтобы P5 не падал на MISSING_STEP_INPUT
             # когда кэш не восстановил выравнивание P4.
             if [ -f "work/$video_id/speech_map.json" ] && [ ! -f "work/$video_id/words.json" ]; then
-              python - "$video_id" <<'PY'
-import json, sys
-from pathlib import Path
-vid = sys.argv[1]
-work = Path("work") / vid
-sm = json.loads((work / "speech_map.json").read_text(encoding="utf-8"))
-words = []
-idx = 0
-for block in sm.get("blocks") or []:
-    bid = str(block.get("id") or "")
-    role = str(block.get("role") or "")
-    for w in block.get("words") or []:
-        display = str(w.get("word") or w.get("display") or "")
-        words.append({
-            "index": idx,
-            "display": display,
-            "start": float(w.get("start") or 0.0),
-            "end": float(w.get("end") or 0.0),
-            "block_id": bid,
-            "role": role,
-            "emphasis": False,
-            "spoken": [display] if display else [],
-            "source": "speech_map_seed",
-        })
-        idx += 1
-doc = {
-    "video_id": sm.get("video_id") or vid,
-    "duration_sec": float(sm.get("duration_sec") or 0.0),
-    "stats": {"count": len(words), "source": "seeded_from_speech_map"},
-    "words": words,
-}
-(work / "words.json").write_text(
-    json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-print("words.json seeded from speech_map:", len(words), "words")
-PY
+              python tools/seed_words_from_speech_map.py "$video_id"
             fi
             echo "голос взят из репозитория: $seed"
           else
