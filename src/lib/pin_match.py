@@ -170,8 +170,21 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
         if "magnific_0050_" in aid_l:
             beat = slot_visual_beat(slot, words)
             kind = aid_l.rsplit("_", 1)[-1]
+            intent = str(slot.get("visual_intent") or "").lower()
+            queries = " ".join(str(q).lower() for q in (slot.get("queries") or []))
+            hay = f"{intent} {queries}"
+            markers = {
+                "weather": ("weather", "radar", "storm", "satellite", "stormscreen"),
+                "wing": ("airplane", "wing", "airfoil", "flight", "winglet"),
+                "pipes": ("pipe", "valve", "industrial", "factorypipes"),
+                "blood": ("blood", "plasma", "cell", "microscope", "plasmaflow"),
+                "stamp": ("stamp", "reject", "paperwork", "deskstamp", "declined"),
+                "city": ("city", "night", "aerial", "traffic", "notebook", "citynight"),
+            }.get(kind, ())
             if kind and kind == beat:
                 bonus = -22
+            elif kind and markers and any(m in hay for m in markers):
+                bonus = -20  # authored intent/queries even if speech window drifted
             else:
                 bonus = 10
             try:

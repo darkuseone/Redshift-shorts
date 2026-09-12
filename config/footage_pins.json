@@ -143,6 +143,6 @@
       "pexels_v10001424"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round11: hydrate magnific into storage; prefer weather/wing/pipes/blood/stamp/city + safe pexels. Deny adds poison pexels. same_asset_max_slots 1."
+    "_note": "round12: prefer weather/wing/pipes/blood/stamp/city + server pexels; deny water fillers; same_asset_max_slots 1; intent pin match."
   }
 }

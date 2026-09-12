@@ -21,17 +21,22 @@ def hydrate_repo_footage(ctx: Any, index: Any) -> int:
     repo_root = Path(getattr(getattr(ctx, "cfg", None), "repo_root", None) or ".")
     assets = repo_root / "assets" / "footage"
     n = 0
+    magnific_checked = 0
+    magnific_copied = 0
     items = list(getattr(index, "items", None) or [])
     for record in items:
         key = str(getattr(record, "file", "") or "")
         if not key:
             continue
+        name = Path(key).name
+        is_magnific = "magnific" in key.lower() or name.lower().startswith("magnific_")
+        if is_magnific:
+            magnific_checked += 1
         try:
             if storage.exists(key):
                 continue
         except Exception:  # noqa: BLE001
             continue
-        name = Path(key).name
         candidates = [
             assets / key,
             assets / "magnific" / name,
@@ -44,8 +49,15 @@ def hydrate_repo_footage(ctx: Any, index: Any) -> int:
         try:
             storage.put(key, src)
             n += 1
+            if is_magnific:
+                magnific_copied += 1
         except Exception as exc:  # noqa: BLE001
             _log.warning("hydrate failed %s: %s", key, exc)
+    _log.info(
+        "hydrate checked %s magnific; copied %s",
+        magnific_checked,
+        magnific_copied,
+    )
     if n:
         _log.info("hydrated %s footage file(s) from assets into storage", n)
     return n

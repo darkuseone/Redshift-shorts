@@ -113,7 +113,7 @@
       "broll_queries": [
         "chalkboard writing equations closeup dark",
         "lean proof code editor dark theme scrolling",
-        "stock market money numbers ticker screen"
+        "gpu cluster server room night aisle"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -170,14 +170,14 @@
       "text": "Крыло самолёта.",
       "emphasis_word": "Крыло",
       "avatar": "off",
-      "visual_intent": "airplane winglet airfoil flightclouds. catalog accent-underline AIRFOIL overlay.",
+      "visual_intent": "airplane winglet airfoil flightclouds. catalog note-pin AIRFOIL overlay.",
       "broll_queries": [
         "airplane winglet airfoil flightclouds"
       ],
       "overlay": {
         "type": "lower_third",
         "content": "AIRFOIL",
-        "template_hint": "lower-thirds/accent-underline"
+        "template_hint": "lower-thirds/note-pin"
       },
       "meme_allowed": false,
       "mode_hint": "C",

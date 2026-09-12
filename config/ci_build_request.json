@@ -1,11 +1,9 @@
 {
-  "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "providers_mode": "live",
-  "from_step": "P7",
+  "from_step": "P5",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
-  "requested_by": "cursor",
-  "note": "round11 hydrate magnific into storage + semantic pins"
+  "providers_mode": "live",
+  "note": "round12: P5 replan slot/speech align; magnific intent-match; grade wing cyan; fix QC-30"
 }
