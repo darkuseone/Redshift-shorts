@@ -2714,8 +2714,13 @@ def dv_stat_card(ctx: "TemplateCtx") -> Piece:
                 f'{{opacity:0}},{_num(at + per)});')
     kicker = f'<span class="sc-label">{_esc(label)}</span>' if label else ""
     tweens = entrance_tweens(f"#{node_id} .sc-in", ctx.start, name="zoom-out") + tweens
+    theme = str(ctx.params.get("theme") or "").lower()
+    dark = bool(ctx.params.get("dark") or theme == "dark"
+                or str(ctx.params.get("background") or "").lower() == "dark"
+                or str(ctx.params.get("tone") or "").lower() == "ink")
+    sc_cls = "clip overlay stat-card" + (" theme-dark" if dark else "")
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip overlay stat-card" {_timing(ctx)}>'
+        nodes=[f'<div id="{node_id}" class="{sc_cls}" {_timing(ctx)}>'
                f'<div class="sc-in">{kicker}'
                f'<span class="sc-num">{"".join(spans)}</span></div></div>'],
         tweens=tweens)
@@ -6355,6 +6360,10 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-display);font-size:168px;line-height:1.05;"
         "color:var(--color-ink)}"
         ".stat-card .sc-num span{position:absolute;left:0;right:0;opacity:0}"
+        ".stat-card.theme-dark .sc-in{background:#16181d;color:#f4f4f5;"
+        "box-shadow:0 22px 60px rgba(0,0,0,0.45)}"
+        ".stat-card.theme-dark .sc-label{color:#9ca3af}"
+        ".stat-card.theme-dark .sc-num{color:#f4f4f5}"
         ".abc-chart{left:0;top:0;"
         f"width:{canvas_w}px;height:{canvas_h}px;"
         "background:#f7f7f8}"
@@ -9231,10 +9240,12 @@ def _lbc_copy(params: dict[str, Any]) -> tuple[str, str, str]:
     return wordmark, tagline, url
 
 
-def _lbc_body_and_dot(wordmark: str) -> tuple[str, str]:
+def _lbc_body_and_dot(wordmark: str, *, no_period: bool = False) -> tuple[str, str]:
     text = str(wordmark or "").strip() or _LBC_DEFAULT_MARK
     if text.endswith("."):
-        return text[:-1], "."
+        text = text[:-1]
+    if no_period:
+        return text, ""
     return text, "."
 
 
@@ -9253,10 +9264,20 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     exit_mode = str(ctx.params.get("exit") or "none").lower()
     if exit_mode not in ("none", "fade", "up"):
         exit_mode = "none"
-    body, dot = _lbc_body_and_dot(wordmark)
+    no_period = bool(ctx.params.get("no_period"))
+    body, dot = _lbc_body_and_dot(wordmark, no_period=no_period)
     node_id = ctx.target
     available = float(ctx.params.get("available_px") or _LBC_WIDTH)
-    size = fit_size(body + dot, available, _LBC_CEILING, role="display")
+    size = fit_size(body + (dot or ""), available, _LBC_CEILING, role="display")
+    # Compact / fontScale: smaller mark so full REDSHIFT fits (no «REDSHI»).
+    scale_factor = _LBLS_SIZE.get("compact", 0.76) if ctx.params.get("compact") else 1.0
+    try:
+        fs = float(ctx.params.get("fontScale") or 0) or 0.0
+    except (TypeError, ValueError):
+        fs = 0.0
+    if fs > 0:
+        scale_factor = fs
+    size = max(28.0, size * scale_factor)
     letter_y = round(_LBC_LETTER_Y_EM * size, 2)
     period_y = round(_LBC_PERIOD_Y_EM * size, 2)
     tag_size = max(28, min(48, int(round(size * 0.22))))
@@ -9276,10 +9297,14 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     total_base = max(0.001, _LBC_IN_BASE + out_base)
     # Short CTA windows used to still run the 2.6s cascade: at ~1s the mark
     # read «REDSHIF». Hold the finished wordmark for the last second+.
+    # Compact 0050: skip cascade entirely — paint the full mark at t0.
     hold = 0.0
-    if duration <= 2.6 and exit_mode == "none":
+    compact = bool(ctx.params.get("compact"))
+    if compact and exit_mode == "none":
+        hold = max(0.0, duration - 0.12)
+    elif duration <= 2.6 and exit_mode == "none":
         hold = max(0.0, duration - 0.55)
-    cascade_budget = max(0.35, duration - hold) if hold else duration
+    cascade_budget = max(0.12, duration - hold) if hold else duration
     scale = cascade_budget / total_base if cascade_budget < total_base else 1.0
     letter_dur = _LBC_LETTER * scale
     stagger_amount = _LBC_STAGGER_AMOUNT * scale
@@ -9317,12 +9342,13 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
             f'{{opacity:1,y:0,duration:{_num(letter_dur)},ease:"expo.out"}},{_num(letter_at)});'
         )
         step += 1
-    chars.append(f'<span id="{node_id}-dot" class="lbc-dot">{_esc(dot)}</span>')
-    tweens.append(
-        f'tl.fromTo("#{node_id}-dot",{{opacity:0,scale:0.2,y:{_num(period_y)}}},'
-        f'{{opacity:1,scale:1,y:0,duration:{_num(period_dur)},'
-        f'ease:"back.out(1.8)"}},{_num(period_at)});'
-    )
+    if dot:
+        chars.append(f'<span id="{node_id}-dot" class="lbc-dot">{_esc(dot)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-dot",{{opacity:0,scale:0.2,y:{_num(period_y)}}},'
+            f'{{opacity:1,scale:1,y:0,duration:{_num(period_dur)},'
+            f'ease:"back.out(1.8)"}},{_num(period_at)});'
+        )
 
     extras: list[str] = []
     if tagline:
@@ -12812,8 +12838,13 @@ def ov_source_card(ctx: "TemplateCtx") -> Piece:
         tweens += entrance_tweens(f"#{node_id} .snippet", ctx.start,
                                   name="rise", delay=0.10, duration=enter)
     compact = " compact" if ctx.params.get("compact") else ""
+    theme = str(ctx.params.get("theme") or "").lower()
+    dark = bool(ctx.params.get("dark") or theme == "dark"
+                or str(ctx.params.get("background") or "").lower() == "dark"
+                or str(ctx.params.get("tone") or "").lower() == "ink")
+    dark_cls = " theme-dark" if dark else ""
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip overlay source-card{compact}" {_timing(ctx)}>'
+        nodes=[f'<div id="{node_id}" class="clip overlay source-card{compact}{dark_cls}" {_timing(ctx)}>'
                f'<div id="{stage}" class="sc-stage" style="opacity:0">'
                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'
@@ -12877,8 +12908,13 @@ def ov_article_scroll(ctx: "TemplateCtx") -> Piece:
             f'tl.fromTo("#{node_id} .as-body",{{y:0}},'
             f'{{y:{-shift},duration:{_num(hold)},ease:"none"}},'
             f'{_num(ctx.start + 0.5)});')
+    theme = str(ctx.params.get("theme") or "").lower()
+    dark = bool(ctx.params.get("dark") or theme == "dark"
+                or str(ctx.params.get("background") or "").lower() == "dark"
+                or str(ctx.params.get("tone") or "").lower() == "ink")
+    as_cls = "clip overlay article-scroll" + (" theme-dark" if dark else "")
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip overlay article-scroll" {_timing(ctx)}>'
+        nodes=[f'<div id="{node_id}" class="{as_cls}" {_timing(ctx)}>'
                f'<div class="as-frame">'
                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'
@@ -14131,6 +14167,14 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "box-shadow:0 0 0 6px var(--color-accent-soft)}"
         ".article-scroll .as-clip{overflow:hidden;max-height:420px}"
         ".article-scroll .as-body{will-change:transform}"
+        ".article-scroll.theme-dark .as-frame{background:#16181d;color:#f4f4f5;"
+        "box-shadow:0 18px 48px rgba(0,0,0,0.45)}"
+        ".article-scroll.theme-dark .bar{background:#1e2229}"
+        ".article-scroll.theme-dark .domain{color:#9ca3af}"
+        ".article-scroll.theme-dark .title{color:#f4f4f5}"
+        ".article-scroll.theme-dark .snippet{color:#c4c7cc}"
+        ".article-scroll.theme-dark .hl{background:rgba(200,69,61,.28);"
+        "box-shadow:0 0 0 6px rgba(200,69,61,.28)}"
         f".paper-reveal{{left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
         f"top:{int(safe['y_min']) + 80}px}}"

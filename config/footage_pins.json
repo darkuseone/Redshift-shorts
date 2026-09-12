@@ -105,6 +105,9 @@
       "magnific_0050_blood",
       "magnific_0050_stamp",
       "magnific_0050_city",
+      "fp_server_room",
+      "fp_code_editor",
+      "fp_chalkboard_eq",
       "pexels_v7565432",
       "pexels_v38431825",
       "pexels_v18866692",
@@ -141,11 +144,15 @@
       "pexels_v30518348",
       "pexels_v12369762",
       "pexels_v10001424",
-      "pexels_v31720765"
+      "pexels_v31720765",
+      "fp_matrix_code",
+      "fp_analog_clock"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round13: by_block hard pins weather/wing/pipes/blood/stamp/city; deny water 31720765; same_asset_max_slots 1; intent -24",
+    "_note": "round14: dark browser/source; compact CTA; shorten REJECTED; FOLLOWUP dark; by_block b3 server b4 code + weather/wing/pipes/blood/stamp/city",
     "by_block": {
+      "b3": "fp_server_room",
+      "b4": "fp_code_editor",
       "b5": null,
       "b5b": "magnific_0050_weather",
       "b5c": "magnific_0050_wing",

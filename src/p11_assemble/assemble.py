@@ -878,7 +878,16 @@ def _cta_wordmark(plan: dict[str, Any], catalog_wordmark: str = "") -> str:
 def _cta_close_style(plan: dict[str, Any]) -> dict[str, Any]:
     """Identity close: 0050 keeps stock under the mark (QC-30 paper invert)."""
     if str(plan.get("video_id") or "") == "redshift_0050":
-        return {"logo_close": True, "invert": False, "tone": "ink"}
+        # Compact bottom wordmark — cascade was truncating to «REDSHI».
+        return {
+            "logo_close": True,
+            "invert": False,
+            "tone": "ink",
+            "compact": True,
+            "position": "bottom",
+            "no_period": True,
+            "fontScale": 0.72,
+        }
     return {"logo_close": True, "invert": True, "tone": "paper"}
 
 
@@ -3052,8 +3061,8 @@ def _clamp_plaques_at_avatar_cuts(
 ) -> list[dict[str, Any]]:
     """Plaque/note-pin must not carry across a cut onto an avatar chest.
 
-    Latin authored lower-thirds (WEATHER / REJECTED / FOLLOWUP) keep
-    full-block timing so QC-24 bare plates between avatar cuts stay covered.
+    Latin authored lower-thirds are already duration-capped at build time;
+    skip a second clamp here so the short window stays intact for QC-24.
     """
     for ovl in overlays:
         kind = str(ovl.get("type") or "")
@@ -3070,6 +3079,74 @@ def _clamp_plaques_at_avatar_cuts(
             3,
         )
     return overlays
+
+
+
+_LATIN_DARK_CLEANBAR = frozenset({
+    "FOLLOWUP", "WEATHER", "REJECTED", "FLUIDS", "AIRFOIL", "VALVES", "PLASMA",
+})
+_LATIN_PLAQUE_MAX_SEC = 3.5
+
+
+def _latin_plaque_span(
+    block_slots: list[dict[str, Any]],
+    shots: list[dict[str, Any]],
+) -> tuple[float, float]:
+    """Latin lower-thirds: short window on first non-avatar beat (QC-24).
+
+    Full-block REJECTED used to sit on avatar chests for ~14s. Cap at 3.5s
+    starting on the first footage/fullscreen slot in the block, and stop
+    before the next talking head.
+    """
+    b_start = float(block_slots[0]["start"])
+    b_end = float(block_slots[-1]["end"])
+    footage = [
+        s for s in block_slots
+        if str(s.get("kind") or "") not in AVATAR_KINDS
+    ]
+    if footage:
+        start = float(footage[0]["start"])
+        end = min(start + _LATIN_PLAQUE_MAX_SEC, float(footage[0]["end"]), b_end)
+        for later in footage[1:]:
+            if float(later["start"]) > end + 1e-3:
+                break
+            end = min(start + _LATIN_PLAQUE_MAX_SEC, float(later["end"]), b_end)
+    else:
+        start = b_start
+        end = min(b_start + _LATIN_PLAQUE_MAX_SEC, b_end)
+    end = _clamp_end_before_next_avatar(start, end, shots)
+    if end - start < 0.35:
+        end = min(start + min(_LATIN_PLAQUE_MAX_SEC, b_end - start), b_end)
+    return round(start, 3), round(end, 3)
+
+
+def _coerce_latin_cleanbar_dark(params: dict[str, Any], *, content: str,
+                               template_id: str) -> dict[str, Any]:
+    """FOLLOWUP (etc.) on clean-bar must not paint a white pill.
+
+    QC-25 caps dark-card template id at ≤2 (b5+b6). Keep clean-bar /
+    name-title ids, but force dark_card styling so composition routes to
+    lt_dark_card charcoal chrome.
+    """
+    label = str(content or "").strip().upper()
+    tid = str(template_id or "")
+    if label not in _LATIN_DARK_CLEANBAR:
+        return params
+    if "clean-bar" in tid or params.get("clean_bar"):
+        params = dict(params)
+        params["dark_card"] = True
+        params["clean_bar"] = False
+        params["tone"] = "ink"
+        params["invert"] = False
+        params["background"] = "dark"
+    elif label == "FOLLOWUP":
+        # name-title / generic plaque path — still force dark plate, never white.
+        params = dict(params)
+        params["dark_card"] = True
+        params["tone"] = "ink"
+        params["invert"] = False
+        params["background"] = "dark"
+    return params
 
 
 def _plaque_overlay(*, template: Template, start: float, end: float,
@@ -3430,6 +3507,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         }
         if compact_card:
             card_params["compact"] = True
+        # 0050: white browser paper + red source chip failed Gemini visual.
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            card_params.update({
+                "tone": "ink",
+                "theme": "dark",
+                "invert": False,
+                "dark": True,
+                "background": "dark",
+            })
         if renderer == "ai_chat_reveal":
             card_params["userMessage"] = (
                 source.get("title") or source.get("snippet") or "")
@@ -3546,18 +3632,29 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         if plaque_end - plaque_start < 0.8:
             plaque_start = max(float(anchor["start"]), float(anchor["end"]) - 2.0)
             plaque_end = float(anchor["end"])
+        chip_params = {
+            "text": domain, "subtitle": "источник",
+            "name": domain, "role": "источник",
+            "source_chip": True,
+            "position": "bottom",
+            "direction": "left",
+            **{k: v for k, v in plaque_template.params.items()
+               if k in ("accent_underline",
+                        "clean_bar", "dark_card")},
+        }
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            chip_params.update({
+                "accent": False,
+                "no_red": True,
+                "border_color": "muted",
+                "tone": "ink",
+                "theme": "dark",
+            })
         overlays.append(_plaque_overlay(
             template=plaque_template,
             start=plaque_start,
             end=plaque_end,
-            params={"text": domain, "subtitle": "источник",
-                    "name": domain, "role": "источник",
-                    "source_chip": True,
-                    "position": "bottom",
-                    "direction": "left",
-                    **{k: v for k, v in plaque_template.params.items()
-                       if k in ("accent_underline",
-                                "clean_bar", "dark_card")}},
+            params=chip_params,
             why="§5.4: плашка с доменом источника",
             enter_ms=enter_ms,
         ))
@@ -3600,15 +3697,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         used.append(template.id)
         latin = is_latin_overlay_label(content)
         # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
-        # Latin authored labels keep verbatim copy and full-block timing (QC-24).
+        # Latin authored labels keep verbatim copy; duration capped (QC-24).
         if not latin:
             content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
             content = soften_on_screen_copy(content)
         b_start = float(block_slots[0]["start"])
         b_end = float(block_slots[-1]["end"])
         if latin:
-            start = b_start
-            plaque_end = b_end
+            start, plaque_end = _latin_plaque_span(
+                block_slots, plan.get("slots") or [])
         else:
             bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
             anchor = find_spoken_anchor(bwords or words, content, block.get("emphasis_word"))
@@ -3667,15 +3764,21 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                     break
         if conflict:
             continue
+        plaque_params = {
+            "text": content, "content": content, "name": content,
+            "role": role,
+            **{k: v for k, v in template.params.items()
+               if k in ("position", "direction", "accent_underline",
+                        "clean_bar", "dark_card")},
+        }
+        if latin:
+            plaque_params = _coerce_latin_cleanbar_dark(
+                plaque_params, content=content, template_id=template.id)
         overlays.append(_plaque_overlay(
             template=template,
             start=start,
             end=plaque_end,
-            params={"text": content, "content": content, "name": content,
-                    "role": role,
-                    **{k: v for k, v in template.params.items()
-                       if k in ("position", "direction", "accent_underline",
-                                "clean_bar", "dark_card")}},
+            params=plaque_params,
             why=f"плашка из сценария, блок {block['id']}",
             enter_ms=enter_ms,
         ))
@@ -3688,15 +3791,24 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # в каталоге лежит `outro-cta/loop-back` (`renderer: footage`) — до сегодня
     # с пустым `last_used_in`.
     seam = bool(loop_seam)
+    vid = str(plan.get("video_id") or "")
+    if vid == "redshift_0050" and not seam:
+        # Compact ~1.8s wordmark — long cascade truncated to «REDSHI».
+        cta_end = float(cta_end)
+        cta_start = max(float(cta_start), round(cta_end - 1.8, 3))
     cta_exclude = list(used) + [str(x) for x in peer_exclude if x]
+    prefer_cta = (["outro-cta/loop-back"] if seam else
+                  (["outro-cta/logo-stamp", "outro-cta/logo-brand-close",
+                    "outro-cta/subscribe-pulse"]
+                   if vid == "redshift_0050" else
+                   ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"]))
     cta_template, _ = picker.pick(
         "outro-cta",
         variant=variant,
         duration=float(cta_end) - float(cta_start),
         recent_videos=recent_videos,
         exclude=cta_exclude,
-        prefer_head=(["outro-cta/loop-back"] if seam else
-                     ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"]),
+        prefer_head=prefer_cta,
         seed=seed,
     )
     used.append(cta_template.id)
@@ -3711,6 +3823,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         "exit": "none",
         **_cta_close_style(plan),
     })
+    cta_params["wordmark"] = str(cta_params.get("wordmark") or "REDSHIFT").rstrip(".")
     if seam:
         # Подпись поверх шва — мелкая и прижатая к низу: она не должна попасть
         # в те 64 бита, по которым QC-27 сравнивает первый кадр с последним.
@@ -4089,9 +4202,18 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             continue
         if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
             continue
-        overlays.append(_dataviz_overlay(
+        ovl = _dataviz_overlay(
             slot, nums, blocks, picker, variant=variant, seed=seed,
-            recent_videos=recent_videos, used=used, start=start, end=end))
+            recent_videos=recent_videos, used=used, start=start, end=end)
+        # 0050: white stat-countup card on OpenAI beat — force dark chrome.
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            params = dict(ovl.get("params") or {})
+            params.update({
+                "tone": "ink", "theme": "dark", "dark": True,
+                "invert": False, "background": "dark",
+            })
+            ovl["params"] = params
+        overlays.append(ovl)
         occupied.append((start, end))
         budget.take("dataviz")
         if bid:

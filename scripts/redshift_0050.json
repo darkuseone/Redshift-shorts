@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 QC round10: stamp+city plates; deprefer blood; fix QC-SEMANTIC mismatch; spoken frozen; skip_generate true.",
+    "notes": "0050 QC round14: dark browser/source; compact REDSHIFT CTA; shorten REJECTED; FOLLOWUP dark; Gemini FIX visual; spoken frozen.",
     "hook": {
       "on_screen": "$1 000 000",
       "style": "number_slam"
@@ -248,7 +248,7 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "city night traffic aerial OR open notebook (citynight trafficlights aerialcity opennotebook). catalog clean-bar FOLLOWUP; soft wordmark-only outro preferred over logo-brand-close paper invert.",
+      "visual_intent": "city night traffic aerial OR open notebook (citynight trafficlights aerialcity opennotebook). catalog name-title FOLLOWUP dark plate; compact wordmark-only outro.",
       "broll_queries": [
         "citynight trafficlights aerialcity city night traffic aerial",
         "opennotebook open notebook desk warm light"
@@ -256,7 +256,7 @@
       "overlay": {
         "type": "lower_third",
         "content": "FOLLOWUP",
-        "template_hint": "lower-thirds/clean-bar"
+        "template_hint": "lower-thirds/name-title"
       },
       "sfx": "subscribe_ping",
       "emphasis_family": "emotion"

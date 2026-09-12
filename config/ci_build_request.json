@@ -1,11 +1,11 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "providers_mode": "live",
   "from_step": "P7",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
+  "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round13: by_block hard pins weather/wing/pipes/blood/stamp/city; no cross-block clone; deny water 31720765; intent -24"
+  "note": "round14: dark browser/source; compact REDSHIFT CTA; shorten REJECTED; FOLLOWUP dark; Gemini FIX visual; by_block b3 server b4 code"
 }

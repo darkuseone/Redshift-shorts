@@ -81,7 +81,7 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     labels = {
         "b5": ("FLUIDS", "lower-thirds/dark-card"),
         "b5b": ("WEATHER", "lower-thirds/clean-bar"),
-        "b5c": ("AIRFOIL", "lower-thirds/accent-underline"),
+        "b5c": ("AIRFOIL", "lower-thirds/note-pin"),
         "b5d": ("VALVES", "lower-thirds/note-pin"),
         "b5e": ("PLASMA", "lower-thirds/metric-badge"),
     }
@@ -99,7 +99,7 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     assert "НЕТ" not in by_id["b6"]["overlay"]["content"]
     assert by_id["b7"]["overlay"]["type"] == "lower_third"
     assert by_id["b7"]["overlay"]["content"] == "FOLLOWUP"
-    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/clean-bar"
+    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/name-title"
     assert "РЕДШИФТ" not in by_id["b7"]["overlay"]["content"]
     assert not by_id["b7"]["overlay"]["content"].endswith(".")
     assert "bigtext-mask-footage" not in by_id["b7"]["overlay"].get("template_hint", "")
@@ -115,30 +115,23 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     entry = pins["redshift_0050"]
     prefer = entry["prefer"]
     deny = entry["deny"]
-    assert prefer[:4] == [
+    assert prefer[:6] == [
         "magnific_0050_weather", "magnific_0050_wing",
         "magnific_0050_pipes", "magnific_0050_blood",
+        "magnific_0050_stamp", "magnific_0050_city",
     ]
     for aid in (
-        "fp_water_vortex", "fp_river_current", "fp_blue_ink", "pexels_v7565432",
-        "fp_server_room", "grok_supercomputer_0042", "freepik_5200850",
-        "freepik_8945319", "freepik_682745",
-        "freepik_4175316", "freepik_3497298",
-        "freepik_8816084", "freepik_6468157", "freepik_2321764",
-        "fp_code_editor", "fp_desk_code", "freepik_9127165",
-        "fp_chalkboard_eq", "fp_writing_equations", "fp_quad_formula",
-        "pexels_v38431825",
-        "fp_stapling_docs", "freepik_2435788", "freepik_1033903",
-        "freepik_1114799", "fp_library_books",
-        "freepik_6468280", "freepik_2341975", "freepik_2989050",
-        "freepik_5504514", "freepik_7749931", "freepik_3449792",
-        "freepik_3543840",
-        "pexels_v15168364", "pexels_v18866692", "pexels_v28709421",
-        "pexels_v28838439", "pexels_v11048629", "pexels_v28055604",
-        "pexels_v29380116",
-        "fp_white_ink", "fp_sand_ripples",
+        "fp_server_room", "fp_code_editor", "fp_chalkboard_eq",
+        "pexels_v7565432", "pexels_v38431825",
+        "magnific_0050_weather", "magnific_0050_stamp", "magnific_0050_city",
     ):
         assert aid in prefer, aid
+    by_block = entry.get("by_block") or {}
+    assert by_block.get("b3") == "fp_server_room"
+    assert by_block.get("b4") == "fp_code_editor"
+    assert by_block.get("b5b") == "magnific_0050_weather"
+    assert by_block.get("b6") == "magnific_0050_stamp"
+    assert by_block.get("b7") == "magnific_0050_city"
     assert "freepik_136238" not in prefer
     assert "press_21bc8e2d72" not in prefer
     assert "press_21bc8e2d72" in deny
@@ -390,6 +383,9 @@ def test_0050_cta_wordmark_latin_never_cyrillic():
     style = _cta_close_style(plan)
     assert style["invert"] is False
     assert style["tone"] != "paper"
+    assert style.get("compact") is True
+    assert style.get("no_period") is True
+    assert style.get("position") == "bottom"
     bans = _template_excludes_for(plan)
     assert "text-fullscreen/bigtext-mask-footage" in bans
 
@@ -450,6 +446,7 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
     assert by_id["b5"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
     assert by_id["b5b"]["overlay"]["template_hint"] == "lower-thirds/clean-bar"
     assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/name-title"
 
 
 def test_0050_ci_request_is_p7_prepared_skip_generate():
@@ -459,9 +456,10 @@ def test_0050_ci_request_is_p7_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert "round9" in req["note"]
-    assert "gap_reason" in req["note"]
+    assert "round14" in req["note"]
     assert "REJECTED" in req["note"]
+    assert "FOLLOWUP" in req["note"]
+    assert "compact REDSHIFT CTA" in req["note"]
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
@@ -507,17 +505,52 @@ def test_0050_footage_index_has_magnific_plates():
     idx = FootageIndex(REPO / "cache" / "footage_index.json")
     for aid, tag in (
         ("magnific_0050_weather", "radar"),
-        ("magnific_0050_wing", "wing"),
-        ("magnific_0050_pipes", "pipes"),
-        ("magnific_0050_blood", "blood"),
+        ("magnific_0050_wing", "winglet"),
+        ("magnific_0050_pipes", "pipework"),
+        ("magnific_0050_blood", "bloodcells"),
+        ("magnific_0050_stamp", "rubberstamp"),
+        ("magnific_0050_city", "citynight"),
     ):
         rec = idx.by_id(aid)
         assert rec is not None, aid
         assert rec.source == "magnific"
-        assert rec.ai_generated is True
+        assert rec.ai_generated is False
         assert rec.width == 1080 and rec.height == 1920
         assert rec.duration_sec == 4.0
         assert rec.file == f"magnific/{aid}.mp4"
         assert tag in rec.tags
+        assert float(rec.score or 0) >= 0.9
         assert rec.vision_summary
         assert tag_url_coherence(rec) >= 0.15
+
+
+def test_0050_latin_plaque_span_caps_before_avatar():
+    from src.p11_assemble.assemble import _latin_plaque_span
+
+    slots = [
+        {"kind": "footage", "start": 50.0, "end": 54.0},
+        {"kind": "avatar", "start": 54.0, "end": 64.0},
+    ]
+    start, end = _latin_plaque_span(slots, slots)
+    assert start == 50.0
+    assert end <= 54.0
+    assert end - start <= 3.5 + 1e-6
+
+
+def test_0050_followup_cleanbar_coerces_dark_card():
+    from src.p11_assemble.assemble import _coerce_latin_cleanbar_dark
+
+    params = _coerce_latin_cleanbar_dark(
+        {"clean_bar": True, "position": "bottom"},
+        content="FOLLOWUP",
+        template_id="lower-thirds/clean-bar",
+    )
+    assert params.get("dark_card") is True
+    assert params.get("clean_bar") is False
+    name = _coerce_latin_cleanbar_dark(
+        {"position": "bottom"},
+        content="FOLLOWUP",
+        template_id="lower-thirds/name-title",
+    )
+    assert name.get("dark_card") is True
+
