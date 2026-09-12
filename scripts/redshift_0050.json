@@ -197,7 +197,7 @@
       "overlay": {
         "type": "lower_third",
         "content": "VALVES",
-        "template_hint": "lower-thirds/dark-card"
+        "template_hint": "lower-thirds/note-pin"
       },
       "meme_allowed": false,
       "mode_hint": "C",
@@ -216,7 +216,7 @@
       "overlay": {
         "type": "lower_third",
         "content": "PLASMA",
-        "template_hint": "lower-thirds/clean-bar"
+        "template_hint": "lower-thirds/metric-badge"
       },
       "meme_allowed": false,
       "mode_hint": "C",
@@ -237,7 +237,7 @@
       "overlay": {
         "type": "lower_third",
         "content": "CLAY REJECT",
-        "template_hint": "lower-thirds/accent-underline"
+        "template_hint": "lower-thirds/dark-card"
       },
       "sfx": "sub_drop",
       "answers_hook": true,
@@ -257,7 +257,7 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "NEXT ASK",
+        "content": "FOLLOWUP",
         "template_hint": "lower-thirds/clean-bar"
       },
       "sfx": "subscribe_ping",
