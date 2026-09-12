@@ -6,5 +6,5 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "round9: clear gap_reason when plaque covers; latin FS conflict identity; b6 REJECTED"
+  "note": "round10: stamp+city plates; deprefer blood; fix QC-SEMANTIC mismatch."
 }
