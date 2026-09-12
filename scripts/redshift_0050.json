@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 QC round9: clear gap_reason when plaque covers; latin FS conflict identity; b6 REJECTED; spoken frozen; skip_generate true.",
+    "notes": "0050 QC round10: stamp+city plates; deprefer blood; fix QC-SEMANTIC mismatch; spoken frozen; skip_generate true.",
     "hook": {
       "on_screen": "$1 000 000",
       "style": "number_slam"
@@ -227,10 +227,10 @@
       "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
       "emphasis_word": "не принял",
       "avatar": "on",
-      "visual_intent": "rubber stamp declined paperwork on desk. catalog dark-card REJECTED overlay. Must place.",
+      "visual_intent": "rubberstamp declined paperwork deskstamp on desk. catalog dark-card REJECTED overlay. Must place.",
       "broll_queries": [
-        "rubber stamp declined paperwork desk",
-        "rubber stamp rejected documents closeup"
+        "rubberstamp declined paperwork deskstamp",
+        "rubber stamp declined paperwork desk"
       ],
       "overlay": {
         "type": "lower_third",
@@ -248,9 +248,9 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "city night traffic aerial OR open notebook (citynight trafficlights opennotebook). catalog clean-bar FOLLOWUP; soft wordmark-only outro preferred over logo-brand-close paper invert.",
+      "visual_intent": "city night traffic aerial OR open notebook (citynight trafficlights aerialcity opennotebook). catalog clean-bar FOLLOWUP; soft wordmark-only outro preferred over logo-brand-close paper invert.",
       "broll_queries": [
-        "citynight trafficlights city night traffic aerial",
+        "citynight trafficlights aerialcity city night traffic aerial",
         "opennotebook open notebook desk warm light"
       ],
       "overlay": {
