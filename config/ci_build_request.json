@@ -7,5 +7,5 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round16: P5 realign b5* to words; seed draft_plan; dark Latin plaques; fill white voids; snap life-beats"
+  "note": "round16: P5 realign b5* to words; seed draft_plan+words; dark Latin plaques; fill white voids; snap life-beats"
 }
