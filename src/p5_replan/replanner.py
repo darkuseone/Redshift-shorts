@@ -1021,8 +1021,11 @@ def compute_stats(slots: list[Slot], duration: float) -> dict[str, Any]:
 
 def run_step(ctx) -> dict[str, Any]:
     draft = ctx.read("draft_plan.json")
-    sync_overlays_from_script(draft, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
+    words = list(words_doc.get("words") or [])
+    sync_overlays_from_script(draft, ctx.cfg.repo_root, words=words)
+    # Persist remapped life-beat block_ids so P6+ karaoke/judge see «Погода».
+    ctx.write("words.json", words_doc)
 
     built = build_slots(draft, words_doc, ctx.cfg)
     slots: list[Slot] = built["slots"]
@@ -1096,6 +1099,9 @@ def run_step(ctx) -> dict[str, Any]:
             for b in draft["blocks"]
         ],
     }
+    from ..lib.text import snap_block_windows_to_keywords
+    snap_block_windows_to_keywords(
+        plan_doc, words, repo_root=ctx.cfg.repo_root)
     ctx.write("cut_plan.json", plan_doc)
 
     for warning in warnings:

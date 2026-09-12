@@ -1155,6 +1155,11 @@ def run_step(ctx) -> dict[str, Any]:
         palette_rules=palette_rules)
     if forced:
         _log.info("by_block pins forced onto %s block slot(s)", forced)
+    from ..lib.text import snap_block_windows_to_keywords
+    snapped = snap_block_windows_to_keywords(
+        plan, words, repo_root=getattr(cfg, "repo_root", None))
+    if snapped:
+        _log.info("life-beat slot windows snapped to keywords: %s", snapped)
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

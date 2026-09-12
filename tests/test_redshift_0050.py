@@ -127,11 +127,14 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     ):
         assert aid in prefer, aid
     by_block = entry.get("by_block") or {}
-    assert by_block.get("b3") == "fp_server_room"
-    assert by_block.get("b4") == "fp_code_editor"
+    assert by_block.get("b3") == "magnific_0050_gpu"
+    assert by_block.get("b4") == "magnific_0050_lean"
+    assert by_block.get("b5") == "pexels_v7565432"
     assert by_block.get("b5b") == "magnific_0050_weather"
     assert by_block.get("b6") == "magnific_0050_stamp"
     assert by_block.get("b7") == "magnific_0050_city"
+    assert "magnific_0050_gpu" in prefer
+    assert "magnific_0050_lean" in prefer
     assert "freepik_136238" not in prefer
     assert "press_21bc8e2d72" not in prefer
     assert "press_21bc8e2d72" in deny
@@ -449,17 +452,17 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
     assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/name-title"
 
 
-def test_0050_ci_request_is_p7_prepared_skip_generate():
+def test_0050_ci_request_is_p5_prepared_skip_generate():
     req = json.loads((REPO / "config" / "ci_build_request.json").read_text(encoding="utf-8"))
     assert req["script"] == "scripts/redshift_0050.json"
-    assert req["from_step"] == "P7"
+    assert req["video_id"] == "redshift_0050"
+    assert req["from_step"] == "P5"
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert "round14" in req["note"]
-    assert "REJECTED" in req["note"]
-    assert "FOLLOWUP" in req["note"]
-    assert "compact REDSHIFT CTA" in req["note"]
+    assert "round16" in req["note"]
+    assert "seed draft_plan" in req["note"]
+    assert "dark Latin plaques" in req["note"]
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
@@ -553,4 +556,62 @@ def test_0050_followup_cleanbar_coerces_dark_card():
         template_id="lower-thirds/name-title",
     )
     assert name.get("dark_card") is True
+    weather = _coerce_latin_cleanbar_dark(
+        {"clean_bar": True, "position": "bottom"},
+        content="WEATHER",
+        template_id="lower-thirds/clean-bar",
+    )
+    assert weather.get("dark_card") is True
+    assert weather.get("clean_bar") is False
+    for label in ("AIRFOIL", "VALVES", "PLASMA", "FLUIDS", "REJECTED"):
+        got = _coerce_latin_cleanbar_dark(
+            {"position": "bottom"}, content=label, template_id="lower-thirds/note-pin")
+        assert got.get("dark_card") is True, label
+
+
+def test_0050_snap_life_beats_to_weather_keyword():
+    from src.lib.text import (
+        reassign_words_for_script_children, snap_block_windows_to_keywords,
+    )
+
+    words = [
+        {"display": "Называются", "start": 34.56, "end": 35.12, "block_id": "b5"},
+        {"display": "уравнения", "start": 35.16, "end": 35.60, "block_id": "b5"},
+        {"display": "Навье-Стокса", "start": 35.66, "end": 36.56, "block_id": "b5"},
+        {"display": "жидкость", "start": 39.74, "end": 40.24, "block_id": "b5"},
+        {"display": "толкают", "start": 40.62, "end": 41.28, "block_id": "b5"},
+        {"display": "Погода", "start": 41.36, "end": 42.32, "block_id": "b5"},
+        {"display": "Крыло", "start": 42.44, "end": 42.80, "block_id": "b5"},
+        {"display": "самолёта", "start": 42.86, "end": 43.60, "block_id": "b5"},
+        {"display": "Трубы", "start": 43.68, "end": 44.00, "block_id": "b5"},
+        {"display": "доме", "start": 44.16, "end": 44.60, "block_id": "b5"},
+        {"display": "крови", "start": 44.98, "end": 45.52, "block_id": "b5"},
+        {"display": "извиняется", "start": 47.74, "end": 48.51, "block_id": "b5"},
+    ]
+    children = [
+        {"id": "b5", "text": "Называются уравнения Навье-Стокса. жидкость толкают."},
+        {"id": "b5b", "text": "Погода."},
+        {"id": "b5c", "text": "Крыло самолёта."},
+        {"id": "b5d", "text": "Трубы в доме."},
+        {"id": "b5e", "text": "Ток крови. извиняется."},
+    ]
+    assert reassign_words_for_script_children(words, "b5", children) > 0
+    assert any(w["block_id"] == "b5b" and "Погод" in w["display"] for w in words)
+    assert any(w["block_id"] == "b5c" and "Крыло" in w["display"] for w in words)
+    plan = {
+        "video_id": "redshift_0050",
+        "slots": [
+            {"index": 10, "block_id": "b5b", "kind": "footage",
+             "start": 37.14, "end": 40.19, "duration": 3.05},
+            {"index": 11, "block_id": "b5c", "kind": "footage",
+             "start": 40.19, "end": 42.0, "duration": 1.81},
+        ],
+        "blocks": children,
+    }
+    script = {"blocks": children}
+    n = snap_block_windows_to_keywords(plan, words, script=script)
+    assert n >= 1
+    weather_slot = next(s for s in plan["slots"] if s["block_id"] == "b5b")
+    assert weather_slot["start"] >= 40.5
+    assert weather_slot["start"] <= 41.5
 

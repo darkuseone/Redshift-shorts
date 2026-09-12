@@ -756,11 +756,15 @@ def _brand_plate_file(ctx, plan: dict[str, Any]) -> str | None:
     plate_path = _backdrop_plate(ctx.cfg, scene_name)
     if plate_path:
         return plate_path
-    # 0050: never fill semantic gaps with striped grid.jpg — leave empty so
-    # by_block force pins (gpu/lean/life-beats) can own those slots.
-    if str(plan.get("video_id") or "") == "redshift_0050":
-        return None
+    # 0050: never fill with striped grid.jpg / pale white voids — use a dark
+    # plate (horizon) so empty slots stay cinematic until by_block pins land.
     assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
+    if str(plan.get("video_id") or "") == "redshift_0050":
+        for name in ("horizon.jpg",):
+            cand = assets_dir / "backdrops" / name
+            if cand.exists():
+                return str(cand)
+        return None
     for name in ("grid.jpg", "horizon.jpg"):
         cand = assets_dir / "backdrops" / name
         if cand.exists():
@@ -3126,30 +3130,21 @@ def _latin_plaque_span(
 
 def _coerce_latin_cleanbar_dark(params: dict[str, Any], *, content: str,
                                template_id: str) -> dict[str, Any]:
-    """FOLLOWUP (etc.) on clean-bar must not paint a white pill.
+    """Latin labels must never paint a white clean-bar pill.
 
-    QC-25 caps dark-card template id at ≤2 (b5+b6). Keep clean-bar /
-    name-title ids, but force dark_card styling so composition routes to
-    lt_dark_card charcoal chrome.
+    QC-25 caps dark-card *template id* at ≤2 (b5+b6). Keep clean-bar /
+    name-title / note-pin ids, but always force dark_card styling so
+    composition routes to lt_dark_card charcoal chrome (WEATHER fix).
     """
     label = str(content or "").strip().upper()
-    tid = str(template_id or "")
     if label not in _LATIN_DARK_CLEANBAR:
         return params
-    if "clean-bar" in tid or params.get("clean_bar"):
-        params = dict(params)
-        params["dark_card"] = True
-        params["clean_bar"] = False
-        params["tone"] = "ink"
-        params["invert"] = False
-        params["background"] = "dark"
-    elif label == "FOLLOWUP":
-        # name-title / generic plaque path — still force dark plate, never white.
-        params = dict(params)
-        params["dark_card"] = True
-        params["tone"] = "ink"
-        params["invert"] = False
-        params["background"] = "dark"
+    params = dict(params)
+    params["dark_card"] = True
+    params["clean_bar"] = False
+    params["tone"] = "ink"
+    params["invert"] = False
+    params["background"] = "dark"
     return params
 
 

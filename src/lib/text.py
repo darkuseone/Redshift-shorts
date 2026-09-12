@@ -456,6 +456,288 @@ def _spoken_tokens(text: str) -> set[str]:
         r"[^\W\d_]{2,}", str(text or ""), flags=re.UNICODE)}
 
 
+
+# 0050 life-beat split markers inside a single spoken parent (b5).
+_0050_LIFE_BEAT_MARKERS: tuple[tuple[str, str], ...] = (
+    ("b5b", "погод"),
+    ("b5c", "крыл"),
+    ("b5d", "труб"),
+    # «Ток крови» — stem ток; substring «ток» must NOT hit «Навье-Стокса».
+    ("b5e", "ток"),
+)
+_0050_LIFE_BEAT_BLOCKS = ("b5", "b5b", "b5c", "b5d", "b5e")
+
+
+def _word_display(word: dict[str, Any]) -> str:
+    return str(word.get("display") or word.get("word") or "")
+
+
+def _marker_hits_word(display: str, stem: str) -> bool:
+    """Prefix/stem hit on whole word or hyphen parts — not raw substring."""
+    bare = _bare_word(display)
+    if not bare or not stem:
+        return False
+    parts = [bare] + [p for p in re.split(r"[-–—]", bare) if len(p) >= 2]
+    for part in parts:
+        if part == stem or part.startswith(stem):
+            return True
+        if stems_match(part, stem):
+            return True
+    return False
+
+
+def reassign_words_for_script_children(
+        words: list[dict[str, Any]] | None,
+        old_id: str,
+        children: list[dict[str, Any]]) -> int:
+    """Move parent ``block_id`` words onto script split children.
+
+    0050: keyword boundaries (погод/крыл/труб/кров). Generic fallback:
+    sequential token counts from each child text.
+    """
+    if not words or not children or len(children) < 2:
+        return 0
+    owned = sorted(
+        (w for w in words if isinstance(w, dict) and str(w.get("block_id") or "") == old_id),
+        key=lambda w: float(w.get("start") or 0.0),
+    )
+    if not owned:
+        return 0
+    child_ids = [str(c.get("id") or "") for c in children]
+    updated = 0
+
+    # 0050 life-beats: marker stems carve the parent span.
+    if (old_id == "b5"
+            and child_ids[:1] == ["b5"]
+            and all(cid in child_ids for cid, _ in _0050_LIFE_BEAT_MARKERS)):
+        cuts: list[tuple[int, str]] = [(0, "b5")]
+        for bid, stem in _0050_LIFE_BEAT_MARKERS:
+            for i, word in enumerate(owned):
+                if _marker_hits_word(_word_display(word), stem):
+                    cuts.append((i, bid))
+                    break
+        cuts.sort(key=lambda item: item[0])
+        # de-dupe by index keeping first marker order
+        seen_i: set[int] = set()
+        clean: list[tuple[int, str]] = []
+        for i, bid in cuts:
+            if i in seen_i and bid != "b5":
+                continue
+            seen_i.add(i)
+            clean.append((i, bid))
+        for n, (start_i, bid) in enumerate(clean):
+            end_i = clean[n + 1][0] if n + 1 < len(clean) else len(owned)
+            for word in owned[start_i:end_i]:
+                if str(word.get("block_id") or "") != bid:
+                    word["block_id"] = bid
+                    updated += 1
+        return updated
+
+    # Generic: consume ~N spoken tokens per child in order.
+    wi = 0
+    for n, child in enumerate(children):
+        cid = str(child.get("id") or "")
+        tokens = [m.group(0).lower() for m in re.finditer(
+            r"[^\W\d_]{2,}", str(child.get("text") or ""), flags=re.UNICODE)]
+        if n == len(children) - 1:
+            chunk = owned[wi:]
+        else:
+            take = max(1, len(tokens)) if tokens else 1
+            chunk = owned[wi:wi + take]
+            # Extend while hyphenated speech word covers extra script tokens.
+            wi_end = wi + len(chunk)
+            ti = len(chunk)
+            while ti < len(tokens) and wi_end < len(owned):
+                bare = _bare_word(_word_display(owned[wi_end]))
+                parts = [p for p in re.split(r"[-–—]", bare) if len(p) >= 2]
+                if len(parts) > 1:
+                    chunk.append(owned[wi_end])
+                    wi_end += 1
+                    ti += len(parts)
+                else:
+                    break
+            wi = wi_end
+        for word in chunk:
+            if str(word.get("block_id") or "") != cid:
+                word["block_id"] = cid
+                updated += 1
+        if n < len(children) - 1:
+            pass
+        else:
+            wi = len(owned)
+    return updated
+
+
+def _avatar_intervals(slots: list[dict[str, Any]]) -> list[tuple[float, float]]:
+    out: list[tuple[float, float]] = []
+    for slot in slots:
+        if not isinstance(slot, dict):
+            continue
+        kind = str(slot.get("kind") or "")
+        if kind not in ("avatar", "split"):
+            continue
+        try:
+            out.append((float(slot.get("start") or 0.0), float(slot.get("end") or 0.0)))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _clamp_away_from_avatar(
+        start: float, end: float,
+        avatars: list[tuple[float, float]]) -> tuple[float, float]:
+    for a0, a1 in avatars:
+        if end <= a0 + 1e-6 or start >= a1 - 1e-6:
+            continue
+        # Prefer keeping the non-overlap toward the keyword center.
+        mid = 0.5 * (start + end)
+        if mid < 0.5 * (a0 + a1):
+            end = min(end, a0)
+        else:
+            start = max(start, a1)
+    if end < start:
+        return start, start
+    return start, end
+
+
+def find_block_speech_span(
+        words: list[dict[str, Any]],
+        block_id: str,
+        *,
+        text: str = "",
+        stems: tuple[str, ...] = ()) -> tuple[float, float] | None:
+    """Start/end of spoken window for a block (by id, else stems/text)."""
+    owned = [
+        w for w in words
+        if isinstance(w, dict) and str(w.get("block_id") or "") == block_id
+    ]
+    if not owned and stems:
+        owned = [
+            w for w in words
+            if isinstance(w, dict)
+            and any(_marker_hits_word(_word_display(w), stem) for stem in stems)
+        ]
+    if not owned and text:
+        tokens = [m.group(0).lower() for m in re.finditer(
+            r"[^\W\d_]{2,}", text, flags=re.UNICODE)]
+        if tokens:
+            # first matching token through last
+            hits = []
+            for w in words:
+                if not isinstance(w, dict):
+                    continue
+                bare = _bare_word(_word_display(w))
+                if any(stems_match(bare, tok) or tok in bare for tok in tokens):
+                    hits.append(w)
+            owned = hits
+    if not owned:
+        return None
+    owned = sorted(owned, key=lambda w: float(w.get("start") or 0.0))
+    try:
+        return float(owned[0]["start"]), float(owned[-1]["end"])
+    except (TypeError, ValueError, KeyError):
+        return None
+
+
+def snap_block_windows_to_keywords(
+        plan: dict[str, Any],
+        words: list[dict[str, Any]] | None,
+        *,
+        script: dict[str, Any] | None = None,
+        repo_root=None,
+        pad: float = 0.3,
+        min_shot: float = 2.0) -> int:
+    """Rewrite 0050 b5* (and stamp/city) slot windows to spoken keyword spans.
+
+    Belt+suspenders when cut_plan slots drifted from «Погода»/«Крыло»/… timing.
+    """
+    if str(plan.get("video_id") or "") != "redshift_0050":
+        return 0
+    if not words:
+        return 0
+    script = script or _load_script_for_plan(plan, repo_root)
+    src_blocks = {
+        str(b.get("id") or ""): b
+        for b in ((script or {}).get("blocks") or [])
+        if isinstance(b, dict)
+    }
+    stem_map = {
+        "b5": ("навье", "жидкост", "течёт", "течет", "толка"),
+        "b5b": ("погод",),
+        "b5c": ("крыл",),
+        "b5d": ("труб",),
+        "b5e": ("ток", "кров"),
+        "b6": ("клей", "приня", "документ"),
+        "b7": ("шести", "разбер"),
+    }
+    slots = [s for s in (plan.get("slots") or []) if isinstance(s, dict)]
+    if not slots:
+        return 0
+    avatars = _avatar_intervals(slots)
+    updated = 0
+    for bid in ("b5", "b5b", "b5c", "b5d", "b5e", "b6", "b7"):
+        block_slots = [s for s in slots if str(s.get("block_id") or "") == bid]
+        if not block_slots:
+            continue
+        text = str((src_blocks.get(bid) or {}).get("text") or "")
+        span = find_block_speech_span(
+            words, bid, text=text, stems=stem_map.get(bid, ()))
+        if span is None and bid == "b5":
+            # Fluids = parent start until weather marker.
+            weather = find_block_speech_span(words, "b5b", stems=("погод",))
+            owned = sorted(
+                (w for w in words if isinstance(w, dict)),
+                key=lambda w: float(w.get("start") or 0.0),
+            )
+            # Prefer words still tagged b5 / early develop.
+            early = [
+                w for w in owned
+                if str(w.get("block_id") or "") in ("b5", "")
+                or (weather and float(w.get("end") or 0) <= weather[0] + 1e-3)
+            ]
+            if weather:
+                early = [
+                    w for w in owned
+                    if float(w.get("end") or 0) <= weather[0] + 1e-3
+                    and float(w.get("start") or 0) >= 34.0
+                ]
+            if early:
+                span = (float(early[0]["start"]), float(early[-1]["end"]))
+        if span is None:
+            continue
+        start, end = span
+        start = max(0.0, start - pad)
+        end = end + pad
+        start, end = _clamp_away_from_avatar(start, end, avatars)
+        if end - start < min_shot - 1e-6:
+            # Grow toward non-avatar neighbors when possible.
+            need = min_shot - (end - start)
+            start = max(0.0, start - need * 0.5)
+            end = end + need * 0.5
+            start, end = _clamp_away_from_avatar(start, end, avatars)
+        if end - start < 0.35:
+            continue
+        # Single fused window for the block's footage slots (keep relative order).
+        footage = [
+            s for s in block_slots
+            if str(s.get("kind") or "") not in ("avatar", "split")
+        ] or block_slots
+        footage = sorted(footage, key=lambda s: float(s.get("start") or 0.0))
+        n = len(footage)
+        dur = end - start
+        for i, slot in enumerate(footage):
+            s0 = start + dur * i / n
+            s1 = start + dur * (i + 1) / n
+            if abs(float(slot.get("start") or 0) - s0) > 0.05 or abs(
+                    float(slot.get("end") or 0) - s1) > 0.05:
+                slot["start"] = round(s0, 3)
+                slot["end"] = round(s1, 3)
+                if "duration" in slot:
+                    slot["duration"] = round(s1 - s0, 3)
+                updated += 1
+    return updated
+
+
 def remap_split_blocks_from_script(
         plan: dict[str, Any],
         script: dict[str, Any],
@@ -515,6 +797,7 @@ def remap_split_blocks_from_script(
                 merged.update(child)
                 new_blocks.append(merged)
                 used.add(str(child.get("id") or ""))
+            updated += reassign_words_for_script_children(words, old_id, run)
             updated += _reassign_split_slots(
                 plan.get("slots") or [], old_id, run, words,
                 overlapping_speech)
@@ -630,6 +913,8 @@ def sync_broll_from_script(
             if hook.get(key) != src_hook.get(key):
                 hook[key] = src_hook[key]
                 updated += 1
+    updated += snap_block_windows_to_keywords(
+        plan, words, script=script, repo_root=repo_root)
     return updated
 
 
