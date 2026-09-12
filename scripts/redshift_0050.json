@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 QC-24 round4: spoken text frozen; b5 sliced into unique Latin dark-cards; magnific weather/wing/pipes/blood pins; skip_generate true.",
+    "notes": "0050 QC round7: magnific ai_generated false + tight tags; deny freepik 402; QC-14/24/30; spoken text frozen; skip_generate true.",
     "hook": {
       "on_screen": "$1 000 000",
       "style": "number_slam"
@@ -130,11 +130,10 @@
       "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают.",
       "emphasis_word": "жидкость",
       "avatar": "off",
-      "visual_intent": "flowing liquid current underwater or ink swirl. catalog card with a short overlay label and thin accent.",
+      "visual_intent": "flowing liquid current underwater or ink swirl. catalog dark-card FLUIDS overlay.",
       "broll_queries": [
-        "water vortex flow slow motion underwater",
-        "blue ink swirling liquid macro",
-        "clear water flow glass tank slow motion"
+        "water vortex fluid flow slow motion",
+        "blue ink swirl liquid macro"
       ],
       "overlay": {
         "type": "lower_third",
@@ -152,9 +151,9 @@
       "text": "Погода.",
       "emphasis_word": "Погода",
       "avatar": "off",
-      "visual_intent": "weather radar storm satellite screen. catalog card with a short overlay label and thin accent.",
+      "visual_intent": "weather radar satellite stormscreen only. catalog clean-bar WEATHER overlay.",
       "broll_queries": [
-        "weather radar storm satellite screen"
+        "weather radar satellite stormscreen"
       ],
       "overlay": {
         "type": "lower_third",
@@ -171,9 +170,9 @@
       "text": "Крыло самолёта.",
       "emphasis_word": "Крыло",
       "avatar": "off",
-      "visual_intent": "airplane wing in flight clouds. catalog card with a short overlay label and thin accent.",
+      "visual_intent": "airplane winglet airfoil flightclouds. catalog accent-underline AIRFOIL overlay.",
       "broll_queries": [
-        "airplane wing in flight clouds"
+        "airplane winglet airfoil flightclouds"
       ],
       "overlay": {
         "type": "lower_third",
@@ -190,9 +189,9 @@
       "text": "Трубы в доме.",
       "emphasis_word": "Трубы",
       "avatar": "off",
-      "visual_intent": "industrial water pipes valves factory. catalog card with a short overlay label and thin accent.",
+      "visual_intent": "pipework valves factorypipes. catalog note-pin VALVES overlay.",
       "broll_queries": [
-        "industrial water pipes valves factory"
+        "pipework valves factorypipes"
       ],
       "overlay": {
         "type": "lower_third",
@@ -209,9 +208,9 @@
       "text": "Ток крови. Если формула врёт — самолёт не извиняется.",
       "emphasis_word": "крови",
       "avatar": "off",
-      "visual_intent": "red blood cells under microscope. catalog card with a short overlay label and thin accent.",
+      "visual_intent": "bloodcells microscope plasmaflow. catalog metric-badge PLASMA overlay.",
       "broll_queries": [
-        "red blood cells under microscope"
+        "bloodcells microscope plasmaflow"
       ],
       "overlay": {
         "type": "lower_third",
@@ -228,11 +227,10 @@
       "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
       "emphasis_word": "не принял",
       "avatar": "on",
-      "visual_intent": "rubber stamp on declined papers and a catalog card with a thin accent. paperwork on a desk, not a bare plate, not cracked walls, not a clay pit.",
+      "visual_intent": "rubber stamp declined paperwork on desk. catalog dark-card CLAY REJECT overlay. Must place.",
       "broll_queries": [
-        "rubber stamp rejected declined documents desk",
-        "stapling stack of papers closeup",
-        "rubber stamp closeup contract papers"
+        "rubber stamp declined paperwork desk",
+        "rubber stamp rejected documents closeup"
       ],
       "overlay": {
         "type": "lower_third",
@@ -250,10 +248,10 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "city night traffic lights aerial or open notebook mathematics desk. catalog card with a short latin label and thin accent, no trailing dot.",
+      "visual_intent": "city night aerial OR open notebook. catalog clean-bar FOLLOWUP; soft wordmark-only outro preferred over logo-brand-close paper invert.",
       "broll_queries": [
-        "city night traffic lights aerial",
-        "open notebook mathematics desk warm light"
+        "city night aerial traffic lights",
+        "open notebook desk warm light"
       ],
       "overlay": {
         "type": "lower_third",
