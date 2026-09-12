@@ -102,6 +102,7 @@
       "magnific_0050_weather",
       "magnific_0050_wing",
       "magnific_0050_pipes",
+      "magnific_0050_blood",
       "magnific_0050_stamp",
       "magnific_0050_city",
       "pexels_v7565432",
@@ -136,9 +137,12 @@
       "freepik_7749931",
       "freepik_3449792",
       "freepik_3543840",
-      "pexels_v15168364"
+      "pexels_v15168364",
+      "pexels_v30518348",
+      "pexels_v12369762",
+      "pexels_v10001424"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round10: prefer weather/wing/pipes/stamp/city first + safe pexels. magnific_0050_blood stays in index for tag match only on plasma queries; not in prefer. Deny keeps prior poison pexels. same_asset_max_slots 1."
+    "_note": "round11: hydrate magnific into storage; prefer weather/wing/pipes/blood/stamp/city + safe pexels. Deny adds poison pexels. same_asset_max_slots 1."
   }
 }

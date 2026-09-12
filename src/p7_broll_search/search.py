@@ -26,6 +26,7 @@ from typing import Any, Iterable
 import yaml
 
 from ..lib.ffmpeg import extract_frames, grade_to_palette, probe
+from ..lib.hydrate_footage import hydrate_repo_footage
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, open_library, tag_url_coherence
 from ..lib.palette import palette_verdict
@@ -380,6 +381,30 @@ def disk_orphan_records(ctx, index: FootageIndex) -> list[AssetRecord]:
                 file=rel, extra={"attribution": f"{source} / local cache",
                                  "orphan_ingest": True},
             ))
+    # Magnific plates committed under assets/footage/magnific
+    seen_ids = {r.id for r in found}
+    for folder in (root / "magnific", Path(ctx.cfg.repo_root) / "assets" / "footage" / "magnific"):
+        if not folder.is_dir():
+            continue
+        for path in sorted(folder.glob("*.mp4")):
+            asset_id = path.stem
+            if asset_id in seen_ids or index.by_id(asset_id) is not None:
+                continue
+            rel = f"magnific/{path.name}"
+            try:
+                info = probe(path)
+            except Exception:
+                continue
+            found.append(AssetRecord(
+                id=asset_id, type="video", source="magnific", license="owner_decision",
+                url_origin="",
+                tags=["magnific", "video"], vision_summary="",
+                score=0.75, duration_sec=float(info.duration_sec or 0.0),
+                width=int(info.width or 0), height=int(info.height or 0),
+                file=rel, ai_generated=False,
+                extra={"attribution": "magnific / repo assets", "orphan_ingest": True},
+            ))
+            seen_ids.add(asset_id)
     return found
 
 
@@ -519,6 +544,7 @@ def run_step(ctx) -> dict[str, Any]:
     if orphans:
         ctx.warn(f"на диске {len(orphans)} клипов стока нет в индексе — добор",
                  count=len(orphans))
+    hydrate_repo_footage(ctx, index)
 
     queries_per_slot = min(QUERY_MAX, max(3, int(cfg.get("stock.queries_per_slot", 5))))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))

@@ -1,10 +1,11 @@
 {
   "script": "scripts/redshift_0050.json",
+  "video_id": "redshift_0050",
   "providers_mode": "live",
   "from_step": "P7",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "round10: stamp+city plates; deprefer blood; fix QC-SEMANTIC mismatch."
+  "note": "round11 hydrate magnific into storage + semantic pins"
 }

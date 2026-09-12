@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from ..lib.footage_seed import SEED_SCORE
+from ..lib.hydrate_footage import hydrate_repo_footage
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
@@ -474,6 +475,7 @@ def _fill_unfilled_from_leftover_prefers(
     """
     if not pin_prefer:
         return 0
+    hydrate_repo_footage(ctx, index)
     asset_slots = [
         s for s in plan.get("slots") or []
         if s.get("needs_asset")
