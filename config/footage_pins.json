@@ -102,6 +102,8 @@
       "magnific_0050_weather",
       "magnific_0050_wing",
       "magnific_0050_pipes",
+      "magnific_0050_stamp",
+      "magnific_0050_city",
       "pexels_v7565432",
       "pexels_v38431825",
       "pexels_v18866692",
@@ -137,6 +139,6 @@
       "pexels_v15168364"
     ],
     "same_asset_max_slots": 1,
-    "_note": "magnific_0050_blood stays in index for tag match only on plasma queries; not in prefer (avoids magnific reuse across Lean/Clay/CTA slots). Deny keeps prior poison pexels that starved weather/pipes/wing."
+    "_note": "round10: prefer weather/wing/pipes/stamp/city first + safe pexels. magnific_0050_blood stays in index for tag match only on plasma queries; not in prefer. Deny keeps prior poison pexels. same_asset_max_slots 1."
   }
 }
