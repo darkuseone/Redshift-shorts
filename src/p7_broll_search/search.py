@@ -523,6 +523,21 @@ def pin_id_denied(asset_id: str, deny: set[str]) -> bool:
     return False
 
 
+def _load_footage_by_block(cfg, video_id: str) -> dict[str, str | None]:
+    """Hard per-block asset pins from footage_pins.json ``by_block`` map."""
+    entry = _footage_pin_entry(cfg, video_id)
+    raw = entry.get("by_block") or {}
+    out: dict[str, str | None] = {}
+    if not isinstance(raw, dict):
+        return out
+    for key, val in raw.items():
+        bid = str(key or "").strip()
+        if not bid:
+            continue
+        out[bid] = None if val is None else str(val)
+    return out
+
+
 def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
     """Return (deny_ids, prefer_ids) for this video from config/footage_pins.json."""
     entry = _footage_pin_entry(cfg, video_id)

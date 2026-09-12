@@ -140,9 +140,19 @@
       "pexels_v15168364",
       "pexels_v30518348",
       "pexels_v12369762",
-      "pexels_v10001424"
+      "pexels_v10001424",
+      "pexels_v31720765"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round12: prefer weather/wing/pipes/blood/stamp/city + server pexels; deny water fillers; same_asset_max_slots 1; intent pin match."
+    "_note": "round13: by_block hard pins weather/wing/pipes/blood/stamp/city; deny water 31720765; same_asset_max_slots 1; intent -24",
+    "by_block": {
+      "b5": null,
+      "b5b": "magnific_0050_weather",
+      "b5c": "magnific_0050_wing",
+      "b5d": "magnific_0050_pipes",
+      "b5e": "magnific_0050_blood",
+      "b6": "magnific_0050_stamp",
+      "b7": "magnific_0050_city"
+    }
   }
 }

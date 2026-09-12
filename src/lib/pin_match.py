@@ -184,7 +184,7 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             if kind and kind == beat:
                 bonus = -22
             elif kind and markers and any(m in hay for m in markers):
-                bonus = -20  # authored intent/queries even if speech window drifted
+                bonus = -24  # authored intent beats overlapping speech (-22)
             else:
                 bonus = 10
             try:

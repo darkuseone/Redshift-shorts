@@ -708,11 +708,10 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
     """Nearest real (non-AI, non-NASA) footage for hero/fullscreen plates.
 
-    Prefer same-block stock/press; if that block has no real media (empty P7/P9
-    gaps), fall back to the nearest real prepared footage anywhere in the cut
-    so plate-needing heroes still show a topical still instead of an empty panel.
-    NASA archive stills are skipped — empty slots take a brand plate instead.
-    AI-only pools return None — heroes then skip plate templates.
+    Only same-block neighbors may fill an empty footage shot — never clone
+    weather/wing/etc. from b5b onto b4/b5. NASA archive stills are skipped —
+    empty slots take a brand plate instead. AI-only pools return None — heroes
+    then skip plate templates.
     """
     index = int(slot["index"])
     assets = assets or {}
@@ -737,7 +736,7 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
             out.append(s)
         return out
 
-    pool = _pool(True) or _pool(False)
+    pool = _pool(True)
     if not pool:
         return None
     nearest = min(pool, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))

@@ -33,8 +33,9 @@ from ..lib.query import (
 )
 from ..lib.text import sync_broll_from_script
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, _local_cache_row, footage_pool_count,
-    judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_report,
+    _footage_pin_entry, _load_footage_by_block, _load_footage_pins, _local_cache_row,
+    footage_pool_count, judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids,
+    surplus_report,
 )
 
 COHERENCE_MIN = 0.15
@@ -342,21 +343,36 @@ def _slot_duration(slot: dict[str, Any]) -> float:
 def _leftover_prefer_key(asset_id: str, slot: dict[str, Any],
                          pin_prefer: list[str],
                          words: list[dict[str, Any]] | None = None,
+                         by_block: dict[str, str | None] | None = None,
                          ) -> tuple[int, int]:
-    """Prefer leftover pins that match this slot's spoken window, else list order."""
+    """Prefer leftover pins that match this slot's spoken window, else list order.
+
+    Hard ``by_block`` pins for this block win with absolute priority (-30).
+    """
+    bid = str(slot.get("block_id") or "")
+    pid = str(asset_id or "")
+    if by_block and bid and by_block.get(bid) == pid:
+        try:
+            rank = list(pin_prefer).index(pid)
+        except ValueError:
+            rank = 99
+        return (-30, rank)
     return pin_slot_prefer_key(asset_id, slot, pin_prefer, words=words)
 
 
 def _prefer_penalized(asset_id: str, slot: dict[str, Any], pin_prefer: list[str],
-                      words: list[dict[str, Any]] | None) -> bool:
+                      words: list[dict[str, Any]] | None,
+                      by_block: dict[str, str | None] | None = None) -> bool:
     """True when this prefer pin is scored as a mismatch on the slot."""
-    return _leftover_prefer_key(asset_id, slot, pin_prefer, words)[0] > 0
+    return _leftover_prefer_key(
+        asset_id, slot, pin_prefer, words, by_block=by_block)[0] > 0
 
 
 def _rebalance_prefers_onto_speech(
         *, accepted: dict[int, dict[str, Any]],
         pin_prefer: list[str], slots_by_index: dict[int, dict[str, Any]],
-        words: list[dict[str, Any]] | None) -> int:
+        words: list[dict[str, Any]] | None,
+        by_block: dict[str, str | None] | None = None) -> int:
     """Swap already-accepted prefer pins onto the slot whose speech they match.
 
     Exclusive P7 assignment can park the Nature figure on a later evidence
@@ -393,17 +409,17 @@ def _rebalance_prefers_onto_speech(
                 aid_a = str(accepted[idx_a].get("asset_id") or "")
                 aid_b = str(accepted[idx_b].get("asset_id") or "")
                 before = (
-                    _leftover_prefer_key(aid_a, slot_a, pin_prefer, words)[0]
-                    + _leftover_prefer_key(aid_b, slot_b, pin_prefer, words)[0]
+                    _leftover_prefer_key(aid_a, slot_a, pin_prefer, words, by_block=by_block)[0]
+                    + _leftover_prefer_key(aid_b, slot_b, pin_prefer, words, by_block=by_block)[0]
                 )
                 after = (
-                    _leftover_prefer_key(aid_a, slot_b, pin_prefer, words)[0]
-                    + _leftover_prefer_key(aid_b, slot_a, pin_prefer, words)[0]
+                    _leftover_prefer_key(aid_a, slot_b, pin_prefer, words, by_block=by_block)[0]
+                    + _leftover_prefer_key(aid_b, slot_a, pin_prefer, words, by_block=by_block)[0]
                 )
                 if after >= before:
                     continue
-                if _prefer_penalized(aid_a, slot_b, pin_prefer, words) or \
-                        _prefer_penalized(aid_b, slot_a, pin_prefer, words):
+                if _prefer_penalized(aid_a, slot_b, pin_prefer, words, by_block=by_block) or \
+                        _prefer_penalized(aid_b, slot_a, pin_prefer, words, by_block=by_block):
                     continue
                 accepted[idx_a], accepted[idx_b] = accepted[idx_b], accepted[idx_a]
                 accepted[idx_a]["slot_index"] = int(idx_a)
@@ -418,12 +434,12 @@ def _rebalance_prefers_onto_speech(
         if aid not in prefer_set:
             continue
         slot = slots_by_index.get(int(idx), {})
-        cur = _leftover_prefer_key(aid, slot, pin_prefer, words)[0]
+        cur = _leftover_prefer_key(aid, slot, pin_prefer, words, by_block=by_block)[0]
         best_idx: int | None = None
         best_sc = cur
         for dest_idx in _empty_destinations():
             dest = slots_by_index.get(int(dest_idx), {})
-            sc = _leftover_prefer_key(aid, dest, pin_prefer, words)[0]
+            sc = _leftover_prefer_key(aid, dest, pin_prefer, words, by_block=by_block)[0]
             if sc >= best_sc or sc > 0:
                 continue
             best_idx = int(dest_idx)
@@ -445,7 +461,8 @@ def _hook_mismatch(asset_id: str, slot: dict[str, Any], pin_prefer: list[str],
 def _drop_mismatched_prefers(
         *, accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
         pin_prefer: list[str], slots_by_index: dict[int, dict[str, Any]],
-        words: list[dict[str, Any]] | None) -> int:
+        words: list[dict[str, Any]] | None,
+        by_block: dict[str, str | None] | None = None) -> int:
     """Unaccept prefer pins that still sit on a penalized slot after swaps."""
     dropped = 0
     for idx in list(accepted):
@@ -453,7 +470,7 @@ def _drop_mismatched_prefers(
         if aid not in set(pin_prefer):
             continue
         slot = slots_by_index.get(int(idx), {})
-        if _leftover_prefer_key(aid, slot, pin_prefer, words)[0] <= 0:
+        if _leftover_prefer_key(aid, slot, pin_prefer, words, by_block=by_block)[0] <= 0:
             continue
         accepted_counts[aid] = max(0, int(accepted_counts.get(aid, 1)) - 1)
         del accepted[idx]
@@ -467,7 +484,8 @@ def _fill_unfilled_from_leftover_prefers(
         judged: list[dict[str, Any]], pin_prefer: list[str], pin_deny: set[str],
         index: FootageIndex, repeat_max: int, skip_live: bool,
         palette_rules: dict[str, Any], visible_min: float,
-        words: list[dict[str, Any]] | None = None) -> int:
+        words: list[dict[str, Any]] | None = None,
+        by_block: dict[str, str | None] | None = None) -> int:
     """Hard-prefer pins parked as P7 runner-ups onto later empty slots.
 
     keep_per_slot used to mark unused prefers taken, so 0042 never showed the
@@ -501,7 +519,7 @@ def _fill_unfilled_from_leftover_prefers(
         slot_index = int(slot["index"])
         if leftover:
             leftover.sort(key=lambda pid: _leftover_prefer_key(
-                pid, slot, pin_prefer, words))
+                pid, slot, pin_prefer, words, by_block=by_block))
         slot_dur = _slot_duration(slot)
         intent = slot.get("visual_intent", "") or slot.get("reason", "")
         picked_id = None
@@ -513,7 +531,8 @@ def _fill_unfilled_from_leftover_prefers(
                 continue
             if storage is not None and not storage.exists(rec.file):
                 continue
-            bonus = _leftover_prefer_key(pid, slot, pin_prefer, words)[0]
+            bonus = _leftover_prefer_key(
+                pid, slot, pin_prefer, words, by_block=by_block)[0]
             if bonus > 0:
                 continue
             carve_sec: float | None = None
@@ -573,6 +592,133 @@ def _fill_unfilled_from_leftover_prefers(
     return filled
 
 
+
+def _force_by_block_pins(
+        *, ctx, cfg, plan: dict[str, Any], slots_by_index: dict[int, dict[str, Any]],
+        accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
+        judged: list[dict[str, Any]], by_block: dict[str, str | None],
+        pin_deny: set[str], index: FootageIndex, skip_live: bool,
+        palette_rules: dict[str, Any]) -> int:
+    """Hard-accept footage_pins ``by_block`` assets onto their mapped blocks.
+
+    Runs after leftover prefer fill. Non-null mapped ids hydrate first, then
+    take the first unfilled/primary asset slot of that block (or replace a
+    mismatched prefer accept). ``same_asset``: each id only on its mapped
+    block(s).
+    """
+    if not by_block:
+        return 0
+    hydrate_repo_footage(ctx, index)
+    storage = getattr(ctx, "storage", None)
+    fill_roles = ("broll", "evidence", "meme", "interstitial")
+    asset_slots = [
+        s for s in plan.get("slots") or []
+        if s.get("needs_asset") and s.get("asset_role") in fill_roles
+    ]
+    slots_by_block: dict[str, list[dict[str, Any]]] = {}
+    for slot in asset_slots:
+        slots_by_block.setdefault(str(slot.get("block_id") or ""), []).append(slot)
+
+    mapped_blocks: dict[str, set[str]] = {}
+    for bid, pid in by_block.items():
+        if pid:
+            mapped_blocks.setdefault(str(pid), set()).add(str(bid))
+
+    forced = 0
+    for bid, pid in by_block.items():
+        if not pid:
+            continue
+        pid = str(pid)
+        if pin_id_denied(pid, pin_deny):
+            continue
+        rec = index.by_id(pid)
+        if rec is None or getattr(rec, "quarantined", False) or not rec.file:
+            continue
+        if storage is not None and not storage.exists(rec.file):
+            continue
+        block_slots = slots_by_block.get(str(bid)) or []
+        if not block_slots:
+            continue
+
+        target: dict[str, Any] | None = None
+        for slot in block_slots:
+            idx = int(slot["index"])
+            cur = accepted.get(idx)
+            if cur is None:
+                target = slot
+                break
+            cur_aid = str(cur.get("asset_id") or "")
+            if cur_aid == pid:
+                target = None
+                break
+            if cur.get("decision") == "accept_prefer" and cur_aid != pid:
+                target = slot
+                break
+        if target is None:
+            # Already correctly pinned on this block, or only non-prefer fills.
+            if any(
+                str(accepted.get(int(s["index"]), {}).get("asset_id") or "") == pid
+                for s in block_slots
+            ):
+                # Still scrub this id off unmapped blocks.
+                pass
+            else:
+                continue
+
+        allowed = mapped_blocks.get(pid, {str(bid)})
+        for other_idx, entry in list(accepted.items()):
+            if str(entry.get("asset_id") or "") != pid:
+                continue
+            other_bid = str(
+                (slots_by_index.get(int(other_idx)) or {}).get("block_id") or "")
+            if other_bid in allowed:
+                continue
+            accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
+            del accepted[other_idx]
+
+        if target is None:
+            continue
+
+        slot_index = int(target["index"])
+        old = accepted.get(slot_index)
+        if old is not None:
+            old_aid = str(old.get("asset_id") or "")
+            if old_aid:
+                accepted_counts[old_aid] = max(
+                    0, int(accepted_counts.get(old_aid, 1)) - 1)
+
+        intent = target.get("visual_intent", "") or target.get("reason", "") or pid
+        candidate = _local_cache_row(slot_index, rec, intent)
+        gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
+        if gate:
+            continue
+        palette = palette_verdict([], palette_rules)
+        if skip_live or candidate.get("prior_score") is not None:
+            verdict_dict = skip_live_verdict(candidate, intent)
+        else:
+            verdict_dict = {
+                "score": float(SEED_SCORE),
+                "reason": "pin by_block",
+                "summary": candidate.get("vision_summary", ""),
+                "judge": "pin_prefer", "frames": 0,
+            }
+        entry = {
+            **candidate,
+            "verdict": verdict_dict,
+            "intent": intent,
+            "score": float(verdict_dict["score"]),
+            "palette": palette,
+            "decision": "accept_prefer",
+            "fallback_reason": "pin by_block",
+            "speech_locked": True,
+        }
+        judged.append(entry)
+        accepted[slot_index] = entry
+        accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
+        forced += 1
+    return forced
+
+
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
@@ -607,6 +753,7 @@ def run_step(ctx) -> dict[str, Any]:
     video_id = str(plan.get("video_id") or "")
     pin_deny, pin_prefer = _load_footage_pins(cfg, video_id)
     pin_entry = _footage_pin_entry(cfg, video_id)
+    by_block = _load_footage_by_block(cfg, video_id)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
     dead_ids = stage1_dead_ids(doc.get("stage1_rejected") or [])
@@ -716,7 +863,8 @@ def run_step(ctx) -> dict[str, Any]:
             (c for c in gated
              if _prefer_rank(c.get("asset_id"), pin_prefer) is not None),
             key=lambda c: _leftover_prefer_key(
-                str(c.get("asset_id") or ""), slot, pin_prefer, words),
+                str(c.get("asset_id") or ""), slot, pin_prefer, words,
+                by_block=by_block),
         )
         best: dict[str, Any] | None = None
         for candidate in prefer_gated:
@@ -724,7 +872,7 @@ def run_step(ctx) -> dict[str, Any]:
                 continue
             if _leftover_prefer_key(
                     str(candidate.get("asset_id") or ""), slot,
-                    pin_prefer, words)[0] > 0:
+                    pin_prefer, words, by_block=by_block)[0] > 0:
                 continue
             palette = palette_verdict(
                 [Path(f) for f in candidate.get("frames", [])], palette_rules)
@@ -779,7 +927,7 @@ def run_step(ctx) -> dict[str, Any]:
             if _prefer_rank(candidate.get("asset_id"), pin_prefer) is not None \
                     and _prefer_penalized(
                         str(candidate.get("asset_id") or ""), slot,
-                        pin_prefer, words):
+                        pin_prefer, words, by_block=by_block):
                 # Prefer pins with a positive speech penalty (ticker on
                 # evidence / hook) must not sneak in via skip_live scoring.
                 # Leftover fill parks them on the spoken money/CTA window.
@@ -960,24 +1108,34 @@ def run_step(ctx) -> dict[str, Any]:
         accepted=accepted, accepted_counts=accepted_counts, judged=judged,
         pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
         repeat_max=repeat_max, skip_live=skip_live,
-        palette_rules=palette_rules, visible_min=visible_min, words=words)
+        palette_rules=palette_rules, visible_min=visible_min, words=words,
+        by_block=by_block)
     if leftover_filled:
         _log.info("leftover prefer pins closed %s empty slot(s)", leftover_filled)
     swapped = _rebalance_prefers_onto_speech(
         accepted=accepted, pin_prefer=pin_prefer,
-        slots_by_index=slots_by_index, words=words)
+        slots_by_index=slots_by_index, words=words, by_block=by_block)
     if swapped:
         _log.info("rebalanced %s prefer pin pair(s) onto spoken slots", swapped)
     dropped = _drop_mismatched_prefers(
         accepted=accepted, accepted_counts=accepted_counts,
-        pin_prefer=pin_prefer, slots_by_index=slots_by_index, words=words)
+        pin_prefer=pin_prefer, slots_by_index=slots_by_index, words=words,
+        by_block=by_block)
     if dropped:
         leftover_filled += _fill_unfilled_from_leftover_prefers(
             ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
             accepted=accepted, accepted_counts=accepted_counts, judged=judged,
             pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
             repeat_max=repeat_max, skip_live=skip_live,
-            palette_rules=palette_rules, visible_min=visible_min, words=words)
+            palette_rules=palette_rules, visible_min=visible_min, words=words,
+            by_block=by_block)
+    forced = _force_by_block_pins(
+        ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
+        accepted=accepted, accepted_counts=accepted_counts, judged=judged,
+        by_block=by_block, pin_deny=pin_deny, index=index, skip_live=skip_live,
+        palette_rules=palette_rules)
+    if forced:
+        _log.info("by_block pins forced onto %s block slot(s)", forced)
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

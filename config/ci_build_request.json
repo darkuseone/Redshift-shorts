@@ -7,5 +7,5 @@
   "skip_generate": true,
   "skip_vision": false,
   "requested_by": "cursor",
-  "note": "round12b: restore script=0050 (not 0042 default); P7 + intent pin match + graded wing; fix QC-30"
+  "note": "round13: by_block hard pins weather/wing/pipes/blood/stamp/city; no cross-block clone; deny water 31720765; intent -24"
 }
