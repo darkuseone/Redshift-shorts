@@ -105,6 +105,8 @@
       "magnific_0050_blood",
       "magnific_0050_stamp",
       "magnific_0050_city",
+      "magnific_0050_gpu",
+      "magnific_0050_lean",
       "fp_server_room",
       "fp_code_editor",
       "fp_chalkboard_eq",
@@ -149,10 +151,10 @@
       "fp_analog_clock"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round14: dark browser/source; compact CTA; shorten REJECTED; FOLLOWUP dark; by_block b3 server b4 code + weather/wing/pipes/blood/stamp/city",
+    "_note": "round15: by_block b3=gpu b4=lean magnific plates; kill grid.jpg freepik miss; fix QC-SEMANTIC; life-beats weather/wing/pipes/blood/stamp/city",
     "by_block": {
-      "b3": "fp_server_room",
-      "b4": "fp_code_editor",
+      "b3": "magnific_0050_gpu",
+      "b4": "magnific_0050_lean",
       "b5": null,
       "b5b": "magnific_0050_weather",
       "b5c": "magnific_0050_wing",

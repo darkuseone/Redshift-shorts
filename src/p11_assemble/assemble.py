@@ -756,6 +756,10 @@ def _brand_plate_file(ctx, plan: dict[str, Any]) -> str | None:
     plate_path = _backdrop_plate(ctx.cfg, scene_name)
     if plate_path:
         return plate_path
+    # 0050: never fill semantic gaps with striped grid.jpg — leave empty so
+    # by_block force pins (gpu/lean/life-beats) can own those slots.
+    if str(plan.get("video_id") or "") == "redshift_0050":
+        return None
     assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
     for name in ("grid.jpg", "horizon.jpg"):
         cand = assets_dir / "backdrops" / name

@@ -523,13 +523,28 @@ def _fill_unfilled_from_leftover_prefers(
         slot_dur = _slot_duration(slot)
         intent = slot.get("visual_intent", "") or slot.get("reason", "")
         picked_id = None
+        by_block_ids = {
+            str(v) for v in (by_block or {}).values() if v
+        }
         for pid in leftover:
             rec = index.by_id(pid)
             if rec is None or getattr(rec, "quarantined", False):
+                if pid in by_block_ids:
+                    _log.error(
+                        "by_block pin missing from storage after hydrate: %s",
+                        pid)
                 continue
             if not rec.file:
+                if pid in by_block_ids:
+                    _log.error(
+                        "by_block pin missing from storage after hydrate: %s",
+                        pid)
                 continue
             if storage is not None and not storage.exists(rec.file):
+                if pid in by_block_ids:
+                    _log.error(
+                        "by_block pin missing from storage after hydrate: %s",
+                        pid)
                 continue
             bonus = _leftover_prefer_key(
                 pid, slot, pin_prefer, words, by_block=by_block)[0]
@@ -633,8 +648,12 @@ def _force_by_block_pins(
             continue
         rec = index.by_id(pid)
         if rec is None or getattr(rec, "quarantined", False) or not rec.file:
+            _log.error(
+                "by_block pin missing from storage after hydrate: %s", pid)
             continue
         if storage is not None and not storage.exists(rec.file):
+            _log.error(
+                "by_block pin missing from storage after hydrate: %s", pid)
             continue
         block_slots = slots_by_block.get(str(bid)) or []
         if not block_slots:

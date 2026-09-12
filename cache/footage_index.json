@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-12",
-  "count": 111,
+  "count": 113,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -3990,6 +3990,70 @@
       "width": 1080,
       "height": 1920,
       "file": "magnific/magnific_0050_city.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_gpu",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_gpu.mp4",
+      "phash": "0718293a4b5c6d7e",
+      "tags": [
+        "gpu",
+        "cluster",
+        "server",
+        "aisle",
+        "datacenter"
+      ],
+      "vision_summary": "GPU cluster server aisle datacenter, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "0718293a4b5c6d7e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_gpu.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_lean",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_lean.mp4",
+      "phash": "18293a4b5c6d7e8f",
+      "tags": [
+        "lean",
+        "proof",
+        "code",
+        "editor",
+        "chalkboard"
+      ],
+      "vision_summary": "Lean proof code editor chalkboard, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "18293a4b5c6d7e8f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_lean.mp4",
       "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific Nano Banana 2",
