@@ -649,7 +649,7 @@
         "renderer": "kenburns",
         "needs": [],
         "frequency": "signature",
-        "status": "active"
+        "status": "retired"
       },
       {
         "id": "kenburns/zoom-in-center",
@@ -1049,7 +1049,7 @@
         "renderer": "shared_axis_z",
         "needs": [],
         "frequency": "variant",
-        "status": "active"
+        "status": "retired"
       },
       {
         "id": "text-fullscreen/stack-3lines",

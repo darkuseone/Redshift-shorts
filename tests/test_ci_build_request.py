@@ -43,7 +43,7 @@ def test_push_reads_file(tmp_path, monkeypatch):
     out = load_request(event_name="push", environ={})
     assert out["script"] == "scripts/redshift_0048.json"
     assert out["from_step"] == "P6"
-    assert out["heygen_source"] == "prepared"
+    assert out["heygen_source"] == "api"
     assert out["force"] == "false"
     assert out["requested_by"] == "cursor"
 

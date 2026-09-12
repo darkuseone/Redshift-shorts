@@ -861,6 +861,8 @@ class CompositionBuilder:
             cls = "clip overlay plaque"
             if params.get("source_chip"):
                 cls += " source-chip"
+            if params.get("no_red") or params.get("accent") is False:
+                cls += " no-red no-accent"
             return (f'<div id="{node_id}" class="{cls}" __TIMING__>'
                     f'{content}{extra}</div>')
         if kind == "cta":
@@ -901,7 +903,12 @@ class CompositionBuilder:
         title = _mark_phrase(str(params.get("title") or ""), highlight)
         snippet = _mark_phrase(str(params.get("snippet") or ""), highlight)
         compact = " compact" if params.get("compact") else ""
-        return (f'<div id="{node_id}" class="clip overlay source-card{compact}" __TIMING__>'
+        theme = str(params.get("theme") or "").lower()
+        dark = bool(params.get("dark") or theme == "dark"
+                    or str(params.get("background") or "").lower() == "dark"
+                    or str(params.get("tone") or "").lower() == "ink")
+        dark_cls = " theme-dark" if dark else ""
+        return (f'<div id="{node_id}" class="clip overlay source-card{compact}{dark_cls}" __TIMING__>'
                 f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                 f'<span class="dot"></span>'
                 f'<span class="url"><b>{_esc(domain)}</b>{_esc(path)}</span></div>'

@@ -340,6 +340,20 @@ def accent_card_start(anchor: dict[str, Any], *, block_start: float,
     return max(float(block_start), onset + delay)
 
 
+
+def is_latin_overlay_label(content: str) -> bool:
+    """True when on-screen label letters are ASCII-only (WEATHER, CLAY REJECT).
+
+    Authored Latin plaques must stay verbatim — enrich must not expand them
+    from neighbouring Russian clause windows.
+    """
+    raw = str(content or "").strip()
+    if not raw:
+        return False
+    letters = [ch for ch in raw if ch.isalpha()]
+    return bool(letters) and all(ch.isascii() for ch in letters)
+
+
 def enrich_overlay_punch(content: str, block_text: str, *,
                          max_words: int = 4) -> str:
     """Короткий stub («НЕЧЕМ») → окно клаузы, где этот удар реально несёт смысл.
@@ -347,8 +361,11 @@ def enrich_overlay_punch(content: str, block_text: str, *,
     Authored multi-token overlays («Проверить нечем») stay as-is when they
     already read as a clause; only ultra-short stubs (≤1 real word, or a
     digit+unit like «5 МИНУТ») get expanded from block text.
+    Latin authored labels (WEATHER / PLASMA / CLAY REJECT) stay verbatim.
     """
     raw = str(content or "").strip()
+    if is_latin_overlay_label(raw):
+        return raw
     text = str(block_text or "").strip()
     if not raw or not text:
         return raw
@@ -406,38 +423,237 @@ def punch_families_overlap(a: str, b: str) -> bool:
     return bool(punch_stems(a) & punch_stems(b))
 
 
+def _load_script_for_plan(
+        plan: dict[str, Any],
+        repo_root=None,
+        script: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """Load ``scripts/<video_id>.json`` for remount self-heal, or use ``script``."""
+    if script is not None:
+        return script
+    import json
+    from pathlib import Path
+
+    meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
+    video_id = str(plan.get("video_id") or meta.get("video_id") or "").strip()
+    if not video_id or repo_root is None:
+        return None
+    path = Path(repo_root) / "scripts" / f"{video_id}.json"
+    if not path.is_file():
+        return None
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+def _norm_spoken(text: str) -> str:
+    return " ".join(str(text or "").split())
+
+
+def _spoken_tokens(text: str) -> set[str]:
+    return {m.group(0).lower() for m in re.finditer(
+        r"[^\W\d_]{2,}", str(text or ""), flags=re.UNICODE)}
+
+
+def remap_split_blocks_from_script(
+        plan: dict[str, Any],
+        script: dict[str, Any],
+        *,
+        words: list[dict[str, Any]] | None = None) -> int:
+    """Apply consecutive script splits onto a stale P5/P7 cut_plan.
+
+    ``--from P7`` keeps ``cut_plan.json`` with one long b5. Unique overlay
+    phrases live on the sliced script blocks, so leftover C-shots reused
+    FLUIDS until QC-24 plates. Children whose texts concat to a plan block
+    replace it; slots of that id are reassigned by overlapping speech.
+    """
+    script_blocks = [
+        block for block in (script.get("blocks") or [])
+        if isinstance(block, dict) and str(block.get("id") or "")
+    ]
+    plan_blocks = [
+        block for block in (plan.get("blocks") or [])
+        if isinstance(block, dict)
+    ]
+    if not script_blocks or not plan_blocks:
+        return 0
+    from .pin_match import overlapping_speech
+
+    si = 0
+    new_blocks: list[dict[str, Any]] = []
+    updated = 0
+    used: set[str] = set()
+    for pblock in plan_blocks:
+        ptext = _norm_spoken(pblock.get("text") or pblock.get("spoken_text") or "")
+        run: list[dict[str, Any]] = []
+        found = False
+        if ptext:
+            for i in range(len(script_blocks)):
+                if str(script_blocks[i].get("id") or "") in used:
+                    continue
+                trial: list[dict[str, Any]] = []
+                for child in script_blocks[i:]:
+                    cid = str(child.get("id") or "")
+                    if cid in used:
+                        break
+                    trial.append(child)
+                    acc = _norm_spoken(" ".join(
+                        str(block.get("text") or "") for block in trial))
+                    if acc == ptext:
+                        run = trial
+                        found = True
+                        break
+                    if not ptext.startswith(acc):
+                        break
+                if found:
+                    break
+        if found and len(run) > 1:
+            old_id = str(pblock.get("id") or "")
+            for child in run:
+                merged = dict(pblock)
+                merged.update(child)
+                new_blocks.append(merged)
+                used.add(str(child.get("id") or ""))
+            updated += _reassign_split_slots(
+                plan.get("slots") or [], old_id, run, words,
+                overlapping_speech)
+        else:
+            new_blocks.append(pblock)
+            if found and run:
+                used.add(str(run[0].get("id") or ""))
+            else:
+                pid = str(pblock.get("id") or "")
+                if pid:
+                    used.add(pid)
+    if updated or new_blocks != plan_blocks:
+        plan["blocks"] = new_blocks
+    return updated
+
+
+def _reassign_split_slots(
+        slots: list[dict[str, Any]],
+        old_id: str,
+        children: list[dict[str, Any]],
+        words: list[dict[str, Any]] | None,
+        overlapping_speech) -> int:
+    owned = [slot for slot in slots
+             if isinstance(slot, dict) and str(slot.get("block_id") or "") == old_id]
+    if not owned or not children:
+        return 0
+    owned.sort(key=lambda slot: float(slot.get("start") or 0))
+    unused = list(children)
+    updated = 0
+    last_id = str(children[-1].get("id") or old_id)
+    for slot in owned:
+        speech = overlapping_speech(slot, words) if words else ""
+        speech_toks = _spoken_tokens(speech)
+        pick = None
+        best = -1
+        pool = unused or children
+        for child in pool:
+            score = len(speech_toks & _spoken_tokens(str(child.get("text") or "")))
+            if score > best:
+                best = score
+                pick = child
+        if pick is None or (speech_toks and best <= 0 and unused):
+            pick = unused[0] if unused else children[0]
+        cid = str(pick.get("id") or last_id)
+        if unused and pick in unused:
+            unused.remove(pick)
+        if str(slot.get("block_id") or "") != cid:
+            slot["block_id"] = cid
+            updated += 1
+        last_id = cid
+    return updated
+
+
+def sync_broll_from_script(
+        plan: dict[str, Any],
+        repo_root=None,
+        *,
+        script: dict[str, Any] | None = None,
+        words: list[dict[str, Any]] | None = None) -> int:
+    """Copy visual_intent / broll_queries / hook onto a stale cut_plan (P7 remount).
+
+    Overlay type/content is ``sync_overlays_from_script``. Queries live on
+    slots as ``queries``; P7 searches those, not the script file, unless we
+    copy them here first.
+    """
+    script = _load_script_for_plan(plan, repo_root, script)
+    if not script:
+        return 0
+    updated = remap_split_blocks_from_script(plan, script, words=words)
+    src_blocks = {
+        str(block.get("id") or ""): block
+        for block in (script.get("blocks") or [])
+        if isinstance(block, dict)
+    }
+    for block in plan.get("blocks") or []:
+        if not isinstance(block, dict):
+            continue
+        src = src_blocks.get(str(block.get("id") or ""))
+        if not src:
+            continue
+        for key in ("visual_intent", "broll_queries"):
+            if key not in src:
+                continue
+            if block.get(key) != src.get(key):
+                block[key] = src[key]
+                updated += 1
+    for slot in plan.get("slots") or []:
+        if not isinstance(slot, dict):
+            continue
+        src = src_blocks.get(str(slot.get("block_id") or ""))
+        if not src:
+            continue
+        changed = False
+        intent = src.get("visual_intent")
+        if intent is not None and slot.get("visual_intent") != intent:
+            slot["visual_intent"] = intent
+            changed = True
+        queries = src.get("broll_queries")
+        if queries is not None and list(slot.get("queries") or []) != list(queries):
+            slot["queries"] = list(queries)
+            changed = True
+        if changed:
+            updated += 1
+    src_hook = (script.get("meta") or {}).get("hook")
+    if isinstance(src_hook, dict):
+        hook = plan.get("hook")
+        if not isinstance(hook, dict):
+            hook = {}
+            plan["hook"] = hook
+        for key in ("on_screen", "style"):
+            if key not in src_hook:
+                continue
+            if hook.get(key) != src_hook.get(key):
+                hook[key] = src_hook[key]
+                updated += 1
+    return updated
+
+
 def sync_overlays_from_script(
         plan: dict[str, Any],
         repo_root=None,
         *,
-        script: dict[str, Any] | None = None) -> int:
+        script: dict[str, Any] | None = None,
+        words: list[dict[str, Any]] | None = None) -> int:
     """Cut/draft overlays can drift from ``scripts/*.json`` (stale P0 cache).
 
     0048 kept «88 ЧАСОВ» on b4 after the script moved the card to
     «СИНГУЛЯРНОСТЬ». Enrich then parked the punch on «семнадцать часов».
     Authored type/content/hint win; other overlay keys stay.
     """
-    import json
-    from pathlib import Path
-
-    if script is None:
-        meta = plan.get("meta") if isinstance(plan.get("meta"), dict) else {}
-        video_id = str(plan.get("video_id") or meta.get("video_id") or "").strip()
-        if not video_id or repo_root is None:
-            return 0
-        path = Path(repo_root) / "scripts" / f"{video_id}.json"
-        if not path.is_file():
-            return 0
-        try:
-            script = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError, TypeError):
-            return 0
+    script = _load_script_for_plan(plan, repo_root, script)
+    if not script:
+        return 0
+    updated = remap_split_blocks_from_script(plan, script, words=words)
     src_blocks = {
         str(block.get("id") or ""): block
         for block in (script.get("blocks") or [])
         if isinstance(block, dict)
     }
-    updated = 0
     for block in plan.get("blocks") or []:
         if not isinstance(block, dict):
             continue

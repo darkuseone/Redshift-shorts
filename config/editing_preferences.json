@@ -31,5 +31,10 @@
     }
   ],
   "sfx_scenario_ring": [],
-  "bed_ring": []
+  "bed_ring": [],
+  "template_excludes": {
+    "redshift_0050": [
+      "text-fullscreen/bigtext-mask-footage"
+    ]
+  }
 }

@@ -273,9 +273,15 @@ jobs:
           set -euo pipefail
           video_id=$(python -c "import json; print(json.load(open('${{ steps.request.outputs.script }}', encoding='utf-8'))['meta']['video_id'])")
           seed="assets/voice/$video_id"
-          if [ -d "$seed" ]; then
+          if [ -d "$seed" ] && [ -f "$seed/voice_final.wav" ]; then
             mkdir -p "work/$video_id"
-            cp -v "$seed"/voice_final.wav "$seed"/*.json "work/$video_id"/
+            cp -v "$seed/voice_final.wav" "work/$video_id"/
+            # speech_map — тайминги голоса. draft_plan НЕ копируем в work/:
+            # иначе P1 не перепланирует avatar on/off, а P2 всё равно сверяет
+            # spoken_key с assets/voice/draft_plan.json.
+            if [ -f "$seed/speech_map.json" ]; then
+              cp -v "$seed/speech_map.json" "work/$video_id"/
+            fi
             echo "голос взят из репозитория: $seed"
           else
             echo "готового голоса для $video_id нет — P2 озвучит заново"
@@ -330,10 +336,17 @@ jobs:
           # прогоне 33666703565 три попытки вытащить её не дали ничего.
           # Файл же уезжает в артефакт и в Summary целиком.
           mkdir -p output
+          HEYGEN_SRC="${{ steps.request.outputs.heygen_source }}"
+          if [ -z "$HEYGEN_SRC" ]; then HEYGEN_SRC=prepared; fi
+          PACE_ARGS=()
+          if [ -n "${{ steps.request.outputs.tts_pace }}" ]; then
+            PACE_ARGS=(--set elevenlabs.pace=${{ steps.request.outputs.tts_pace }})
+          fi
           python -m src.cli \
             --set providers.mode=${{ steps.request.outputs.providers_mode }} \
             --set vision.primary=grok \
-            --set heygen.source=prepared \
+            --set heygen.source="$HEYGEN_SRC" \
+            "${PACE_ARGS[@]}" \
             ${{ steps.request.outputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
             ${{ steps.request.outputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \
             run --script "${{ steps.request.outputs.script }}" \

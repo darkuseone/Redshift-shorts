@@ -25,6 +25,7 @@ DEFAULTS = {
     "force": "false",
     "requested_by": "",
     "note": "",
+    "tts_pace": "",
 }
 
 
@@ -49,6 +50,7 @@ def load_request(*, event_name: str, environ: dict[str, str] | None = None) -> d
         out["skip_vision"] = _flag(env.get("INPUT_SKIP_VISION"))
         out["force"] = _flag(env.get("INPUT_FORCE"))
         out["requested_by"] = "workflow_dispatch"
+        out["tts_pace"] = ""
         return out
 
     if not REQUEST_PATH.is_file():
@@ -60,10 +62,14 @@ def load_request(*, event_name: str, environ: dict[str, str] | None = None) -> d
     out["providers_mode"] = str(data.get("providers_mode") or "auto")
     from_step = data.get("from_step")
     out["from_step"] = "" if from_step is None else str(from_step).strip()
-    out["heygen_source"] = str(data.get("heygen_source") or "prepared")
-    if out["heygen_source"].lower() == "api":
-        out["heygen_source"] = "prepared"
+    out["heygen_source"] = str(data.get("heygen_source") or "prepared").lower()
+    # TZ-0050+: allow live Avatar V via Actions secrets (`api`). Do not coerce.
+    if out["heygen_source"] in ("live", "avatar_v"):
+        out["heygen_source"] = "api"
     out["skip_generate"] = _flag(data.get("skip_generate", False))
+    # Optional TTS pace override for a single build request.
+    pace = data.get("tts_pace")
+    out["tts_pace"] = "" if pace in (None, "") else str(pace)
     out["skip_vision"] = _flag(data.get("skip_vision", False))
     out["force"] = "false"
     # --force-paid из заявки Cursor никогда не проходит.

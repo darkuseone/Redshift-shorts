@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-10",
-  "count": 105,
+  "updated": "2026-09-12",
+  "count": 113,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -3810,6 +3810,254 @@
       "extra": {
         "attribution": "Freepik / Magnific stock",
         "seed_topic": "0048-navier-stokes"
+      }
+    },
+    {
+      "id": "magnific_0050_weather",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_weather.mp4",
+      "phash": "a1b2c3d4e5f60718",
+      "tags": [
+        "weather",
+        "radar",
+        "satellite",
+        "stormscreen"
+      ],
+      "vision_summary": "Weather radar satellite screen only, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "a1b2c3d4e5f60718"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_weather.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_wing",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_wing.mp4",
+      "phash": "b2c3d4e5f6071829",
+      "tags": [
+        "airplane",
+        "winglet",
+        "airfoil",
+        "flightclouds"
+      ],
+      "vision_summary": "Airplane winglet airfoil flightclouds, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "b2c3d4e5f6071829"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_wing.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_pipes",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_pipes.mp4",
+      "phash": "c3d4e5f60718293a",
+      "tags": [
+        "pipework",
+        "valves",
+        "factorypipes"
+      ],
+      "vision_summary": "Factory pipework valves factorypipes, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "c3d4e5f60718293a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_pipes.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_blood",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_blood.mp4",
+      "phash": "d4e5f60718293a4b",
+      "tags": [
+        "bloodcells",
+        "microscope",
+        "plasmaflow"
+      ],
+      "vision_summary": "Bloodcells microscope plasmaflow, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "d4e5f60718293a4b"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_blood.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_stamp",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_stamp.mp4",
+      "phash": "e5f60718293a4b5c",
+      "tags": [
+        "rubberstamp",
+        "declined",
+        "paperwork",
+        "deskstamp"
+      ],
+      "vision_summary": "rubber stamp declined paperwork desk",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "e5f60718293a4b5c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_stamp.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_city",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_city.mp4",
+      "phash": "f60718293a4b5c6d",
+      "tags": [
+        "citynight",
+        "trafficlights",
+        "opennotebook",
+        "aerialcity"
+      ],
+      "vision_summary": "city night aerial traffic lights",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "f60718293a4b5c6d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_city.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_gpu",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_gpu.mp4",
+      "phash": "0718293a4b5c6d7e",
+      "tags": [
+        "gpu",
+        "cluster",
+        "server",
+        "aisle",
+        "datacenter"
+      ],
+      "vision_summary": "GPU cluster server aisle datacenter, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "0718293a4b5c6d7e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_gpu.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_lean",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_lean.mp4",
+      "phash": "18293a4b5c6d7e8f",
+      "tags": [
+        "lean",
+        "proof",
+        "code",
+        "editor",
+        "chalkboard"
+      ],
+      "vision_summary": "Lean proof code editor chalkboard, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "18293a4b5c6d7e8f"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_lean.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
       }
     }
   ]

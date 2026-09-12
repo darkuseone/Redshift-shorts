@@ -1,0 +1,11 @@
+{
+  "script": "scripts/redshift_0050.json",
+  "video_id": "redshift_0050",
+  "from_step": "P7",
+  "heygen_source": "prepared",
+  "skip_generate": true,
+  "skip_vision": false,
+  "providers_mode": "live",
+  "requested_by": "cursor",
+  "note": "round15: by_block b3=gpu b4=lean magnific plates; kill grid.jpg freepik miss; fix QC-SEMANTIC 17%"
+}

@@ -26,11 +26,14 @@ from typing import Any, Iterable
 import yaml
 
 from ..lib.ffmpeg import extract_frames, grade_to_palette, probe
+from ..lib.hydrate_footage import hydrate_repo_footage
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, open_library, tag_url_coherence
 from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
-from ..lib.pin_match import ctx_words, pin_slot_prefer_key
+from ..lib.pin_match import (
+    ctx_words, filter_queries_for_beat, pin_slot_prefer_key, slot_visual_beat,
+)
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import (
@@ -40,6 +43,7 @@ from ..lib.query import (
     topical_tokens,
 )
 from ..lib.render.shots import slim_video
+from ..lib.text import sync_broll_from_script
 
 SCI_QUERY_PAD = (
     "dilution refrigerator",
@@ -377,6 +381,30 @@ def disk_orphan_records(ctx, index: FootageIndex) -> list[AssetRecord]:
                 file=rel, extra={"attribution": f"{source} / local cache",
                                  "orphan_ingest": True},
             ))
+    # Magnific plates committed under assets/footage/magnific
+    seen_ids = {r.id for r in found}
+    for folder in (root / "magnific", Path(ctx.cfg.repo_root) / "assets" / "footage" / "magnific"):
+        if not folder.is_dir():
+            continue
+        for path in sorted(folder.glob("*.mp4")):
+            asset_id = path.stem
+            if asset_id in seen_ids or index.by_id(asset_id) is not None:
+                continue
+            rel = f"magnific/{path.name}"
+            try:
+                info = probe(path)
+            except Exception:
+                continue
+            found.append(AssetRecord(
+                id=asset_id, type="video", source="magnific", license="owner_decision",
+                url_origin="",
+                tags=["magnific", "video"], vision_summary="",
+                score=0.75, duration_sec=float(info.duration_sec or 0.0),
+                width=int(info.width or 0), height=int(info.height or 0),
+                file=rel, ai_generated=False,
+                extra={"attribution": "magnific / repo assets", "orphan_ingest": True},
+            ))
+            seen_ids.add(asset_id)
     return found
 
 
@@ -495,6 +523,21 @@ def pin_id_denied(asset_id: str, deny: set[str]) -> bool:
     return False
 
 
+def _load_footage_by_block(cfg, video_id: str) -> dict[str, str | None]:
+    """Hard per-block asset pins from footage_pins.json ``by_block`` map."""
+    entry = _footage_pin_entry(cfg, video_id)
+    raw = entry.get("by_block") or {}
+    out: dict[str, str | None] = {}
+    if not isinstance(raw, dict):
+        return out
+    for key, val in raw.items():
+        bid = str(key or "").strip()
+        if not bid:
+            continue
+        out[bid] = None if val is None else str(val)
+    return out
+
+
 def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
     """Return (deny_ids, prefer_ids) for this video from config/footage_pins.json."""
     entry = _footage_pin_entry(cfg, video_id)
@@ -505,16 +548,18 @@ def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
 
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
+    words = ctx_words(ctx)
+    sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
     cfg = ctx.cfg
     routing = _load_routing(cfg)
     providers = build_stock_providers(cfg, ctx.costs)
     index = FootageIndex.load(cfg)
     pin_deny, pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
-    words = ctx_words(ctx)
     orphans = disk_orphan_records(ctx, index)
     if orphans:
         ctx.warn(f"на диске {len(orphans)} клипов стока нет в индексе — добор",
                  count=len(orphans))
+    hydrate_repo_footage(ctx, index)
 
     queries_per_slot = min(QUERY_MAX, max(3, int(cfg.get("stock.queries_per_slot", 5))))
     per_query = int(cfg.get("stock.max_candidates_per_query", 8))
@@ -559,6 +604,7 @@ def run_step(ctx) -> dict[str, Any]:
     # неиспользованные prefer как запасные — taken_ids сжигал их, и хвост
     # ролика (0042: криостат Grok) оставался пустым.
     exclusive_ids: set[str] = set()
+    remote_pin_tried: set[str] = set()
     from_cache = 0
     missing_in_storage: list[str] = []
     slot_search: list[dict[str, Any]] = []
@@ -566,9 +612,17 @@ def run_step(ctx) -> dict[str, Any]:
     frames_dir = ctx.wpath("broll", "frames", ".keep").parent
 
     for slot in slots:
-        intent_kind = classify_intent(slot.get("visual_intent", ""), slot.get("queries", []),
+        search_slot = slot
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            beat = slot_visual_beat(slot, words)
+            filtered = filter_queries_for_beat(list(slot.get("queries") or []), beat)
+            if filtered:
+                search_slot = dict(slot)
+                search_slot["queries"] = filtered
+        intent_kind = classify_intent(search_slot.get("visual_intent", ""),
+                                      search_slot.get("queries", []),
                                       plan.get("category", ""))
-        compiled = compile_slot_search(slot, plan, count=queries_per_slot)
+        compiled = compile_slot_search(search_slot, plan, count=queries_per_slot)
         queries = pad_slot_queries(
             compiled["queries"],
             queries_per_slot=queries_per_slot,
@@ -938,6 +992,33 @@ def run_step(ctx) -> dict[str, Any]:
                           palette_max=press_palette_max, grade=True):
                     press_used += 1
                     break
+
+        # Prefer Freepik IDs that are not in the local index: download by id
+        # only when pin_match says this slot is the one (bonus < 0).
+        fp_provider = providers.get("freepik")
+        if fp_provider is not None and pin_prefer:
+            for pid in pin_prefer:
+                if not pid.startswith("freepik_") or pid in remote_pin_tried:
+                    continue
+                if pin_id_denied(pid, pin_deny):
+                    continue
+                if any(str(row.get("asset_id") or "") == pid
+                       for row in slot_candidates):
+                    continue
+                rec = index.by_id(pid)
+                if rec is not None and rec.file and ctx.storage.exists(rec.file):
+                    continue
+                bonus = pin_slot_prefer_key(pid, slot, pin_prefer, words=words)[0]
+                if bonus >= 0:
+                    continue
+                remote_pin_tried.add(pid)
+                cand = StockCandidate(
+                    id=pid, source="freepik", kind="video", query=pid,
+                    license=getattr(fp_provider, "license_name", "") or "Freepik",
+                    license_confirmed=True, attribution="Freepik",
+                )
+                if accept(fp_provider, cand, queries[0] if queries else pid):
+                    exclusive_ids.add(pid)
 
         # --- 3. внешние стоки -------------------------------------------------
         harvest(queries)

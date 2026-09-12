@@ -1,0 +1,269 @@
+{
+  "meta": {
+    "video_id": "redshift_0050",
+    "title": "OpenAI закрыла кусок задачи тысячелетия — приз не отдали",
+    "topic": "OpenAI / GPT-6 Astra / Navier–Stokes / Lean / Clay",
+    "category": "ai",
+    "language": "ru",
+    "target_duration_sec": 62,
+    "allow_memes": false,
+    "allow_bg_vfx": true,
+    "publish_date": "2026-09-12",
+    "music_mood": "tense",
+    "cta": true,
+    "notes": "0050 QC round14: dark browser/source; compact REDSHIFT CTA; shorten REJECTED; FOLLOWUP dark; Gemini FIX visual; spoken frozen.",
+    "hook": {
+      "on_screen": "$1 000 000",
+      "style": "number_slam"
+    }
+  },
+  "sources": [
+    {
+      "title": "On the Navier–Stokes Millennium Prize Problem",
+      "domain": "openai.com",
+      "url": "https://openai.com/index/navier-stokes-solution/",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "published": "8 сентября 2026",
+      "snippet": "Внутренняя модель сильнее GPT-6 Astra. Перекладка в Lean за 17 часов.",
+      "highlight_line": "сильнее GPT-6 Astra"
+    },
+    {
+      "title": "Millennium Prize Problems",
+      "domain": "claymath.org",
+      "url": "https://www.claymath.org/millennium-problems/",
+      "show_on_screen": false,
+      "screen_template": "search",
+      "snippet": "Семь задач. Миллион за каждую. Навье–Стокс с 2000 года."
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Миллион долларов. Четверть века никто не брал.",
+      "emphasis_word": "миллион",
+      "avatar": "off",
+      "visual_intent": "Motion from frame 0: data-center aisle or flowing water or OpenAI press still. Overlay $1 000 000. No big Russian word. Avatar off.",
+      "broll_queries": [
+        "data center server aisle blue lights moving",
+        "water vortex flow slow motion underwater",
+        "modern glass headquarters exterior night"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "$1 000 000",
+        "template_hint": "text-fullscreen/number-slam-card"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "number"
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Восьмого сентября модель без чата закрыла кусок этой задачи. Семь задач тысячелетия. Миллион долларов за каждую. Четверть века. Это формулы воды, воздуха и крови — не мелки на доске.",
+      "emphasis_word": "семь",
+      "avatar": "on",
+      "visual_intent": "Live water / river current after the hook $1 000 000 card. One stake card: 7 · $1 000 000 · 25 Y. Not a second prize plate.",
+      "broll_queries": [
+        "river current aerial flowing water",
+        "blue ink swirling liquid macro",
+        "clear water flow glass tank slow motion"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "7 · $1 000 000 · 25 Y",
+        "template_hint": "text-fullscreen/fact-card"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A",
+      "emphasis_family": "number"
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "Восьмого сентября две тысячи двадцать шесть OpenAI выкладывает работу. Искал не чат, а внутренняя модель сильнее GPT-6 Astra.",
+      "emphasis_word": "Astra",
+      "avatar": "off",
+      "visual_intent": "openai.com article card + GPT-6 ASTRA. Source-chip corner, no red. GPU cluster / server aisle behind. Not a Nature figure.",
+      "broll_queries": [
+        "gpu cluster server room night aisle",
+        "supercomputer hall dark blue lights",
+        "data center corridor blue leds"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "GPT-6 ASTRA",
+        "template_hint": "browser-ui/browser-scroll"
+      },
+      "sfx": "ui_click",
+      "source_ref": "openai.com",
+      "mode_hint": "C",
+      "emphasis_family": "source"
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений. Семнадцать часов переложили доказательство в Lean.",
+      "emphasis_word": "Lean",
+      "avatar": "off",
+      "visual_intent": "Dark translucent number cards on live footage: 10 000, 88 Ч, 2 700 000, 17 Ч LEAN. Lean = proof code editor, not HTML hello-js. Chalkboard for hours.",
+      "broll_queries": [
+        "chalkboard writing equations closeup dark",
+        "lean proof code editor dark theme scrolling",
+        "gpu cluster server room night aisle"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN",
+        "template_hint": "text-fullscreen/fact-card"
+      },
+      "sfx": "data_beep",
+      "mode_hint": "C",
+      "emphasis_family": "number"
+    },
+    {
+      "id": "b5",
+      "role": "develop",
+      "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают.",
+      "emphasis_word": "жидкость",
+      "avatar": "off",
+      "visual_intent": "flowing liquid current underwater or ink swirl. catalog dark-card FLUIDS overlay.",
+      "broll_queries": [
+        "water vortex fluid flow slow motion",
+        "blue ink swirl liquid macro"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "FLUIDS",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "sfx": "whoosh_in",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5b",
+      "role": "develop",
+      "text": "Погода.",
+      "emphasis_word": "Погода",
+      "avatar": "off",
+      "visual_intent": "weather radar satellite stormscreen only. catalog clean-bar WEATHER overlay.",
+      "broll_queries": [
+        "weather radar satellite stormscreen"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "WEATHER",
+        "template_hint": "lower-thirds/clean-bar"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5c",
+      "role": "develop",
+      "text": "Крыло самолёта.",
+      "emphasis_word": "Крыло",
+      "avatar": "off",
+      "visual_intent": "airplane winglet airfoil flightclouds. catalog note-pin AIRFOIL overlay.",
+      "broll_queries": [
+        "airplane winglet airfoil flightclouds"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "AIRFOIL",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5d",
+      "role": "develop",
+      "text": "Трубы в доме.",
+      "emphasis_word": "Трубы",
+      "avatar": "off",
+      "visual_intent": "pipework valves factorypipes. catalog note-pin VALVES overlay.",
+      "broll_queries": [
+        "pipework valves factorypipes"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "VALVES",
+        "template_hint": "lower-thirds/note-pin"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b5e",
+      "role": "develop",
+      "text": "Ток крови. Если формула врёт — самолёт не извиняется.",
+      "emphasis_word": "крови",
+      "avatar": "off",
+      "visual_intent": "bloodcells microscope plasmaflow. catalog metric-badge PLASMA overlay.",
+      "broll_queries": [
+        "bloodcells microscope plasmaflow"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "PLASMA",
+        "template_hint": "lower-thirds/metric-badge"
+      },
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
+    },
+    {
+      "id": "b6",
+      "role": "twist",
+      "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
+      "emphasis_word": "не принял",
+      "avatar": "on",
+      "visual_intent": "rubberstamp declined paperwork deskstamp on desk. catalog dark-card REJECTED overlay. Must place.",
+      "broll_queries": [
+        "rubberstamp declined paperwork deskstamp",
+        "rubber stamp declined paperwork desk"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "REJECTED",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "sfx": "sub_drop",
+      "answers_hook": true,
+      "mode_hint": "A",
+      "emphasis_family": "myth"
+    },
+    {
+      "id": "b7",
+      "role": "cta",
+      "text": "Какую из оставшихся шести разберём следующей?",
+      "emphasis_word": "шести",
+      "avatar": "off",
+      "visual_intent": "city night traffic aerial OR open notebook (citynight trafficlights aerialcity opennotebook). catalog name-title FOLLOWUP dark plate; compact wordmark-only outro.",
+      "broll_queries": [
+        "citynight trafficlights aerialcity city night traffic aerial",
+        "opennotebook open notebook desk warm light"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "FOLLOWUP",
+        "template_hint": "lower-thirds/name-title"
+      },
+      "sfx": "subscribe_ping",
+      "emphasis_family": "emotion"
+    }
+  ],
+  "cta": {
+    "text": "Какую из оставшихся шести разберём следующей?",
+    "type": "part2_cliff"
+  }
+}

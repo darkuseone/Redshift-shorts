@@ -67,12 +67,13 @@ AVATAR_EARLIEST_SEC = 1.0
 
 
 def _mode_for_block(block: dict[str, Any], *, avatar_forced: str) -> str:
+    # avatar: off сильнее mode_hint — иначе CTA с mode_hint=A получает лицо.
+    if avatar_forced == "off":
+        return "C"
     hint = block.get("mode_hint")
     if hint:
         return hint
     prefs = ROLE_MODE_PREFERENCE.get(block.get("role", "develop"), ("C",))
-    if avatar_forced == "off":
-        return "C"
     if avatar_forced == "on":
         return prefs[0] if prefs[0] in AVATAR_MODES else "A"
     return prefs[0]

@@ -36,8 +36,9 @@ from ..lib.backdrop import pick_scene
 from ..lib.backdrop import tone as scene_tone
 from ..lib.text import (
     accent_card_start, enrich_overlay_punch, find_spoken_anchor,
-    punch_families_overlap, soften_on_screen_copy, spoken_onset_for_content,
-    stems_match, sync_overlays_from_script,
+    is_latin_overlay_label, punch_families_overlap, soften_on_screen_copy,
+    spoken_onset_for_content,
+    stems_match, sync_broll_from_script, sync_overlays_from_script,
 )
 from ..lib.glyphs import match_glyphs
 from ..lib.meaning import block_traits, explain, grounded_for, matched
@@ -707,11 +708,10 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
                   assets: dict[int, dict[str, Any]] | None = None) -> dict[str, Any] | None:
     """Nearest real (non-AI, non-NASA) footage for hero/fullscreen plates.
 
-    Prefer same-block stock/press; if that block has no real media (empty P7/P9
-    gaps), fall back to the nearest real prepared footage anywhere in the cut
-    so plate-needing heroes still show a topical still instead of an empty panel.
-    NASA archive stills are skipped — empty slots take a brand plate instead.
-    AI-only pools return None — heroes then skip plate templates.
+    Only same-block neighbors may fill an empty footage shot — never clone
+    weather/wing/etc. from b5b onto b4/b5. NASA archive stills are skipped —
+    empty slots take a brand plate instead. AI-only pools return None — heroes
+    then skip plate templates.
     """
     index = int(slot["index"])
     assets = assets or {}
@@ -736,7 +736,7 @@ def _plate_source(slot: dict[str, Any], slots: list[dict[str, Any]],
             out.append(s)
         return out
 
-    pool = _pool(True) or _pool(False)
+    pool = _pool(True)
     if not pool:
         return None
     nearest = min(pool, key=lambda s: (abs(int(s["index"]) - index), int(s["index"])))
@@ -756,6 +756,10 @@ def _brand_plate_file(ctx, plan: dict[str, Any]) -> str | None:
     plate_path = _backdrop_plate(ctx.cfg, scene_name)
     if plate_path:
         return plate_path
+    # 0050: never fill semantic gaps with striped grid.jpg — leave empty so
+    # by_block force pins (gpu/lean/life-beats) can own those slots.
+    if str(plan.get("video_id") or "") == "redshift_0050":
+        return None
     assets_dir = ctx.cfg.path("paths.assets_dir", "assets")
     for name in ("grid.jpg", "horizon.jpg"):
         cand = assets_dir / "backdrops" / name
@@ -840,6 +844,82 @@ def _claim_screen_phrase(used: set[str], content: str) -> bool:
         return False
     used.add(key)
     return True
+
+
+_0050_TEMPLATE_BAN = ("text-fullscreen/bigtext-mask-footage",)
+
+
+def _authored_overlay_owns_gap_fs(block: dict[str, Any] | None) -> bool:
+    """Authored overlay (not none) owns on-screen copy for this block.
+
+    Gap-phrase used to invent a long Russian sentence on 0050 b5
+    (overlay type none → QC-30 bigtext-mask). Lower-thirds / frames with
+    content must also block that path so leftover shots can stay footage.
+    """
+    overlay = block.get("overlay") if isinstance((block or {}).get("overlay"), dict) else {}
+    otype = str(overlay.get("type") or "")
+    if otype in ("", "none"):
+        return False
+    return bool(str(overlay.get("content") or "").strip())
+
+
+def _cta_wordmark(plan: dict[str, Any], catalog_wordmark: str = "") -> str:
+    """Latin REDSHIFT for 0050 / authored overlay; never catalog «РЕДШИФТ»."""
+    vid = str(plan.get("video_id") or "")
+    cta_block = next(
+        (b for b in (plan.get("blocks") or [])
+         if str(b.get("role") or "") == "cta" and isinstance(b, dict)),
+        {},
+    )
+    authored = str((cta_block.get("overlay") or {}).get("content") or "").strip()
+    mark = authored or str(catalog_wordmark or "").strip() or "REDSHIFT"
+    folded = mark.replace(".", "").upper()
+    if vid == "redshift_0050" or folded == "REDSHIFT" or "РЕДШИФТ" in mark.upper():
+        mark = "REDSHIFT"
+    return mark.rstrip(".")
+
+
+def _cta_close_style(plan: dict[str, Any]) -> dict[str, Any]:
+    """Identity close: 0050 keeps stock under the mark (QC-30 paper invert)."""
+    if str(plan.get("video_id") or "") == "redshift_0050":
+        # Compact bottom wordmark — cascade was truncating to «REDSHI».
+        return {
+            "logo_close": True,
+            "invert": False,
+            "tone": "ink",
+            "compact": True,
+            "position": "bottom",
+            "no_period": True,
+            "fontScale": 0.72,
+        }
+    return {"logo_close": True, "invert": True, "tone": "paper"}
+
+
+def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
+    """Per-video template bans from editing_preferences + 0050 hard bans."""
+    vid = str(plan.get("video_id") or "")
+    out: list[str] = []
+    if vid == "redshift_0050":
+        out.extend(_0050_TEMPLATE_BAN)
+    prefs: dict[str, Any] = {}
+    root = None
+    if ctx is not None:
+        cfg = getattr(ctx, "cfg", None)
+        root = getattr(cfg, "repo_root", None)
+    if root is None:
+        from pathlib import Path as _Path
+        root = _Path(__file__).resolve().parents[2]
+    try:
+        from ..lib.jsonio import read_json_or
+        prefs = read_json_or(root / "config" / "editing_preferences.json", {}) or {}
+    except Exception:  # noqa: BLE001
+        prefs = {}
+    extra = ((prefs.get("template_excludes") or {}).get(vid) or [])
+    for tid in extra:
+        text = str(tid or "").strip()
+        if text and text not in out:
+            out.append(text)
+    return out
 
 
 def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
@@ -2951,15 +3031,51 @@ def _clamp_end_before_next_avatar(
     return end
 
 
+
+def _clear_plate_gap_when_covered(shots, overlays):
+    """QC-24 reads gap_reason; clear when a text-bearing overlay covers the shot."""
+    covers = []
+    for ov in overlays or []:
+        t = str(ov.get('type') or '')
+        if t not in ('plaque', 'cta', 'fullscreen_text', 'accent', 'source_card'):
+            continue
+        covers.append((float(ov['start']), float(ov['end'])))
+    for s in shots or []:
+        gr = str(s.get('gap_reason') or '')
+        if 'plate without text' not in gr:
+            continue
+        a, b = float(s.get('start') or 0), float(s.get('end') or 0)
+        mid = (a + b) / 2.0
+        # cover if any overlay spans the midpoint (or ≥50% of shot)
+        if any(o0 - 1e-3 <= mid <= o1 + 1e-3 for o0, o1 in covers):
+            # strip only the plate-without-text marker; keep other reasons if useful
+            s['gap_reason'] = gr.replace('no unique phrase: plate without text', '').replace('fullscreen cap or duplicate phrase: plate without text', '').replace('fullscreen cap: plate without text', '').strip(' ;')
+            if not s['gap_reason']:
+                s.pop('gap_reason', None)
+            elif 'plate without text' in s['gap_reason']:
+                s['gap_reason'] = s['gap_reason'].replace('plate without text', '').strip(' ;:') or None
+                if not s.get('gap_reason'):
+                    s.pop('gap_reason', None)
+    return shots
+
+
 def _clamp_plaques_at_avatar_cuts(
     overlays: list[dict[str, Any]],
     shots: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Plaque/note-pin must not carry across a cut onto an avatar chest."""
+    """Plaque/note-pin must not carry across a cut onto an avatar chest.
+
+    Latin authored lower-thirds are already duration-capped at build time;
+    skip a second clamp here so the short window stays intact for QC-24.
+    """
     for ovl in overlays:
         kind = str(ovl.get("type") or "")
         template = str(ovl.get("template") or "")
         if kind != "plaque" and "note-pin" not in template:
+            continue
+        params = ovl.get("params") or {}
+        label = str(params.get("text") or params.get("content") or "")
+        if is_latin_overlay_label(label):
             continue
         ovl["end"] = round(
             _clamp_end_before_next_avatar(
@@ -2967,6 +3083,74 @@ def _clamp_plaques_at_avatar_cuts(
             3,
         )
     return overlays
+
+
+
+_LATIN_DARK_CLEANBAR = frozenset({
+    "FOLLOWUP", "WEATHER", "REJECTED", "FLUIDS", "AIRFOIL", "VALVES", "PLASMA",
+})
+_LATIN_PLAQUE_MAX_SEC = 3.5
+
+
+def _latin_plaque_span(
+    block_slots: list[dict[str, Any]],
+    shots: list[dict[str, Any]],
+) -> tuple[float, float]:
+    """Latin lower-thirds: short window on first non-avatar beat (QC-24).
+
+    Full-block REJECTED used to sit on avatar chests for ~14s. Cap at 3.5s
+    starting on the first footage/fullscreen slot in the block, and stop
+    before the next talking head.
+    """
+    b_start = float(block_slots[0]["start"])
+    b_end = float(block_slots[-1]["end"])
+    footage = [
+        s for s in block_slots
+        if str(s.get("kind") or "") not in AVATAR_KINDS
+    ]
+    if footage:
+        start = float(footage[0]["start"])
+        end = min(start + _LATIN_PLAQUE_MAX_SEC, float(footage[0]["end"]), b_end)
+        for later in footage[1:]:
+            if float(later["start"]) > end + 1e-3:
+                break
+            end = min(start + _LATIN_PLAQUE_MAX_SEC, float(later["end"]), b_end)
+    else:
+        start = b_start
+        end = min(b_start + _LATIN_PLAQUE_MAX_SEC, b_end)
+    end = _clamp_end_before_next_avatar(start, end, shots)
+    if end - start < 0.35:
+        end = min(start + min(_LATIN_PLAQUE_MAX_SEC, b_end - start), b_end)
+    return round(start, 3), round(end, 3)
+
+
+def _coerce_latin_cleanbar_dark(params: dict[str, Any], *, content: str,
+                               template_id: str) -> dict[str, Any]:
+    """FOLLOWUP (etc.) on clean-bar must not paint a white pill.
+
+    QC-25 caps dark-card template id at ≤2 (b5+b6). Keep clean-bar /
+    name-title ids, but force dark_card styling so composition routes to
+    lt_dark_card charcoal chrome.
+    """
+    label = str(content or "").strip().upper()
+    tid = str(template_id or "")
+    if label not in _LATIN_DARK_CLEANBAR:
+        return params
+    if "clean-bar" in tid or params.get("clean_bar"):
+        params = dict(params)
+        params["dark_card"] = True
+        params["clean_bar"] = False
+        params["tone"] = "ink"
+        params["invert"] = False
+        params["background"] = "dark"
+    elif label == "FOLLOWUP":
+        # name-title / generic plaque path — still force dark plate, never white.
+        params = dict(params)
+        params["dark_card"] = True
+        params["tone"] = "ink"
+        params["invert"] = False
+        params["background"] = "dark"
+    return params
 
 
 def _plaque_overlay(*, template: Template, start: float, end: float,
@@ -3327,6 +3511,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         }
         if compact_card:
             card_params["compact"] = True
+        # 0050: white browser paper + red source chip failed Gemini visual.
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            card_params.update({
+                "tone": "ink",
+                "theme": "dark",
+                "invert": False,
+                "dark": True,
+                "background": "dark",
+            })
         if renderer == "ai_chat_reveal":
             card_params["userMessage"] = (
                 source.get("title") or source.get("snippet") or "")
@@ -3443,18 +3636,29 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         if plaque_end - plaque_start < 0.8:
             plaque_start = max(float(anchor["start"]), float(anchor["end"]) - 2.0)
             plaque_end = float(anchor["end"])
+        chip_params = {
+            "text": domain, "subtitle": "источник",
+            "name": domain, "role": "источник",
+            "source_chip": True,
+            "position": "bottom",
+            "direction": "left",
+            **{k: v for k, v in plaque_template.params.items()
+               if k in ("accent_underline",
+                        "clean_bar", "dark_card")},
+        }
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            chip_params.update({
+                "accent": False,
+                "no_red": True,
+                "border_color": "muted",
+                "tone": "ink",
+                "theme": "dark",
+            })
         overlays.append(_plaque_overlay(
             template=plaque_template,
             start=plaque_start,
             end=plaque_end,
-            params={"text": domain, "subtitle": "источник",
-                    "name": domain, "role": "источник",
-                    "source_chip": True,
-                    "position": "bottom",
-                    "direction": "left",
-                    **{k: v for k, v in plaque_template.params.items()
-                       if k in ("accent_underline",
-                                "clean_bar", "dark_card")}},
+            params=chip_params,
             why="§5.4: плашка с доменом источника",
             enter_ms=enter_ms,
         ))
@@ -3495,21 +3699,30 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             seed=seed + 7,
         )
         used.append(template.id)
+        latin = is_latin_overlay_label(content)
         # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
-        content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
-        content = soften_on_screen_copy(content)
+        # Latin authored labels keep verbatim copy; duration capped (QC-24).
+        if not latin:
+            content = enrich_overlay_punch(str(content or ""), str(block.get("text") or "")) or content
+            content = soften_on_screen_copy(content)
         b_start = float(block_slots[0]["start"])
         b_end = float(block_slots[-1]["end"])
-        bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
-        anchor = find_spoken_anchor(bwords or words, content, block.get("emphasis_word"))
-        if anchor is not None:
-            start = accent_card_start(anchor, block_start=b_start, delay_sec=0.05)
+        if latin:
+            start, plaque_end = _latin_plaque_span(
+                block_slots, plan.get("slots") or [])
         else:
-            start = b_start + 0.4
-        start = min(start, max(b_start, b_end - 1.2))
-        plaque_end = min(start + 2.6, b_end)
-        plaque_end = _clamp_end_before_next_avatar(
-            start, plaque_end, plan.get("slots") or [])
+            bwords = [w for w in words if str(w.get("block_id") or "") == str(block.get("id") or "")]
+            anchor = find_spoken_anchor(bwords or words, content, block.get("emphasis_word"))
+            if anchor is not None:
+                start = accent_card_start(anchor, block_start=b_start, delay_sec=0.05)
+            else:
+                start = b_start + 0.4
+            start = min(start, max(b_start, b_end - 1.2))
+            plaque_end = min(start + 2.6, b_end)
+            plaque_end = _clamp_end_before_next_avatar(
+                start, plaque_end, plan.get("slots") or [])
+        if plaque_end - start < 0.35:
+            continue
         # Suppress plaque when a punch-family FS/accent card already owns
         # the beat (0042 r6: triple НЕЧЕМ = card + plaque + captions).
         conflict = False
@@ -3519,7 +3732,16 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             if float(s["end"]) <= start or float(s["start"]) >= plaque_end:
                 continue
             sc = str(s.get("content") or "")
-            if sc and punch_families_overlap(sc, str(content)):
+            if not sc:
+                continue
+            # Latin plaques only collide with FS on identical text (same as
+            # plaque-plaque). Punch-stem overlap would drop e.g. CLAY REJECT
+            # vs fullscreen «CLAY: НЕТ».
+            if latin:
+                if sc.strip() == str(content).strip():
+                    conflict = True
+                    break
+            elif punch_families_overlap(sc, str(content)):
                 conflict = True
                 break
         if not conflict:
@@ -3527,26 +3749,40 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
                 if ov.get("type") not in ("fullscreen_text", "accent", "cta"):
                     # also check shots-to-be: use slot content above
                     pass
-            # Also suppress if any earlier overlay plaque same family
+            # Also suppress if any earlier overlay plaque same family.
+            # Latin labels only collide on identical text (not punch stems).
             for ov in overlays:
                 if ov.get("type") != "plaque":
                     continue
                 pt = str((ov.get("params") or {}).get("text") or "")
-                if pt and punch_families_overlap(pt, str(content)):
-                    if float(ov["end"]) > start and float(ov["start"]) < plaque_end:
+                if not pt:
+                    continue
+                if float(ov["end"]) <= start or float(ov["start"]) >= plaque_end:
+                    continue
+                if latin:
+                    if pt.strip() == str(content).strip():
                         conflict = True
                         break
+                elif punch_families_overlap(pt, str(content)):
+                    conflict = True
+                    break
         if conflict:
             continue
+        plaque_params = {
+            "text": content, "content": content, "name": content,
+            "role": role,
+            **{k: v for k, v in template.params.items()
+               if k in ("position", "direction", "accent_underline",
+                        "clean_bar", "dark_card")},
+        }
+        if latin:
+            plaque_params = _coerce_latin_cleanbar_dark(
+                plaque_params, content=content, template_id=template.id)
         overlays.append(_plaque_overlay(
             template=template,
             start=start,
             end=plaque_end,
-            params={"text": content, "content": content, "name": content,
-                    "role": role,
-                    **{k: v for k, v in template.params.items()
-                       if k in ("position", "direction", "accent_underline",
-                                "clean_bar", "dark_card")}},
+            params=plaque_params,
             why=f"плашка из сценария, блок {block['id']}",
             enter_ms=enter_ms,
         ))
@@ -3559,31 +3795,39 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # в каталоге лежит `outro-cta/loop-back` (`renderer: footage`) — до сегодня
     # с пустым `last_used_in`.
     seam = bool(loop_seam)
+    vid = str(plan.get("video_id") or "")
+    if vid == "redshift_0050" and not seam:
+        # Compact ~1.8s wordmark — long cascade truncated to «REDSHI».
+        cta_end = float(cta_end)
+        cta_start = max(float(cta_start), round(cta_end - 1.8, 3))
     cta_exclude = list(used) + [str(x) for x in peer_exclude if x]
+    prefer_cta = (["outro-cta/loop-back"] if seam else
+                  (["outro-cta/logo-stamp", "outro-cta/logo-brand-close",
+                    "outro-cta/subscribe-pulse"]
+                   if vid == "redshift_0050" else
+                   ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"]))
     cta_template, _ = picker.pick(
         "outro-cta",
         variant=variant,
         duration=float(cta_end) - float(cta_start),
         recent_videos=recent_videos,
         exclude=cta_exclude,
-        prefer_head=(["outro-cta/loop-back"] if seam else
-                     ["outro-cta/logo-brand-close", "outro-cta/subscribe-pulse"]),
+        prefer_head=prefer_cta,
         seed=seed,
     )
     used.append(cta_template.id)
     cta_params = dict(cta_template.params)
     show_subscribe = show_subscribe_cta(plan)
     cta_params.update({
-        "logo_close": True,
-        "wordmark": str(cta_params.get("wordmark") or "REDSHIFT"),
+        "wordmark": _cta_wordmark(plan, str(cta_params.get("wordmark") or "")),
         "tagline": "",  # 0042 r6: drop «Write code. Ship to orbit.»
         "url": str(cta_params.get("url") or "redshift.shorts"),
         "subscribe": show_subscribe,
         "buttonText": "Subscribe" if show_subscribe else "",
-        "invert": True,
-        "tone": "paper",
         "exit": "none",
+        **_cta_close_style(plan),
     })
+    cta_params["wordmark"] = str(cta_params.get("wordmark") or "REDSHIFT").rstrip(".")
     if seam:
         # Подпись поверх шва — мелкая и прижатая к низу: она не должна попасть
         # в те 64 бита, по которым QC-27 сравнивает первый кадр с последним.
@@ -3962,9 +4206,18 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             continue
         if any(start < occ_end and end > occ_start for occ_start, occ_end in occupied):
             continue
-        overlays.append(_dataviz_overlay(
+        ovl = _dataviz_overlay(
             slot, nums, blocks, picker, variant=variant, seed=seed,
-            recent_videos=recent_videos, used=used, start=start, end=end))
+            recent_videos=recent_videos, used=used, start=start, end=end)
+        # 0050: white stat-countup card on OpenAI beat — force dark chrome.
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            params = dict(ovl.get("params") or {})
+            params.update({
+                "tone": "ink", "theme": "dark", "dark": True,
+                "invert": False, "background": "dark",
+            })
+            ovl["params"] = params
+        overlays.append(ovl)
         occupied.append((start, end))
         budget.take("dataviz")
         if bid:
@@ -4444,6 +4697,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # Накопленные предпочтения влияют на версию A: она несёт «текущий дефолт»,
     # а B остаётся альтернативой, иначе обучение схлопнет обе версии в одну.
     prefs = (preferences or {}) if variant == "A" else {}
+    ban_templates = _template_excludes_for(plan, ctx)
     used_templates: list[str] = []
     peer_block = [str(x) for x in peer_exclude if x]
     slots = plan["slots"]
@@ -4632,7 +4886,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
-                exclude=used_templates,
+                exclude=used_templates + ban_templates,
                 seed=seed,
                 prefer_head=head,
                 exclude_renderers=escalation.bans(str(slot.get("beat") or "")),
@@ -4742,9 +4996,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     content = soften_on_screen_copy(str(content or ""))
                     if not _claim_screen_phrase(used_screen_phrases, content):
                         content = ""
-                elif str((gap_block.get("overlay") or {}).get("type") or "") == "fullscreen_text":
-                    # Authored punch owns the FS budget for this block.
-                    # Auto «За семнадцать часов» stole the card from СИНГУЛЯРНОСТЬ.
+                elif _authored_overlay_owns_gap_fs(gap_block):
+                    # Authored punch / plaque owns the copy for this block.
+                    # Auto «Называются уравнения Навье-Стокса» stole the
+                    # 0050 b5 card and blew QC-30 / QC-24 leftover plates.
                     content = ""
                 else:
                     raw = gap_phrase(words_doc["words"], slot, gap_block,
@@ -4784,7 +5039,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
-                exclude=used_templates,
+                exclude=used_templates + ban_templates,
                 seed=seed + int(slot["index"]),
                 prefer_head=head,
                 exclude_renderers=escalation.bans(str(slot.get("beat") or "")),
@@ -4840,7 +5095,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
-                exclude=used_templates,
+                exclude=used_templates + ban_templates,
                 prefer_head=head,
                 seed=seed + slot["index"],
             )
@@ -5015,6 +5270,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             })
 
     overlays = _clamp_plaques_at_avatar_cuts(overlays, shots)
+    shots = _clear_plate_gap_when_covered(shots, overlays)
 
     # Smart captions: punch-family mute stays. Card mute is only bulky type
     # (FS slam beat, punch/slam heroes, source cards, CTA) — not behind-head
@@ -5264,8 +5520,10 @@ def _force_ab_difference(plans: dict[str, dict[str, Any]], variants: list[str],
 
 def run_step(ctx) -> dict[str, Any]:
     plan = copy.deepcopy(ctx.read("cut_plan.json"))
-    sync_overlays_from_script(plan, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
+    words = list(words_doc.get("words") or [])
+    sync_overlays_from_script(plan, ctx.cfg.repo_root, words=words)
+    sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
     accepted_doc = ctx.read("accepted_assets.json")
     generated_doc = ctx.read("generated_assets.json")
     avatar_meta = ctx.read_or("avatar_meta.json", {"segments": []})
