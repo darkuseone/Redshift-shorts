@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-      "notes": "0050 QC-24 round4: spoken text frozen; b5 sliced into unique Latin dark-cards; magnific weather/wing/pipes/blood pins; skip_generate true.",
+    "notes": "0050 QC-24 round4: spoken text frozen; b5 sliced into unique Latin dark-cards; magnific weather/wing/pipes/blood pins; skip_generate true.",
     "hook": {
       "on_screen": "$1 000 000",
       "style": "number_slam"
@@ -158,8 +158,8 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "RADAR",
-        "template_hint": "lower-thirds/dark-card"
+        "content": "WEATHER",
+        "template_hint": "lower-thirds/clean-bar"
       },
       "meme_allowed": false,
       "mode_hint": "C",
@@ -177,8 +177,8 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "WING",
-        "template_hint": "lower-thirds/dark-card"
+        "content": "AIRFOIL",
+        "template_hint": "lower-thirds/accent-underline"
       },
       "meme_allowed": false,
       "mode_hint": "C",
@@ -196,7 +196,7 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "PIPES",
+        "content": "VALVES",
         "template_hint": "lower-thirds/dark-card"
       },
       "meme_allowed": false,
@@ -215,8 +215,8 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "BLOOD",
-        "template_hint": "lower-thirds/dark-card"
+        "content": "PLASMA",
+        "template_hint": "lower-thirds/clean-bar"
       },
       "meme_allowed": false,
       "mode_hint": "C",
@@ -236,8 +236,8 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "CLAY: REJECT",
-        "template_hint": "lower-thirds/dark-card"
+        "content": "CLAY REJECT",
+        "template_hint": "lower-thirds/accent-underline"
       },
       "sfx": "sub_drop",
       "answers_hook": true,
@@ -257,8 +257,8 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "REDSHIFT",
-        "template_hint": "lower-thirds/dark-card"
+        "content": "NEXT ASK",
+        "template_hint": "lower-thirds/clean-bar"
       },
       "sfx": "subscribe_ping",
       "emphasis_family": "emotion"
