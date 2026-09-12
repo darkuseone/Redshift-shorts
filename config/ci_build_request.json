@@ -1,9 +1,11 @@
 {
+  "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P5",
+  "providers_mode": "live",
+  "from_step": "P7",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
-  "providers_mode": "live",
-  "note": "round12: P5 replan slot/speech align; magnific intent-match; grade wing cyan; fix QC-30"
+  "requested_by": "cursor",
+  "note": "round12b: restore script=0050 (not 0042 default); P7 + intent pin match + graded wing; fix QC-30"
 }
