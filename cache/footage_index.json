@@ -3817,7 +3817,7 @@
       "type": "video",
       "source": "magnific",
       "license": "generated-owned",
-      "url_origin": "magnific://redshift_0050/weather-radar-storm-satellite-screen",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_weather.mp4",
       "phash": "a1b2c3d4e5f60718",
       "tags": [
         "weather",
@@ -3849,7 +3849,7 @@
       "type": "video",
       "source": "magnific",
       "license": "generated-owned",
-      "url_origin": "magnific://redshift_0050/airplane-wing-flight-clouds",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_wing.mp4",
       "phash": "b2c3d4e5f6071829",
       "tags": [
         "airplane",
@@ -3880,7 +3880,7 @@
       "type": "video",
       "source": "magnific",
       "license": "generated-owned",
-      "url_origin": "magnific://redshift_0050/industrial-water-pipes-valves-factory",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_pipes.mp4",
       "phash": "c3d4e5f60718293a",
       "tags": [
         "industrial",
@@ -3912,13 +3912,14 @@
       "type": "video",
       "source": "magnific",
       "license": "generated-owned",
-      "url_origin": "magnific://redshift_0050/red-blood-cells-microscope",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_blood.mp4",
       "phash": "d4e5f60718293a4b",
       "tags": [
         "blood",
         "cells",
         "microscope",
-        "artery"
+        "artery",
+        "plasma"
       ],
       "vision_summary": "Red blood cells under a microscope, vertical 9:16 prepared plate",
       "score": 0.88,
