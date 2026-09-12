@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-12",
-  "count": 109,
+  "count": 111,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -3928,6 +3928,68 @@
       "width": 1080,
       "height": 1920,
       "file": "magnific/magnific_0050_blood.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_stamp",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_stamp.mp4",
+      "phash": "e5f60718293a4b5c",
+      "tags": [
+        "rubberstamp",
+        "declined",
+        "paperwork",
+        "deskstamp"
+      ],
+      "vision_summary": "rubber stamp declined paperwork desk",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "e5f60718293a4b5c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_stamp.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_city",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_city.mp4",
+      "phash": "f60718293a4b5c6d",
+      "tags": [
+        "citynight",
+        "trafficlights",
+        "opennotebook",
+        "aerialcity"
+      ],
+      "vision_summary": "city night aerial traffic lights",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-12",
+      "phashes": [
+        "f60718293a4b5c6d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_city.mp4",
       "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific Nano Banana 2",
