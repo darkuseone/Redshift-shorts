@@ -842,6 +842,66 @@ def _claim_screen_phrase(used: set[str], content: str) -> bool:
     return True
 
 
+_0050_TEMPLATE_BAN = ("text-fullscreen/bigtext-mask-footage",)
+
+
+def _authored_overlay_owns_gap_fs(block: dict[str, Any] | None) -> bool:
+    """Authored overlay (not none) owns on-screen copy for this block.
+
+    Gap-phrase used to invent a long Russian sentence on 0050 b5
+    (overlay type none → QC-30 bigtext-mask). Lower-thirds / frames with
+    content must also block that path so leftover shots can stay footage.
+    """
+    overlay = block.get("overlay") if isinstance((block or {}).get("overlay"), dict) else {}
+    otype = str(overlay.get("type") or "")
+    if otype in ("", "none"):
+        return False
+    return bool(str(overlay.get("content") or "").strip())
+
+
+def _cta_wordmark(plan: dict[str, Any], catalog_wordmark: str = "") -> str:
+    """Latin REDSHIFT for 0050 / authored overlay; never catalog «РЕДШИФТ»."""
+    vid = str(plan.get("video_id") or "")
+    cta_block = next(
+        (b for b in (plan.get("blocks") or [])
+         if str(b.get("role") or "") == "cta" and isinstance(b, dict)),
+        {},
+    )
+    authored = str((cta_block.get("overlay") or {}).get("content") or "").strip()
+    mark = authored or str(catalog_wordmark or "").strip() or "REDSHIFT"
+    folded = mark.replace(".", "").upper()
+    if vid == "redshift_0050" or folded == "REDSHIFT" or "РЕДШИФТ" in mark.upper():
+        mark = "REDSHIFT"
+    return mark.rstrip(".")
+
+
+def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
+    """Per-video template bans from editing_preferences + 0050 hard bans."""
+    vid = str(plan.get("video_id") or "")
+    out: list[str] = []
+    if vid == "redshift_0050":
+        out.extend(_0050_TEMPLATE_BAN)
+    prefs: dict[str, Any] = {}
+    root = None
+    if ctx is not None:
+        cfg = getattr(ctx, "cfg", None)
+        root = getattr(cfg, "repo_root", None)
+    if root is None:
+        from pathlib import Path as _Path
+        root = _Path(__file__).resolve().parents[2]
+    try:
+        from ..lib.jsonio import read_json_or
+        prefs = read_json_or(root / "config" / "editing_preferences.json", {}) or {}
+    except Exception:  # noqa: BLE001
+        prefs = {}
+    extra = ((prefs.get("template_excludes") or {}).get(vid) or [])
+    for tid in extra:
+        text = str(tid or "").strip()
+        if text and text not in out:
+            out.append(text)
+    return out
+
+
 def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
     kind = str(ovl.get("type") or "")
     renderer = str(ovl.get("renderer") or "")
@@ -3575,7 +3635,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     show_subscribe = show_subscribe_cta(plan)
     cta_params.update({
         "logo_close": True,
-        "wordmark": str(cta_params.get("wordmark") or "REDSHIFT"),
+        "wordmark": _cta_wordmark(plan, str(cta_params.get("wordmark") or "")),
         "tagline": "",  # 0042 r6: drop «Write code. Ship to orbit.»
         "url": str(cta_params.get("url") or "redshift.shorts"),
         "subscribe": show_subscribe,
@@ -4444,6 +4504,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # Накопленные предпочтения влияют на версию A: она несёт «текущий дефолт»,
     # а B остаётся альтернативой, иначе обучение схлопнет обе версии в одну.
     prefs = (preferences or {}) if variant == "A" else {}
+    ban_templates = _template_excludes_for(plan, ctx)
     used_templates: list[str] = []
     peer_block = [str(x) for x in peer_exclude if x]
     slots = plan["slots"]
@@ -4632,7 +4693,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
-                exclude=used_templates,
+                exclude=used_templates + ban_templates,
                 seed=seed,
                 prefer_head=head,
                 exclude_renderers=escalation.bans(str(slot.get("beat") or "")),
@@ -4742,9 +4803,10 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     content = soften_on_screen_copy(str(content or ""))
                     if not _claim_screen_phrase(used_screen_phrases, content):
                         content = ""
-                elif str((gap_block.get("overlay") or {}).get("type") or "") == "fullscreen_text":
-                    # Authored punch owns the FS budget for this block.
-                    # Auto «За семнадцать часов» stole the card from СИНГУЛЯРНОСТЬ.
+                elif _authored_overlay_owns_gap_fs(gap_block):
+                    # Authored punch / plaque owns the copy for this block.
+                    # Auto «Называются уравнения Навье-Стокса» stole the
+                    # 0050 b5 card and blew QC-30 / QC-24 leftover plates.
                     content = ""
                 else:
                     raw = gap_phrase(words_doc["words"], slot, gap_block,
@@ -4784,7 +4846,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
-                exclude=used_templates,
+                exclude=used_templates + ban_templates,
                 seed=seed + int(slot["index"]),
                 prefer_head=head,
                 exclude_renderers=escalation.bans(str(slot.get("beat") or "")),
@@ -4840,7 +4902,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 variant=variant,
                 duration=float(slot["duration"]),
                 recent_videos=recent_videos,
-                exclude=used_templates,
+                exclude=used_templates + ban_templates,
                 prefer_head=head,
                 seed=seed + slot["index"],
             )

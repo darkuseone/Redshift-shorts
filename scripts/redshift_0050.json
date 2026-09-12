@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 remount: spoken text frozen; overlay/pins/P7 only. Caption-gradient-fill. Avatar off in hook. No blackout RU word.",
+      "notes": "0050 QC-24/30 remount: spoken text frozen; b5/b6 dark cards not none; pins fill b5–b7; no bigtext-mask; REDSHIFT Latin CTA. Caption-gradient-fill. Avatar off in hook.",
     "hook": {
       "on_screen": "$1 000 000",
       "style": "number_slam"
@@ -130,15 +130,17 @@
       "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают. Погода. Крыло самолёта. Трубы в доме. Ток крови. Если формула врёт — самолёт не извиняется.",
       "emphasis_word": "жидкость",
       "avatar": "off",
-      "visual_intent": "One life beat per shot: weather radar, airplane wing, industrial pipes, blood flow. Not a collage of all words. Not HTML tutorial.",
+      "visual_intent": "One beat one shot: weather radar; then airplane wing; then industrial pipes; then blood cells. Dark translucent card, thin accent, not a collage, not a big Russian sentence, not HTML.",
       "broll_queries": [
         "weather radar storm satellite screen",
         "airplane wing in flight above clouds",
         "industrial water pipes plant valves",
-        "blood flow artery visualization slow motion"
+        "blood cells artery microscope slow motion"
       ],
       "overlay": {
-        "type": "none"
+        "type": "lower_third",
+        "content": "FLUIDS",
+        "template_hint": "lower-thirds/dark-card"
       },
       "sfx": "whoosh_in",
       "meme_allowed": false,
@@ -151,16 +153,16 @@
       "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
       "emphasis_word": "не принял",
       "avatar": "on",
-      "visual_intent": "Clay institute documents, stamp REJECT, door-gap light. Not concrete, not a drought plate, not a clay pit.",
+      "visual_intent": "CLAY: REJECT on a dark thin card. Stamp, paperwork, not a bare plate, not cracked walls, not a clay pit.",
       "broll_queries": [
-        "official documents stamp paperwork desk",
+        "official documents stamp reject paperwork desk",
         "stapling stack of papers closeup",
-        "classical institute facade night columns"
+        "rubber stamp closeup contract papers"
       ],
       "overlay": {
-        "type": "fullscreen_text",
+        "type": "lower_third",
         "content": "CLAY: REJECT",
-        "template_hint": "text-fullscreen/fact-card"
+        "template_hint": "lower-thirds/dark-card"
       },
       "sfx": "sub_drop",
       "answers_hook": true,
@@ -173,10 +175,10 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "REDSHIFT wordmark latin, no trailing dot. Identity close. Live night motion, not oblique type.",
+      "visual_intent": "REDSHIFT Latin wordmark, no trailing dot, no Cyrillic. Identity close over live city night aerial or open notebook. Not oblique type, not a red particle plate.",
       "broll_queries": [
         "city night lights traffic flow aerial",
-        "dark abstract motion red accent particles"
+        "open notebook on desk night lamp"
       ],
       "overlay": {
         "type": "fullscreen_text",

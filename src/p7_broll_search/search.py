@@ -30,7 +30,9 @@ from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, open_library, tag_url_coherence
 from ..lib.palette import palette_verdict
 from ..lib.phash import phash_image
-from ..lib.pin_match import ctx_words, pin_slot_prefer_key
+from ..lib.pin_match import (
+    ctx_words, filter_queries_for_beat, pin_slot_prefer_key, slot_visual_beat,
+)
 from ..lib.providers.press import build_press_provider
 from ..lib.providers.stock import StockCandidate, build_stock_providers
 from ..lib.query import (
@@ -569,9 +571,17 @@ def run_step(ctx) -> dict[str, Any]:
     frames_dir = ctx.wpath("broll", "frames", ".keep").parent
 
     for slot in slots:
-        intent_kind = classify_intent(slot.get("visual_intent", ""), slot.get("queries", []),
+        search_slot = slot
+        if str(plan.get("video_id") or "") == "redshift_0050":
+            beat = slot_visual_beat(slot, words)
+            filtered = filter_queries_for_beat(list(slot.get("queries") or []), beat)
+            if filtered:
+                search_slot = dict(slot)
+                search_slot["queries"] = filtered
+        intent_kind = classify_intent(search_slot.get("visual_intent", ""),
+                                      search_slot.get("queries", []),
                                       plan.get("category", ""))
-        compiled = compile_slot_search(slot, plan, count=queries_per_slot)
+        compiled = compile_slot_search(search_slot, plan, count=queries_per_slot)
         queries = pad_slot_queries(
             compiled["queries"],
             queries_per_slot=queries_per_slot,

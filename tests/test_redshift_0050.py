@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from src.lib.pin_match import pin_slot_prefer_key
+from src.lib.pin_match import (
+    filter_queries_for_beat, pin_slot_prefer_key, slot_visual_beat,
+)
 from src.lib.query import compile_slot_search, negative_reject_reason, slot_negatives
 from src.lib.text import sync_broll_from_script
 from src.p7_broll_search.search import pin_id_denied
@@ -72,10 +74,17 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     assert "ШЕСТЬ" not in by_id["b3"]["overlay"]["content"]
     assert by_id["b4"]["overlay"]["content"] == "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN"
     assert "80 8" not in by_id["b4"]["overlay"]["content"]
+    assert by_id["b5"]["overlay"]["type"] == "lower_third"
+    assert by_id["b5"]["overlay"]["content"] == "FLUIDS"
+    assert by_id["b5"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+    assert "bigtext-mask-footage" not in by_id["b5"]["overlay"].get("template_hint", "")
+    assert by_id["b6"]["overlay"]["type"] == "lower_third"
     assert by_id["b6"]["overlay"]["content"] == "CLAY: REJECT"
     assert "НЕТ" not in by_id["b6"]["overlay"]["content"]
     assert by_id["b7"]["overlay"]["content"] == "REDSHIFT"
+    assert "РЕДШИФТ" not in by_id["b7"]["overlay"]["content"]
     assert not by_id["b7"]["overlay"]["content"].endswith(".")
+    assert "bigtext-mask-footage" not in by_id["b7"]["overlay"].get("template_hint", "")
     source = script["sources"][0]
     assert source["url"] == "https://openai.com/index/navier-stokes-solution/"
     assert source["show_on_screen"] is True
@@ -92,29 +101,37 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
         "fp_water_vortex", "fp_river_current", "fp_blue_ink", "pexels_v7565432",
         "fp_server_room", "grok_supercomputer_0042", "freepik_5200850",
         "freepik_8945319", "freepik_682745",
-        "freepik_4175316", "freepik_3497298", "freepik_136238",
+        "freepik_4175316", "freepik_3497298",
         "freepik_8816084", "freepik_6468157", "freepik_2321764",
         "fp_code_editor", "fp_desk_code", "freepik_9127165",
         "fp_chalkboard_eq", "fp_writing_equations", "fp_quad_formula",
         "pexels_v38431825",
-        "fp_stapling_docs", "fp_library_books",
+        "fp_stapling_docs", "freepik_2435788", "freepik_1033903",
+        "freepik_1114799", "fp_library_books",
+        "freepik_6468280", "freepik_2341975", "freepik_2989050",
+        "freepik_5504514", "freepik_7749931", "freepik_3449792",
+        "freepik_3543840",
         "fp_white_ink", "fp_sand_ripples",
     ):
         assert aid in prefer, aid
+    assert "freepik_136238" not in prefer
     assert "press_21bc8e2d72" not in prefer
     assert "press_21bc8e2d72" in deny
     assert "nasa_*" in deny
+    assert "freepik_136238" in deny
     for aid in (
         "fp_cracked_wall", "fp_plaster_wall", "fp_peeling_wall",
         "fp_cracked_concrete", "fp_cracked_earth", "fp_rock_surface",
         "fp_corroded_mesh", "pixabay_v144678",
         "grok_cryostat_0042", "pexels_v20068211", "pexels_v30775057",
+        "freepik_136238",
     ):
         assert aid in deny, aid
         assert aid not in prefer
     assert int(entry["same_asset_max_slots"]) == 1
     assert pin_id_denied("nasa_PIA13308", set(deny))
     assert pin_id_denied("nasa_S74-23458", set(deny))
+    assert pin_id_denied("freepik_136238", set(deny))
 
 
 def test_0050_sync_broll_from_script_copies_queries_and_hook():
@@ -233,3 +250,117 @@ def test_p7_p8_config_inputs_include_footage_pins():
     by_name = {step.name: step for step in pipe.steps}
     assert "config/footage_pins.json" in by_name["P7"].config_inputs
     assert "config/footage_pins.json" in by_name["P8"].config_inputs
+
+
+def test_0050_queries_name_life_beats_not_red_particles():
+    script = _script()
+    by_id = {block["id"]: block for block in script["blocks"]}
+    b5 = " ".join(by_id["b5"]["broll_queries"]).lower()
+    assert "weather radar" in b5
+    assert "airplane wing" in b5
+    assert "pipes" in b5
+    assert "blood" in b5
+    b7 = " ".join(by_id["b7"]["broll_queries"]).lower()
+    assert "city night" in b7
+    assert "notebook" in b7
+    assert "red accent" not in b7
+    assert "particles" not in b7
+
+
+def test_0050_beat_pins_lock_speech_and_cta_city():
+    ns_open = {
+        "index": 13, "role": "develop", "asset_role": "broll",
+        "visual_intent": "One beat one shot: weather radar",
+        "start": 37.0, "end": 40.0,
+    }
+    weather_words = [
+        {"display": "Называются", "start": 37.1, "end": 37.5},
+        {"display": "уравнения", "start": 37.5, "end": 38.0},
+        {"display": "Навье-Стокса", "start": 38.0, "end": 38.8},
+        {"display": "жидкость", "start": 39.0, "end": 39.5},
+    ]
+    blood = {
+        "index": 16, "role": "develop", "asset_role": "broll",
+        "visual_intent": "blood cells",
+        "start": 46.0, "end": 49.0,
+    }
+    blood_words = [
+        {"display": "Ток", "start": 46.2, "end": 46.5},
+        {"display": "крови", "start": 46.5, "end": 47.0},
+    ]
+    cta = {
+        "index": 24, "role": "cta", "asset_role": "broll",
+        "visual_intent": "city night aerial",
+        "start": 63.0, "end": 66.0,
+    }
+    cta_words = [
+        {"display": "Какую", "start": 63.2, "end": 63.6},
+        {"display": "шести", "start": 64.0, "end": 64.4},
+    ]
+    prefer = [
+        "fp_water_vortex", "freepik_4175316", "freepik_6468280",
+        "freepik_5504514", "fp_stapling_docs",
+    ]
+    weather_bonus, _ = pin_slot_prefer_key(
+        "freepik_4175316", ns_open, prefer, words=weather_words)
+    water_on_ns, _ = pin_slot_prefer_key(
+        "fp_water_vortex", ns_open, prefer, words=weather_words)
+    blood_bonus, _ = pin_slot_prefer_key(
+        "freepik_6468280", blood, prefer, words=blood_words)
+    city_bonus, _ = pin_slot_prefer_key(
+        "freepik_5504514", cta, prefer, words=cta_words)
+    assert slot_visual_beat(ns_open, weather_words) == "weather"
+    assert slot_visual_beat(blood, blood_words) == "blood"
+    assert slot_visual_beat(cta, cta_words) == "city"
+    assert weather_bonus < 0
+    assert water_on_ns > 0
+    assert blood_bonus < 0
+    assert city_bonus < 0
+
+
+def test_0050_filter_queries_keeps_matching_beat():
+    queries = [
+        "weather radar storm satellite screen",
+        "airplane wing in flight above clouds",
+        "industrial water pipes plant valves",
+        "blood cells artery microscope slow motion",
+    ]
+    assert filter_queries_for_beat(queries, "wing") == [queries[1]]
+    assert filter_queries_for_beat(queries, "blood") == [queries[3]]
+    assert filter_queries_for_beat(queries, "") == queries
+
+
+def test_0050_cta_wordmark_latin_never_cyrillic():
+    from src.p11_assemble.assemble import _cta_wordmark, _template_excludes_for
+
+    plan = {
+        "video_id": "redshift_0050",
+        "blocks": [{"role": "cta", "overlay": {"content": "REDSHIFT"}}],
+    }
+    assert _cta_wordmark(plan, "РЕДШИФТ") == "REDSHIFT"
+    assert _cta_wordmark(plan, "РЕДШИФТ.") == "REDSHIFT"
+    bans = _template_excludes_for(plan)
+    assert "text-fullscreen/bigtext-mask-footage" in bans
+
+
+def test_0050_authored_overlay_blocks_gap_phrase():
+    from src.p11_assemble.assemble import _authored_overlay_owns_gap_fs
+
+    assert _authored_overlay_owns_gap_fs({
+        "overlay": {"type": "lower_third", "content": "FLUIDS"},
+    })
+    assert _authored_overlay_owns_gap_fs({
+        "overlay": {"type": "fullscreen_text", "content": "REDSHIFT"},
+    })
+    assert not _authored_overlay_owns_gap_fs({"overlay": {"type": "none"}})
+    assert not _authored_overlay_owns_gap_fs({"overlay": {"type": "lower_third"}})
+
+
+def test_0050_ci_request_is_p7_prepared_skip_generate():
+    req = json.loads((REPO / "config" / "ci_build_request.json").read_text(encoding="utf-8"))
+    assert req["script"] == "scripts/redshift_0050.json"
+    assert req["from_step"] == "P7"
+    assert req["heygen_source"] == "prepared"
+    assert req["skip_generate"] is True
+    assert req["providers_mode"] == "live"
+    assert "QC-24" in req["note"]

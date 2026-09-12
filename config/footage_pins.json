@@ -102,17 +102,20 @@
       "fp_water_vortex",
       "fp_river_current",
       "fp_blue_ink",
+      "pexels_v7565432",
       "fp_server_room",
       "grok_supercomputer_0042",
       "freepik_5200850",
-      "freepik_8945319",
-      "freepik_682745",
       "freepik_4175316",
       "freepik_3497298",
-      "freepik_136238",
+      "freepik_8945319",
+      "freepik_682745",
       "freepik_8816084",
       "freepik_6468157",
       "freepik_2321764",
+      "freepik_6468280",
+      "freepik_2341975",
+      "freepik_2989050",
       "fp_code_editor",
       "fp_desk_code",
       "freepik_9127165",
@@ -121,10 +124,16 @@
       "fp_quad_formula",
       "pexels_v38431825",
       "fp_stapling_docs",
+      "freepik_2435788",
+      "freepik_1033903",
+      "freepik_1114799",
       "fp_library_books",
+      "freepik_5504514",
+      "freepik_7749931",
+      "freepik_3449792",
+      "freepik_3543840",
       "fp_white_ink",
-      "fp_sand_ripples",
-      "pexels_v7565432"
+      "fp_sand_ripples"
     ],
     "deny": [
       "nasa_*",
@@ -139,7 +148,8 @@
       "pixabay_v144678",
       "grok_cryostat_0042",
       "pexels_v20068211",
-      "pexels_v30775057"
+      "pexels_v30775057",
+      "freepik_136238"
     ],
     "same_asset_max_slots": 1
   }

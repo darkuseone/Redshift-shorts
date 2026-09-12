@@ -49,6 +49,56 @@ def overlapping_speech(slot: dict[str, Any],
     return " ".join(parts)
 
 
+# 0050 life-beats: speech first, then role. Opening «Навье-Стокса / жидкость»
+# maps to weather so those slots are not left with bonus 0 (no remote pin).
+_BEAT_SPEECH: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("blood", ("кров", "blood", "artery", "клетк")),
+    ("wing", ("крыл", "самолёт", "самолет", "airplane", "wing")),
+    ("pipes", ("труб", "pipe", "valve", "industrial")),
+    ("weather", ("погод", "radar", "storm", "weather", "satellite")),
+    ("stamp", ("клей", "приня", "reject", "stamp", "документ", "бумаг")),
+    ("city", ("город", "ноч", "aerial", "traffic")),
+    ("notebook", ("notebook", "тетрад", "записн")),
+    ("ns_open", ("навье", "уравнен", "жидкост", "стокс")),
+)
+_BEAT_QUERY: dict[str, tuple[str, ...]] = {
+    "weather": ("weather", "radar", "storm", "satellite"),
+    "wing": ("airplane", "wing", "flight", "aircraft", "cloud"),
+    "pipes": ("pipe", "valve", "industrial"),
+    "blood": ("blood", "artery", "cell"),
+    "stamp": ("stamp", "document", "paperwork", "stapling", "paper", "notebook"),
+    "city": ("city", "night", "aerial", "traffic", "notebook"),
+    "notebook": ("notebook",),
+}
+
+
+def slot_visual_beat(slot: dict[str, Any],
+                     words: list[dict[str, Any]] | None) -> str:
+    """One beat for this slot from overlapping speech, else authored intent."""
+    speech = overlapping_speech(slot, words).lower()
+    intent = str(slot.get("visual_intent") or "").lower()
+    role = str(slot.get("role") or "")
+    for beat, tokens in _BEAT_SPEECH:
+        if any(token in speech for token in tokens):
+            return "weather" if beat == "ns_open" else beat
+    if role == "twist" and any(token in intent for token in (
+            "stamp", "reject", "clay", "paperwork", "документ")):
+        return "stamp"
+    if role == "cta" and any(token in intent for token in (
+            "city", "night", "aerial", "notebook", "redshift")):
+        return "city"
+    return ""
+
+
+def filter_queries_for_beat(queries: list[str], beat: str) -> list[str]:
+    """Keep author queries that name this beat; otherwise leave the list."""
+    markers = _BEAT_QUERY.get(str(beat or ""), ())
+    if not markers:
+        return list(queries)
+    hit = [q for q in queries if any(m in str(q).lower() for m in markers)]
+    return hit or list(queries)
+
+
 def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                         pin_prefer: list[str], *,
                         words: list[dict[str, Any]] | None = None,
@@ -130,7 +180,18 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             "3111227", "1257662"))
         if water:
             blob = hook_blob if block_role == "hook" else hay
-            if any(token in blob for token in (
+            # Develop «жидкость» is the Navier–Stokes life-beat, not the
+            # setup river. Leave those slots for weather/wing/pipes/blood.
+            ns_develop = (
+                block_role == "develop"
+                and any(token in speech for token in (
+                    "навье", "уравнен", "жидкост", "погод", "крыл",
+                    "труб", "кров"))
+                and not any(token in speech for token in ("вод ", "воды", "реч"))
+            )
+            if ns_develop:
+                bonus = 8
+            elif any(token in blob for token in (
                     "вод", "теч", "жидкост", "water", "vortex", "river",
                     "flowing", "ink")):
                 bonus = -18
@@ -150,10 +211,12 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                     bonus = -10
             elif busy:
                 bonus = 10
-        elif staple:
-            if any(token in hay for token in (
+        elif staple or any(token in aid_l for token in (
+                "2435788", "1033903", "1114799")):
+            beat = slot_visual_beat(slot, words)
+            if beat == "stamp" or any(token in hay for token in (
                     "публик", "документ", "бумаг", "клей", "clay", "приня",
-                    "reject")):
+                    "reject", "stamp")):
                 bonus = -12
             elif hole:
                 bonus = 18
@@ -187,17 +250,30 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             elif any(token in hay for token in ("lean", "код", "проверя")):
                 bonus = -10
         elif any(token in aid_l for token in ("8945319", "682745")):
-            blob = hook_blob if block_role == "hook" else hay
-            if any(token in blob for token in (
+            beat = slot_visual_beat(slot, words)
+            if beat == "wing" or any(token in speech for token in (
                     "крыл", "самолёт", "самолет", "airplane", "wing", "flight")):
                 bonus = -18
-        elif any(token in aid_l for token in ("4175316", "3497298", "136238")):
-            if any(token in hay for token in (
-                    "погод", "radar", "storm", "weather", "satellite")):
+        elif any(token in aid_l for token in ("4175316", "3497298")):
+            beat = slot_visual_beat(slot, words)
+            if beat == "weather" or any(token in speech for token in (
+                    "погод", "radar", "storm", "weather", "satellite",
+                    "навье", "уравнен", "жидкост")):
                 bonus = -18
         elif any(token in aid_l for token in ("8816084", "6468157", "2321764")):
-            if any(token in hay for token in (
+            beat = slot_visual_beat(slot, words)
+            if beat == "pipes" or any(token in speech for token in (
                     "труб", "pipe", "valve", "industrial")):
+                bonus = -18
+        elif any(token in aid_l for token in ("6468280", "2341975", "2989050")):
+            beat = slot_visual_beat(slot, words)
+            if beat == "blood" or any(token in speech for token in (
+                    "кров", "blood", "artery", "клетк")):
+                bonus = -18
+        elif any(token in aid_l for token in (
+                "5504514", "7749931", "3449792", "3543840")):
+            beat = slot_visual_beat(slot, words)
+            if beat in ("city", "notebook"):
                 bonus = -18
         elif "library_books" in aid_l:
             if any(token in hay for token in (
