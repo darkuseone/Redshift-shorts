@@ -248,10 +248,10 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "city night aerial OR open notebook. catalog clean-bar FOLLOWUP; soft wordmark-only outro preferred over logo-brand-close paper invert.",
+      "visual_intent": "city night traffic aerial OR open notebook (citynight trafficlights opennotebook). catalog clean-bar FOLLOWUP; soft wordmark-only outro preferred over logo-brand-close paper invert.",
       "broll_queries": [
-        "city night aerial traffic lights",
-        "open notebook desk warm light"
+        "citynight trafficlights city night traffic aerial",
+        "opennotebook open notebook desk warm light"
       ],
       "overlay": {
         "type": "lower_third",

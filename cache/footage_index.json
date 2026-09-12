@@ -3826,7 +3826,7 @@
         "stormscreen"
       ],
       "vision_summary": "Weather radar satellite screen only, vertical 9:16 prepared owned plate",
-      "score": 0.88,
+      "score": 0.92,
       "duration_sec": 4.0,
       "used_in": [],
       "last_used": null,
@@ -3857,7 +3857,7 @@
         "flightclouds"
       ],
       "vision_summary": "Airplane winglet airfoil flightclouds, vertical 9:16 prepared owned plate",
-      "score": 0.88,
+      "score": 0.92,
       "duration_sec": 4.0,
       "used_in": [],
       "last_used": null,
@@ -3887,7 +3887,7 @@
         "factorypipes"
       ],
       "vision_summary": "Factory pipework valves factorypipes, vertical 9:16 prepared owned plate",
-      "score": 0.88,
+      "score": 0.92,
       "duration_sec": 4.0,
       "used_in": [],
       "last_used": null,
@@ -3917,7 +3917,7 @@
         "plasmaflow"
       ],
       "vision_summary": "Bloodcells microscope plasmaflow, vertical 9:16 prepared owned plate",
-      "score": 0.88,
+      "score": 0.7,
       "duration_sec": 4.0,
       "used_in": [],
       "last_used": null,
