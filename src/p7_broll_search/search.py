@@ -555,6 +555,8 @@ def run_step(ctx) -> dict[str, Any]:
     providers = build_stock_providers(cfg, ctx.costs)
     index = FootageIndex.load(cfg)
     pin_deny, pin_prefer = _load_footage_pins(cfg, str(plan.get("video_id") or ""))
+    by_block = _load_footage_by_block(cfg, str(plan.get("video_id") or ""))
+    by_block_ids = {str(v) for v in by_block.values() if v}
     orphans = disk_orphan_records(ctx, index)
     if orphans:
         ctx.warn(f"на диске {len(orphans)} клипов стока нет в индексе — добор",
@@ -666,7 +668,19 @@ def run_step(ctx) -> dict[str, Any]:
                 have.add(pid)
             prefer_set = set(pin_prefer)
             local = sorted(local, key=lambda r: (0 if r.id in prefer_set else 1, -r.score))
+        # Hard by_block: densify-split slots inherit the parent pin even when
+        # exclusive_ids already burned the id on an earlier sibling slot.
+        hard_pid = by_block.get(str(slot.get("block_id") or "") or "")
+        if hard_pid and not pin_id_denied(hard_pid, pin_deny):
+            have = {r.id for r in local}
+            if hard_pid not in have:
+                rec = index.by_id(hard_pid)
+                if rec is not None and not rec.quarantined and rec.file:
+                    local.insert(0, rec)
         taken_ids = set(exclusive_ids)
+        # Same-block densify may reuse the by_block pin; do not treat it as taken.
+        if hard_pid and hard_pid in taken_ids:
+            taken_ids.discard(hard_pid)
         category = str(plan.get("category") or "")
         video_id = str(plan.get("video_id") or "")
         pooled: list[tuple[Any, dict[str, Any]]] = []
@@ -679,7 +693,8 @@ def run_step(ctx) -> dict[str, Any]:
             if not record.file or not ctx.storage.exists(record.file):
                 missing_in_storage.append(record.id)
                 continue
-            theme_reason = _local_reject_reason(
+            hard_match = bool(hard_pid and record.id == hard_pid)
+            theme_reason = None if hard_match else _local_reject_reason(
                 record, category=category, intent_kind=intent_kind,
                 video_id=video_id, negatives=negatives,
                 max_short_side=max_short_side)
@@ -689,7 +704,7 @@ def run_step(ctx) -> dict[str, Any]:
                     "reason": theme_reason, "query": queries[0],
                 })
                 continue
-            coherence = tag_url_coherence(record)
+            coherence = 1.0 if hard_match else tag_url_coherence(record)
             if coherence < 0.15:
                 stage1_rejected.append({
                     "id": record.id, "source": record.source,
@@ -697,7 +712,7 @@ def run_step(ctx) -> dict[str, Any]:
                     "query": queries[0],
                 })
                 continue
-            if frozen and float(record.score or 0) < float(
+            if (not hard_match) and frozen and float(record.score or 0) < float(
                     cfg.get("vision.accept_threshold", 0.70)):
                 # Freeze: paid critic выключен. P8 не примет 0.55 как accept,
                 # слот останется пустым — лучше сразу отдать место добору.
@@ -706,6 +721,7 @@ def run_step(ctx) -> dict[str, Any]:
 
         prefer_set = set(pin_prefer)
         pooled.sort(key=lambda pair: (
+            -30 if hard_pid and pair[0].id == hard_pid else
             pin_slot_prefer_key(pair[0].id, slot, pin_prefer, words=words)[0],
             0 if pair[0].id in prefer_set else 1,
             -float(pair[0].score or 0),
@@ -731,7 +747,10 @@ def run_step(ctx) -> dict[str, Any]:
         if slot_candidates:
             primary = str(slot_candidates[0].get("asset_id") or "")
             if primary:
-                exclusive_ids.add(primary)
+                # by_block plates must remain available for densify-split siblings
+                # of the same block; cross-block use is scrubbed in P8 force.
+                if primary not in by_block_ids:
+                    exclusive_ids.add(primary)
                 taken_ids.add(primary)
 
         # Prefer-пины и лимит поиска занимали первые слоты одними и теми же
@@ -741,13 +760,15 @@ def run_step(ctx) -> dict[str, Any]:
             ranked = sorted(
                 list(index.items) + list(orphans),
                 key=lambda rec: (
-                    0 if rec.id in set(pin_prefer) else 1,
+                    0 if hard_pid and rec.id == hard_pid else
+                    (1 if rec.id in set(pin_prefer) else 2),
                     -_local_overlap(rec, queries),
                     -float(rec.score or 0),
                 ),
             )
             for record in ranked:
-                if record.id in taken_ids or pin_id_denied(record.id, pin_deny):
+                hard_match = bool(hard_pid and record.id == hard_pid)
+                if (record.id in taken_ids and not hard_match) or pin_id_denied(record.id, pin_deny):
                     continue
                 if getattr(record, "quarantined", False):
                     continue
@@ -761,7 +782,7 @@ def run_step(ctx) -> dict[str, Any]:
                 # Empty-slot fallback used to dump any orphan (tags=[pexels,video],
                 # score 0.72) into a quantum cut — earth, galaxy, a chemistry
                 # beaker. Require a real overlap with the slot queries.
-                if _local_overlap(record, queries) < 1:
+                if (not hard_match) and _local_overlap(record, queries) < 1:
                     continue
                 theme_reason = _local_reject_reason(
                     record, category=category, intent_kind=intent_kind,
@@ -783,7 +804,8 @@ def run_step(ctx) -> dict[str, Any]:
                 slot_candidates.append(
                     _local_cache_row(slot["index"], record, queries[0]))
                 from_cache += 1
-                exclusive_ids.add(record.id)
+                if record.id not in by_block_ids:
+                    exclusive_ids.add(record.id)
                 taken_ids.add(record.id)
                 break
 

@@ -617,9 +617,9 @@ def _force_by_block_pins(
     """Hard-accept footage_pins ``by_block`` assets onto their mapped blocks.
 
     Runs after leftover prefer fill. Non-null mapped ids hydrate first, then
-    take the first unfilled/primary asset slot of that block (or replace a
-    mismatched prefer accept). ``same_asset``: each id only on its mapped
-    block(s).
+    land on **every** densify-split asset slot of that block (inherit parent
+    pin; empty splits must not free-search-fail). ``same_asset``: each id only
+    on its mapped block(s) — no cross-block clone.
     """
     if not by_block:
         return 0
@@ -638,6 +638,18 @@ def _force_by_block_pins(
     for bid, pid in by_block.items():
         if pid:
             mapped_blocks.setdefault(str(pid), set()).add(str(bid))
+
+    # Scrub each by_block id off unmapped blocks once (no cross-block clone).
+    for pid, allowed in mapped_blocks.items():
+        for other_idx, entry in list(accepted.items()):
+            if str(entry.get("asset_id") or "") != pid:
+                continue
+            other_bid = str(
+                (slots_by_index.get(int(other_idx)) or {}).get("block_id") or "")
+            if other_bid in allowed:
+                continue
+            accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
+            del accepted[other_idx]
 
     forced = 0
     for bid, pid in by_block.items():
@@ -659,82 +671,56 @@ def _force_by_block_pins(
         if not block_slots:
             continue
 
-        target: dict[str, Any] | None = None
-        for slot in block_slots:
-            idx = int(slot["index"])
-            cur = accepted.get(idx)
-            if cur is None:
-                target = slot
-                break
-            cur_aid = str(cur.get("asset_id") or "")
-            if cur_aid == pid:
-                target = None
-                break
-            if cur.get("decision") == "accept_prefer" and cur_aid != pid:
-                target = slot
-                break
-        if target is None:
-            # Already correctly pinned on this block, or only non-prefer fills.
-            if any(
-                str(accepted.get(int(s["index"]), {}).get("asset_id") or "") == pid
-                for s in block_slots
-            ):
-                # Still scrub this id off unmapped blocks.
-                pass
+        # Densify splits one block into many slots — every empty / mismatched
+        # asset slot inherits the parent block pin (same_asset_max does not
+        # block same-block inherit; cross-block was scrubbed above).
+        for target in block_slots:
+            slot_index = int(target["index"])
+            cur = accepted.get(slot_index)
+            cur_aid = str((cur or {}).get("asset_id") or "")
+            if cur is not None and cur_aid == pid:
+                continue
+            if cur is not None and cur.get("decision") != "accept_prefer" and cur_aid:
+                # Keep a non-prefer accept only when it already is the pin.
+                if cur_aid == pid:
+                    continue
+
+            old = accepted.get(slot_index)
+            if old is not None:
+                old_aid = str(old.get("asset_id") or "")
+                if old_aid and old_aid != pid:
+                    accepted_counts[old_aid] = max(
+                        0, int(accepted_counts.get(old_aid, 1)) - 1)
+
+            intent = target.get("visual_intent", "") or target.get("reason", "") or pid
+            candidate = _local_cache_row(slot_index, rec, intent)
+            gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
+            if gate:
+                continue
+            palette = palette_verdict([], palette_rules)
+            if skip_live or candidate.get("prior_score") is not None:
+                verdict_dict = skip_live_verdict(candidate, intent)
             else:
-                continue
-
-        allowed = mapped_blocks.get(pid, {str(bid)})
-        for other_idx, entry in list(accepted.items()):
-            if str(entry.get("asset_id") or "") != pid:
-                continue
-            other_bid = str(
-                (slots_by_index.get(int(other_idx)) or {}).get("block_id") or "")
-            if other_bid in allowed:
-                continue
-            accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
-            del accepted[other_idx]
-
-        if target is None:
-            continue
-
-        slot_index = int(target["index"])
-        old = accepted.get(slot_index)
-        if old is not None:
-            old_aid = str(old.get("asset_id") or "")
-            if old_aid:
-                accepted_counts[old_aid] = max(
-                    0, int(accepted_counts.get(old_aid, 1)) - 1)
-
-        intent = target.get("visual_intent", "") or target.get("reason", "") or pid
-        candidate = _local_cache_row(slot_index, rec, intent)
-        gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
-        if gate:
-            continue
-        palette = palette_verdict([], palette_rules)
-        if skip_live or candidate.get("prior_score") is not None:
-            verdict_dict = skip_live_verdict(candidate, intent)
-        else:
-            verdict_dict = {
-                "score": float(SEED_SCORE),
-                "reason": "pin by_block",
-                "summary": candidate.get("vision_summary", ""),
-                "judge": "pin_prefer", "frames": 0,
+                verdict_dict = {
+                    "score": float(SEED_SCORE),
+                    "reason": "pin by_block",
+                    "summary": candidate.get("vision_summary", ""),
+                    "judge": "pin_prefer", "frames": 0,
+                }
+            entry = {
+                **candidate,
+                "verdict": verdict_dict,
+                "intent": intent,
+                "score": float(verdict_dict["score"]),
+                "palette": palette,
+                "decision": "accept_prefer",
+                "fallback_reason": "pin by_block",
+                "speech_locked": True,
             }
-        entry = {
-            **candidate,
-            "verdict": verdict_dict,
-            "intent": intent,
-            "score": float(verdict_dict["score"]),
-            "palette": palette,
-            "decision": "accept_prefer",
-            "fallback_reason": "pin by_block",
-            "speech_locked": True,
-        }
-        judged.append(entry)
-        accepted[slot_index] = entry
-        accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
-        forced += 1
+            judged.append(entry)
+            accepted[slot_index] = entry
+            accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
+            forced += 1
     return forced
 
 
@@ -875,6 +861,9 @@ def run_step(ctx) -> dict[str, Any]:
         def _under_repeat_cap(entry: dict[str, Any]) -> bool:
             aid = str(entry.get("asset_id") or "")
             if not aid:
+                return True
+            # Densify-split slots of a by_block-mapped block may share the pin.
+            if by_block and by_block.get(str(slot.get("block_id") or "")) == aid:
                 return True
             return accepted_counts.get(aid, 0) < repeat_max
 

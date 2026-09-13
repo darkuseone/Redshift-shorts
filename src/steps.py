@@ -69,8 +69,12 @@ def build_pipeline() -> Pipeline:
              config_inputs=("config/stock_sources.yaml",
                             "config/footage_pins.json")),
         Step("P8", "Трёхступенчатая оценка футажей", p8,
-             inputs=("candidates.json",), outputs=("accepted_assets.json",),
-             config_inputs=("config/footage_pins.json",)),
+             # cut_plan must fingerprint: densify splits slots; without it P8
+             # can return cached accepts for a pre-densify plan (round18).
+             inputs=("candidates.json", "cut_plan.json"),
+             outputs=("accepted_assets.json",),
+             config_inputs=("config/footage_pins.json",),
+             version="2"),
         Step("P9", "Генерация недостающих материалов", p9,
              inputs=("accepted_assets.json", "cut_plan.json"), outputs=("generated_assets.json",)),
         Step("P10", "Аудио: SFX, музыкальная подложка, микс", p10,

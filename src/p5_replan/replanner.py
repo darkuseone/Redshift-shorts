@@ -1123,36 +1123,48 @@ def apply_prepared_avatar_windows(
         + [(s.start, s.end) for s in punched],
         key=lambda p: p[0],
     )
+    def _gap_ref(gap_start: float, gap_end: float) -> Slot | None:
+        """Prefer the enclosing/nearest avatar window block (stamp on b6 gaps).
+
+        Falling back to punched[0] labeled interstitial gaps as b1 and left
+        by_block stamp unused (round18 QC-SEMANTIC).
+        """
+        # Nearest avatar by time (before, else after).
+        before = [w for w in windows if float(w["end"]) <= gap_start + 1e-6]
+        after = [w for w in windows if float(w["start"]) >= gap_end - 1e-6]
+        pick = before[-1] if before else (after[0] if after else None)
+        if pick is not None:
+            ref = next((s for s in slots if s.block_id == pick.get("block_id")), None)
+            return Slot(
+                index=0, start=gap_start, end=gap_end, kind="footage",
+                block_id=str(pick.get("block_id") or (ref.block_id if ref else "")),
+                role=ref.role if ref else "twist",
+                mode="C", needs_asset=True, asset_role="broll",
+                reason="gap fill around prepared avatar window",
+            )
+        ref = next((s for s in punched if s.end <= gap_start + 1e-6), None) or (
+            punched[0] if punched else (slots[0] if slots else None))
+        if ref is None:
+            return None
+        return Slot(
+            index=0, start=gap_start, end=gap_end, kind="footage",
+            block_id=ref.block_id, role=ref.role, mode="C",
+            needs_asset=True, asset_role="broll",
+            reason="gap fill around prepared avatar window",
+        )
+
     fillers: list[Slot] = []
     cursor = 0.0
     for a, b in covered:
         if a > cursor + 0.05:
-            # Prefer mirroring nearest non-avatar block_id for the gap.
-            ref = next((s for s in punched if s.end <= a + 1e-6), None) or (
-                punched[0] if punched else (slots[0] if slots else None))
-            fillers.append(Slot(
-                index=0, start=cursor, end=a,
-                kind="footage",
-                block_id=ref.block_id if ref else "",
-                role=ref.role if ref else "develop",
-                mode="C",
-                needs_asset=True,
-                asset_role="broll",
-                reason="gap fill around prepared avatar window",
-            ))
+            gap = _gap_ref(cursor, a)
+            if gap is not None:
+                fillers.append(gap)
         cursor = max(cursor, b)
     if duration > cursor + 0.05:
-        ref = punched[-1] if punched else (slots[-1] if slots else None)
-        fillers.append(Slot(
-            index=0, start=cursor, end=duration,
-            kind="footage",
-            block_id=ref.block_id if ref else "",
-            role=ref.role if ref else "cta",
-            mode="C",
-            needs_asset=True,
-            asset_role="broll",
-            reason="gap fill around prepared avatar window",
-        ))
+        gap = _gap_ref(cursor, duration)
+        if gap is not None:
+            fillers.append(gap)
 
     avatars: list[Slot] = []
     for win in windows:

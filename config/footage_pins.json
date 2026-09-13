@@ -151,7 +151,7 @@
       "fp_analog_clock"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round16: P5 word-align b5*; by_block b5=water fluids; b3=gpu b4=lean; dark Latin plaques; fill white voids with horizon; life-beats weather/wing/pipes/blood/stamp/city",
+    "_note": "round19: by_block hard pins weather/wing/pipes/blood/stamp/city + gpu/lean + b5 fluids; densify-split slots inherit parent pin; same_asset_max_slots 1 (no cross-block clone); prepared freeze densify QC-3/4",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",

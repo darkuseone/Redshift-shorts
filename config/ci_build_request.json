@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round18: P5 prepared-avatar freeze densify — keep seg durations, split footage gaps for QC-3/4 (no 65s max_gap); dark plaques; fill white voids",
-  "round": 18
+  "note": "round19: restore by_block pins after densify (QC-SEMANTIC); prepared-avatar freeze densify QC-3/4; P8 cut_plan fingerprint; force pin onto all densify-split slots; gap fills inherit avatar block",
+  "round": 19
 }
