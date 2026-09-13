@@ -177,10 +177,10 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             # siblings get distinct plates after by_block same_asset_max_slots=1.
             # Life-beat kinds stay mismatch-penalized (+10) off their beat.
             _HOLE_FILLERS = {
-                # round24 cool dark leftovers (deny coldspark≈stamp + red-heavy)
+                # cool dark leftovers — NOT liquid (coolvortex is a fluid plate)
                 "voidpulse", "darkgrid", "codeglow", "nightstatic",
                 "tealmister", "blueember", "charcoalash",
-                "steelglow", "slateiron", "coolvortex",
+                "steelglow", "slateiron",
                 "cyanrain", "frostscan", "deepcoil",
             }
             markers = {
@@ -191,13 +191,15 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                 "fluids": ("fluid", "liquid", "viscous", "vortex", "ink", "flow", "current"),
                 "inkswirl": ("ink", "swirl", "fluid", "liquid", "viscous", "macro"),
                 "vortex": ("vortex", "whirl", "ink", "fluid", "liquid", "flow"),
+                "coolvortex": ("vortex", "whirl", "ink", "fluid", "liquid", "flow", "current"),
                 "stamp": ("stamp", "reject", "paperwork", "deskstamp", "declined"),
                 "city": ("city", "night", "aerial", "traffic", "notebook", "citynight"),
                 "gpu": ("gpu", "cluster", "server", "aisle", "datacenter", "astra"),
                 "lean": ("lean", "proof", "code", "editor", "chalkboard", "агент"),
             }.get(kind, ())
             if kind in _HOLE_FILLERS:
-                bonus = 0
+                # Abstract hole plates on Navier–Stokes liquid beat → QC-SEMANTIC
+                bonus = 10 if beat == "fluids" else 0
             elif kind and kind == beat:
                 bonus = -22
             elif kind and markers and any(m in hay for m in markers):

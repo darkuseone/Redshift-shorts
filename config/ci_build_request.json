@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round26: fix script path (was bare redshift_0050 → validate FileNotFound); keep round25 rehash phashes; prepared+skip_generate P7",
-  "round": 26
+  "note": "round27: QC-SEMANTIC hole — park coolvortex/inkswirl on b5 fluids densify (not nightstatic); coolvortex fluid match; prepared+skip_generate",
+  "round": 27
 }
