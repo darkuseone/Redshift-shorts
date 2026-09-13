@@ -1,5 +1,5 @@
 {
-  "script": "redshift_0050",
+  "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
   "from_step": "P7",
   "heygen_source": "prepared",
@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round25: rehash footage_index phashes (stub clones caused QC-5); hole-only pins; heygen prepared skip_generate",
-  "round": 25
+  "note": "round26: fix script path (was bare redshift_0050 → validate FileNotFound); keep round25 rehash phashes; prepared+skip_generate P7",
+  "round": 26
 }
