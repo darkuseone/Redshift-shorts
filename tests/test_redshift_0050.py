@@ -119,21 +119,29 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
         "magnific_0050_weather", "magnific_0050_wing",
         "magnific_0050_pipes", "magnific_0050_blood",
         "magnific_0050_fluids", "magnific_0050_inkswirl",
-        "magnific_0050_vortex",
+        "magnific_0050_coolvortex",
     ]
     assert "magnific_0050_stamp" in prefer
     assert "magnific_0050_city" in prefer
     for aid in (
         "fp_server_room", "fp_code_editor", "fp_chalkboard_eq",
-        "magnific_0050_fluids", "magnific_0050_inkswirl", "magnific_0050_vortex",
+        "magnific_0050_fluids", "magnific_0050_inkswirl", "magnific_0050_coolvortex",
         "pexels_v38431825",
         "magnific_0050_weather", "magnific_0050_stamp", "magnific_0050_city",
-        "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
-        "magnific_0050_voidpulse", "magnific_0050_coalglow", "magnific_0050_darkgrid",
-        "magnific_0050_codeglow", "magnific_0050_ironrust", "magnific_0050_nightstatic",
-        "magnific_0050_sparkrain",
+        "magnific_0050_voidpulse", "magnific_0050_darkgrid",
+        "magnific_0050_codeglow", "magnific_0050_nightstatic",
+        "magnific_0050_tealmister", "magnific_0050_blueember",
+        "magnific_0050_charcoalash", "magnific_0050_coldspark",
+        "magnific_0050_steelglow", "magnific_0050_slateiron",
     ):
         assert aid in prefer, aid
+    for aid in (
+        "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
+        "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
+        "magnific_0050_vortex",
+    ):
+        assert aid not in prefer, aid
+        assert aid in deny, aid
     assert "pexels_v7565432" not in prefer
     assert "pexels_v7565432" in deny
     by_block = entry.get("by_block") or {}
@@ -466,15 +474,15 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     req = json.loads((REPO / "config" / "ci_build_request.json").read_text(encoding="utf-8"))
     assert req["script"] == "scripts/redshift_0050.json"
     assert req["video_id"] == "redshift_0050"
-    assert req["from_step"] == "P5"
+    assert req["from_step"] == "P7"
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 22
-    assert "round22" in req["note"]
-    assert "densify holes" in req["note"] or "hole" in req["note"]
-    assert "one asset per slot" in req["note"]
-    assert "prepared-avatar freeze densify" in req["note"] or "QC-3/4" in req["note"]
+    assert int(req.get("round") or 0) == 23
+    assert "round23" in req["note"]
+    assert "cool" in req["note"] or "QC-30" in req["note"] or "hole" in req["note"]
+    assert "skip_generate" in req["note"] or req["skip_generate"] is True
+    assert "P7" in req["note"] or req["from_step"] == "P7"
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
@@ -525,10 +533,11 @@ def test_0050_footage_index_has_magnific_plates():
         ("magnific_0050_blood", "bloodcells"),
         ("magnific_0050_stamp", "rubberstamp"),
         ("magnific_0050_city", "citynight"),
-        ("magnific_0050_darkember", "ember"),
+        ("magnific_0050_tealmister", "teal"),
         ("magnific_0050_darkgrid", "grid"),
         ("magnific_0050_codeglow", "code"),
-        ("magnific_0050_sparkrain", "spark"),
+        ("magnific_0050_coolvortex", "cool"),
+        ("magnific_0050_blueember", "blue"),
     ):
         rec = idx.by_id(aid)
         assert rec is not None, aid
@@ -799,10 +808,10 @@ def test_0050_hole_filler_pins_are_neutral_leftover():
         "block_id": "b3",
     }
     prefer = [
-        "magnific_0050_gpu", "magnific_0050_darkember", "magnific_0050_weather",
+        "magnific_0050_gpu", "magnific_0050_tealmister", "magnific_0050_weather",
     ]
     filler_bonus, _ = pin_slot_prefer_key(
-        "magnific_0050_darkember", empty, prefer, words=[])
+        "magnific_0050_tealmister", empty, prefer, words=[])
     weather_on_empty, _ = pin_slot_prefer_key(
         "magnific_0050_weather", empty, prefer, words=[])
     assert filler_bonus == 0
@@ -816,7 +825,7 @@ def test_0050_leftover_fills_densify_holes_with_distinct_fillers(monkeypatch):
     from src.lib.manifest import AssetRecord
 
     fillers = [
-        "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
+        "magnific_0050_tealmister", "magnific_0050_blueember", "magnific_0050_charcoalash",
     ]
 
     class Rec:
@@ -910,3 +919,33 @@ def test_densify_prefers_internal_events_over_split_under_max_shot_ev():
     assert any("one plate with internal events" in n for n in notes)
     assert out[0].events  # kenburns/push restored
     assert len(out[0].events) >= 2
+
+
+def test_0050_avatar_bg_skips_red_plates():
+    from src.p11_assemble.assemble import _avatar_bg_asset_ok, _avatar_bg_plates
+
+    assert _avatar_bg_asset_ok({"id": "magnific_0050_voidpulse", "tags": ["dark"]}, video_id="redshift_0050")
+    assert not _avatar_bg_asset_ok({"id": "magnific_0050_redsmoke", "tags": ["red"]}, video_id="redshift_0050")
+    assert not _avatar_bg_asset_ok({"id": "magnific_0050_vortex", "tags": ["red", "ink"]}, video_id="redshift_0050")
+    # other videos unrestricted
+    assert _avatar_bg_asset_ok({"id": "magnific_0050_vortex", "tags": ["red"]}, video_id="redshift_0042")
+
+    slots = [
+        {"index": 0, "kind": "footage", "block_id": "b1", "start": 0.0, "end": 2.0},
+        {"index": 1, "kind": "avatar", "block_id": "b2", "start": 2.0, "end": 6.0},
+    ]
+    prepared = {
+        0: {"dst": "/tmp/magnific_0050_vortex_crop.mp4"},
+        1: {"dst": "/tmp/avatar.webm"},
+    }
+    assets = {
+        0: {"id": "magnific_0050_vortex", "tags": ["red", "ink"], "ai_generated": False},
+        1: {"id": "avatar_seg_0", "ai_generated": False},
+    }
+    # With only vortex available, pool is empty for 0050.
+    assert _avatar_bg_plates(slots, prepared, assets, plan={"video_id": "redshift_0050"}) == {}
+    # Cool plate is accepted.
+    prepared[0] = {"dst": "/tmp/magnific_0050_tealmister_crop.mp4"}
+    assets[0] = {"id": "magnific_0050_tealmister", "tags": ["teal", "cool"], "ai_generated": False}
+    got = _avatar_bg_plates(slots, prepared, assets, plan={"video_id": "redshift_0050"})
+    assert got[1].endswith("tealmister_crop.mp4")

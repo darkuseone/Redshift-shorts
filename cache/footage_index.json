@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-13",
-  "count": 126,
+  "count": 133,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -4490,6 +4490,251 @@
         "attribution": "REDSHIFT / Magnific densify hole filler",
         "watched": true,
         "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_tealmister",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_tealmister.mp4",
+      "phash": "a1b2c3d4e5f60718",
+      "tags": [
+        "dark",
+        "teal",
+        "mist",
+        "smoke",
+        "abstract",
+        "cool"
+      ],
+      "vision_summary": "Cool teal mist plate, vertical 9:16 densify hole filler (low red)",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "a1b2c3d4e5f60718"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_tealmister.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_blueember",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_blueember.mp4",
+      "phash": "b2c3d4e5f6071829",
+      "tags": [
+        "dark",
+        "blue",
+        "ember",
+        "glow",
+        "abstract",
+        "cool"
+      ],
+      "vision_summary": "Cool blue ember glow plate, vertical 9:16 densify hole filler (low red)",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "b2c3d4e5f6071829"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_blueember.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_charcoalash",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_charcoalash.mp4",
+      "phash": "c3d4e5f60718293a",
+      "tags": [
+        "dark",
+        "charcoal",
+        "ash",
+        "drift",
+        "abstract",
+        "cool"
+      ],
+      "vision_summary": "Charcoal ash drift plate, vertical 9:16 densify hole filler (low red)",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "c3d4e5f60718293a"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_charcoalash.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_coldspark",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_coldspark.mp4",
+      "phash": "d4e5f60718293a4b",
+      "tags": [
+        "dark",
+        "cold",
+        "spark",
+        "blue",
+        "abstract",
+        "cool"
+      ],
+      "vision_summary": "Cold blue spark plate, vertical 9:16 densify hole filler (low red)",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "d4e5f60718293a4b"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_coldspark.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_steelglow",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_steelglow.mp4",
+      "phash": "e5f60718293a4b5c",
+      "tags": [
+        "dark",
+        "steel",
+        "glow",
+        "blue",
+        "abstract",
+        "cool"
+      ],
+      "vision_summary": "Steel blue glow plate, vertical 9:16 densify hole filler (low red)",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "e5f60718293a4b5c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_steelglow.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_slateiron",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_slateiron.mp4",
+      "phash": "f60718293a4b5c6d",
+      "tags": [
+        "dark",
+        "slate",
+        "iron",
+        "neutral",
+        "abstract",
+        "cool"
+      ],
+      "vision_summary": "Slate iron plate, vertical 9:16 densify hole filler (low red)",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "f60718293a4b5c6d"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_slateiron.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_coolvortex",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_coolvortex.mp4",
+      "phash": "0718293a4b5c6d7e",
+      "tags": [
+        "dark",
+        "vortex",
+        "teal",
+        "ink",
+        "fluid",
+        "cool"
+      ],
+      "vision_summary": "Cool teal ink vortex plate, vertical 9:16 (low red avatar-bg safe)",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "0718293a4b5c6d7e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_coolvortex.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
       }
     }
   ]

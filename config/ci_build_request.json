@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P5",
+  "from_step": "P7",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round22: fill empty densify holes only with distinct on-disk magnific fillers; keep by_block life-beat pins; prepared-avatar freeze densify QC-3/4; skip_generate; one asset per slot; from_step P5",
-  "round": 22
+  "note": "round23: cool hole plates for QC-30 accent; deny red-heavy densify fillers; keep by_block life-beats; prepared avatar; skip_generate; from_step P7 (cut_plan/accepted stable)",
+  "round": 23
 }

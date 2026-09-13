@@ -1321,15 +1321,41 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
     return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
 
 
+# 0050 QC-30: red-heavy densify/hole plates must not paint avatar VFX backgrounds.
+_0050_AVATAR_BG_DENY = frozenset({
+    "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
+    "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
+    "magnific_0050_vortex",
+})
+
+
+def _avatar_bg_asset_ok(asset: dict[str, Any], *, video_id: str) -> bool:
+    """Skip red-accent plates behind 0050 talking-head (QC-30 accent_share)."""
+    if video_id != "redshift_0050":
+        return True
+    aid = str(asset.get("id") or asset.get("asset_id") or "")
+    if aid in _0050_AVATAR_BG_DENY:
+        return False
+    tags = asset.get("tags") or []
+    if isinstance(tags, str):
+        tags = [tags]
+    tag_l = {str(t).lower() for t in tags}
+    if "red" in tag_l and "cool" not in tag_l:
+        return False
+    return True
+
+
 def _avatar_bg_plates(slots: list[dict[str, Any]],
                        prepared: dict[int, dict[str, Any]],
-                       assets: dict[int, dict[str, Any]]) -> dict[int, str]:
+                       assets: dict[int, dict[str, Any]],
+                       plan: dict[str, Any] | None = None) -> dict[int, str]:
     """Real (non-AI) footage paths for alpha talking-head backgrounds.
 
     HyperFrames alpha avatars used a single static scene plate for the whole
     cut — background never changed. Round-robin distinct prepared plates so
     each avatar beat gets interesting B-roll behind the transparent subject.
     """
+    video_id = str((plan or {}).get("video_id") or "")
     plates: list[str] = []
     seen: set[str] = set()
     for slot in slots:
@@ -1337,6 +1363,8 @@ def _avatar_bg_plates(slots: list[dict[str, Any]],
         asset = assets.get(idx) or {}
         prep = prepared.get(idx) or {}
         if asset.get("ai_generated"):
+            continue
+        if not _avatar_bg_asset_ok(asset, video_id=video_id):
             continue
         path = str(prep.get("dst") or "").strip()
         if not path or path in seen:
@@ -1366,7 +1394,16 @@ def _avatar_bg_plates(slots: list[dict[str, Any]],
         for slot in slots:
             plate = _plate_source(slot, slots, prepared, assets)
             path = str((plate or {}).get("file") or "").strip()
-            if path and path not in seen:
+            idx = int(slot["index"])
+            asset = assets.get(idx) or {}
+            if path and path not in seen and _avatar_bg_asset_ok(asset, video_id=video_id):
+                # Path may still name a denied plate when asset id is missing.
+                low = path.lower()
+                if video_id == "redshift_0050" and any(
+                        bad in low for bad in (
+                            "darkember", "redsmoke", "ashdrift", "coalglow",
+                            "ironrust", "sparkrain", "magnific_0050_vortex")):
+                    continue
                 seen.add(path)
                 plates.append(path)
     out: dict[int, str] = {}
@@ -4709,7 +4746,7 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     alpha_slots = _alpha_slots(avatar_meta)
     face_centres = _face_centres(avatar_meta)
     head_boxes = _head_boxes(avatar_meta)
-    avatar_bgs = _avatar_bg_plates(slots, prepared, assets)
+    avatar_bgs = _avatar_bg_plates(slots, prepared, assets, plan=plan)
     compose_zoom = float(ctx.cfg.get("heygen.compose_zoom", 1.0) or 1.0)
     blocks_by_id = {b["id"]: b for b in plan.get("blocks", [])}
     # Dedup on-screen slogans across intentional FS + gap FS (0042: «5 МИНУТ»).

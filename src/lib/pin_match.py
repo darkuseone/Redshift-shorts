@@ -177,8 +177,10 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             # siblings get distinct plates after by_block same_asset_max_slots=1.
             # Life-beat kinds stay mismatch-penalized (+10) off their beat.
             _HOLE_FILLERS = {
-                "darkember", "redsmoke", "ashdrift", "voidpulse", "coalglow",
-                "darkgrid", "codeglow", "ironrust", "nightstatic", "sparkrain",
+                # round23 cool dark leftovers (deny redsmoke/darkember/…)
+                "voidpulse", "darkgrid", "codeglow", "nightstatic",
+                "tealmister", "blueember", "charcoalash", "coldspark",
+                "steelglow", "slateiron", "coolvortex",
             }
             markers = {
                 "weather": ("weather", "radar", "storm", "satellite", "stormscreen"),
