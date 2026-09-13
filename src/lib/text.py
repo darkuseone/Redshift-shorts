@@ -722,6 +722,9 @@ def snap_block_windows_to_keywords(
         footage = [
             s for s in block_slots
             if str(s.get("kind") or "") not in ("avatar", "split")
+            # Prepared-avatar interstitial gap fills must keep exact windows
+            # (0050 seg_02→seg_03); keyword snap was sliding them onto «клей».
+            and "gap fill" not in str(s.get("reason") or "").lower()
         ]
         if not footage:
             continue

@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round29: from_step P5 — fill avatar seg_02/03 1.2s gap (QC-SEMANTIC sample t≈49.4); fluid plates stay on b5; prepared+skip_generate",
-  "round": 29
+  "note": "round30: exclude gap-fill from b6 keyword snap; reinsert avatar gaps after final clamp (fix seg_02/03 navy void)",
+  "round": 30
 }

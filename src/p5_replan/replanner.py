@@ -1255,6 +1255,54 @@ def apply_prepared_avatar_windows(
     return cleaned
 
 
+
+def reinsert_gaps_between_prepared_avatars(
+        slots: list[Slot],
+        *,
+        notes: list[str] | None = None,
+        min_gap: float = 0.05) -> list[Slot]:
+    """Fill timeline holes between frozen avatar windows (and other coverage).
+
+    densify neighbor-clamp + b6 keyword snap can drop the 1.2s interstitial
+    between 0050 seg_02/seg_03; vision then samples a navy void (QC-SEMANTIC).
+    """
+    notes = notes if notes is not None else []
+    if not slots:
+        return slots
+    covered = sorted(((s.start, s.end) for s in slots), key=lambda p: p[0])
+    fillers: list[Slot] = []
+    cursor = 0.0
+    for a, b in covered:
+        if a > cursor + min_gap:
+            bid = ""
+            role = "twist"
+            for s in slots:
+                if s.kind in AVATAR_KINDS and s.end <= a + 1e-6:
+                    bid, role = s.block_id, s.role
+            if not bid:
+                for s in slots:
+                    if s.kind in AVATAR_KINDS and s.start >= a - 1e-6:
+                        bid, role = s.block_id, s.role
+                        break
+            fillers.append(Slot(
+                index=0, start=cursor, end=a, kind="footage",
+                block_id=bid or "b6", role=role or "twist", mode="C",
+                needs_asset=True, asset_role="broll",
+                reason="gap fill around prepared avatar window | densify reinsert",
+            ))
+            notes.append(
+                f"prepared-avatar densify: reinserted gap fill "
+                f"{cursor:.3f}–{a:.3f} (block {bid or 'b6'})")
+        cursor = max(cursor, b)
+    if not fillers:
+        return slots
+    out = list(slots) + fillers
+    out.sort(key=lambda s: (s.start, s.end))
+    for i, slot in enumerate(out):
+        slot.index = i
+    return out
+
+
 def densify_after_prepared_freeze(
         slots: list[Slot],
         cfg,
@@ -1352,38 +1400,7 @@ def densify_after_prepared_freeze(
     for i, slot in enumerate(cleaned):
         slot.index = i
 
-    # densify neighbor-clamp can drop gap-fill between two prepared avatar
-    # windows (0050 seg_02→seg_03 left 1.2s navy void → QC-SEMANTIC sample).
-    covered = sorted(((s.start, s.end) for s in cleaned), key=lambda p: p[0])
-    fillers: list[Slot] = []
-    cursor = 0.0
-    for a, b in covered:
-        if a > cursor + 0.05:
-            bid = ""
-            role = "twist"
-            for s in cleaned:
-                if s.kind in AVATAR_KINDS and s.end <= a + 1e-6:
-                    bid, role = s.block_id, s.role
-            if not bid:
-                for s in cleaned:
-                    if s.kind in AVATAR_KINDS and s.start >= a - 1e-6:
-                        bid, role = s.block_id, s.role
-                        break
-            fillers.append(Slot(
-                index=0, start=cursor, end=a, kind="footage",
-                block_id=bid or "b6", role=role or "twist", mode="C",
-                needs_asset=True, asset_role="broll",
-                reason="gap fill around prepared avatar window | densify reinsert",
-            ))
-            notes.append(
-                f"prepared-avatar densify: reinserted gap fill "
-                f"{cursor:.3f}–{a:.3f} (block {bid or 'b6'})")
-        cursor = max(cursor, b)
-    if fillers:
-        cleaned.extend(fillers)
-        cleaned.sort(key=lambda s: (s.start, s.end))
-        for i, slot in enumerate(cleaned):
-            slot.index = i
+    cleaned = reinsert_gaps_between_prepared_avatars(cleaned, notes=notes)
 
     if draft is not None:
         _assign_queries(cleaned, draft)
@@ -1573,6 +1590,10 @@ def run_step(ctx) -> dict[str, Any]:
                           s.kind in AVATAR_KINDS or s.end - s.start >= 0.05)]
         for i, slot in enumerate(plan_slots):
             slot.index = i
+        # Last pass: keyword snap + neighbor clamp may have cleared the
+        # seg_02→seg_03 hole again — force gap fills after all mutations.
+        plan_slots = reinsert_gaps_between_prepared_avatars(
+            plan_slots, notes=warnings)
         _add_internal_events(
             plan_slots,
             float(ctx.cfg.get("limits.max_event_gap_sec", 2.5)),
