@@ -460,9 +460,9 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert "round16" in req["note"]
-    assert "seed draft_plan" in req["note"]
-    assert "dark Latin plaques" in req["note"]
+    assert "round17" in req["note"]
+    assert "prepared avatar windows" in req["note"]
+    assert "word-align" in req["note"]
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
@@ -615,3 +615,57 @@ def test_0050_snap_life_beats_to_weather_keyword():
     assert weather_slot["start"] >= 40.5
     assert weather_slot["start"] <= 41.5
 
+
+
+def test_0050_prepared_avatar_windows_frozen_match_request():
+    """P5 must keep prepared seg durations so P6 does not demand new clips."""
+    from src.lib.config import load_config
+    from src.p5_replan.replanner import (
+        Slot, apply_prepared_avatar_windows, load_prepared_avatar_windows,
+    )
+    from src.p6_avatar.avatar import merge_segments
+
+    cfg = load_config()
+    cfg.data.setdefault("heygen", {})["source"] = "prepared"
+    windows = load_prepared_avatar_windows(cfg, "redshift_0050")
+    assert windows is not None and len(windows) == 5
+    assert [round(w["duration"], 3) for w in windows] == [
+        4.094, 5.871, 0.256, 4.921, 6.452]
+
+    # Simulate a P5 rebuild that carved different b6 avatar spans.
+    slots = [
+        Slot(0, 0.0, 4.575, "footage", "b1", "hook", "C", needs_asset=True),
+        Slot(1, 4.575, 12.0, "avatar", "b2", "setup", "A"),
+        Slot(2, 12.0, 48.0, "footage", "b5b", "develop", "C", needs_asset=True),
+        Slot(3, 48.0, 51.131, "avatar", "b6", "twist", "A"),
+        Slot(4, 51.131, 65.87, "footage", "b7", "cta", "C", needs_asset=True),
+    ]
+    notes: list[str] = []
+    out = apply_prepared_avatar_windows(
+        slots, windows, duration=65.87, notes=notes)
+    assert any("prepared avatar windows frozen" in n for n in notes)
+    merged = merge_segments([s.to_dict() for s in out])
+    assert len(merged) == 5
+    for seg, win in zip(merged, windows):
+        assert abs((seg["end"] - seg["start"]) - win["duration"]) < 1e-6
+        assert abs(seg["start"] - win["start"]) < 1e-6
+
+
+def test_0050_snap_never_rewrites_avatar_slots():
+    from src.lib.text import snap_block_windows_to_keywords
+
+    plan = {
+        "video_id": "redshift_0050",
+        "slots": [
+            {"block_id": "b6", "kind": "avatar", "start": 50.286, "end": 55.207},
+            {"block_id": "b6", "kind": "footage", "start": 55.207, "end": 56.607},
+        ],
+        "blocks": [{"id": "b6", "text": "Клей не принял документ"}],
+    }
+    words = [
+        {"display": "Клей", "start": 52.67, "end": 53.19, "block_id": "b6"},
+        {"display": "принял", "start": 53.36, "end": 53.87, "block_id": "b6"},
+    ]
+    before = (plan["slots"][0]["start"], plan["slots"][0]["end"])
+    snap_block_windows_to_keywords(plan, words, script={"blocks": plan["blocks"]})
+    assert (plan["slots"][0]["start"], plan["slots"][0]["end"]) == before

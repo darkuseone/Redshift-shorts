@@ -15,7 +15,9 @@
       "duration_sec": 4.094,
       "block_id": "b2",
       "text": "модель без чата закрыла кусок этой задачи. 7 задач тысячелетия.",
-      "expected_clip": "seg_00.webm"
+      "expected_clip": "seg_00.webm",
+      "start": 4.575,
+      "end": 8.669
     },
     {
       "index": 1,
@@ -23,7 +25,9 @@
       "duration_sec": 5.871,
       "block_id": "b2",
       "text": "долларов за каждую. Четверть века. Это формулы воды, воздуха и крови — не мелки на доске. Восьмого",
-      "expected_clip": "seg_01.webm"
+      "expected_clip": "seg_01.webm",
+      "start": 10.069,
+      "end": 15.94
     },
     {
       "index": 2,
@@ -31,7 +35,9 @@
       "duration_sec": 0.256,
       "block_id": "b6",
       "text": "Lean проверяет",
-      "expected_clip": "seg_02.webm"
+      "expected_clip": "seg_02.webm",
+      "start": 48.83,
+      "end": 49.086
     },
     {
       "index": 3,
@@ -39,7 +45,9 @@
       "duration_sec": 4.921,
       "block_id": "b6",
       "text": "шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI",
-      "expected_clip": "seg_03.webm"
+      "expected_clip": "seg_03.webm",
+      "start": 50.286,
+      "end": 55.207
     },
     {
       "index": 4,
@@ -47,7 +55,9 @@
       "duration_sec": 6.452,
       "block_id": "b6",
       "text": "Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
-      "expected_clip": "seg_04.webm"
+      "expected_clip": "seg_04.webm",
+      "start": 56.607,
+      "end": 63.059
     }
   ],
   "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы в clips_dir под именами expected_clip и возобновить прогон с шага P6."

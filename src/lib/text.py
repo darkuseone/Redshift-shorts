@@ -717,11 +717,14 @@ def snap_block_windows_to_keywords(
             start, end = _clamp_away_from_avatar(start, end, avatars)
         if end - start < 0.35:
             continue
-        # Single fused window for the block's footage slots (keep relative order).
+        # Footage only — never fall back to avatar/split slots (prepared clips
+        # freeze those windows; rewriting them breaks P6 duration match).
         footage = [
             s for s in block_slots
             if str(s.get("kind") or "") not in ("avatar", "split")
-        ] or block_slots
+        ]
+        if not footage:
+            continue
         footage = sorted(footage, key=lambda s: float(s.get("start") or 0.0))
         n = len(footage)
         dur = end - start
