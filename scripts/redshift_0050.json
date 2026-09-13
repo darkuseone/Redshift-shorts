@@ -11,10 +11,10 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 QC round14: dark browser/source; compact REDSHIFT CTA; shorten REJECTED; FOLLOWUP dark; Gemini FIX visual; spoken frozen.",
+    "notes": "0050 r36 Gemini: hook only $1 000 000 dark card; no big RU in 0-3; spoken frozen.",
     "hook": {
       "on_screen": "$1 000 000",
-      "style": "number_slam"
+      "style": "fact_card"
     }
   },
   "sources": [
@@ -44,17 +44,9 @@
       "text": "Миллион долларов. Четверть века никто не брал.",
       "emphasis_word": "миллион",
       "avatar": "off",
-      "visual_intent": "Motion from frame 0: data-center aisle or flowing water or OpenAI press still. Overlay $1 000 000. No big Russian word. Avatar off.",
-      "broll_queries": [
-        "data center server aisle blue lights moving",
-        "water vortex flow slow motion underwater",
-        "modern glass headquarters exterior night"
-      ],
-      "overlay": {
-        "type": "fullscreen_text",
-        "content": "$1 000 000",
-        "template_hint": "text-fullscreen/number-slam-card"
-      },
+      "visual_intent": "Motion from frame 0. Overlay ONLY $1 000 000 dark card red frame. No Russian title. No white plate. Avatar off.",
+      "broll_queries": ["water vortex flow slow motion underwater", "blue ink swirling liquid macro"],
+      "overlay": {"type": "fullscreen_text", "content": "$1 000 000", "template_hint": "text-fullscreen/fact-card"},
       "sfx": "hit_impact",
       "meme_allowed": false,
       "mode_hint": "C",
@@ -66,17 +58,9 @@
       "text": "Восьмого сентября модель без чата закрыла кусок этой задачи. Семь задач тысячелетия. Миллион долларов за каждую. Четверть века. Это формулы воды, воздуха и крови — не мелки на доске.",
       "emphasis_word": "семь",
       "avatar": "on",
-      "visual_intent": "Live water / river current after the hook $1 000 000 card. One stake card: 7 · $1 000 000 · 25 Y. Not a second prize plate.",
-      "broll_queries": [
-        "river current aerial flowing water",
-        "blue ink swirling liquid macro",
-        "clear water flow glass tank slow motion"
-      ],
-      "overlay": {
-        "type": "fullscreen_text",
-        "content": "7 · $1 000 000 · 25 Y",
-        "template_hint": "text-fullscreen/fact-card"
-      },
+      "visual_intent": "Ink / water after hook. Stake card 7 · $1 000 000 · 25 Y dark. No server aisle.",
+      "broll_queries": ["blue ink swirling liquid macro", "clear water flow glass tank slow motion"],
+      "overlay": {"type": "fullscreen_text", "content": "7 · $1 000 000 · 25 Y", "template_hint": "text-fullscreen/fact-card"},
       "sfx": "whoosh_in",
       "mode_hint": "A",
       "emphasis_family": "number"
@@ -87,17 +71,9 @@
       "text": "Восьмого сентября две тысячи двадцать шесть OpenAI выкладывает работу. Искал не чат, а внутренняя модель сильнее GPT-6 Astra.",
       "emphasis_word": "Astra",
       "avatar": "off",
-      "visual_intent": "openai.com article card + GPT-6 ASTRA. Source-chip corner, no red. GPU cluster / server aisle behind. Not a Nature figure.",
-      "broll_queries": [
-        "gpu cluster server room night aisle",
-        "supercomputer hall dark blue lights",
-        "data center corridor blue leds"
-      ],
-      "overlay": {
-        "type": "highlight",
-        "content": "GPT-6 ASTRA",
-        "template_hint": "browser-ui/browser-scroll"
-      },
+      "visual_intent": "GPU cluster then code editor. GPT-6 ASTRA. Source-chip no red. No empty grid. No server aisle repeat.",
+      "broll_queries": ["gpu cluster server room night aisle", "lean proof code editor dark theme scrolling"],
+      "overlay": {"type": "highlight", "content": "GPT-6 ASTRA", "template_hint": "browser-ui/browser-scroll"},
       "sfx": "ui_click",
       "source_ref": "openai.com",
       "mode_hint": "C",
@@ -109,17 +85,9 @@
       "text": "Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений. Семнадцать часов переложили доказательство в Lean.",
       "emphasis_word": "Lean",
       "avatar": "off",
-      "visual_intent": "Dark translucent number cards on live footage: 10 000, 88 Ч, 2 700 000, 17 Ч LEAN. Lean = proof code editor, not HTML hello-js. Chalkboard for hours.",
-      "broll_queries": [
-        "chalkboard writing equations closeup dark",
-        "lean proof code editor dark theme scrolling",
-        "gpu cluster server room night aisle"
-      ],
-      "overlay": {
-        "type": "fullscreen_text",
-        "content": "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN",
-        "template_hint": "text-fullscreen/fact-card"
-      },
+      "visual_intent": "Dark number cards on moving void/steel, then Lean editor. Not flat black.",
+      "broll_queries": ["lean proof code editor dark theme scrolling", "chalkboard writing equations closeup dark"],
+      "overlay": {"type": "fullscreen_text", "content": "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN", "template_hint": "text-fullscreen/fact-card"},
       "sfx": "data_beep",
       "mode_hint": "C",
       "emphasis_family": "number"
@@ -130,16 +98,9 @@
       "text": "Называются уравнения Навье-Стокса. Страшное имя, простой смысл: как течёт жидкость, когда её толкают.",
       "emphasis_word": "жидкость",
       "avatar": "off",
-      "visual_intent": "flowing liquid current underwater or ink swirl. catalog dark-card FLUIDS overlay.",
-      "broll_queries": [
-        "water vortex fluid flow slow motion",
-        "blue ink swirl liquid macro"
-      ],
-      "overlay": {
-        "type": "lower_third",
-        "content": "FLUIDS",
-        "template_hint": "lower-thirds/dark-card"
-      },
+      "visual_intent": "flowing liquid. dark-card FLUIDS. source-chip no red.",
+      "broll_queries": ["water vortex fluid flow slow motion", "blue ink swirl liquid macro"],
+      "overlay": {"type": "lower_third", "content": "FLUIDS", "template_hint": "lower-thirds/dark-card"},
       "sfx": "whoosh_in",
       "meme_allowed": false,
       "mode_hint": "C",
@@ -151,15 +112,9 @@
       "text": "Погода.",
       "emphasis_word": "Погода",
       "avatar": "off",
-      "visual_intent": "weather radar satellite stormscreen only. catalog clean-bar WEATHER overlay.",
-      "broll_queries": [
-        "weather radar satellite stormscreen"
-      ],
-      "overlay": {
-        "type": "lower_third",
-        "content": "WEATHER",
-        "template_hint": "lower-thirds/clean-bar"
-      },
+      "visual_intent": "weather radar. dark-card WEATHER, no red bar.",
+      "broll_queries": ["weather radar satellite stormscreen"],
+      "overlay": {"type": "lower_third", "content": "WEATHER", "template_hint": "lower-thirds/dark-card"},
       "meme_allowed": false,
       "mode_hint": "C",
       "emphasis_family": "tech"
@@ -170,15 +125,9 @@
       "text": "Крыло самолёта.",
       "emphasis_word": "Крыло",
       "avatar": "off",
-      "visual_intent": "airplane winglet airfoil flightclouds. catalog note-pin AIRFOIL overlay.",
-      "broll_queries": [
-        "airplane winglet airfoil flightclouds"
-      ],
-      "overlay": {
-        "type": "lower_third",
-        "content": "AIRFOIL",
-        "template_hint": "lower-thirds/note-pin"
-      },
+      "visual_intent": "airplane wing. dark-card AIRFOIL, no red bar.",
+      "broll_queries": ["airplane winglet airfoil flightclouds"],
+      "overlay": {"type": "lower_third", "content": "AIRFOIL", "template_hint": "lower-thirds/dark-card"},
       "meme_allowed": false,
       "mode_hint": "C",
       "emphasis_family": "tech"
@@ -189,15 +138,9 @@
       "text": "Трубы в доме.",
       "emphasis_word": "Трубы",
       "avatar": "off",
-      "visual_intent": "pipework valves factorypipes. catalog note-pin VALVES overlay.",
-      "broll_queries": [
-        "pipework valves factorypipes"
-      ],
-      "overlay": {
-        "type": "lower_third",
-        "content": "VALVES",
-        "template_hint": "lower-thirds/note-pin"
-      },
+      "visual_intent": "factory pipes. dark-card VALVES, no red bar.",
+      "broll_queries": ["pipework valves factorypipes"],
+      "overlay": {"type": "lower_third", "content": "VALVES", "template_hint": "lower-thirds/dark-card"},
       "meme_allowed": false,
       "mode_hint": "C",
       "emphasis_family": "tech"
@@ -208,15 +151,9 @@
       "text": "Ток крови. Если формула врёт — самолёт не извиняется.",
       "emphasis_word": "крови",
       "avatar": "off",
-      "visual_intent": "bloodcells microscope plasmaflow. catalog metric-badge PLASMA overlay.",
-      "broll_queries": [
-        "bloodcells microscope plasmaflow"
-      ],
-      "overlay": {
-        "type": "lower_third",
-        "content": "PLASMA",
-        "template_hint": "lower-thirds/metric-badge"
-      },
+      "visual_intent": "blood cells. dark-card PLASMA, no red bar.",
+      "broll_queries": ["bloodcells microscope plasmaflow"],
+      "overlay": {"type": "lower_third", "content": "PLASMA", "template_hint": "lower-thirds/dark-card"},
       "meme_allowed": false,
       "mode_hint": "C",
       "emphasis_family": "tech"
@@ -227,16 +164,9 @@
       "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
       "emphasis_word": "не принял",
       "avatar": "on",
-      "visual_intent": "rubberstamp declined paperwork deskstamp on desk. catalog dark-card REJECTED overlay. Must place.",
-      "broll_queries": [
-        "rubberstamp declined paperwork deskstamp",
-        "rubber stamp declined paperwork desk"
-      ],
-      "overlay": {
-        "type": "lower_third",
-        "content": "REJECTED",
-        "template_hint": "lower-thirds/dark-card"
-      },
+      "visual_intent": "code then REJECTED stamp then void pulse. No highway. No server aisle. dark-card REJECTED no red underline.",
+      "broll_queries": ["rubberstamp declined paperwork deskstamp", "rubber stamp declined paperwork desk"],
+      "overlay": {"type": "lower_third", "content": "REJECTED", "template_hint": "lower-thirds/dark-card"},
       "sfx": "sub_drop",
       "answers_hook": true,
       "mode_hint": "A",
@@ -248,16 +178,9 @@
       "text": "Какую из оставшихся шести разберём следующей?",
       "emphasis_word": "шести",
       "avatar": "off",
-      "visual_intent": "city night traffic aerial OR open notebook (citynight trafficlights aerialcity opennotebook). catalog name-title FOLLOWUP dark plate; compact wordmark-only outro.",
-      "broll_queries": [
-        "citynight trafficlights aerialcity city night traffic aerial",
-        "opennotebook open notebook desk warm light"
-      ],
-      "overlay": {
-        "type": "lower_third",
-        "content": "FOLLOWUP",
-        "template_hint": "lower-thirds/name-title"
-      },
+      "visual_intent": "city night. dark-card FOLLOWUP no red bar. compact REDSHIFT.",
+      "broll_queries": ["citynight trafficlights aerialcity city night traffic aerial"],
+      "overlay": {"type": "lower_third", "content": "FOLLOWUP", "template_hint": "lower-thirds/dark-card"},
       "sfx": "subscribe_ping",
       "emphasis_family": "emotion"
     }
