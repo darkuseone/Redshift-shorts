@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round36b: Gemini fixes landed in pins+script; render now",
+  "note": "round36c: hook.style cold_open (fact_card invalid schema)",
   "round": 36
 }
