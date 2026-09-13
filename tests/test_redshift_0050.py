@@ -460,9 +460,9 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert "round17" in req["note"]
-    assert "prepared avatar windows" in req["note"]
-    assert "word-align" in req["note"]
+    assert "round18" in req["note"]
+    assert "prepared-avatar freeze densify" in req["note"]
+    assert "QC-3" in req["note"] or "QC-3/4" in req["note"]
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
@@ -621,7 +621,8 @@ def test_0050_prepared_avatar_windows_frozen_match_request():
     """P5 must keep prepared seg durations so P6 does not demand new clips."""
     from src.lib.config import load_config
     from src.p5_replan.replanner import (
-        Slot, apply_prepared_avatar_windows, load_prepared_avatar_windows,
+        Slot, apply_prepared_avatar_windows, compute_stats,
+        densify_after_prepared_freeze, load_prepared_avatar_windows,
     )
     from src.p6_avatar.avatar import merge_segments
 
@@ -644,6 +645,14 @@ def test_0050_prepared_avatar_windows_frozen_match_request():
     out = apply_prepared_avatar_windows(
         slots, windows, duration=65.87, notes=notes)
     assert any("prepared avatar windows frozen" in n for n in notes)
+    # Round17 bug: freeze cleared events → max_gap ≈ full duration.
+    frozen_stats = compute_stats(out, 65.87)
+    assert frozen_stats["max_event_gap_sec"] > 60.0
+    out = densify_after_prepared_freeze(out, cfg, notes=notes)
+    assert any("internal events restored" in n for n in notes)
+    densified = compute_stats(out, 65.87)
+    assert densified["max_event_gap_sec"] <= 2.5 + 1e-3
+    assert densified["max_shot_sec"] <= 7.0 + 1e-3
     merged = merge_segments([s.to_dict() for s in out])
     assert len(merged) == 5
     for seg, win in zip(merged, windows):

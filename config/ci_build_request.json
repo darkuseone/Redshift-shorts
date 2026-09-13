@@ -7,5 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round17: P5 preserve prepared avatar windows + word-align footage life-beats; dark plaques; fill white voids"
+  "note": "round18: P5 prepared-avatar freeze densify — keep seg durations, split footage gaps for QC-3/4 (no 65s max_gap); dark plaques; fill white voids",
+  "round": 18
 }

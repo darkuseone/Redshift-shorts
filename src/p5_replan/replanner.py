@@ -1243,6 +1243,123 @@ def apply_prepared_avatar_windows(
     return cleaned
 
 
+def densify_after_prepared_freeze(
+        slots: list[Slot],
+        cfg,
+        *,
+        draft: dict[str, Any] | None = None,
+        words: list[dict[str, Any]] | None = None,
+        notes: list[str] | None = None) -> list[Slot]:
+    """Restore QC-3/4 density after prepared-avatar freeze.
+
+    Freeze punches avatar holes and clears events, which can leave a long
+    continuous footage gap (and ``max_event_gap_sec`` ≈ full duration). Keep
+    every prepared avatar start/end/duration untouched; only split non-avatar
+    footage/split shots and re-inject internal events + transitions.
+    """
+    notes = notes if notes is not None else []
+    limits = cfg.get("limits")
+    min_shot = float(limits.get("min_shot_sec", 1.5))
+    max_shot = float(limits.get("max_shot_sec", 5.0))
+    max_gap = float(limits.get("max_event_gap_sec", 2.5))
+    first_event = float(limits.get("first_event_sec", 0.8))
+
+    # Snapshot prepared avatar bounds so densify cannot drift lipsync windows.
+    frozen = [(s.start, s.end) for s in slots if s.kind in AVATAR_KINDS]
+
+    out: list[Slot] = []
+    split_notes = 0
+    for slot in slots:
+        if slot.kind in AVATAR_KINDS:
+            out.append(slot)
+            continue
+        if slot.kind not in ("footage", "split") or slot.duration <= max_shot + 1e-3:
+            out.append(slot)
+            continue
+        parts = _split_span(
+            slot.start, slot.end, target=max_shot * 0.75,
+            min_len=min_shot, max_len=max_shot, words=words or [])
+        for i, (s, e) in enumerate(parts):
+            clone = Slot(**{**slot.__dict__, "start": s, "end": e, "events": [],
+                            "reason": (slot.reason + " | densify after prepared freeze").strip(" |")})
+            if i:
+                clone.transition_in = "cut"
+            out.append(clone)
+        split_notes += 1
+        notes.append(
+            f"футаж {slot.start:.2f}–{slot.end:.2f} разрезан на {len(parts)} плана "
+            f"после freeze prepared-avatar (лимит {max_shot} сек)")
+    if split_notes:
+        notes.append(
+            f"prepared-avatar densify: split {split_notes} long non-avatar shot(s)")
+
+    out.sort(key=lambda s: (s.start, s.end))
+    for i, slot in enumerate(out):
+        slot.index = i
+
+    # Re-assert exact frozen avatar bounds (split neighbors only).
+    av_i = 0
+    for i, slot in enumerate(out):
+        if slot.kind not in AVATAR_KINDS:
+            continue
+        if av_i >= len(frozen):
+            break
+        slot.start, slot.end = frozen[av_i]
+        av_i += 1
+        if i > 0 and out[i - 1].kind not in AVATAR_KINDS:
+            out[i - 1].end = slot.start
+        if i + 1 < len(out) and out[i + 1].kind not in AVATAR_KINDS:
+            out[i + 1].start = slot.end
+
+    # Drop collapsed non-avatar crumbs from neighbor clamps.
+    cleaned: list[Slot] = []
+    for slot in out:
+        if slot.end - slot.start < 0.05 and slot.kind not in AVATAR_KINDS:
+            continue
+        if slot.end <= slot.start + 1e-6:
+            continue
+        cleaned.append(slot)
+    for i, slot in enumerate(cleaned):
+        slot.index = i
+
+    if draft is not None:
+        _assign_queries(cleaned, draft)
+    _add_internal_events(cleaned, max_gap, first_event, notes)
+    _assign_transitions(cleaned, cfg, notes)
+    notes.append(
+        "prepared-avatar densify: internal events restored for QC-3/QC-4 "
+        "(avatar windows unchanged)")
+    return cleaned
+
+
+def _slots_from_plan_dicts(raw_slots: list[Any]) -> list[Slot]:
+    """Rebuild Slot objects from cut_plan slot dicts (post-snap refresh)."""
+    out: list[Slot] = []
+    for i, s in enumerate(raw_slots or []):
+        if not isinstance(s, dict):
+            continue
+        out.append(Slot(
+            index=int(s.get("index") or i),
+            start=float(s["start"]), end=float(s["end"]),
+            kind=str(s.get("kind") or "footage"),
+            block_id=str(s.get("block_id") or ""),
+            role=str(s.get("role") or ""),
+            mode=str(s.get("mode") or "C"),
+            visual_intent=str(s.get("visual_intent") or ""),
+            queries=list(s.get("queries") or []),
+            content=str(s.get("content") or ""),
+            transition_in=str(s.get("transition_in") or "cut"),
+            events=list(s.get("events") or []),
+            needs_asset=bool(s.get("needs_asset")),
+            asset_role=str(s.get("asset_role") or ""),
+            template_hint=str(s.get("template_hint") or ""),
+            meme_emotion=str(s.get("meme_emotion") or ""),
+            beat=str(s.get("beat") or "stretch"),
+            reason=str(s.get("reason") or ""),
+        ))
+    return out
+
+
 def enforce_prepared_avatar_on_plan(
         plan: dict[str, Any],
         windows: list[dict[str, Any]]) -> int:
@@ -1294,6 +1411,10 @@ def run_step(ctx) -> dict[str, Any]:
     if prepared_windows:
         slots = apply_prepared_avatar_windows(
             slots, prepared_windows, duration=duration, notes=warnings)
+        # Freeze clears events and can leave long footage gaps — densify
+        # non-avatar shots + restore events without touching prepared windows.
+        slots = densify_after_prepared_freeze(
+            slots, ctx.cfg, draft=draft, words=words, notes=warnings)
 
     # Карта битов §6.1 — до статистики: счётчик битов уходит в неё же.
     beat_counts = annotate_slots(slots, draft["blocks"])
@@ -1363,33 +1484,50 @@ def run_step(ctx) -> dict[str, Any]:
         plan_doc, words, repo_root=ctx.cfg.repo_root)
     if prepared_windows:
         enforce_prepared_avatar_on_plan(plan_doc, prepared_windows)
-        # Refresh stats after footage snap + avatar re-assert.
-        plan_slots = [
-            Slot(
-                index=int(s.get("index") or i),
-                start=float(s["start"]), end=float(s["end"]),
-                kind=str(s.get("kind") or "footage"),
-                block_id=str(s.get("block_id") or ""),
-                role=str(s.get("role") or ""),
-                mode=str(s.get("mode") or "C"),
-                visual_intent=str(s.get("visual_intent") or ""),
-                queries=list(s.get("queries") or []),
-                content=str(s.get("content") or ""),
-                transition_in=str(s.get("transition_in") or "cut"),
-                events=list(s.get("events") or []),
-                needs_asset=bool(s.get("needs_asset")),
-                asset_role=str(s.get("asset_role") or ""),
-                template_hint=str(s.get("template_hint") or ""),
-                meme_emotion=str(s.get("meme_emotion") or ""),
-                beat=str(s.get("beat") or "stretch"),
-                reason=str(s.get("reason") or ""),
-            )
-            for i, s in enumerate(plan_doc.get("slots") or [])
-            if isinstance(s, dict)
+        # Keyword snap may stretch non-avatar windows; densify once more,
+        # then hard-snap avatar bounds and refresh events/stats.
+        plan_slots = densify_after_prepared_freeze(
+            _slots_from_plan_dicts(plan_doc.get("slots") or []),
+            ctx.cfg, draft=draft, words=words, notes=warnings)
+        av_i = 0
+        for i, slot in enumerate(plan_slots):
+            if slot.kind not in AVATAR_KINDS:
+                continue
+            if av_i >= len(prepared_windows):
+                break
+            win = prepared_windows[av_i]
+            slot.start = float(win["start"])
+            slot.end = float(win["end"])
+            if win.get("block_id"):
+                slot.block_id = str(win["block_id"])
+            av_i += 1
+            if i > 0 and plan_slots[i - 1].kind not in AVATAR_KINDS:
+                plan_slots[i - 1].end = slot.start
+            if i + 1 < len(plan_slots) and plan_slots[i + 1].kind not in AVATAR_KINDS:
+                plan_slots[i + 1].start = slot.end
+        plan_slots = [s for s in plan_slots
+                      if s.end > s.start + 1e-6 and (
+                          s.kind in AVATAR_KINDS or s.end - s.start >= 0.05)]
+        for i, slot in enumerate(plan_slots):
+            slot.index = i
+        _add_internal_events(
+            plan_slots,
+            float(ctx.cfg.get("limits.max_event_gap_sec", 2.5)),
+            float(ctx.cfg.get("limits.first_event_sec", 0.8)),
+            warnings)
+        _assign_transitions(plan_slots, ctx.cfg, warnings)
+        plan_doc["slots"] = [s.to_dict() for s in plan_slots]
+        plan_doc["avatar_segments"] = [
+            {"index": i, "slot_index": s.index, "start": round(s.start, 3),
+             "end": round(s.end, 3), "duration": round(s.duration, 3),
+             "block_id": s.block_id, "mode": s.mode, "kind": s.kind}
+            for i, s in enumerate(s for s in plan_slots if s.kind in AVATAR_KINDS)
         ]
         stats = compute_stats(plan_slots, duration)
         stats["beats"] = beat_counts
         plan_doc["stats"] = stats
+        plan_doc["notes"] = warnings
+
     ctx.write("cut_plan.json", plan_doc)
 
     for warning in warnings:
