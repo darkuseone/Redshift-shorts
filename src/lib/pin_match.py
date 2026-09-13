@@ -181,8 +181,8 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             # siblings get distinct plates after by_block same_asset_max_slots=1.
             # Life-beat kinds stay mismatch-penalized (+10) off their beat.
             _HOLE_FILLERS = {
-                # cool dark leftovers — NOT liquid (coolvortex is a fluid plate)
-                "voidpulse", "darkgrid", "codeglow", "nightstatic",
+                # cool dark leftovers — NOT liquid; codeglow is Lean-check plate
+                "voidpulse", "darkgrid", "nightstatic",
                 "tealmister", "blueember", "charcoalash",
                 "steelglow", "slateiron",
                 "cyanrain", "frostscan", "deepcoil",
@@ -204,18 +204,22 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             }.get(kind, ())
             _FLUID_KINDS = {"fluids", "inkswirl", "vortex", "coolvortex"}
             speech_l = speech  # already lower from overlapping_speech
-            if kind in _HOLE_FILLERS:
+            if kind in ("lean", "codeglow") and any(
+                    t in speech_l for t in ("проверя", "lean", "кажд")):
+                bonus = -26
+            elif kind == "stamp" and (
+                    "gap fill" in str(slot.get("reason") or "").lower()
+                    or (any(t in speech_l for t in ("проверя", "lean"))
+                        and not any(t in speech_l for t in (
+                            "клей", "приня", "reject", "отклон")))):
+                # Avatar interstitial «Lean проверяет» ≠ REJECTED stamp
+                bonus = 14
+            elif kind in _HOLE_FILLERS:
                 # Abstract hole plates on Navier–Stokes liquid beat → QC-SEMANTIC
                 bonus = 10 if beat == "fluids" else 0
             elif kind in _FLUID_KINDS:
                 # Keep liquid plates on «жидкость» densify; don't burn on hook/setup
                 bonus = -26 if beat == "fluids" else 14
-            elif kind == "stamp" and any(t in speech_l for t in ("проверя", "lean")) and not any(
-                    t in speech_l for t in ("клей", "приня", "reject", "отклон")):
-                # Avatar interstitial «Lean проверяет» ≠ REJECTED stamp
-                bonus = 14
-            elif kind == "lean" and any(t in speech_l for t in ("проверя", "lean", "кажд")):
-                bonus = -26
             elif kind and kind == beat:
                 bonus = -22
             elif kind and markers and any(m in hay for m in markers):

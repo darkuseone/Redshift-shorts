@@ -526,7 +526,12 @@ def _fill_unfilled_from_leftover_prefers(
         by_block_ids = {
             str(v) for v in (by_block or {}).values() if v
         }
+        gap_fill = "gap fill" in str(slot.get("reason") or "").lower()
         for pid in leftover:
+            # Never park REJECTED stamp on prepared-avatar interstitials
+            # (0050 Lean-check gap at ~49s → QC-SEMANTIC).
+            if gap_fill and "stamp" in str(pid).lower():
+                continue
             rec = index.by_id(pid)
             if rec is None or getattr(rec, "quarantined", False):
                 if pid in by_block_ids:
@@ -606,6 +611,51 @@ def _fill_unfilled_from_leftover_prefers(
             leftover = [pid for pid in leftover if pid != picked_id]
     return filled
 
+
+
+
+def _scrub_stamp_off_lean_gaps(
+        *, accepted: dict[int, dict[str, Any]],
+        slots_by_index: dict[int, dict[str, Any]],
+        judged: list[dict[str, Any]],
+        repeat_max: int) -> int:
+    """REJECTED stamp must not sit on prepared-avatar Lean-check gaps."""
+    replacements = (
+        "magnific_0050_codeglow", "magnific_0050_steelglow",
+        "magnific_0050_darkgrid", "magnific_0050_tealmister",
+    )
+
+    def _count(pid: str) -> int:
+        return sum(1 for v in accepted.values()
+                   if str(v.get("asset_id") or "") == pid)
+
+    fixed = 0
+    for idx, entry in list(accepted.items()):
+        if "stamp" not in str(entry.get("asset_id") or "").lower():
+            continue
+        slot = slots_by_index.get(int(idx), {})
+        if "gap fill" not in str(slot.get("reason") or "").lower():
+            continue
+        pick = next((pid for pid in replacements if _count(pid) < repeat_max), None)
+        if pick is None:
+            del accepted[int(idx)]
+            fixed += 1
+            continue
+        row = next((j for j in judged if str(j.get("asset_id") or "") == pick), None)
+        if row is None:
+            accepted[int(idx)] = {
+                **entry,
+                "asset_id": pick,
+                "reason": f"gap fill scrub: stamp→{pick.rsplit('_', 1)[-1]}",
+                "fallback_reason": "lean-check gap ≠ REJECTED stamp",
+            }
+        else:
+            accepted[int(idx)] = {
+                **row, "slot_index": int(idx),
+                "reason": f"gap fill scrub: stamp→{pick.rsplit('_', 1)[-1]}",
+            }
+        fixed += 1
+    return fixed
 
 
 def _force_by_block_pins(
@@ -1218,6 +1268,11 @@ def run_step(ctx) -> dict[str, Any]:
         pin_prefer=pin_prefer, words=words)
     if forced:
         _log.info("by_block pins forced onto %s block slot(s)", forced)
+    scrubbed = _scrub_stamp_off_lean_gaps(
+        accepted=accepted, slots_by_index=slots_by_index,
+        judged=judged, repeat_max=repeat_max)
+    if scrubbed:
+        _log.info("scrubbed stamp off %s Lean-check gap fill(s)", scrubbed)
     # Densify siblings left empty after one-pin-per-asset force need distinct
     # prefer/stock plates (never re-clone the by_block id — repeat_max).
     leftover_filled += _fill_unfilled_from_leftover_prefers(

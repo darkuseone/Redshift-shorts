@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round31: QC-SEMANTIC — stamp/REJECTED off Lean-check gap (t≈49.4); prefer lean; by_block skips gap-fill",
-  "round": 31
+  "note": "round32: ban/scrub REJECTED stamp on Lean-check gap-fill; prefer codeglow/steelglow",
+  "round": 32
 }
