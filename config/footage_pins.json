@@ -121,7 +121,6 @@
       "magnific_0050_frostscan",
       "magnific_0050_deepcoil",
       "magnific_0050_steelglow",
-      "magnific_0050_slateiron",
       "fp_server_room",
       "fp_code_editor",
       "fp_chalkboard_eq",
@@ -165,10 +164,11 @@
       "magnific_0050_ironrust",
       "magnific_0050_sparkrain",
       "magnific_0050_vortex",
-      "magnific_0050_coldspark"
+      "magnific_0050_coldspark",
+      "magnific_0050_slateiron"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round24: break QC-5 — coldspark≈stamp (replace hole side with cyanrain/frostscan/deepcoil); deny coldspark; keep by_block life-beats; skip_generate; prepared freeze densify QC-3/4",
+    "_note": "round25: rehash magnific_0050_* phashes in cache/footage_index (stubs copied weather=tealmister etc → QC-5); keep hole pins; skip_generate; prepared",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",

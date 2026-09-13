@@ -1,7 +1,7 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-13",
+  "updated": "2026-09-13T03:22:03Z",
   "count": 136,
   "items": [
     {
@@ -3818,7 +3818,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_weather.mp4",
-      "phash": "a1b2c3d4e5f60718",
+      "phash": "d992e56ccc1993a3",
       "tags": [
         "weather",
         "radar",
@@ -3832,7 +3832,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "a1b2c3d4e5f60718"
+        "d992e56ccc1993a3",
+        "d992656ccc19b333",
+        "d996656ccc58b313"
       ],
       "width": 1080,
       "height": 1920,
@@ -3849,7 +3851,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_wing.mp4",
-      "phash": "b2c3d4e5f6071829",
+      "phash": "00907f6d1f87994d",
       "tags": [
         "airplane",
         "winglet",
@@ -3863,7 +3865,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "b2c3d4e5f6071829"
+        "00907f6d1f87994d",
+        "00907f6d3d8798cd",
+        "00987f6c3d8798cd"
       ],
       "width": 1080,
       "height": 1920,
@@ -3880,7 +3884,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_pipes.mp4",
-      "phash": "c3d4e5f60718293a",
+      "phash": "ebe882231637c73c",
       "tags": [
         "pipework",
         "valves",
@@ -3893,7 +3897,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "c3d4e5f60718293a"
+        "ebe882231637c73c",
+        "e1e882631677c33e",
+        "e9e880631767c33e"
       ],
       "width": 1080,
       "height": 1920,
@@ -3910,7 +3916,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_blood.mp4",
-      "phash": "d4e5f60718293a4b",
+      "phash": "13b7252c4adc72b2",
       "tags": [
         "bloodcells",
         "microscope",
@@ -3923,7 +3929,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "d4e5f60718293a4b"
+        "13b7252c4adc72b2",
+        "12b33d2c4adc72d2",
+        "12b33d2c4edc7292"
       ],
       "width": 1080,
       "height": 1920,
@@ -3940,7 +3948,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_stamp.mp4",
-      "phash": "e5f60718293a4b5c",
+      "phash": "e33b14977aa2348e",
       "tags": [
         "rubberstamp",
         "declined",
@@ -3954,7 +3962,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "e5f60718293a4b5c"
+        "e33b14977aa2348e",
+        "e37b159772a2308e",
+        "e37b159572a2308f"
       ],
       "width": 1080,
       "height": 1920,
@@ -3971,7 +3981,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_city.mp4",
-      "phash": "f60718293a4b5c6d",
+      "phash": "c8f06799e4dc3345",
       "tags": [
         "citynight",
         "trafficlights",
@@ -3985,7 +3995,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "f60718293a4b5c6d"
+        "c8f06799e4dc3345",
+        "c8f06799e49c33cc",
+        "c8f06799e49c33cc"
       ],
       "width": 1080,
       "height": 1920,
@@ -4002,7 +4014,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_gpu.mp4",
-      "phash": "0718293a4b5c6d7e",
+      "phash": "da6506d9c71e619a",
       "tags": [
         "gpu",
         "cluster",
@@ -4017,7 +4029,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "0718293a4b5c6d7e"
+        "da6506d9c71e619a",
+        "da6506d9c71e619a",
+        "da6506d9c71e619a"
       ],
       "width": 1080,
       "height": 1920,
@@ -4034,7 +4048,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_lean.mp4",
-      "phash": "18293a4b5c6d7e8f",
+      "phash": "d48c23233c3f1f9c",
       "tags": [
         "lean",
         "proof",
@@ -4049,7 +4063,9 @@
       "last_used": null,
       "added": "2026-09-12",
       "phashes": [
-        "18293a4b5c6d7e8f"
+        "d48c23233c3f1f9c",
+        "d48c23233c3f1f9c",
+        "d48c23233c3f1f9c"
       ],
       "width": 1080,
       "height": 1920,
@@ -4066,7 +4082,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_fluids.mp4",
-      "phash": "293a4b5c6d7e8f90",
+      "phash": "e6e6e6e4e4cc1819",
       "tags": [
         "fluids",
         "viscous",
@@ -4083,7 +4099,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "293a4b5c6d7e8f90"
+        "e6e6e6e4e4cc1819",
+        "cdc9c11313ced993",
+        "d8d0262bc90b27ef"
       ],
       "width": 1080,
       "height": 1920,
@@ -4100,7 +4118,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_inkswirl.mp4",
-      "phash": "3a4b5c6d7e8f9012",
+      "phash": "29a95654ada592d9",
       "tags": [
         "ink",
         "swirl",
@@ -4116,7 +4134,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "3a4b5c6d7e8f9012"
+        "29a95654ada592d9",
+        "2bad5456aba99492",
+        "32ba494da2bab694"
       ],
       "width": 1080,
       "height": 1920,
@@ -4133,7 +4153,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_vortex.mp4",
-      "phash": "4b5c6d7e8f901234",
+      "phash": "10bf623599986679",
       "tags": [
         "vortex",
         "ink",
@@ -4150,7 +4170,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "4b5c6d7e8f901234"
+        "10bf623599986679",
+        "0ad76a348ad66378",
+        "29d7291e8dd2e14a"
       ],
       "width": 1080,
       "height": 1920,
@@ -4167,7 +4189,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_darkember.mp4",
-      "phash": "ade7c3fb801464ad",
+      "phash": "11feea2591d26c2a",
       "tags": [
         "dark",
         "ember",
@@ -4183,7 +4205,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "ade7c3fb801464ad"
+        "11feea2591d26c2a",
+        "00dfe2358adc6671",
+        "0ac7f83489d6617a"
       ],
       "width": 1080,
       "height": 1920,
@@ -4201,7 +4225,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_redsmoke.mp4",
-      "phash": "d9865682cb4ae57b",
+      "phash": "25d2ac5ea5da740a",
       "tags": [
         "dark",
         "red",
@@ -4216,7 +4240,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "d9865682cb4ae57b"
+        "25d2ac5ea5da740a",
+        "25d0ac5bb4ca742b",
+        "25d8b45bb44954e9"
       ],
       "width": 1080,
       "height": 1920,
@@ -4234,7 +4260,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_ashdrift.mp4",
-      "phash": "c4bd781684213bda",
+      "phash": "fcfefcfcfc100000",
       "tags": [
         "dark",
         "ash",
@@ -4249,7 +4275,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "c4bd781684213bda"
+        "fcfefcfcfc100000",
+        "c8d8f173e2c8c8b3",
+        "d0f066490b3376dd"
       ],
       "width": 1080,
       "height": 1920,
@@ -4267,7 +4295,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_voidpulse.mp4",
-      "phash": "e6089cfa0d010504",
+      "phash": "2aa25555abab9694",
       "tags": [
         "dark",
         "void",
@@ -4282,7 +4310,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "e6089cfa0d010504"
+        "2aa25555abab9694",
+        "36b249496ab2b6b4",
+        "26b4515b4aa4b5b6"
       ],
       "width": 1080,
       "height": 1920,
@@ -4300,7 +4330,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_coalglow.mp4",
-      "phash": "2f4ae386b6312f46",
+      "phash": "d1d166080b33f4fd",
       "tags": [
         "dark",
         "coal",
@@ -4315,7 +4345,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "2f4ae386b6312f46"
+        "d1d166080b33f4fd",
+        "d0e07c5c103ffe0e",
+        "e1f57d91005f83aa"
       ],
       "width": 1080,
       "height": 1920,
@@ -4333,7 +4365,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_darkgrid.mp4",
-      "phash": "5f01ec058ed0da6b",
+      "phash": "c2251fd1c73ae0ba",
       "tags": [
         "dark",
         "grid",
@@ -4348,7 +4380,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "5f01ec058ed0da6b"
+        "c2251fd1c73ae0ba",
+        "c2251ff1c73ae0b8",
+        "c2251fd1c73ae0ba"
       ],
       "width": 1080,
       "height": 1920,
@@ -4366,7 +4400,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_codeglow.mp4",
-      "phash": "00b87416f4399954",
+      "phash": "fcdc0321b43f4ad8",
       "tags": [
         "dark",
         "code",
@@ -4381,7 +4415,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "00b87416f4399954"
+        "fcdc0321b43f4ad8",
+        "fcdc0321b43f4ad8",
+        "fcdc0321b43f4ad8"
       ],
       "width": 1080,
       "height": 1920,
@@ -4399,7 +4435,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_ironrust.mp4",
-      "phash": "fd70b20c772193fa",
+      "phash": "ebe08203173fc73c",
       "tags": [
         "dark",
         "iron",
@@ -4414,7 +4450,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "fd70b20c772193fa"
+        "ebe08203173fc73c",
+        "e1e0c0c31737c73e",
+        "e1e0c0c31737c33f"
       ],
       "width": 1080,
       "height": 1920,
@@ -4432,7 +4470,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_nightstatic.mp4",
-      "phash": "fa3513401649a0dc",
+      "phash": "c8f8273360dc3bcc",
       "tags": [
         "dark",
         "night",
@@ -4447,7 +4485,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "fa3513401649a0dc"
+        "c8f8273360dc3bcc",
+        "c8f8273364cc3bcc",
+        "c8f8673360cc3bc5"
       ],
       "width": 1080,
       "height": 1920,
@@ -4465,7 +4505,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_sparkrain.mp4",
-      "phash": "bc02cac6b7574af8",
+      "phash": "e33b14d77aa2340e",
       "tags": [
         "dark",
         "spark",
@@ -4480,7 +4520,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "bc02cac6b7574af8"
+        "e33b14d77aa2340e",
+        "e33b14d77aa2308e",
+        "e37b14d17aa2308f"
       ],
       "width": 1080,
       "height": 1920,
@@ -4498,7 +4540,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_tealmister.mp4",
-      "phash": "a1b2c3d4e5f60718",
+      "phash": "25d2ac5e85dae40b",
       "tags": [
         "dark",
         "teal",
@@ -4514,7 +4556,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "a1b2c3d4e5f60718"
+        "25d2ac5e85dae40b",
+        "25d2ac5bb4ca542b",
+        "25c8b45bb4c956a9"
       ],
       "width": 1080,
       "height": 1920,
@@ -4533,7 +4577,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_blueember.mp4",
-      "phash": "b2c3d4e5f6071829",
+      "phash": "11feeaa591926c2a",
       "tags": [
         "dark",
         "blue",
@@ -4549,7 +4593,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "b2c3d4e5f6071829"
+        "11feeaa591926c2a",
+        "18dfe03198de6631",
+        "0ac7f83c89d2617a"
       ],
       "width": 1080,
       "height": 1920,
@@ -4568,7 +4614,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_charcoalash.mp4",
-      "phash": "c3d4e5f60718293a",
+      "phash": "fefefefcf8000000",
       "tags": [
         "dark",
         "charcoal",
@@ -4584,7 +4630,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "c3d4e5f60718293a"
+        "fefefefcf8000000",
+        "e8f0f0f2e1c8c8f1",
+        "f0f0e00b1b3e34fc"
       ],
       "width": 1080,
       "height": 1920,
@@ -4603,7 +4651,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_coldspark.mp4",
-      "phash": "d4e5f60718293a4b",
+      "phash": "e33b1cd77aa2300e",
       "tags": [
         "dark",
         "cold",
@@ -4619,7 +4667,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "d4e5f60718293a4b"
+        "e33b1cd77aa2300e",
+        "e33b14d77aa2308e",
+        "e33b15d17aa2308f"
       ],
       "width": 1080,
       "height": 1920,
@@ -4638,7 +4688,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_steelglow.mp4",
-      "phash": "e5f60718293a4b5c",
+      "phash": "f1f060091b32fcf9",
       "tags": [
         "dark",
         "steel",
@@ -4654,7 +4704,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "e5f60718293a4b5c"
+        "f1f060091b32fcf9",
+        "f0e07c1c143f1f1b",
+        "e1fd5d80001f83fb"
       ],
       "width": 1080,
       "height": 1920,
@@ -4673,7 +4725,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_slateiron.mp4",
-      "phash": "f60718293a4b5c6d",
+      "phash": "ebe08283061f5f3e",
       "tags": [
         "dark",
         "slate",
@@ -4689,7 +4741,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "f60718293a4b5c6d"
+        "ebe08283061f5f3e",
+        "e1c0c0c3071fdf3e",
+        "e1e0c0c30717cf3f"
       ],
       "width": 1080,
       "height": 1920,
@@ -4708,7 +4762,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_coolvortex.mp4",
-      "phash": "0718293a4b5c6d7e",
+      "phash": "109f6235999e6663",
       "tags": [
         "dark",
         "vortex",
@@ -4724,7 +4778,9 @@
       "last_used": null,
       "added": "2026-09-13",
       "phashes": [
-        "0718293a4b5c6d7e"
+        "109f6235999e6663",
+        "0ad768348bd66378",
+        "21d3b95e8dd2e10a"
       ],
       "width": 1080,
       "height": 1920,
@@ -4743,7 +4799,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_cyanrain.mp4",
-      "phash": "f40ec198847b5bbc",
+      "phash": "30362ee16b0fd2d4",
       "tags": [
         "dark",
         "cyan",
@@ -4780,7 +4836,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_frostscan.mp4",
-      "phash": "1a25dc1a23db54a7",
+      "phash": "0e0f6381dc1ed1d9",
       "tags": [
         "dark",
         "frost",
@@ -4817,7 +4873,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_deepcoil.mp4",
-      "phash": "d1739f2c642d8a96",
+      "phash": "d97d15325e3604c7",
       "tags": [
         "dark",
         "coil",
