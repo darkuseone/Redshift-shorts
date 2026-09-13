@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round20: one asset per slot globally (same_asset_max_slots for by_block too); densify prefers internal events over QC-5 clones; densify siblings get distinct prefer/stock plates; prepared-avatar freeze densify QC-3/4; life-beat pins on one speech-aligned slot each",
-  "round": 20
+  "note": "round21: replace missing pexels_v7565432 b5 pin with magnific_0050_fluids + distinct dark fluid densify fillers; keep prepared-avatar freeze densify QC-3/4; skip_generate; one asset per slot",
+  "round": 21
 }

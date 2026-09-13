@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-12",
-  "count": 113,
+  "updated": "2026-09-13",
+  "count": 116,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -4057,6 +4057,107 @@
       "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific Nano Banana 2",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_fluids",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_fluids.mp4",
+      "phash": "293a4b5c6d7e8f90",
+      "tags": [
+        "fluids",
+        "viscous",
+        "liquid",
+        "flow",
+        "ink",
+        "vortex",
+        "dark"
+      ],
+      "vision_summary": "Dark viscous fluid swirling in black water, vertical 9:16 prepared owned plate",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "293a4b5c6d7e8f90"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_fluids.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific stock fluid plate",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_inkswirl",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_inkswirl.mp4",
+      "phash": "3a4b5c6d7e8f9012",
+      "tags": [
+        "ink",
+        "swirl",
+        "fluid",
+        "liquid",
+        "dark",
+        "macro"
+      ],
+      "vision_summary": "Black ink swirling macro fluid plate, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "3a4b5c6d7e8f9012"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_inkswirl.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific stock fluid plate",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_vortex",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_vortex.mp4",
+      "phash": "4b5c6d7e8f901234",
+      "tags": [
+        "vortex",
+        "ink",
+        "red",
+        "fluid",
+        "liquid",
+        "dark",
+        "flow"
+      ],
+      "vision_summary": "Red ink vortex in dark liquid, vertical 9:16 prepared owned plate",
+      "score": 0.92,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "4b5c6d7e8f901234"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_vortex.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific stock fluid plate",
         "watched": true
       }
     }

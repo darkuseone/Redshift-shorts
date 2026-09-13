@@ -115,21 +115,27 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     entry = pins["redshift_0050"]
     prefer = entry["prefer"]
     deny = entry["deny"]
-    assert prefer[:6] == [
+    assert prefer[:7] == [
         "magnific_0050_weather", "magnific_0050_wing",
         "magnific_0050_pipes", "magnific_0050_blood",
-        "magnific_0050_stamp", "magnific_0050_city",
+        "magnific_0050_fluids", "magnific_0050_inkswirl",
+        "magnific_0050_vortex",
     ]
+    assert "magnific_0050_stamp" in prefer
+    assert "magnific_0050_city" in prefer
     for aid in (
         "fp_server_room", "fp_code_editor", "fp_chalkboard_eq",
-        "pexels_v7565432", "pexels_v38431825",
+        "magnific_0050_fluids", "magnific_0050_inkswirl", "magnific_0050_vortex",
+        "pexels_v38431825",
         "magnific_0050_weather", "magnific_0050_stamp", "magnific_0050_city",
     ):
         assert aid in prefer, aid
+    assert "pexels_v7565432" not in prefer
+    assert "pexels_v7565432" in deny
     by_block = entry.get("by_block") or {}
     assert by_block.get("b3") == "magnific_0050_gpu"
     assert by_block.get("b4") == "magnific_0050_lean"
-    assert by_block.get("b5") == "pexels_v7565432"
+    assert by_block.get("b5") == "magnific_0050_fluids"
     assert by_block.get("b5b") == "magnific_0050_weather"
     assert by_block.get("b6") == "magnific_0050_stamp"
     assert by_block.get("b7") == "magnific_0050_city"
@@ -460,11 +466,11 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 20
-    assert "round20" in req["note"]
+    assert int(req.get("round") or 0) == 21
+    assert "round21" in req["note"]
+    assert "magnific_0050_fluids" in req["note"]
     assert "one asset per slot" in req["note"]
     assert "prepared-avatar freeze densify" in req["note"] or "QC-3/4" in req["note"]
-    assert "QC-3" in req["note"] or "QC-3/4" in req["note"]
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
