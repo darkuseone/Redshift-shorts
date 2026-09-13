@@ -11,10 +11,10 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 r36c: hook.style cold_open; overlay $1 000 000 fact-card; spoken frozen.",
+    "notes": "0050 r37: hook number_slam + $1 000 000; skip_vision; spoken frozen.",
     "hook": {
       "on_screen": "$1 000 000",
-      "style": "cold_open"
+      "style": "number_slam"
     }
   },
   "sources": [
