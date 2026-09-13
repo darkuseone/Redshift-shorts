@@ -460,8 +460,10 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert "round19" in req["note"]
-    assert "prepared-avatar freeze densify" in req["note"]
+    assert int(req.get("round") or 0) == 20
+    assert "round20" in req["note"]
+    assert "one asset per slot" in req["note"]
+    assert "prepared-avatar freeze densify" in req["note"] or "QC-3/4" in req["note"]
     assert "QC-3" in req["note"] or "QC-3/4" in req["note"]
 
 
@@ -688,8 +690,8 @@ def test_0050_p8_fingerprints_cut_plan_after_densify():
     assert "candidates.json" in p8.inputs
 
 
-def test_force_by_block_pins_fill_all_densify_split_slots(tmp_path, monkeypatch):
-    """Empty densify-split siblings inherit the parent by_block pin."""
+def test_force_by_block_pins_one_asset_per_slot_no_densify_clones(tmp_path, monkeypatch):
+    """by_block pin lands on one densify sibling only (same_asset_max_slots=1)."""
     from types import SimpleNamespace
     from src.p8_broll_judge import judge as judge_mod
 
@@ -720,19 +722,25 @@ def test_force_by_block_pins_fill_all_densify_split_slots(tmp_path, monkeypatch)
 
     slots = [
         {"index": 6, "block_id": "b3", "needs_asset": True, "asset_role": "broll",
-         "visual_intent": "gpu", "reason": "densify", "start": 0, "end": 2},
+         "visual_intent": "gpu", "reason": "densify after prepared freeze",
+         "start": 0, "end": 2},
         {"index": 7, "block_id": "b3", "needs_asset": True, "asset_role": "broll",
-         "visual_intent": "gpu", "reason": "densify", "start": 2, "end": 4},
+         "visual_intent": "gpu", "reason": "densify after prepared freeze",
+         "start": 2, "end": 4},
         {"index": 8, "block_id": "b3", "needs_asset": True, "asset_role": "broll",
-         "visual_intent": "gpu", "reason": "densify", "start": 4, "end": 6},
+         "visual_intent": "gpu", "reason": "densify after prepared freeze",
+         "start": 4, "end": 6},
         {"index": 16, "block_id": "b5b", "needs_asset": True, "asset_role": "broll",
          "visual_intent": "weather", "reason": "life", "start": 6, "end": 8},
     ]
     plan = {"slots": slots, "video_id": "redshift_0050"}
+    # Round19 bug: same pin already cloned onto every densify sibling.
     accepted = {
         6: {"asset_id": "magnific_0050_gpu", "decision": "accept_prefer"},
+        7: {"asset_id": "magnific_0050_gpu", "decision": "accept_prefer"},
+        8: {"asset_id": "magnific_0050_gpu", "decision": "accept_prefer"},
     }
-    accepted_counts = {"magnific_0050_gpu": 1}
+    accepted_counts = {"magnific_0050_gpu": 3}
     judged = []
     slots_by_index = {s["index"]: s for s in slots}
     storage = SimpleNamespace(exists=lambda key: True)
@@ -751,9 +759,36 @@ def test_force_by_block_pins_fill_all_densify_split_slots(tmp_path, monkeypatch)
         accepted=accepted, accepted_counts=accepted_counts, judged=judged,
         by_block={"b3": "magnific_0050_gpu", "b5b": "magnific_0050_weather"},
         pin_deny=set(), index=Index(), skip_live=True, palette_rules={},
+        repeat_max=1,
+        pin_prefer=["magnific_0050_gpu", "magnific_0050_weather"],
     )
-    assert forced >= 3  # slots 7,8 + 16 (6 already pinned)
-    assert accepted[7]["asset_id"] == "magnific_0050_gpu"
-    assert accepted[8]["asset_id"] == "magnific_0050_gpu"
+    gpu_slots = [idx for idx, e in accepted.items()
+                 if e.get("asset_id") == "magnific_0050_gpu"]
+    assert len(gpu_slots) == 1, gpu_slots
+    assert accepted_counts.get("magnific_0050_gpu", 0) == 1
+    # Densify siblings must stay empty for distinct leftover/stock plates.
+    assert 7 not in accepted or accepted[7].get("asset_id") != "magnific_0050_gpu"
+    assert 8 not in accepted or accepted[8].get("asset_id") != "magnific_0050_gpu"
     assert accepted[16]["asset_id"] == "magnific_0050_weather"
-    assert accepted[7].get("speech_locked") is True
+    assert accepted[16].get("speech_locked") is True
+    assert forced >= 1  # weather at least (gpu may only scrub clones)
+
+
+def test_densify_prefers_internal_events_over_split_under_max_shot_ev():
+    """Shots ≤ max_shot_sec_with_events stay one plate (events cover QC-3/4)."""
+    from src.lib.config import load_config
+    from src.p5_replan.replanner import Slot, densify_after_prepared_freeze
+
+    cfg = load_config()
+    # 6.5s is above max_shot (5) but under max_shot_with_events (7).
+    slots = [
+        Slot(0, 0.0, 6.5, "footage", "b3", "develop", "C", needs_asset=True,
+             asset_role="broll", reason="gpu plate"),
+    ]
+    notes: list[str] = []
+    out = densify_after_prepared_freeze(slots, cfg, notes=notes)
+    assert len(out) == 1
+    assert abs(out[0].duration - 6.5) < 1e-6
+    assert any("one plate with internal events" in n for n in notes)
+    assert out[0].events  # kenburns/push restored
+    assert len(out[0].events) >= 2

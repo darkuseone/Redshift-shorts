@@ -613,19 +613,25 @@ def _force_by_block_pins(
         accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
         judged: list[dict[str, Any]], by_block: dict[str, str | None],
         pin_deny: set[str], index: FootageIndex, skip_live: bool,
-        palette_rules: dict[str, Any]) -> int:
+        palette_rules: dict[str, Any],
+        repeat_max: int = 1,
+        pin_prefer: list[str] | None = None,
+        words: list[dict[str, Any]] | None = None) -> int:
     """Hard-accept footage_pins ``by_block`` assets onto their mapped blocks.
 
     Runs after leftover prefer fill. Non-null mapped ids hydrate first, then
-    land on **every** densify-split asset slot of that block (inherit parent
-    pin; empty splits must not free-search-fail). ``same_asset``: each id only
-    on its mapped block(s) — no cross-block clone.
+    land on **at most one** asset slot per ``asset_id`` (honor
+    ``same_asset_max_slots`` globally — densify siblings must NOT clone the
+    same pin; QC-5). Prefer the speech-aligned life-beat slot when several
+    densify fragments exist. Empty siblings stay for leftover prefer / stock
+    with distinct plates.
     """
     if not by_block:
         return 0
     hydrate_repo_footage(ctx, index)
     storage = getattr(ctx, "storage", None)
     fill_roles = ("broll", "evidence", "meme", "interstitial")
+    prefer = list(pin_prefer or [])
     asset_slots = [
         s for s in plan.get("slots") or []
         if s.get("needs_asset") and s.get("asset_role") in fill_roles
@@ -639,7 +645,7 @@ def _force_by_block_pins(
         if pid:
             mapped_blocks.setdefault(str(pid), set()).add(str(bid))
 
-    # Scrub each by_block id off unmapped blocks once (no cross-block clone).
+    # Scrub each by_block id off unmapped blocks (no cross-block clone).
     for pid, allowed in mapped_blocks.items():
         for other_idx, entry in list(accepted.items()):
             if str(entry.get("asset_id") or "") != pid:
@@ -650,6 +656,43 @@ def _force_by_block_pins(
                 continue
             accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
             del accepted[other_idx]
+
+    def _pick_target(block_slots: list[dict[str, Any]], pid: str) -> dict[str, Any] | None:
+        """One slot for this pin: already-held > speech match > earliest."""
+        already = [
+            s for s in block_slots
+            if str((accepted.get(int(s["index"])) or {}).get("asset_id") or "") == pid
+        ]
+        if already:
+            return already[0]
+
+        def _rank(slot: dict[str, Any]) -> tuple:
+            idx = int(slot["index"])
+            cur = accepted.get(idx)
+            cur_aid = str((cur or {}).get("asset_id") or "")
+            # Prefer empty / mismatched prefer accepts over locked non-prefer.
+            replaceable = (
+                cur is None
+                or cur.get("decision") == "accept_prefer"
+                or not cur_aid
+            )
+            speech_key = _leftover_prefer_key(
+                pid, slot, prefer, words, by_block=by_block)[0]
+            # Densify fragments: prefer non-densify / primary (earlier start).
+            densify_pen = 1 if "densify" in str(slot.get("reason") or "").lower() else 0
+            try:
+                start = float(slot.get("start") or 0.0)
+            except (TypeError, ValueError):
+                start = 0.0
+            return (0 if replaceable else 9, speech_key, densify_pen, start, idx)
+
+        ranked = sorted(block_slots, key=_rank)
+        if not ranked:
+            return None
+        best = ranked[0]
+        if _rank(best)[0] >= 9:
+            return None
+        return best
 
     forced = 0
     for bid, pid in by_block.items():
@@ -671,56 +714,81 @@ def _force_by_block_pins(
         if not block_slots:
             continue
 
-        # Densify splits one block into many slots — every empty / mismatched
-        # asset slot inherits the parent block pin (same_asset_max does not
-        # block same-block inherit; cross-block was scrubbed above).
-        for target in block_slots:
-            slot_index = int(target["index"])
-            cur = accepted.get(slot_index)
-            cur_aid = str((cur or {}).get("asset_id") or "")
-            if cur is not None and cur_aid == pid:
-                continue
-            if cur is not None and cur.get("decision") != "accept_prefer" and cur_aid:
-                # Keep a non-prefer accept only when it already is the pin.
-                if cur_aid == pid:
-                    continue
+        # Global same_asset_max_slots: never place this id on > repeat_max slots.
+        # First collapse same-block densify clones down to one keeper.
+        holders = [
+            int(s["index"]) for s in block_slots
+            if str((accepted.get(int(s["index"])) or {}).get("asset_id") or "") == pid
+        ]
+        if len(holders) > max(1, repeat_max):
+            keep = holders[0]
+            for idx in holders[1:]:
+                accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
+                del accepted[idx]
+            holders = [keep]
 
-            old = accepted.get(slot_index)
-            if old is not None:
-                old_aid = str(old.get("asset_id") or "")
-                if old_aid and old_aid != pid:
-                    accepted_counts[old_aid] = max(
-                        0, int(accepted_counts.get(old_aid, 1)) - 1)
+        # Also scrub extras of this pid outside the chosen slot once we pick.
+        target = _pick_target(block_slots, pid)
+        if target is None:
+            continue
+        target_idx = int(target["index"])
 
-            intent = target.get("visual_intent", "") or target.get("reason", "") or pid
-            candidate = _local_cache_row(slot_index, rec, intent)
-            gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
-            if gate:
+        # Drop this pid from every other accepted slot (same or other block).
+        for other_idx, entry in list(accepted.items()):
+            if int(other_idx) == target_idx:
                 continue
-            palette = palette_verdict([], palette_rules)
-            if skip_live or candidate.get("prior_score") is not None:
-                verdict_dict = skip_live_verdict(candidate, intent)
-            else:
-                verdict_dict = {
-                    "score": float(SEED_SCORE),
-                    "reason": "pin by_block",
-                    "summary": candidate.get("vision_summary", ""),
-                    "judge": "pin_prefer", "frames": 0,
-                }
-            entry = {
-                **candidate,
-                "verdict": verdict_dict,
-                "intent": intent,
-                "score": float(verdict_dict["score"]),
-                "palette": palette,
-                "decision": "accept_prefer",
-                "fallback_reason": "pin by_block",
-                "speech_locked": True,
+            if str(entry.get("asset_id") or "") != pid:
+                continue
+            accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
+            del accepted[other_idx]
+
+        cur = accepted.get(target_idx)
+        if cur is not None and str(cur.get("asset_id") or "") == pid:
+            # Already correctly pinned on the one slot — counts may need fix.
+            accepted_counts[pid] = min(
+                max(1, int(accepted_counts.get(pid, 1))), max(1, repeat_max))
+            continue
+
+        if int(accepted_counts.get(pid, 0)) >= max(1, repeat_max):
+            # Cap already spent elsewhere after scrub — skip.
+            continue
+
+        old = accepted.get(target_idx)
+        if old is not None:
+            old_aid = str(old.get("asset_id") or "")
+            if old_aid and old_aid != pid:
+                accepted_counts[old_aid] = max(
+                    0, int(accepted_counts.get(old_aid, 1)) - 1)
+
+        intent = target.get("visual_intent", "") or target.get("reason", "") or pid
+        candidate = _local_cache_row(target_idx, rec, intent)
+        gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
+        if gate:
+            continue
+        palette = palette_verdict([], palette_rules)
+        if skip_live or candidate.get("prior_score") is not None:
+            verdict_dict = skip_live_verdict(candidate, intent)
+        else:
+            verdict_dict = {
+                "score": float(SEED_SCORE),
+                "reason": "pin by_block",
+                "summary": candidate.get("vision_summary", ""),
+                "judge": "pin_prefer", "frames": 0,
             }
-            judged.append(entry)
-            accepted[slot_index] = entry
-            accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
-            forced += 1
+        entry = {
+            **candidate,
+            "verdict": verdict_dict,
+            "intent": intent,
+            "score": float(verdict_dict["score"]),
+            "palette": palette,
+            "decision": "accept_prefer",
+            "fallback_reason": "pin by_block",
+            "speech_locked": True,
+        }
+        judged.append(entry)
+        accepted[target_idx] = entry
+        accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
+        forced += 1
     return forced
 
 
@@ -862,9 +930,7 @@ def run_step(ctx) -> dict[str, Any]:
             aid = str(entry.get("asset_id") or "")
             if not aid:
                 return True
-            # Densify-split slots of a by_block-mapped block may share the pin.
-            if by_block and by_block.get(str(slot.get("block_id") or "")) == aid:
-                return True
+            # same_asset_max_slots is global — densify siblings need distinct plates.
             return accepted_counts.get(aid, 0) < repeat_max
 
         prefer_gated = sorted(
@@ -1141,9 +1207,19 @@ def run_step(ctx) -> dict[str, Any]:
         ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
         accepted=accepted, accepted_counts=accepted_counts, judged=judged,
         by_block=by_block, pin_deny=pin_deny, index=index, skip_live=skip_live,
-        palette_rules=palette_rules)
+        palette_rules=palette_rules, repeat_max=repeat_max,
+        pin_prefer=pin_prefer, words=words)
     if forced:
         _log.info("by_block pins forced onto %s block slot(s)", forced)
+    # Densify siblings left empty after one-pin-per-asset force need distinct
+    # prefer/stock plates (never re-clone the by_block id — repeat_max).
+    leftover_filled += _fill_unfilled_from_leftover_prefers(
+        ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
+        accepted=accepted, accepted_counts=accepted_counts, judged=judged,
+        pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
+        repeat_max=repeat_max, skip_live=skip_live,
+        palette_rules=palette_rules, visible_min=visible_min, words=words,
+        by_block=by_block)
     from ..lib.text import snap_block_windows_to_keywords
     snapped = snap_block_windows_to_keywords(
         plan, words, repo_root=getattr(cfg, "repo_root", None))

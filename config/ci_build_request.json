@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round19: restore by_block pins after densify (QC-SEMANTIC); prepared-avatar freeze densify QC-3/4; P8 cut_plan fingerprint; force pin onto all densify-split slots; gap fills inherit avatar block",
-  "round": 19
+  "note": "round20: one asset per slot globally (same_asset_max_slots for by_block too); densify prefers internal events over QC-5 clones; densify siblings get distinct prefer/stock plates; prepared-avatar freeze densify QC-3/4; life-beat pins on one speech-aligned slot each",
+  "round": 20
 }

@@ -1266,13 +1266,19 @@ def densify_after_prepared_freeze(
 
     Freeze punches avatar holes and clears events, which can leave a long
     continuous footage gap (and ``max_event_gap_sec`` ≈ full duration). Keep
-    every prepared avatar start/end/duration untouched; only split non-avatar
-    footage/split shots and re-inject internal events + transitions.
+    every prepared avatar start/end/duration untouched.
+
+    Prefer **internal events / transitions inside one shot** (QC-3/4) over
+    splitting into many asset slots that would need the same by_block pin
+    (QC-5 phash clones). Only split when longer than
+    ``max_shot_sec_with_events``; shorter long-shots stay one plate and get
+    kenburns/push events below.
     """
     notes = notes if notes is not None else []
     limits = cfg.get("limits")
     min_shot = float(limits.get("min_shot_sec", 1.5))
     max_shot = float(limits.get("max_shot_sec", 5.0))
+    max_shot_ev = float(limits.get("max_shot_sec_with_events", 7.0))
     max_gap = float(limits.get("max_event_gap_sec", 2.5))
     first_event = float(limits.get("first_event_sec", 0.8))
 
@@ -1281,16 +1287,24 @@ def densify_after_prepared_freeze(
 
     out: list[Slot] = []
     split_notes = 0
+    event_kept = 0
     for slot in slots:
         if slot.kind in AVATAR_KINDS:
             out.append(slot)
             continue
-        if slot.kind not in ("footage", "split") or slot.duration <= max_shot + 1e-3:
+        if slot.kind not in ("footage", "split"):
             out.append(slot)
             continue
+        # One plate + internal events covers QC-3/4 up to max_shot_ev.
+        if slot.duration <= max_shot_ev + 1e-3:
+            if slot.duration > max_shot + 1e-3:
+                event_kept += 1
+            out.append(slot)
+            continue
+        # Must split: keep each sibling ≤ max_shot_ev so events still qualify.
         parts = _split_span(
-            slot.start, slot.end, target=max_shot * 0.75,
-            min_len=min_shot, max_len=max_shot, words=words or [])
+            slot.start, slot.end, target=max_shot_ev * 0.75,
+            min_len=min_shot, max_len=max_shot_ev, words=words or [])
         for i, (s, e) in enumerate(parts):
             clone = Slot(**{**slot.__dict__, "start": s, "end": e, "events": [],
                             "reason": (slot.reason + " | densify after prepared freeze").strip(" |")})
@@ -1300,7 +1314,11 @@ def densify_after_prepared_freeze(
         split_notes += 1
         notes.append(
             f"футаж {slot.start:.2f}–{slot.end:.2f} разрезан на {len(parts)} плана "
-            f"после freeze prepared-avatar (лимит {max_shot} сек)")
+            f"после freeze prepared-avatar (лимит с событиями {max_shot_ev} сек)")
+    if event_kept:
+        notes.append(
+            f"prepared-avatar densify: kept {event_kept} long shot(s) as one "
+            f"plate with internal events (≤{max_shot_ev}s, avoid QC-5 clones)")
     if split_notes:
         notes.append(
             f"prepared-avatar densify: split {split_notes} long non-avatar shot(s)")
