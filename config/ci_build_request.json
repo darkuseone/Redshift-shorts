@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round37b: number_slam + skip_vision + lock path guard",
-  "round": 37
+  "note": "round38: QC-25 template diversity; no XAI vision",
+  "round": 38
 }
