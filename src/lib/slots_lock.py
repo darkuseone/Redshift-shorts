@@ -102,6 +102,10 @@ def _accepted_map(doc: dict[str, Any]) -> dict[int, dict[str, Any]]:
     return out
 
 
+def _donor_has_media(donor: dict[str, Any]) -> bool:
+    return bool(donor.get("file") or donor.get("dst") or donor.get("path") or donor.get("local_path"))
+
+
 def apply_lock_after_p8(ctx: Any) -> int:
     try:
         plan = ctx.read("cut_plan.json")
@@ -115,7 +119,7 @@ def apply_lock_after_p8(ctx: Any) -> int:
     accepted = _accepted_map(doc)
     by_id: dict[str, dict[str, Any]] = {}
     for entry in accepted.values():
-        if isinstance(entry, dict) and entry.get("asset_id"):
+        if isinstance(entry, dict) and entry.get("asset_id") and _donor_has_media(entry):
             by_id[str(entry["asset_id"])] = entry
     fill_roles = ("broll", "evidence", "meme", "interstitial")
     slots = [s for s in (plan.get("slots") or [])
@@ -127,7 +131,7 @@ def apply_lock_after_p8(ctx: Any) -> int:
         if not targets:
             continue
         donor = by_id.get(pid)
-        if donor is None:
+        if donor is None or not _donor_has_media(donor):
             continue
         target_idx = int(targets[0]["index"])
         cur = accepted.get(target_idx) or {}

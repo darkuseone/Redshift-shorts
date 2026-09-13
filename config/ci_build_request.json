@@ -4,9 +4,9 @@
   "from_step": "P5",
   "heygen_source": "prepared",
   "skip_generate": true,
-  "skip_vision": false,
+  "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round36c: hook.style cold_open (fact_card invalid schema)",
-  "round": 36
+  "note": "round37: no XAI vision; P11 file/dst; frozen voice/avatar",
+  "round": 37
 }
