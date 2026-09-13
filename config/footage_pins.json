@@ -168,7 +168,7 @@
       "magnific_0050_slateiron"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round28: lock coolvortex/inkswirl to fluids beat only (r27 burned coolvortex on hook; b5 densify got codeglow → QC-SEMANTIC); b5 beat fallback; prepared+skip_generate",
+    "_note": "round29: P5 rebuild cut_plan — fill 1.2s gap between avatar seg_02/03 (vision sample t≈49.4 navy void → QC-SEMANTIC); keep fluid lock; coolvortex for b5 densify sibling; prepared+skip_generate",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",

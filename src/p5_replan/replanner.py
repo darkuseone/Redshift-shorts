@@ -1352,6 +1352,39 @@ def densify_after_prepared_freeze(
     for i, slot in enumerate(cleaned):
         slot.index = i
 
+    # densify neighbor-clamp can drop gap-fill between two prepared avatar
+    # windows (0050 seg_02→seg_03 left 1.2s navy void → QC-SEMANTIC sample).
+    covered = sorted(((s.start, s.end) for s in cleaned), key=lambda p: p[0])
+    fillers: list[Slot] = []
+    cursor = 0.0
+    for a, b in covered:
+        if a > cursor + 0.05:
+            bid = ""
+            role = "twist"
+            for s in cleaned:
+                if s.kind in AVATAR_KINDS and s.end <= a + 1e-6:
+                    bid, role = s.block_id, s.role
+            if not bid:
+                for s in cleaned:
+                    if s.kind in AVATAR_KINDS and s.start >= a - 1e-6:
+                        bid, role = s.block_id, s.role
+                        break
+            fillers.append(Slot(
+                index=0, start=cursor, end=a, kind="footage",
+                block_id=bid or "b6", role=role or "twist", mode="C",
+                needs_asset=True, asset_role="broll",
+                reason="gap fill around prepared avatar window | densify reinsert",
+            ))
+            notes.append(
+                f"prepared-avatar densify: reinserted gap fill "
+                f"{cursor:.3f}–{a:.3f} (block {bid or 'b6'})")
+        cursor = max(cursor, b)
+    if fillers:
+        cleaned.extend(fillers)
+        cleaned.sort(key=lambda s: (s.start, s.end))
+        for i, slot in enumerate(cleaned):
+            slot.index = i
+
     if draft is not None:
         _assign_queries(cleaned, draft)
     _add_internal_events(cleaned, max_gap, first_event, notes)

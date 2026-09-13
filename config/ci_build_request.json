@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P7",
+  "from_step": "P5",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round28: fluid plates only on b5 fluids beat (not hook); b5 densify beat fallback; prepared+skip_generate",
-  "round": 28
+  "note": "round29: from_step P5 — fill avatar seg_02/03 1.2s gap (QC-SEMANTIC sample t≈49.4); fluid plates stay on b5; prepared+skip_generate",
+  "round": 29
 }
