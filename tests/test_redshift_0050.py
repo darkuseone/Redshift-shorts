@@ -128,6 +128,10 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
         "magnific_0050_fluids", "magnific_0050_inkswirl", "magnific_0050_vortex",
         "pexels_v38431825",
         "magnific_0050_weather", "magnific_0050_stamp", "magnific_0050_city",
+        "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
+        "magnific_0050_voidpulse", "magnific_0050_coalglow", "magnific_0050_darkgrid",
+        "magnific_0050_codeglow", "magnific_0050_ironrust", "magnific_0050_nightstatic",
+        "magnific_0050_sparkrain",
     ):
         assert aid in prefer, aid
     assert "pexels_v7565432" not in prefer
@@ -466,9 +470,9 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 21
-    assert "round21" in req["note"]
-    assert "magnific_0050_fluids" in req["note"]
+    assert int(req.get("round") or 0) == 22
+    assert "round22" in req["note"]
+    assert "densify holes" in req["note"] or "hole" in req["note"]
     assert "one asset per slot" in req["note"]
     assert "prepared-avatar freeze densify" in req["note"] or "QC-3/4" in req["note"]
 
@@ -521,6 +525,10 @@ def test_0050_footage_index_has_magnific_plates():
         ("magnific_0050_blood", "bloodcells"),
         ("magnific_0050_stamp", "rubberstamp"),
         ("magnific_0050_city", "citynight"),
+        ("magnific_0050_darkember", "ember"),
+        ("magnific_0050_darkgrid", "grid"),
+        ("magnific_0050_codeglow", "code"),
+        ("magnific_0050_sparkrain", "spark"),
     ):
         rec = idx.by_id(aid)
         assert rec is not None, aid
@@ -778,6 +786,110 @@ def test_force_by_block_pins_one_asset_per_slot_no_densify_clones(tmp_path, monk
     assert accepted[16]["asset_id"] == "magnific_0050_weather"
     assert accepted[16].get("speech_locked") is True
     assert forced >= 1  # weather at least (gpu may only scrub clones)
+
+
+
+def test_0050_hole_filler_pins_are_neutral_leftover():
+    """Densify hole fillers accept at bonus 0; life-beat mismatch stays +10."""
+    from src.lib.pin_match import pin_slot_prefer_key
+
+    empty = {
+        "index": 7, "role": "evidence", "asset_role": "broll",
+        "visual_intent": "", "queries": [], "start": 18.0, "end": 21.0,
+        "block_id": "b3",
+    }
+    prefer = [
+        "magnific_0050_gpu", "magnific_0050_darkember", "magnific_0050_weather",
+    ]
+    filler_bonus, _ = pin_slot_prefer_key(
+        "magnific_0050_darkember", empty, prefer, words=[])
+    weather_on_empty, _ = pin_slot_prefer_key(
+        "magnific_0050_weather", empty, prefer, words=[])
+    assert filler_bonus == 0
+    assert weather_on_empty > 0
+
+
+def test_0050_leftover_fills_densify_holes_with_distinct_fillers(monkeypatch):
+    """After by_block one-pin, leftover places distinct hole fillers on siblings."""
+    from types import SimpleNamespace
+    from src.p8_broll_judge import judge as judge_mod
+    from src.lib.manifest import AssetRecord
+
+    fillers = [
+        "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
+    ]
+
+    class Rec:
+        def __init__(self, aid):
+            self.id = aid
+            self.file = f"magnific/{aid}.mp4"
+            self.quarantined = False
+            self.source = "magnific"
+            self.type = "video"
+            self.license = "owner_decision"
+            self.url_origin = ""
+            self.tags = ["dark"]
+            self.vision_summary = "dark plate"
+            self.score = 0.9
+            self.duration_sec = 4.0
+            self.width = 1080
+            self.height = 1920
+            self.phashes = []
+            self.phash = ""
+            self.ai_generated = False
+            self.mock = False
+            self.extra = {"hole_filler": True}
+
+    class Index:
+        def by_id(self, pid):
+            if pid.startswith("magnific_"):
+                return Rec(pid)
+            return None
+
+    slots = [
+        {"index": 6, "block_id": "b3", "needs_asset": True, "asset_role": "broll",
+         "visual_intent": "gpu", "reason": "primary", "start": 0, "end": 2},
+        {"index": 7, "block_id": "b3", "needs_asset": True, "asset_role": "broll",
+         "visual_intent": "", "reason": "densify after prepared freeze",
+         "start": 2, "end": 4, "queries": []},
+        {"index": 8, "block_id": "b3", "needs_asset": True, "asset_role": "broll",
+         "visual_intent": "", "reason": "densify after prepared freeze",
+         "start": 4, "end": 6, "queries": []},
+    ]
+    plan = {"slots": slots, "video_id": "redshift_0050", "duration_sec": 6.0}
+    accepted = {6: {"asset_id": "magnific_0050_gpu", "decision": "accept_prefer",
+                    "fallback_reason": "pin by_block"}}
+    accepted_counts = {"magnific_0050_gpu": 1}
+    judged = []
+    slots_by_index = {s["index"]: s for s in slots}
+    storage = SimpleNamespace(exists=lambda key: True)
+    ctx = SimpleNamespace(storage=storage)
+    cfg = SimpleNamespace(get=lambda *a, **k: 0.10 if "ai_footage" in str(a) else None)
+
+    monkeypatch.setattr(judge_mod, "hydrate_repo_footage", lambda *a, **k: 0)
+    monkeypatch.setattr(judge_mod, "_engine_gate_reason", lambda *a, **k: None)
+    monkeypatch.setattr(judge_mod, "cheap_reject_reason", lambda *a, **k: None)
+    monkeypatch.setattr(judge_mod, "palette_verdict", lambda *a, **k: {"passed": True})
+    monkeypatch.setattr(judge_mod, "slot_negatives", lambda *a, **k: [])
+    monkeypatch.setattr(judge_mod, "classify_intent", lambda *a, **k: "broll")
+    monkeypatch.setattr(judge_mod, "skip_live_verdict", lambda c, intent: {
+        "score": 0.9, "reason": "leftover", "summary": "", "judge": "pin", "frames": 0,
+    })
+
+    filled = judge_mod._fill_unfilled_from_leftover_prefers(
+        ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
+        accepted=accepted, accepted_counts=accepted_counts, judged=judged,
+        pin_prefer=["magnific_0050_gpu"] + fillers,
+        pin_deny=set(), index=Index(), repeat_max=1, skip_live=True,
+        palette_rules={}, visible_min=0.5, words=[],
+        by_block={"b3": "magnific_0050_gpu"},
+    )
+    assert filled == 2
+    assert accepted[6]["asset_id"] == "magnific_0050_gpu"
+    aids = {accepted[7]["asset_id"], accepted[8]["asset_id"]}
+    assert aids <= set(fillers)
+    assert len(aids) == 2  # distinct
+    assert "magnific_0050_gpu" not in aids
 
 
 def test_densify_prefers_internal_events_over_split_under_max_shot_ev():

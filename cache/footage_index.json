@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-13",
-  "count": 116,
+  "count": 126,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -4159,6 +4159,337 @@
       "extra": {
         "attribution": "REDSHIFT / Magnific stock fluid plate",
         "watched": true
+      }
+    },
+    {
+      "id": "magnific_0050_darkember",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_darkember.mp4",
+      "phash": "ade7c3fb801464ad",
+      "tags": [
+        "dark",
+        "ember",
+        "red",
+        "glow",
+        "fluid",
+        "ink"
+      ],
+      "vision_summary": "Dark red ember ink swirl plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "ade7c3fb801464ad"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_darkember.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_redsmoke",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_redsmoke.mp4",
+      "phash": "d9865682cb4ae57b",
+      "tags": [
+        "dark",
+        "red",
+        "smoke",
+        "mist",
+        "fluid"
+      ],
+      "vision_summary": "Dark red smoke mist plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "d9865682cb4ae57b"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_redsmoke.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_ashdrift",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_ashdrift.mp4",
+      "phash": "c4bd781684213bda",
+      "tags": [
+        "dark",
+        "ash",
+        "drift",
+        "smoke",
+        "abstract"
+      ],
+      "vision_summary": "Dark ash drift smoke plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "c4bd781684213bda"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_ashdrift.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_voidpulse",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_voidpulse.mp4",
+      "phash": "e6089cfa0d010504",
+      "tags": [
+        "dark",
+        "void",
+        "pulse",
+        "ink",
+        "abstract"
+      ],
+      "vision_summary": "Dark void ink pulse plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "e6089cfa0d010504"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_voidpulse.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_coalglow",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_coalglow.mp4",
+      "phash": "2f4ae386b6312f46",
+      "tags": [
+        "dark",
+        "coal",
+        "glow",
+        "ember",
+        "abstract"
+      ],
+      "vision_summary": "Dark coal glow plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "2f4ae386b6312f46"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_coalglow.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_darkgrid",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_darkgrid.mp4",
+      "phash": "5f01ec058ed0da6b",
+      "tags": [
+        "dark",
+        "grid",
+        "server",
+        "gpu",
+        "datacenter"
+      ],
+      "vision_summary": "Dark GPU/server grid plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "5f01ec058ed0da6b"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_darkgrid.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_codeglow",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_codeglow.mp4",
+      "phash": "00b87416f4399954",
+      "tags": [
+        "dark",
+        "code",
+        "editor",
+        "lean",
+        "glow"
+      ],
+      "vision_summary": "Dark code/lean editor glow plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "00b87416f4399954"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_codeglow.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_ironrust",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_ironrust.mp4",
+      "phash": "fd70b20c772193fa",
+      "tags": [
+        "dark",
+        "iron",
+        "rust",
+        "pipes",
+        "industrial"
+      ],
+      "vision_summary": "Dark iron rust industrial plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "fd70b20c772193fa"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_ironrust.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_nightstatic",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_nightstatic.mp4",
+      "phash": "fa3513401649a0dc",
+      "tags": [
+        "dark",
+        "night",
+        "city",
+        "static",
+        "traffic"
+      ],
+      "vision_summary": "Dark night city static plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "fa3513401649a0dc"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_nightstatic.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
+      }
+    },
+    {
+      "id": "magnific_0050_sparkrain",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_sparkrain.mp4",
+      "phash": "bc02cac6b7574af8",
+      "tags": [
+        "dark",
+        "spark",
+        "stamp",
+        "paper",
+        "desk"
+      ],
+      "vision_summary": "Dark spark paperwork plate, vertical 9:16 prepared owned densify filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "bc02cac6b7574af8"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_sparkrain.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler",
+        "watched": true,
+        "hole_filler": true
       }
     }
   ]

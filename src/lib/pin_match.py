@@ -173,6 +173,13 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
             intent = str(slot.get("visual_intent") or "").lower()
             queries = " ".join(str(q).lower() for q in (slot.get("queries") or []))
             hay = f"{intent} {queries}"
+            # Densify hole fillers: neutral leftover accept (bonus 0) so empty
+            # siblings get distinct plates after by_block same_asset_max_slots=1.
+            # Life-beat kinds stay mismatch-penalized (+10) off their beat.
+            _HOLE_FILLERS = {
+                "darkember", "redsmoke", "ashdrift", "voidpulse", "coalglow",
+                "darkgrid", "codeglow", "ironrust", "nightstatic", "sparkrain",
+            }
             markers = {
                 "weather": ("weather", "radar", "storm", "satellite", "stormscreen"),
                 "wing": ("airplane", "wing", "airfoil", "flight", "winglet"),
@@ -183,8 +190,12 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                 "vortex": ("vortex", "whirl", "ink", "fluid", "liquid", "flow"),
                 "stamp": ("stamp", "reject", "paperwork", "deskstamp", "declined"),
                 "city": ("city", "night", "aerial", "traffic", "notebook", "citynight"),
+                "gpu": ("gpu", "cluster", "server", "aisle", "datacenter", "astra"),
+                "lean": ("lean", "proof", "code", "editor", "chalkboard", "агент"),
             }.get(kind, ())
-            if kind and kind == beat:
+            if kind in _HOLE_FILLERS:
+                bonus = 0
+            elif kind and kind == beat:
                 bonus = -22
             elif kind and markers and any(m in hay for m in markers):
                 bonus = -24  # authored intent beats overlapping speech (-22)

@@ -110,16 +110,20 @@
       "magnific_0050_city",
       "magnific_0050_gpu",
       "magnific_0050_lean",
+      "magnific_0050_darkember",
+      "magnific_0050_redsmoke",
+      "magnific_0050_ashdrift",
+      "magnific_0050_voidpulse",
+      "magnific_0050_coalglow",
+      "magnific_0050_darkgrid",
+      "magnific_0050_codeglow",
+      "magnific_0050_ironrust",
+      "magnific_0050_nightstatic",
+      "magnific_0050_sparkrain",
       "fp_server_room",
       "fp_code_editor",
       "fp_chalkboard_eq",
-      "pexels_v38431825",
-      "pexels_v18866692",
-      "pexels_v28709421",
-      "pexels_v28838439",
-      "pexels_v11048629",
-      "pexels_v28055604",
-      "pexels_v29380116"
+      "pexels_v38431825"
     ],
     "deny": [
       "pexels_v31263225",
@@ -154,7 +158,7 @@
       "pexels_v7565432"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round21: replace missing pexels_v7565432 b5 pin with magnific_0050_fluids; densify siblings get distinct dark fluid fillers (inkswirl/vortex); same_asset_max_slots 1; weather/wing/pipes/blood/stamp/city/gpu/lean still by_block; prepared freeze densify QC-3/4",
+    "_note": "round22: densify hole fillers (10 distinct dark magnific plates) for empty siblings after same_asset_max_slots=1 by_block; life-beat pins unchanged; skip_generate; prepared freeze densify QC-3/4",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",

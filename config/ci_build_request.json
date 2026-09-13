@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round21: replace missing pexels_v7565432 b5 pin with magnific_0050_fluids + distinct dark fluid densify fillers; keep prepared-avatar freeze densify QC-3/4; skip_generate; one asset per slot",
-  "round": 21
+  "note": "round22: fill empty densify holes only with distinct on-disk magnific fillers; keep by_block life-beat pins; prepared-avatar freeze densify QC-3/4; skip_generate; one asset per slot; from_step P5",
+  "round": 22
 }
