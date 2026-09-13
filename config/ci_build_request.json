@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round30: exclude gap-fill from b6 keyword snap; reinsert avatar gaps after final clamp (fix seg_02/03 navy void)",
-  "round": 30
+  "note": "round31: QC-SEMANTIC — stamp/REJECTED off Lean-check gap (t≈49.4); prefer lean; by_block skips gap-fill",
+  "round": 31
 }

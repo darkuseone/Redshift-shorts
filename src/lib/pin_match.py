@@ -199,15 +199,23 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                 "stamp": ("stamp", "reject", "paperwork", "deskstamp", "declined"),
                 "city": ("city", "night", "aerial", "traffic", "notebook", "citynight"),
                 "gpu": ("gpu", "cluster", "server", "aisle", "datacenter", "astra"),
-                "lean": ("lean", "proof", "code", "editor", "chalkboard", "агент"),
+                "lean": ("lean", "proof", "code", "editor", "chalkboard", "агент",
+                         "проверя", "кажд"),
             }.get(kind, ())
             _FLUID_KINDS = {"fluids", "inkswirl", "vortex", "coolvortex"}
+            speech_l = speech  # already lower from overlapping_speech
             if kind in _HOLE_FILLERS:
                 # Abstract hole plates on Navier–Stokes liquid beat → QC-SEMANTIC
                 bonus = 10 if beat == "fluids" else 0
             elif kind in _FLUID_KINDS:
                 # Keep liquid plates on «жидкость» densify; don't burn on hook/setup
                 bonus = -26 if beat == "fluids" else 14
+            elif kind == "stamp" and any(t in speech_l for t in ("проверя", "lean")) and not any(
+                    t in speech_l for t in ("клей", "приня", "reject", "отклон")):
+                # Avatar interstitial «Lean проверяет» ≠ REJECTED stamp
+                bonus = 14
+            elif kind == "lean" and any(t in speech_l for t in ("проверя", "lean", "кажд")):
+                bonus = -26
             elif kind and kind == beat:
                 bonus = -22
             elif kind and markers and any(m in hay for m in markers):

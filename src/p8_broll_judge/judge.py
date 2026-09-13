@@ -711,6 +711,13 @@ def _force_by_block_pins(
                 "by_block pin missing from storage after hydrate: %s", pid)
             continue
         block_slots = slots_by_block.get(str(bid)) or []
+        # Gap fills between prepared avatar windows are timed to interstitial
+        # speech (0050: «Lean проверяет»), not the block's by_block hero
+        # (stamp/REJECTED). Forcing stamp there → QC-SEMANTIC.
+        block_slots = [
+            s for s in block_slots
+            if "gap fill" not in str(s.get("reason") or "").lower()
+        ]
         if not block_slots:
             continue
 

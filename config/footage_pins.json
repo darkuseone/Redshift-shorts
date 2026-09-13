@@ -102,6 +102,7 @@
       "magnific_0050_fluids",
       "magnific_0050_inkswirl",
       "magnific_0050_coolvortex",
+      "magnific_0050_lean",
       "magnific_0050_weather",
       "magnific_0050_wing",
       "magnific_0050_pipes",
@@ -109,7 +110,6 @@
       "magnific_0050_stamp",
       "magnific_0050_city",
       "magnific_0050_gpu",
-      "magnific_0050_lean",
       "magnific_0050_voidpulse",
       "magnific_0050_darkgrid",
       "magnific_0050_codeglow",
@@ -168,7 +168,7 @@
       "magnific_0050_slateiron"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round30: snap skips gap-fill; final P5 reinsert after avatar clamp (r29 snap slid 49.086 gap onto клей → navy void QC-SEMANTIC); prepared+skip_generate",
+    "_note": "round31: stamp not on Lean-check gap-fill (REJECTED≠проверяет); lean plate for interstitial; by_block skips gap-fill; prepared+skip_generate",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",
