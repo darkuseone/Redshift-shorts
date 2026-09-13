@@ -5,9 +5,25 @@ A lock line is {block, on, asset, plaque?, template?, avatar?}.
 """
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any, Callable
 
 from .pin_match import ctx_words, overlapping_speech
+
+# Spare lower-thirds for QC-25 (no template id more than twice). dark-card
+# stays off this list so a third plaque cannot reuse the overflowing id.
+_QC25_LT_POOL = (
+    "lower-thirds/clean-bar",
+    "lower-thirds/accent-underline",
+    "lower-thirds/note-pin",
+    "lower-thirds/metric-badge",
+    "lower-thirds/name-title",
+    "lower-thirds/timestamp-marker",
+    "lower-thirds/progress-step",
+    "lower-thirds/tag-chips",
+    "lower-thirds/warning-strip",
+    "lower-thirds/source-domain",
+)
 
 
 def load_slots_lock(cfg: Any, video_id: str,
@@ -201,6 +217,71 @@ def retarget_plaques_after_p11(ctx: Any) -> int:
     return changed
 
 
+def cap_plan_templates_qc25(plan: dict[str, Any], catalog: Any = None) -> int:
+    """Rewrite 3rd+ overlay template ids so QC-25 (max 2) passes.
+
+    Shot templates stay put (footage lock). Latin plaque params keep
+    dark_card chrome; only the counted id / renderer change.
+    """
+    shots = list(plan.get("shots") or [])
+    overlays = list(plan.get("overlays") or [])
+    seen: Counter[str] = Counter()
+    for shot in shots:
+        tid = str(shot.get("template") or "").strip()
+        if tid:
+            seen[tid] += 1
+    if not overlays:
+        return 0
+    changed = 0
+    used_list = list(plan.get("templates_used") or [])
+    for ovl in overlays:
+        if not isinstance(ovl, dict):
+            continue
+        tid = str(ovl.get("template") or "").strip()
+        if not tid:
+            continue
+        seen[tid] += 1
+        if seen[tid] <= 2:
+            continue
+        replacement = next((p for p in _QC25_LT_POOL if seen[p] < 2 and p != tid), None)
+        if not replacement:
+            continue
+        ovl["template"] = replacement
+        tmpl = catalog.by_id(replacement) if catalog is not None else None
+        if tmpl is not None:
+            renderer = getattr(tmpl, "renderer", None)
+            if renderer and renderer != "plaque":
+                ovl["renderer"] = renderer
+            elif ovl.get("type") == "plaque":
+                ovl.pop("renderer", None)
+        seen[tid] -= 1
+        seen[replacement] += 1
+        if replacement not in used_list:
+            used_list.append(replacement)
+        changed += 1
+    if changed:
+        plan["overlays"] = overlays
+        plan["templates_used"] = used_list
+    return changed
+
+
+def cap_overlay_templates_qc25(ctx: Any) -> int:
+    try:
+        plan = ctx.read("edit_plan_A.json")
+    except Exception:
+        return 0
+    catalog = None
+    try:
+        from .templates import TemplateCatalog
+        catalog = TemplateCatalog.load(getattr(ctx, "cfg", None))
+    except Exception:
+        catalog = None
+    changed = cap_plan_templates_qc25(plan, catalog)
+    if changed:
+        ctx.write("edit_plan_A.json", plan)
+    return changed
+
+
 def wrap_p8(run_p8: Callable) -> Callable:
     def _wrapped(ctx):
         out = run_p8(ctx)
@@ -213,5 +294,6 @@ def wrap_p11(run_p11: Callable) -> Callable:
     def _wrapped(ctx):
         out = run_p11(ctx)
         retarget_plaques_after_p11(ctx)
+        cap_overlay_templates_qc25(ctx)
         return out
     return _wrapped

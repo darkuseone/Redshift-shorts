@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round38b: unique templates landed; skip_vision",
-  "round": 38
+  "note": "round39: QC-25 cap overlay templates; P11 cache bust; skip_vision",
+  "round": 39
 }

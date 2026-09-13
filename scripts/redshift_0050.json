@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 r38: unique templates ≤2; skip_vision; spoken frozen.",
+    "notes": "0050 r39: unique templates ≤2; skip_vision; spoken frozen.",
     "hook": {"on_screen": "$1 000 000", "style": "number_slam"}
   },
   "sources": [
@@ -84,21 +84,21 @@
       "id": "b5b", "role": "develop", "text": "Погода.", "emphasis_word": "Погода", "avatar": "off",
       "visual_intent": "weather radar. WEATHER.",
       "broll_queries": ["weather radar satellite stormscreen"],
-      "overlay": {"type": "lower_third", "content": "WEATHER", "template_hint": "lower-thirds/source-domain"},
+      "overlay": {"type": "lower_third", "content": "WEATHER", "template_hint": "lower-thirds/clean-bar"},
       "meme_allowed": false, "mode_hint": "C", "emphasis_family": "tech"
     },
     {
       "id": "b5c", "role": "develop", "text": "Крыло самолёта.", "emphasis_word": "Крыло", "avatar": "off",
       "visual_intent": "airplane wing. AIRFOIL.",
       "broll_queries": ["airplane winglet airfoil flightclouds"],
-      "overlay": {"type": "lower_third", "content": "AIRFOIL", "template_hint": "lower-thirds/tag-chips"},
+      "overlay": {"type": "lower_third", "content": "AIRFOIL", "template_hint": "lower-thirds/note-pin"},
       "meme_allowed": false, "mode_hint": "C", "emphasis_family": "tech"
     },
     {
       "id": "b5d", "role": "develop", "text": "Трубы в доме.", "emphasis_word": "Трубы", "avatar": "off",
       "visual_intent": "factory pipes. VALVES.",
       "broll_queries": ["pipework valves factorypipes"],
-      "overlay": {"type": "lower_third", "content": "VALVES", "template_hint": "lower-thirds/timestamp-marker"},
+      "overlay": {"type": "lower_third", "content": "VALVES", "template_hint": "lower-thirds/note-pin"},
       "meme_allowed": false, "mode_hint": "C", "emphasis_family": "tech"
     },
     {
@@ -107,7 +107,7 @@
       "emphasis_word": "крови", "avatar": "off",
       "visual_intent": "blood cells. PLASMA.",
       "broll_queries": ["bloodcells microscope plasmaflow"],
-      "overlay": {"type": "lower_third", "content": "PLASMA", "template_hint": "lower-thirds/progress-step"},
+      "overlay": {"type": "lower_third", "content": "PLASMA", "template_hint": "lower-thirds/metric-badge"},
       "meme_allowed": false, "mode_hint": "C", "emphasis_family": "tech"
     },
     {

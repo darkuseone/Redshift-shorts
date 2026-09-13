@@ -475,15 +475,38 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     req = json.loads((REPO / "config" / "ci_build_request.json").read_text(encoding="utf-8"))
     assert req["script"] == "scripts/redshift_0050.json"
     assert req["video_id"] == "redshift_0050"
-    assert req["from_step"] == "P7"
+    assert req["from_step"] == "P5"
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
+    assert req["skip_vision"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 24
-    assert "round24" in req["note"]
-    assert "QC-5" in req["note"] or "phash" in req["note"] or "hole" in req["note"]
+    assert int(req.get("round") or 0) == 39
+    assert "round39" in req["note"]
+    assert "QC-25" in req["note"] or "template" in req["note"]
     assert "skip_generate" in req["note"] or req["skip_generate"] is True
-    assert "P7" in req["note"] or req["from_step"] == "P7"
+    assert "P5" in req["note"] or req["from_step"] == "P5"
+
+
+def test_0050_qc25_cap_splits_third_dark_card():
+    from src.lib.slots_lock import cap_plan_templates_qc25
+
+    plan = {
+        "shots": [{"index": 0, "template": "intro-hooks/hook-number-slam"}],
+        "overlays": [
+            {"type": "plaque", "template": "lower-thirds/dark-card", "params": {"text": "FLUIDS"}},
+            {"type": "plaque", "template": "lower-thirds/dark-card", "params": {"text": "VALVES"}},
+            {"type": "plaque", "template": "lower-thirds/dark-card", "params": {"text": "PLASMA"}},
+            {"type": "plaque", "template": "lower-thirds/dark-card", "params": {"text": "REJECTED"}},
+            {"type": "plaque", "template": "lower-thirds/dark-card", "params": {"text": "FOLLOWUP"}},
+        ],
+        "templates_used": ["intro-hooks/hook-number-slam", "lower-thirds/dark-card"],
+    }
+    changed = cap_plan_templates_qc25(plan)
+    assert changed >= 3
+    from collections import Counter
+    counts = Counter(o["template"] for o in plan["overlays"])
+    assert counts["lower-thirds/dark-card"] <= 2
+    assert all(n <= 2 for n in counts.values())
 
 
 def test_0050_remap_splits_stale_b5_slots_onto_unique_overlays():
