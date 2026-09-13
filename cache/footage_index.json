@@ -2,7 +2,7 @@
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
   "updated": "2026-09-13",
-  "count": 133,
+  "count": 136,
   "items": [
     {
       "id": "nasa_PIA12110",
@@ -4729,6 +4729,117 @@
       "width": 1080,
       "height": 1920,
       "file": "magnific/magnific_0050_coolvortex.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_cyanrain",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_cyanrain.mp4",
+      "phash": "f40ec198847b5bbc",
+      "tags": [
+        "dark",
+        "cyan",
+        "rain",
+        "cool",
+        "abstract",
+        "digital"
+      ],
+      "vision_summary": "Cyan digital rain streaks on near-black, vertical 9:16 densify hole filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "30362ee16b0fd2d4",
+        "f40ec198847b5bbc",
+        "14e1b4f6199835e5"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_cyanrain.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_frostscan",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_frostscan.mp4",
+      "phash": "1a25dc1a23db54a7",
+      "tags": [
+        "dark",
+        "frost",
+        "scan",
+        "teal",
+        "cool",
+        "grid"
+      ],
+      "vision_summary": "Teal frost scanline band on dark grid, vertical 9:16 densify hole filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "0e0f6381dc1ed1d9",
+        "1a25dc1a23db54a7",
+        "cbe2635ed0bc510e"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_frostscan.mp4",
+      "ai_generated": false,
+      "extra": {
+        "attribution": "REDSHIFT / Magnific densify hole filler cool",
+        "watched": true,
+        "hole_filler": true,
+        "cool_dark": true
+      }
+    },
+    {
+      "id": "magnific_0050_deepcoil",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/cursor/0050-from-tz/assets/footage/magnific/magnific_0050_deepcoil.mp4",
+      "phash": "d1739f2c642d8a96",
+      "tags": [
+        "dark",
+        "coil",
+        "radar",
+        "teal",
+        "cool",
+        "rings"
+      ],
+      "vision_summary": "Teal radar concentric rings on navy, vertical 9:16 densify hole filler",
+      "score": 0.9,
+      "duration_sec": 4.0,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-13",
+      "phashes": [
+        "d97d15325e3604c7",
+        "d1739f2c642d8a96",
+        "3f3cb5d89bc8208c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0050_deepcoil.mp4",
       "ai_generated": false,
       "extra": {
         "attribution": "REDSHIFT / Magnific densify hole filler cool",

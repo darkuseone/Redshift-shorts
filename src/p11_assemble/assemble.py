@@ -1325,7 +1325,7 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
 _0050_AVATAR_BG_DENY = frozenset({
     "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
     "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
-    "magnific_0050_vortex",
+    "magnific_0050_vortex", "magnific_0050_coldspark",
 })
 
 

@@ -131,14 +131,15 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
         "magnific_0050_voidpulse", "magnific_0050_darkgrid",
         "magnific_0050_codeglow", "magnific_0050_nightstatic",
         "magnific_0050_tealmister", "magnific_0050_blueember",
-        "magnific_0050_charcoalash", "magnific_0050_coldspark",
+        "magnific_0050_charcoalash", "magnific_0050_cyanrain",
+        "magnific_0050_frostscan", "magnific_0050_deepcoil",
         "magnific_0050_steelglow", "magnific_0050_slateiron",
     ):
         assert aid in prefer, aid
     for aid in (
         "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
         "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
-        "magnific_0050_vortex",
+        "magnific_0050_vortex", "magnific_0050_coldspark",
     ):
         assert aid not in prefer, aid
         assert aid in deny, aid
@@ -478,9 +479,9 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["heygen_source"] == "prepared"
     assert req["skip_generate"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 23
-    assert "round23" in req["note"]
-    assert "cool" in req["note"] or "QC-30" in req["note"] or "hole" in req["note"]
+    assert int(req.get("round") or 0) == 24
+    assert "round24" in req["note"]
+    assert "QC-5" in req["note"] or "phash" in req["note"] or "hole" in req["note"]
     assert "skip_generate" in req["note"] or req["skip_generate"] is True
     assert "P7" in req["note"] or req["from_step"] == "P7"
 
@@ -538,6 +539,9 @@ def test_0050_footage_index_has_magnific_plates():
         ("magnific_0050_codeglow", "code"),
         ("magnific_0050_coolvortex", "cool"),
         ("magnific_0050_blueember", "blue"),
+        ("magnific_0050_cyanrain", "cyan"),
+        ("magnific_0050_frostscan", "frost"),
+        ("magnific_0050_deepcoil", "radar"),
     ):
         rec = idx.by_id(aid)
         assert rec is not None, aid

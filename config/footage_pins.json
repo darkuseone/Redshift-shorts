@@ -117,7 +117,9 @@
       "magnific_0050_tealmister",
       "magnific_0050_blueember",
       "magnific_0050_charcoalash",
-      "magnific_0050_coldspark",
+      "magnific_0050_cyanrain",
+      "magnific_0050_frostscan",
+      "magnific_0050_deepcoil",
       "magnific_0050_steelglow",
       "magnific_0050_slateiron",
       "fp_server_room",
@@ -162,10 +164,11 @@
       "magnific_0050_coalglow",
       "magnific_0050_ironrust",
       "magnific_0050_sparkrain",
-      "magnific_0050_vortex"
+      "magnific_0050_vortex",
+      "magnific_0050_coldspark"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round23: cool dark hole fillers only (teal/blue/charcoal/neutral) for densify leftovers; deny red-heavy hole plates (redsmoke/sparkrain/darkember/coalglow/ironrust/ashdrift) + red vortex; keep by_block life-beats incl blood b5e; skip_generate; prepared freeze densify QC-3/4",
+    "_note": "round24: break QC-5 — coldspark≈stamp (replace hole side with cyanrain/frostscan/deepcoil); deny coldspark; keep by_block life-beats; skip_generate; prepared freeze densify QC-3/4",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",
