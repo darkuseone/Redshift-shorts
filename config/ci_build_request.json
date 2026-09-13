@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round36: Gemini visual 5 montage 4; hook $1M only; deny server corridor; REJECTED/FOLLOWUP dark-card; highway off не берёт",
+  "note": "round36b: Gemini fixes landed in pins+script; render now",
   "round": 36
 }
