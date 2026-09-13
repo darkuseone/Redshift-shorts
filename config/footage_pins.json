@@ -168,7 +168,7 @@
       "magnific_0050_slateiron"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round27: QC-SEMANTIC — coolvortex is fluid (not hole filler); hole fillers penalized on fluids beat; prefer fluids/inkswirl/coolvortex first; prepared+skip_generate",
+    "_note": "round28: lock coolvortex/inkswirl to fluids beat only (r27 burned coolvortex on hook; b5 densify got codeglow → QC-SEMANTIC); b5 beat fallback; prepared+skip_generate",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",

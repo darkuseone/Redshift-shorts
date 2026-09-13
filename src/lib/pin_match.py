@@ -79,9 +79,13 @@ def slot_visual_beat(slot: dict[str, Any],
     speech = overlapping_speech(slot, words).lower()
     intent = str(slot.get("visual_intent") or "").lower()
     role = str(slot.get("role") or "")
+    bid = str(slot.get("block_id") or "")
     for beat, tokens in _BEAT_SPEECH:
         if any(token in speech for token in tokens):
             return beat
+    # Densify siblings of Navier–Stokes may only hear «смысл» — keep fluids beat
+    if bid == "b5":
+        return "fluids"
     if role == "twist" and any(token in intent for token in (
             "stamp", "reject", "clay", "paperwork", "документ")):
         return "stamp"
@@ -197,9 +201,13 @@ def pin_slot_prefer_key(asset_id: str, slot: dict[str, Any],
                 "gpu": ("gpu", "cluster", "server", "aisle", "datacenter", "astra"),
                 "lean": ("lean", "proof", "code", "editor", "chalkboard", "агент"),
             }.get(kind, ())
+            _FLUID_KINDS = {"fluids", "inkswirl", "vortex", "coolvortex"}
             if kind in _HOLE_FILLERS:
                 # Abstract hole plates on Navier–Stokes liquid beat → QC-SEMANTIC
                 bonus = 10 if beat == "fluids" else 0
+            elif kind in _FLUID_KINDS:
+                # Keep liquid plates on «жидкость» densify; don't burn on hook/setup
+                bonus = -26 if beat == "fluids" else 14
             elif kind and kind == beat:
                 bonus = -22
             elif kind and markers and any(m in hay for m in markers):

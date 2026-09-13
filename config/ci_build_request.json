@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "cursor",
-  "note": "round27: QC-SEMANTIC hole — park coolvortex/inkswirl on b5 fluids densify (not nightstatic); coolvortex fluid match; prepared+skip_generate",
-  "round": 27
+  "note": "round28: fluid plates only on b5 fluids beat (not hook); b5 densify beat fallback; prepared+skip_generate",
+  "round": 28
 }
