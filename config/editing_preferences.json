@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа (§4.5, §7.8). Пополняется командой `redshift learn --video-id X --choice A|B`. Формат записи: «в ситуации X выбран вариант Y».",
   "version": 1,
-  "updated_at": "2026-09-09T00:07:17+00:00",
+  "updated_at": "2026-09-14T00:00:00+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -34,7 +34,12 @@
   "bed_ring": [],
   "template_excludes": {
     "redshift_0050": [
-      "text-fullscreen/bigtext-mask-footage"
+      "text-fullscreen/bigtext-mask-footage",
+      "text-fullscreen/number-slam-card",
+      "lower-thirds/clean-bar",
+      "lower-thirds/note-pin",
+      "lower-thirds/name-title",
+      "lower-thirds/metric-badge"
     ]
   }
 }
