@@ -168,7 +168,7 @@
       "magnific_0050_slateiron"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round32: hard-ban stamp on gap-fill leftover + scrub stamp→codeglow/steelglow (r31 still had REJECTED under Lean проверяет); prepared+skip_generate",
+    "_note": "round33: Lean-check gap = codeglow not stamp/tealmist; REJECTED plaque after avatar; prepared+skip_generate",
     "by_block": {
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_lean",
