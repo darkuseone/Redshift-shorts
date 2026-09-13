@@ -6,7 +6,7 @@
   "skip_generate": true,
   "skip_vision": false,
   "providers_mode": "live",
-  "requested_by": "cursor",
-  "note": "round33: REJECTED plaque + tealmist off Lean-check gap t≈49.4; close 48.5 navy hole; stamp on Clay gap",
-  "round": 33
+  "requested_by": "grok",
+  "note": "round34: slots_lock brains-in-chat; REJECTED on не принял; codeglow on Lean проверяет",
+  "round": 34
 }
