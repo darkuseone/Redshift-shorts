@@ -7,6 +7,6 @@
   "skip_vision": false,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round34: slots_lock brains-in-chat; REJECTED on не принял; codeglow on Lean проверяет",
-  "round": 34
+  "note": "round35: execute slots_lock wrap after P8 + plaque retarget after P11",
+  "round": 35
 }
