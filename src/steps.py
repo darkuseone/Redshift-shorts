@@ -32,10 +32,13 @@ def build_pipeline() -> Pipeline:
     from .p5_replan.replanner import run_step as p5
     from .p6_avatar.avatar import run_step as p6
     from .p7_broll_search.search import run_step as p7
-    from .p8_broll_judge.judge import run_step as p8
+    from .p8_broll_judge.judge import run_step as p8_raw
     from .p9_generate.generate import run_step as p9
     from .p10_audio.audio_build import run_step as p10
-    from .p11_assemble.assemble import run_step as p11
+    from .p11_assemble.assemble import run_step as p11_raw
+    from .lib.slots_lock import wrap_p11, wrap_p8
+    p8 = wrap_p8(p8_raw)
+    p11 = wrap_p11(p11_raw)
     from .p12_render_qc.render import run_step as p12
 
     return Pipeline([
@@ -46,12 +49,6 @@ def build_pipeline() -> Pipeline:
              config_inputs=("config/pronunciation.json",)),
         Step("P2", "TTS: сырая озвучка с запасом длины", p2,
              inputs=("draft_plan.json",), outputs=("voice_raw.wav", "tts_meta.json"),
-             # Озвучка зависит от речи и только от неё. В том же плане лежат
-             # поисковые запросы футажа, visual_intent и подсказки шаблонов —
-             # правка любой из этих строк меняла отпечаток шага, ElevenLabs
-             # озвучивал заново, границы фраз уезжали, и клипы ведущего из
-             # репозитория браковались как разошедшийся липсинк. Здесь названо
-             # ровно то, что шаг и правда читает (см. src/p2_tts/tts.py).
              input_slice={"draft_plan.json": _speech_of_plan}),
         Step("P3", "Оптимизация речи: паузы, вдохи, нормализация", p3,
              inputs=("voice_raw.wav", "tts_meta.json"),
@@ -69,12 +66,10 @@ def build_pipeline() -> Pipeline:
              config_inputs=("config/stock_sources.yaml",
                             "config/footage_pins.json")),
         Step("P8", "Трёхступенчатая оценка футажей", p8,
-             # cut_plan must fingerprint: densify splits slots; without it P8
-             # can return cached accepts for a pre-densify plan (round18).
              inputs=("candidates.json", "cut_plan.json"),
              outputs=("accepted_assets.json",),
              config_inputs=("config/footage_pins.json",),
-             version="2"),
+             version="3"),
         Step("P9", "Генерация недостающих материалов", p9,
              inputs=("accepted_assets.json", "cut_plan.json"), outputs=("generated_assets.json",)),
         Step("P10", "Аудио: SFX, музыкальная подложка, микс", p10,
@@ -84,15 +79,10 @@ def build_pipeline() -> Pipeline:
              inputs=("cut_plan.json", "accepted_assets.json", "generated_assets.json",
                      "avatar_meta.json", "sfx_map.json", "words.json"),
              outputs=("edit_plan_A.json",),
-             # templates/manifest.json сюда не входит: его пишет сам P11
-             # (состояние ротации), и шаг стал бы вечно несвежим.
              config_inputs=("config/brandbook.json", "config/editing_preferences.json")),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),
-             # Отчёт лежит в рабочем каталоге, а ролики — в выдаче, и она
-             # прогон не переживает. Без этой строки возобновление с P12
-             # возвращалось из кэша, не отрендерив ничего.
              deliverables=("{video_id}_{variant}.mp4",),
              config_inputs=("config/brandbook.json",)),
     ])
