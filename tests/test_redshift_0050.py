@@ -480,9 +480,9 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["skip_generate"] is True
     assert req["skip_vision"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 39
-    assert "round39" in req["note"]
-    assert "QC-25" in req["note"] or "template" in req["note"]
+    assert int(req.get("round") or 0) == 40
+    assert "round40" in req["note"]
+    assert "QC-SEMANTIC" in req["note"] or "skip_vision" in req["note"]
     assert "skip_generate" in req["note"] or req["skip_generate"] is True
     assert "P5" in req["note"] or req["from_step"] == "P5"
 

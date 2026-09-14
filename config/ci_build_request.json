@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round39: QC-25 cap overlay templates; P11 cache bust; skip_vision",
-  "round": 39
+  "note": "round40: skip_vision ships mp4 (QC-SEMANTIC advisory); skip_generate; P5",
+  "round": 40
 }
