@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round45: avatar windows frozen again; rhythm never touches the avatar; skip_vision",
-  "round": 45
+  "note": "round46: frozen avatar request busts P5/P6 cache so the restored windows reach cut_plan; skip_vision",
+  "round": 46
 }

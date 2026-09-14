@@ -116,6 +116,12 @@ class Step:
     # переозвучка стоит денег, и решать её судьбу должен срез речи, а не
     # любая правка соседнего поля.
     uses_script: bool = False
+    # Шаг читает замороженную заявку на клипы аватара. Она лежит в репозитории
+    # и описывает окна, под которые отрендерены оплаченные webm. Правка этого
+    # файла обязана отменять кэш: на 0050 испорченная заявка успела попасть в
+    # cut_plan, и восстановление файла уже ничего не меняло — P5 отдавал
+    # прежний план из кэша, а P6 на нём требовал новых клипов.
+    uses_prepared_avatar: bool = False
     optional: bool = False          # шаг может быть пропущен по фиче-флагу
     cacheable: bool = True
 
@@ -138,6 +144,10 @@ class Step:
         # выдавал прежний validated_script.json, и вся правка молча пропадала.
         if not self.inputs or self.uses_script:
             payload["_script"] = hash_files([str(ctx.script_path)])
+        if self.uses_prepared_avatar:
+            payload["_avatar_request"] = hash_files([str(
+                ctx.cfg.repo_root / "assets" / "avatar_clips"
+                / str(ctx.video_id) / "avatar_request.json")])
         for name in self.inputs:
             path = ctx.work_dir / name
             if path.exists():

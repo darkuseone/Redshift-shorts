@@ -26,6 +26,15 @@ def ctx(tmp_path, cfg):
     script.write_text(json.dumps({"meta": {"video_id": "x"}, "blocks": []}),
                       encoding="utf-8")
 
+    class _Cfg:
+        repo_root = tmp_path
+
+        def __init__(self, inner):
+            self._inner = inner
+
+        def get(self, *a, **kw):
+            return self._inner.get(*a, **kw)
+
     class _Ctx:
         script_path = script
         work_dir = tmp_path / "work"
@@ -34,7 +43,7 @@ def ctx(tmp_path, cfg):
         variants = ("A",)
 
     _Ctx.work_dir.mkdir()
-    _Ctx.cfg = cfg
+    _Ctx.cfg = _Cfg(cfg)
     return _Ctx()
 
 
@@ -58,6 +67,38 @@ class TestTheScriptReachesTheFingerprint:
     @pytest.mark.parametrize("name", ["P5", "P7", "P8", "P11"])
     def test_the_flag_is_declared(self, name):
         assert _steps()[name].uses_script is True
+
+
+class TestTheFrozenAvatarRequestReachesTheFingerprint:
+    """Испорченная заявка успела попасть в cut_plan, и восстановить её было
+    мало: P5 отдавал прежний план из кэша, а P6 на нём требовал новых клипов
+    HeyGen. Правка заявки обязана отменять кэш обоих шагов."""
+
+    @pytest.fixture()
+    def request_path(self, ctx):
+        path = (ctx.cfg.repo_root / "assets" / "avatar_clips"
+                / ctx.video_id / "avatar_request.json")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @pytest.mark.parametrize("name", ["P5", "P6"])
+    def test_editing_the_request_changes_the_fingerprint(self, name, ctx, request_path):
+        step = _steps()[name]
+        request_path.write_text(json.dumps({"segments": [{"index": 0}]}),
+                                encoding="utf-8")
+        before = step.fingerprint(ctx)
+        request_path.write_text(
+            json.dumps({"segments": [{"index": i} for i in range(5)]}),
+            encoding="utf-8")
+        assert step.fingerprint(ctx) != before, (
+            f"{name} не заметил правку заявки — кэш отдаст план по старым окнам")
+
+    @pytest.mark.parametrize("name", ["P5", "P6"])
+    def test_the_flag_is_declared(self, name):
+        assert _steps()[name].uses_prepared_avatar is True
+
+    def test_a_step_that_never_reads_it_is_not_dragged_in(self):
+        assert _steps()["P12"].uses_prepared_avatar is False
 
 
 class TestVoiceIsDeliberatelyLeftOut:
