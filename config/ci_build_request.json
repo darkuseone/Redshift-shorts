@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round41b: script+pins landed; skip_vision",
-  "round": 41
+  "note": "round42: captions one layer, shot rhythm >=2s, corner chips no red; skip_vision",
+  "round": 42
 }

@@ -934,6 +934,184 @@ def _is_cta_overlay(ovl: dict[str, Any]) -> bool:
             or "logo-brand-close" in template)
 
 
+# --- ритм монтажа (закон канала: шот 2–7 с, без микро-перебивок) -------------
+
+# Кадр короче двух секунд зритель не успевает прочитать как кадр: он читается
+# как сбой склейки. Gemini ловил их на 0050 пять раз подряд.
+MIN_FOOTAGE_SHOT_SEC = 2.0
+# Лицо короче полутора секунд — вспышка, а не появление. Сборка 0050 выдавала
+# сегмент аватара на 0.26 с.
+MIN_AVATAR_SHOT_SEC = 1.5
+# Полноэкранная надпись живёт по своим правилам: это удар на бит, а не кадр.
+# Донором времени она быть может, но не ниже своего пола.
+MIN_FULLSCREEN_SHOT_SEC = 0.9
+
+AVATAR_SLOT_KINDS = ("avatar", "split")
+
+
+def _span(slot: dict[str, Any]) -> float:
+    return float(slot.get("end", 0.0)) - float(slot.get("start", 0.0))
+
+
+def _retime(slot: dict[str, Any], start: float, end: float) -> None:
+    slot["start"] = round(float(start), 3)
+    slot["end"] = round(float(end), 3)
+    slot["duration"] = round(float(end) - float(start), 3)
+
+
+def _slot_floor(slot: dict[str, Any]) -> float:
+    kind = str(slot.get("kind") or "")
+    if kind in AVATAR_SLOT_KINDS:
+        return MIN_AVATAR_SHOT_SEC
+    if kind == "fullscreen_text":
+        return MIN_FULLSCREEN_SHOT_SEC
+    return MIN_FOOTAGE_SHOT_SEC
+
+
+def close_slot_holes(slots: list[dict[str, Any]], *, total: float) -> None:
+    """Кадры встык: конец каждого — начало следующего, последний до конца.
+
+    Длительность кадра P11 считал отдельно от его старта, и на 0050 они
+    разъехались: объявленные две секунды накрывались следующим кадром через
+    1.29 с, а между блоками оставались дыры в треть секунды, где вместо кадра
+    светил фон. В плане стояло одно, на экране шло другое — поэтому правка
+    «удлинить шот до 2 секунд» и не сработала: длительность росла, старты нет.
+    """
+    slots.sort(key=lambda s: float(s.get("start", 0.0)))
+    for i, slot in enumerate(slots):
+        nxt = float(slots[i + 1]["start"]) if i + 1 < len(slots) else float(total)
+        _retime(slot, float(slot["start"]), max(float(slot["start"]), nxt))
+
+
+def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
+                        total: float) -> list[str]:
+    """Убрать перебивки короче порога, не трогая ни речь, ни подбор футажа.
+
+    Порядок лечения — от дешёвого к дорогому:
+
+    1. Кадры сводятся встык, дыры между ними закрываются.
+    2. Вспышка лица короче ``MIN_AVATAR_SHOT_SEC`` снимается: 0.26 с головы
+       на экране — это сбой, а не появление ведущего.
+    3. Короткий футаж добирает время у соседей, пока те сами не упрутся в свой
+       пол. Речь при этом не двигается: двигается только граница склейки.
+    4. Если добрать не у кого — короткий футаж сливается со следующим футажом,
+       и группа остаётся на материале своего первого кадра, того, на чьё слово
+       она начиналась.
+
+    Слот правится до нарезки клипов, поэтому ffmpeg режет материал сразу под
+    новую длину: ни растянутого хвоста, ни чёрного кадра в конце.
+
+    Возвращает ``block_id`` кадров, которых не стало: плашки этих блоков
+    дальше снимаются, иначе подпись повиснет над чужим футажом.
+    """
+    if not slots:
+        return []
+    close_slot_holes(slots, total=total)
+
+    dropped: list[str] = []
+    kept = [s for s in slots
+            if not (str(s.get("kind")) in AVATAR_SLOT_KINDS
+                    and _span(s) < MIN_AVATAR_SHOT_SEC)]
+    if len(kept) != len(slots) and kept:
+        dropped += [str(s.get("block_id") or "") for s in slots if s not in kept]
+        slots[:] = kept
+        close_slot_holes(slots, total=total)
+
+    # 3. Занять время у соседей.
+    for i, slot in enumerate(slots):
+        if str(slot.get("kind")) != "footage":
+            continue
+        need = MIN_FOOTAGE_SHOT_SEC - _span(slot)
+        if need <= 1e-3:
+            continue
+        prev = slots[i - 1] if i else None
+        if prev is not None and need > 1e-3:
+            take = min(need, max(0.0, _span(prev) - _slot_floor(prev)))
+            if take > 1e-3:
+                _retime(prev, float(prev["start"]), float(prev["end"]) - take)
+                _retime(slot, float(slot["start"]) - take, float(slot["end"]))
+                need -= take
+        nxt = slots[i + 1] if i + 1 < len(slots) else None
+        if nxt is not None and need > 1e-3:
+            take = min(need, max(0.0, _span(nxt) - _slot_floor(nxt)))
+            if take > 1e-3:
+                _retime(nxt, float(nxt["start"]) + take, float(nxt["end"]))
+                _retime(slot, float(slot["start"]), float(slot["end"]) + take)
+
+    # 4. Что не добрало — сливаем с соседом-футажом.
+    result: list[dict[str, Any]] = []
+    i = 0
+    while i < len(slots):
+        slot = slots[i]
+        if (str(slot.get("kind")) != "footage"
+                or _span(slot) >= MIN_FOOTAGE_SHOT_SEC - 1e-3):
+            result.append(slot)
+            i += 1
+            continue
+        j = i
+        end = float(slot["end"])
+        while (end - float(slot["start"]) < MIN_FOOTAGE_SHOT_SEC - 1e-3
+               and j + 1 < len(slots)
+               and str(slots[j + 1].get("kind")) == "footage"):
+            j += 1
+            end = float(slots[j]["end"])
+        if j == i:
+            # Соседа-футажа нет: кадр зажат аватаром или концом ролика, и его
+            # длина — это длина куска речи, а не решение монтажа.
+            result.append(slot)
+            i += 1
+            continue
+        dropped += [str(s.get("block_id") or "") for s in slots[i + 1:j + 1]]
+        _retime(slot, float(slot["start"]), end)
+        result.append(slot)
+        i = j + 1
+    slots[:] = result
+    close_slot_holes(slots, total=total)
+    return [b for b in dropped if b]
+
+
+def clamp_plaques_to_shots(overlays: list[dict[str, Any]],
+                           shots: list[dict[str, Any]],
+                           *, dropped_blocks: Iterable[str] = ()) -> None:
+    """Подпись живёт ровно столько, сколько её кадр.
+
+    На 0050 каждая плашка перечисления переживала свой кадр на три четверти
+    секунды, и зритель успевал прочитать AIRFOIL над трубами и VALVES над
+    кровью. Подпись, потерявшая кадр целиком, снимается: лучше кадр без
+    подписи, чем подпись про другой кадр.
+    """
+    gone = {b for b in dropped_blocks if b}
+    spans: dict[str, tuple[float, float]] = {}
+    for shot in shots:
+        block = str(shot.get("block_id") or "")
+        if not block:
+            continue
+        start, end = float(shot["start"]), float(shot["end"])
+        if block in spans:
+            spans[block] = (min(spans[block][0], start), max(spans[block][1], end))
+        else:
+            spans[block] = (start, end)
+    kept: list[dict[str, Any]] = []
+    for ovl in overlays:
+        if str(ovl.get("type")) != "plaque":
+            kept.append(ovl)
+            continue
+        block = str(ovl.get("block_id") or "")
+        if block and block in gone and block not in spans:
+            continue
+        span = spans.get(block)
+        if span is None:
+            kept.append(ovl)
+            continue
+        start = max(float(ovl["start"]), span[0])
+        end = min(float(ovl["end"]), span[1])
+        if end - start < 0.4:
+            continue
+        ovl["start"], ovl["end"] = round(start, 3), round(end, 3)
+        kept.append(ovl)
+    overlays[:] = kept
+
+
 # Majority of words under a card → drop the phrase. Sparse hits drop only
 # those words so spoken VO outside bulky cards still has captions.
 PHRASE_MUTE_RATIO = 0.50
@@ -1326,6 +1504,10 @@ _0050_AVATAR_BG_DENY = frozenset({
     "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
     "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
     "magnific_0050_vortex", "magnific_0050_coldspark",
+    # Серверный ряд уже стоит целым кадром на b3. За спиной ведущего он
+    # читается тем же местом, и ролик получает «третий раз серверы» —
+    # ровно ту строку критики, из-за которой коридор и попал в deny.
+    "magnific_0050_gpu",
 })
 
 
@@ -3172,6 +3354,12 @@ def _coerce_latin_cleanbar_dark(params: dict[str, Any], *, content: str,
     QC-25 caps dark-card *template id* at ≤2 (b5+b6). Keep clean-bar /
     name-title / note-pin ids, but always force dark_card styling so
     composition routes to lt_dark_card charcoal chrome (WEATHER fix).
+
+    Красного в этой плашке нет ни в каком виде. Закон канала разводит две
+    вещи, которые легко перепутать: карточка-герой в центре кадра носит
+    красный кант, а подпись источника в углу — нет. Gemini выписал красную
+    полосу в FLUIDS, WEATHER, AIRFOIL, VALVES, PLASMA, REJECTED и FOLLOWUP
+    семью отдельными строками: это один и тот же брак, а не семь.
     """
     label = str(content or "").strip().upper()
     if label not in _LATIN_DARK_CLEANBAR:
@@ -3182,6 +3370,9 @@ def _coerce_latin_cleanbar_dark(params: dict[str, Any], *, content: str,
     params["tone"] = "ink"
     params["invert"] = False
     params["background"] = "dark"
+    params["source_chip"] = True
+    params["no_red"] = True
+    params["accent"] = False
     return params
 
 
@@ -4737,6 +4928,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     escalation = _Escalation()
     _sync_fullscreen_overlay_content(slots, plan)
     _retime_fullscreen_slots(slots, plan, words_doc.get("words") or [])
+    # Ритм монтажа правится до нарезки клипов: ffmpeg режет материал уже под
+    # исправленную длину, а не под ту, что была в плане до склейки коротышей.
+    dropped_blocks = enforce_slot_rhythm(slots, total=float(plan["duration_sec"]))
     shots: list[dict[str, Any]] = []
 
     # Приёмы вокруг ведущего ставятся через один подходящий аватар-кадр: на
@@ -5251,6 +5445,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # Приёмы лестницы §7.2 родились в цикле шотов — доливаем их к общим
     # оверлеям здесь, чтобы дальше все проверки видели один список.
     overlays.extend(ladder_overlays)
+
+    # Подпись не переживает свой кадр: AIRFOIL над трубами и VALVES над кровью
+    # на 0050 были именно этим — плашка держалась дольше футажа, под который
+    # её ставили.
+    clamp_plaques_to_shots(overlays, shots, dropped_blocks=dropped_blocks)
 
     # Drop plaques that echo an on-screen punch FS (slots may still say footage
     # when the plaque was built; shots are authoritative after gap promote).

@@ -8266,9 +8266,28 @@ def _fs_ceiling(ctx: "TemplateCtx") -> int:
     return 420
 
 
-def _fs_size(ctx: "TemplateCtx", text: str) -> int:
+_UNBREAKABLE_NUMBER_RE = re.compile(
+    r"^[\$€£₽]?\s*\d[\d\s\u00a0\u202f.,]*%?$"
+)
+
+
+def is_unbreakable_number(text: str) -> bool:
+    """Число целиком или не показывать вовсе.
+
+    В «$1 000 000» пробелы — это разряды, а не границы слов. Подбор кегля по
+    самому длинному слову давал 160 px на «000», строка не влезала в карточку
+    и переносилась: в хуке 0050 стояло «$1» на одной строке и «000 000» на
+    другой. Для зрителя это не миллион, а сломанная вёрстка.
+    """
+    return bool(_UNBREAKABLE_NUMBER_RE.match(str(text or "").strip()))
+
+
+def _fs_size(ctx: "TemplateCtx", text: str, *, pad_px: float = 0.0) -> int:
     ceiling = _fs_ceiling(ctx)
     available = min(float(ctx.params.get("available_px") or 900), float(WORK_AREA_W))
+    available = max(80.0, available - float(pad_px))
+    if is_unbreakable_number(text):
+        return fit_size(str(text).strip(), available, ceiling, role="display")
     longest = max(text.upper().split() or [text], key=len, default="")
     return fit_size(longest, available, ceiling, role="display")
 
@@ -9170,13 +9189,21 @@ def fs_word_swap(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_FS_CARD_PAD_X = 44
+
+
 def fs_fact_card(ctx: "TemplateCtx") -> Piece:
     content, accent, invert = _content_of(ctx)
     if not content:
         return Piece()
     node_id = ctx.target
-    size = min(_fs_size(ctx, content), 160)
+    # Поля карточки (44 px с каждой стороны) и рамка съедают ширину: считать
+    # кегль по всей рабочей зоне значило обещать строке место, которого у неё
+    # внутри карточки нет.
+    size = min(_fs_size(ctx, content, pad_px=_FS_CARD_PAD_X * 2 + 4), 160)
     cls = "clip fullscreen-text fs-card" + (" invert" if invert else "")
+    if is_unbreakable_number(content):
+        cls += " fs-nowrap"
     return Piece(
         nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
                f'<span id="{node_id}-inner" class="fs-fact" '
@@ -12965,6 +12992,18 @@ def ov_paper_reveal(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def _lt_no_red(params: dict[str, Any]) -> bool:
+    """Плашка отказалась от красного.
+
+    Закон канала разводит две вещи, которые легко перепутать: карточка-герой
+    в центре кадра носит красный кант, а подпись источника в углу — нет.
+    Флаг ставит P11 по содержимому подписи: один и тот же ``lt-dark-card``
+    служит и тем, и другим, поэтому выбор шаблона тут ничего не решает.
+    """
+    return bool(params.get("no_red") or params.get("accent") is False
+                or params.get("source_chip"))
+
+
 # Каталог lt-accent-underline: 4.8 с, имя ↑, черта scaleX, роль ↑, затем уход.
 _LT_AU_NAME_CEILING = 72
 _LT_AU_ROLE_SIZE = 26
@@ -13022,6 +13061,7 @@ def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
     if not name and not role:
         return Piece()
     node_id = ctx.target
+    no_red_cls = " no-red" if _lt_no_red(params) else ""
     available = float(params.get("available_px") or 740)
     name_size = (fit_size(name.upper(), available, _LT_AU_NAME_CEILING, role="display")
                  if name else _LT_AU_NAME_CEILING)
@@ -13048,7 +13088,7 @@ def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
             f'ease:"power2.in",immediateRender:false}},'
             f'{_num(at + t["name_out_at"])});')
     parts.append(
-        f'<span id="{node_id}-rule" class="lt-au-rule" '
+        f'<span id="{node_id}-rule" class="lt-au-rule{no_red_cls}" '
         f'style="width:{rule_w}px"></span>')
     tweens.append(
         f'tl.fromTo("#{node_id}-rule",{{scaleX:0}},'
@@ -13140,6 +13180,7 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
     if not name and not role:
         return Piece()
     node_id = ctx.target
+    no_red_cls = " no-red" if _lt_no_red(params) else ""
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_CB_TAB_W - _LT_CB_PAD_L - _LT_CB_PAD_R)
     fit_avail = text_avail / _LT_CB_SLACK
@@ -13203,7 +13244,7 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
                f'</svg>'
                f'<span id="{node_id}-card" class="lt-cb-card" '
                f'style="-webkit-mask:url(#{node_id}-m);mask:url(#{node_id}-m)">'
-               f'<span id="{node_id}-tab" class="lt-cb-tab"></span>'
+               f'<span id="{node_id}-tab" class="lt-cb-tab{no_red_cls}"></span>'
                f'<span class="lt-cb-body">{"".join(rows)}</span></span></span></div>'],
         tweens=tweens)
 
@@ -13268,6 +13309,7 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
     if not name and not role:
         return Piece()
     node_id = ctx.target
+    no_red_cls = " no-red" if _lt_no_red(params) else ""
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_DC_PAD_L - _LT_DC_PAD_R)
     fit_avail = text_avail / _LT_DC_SLACK
@@ -13302,7 +13344,7 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
             f'{{y:0,opacity:1,duration:{_num(t["name_in_dur"])},'
             f'ease:"power3.out"}},{_num(at + t["name_in_at"])});')
     rows.append(
-        f'<span id="{node_id}-rule" class="lt-dc-rule" '
+        f'<span id="{node_id}-rule" class="lt-dc-rule{no_red_cls}" '
         f'style="width:{rule_w}px"></span>')
     if role:
         rows.append(
@@ -13314,7 +13356,7 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
             f'{_num(at + t["role_in_at"])});')
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay lt-dark-card" {_timing(ctx)}>'
-               f'<span id="{node_id}-card" class="lt-dc-card">'
+               f'<span id="{node_id}-card" class="lt-dc-card{no_red_cls}">'
                f'{"".join(rows)}</span></div>'],
         tweens=tweens)
 
@@ -14131,6 +14173,9 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text.fs-underline .accent"
         "{box-shadow:inset 0 -0.12em 0 var(--color-accent)}"
         ".fullscreen-text .fs-q{color:var(--color-accent);font-size:0.55em}"
+        # Разряды числа не переносятся: «$1» и «000 000» на двух строках — это
+        # не миллион, а сломанная вёрстка (хук 0050).
+        ".fullscreen-text.fs-nowrap .fs-fact{white-space:nowrap}"
         f".chat-thread{{left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
         f"top:{int(safe['y_min']) + 40}px}}"
@@ -14202,6 +14247,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "text-shadow:0 2px 22px rgba(0,0,0,0.45);will-change:transform,opacity}"
         ".lt-au-rule{display:block;height:6px;border-radius:3px;background:#C8453D;"
         "transform-origin:0% 50%;will-change:transform}"
+        ".lt-au-rule.no-red{background:rgba(199,201,209,0.72)}"
         ".lt-au-role{display:block;font-family:'Space Mono',var(--font-mono),monospace;"
         "font-weight:400;color:#7A7D82;line-height:1.2;letter-spacing:0.04em;"
         "white-space:nowrap;text-shadow:0 2px 16px rgba(0,0,0,0.45);"
@@ -14219,6 +14265,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "box-shadow:0 14px 44px rgba(17,18,20,0.18)}"
         ".lt-cb-tab{display:block;width:12px;flex-shrink:0;background:#C8453D;"
         "transform-origin:50% 0%;will-change:transform}"
+        ".lt-cb-tab.no-red{background:rgba(199,201,209,0.72)}"
         ".lt-cb-body{display:flex;flex-direction:column;gap:7px;flex:1;"
         "background:#ffffff;padding:22px 40px 24px 30px}"
         ".lt-cb-name{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
@@ -14242,6 +14289,8 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "white-space:nowrap;will-change:transform,opacity}"
         ".lt-dc-rule{display:block;height:4px;border-radius:2px;background:#C8453D;"
         "transform-origin:0% 50%;will-change:transform}"
+        ".lt-dc-rule.no-red{background:rgba(199,201,209,0.72)}"
+        ".lt-dc-card.no-red{border-color:rgba(199,201,209,0.28)}"
         ".lt-dc-role{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
         "font-weight:400;color:#7A7D82;line-height:1.2;letter-spacing:0.02em;"
         "white-space:nowrap;will-change:opacity}"

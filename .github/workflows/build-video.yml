@@ -456,7 +456,13 @@ jobs:
                   templates/manifest.json cache/footage_index.json \
                   instruction.md rejected_patterns.md || true
           # mp4 никогда не в git (превью и сток — артефакт / S3).
-          git diff --cached --name-only -z | grep -zE '\.mp4$' | xargs -0 -r git restore --staged --
+          # `|| true` обязателен: при `pipefail` grep без единого совпадения
+          # роняет шаг, и прогон с готовым mp4 и зелёным QC отмечался красным
+          # только потому, что запрещённых файлов не нашлось.
+          staged_mp4=$(git diff --cached --name-only -z | grep -zE '\.mp4$' || true)
+          if [ -n "$staged_mp4" ]; then
+            printf '%s' "$staged_mp4" | xargs -0 -r git restore --staged --
+          fi
           if git diff --cached --quiet; then
             echo "нечего коммитить"
             exit 0

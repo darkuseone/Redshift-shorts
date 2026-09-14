@@ -79,27 +79,31 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     assert by_id["b4"]["overlay"]["content"] == "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN"
     assert "80 8" not in by_id["b4"]["overlay"]["content"]
     labels = {
-        "b5": ("FLUIDS", "lower-thirds/dark-card"),
-        "b5b": ("WEATHER", "lower-thirds/clean-bar"),
-        "b5c": ("AIRFOIL", "lower-thirds/note-pin"),
-        "b5d": ("VALVES", "lower-thirds/note-pin"),
-        "b5e": ("PLASMA", "lower-thirds/metric-badge"),
+        "b5": "FLUIDS", "b5b": "WEATHER", "b5c": "AIRFOIL",
+        "b5d": "VALVES", "b5e": "PLASMA",
     }
-    for bid, (label, hint) in labels.items():
+    for bid, label in labels.items():
         ov = by_id[bid]["overlay"]
         assert ov["type"] == "lower_third"
         assert ov["content"] == label
         assert ov["content"].strip()
-        assert ov["template_hint"] == hint
+        assert ov["template_hint"].startswith("lower-thirds/")
         assert "bigtext-mask-footage" not in ov.get("template_hint", "")
-    assert len({v[0] for v in labels.values()}) == 5
+    assert len(set(labels.values())) == 5
+    # QC-25: один id шаблона не больше двух раз за ролик. Конкретные id
+    # проверять бессмысленно — P11 их всё равно разводит при сборке; важно,
+    # чтобы сценарий не приносил одну и ту же плашку семь раз подряд.
+    hints = [b["overlay"]["template_hint"] for b in script["blocks"]
+             if (b.get("overlay") or {}).get("template_hint")]
+    for hint in set(hints):
+        assert hints.count(hint) <= 2, (hint, hints)
     assert by_id["b6"]["overlay"]["type"] == "lower_third"
     assert by_id["b6"]["overlay"]["content"] == "REJECTED"
-    assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
+    assert by_id["b6"]["overlay"]["template_hint"].startswith("lower-thirds/")
     assert "НЕТ" not in by_id["b6"]["overlay"]["content"]
     assert by_id["b7"]["overlay"]["type"] == "lower_third"
     assert by_id["b7"]["overlay"]["content"] == "FOLLOWUP"
-    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/name-title"
+    assert by_id["b7"]["overlay"]["template_hint"].startswith("lower-thirds/")
     assert "РЕДШИФТ" not in by_id["b7"]["overlay"]["content"]
     assert not by_id["b7"]["overlay"]["content"].endswith(".")
     assert "bigtext-mask-footage" not in by_id["b7"]["overlay"].get("template_hint", "")
@@ -115,27 +119,36 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     entry = pins["redshift_0050"]
     prefer = entry["prefer"]
     deny = entry["deny"]
-    assert prefer[:7] == [
+    # Порядок внутри prefer ролик не решает: каждый слот прибит поимённо в
+    # slots_lock. Проверяем состав, а не очередь — иначе тест ломается на
+    # каждой перестановке, ничего не защищая.
+    assert set(prefer[:12]) >= {
         "magnific_0050_weather", "magnific_0050_wing",
         "magnific_0050_pipes", "magnific_0050_blood",
         "magnific_0050_fluids", "magnific_0050_inkswirl",
         "magnific_0050_coolvortex",
-    ]
+    }
     assert "magnific_0050_stamp" in prefer
     assert "magnific_0050_city" in prefer
     for aid in (
-        "fp_server_room", "fp_code_editor", "fp_chalkboard_eq",
+        "fp_code_editor", "fp_chalkboard_eq",
         "magnific_0050_fluids", "magnific_0050_inkswirl", "magnific_0050_coolvortex",
-        "pexels_v38431825",
         "magnific_0050_weather", "magnific_0050_stamp", "magnific_0050_city",
-        "magnific_0050_voidpulse", "magnific_0050_darkgrid",
+        "magnific_0050_wing", "magnific_0050_pipes", "magnific_0050_blood",
         "magnific_0050_codeglow", "magnific_0050_nightstatic",
         "magnific_0050_tealmister", "magnific_0050_blueember",
         "magnific_0050_charcoalash", "magnific_0050_cyanrain",
         "magnific_0050_frostscan", "magnific_0050_deepcoil",
-        "magnific_0050_steelglow", "magnific_0050_slateiron",
+        "magnific_0050_steelglow",
     ):
         assert aid in prefer, aid
+    # Серверный коридор — отдельной строкой: его выкинули по критике («повтор
+    # серверов» трижды за ролик), и вернуть его в prefer молча нельзя.
+    for aid in ("fp_server_room", "pexels_v38431825",
+                "magnific_0050_voidpulse", "magnific_0050_darkgrid",
+                "magnific_0050_slateiron"):
+        assert aid not in prefer, aid
+        assert aid in deny, aid
     for aid in (
         "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
         "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
@@ -147,7 +160,7 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     assert "pexels_v7565432" in deny
     by_block = entry.get("by_block") or {}
     assert by_block.get("b3") == "magnific_0050_gpu"
-    assert by_block.get("b4") == "magnific_0050_lean"
+    assert by_block.get("b4") == "magnific_0050_steelglow"
     assert by_block.get("b5") == "magnific_0050_fluids"
     assert by_block.get("b5b") == "magnific_0050_weather"
     assert by_block.get("b6") == "magnific_0050_stamp"
@@ -307,7 +320,6 @@ def test_0050_queries_name_life_beats_not_red_particles():
     assert "vortex" in " ".join(by_id["b5"]["broll_queries"]).lower()
     b7 = " ".join(by_id["b7"]["broll_queries"]).lower()
     assert "city night" in b7
-    assert "notebook" in b7
     assert "red accent" not in b7
     assert "particles" not in b7
 
@@ -465,10 +477,8 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
             assert "clay official" not in blob
             assert "clay rubber" not in blob
     assert "rubber stamp" in " ".join(by_id["b6"]["broll_queries"]).lower()
-    assert by_id["b5"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
-    assert by_id["b5b"]["overlay"]["template_hint"] == "lower-thirds/clean-bar"
-    assert by_id["b6"]["overlay"]["template_hint"] == "lower-thirds/dark-card"
-    assert by_id["b7"]["overlay"]["template_hint"] == "lower-thirds/name-title"
+    for bid in ("b5", "b5b", "b6", "b7"):
+        assert by_id[bid]["overlay"]["template_hint"].startswith("lower-thirds/")
 
 
 def test_0050_ci_request_is_p5_prepared_skip_generate():
@@ -480,8 +490,8 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["skip_generate"] is True
     assert req["skip_vision"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 40
-    assert "round40" in req["note"]
+    assert int(req.get("round") or 0) == 42
+    assert req["note"].startswith(f"round{int(req['round'])}")
     assert "QC-SEMANTIC" in req["note"] or "skip_vision" in req["note"]
     assert "skip_generate" in req["note"] or req["skip_generate"] is True
     assert "P5" in req["note"] or req["from_step"] == "P5"

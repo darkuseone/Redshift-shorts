@@ -79,8 +79,13 @@ def build_pipeline() -> Pipeline:
              inputs=("cut_plan.json", "accepted_assets.json", "generated_assets.json",
                      "avatar_meta.json", "sfx_map.json", "words.json"),
              outputs=("edit_plan_A.json",),
-             config_inputs=("config/brandbook.json", "config/editing_preferences.json"),
-             version="2"),
+             config_inputs=("config/brandbook.json", "config/editing_preferences.json",
+                            "config/footage_pins.json", "config/glossary.json"),
+             # 3: ритм монтажа (кадры встык, без перебивок короче двух секунд)
+             # и плашки, обрезанные по своему кадру. Правки живут в коде, а
+             # ключ кэша считался только по данным — на 0050 из-за этого
+             # приезжал старый edit_plan с теми же наездами кадров.
+             version="3"),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),
