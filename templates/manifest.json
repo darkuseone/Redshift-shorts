@@ -2981,7 +2981,8 @@
       ],
       "renderer": "light_leak",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -3980,7 +3981,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -5961,7 +5963,8 @@
       "renderer": "hero-title-behind",
       "last_used_in": [
         "redshift_0047",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
