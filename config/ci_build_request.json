@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round46: frozen avatar request busts P5/P6 cache so the restored windows reach cut_plan; skip_vision",
-  "round": 46
+  "note": "round47: the run no longer overwrites the frozen avatar request; skip_vision",
+  "round": 47
 }

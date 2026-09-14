@@ -428,7 +428,17 @@ jobs:
           if [ -f "$src/avatar_request.json" ]; then
             clips="assets/avatar_clips/$video_id"
             mkdir -p "$clips"
-            cp -v "$src/avatar_request.json" "$clips"/
+            # Заявка кладётся только один раз — когда клипов ещё нет. Дальше
+            # она замороженный контракт: под её окна отрендерены оплаченные
+            # webm, и переписывать её результатом прогона нельзя. На 0050 этот
+            # `cp` трижды подряд затирал пять сегментов тремя, после чего
+            # следующий прогон требовал новой генерации HeyGen. Свежую заявку
+            # всегда видно в артефакте `avatar-request`.
+            if [ -f "$clips/avatar_request.json" ]; then
+              echo "заявка на клипы уже заморожена — не трогаем"
+            else
+              cp -v "$src/avatar_request.json" "$clips"/
+            fi
             python - "$src" "$clips" <<'EOF'
           import json, shutil, sys
           from pathlib import Path
