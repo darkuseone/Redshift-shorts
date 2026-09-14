@@ -5,10 +5,13 @@ A lock line is {block, on, asset, plaque?, template?, avatar?}.
 """
 from __future__ import annotations
 
+import logging
 from collections import Counter
 from typing import Any, Callable
 
 from .pin_match import ctx_words, overlapping_speech
+
+_log = logging.getLogger("redshift.slots_lock")
 
 # Spare lower-thirds for QC-25 (no template id more than twice). dark-card
 # stays off this list so a third plaque cannot reuse the overflowing id.
@@ -118,8 +121,63 @@ def _accepted_map(doc: dict[str, Any]) -> dict[int, dict[str, Any]]:
     return out
 
 
+_MEDIA_KEYS = ("storage_key", "local_file", "file", "dst", "path", "local_path")
+
+
 def _donor_has_media(donor: dict[str, Any]) -> bool:
-    return bool(donor.get("file") or donor.get("dst") or donor.get("path") or donor.get("local_path"))
+    """Есть ли у донора ссылка на файл.
+
+    P7 кладёт в кандидата ``storage_key`` (материал из базы) и ``local_file``
+    (скачанный сток); P8 пересобирает запись как ``{**candidate, ...}`` и
+    других ключей не добавляет. Проверка же спрашивала про ``file``/``dst`` —
+    таких ключей в ``accepted_assets.json`` нет ни у одной записи, поэтому
+    ``apply_lock_after_p8`` молча выходил на каждой строке замка. Девять
+    раундов замок стоял в заявке и не двигал ни одного слота.
+    """
+    return any(donor.get(k) for k in _MEDIA_KEYS)
+
+
+def _index_donor(ctx: Any, pid: str) -> dict[str, Any] | None:
+    """Донор из базы футажей, когда P8 не принял материал ни на один слот.
+
+    Замок называет материал поимённо: раз его нет среди принятых, поиск до
+    него не дошёл (у ``magnific_0050_stamp`` теги «rubberstamp declined» не
+    совпали ни с одним запросом b6). Брать файл с диска здесь законно —
+    материал уже лежит в репозитории и в индексе, платить за него второй раз
+    не нужно.
+    """
+    storage = getattr(ctx, "storage", None)
+    cfg = getattr(ctx, "cfg", None)
+    if storage is None or cfg is None or not pid:
+        return None
+    try:
+        from .manifest import FootageIndex
+        from .hydrate_footage import hydrate_repo_footage
+        from ..p7_broll_search.search import _local_cache_row
+    except Exception:  # noqa: BLE001
+        return None
+    try:
+        index = FootageIndex.load(cfg)
+        record = index.by_id(pid)
+        if record is None or not record.file:
+            return None
+        if not storage.exists(record.file):
+            hydrate_repo_footage(ctx, index)
+        if not storage.exists(record.file):
+            return None
+        row = _local_cache_row(-1, record, f"slots_lock:{pid}")
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("slots_lock: донор %s не поднялся из базы: %s", pid, exc)
+        return None
+    row["verdict"] = {
+        "score": float(record.score or 0.0),
+        "reason": "slots_lock: материал назван заявкой",
+        "summary": record.vision_summary or "",
+        "judge": "slots_lock", "frames": 0,
+    }
+    row["score"] = float(record.score or 0.0)
+    row["decision"] = "accept_lock"
+    return row
 
 
 def apply_lock_after_p8(ctx: Any) -> int:
@@ -148,16 +206,32 @@ def apply_lock_after_p8(ctx: Any) -> int:
             continue
         donor = by_id.get(pid)
         if donor is None or not _donor_has_media(donor):
+            donor = _index_donor(ctx, pid)
+        if donor is None or not _donor_has_media(donor):
+            _log.warning("slots_lock: нет донора для %s («%s») — слот не заперт",
+                         pid, spec["on"])
             continue
         target_idx = int(targets[0]["index"])
         cur = accepted.get(target_idx) or {}
         if str(cur.get("asset_id") or "") == pid:
             continue
         if not spec.get("reuse"):
+            # Замок переставляет материал, а не выбивает дыру. Если материал
+            # уже лежит на другом слоте, туда переезжает прежний житель цели:
+            # иначе слот-донор остаётся пустым, P11 закрывает его лестницей
+            # (карточка поверх чужого клипа) — ровно так и родилось
+            # «НЕ БЕРЁТ. ЭТО» поверх кадра Lean.
             for other_idx, entry in list(accepted.items()):
                 if int(other_idx) == target_idx:
                     continue
-                if str((entry or {}).get("asset_id") or "") == pid:
+                if str((entry or {}).get("asset_id") or "") != pid:
+                    continue
+                if cur.get("asset_id") and _donor_has_media(cur):
+                    accepted[int(other_idx)] = {
+                        **cur, "slot_index": int(other_idx),
+                        "fallback_reason": f"slots_lock swap: уступил {pid}",
+                    }
+                else:
                     del accepted[int(other_idx)]
         accepted[target_idx] = {
             **donor,
@@ -165,9 +239,13 @@ def apply_lock_after_p8(ctx: Any) -> int:
             "speech_locked": True,
             "fallback_reason": f"slots_lock:{spec['on']}",
         }
+        _log.info("slots_lock: %s → слот %s (%s «%s»), было %s",
+                  pid, target_idx, spec.get("block") or "-", spec["on"],
+                  str(cur.get("asset_id") or "пусто"))
         moved += 1
     if not moved:
         return 0
+    _log.info("slots_lock: закреплено слотов: %s из %s строк", moved, len(lock))
     doc = dict(doc)
     doc["accepted"] = {str(k): v for k, v in accepted.items()}
     ctx.write("accepted_assets.json", doc)

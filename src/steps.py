@@ -72,7 +72,10 @@ def build_pipeline() -> Pipeline:
              inputs=("candidates.json", "cut_plan.json"),
              outputs=("accepted_assets.json",),
              config_inputs=("config/footage_pins.json",),
-             uses_script=True, version="4"),
+             # 5: замок слотов наконец видит донора — до этого он спрашивал у
+             # принятой записи ключи, которых P7 туда не кладёт, и выходил
+             # молча на каждой строке заявки.
+             uses_script=True, version="5"),
         Step("P9", "Генерация недостающих материалов", p9,
              inputs=("accepted_assets.json", "cut_plan.json"), outputs=("generated_assets.json",)),
         Step("P10", "Аудио: SFX, музыкальная подложка, микс", p10,

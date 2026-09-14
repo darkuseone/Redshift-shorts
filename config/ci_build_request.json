@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round50: stamp scrub spares the pinned gap; git tail resolves regenerated-file conflicts; skip_vision",
-  "round": 50
+  "note": "round51: the slot lock finally sees a donor (P7 writes storage_key, not file) and swaps instead of punching holes; skip_vision",
+  "round": 51
 }
