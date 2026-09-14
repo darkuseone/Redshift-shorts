@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-14T00:00:00+00:00",
+  "updated_at": "2026-09-14T03:50:23+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -12,11 +12,35 @@
     "meme_enabled": true,
     "dynamic_transition_bias": 0.5
   },
-  "ending_last_type": "open_question",
-  "ending_ring": ["open_question", "binary_vote", "part2_cliff", "share_prompt", "source_tease", "save_prompt", "visual_loop_seam", "soft_subscribe"],
-  "ending_history": [{"video_id": "redshift_0042", "type": "open_question", "recorded_at": "2026-09-08"}],
-  "sfx_scenario_ring": [],
-  "bed_ring": [],
+  "ending_last_type": "part2_cliff",
+  "ending_ring": [
+    "open_question",
+    "binary_vote",
+    "part2_cliff",
+    "share_prompt",
+    "source_tease",
+    "save_prompt",
+    "visual_loop_seam",
+    "soft_subscribe"
+  ],
+  "ending_history": [
+    {
+      "video_id": "redshift_0042",
+      "type": "open_question",
+      "recorded_at": "2026-09-08"
+    },
+    {
+      "video_id": "redshift_0050",
+      "type": "part2_cliff",
+      "recorded_at": "2026-09-14"
+    }
+  ],
+  "sfx_scenario_ring": [
+    "impact"
+  ],
+  "bed_ring": [
+    "music_data_sonification_strings"
+  ],
   "template_excludes": {
     "redshift_0050": [
       "text-fullscreen/bigtext-mask-footage",

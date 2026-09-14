@@ -699,10 +699,10 @@
       "mode_reason": "mode_hint из сценария",
       "visual_intent": "Отдельные тёмные карточки цифр на живом фоне: 10 000, 88 Ч, 2 700 000, 17 Ч · LEAN. Не белые плашки. Не HTML Hello JS.",
       "broll_queries": [
-        "server rack blinking lights closeup",
-        "lean theorem prover code proof screen",
+        "server rack blinking lights closeup dark",
+        "code editor dark theme scrolling proof",
         "mathematics proof whiteboard equations dark",
-        "digital counter numbers dashboard ui"
+        "digital counter numbers dashboard ui dark"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -980,7 +980,7 @@
       ],
       "emphasis_word": "жидкость",
       "answers_hook": false,
-      "avatar_directive": "auto",
+      "avatar_directive": "off",
       "mode": "C",
       "mode_reason": "mode_hint из сценария",
       "visual_intent": "Один пункт жизни — один кадр: погода, крыло, трубы, кровь. Не коллаж всех слов на одной карточке.",
@@ -1293,10 +1293,10 @@
       "mode_reason": "mode_hint из сценария",
       "visual_intent": "Документы / институт Clay. Штамп REJECT или свет в щели двери. НЕ cracked wall / бетон / глина.",
       "broll_queries": [
-        "university institute classical building facade",
+        "university institute classical building facade night",
         "official documents stamp desk paperwork",
         "door light gap dark room cinematic",
-        "rejected stamp paper closeup"
+        "rubber stamp rejected paper closeup"
       ],
       "overlay": {
         "type": "fullscreen_text",
@@ -1375,9 +1375,9 @@
       ],
       "emphasis_word": "шести",
       "answers_hook": false,
-      "avatar_directive": "on",
-      "mode": "A",
-      "mode_reason": "mode_hint из сценария",
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "роль блока (§6)",
       "visual_intent": "REDSHIFT ровно без точки + аватар или живой кадр. Не косой текст.",
       "broll_queries": [
         "open notebook mathematics desk warm light",
@@ -1398,9 +1398,9 @@
     }
   ],
   "avatar": {
-    "planned_share": 0.4664,
-    "planned_sec": 28.248,
-    "appearances": 3,
+    "planned_share": 0.4135,
+    "planned_sec": 25.04,
+    "appearances": 2,
     "avatar_id": "99ccc74e764947c394cd4ef210960a6f"
   },
   "planned_counts": {
@@ -1453,7 +1453,7 @@
     "b4": "C",
     "b5": "C",
     "b6": "A",
-    "b7": "A"
+    "b7": "C"
   },
   "conflicts": []
 }
