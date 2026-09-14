@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round40: skip_vision ships mp4 (QC-SEMANTIC advisory); skip_generate; P5",
-  "round": 40
+  "note": "round41: Gemini punch list on 162; skip_vision; frozen voice/avatar",
+  "round": 41
 }
