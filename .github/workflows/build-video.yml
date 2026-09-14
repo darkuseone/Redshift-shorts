@@ -27,9 +27,9 @@ on:
         default: false
         type: boolean
       skip_vision:
-        description: "Без live Grok/Gemini vision: P8 + P12 semantic QC; thumbs = ffmpeg"
+        description: "Без live Grok/Gemini vision: P8 + P12 semantic QC; thumbs = ffmpeg. QC картинки — вручную."
         required: false
-        default: false
+        default: true
         type: boolean
       skip_generate:
         description: "Без image gen: P9 + P12 AI thumbs (сразу ffmpeg, без Gemini/Grok image)"
@@ -144,9 +144,9 @@ jobs:
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       HEYGEN_API: ${{ secrets.HEYGEN_API }}
       # Look id только из config.yaml (heygen.avatar_id), не из секрета.
-      # Vision: Grok primary, Gemini только если Grok недоступен. GLM выведен.
-      XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-      XAI_API: ${{ secrets.XAI_API }}
+      # Vision по API-ключам выключен (vision.skip_live=true). QC картинки —
+      # заказчик. XAI_API_KEY / XAI_API не экспортируются: даже auto+ключ
+      # не вызовет Grok vision. Gemini остаётся для image gen (generation.skip).
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       MAGNIFIC_API_KEY: ${{ secrets.MAGNIFIC_API_KEY }}
@@ -357,7 +357,7 @@ jobs:
             --set vision.primary=grok \
             --set heygen.source="$HEYGEN_SRC" \
             "${PACE_ARGS[@]}" \
-            ${{ steps.request.outputs.skip_vision == 'true' && '--set vision.skip_live=true' || '' }} \
+            ${{ steps.request.outputs.skip_vision != 'false' && '--set vision.skip_live=true' || '--set vision.skip_live=false' }} \
             ${{ steps.request.outputs.skip_generate == 'true' && '--set generation.skip=true' || '' }} \
             run --script "${{ steps.request.outputs.script }}" \
             ${{ steps.request.outputs.from_step != '' && format('--from {0}', steps.request.outputs.from_step) || '' }} \

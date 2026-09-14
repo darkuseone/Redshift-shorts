@@ -128,8 +128,9 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # Critic / P8 / P12 semantic QC → Grok. Gemini только если Grok недоступен.
-  # GLM выведен. Generation по-прежнему providers.allow_xai=false.
+  # Critic / P8 / P12 semantic QC. Live Grok/Gemini выключены: заказчик
+  # смотрит ролик сам. skip_live=false в заявке — единственный способ
+  # снова вызвать vision API. Generation по-прежнему providers.allow_xai=false.
   primary: "grok"
   arbiter: "grok"
   fallback: "gemini"
@@ -143,9 +144,10 @@ vision:
   grok_api_base: "https://api.x.ai"
   gemini_api_key_env: GEMINI_API_KEY
   gemini_model: "gemini-3.8-flash"
-  # true = без live vision (Grok/Gemini): P8 кэш/ранг. P12 не ставит semantic
-  # pass: qc_skipped_semantic, ролик не выдаётся (MUST-006). Mock — mode=mock.
-  skip_live: false
+  # true = без live vision даже при XAI_API_KEY / GEMINI_API_KEY.
+  # P8: кэш/ранг/движковые гейты. P12: qc_skipped_semantic, файл выдаётся.
+  # Смысловой QC — глаз заказчика. Mock-судья — только providers.mode=mock.
+  skip_live: true
   # Запасной Flash только при стойком 503 на primary. 3.7 — предыдущий GA Flash
   # (релизы 3.7→3.8 за ~3 недели); 2.5 для новых ключей уже недоступен.
   gemini_model_fallback: "gemini-3.7-flash"

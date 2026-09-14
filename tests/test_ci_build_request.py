@@ -22,6 +22,7 @@ def test_dispatch_reads_inputs():
     assert out["heygen_source"] == "prepared"
     assert out["force"] == "true"
     assert out["requested_by"] == "workflow_dispatch"
+    assert out["skip_vision"] == "true"
 
 
 def test_push_reads_file(tmp_path, monkeypatch):
@@ -46,6 +47,7 @@ def test_push_reads_file(tmp_path, monkeypatch):
     assert out["heygen_source"] == "api"
     assert out["force"] == "false"
     assert out["requested_by"] == "cursor"
+    assert out["skip_vision"] == "true"
 
 
 def test_empty_from_step_is_phase_one(tmp_path, monkeypatch):

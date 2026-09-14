@@ -10,9 +10,9 @@
    водяные знаки?
 
 ``mismatch_share > limits.vision_mismatch_share_max`` — blocking: ролик не
-выдаётся. ``vision.skip_live`` не вызывает Gemini/Grok, пишет
-``qc_skipped_semantic`` и **не** блокирует выдачу: глаз / Gemini после
-станка — смысловой QC канала.
+выдаётся. ``vision.skip_live`` (по умолчанию true) не вызывает Gemini/Grok
+даже при ключах, пишет ``qc_skipped_semantic`` и **не** блокирует выдачу:
+смысловой QC канала — глаз заказчика.
 """
 
 from __future__ import annotations
@@ -315,8 +315,9 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
     if not bool(cfg.get("features.vision_qc", True)):
         return {"enabled": False, "reason": "features.vision_qc выключен"}
 
-    # skip_live: ZERO live Gemini/Grok. File still ships; human/Gemini is QC.
-    if bool(cfg.get("vision.skip_live", False)):
+    # skip_live: ZERO live Gemini/Grok даже при ключах. Файл выдаётся;
+    # смысловой QC — глаз заказчика.
+    if bool(cfg.get("vision.skip_live", True)):
         _log.warning("vision.skip_live: смысловой QC без live vision",
                      extra={"variant": plan.get("variant")})
         return _skipped_semantic_report(

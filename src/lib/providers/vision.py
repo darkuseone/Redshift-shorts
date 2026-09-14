@@ -460,6 +460,10 @@ def _grok_allowed_for_role(cfg, *, role: str) -> bool:
 
 
 def _live_vision(cfg, costs, name: str, *, role: str = "primary") -> VisionProvider | None:
+    # skip_live: ключи в окружении не считаются разрешением. Live Grok/Gemini
+    # не создаются — смысловой QC делает заказчик.
+    if bool(cfg.get("vision.skip_live", True)):
+        return None
     # Нет ключа → None (следующий в цепочке), даже при providers.mode=live.
     if name == "glm":
         return None
@@ -512,10 +516,15 @@ class FallbackVision(VisionProvider):
 def build_vision_provider(cfg, costs, *, role: str = "primary") -> VisionProvider:
     """Судья для роли из ``vision.primary`` / ``vision.arbiter``.
 
-    Primary — Grok. Gemini только как fallback, если Grok недоступен.
-    GLM в цепочку не ставится.
+    ``vision.skip_live`` (по умолчанию true) — live Grok/Gemini не вызываются
+    даже при наличии ключей. Primary — Grok. Gemini только как fallback, если
+    Grok недоступен и skip_live снят. GLM в цепочку не ставится.
     """
     preferred = str(cfg.get(f"vision.{role}", "grok")).lower()
+    if bool(cfg.get("vision.skip_live", True)):
+        _log.warning("vision.skip_live: live Grok/Gemini не вызываются",
+                     extra={"role": role})
+        return MockVision(cfg, costs, judge_name=preferred or "grok")
     fallback = str(cfg.get("vision.fallback", "gemini") or "").lower()
     if preferred == "glm":
         preferred = "grok"

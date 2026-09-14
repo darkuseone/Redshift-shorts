@@ -21,7 +21,7 @@ DEFAULTS = {
     "from_step": "",
     "heygen_source": "prepared",
     "skip_generate": "false",
-    "skip_vision": "false",
+    "skip_vision": "true",
     "force": "false",
     "requested_by": "",
     "note": "",
@@ -47,7 +47,7 @@ def load_request(*, event_name: str, environ: dict[str, str] | None = None) -> d
         out["from_step"] = env.get("INPUT_FROM") or ""
         out["heygen_source"] = env.get("INPUT_HEYGEN") or "prepared"
         out["skip_generate"] = _flag(env.get("INPUT_SKIP_GENERATE"))
-        out["skip_vision"] = _flag(env.get("INPUT_SKIP_VISION"))
+        out["skip_vision"] = _flag(env.get("INPUT_SKIP_VISION", "true"))
         out["force"] = _flag(env.get("INPUT_FORCE"))
         out["requested_by"] = "workflow_dispatch"
         out["tts_pace"] = ""
@@ -70,7 +70,7 @@ def load_request(*, event_name: str, environ: dict[str, str] | None = None) -> d
     # Optional TTS pace override for a single build request.
     pace = data.get("tts_pace")
     out["tts_pace"] = "" if pace in (None, "") else str(pace)
-    out["skip_vision"] = _flag(data.get("skip_vision", False))
+    out["skip_vision"] = _flag(data.get("skip_vision", True))
     out["force"] = "false"
     # --force-paid из заявки Cursor никогда не проходит.
     out["requested_by"] = str(data.get("requested_by") or "cursor")

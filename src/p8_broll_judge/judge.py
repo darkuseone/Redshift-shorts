@@ -860,7 +860,7 @@ def run_step(ctx) -> dict[str, Any]:
     reject_threshold = float(cfg.get("vision.reject_threshold", 0.45))
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 3))
 
-    skip_live = bool(cfg.get("vision.skip_live", False))
+    skip_live = bool(cfg.get("vision.skip_live", True))
     surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
     footage_slots = [
         s for s in plan.get("slots", [])

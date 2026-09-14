@@ -7,11 +7,29 @@ from unittest.mock import MagicMock
 from src.lib.config import load_config
 
 
-def test_skip_flags_default_off():
+def test_skip_flags_default():
     cfg = load_config()
-    assert cfg.get("vision.skip_live") is False
+    assert cfg.get("vision.skip_live") is True
     assert cfg.get("generation.skip") is False
     assert cfg.get("limits.vision_mismatch_share_max") == 0.10
+
+
+def test_skip_live_default_ignores_api_keys(monkeypatch):
+    """Ключи в окружении не включают Grok/Gemini vision — skip_live по умолчанию."""
+    from src.lib.costs import CostLedger
+    from src.lib.providers.vision import MockVision, build_vision_provider
+
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    monkeypatch.setenv("XAI_API", "xai-test-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+    monkeypatch.setenv("GOOGLE_API_KEY", "google-test-key")
+    cfg = load_config()
+    assert cfg.get("vision.skip_live") is True
+    cfg.set("providers.mode", "live")
+    provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
+    assert isinstance(provider, MockVision)
+    arbiter = build_vision_provider(cfg, CostLedger(video_id="t"), role="arbiter")
+    assert isinstance(arbiter, MockVision)
 
 
 def test_skip_flags_cli_override():
@@ -98,6 +116,7 @@ def test_vision_qc_provider_error_is_non_blocking(tmp_path, monkeypatch):
     monkeypatch.setattr(VQ, "extract_frames", lambda *_a, **_k: [frame] * VQ.SAMPLES)
 
     cfg = load_config()
+    cfg.set("vision.skip_live", False)
     ctx = MagicMock()
     ctx.cfg = cfg
     ctx.costs = MagicMock()
