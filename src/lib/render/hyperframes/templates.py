@@ -8282,6 +8282,25 @@ def is_unbreakable_number(text: str) -> bool:
     return bool(_UNBREAKABLE_NUMBER_RE.match(str(text or "").strip()))
 
 
+_LEADING_NUMBER_RE = re.compile(
+    r"^([\$€£₽]?\s*\d[\d\s\u00a0\u202f.,]*%?)\s*(.*)$", re.S
+)
+
+
+def split_leading_number(text: str) -> tuple[str, str]:
+    """Число целиком и подпись после него.
+
+    Дробить по первому пробелу нельзя: пробелы внутри числа — разряды.
+    «$1 000 000» так превращалось в число «$1» и подпись «000 000», а
+    «10 000 АГЕНТОВ» — в «10» и «000 АГЕНТОВ».
+    """
+    match = _LEADING_NUMBER_RE.match(str(text or "").strip())
+    if not match:
+        return str(text or "").strip(), ""
+    number = match.group(1).strip().rstrip(".,")
+    return number, match.group(2).strip()
+
+
 def _fs_size(ctx: "TemplateCtx", text: str, *, pad_px: float = 0.0,
              whole_line: bool = False) -> int:
     """Кегль полноэкранной надписи.
@@ -8680,8 +8699,11 @@ def fs_number_slam(ctx: "TemplateCtx") -> Piece:
 
     # Numeric slam: keep classic number + caption split.
     if parts and re.match(r"^[\d$€£%.,+\-×xX]+", parts[0]):
-        number, caption = parts[0], " ".join(parts[1:])
-        size = _fs_size(ctx, number)
+        # Пробелы внутри числа — разряды, а не граница слов: деление по
+        # первому пробелу ставило в хук «$1» огромным числом и «000 000»
+        # мелкой подписью — приз читался как один доллар.
+        number, caption = split_leading_number(content)
+        size = _fs_size(ctx, number, whole_line=True)
         cap = (f'<span class="fs-cap">{_esc(caption)}</span>' if caption else "")
         if detail and not caption:
             cap = f'<span class="fs-cap">{_esc(detail)}</span>'

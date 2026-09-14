@@ -14,8 +14,8 @@ from pathlib import Path
 import pytest
 
 from src.lib.render.hyperframes.templates import (
-    OVERLAYS, TemplateCtx, fs_fact_card, fs_stack_lines, is_unbreakable_number,
-    overlay_css, text_width,
+    OVERLAYS, TemplateCtx, fs_fact_card, fs_number_slam, fs_stack_lines,
+    is_unbreakable_number, overlay_css, split_leading_number, text_width,
 )
 from src.p11_assemble.assemble import _coerce_latin_cleanbar_dark
 
@@ -116,3 +116,32 @@ class TestAFullscreenLineFitsTheFrame:
         assert lines
         for line in lines:
             assert text_width(line, size) <= 740, (line, size)
+
+
+class TestTheHookSumIsNotCutInHalf:
+    """Пробелы в «$1 000 000» — разряды, а не граница слов.
+
+    Приём hook-number-slam делил содержимое по первому пробелу на «число» и
+    «подпись». В хуке 0050 это давало огромное «$1» и мелкое «000 000» под
+    ним: приз читался как один доллар (прогоны 164–170).
+    """
+
+    @pytest.mark.parametrize("content,number,caption", [
+        ("$1 000 000", "$1 000 000", ""),
+        ("10 000 АГЕНТОВ", "10 000", "АГЕНТОВ"),
+        ("2 700 000 СООБЩЕНИЙ", "2 700 000", "СООБЩЕНИЙ"),
+        ("88 ЧАСОВ", "88", "ЧАСОВ"),
+        ("ВЕКА НИКТО БРАЛ", "ВЕКА НИКТО БРАЛ", ""),
+    ])
+    def test_the_whole_number_stays_together(self, content, number, caption):
+        assert split_leading_number(content) == (number, caption)
+
+    def test_the_hook_renders_the_sum_as_one_number(self):
+        html = "".join(fs_number_slam(_ctx(content="$1 000 000", slam=True)).nodes)
+        painted = re.sub(r"<[^>]+>", "",
+                         re.search(r'class="fs-num[^"]*"[^>]*>(.*?)</span>',
+                                   html, re.S).group(1))
+        assert painted == "$1 000 000"
+        assert 'class="fs-cap"' not in html
+        size = int(re.search(r"font-size:(\d+)px", html).group(1))
+        assert text_width(painted, size) <= 740

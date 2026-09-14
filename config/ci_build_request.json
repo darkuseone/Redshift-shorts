@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round48: Clay stamp pinned to the word that has a free slot; one clip is never two shots; skip_vision",
-  "round": 48
+  "note": "round49: hook sum is one number; the fill hands over instead of holding the whole line red; skip_vision",
+  "round": 49
 }

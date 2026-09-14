@@ -160,3 +160,39 @@ class TestNumbersReadAsNumbers:
 
     def test_the_tts_stress_mark_never_reaches_the_frame(self, markup):
         assert "́" not in markup
+
+
+class TestTheFillHandsOverInsteadOfHolding:
+    """Заливка гаснет, когда слово отзвучало, а не висит до конца фразы.
+
+    Фраза канала часто состоит из одного экранного токена («ПОГОДА», «НЕ
+    БРАЛ» со склеенным предлогом). Удержание до конца клипа красило всю
+    строку целиком на весь её хвост — в кадре стоял сплошной красный вместо
+    белой фразы с одним красным словом (прогон 170).
+    """
+
+    def _spans(self, markup):
+        fills = {t: (float(at), float(at) + float(d)) for t, d, at in re.findall(
+            r'fromTo\("#(gf-\d+-w\d+)-r",\{scaleX:0\},\{scaleX:1,'
+            r'duration:([\d.]+)[^}]*\},([\d.]+)\)', markup)}
+        offs = {t: float(v) for t, v in re.findall(
+            r'tl\.set\("#(gf-\d+-w\d+)-r",\{scaleX:0\},([\d.]+)\)', markup)}
+        return fills, offs
+
+    def test_every_word_stops_glowing_soon_after_it_is_spoken(self, markup):
+        fills, offs = self._spans(markup)
+        assert fills
+        for word, (_, ends) in fills.items():
+            assert word in offs, word
+            assert offs[word] - ends <= 0.2 + 1e-6, (word, ends, offs[word])
+
+    def test_two_words_of_one_phrase_never_glow_together(self, markup):
+        fills, offs = self._spans(markup)
+        by_phrase: dict[str, list[tuple[float, float]]] = {}
+        for word, (start, _) in fills.items():
+            by_phrase.setdefault(word.rsplit("-w", 1)[0], []).append(
+                (start, offs[word]))
+        for phrase, spans in by_phrase.items():
+            spans.sort()
+            for (a_start, a_end), (b_start, _) in zip(spans, spans[1:]):
+                assert a_end <= b_start + 1e-6, (phrase, spans)

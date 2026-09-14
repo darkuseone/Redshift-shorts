@@ -45,6 +45,9 @@ TRACK_CAPTION_ODD = 19
 # stretch until the next *visible* phrase: mute windows drop karaoke in
 # between, and that left «ДНЯ» on screen for 17 seconds on 0048.
 _PHRASE_HOLD_CAP = 0.45
+# Сколько заливка держится после того, как слово отзвучало. Ноль читался бы
+# как мигание на стыке, полсекунды — как «вся фраза красная».
+_FILL_HOLD_SEC = 0.12
 
 
 def phrase_clip_span(
@@ -1094,11 +1097,18 @@ def build_gradient_fill(
             at = float(word["start"])
             word_end = float(word["end"])
             dur = max(0.05, word_end - at)
-            # Красным светится ровно одно слово — то, которое звучит. Гасим
-            # его к началу следующего, иначе к концу фразы красной становится
-            # вся строка, а фраза по закону канала белая.
-            hand_off = float(phrase[i + 1]["start"]) if i + 1 < n else end
-            hand_off = max(hand_off, word_end)
+            # Красным светится ровно одно слово — то, которое звучит.
+            #
+            # Гаснет оно сразу, как слово отзвучало, а не висит до конца
+            # фразы. Фраза канала часто состоит из одного экранного токена
+            # («ПОГОДА», «НЕ БРАЛ» со склеенным предлогом), и удержание
+            # заливки до конца клипа красило всю строку целиком на весь её
+            # хвост: в кадре вместо белой фразы с одним красным словом стоял
+            # сплошной красный. Передаём эстафету следующему слову, а на
+            # последнем просто гасим.
+            hand_off = (float(phrase[i + 1]["start"]) if i + 1 < n
+                        else word_end + _FILL_HOLD_SEC)
+            hand_off = min(max(hand_off, word_end), end)
             tweens.append(
                 f'tl.set("#{wid}",{{scale:{_scale(bounce)}}},{_num(at)});'
             )
