@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round41: Gemini punch list on 162; skip_vision; frozen voice/avatar",
+  "note": "round41b: script+pins landed; skip_vision",
   "round": 41
 }
