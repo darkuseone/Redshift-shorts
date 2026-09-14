@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round52: P8/P11 stop fingerprinting the wrapper instead of their own code; card numbers stop breaking across lines; skip_vision",
-  "round": 52
+  "note": "round53: two lock lines on one phrase take two slots, so the Clay stamp keeps the gap it was pinned to; skip_vision",
+  "round": 53
 }

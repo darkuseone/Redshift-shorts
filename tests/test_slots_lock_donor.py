@@ -87,3 +87,34 @@ def test_a_lock_without_a_donor_anywhere_leaves_the_plan_alone():
     ctx = _Ctx(_plan(), doc)
     assert apply_lock_after_p8(ctx) == 0
     assert "accepted_assets.json" not in ctx.written
+
+
+def _plan_two_lines():
+    """Две строки заявки на одну реплику — как b6 «не берёт» на 0050."""
+    plan = _plan()
+    plan["slots"] = [
+        {"index": 0, "block_id": "b6", "needs_asset": True,
+         "asset_role": "broll", "start": 20.0, "end": 20.7},
+        {"index": 1, "block_id": "b6", "needs_asset": True,
+         "asset_role": "broll", "start": 20.7, "end": 21.4},
+    ]
+    plan["slots_lock"] = [
+        {"block": "b6", "on": "не берёт", "asset": "magnific_0050_stamp"},
+        {"block": "b6", "on": "не берёт", "asset": "magnific_0050_charcoalash"},
+    ]
+    return plan
+
+
+def test_two_lines_on_one_phrase_take_two_slots():
+    doc = {"accepted": {
+        "0": {"asset_id": "magnific_0050_lean", "storage_key": "magnific/lean.mp4"},
+        "1": {"asset_id": "magnific_0050_stamp", "storage_key": "magnific/stamp.mp4"},
+        "2": {"asset_id": "magnific_0050_charcoalash",
+              "storage_key": "magnific/ash.mp4"},
+    }}
+    ctx = _Ctx(_plan_two_lines(), doc)
+    assert apply_lock_after_p8(ctx) == 2
+    out = ctx.written["accepted_assets.json"]["accepted"]
+    # первая строка забирает первый слот, вторая — следующий, а не тот же
+    assert out["0"]["asset_id"] == "magnific_0050_stamp"
+    assert out["1"]["asset_id"] == "magnific_0050_charcoalash"

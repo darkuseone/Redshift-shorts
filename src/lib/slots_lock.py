@@ -71,12 +71,17 @@ def lock_targets(spec: dict[str, Any], slots: list[dict[str, Any]],
         speech = overlapping_speech(slot, words).lower()
         if needle and needle in speech:
             hits.append(slot)
-    if hits:
-        return hits
     tokens = [t for t in needle.split() if len(t) > 3]
     if not tokens:
-        return []
+        return hits
+    # Точные попадания идут первыми, но список на них не обрывается: когда
+    # первый слот уже занят другой строкой заявки, следующей нужен запасной,
+    # а он находится только по отдельным словам реплики. Раньше выход по
+    # ``if hits: return hits`` оставлял вторую строку вовсе без цели.
+    seen = {id(s) for s in hits}
     for slot in slots:
+        if id(slot) in seen:
+            continue
         if bid and str(slot.get("block_id") or "") != bid:
             continue
         speech = overlapping_speech(slot, words).lower()
@@ -199,9 +204,16 @@ def apply_lock_after_p8(ctx: Any) -> int:
     slots = [s for s in (plan.get("slots") or [])
              if s.get("needs_asset") and s.get("asset_role") in fill_roles]
     moved = 0
+    # Две строки заявки могут называть одну и ту же реплику — на 0050 это
+    # «не берёт»: штамп Clay и подложка под ним. Обе брали targets[0], и
+    # вторая затирала первую, а первая уезжала свопом в чужой блок: штамп
+    # оказывался на 27 с, где о нём никто не просил. Строка занимает слот, и
+    # следующая с той же репликой берёт следующий подходящий.
+    claimed: set[int] = set()
     for spec in lock:
         pid = spec["asset"]
-        targets = lock_targets(spec, slots, words)
+        targets = [t for t in lock_targets(spec, slots, words)
+                   if int(t["index"]) not in claimed]
         if not targets:
             continue
         donor = by_id.get(pid)
@@ -212,9 +224,10 @@ def apply_lock_after_p8(ctx: Any) -> int:
                          pid, spec["on"])
             continue
         target_idx = int(targets[0]["index"])
+        claimed.add(target_idx)
         cur = accepted.get(target_idx) or {}
         if str(cur.get("asset_id") or "") == pid:
-            continue
+            continue  # слот уже помечен занятым выше
         if not spec.get("reuse"):
             # Замок переставляет материал, а не выбивает дыру. Если материал
             # уже лежит на другом слоте, туда переезжает прежний житель цели:
