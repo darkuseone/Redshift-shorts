@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round43: plaque clamp by time, borrow left only, approved queries restored; skip_vision",
-  "round": 43
+  "note": "round44: script now busts P5/P7/P8/P11 cache; r43 fixes and stacked-line sizing actually run; skip_vision",
+  "round": 44
 }

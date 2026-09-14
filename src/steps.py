@@ -58,18 +58,20 @@ def build_pipeline() -> Pipeline:
              outputs=("words.json", "subtitles.srt")),
         Step("P5", "Пересчёт плана: аватар, футаж, текст", p5,
              inputs=("draft_plan.json", "words.json"), outputs=("cut_plan.json",),
-             config_inputs=("config/brandbook.json",)),
+             config_inputs=("config/brandbook.json",), uses_script=True,
+             version="2"),
         Step("P6", "Генерация аватара посегментно", p6,
              inputs=("cut_plan.json", "voice_final.wav"), outputs=("avatar_meta.json",)),
         Step("P7", "Поиск B-roll", p7,
              inputs=("cut_plan.json",), outputs=("candidates.json",),
              config_inputs=("config/stock_sources.yaml",
-                            "config/footage_pins.json")),
+                            "config/footage_pins.json"),
+             uses_script=True, version="2"),
         Step("P8", "Трёхступенчатая оценка футажей", p8,
              inputs=("candidates.json", "cut_plan.json"),
              outputs=("accepted_assets.json",),
              config_inputs=("config/footage_pins.json",),
-             version="3"),
+             uses_script=True, version="4"),
         Step("P9", "Генерация недостающих материалов", p9,
              inputs=("accepted_assets.json", "cut_plan.json"), outputs=("generated_assets.json",)),
         Step("P10", "Аудио: SFX, музыкальная подложка, микс", p10,
@@ -81,11 +83,10 @@ def build_pipeline() -> Pipeline:
              outputs=("edit_plan_A.json",),
              config_inputs=("config/brandbook.json", "config/editing_preferences.json",
                             "config/footage_pins.json", "config/glossary.json"),
-             # 3: ритм монтажа (кадры встык, без перебивок короче двух секунд)
-             # и плашки, обрезанные по своему кадру. Правки живут в коде, а
-             # ключ кэша считался только по данным — на 0050 из-за этого
-             # приезжал старый edit_plan с теми же наездами кадров.
-             version="3"),
+             uses_script=True,
+             # 4: ритм монтажа (кадры встык, без перебивок короче двух секунд)
+             # и плашки, обрезанные по своему кадру.
+             version="4"),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),
