@@ -8282,6 +8282,25 @@ def is_unbreakable_number(text: str) -> bool:
     return bool(_UNBREAKABLE_NUMBER_RE.match(str(text or "").strip()))
 
 
+_DIGIT_GROUP_SPACE_RE = re.compile(r"(?<=\d) (?=\d)")
+_NUMBER_UNIT_SPACE_RE = re.compile(r"(?<=\d) (?=[A-Za-zА-Яа-яЁё]{1,2}(?![A-Za-zА-Яа-яЁё]))")
+
+
+def glue_number_runs(text: str) -> str:
+    """Неразрывные пробелы внутри чисел и между числом и единицей.
+
+    Карточка не обязана влезать в одну строку — «10 000 · 88 Ч · 2 700 000 ·
+    17 Ч LEAN» честно переносится. Но переносить её браузер волен по любому
+    пробелу, а половина пробелов здесь — разряды: на экране вышло «2 700» и
+    «000» на разных строках, «88» без своего «Ч». Число, разорванное между
+    строк, зритель не читает как число.
+
+    Переносить остаётся где и следовало: по разделителю и перед словом.
+    """
+    out = _DIGIT_GROUP_SPACE_RE.sub("\u00a0", str(text or ""))
+    return _NUMBER_UNIT_SPACE_RE.sub("\u00a0", out)
+
+
 _LEADING_NUMBER_RE = re.compile(
     r"^([\$€£₽]?\s*\d[\d\s\u00a0\u202f.,]*%?)\s*(.*)$", re.S
 )
@@ -9235,6 +9254,7 @@ def fs_fact_card(ctx: "TemplateCtx") -> Piece:
     # кегль по всей рабочей зоне значило обещать строке место, которого у неё
     # внутри карточки нет.
     size = min(_fs_size(ctx, content, pad_px=_FS_CARD_PAD_X * 2 + 4), 160)
+    content = glue_number_runs(content)
     cls = "clip fullscreen-text fs-card" + (" invert" if invert else "")
     if is_unbreakable_number(content):
         cls += " fs-nowrap"

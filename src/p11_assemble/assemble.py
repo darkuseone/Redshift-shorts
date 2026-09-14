@@ -52,6 +52,12 @@ from ..lib.templates import TemplateCatalog, Template, diff_count
 from ..lib.template_picker import ScenarioIndex, TemplatePicker, build_blob
 from ..lib.pin_match import overlapping_speech
 
+# Отпечаток кода шага обходит модули по значениям в пространстве имён (см.
+# lib/cache.py). Замок слотов выполняется сразу после этого шага, поэтому его
+# правка обязана отменять кэш шага — а лениво импортированный внутри функции
+# модуль в граф не попадает. Держим ссылку на уровне модуля.
+from ..lib import slots_lock as _lock_module  # noqa: F401
+
 _log = get_logger("p11")
 
 

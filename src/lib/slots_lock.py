@@ -360,12 +360,29 @@ def cap_overlay_templates_qc25(ctx: Any) -> int:
     return changed
 
 
+def _carry_identity(wrapper: Callable, inner: Callable) -> Callable:
+    """Обёртка обязана остаться прозрачной для отпечатка кода шага.
+
+    ``Step.fingerprint`` берёт ``code_fingerprint(self.fn.__module__)``, а
+    ``self.fn`` здесь — замыкание, объявленное в этом файле. P8 и P11 поэтому
+    считали свой код по ``slots_lock.py`` и не замечали ни одной правки в
+    ``judge.py`` и ``assemble.py``: прогон 173 взял P8 из кэша, и вся работа
+    предыдущего круга по штампу просто не выполнялась. Обход модулей идёт по
+    именам модуля, так что ``_lock_module`` ниже держит и этот файл в графе.
+    """
+    wrapper.__module__ = inner.__module__
+    wrapper.__name__ = getattr(inner, "__name__", wrapper.__name__)
+    wrapper.__qualname__ = getattr(inner, "__qualname__", wrapper.__qualname__)
+    wrapper.__doc__ = inner.__doc__
+    return wrapper
+
+
 def wrap_p8(run_p8: Callable) -> Callable:
     def _wrapped(ctx):
         out = run_p8(ctx)
         apply_lock_after_p8(ctx)
         return out
-    return _wrapped
+    return _carry_identity(_wrapped, run_p8)
 
 
 def wrap_p11(run_p11: Callable) -> Callable:
@@ -374,4 +391,4 @@ def wrap_p11(run_p11: Callable) -> Callable:
         retarget_plaques_after_p11(ctx)
         cap_overlay_templates_qc25(ctx)
         return out
-    return _wrapped
+    return _carry_identity(_wrapped, run_p11)

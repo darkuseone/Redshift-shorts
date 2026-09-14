@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round51: the slot lock finally sees a donor (P7 writes storage_key, not file) and swaps instead of punching holes; skip_vision",
-  "round": 51
+  "note": "round52: P8/P11 stop fingerprinting the wrapper instead of their own code; card numbers stop breaking across lines; skip_vision",
+  "round": 52
 }
