@@ -8,13 +8,14 @@ REJECTED и FOLLOWUP семью отдельными строками. Это о
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
 
 from src.lib.render.hyperframes.templates import (
-    OVERLAYS, TemplateCtx, fs_fact_card, is_unbreakable_number, overlay_css,
-    text_width,
+    OVERLAYS, TemplateCtx, fs_fact_card, fs_stack_lines, is_unbreakable_number,
+    overlay_css, text_width,
 )
 from src.p11_assemble.assemble import _coerce_latin_cleanbar_dark
 
@@ -92,3 +93,26 @@ class TestANumberIsNeverBrokenAcrossLines:
     def test_a_phrase_is_still_allowed_to_wrap(self):
         html = "".join(fs_fact_card(_ctx(content="ВЕКА НИКТО БРАЛ", card=True)).nodes)
         assert "fs-nowrap" not in html
+
+
+class TestAFullscreenLineFitsTheFrame:
+    """Кегль лесенки считается по строке, а не по слову внутри неё.
+
+    Перенос лесенка раскладывает сама, поэтому мерить слово бессмысленно:
+    «7 · $1 000 000 · 25 Y» получало кегль по «000», три строки уезжали за
+    край кадра и накрывали собой субтитр (0050, прогон 165).
+    """
+
+    @pytest.mark.parametrize("content", [
+        "7 · $1 000 000 · 25 Y",
+        "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN",
+        "ВЕКА НИКТО БРАЛ",
+    ])
+    def test_every_line_fits_the_work_area(self, content):
+        html = "".join(fs_stack_lines(_ctx(content=content)).nodes)
+        size = int(html.split("font-size:")[1].split("px")[0])
+        lines = [re.sub(r"<[^>]+>", "", m)
+                 for m in re.findall(r'class="fs-line">(.*?)</span>', html)]
+        assert lines
+        for line in lines:
+            assert text_width(line, size) <= 740, (line, size)

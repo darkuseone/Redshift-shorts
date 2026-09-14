@@ -8282,11 +8282,22 @@ def is_unbreakable_number(text: str) -> bool:
     return bool(_UNBREAKABLE_NUMBER_RE.match(str(text or "").strip()))
 
 
-def _fs_size(ctx: "TemplateCtx", text: str, *, pad_px: float = 0.0) -> int:
+def _fs_size(ctx: "TemplateCtx", text: str, *, pad_px: float = 0.0,
+             whole_line: bool = False) -> int:
+    """Кегль полноэкранной надписи.
+
+    По умолчанию меряется самое длинное слово: строка переносится сама, и
+    важно только, чтобы в ширину влезло неразрывное слово.
+
+    ``whole_line`` — для тех, кто перенос уже разложил сам (лесенка, VS,
+    неразрывное число). Им нужно, чтобы влезла строка целиком. Раньше такой
+    вызов всё равно мерился по слову: «7 · $1 000 000 · 25 Y» получало кегль
+    по «000», три строки лесенки уезжали за кадр и накрывали собой субтитр.
+    """
     ceiling = _fs_ceiling(ctx)
     available = min(float(ctx.params.get("available_px") or 900), float(WORK_AREA_W))
     available = max(80.0, available - float(pad_px))
-    if is_unbreakable_number(text):
+    if whole_line or is_unbreakable_number(text):
         return fit_size(str(text).strip(), available, ceiling, role="display")
     longest = max(text.upper().split() or [text], key=len, default="")
     return fit_size(longest, available, ceiling, role="display")
@@ -8865,7 +8876,8 @@ def fs_stack_lines(ctx: "TemplateCtx") -> Piece:
     per = max(1, (len(words) + max_lines - 1) // max_lines)
     lines = [" ".join(words[i:i + per]) for i in range(0, len(words), per)][:max_lines]
     node_id = ctx.target
-    size = _fs_size(ctx, max(lines, key=len))
+    # Перенос лесенка разложила сама — мерить надо строку, а не слово в ней.
+    size = _fs_size(ctx, widest(lines), whole_line=True)
     cls = "clip fullscreen-text fs-stack" + (" invert" if invert else "")
     rows, tweens = [], []
     for i, line in enumerate(lines):
@@ -8887,7 +8899,7 @@ def fs_vs_compare(ctx: "TemplateCtx") -> Piece:
     if len(parts) != 2:
         return fs_plain(ctx)
     node_id = ctx.target
-    size = _fs_size(ctx, max(parts, key=len))
+    size = _fs_size(ctx, widest(parts), whole_line=True)
     cls = "clip fullscreen-text fs-vs" + (" invert" if invert else "")
     tweens = entrance_tweens(f"#{node_id} .fs-vs-a", _enter_at(ctx), name="rise")
     tweens += entrance_tweens(f"#{node_id} .fs-vs-b", _enter_at(ctx), name="rise",
