@@ -962,7 +962,8 @@ def _retime(slot: dict[str, Any], start: float, end: float) -> None:
 def _slot_floor(slot: dict[str, Any]) -> float:
     kind = str(slot.get("kind") or "")
     if kind in AVATAR_SLOT_KINDS:
-        return MIN_AVATAR_SHOT_SEC
+        # Недостижимый пол: у аватара время не занимают ни при каких условиях.
+        return float("inf")
     if kind == "fullscreen_text":
         return MIN_FULLSCREEN_SHOT_SEC
     return MIN_FOOTAGE_SHOT_SEC
@@ -990,13 +991,22 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
     Порядок лечения — от дешёвого к дорогому:
 
     1. Кадры сводятся встык, дыры между ними закрываются.
-    2. Вспышка лица короче ``MIN_AVATAR_SHOT_SEC`` снимается: 0.26 с головы
-       на экране — это сбой, а не появление ведущего.
-    3. Короткий футаж добирает время у соседей, пока те сами не упрутся в свой
-       пол. Речь при этом не двигается: двигается только граница склейки.
-    4. Если добрать не у кого — короткий футаж сливается со следующим футажом,
+    2. Короткий футаж добирает время у соседа слева, пока тот сам не упрётся
+       в свой пол. Речь при этом не двигается: двигается только граница
+       склейки.
+    3. Если добрать не у кого — короткий футаж сливается со следующим футажом,
        и группа остаётся на материале своего первого кадра, того, на чьё слово
        она начиналась.
+
+    Аватар не трогается вовсе: ни снять, ни подрезать. Его куски приезжают
+    готовыми webm, а окна записаны в замороженной заявке
+    ``assets/avatar_clips/<id>/avatar_request.json``. Стоит сдвинуть окно — и
+    P6 выписывает заявку на новые клипы, то есть требует платного рендера
+    HeyGen. На 0050 так и вышло: сборка сняла вспышку лица в 0.26 с, заявка
+    переписалась на три сегмента вместо пяти, и заморозка окон развалилась.
+    Вспышка короче ``MIN_AVATAR_SHOT_SEC`` остаётся в кадре и лечится только
+    новой генерацией — это решение заказчика, а не сборки. Порог оставлен как
+    мера: по нему такую вспышку видно в отчёте, но снимать её сборка не может.
 
     Слот правится до нарезки клипов, поэтому ffmpeg режет материал сразу под
     новую длину: ни растянутого хвоста, ни чёрного кадра в конце.
@@ -1009,13 +1019,6 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
     close_slot_holes(slots, total=total)
 
     dropped: list[str] = []
-    kept = [s for s in slots
-            if not (str(s.get("kind")) in AVATAR_SLOT_KINDS
-                    and _span(s) < MIN_AVATAR_SHOT_SEC)]
-    if len(kept) != len(slots) and kept:
-        dropped += [str(s.get("block_id") or "") for s in slots if s not in kept]
-        slots[:] = kept
-        close_slot_holes(slots, total=total)
 
     # 3. Занять время у предыдущего кадра — и только у него.
     #
@@ -1031,6 +1034,9 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
         if need <= 1e-3:
             continue
         prev = slots[i - 1]
+        if str(prev.get("kind")) in AVATAR_SLOT_KINDS:
+            # У аватара не занимаем: его окно заморожено вместе с webm.
+            continue
         take = min(need, max(0.0, _span(prev) - _slot_floor(prev)))
         if take > 1e-3:
             _retime(prev, float(prev["start"]), float(prev["end"]) - take)

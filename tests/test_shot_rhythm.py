@@ -8,12 +8,18 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from src.p11_assemble.assemble import (
-    MIN_AVATAR_SHOT_SEC, MIN_FOOTAGE_SHOT_SEC, clamp_plaques_to_shots,
+    MIN_FOOTAGE_SHOT_SEC, MIN_FULLSCREEN_SHOT_SEC, clamp_plaques_to_shots,
     close_slot_holes, enforce_slot_rhythm,
 )
+
+
+REPO = Path(__file__).resolve().parents[1]
 
 
 def _slot(start, end, kind="footage", block=None, **extra):
@@ -40,8 +46,8 @@ class TestKadryVstyk:
 
 class TestPerebivkiKorocheDvuhSekund:
 
-    def test_a_short_cutaway_borrows_from_its_neighbours(self):
-        slots = [_slot(0.0, 6.0, "avatar", "b1"),
+    def test_a_short_cutaway_borrows_from_the_footage_on_its_left(self):
+        slots = [_slot(0.0, 6.0, "footage", "b1"),
                  _slot(6.0, 7.4, "footage", "b2"),
                  _slot(7.4, 13.0, "avatar", "b3")]
         enforce_slot_rhythm(slots, total=13.0)
@@ -69,11 +75,11 @@ class TestPerebivkiKorocheDvuhSekund:
         assert wing["start"] < 41.88
 
     def test_a_neighbour_is_never_starved_below_its_own_floor(self):
-        slots = [_slot(0.0, 1.7, "avatar", "b1"),
-                 _slot(1.7, 3.0, "footage", "b2")]
+        slots = [_slot(0.0, 1.2, "fullscreen_text", "b1"),
+                 _slot(1.2, 3.0, "footage", "b2")]
         enforce_slot_rhythm(slots, total=3.0)
-        avatar = [s for s in slots if s["kind"] == "avatar"]
-        assert not avatar or avatar[0]["duration"] >= MIN_AVATAR_SHOT_SEC - 1e-3
+        card = next(s for s in slots if s["kind"] == "fullscreen_text")
+        assert card["duration"] >= MIN_FULLSCREEN_SHOT_SEC - 1e-3
 
     def test_a_run_of_short_cutaways_merges_into_long_ones(self):
         """Четыре удара перечисления в 3.8 с четырьмя кадрами не показать."""
@@ -89,14 +95,34 @@ class TestPerebivkiKorocheDvuhSekund:
         # слово она начиналась.
         assert slots[0]["block_id"] == "b5b"
 
-    def test_a_face_flash_is_dropped_outright(self):
+    def test_a_face_flash_is_left_alone_because_its_clip_is_frozen(self):
+        """Аватар не трогаем даже ради правила: его окна — платный контракт.
+
+        Сборка один раз сняла вспышку лица в 0.26 с, P6 переписал заявку
+        ``avatar_request.json`` на три сегмента вместо пяти, и заморозка окон
+        развалилась: следующий прогон потребовал бы новой генерации HeyGen.
+        Такая вспышка лечится только новым рендером — решением заказчика.
+        """
         slots = [_slot(0.0, 4.0, "footage", "b1"),
                  _slot(4.0, 4.26, "avatar", "b6"),
                  _slot(4.26, 8.0, "footage", "b7")]
         dropped = enforce_slot_rhythm(slots, total=8.0)
-        assert "b6" in dropped
-        assert all(s["kind"] != "avatar" for s in slots)
-        assert slots[0]["end"] == slots[1]["start"]
+        assert "b6" not in dropped
+        avatar = [s for s in slots if s["kind"] == "avatar"]
+        assert len(avatar) == 1
+        assert (avatar[0]["start"], avatar[0]["end"]) == (4.0, 4.26)
+
+    def test_a_cutaway_never_borrows_from_an_avatar(self):
+        """Занять у аватара — значит сдвинуть окно замороженного webm."""
+        slots = [_slot(0.0, 6.0, "avatar", "b1"),
+                 _slot(6.0, 7.4, "footage", "b2"),
+                 _slot(7.4, 13.0, "avatar", "b3")]
+        enforce_slot_rhythm(slots, total=13.0)
+        assert (slots[0]["start"], slots[0]["end"]) == (0.0, 6.0)
+        assert (slots[-1]["start"], slots[-1]["end"]) == (7.4, 13.0)
+        # Вставка остаётся короткой: удлинить её без нового аватара нечем.
+        insert = next(s for s in slots if s["block_id"] == "b2")
+        assert insert["duration"] == pytest.approx(1.4, abs=1e-3)
 
     def test_a_cutaway_between_two_avatars_is_left_alone_when_nothing_can_give(self):
         """Длина такой вставки — длина куска речи, а не решение монтажа."""
@@ -159,3 +185,43 @@ class TestPlashkaNePerezhivaetSvoyKadr:
         overlays = [self._plaque(44.9, 45.1)]
         clamp_plaques_to_shots(overlays, self._shots())
         assert overlays == []
+
+
+class TestTheFrozenAvatarContractSurvives:
+    """Заявка на клипы — платный контракт, а не производный файл.
+
+    Сборка, сдвинувшая окна аватара, заставила P6 переписать
+    ``avatar_request.json``: пять сегментов превратились в три, вспышка в
+    0.26 с растянулась до 3.13 с, заморозка окон перестала загружаться. Следом
+    прогон потребовал бы новой генерации HeyGen — то есть денег.
+    """
+
+    def test_the_request_still_lists_five_frozen_segments(self):
+        request = json.loads(
+            (REPO / "assets" / "avatar_clips" / "redshift_0050"
+             / "avatar_request.json").read_text(encoding="utf-8"))
+        segments = request["segments"]
+        assert [s["index"] for s in segments] == [0, 1, 2, 3, 4]
+        assert request["avatar_id"] == "99ccc74e764947c394cd4ef210960a6f"
+
+    def test_every_segment_has_the_webm_it_promises(self):
+        clips = REPO / "assets" / "avatar_clips" / "redshift_0050"
+        request = json.loads((clips / "avatar_request.json").read_text(encoding="utf-8"))
+        for segment in request["segments"]:
+            assert (clips / segment["expected_clip"]).is_file(), segment["expected_clip"]
+
+    def test_the_rhythm_pass_moves_no_avatar_window(self):
+        request = json.loads(
+            (REPO / "assets" / "avatar_clips" / "redshift_0050"
+             / "avatar_request.json").read_text(encoding="utf-8"))
+        slots = [_slot(0.0, 4.575, "footage", "b1")]
+        for segment in request["segments"]:
+            slots.append(_slot(float(segment["start"]), float(segment["end"]),
+                               "avatar", segment["block_id"]))
+            slots.append(_slot(float(segment["end"]),
+                               float(segment["end"]) + 1.2, "footage", "gap"))
+        total = slots[-1]["end"]
+        before = [(s["start"], s["end"]) for s in slots if s["kind"] == "avatar"]
+        enforce_slot_rhythm(slots, total=total)
+        after = [(s["start"], s["end"]) for s in slots if s["kind"] == "avatar"]
+        assert after == before

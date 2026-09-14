@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round44: script now busts P5/P7/P8/P11 cache; r43 fixes and stacked-line sizing actually run; skip_vision",
-  "round": 44
+  "note": "round45: avatar windows frozen again; rhythm never touches the avatar; skip_vision",
+  "round": 45
 }
