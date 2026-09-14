@@ -204,7 +204,7 @@ def test_0050_sync_broll_from_script_copies_queries_and_hook():
     assert plan["hook"]["on_screen"] == "$1 000 000"
     assert plan["hook"]["style"] == "number_slam"
     assert plan["slots"][0]["queries"] == script["blocks"][1]["broll_queries"]
-    assert "Live water" in plan["slots"][0]["visual_intent"]
+    assert "Ink swirl" in plan["slots"][0]["visual_intent"]
 
 
 def test_0050_water_and_wing_pins_lock_speech_ticker_skips_hook():
@@ -476,7 +476,10 @@ def test_0050_compiled_queries_are_not_poisoned_with_director_labels():
             assert "latin city" not in blob
             assert "clay official" not in blob
             assert "clay rubber" not in blob
-    assert "rubber stamp" in " ".join(by_id["b6"]["broll_queries"]).lower()
+    # Токен склеен намеренно: ровно так помечен штамп в индексе футажа
+    # (tags: rubberstamp / deskstamp). Развёрнутое «rubber stamp» тега не
+    # находит, P7 остаётся без кандидатов и b6 теряет одобренный штамп.
+    assert "rubberstamp" in " ".join(by_id["b6"]["broll_queries"]).lower()
     for bid in ("b5", "b5b", "b6", "b7"):
         assert by_id[bid]["overlay"]["template_hint"].startswith("lower-thirds/")
 
@@ -490,7 +493,7 @@ def test_0050_ci_request_is_p5_prepared_skip_generate():
     assert req["skip_generate"] is True
     assert req["skip_vision"] is True
     assert req["providers_mode"] == "live"
-    assert int(req.get("round") or 0) == 42
+    assert int(req.get("round") or 0) == 43
     assert req["note"].startswith(f"round{int(req['round'])}")
     assert "QC-SEMANTIC" in req["note"] or "skip_vision" in req["note"]
     assert "skip_generate" in req["note"] or req["skip_generate"] is True
@@ -986,3 +989,36 @@ def test_0050_avatar_bg_skips_red_plates():
     assets[0] = {"id": "magnific_0050_tealmister", "tags": ["teal", "cool"], "ai_generated": False}
     got = _avatar_bg_plates(slots, prepared, assets, plan={"video_id": "redshift_0050"})
     assert got[1].endswith("tealmister_crop.mp4")
+
+
+def test_0050_beat_queries_still_match_the_tags_of_their_footage():
+    """Запрос удара обязан попадать в теги своего материала.
+
+    Склеенные токены в этих запросах — не опечатка: индекс помечает материал
+    ровно так (``rubberstamp``, ``citynight``, ``stormscreen``). Стоило
+    развернуть их в человеческие слова, как P7 остался без кандидатов на
+    слотах b6 и переподобрал уже одобренный футаж — штамп Clay пропал из
+    ролика целиком.
+
+    Проверяются только удары, чей футаж и ищется этим запросом. b1–b4 стоят
+    на пинах ``by_block`` и от текста запроса не зависят.
+    """
+    script = _script()
+    by_id = {b["id"]: b for b in script["blocks"]}
+    index = json.loads((REPO / "cache" / "footage_index.json").read_text(encoding="utf-8"))
+    items = index if isinstance(index, list) else (index.get("items") or [])
+    tags_by_id = {str(it.get("id")): {str(t).lower() for t in (it.get("tags") or [])}
+                  for it in items}
+    beats = {
+        "b5b": "magnific_0050_weather",
+        "b5c": "magnific_0050_wing",
+        "b5d": "magnific_0050_pipes",
+        "b5e": "magnific_0050_blood",
+        "b6": "magnific_0050_stamp",
+        "b7": "magnific_0050_city",
+    }
+    for block_id, asset in beats.items():
+        tags = tags_by_id.get(asset)
+        assert tags, f"{asset} пропал из индекса футажа"
+        words = set(" ".join(by_id[block_id].get("broll_queries") or []).lower().split())
+        assert words & tags, (block_id, asset, sorted(words), sorted(tags))

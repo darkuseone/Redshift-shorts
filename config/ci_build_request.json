@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round42: captions one layer, shot rhythm >=2s, corner chips no red; skip_vision",
-  "round": 42
+  "note": "round43: plaque clamp by time, borrow left only, approved queries restored; skip_vision",
+  "round": 43
 }

@@ -1017,26 +1017,24 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
         slots[:] = kept
         close_slot_holes(slots, total=total)
 
-    # 3. Занять время у соседей.
+    # 3. Занять время у предыдущего кадра — и только у него.
+    #
+    # Занимать у следующего нельзя: кадр тогда переезжает через его слово.
+    # На 0050 так и вышло — крыло, дотянувшись до двух секунд за счёт крови,
+    # стояло на экране, когда диктор уже говорил «ток крови», а кровь
+    # приезжала после. Начаться раньше своего слова кадр может: это обычная
+    # склейка на хвосте предыдущей фразы. Закончиться позже следующего — нет.
     for i, slot in enumerate(slots):
-        if str(slot.get("kind")) != "footage":
+        if str(slot.get("kind")) != "footage" or not i:
             continue
         need = MIN_FOOTAGE_SHOT_SEC - _span(slot)
         if need <= 1e-3:
             continue
-        prev = slots[i - 1] if i else None
-        if prev is not None and need > 1e-3:
-            take = min(need, max(0.0, _span(prev) - _slot_floor(prev)))
-            if take > 1e-3:
-                _retime(prev, float(prev["start"]), float(prev["end"]) - take)
-                _retime(slot, float(slot["start"]) - take, float(slot["end"]))
-                need -= take
-        nxt = slots[i + 1] if i + 1 < len(slots) else None
-        if nxt is not None and need > 1e-3:
-            take = min(need, max(0.0, _span(nxt) - _slot_floor(nxt)))
-            if take > 1e-3:
-                _retime(nxt, float(nxt["start"]) + take, float(nxt["end"]))
-                _retime(slot, float(slot["start"]), float(slot["end"]) + take)
+        prev = slots[i - 1]
+        take = min(need, max(0.0, _span(prev) - _slot_floor(prev)))
+        if take > 1e-3:
+            _retime(prev, float(prev["start"]), float(prev["end"]) - take)
+            _retime(slot, float(slot["start"]) - take, float(slot["end"]))
 
     # 4. Что не добрало — сливаем с соседом-футажом.
     result: list[dict[str, Any]] = []
@@ -1073,41 +1071,43 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
 def clamp_plaques_to_shots(overlays: list[dict[str, Any]],
                            shots: list[dict[str, Any]],
                            *, dropped_blocks: Iterable[str] = ()) -> None:
-    """Подпись живёт ровно столько, сколько её кадр.
+    """Подпись живёт ровно столько, сколько кадр, на котором она появилась.
 
-    На 0050 каждая плашка перечисления переживала свой кадр на три четверти
-    секунды, и зритель успевал прочитать AIRFOIL над трубами и VALVES над
-    кровью. Подпись, потерявшая кадр целиком, снимается: лучше кадр без
-    подписи, чем подпись про другой кадр.
+    На 0050 каждая плашка перечисления переживала свой кадр примерно на три
+    четверти секунды, и зритель успевал прочитать AIRFOIL над трубами и
+    VALVES над кровью.
+
+    Кадр ищется по времени, а не по ``block_id``: плашка его не несёт — в
+    плане у неё только ``start``, ``end``, ``template`` и ``params``. Первая
+    версия этой проверки сверялась с блоком, не находила его ни у одной
+    плашки и молча пропускала все до одной.
     """
     gone = {b for b in dropped_blocks if b}
-    spans: dict[str, tuple[float, float]] = {}
-    for shot in shots:
-        block = str(shot.get("block_id") or "")
-        if not block:
-            continue
-        start, end = float(shot["start"]), float(shot["end"])
-        if block in spans:
-            spans[block] = (min(spans[block][0], start), max(spans[block][1], end))
-        else:
-            spans[block] = (start, end)
+    ordered = sorted(shots, key=lambda s: float(s["start"]))
+    if not ordered:
+        return
     kept: list[dict[str, Any]] = []
     for ovl in overlays:
         if str(ovl.get("type")) != "plaque":
             kept.append(ovl)
             continue
-        block = str(ovl.get("block_id") or "")
-        if block and block in gone and block not in spans:
-            continue
-        span = spans.get(block)
-        if span is None:
+        start, end = float(ovl["start"]), float(ovl["end"])
+        # Кадр, на котором плашка появилась: последний, начавшийся не позже её.
+        host = None
+        for shot in ordered:
+            if float(shot["start"]) <= start + 1e-3:
+                host = shot
+            else:
+                break
+        if host is None:
             kept.append(ovl)
             continue
-        start = max(float(ovl["start"]), span[0])
-        end = min(float(ovl["end"]), span[1])
+        if str(host.get("block_id") or "") in gone:
+            continue
+        end = min(end, float(host["end"]))
         if end - start < 0.4:
             continue
-        ovl["start"], ovl["end"] = round(start, 3), round(end, 3)
+        ovl["end"] = round(end, 3)
         kept.append(ovl)
     overlays[:] = kept
 

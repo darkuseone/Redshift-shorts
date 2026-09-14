@@ -50,6 +50,24 @@ class TestPerebivkiKorocheDvuhSekund:
         # Речь не двигается — двигается только граница склейки.
         assert slots[0]["start"] == 0.0 and slots[-1]["end"] == 13.0
 
+    def test_a_cutaway_never_borrows_from_the_next_shot(self):
+        """Иначе кадр переезжает через следующее слово.
+
+        На 0050 крыло, дотянувшись до двух секунд за счёт крови, стояло на
+        экране, когда диктор уже говорил «ток крови»: подпись PLASMA висела
+        над крылом, а кровь приезжала после своего слова.
+        """
+        slots = [_slot(38.63, 41.88, "footage", "fluids"),
+                 _slot(41.88, 43.14, "footage", "wing"),
+                 _slot(43.14, 48.49, "footage", "blood")]
+        enforce_slot_rhythm(slots, total=48.49)
+        blood = [s for s in slots if s["block_id"] == "blood"]
+        assert blood, "кровь не должна была исчезнуть"
+        # Крыло добрало недостающее у жидкости слева, а не у крови справа.
+        assert blood[0]["start"] <= 43.14 + 1e-3
+        wing = next(s for s in slots if s["block_id"] == "wing")
+        assert wing["start"] < 41.88
+
     def test_a_neighbour_is_never_starved_below_its_own_floor(self):
         slots = [_slot(0.0, 1.7, "avatar", "b1"),
                  _slot(1.7, 3.0, "footage", "b2")]
@@ -106,26 +124,38 @@ class TestPlashkaNePerezhivaetSvoyKadr:
         return [{"start": 41.88, "end": 45.14, "block_id": "b5c"},
                 {"start": 45.14, "end": 48.49, "block_id": "b5e"}]
 
+    def _plaque(self, start, end, text="AIRFOIL"):
+        # Ровно те ключи, что кладёт P11: block_id среди них нет.
+        return {"type": "plaque", "start": start, "end": end,
+                "template": "lower-thirds/dark-card", "params": {"text": text}}
+
     def test_a_plaque_is_cut_to_its_shot(self):
-        overlays = [{"type": "plaque", "block_id": "b5c",
-                     "start": 41.88, "end": 47.0, "params": {"text": "AIRFOIL"}}]
+        overlays = [self._plaque(41.88, 47.0)]
         clamp_plaques_to_shots(overlays, self._shots())
         assert overlays[0]["end"] == 45.14
 
+    def test_the_real_plasma_lag_is_cut(self):
+        """PLASMA стоял 44.36–47.86 над крылом, кровь начиналась в 45.14."""
+        overlays = [self._plaque(44.36, 47.86, "PLASMA")]
+        clamp_plaques_to_shots(overlays, self._shots())
+        assert overlays[0]["end"] == 45.14
+
+    def test_a_plaque_inside_its_shot_is_left_alone(self):
+        overlays = [self._plaque(45.5, 47.0, "PLASMA")]
+        clamp_plaques_to_shots(overlays, self._shots())
+        assert overlays[0]["end"] == 47.0
+
     def test_a_plaque_whose_shot_is_gone_is_dropped(self):
-        overlays = [{"type": "plaque", "block_id": "b5d",
-                     "start": 43.14, "end": 45.14, "params": {"text": "VALVES"}}]
-        clamp_plaques_to_shots(overlays, self._shots(), dropped_blocks=["b5d"])
+        overlays = [self._plaque(42.0, 44.0, "VALVES")]
+        clamp_plaques_to_shots(overlays, self._shots(), dropped_blocks=["b5c"])
         assert overlays == []
 
     def test_other_overlays_are_not_touched(self):
-        overlays = [{"type": "source_card", "block_id": "b5c",
-                     "start": 0.0, "end": 60.0}]
+        overlays = [{"type": "source_card", "start": 0.0, "end": 60.0}]
         clamp_plaques_to_shots(overlays, self._shots())
         assert overlays[0]["end"] == 60.0
 
     def test_a_plaque_squeezed_to_nothing_is_dropped(self):
-        overlays = [{"type": "plaque", "block_id": "b5c",
-                     "start": 44.9, "end": 45.1, "params": {"text": "AIRFOIL"}}]
+        overlays = [self._plaque(44.9, 45.1)]
         clamp_plaques_to_shots(overlays, self._shots())
         assert overlays == []

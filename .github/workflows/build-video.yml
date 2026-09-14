@@ -469,9 +469,13 @@ jobs:
           fi
           git commit -m "chore(run): голос и заявка на клипы после фазы 1"
           branch="${GITHUB_REF_NAME}"
+          # --autostash обязателен: прогон оставляет в дереве и то, что в
+          # коммит не входит (сырой сток, output/, work/), и без него rebase
+          # отказывается словами «You have unstaged changes» — прогон с живым
+          # mp4 и зелёным QC снова отмечался красным.
           for attempt in 1 2 3 4; do
             if git fetch origin "$branch" \
-               && git rebase "origin/$branch" \
+               && git rebase --autostash "origin/$branch" \
                && git push origin "HEAD:$branch"; then
               echo "запушено с попытки $attempt"
               exit 0
