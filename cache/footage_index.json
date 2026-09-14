@@ -20,8 +20,10 @@
       "vision_summary": "Weather radar satellite screen only, vertical 9:16 prepared owned plate",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-12",
       "phashes": [
         "d992e56ccc1993a3",
@@ -52,8 +54,10 @@
       "vision_summary": "Airplane winglet airfoil flightclouds, vertical 9:16 prepared owned plate",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-12",
       "phashes": [
         "00907f6d1f87994d",
@@ -83,8 +87,10 @@
       "vision_summary": "Factory pipework valves factorypipes, vertical 9:16 prepared owned plate",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-12",
       "phashes": [
         "ebe882231637c73c",
@@ -114,8 +120,10 @@
       "vision_summary": "Bloodcells microscope plasmaflow, vertical 9:16 prepared owned plate",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-12",
       "phashes": [
         "13b7252c4adc72b2",
@@ -178,8 +186,10 @@
       "vision_summary": "city night aerial traffic lights",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-12",
       "phashes": [
         "c8f06799e4dc3345",
@@ -211,8 +221,10 @@
       "vision_summary": "GPU cluster server aisle datacenter, vertical 9:16 prepared owned plate",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-12",
       "phashes": [
         "da6506d9c71e619a",
@@ -244,8 +256,10 @@
       "vision_summary": "Lean proof code editor chalkboard, vertical 9:16 prepared owned plate",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-12",
       "phashes": [
         "d48c23233c3f1f9c",
@@ -279,8 +293,10 @@
       "vision_summary": "Dark viscous fluid swirling in black water, vertical 9:16 prepared owned plate",
       "score": 0.93,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "e6e6e6e4e4cc1819",
@@ -313,8 +329,10 @@
       "vision_summary": "Black ink swirling macro fluid plate, vertical 9:16 prepared owned plate",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "29a95654ada592d9",
@@ -586,8 +604,10 @@
       "vision_summary": "Dark code/lean editor glow plate, vertical 9:16 prepared owned densify filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "fcdc0321b43f4ad8",
@@ -654,8 +674,10 @@
       "vision_summary": "Dark night city static plate, vertical 9:16 prepared owned densify filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "c8f8273360dc3bcc",
@@ -723,8 +745,10 @@
       "vision_summary": "Cool teal mist plate, vertical 9:16 densify hole filler (low red)",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "25d2ac5e85dae40b",
@@ -759,8 +783,10 @@
       "vision_summary": "Cool blue ember glow plate, vertical 9:16 densify hole filler (low red)",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "11feeaa591926c2a",
@@ -795,8 +821,10 @@
       "vision_summary": "Charcoal ash drift plate, vertical 9:16 densify hole filler (low red)",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "fefefefcf8000000",
@@ -867,8 +895,10 @@
       "vision_summary": "Steel blue glow plate, vertical 9:16 densify hole filler (low red)",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "f1f060091b32fcf9",
@@ -939,8 +969,10 @@
       "vision_summary": "Cool teal ink vortex plate, vertical 9:16 (low red avatar-bg safe)",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "109f6235999e6663",
@@ -975,8 +1007,10 @@
       "vision_summary": "Cyan digital rain streaks on near-black, vertical 9:16 densify hole filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "30362ee16b0fd2d4",
@@ -1011,8 +1045,10 @@
       "vision_summary": "Teal frost scanline band on dark grid, vertical 9:16 densify hole filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "0e0f6381dc1ed1d9",
@@ -1047,8 +1083,10 @@
       "vision_summary": "Teal radar concentric rings on navy, vertical 9:16 densify hole filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-14",
       "added": "2026-09-13",
       "phashes": [
         "d97d15325e3604c7",

@@ -77,7 +77,9 @@
         "number"
       ],
       "renderer": "fullscreen_text",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-08-18",
       "frequency": "variant",
       "needs": [
@@ -398,7 +400,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -633,7 +636,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -1493,7 +1497,9 @@
         "minimal"
       ],
       "renderer": "lt_accent_underline",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-09-03",
       "frequency": "signature",
       "needs": [],
@@ -1526,7 +1532,9 @@
         "podcast"
       ],
       "renderer": "lt_clean_bar",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-09-03",
       "frequency": "signature",
       "needs": [],
@@ -1559,7 +1567,9 @@
         "dark"
       ],
       "renderer": "lt_dark_card",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-09-03",
       "frequency": "signature",
       "needs": [],
@@ -1595,7 +1605,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0045",
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -1784,7 +1795,9 @@
         "time"
       ],
       "renderer": "plaque",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-08-18",
       "frequency": "signature",
       "needs": [],
@@ -2062,7 +2075,8 @@
       "renderer": "article_scroll",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0043"
+        "redshift_0043",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -2887,7 +2901,8 @@
       ],
       "renderer": "glitch_shader",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -3771,7 +3786,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -3809,7 +3825,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4000,7 +4017,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4041,7 +4059,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4081,7 +4100,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4125,7 +4145,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4169,7 +4190,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4213,7 +4235,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4257,7 +4280,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4301,7 +4325,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4388,7 +4413,8 @@
         "redshift_0044",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4750,7 +4776,8 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-02",
       "frequency": "variant",
@@ -4998,7 +5025,9 @@
         "series"
       ],
       "renderer": "dataviz",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-09-03",
       "frequency": "variant",
       "needs": [
@@ -5313,7 +5342,9 @@
         "brand"
       ],
       "renderer": "fullscreen_text",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-08-18",
       "frequency": "signature",
       "needs": [],
@@ -5489,7 +5520,8 @@
       ],
       "renderer": "hero-icons",
       "last_used_in": [
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -5606,7 +5638,8 @@
       "renderer": "hero-text-column",
       "last_used_in": [
         "redshift_0046",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -5744,7 +5777,8 @@
       ],
       "renderer": "hero-type-slab",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-02",
       "frequency": "variant",
@@ -5780,7 +5814,8 @@
       ],
       "renderer": "hero-plate-pop",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-02",
       "frequency": "variant",
