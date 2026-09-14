@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round49: hook sum is one number; the fill hands over instead of holding the whole line red; skip_vision",
-  "round": 49
+  "note": "round50: stamp scrub spares the pinned gap; git tail resolves regenerated-file conflicts; skip_vision",
+  "round": 50
 }

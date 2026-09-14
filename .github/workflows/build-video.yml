@@ -483,9 +483,31 @@ jobs:
           # коммит не входит (сырой сток, output/, work/), и без него rebase
           # отказывается словами «You have unstaged changes» — прогон с живым
           # mp4 и зелёным QC снова отмечался красным.
+          # Файлы, которые прогон и пересоздаёт: при конфликте побеждает
+          # свежий прогон. Это не «разрешить конфликт вслепую» — для
+          # сгенерированного файла версия последнего прогона и есть верная.
+          regenerated='assets/voice/ assets/avatar_clips/ config/editing_preferences.json config/pronunciation.json templates/manifest.json cache/footage_index.json'
+          resolve_generated() {
+            local left ; left=$(git diff --name-only --diff-filter=U)
+            [ -n "$left" ] || return 1
+            local f keep
+            for f in $left; do
+              keep=0
+              for pat in $regenerated; do
+                case "$f" in "$pat"*) keep=1 ;; esac
+              done
+              # Конфликт в чём-то, что прогон не генерирует, разбирает человек.
+              [ "$keep" = 1 ] || return 1
+            done
+            for f in $left; do
+              git checkout --theirs -- "$f" || return 1
+              git add -- "$f" || return 1
+            done
+            GIT_EDITOR=true git rebase --continue
+          }
           for attempt in 1 2 3 4; do
             if git fetch origin "$branch" \
-               && git rebase --autostash "origin/$branch" \
+               && { git rebase --autostash "origin/$branch" || resolve_generated; } \
                && git push origin "HEAD:$branch"; then
               echo "запушено с попытки $attempt"
               exit 0

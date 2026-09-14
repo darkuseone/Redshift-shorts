@@ -959,23 +959,6 @@ def _retime(slot: dict[str, Any], start: float, end: float) -> None:
     slot["duration"] = round(float(end) - float(start), 3)
 
 
-def _same_material(a: dict[str, Any], b: dict[str, Any]) -> bool:
-    """Один и тот же материал у двух кадров.
-
-    Сравниваем по ``asset``/``asset_id``, а если его нет — по имени готового
-    файла: у заполнителей зазоров вокруг аватара идентификатора материала нет
-    вовсе, и на 0050 именно они дважды подряд ставили один клип.
-    """
-    for key in ("asset", "asset_id"):
-        left, right = a.get(key), b.get(key)
-        if left and right:
-            return str(left) == str(right)
-    from pathlib import Path as _Path
-    left = str(a.get("file") or a.get("dst") or "")
-    right = str(b.get("file") or b.get("dst") or "")
-    return bool(left) and _Path(left).name == _Path(right).name
-
-
 def _slot_floor(slot: dict[str, Any]) -> float:
     kind = str(slot.get("kind") or "")
     if kind in AVATAR_SLOT_KINDS:
@@ -1025,6 +1008,11 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
     новой генерацией — это решение заказчика, а не сборки. Порог оставлен как
     мера: по нему такую вспышку видно в отчёте, но снимать её сборка не может.
 
+    Материал кадра здесь неизвестен: слот несёт только ``asset_role``, а сам
+    актив живёт в отдельных картах по индексу слота и приезжает уже в цикле
+    сборки. Поэтому свести два соседних кадра на одном клипе тут нельзя — и
+    попытка это сделать была бы тихой пустышкой.
+
     Слот правится до нарезки клипов, поэтому ffmpeg режет материал сразу под
     новую длину: ни растянутого хвоста, ни чёрного кадра в конце.
 
@@ -1039,7 +1027,7 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
     # экране, и его плашку снимать не за что.
     before = {str(s.get("block_id") or "") for s in slots}
 
-    # 3. Занять время у предыдущего кадра — и только у него.
+    # 2. Занять время у предыдущего кадра — и только у него.
     #
     # Занимать у следующего нельзя: кадр тогда переезжает через его слово.
     # На 0050 так и вышло — крыло, дотянувшись до двух секунд за счёт крови,
@@ -1061,22 +1049,7 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
             _retime(prev, float(prev["start"]), float(prev["end"]) - take)
             _retime(slot, float(slot["start"]) - take, float(slot["end"]))
 
-    # 4. Два подряд идущих кадра на одном и том же материале — это один
-    #    кадр, разрезанный пополам: склейки между ними не видно, а закон
-    #    канала (``same_asset_max_slots: 1``) считает их двумя. Сливаем.
-    merged: list[dict[str, Any]] = []
-    for slot in slots:
-        prev = merged[-1] if merged else None
-        same = (prev is not None
-                and str(prev.get("kind")) == "footage" == str(slot.get("kind"))
-                and _same_material(prev, slot))
-        if same:
-            _retime(prev, float(prev["start"]), float(slot["end"]))
-            continue
-        merged.append(slot)
-    slots[:] = merged
-
-    # 5. Что не добрало — сливаем с соседом-футажом.
+    # 3. Что не добрало — сливаем с соседом-футажом.
     result: list[dict[str, Any]] = []
     i = 0
     while i < len(slots):

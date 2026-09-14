@@ -618,8 +618,19 @@ def _scrub_stamp_off_lean_gaps(
         *, accepted: dict[int, dict[str, Any]],
         slots_by_index: dict[int, dict[str, Any]],
         judged: list[dict[str, Any]],
-        repeat_max: int) -> int:
-    """REJECTED stamp must not sit on prepared-avatar Lean-check gaps."""
+        repeat_max: int,
+        words: list[dict[str, Any]] | None = None,
+        keep_on: str = "") -> int:
+    """REJECTED stamp must not sit on prepared-avatar Lean-check gaps.
+
+    Кроме одного — того, куда штамп прибит заявкой ``slots_lock``. Между
+    окнами замороженного аватара на 0050 два зазора: «Lean проверяет каждый
+    шаг» и «Миллион OpenAI не берёт». Штампу нечего делать на первом и место
+    на втором — именно его называет критика. Проверка же смотрела только на
+    слово «gap fill» в причине слота и вычищала оба, а так как она идёт до
+    ``apply_lock_after_p8``, замок оставался без донора: штамп не доехал до
+    кадра ни разу за девять раундов.
+    """
     replacements = (
         "magnific_0050_codeglow", "magnific_0050_steelglow",
         "magnific_0050_darkgrid", "magnific_0050_tealmister",
@@ -636,6 +647,10 @@ def _scrub_stamp_off_lean_gaps(
         slot = slots_by_index.get(int(idx), {})
         if "gap fill" not in str(slot.get("reason") or "").lower():
             continue
+        if keep_on:
+            from ..lib.pin_match import overlapping_speech
+            if keep_on.lower() in overlapping_speech(slot, words).lower():
+                continue
         pick = next((pid for pid in replacements if _count(pid) < repeat_max), None)
         if pick is None:
             del accepted[int(idx)]
@@ -1268,9 +1283,21 @@ def run_step(ctx) -> dict[str, Any]:
         pin_prefer=pin_prefer, words=words)
     if forced:
         _log.info("by_block pins forced onto %s block slot(s)", forced)
+    # Реплика, на которой штамп стоит по заявке: её зазор чистка обязана
+    # пропустить, иначе замку нечего будет ставить.
+    stamp_anchor = ""
+    try:
+        from ..lib.slots_lock import load_slots_lock
+        for spec in load_slots_lock(cfg, str(plan.get("video_id") or ""), plan):
+            if "stamp" in str(spec.get("asset") or "").lower():
+                stamp_anchor = str(spec.get("on") or "")
+                break
+    except Exception:                                    # noqa: BLE001
+        stamp_anchor = ""
     scrubbed = _scrub_stamp_off_lean_gaps(
         accepted=accepted, slots_by_index=slots_by_index,
-        judged=judged, repeat_max=repeat_max)
+        judged=judged, repeat_max=repeat_max,
+        words=words, keep_on=stamp_anchor)
     if scrubbed:
         _log.info("scrubbed stamp off %s Lean-check gap fill(s)", scrubbed)
     # Densify siblings left empty after one-pin-per-asset force need distinct

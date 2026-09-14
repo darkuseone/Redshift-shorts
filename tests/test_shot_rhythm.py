@@ -144,43 +144,6 @@ class TestPerebivkiKorocheDvuhSekund:
             assert a["end"] == b["start"]
 
 
-class TestOdinMaterialNeStavitsyaDvazhdyPodryad:
-    """``same_asset_max_slots: 1``: два кадра на одном клипе — это один кадр.
-
-    Заполнители зазоров вокруг аватара идентификатора материала не несут, и
-    на 0050 они дважды подряд ставили один и тот же файл: склейки между ними
-    не видно, а закон считает их двумя кадрами.
-    """
-
-    def test_two_shots_on_one_clip_become_one(self):
-        slots = [_slot(36.63, 38.63, "footage", "b5", file="/w/teal_2370.mp4"),
-                 _slot(38.63, 41.88, "footage", "b5", file="/w/teal_2370.mp4"),
-                 _slot(41.88, 44.36, "footage", "b5c", asset_id="wing")]
-        enforce_slot_rhythm(slots, total=44.36)
-        assert len(slots) == 2
-        assert (slots[0]["start"], slots[0]["end"]) == (36.63, 41.88)
-
-    def test_the_block_keeps_its_plaque_after_such_a_merge(self):
-        """Блок никуда не делся — снимать его подпись не за что."""
-        slots = [_slot(36.63, 38.63, "footage", "b5", file="/w/teal.mp4"),
-                 _slot(38.63, 41.88, "footage", "b5", file="/w/teal.mp4")]
-        assert enforce_slot_rhythm(slots, total=41.88) == []
-
-    def test_different_material_is_left_alone(self):
-        slots = [_slot(24.80, 27.25, "footage", "b4", asset_id="steelglow"),
-                 _slot(27.25, 29.37, "footage", "b4", asset_id="charcoalash")]
-        enforce_slot_rhythm(slots, total=29.37)
-        assert len(slots) == 2
-
-    def test_the_same_clip_across_an_avatar_is_not_merged(self):
-        """Между ними лицо — это не один кадр, а два появления материала."""
-        slots = [_slot(49.09, 50.29, "footage", "b6", file="/w/lean.mp4"),
-                 _slot(50.29, 55.21, "avatar", "b6"),
-                 _slot(55.21, 56.61, "footage", "b6", file="/w/lean.mp4")]
-        enforce_slot_rhythm(slots, total=56.61)
-        assert [s["kind"] for s in slots] == ["footage", "avatar", "footage"]
-
-
 class TestPlashkaNePerezhivaetSvoyKadr:
 
     def _shots(self):
