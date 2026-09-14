@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round47: the run no longer overwrites the frozen avatar request; skip_vision",
-  "round": 47
+  "note": "round48: Clay stamp pinned to the word that has a free slot; one clip is never two shots; skip_vision",
+  "round": 48
 }

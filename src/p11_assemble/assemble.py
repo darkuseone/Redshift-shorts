@@ -959,6 +959,23 @@ def _retime(slot: dict[str, Any], start: float, end: float) -> None:
     slot["duration"] = round(float(end) - float(start), 3)
 
 
+def _same_material(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    """Один и тот же материал у двух кадров.
+
+    Сравниваем по ``asset``/``asset_id``, а если его нет — по имени готового
+    файла: у заполнителей зазоров вокруг аватара идентификатора материала нет
+    вовсе, и на 0050 именно они дважды подряд ставили один клип.
+    """
+    for key in ("asset", "asset_id"):
+        left, right = a.get(key), b.get(key)
+        if left and right:
+            return str(left) == str(right)
+    from pathlib import Path as _Path
+    left = str(a.get("file") or a.get("dst") or "")
+    right = str(b.get("file") or b.get("dst") or "")
+    return bool(left) and _Path(left).name == _Path(right).name
+
+
 def _slot_floor(slot: dict[str, Any]) -> float:
     kind = str(slot.get("kind") or "")
     if kind in AVATAR_SLOT_KINDS:
@@ -1017,8 +1034,10 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
     if not slots:
         return []
     close_slot_holes(slots, total=total)
-
-    dropped: list[str] = []
+    # «Пропал» — это блок, у которого не осталось ни одного кадра. Считать
+    # выбывшие кадры поштучно нельзя: слияние соседей оставляет блок на
+    # экране, и его плашку снимать не за что.
+    before = {str(s.get("block_id") or "") for s in slots}
 
     # 3. Занять время у предыдущего кадра — и только у него.
     #
@@ -1042,7 +1061,22 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
             _retime(prev, float(prev["start"]), float(prev["end"]) - take)
             _retime(slot, float(slot["start"]) - take, float(slot["end"]))
 
-    # 4. Что не добрало — сливаем с соседом-футажом.
+    # 4. Два подряд идущих кадра на одном и том же материале — это один
+    #    кадр, разрезанный пополам: склейки между ними не видно, а закон
+    #    канала (``same_asset_max_slots: 1``) считает их двумя. Сливаем.
+    merged: list[dict[str, Any]] = []
+    for slot in slots:
+        prev = merged[-1] if merged else None
+        same = (prev is not None
+                and str(prev.get("kind")) == "footage" == str(slot.get("kind"))
+                and _same_material(prev, slot))
+        if same:
+            _retime(prev, float(prev["start"]), float(slot["end"]))
+            continue
+        merged.append(slot)
+    slots[:] = merged
+
+    # 5. Что не добрало — сливаем с соседом-футажом.
     result: list[dict[str, Any]] = []
     i = 0
     while i < len(slots):
@@ -1065,13 +1099,13 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
             result.append(slot)
             i += 1
             continue
-        dropped += [str(s.get("block_id") or "") for s in slots[i + 1:j + 1]]
         _retime(slot, float(slot["start"]), end)
         result.append(slot)
         i = j + 1
     slots[:] = result
     close_slot_holes(slots, total=total)
-    return [b for b in dropped if b]
+    after = {str(s.get("block_id") or "") for s in slots}
+    return sorted(b for b in before - after if b)
 
 
 def clamp_plaques_to_shots(overlays: list[dict[str, Any]],
