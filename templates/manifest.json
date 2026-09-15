@@ -2871,7 +2871,8 @@
       ],
       "renderer": "cinematic_zoom",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -3082,7 +3083,8 @@
       ],
       "renderer": "whip_pan_shader",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
