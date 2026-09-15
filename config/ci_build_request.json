@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round54: b4 becomes a line chart (88h to 17h) instead of a 4-line number card; skip_vision",
-  "round": 54
+  "note": "round55: schema allows overlay.type=dataviz — r54 broke on P0 before this; skip_vision",
+  "round": 55
 }

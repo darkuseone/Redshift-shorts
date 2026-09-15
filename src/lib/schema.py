@@ -12,7 +12,7 @@ from typing import Any
 
 BLOCK_ROLES = ("hook", "setup", "evidence", "develop", "twist", "cta")
 CATEGORIES = ("ai", "space", "tech", "medicine", "science")
-OVERLAY_TYPES = ("fullscreen_text", "frame", "lower_third", "highlight", "none")
+OVERLAY_TYPES = ("fullscreen_text", "frame", "lower_third", "highlight", "dataviz", "none")
 SCREEN_TEMPLATES = ("browser", "notepad", "search", "chat_ai", "arxiv_card", "patent_card")
 AVATAR_MODES = ("auto", "on", "off")
 # Типы концовки (§6.4). Три старых типа канал использовал шесть роликов подряд:
