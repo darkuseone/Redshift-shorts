@@ -144,8 +144,9 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
         "magnific_0050_tealmister", "magnific_0050_blueember",
         "magnific_0050_cyanrain",
         "magnific_0050_frostscan", "magnific_0050_deepcoil",
-        # Сталь вместо чёрного экрана под числами b4.
-        "magnific_0050_ironrust", "magnific_0050_slateiron",
+        # Вместо чёрного экрана под числами b4. Не ярче всех, зато не дубль:
+        # всё, что ярче, повторяет уже занятый кадр по phash.
+        "magnific_0050_slateiron", "magnific_0050_voidpulse",
     ):
         assert aid in prefer, aid
     # Вышли из prefer по покадровому разбору: steelglow давал 0.8 % видимого
@@ -157,7 +158,7 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     # Серверный коридор — отдельной строкой: его выкинули по критике («повтор
     # серверов» трижды за ролик), и вернуть его в prefer молча нельзя.
     for aid in ("fp_server_room", "pexels_v38431825",
-                "magnific_0050_voidpulse", "magnific_0050_darkgrid"):
+                "magnific_0050_darkgrid", "magnific_0050_ironrust"):
         assert aid not in prefer, aid
         assert aid in deny, aid
     for aid in (
@@ -173,7 +174,7 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     assert by_block.get("b3") == "magnific_0050_gpu"
     # b4 сменил материал: steelglow давал 0.8 % видимого кадра под числами,
     # а заявка блока просит «Steel/network motion ... Not flat black».
-    assert by_block.get("b4") == "magnific_0050_ironrust"
+    assert by_block.get("b4") == "magnific_0050_slateiron"
     assert by_block.get("b5") == "magnific_0050_fluids"
     assert by_block.get("b5b") == "magnific_0050_weather"
     assert by_block.get("b6") == "magnific_0050_stamp"

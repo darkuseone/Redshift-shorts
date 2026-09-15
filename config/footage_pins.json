@@ -118,13 +118,12 @@
       "magnific_0050_tealmister",
       "fp_chalkboard_eq",
       "magnific_0050_nightstatic",
-      "magnific_0050_ironrust",
-      "magnific_0050_slateiron"
+      "magnific_0050_slateiron",
+      "magnific_0050_voidpulse"
     ],
     "deny": [
       "fp_server_room",
       "magnific_0050_darkgrid",
-      "magnific_0050_voidpulse",
       "pexels_v38431825",
       "pexels_v31263225",
       "pexels_v25242933",
@@ -159,7 +158,8 @@
       "magnific_0050_coldspark",
       "freepik_136238",
       "magnific_0050_steelglow",
-      "magnific_0050_charcoalash"
+      "magnific_0050_charcoalash",
+      "magnific_0050_ironrust"
     ],
     "same_asset_max_slots": 1,
     "_note": "round41: Gemini 162 — no server, no empty grid, no highway on refuse",
@@ -167,7 +167,7 @@
       "b1": "magnific_0050_coolvortex",
       "b2": "magnific_0050_inkswirl",
       "b3": "magnific_0050_gpu",
-      "b4": "magnific_0050_ironrust",
+      "b4": "magnific_0050_slateiron",
       "b5": "magnific_0050_fluids",
       "b5b": "magnific_0050_weather",
       "b5c": "magnific_0050_wing",
@@ -200,12 +200,12 @@
       {
         "block": "b4",
         "on": "агентов",
-        "asset": "magnific_0050_ironrust"
+        "asset": "magnific_0050_slateiron"
       },
       {
         "block": "b4",
         "on": "часов",
-        "asset": "magnific_0050_slateiron"
+        "asset": "magnific_0050_voidpulse"
       },
       {
         "block": "b4",

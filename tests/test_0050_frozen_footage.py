@@ -38,8 +38,10 @@ def test_the_two_black_clips_under_the_b4_numbers_are_replaced():
     b4 = [s["asset"] for s in LOCK if s["block"] == "b4"]
     assert M + "steelglow" not in b4
     assert M + "charcoalash" not in b4
-    assert M + "ironrust" in b4
     assert M + "slateiron" in b4
+    assert M + "voidpulse" in b4
+    # ironrust ярче, но по phash это тот же цех, что и pipes на «Трубах».
+    assert M + "ironrust" not in b4
 
 
 def test_the_black_clips_cannot_come_back_through_prefer():
@@ -48,8 +50,8 @@ def test_the_black_clips_cannot_come_back_through_prefer():
         assert asset in PINS["deny"], asset
 
 
-def test_the_steel_clips_are_no_longer_denied():
-    for asset in (M + "ironrust", M + "slateiron"):
+def test_the_replacement_clips_are_no_longer_denied():
+    for asset in (M + "slateiron", M + "voidpulse"):
         assert asset not in PINS["deny"], asset
         assert asset in PINS["prefer"], asset
 
@@ -93,3 +95,30 @@ def test_only_a_reuse_line_may_name_the_same_asset_twice():
 def test_every_pinned_asset_exists_in_the_index(asset):
     index = json.load(open("cache/footage_index.json", encoding="utf-8"))
     assert asset in {i["id"] for i in index["items"]}
+
+
+def test_no_two_pinned_clips_are_the_same_shot():
+    """QC-5 ловит визуальные дубли — но уже в готовом ролике, через прогон.
+
+    На круге 59 в b4 встал ironrust: по яркости и по миниатюре он подходил,
+    а по phash отличался от pipes — кадра «Трубы в доме» — на четыре бита при
+    пороге восемь. Это один и тот же цех, снятый чуть иначе. Замок такое
+    обязан отсекать у себя, а не в Actions девять минут спустя.
+    """
+    from src.lib.phash import DEFAULT_THRESHOLD, video_is_duplicate
+
+    index = json.load(open("cache/footage_index.json", encoding="utf-8"))
+    by = {i["id"]: i for i in index["items"]}
+
+    def hashes(asset: str) -> list[str]:
+        row = by[asset]
+        return list(row.get("phashes") or [row["phash"]])
+
+    pinned = sorted({s["asset"] for s in LOCK})
+    clashes = [
+        (a, b)
+        for i, a in enumerate(pinned)
+        for b in pinned[i + 1:]
+        if video_is_duplicate(hashes(a), hashes(b), DEFAULT_THRESHOLD)
+    ]
+    assert clashes == [], clashes
