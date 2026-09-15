@@ -7,6 +7,8 @@
 собирается только когда материала на слот не нашлось; здесь материал есть
 (футаж под числами), и блок явно просит график поверх него.
 """
+import pytest
+
 from src.lib.template_picker import TemplatePicker
 from src.lib.templates import TemplateCatalog
 from src.p11_assemble.assemble import ScenarioIndex, VisualBudget, _authored_dataviz_overlays
@@ -43,8 +45,11 @@ def test_a_dataviz_block_gets_a_chart_overlay(cfg):
     overlay = out[0]
     assert overlay["type"] == "dataviz"
     assert overlay["template"].startswith("data-viz/")
-    assert overlay["start"] == 31.41
+    # Оверлей прибит к хвосту блока (§7.2's own 3.2s ceiling), не к его
+    # началу — иначе он тянется через реплику про 2 700 000, которую сам
+    # же не показывает, и субтитр на этом слове ложится поверх графика.
     assert overlay["end"] == 36.63
+    assert overlay["start"] == pytest.approx(36.63 - 3.2)
 
 
 def test_mismatched_units_never_share_one_axis(cfg):
@@ -99,6 +104,27 @@ def test_the_dataviz_cap_is_shared_with_the_empty_slot_ladder(cfg):
         _shots(), blocks, picker=picker, budget=budget, variant="A",
         seed=1, recent_videos=[], used_templates=[])
     assert out == []
+
+
+def test_a_long_block_gets_a_capped_tail_window_not_the_whole_span(cfg):
+    # Реальный 0050 b4: 9.46 с шота на четыре числа, произнесённых не в
+    # порядке графика (10 000, 88, 2 700 000, 17) — окно во весь шот
+    # тянулось бы через субтитр «2 700 000», который график не показывает.
+    picker = _picker(type("C", (), {"cfg": cfg})())
+    budget = VisualBudget()
+    blocks = {"b4": {"id": "b4", "text": B4_TEXT,
+                     "overlay": {"type": "dataviz"}}}
+    long_shots = [{"index": 20, "block_id": "b4", "start": 24.8, "end": 29.37,
+                   "kind": "footage"},
+                  {"index": 21, "block_id": "b4", "start": 29.37, "end": 34.26,
+                   "kind": "footage"}]
+    out = _authored_dataviz_overlays(
+        long_shots, blocks, picker=picker, budget=budget, variant="A",
+        seed=1, recent_videos=[], used_templates=[])
+    assert len(out) == 1
+    span = out[0]["end"] - out[0]["start"]
+    assert span == pytest.approx(3.2)
+    assert out[0]["start"] > 29.37  # «2 700 000» (28.92–29.37) остаётся снаружи
 
 
 def test_a_too_short_window_gets_no_chart(cfg):

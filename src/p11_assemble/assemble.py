@@ -4412,6 +4412,17 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
     }
 
 
+# §7.2's own dataviz rung caps a chart at start+3.2s (_close_empty_slot) — a
+# brief accent, never a whole sentence. An authored chart follows the same
+# ceiling: a block's spoken numbers do not arrive in chart order (0050 b4
+# says 10 000, 88, 2 700 000, then 17 — the chart keeps only 88→17), so a
+# window spanning the whole block runs the caption for every OTHER spoken
+# number — «2 700 000» — straight through the chart. Anchoring the window to
+# the block's tail instead of its head keeps it inside the last beat, after
+# the excluded numbers have already been said and captioned.
+_AUTHORED_DATAVIZ_MAX_SEC = 3.2
+
+
 def _authored_dataviz_overlays(
         shots: list[dict[str, Any]], blocks_by_id: dict[str, Any], *,
         picker: TemplatePicker, budget: VisualBudget, variant: str, seed: int,
@@ -4438,8 +4449,9 @@ def _authored_dataviz_overlays(
         own = [s for s in shots if str(s.get("block_id") or "") == block_id]
         if not own:
             continue
-        start = float(min(float(s["start"]) for s in own))
+        block_start = float(min(float(s["start"]) for s in own))
         end = float(max(float(s["end"]) for s in own))
+        start = max(block_start, end - _AUTHORED_DATAVIZ_MAX_SEC)
         if end - start < 1.2:
             continue
         nums = _stats_from_text(str(block.get("text") or ""))

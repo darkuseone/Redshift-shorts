@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round55: schema allows overlay.type=dataviz — r54 broke on P0 before this; skip_vision",
-  "round": 55
+  "note": "round56: dataviz overlay window anchored to block tail — the caption for 2 700 000 was crossing the chart; skip_vision",
+  "round": 56
 }
