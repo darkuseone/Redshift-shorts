@@ -50,6 +50,12 @@ _PHRASE_HOLD_CAP = 0.45
 _FILL_HOLD_SEC = 0.12
 
 
+# Оверлеи, которым караоке уступает кадр: они занимают его целиком или почти
+# целиком. Тот же набор читает clip-wipe (``overlay_cuts``).
+_CAPTION_YIELDS_TO = frozenset({"plaque", "cta", "dataviz", "source_card",
+                                "fullscreen_text"})
+
+
 def phrase_clip_span(
     start: float,
     last_end: float,
@@ -1008,6 +1014,17 @@ def build_gradient_fill(
         comfort_px=int(params["comfort_px"]),
         min_size=int(params["min_px"]),
     )
+    # Фраза не должна доживать до карточки или диаграммы, которая займёт тот
+    # же кадр. Хвост «НЕ БРАЛ» висел поверх карточки «7 · $1 000 000 · 25 Y»,
+    # а «СООБЩЕНИЙ» и «17 ЧАСОВ» ложились на линию графика b4: караоке знает
+    # только тайминг слов и про оверлеи под собой не спрашивает. У clip-wipe
+    # такая развязка есть с самого начала (``overlay_cuts``), у заливки её
+    # не было — добавляем ту же: держать хвост до начала оверлея, не дальше.
+    overlay_cuts = sorted(
+        float(ovl.get("start") or 0)
+        for ovl in (plan.get("overlays") or [])
+        if str(ovl.get("type") or "") in _CAPTION_YIELDS_TO
+    )
     nodes: list[str] = []
     tweens: list[str] = []
     count = 0
@@ -1035,6 +1052,13 @@ def build_gradient_fill(
         n = len(phrase)
         end, fade_start, fade_dur = phrase_clip_span(
             start, last_end, next_start, fade_sec=params["fade_sec"])
+        for cut in overlay_cuts:
+            # Режем только хвост: слово, которое звучит, с экрана не снимаем.
+            if last_end < cut < end:
+                end = max(cut, start + 0.05)
+                fade_dur = min(fade_dur, max(0.0, end - last_end))
+                fade_start = end - fade_dur if fade_dur else last_end
+                break
         if p + 1 < len(phrases):
             # Exclusive end so even/odd tracks never share a frame at the join
             # (clip visibility includes both endpoints). One frame at 30 fps.

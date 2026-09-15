@@ -8912,7 +8912,12 @@ def fs_stack_lines(ctx: "TemplateCtx") -> Piece:
     content, accent, invert = _content_of(ctx)
     if not content:
         return Piece()
-    words = content.split()
+    # Лесенка раскладывала «7 · $1 000 000 · 25 Y» по пробелам и ставила
+    # «7 · $1» / «000 000 ·» / «25 Y»: разряды числа она считала границами
+    # слов. Склейка делает разряды неразрывными, а разбивка идёт только по
+    # обычным пробелам — число целиком остаётся одним токеном и на одной
+    # строке. ``str.split()`` здесь не годится: он рвёт и по NBSP.
+    words = [w for w in re.split(r"[ \t]+", glue_number_runs(content)) if w]
     max_lines = max(1, int(ctx.params.get("max_lines") or 3))
     per = max(1, (len(words) + max_lines - 1) // max_lines)
     lines = [" ".join(words[i:i + per]) for i in range(0, len(words), per)][:max_lines]

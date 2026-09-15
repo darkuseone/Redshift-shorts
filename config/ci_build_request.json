@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round56: dataviz overlay window anchored to block tail — the caption for 2 700 000 was crossing the chart; skip_vision",
-  "round": 56
+  "note": "round57: words stop touching, the card stops breaking a number, captions yield to cards and charts; skip_vision",
+  "round": 57
 }

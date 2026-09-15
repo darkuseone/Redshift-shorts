@@ -620,6 +620,55 @@ def _fill_unfilled_from_leftover_prefers(
 
 
 
+def _dark_reject_reason(light: dict[str, Any] | None, slot: dict[str, Any],
+                        *, visible_min: float, black_max: float) -> str:
+    """Почему этот кадр нельзя ставить перебивкой: он ничего не показывает.
+
+    Отказ остаётся там, где и был, — на перебивке: она живёт полторы секунды
+    ради того, чтобы в кадре что-то произошло, и сумрачный материал ей не
+    годится.
+
+    ``black_max`` отказом не делает. Замер по библиотеке 0050 показал, что
+    почти чёрный футаж там выбран нарочно: девять клипов светлее порога дают
+    меньше 6 % кадра, а весь яркий материал (vortex 88 %, redsmoke 63 %,
+    darkember 52 %) лежит в ``deny``. Гейт, режущий такое, вычистил бы шесть
+    занятых слотов сразу и отдал бы их лестнице §7.2 — то самое «слайд-шоу из
+    текста», от которого лестница и защищает. Порог поэтому только считает и
+    пишет в журнал: решение, менять ли материал, стоит кредитов Magnific и
+    принадлежит заказчику, а не судье.
+    """
+    if light is None:
+        return ""
+    share = float(light.get("visible_share", 1.0))
+    if str(slot.get("asset_role") or "") == "interstitial" and share < visible_min:
+        return (f"перебивке видно {share:.0%} кадра при пороге "
+                f"{visible_min:.0%}: зритель увидит субтитр на пустоте")
+    return ""
+
+
+def _warn_if_black(light: dict[str, Any] | None, candidate: dict[str, Any],
+                   slot: dict[str, Any], *, black_max: float) -> None:
+    """Назвать в журнале футаж, который в кадре читается как чёрный экран.
+
+    На 0050 под числами b4 встали steelglow (0.8 % видимого кадра) и
+    charcoalash (0.2 %): четыре с половиной секунды подряд зритель видел
+    субтитр на пустоте, при том что в заявке блока написано «Steel/network
+    motion under numbers. Not flat black.». Без этой строки в журнале такое
+    ловится только покадровым осмотром готового ролика.
+    """
+    if light is None:
+        return
+    share = float(light.get("visible_share", 1.0))
+    if share >= black_max:
+        return
+    _log.warning("футаж почти чёрный: в кадре видно %.0f%%", share * 100,
+                 extra={"asset": candidate.get("asset_id"),
+                        "slot": slot.get("index"),
+                        "block": slot.get("block_id"),
+                        "visible_share": share,
+                        "mean": light.get("mean")})
+
+
 def _scrub_stamp_off_lean_gaps(
         *, accepted: dict[int, dict[str, Any]],
         slots_by_index: dict[int, dict[str, Any]],
@@ -939,6 +988,9 @@ def run_step(ctx) -> dict[str, Any]:
     # Порог светлоты перебивки. Замер по базе: медиана 55 % видимого, у клипа,
     # давшего чёрную перебивку в 0047, — 16 %.
     visible_min = float(ctx.cfg.get("stock.interstitial_visible_min", 0.20))
+    # Ниже этого кадр читается как чёрный экран. Не отказ — строка в журнале:
+    # тёмная палитра 0050 выбрана заявкой, и судья её не отменяет.
+    black_max = float(ctx.cfg.get("stock.black_frame_min_visible", 0.06))
 
     for slot_index in sorted(by_slot):
         slot = slots_by_index.get(slot_index, {})
@@ -1028,8 +1080,8 @@ def run_step(ctx) -> dict[str, Any]:
                 continue
             palette = palette_verdict(
                 [Path(f) for f in candidate.get("frames", [])], palette_rules)
-            light = (frame_light([Path(f) for f in candidate.get("frames", [])])
-                     if slot.get("asset_role") == "interstitial" else None)
+            light = frame_light([Path(f) for f in candidate.get("frames", [])])
+            _warn_if_black(light, candidate, slot, black_max=black_max)
             if skip_live or candidate.get("prior_score") is not None:
                 verdict_dict = skip_live_verdict(candidate, intent)
                 reused_scores += 1
@@ -1044,11 +1096,11 @@ def run_step(ctx) -> dict[str, Any]:
                      "score": float(verdict_dict["score"]), "palette": palette}
             if light is not None:
                 entry["light"] = light
-            if light is not None and light["visible_share"] < visible_min:
+            dark_reason = _dark_reject_reason(
+                light, slot, visible_min=visible_min, black_max=black_max)
+            if dark_reason:
                 entry["decision"] = "reject_dark"
-                entry["reject_reason"] = (
-                    f"перебивке видно {light['visible_share']:.0%} кадра при пороге "
-                    f"{visible_min:.0%}: зритель увидит субтитр на пустоте")
+                entry["reject_reason"] = dark_reason
                 rejected_by_dark += 1
                 judged.append(entry)
                 continue
@@ -1170,8 +1222,8 @@ def run_step(ctx) -> dict[str, Any]:
             # Перебивка — другое: 1.4 секунды, ради того чтобы в кадре что-то
             # произошло. В 0047 на 40.5 и 50.0 сек там оказался субтитр на
             # пустоте, средняя яркость 17.7 и 20.1 из 255.
-            light = (frame_light([Path(f) for f in candidate.get("frames", [])])
-                     if slot.get("asset_role") == "interstitial" else None)
+            light = frame_light([Path(f) for f in candidate.get("frames", [])])
+            _warn_if_black(light, candidate, slot, black_max=black_max)
 
             entry = {**candidate, "verdict": verdict_dict, "intent": intent,
                      "score": float(verdict_dict["score"]), "palette": palette}
@@ -1181,14 +1233,14 @@ def run_step(ctx) -> dict[str, Any]:
                 "accept" if entry["score"] >= accept_threshold
                 else "reject" if entry["score"] < reject_threshold
                 else "borderline")
-            if light is not None and light["visible_share"] < visible_min:
+            dark_reason = _dark_reject_reason(
+                light, slot, visible_min=visible_min, black_max=black_max)
+            if dark_reason:
                 # Перебивка в черноту — не перебивка. Отказ, а не штраф:
                 # §7.3 велит незакрытый слот отправлять в генерацию, а не
                 # затыкать материалом, который в кадре ничего не показывает.
                 entry["decision"] = "reject_dark"
-                entry["reject_reason"] = (
-                    f"перебивке видно {light['visible_share']:.0%} кадра при пороге "
-                    f"{visible_min:.0%}: зритель увидит субтитр на пустоте")
+                entry["reject_reason"] = dark_reason
                 rejected_by_dark += 1
                 _log.info("кандидат отклонён по темноте", extra={
                     "slot": slot_index, "asset": candidate.get("asset_id"),

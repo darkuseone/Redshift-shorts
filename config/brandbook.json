@@ -225,7 +225,7 @@
       "max_words": 2,
       "pause_break_sec": 0.45,
       "letter_spacing_em": 0.02,
-      "gap_em": 0.18,
+      "gap_em": 0.3,
       "case": "upper",
       "bounce_scale": 1.04,
       "bounce_out_sec": 0.15,
