@@ -502,8 +502,10 @@
       "vision_summary": "Dark void ink pulse plate, vertical 9:16 prepared owned densify filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "2aa25555abab9694",
