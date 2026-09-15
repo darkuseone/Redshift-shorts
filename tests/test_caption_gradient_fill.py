@@ -6,7 +6,8 @@ import re
 
 from src.lib.render.hyperframes.brand_css import build_css
 from src.lib.render.hyperframes.captions import (
-    caption_css, is_space_theme, pick_caption_style, resolve_caption,
+    caption_css, is_explicit_space, is_space_theme, pick_caption_style,
+    resolve_caption,
 )
 from src.lib.render.hyperframes.composition import CompositionBuilder
 
@@ -80,17 +81,42 @@ def test_gradient_fill_does_not_tween_forbidden_props(cfg):
     assert 'fromTo("#gf-00"' not in out
 
 
-def test_accent_uses_blood_not_siri_rainbow(cfg):
+def test_fill_is_one_layer_in_one_colour(cfg):
+    """Закон канала: один слой, белая фраза, заливка только #C8453D."""
     out = _fill(cfg, _words("пиши", ("html", True), "код"))
-    assert "#fe9f1b" not in out.lower()
-    assert "#ff2063" not in out.lower()
-    assert "#fd56cb" not in out.lower()
-    assert "#FFD700" not in out
-    assert cfg.brandbook["colors"]["accent"] in out
-    assert cfg.brandbook["colors"]["accent_soft"] in out
-    assert out.count('class="gf-word gf-accent"') == 1
+    accent = cfg.brandbook["colors"]["accent"]
+    assert accent == "#C8453D"
+    for banned in ("#fe9f1b", "#f76e49", "#ff2063", "#fd56cb", "#ffd700",
+                   cfg.brandbook["colors"]["accent_soft"].lower(),
+                   cfg.brandbook["colors"]["cyan"].lower()):
+        assert banned not in out.lower(), banned
+    assert accent in out
+    # Ни HTML-дубля под SVG, ни отдельного акцентного класса: слово рисуется
+    # ровно одним <svg> с белым текстом и красным поверх него под маской.
+    assert 'class="gf-base"' not in out
+    assert "gf-accent" not in out
     assert ">HTML<" in out
-    assert 'class="gf-base"' in out
+    assert out.count('<text class="gf-ink"') == out.count('class="gf-word"') * 2
+
+
+def test_every_word_fills_as_it_is_spoken(cfg):
+    """Заливается текущее слово, а не одно «акцентное» на фразу."""
+    out = _fill(cfg, _words("пиши", ("html", True)))
+    rects = [ln for ln in out.splitlines() if "-r\"" in ln and "scaleX" in ln]
+    assert any("gf-00-w0-r" in line for line in rects)
+    assert any("gf-00-w1-r" in line for line in rects)
+    # И гаснет: к концу фразы строка снова белая.
+    assert 'tl.set("#gf-00-w0-r",{scaleX:0}' in out
+
+
+def test_phrase_never_wraps_to_a_second_line(cfg):
+    """Перенос склеивал соседние слова («ВРЁТСАМОЛЁТ»). Строка одна."""
+    css = caption_css(cfg.brandbook)
+    assert "flex-wrap:nowrap" in css
+    assert "flex-wrap:wrap" not in css.split(".gf-group{")[1].split("}")[0]
+    out = _fill(cfg, _words("врёт", "самолёт"))
+    assert ">ВРЁТ<" in out and ">САМОЛЁТ<" in out
+    assert ">ВРЁТСАМОЛЁТ<" not in out
 
 
 def test_fill_tweens_scale_on_the_mask_rect(cfg):
@@ -143,14 +169,20 @@ def test_space_category_picks_clip_wipe(cfg):
     assert pick_caption_style(plan, cfg.brandbook) == "clip-wipe"
 
 
-def test_cosmic_topic_picks_clip_wipe_without_space_category(cfg):
+def test_cosmic_topic_without_space_category_stays_gradient_fill(cfg):
+    """clip-wipe — только явный ``category: space``.
+
+    Эвристика по словам темы ловила «орбиту» в обычном ролике и уводила его
+    с единственного разрешённого жеста канала.
+    """
     plan = {
         "category": "science",
         "title": "Сбой на орбите МКС",
         "blocks": [{"text": "Станция потеряла ориентацию."}],
     }
     assert is_space_theme(plan)
-    assert pick_caption_style(plan, cfg.brandbook) == "clip-wipe"
+    assert not is_explicit_space(plan)
+    assert pick_caption_style(plan, cfg.brandbook) == "gradient-fill"
 
 
 def test_gradient_fill_does_not_hold_across_mute_hole(cfg):

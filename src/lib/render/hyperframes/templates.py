@@ -2714,8 +2714,13 @@ def dv_stat_card(ctx: "TemplateCtx") -> Piece:
                 f'{{opacity:0}},{_num(at + per)});')
     kicker = f'<span class="sc-label">{_esc(label)}</span>' if label else ""
     tweens = entrance_tweens(f"#{node_id} .sc-in", ctx.start, name="zoom-out") + tweens
+    theme = str(ctx.params.get("theme") or "").lower()
+    dark = bool(ctx.params.get("dark") or theme == "dark"
+                or str(ctx.params.get("background") or "").lower() == "dark"
+                or str(ctx.params.get("tone") or "").lower() == "ink")
+    sc_cls = "clip overlay stat-card" + (" theme-dark" if dark else "")
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip overlay stat-card" {_timing(ctx)}>'
+        nodes=[f'<div id="{node_id}" class="{sc_cls}" {_timing(ctx)}>'
                f'<div class="sc-in">{kicker}'
                f'<span class="sc-num">{"".join(spans)}</span></div></div>'],
         tweens=tweens)
@@ -3788,9 +3793,16 @@ _DCL_LABEL_SIZE = 38
 _DCL_VALUE_SIZE = 118
 _DCL_VALUE_W = 360
 _DCL_PLOT_LEFT = 97
-_DCL_PLOT_TOP = 387
+# Поле графика кончается выше полосы субтитров. Было 387..1766 — почти весь
+# кадр по высоте, и караоке шло прямо по падающей линии: «СООБЩЕНИЙ» и
+# «17 ЧАСОВ» ложились на неё, а увести их некуда — брендбук разрешает базовую
+# линию только в 620..1280, и это целиком внутри поля. Двигать пришлось
+# график: 340..1060 оставляет subtitle-полосе весь низ кадра. Каталожный
+# жест (линия вниз, счётчик, гуашь) от этого не меняется — меняется рамка,
+# в которой он живёт, а она и так наша, не каталожная.
+_DCL_PLOT_TOP = 340
 _DCL_PLOT_W = 886
-_DCL_PLOT_H = 1379
+_DCL_PLOT_H = 720
 _DCL_EP_D = 30
 _DCL_VB_W = 260.0
 _DCL_VB_H = 240.0
@@ -6355,6 +6367,10 @@ def dataviz_css(brandbook: dict[str, Any]) -> str:
         "font-family:var(--font-display);font-size:168px;line-height:1.05;"
         "color:var(--color-ink)}"
         ".stat-card .sc-num span{position:absolute;left:0;right:0;opacity:0}"
+        ".stat-card.theme-dark .sc-in{background:#16181d;color:#f4f4f5;"
+        "box-shadow:0 22px 60px rgba(0,0,0,0.45)}"
+        ".stat-card.theme-dark .sc-label{color:#9ca3af}"
+        ".stat-card.theme-dark .sc-num{color:#f4f4f5}"
         ".abc-chart{left:0;top:0;"
         f"width:{canvas_w}px;height:{canvas_h}px;"
         "background:#f7f7f8}"
@@ -8257,9 +8273,77 @@ def _fs_ceiling(ctx: "TemplateCtx") -> int:
     return 420
 
 
-def _fs_size(ctx: "TemplateCtx", text: str) -> int:
+_UNBREAKABLE_NUMBER_RE = re.compile(
+    r"^[\$€£₽]?\s*\d[\d\s\u00a0\u202f.,]*%?$"
+)
+
+
+def is_unbreakable_number(text: str) -> bool:
+    """Число целиком или не показывать вовсе.
+
+    В «$1 000 000» пробелы — это разряды, а не границы слов. Подбор кегля по
+    самому длинному слову давал 160 px на «000», строка не влезала в карточку
+    и переносилась: в хуке 0050 стояло «$1» на одной строке и «000 000» на
+    другой. Для зрителя это не миллион, а сломанная вёрстка.
+    """
+    return bool(_UNBREAKABLE_NUMBER_RE.match(str(text or "").strip()))
+
+
+_DIGIT_GROUP_SPACE_RE = re.compile(r"(?<=\d) (?=\d)")
+_NUMBER_UNIT_SPACE_RE = re.compile(r"(?<=\d) (?=[A-Za-zА-Яа-яЁё]{1,2}(?![A-Za-zА-Яа-яЁё]))")
+
+
+def glue_number_runs(text: str) -> str:
+    """Неразрывные пробелы внутри чисел и между числом и единицей.
+
+    Карточка не обязана влезать в одну строку — «10 000 · 88 Ч · 2 700 000 ·
+    17 Ч LEAN» честно переносится. Но переносить её браузер волен по любому
+    пробелу, а половина пробелов здесь — разряды: на экране вышло «2 700» и
+    «000» на разных строках, «88» без своего «Ч». Число, разорванное между
+    строк, зритель не читает как число.
+
+    Переносить остаётся где и следовало: по разделителю и перед словом.
+    """
+    out = _DIGIT_GROUP_SPACE_RE.sub("\u00a0", str(text or ""))
+    return _NUMBER_UNIT_SPACE_RE.sub("\u00a0", out)
+
+
+_LEADING_NUMBER_RE = re.compile(
+    r"^([\$€£₽]?\s*\d[\d\s\u00a0\u202f.,]*%?)\s*(.*)$", re.S
+)
+
+
+def split_leading_number(text: str) -> tuple[str, str]:
+    """Число целиком и подпись после него.
+
+    Дробить по первому пробелу нельзя: пробелы внутри числа — разряды.
+    «$1 000 000» так превращалось в число «$1» и подпись «000 000», а
+    «10 000 АГЕНТОВ» — в «10» и «000 АГЕНТОВ».
+    """
+    match = _LEADING_NUMBER_RE.match(str(text or "").strip())
+    if not match:
+        return str(text or "").strip(), ""
+    number = match.group(1).strip().rstrip(".,")
+    return number, match.group(2).strip()
+
+
+def _fs_size(ctx: "TemplateCtx", text: str, *, pad_px: float = 0.0,
+             whole_line: bool = False) -> int:
+    """Кегль полноэкранной надписи.
+
+    По умолчанию меряется самое длинное слово: строка переносится сама, и
+    важно только, чтобы в ширину влезло неразрывное слово.
+
+    ``whole_line`` — для тех, кто перенос уже разложил сам (лесенка, VS,
+    неразрывное число). Им нужно, чтобы влезла строка целиком. Раньше такой
+    вызов всё равно мерился по слову: «7 · $1 000 000 · 25 Y» получало кегль
+    по «000», три строки лесенки уезжали за кадр и накрывали собой субтитр.
+    """
     ceiling = _fs_ceiling(ctx)
     available = min(float(ctx.params.get("available_px") or 900), float(WORK_AREA_W))
+    available = max(80.0, available - float(pad_px))
+    if whole_line or is_unbreakable_number(text):
+        return fit_size(str(text).strip(), available, ceiling, role="display")
     longest = max(text.upper().split() or [text], key=len, default="")
     return fit_size(longest, available, ceiling, role="display")
 
@@ -8641,8 +8725,11 @@ def fs_number_slam(ctx: "TemplateCtx") -> Piece:
 
     # Numeric slam: keep classic number + caption split.
     if parts and re.match(r"^[\d$€£%.,+\-×xX]+", parts[0]):
-        number, caption = parts[0], " ".join(parts[1:])
-        size = _fs_size(ctx, number)
+        # Пробелы внутри числа — разряды, а не граница слов: деление по
+        # первому пробелу ставило в хук «$1» огромным числом и «000 000»
+        # мелкой подписью — приз читался как один доллар.
+        number, caption = split_leading_number(content)
+        size = _fs_size(ctx, number, whole_line=True)
         cap = (f'<span class="fs-cap">{_esc(caption)}</span>' if caption else "")
         if detail and not caption:
             cap = f'<span class="fs-cap">{_esc(detail)}</span>'
@@ -8832,12 +8919,18 @@ def fs_stack_lines(ctx: "TemplateCtx") -> Piece:
     content, accent, invert = _content_of(ctx)
     if not content:
         return Piece()
-    words = content.split()
+    # Лесенка раскладывала «7 · $1 000 000 · 25 Y» по пробелам и ставила
+    # «7 · $1» / «000 000 ·» / «25 Y»: разряды числа она считала границами
+    # слов. Склейка делает разряды неразрывными, а разбивка идёт только по
+    # обычным пробелам — число целиком остаётся одним токеном и на одной
+    # строке. ``str.split()`` здесь не годится: он рвёт и по NBSP.
+    words = [w for w in re.split(r"[ \t]+", glue_number_runs(content)) if w]
     max_lines = max(1, int(ctx.params.get("max_lines") or 3))
     per = max(1, (len(words) + max_lines - 1) // max_lines)
     lines = [" ".join(words[i:i + per]) for i in range(0, len(words), per)][:max_lines]
     node_id = ctx.target
-    size = _fs_size(ctx, max(lines, key=len))
+    # Перенос лесенка разложила сама — мерить надо строку, а не слово в ней.
+    size = _fs_size(ctx, widest(lines), whole_line=True)
     cls = "clip fullscreen-text fs-stack" + (" invert" if invert else "")
     rows, tweens = [], []
     for i, line in enumerate(lines):
@@ -8859,7 +8952,7 @@ def fs_vs_compare(ctx: "TemplateCtx") -> Piece:
     if len(parts) != 2:
         return fs_plain(ctx)
     node_id = ctx.target
-    size = _fs_size(ctx, max(parts, key=len))
+    size = _fs_size(ctx, widest(parts), whole_line=True)
     cls = "clip fullscreen-text fs-vs" + (" invert" if invert else "")
     tweens = entrance_tweens(f"#{node_id} .fs-vs-a", _enter_at(ctx), name="rise")
     tweens += entrance_tweens(f"#{node_id} .fs-vs-b", _enter_at(ctx), name="rise",
@@ -9161,13 +9254,22 @@ def fs_word_swap(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+_FS_CARD_PAD_X = 44
+
+
 def fs_fact_card(ctx: "TemplateCtx") -> Piece:
     content, accent, invert = _content_of(ctx)
     if not content:
         return Piece()
     node_id = ctx.target
-    size = min(_fs_size(ctx, content), 160)
+    # Поля карточки (44 px с каждой стороны) и рамка съедают ширину: считать
+    # кегль по всей рабочей зоне значило обещать строке место, которого у неё
+    # внутри карточки нет.
+    size = min(_fs_size(ctx, content, pad_px=_FS_CARD_PAD_X * 2 + 4), 160)
+    content = glue_number_runs(content)
     cls = "clip fullscreen-text fs-card" + (" invert" if invert else "")
+    if is_unbreakable_number(content):
+        cls += " fs-nowrap"
     return Piece(
         nodes=[f'<div id="{node_id}" class="{cls}" {_timing(ctx)}>'
                f'<span id="{node_id}-inner" class="fs-fact" '
@@ -9231,10 +9333,12 @@ def _lbc_copy(params: dict[str, Any]) -> tuple[str, str, str]:
     return wordmark, tagline, url
 
 
-def _lbc_body_and_dot(wordmark: str) -> tuple[str, str]:
+def _lbc_body_and_dot(wordmark: str, *, no_period: bool = False) -> tuple[str, str]:
     text = str(wordmark or "").strip() or _LBC_DEFAULT_MARK
     if text.endswith("."):
-        return text[:-1], "."
+        text = text[:-1]
+    if no_period:
+        return text, ""
     return text, "."
 
 
@@ -9253,10 +9357,20 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     exit_mode = str(ctx.params.get("exit") or "none").lower()
     if exit_mode not in ("none", "fade", "up"):
         exit_mode = "none"
-    body, dot = _lbc_body_and_dot(wordmark)
+    no_period = bool(ctx.params.get("no_period"))
+    body, dot = _lbc_body_and_dot(wordmark, no_period=no_period)
     node_id = ctx.target
     available = float(ctx.params.get("available_px") or _LBC_WIDTH)
-    size = fit_size(body + dot, available, _LBC_CEILING, role="display")
+    size = fit_size(body + (dot or ""), available, _LBC_CEILING, role="display")
+    # Compact / fontScale: smaller mark so full REDSHIFT fits (no «REDSHI»).
+    scale_factor = _LBLS_SIZE.get("compact", 0.76) if ctx.params.get("compact") else 1.0
+    try:
+        fs = float(ctx.params.get("fontScale") or 0) or 0.0
+    except (TypeError, ValueError):
+        fs = 0.0
+    if fs > 0:
+        scale_factor = fs
+    size = max(28.0, size * scale_factor)
     letter_y = round(_LBC_LETTER_Y_EM * size, 2)
     period_y = round(_LBC_PERIOD_Y_EM * size, 2)
     tag_size = max(28, min(48, int(round(size * 0.22))))
@@ -9276,10 +9390,14 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
     total_base = max(0.001, _LBC_IN_BASE + out_base)
     # Short CTA windows used to still run the 2.6s cascade: at ~1s the mark
     # read «REDSHIF». Hold the finished wordmark for the last second+.
+    # Compact 0050: skip cascade entirely — paint the full mark at t0.
     hold = 0.0
-    if duration <= 2.6 and exit_mode == "none":
+    compact = bool(ctx.params.get("compact"))
+    if compact and exit_mode == "none":
+        hold = max(0.0, duration - 0.12)
+    elif duration <= 2.6 and exit_mode == "none":
         hold = max(0.0, duration - 0.55)
-    cascade_budget = max(0.35, duration - hold) if hold else duration
+    cascade_budget = max(0.12, duration - hold) if hold else duration
     scale = cascade_budget / total_base if cascade_budget < total_base else 1.0
     letter_dur = _LBC_LETTER * scale
     stagger_amount = _LBC_STAGGER_AMOUNT * scale
@@ -9317,12 +9435,13 @@ def fs_logo_brand_close(ctx: "TemplateCtx") -> Piece:
             f'{{opacity:1,y:0,duration:{_num(letter_dur)},ease:"expo.out"}},{_num(letter_at)});'
         )
         step += 1
-    chars.append(f'<span id="{node_id}-dot" class="lbc-dot">{_esc(dot)}</span>')
-    tweens.append(
-        f'tl.fromTo("#{node_id}-dot",{{opacity:0,scale:0.2,y:{_num(period_y)}}},'
-        f'{{opacity:1,scale:1,y:0,duration:{_num(period_dur)},'
-        f'ease:"back.out(1.8)"}},{_num(period_at)});'
-    )
+    if dot:
+        chars.append(f'<span id="{node_id}-dot" class="lbc-dot">{_esc(dot)}</span>')
+        tweens.append(
+            f'tl.fromTo("#{node_id}-dot",{{opacity:0,scale:0.2,y:{_num(period_y)}}},'
+            f'{{opacity:1,scale:1,y:0,duration:{_num(period_dur)},'
+            f'ease:"back.out(1.8)"}},{_num(period_at)});'
+        )
 
     extras: list[str] = []
     if tagline:
@@ -12812,8 +12931,13 @@ def ov_source_card(ctx: "TemplateCtx") -> Piece:
         tweens += entrance_tweens(f"#{node_id} .snippet", ctx.start,
                                   name="rise", delay=0.10, duration=enter)
     compact = " compact" if ctx.params.get("compact") else ""
+    theme = str(ctx.params.get("theme") or "").lower()
+    dark = bool(ctx.params.get("dark") or theme == "dark"
+                or str(ctx.params.get("background") or "").lower() == "dark"
+                or str(ctx.params.get("tone") or "").lower() == "ink")
+    dark_cls = " theme-dark" if dark else ""
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip overlay source-card{compact}" {_timing(ctx)}>'
+        nodes=[f'<div id="{node_id}" class="clip overlay source-card{compact}{dark_cls}" {_timing(ctx)}>'
                f'<div id="{stage}" class="sc-stage" style="opacity:0">'
                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'
@@ -12877,8 +13001,13 @@ def ov_article_scroll(ctx: "TemplateCtx") -> Piece:
             f'tl.fromTo("#{node_id} .as-body",{{y:0}},'
             f'{{y:{-shift},duration:{_num(hold)},ease:"none"}},'
             f'{_num(ctx.start + 0.5)});')
+    theme = str(ctx.params.get("theme") or "").lower()
+    dark = bool(ctx.params.get("dark") or theme == "dark"
+                or str(ctx.params.get("background") or "").lower() == "dark"
+                or str(ctx.params.get("tone") or "").lower() == "ink")
+    as_cls = "clip overlay article-scroll" + (" theme-dark" if dark else "")
     return Piece(
-        nodes=[f'<div id="{node_id}" class="clip overlay article-scroll" {_timing(ctx)}>'
+        nodes=[f'<div id="{node_id}" class="{as_cls}" {_timing(ctx)}>'
                f'<div class="as-frame">'
                f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                f'<span class="dot"></span><span class="domain">{_esc(domain)}</span></div>'
@@ -12927,6 +13056,18 @@ def ov_paper_reveal(ctx: "TemplateCtx") -> Piece:
                f'<div class="pr-card">{kicker}{head}'
                f'<span class="pr-lines">{"".join(rows)}</span></div></div>'],
         tweens=tweens)
+
+
+def _lt_no_red(params: dict[str, Any]) -> bool:
+    """Плашка отказалась от красного.
+
+    Закон канала разводит две вещи, которые легко перепутать: карточка-герой
+    в центре кадра носит красный кант, а подпись источника в углу — нет.
+    Флаг ставит P11 по содержимому подписи: один и тот же ``lt-dark-card``
+    служит и тем, и другим, поэтому выбор шаблона тут ничего не решает.
+    """
+    return bool(params.get("no_red") or params.get("accent") is False
+                or params.get("source_chip"))
 
 
 # Каталог lt-accent-underline: 4.8 с, имя ↑, черта scaleX, роль ↑, затем уход.
@@ -12986,6 +13127,7 @@ def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
     if not name and not role:
         return Piece()
     node_id = ctx.target
+    no_red_cls = " no-red" if _lt_no_red(params) else ""
     available = float(params.get("available_px") or 740)
     name_size = (fit_size(name.upper(), available, _LT_AU_NAME_CEILING, role="display")
                  if name else _LT_AU_NAME_CEILING)
@@ -13012,7 +13154,7 @@ def ov_lt_accent_underline(ctx: "TemplateCtx") -> Piece:
             f'ease:"power2.in",immediateRender:false}},'
             f'{_num(at + t["name_out_at"])});')
     parts.append(
-        f'<span id="{node_id}-rule" class="lt-au-rule" '
+        f'<span id="{node_id}-rule" class="lt-au-rule{no_red_cls}" '
         f'style="width:{rule_w}px"></span>')
     tweens.append(
         f'tl.fromTo("#{node_id}-rule",{{scaleX:0}},'
@@ -13104,6 +13246,7 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
     if not name and not role:
         return Piece()
     node_id = ctx.target
+    no_red_cls = " no-red" if _lt_no_red(params) else ""
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_CB_TAB_W - _LT_CB_PAD_L - _LT_CB_PAD_R)
     fit_avail = text_avail / _LT_CB_SLACK
@@ -13167,7 +13310,7 @@ def ov_lt_clean_bar(ctx: "TemplateCtx") -> Piece:
                f'</svg>'
                f'<span id="{node_id}-card" class="lt-cb-card" '
                f'style="-webkit-mask:url(#{node_id}-m);mask:url(#{node_id}-m)">'
-               f'<span id="{node_id}-tab" class="lt-cb-tab"></span>'
+               f'<span id="{node_id}-tab" class="lt-cb-tab{no_red_cls}"></span>'
                f'<span class="lt-cb-body">{"".join(rows)}</span></span></span></div>'],
         tweens=tweens)
 
@@ -13232,6 +13375,7 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
     if not name and not role:
         return Piece()
     node_id = ctx.target
+    no_red_cls = " no-red" if _lt_no_red(params) else ""
     available = float(params.get("available_px") or 740)
     text_avail = max(80.0, available - _LT_DC_PAD_L - _LT_DC_PAD_R)
     fit_avail = text_avail / _LT_DC_SLACK
@@ -13266,7 +13410,7 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
             f'{{y:0,opacity:1,duration:{_num(t["name_in_dur"])},'
             f'ease:"power3.out"}},{_num(at + t["name_in_at"])});')
     rows.append(
-        f'<span id="{node_id}-rule" class="lt-dc-rule" '
+        f'<span id="{node_id}-rule" class="lt-dc-rule{no_red_cls}" '
         f'style="width:{rule_w}px"></span>')
     if role:
         rows.append(
@@ -13278,7 +13422,7 @@ def ov_lt_dark_card(ctx: "TemplateCtx") -> Piece:
             f'{_num(at + t["role_in_at"])});')
     return Piece(
         nodes=[f'<div id="{node_id}" class="clip overlay lt-dark-card" {_timing(ctx)}>'
-               f'<span id="{node_id}-card" class="lt-dc-card">'
+               f'<span id="{node_id}-card" class="lt-dc-card{no_red_cls}">'
                f'{"".join(rows)}</span></div>'],
         tweens=tweens)
 
@@ -14095,6 +14239,9 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         ".fullscreen-text.fs-underline .accent"
         "{box-shadow:inset 0 -0.12em 0 var(--color-accent)}"
         ".fullscreen-text .fs-q{color:var(--color-accent);font-size:0.55em}"
+        # Разряды числа не переносятся: «$1» и «000 000» на двух строках — это
+        # не миллион, а сломанная вёрстка (хук 0050).
+        ".fullscreen-text.fs-nowrap .fs-fact{white-space:nowrap}"
         f".chat-thread{{left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
         f"top:{int(safe['y_min']) + 40}px}}"
@@ -14131,6 +14278,14 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "box-shadow:0 0 0 6px var(--color-accent-soft)}"
         ".article-scroll .as-clip{overflow:hidden;max-height:420px}"
         ".article-scroll .as-body{will-change:transform}"
+        ".article-scroll.theme-dark .as-frame{background:#16181d;color:#f4f4f5;"
+        "box-shadow:0 18px 48px rgba(0,0,0,0.45)}"
+        ".article-scroll.theme-dark .bar{background:#1e2229}"
+        ".article-scroll.theme-dark .domain{color:#9ca3af}"
+        ".article-scroll.theme-dark .title{color:#f4f4f5}"
+        ".article-scroll.theme-dark .snippet{color:#c4c7cc}"
+        ".article-scroll.theme-dark .hl{background:rgba(200,69,61,.28);"
+        "box-shadow:0 0 0 6px rgba(200,69,61,.28)}"
         f".paper-reveal{{left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
         f"top:{int(safe['y_min']) + 80}px}}"
@@ -14158,6 +14313,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "text-shadow:0 2px 22px rgba(0,0,0,0.45);will-change:transform,opacity}"
         ".lt-au-rule{display:block;height:6px;border-radius:3px;background:#C8453D;"
         "transform-origin:0% 50%;will-change:transform}"
+        ".lt-au-rule.no-red{background:rgba(199,201,209,0.72)}"
         ".lt-au-role{display:block;font-family:'Space Mono',var(--font-mono),monospace;"
         "font-weight:400;color:#7A7D82;line-height:1.2;letter-spacing:0.04em;"
         "white-space:nowrap;text-shadow:0 2px 16px rgba(0,0,0,0.45);"
@@ -14175,6 +14331,7 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "box-shadow:0 14px 44px rgba(17,18,20,0.18)}"
         ".lt-cb-tab{display:block;width:12px;flex-shrink:0;background:#C8453D;"
         "transform-origin:50% 0%;will-change:transform}"
+        ".lt-cb-tab.no-red{background:rgba(199,201,209,0.72)}"
         ".lt-cb-body{display:flex;flex-direction:column;gap:7px;flex:1;"
         "background:#ffffff;padding:22px 40px 24px 30px}"
         ".lt-cb-name{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
@@ -14198,6 +14355,8 @@ def overlay_css(brandbook: dict[str, Any]) -> str:
         "white-space:nowrap;will-change:transform,opacity}"
         ".lt-dc-rule{display:block;height:4px;border-radius:2px;background:#C8453D;"
         "transform-origin:0% 50%;will-change:transform}"
+        ".lt-dc-rule.no-red{background:rgba(199,201,209,0.72)}"
+        ".lt-dc-card.no-red{border-color:rgba(199,201,209,0.28)}"
         ".lt-dc-role{display:block;font-family:'Montserrat',var(--font-subtitle),sans-serif;"
         "font-weight:400;color:#7A7D82;line-height:1.2;letter-spacing:0.02em;"
         "white-space:nowrap;will-change:opacity}"

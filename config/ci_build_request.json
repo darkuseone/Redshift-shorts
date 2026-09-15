@@ -1,0 +1,12 @@
+{
+  "script": "scripts/redshift_0050.json",
+  "video_id": "redshift_0050",
+  "from_step": "P5",
+  "heygen_source": "prepared",
+  "skip_generate": true,
+  "skip_vision": true,
+  "providers_mode": "live",
+  "requested_by": "grok",
+  "note": "round61: reuse:True does not make a second lock line safe — it reproduces the QC-5 collision; skip_vision",
+  "round": 61
+}

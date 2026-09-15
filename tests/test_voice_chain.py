@@ -781,10 +781,13 @@ def test_the_glued_word_keeps_the_accent_off_the_preposition():
     builder.tweens = []
     builder.stats = {"subtitle_words": 0}
     html = "".join(builder._subtitle_nodes())
-    assert "gf-accent" in html
-    assert '<i class="lead">А</i>' in html
-    assert "РАСЧЁТЫ" in html
-    assert "А</text>" not in html
+    # Приклеенный предлог живёт внутри того же токена и с тем же пробелом:
+    # «А РАСЧЁТЫ» читается как два слова и заливается вместе с ним, а не
+    # отдельной красной вспышкой перед фразой.
+    assert ">А РАСЧЁТЫ<" in html
+    assert ">АРАСЧЁТЫ<" not in html
+    # Отдельного HTML-слоя под SVG больше нет — один глиф, одна заливка.
+    assert "gf-accent" not in html and 'class="lead"' not in html
 
 
 def test_srt_shows_the_same_cues_as_the_frame():

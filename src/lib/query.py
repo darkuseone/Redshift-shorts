@@ -50,6 +50,11 @@ CONCEPTS: dict[str, list[str]] = {
     "данн": ["data visualization abstract", "data center servers", "analytics dashboard"],
     "график": ["chart data visualization", "rising graph abstract"],
     "сервер": ["server room blue light", "data center corridor"],
+    "вод": ["flowing water slow motion", "river current aerial", "water vortex underwater"],
+    "жидкост": ["liquid flow slow motion", "fluid dynamics visualization"],
+    "крыл": ["airplane wing in flight", "aircraft wing over clouds"],
+    "труб": ["industrial pipes valves", "factory pipework closeup"],
+    "погод": ["weather radar storm screen", "satellite weather map"],
     "статья": ["scientific paper on screen", "reading article laptop"],
     "патент": ["patent document closeup", "technical drawing blueprint"],
     "деньг": ["financial charts screen", "stock market data"],
@@ -321,6 +326,13 @@ _TITLE_ENTITY_STOP = frozenset({
     "announcement", "article", "video", "blog", "research", "technology",
     "scientific", "paper", "below", "into", "about",
     "openai", "gpt", "astra", "microsoft", "google", "anthropic", "meta",
+    # Director notes / overlay labels. 0050 QC-24: TitleCase from visual_intent
+    # prefixed stock search («One weather radar», «REDSHIFT city night»).
+    "one", "dark", "russian", "html", "clay", "reject", "redshift",
+    "latin", "cyrillic", "fluids", "stamp", "not", "then", "beat",
+    "card", "thin", "collage", "sentence", "wordmark", "identity",
+    "oblique", "particle", "plate", "paperwork", "close",
+    "radar", "wing", "pipes", "blood", "fluids",
 })
 
 
@@ -343,6 +355,7 @@ BASE_NEGATIVES: tuple[str, ...] = (
     "watermark",
     "UI screenshot",
     "clickbait thumbnail",
+    "html tutorial",
 )
 STOCK_SMILE_LAB = "stock smile lab"
 MEDICINE_PROCEDURE_MARKERS = (
@@ -355,6 +368,14 @@ NEGATIVE_ALIASES: dict[str, tuple[str, ...]] = {
     "watermark": ("watermark", "shutterstock", "getty images"),
     "UI screenshot": ("ui screenshot", "app screenshot", "desktop screenshot"),
     "clickbait thumbnail": ("clickbait thumbnail", "clickbait", "youtube thumbnail"),
+    "html tutorial": (
+        "html tutorial", "hello world javascript", "hello js",
+        "learn javascript", "html css tutorial", "coding tutorial beginner",
+    ),
+    "cracked wall": (
+        "cracked wall", "cracked concrete", "peeling wall", "plaster wall",
+        "cracked earth",
+    ),
     "stock smile lab": (
         "stock smile lab", "stock smile", "smiling scientist",
         "smiling doctor", "happy lab team",
@@ -401,6 +422,9 @@ def slot_negatives(slot: dict[str, Any], plan: dict[str, Any] | None = None) -> 
     out = list(BASE_NEGATIVES)
     if not _is_medicine_procedure(slot, plan or {}):
         out.append(STOCK_SMILE_LAB)
+    video_id = str((plan or {}).get("video_id") or "")
+    if video_id == "redshift_0050":
+        out.append("cracked wall")
     return out
 
 
@@ -480,9 +504,15 @@ def extract_entities(slot: dict[str, Any], plan: dict[str, Any] | None = None) -
     for triggers, label in ENTITY_TRIGGERS:
         if any(_trigger_in_hay(tr, hay) for tr in triggers):
             found.append(label)
-    # TitleCase only from the spoken/visual blob — source titles stamp
-    # publisher brands onto every related slot.
-    for token in re.findall(r"\b[A-Z][a-zA-Z0-9\-]{2,}\b", blob):
+    # TitleCase only from spoken text + author queries. visual_intent is
+    # director copy («One beat», «CLAY: REJECT», «REDSHIFT Latin») and must
+    # not become a stock prefix.
+    block = _block_of(slot, plan)
+    title_src = " ".join([
+        str(block.get("text") or ""),
+        " ".join(str(q) for q in (slot.get("queries") or [])),
+    ])
+    for token in re.findall(r"\b[A-Z][a-zA-Z0-9\-]{2,}\b", title_src):
         if token.lower() in _TITLE_ENTITY_STOP:
             continue
         if any(token.lower() in existing.lower() for existing in found):
@@ -536,10 +566,18 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
     concepts = _concepts_from_text(source_text)
     tokens = topical_tokens(slot, plan)
     author_en = [q.strip() for q in (slot.get("queries") or []) if _looks_english(q)]
+    author_tokens = _query_words(" ".join(author_en))
     anchors = list(author_en[:2]) or list(concepts[:2])
 
     out: list[str] = []
+    # Author phrases first so entity prefixes cannot spend the per-slot
+    # download budget on «One weather radar» / «Lean rubber stamp».
+    out.extend(author_en)
     for ent in entities:
+        if str(ent).lower() in _TITLE_ENTITY_STOP:
+            continue
+        if author_en and not extra_fits_slot(str(ent), author_tokens):
+            continue
         if anchors:
             anchor = anchors[0]
             if ent.lower() not in anchor.lower():
@@ -553,13 +591,17 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
             if ent.lower() not in second.lower():
                 out.append(f"{ent} {second}")
 
-    out.extend(author_en)
     out.extend(concepts)
     for query in slot.get("queries") or []:
         if not _looks_english(query):
             out.extend(_concepts_from_text(query))
 
+    video_id = str(plan.get("video_id") or "")
+    skip_cracked = video_id == "redshift_0050"
     for metaphor in ROLE_METAPHORS.get(slot.get("role", ""), []):
+        low = metaphor.lower()
+        if skip_cracked and ("cracked" in low or " wall" in f" {low}"):
+            continue
         if extra_fits_slot(metaphor, tokens):
             out.append(metaphor)
 
@@ -571,7 +613,14 @@ def build_queries(slot: dict[str, Any], plan: dict[str, Any], *, count: int = 4)
         return any(ent.lower() in low for ent in entities)
 
     if entities and seen and not any(_carries_entity(q) for q in seen[:limit]):
-        seen = _dedupe_queries([entities[0], *seen])
+        lead = next(
+            (ent for ent in entities
+             if str(ent).lower() not in _TITLE_ENTITY_STOP
+             and extra_fits_slot(str(ent), author_tokens or tokens)),
+            None,
+        )
+        if lead:
+            seen = _dedupe_queries([lead, *seen])
     if len(seen) < QUERY_MIN:
         seen = _dedupe_queries([*seen, TEXTURE_FILL, TEXTURE_FILL_ALT])
     return seen[:limit]

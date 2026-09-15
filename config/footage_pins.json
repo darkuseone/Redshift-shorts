@@ -96,5 +96,179 @@
       "fp_matrix_code"
     ],
     "same_asset_max_slots": 1
+  },
+  "redshift_0050": {
+    "prefer": [
+      "magnific_0050_fluids",
+      "magnific_0050_inkswirl",
+      "magnific_0050_coolvortex",
+      "magnific_0050_lean",
+      "magnific_0050_codeglow",
+      "magnific_0050_weather",
+      "magnific_0050_wing",
+      "magnific_0050_pipes",
+      "magnific_0050_blood",
+      "magnific_0050_stamp",
+      "magnific_0050_city",
+      "magnific_0050_gpu",
+      "magnific_0050_cyanrain",
+      "magnific_0050_frostscan",
+      "magnific_0050_deepcoil",
+      "magnific_0050_blueember",
+      "magnific_0050_tealmister",
+      "fp_chalkboard_eq",
+      "magnific_0050_nightstatic",
+      "magnific_0050_slateiron",
+      "magnific_0050_voidpulse"
+    ],
+    "deny": [
+      "fp_server_room",
+      "magnific_0050_darkgrid",
+      "pexels_v38431825",
+      "pexels_v31263225",
+      "pexels_v25242933",
+      "pexels_v28055443",
+      "nasa_*",
+      "press_21bc8e2d72",
+      "fp_cracked_wall",
+      "fp_plaster_wall",
+      "fp_peeling_wall",
+      "fp_cracked_concrete",
+      "fp_cracked_earth",
+      "fp_rock_surface",
+      "fp_corroded_mesh",
+      "pixabay_v144678",
+      "grok_cryostat_0042",
+      "pexels_v20068211",
+      "pexels_v30775057",
+      "pexels_v15168364",
+      "pexels_v30518348",
+      "pexels_v12369762",
+      "pexels_v10001424",
+      "pexels_v31720765",
+      "fp_matrix_code",
+      "fp_analog_clock",
+      "pexels_v7565432",
+      "magnific_0050_darkember",
+      "magnific_0050_redsmoke",
+      "magnific_0050_ashdrift",
+      "magnific_0050_coalglow",
+      "magnific_0050_sparkrain",
+      "magnific_0050_vortex",
+      "magnific_0050_coldspark",
+      "freepik_136238",
+      "magnific_0050_steelglow",
+      "magnific_0050_charcoalash",
+      "magnific_0050_ironrust"
+    ],
+    "same_asset_max_slots": 1,
+    "_note": "round41: Gemini 162 — no server, no empty grid, no highway on refuse",
+    "by_block": {
+      "b1": "magnific_0050_coolvortex",
+      "b2": "magnific_0050_inkswirl",
+      "b3": "magnific_0050_gpu",
+      "b4": "magnific_0050_slateiron",
+      "b5": "magnific_0050_fluids",
+      "b5b": "magnific_0050_weather",
+      "b5c": "magnific_0050_wing",
+      "b5d": "magnific_0050_pipes",
+      "b5e": "magnific_0050_blood",
+      "b6": "magnific_0050_stamp",
+      "b7": "magnific_0050_city"
+    },
+    "slots_lock": [
+      {
+        "block": "b1",
+        "on": "века",
+        "asset": "magnific_0050_frostscan"
+      },
+      {
+        "block": "b2",
+        "on": "Миллион",
+        "asset": "magnific_0050_deepcoil"
+      },
+      {
+        "block": "b3",
+        "on": "Искал",
+        "asset": "magnific_0050_codeglow"
+      },
+      {
+        "block": "b3",
+        "on": "Astra",
+        "asset": "magnific_0050_lean"
+      },
+      {
+        "block": "b4",
+        "on": "агентов",
+        "asset": "magnific_0050_slateiron"
+      },
+      {
+        "block": "b4",
+        "on": "часов",
+        "asset": "magnific_0050_voidpulse"
+      },
+      {
+        "block": "b4",
+        "on": "сообщений",
+        "asset": "magnific_0050_blueember"
+      },
+      {
+        "block": "b4",
+        "on": "переложили",
+        "asset": "magnific_0050_cyanrain"
+      },
+      {
+        "block": "b5",
+        "on": "Называются",
+        "asset": "magnific_0050_tealmister"
+      },
+      {
+        "block": "b5",
+        "on": "жидкость",
+        "asset": "magnific_0050_fluids",
+        "plaque": "FLUIDS"
+      },
+      {
+        "block": "b5b",
+        "on": "Погода",
+        "asset": "magnific_0050_weather",
+        "plaque": "WEATHER"
+      },
+      {
+        "block": "b5c",
+        "on": "Крыло",
+        "asset": "magnific_0050_wing",
+        "plaque": "AIRFOIL"
+      },
+      {
+        "block": "b5d",
+        "on": "Трубы",
+        "asset": "magnific_0050_pipes",
+        "plaque": "VALVES"
+      },
+      {
+        "block": "b5e",
+        "on": "крови",
+        "asset": "magnific_0050_blood",
+        "plaque": "PLASMA"
+      },
+      {
+        "block": "b6",
+        "on": "проверяет",
+        "asset": "magnific_0050_nightstatic"
+      },
+      {
+        "block": "b6",
+        "on": "не берёт",
+        "asset": "magnific_0050_stamp",
+        "plaque": "REJECTED"
+      },
+      {
+        "block": "b7",
+        "on": "Какую",
+        "asset": "magnific_0050_city",
+        "plaque": "FOLLOWUP"
+      }
+    ]
   }
 }

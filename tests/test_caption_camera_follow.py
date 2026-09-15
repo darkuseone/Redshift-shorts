@@ -6,7 +6,7 @@ import re
 
 from src.lib.render.hyperframes.brand_css import build_css
 from src.lib.render.hyperframes.captions import (
-    caption_css, group_caption_phrases, layout_camera_follow, pose_for,
+    build_camera_follow, caption_css, group_caption_phrases, layout_camera_follow, pose_for,
 )
 from src.lib.render.hyperframes.composition import CompositionBuilder
 
@@ -45,7 +45,16 @@ def _plan(words):
 
 
 def _follow(cfg, words):
-    return CompositionBuilder(_plan(words), cfg.brandbook, {}).build("assets/mix.wav")
+    """Жест собирается напрямую.
+
+    Закон канала выключил camera-follow для роликов: композитор сводит любое
+    имя к gradient-fill (кроме явного космоса). Механика жеста остаётся под
+    тестом, чтобы код не сгнил, но через композитор она больше не приезжает.
+    """
+    plan = _plan(words)
+    nodes, tweens, _ = build_camera_follow(
+        plan, cfg.brandbook, duration=float(plan["duration_sec"]))
+    return "\n".join([caption_css(cfg.brandbook), *nodes, *tweens])
 
 
 def _world_windows(markup: str) -> list[tuple[float, float]]:
