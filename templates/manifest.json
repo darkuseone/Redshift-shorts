@@ -1735,7 +1735,9 @@
         "progress"
       ],
       "renderer": "plaque",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-08-18",
       "frequency": "signature",
       "needs": [],
@@ -1765,7 +1767,9 @@
         "tags"
       ],
       "renderer": "plaque",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0050"
+      ],
       "added": "2026-08-18",
       "frequency": "signature",
       "needs": [],

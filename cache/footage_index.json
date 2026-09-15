@@ -640,8 +640,10 @@
       "vision_summary": "Dark iron rust industrial plate, vertical 9:16 prepared owned densify filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "ebe08203173fc73c",
@@ -933,8 +935,10 @@
       "vision_summary": "Slate iron plate, vertical 9:16 densify hole filler (low red)",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "ebe08283061f5f3e",
