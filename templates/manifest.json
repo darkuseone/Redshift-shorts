@@ -3181,7 +3181,8 @@
       ],
       "renderer": "transitions_blur",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -3212,7 +3213,8 @@
       ],
       "renderer": "transitions_cover",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0050"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
