@@ -82,12 +82,20 @@ def test_every_footage_shot_of_the_approved_cut_is_pinned():
     assert frozen <= set(_assets())
 
 
-def test_only_a_reuse_line_may_name_the_same_asset_twice():
+def test_no_asset_is_named_by_two_lock_lines():
+    """``reuse: True`` does not make two lines safe — it makes QC-5 certain.
+
+    Круг 60 упал на QC-5: b5 нёс две строки на tealmister («Называются» и
+    «Страшное», вторая с ``reuse: True``). Флаг только пропускает шаг, который
+    забирает актив у прежнего слота — он не мешает второй записи нести те же
+    ``phashes``, что и первой. Естественный сплит b5 на два соседних кадра уже
+    выходил из ОДНОГО принятого слота P8 безо всякого замка; вторая строка
+    была лишней и только заводила дубль.
+    """
     seen: dict[str, dict] = {}
     for spec in LOCK:
         prev = seen.get(spec["asset"])
-        if prev is not None:
-            assert spec.get("reuse") or prev.get("reuse"), spec["asset"]
+        assert prev is None, (spec["asset"], prev, spec)
         seen[spec["asset"]] = spec
 
 

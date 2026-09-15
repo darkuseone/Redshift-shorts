@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round60: QC-5 was right, ironrust is the same shot as pipes; the only non-duplicate pair goes under the b4 numbers; skip_vision",
-  "round": 60
+  "note": "round61: reuse:True does not make a second lock line safe — it reproduces the QC-5 collision; skip_vision",
+  "round": 61
 }

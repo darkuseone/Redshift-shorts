@@ -224,12 +224,6 @@
       },
       {
         "block": "b5",
-        "on": "Страшное",
-        "asset": "magnific_0050_tealmister",
-        "reuse": true
-      },
-      {
-        "block": "b5",
         "on": "жидкость",
         "asset": "magnific_0050_fluids",
         "plaque": "FLUIDS"
