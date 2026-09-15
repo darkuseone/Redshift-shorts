@@ -4375,16 +4375,23 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
                 str(nums[0]["suffix"]) if nums[0].get("suffix") else "%")
             params["emphasize"] = len(params["values"]) - 1
         if name == "mk-line-graph":
-            heading = str(blocks.get(slot["block_id"], {}).get("heading")
-                          or "")
+            # «0048 drew them as a line chart labelled Renders» (see
+            # _comparable_stats above) — the wrong-numbers-grouped-together
+            # half of that bug got fixed there; this English default never
+            # did, and a Cyrillic block still hits it every time it has no
+            # authored heading.
+            legend_block = blocks.get(slot["block_id"], {})
             series = [{
-                "name": heading or "Renders",
+                "name": _dataviz_label(legend_block, english_fallback="Renders"),
                 "values": [n["value"] for n in nums[:n_take]],
             }]
             rest = nums[n_take:n_take * 2]
             if len(rest) >= 2:
+                second = _dataviz_label(legend_block, english_fallback="Projects")
+                if second == series[0]["name"]:
+                    second = f"{second} 2"
                 series.append({
-                    "name": "Projects",
+                    "name": second,
                     "values": [n["value"] for n in rest],
                 })
             params["series"] = series
@@ -4403,6 +4410,53 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
         "grounded_on": sorted(matched(template.needs, traits)),
         "why": why,
     }
+
+
+def _authored_dataviz_overlays(
+        shots: list[dict[str, Any]], blocks_by_id: dict[str, Any], *,
+        picker: TemplatePicker, budget: VisualBudget, variant: str, seed: int,
+        recent_videos: list[str], used_templates: list[str],
+) -> list[dict[str, Any]]:
+    """Chart overlay for a block the script itself asks to chart.
+
+    §7.2's ladder reaches for data-viz only when a slot has no material —
+    the number becomes the picture because nothing else could. That is a
+    fallback, not a design choice: a block whose whole point IS the number
+    (0050 b4 — «10 000 агентов, 88 часов, 2 700 000 сообщений, 17 часов»)
+    got a fullscreen card that a spoken punch card is, wrapping four figures
+    across four lines with no visual read on the numbers themselves. Here
+    ``overlay.type: "dataviz"`` says so directly: the shot keeps its normal
+    footage, and a chart — picked by the same vetted machinery as the
+    ladder's, ``_comparable_stats`` included, so mismatched units still
+    never share one axis — draws over it instead of blocking the frame.
+    """
+    out: list[dict[str, Any]] = []
+    for block_id, block in blocks_by_id.items():
+        overlay = block.get("overlay") if isinstance(block.get("overlay"), dict) else {}
+        if str(overlay.get("type") or "") != "dataviz":
+            continue
+        own = [s for s in shots if str(s.get("block_id") or "") == block_id]
+        if not own:
+            continue
+        start = float(min(float(s["start"]) for s in own))
+        end = float(max(float(s["end"]) for s in own))
+        if end - start < 1.2:
+            continue
+        nums = _stats_from_text(str(block.get("text") or ""))
+        if not nums or not budget.allows("dataviz"):
+            continue
+        index = int(own[0].get("index") or 0)
+        slot = {"block_id": block_id, "index": index}
+        built = _dataviz_overlay(
+            slot, nums, blocks_by_id, picker,
+            variant=variant, seed=seed + index,
+            recent_videos=recent_videos, used=used_templates,
+            start=start, end=end,
+            why="авторский оверлей: блок сам просит диаграмму (overlay.type=dataviz)")
+        budget.take("dataviz")
+        budget.dataviz_blocks.add(block_id)
+        out.append(built)
+    return out
 
 
 def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
@@ -5452,6 +5506,13 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             "hero": hero_entry,
         })
         shots.append(entry)
+
+    # Блок, авторски попросивший диаграмму (overlay.type=dataviz), получает
+    # её здесь — после того, как цикл шотов выше решил вопрос футажа под
+    # ним, до того, как лестничные оверлеи вольются в общий список.
+    ladder_overlays.extend(_authored_dataviz_overlays(
+        shots, blocks_by_id, picker=picker, budget=budget, variant=variant,
+        seed=seed, recent_videos=recent_videos, used_templates=used_templates))
 
     # Шов лупа сводится до сборки оверлеев: CTA-плашка выбирается по тому,
     # смыкается кадр или нет, а не наоборот.

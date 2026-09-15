@@ -76,8 +76,13 @@ def test_0050_hook_and_overlays_pass_anti_checklist():
     assert by_id["b2"]["overlay"]["content"] == "7 · $1 000 000 · 25 Y"
     assert by_id["b3"]["overlay"]["content"] == "GPT-6 ASTRA"
     assert "ШЕСТЬ" not in by_id["b3"]["overlay"]["content"]
-    assert by_id["b4"]["overlay"]["content"] == "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN"
-    assert "80 8" not in by_id["b4"]["overlay"]["content"]
+    # b4 used to be a fullscreen card cramming four figures across four
+    # lines — «10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN» with no visual read on
+    # the numbers themselves. It now asks for a chart instead: the footage
+    # stays underneath, and _authored_dataviz_overlays in P11 builds the
+    # overlay from the block's own spoken numbers (_comparable_stats keeps
+    # units from sharing one axis — mismatch elsewhere).
+    assert by_id["b4"]["overlay"] == {"type": "dataviz"}
     labels = {
         "b5": "FLUIDS", "b5b": "WEATHER", "b5c": "AIRFOIL",
         "b5d": "VALVES", "b5e": "PLASMA",

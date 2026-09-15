@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round53: two lock lines on one phrase take two slots, so the Clay stamp keeps the gap it was pinned to; skip_vision",
-  "round": 53
+  "note": "round54: b4 becomes a line chart (88h to 17h) instead of a 4-line number card; skip_vision",
+  "round": 54
 }

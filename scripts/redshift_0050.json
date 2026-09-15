@@ -68,7 +68,7 @@
       "emphasis_word": "Lean", "avatar": "off",
       "visual_intent": "Steel/network motion under numbers. Not flat black.",
       "broll_queries": ["lean proof code editor dark theme scrolling"],
-      "overlay": {"type": "fullscreen_text", "content": "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN", "template_hint": "text-fullscreen/dark-plus"},
+      "overlay": {"type": "dataviz"},
       "sfx": "data_beep", "mode_hint": "C", "emphasis_family": "number"
     },
     {

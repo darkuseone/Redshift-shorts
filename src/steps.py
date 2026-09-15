@@ -90,7 +90,9 @@ def build_pipeline() -> Pipeline:
              uses_script=True,
              # 4: ритм монтажа (кадры встык, без перебивок короче двух секунд)
              # и плашки, обрезанные по своему кадру.
-             version="4"),
+             # 5: overlay.type=dataviz — блок сам просит диаграмму вместо
+             # пустого-слота ладдера §7.2 (см. _authored_dataviz_overlays).
+             version="5"),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),
