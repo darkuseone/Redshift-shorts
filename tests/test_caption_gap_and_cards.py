@@ -14,8 +14,8 @@ import json
 import re
 
 from src.lib.render.hyperframes.captions import (
-    _CAPTION_YIELDS_TO, build_gradient_fill, fit_wipe_group,
-    gradient_fill_params,
+    _CAPTION_YIELDS_TO, _frame_taking_starts, build_gradient_fill,
+    fit_wipe_group, gradient_fill_params,
 )
 from src.lib.render.hyperframes.templates import glue_number_runs
 
@@ -59,14 +59,15 @@ def test_a_stacked_card_never_breaks_a_number_across_lines():
         assert not re.fullmatch(r"0{3}", line.strip(" ·"))
 
 
-def _plan(overlays):
+def _plan(overlays, shots=()):
     return {
         "subtitles": [
             {"display": "Не", "start": 2.0, "end": 2.4},
             {"display": "брал", "start": 2.45, "end": 3.0},
         ],
         "subtitle_style": {},
-        "overlays": overlays,
+        "overlays": list(overlays),
+        "shots": list(shots),
     }
 
 
@@ -77,9 +78,12 @@ def _clip_end(nodes):
 
 
 def test_a_caption_tail_stops_where_a_card_starts():
+    # Карточка приходит в план шотом (kind), а не оверлеем (type): список,
+    # собранный по одним overlays, её не видел — и хвост «НЕ БРАЛ» лежал
+    # поверх «7 · $1 000 000 · 25 Y» весь прогон 180.
     free, _t, _c = build_gradient_fill(_plan([]), BRANDBOOK, duration=10.0)
     card, _t, _c = build_gradient_fill(
-        _plan([{"type": "fullscreen_text", "start": 3.2, "end": 4.6}]),
+        _plan([], shots=[{"kind": "fullscreen_text", "start": 3.2, "end": 4.6}]),
         BRANDBOOK, duration=10.0)
     assert _clip_end(free) > 3.2  # без карточки хвост жил дольше
     assert _clip_end(card) <= 3.2 + 1e-6
@@ -102,4 +106,15 @@ def test_the_spoken_word_itself_is_never_cut_away():
 
 
 def test_the_yield_list_covers_the_frame_filling_overlays():
-    assert {"fullscreen_text", "dataviz", "plaque", "cta"} <= _CAPTION_YIELDS_TO
+    assert {"dataviz", "plaque", "cta", "source_card"} <= _CAPTION_YIELDS_TO
+
+
+def test_both_collections_are_read_for_cut_points():
+    # оверлей лежит в plan["overlays"], карточка — в plan["shots"]
+    starts = _frame_taking_starts({
+        "overlays": [{"type": "dataviz", "start": 9.0},
+                     {"type": "highlight", "start": 1.0}],
+        "shots": [{"kind": "fullscreen_text", "start": 3.2},
+                  {"kind": "footage", "start": 5.0}],
+    })
+    assert sorted(starts) == [3.2, 9.0]

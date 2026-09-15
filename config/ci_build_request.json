@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "round57: words stop touching, the card stops breaking a number, captions yield to cards and charts; skip_vision",
-  "round": 57
+  "note": "round58: the caption tail finally sees the card it was lying on top of; skip_vision",
+  "round": 58
 }

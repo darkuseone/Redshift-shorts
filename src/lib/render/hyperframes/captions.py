@@ -52,8 +52,29 @@ _FILL_HOLD_SEC = 0.12
 
 # Оверлеи, которым караоке уступает кадр: они занимают его целиком или почти
 # целиком. Тот же набор читает clip-wipe (``overlay_cuts``).
-_CAPTION_YIELDS_TO = frozenset({"plaque", "cta", "dataviz", "source_card",
-                                "fullscreen_text"})
+_CAPTION_YIELDS_TO = frozenset({"plaque", "cta", "dataviz", "source_card"})
+
+
+def _frame_taking_starts(plan: dict[str, Any]) -> list[float]:
+    """Моменты, с которых кадр занят не субтитром.
+
+    Полноэкранная карточка — это **шот**, а не оверлей: она приходит в план
+    как ``kind: "fullscreen_text"`` в ``shots``. Список, собранный по одним
+    ``overlays``, её не видел, и хвост «НЕ БРАЛ» так и лежал поверх карточки
+    «7 · $1 000 000 · 25 Y» — при том что слово отзвучало за 0.14 с до её
+    начала. Смотрим обе коллекции.
+    """
+    starts = [
+        float(ovl.get("start") or 0)
+        for ovl in (plan.get("overlays") or [])
+        if str(ovl.get("type") or "") in _CAPTION_YIELDS_TO
+    ]
+    starts += [
+        float(shot.get("start") or 0)
+        for shot in (plan.get("shots") or [])
+        if str(shot.get("kind") or "") == "fullscreen_text"
+    ]
+    return starts
 
 
 def phrase_clip_span(
@@ -1020,11 +1041,7 @@ def build_gradient_fill(
     # только тайминг слов и про оверлеи под собой не спрашивает. У clip-wipe
     # такая развязка есть с самого начала (``overlay_cuts``), у заливки её
     # не было — добавляем ту же: держать хвост до начала оверлея, не дальше.
-    overlay_cuts = sorted(
-        float(ovl.get("start") or 0)
-        for ovl in (plan.get("overlays") or [])
-        if str(ovl.get("type") or "") in _CAPTION_YIELDS_TO
-    )
+    overlay_cuts = sorted(_frame_taking_starts(plan))
     nodes: list[str] = []
     tweens: list[str] = []
     count = 0
