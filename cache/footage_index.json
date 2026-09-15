@@ -1,7 +1,7 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-14",
+  "updated": "2026-09-15",
   "count": 31,
   "items": [
     {
@@ -23,7 +23,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-12",
       "phashes": [
         "d992e56ccc1993a3",
@@ -57,7 +57,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-12",
       "phashes": [
         "00907f6d1f87994d",
@@ -90,7 +90,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-12",
       "phashes": [
         "ebe882231637c73c",
@@ -123,7 +123,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-12",
       "phashes": [
         "13b7252c4adc72b2",
@@ -189,7 +189,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-12",
       "phashes": [
         "c8f06799e4dc3345",
@@ -224,7 +224,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-12",
       "phashes": [
         "da6506d9c71e619a",
@@ -259,7 +259,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-12",
       "phashes": [
         "d48c23233c3f1f9c",
@@ -296,7 +296,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "e6e6e6e4e4cc1819",
@@ -332,7 +332,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "29a95654ada592d9",
@@ -607,7 +607,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "fcdc0321b43f4ad8",
@@ -677,7 +677,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "c8f8273360dc3bcc",
@@ -748,7 +748,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "25d2ac5e85dae40b",
@@ -786,7 +786,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "11feeaa591926c2a",
@@ -824,7 +824,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "fefefefcf8000000",
@@ -898,7 +898,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "f1f060091b32fcf9",
@@ -972,7 +972,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "109f6235999e6663",
@@ -1010,7 +1010,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "30362ee16b0fd2d4",
@@ -1048,7 +1048,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "0e0f6381dc1ed1d9",
@@ -1086,7 +1086,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-14",
+      "last_used": "2026-09-15",
       "added": "2026-09-13",
       "phashes": [
         "d97d15325e3604c7",
