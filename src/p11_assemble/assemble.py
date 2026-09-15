@@ -991,7 +991,8 @@ def close_slot_holes(slots: list[dict[str, Any]], *, total: float) -> None:
 
 
 def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
-                        total: float) -> list[str]:
+                        total: float,
+                        keep_blocks: Iterable[str] = ()) -> list[str]:
     """Убрать перебивки короче порога, не трогая ни речь, ни подбор футажа.
 
     Порядок лечения — от дешёвого к дорогому:
@@ -1022,11 +1023,21 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
     Слот правится до нарезки клипов, поэтому ffmpeg режет материал сразу под
     новую длину: ни растянутого хвоста, ни чёрного кадра в конце.
 
+    ``keep_blocks`` — блоки, у которых материал назван заявкой поимённо. Их
+    кадр не сливается с соседним, даже если он короче порога. Перечисление
+    «Погода. Крыло самолёта. Трубы в доме. Ток крови.» звучит четыре ноты по
+    полсекунды: под правило двух секунд из них выживали две, и на «Трубы в
+    доме» стояло крыло самолёта, а на «Погоду» — вода. Кадр короче нормы —
+    изъян ритма; кадр, показывающий не то, о чём речь, — изъян смысла, и он
+    дороже. Занять у соседа слева такой кадр по-прежнему может и, если слева
+    есть запас, до нормы дотягивается сам.
+
     Возвращает ``block_id`` кадров, которых не стало: плашки этих блоков
     дальше снимаются, иначе подпись повиснет над чужим футажом.
     """
     if not slots:
         return []
+    keep = {str(b) for b in keep_blocks if b}
     close_slot_holes(slots, total=total)
     # «Пропал» — это блок, у которого не осталось ни одного кадра. Считать
     # выбывшие кадры поштучно нельзя: слияние соседей оставляет блок на
@@ -1061,7 +1072,8 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
     while i < len(slots):
         slot = slots[i]
         if (str(slot.get("kind")) != "footage"
-                or _span(slot) >= MIN_FOOTAGE_SHOT_SEC - 1e-3):
+                or _span(slot) >= MIN_FOOTAGE_SHOT_SEC - 1e-3
+                or str(slot.get("block_id") or "") in keep):
             result.append(slot)
             i += 1
             continue
@@ -1069,7 +1081,8 @@ def enforce_slot_rhythm(slots: list[dict[str, Any]], *,
         end = float(slot["end"])
         while (end - float(slot["start"]) < MIN_FOOTAGE_SHOT_SEC - 1e-3
                and j + 1 < len(slots)
-               and str(slots[j + 1].get("kind")) == "footage"):
+               and str(slots[j + 1].get("kind")) == "footage"
+               and str(slots[j + 1].get("block_id") or "") not in keep):
             j += 1
             end = float(slots[j]["end"])
         if j == i:
@@ -5015,7 +5028,14 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     _retime_fullscreen_slots(slots, plan, words_doc.get("words") or [])
     # Ритм монтажа правится до нарезки клипов: ffmpeg режет материал уже под
     # исправленную длину, а не под ту, что была в плане до склейки коротышей.
-    dropped_blocks = enforce_slot_rhythm(slots, total=float(plan["duration_sec"]))
+    # Блок, чей материал назван заявкой, кадр не отдаёт: см. keep_blocks.
+    from ..lib.slots_lock import load_slots_lock
+    locked_blocks = {str(spec.get("block") or "")
+                     for spec in load_slots_lock(
+                         getattr(ctx, "cfg", None),
+                         str(plan.get("video_id") or ""), plan)}
+    dropped_blocks = enforce_slot_rhythm(
+        slots, total=float(plan["duration_sec"]), keep_blocks=locked_blocks)
     shots: list[dict[str, Any]] = []
 
     # Приёмы вокруг ведущего ставятся через один подходящий аватар-кадр: на

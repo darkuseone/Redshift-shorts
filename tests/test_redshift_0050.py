@@ -136,27 +136,33 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     assert "magnific_0050_stamp" in prefer
     assert "magnific_0050_city" in prefer
     for aid in (
-        "fp_code_editor", "fp_chalkboard_eq",
+        "fp_chalkboard_eq",
         "magnific_0050_fluids", "magnific_0050_inkswirl", "magnific_0050_coolvortex",
         "magnific_0050_weather", "magnific_0050_stamp", "magnific_0050_city",
         "magnific_0050_wing", "magnific_0050_pipes", "magnific_0050_blood",
         "magnific_0050_codeglow", "magnific_0050_nightstatic",
         "magnific_0050_tealmister", "magnific_0050_blueember",
-        "magnific_0050_charcoalash", "magnific_0050_cyanrain",
+        "magnific_0050_cyanrain",
         "magnific_0050_frostscan", "magnific_0050_deepcoil",
-        "magnific_0050_steelglow",
+        # Сталь вместо чёрного экрана под числами b4.
+        "magnific_0050_ironrust", "magnific_0050_slateiron",
     ):
         assert aid in prefer, aid
+    # Вышли из prefer по покадровому разбору: steelglow давал 0.8 % видимого
+    # кадра, charcoalash — 0.2 %, а материала fp_code_editor нет ни в индексе,
+    # ни на диске — строка только писала «нет донора».
+    for aid in ("magnific_0050_steelglow", "magnific_0050_charcoalash",
+                "fp_code_editor"):
+        assert aid not in prefer, aid
     # Серверный коридор — отдельной строкой: его выкинули по критике («повтор
     # серверов» трижды за ролик), и вернуть его в prefer молча нельзя.
     for aid in ("fp_server_room", "pexels_v38431825",
-                "magnific_0050_voidpulse", "magnific_0050_darkgrid",
-                "magnific_0050_slateiron"):
+                "magnific_0050_voidpulse", "magnific_0050_darkgrid"):
         assert aid not in prefer, aid
         assert aid in deny, aid
     for aid in (
         "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
-        "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
+        "magnific_0050_coalglow", "magnific_0050_sparkrain",
         "magnific_0050_vortex", "magnific_0050_coldspark",
     ):
         assert aid not in prefer, aid
@@ -165,7 +171,9 @@ def test_0050_pins_prefer_deny_and_keep_0042_0048():
     assert "pexels_v7565432" in deny
     by_block = entry.get("by_block") or {}
     assert by_block.get("b3") == "magnific_0050_gpu"
-    assert by_block.get("b4") == "magnific_0050_steelglow"
+    # b4 сменил материал: steelglow давал 0.8 % видимого кадра под числами,
+    # а заявка блока просит «Steel/network motion ... Not flat black».
+    assert by_block.get("b4") == "magnific_0050_ironrust"
     assert by_block.get("b5") == "magnific_0050_fluids"
     assert by_block.get("b5b") == "magnific_0050_weather"
     assert by_block.get("b6") == "magnific_0050_stamp"

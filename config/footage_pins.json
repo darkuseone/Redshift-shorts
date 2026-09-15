@@ -104,7 +104,6 @@
       "magnific_0050_coolvortex",
       "magnific_0050_lean",
       "magnific_0050_codeglow",
-      "magnific_0050_steelglow",
       "magnific_0050_weather",
       "magnific_0050_wing",
       "magnific_0050_pipes",
@@ -115,12 +114,12 @@
       "magnific_0050_cyanrain",
       "magnific_0050_frostscan",
       "magnific_0050_deepcoil",
-      "magnific_0050_charcoalash",
       "magnific_0050_blueember",
       "magnific_0050_tealmister",
-      "fp_code_editor",
       "fp_chalkboard_eq",
-      "magnific_0050_nightstatic"
+      "magnific_0050_nightstatic",
+      "magnific_0050_ironrust",
+      "magnific_0050_slateiron"
     ],
     "deny": [
       "fp_server_room",
@@ -155,12 +154,12 @@
       "magnific_0050_redsmoke",
       "magnific_0050_ashdrift",
       "magnific_0050_coalglow",
-      "magnific_0050_ironrust",
       "magnific_0050_sparkrain",
       "magnific_0050_vortex",
       "magnific_0050_coldspark",
-      "magnific_0050_slateiron",
-      "freepik_136238"
+      "freepik_136238",
+      "magnific_0050_steelglow",
+      "magnific_0050_charcoalash"
     ],
     "same_asset_max_slots": 1,
     "_note": "round41: Gemini 162 — no server, no empty grid, no highway on refuse",
@@ -168,7 +167,7 @@
       "b1": "magnific_0050_coolvortex",
       "b2": "magnific_0050_inkswirl",
       "b3": "magnific_0050_gpu",
-      "b4": "magnific_0050_steelglow",
+      "b4": "magnific_0050_ironrust",
       "b5": "magnific_0050_fluids",
       "b5b": "magnific_0050_weather",
       "b5c": "magnific_0050_wing",
@@ -180,23 +179,17 @@
     "slots_lock": [
       {
         "block": "b1",
-        "on": "Миллион",
-        "asset": "magnific_0050_coolvortex",
-        "plaque": "$1 000 000"
+        "on": "века",
+        "asset": "magnific_0050_frostscan"
       },
       {
         "block": "b2",
-        "on": "Семь",
-        "asset": "magnific_0050_inkswirl"
+        "on": "Миллион",
+        "asset": "magnific_0050_deepcoil"
       },
       {
         "block": "b3",
-        "on": "OpenAI",
-        "asset": "magnific_0050_gpu"
-      },
-      {
-        "block": "b3",
-        "on": "искал",
+        "on": "Искал",
         "asset": "magnific_0050_codeglow"
       },
       {
@@ -207,12 +200,33 @@
       {
         "block": "b4",
         "on": "агентов",
-        "asset": "magnific_0050_steelglow"
+        "asset": "magnific_0050_ironrust"
       },
       {
         "block": "b4",
-        "on": "Lean",
+        "on": "часов",
+        "asset": "magnific_0050_slateiron"
+      },
+      {
+        "block": "b4",
+        "on": "сообщений",
+        "asset": "magnific_0050_blueember"
+      },
+      {
+        "block": "b4",
+        "on": "переложили",
         "asset": "magnific_0050_cyanrain"
+      },
+      {
+        "block": "b5",
+        "on": "Называются",
+        "asset": "magnific_0050_tealmister"
+      },
+      {
+        "block": "b5",
+        "on": "Страшное",
+        "asset": "magnific_0050_tealmister",
+        "reuse": true
       },
       {
         "block": "b5",
@@ -247,7 +261,7 @@
       {
         "block": "b6",
         "on": "проверяет",
-        "asset": "fp_code_editor"
+        "asset": "magnific_0050_nightstatic"
       },
       {
         "block": "b6",
@@ -256,18 +270,8 @@
         "plaque": "REJECTED"
       },
       {
-        "block": "b6",
-        "on": "не берёт",
-        "asset": "magnific_0050_charcoalash"
-      },
-      {
-        "block": "b6",
-        "on": "целиком",
-        "asset": "magnific_0050_frostscan"
-      },
-      {
         "block": "b7",
-        "on": "шести",
+        "on": "Какую",
         "asset": "magnific_0050_city",
         "plaque": "FOLLOWUP"
       }
