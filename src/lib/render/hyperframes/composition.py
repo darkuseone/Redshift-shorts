@@ -1041,10 +1041,19 @@ class CompositionBuilder:
         """Size transparent Avatar V so the subject fills the frame.
 
         HyperFrames alpha path plays the raw webm with object-fit:cover — the
-        prepare_avatar_shot compose_zoom never reached the screen. Enlarge via
-        width/height (not transform:scale) so GSAP entry tweens that end at
-        scale:1 keep the resting fill. Zoom is fitted to face_band / captions
-        (MUST-009): never grow into the bottom 400 or the subtitle strip.
+        prepare_avatar_shot compose_zoom never reached the screen. Sizing via
+        width/height (not transform:scale) keeps GSAP entry tweens that end at
+        scale:1 consistent with the resting fill.
+
+        ``heygen.compose_zoom: 1.0`` (the channel default since r63) routes
+        `fit_compose_zoom` to its natural-placement branch: width/height come
+        out at exactly ``var(--frame-w)``/``var(--frame-h)`` — the browser
+        never draws the clip bigger than the pixels HeyGen actually sent —
+        and only ``top`` moves, pinning the measured head to
+        ``avatar.head_top_frac``. A `heygen.compose_zoom` above 1.0 still
+        takes the old band-fit path (MUST-009: never grow into the bottom
+        400 or the subtitle strip) for a look that genuinely sits too small
+        in its native frame.
         """
         requested = max(float(self.plan.get("avatar_compose_zoom") or 1.0), 1.0)
         faces = []

@@ -639,6 +639,47 @@ def find_block_speech_span(
         return None
 
 
+def _is_avatar_interstitial(slot: dict[str, Any],
+                            slots: list[dict[str, Any]]) -> bool:
+    """Перебивка между двумя аватар-планами — окно, которое двигать нельзя.
+
+    Её положение задаёт правило §7.4.3 (два аватар-сегмента подряд запрещены),
+    а не ключевое слово: сдвинув её, мы разрываем стык, ради которого она и
+    стоит, и растягиваем соседний аватар-план на её место.
+
+    Признак структурный, а не текстовый. Раньше здесь стояла проверка причины
+    слота на подстроку ``gap fill`` — так подписывает свои вставки
+    ``reinsert_gaps_between_prepared_avatars``. Но P5 подписывает свои
+    по-русски («перебивка между аватар-сегментами (§7.4.3, R-3)»), и защита их
+    молча не узнавала: на 0050 r62 обе перебивки b6 уехали на четыре секунды
+    вперёд и легли двумя огрызками по 0.7 сек, один из которых остался без
+    материала, а соседний аватар-план растянулся на 1.4 сек сверх своего клипа.
+    """
+    if str(slot.get("kind") or "") in ("avatar", "split"):
+        return False
+    try:
+        start = float(slot.get("start"))
+        end = float(slot.get("end"))
+    except (TypeError, ValueError):
+        return False
+    before = after = False
+    for other in slots:
+        if other is slot or not isinstance(other, dict):
+            continue
+        if str(other.get("kind") or "") not in ("avatar", "split"):
+            continue
+        try:
+            o_start = float(other.get("start"))
+            o_end = float(other.get("end"))
+        except (TypeError, ValueError):
+            continue
+        if abs(o_end - start) < 0.05:
+            before = True
+        if abs(o_start - end) < 0.05:
+            after = True
+    return before and after
+
+
 def snap_block_windows_to_keywords(
         plan: dict[str, Any],
         words: list[dict[str, Any]] | None,
@@ -722,9 +763,7 @@ def snap_block_windows_to_keywords(
         footage = [
             s for s in block_slots
             if str(s.get("kind") or "") not in ("avatar", "split")
-            # Prepared-avatar interstitial gap fills must keep exact windows
-            # (0050 seg_02→seg_03); keyword snap was sliding them onto «клей».
-            and "gap fill" not in str(s.get("reason") or "").lower()
+            and not _is_avatar_interstitial(s, slots)
         ]
         if not footage:
             continue

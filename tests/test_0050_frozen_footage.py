@@ -60,10 +60,16 @@ def test_the_enumeration_items_each_name_their_own_material():
     # «Погода. Крыло самолёта. Трубы в доме. Ток крови.» — четыре реплики,
     # четыре разных кадра. Раньше b5b и b5d сливались с соседом, и на
     # «Трубы в доме» стояло крыло самолёта.
-    want = {"b5b": M + "weather", "b5c": M + "wing",
+    #
+    # На «Погоду» и «Крыло» теперь стоят настоящие расчёты NASA вместо
+    # абстрактных плит под теми же словами: симуляция GEOS-5 и расчёт обтекания
+    # крыла. Проверяется не конкретный материал, а то, что материал у каждой
+    # реплики свой — правило переживает смену библиотеки.
+    want = {"b5b": "nasa_0050_geosweather", "b5c": "nasa_0050_wingcfd",
             "b5d": M + "pipes", "b5e": M + "blood"}
     got = {s["block"]: s["asset"] for s in LOCK if s["block"] in want}
     assert got == want
+    assert len(set(got.values())) == len(want)
 
 
 def test_the_clay_stamp_keeps_its_phrase():
@@ -75,11 +81,28 @@ def test_the_clay_stamp_keeps_its_phrase():
 
 
 def test_every_footage_shot_of_the_approved_cut_is_pinned():
-    # Заморозка: всё, что стояло в прогоне 181 и остаётся, названо в замке.
+    # Заморозка: всё, что стоит в утверждённом монтаже, названо в замке.
+    # `tealmister` и `wing` из списка ушли: на «Навье-Стокса» встала
+    # официальная иллюстрация OpenAI, на «Крыло» — расчёт NASA. Список
+    # описывает текущий монтаж, а не архив прошлого прогона.
     frozen = {M + n for n in (
         "frostscan", "deepcoil", "codeglow", "lean", "blueember", "cyanrain",
-        "tealmister", "fluids", "wing", "blood", "nightstatic", "stamp", "city")}
+        "fluids", "pipes", "blood", "nightstatic", "stamp", "city")}
+    frozen |= {"openai_0050_nsspiral", "nasa_0050_wingcfd",
+               "nasa_0050_geosweather"}
     assert frozen <= set(_assets())
+
+
+def test_the_official_figure_sits_on_the_name_of_the_equations():
+    """Иллюстрация OpenAI — на слове, ради которого её и взяли.
+
+    Заказчик: «почему ты не взял официальный футаж от OpenAI, который они везде
+    прикладывают к этой новости, ты должен был найти его в первую очередь».
+    """
+    spiral = [s for s in LOCK if s["asset"] == "openai_0050_nsspiral"]
+    assert len(spiral) == 1
+    assert spiral[0]["block"] == "b5"
+    assert "Стокса" in spiral[0]["on"]
 
 
 def test_no_asset_is_named_by_two_lock_lines():

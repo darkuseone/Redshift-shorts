@@ -427,6 +427,7 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
         stage = "withtext"
     zoom = max(float(compose_zoom or 1.0), 1.0)
     crop_x_fit = crop_y_fit = None
+    overlay_x, overlay_y = 0, 0
     if brandbook is not None:
         from .avatar_compose import fit_compose_zoom
         fit = fit_compose_zoom(
@@ -434,6 +435,14 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
             width=width, height=height, mode=mode)
         zoom = max(float(fit.zoom), 1.0)
         crop_x_fit, crop_y_fit = fit.crop_x, fit.crop_y
+        if zoom <= 1.001:
+            # Natural placement (r63): no scale, so there is nothing to crop
+            # — the whole native frame just slides by (fit.left, fit.top),
+            # the same translate `_avatar_zoom_css` applies at render time.
+            # `overlay` clips whatever lands outside the base canvas on its
+            # own; the strip left empty above the head shows the `bg` layer
+            # (vfx footage / brand gradient) already composited under it.
+            overlay_x, overlay_y = int(round(fit.left)), int(round(fit.top))
     if zoom > 1.001:
         # Scale up then head-weighted crop: Avatar V often leaves subject ~23–30% tall
         # with a huge black void above the head. Mild zoom (≤1.6) keeps a light bias;
@@ -457,7 +466,9 @@ def prepare_avatar_shot(*, avatar_src: Path, dst: Path, duration_sec: float,
             f"crop={width}:{height}:{crop_x}:{crop_y},setsar=1[av]")
     else:
         filters.append(f"[{avatar_index}:v]fps={fps},scale={width}:{height},setsar=1[av]")
-    filters.append(f"[{stage}][av]overlay=0:0:format=auto,format=yuv420p[out]")
+    filters.append(
+        f"[{stage}][av]overlay={overlay_x}:{overlay_y}:format=auto,"
+        "format=yuv420p[out]")
 
     args = ["-y", *inputs, "-filter_complex", ";".join(filters), "-map", "[out]",
             "-t", f"{duration_sec:.3f}", "-an", "-r", str(fps),

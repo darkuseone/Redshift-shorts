@@ -5,6 +5,13 @@
 render/features — общие для всех шагов. Правка `speech.pause_threshold_ms`
 не отменяла ничего: P3 отдавал прежнюю дорожку из кэша, и заказанный темп
 молча не менялся.
+
+0050 r63: та же дыра нашлась в разделе `heygen`. P5 пишет `avatar_id` в
+cut_plan.json и читает `heygen.source`; P6 настраивает провайдера целиком
+отсюда (engine, model_version, background, лимиты); P11 переводит
+`heygen.compose_zoom` в `avatar_compose_zoom` (§ natural placement). Ни один
+не был объявлен — смена лука или зума в конфиге не отменяла бы кэш ни у
+одного из трёх.
 """
 import pytest
 
@@ -52,6 +59,9 @@ def test_an_undeclared_section_does_not(tmp_path):
     ("P2", "elevenlabs"),   # голос: модель, клон, темп
     ("P3", "speech"),       # паузы, вдохи, нормализация
     ("P4", "speech"),       # длительность слова в субтитре
+    ("P5", "heygen"),       # avatar_id/source едут в cut_plan.json
+    ("P6", "heygen"),       # весь провайдер аватара настраивается отсюда
+    ("P11", "heygen"),      # compose_zoom → avatar_compose_zoom
 ])
 def test_the_speech_steps_declare_what_they_read(name, section):
     step = next(s for s in build_pipeline().steps if s.name == name)

@@ -401,6 +401,8 @@
     ]
   },
   "avatar": {
+    "_head_top_frac_comment": "r63: заказчик прислал референс, прикинутый в фоторедакторе — голова должна начинаться примерно на 42% высоты кадра, а HeyGen-клип не масштабируется (не растягивать, обрезать и прижать к низу). 0.42 — доля кадра, куда встаёт измеренный верх головы (src.lib.ffmpeg.head_box, по альфе) при heygen.compose_zoom=1.0 (src.lib.render.avatar_compose._fit_natural). Ниже это не даёт голове уйти под подпись.",
+    "head_top_frac": 0.42,
     "share_of_runtime": [
       0.35,
       0.5
@@ -414,6 +416,7 @@
       12.0
     ],
     "first_appearance_before_sec": 6.0,
+    "_face_band_y_comment": "Полоса «куда целится зум» — только для heygen.compose_zoom > 1.0 (старый band-fit режим, для лука, который HeyGen сажает мелко в кадр). При compose_zoom=1.0 (r63, текущий лук) это поле не читается — см. head_top_frac.",
     "face_band_y": [
       1080,
       1480

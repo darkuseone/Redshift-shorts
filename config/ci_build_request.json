@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P6",
+  "from_step": "",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "claude",
-  "note": "r62 фаза 2: клипы ведущего сняты через MCP HeyGen под новую озвучку (avatar_v, webm, 9:16). Пять сегментов, минимальный 3.26 сек — огрызка в 0.26 сек, из-за которого аватар выпрыгивал на 49 секунде, больше нет. В монтаже официальная иллюстрация OpenAI на «Стокса» и два расчёта NASA на «Крыло»/«Погода».",
-  "round": 62
+  "note": "r63: three fixes since the r62 phase-2 QC-33 failure — snap_block_windows_to_keywords no longer drags the b6 interstitials off their timing (structural anchor, not an English-only 'gap fill' string match); tools/fetch_avatar_clips.py stopped re-cropping an already-9:16 source (that was the stretch the owner flagged); heygen.compose_zoom moved from 2.7 (CSS upscale, band-fit) to 1.0 (natural placement — never scale, translate the measured head to avatar.head_top_frac, calibrated off the owner's own reference crop). from_step empty on purpose: P0-P4 must hit the Actions work/ cache (same script, same voice) — no new ElevenLabs or HeyGen spend, only P5 onward recompute.",
+  "round": 63
 }

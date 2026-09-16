@@ -88,8 +88,72 @@ def test_mode_b_face_not_under_caption_or_bottom_safe(cfg):
     assert fit.face[3] <= target[3] + 1
 
 
-def test_config_zoom_is_ceiling_not_blind_constant(cfg):
-    assert float(cfg.get("heygen.compose_zoom")) == 2.7
+class TestNaturalPlacementR63:
+    """``heygen.compose_zoom <= 1.0`` → crop-and-pin, never CSS-upscale.
+
+    The owner: «растягивать видео из HeyGen не надо, как раньше, только
+    обрезай по начало микрофона … и ставь вниз» — they measured a reference
+    crop in a photo editor and sent it back. This is the calibration:
+    `avatar.head_top_frac` (0.42) is where the *measured* head top
+    (`src.lib.ffmpeg.head_box`, real alpha) should land, at zoom 1.0.
+    """
+
+    BOX = (360.0, 342.0, 690.0, 786.0)  # measured seg_00 @ t=1.0s
+
+    def test_zoom_is_pinned_to_one(self, cfg):
+        fit = fit_compose_zoom(self.BOX, 1.0, brandbook=cfg.brandbook)
+        assert fit.zoom == 1.0
+
+    def test_the_head_lands_on_the_configured_fraction(self, cfg):
+        fit = fit_compose_zoom(self.BOX, 1.0, brandbook=cfg.brandbook,
+                               width=1080, height=1920)
+        head_top_frac = cfg.brandbook["avatar"]["head_top_frac"]
+        landed = (self.BOX[1] + fit.top) / 1920
+        assert abs(landed - head_top_frac) < 1e-6
+
+    def test_no_horizontal_shift_even_off_centre(self, cfg):
+        # A head turn mid-sentence moves the measured box left/right by
+        # 60-80 px frame to frame — that is not a framing error to correct.
+        off_centre = (180.0, 342.0, 510.0, 786.0)
+        fit = fit_compose_zoom(off_centre, 1.0, brandbook=cfg.brandbook)
+        assert fit.left == 0.0
+
+    def test_falsy_requested_zoom_also_means_natural(self, cfg):
+        # None/0 has always meant "no zoom was asked for" — that reads as
+        # natural placement now, the same as an explicit 1.0.
+        fit_none = fit_compose_zoom(self.BOX, None, brandbook=cfg.brandbook)
+        fit_zero = fit_compose_zoom(self.BOX, 0.0, brandbook=cfg.brandbook)
+        assert fit_none.zoom == fit_zero.zoom == 1.0
+
+    def test_it_never_creeps_up_under_the_caption_band(self, cfg):
+        # A tighter alpha read (smaller measured head) must not pull the
+        # translate up past the caption floor — captions sit above the head
+        # by construction at head_top_frac; this is the belt-and-suspenders.
+        tiny_high_box = (500.0, 40.0, 580.0, 148.0)
+        fit = fit_compose_zoom(tiny_high_box, 1.0, brandbook=cfg.brandbook,
+                               width=1080, height=1920)
+        cap_bottom = caption_layout_bbox(cfg.brandbook, for_avatar=True)[3]
+        assert fit.top + tiny_high_box[1] >= cap_bottom - 1e-6
+
+    def test_an_explicit_zoom_above_one_still_takes_the_old_band_fit(self, cfg):
+        fit = fit_compose_zoom(self.BOX, 1.3, brandbook=cfg.brandbook)
+        assert fit.zoom == 1.3
+
+
+def test_config_default_is_natural_placement_since_r63(cfg):
+    # r63: the channel's current look is shot vertically and already fills
+    # the frame — CSS-scaling it further was the "stretched, poor quality"
+    # complaint the owner sent back. 1.0 routes fit_compose_zoom to the
+    # natural-placement branch (no scale, ever) instead of the band-fit
+    # below. A value above 1.0 is still an explicit, deliberate request —
+    # for a future look that genuinely sits small in its own frame.
+    assert float(cfg.get("heygen.compose_zoom")) == 1.0
+
+
+def test_an_explicit_zoom_above_one_is_still_a_ceiling_not_blind(cfg):
+    # Band-fit stays reachable for a look that needs it; 2.7 here is a
+    # deliberate request passed straight to the function, not read off the
+    # channel's current (natural, 1.0) default.
     brand = cfg.brandbook
     small = fit_compose_zoom((430, 480, 650, 640), 2.7, brandbook=brand)
     large = fit_compose_zoom((280, 360, 800, 1100), 2.7, brandbook=brand)

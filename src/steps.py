@@ -62,10 +62,17 @@ def build_pipeline() -> Pipeline:
         Step("P5", "Пересчёт плана: аватар, футаж, текст", p5,
              inputs=("draft_plan.json", "words.json"), outputs=("cut_plan.json",),
              config_inputs=("config/brandbook.json",), uses_script=True,
-             uses_prepared_avatar=True, version="3"),
+             uses_prepared_avatar=True, version="3",
+             # avatar_id/source читаются напрямую (cut_plan.json несёт
+             # avatar_id дальше в P6/P11) — тот же класс дыры, что у темпа
+             # речи: смена лука в конфиге не отменяла бы кэш.
+             cfg_sections=("heygen",)),
         Step("P6", "Генерация аватара посегментно", p6,
              inputs=("cut_plan.json", "voice_final.wav"), outputs=("avatar_meta.json",),
-             uses_prepared_avatar=True, version="2"),
+             uses_prepared_avatar=True, version="2",
+             # engine/model_version/background/max_seconds_per_video и т. д. —
+             # весь провайдер настраивается отсюда.
+             cfg_sections=("heygen",)),
         Step("P7", "Поиск B-roll", p7,
              inputs=("cut_plan.json",), outputs=("candidates.json",),
              config_inputs=("config/stock_sources.yaml",
@@ -91,6 +98,12 @@ def build_pipeline() -> Pipeline:
              config_inputs=("config/brandbook.json", "config/editing_preferences.json",
                             "config/footage_pins.json", "config/glossary.json"),
              uses_script=True,
+             # heygen.compose_zoom едет в edit_plan_A.json как avatar_compose_zoom
+             # (§ compose-natural r63), а раздел `heygen` не входит в общий `_cfg`
+             # (там только limits/audio/render/features). Без этого поля правка
+             # zoom не отменяла бы кэш P11 — тот же класс дыры, что уже нашёлся
+             # у P2/P3/P4 на теме темпа речи: шаг мерился не тем, что читает.
+             cfg_sections=("heygen",),
              # 4: ритм монтажа (кадры встык, без перебивок короче двух секунд)
              # и плашки, обрезанные по своему кадру.
              # 5: overlay.type=dataviz — блок сам просит диаграмму вместо

@@ -1680,6 +1680,39 @@ def run_step(ctx) -> dict[str, Any]:
         plan_doc["stats"] = stats
         plan_doc["notes"] = warnings
 
+    else:
+        # Без замороженных окон весь ремонт выше не делается, а привязка к
+        # ключевым словам границы всё равно двигает — и таймлайн остаётся
+        # рваным. На 0050 r62 это дало наложения (слот кончался на 34.37, а
+        # следующий начинался с 34.07), перебивку b6, уехавшую на четыре
+        # секунды от своего места, и два огрызка по 0.7 сек подряд, из которых
+        # второй остался вовсе без материала.
+        #
+        # Раньше не всплывало: 0050 всегда шёл с заявкой, где у сегментов были
+        # `start`/`end`, — то есть по защищённой ветке. Заявка фазы 1 несёт
+        # только длительности, и ветка оказалась другой.
+        plan_slots = close_gaps(
+            _slots_from_plan_dicts(plan_doc.get("slots") or []), duration)
+        for i, slot in enumerate(plan_slots):
+            slot.index = i
+        _add_internal_events(
+            plan_slots,
+            float(ctx.cfg.get("limits.max_event_gap_sec", 2.5)),
+            float(ctx.cfg.get("limits.first_event_sec", 0.8)),
+            warnings)
+        _assign_transitions(plan_slots, ctx.cfg, warnings)
+        plan_doc["slots"] = [s.to_dict() for s in plan_slots]
+        plan_doc["avatar_segments"] = [
+            {"index": i, "slot_index": s.index, "start": round(s.start, 3),
+             "end": round(s.end, 3), "duration": round(s.duration, 3),
+             "block_id": s.block_id, "mode": s.mode, "kind": s.kind}
+            for i, s in enumerate(s for s in plan_slots if s.kind in AVATAR_KINDS)
+        ]
+        stats = compute_stats(plan_slots, duration)
+        stats["beats"] = beat_counts
+        plan_doc["stats"] = stats
+        plan_doc["notes"] = warnings
+
     ctx.write("cut_plan.json", plan_doc)
 
     for warning in warnings:

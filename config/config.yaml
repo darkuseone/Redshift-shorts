@@ -67,21 +67,32 @@ heygen:
   # Достаёт её только libvpx-vp9.
   prepared_chroma: ""
   background: "transparent_if_available"
-  # 720p, не 1080p — решение заказчика. Кадр канала 1080×1920, и композитор
-  # аватар не уменьшает, а увеличивает (`compose_zoom` ≈1.85), поэтому мягкость
-  # лица здесь платится сознательно: против прежнего лука, который до вертикали
-  # ещё и кропался из ландшафта, картинка всё равно чище, а кредиты HeyGen
-  # вдвое дешевле.
+  # 720p, не 1080p — решение заказчика. Дешевле у HeyGen, и это не тот
+  # компромисс с качеством, которым сперва показался: у прежнего лука лицо
+  # занимало 216 px из 1920 (11 % кадра, ландшафтный кроп растягивался в
+  # вертикаль), у этого — около 290 px из 1280 (23 %). На лицо приходится
+  # больше пикселей, чем было на 1080p прежнего лука, не меньше.
   output: "720x1280"
-  # In-compose zoom for prepared Avatar V plates where the subject sits
-  # small in 9:16 (desk-wide look). Applied at shot prepare AND as CSS size
-  # on HyperFrames alpha avatars (object-fit path ignored compose_zoom before).
-  # Does not rewrite assets/avatar_clips. Measured seg_00 subject ~30% tall →
-  # 3.75 was face-filling / too tight on 0042 QA. 2.7 is the requested ceiling
-  # only — MUST-009 fit_compose_zoom clamps it to face_band_y / caption safe
-  # (bottom 400). Do not raise it to "make the face larger" if that enters
-  # the subtitle strip.
-  compose_zoom: 2.7
+  # r63: заказчик — «растягивать видео из HeyGen не надо, как раньше».
+  # 2.7 (и даже эффективные ~1.85 после MUST-009) значило одно и то же:
+  # `_avatar_zoom_css` рисует уже закодированный VP9-кадр через CSS
+  # width/height крупнее, чем он есть — браузер домысливает пиксели, которых
+  # в файле нет. Прежний лук садился в кадр мелко и без этого лицо было не
+  # разглядеть; этот лук снят вертикально и уже заполняет кадр — зумить
+  # больше нечего, разве что портить.
+  #
+  # 1.0 — не «зум выключен», а другой режим целиком: `fit_compose_zoom`
+  # видит requested_zoom<=1.0 и уходит в `_fit_natural` (без band-fit).
+  # Клип рисуется 1:1, ни один пиксель не увеличивается; голова только
+  # сдвигается по вертикали так, чтобы её измеренный верх (по альфе, не
+  # догадкой) встал на `avatar.head_top_frac` кадра — заказчик прислал
+  # референс, прикинутый в фоторедакторе, ровно под это число. Всё ниже
+  # видимой части — стол, пол — просто уходит за overflow:hidden кадра.
+  #
+  # Значение выше 1.0 по-прежнему берёт старый band-fit (MUST-009,
+  # `avatar.face_band_y`) — для лука, который в своём кадре сидит мелко.
+  # Этому лук не подходит; трогать заново, только если лук сменится опять.
+  compose_zoom: 1.0
   max_seconds_per_video: 42
   api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"
