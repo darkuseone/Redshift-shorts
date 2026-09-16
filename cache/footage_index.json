@@ -23,7 +23,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "d992e56ccc1993a3",
@@ -57,7 +57,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "00907f6d1f87994d",
@@ -90,7 +90,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "ebe882231637c73c",
@@ -123,7 +123,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "13b7252c4adc72b2",
@@ -154,8 +154,10 @@
       "vision_summary": "rubber stamp declined paperwork desk",
       "score": 0.92,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "e33b14977aa2348e",
@@ -189,7 +191,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "c8f06799e4dc3345",
@@ -224,7 +226,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "da6506d9c71e619a",
@@ -259,7 +261,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-12",
       "phashes": [
         "d48c23233c3f1f9c",
@@ -296,7 +298,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "e6e6e6e4e4cc1819",
@@ -332,7 +334,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "29a95654ada592d9",
@@ -609,7 +611,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "fcdc0321b43f4ad8",
@@ -681,7 +683,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "c8f8273360dc3bcc",
@@ -752,7 +754,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "25d2ac5e85dae40b",
@@ -790,7 +792,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "11feeaa591926c2a",
@@ -940,7 +942,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "ebe08283061f5f3e",
@@ -978,7 +980,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "109f6235999e6663",
@@ -1016,7 +1018,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "30362ee16b0fd2d4",
@@ -1054,7 +1056,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "0e0f6381dc1ed1d9",
@@ -1092,7 +1094,7 @@
       "used_in": [
         "redshift_0050"
       ],
-      "last_used": "2026-09-15",
+      "last_used": "2026-09-16",
       "added": "2026-09-13",
       "phashes": [
         "d97d15325e3604c7",
@@ -1129,8 +1131,10 @@
       "vision_summary": "Official OpenAI Navier–Stokes figure: vortex streamlines around a vertical axis, cyan/blue/orange on black, slow push-in and drift",
       "score": 0.97,
       "duration_sec": 6.0,
-      "used_in": [],
-      "last_used": "",
+      "used_in": [
+        "redshift_0050"
+      ],
+      "last_used": "2026-09-16",
       "added": "2026-09-16",
       "phashes": [
         "c0993f6cb0b64f58",
@@ -1154,11 +1158,6 @@
       "license": "public-domain",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/claude/redshift-0050-release-k5gqvc/assets/footage/nasa/nasa_0050_wingcfd.mp4",
       "phash": "3f807fe040ff0287",
-      "phashes": [
-        "3f807fe040ff0287",
-        "23f37cb2d11ad409",
-        "24ee6af043a5343b"
-      ],
       "tags": [
         "cfd",
         "turbulence",
@@ -1175,6 +1174,11 @@
       "used_in": [],
       "last_used": "",
       "added": "2026-09-16",
+      "phashes": [
+        "3f807fe040ff0287",
+        "23f37cb2d11ad409",
+        "24ee6af043a5343b"
+      ],
       "width": 1080,
       "height": 1920,
       "file": "nasa/nasa_0050_wingcfd.mp4",
@@ -1194,11 +1198,6 @@
       "license": "public-domain",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/claude/redshift-0050-release-k5gqvc/assets/footage/nasa/nasa_0050_geosweather.mp4",
       "phash": "c048c0dbcb9f3eb2",
-      "phashes": [
-        "c048c0dbcb9f3eb2",
-        "c040cac8df9f7a99",
-        "c0c0c8cb9fb75bd0"
-      ],
       "tags": [
         "weather",
         "storm",
@@ -1215,6 +1214,11 @@
       "used_in": [],
       "last_used": "",
       "added": "2026-09-16",
+      "phashes": [
+        "c048c0dbcb9f3eb2",
+        "c040cac8df9f7a99",
+        "c0c0c8cb9fb75bd0"
+      ],
       "width": 1080,
       "height": 1920,
       "file": "nasa/nasa_0050_geosweather.mp4",
