@@ -48,27 +48,27 @@
       "id": "b2", "role": "setup",
       "text": "Восьмого сентября модель без чата закрыла кусок этой задачи. Семь задач тысячелетия. Миллион долларов за каждую. Четверть века. Это формулы воды, воздуха и крови — не мелки на доске.",
       "emphasis_word": "семь", "avatar": "on",
-      "visual_intent": "Ink swirl. No server aisle. No 1-second cutaway.",
+      "visual_intent": "Ink swirl. Dark 3-line card: 7 TASKS / $1 000 000 / 25 YEARS. No cryptic 25 Y. No server aisle.",
       "broll_queries": ["blue ink swirling liquid macro"],
-      "overlay": {"type": "fullscreen_text", "content": "7 · $1 000 000 · 25 Y", "template_hint": "text-fullscreen/stack-3lines"},
+      "overlay": {"type": "fullscreen_text", "content": "7 TASKS · $1 000 000 · 25 YEARS", "template_hint": "text-fullscreen/stack-3lines"},
       "sfx": "whoosh_in", "mode_hint": "A", "emphasis_family": "number"
     },
     {
       "id": "b3", "role": "evidence",
       "text": "Восьмого сентября две тысячи двадцать шесть OpenAI выкладывает работу. Искал не чат, а внутренняя модель сильнее GPT-6 Astra.",
       "emphasis_word": "Astra", "avatar": "off",
-      "visual_intent": "Dark openai.com chip. Then Lean/code glow. NO empty grid. NO server corridor.",
+      "visual_intent": "Lean/code glow + brand chip GPT-6 ASTRA. NO lone digit 6. NO 1-6 plate. NO empty grid.",
       "broll_queries": ["lean proof code editor dark theme"],
-      "overlay": {"type": "highlight", "content": "GPT-6 ASTRA", "template_hint": "browser-ui/article-highlight"},
+      "overlay": {"type": "highlight", "content": "GPT-6 ASTRA", "template_hint": "hero-devices/brand-pill"},
       "sfx": "ui_click", "source_ref": "openai.com", "mode_hint": "C", "emphasis_family": "source"
     },
     {
       "id": "b4", "role": "develop",
       "text": "Десять тысяч агентов. Восемьдесят восемь часов. Два миллиона семьсот тысяч сообщений. Семнадцать часов переложили доказательство в Lean.",
       "emphasis_word": "Lean", "avatar": "off",
-      "visual_intent": "Steel/network motion under numbers. Not flat black.",
+      "visual_intent": "Two dark bars same unit: SEARCH 88 h vs LEAN 17 h. Not a falling Lean line. Not a dummy graph.",
       "broll_queries": ["lean proof code editor dark theme scrolling"],
-      "overlay": {"type": "dataviz"},
+      "overlay": {"type": "dataviz", "template_hint": "data-viz/compare-bars", "values": [88, 17], "labels": ["SEARCH", "LEAN"], "unit": "h"},
       "sfx": "data_beep", "mode_hint": "C", "emphasis_family": "number"
     },
     {
@@ -114,7 +114,7 @@
       "id": "b6", "role": "twist",
       "text": "Lean проверяет каждый шаг. Но пункт без внешней силы Клей не принял. Миллион OpenAI не берёт. Это не закрыли задачу тысячелетия целиком. Это первая дыра, которую четверть века считали глухой.",
       "emphasis_word": "Clay", "avatar": "on",
-      "visual_intent": "Lean code, REJECTED stamp dark no red underline, ash/void — NOT highway NOT server.",
+      "visual_intent": "Avatar + dark REJECTED text plate. Do NOT replay the stamp photo as a PiP card. Stamp footage only on the cutaway, once.",
       "broll_queries": ["rubberstamp declined paperwork deskstamp"],
       "overlay": {"type": "lower_third", "content": "REJECTED", "template_hint": "lower-thirds/dark-card"},
       "sfx": "sub_drop", "answers_hook": true, "mode_hint": "A", "emphasis_family": "myth"
