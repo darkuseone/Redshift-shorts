@@ -116,10 +116,10 @@ elevenlabs:
     similarity_boost: 0.85
     style: 0.45
     use_speaker_boost: true
-  # Темп речи ведущего относительно базового. 1.1 — на десятую быстрее: так
+  # Темп речи ведущего относительно базового. 1.2 — TZ-0050 заказчик: так
   # просил заказчик. Вместе со скоростью на ту же долю сдвигается плановая
   # длительность, иначе коррекция длины вернула бы прежний темп.
-  pace: 1.1
+  pace: 1.2
   length_buffer_pct: 22                      # §4.2.4: запас +18…25%
   api_key_env: ELEVENLABS_API_KEY
   api_base: "https://api.elevenlabs.io"
@@ -128,8 +128,9 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # Critic / P8 / P12 semantic QC → Grok. Gemini только если Grok недоступен.
-  # GLM выведен. Generation по-прежнему providers.allow_xai=false.
+  # Critic / P8 / P12 semantic QC. Live Grok/Gemini выключены: заказчик
+  # смотрит ролик сам. skip_live=false в заявке — единственный способ
+  # снова вызвать vision API. Generation по-прежнему providers.allow_xai=false.
   primary: "grok"
   arbiter: "grok"
   fallback: "gemini"
@@ -143,9 +144,10 @@ vision:
   grok_api_base: "https://api.x.ai"
   gemini_api_key_env: GEMINI_API_KEY
   gemini_model: "gemini-3.8-flash"
-  # true = без live vision (Grok/Gemini): P8 кэш/ранг. P12 не ставит semantic
-  # pass: qc_skipped_semantic, ролик не выдаётся (MUST-006). Mock — mode=mock.
-  skip_live: false
+  # true = без live vision даже при XAI_API_KEY / GEMINI_API_KEY.
+  # P8: кэш/ранг/движковые гейты. P12: qc_skipped_semantic, файл выдаётся.
+  # Смысловой QC — глаз заказчика. Mock-судья — только providers.mode=mock.
+  skip_live: true
   # Запасной Flash только при стойком 503 на primary. 3.7 — предыдущий GA Flash
   # (релизы 3.7→3.8 за ~3 недели); 2.5 для новых ключей уже недоступен.
   gemini_model_fallback: "gemini-3.7-flash"
@@ -271,7 +273,7 @@ features:
 
 limits:
   duration_sec: [35, 70]
-  avatar_share: [0.35, 0.50]
+  avatar_share: [0.20, 0.40]  # TZ-0050: 20–40%, not 35–50%
   max_event_gap_sec: 2.5
   max_shot_sec: 5
   max_shot_sec_with_events: 7
@@ -315,14 +317,20 @@ limits:
   ab_min_template_diff: 0           # A/B выключен: одна версия
 
 speech:
-  pause_threshold_ms: 150           # §4.2.2 паузы >150 мс режем
-  pause_target_ms: [80, 120]
+  # Темп 0050 r62. Заказчик: «темп речи ускорь, чтобы именно там в быстром
+  # темпе, та-та-та-та-та, новости». Скорость самой модели поднять больше
+  # нечем — `elevenlabs.pace: 1.2` уже упирается в потолок параметра speed у
+  # ElevenLabs. Значит плотность берётся паузами: режем от 110 мс (было 150) и
+  # оставляем 55–85 мс (было 80–120). Пауза-удар перед ответом не тронута —
+  # она динамику создаёт, а не отнимает.
+  pause_threshold_ms: 110           # §4.2.2 паузы выше порога режем
+  pause_target_ms: [55, 85]
   # Единственная пауза ролика, которую не режут, а держат: перед словом-ударом
   # в блоке-ответе (script_playbook.md §6). Остальные паузы отнимают динамику,
   # эта её создаёт — ответ звучит как ответ, а не как продолжение фразы.
   # 0 выключает приём.
   punch_hold_ms: 320
-  breath_max_ms: 400
+  breath_max_ms: 280
   silence_floor_db: -42.0
   min_word_ms: 250                  # §5.1 длительность слова 250–450 мс
   max_word_ms: 450

@@ -263,6 +263,7 @@ def test_the_final_frame_is_not_judged_as_raw_stock(cfg, tmp_path, monkeypatch):
 
     frame = tmp_path / "f.jpg"
     Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    cfg.set("vision.skip_live", False)
     monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
     monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
 
@@ -329,6 +330,7 @@ def test_vision_qc_reads_words_json_not_muted_cues(cfg, tmp_path, monkeypatch):
 
     frame = tmp_path / "f.jpg"
     Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    cfg.set("vision.skip_live", False)
     monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
     monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
 
@@ -367,6 +369,7 @@ def test_picture_copy_includes_on_screen_karaoke(cfg, tmp_path, monkeypatch):
 
     frame = tmp_path / "f.jpg"
     Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    cfg.set("vision.skip_live", False)
     monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
     monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
 
@@ -479,6 +482,7 @@ def test_vision_qc_blocks_when_mismatch_exceeds_ten_percent(cfg, tmp_path, monke
 
     frame = tmp_path / "f.jpg"
     Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    cfg.set("vision.skip_live", False)
     monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
     monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
     # Один и тот же кадр иначе кэшируется и все шесть проб получают первый score.
@@ -513,6 +517,7 @@ def test_vision_qc_passes_when_mismatch_is_under_ten_percent(cfg, tmp_path, monk
 
     frame = tmp_path / "f.jpg"
     Image.new("RGB", (54, 96), (20, 20, 24)).save(frame)
+    cfg.set("vision.skip_live", False)
     monkeypatch.setattr(VQ, "build_vision_provider", lambda *a, **k: _Spy())
     monkeypatch.setattr(VQ, "extract_frames", lambda *a, **k: [frame] * VQ.SAMPLES)
 

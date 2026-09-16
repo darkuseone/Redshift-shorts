@@ -14,7 +14,7 @@ import re
 
 from src.lib.render.hyperframes.brand_css import build_css
 from src.lib.render.hyperframes.captions import (
-    caption_css, pick_caption_style, resolve_caption,
+    build_blend_difference, caption_css, pick_caption_style, resolve_caption,
 )
 from src.lib.render.hyperframes.composition import CompositionBuilder
 
@@ -55,14 +55,28 @@ def _plan(words, **extra):
 
 
 def _blend(cfg, words, **extra):
-    return CompositionBuilder(_plan(words, **extra), cfg.brandbook, {}).build(
-        "assets/mix.wav")
+    """Жест собирается напрямую — см. комментарий в camera-follow.
+
+    blend-difference выключен законом канала: цветной дубль поверх белого
+    ряда — брак. Механика остаётся под тестом, маршрут — нет.
+    """
+    plan = _plan(words, **extra)
+    nodes, tweens, _ = build_blend_difference(
+        plan, cfg.brandbook, duration=float(plan["duration_sec"]))
+    return "\n".join([caption_css(cfg.brandbook), *nodes, *tweens])
 
 
-def test_resolve_catalog_aliases() -> None:
-    assert resolve_caption("blend-difference") == "blend-difference"
-    assert resolve_caption("caption-blend-difference") == "blend-difference"
-    assert resolve_caption("blend_difference") == "blend-difference"
+def test_resolve_collapses_every_alias_to_gradient_fill() -> None:
+    """Закон канала: цветной дубль поверх белого ряда не собирается.
+
+    Имена жеста из каталога остаются валидным вводом, но композитор сводит
+    их к gradient-fill — включить blend можно только правкой кода, не данных.
+    """
+    assert resolve_caption("blend-difference") == "gradient-fill"
+    assert resolve_caption("caption-blend-difference") == "gradient-fill"
+    assert resolve_caption("blend_difference") == "gradient-fill"
+    assert resolve_caption("camera-follow") == "gradient-fill"
+    assert resolve_caption("clip-wipe") == "clip-wipe"
 
 
 def test_empty_and_pop_in_stay_gradient_fill() -> None:
@@ -80,9 +94,12 @@ def test_space_still_clip_wipe_unless_explicit_blend(cfg) -> None:
     assert pick_caption_style(plan, gestures) == "clip-wipe"
     brand = copy.deepcopy(cfg.brandbook)
     brand["subtitles"]["caption"] = "blend-difference"
-    assert pick_caption_style(plan, brand) == "blend-difference"
+    # Брендбук больше не может включить blend: жест выключен законом канала.
+    assert pick_caption_style(plan, brand) == "clip-wipe"
+    brand["category"] = None
+    assert pick_caption_style({}, brand) == "gradient-fill"
     brand["subtitles"]["caption"] = "caption-blend-difference"
-    assert pick_caption_style(plan, brand) == "blend-difference"
+    assert pick_caption_style(plan, brand) == "clip-wipe"
 
 
 def test_pick_does_not_auto_select_blend(cfg) -> None:

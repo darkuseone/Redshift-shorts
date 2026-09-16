@@ -7,11 +7,29 @@ from unittest.mock import MagicMock
 from src.lib.config import load_config
 
 
-def test_skip_flags_default_off():
+def test_skip_flags_default():
     cfg = load_config()
-    assert cfg.get("vision.skip_live") is False
+    assert cfg.get("vision.skip_live") is True
     assert cfg.get("generation.skip") is False
     assert cfg.get("limits.vision_mismatch_share_max") == 0.10
+
+
+def test_skip_live_default_ignores_api_keys(monkeypatch):
+    """Ключи в окружении не включают Grok/Gemini vision — skip_live по умолчанию."""
+    from src.lib.costs import CostLedger
+    from src.lib.providers.vision import MockVision, build_vision_provider
+
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    monkeypatch.setenv("XAI_API", "xai-test-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+    monkeypatch.setenv("GOOGLE_API_KEY", "google-test-key")
+    cfg = load_config()
+    assert cfg.get("vision.skip_live") is True
+    cfg.set("providers.mode", "live")
+    provider = build_vision_provider(cfg, CostLedger(video_id="t"), role="primary")
+    assert isinstance(provider, MockVision)
+    arbiter = build_vision_provider(cfg, CostLedger(video_id="t"), role="arbiter")
+    assert isinstance(arbiter, MockVision)
 
 
 def test_skip_flags_cli_override():
@@ -49,7 +67,7 @@ def test_vision_qc_skip_live_short_circuits(tmp_path, monkeypatch):
     )
     assert report.get("qc_skipped_semantic") is True
     assert report.get("skipped") is True
-    assert report["blocking"] is True
+    assert report["blocking"] is False
     assert report["picture_matches_speech"] is False
     assert report["mismatch_share"] is None
     assert called["build"] == 0
@@ -78,7 +96,7 @@ def test_vision_qc_auto_without_live_keys_skips_semantic(tmp_path, monkeypatch):
         plan={"duration_sec": 10, "variant": "A", "shots": [], "subtitles": []},
     )
     assert report.get("qc_skipped_semantic") is True
-    assert report["blocking"] is True
+    assert report["blocking"] is False
     assert report["picture_matches_speech"] is False
     assert report["mismatch_share"] is None
 
@@ -98,6 +116,7 @@ def test_vision_qc_provider_error_is_non_blocking(tmp_path, monkeypatch):
     monkeypatch.setattr(VQ, "extract_frames", lambda *_a, **_k: [frame] * VQ.SAMPLES)
 
     cfg = load_config()
+    cfg.set("vision.skip_live", False)
     ctx = MagicMock()
     ctx.cfg = cfg
     ctx.costs = MagicMock()
@@ -113,7 +132,7 @@ def test_vision_qc_provider_error_is_non_blocking(tmp_path, monkeypatch):
     )
     assert report.get("provider_error") or report.get("skipped")
     assert report.get("qc_skipped_semantic") is True
-    assert report["blocking"] is True
+    assert report["blocking"] is False
     assert report["picture_matches_speech"] is False
     ctx.warn.assert_called()
 
@@ -314,8 +333,8 @@ def test_mismatch_share_nine_percent_passes():
     assert folded["vision"]["blocking"] is False
 
 
-def test_skip_live_is_not_a_shipped_semantic_success(tmp_path, monkeypatch):
-    """skip_live не пишет semantic pass и не даёт status success."""
+def test_skip_live_ships_file_without_fake_semantic_pass(tmp_path, monkeypatch):
+    """skip_live does not call vision APIs; file still ships (human/Gemini QC)."""
     from src.p12_render_qc import vision_qc as VQ
     from src.p12_render_qc.qc import apply_semantic_qc
 
@@ -332,10 +351,10 @@ def test_skip_live_is_not_a_shipped_semantic_success(tmp_path, monkeypatch):
         plan={"duration_sec": 10, "variant": "A", "shots": [], "subtitles": []},
     )
     folded = apply_semantic_qc(_ok_qc(), vision)
-    status = "ok" if folded["passed"] else "qc_failed"
     assert vision["qc_skipped_semantic"] is True
     assert vision["picture_matches_speech"] is not True
-    assert folded["passed"] is False
-    assert status != "ok"
-    assert "success" not in status
+    assert vision["blocking"] is False
+    assert folded["passed"] is True
+    sem = next(c for c in folded["checks"] if c["id"] == "QC-SEMANTIC")
+    assert sem["blocking"] is False
     assert folded.get("vision")

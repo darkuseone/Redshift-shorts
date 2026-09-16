@@ -1,0 +1,12 @@
+{
+  "script": "scripts/redshift_0050.json",
+  "video_id": "redshift_0050",
+  "from_step": "P6",
+  "heygen_source": "prepared",
+  "skip_generate": true,
+  "skip_vision": true,
+  "providers_mode": "live",
+  "requested_by": "claude",
+  "note": "r62 фаза 2: клипы ведущего сняты через MCP HeyGen под новую озвучку (avatar_v, webm, 9:16). Пять сегментов, минимальный 3.26 сек — огрызка в 0.26 сек, из-за которого аватар выпрыгивал на 49 секунде, больше нет. В монтаже официальная иллюстрация OpenAI на «Стокса» и два расчёта NASA на «Крыло»/«Погода».",
+  "round": 62
+}

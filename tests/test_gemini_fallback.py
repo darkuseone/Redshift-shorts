@@ -23,7 +23,9 @@ from src.lib.providers.vision import (
 
 @pytest.fixture
 def cfg():
-    return load_config()
+    c = load_config()
+    c.set("vision.skip_live", False)
+    return c
 
 
 def _provider_blob(provider) -> str:

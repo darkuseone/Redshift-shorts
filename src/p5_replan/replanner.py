@@ -375,6 +375,9 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
         slots = close_gaps(
             _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes,
                                  appearance_min=appearance_min, words=all_words), duration)
+        slots = close_gaps(
+            _heal_stub_appearances(slots, appearance_min, appearance_max, notes),
+            duration)
         # Оба правила §3.5 чинятся одним действием — «отдать аватару футажный
         # слот», и оба должны попасть в ту же сходимость: разрыв футажа может
         # поднять долю, а добор доли — разорвать футаж.
@@ -387,7 +390,12 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
             break
         slots = close_gaps(_hold_face_until(slots), duration)
 
+    # Последним — контроль того, что осталось после всех резов, включая сдвиг
+    # первого появления: появление короче §3.5 в кадр не выходит ни при каких
+    # обстоятельствах.
     slots = close_gaps(_hold_face_until(slots), duration)
+    slots = close_gaps(
+        _heal_stub_appearances(slots, appearance_min, appearance_max, notes), duration)
 
     final_share = _avatar_share(slots, duration)
     if final_share < share_lo:
@@ -730,6 +738,66 @@ def _insert_avatar_interstitials(slots: list[Slot], min_shot: float, appearance_
     return out
 
 
+def _heal_stub_appearances(slots: list[Slot], appearance_min: float,
+                           appearance_max: float, notes: list[str]) -> list[Slot]:
+    """Появление короче §3.5 не доживает до кадра — ни в каком виде.
+
+    Проходы выше режут секунды из аватара каждый по своему правилу: перебивка
+    §7.4.3 берёт их с хвоста, лимит длины плана §3.6.2 — из середины, дробление
+    §3.5 — у границы слотов. Каждый бережёт свой минимум, но ни один не смотрит,
+    что осталось после соседа. На 0050 так вышел сегмент в 0.26 сек: ведущий
+    выпрыгивал в кадр на четверть секунды и исчезал. Заказчик: «аватар
+    выпрыгивает и исчезает быстро, так быть не должно».
+
+    Лечим двумя способами. Если огрызок отделён от соседнего появления одной
+    перебивкой и вместе они влезают в 12 сек — перебивка снимается, и это одно
+    появление, а не два подряд (QC-18 запрещает именно два подряд, а не длинное
+    одно). Не влезают — огрызок становится футажом: лучше лишний кадр материала,
+    чем вспышка лица.
+    """
+    for _ in range(8):
+        runs = _avatar_runs(slots)
+        stub = next((r for r in runs
+                     if slots[r[-1]].end - slots[r[0]].start < appearance_min - 1e-6),
+                    None)
+        if stub is None:
+            return slots
+        merged = False
+        for other in runs:
+            if other[0] <= stub[-1]:
+                continue
+            # Ровно одна перебивка между огрызком и соседом.
+            if other[0] - stub[-1] != 2:
+                break
+            span = slots[other[-1]].end - slots[stub[0]].start
+            if span > appearance_max + 1e-6:
+                break
+            head, tail = slots[stub[0]], slots[other[-1]]
+            notes.append(
+                f"появление {slots[stub[0]].start:.2f}–{slots[stub[-1]].end:.2f} сек "
+                f"короче {appearance_min:.0f} сек: слито с соседним через снятую "
+                f"перебивку в одно появление {head.start:.2f}–{tail.end:.2f} сек")
+            head.end = tail.end
+            slots = slots[:stub[0] + 1] + slots[other[-1] + 1:]
+            merged = True
+            break
+        if merged:
+            continue
+        first = slots[stub[0]]
+        notes.append(
+            f"появление {first.start:.2f}–{slots[stub[-1]].end:.2f} сек короче "
+            f"{appearance_min:.0f} сек и слить не с чем: отдано под футаж")
+        for i in stub:
+            slot = slots[i]
+            slot.kind = "footage"
+            slot.mode = "C"
+            slot.needs_asset = True
+            slot.asset_role = slot.asset_role or "broll"
+            slot.reason = (f"огрызок появления короче {appearance_min:.0f} сек "
+                           f"отдан под футаж (§3.5)")
+    return slots
+
+
 def _avatar_runs(slots: list[Slot]) -> list[list[int]]:
     """Индексы слотов, образующих непрерывные появления аватара."""
     runs: list[list[int]] = []
@@ -1019,10 +1087,465 @@ def compute_stats(slots: list[Slot], duration: float) -> dict[str, Any]:
     }
 
 
+
+def _prepared_avatar_request_path(cfg, video_id: str):
+    """Path to assets/avatar_clips/<video_id>/avatar_request.json if usable."""
+    from pathlib import Path as _Path
+    base = cfg.path("heygen.prepared_dir", "assets/avatar_clips")
+    return _Path(base) / str(video_id) / "avatar_request.json"
+
+
+def load_prepared_avatar_windows(cfg, video_id: str) -> list[dict[str, Any]] | None:
+    """Prepared clip windows for ``heygen.source=prepared``.
+
+    Prefers explicit ``start``/``end`` on ``avatar_request.json`` segments
+    (round15-green timings). Falls back to ``duration_sec`` only when both
+    bounds are present via start+duration.
+    """
+    from ..lib.jsonio import read_json_or
+
+    if str(cfg.get("heygen.source", "prepared")).lower() != "prepared":
+        return None
+    path = _prepared_avatar_request_path(cfg, video_id)
+    if not path.is_file():
+        return None
+    req = read_json_or(path, {})
+    segments = req.get("segments") or []
+    if not segments:
+        return None
+    windows: list[dict[str, Any]] = []
+    for seg in segments:
+        if not isinstance(seg, dict):
+            continue
+        try:
+            start = float(seg["start"]) if seg.get("start") is not None else None
+            end = float(seg["end"]) if seg.get("end") is not None else None
+            dur = float(seg.get("duration_sec") or 0.0)
+        except (TypeError, ValueError):
+            continue
+        if start is None or end is None:
+            continue
+        if end <= start + 1e-6:
+            continue
+        # duration_sec is what P6 matches against the webm — keep it.
+        if dur > 0 and abs((end - start) - dur) > 0.05:
+            end = start + dur
+        windows.append({
+            "index": int(seg.get("index", len(windows))),
+            "start": round(start, 3),
+            "end": round(end, 3),
+            "duration": round(end - start, 3),
+            "block_id": str(seg.get("block_id") or ""),
+            "kind": str(seg.get("kind") or "avatar"),
+            "mode": str(seg.get("mode") or "A"),
+            "text": str(seg.get("text") or ""),
+        })
+    windows.sort(key=lambda w: (w["start"], w["index"]))
+    return windows or None
+
+
+def _subtract_interval(pieces: list[tuple[float, float]],
+                       cut0: float, cut1: float) -> list[tuple[float, float]]:
+    out: list[tuple[float, float]] = []
+    for a, b in pieces:
+        if cut1 <= a + 1e-9 or cut0 >= b - 1e-9:
+            out.append((a, b))
+            continue
+        if cut0 > a + 1e-9:
+            out.append((a, min(b, cut0)))
+        if cut1 < b - 1e-9:
+            out.append((max(a, cut1), b))
+    return [(a, b) for a, b in out if b > a + 1e-6]
+
+
+def apply_prepared_avatar_windows(
+        slots: list[Slot],
+        windows: list[dict[str, Any]],
+        *,
+        duration: float,
+        notes: list[str] | None = None) -> list[Slot]:
+    """Replace rebuilt avatar/split slots with frozen prepared windows.
+
+    P5 ``build_slots`` re-carves mode-A blocks; prepared seg_*.webm were
+    generated for earlier windows. Keep footage/life-beat slots, punch holes
+    for the frozen avatar appearances, and restore exact start/end so P6
+    duration matches the webm (±0.20s).
+    """
+    if not windows:
+        return slots
+    notes = notes if notes is not None else []
+    non_av = [s for s in slots if s.kind not in AVATAR_KINDS]
+    punched: list[Slot] = []
+    for slot in non_av:
+        pieces = [(slot.start, slot.end)]
+        for win in windows:
+            pieces = _subtract_interval(pieces, win["start"], win["end"])
+        for a, b in pieces:
+            if b - a < 0.05:
+                continue
+            punched.append(replace(slot, start=a, end=b, events=[]))
+
+    # Fill holes that are not covered by punched non-avatar or windows.
+    covered = sorted(
+        [(w["start"], w["end"]) for w in windows]
+        + [(s.start, s.end) for s in punched],
+        key=lambda p: p[0],
+    )
+    def _gap_ref(gap_start: float, gap_end: float) -> Slot | None:
+        """Prefer the enclosing/nearest avatar window block (stamp on b6 gaps).
+
+        Falling back to punched[0] labeled interstitial gaps as b1 and left
+        by_block stamp unused (round18 QC-SEMANTIC).
+        """
+        # Nearest avatar by time (before, else after).
+        before = [w for w in windows if float(w["end"]) <= gap_start + 1e-6]
+        after = [w for w in windows if float(w["start"]) >= gap_end - 1e-6]
+        pick = before[-1] if before else (after[0] if after else None)
+        if pick is not None:
+            ref = next((s for s in slots if s.block_id == pick.get("block_id")), None)
+            return Slot(
+                index=0, start=gap_start, end=gap_end, kind="footage",
+                block_id=str(pick.get("block_id") or (ref.block_id if ref else "")),
+                role=ref.role if ref else "twist",
+                mode="C", needs_asset=True, asset_role="broll",
+                reason="gap fill around prepared avatar window",
+            )
+        ref = next((s for s in punched if s.end <= gap_start + 1e-6), None) or (
+            punched[0] if punched else (slots[0] if slots else None))
+        if ref is None:
+            return None
+        return Slot(
+            index=0, start=gap_start, end=gap_end, kind="footage",
+            block_id=ref.block_id, role=ref.role, mode="C",
+            needs_asset=True, asset_role="broll",
+            reason="gap fill around prepared avatar window",
+        )
+
+    fillers: list[Slot] = []
+    cursor = 0.0
+    for a, b in covered:
+        if a > cursor + 0.05:
+            gap = _gap_ref(cursor, a)
+            if gap is not None:
+                fillers.append(gap)
+        cursor = max(cursor, b)
+    if duration > cursor + 0.05:
+        gap = _gap_ref(cursor, duration)
+        if gap is not None:
+            fillers.append(gap)
+
+    avatars: list[Slot] = []
+    for win in windows:
+        ref = next((s for s in slots if s.block_id == win["block_id"]), None)
+        avatars.append(Slot(
+            index=0,
+            start=float(win["start"]),
+            end=float(win["end"]),
+            kind=str(win.get("kind") or "avatar"),
+            block_id=str(win.get("block_id") or (ref.block_id if ref else "")),
+            role=ref.role if ref else "setup",
+            mode=str(win.get("mode") or (ref.mode if ref else "A")),
+            visual_intent=ref.visual_intent if ref else "",
+            reason="prepared avatar window (frozen for heygen_source=prepared)",
+        ))
+
+    out = sorted(punched + fillers + avatars, key=lambda s: (s.start, s.end))
+    # Neighbor clamp without stretching avatar durations (close_gaps would).
+    out = [s for s in out if s.end > s.start + 1e-6]
+    if out:
+        if out[0].kind not in AVATAR_KINDS:
+            out[0].start = 0.0
+        elif out[0].start > 1e-6:
+            out.insert(0, Slot(
+                index=0, start=0.0, end=out[0].start, kind="footage",
+                block_id=out[0].block_id, role=out[0].role, mode="C",
+                needs_asset=True, asset_role="broll",
+                reason="lead-in before first prepared avatar",
+            ))
+        for prev, nxt in zip(out, out[1:]):
+            if abs(prev.end - nxt.start) <= 1e-9:
+                continue
+            if prev.kind in AVATAR_KINDS and nxt.kind not in AVATAR_KINDS:
+                nxt.start = prev.end
+            elif nxt.kind in AVATAR_KINDS and prev.kind not in AVATAR_KINDS:
+                prev.end = nxt.start
+            elif prev.kind not in AVATAR_KINDS and nxt.kind not in AVATAR_KINDS:
+                prev.end = nxt.start
+            # avatar|avatar gap: insert interstitial rather than stretch
+            elif prev.kind in AVATAR_KINDS and nxt.kind in AVATAR_KINDS and nxt.start > prev.end + 0.05:
+                pass  # fillers already cover; leave
+        if out[-1].kind not in AVATAR_KINDS:
+            out[-1].end = duration
+        elif out[-1].end < duration - 1e-6:
+            out.append(Slot(
+                index=0, start=out[-1].end, end=duration, kind="footage",
+                block_id=out[-1].block_id, role=out[-1].role, mode="C",
+                needs_asset=True, asset_role="broll",
+                reason="tail after last prepared avatar",
+            ))
+
+    # Drop zero/negative after clamps; reindex.
+    cleaned: list[Slot] = []
+    for slot in out:
+        if slot.end - slot.start < 0.05 and slot.kind not in AVATAR_KINDS:
+            continue
+        if slot.end <= slot.start + 1e-6:
+            continue
+        cleaned.append(slot)
+    for i, slot in enumerate(cleaned):
+        slot.index = i
+
+    # Restore exact prepared bounds (clamps must not drift lipsync windows).
+    av_i = 0
+    for slot in cleaned:
+        if slot.kind not in AVATAR_KINDS:
+            continue
+        if av_i >= len(windows):
+            break
+        slot.start = float(windows[av_i]["start"])
+        slot.end = float(windows[av_i]["end"])
+        slot.block_id = str(windows[av_i].get("block_id") or slot.block_id)
+        av_i += 1
+        if av_i >= 2:
+            # ensure previous non-avatar ends at this start
+            pass
+    for i, slot in enumerate(cleaned):
+        if slot.kind not in AVATAR_KINDS:
+            continue
+        if i > 0 and cleaned[i - 1].kind not in AVATAR_KINDS:
+            cleaned[i - 1].end = slot.start
+        if i + 1 < len(cleaned) and cleaned[i + 1].kind not in AVATAR_KINDS:
+            cleaned[i + 1].start = slot.end
+
+    notes.append(
+        f"prepared avatar windows frozen: {len(windows)} clips "
+        f"(heygen_source=prepared)")
+    return cleaned
+
+
+
+def reinsert_gaps_between_prepared_avatars(
+        slots: list[Slot],
+        *,
+        notes: list[str] | None = None,
+        min_gap: float = 0.05) -> list[Slot]:
+    """Fill timeline holes between frozen avatar windows (and other coverage).
+
+    densify neighbor-clamp + b6 keyword snap can drop the 1.2s interstitial
+    between 0050 seg_02/seg_03; vision then samples a navy void (QC-SEMANTIC).
+    """
+    notes = notes if notes is not None else []
+    if not slots:
+        return slots
+    covered = sorted(((s.start, s.end) for s in slots), key=lambda p: p[0])
+    fillers: list[Slot] = []
+    cursor = 0.0
+    for a, b in covered:
+        if a > cursor + min_gap:
+            bid = ""
+            role = "twist"
+            for s in slots:
+                if s.kind in AVATAR_KINDS and s.end <= a + 1e-6:
+                    bid, role = s.block_id, s.role
+            if not bid:
+                for s in slots:
+                    if s.kind in AVATAR_KINDS and s.start >= a - 1e-6:
+                        bid, role = s.block_id, s.role
+                        break
+            fillers.append(Slot(
+                index=0, start=cursor, end=a, kind="footage",
+                block_id=bid or "b6", role=role or "twist", mode="C",
+                needs_asset=True, asset_role="broll",
+                reason="gap fill around prepared avatar window | densify reinsert",
+            ))
+            notes.append(
+                f"prepared-avatar densify: reinserted gap fill "
+                f"{cursor:.3f}–{a:.3f} (block {bid or 'b6'})")
+        cursor = max(cursor, b)
+    if not fillers:
+        return slots
+    out = list(slots) + fillers
+    out.sort(key=lambda s: (s.start, s.end))
+    for i, slot in enumerate(out):
+        slot.index = i
+    return out
+
+
+def densify_after_prepared_freeze(
+        slots: list[Slot],
+        cfg,
+        *,
+        draft: dict[str, Any] | None = None,
+        words: list[dict[str, Any]] | None = None,
+        notes: list[str] | None = None) -> list[Slot]:
+    """Restore QC-3/4 density after prepared-avatar freeze.
+
+    Freeze punches avatar holes and clears events, which can leave a long
+    continuous footage gap (and ``max_event_gap_sec`` ≈ full duration). Keep
+    every prepared avatar start/end/duration untouched.
+
+    Prefer **internal events / transitions inside one shot** (QC-3/4) over
+    splitting into many asset slots that would need the same by_block pin
+    (QC-5 phash clones). Only split when longer than
+    ``max_shot_sec_with_events``; shorter long-shots stay one plate and get
+    kenburns/push events below.
+    """
+    notes = notes if notes is not None else []
+    limits = cfg.get("limits")
+    min_shot = float(limits.get("min_shot_sec", 1.5))
+    max_shot = float(limits.get("max_shot_sec", 5.0))
+    max_shot_ev = float(limits.get("max_shot_sec_with_events", 7.0))
+    max_gap = float(limits.get("max_event_gap_sec", 2.5))
+    first_event = float(limits.get("first_event_sec", 0.8))
+
+    # Snapshot prepared avatar bounds so densify cannot drift lipsync windows.
+    frozen = [(s.start, s.end) for s in slots if s.kind in AVATAR_KINDS]
+
+    out: list[Slot] = []
+    split_notes = 0
+    event_kept = 0
+    for slot in slots:
+        if slot.kind in AVATAR_KINDS:
+            out.append(slot)
+            continue
+        if slot.kind not in ("footage", "split"):
+            out.append(slot)
+            continue
+        # One plate + internal events covers QC-3/4 up to max_shot_ev.
+        if slot.duration <= max_shot_ev + 1e-3:
+            if slot.duration > max_shot + 1e-3:
+                event_kept += 1
+            out.append(slot)
+            continue
+        # Must split: keep each sibling ≤ max_shot_ev so events still qualify.
+        parts = _split_span(
+            slot.start, slot.end, target=max_shot_ev * 0.75,
+            min_len=min_shot, max_len=max_shot_ev, words=words or [])
+        for i, (s, e) in enumerate(parts):
+            clone = Slot(**{**slot.__dict__, "start": s, "end": e, "events": [],
+                            "reason": (slot.reason + " | densify after prepared freeze").strip(" |")})
+            if i:
+                clone.transition_in = "cut"
+            out.append(clone)
+        split_notes += 1
+        notes.append(
+            f"футаж {slot.start:.2f}–{slot.end:.2f} разрезан на {len(parts)} плана "
+            f"после freeze prepared-avatar (лимит с событиями {max_shot_ev} сек)")
+    if event_kept:
+        notes.append(
+            f"prepared-avatar densify: kept {event_kept} long shot(s) as one "
+            f"plate with internal events (≤{max_shot_ev}s, avoid QC-5 clones)")
+    if split_notes:
+        notes.append(
+            f"prepared-avatar densify: split {split_notes} long non-avatar shot(s)")
+
+    out.sort(key=lambda s: (s.start, s.end))
+    for i, slot in enumerate(out):
+        slot.index = i
+
+    # Re-assert exact frozen avatar bounds (split neighbors only).
+    av_i = 0
+    for i, slot in enumerate(out):
+        if slot.kind not in AVATAR_KINDS:
+            continue
+        if av_i >= len(frozen):
+            break
+        slot.start, slot.end = frozen[av_i]
+        av_i += 1
+        if i > 0 and out[i - 1].kind not in AVATAR_KINDS:
+            out[i - 1].end = slot.start
+        if i + 1 < len(out) and out[i + 1].kind not in AVATAR_KINDS:
+            out[i + 1].start = slot.end
+
+    # Drop collapsed non-avatar crumbs from neighbor clamps.
+    cleaned: list[Slot] = []
+    for slot in out:
+        if slot.end - slot.start < 0.05 and slot.kind not in AVATAR_KINDS:
+            continue
+        if slot.end <= slot.start + 1e-6:
+            continue
+        cleaned.append(slot)
+    for i, slot in enumerate(cleaned):
+        slot.index = i
+
+    cleaned = reinsert_gaps_between_prepared_avatars(cleaned, notes=notes)
+
+    if draft is not None:
+        _assign_queries(cleaned, draft)
+    _add_internal_events(cleaned, max_gap, first_event, notes)
+    _assign_transitions(cleaned, cfg, notes)
+    notes.append(
+        "prepared-avatar densify: internal events restored for QC-3/QC-4 "
+        "(avatar windows unchanged)")
+    return cleaned
+
+
+def _slots_from_plan_dicts(raw_slots: list[Any]) -> list[Slot]:
+    """Rebuild Slot objects from cut_plan slot dicts (post-snap refresh)."""
+    out: list[Slot] = []
+    for i, s in enumerate(raw_slots or []):
+        if not isinstance(s, dict):
+            continue
+        out.append(Slot(
+            index=int(s.get("index") or i),
+            start=float(s["start"]), end=float(s["end"]),
+            kind=str(s.get("kind") or "footage"),
+            block_id=str(s.get("block_id") or ""),
+            role=str(s.get("role") or ""),
+            mode=str(s.get("mode") or "C"),
+            visual_intent=str(s.get("visual_intent") or ""),
+            queries=list(s.get("queries") or []),
+            content=str(s.get("content") or ""),
+            transition_in=str(s.get("transition_in") or "cut"),
+            events=list(s.get("events") or []),
+            needs_asset=bool(s.get("needs_asset")),
+            asset_role=str(s.get("asset_role") or ""),
+            template_hint=str(s.get("template_hint") or ""),
+            meme_emotion=str(s.get("meme_emotion") or ""),
+            beat=str(s.get("beat") or "stretch"),
+            reason=str(s.get("reason") or ""),
+        ))
+    return out
+
+
+def enforce_prepared_avatar_on_plan(
+        plan: dict[str, Any],
+        windows: list[dict[str, Any]]) -> int:
+    """Re-assert prepared avatar start/end on cut_plan slots after footage snap."""
+    if not windows or not isinstance(plan.get("slots"), list):
+        return 0
+    slots = [s for s in plan["slots"] if isinstance(s, dict)]
+    av = [s for s in slots if str(s.get("kind") or "") in AVATAR_KINDS]
+    av.sort(key=lambda s: float(s.get("start") or 0.0))
+    changed = 0
+    for slot, win in zip(av, windows):
+        for key in ("start", "end"):
+            val = float(win[key])
+            if abs(float(slot.get(key) or 0.0) - val) > 1e-6:
+                slot[key] = val
+                changed += 1
+        slot["duration"] = round(float(win["end"]) - float(win["start"]), 3)
+        if win.get("block_id"):
+            slot["block_id"] = win["block_id"]
+    plan["avatar_segments"] = [
+        {"index": i, "slot_index": s.get("index", i),
+         "start": round(float(s["start"]), 3),
+         "end": round(float(s["end"]), 3),
+         "duration": round(float(s["end"]) - float(s["start"]), 3),
+         "block_id": s.get("block_id"), "mode": s.get("mode"),
+         "kind": s.get("kind")}
+        for i, s in enumerate(av[:len(windows)])
+    ]
+    return changed
+
+
 def run_step(ctx) -> dict[str, Any]:
     draft = ctx.read("draft_plan.json")
-    sync_overlays_from_script(draft, ctx.cfg.repo_root)
     words_doc = ctx.read("words.json")
+    words = list(words_doc.get("words") or [])
+    sync_overlays_from_script(draft, ctx.cfg.repo_root, words=words)
+    # Persist remapped life-beat block_ids so P6+ karaoke/judge see «Погода».
+    ctx.write("words.json", words_doc)
 
     built = build_slots(draft, words_doc, ctx.cfg)
     slots: list[Slot] = built["slots"]
@@ -1031,6 +1554,16 @@ def run_step(ctx) -> dict[str, Any]:
         raise RedshiftError("монтажный план пуст: нет ни одного слота",
                             code="EMPTY_CUT_PLAN")
 
+    warnings: list[str] = list(built["notes"])
+    prepared_windows = load_prepared_avatar_windows(ctx.cfg, draft["video_id"])
+    if prepared_windows:
+        slots = apply_prepared_avatar_windows(
+            slots, prepared_windows, duration=duration, notes=warnings)
+        # Freeze clears events and can leave long footage gaps — densify
+        # non-avatar shots + restore events without touching prepared windows.
+        slots = densify_after_prepared_freeze(
+            slots, ctx.cfg, draft=draft, words=words, notes=warnings)
+
     # Карта битов §6.1 — до статистики: счётчик битов уходит в неё же.
     beat_counts = annotate_slots(slots, draft["blocks"])
 
@@ -1038,8 +1571,6 @@ def run_step(ctx) -> dict[str, Any]:
     stats["beats"] = beat_counts
     limits = ctx.cfg.get("limits")
     lo_share, hi_share = limits.get("avatar_share", [0.35, 0.50])
-
-    warnings: list[str] = list(built["notes"])
     if not (lo_share <= stats["avatar_share"] <= hi_share):
         warnings.append(f"доля аватара {stats['avatar_share']:.1%} вне {lo_share:.0%}–{hi_share:.0%}")
     if stats["max_event_gap_sec"] > float(limits.get("max_event_gap_sec", 2.5)) + 1e-3:
@@ -1096,6 +1627,59 @@ def run_step(ctx) -> dict[str, Any]:
             for b in draft["blocks"]
         ],
     }
+    from ..lib.text import snap_block_windows_to_keywords
+    snap_block_windows_to_keywords(
+        plan_doc, words, repo_root=ctx.cfg.repo_root)
+    if prepared_windows:
+        enforce_prepared_avatar_on_plan(plan_doc, prepared_windows)
+        # Keyword snap may stretch non-avatar windows; densify once more,
+        # then hard-snap avatar bounds and refresh events/stats.
+        plan_slots = densify_after_prepared_freeze(
+            _slots_from_plan_dicts(plan_doc.get("slots") or []),
+            ctx.cfg, draft=draft, words=words, notes=warnings)
+        av_i = 0
+        for i, slot in enumerate(plan_slots):
+            if slot.kind not in AVATAR_KINDS:
+                continue
+            if av_i >= len(prepared_windows):
+                break
+            win = prepared_windows[av_i]
+            slot.start = float(win["start"])
+            slot.end = float(win["end"])
+            if win.get("block_id"):
+                slot.block_id = str(win["block_id"])
+            av_i += 1
+            if i > 0 and plan_slots[i - 1].kind not in AVATAR_KINDS:
+                plan_slots[i - 1].end = slot.start
+            if i + 1 < len(plan_slots) and plan_slots[i + 1].kind not in AVATAR_KINDS:
+                plan_slots[i + 1].start = slot.end
+        plan_slots = [s for s in plan_slots
+                      if s.end > s.start + 1e-6 and (
+                          s.kind in AVATAR_KINDS or s.end - s.start >= 0.05)]
+        for i, slot in enumerate(plan_slots):
+            slot.index = i
+        # Last pass: keyword snap + neighbor clamp may have cleared the
+        # seg_02→seg_03 hole again — force gap fills after all mutations.
+        plan_slots = reinsert_gaps_between_prepared_avatars(
+            plan_slots, notes=warnings)
+        _add_internal_events(
+            plan_slots,
+            float(ctx.cfg.get("limits.max_event_gap_sec", 2.5)),
+            float(ctx.cfg.get("limits.first_event_sec", 0.8)),
+            warnings)
+        _assign_transitions(plan_slots, ctx.cfg, warnings)
+        plan_doc["slots"] = [s.to_dict() for s in plan_slots]
+        plan_doc["avatar_segments"] = [
+            {"index": i, "slot_index": s.index, "start": round(s.start, 3),
+             "end": round(s.end, 3), "duration": round(s.duration, 3),
+             "block_id": s.block_id, "mode": s.mode, "kind": s.kind}
+            for i, s in enumerate(s for s in plan_slots if s.kind in AVATAR_KINDS)
+        ]
+        stats = compute_stats(plan_slots, duration)
+        stats["beats"] = beat_counts
+        plan_doc["stats"] = stats
+        plan_doc["notes"] = warnings
+
     ctx.write("cut_plan.json", plan_doc)
 
     for warning in warnings:

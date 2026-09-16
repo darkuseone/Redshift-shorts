@@ -811,6 +811,17 @@ class CompositionBuilder:
                               params=params)
             piece = render_overlay("lt_accent_underline", ctx)
             return piece if piece.nodes else None
+        # dark_card wins over clean-bar: Latin WEATHER/FOLLOWUP coerce sets
+        # dark_card while template_id may still end with clean-bar.
+        if (params.get("dark_card") or renderer == "lt_dark_card"
+                or template_id.endswith("dark-card")):
+            work = self.brandbook["safe_zones"]["work_area"]
+            params.setdefault("available_px", int(work["x_max"]) - int(work["x_min"]))
+            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
+                              duration=duration, target=node_id, track=track,
+                              params=params)
+            piece = render_overlay("lt_dark_card", ctx)
+            return piece if piece.nodes else None
         if (renderer == "lt_clean_bar" or params.get("clean_bar")
                 or template_id.endswith("clean-bar")):
             work = self.brandbook["safe_zones"]["work_area"]
@@ -819,15 +830,6 @@ class CompositionBuilder:
                               duration=duration, target=node_id, track=track,
                               params=params)
             piece = render_overlay("lt_clean_bar", ctx)
-            return piece if piece.nodes else None
-        if (renderer == "lt_dark_card" or params.get("dark_card")
-                or template_id.endswith("dark-card")):
-            work = self.brandbook["safe_zones"]["work_area"]
-            params.setdefault("available_px", int(work["x_max"]) - int(work["x_min"]))
-            ctx = TemplateCtx(index=int(node_id.split("-")[-1]), start=start,
-                              duration=duration, target=node_id, track=track,
-                              params=params)
-            piece = render_overlay("lt_dark_card", ctx)
             return piece if piece.nodes else None
         overlay_name = renderer if renderer in OVERLAYS else ""
         if not overlay_name and kind in OVERLAYS:
@@ -861,6 +863,8 @@ class CompositionBuilder:
             cls = "clip overlay plaque"
             if params.get("source_chip"):
                 cls += " source-chip"
+            if params.get("no_red") or params.get("accent") is False:
+                cls += " no-red no-accent"
             return (f'<div id="{node_id}" class="{cls}" __TIMING__>'
                     f'{content}{extra}</div>')
         if kind == "cta":
@@ -901,7 +905,12 @@ class CompositionBuilder:
         title = _mark_phrase(str(params.get("title") or ""), highlight)
         snippet = _mark_phrase(str(params.get("snippet") or ""), highlight)
         compact = " compact" if params.get("compact") else ""
-        return (f'<div id="{node_id}" class="clip overlay source-card{compact}" __TIMING__>'
+        theme = str(params.get("theme") or "").lower()
+        dark = bool(params.get("dark") or theme == "dark"
+                    or str(params.get("background") or "").lower() == "dark"
+                    or str(params.get("tone") or "").lower() == "ink")
+        dark_cls = " theme-dark" if dark else ""
+        return (f'<div id="{node_id}" class="clip overlay source-card{compact}{dark_cls}" __TIMING__>'
                 f'<div class="bar"><span class="dot"></span><span class="dot"></span>'
                 f'<span class="dot"></span>'
                 f'<span class="url"><b>{_esc(domain)}</b>{_esc(path)}</span></div>'
