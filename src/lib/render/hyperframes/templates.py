@@ -54,6 +54,12 @@ Z_SHOT = 10
 Z_BEHIND_HEAD = 15
 Z_AVATAR = 20
 
+# Сколько строк несут приёмы-носители реплики. Столько же обязан отдавать
+# P11: приём гасит караоке на своём окне, поэтому «не влезло» не может
+# означать «покажем начало» — оно означает «приём не подходит этому окну».
+TYPE_SLAB_MAX_LINES = 4
+TEXT_COLUMN_MAX_LINES = 5
+
 
 @dataclass
 class Piece:
@@ -7359,6 +7365,13 @@ def hero_text_column(ctx: "TemplateCtx") -> Piece:
     lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
     if not lines:
         return Piece()
+    # Колонка несёт реплику целиком (P11 гасит на этом окне караоке). Значит
+    # обрезать её нельзя: на 0050 соседний приём, плита типа, срезал реплику
+    # по четвёртой строке и оставил в кадре «ШАГ. НО ПУНКТ БЕЗ ВНЕШНЕЙ СИЛЫ
+    # КЛЕЙ НЕ» — оборванное предложение и шесть секунд речи без единого
+    # субтитра. Не влезло — приём не показывается, слова возвращает караоке.
+    if len(lines) > TEXT_COLUMN_MAX_LINES:
+        return Piece()
     accents = {int(i) for i in (ctx.params.get("accent_lines") or [])}
     node_id = f"tc-{ctx.index:02d}"
     # Колонка садится ниже лица — на уровень плеча и торса. На 560 она резала
@@ -7367,7 +7380,7 @@ def hero_text_column(ctx: "TemplateCtx") -> Piece:
     top = int(ctx.params.get("top", 700))
 
     spans, tweens = [], []
-    for i, line in enumerate(lines[:5]):
+    for i, line in enumerate(lines):
         css = "tc-line accent" if i in accents else "tc-line"
         spans.append(f'<span class="{css}">{_esc(line)}</span>')
         tweens += entrance_tweens(f"#{node_id} .tc-line:nth-child({i + 1})",
@@ -7492,13 +7505,15 @@ def hero_type_slab(ctx: "TemplateCtx") -> Piece:
     lines = [str(l).strip() for l in (ctx.params.get("lines") or []) if str(l).strip()]
     if not lines:
         return Piece()
+    if len(lines) > TYPE_SLAB_MAX_LINES:
+        return Piece()
     accents = {int(i) for i in (ctx.params.get("accent_lines") or [])}
     node_id = f"ts-{ctx.index:02d}"
     available = 1080 * 0.48
     longest = max(lines, key=len)
     size = fit_size(longest.upper(), available, int(ctx.params.get("size", 148)), role="subtitle")
     rows, tweens = [], []
-    for i, line in enumerate(lines[:4]):
+    for i, line in enumerate(lines):
         cls = "accent" if i in accents else ""
         rows.append(f'<span class="ts-line {cls}" style="font-size:{size}px">'
                     f'{_esc(line.upper())}</span>')
@@ -8914,6 +8929,28 @@ def fs_line_by_line_slide(ctx: "TemplateCtx") -> Piece:
         tweens=tweens)
 
 
+def stack_lines(content: str, max_lines: int = 3) -> list[str]:
+    """Разложить содержимое карточки-лесенки по строкам.
+
+    Средняя точка — авторский перенос, а не знак. «7 · $1 000 000 · 25 Y» это
+    три величины, и упаковщик по словам ставил «7 ·» отдельной строкой, а точку
+    от следующей величины уносил в предыдущую: заказчик прислал этот кадр как
+    брак. Разделитель назван — разбиваем по нему; пакуем по словам только там,
+    где его нет.
+
+    Склейка разрядов идёт до разбивки: без неё «$1 000 000» считалось тремя
+    словами. ``str.split()`` здесь не годится — он рвёт и по NBSP.
+    """
+    max_lines = max(1, int(max_lines))
+    marked = [part.strip() for part in re.split(r"\s*[·•]\s*", content or "")]
+    marked = [part for part in marked if part]
+    if len(marked) > 1:
+        return [glue_number_runs(part) for part in marked][:max_lines]
+    words = [w for w in re.split(r"[ \t]+", glue_number_runs(content or "")) if w]
+    per = max(1, (len(words) + max_lines - 1) // max_lines)
+    return [" ".join(words[i:i + per]) for i in range(0, len(words), per)][:max_lines]
+
+
 def fs_stack_lines(ctx: "TemplateCtx") -> Piece:
     """Три строки лесенкой: слова пакуются в max_lines и входят rise."""
     content, accent, invert = _content_of(ctx)
@@ -8924,10 +8961,8 @@ def fs_stack_lines(ctx: "TemplateCtx") -> Piece:
     # слов. Склейка делает разряды неразрывными, а разбивка идёт только по
     # обычным пробелам — число целиком остаётся одним токеном и на одной
     # строке. ``str.split()`` здесь не годится: он рвёт и по NBSP.
-    words = [w for w in re.split(r"[ \t]+", glue_number_runs(content)) if w]
     max_lines = max(1, int(ctx.params.get("max_lines") or 3))
-    per = max(1, (len(words) + max_lines - 1) // max_lines)
-    lines = [" ".join(words[i:i + per]) for i in range(0, len(words), per)][:max_lines]
+    lines = stack_lines(content, max_lines)
     node_id = ctx.target
     # Перенос лесенка разложила сама — мерить надо строку, а не слово в ней.
     size = _fs_size(ctx, widest(lines), whole_line=True)
@@ -14507,8 +14542,13 @@ def hero_css(brandbook: dict[str, Any]) -> str:
         f"width:{int(width * 0.52)}px;z-index:{Z_AVATAR + 1};"
         "display:flex;flex-direction:column;align-items:flex-start;gap:8px;"
         "pointer-events:none}"
+        # Цвет — по кадру, а не по сцене. `--color-on-stage` описывает подложку
+        # §7.6, а плита лежит поверх шота (z-index Z_AVATAR+1): на 0050 сцена
+        # была `room` (светлая), кадр — чёрный, и вся плита ушла в чернильный
+        # текст по чёрному. Кадры канала тёмные всегда, светлая плита читается
+        # на любом из них.
         ".hero-type-slab .ts-line{display:block;font-family:var(--font-display);"
-        "text-transform:uppercase;line-height:0.9;color:var(--color-on-stage);"
+        "text-transform:uppercase;line-height:0.9;color:var(--color-bg-light);"
         "will-change:transform;"
         "text-shadow:0 4px 22px rgba(0,0,0,0.55),0 0 18px rgba(247,245,243,0.35)}"
         ".hero-type-slab .ts-line.accent{color:var(--color-accent)}"

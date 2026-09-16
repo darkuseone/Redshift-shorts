@@ -99,6 +99,9 @@
   },
   "redshift_0050": {
     "prefer": [
+      "nasa_0050_wingcfd",
+      "nasa_0050_geosweather",
+      "openai_0050_nsspiral",
       "magnific_0050_fluids",
       "magnific_0050_inkswirl",
       "magnific_0050_coolvortex",
@@ -162,15 +165,15 @@
       "magnific_0050_ironrust"
     ],
     "same_asset_max_slots": 1,
-    "_note": "round41: Gemini 162 — no server, no empty grid, no highway on refuse",
+    "_note": "r62: официальная иллюстрация OpenAI на «Навье-Стокса», настоящий расчёт NASA на «Крыло» и симуляция GEOS-5 на «Погода» — вместо абстрактных плит под теми же словами",
     "by_block": {
       "b1": "magnific_0050_coolvortex",
       "b2": "magnific_0050_inkswirl",
       "b3": "magnific_0050_gpu",
       "b4": "magnific_0050_slateiron",
       "b5": "magnific_0050_fluids",
-      "b5b": "magnific_0050_weather",
-      "b5c": "magnific_0050_wing",
+      "b5b": "nasa_0050_geosweather",
+      "b5c": "nasa_0050_wingcfd",
       "b5d": "magnific_0050_pipes",
       "b5e": "magnific_0050_blood",
       "b6": "magnific_0050_stamp",
@@ -219,8 +222,9 @@
       },
       {
         "block": "b5",
-        "on": "Называются",
-        "asset": "magnific_0050_tealmister"
+        "on": "Стокса",
+        "asset": "openai_0050_nsspiral",
+        "plaque": "OPENAI"
       },
       {
         "block": "b5",
@@ -231,13 +235,13 @@
       {
         "block": "b5b",
         "on": "Погода",
-        "asset": "magnific_0050_weather",
+        "asset": "nasa_0050_geosweather",
         "plaque": "WEATHER"
       },
       {
         "block": "b5c",
         "on": "Крыло",
-        "asset": "magnific_0050_wing",
+        "asset": "nasa_0050_wingcfd",
         "plaque": "AIRFOIL"
       },
       {

@@ -5,7 +5,7 @@
 без своего «Ч».
 """
 from src.lib.render.hyperframes.templates import (
-    glue_number_runs, is_unbreakable_number)
+    glue_number_runs, is_unbreakable_number, stack_lines)
 
 CARD = "10 000 · 88 Ч · 2 700 000 · 17 Ч LEAN"
 NBSP = " "
@@ -37,3 +37,18 @@ def test_gluing_does_not_break_the_whole_number_check():
 def test_plain_prose_is_left_alone():
     text = "Миллион OpenAI не берёт"
     assert glue_number_runs(text) == text
+
+
+def test_a_middot_card_breaks_on_the_separator_not_on_words():
+    """«7 · $1 000 000 · 25 Y» — три величины, а не пять слов.
+
+    Упаковщик по словам ставил «7 ·» / «$1 000 000 ·» / «25 Y»: одинокая
+    семёрка с висящей точкой на первой строке, точка следующей величины —
+    в конце предыдущей. Заказчик прислал этот кадр как брак.
+    """
+    lines = stack_lines("7 · $1 000 000 · 25 Y")
+    assert lines == ["7", "$1 000 000", "25 Y"]
+
+
+def test_a_card_without_a_separator_still_packs_by_words():
+    assert len(stack_lines("ДВА МИЛЛИОНА СЕМЬСОТ ТЫСЯЧ СООБЩЕНИЙ")) <= 3

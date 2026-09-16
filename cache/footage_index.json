@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-15",
-  "count": 31,
+  "updated": "2026-09-16",
+  "count": 34,
   "items": [
     {
       "id": "magnific_0050_weather",
@@ -1107,6 +1107,124 @@
         "watched": true,
         "hole_filler": true,
         "cool_dark": true
+      }
+    },
+    {
+      "id": "openai_0050_nsspiral",
+      "type": "video",
+      "source": "openai",
+      "license": "editorial_source_figure",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/claude/redshift-0050-release-k5gqvc/assets/footage/official/openai_0050_nsspiral.mp4",
+      "phash": "c0993f6cb0b64f58",
+      "tags": [
+        "navier-stokes",
+        "vortex",
+        "spiral",
+        "official",
+        "openai",
+        "fluid",
+        "simulation",
+        "streamlines"
+      ],
+      "vision_summary": "Official OpenAI Navier–Stokes figure: vortex streamlines around a vertical axis, cyan/blue/orange on black, slow push-in and drift",
+      "score": 0.97,
+      "duration_sec": 6.0,
+      "used_in": [],
+      "last_used": "",
+      "added": "2026-09-16",
+      "phashes": [
+        "c0993f6cb0b64f58",
+        "c0392fe8b0974bda",
+        "c43d2fe0b4074bda"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "official/openai_0050_nsspiral.mp4",
+      "extra": {
+        "attribution": "OpenAI — иллюстрация к «On the Navier–Stokes Millennium Prize Problem»",
+        "credit_on_screen": "openai.com",
+        "why": "Официальная иллюстрация из самой новости. Заказчик: «почему ты не взял официальный футаж от OpenAI, ты должен был найти его в первую очередь». Белая бумага выбита по яркости, штрихи оставлены в своём цвете и подсвечены — кадр канала тёмный.",
+        "watched": true
+      }
+    },
+    {
+      "id": "nasa_0050_wingcfd",
+      "type": "video",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/claude/redshift-0050-release-k5gqvc/assets/footage/nasa/nasa_0050_wingcfd.mp4",
+      "phash": "3f807fe040ff0287",
+      "phashes": [
+        "3f807fe040ff0287",
+        "23f37cb2d11ad409",
+        "24ee6af043a5343b"
+      ],
+      "tags": [
+        "cfd",
+        "turbulence",
+        "wing",
+        "airfoil",
+        "aerodynamics",
+        "simulation",
+        "navier-stokes",
+        "official"
+      ],
+      "vision_summary": "NASA Ames CFD: violet/blue turbulent wake over a wing on near-black, dense vortex structures filling the frame",
+      "score": 0.95,
+      "duration_sec": 5.0,
+      "used_in": [],
+      "last_used": "",
+      "added": "2026-09-16",
+      "width": 1080,
+      "height": 1920,
+      "file": "nasa/nasa_0050_wingcfd.mp4",
+      "extra": {
+        "attribution": "NASA Advanced Supercomputing Division / Ames Research Center",
+        "source_id": "NHQ20201221ARMD",
+        "source_url": "https://images.nasa.gov/details/NHQ20201221ARMD",
+        "credit_on_screen": "nasa.gov",
+        "why": "Настоящий расчёт Навье-Стокса вокруг крыла, а не абстракция под тем же словом. Public domain.",
+        "watched": true
+      }
+    },
+    {
+      "id": "nasa_0050_geosweather",
+      "type": "video",
+      "source": "nasa",
+      "license": "public-domain",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/claude/redshift-0050-release-k5gqvc/assets/footage/nasa/nasa_0050_geosweather.mp4",
+      "phash": "c048c0dbcb9f3eb2",
+      "phashes": [
+        "c048c0dbcb9f3eb2",
+        "c040cac8df9f7a99",
+        "c0c0c8cb9fb75bd0"
+      ],
+      "tags": [
+        "weather",
+        "storm",
+        "hurricane",
+        "vortex",
+        "atlantic",
+        "simulation",
+        "navier-stokes",
+        "official"
+      ],
+      "vision_summary": "NASA GEOS-5 global aerosol simulation: deep blue sea-salt streams spinning up into a bright storm vortex over the North Atlantic",
+      "score": 0.95,
+      "duration_sec": 5.0,
+      "used_in": [],
+      "last_used": "",
+      "added": "2026-09-16",
+      "width": 1080,
+      "height": 1920,
+      "file": "nasa/nasa_0050_geosweather.mp4",
+      "extra": {
+        "attribution": "NASA Goddard Space Flight Center / GEOS-5",
+        "source_id": "GSFC_20171113_Hurricanes_m12772_Aerosols",
+        "source_url": "https://images.nasa.gov/details/GSFC_20171113_Hurricanes_m12772_Aerosols",
+        "credit_on_screen": "nasa.gov",
+        "why": "Погода как решение уравнений Навье-Стокса в планетарном масштабе — ровно то, о чём блок. Public domain. Кадр выбран без подписи шторма: английская служебная строка в кадре запрещена (§7.3).",
+        "watched": true
       }
     }
   ]

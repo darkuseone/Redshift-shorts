@@ -375,6 +375,9 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
         slots = close_gaps(
             _enforce_shot_limits(slots, max_shot, max_shot_ev, min_shot, notes,
                                  appearance_min=appearance_min, words=all_words), duration)
+        slots = close_gaps(
+            _heal_stub_appearances(slots, appearance_min, appearance_max, notes),
+            duration)
         # Оба правила §3.5 чинятся одним действием — «отдать аватару футажный
         # слот», и оба должны попасть в ту же сходимость: разрыв футажа может
         # поднять долю, а добор доли — разорвать футаж.
@@ -387,7 +390,12 @@ def build_slots(draft: dict[str, Any], words_doc: dict[str, Any], cfg) -> dict[s
             break
         slots = close_gaps(_hold_face_until(slots), duration)
 
+    # Последним — контроль того, что осталось после всех резов, включая сдвиг
+    # первого появления: появление короче §3.5 в кадр не выходит ни при каких
+    # обстоятельствах.
     slots = close_gaps(_hold_face_until(slots), duration)
+    slots = close_gaps(
+        _heal_stub_appearances(slots, appearance_min, appearance_max, notes), duration)
 
     final_share = _avatar_share(slots, duration)
     if final_share < share_lo:
@@ -728,6 +736,66 @@ def _insert_avatar_interstitials(slots: list[Slot], min_shot: float, appearance_
                 notes.append("смежные аватар-сегменты слиты: перебивка не помещалась")
         out.append(slot)
     return out
+
+
+def _heal_stub_appearances(slots: list[Slot], appearance_min: float,
+                           appearance_max: float, notes: list[str]) -> list[Slot]:
+    """Появление короче §3.5 не доживает до кадра — ни в каком виде.
+
+    Проходы выше режут секунды из аватара каждый по своему правилу: перебивка
+    §7.4.3 берёт их с хвоста, лимит длины плана §3.6.2 — из середины, дробление
+    §3.5 — у границы слотов. Каждый бережёт свой минимум, но ни один не смотрит,
+    что осталось после соседа. На 0050 так вышел сегмент в 0.26 сек: ведущий
+    выпрыгивал в кадр на четверть секунды и исчезал. Заказчик: «аватар
+    выпрыгивает и исчезает быстро, так быть не должно».
+
+    Лечим двумя способами. Если огрызок отделён от соседнего появления одной
+    перебивкой и вместе они влезают в 12 сек — перебивка снимается, и это одно
+    появление, а не два подряд (QC-18 запрещает именно два подряд, а не длинное
+    одно). Не влезают — огрызок становится футажом: лучше лишний кадр материала,
+    чем вспышка лица.
+    """
+    for _ in range(8):
+        runs = _avatar_runs(slots)
+        stub = next((r for r in runs
+                     if slots[r[-1]].end - slots[r[0]].start < appearance_min - 1e-6),
+                    None)
+        if stub is None:
+            return slots
+        merged = False
+        for other in runs:
+            if other[0] <= stub[-1]:
+                continue
+            # Ровно одна перебивка между огрызком и соседом.
+            if other[0] - stub[-1] != 2:
+                break
+            span = slots[other[-1]].end - slots[stub[0]].start
+            if span > appearance_max + 1e-6:
+                break
+            head, tail = slots[stub[0]], slots[other[-1]]
+            notes.append(
+                f"появление {slots[stub[0]].start:.2f}–{slots[stub[-1]].end:.2f} сек "
+                f"короче {appearance_min:.0f} сек: слито с соседним через снятую "
+                f"перебивку в одно появление {head.start:.2f}–{tail.end:.2f} сек")
+            head.end = tail.end
+            slots = slots[:stub[0] + 1] + slots[other[-1] + 1:]
+            merged = True
+            break
+        if merged:
+            continue
+        first = slots[stub[0]]
+        notes.append(
+            f"появление {first.start:.2f}–{slots[stub[-1]].end:.2f} сек короче "
+            f"{appearance_min:.0f} сек и слить не с чем: отдано под футаж")
+        for i in stub:
+            slot = slots[i]
+            slot.kind = "footage"
+            slot.mode = "C"
+            slot.needs_asset = True
+            slot.asset_role = slot.asset_role or "broll"
+            slot.reason = (f"огрызок появления короче {appearance_min:.0f} сек "
+                           f"отдан под футаж (§3.5)")
+    return slots
 
 
 def _avatar_runs(slots: list[Slot]) -> list[list[int]]:

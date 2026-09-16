@@ -27,7 +27,8 @@ from ..lib.render.shots import (
     ShotSpec, choose_fit, detect_focus, prepare_avatar_shot, prepare_shot,
     prepare_split_shot,
 )
-from ..lib.render.text_rules import drop_orphan_short_cues, glue_short_cues
+from ..lib.render.text_rules import (
+    drop_orphan_short_cues, glue_short_cues, merge_brand_phrases)
 from ..lib.backdrop import load_pins as _load_backdrop_pins
 from ..lib.backdrop import plate_name as _scene_plate_name
 from ..lib.brand_icons import load_library as load_brand_icons
@@ -45,6 +46,8 @@ from ..lib.meaning import block_traits, explain, grounded_for, matched
 from ..lib.query import topical_match_score
 from ..lib.render.canvas import plaque_enter_ms
 from ..lib.render.hyperframes.captions import group_caption_phrases, pick_caption_style
+from ..lib.render.hyperframes.templates import (
+    TEXT_COLUMN_MAX_LINES, TYPE_SLAB_MAX_LINES)
 from ..lib.render.hyperframes.spm_shapes import SPM_SHAPES
 from ..lib.render.hyperframes.umf_shapes import UMF_CITIES, UMF_FLOWS
 from ..lib.render.hyperframes.usm_shapes import USM_SHAPES
@@ -1998,6 +2001,10 @@ def _spoken_window_text(
         return ""
     start = float(slot.get("start") or 0.0)
     end = float(slot.get("end") or 0.0)
+    # Бренд на экране пишется латиницей — тем же правилом, что и в караоке
+    # (`config/glossary.json`, `brands_latin`). Приёмы брали слова в обход него
+    # и печатали то, что слышно: на 0050 в кадре стоял «КЛЕЙ» вместо Clay.
+    words = merge_brand_phrases(list(words))
     bits: list[str] = []
     for item in words:
         try:
@@ -2179,6 +2186,24 @@ _TEXT_ZONE_HEROES = (
     "hero-headline", "hero-oversize", "hero-split", "hero-title-behind",
     "hero-figure", "hero-card-stack", "hero-paper", "hero-brand-pill",
 )
+
+
+# Сколько строк приём реально выкладывает в кадр. Числа берём у самих
+# рендереров: приём-носитель гасит караоке на своём окне, и если реплика в
+# него не влезает, кадр остаётся и без приёма (он вернёт пустоту), и без
+# субтитра. На 0050 так пропало шесть секунд речи. Не влезло — приём не
+# выбирается, и слова говорит караоке.
+_HERO_LINE_CAPS: dict[str, int] = {
+    "hero-type-slab": TYPE_SLAB_MAX_LINES,
+    "hero-text-column": TEXT_COLUMN_MAX_LINES,
+}
+
+
+def hero_fits_lines(renderer: str, params: dict[str, Any]) -> bool:
+    cap = _HERO_LINE_CAPS.get(renderer)
+    if cap is None:
+        return True
+    return len([l for l in (params.get("lines") or []) if str(l).strip()]) <= cap
 
 
 def hero_mutes_subtitle(renderer: str) -> dict[str, bool]:
@@ -2675,6 +2700,8 @@ def _hero_device(catalog: TemplateCatalog, *, slot: dict[str, Any],
         if any(not available.get(key) for key in needs):
             return None
     params = hero_params(renderer, template.params, content, slot)
+    if not hero_fits_lines(renderer, params):
+        return None
     if late:
         params["clear_crown"] = True
 
@@ -3456,9 +3483,16 @@ _WORD_SCALES: dict[str, tuple[float, str]] = {
 }
 # Значения-множители: слагаемым в составном числительном они не бывают.
 _WORD_SCALE_VALUES = frozenset({1e3, 1e6, 1e9})
+# Косвенные окончания числительных перечислены, а не взяты как `\w*`. Хвост
+# «любые буквы» делал числом любое слово, начинающееся с числительного:
+# «Навье-Стокса» читалось как «сто», и на 0050 поверх футажа встала диаграмма
+# «100 СТОКСА» — число, которого в реплике нет. Пропущенная падежная форма
+# стоит непоставленной диаграммы; лишняя — выдуманного числа в кадре.
+_WORD_NUM_TAIL = r"(?:ями|ами|ях|ах|ой|ом|ух|ёх|ю|и)?"
 _WORD_NUM_RE = re.compile(
     r"\b(" + "|".join(sorted(_WORD_VALUES, key=len, reverse=True))
-    + r")\w*(?:\s+(тысяч\w*|миллион\w*|миллиард\w*))?", re.IGNORECASE)
+    + r")" + _WORD_NUM_TAIL + r"\b(?:\s+(тысяч\w*|миллион\w*|миллиард\w*))?",
+    re.IGNORECASE)
 _WORD_FACTOR_RE = re.compile(
     r"\b(" + "|".join(sorted(_WORD_FACTORS, key=len, reverse=True)) + r")\b",
     re.IGNORECASE)
