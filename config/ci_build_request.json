@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "",
+  "from_step": "P5",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
-  "requested_by": "claude",
-  "note": "r63: three fixes since the r62 phase-2 QC-33 failure — snap_block_windows_to_keywords no longer drags the b6 interstitials off their timing (structural anchor, not an English-only 'gap fill' string match); tools/fetch_avatar_clips.py stopped re-cropping an already-9:16 source (that was the stretch the owner flagged); heygen.compose_zoom moved from 2.7 (CSS upscale, band-fit) to 1.0 (natural placement — never scale, translate the measured head to avatar.head_top_frac, calibrated off the owner's own reference crop). from_step empty on purpose: P0-P4 must hit the Actions work/ cache (same script, same voice) — no new ElevenLabs or HeyGen spend, only P5 onward recompute.",
-  "round": 63
+  "requested_by": "grok",
+  "note": "r64: owner 5-frame QC. Cache voice+webm. Visual only: labeled 7 TASKS / $1M / 25 YEARS; ban icons-behind-head; GPT-6 is a brand not digit 6; 88h vs 17h compare-bars not decline Lean; REJECTED text plate not stamp PiP replay. from_step P5, skip_generate, no TTS/HeyGen.",
+  "round": 64
 }

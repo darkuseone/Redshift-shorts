@@ -48,7 +48,14 @@
   "template_excludes": {
     "redshift_0050": [
       "text-fullscreen/bigtext-mask-footage",
-      "text-fullscreen/number-slam-card"
+      "text-fullscreen/number-slam-card",
+      "hero-devices/icons-behind-head",
+      "hero-devices/footage-plate-pop",
+      "hero-devices/card-stack-top",
+      "hero-devices/exhibit-card",
+      "data-viz/decline-chart",
+      "data-viz/mk-line-graph",
+      "data-viz/us-map-hex"
     ]
   }
 }
