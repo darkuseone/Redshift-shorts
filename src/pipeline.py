@@ -122,6 +122,14 @@ class Step:
     # cut_plan, и восстановление файла уже ничего не меняло — P5 отдавал
     # прежний план из кэша, а P6 на нём требовал новых клипов.
     uses_prepared_avatar: bool = False
+    # Разделы конфига, которые шаг читает. В отпечаток и так входит `_cfg`, но
+    # там перечислены только limits/audio/render/features — общие для всех. У
+    # шага бывают свои: темп речи живёт в `speech`, голос — в `elevenlabs`.
+    # Пока их не было в отпечатке, правка `speech.pause_threshold_ms` не
+    # отменяла ничего: P3 отдавал прежнюю дорожку из кэша, и заказанный темп
+    # молча не менялся. Это та же ошибка, что уже стоила раунда на обёртках
+    # замка слотов, — шаг измерялся не по тому, что он на самом деле читает.
+    cfg_sections: tuple[str, ...] = ()
     optional: bool = False          # шаг может быть пропущен по фиче-флагу
     cacheable: bool = True
 
@@ -160,6 +168,9 @@ class Step:
         if self.config_inputs:
             payload["_files"] = hash_files(
                 str(ctx.cfg.repo_root / name) for name in self.config_inputs)
+        if self.cfg_sections:
+            payload["_cfg_own"] = {name: ctx.cfg.get(name, {})
+                                   for name in self.cfg_sections}
         payload["_cfg"] = {
             "limits": ctx.cfg.get("limits", {}),
             "audio": ctx.cfg.get("audio", {}),

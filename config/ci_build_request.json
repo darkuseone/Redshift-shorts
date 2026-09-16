@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P5",
+  "from_step": "",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
-  "requested_by": "grok",
-  "note": "round61: reuse:True does not make a second lock line safe — it reproduces the QC-5 collision; skip_vision",
-  "round": 61
+  "requested_by": "claude",
+  "note": "r62 фаза 1: новая озвучка в ускоренном темпе (паузы 110/55-85 мс) и новая нарезка аватара. Прежние voice_final.wav и клипы сняты — заказчик просил прегенерировать заново. P6 оставит avatar_request.json и seg_*.wav для MCP HeyGen.",
+  "round": 62
 }
