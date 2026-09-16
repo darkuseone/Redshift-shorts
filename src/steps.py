@@ -37,8 +37,9 @@ def build_pipeline() -> Pipeline:
     from .p10_audio.audio_build import run_step as p10
     from .p11_assemble.assemble import run_step as p11_raw
     from .lib.slots_lock import wrap_p11, wrap_p8
+    from .lib.owner_visuals_0050 import wrap_p11_visuals
     p8 = wrap_p8(p8_raw)
-    p11 = wrap_p11(p11_raw)
+    p11 = wrap_p11_visuals(wrap_p11(p11_raw))
     from .p12_render_qc.render import run_step as p12
 
     return Pipeline([
@@ -63,15 +64,10 @@ def build_pipeline() -> Pipeline:
              inputs=("draft_plan.json", "words.json"), outputs=("cut_plan.json",),
              config_inputs=("config/brandbook.json",), uses_script=True,
              uses_prepared_avatar=True, version="3",
-             # avatar_id/source читаются напрямую (cut_plan.json несёт
-             # avatar_id дальше в P6/P11) — тот же класс дыры, что у темпа
-             # речи: смена лука в конфиге не отменяла бы кэш.
              cfg_sections=("heygen",)),
         Step("P6", "Генерация аватара посегментно", p6,
              inputs=("cut_plan.json", "voice_final.wav"), outputs=("avatar_meta.json",),
              uses_prepared_avatar=True, version="2",
-             # engine/model_version/background/max_seconds_per_video и т. д. —
-             # весь провайдер настраивается отсюда.
              cfg_sections=("heygen",)),
         Step("P7", "Поиск B-roll", p7,
              inputs=("cut_plan.json",), outputs=("candidates.json",),
@@ -82,9 +78,6 @@ def build_pipeline() -> Pipeline:
              inputs=("candidates.json", "cut_plan.json"),
              outputs=("accepted_assets.json",),
              config_inputs=("config/footage_pins.json",),
-             # 5: замок слотов наконец видит донора — до этого он спрашивал у
-             # принятой записи ключи, которых P7 туда не кладёт, и выходил
-             # молча на каждой строке заявки.
              uses_script=True, version="5"),
         Step("P9", "Генерация недостающих материалов", p9,
              inputs=("accepted_assets.json", "cut_plan.json"), outputs=("generated_assets.json",)),
@@ -98,17 +91,8 @@ def build_pipeline() -> Pipeline:
              config_inputs=("config/brandbook.json", "config/editing_preferences.json",
                             "config/footage_pins.json", "config/glossary.json"),
              uses_script=True,
-             # heygen.compose_zoom едет в edit_plan_A.json как avatar_compose_zoom
-             # (§ compose-natural r63), а раздел `heygen` не входит в общий `_cfg`
-             # (там только limits/audio/render/features). Без этого поля правка
-             # zoom не отменяла бы кэш P11 — тот же класс дыры, что уже нашёлся
-             # у P2/P3/P4 на теме темпа речи: шаг мерился не тем, что читает.
              cfg_sections=("heygen",),
-             # 4: ритм монтажа (кадры встык, без перебивок короче двух секунд)
-             # и плашки, обрезанные по своему кадру.
-             # 5: overlay.type=dataviz — блок сам просит диаграмму вместо
-             # пустого-слота ладдера §7.2 (см. _authored_dataviz_overlays).
-             version="5"),
+             version="6"),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),
