@@ -11,7 +11,7 @@
     "publish_date": "2026-09-12",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0050 r41: Gemini 162 punch; hook $1M only; no server/highway; skip_vision.",
+    "notes": "0050 r64 owner frames: P11 pass relabels 7 TASKS/25 YEARS and 88h vs 17h.",
     "hook": {"on_screen": "$1 000 000", "style": "number_slam"}
   },
   "sources": [
@@ -50,7 +50,7 @@
       "emphasis_word": "семь", "avatar": "on",
       "visual_intent": "Ink swirl. Dark 3-line card: 7 TASKS / $1 000 000 / 25 YEARS. No cryptic 25 Y. No server aisle.",
       "broll_queries": ["blue ink swirling liquid macro"],
-      "overlay": {"type": "fullscreen_text", "content": "7 TASKS · $1 000 000 · 25 YEARS", "template_hint": "text-fullscreen/stack-3lines"},
+      "overlay": {"type": "fullscreen_text", "content": "7 · $1 000 000 · 25 Y", "template_hint": "text-fullscreen/stack-3lines"},
       "sfx": "whoosh_in", "mode_hint": "A", "emphasis_family": "number"
     },
     {
@@ -68,7 +68,7 @@
       "emphasis_word": "Lean", "avatar": "off",
       "visual_intent": "Two dark bars same unit: SEARCH 88 h vs LEAN 17 h. Not a falling Lean line. Not a dummy graph.",
       "broll_queries": ["lean proof code editor dark theme scrolling"],
-      "overlay": {"type": "dataviz", "template_hint": "data-viz/compare-bars", "values": [88, 17], "labels": ["SEARCH", "LEAN"], "unit": "h"},
+      "overlay": {"type": "dataviz"},
       "sfx": "data_beep", "mode_hint": "C", "emphasis_family": "number"
     },
     {
