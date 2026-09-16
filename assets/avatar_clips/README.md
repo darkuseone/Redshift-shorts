@@ -23,9 +23,9 @@ assets/avatar_clips/<video_id>/seg_01.webm
 ...
 ```
 
-Снимать только запрошенные сегменты через HeyGen MCP: лук
-`99ccc74e764947c394cd4ef210960a6f`, engine `avatar_v`, формат webm+alpha.
-Не переозвучивать.
+Снимать только запрошенные сегменты через HeyGen MCP. Лук, движок и разрешение —
+из `config/config.yaml` (`heygen.avatar_id`, `heygen.engine`, `heygen.output`),
+формат webm+alpha. Не переозвучивать.
 
 В git держим **только актуальный рабочий prepared** (сейчас `redshift_0048`).
 Снятые id выносятся; чтобы снять заново — фаза 1 Actions кладёт

@@ -19,7 +19,7 @@ Cursor — режиссёр, MCP-аватар и QC. GitHub Actions — стан
 - НЕ собирает live mp4
 - НЕ держит ключи ElevenLabs/HeyGen/Pexels в чате
 - после фазы 1 забирает avatar_request + wav-сегменты
-- снимает Avatar V только через HeyGen MCP (лук `99ccc74e764947c394cd4ef210960a6f`, engine `avatar_v`, webm+alpha)
+- снимает Avatar V только через HeyGen MCP; лук, движок и разрешение берутся из `config/config.yaml` (`heygen.avatar_id` / `heygen.engine` / `heygen.output`), формат webm+alpha
 - кладёт клипы в `assets/avatar_clips/<video_id>/` и пушит
 - запускает живую сборку ТОЛЬКО явной заявкой (см. триггер ниже)
 - после артефакта делает QC ≥9/10

@@ -1,12 +1,12 @@
 {
   "video_id": "redshift_0050",
-  "avatar_id": "99ccc74e764947c394cd4ef210960a6f",
+  "avatar_id": "cfcb357563454e8cb7083258e4424992",
   "model_version": "avatar5",
   "clips_dir": "/home/runner/work/Redshift-shorts/Redshift-shorts/assets/avatar_clips/redshift_0050",
   "background": "transparent_if_available",
   "resolution": [
-    1080,
-    1920
+    720,
+    1280
   ],
   "segments": [
     {

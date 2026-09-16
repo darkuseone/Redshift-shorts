@@ -187,39 +187,72 @@ class TestPlashkaNePerezhivaetSvoyKadr:
         assert overlays == []
 
 
-class TestTheFrozenAvatarContractSurvives:
+class TestTheAvatarContractSurvives:
     """Заявка на клипы — платный контракт, а не производный файл.
 
-    Сборка, сдвинувшая окна аватара, заставила P6 переписать
-    ``avatar_request.json``: пять сегментов превратились в три, вспышка в
-    0.26 с растянулась до 3.13 с, заморозка окон перестала загружаться. Следом
-    прогон потребовал бы новой генерации HeyGen — то есть денег.
+    Раньше этот набор морозил конкретные окна r61 — пять сегментов с
+    ``start``/``end``, — чтобы пересборка не обесценила оплаченные клипы. Но
+    среди замороженных окон был сегмент в 0.256 с: ведущий выпрыгивал в кадр
+    на четверть секунды и исчезал. Тест защищал брак: любая попытка починить
+    вспышку роняла его, а сам он зеленел ровно до тех пор, пока вспышка
+    оставалась на месте.
+
+    Морозить снимок нельзя — заказчик заказывает перегенерацию, и окна
+    меняются вместе с озвучкой. Морозить надо правила, которые обязаны
+    выполняться на **любой** заявке.
     """
 
-    def test_the_request_still_lists_five_frozen_segments(self):
-        request = json.loads(
-            (REPO / "assets" / "avatar_clips" / "redshift_0050"
-             / "avatar_request.json").read_text(encoding="utf-8"))
-        segments = request["segments"]
-        assert [s["index"] for s in segments] == [0, 1, 2, 3, 4]
-        assert request["avatar_id"] == "99ccc74e764947c394cd4ef210960a6f"
+    REQUEST = REPO / "assets" / "avatar_clips" / "redshift_0050" / "avatar_request.json"
 
-    def test_every_segment_has_the_webm_it_promises(self):
-        clips = REPO / "assets" / "avatar_clips" / "redshift_0050"
-        request = json.loads((clips / "avatar_request.json").read_text(encoding="utf-8"))
-        for segment in request["segments"]:
-            assert (clips / segment["expected_clip"]).is_file(), segment["expected_clip"]
+    def _request(self):
+        return json.loads(self.REQUEST.read_text(encoding="utf-8"))
+
+    def test_the_look_comes_from_the_config_not_from_a_literal(self):
+        # Пока id лука стоял здесь строкой, смена лука заказчиком не роняла
+        # ничего: тест зеленел на старом id, а ролик собирался на старом
+        # аватаре. Источник правды один — `config/config.yaml`.
+        from src.lib.config import load_config
+        assert self._request()["avatar_id"] == load_config().get("heygen.avatar_id")
+
+    def test_segments_are_numbered_without_holes(self):
+        segments = self._request()["segments"]
+        assert segments, "заявка без сегментов"
+        assert [s["index"] for s in segments] == list(range(len(segments)))
+
+    def test_no_segment_is_shorter_than_an_appearance_may_be(self):
+        # §3.5: появление ведущего — 3–12 сек. Сегмент короче трёх секунд это
+        # и есть та вспышка на 49-й, за которую заказчик вернул ролик.
+        from src.lib.config import load_config
+        floor = float(load_config().brandbook["avatar"]["appearance_sec"][0])
+        short = [(s["index"], s["duration_sec"]) for s in self._request()["segments"]
+                 if float(s["duration_sec"]) < floor - 1e-6]
+        assert short == [], f"сегменты короче {floor} сек: {short}"
+
+    def test_every_segment_has_a_clip_the_provider_will_accept(self):
+        # Расширение в `expected_clip` — пожелание P6, а не закон: провайдер
+        # перебирает .mov/.webm/.mp4 в этом порядке. Проверяем то же, что и он.
+        clips = self.REQUEST.parent
+        for segment in self._request()["segments"]:
+            stem = Path(segment["expected_clip"]).stem
+            found = [ext for ext in (".mov", ".webm", ".mp4")
+                     if (clips / f"{stem}{ext}").is_file()]
+            assert found, f"{stem}: клипа нет ни в одном контейнере"
 
     def test_the_rhythm_pass_moves_no_avatar_window(self):
-        request = json.loads(
-            (REPO / "assets" / "avatar_clips" / "redshift_0050"
-             / "avatar_request.json").read_text(encoding="utf-8"))
+        # Окна строятся из длительностей заявки, а не берутся из неё готовыми:
+        # заявка фазы 1 несёт только длины кусков речи, а проверяется здесь
+        # ритм монтажа, которому важны границы, а не то, откуда они взялись.
+        segments = self._request()["segments"]
         slots = [_slot(0.0, 4.575, "footage", "b1")]
-        for segment in request["segments"]:
-            slots.append(_slot(float(segment["start"]), float(segment["end"]),
-                               "avatar", segment["block_id"]))
-            slots.append(_slot(float(segment["end"]),
-                               float(segment["end"]) + 1.2, "footage", "gap"))
+        at = 4.575
+        for segment in segments:
+            # Округление — не косметика: `enforce_slot_rhythm` округляет свои
+            # границы, и накопленная погрешность сложения дала бы расхождение
+            # в 1e-15, которое читается как «ритм подвинул окно».
+            end = round(at + float(segment["duration_sec"]), 3)
+            slots.append(_slot(at, end, "avatar", segment["block_id"]))
+            slots.append(_slot(end, end + 1.2, "footage", "gap"))
+            at = round(end + 1.2, 3)
         total = slots[-1]["end"]
         before = [(s["start"], s["end"]) for s in slots if s["kind"] == "avatar"]
         enforce_slot_rhythm(slots, total=total)
