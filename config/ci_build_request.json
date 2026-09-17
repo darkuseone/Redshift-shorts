@@ -1,12 +1,12 @@
 {
-  "script": "scripts/redshift_0050.json",
-  "video_id": "redshift_0050",
-  "from_step": "P11",
-  "heygen_source": "prepared",
+  "script": "scripts/redshift_0051.json",
+  "video_id": "redshift_0051",
+  "from_step": "P0",
+  "heygen_source": "api",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r65: cache voice+webm+footage. Apply owner visuals on a REAL P11/P12 rerun (r64 mp4 was built before the pass). 7 TASKS/25 YEARS, compare-bars 88h vs 17h, drop lone 6, no icon/stamp PiP, NASA credit to bottom 56px.",
-  "round": 65
+  "note": "0051 r1 first assemble from TypeSafe/Jev launch 15 Sep 2026. skip_vision. No Imagine. Pins locked per block. Voice rotate to 7fU3YUxRrVGjNaZ5dzEH. Draft until owner says GODEN.",
+  "round": 1
 }
