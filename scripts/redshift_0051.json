@@ -11,8 +11,7 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r1. Facts locked to TypeSafe blog 15 Sep 2026 + X 2099925682726002904. Speed/cost are VENDOR tests. Jev cannot generate text. Voice clone 7fU3YUxRrVGjNaZ5dzEH. Avatar look cfcb357563454e8cb7083258e4424992 720p 9:16. Hook = date+who+what+sting, no Russian blackout plate.",
-    "voice_id": "7fU3YUxRrVGjNaZ5dzEH",
+    "notes": "0051 r2. Hook shortened for 3s cap. Vendor numbers only. Jev cannot generate text.",
     "hook": {"on_screen": "JEV", "style": "number_slam"}
   },
   "sources": [
@@ -39,9 +38,9 @@
   "blocks": [
     {
       "id": "b1", "role": "hook",
-      "text": "Пятнадцатого сентября две тысячи двадцать шесть соавтор ChatGPT выпустил Jev — модель, которая не пишет текст.",
+      "text": "15 сентября соавтор ChatGPT выпустил Jev — без текста.",
       "emphasis_word": "Jev", "avatar": "off",
-      "visual_intent": "ONLY dark card JEV red frame on moving code/decision UI. NO Russian plate. NO blackout word. Avatar off. Motion from frame 0.",
+      "visual_intent": "ONLY dark card JEV red frame on moving code UI. NO Russian plate. Avatar off. Motion from frame 0.",
       "broll_queries": ["dark code editor terminal neon cursor scrolling"],
       "overlay": {"type": "fullscreen_text", "content": "JEV", "template_hint": "text-fullscreen/fact-card"},
       "sfx": "hit_impact", "meme_allowed": false, "mode_hint": "A", "emphasis_family": "tech"
@@ -59,9 +58,9 @@
       "id": "b3", "role": "evidence",
       "text": "На сайте свои цифры: сто девяносто четыре раза быстрее, четыреста сорок пять раз дешевле. Вход — сорок два доллара за миллиард токенов. Выход бесплатный.",
       "emphasis_word": "бесплатный", "avatar": "off",
-      "visual_intent": "Two dark compare bars: 194x SPEED vs 445x COST. Plate $42 / BTok. Source-chip TYPESAFE no red. Vendor numbers.",
+      "visual_intent": "Two dark compare bars: 194x SPEED vs 445x COST. Plate $42 / BTok. Source-chip TYPESAFE no red.",
       "broll_queries": ["data center gpu rack lights close"],
-      "overlay": {"type": "dataviz", "content": "194x / 445x / $42", "template_hint": "data-viz/dataviz-bars-comparison"},
+      "overlay": {"type": "dataviz"},
       "sfx": "data_beep", "source_ref": "typesafe.ai", "mode_hint": "A", "emphasis_family": "number"
     },
     {
@@ -77,16 +76,16 @@
       "id": "b5", "role": "develop",
       "text": "Обучение другое. Не RLHF под чат. RLCD — калиброванные решения для кода.",
       "emphasis_word": "RLCD", "avatar": "off",
-      "visual_intent": "Split plate RLHF to CHAT vs RLCD to CODE. Dark cards red frame. Brand Latin only.",
+      "visual_intent": "Split plate RLHF CHAT vs RLCD CODE. Dark cards red frame.",
       "broll_queries": ["software workflow nodes graph dark ui"],
-      "overlay": {"type": "fullscreen_text", "content": "RLHF CHAT  /  RLCD CODE", "template_hint": "text-fullscreen/text-compare-vs"},
+      "overlay": {"type": "fullscreen_text", "content": "RLHF CHAT / RLCD CODE", "template_hint": "text-fullscreen/text-compare-vs"},
       "sfx": "whoosh_in", "mode_hint": "A", "emphasis_family": "tech"
     },
     {
       "id": "b6", "role": "twist",
       "text": "Халявы нет. Jev не пишет текст. Не пишет код. Не объясняет ход мыслей. Цифры — их собственные тесты, не независимый бенчмарк. Это судья внутри программы, не новый чат.",
       "emphasis_word": "судья", "avatar": "on",
-      "visual_intent": "Avatar + dark plate NO TEXT / OWN TESTS. Do not sell AGI. Do not show a chatbot UI.",
+      "visual_intent": "Avatar + dark plate NO TEXT / OWN TESTS. Do not sell AGI.",
       "broll_queries": ["court gavel desk dark close"],
       "overlay": {"type": "lower_third", "content": "NO TEXT", "template_hint": "lower-thirds/dark-card"},
       "sfx": "sub_drop", "answers_hook": true, "mode_hint": "A", "emphasis_family": "myth"
@@ -95,7 +94,7 @@
       "id": "b7", "role": "cta",
       "text": "Код плюс ИИ вместо ещё одного чата. Это короткий путь, который они продают. REDSHIFT",
       "emphasis_word": "REDSHIFT", "avatar": "off",
-      "visual_intent": "City night code glow. FOLLOWUP chip no red. Brand REDSHIFT Latin no dot.",
+      "visual_intent": "City night. FOLLOWUP chip no red. REDSHIFT Latin no dot.",
       "broll_queries": ["city night traffic lights aerial"],
       "overlay": {"type": "lower_third", "content": "FOLLOWUP", "template_hint": "lower-thirds/source-domain"},
       "sfx": "subscribe_ping", "emphasis_family": "emotion"
