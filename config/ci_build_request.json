@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r2 hook shortened under 3s. TypeSafe Jev 15 Sep 2026. Draft until GODEN.",
-  "round": 2
+  "note": "0051 r3: HeyGen MIME audio/x-wav; keep source=api with cached voice. Draft until GODEN.",
+  "round": 3
 }
