@@ -1,0 +1,1392 @@
+{
+  "video_id": "redshift_0051",
+  "sample_rate": 48000,
+  "source_duration_sec": 60.68,
+  "duration_sec": 56.873,
+  "removed_sec": 3.807,
+  "target_duration_sec": 58.0,
+  "pause_threshold_ms": 110.0,
+  "pause_target_ms_range": [
+    55,
+    85
+  ],
+  "pause_ratio": 1.0,
+  "punch_hold": {
+    "block_id": "b6",
+    "word": "судья",
+    "src_sec": 50.82,
+    "matched_emphasis": true,
+    "hold_ms": 320.0,
+    "at_sec": 47.838
+  },
+  "gain_applied_db": 4.97,
+  "loudness": {
+    "integrated_lufs": -14.0,
+    "true_peak_dbtp": -3.41,
+    "trailing_silence_ms": 0.0
+  },
+  "cuts": [
+    {
+      "kind": "breath",
+      "src_start": 1.04,
+      "src_end": 1.173,
+      "kept_sec": 0.085,
+      "removed_sec": 0.048
+    },
+    {
+      "kind": "breath",
+      "src_start": 3.2,
+      "src_end": 3.4,
+      "kept_sec": 0.085,
+      "removed_sec": 0.115
+    },
+    {
+      "kind": "breath",
+      "src_start": 3.76,
+      "src_end": 4.2,
+      "kept_sec": 0.085,
+      "removed_sec": 0.355
+    },
+    {
+      "kind": "pause",
+      "src_start": 4.88,
+      "src_end": 5.1,
+      "kept_sec": 0.085,
+      "removed_sec": 0.135
+    },
+    {
+      "kind": "breath",
+      "src_start": 7.26,
+      "src_end": 7.42,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "breath",
+      "src_start": 9.26,
+      "src_end": 9.54,
+      "kept_sec": 0.085,
+      "removed_sec": 0.195
+    },
+    {
+      "kind": "pause",
+      "src_start": 12.14,
+      "src_end": 12.3,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "breath",
+      "src_start": 13.66,
+      "src_end": 13.804,
+      "kept_sec": 0.085,
+      "removed_sec": 0.059
+    },
+    {
+      "kind": "pause",
+      "src_start": 16.06,
+      "src_end": 16.28,
+      "kept_sec": 0.085,
+      "removed_sec": 0.135
+    },
+    {
+      "kind": "breath",
+      "src_start": 17.72,
+      "src_end": 17.84,
+      "kept_sec": 0.085,
+      "removed_sec": 0.035
+    },
+    {
+      "kind": "breath",
+      "src_start": 22.84,
+      "src_end": 23.04,
+      "kept_sec": 0.085,
+      "removed_sec": 0.115
+    },
+    {
+      "kind": "pause",
+      "src_start": 26.2,
+      "src_end": 26.42,
+      "kept_sec": 0.085,
+      "removed_sec": 0.135
+    },
+    {
+      "kind": "breath",
+      "src_start": 27.3,
+      "src_end": 27.46,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "breath",
+      "src_start": 29.46,
+      "src_end": 29.593,
+      "kept_sec": 0.085,
+      "removed_sec": 0.048
+    },
+    {
+      "kind": "pause",
+      "src_start": 31.06,
+      "src_end": 31.18,
+      "kept_sec": 0.085,
+      "removed_sec": 0.035
+    },
+    {
+      "kind": "breath",
+      "src_start": 32.18,
+      "src_end": 32.3,
+      "kept_sec": 0.085,
+      "removed_sec": 0.035
+    },
+    {
+      "kind": "breath",
+      "src_start": 32.98,
+      "src_end": 33.412,
+      "kept_sec": 0.085,
+      "removed_sec": 0.347
+    },
+    {
+      "kind": "pause",
+      "src_start": 34.5,
+      "src_end": 34.72,
+      "kept_sec": 0.085,
+      "removed_sec": 0.135
+    },
+    {
+      "kind": "breath",
+      "src_start": 35.84,
+      "src_end": 36.0,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "breath",
+      "src_start": 36.32,
+      "src_end": 36.507,
+      "kept_sec": 0.085,
+      "removed_sec": 0.102
+    },
+    {
+      "kind": "pause",
+      "src_start": 37.92,
+      "src_end": 38.16,
+      "kept_sec": 0.085,
+      "removed_sec": 0.155
+    },
+    {
+      "kind": "breath",
+      "src_start": 38.96,
+      "src_end": 39.26,
+      "kept_sec": 0.085,
+      "removed_sec": 0.215
+    },
+    {
+      "kind": "pause",
+      "src_start": 40.96,
+      "src_end": 41.18,
+      "kept_sec": 0.085,
+      "removed_sec": 0.135
+    },
+    {
+      "kind": "breath",
+      "src_start": 41.98,
+      "src_end": 42.14,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "breath",
+      "src_start": 44.54,
+      "src_end": 44.7,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "pause",
+      "src_start": 46.46,
+      "src_end": 46.7,
+      "kept_sec": 0.085,
+      "removed_sec": 0.155
+    },
+    {
+      "kind": "breath",
+      "src_start": 47.26,
+      "src_end": 47.393,
+      "kept_sec": 0.085,
+      "removed_sec": 0.048
+    },
+    {
+      "kind": "pause",
+      "src_start": 50.14,
+      "src_end": 50.3,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "punch_hold",
+      "src_start": 50.78,
+      "src_end": 50.82,
+      "kept_sec": 0.04,
+      "removed_sec": 0.0,
+      "added_sec": 0.28
+    },
+    {
+      "kind": "pause",
+      "src_start": 53.18,
+      "src_end": 53.4,
+      "kept_sec": 0.085,
+      "removed_sec": 0.135
+    },
+    {
+      "kind": "breath",
+      "src_start": 56.84,
+      "src_end": 56.98,
+      "kept_sec": 0.085,
+      "removed_sec": 0.055
+    },
+    {
+      "kind": "pause",
+      "src_start": 59.32,
+      "src_end": 59.48,
+      "kept_sec": 0.085,
+      "removed_sec": 0.075
+    },
+    {
+      "kind": "tail",
+      "src_start": 60.51,
+      "src_end": 60.68,
+      "removed_sec": 0.17
+    }
+  ],
+  "segments": [
+    {
+      "src_start": 0.0,
+      "src_end": 1.04,
+      "dst_start": 0.0,
+      "dst_end": 1.04,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 1.088,
+      "src_end": 1.173,
+      "dst_start": 1.04,
+      "dst_end": 1.125,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 1.173,
+      "src_end": 3.2,
+      "dst_start": 1.125,
+      "dst_end": 3.152,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 3.315,
+      "src_end": 3.4,
+      "dst_start": 3.152,
+      "dst_end": 3.237,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 3.4,
+      "src_end": 3.76,
+      "dst_start": 3.237,
+      "dst_end": 3.597,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 3.9118,
+      "src_end": 3.9968,
+      "dst_start": 3.597,
+      "dst_end": 3.682,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 4.2,
+      "src_end": 4.88,
+      "dst_start": 3.682,
+      "dst_end": 4.362,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 4.885,
+      "src_end": 4.97,
+      "dst_start": 4.362,
+      "dst_end": 4.447,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 5.1,
+      "src_end": 7.26,
+      "dst_start": 4.447,
+      "dst_end": 6.607,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 7.335,
+      "src_end": 7.42,
+      "dst_start": 6.607,
+      "dst_end": 6.692,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 7.42,
+      "src_end": 9.26,
+      "dst_start": 6.692,
+      "dst_end": 8.532,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 9.2879,
+      "src_end": 9.3729,
+      "dst_start": 8.532,
+      "dst_end": 8.617,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 9.54,
+      "src_end": 12.14,
+      "dst_start": 8.617,
+      "dst_end": 11.217,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 12.1504,
+      "src_end": 12.2354,
+      "dst_start": 11.217,
+      "dst_end": 11.302,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 12.3,
+      "src_end": 13.66,
+      "dst_start": 11.302,
+      "dst_end": 12.662,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 13.7081,
+      "src_end": 13.7931,
+      "dst_start": 12.662,
+      "dst_end": 12.747,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 13.804,
+      "src_end": 16.06,
+      "dst_start": 12.747,
+      "dst_end": 15.003,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 16.065,
+      "src_end": 16.15,
+      "dst_start": 15.003,
+      "dst_end": 15.088,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 16.28,
+      "src_end": 17.72,
+      "dst_start": 15.088,
+      "dst_end": 16.528,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 17.7447,
+      "src_end": 17.8298,
+      "dst_start": 16.528,
+      "dst_end": 16.613,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 17.84,
+      "src_end": 22.84,
+      "dst_start": 16.613,
+      "dst_end": 21.613,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 22.9402,
+      "src_end": 23.0252,
+      "dst_start": 21.613,
+      "dst_end": 21.698,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 23.04,
+      "src_end": 26.2,
+      "dst_start": 21.698,
+      "dst_end": 24.858,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 26.205,
+      "src_end": 26.29,
+      "dst_start": 24.858,
+      "dst_end": 24.943,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 26.42,
+      "src_end": 27.3,
+      "dst_start": 24.943,
+      "dst_end": 25.823,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 27.3665,
+      "src_end": 27.4515,
+      "dst_start": 25.823,
+      "dst_end": 25.908,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 27.46,
+      "src_end": 29.46,
+      "dst_start": 25.908,
+      "dst_end": 27.908,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 29.5056,
+      "src_end": 29.5906,
+      "dst_start": 27.908,
+      "dst_end": 27.993,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 29.593,
+      "src_end": 31.06,
+      "dst_start": 27.993,
+      "dst_end": 29.46,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 31.0688,
+      "src_end": 31.1538,
+      "dst_start": 29.46,
+      "dst_end": 29.545,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 31.18,
+      "src_end": 32.18,
+      "dst_start": 29.545,
+      "dst_end": 30.545,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 32.2054,
+      "src_end": 32.2904,
+      "dst_start": 30.545,
+      "dst_end": 30.63,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 32.3,
+      "src_end": 32.98,
+      "dst_start": 30.63,
+      "dst_end": 31.31,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 33.2451,
+      "src_end": 33.3301,
+      "dst_start": 31.31,
+      "dst_end": 31.395,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 33.412,
+      "src_end": 34.5,
+      "dst_start": 31.395,
+      "dst_end": 32.483,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 34.505,
+      "src_end": 34.59,
+      "dst_start": 32.483,
+      "dst_end": 32.568,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 34.72,
+      "src_end": 35.84,
+      "dst_start": 32.568,
+      "dst_end": 33.688,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 35.915,
+      "src_end": 36.0,
+      "dst_start": 33.688,
+      "dst_end": 33.773,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 36.0,
+      "src_end": 36.32,
+      "dst_start": 33.773,
+      "dst_end": 34.093,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 36.422,
+      "src_end": 36.507,
+      "dst_start": 34.093,
+      "dst_end": 34.178,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 36.507,
+      "src_end": 37.92,
+      "dst_start": 34.178,
+      "dst_end": 35.591,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 37.9256,
+      "src_end": 38.0106,
+      "dst_start": 35.591,
+      "dst_end": 35.676,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 38.16,
+      "src_end": 38.96,
+      "dst_start": 35.676,
+      "dst_end": 36.476,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 39.175,
+      "src_end": 39.26,
+      "dst_start": 36.476,
+      "dst_end": 36.561,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 39.26,
+      "src_end": 40.96,
+      "dst_start": 36.561,
+      "dst_end": 38.261,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 40.965,
+      "src_end": 41.05,
+      "dst_start": 38.261,
+      "dst_end": 38.346,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 41.18,
+      "src_end": 41.98,
+      "dst_start": 38.346,
+      "dst_end": 39.146,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 42.055,
+      "src_end": 42.14,
+      "dst_start": 39.146,
+      "dst_end": 39.231,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 42.14,
+      "src_end": 44.54,
+      "dst_start": 39.231,
+      "dst_end": 41.631,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 44.5736,
+      "src_end": 44.6586,
+      "dst_start": 41.631,
+      "dst_end": 41.716,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 44.7,
+      "src_end": 46.46,
+      "dst_start": 41.716,
+      "dst_end": 43.476,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 46.46,
+      "src_end": 46.545,
+      "dst_start": 43.476,
+      "dst_end": 43.561,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 46.7,
+      "src_end": 47.26,
+      "dst_start": 43.561,
+      "dst_end": 44.121,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 47.308,
+      "src_end": 47.393,
+      "dst_start": 44.121,
+      "dst_end": 44.206,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 47.393,
+      "src_end": 50.14,
+      "dst_start": 44.206,
+      "dst_end": 46.953,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 50.14,
+      "src_end": 50.225,
+      "dst_start": 46.953,
+      "dst_end": 47.038,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 50.3,
+      "src_end": 50.78,
+      "dst_start": 47.038,
+      "dst_end": 47.518,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 50.78,
+      "src_end": 50.82,
+      "dst_start": 47.518,
+      "dst_end": 47.838,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 50.82,
+      "src_end": 53.18,
+      "dst_start": 47.838,
+      "dst_end": 50.198,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 53.185,
+      "src_end": 53.27,
+      "dst_start": 50.198,
+      "dst_end": 50.283,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 53.4,
+      "src_end": 56.84,
+      "dst_start": 50.283,
+      "dst_end": 53.723,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 56.882,
+      "src_end": 56.967,
+      "dst_start": 53.723,
+      "dst_end": 53.808,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 56.98,
+      "src_end": 59.32,
+      "dst_start": 53.808,
+      "dst_end": 56.148,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 59.338,
+      "src_end": 59.423,
+      "dst_start": 56.148,
+      "dst_end": 56.233,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 59.48,
+      "src_end": 60.51,
+      "dst_start": 56.233,
+      "dst_end": 57.263,
+      "attenuate_db": 0.0
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "start": 0.0,
+      "end": 4.362,
+      "words": [
+        {
+          "word": "пятнадцать",
+          "start": 0.0,
+          "end": 0.4
+        },
+        {
+          "word": "сентября́",
+          "start": 0.462,
+          "end": 1.04
+        },
+        {
+          "word": "соавтор",
+          "start": 1.125,
+          "end": 1.632
+        },
+        {
+          "word": "ChatGPT",
+          "start": 1.712,
+          "end": 2.512
+        },
+        {
+          "word": "выпустил",
+          "start": 2.592,
+          "end": 3.152
+        },
+        {
+          "word": "Jev",
+          "start": 3.237,
+          "end": 3.597
+        },
+        {
+          "word": "без",
+          "start": 3.682,
+          "end": 3.802
+        },
+        {
+          "word": "текста",
+          "start": 3.869,
+          "end": 4.362
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "start": 4.447,
+      "end": 15.003,
+      "words": [
+        {
+          "word": "Diogo",
+          "start": 4.447,
+          "end": 4.767
+        },
+        {
+          "word": "Almeida",
+          "start": 4.82,
+          "end": 5.727
+        },
+        {
+          "word": "Он",
+          "start": 5.834,
+          "end": 6.047
+        },
+        {
+          "word": "делал",
+          "start": 6.147,
+          "end": 6.607
+        },
+        {
+          "word": "RLHF",
+          "start": 6.692,
+          "end": 7.492
+        },
+        {
+          "word": "в",
+          "start": 7.572,
+          "end": 7.652
+        },
+        {
+          "word": "опен",
+          "start": 7.732,
+          "end": 8.052
+        },
+        {
+          "word": "эй",
+          "start": 8.132,
+          "end": 8.252
+        },
+        {
+          "word": "ай",
+          "start": 8.272,
+          "end": 8.532
+        },
+        {
+          "word": "Два",
+          "start": 8.617,
+          "end": 8.977
+        },
+        {
+          "word": "года",
+          "start": 9.025,
+          "end": 9.217
+        },
+        {
+          "word": "в",
+          "start": 9.257,
+          "end": 9.297
+        },
+        {
+          "word": "стелсе",
+          "start": 9.35,
+          "end": 9.977
+        },
+        {
+          "word": "Компания",
+          "start": 10.017,
+          "end": 10.417
+        },
+        {
+          "word": "TypeSafe",
+          "start": 10.497,
+          "end": 11.217
+        },
+        {
+          "word": "Сид",
+          "start": 11.302,
+          "end": 11.622
+        },
+        {
+          "word": "сорок",
+          "start": 11.702,
+          "end": 12.022
+        },
+        {
+          "word": "миллионов",
+          "start": 12.062,
+          "end": 12.662
+        },
+        {
+          "word": "Первый",
+          "start": 12.747,
+          "end": 13.403
+        },
+        {
+          "word": "публичный",
+          "start": 13.483,
+          "end": 14.123
+        },
+        {
+          "word": "System",
+          "start": 14.192,
+          "end": 14.603
+        },
+        {
+          "word": "One",
+          "start": 14.683,
+          "end": 15.003
+        }
+      ]
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "start": 15.088,
+      "end": 24.858,
+      "words": [
+        {
+          "word": "На",
+          "start": 15.088,
+          "end": 15.248
+        },
+        {
+          "word": "сайте",
+          "start": 15.315,
+          "end": 15.648
+        },
+        {
+          "word": "свои",
+          "start": 15.712,
+          "end": 15.968
+        },
+        {
+          "word": "цифры",
+          "start": 16.048,
+          "end": 16.528
+        },
+        {
+          "word": "сто",
+          "start": 16.613,
+          "end": 16.973
+        },
+        {
+          "word": "девяносто",
+          "start": 17.033,
+          "end": 17.613
+        },
+        {
+          "word": "четыре",
+          "start": 17.645,
+          "end": 17.853
+        },
+        {
+          "word": "раза",
+          "start": 17.917,
+          "end": 18.173
+        },
+        {
+          "word": "быстрее",
+          "start": 18.226,
+          "end": 18.893
+        },
+        {
+          "word": "четыреста",
+          "start": 18.941,
+          "end": 19.413
+        },
+        {
+          "word": "сорок",
+          "start": 19.443,
+          "end": 19.613
+        },
+        {
+          "word": "пять",
+          "start": 19.661,
+          "end": 19.853
+        },
+        {
+          "word": "раз",
+          "start": 19.913,
+          "end": 20.093
+        },
+        {
+          "word": "дешевле",
+          "start": 20.173,
+          "end": 21.213
+        },
+        {
+          "word": "Вход",
+          "start": 21.293,
+          "end": 21.613
+        },
+        {
+          "word": "сорок",
+          "start": 21.698,
+          "end": 21.898
+        },
+        {
+          "word": "два",
+          "start": 21.938,
+          "end": 22.058
+        },
+        {
+          "word": "доллара",
+          "start": 22.118,
+          "end": 22.538
+        },
+        {
+          "word": "за",
+          "start": 22.565,
+          "end": 22.618
+        },
+        {
+          "word": "миллиард",
+          "start": 22.658,
+          "end": 23.018
+        },
+        {
+          "word": "токенов",
+          "start": 23.098,
+          "end": 23.738
+        },
+        {
+          "word": "Выход",
+          "start": 23.818,
+          "end": 24.138
+        },
+        {
+          "word": "бесплатный",
+          "start": 24.186,
+          "end": 24.858
+        }
+      ]
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "start": 24.943,
+      "end": 32.483,
+      "words": [
+        {
+          "word": "Секрет",
+          "start": 24.943,
+          "end": 25.263
+        },
+        {
+          "word": "простой",
+          "start": 25.316,
+          "end": 25.823
+        },
+        {
+          "word": "Jev",
+          "start": 25.908,
+          "end": 26.228
+        },
+        {
+          "word": "не",
+          "start": 26.281,
+          "end": 26.388
+        },
+        {
+          "word": "печатает",
+          "start": 26.448,
+          "end": 26.868
+        },
+        {
+          "word": "слова",
+          "start": 26.921,
+          "end": 27.188
+        },
+        {
+          "word": "по",
+          "start": 27.241,
+          "end": 27.348
+        },
+        {
+          "word": "одному",
+          "start": 27.417,
+          "end": 27.908
+        },
+        {
+          "word": "Он",
+          "start": 27.993,
+          "end": 28.26
+        },
+        {
+          "word": "сразу",
+          "start": 28.313,
+          "end": 28.58
+        },
+        {
+          "word": "отдаёт",
+          "start": 28.66,
+          "end": 29.14
+        },
+        {
+          "word": "выбор",
+          "start": 29.193,
+          "end": 29.46
+        },
+        {
+          "word": "и",
+          "start": 29.545,
+          "end": 29.665
+        },
+        {
+          "word": "вероятность",
+          "start": 29.734,
+          "end": 30.545
+        },
+        {
+          "word": "Семьдесят",
+          "start": 30.63,
+          "end": 31.31
+        },
+        {
+          "word": "пятьсот",
+          "start": 31.395,
+          "end": 31.603
+        },
+        {
+          "word": "миллисекунд",
+          "start": 31.656,
+          "end": 32.483
+        }
+      ]
+    },
+    {
+      "id": "b5",
+      "role": "develop",
+      "start": 32.568,
+      "end": 38.261,
+      "words": [
+        {
+          "word": "Обучение",
+          "start": 32.568,
+          "end": 33.128
+        },
+        {
+          "word": "другое",
+          "start": 33.176,
+          "end": 33.688
+        },
+        {
+          "word": "Не",
+          "start": 33.773,
+          "end": 34.093
+        },
+        {
+          "word": "RLHF",
+          "start": 34.178,
+          "end": 34.951
+        },
+        {
+          "word": "под",
+          "start": 35.011,
+          "end": 35.191
+        },
+        {
+          "word": "чат",
+          "start": 35.231,
+          "end": 35.591
+        },
+        {
+          "word": "RLCD",
+          "start": 35.676,
+          "end": 36.476
+        },
+        {
+          "word": "калиброванные",
+          "start": 36.561,
+          "end": 37.141
+        },
+        {
+          "word": "решения",
+          "start": 37.201,
+          "end": 37.621
+        },
+        {
+          "word": "для",
+          "start": 37.661,
+          "end": 37.781
+        },
+        {
+          "word": "кода",
+          "start": 37.861,
+          "end": 38.261
+        }
+      ]
+    },
+    {
+      "id": "b6",
+      "role": "twist",
+      "start": 38.346,
+      "end": 50.198,
+      "words": [
+        {
+          "word": "Халявы",
+          "start": 38.346,
+          "end": 38.746
+        },
+        {
+          "word": "нет",
+          "start": 38.826,
+          "end": 39.146
+        },
+        {
+          "word": "Jev",
+          "start": 39.231,
+          "end": 39.551
+        },
+        {
+          "word": "не",
+          "start": 39.604,
+          "end": 39.711
+        },
+        {
+          "word": "пишет",
+          "start": 39.738,
+          "end": 40.031
+        },
+        {
+          "word": "текст",
+          "start": 40.111,
+          "end": 40.511
+        },
+        {
+          "word": "Не",
+          "start": 40.618,
+          "end": 40.831
+        },
+        {
+          "word": "пишет",
+          "start": 40.884,
+          "end": 41.151
+        },
+        {
+          "word": "код",
+          "start": 41.251,
+          "end": 41.631
+        },
+        {
+          "word": "Не",
+          "start": 41.716,
+          "end": 42.036
+        },
+        {
+          "word": "объясняет",
+          "start": 42.089,
+          "end": 42.596
+        },
+        {
+          "word": "ход",
+          "start": 42.656,
+          "end": 42.836
+        },
+        {
+          "word": "мыслей",
+          "start": 42.889,
+          "end": 43.476
+        },
+        {
+          "word": "Цифры",
+          "start": 43.561,
+          "end": 44.121
+        },
+        {
+          "word": "их",
+          "start": 44.206,
+          "end": 44.313
+        },
+        {
+          "word": "собственные",
+          "start": 44.349,
+          "end": 44.873
+        },
+        {
+          "word": "тесты",
+          "start": 44.937,
+          "end": 45.473
+        },
+        {
+          "word": "не",
+          "start": 45.513,
+          "end": 45.593
+        },
+        {
+          "word": "независимый",
+          "start": 45.653,
+          "end": 46.233
+        },
+        {
+          "word": "бенчмарк",
+          "start": 46.273,
+          "end": 46.953
+        },
+        {
+          "word": "Это",
+          "start": 47.038,
+          "end": 47.518
+        },
+        {
+          "word": "судья",
+          "start": 47.838,
+          "end": 48.198
+        },
+        {
+          "word": "внутри",
+          "start": 48.244,
+          "end": 48.518
+        },
+        {
+          "word": "программы",
+          "start": 48.58,
+          "end": 49.159
+        },
+        {
+          "word": "не",
+          "start": 49.265,
+          "end": 49.478
+        },
+        {
+          "word": "новый",
+          "start": 49.531,
+          "end": 49.798
+        },
+        {
+          "word": "чат",
+          "start": 49.838,
+          "end": 50.198
+        }
+      ]
+    },
+    {
+      "id": "b7",
+      "role": "cta",
+      "start": 50.283,
+      "end": 57.113,
+      "words": [
+        {
+          "word": "Код",
+          "start": 50.283,
+          "end": 50.603
+        },
+        {
+          "word": "плюс",
+          "start": 50.643,
+          "end": 50.843
+        },
+        {
+          "word": "искусственный",
+          "start": 50.896,
+          "end": 51.483
+        },
+        {
+          "word": "интеллект",
+          "start": 51.523,
+          "end": 51.963
+        },
+        {
+          "word": "вместо",
+          "start": 52.043,
+          "end": 52.523
+        },
+        {
+          "word": "ещё",
+          "start": 52.603,
+          "end": 52.843
+        },
+        {
+          "word": "одного",
+          "start": 52.889,
+          "end": 53.163
+        },
+        {
+          "word": "чата",
+          "start": 53.243,
+          "end": 53.723
+        },
+        {
+          "word": "Это",
+          "start": 53.808,
+          "end": 54.228
+        },
+        {
+          "word": "короткий",
+          "start": 54.268,
+          "end": 54.628
+        },
+        {
+          "word": "путь",
+          "start": 54.708,
+          "end": 54.948
+        },
+        {
+          "word": "который",
+          "start": 54.988,
+          "end": 55.268
+        },
+        {
+          "word": "они",
+          "start": 55.328,
+          "end": 55.508
+        },
+        {
+          "word": "продают",
+          "start": 55.535,
+          "end": 56.148
+        },
+        {
+          "word": "REDSHIFT",
+          "start": 56.233,
+          "end": 57.113
+        }
+      ]
+    }
+  ],
+  "provider_mode": "live"
+}
