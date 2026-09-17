@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r1 first assemble from TypeSafe/Jev launch 15 Sep 2026. skip_vision. No Imagine. Pins locked per block. Voice rotate to 7fU3YUxRrVGjNaZ5dzEH. Draft until owner says GODEN.",
-  "round": 1
+  "note": "0051 r2 hook shortened under 3s. TypeSafe Jev 15 Sep 2026. Draft until GODEN.",
+  "round": 2
 }
