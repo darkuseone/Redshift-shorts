@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P5",
+  "from_step": "P11",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r64: owner 5-frame QC. Cache voice+webm. Visual only: labeled 7 TASKS / $1M / 25 YEARS; ban icons-behind-head; GPT-6 is a brand not digit 6; 88h vs 17h compare-bars not decline Lean; REJECTED text plate not stamp PiP replay. from_step P5, skip_generate, no TTS/HeyGen.",
-  "round": 64
+  "note": "r65: cache voice+webm+footage. Apply owner visuals on a REAL P11/P12 rerun (r64 mp4 was built before the pass). 7 TASKS/25 YEARS, compare-bars 88h vs 17h, drop lone 6, no icon/stamp PiP, NASA credit to bottom 56px.",
+  "round": 65
 }

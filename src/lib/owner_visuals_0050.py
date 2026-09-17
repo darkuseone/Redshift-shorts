@@ -1,4 +1,4 @@
-"""0050 owner 5-frame QC — rewrite after P11, no new TTS/HeyGen."""
+"""0050 owner visual QC — rewrite after P11, no new TTS/HeyGen."""
 from __future__ import annotations
 
 from typing import Any, Callable
@@ -10,6 +10,49 @@ _HERO_BAN = {
     "hero-devices/exhibit-card",
 }
 
+_DECLINE = ("data-viz/decline-chart", "data-viz/mk-line-graph")
+_COMPARE = {
+    "values": [88.0, 17.0],
+    "labels": ["SEARCH", "LEAN"],
+    "unit": "h",
+    "value_suffix": " h",
+    "tone": "ink",
+    "theme": "dark",
+    "dark": True,
+}
+
+
+def _is_lone_six(text: str, params: dict[str, Any]) -> bool:
+    val = params.get("value")
+    values = params.get("values") or []
+    return (
+        (val in (6, 6.0) and not values)
+        or (isinstance(values, list) and list(values) == [6])
+        or str(text).strip() in {"6", "6.0"}
+    )
+
+
+def _relabel_stack(obj: dict[str, Any]) -> bool:
+    text = str(obj.get("content") or "")
+    params = dict(obj.get("params") or {})
+    blob = " ".join((text, str(params.get("content") or "")))
+    if "25 Y" not in blob and "7 · $1 000 000 · 25 Y" not in blob:
+        return False
+    obj["content"] = "7 TASKS · $1 000 000 · 25 YEARS"
+    params["content"] = obj["content"]
+    obj["params"] = params
+    return True
+
+
+def _force_compare(obj: dict[str, Any]) -> bool:
+    tid = str(obj.get("template") or "")
+    if tid not in _DECLINE:
+        return False
+    obj["template"] = "data-viz/compare-bars"
+    obj["renderer"] = "dataviz"
+    obj["params"] = dict(_COMPARE)
+    return True
+
 
 def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     if str(plan.get("video_id") or "") != "redshift_0050":
@@ -18,13 +61,15 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     for shot in plan.get("shots") or []:
         if not isinstance(shot, dict):
             continue
-        text = str(shot.get("content") or "")
-        if text == "7 · $1 000 000 · 25 Y" or text.endswith("25 Y"):
-            shot["content"] = "7 TASKS · $1 000 000 · 25 YEARS"
-            params = dict(shot.get("params") or {})
-            params["content"] = shot["content"]
-            shot["params"] = params
+        if _relabel_stack(shot):
             changed += 1
+        if _force_compare(shot):
+            changed += 1
+        credit = str(shot.get("credit") or "")
+        if credit and "NASA" in credit.upper():
+            if credit.strip() != "NASA":
+                shot["credit"] = "NASA"
+                changed += 1
         hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else None
         if hero and str(hero.get("template") or "") in _HERO_BAN:
             hero["template"] = "hero-devices/headline-over-head"
@@ -33,37 +78,24 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
         if str(shot.get("template") or "") in _HERO_BAN:
             shot["template"] = "hero-devices/headline-over-head"
             changed += 1
+        if _is_lone_six(str(shot.get("content") or ""), dict(shot.get("params") or {})):
+            shot["content"] = "GPT-6 ASTRA"
+            shot["template"] = "hero-devices/brand-pill"
+            shot["params"] = {"content": "GPT-6 ASTRA"}
+            changed += 1
     kept: list[dict[str, Any]] = []
     for ovl in list(plan.get("overlays") or []):
         if not isinstance(ovl, dict):
             kept.append(ovl)
             continue
-        tid = str(ovl.get("template") or "")
         params = dict(ovl.get("params") or {})
         content = str(params.get("content") or ovl.get("content") or "")
-        val = params.get("value")
-        values = params.get("values") or []
-        lone_six = (
-            (val in (6, 6.0) and not values)
-            or (isinstance(values, list) and list(values) == [6])
-            or content.strip() in {"6", "6.0"}
-        )
-        if lone_six:
+        if _is_lone_six(content, params):
             changed += 1
             continue
-        if tid in ("data-viz/decline-chart", "data-viz/mk-line-graph"):
-            ovl = dict(ovl)
-            ovl["template"] = "data-viz/compare-bars"
-            ovl["renderer"] = "dataviz"
-            ovl["params"] = {
-                "values": [88.0, 17.0],
-                "labels": ["SEARCH", "LEAN"],
-                "unit": "h",
-                "value_suffix": " h",
-                "tone": "ink",
-                "theme": "dark",
-                "dark": True,
-            }
+        if _relabel_stack(ovl):
+            changed += 1
+        if _force_compare(ovl):
             changed += 1
         kept.append(ovl)
     plan["overlays"] = kept
