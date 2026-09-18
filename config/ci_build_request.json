@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r74 owner: QC-12 license on retargeted inkswirl + QC-21 grounded brand-pill. P11.",
-  "round": 74
+  "note": "r75: bust P11 cache (owner_visuals in assemble fingerprint) + QC-12/21 license+grounded",
+  "round": 75
 }

@@ -60,6 +60,7 @@ from ..lib.pin_match import overlapping_speech
 # правка обязана отменять кэш шага — а лениво импортированный внутри функции
 # модуль в граф не попадает. Держим ссылку на уровне модуля.
 from ..lib import slots_lock as _lock_module  # noqa: F401
+from ..lib import owner_visuals_0050 as _owner_visuals_0050  # noqa: F401 — P11 cache sees owner pass
 
 _log = get_logger("p11")
 
