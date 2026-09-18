@@ -765,9 +765,10 @@
       "score": 0.9,
       "duration_sec": 4.0,
       "used_in": [
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
-      "last_used": "2026-09-16",
+      "last_used": "2026-09-18",
       "added": "2026-09-13",
       "phashes": [
         "25d2ac5e85dae40b",
@@ -803,9 +804,10 @@
       "score": 0.9,
       "duration_sec": 4.0,
       "used_in": [
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
-      "last_used": "2026-09-16",
+      "last_used": "2026-09-18",
       "added": "2026-09-13",
       "phashes": [
         "11feeaa591926c2a",
