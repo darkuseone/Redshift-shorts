@@ -30,3 +30,35 @@ def test_0050_owner_visual_pass_rewrites_five_defects():
     assert len(charts) == 1
     assert charts[0]["template"] == "data-viz/compare-bars"
     assert charts[0]["params"]["labels"] == ["SEARCH", "LEAN"]
+
+
+def test_0050_gemini_hook_mute_and_plaques():
+    plan = {
+        "video_id": "redshift_0050",
+        "subtitle_style": {"mode": "glow", "baseline_y": 720, "caption": "gradient-fill"},
+        "subtitles": [
+            {"display": "века", "start": 1.88, "end": 2.13},
+            {"display": "Клей", "start": 52.0, "end": 52.4},
+        ],
+        "shots": [
+            {"start": 0.05, "end": 1.2, "role": "hook", "kind": "fullscreen_text",
+             "content": "$1 000 000", "file": "vortex.mp4",
+             "params": {"content": "$1 000 000", "media": "vortex.mp4"}},
+            {"start": 1.2, "end": 3.2, "role": "hook", "kind": "footage",
+             "file": "frostscan.mp4"},
+        ],
+        "overlays": [
+            {"template": "lower-thirds/accent-underline",
+             "params": {"text": "REJECTED", "content": "REJECTED"}},
+            {"template": "lower-thirds/source-domain",
+             "params": {"text": "FOLLOWUP", "content": "FOLLOWUP"}},
+        ],
+    }
+    assert apply_0050_owner_visuals(plan) >= 4
+    assert all(s["start"] >= 3.2 for s in plan["subtitles"])
+    assert plan["subtitles"][0]["display"] == "Clay"
+    assert plan["shots"][1]["template"] == "intro-hooks/hook-number-slam"
+    assert plan["shots"][1]["content"] == "$1 000 000"
+    assert plan["shots"][1]["file"] == "vortex.mp4"
+    assert plan["subtitle_style"]["baseline_y"] == 520
+    assert all(o["template"] == "lower-thirds/dark-card" for o in plan["overlays"])

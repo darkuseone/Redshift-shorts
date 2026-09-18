@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r66: same cache as r65. P11 v8 bust so P12 picks .credit{bottom:56px}. Voice/avatar/footage untouched.",
-  "round": 66
+  "note": "r67 Gemini QC from cache. Mute RU karaoke 0-3.2s, hold $1M card, Clay latin, dark no-red plaques, captions baseline 520. Voice/avatar frozen.",
+  "round": 67
 }
