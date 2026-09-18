@@ -1,16 +1,16 @@
 {
   "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-17T00:25:31+00:00",
+  "updated_at": "2026-09-18T18:30:00+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
     "hook_mode": "C",
     "twist_mode": "A",
-    "evidence_mode": "B",
+    "evidence_mode": "C",
     "fullscreen_text_count": 3,
-    "meme_enabled": true,
-    "dynamic_transition_bias": 0.5
+    "meme_enabled": false,
+    "dynamic_transition_bias": 0.35
   },
   "ending_last_type": "part2_cliff",
   "ending_ring": [
@@ -56,6 +56,35 @@
       "data-viz/decline-chart",
       "data-viz/mk-line-graph",
       "data-viz/us-map-hex"
+    ],
+    "redshift_0051": [
+      "text-fullscreen/bigtext-mask-footage",
+      "text-fullscreen/per-word-crossfade",
+      "text-fullscreen/word-swap",
+      "text-fullscreen/kinetic-type-swap",
+      "text-fullscreen/bottom-up-letters",
+      "hero-devices/oversize-word",
+      "hero-devices/card-stack-top",
+      "hero-devices/footage-plate-pop",
+      "hero-devices/exhibit-card",
+      "hero-devices/chat-generate",
+      "hero-devices/chat-typing",
+      "browser-ui/article-highlight",
+      "browser-ui/browser-scroll",
+      "browser-ui/chat-ai-typing",
+      "browser-ui/chat-thread",
+      "browser-ui/google-typing",
+      "browser-ui/notepad-typing",
+      "browser-ui/notes-reveal",
+      "frames-cards/article-card",
+      "frames-cards/paper-reveal",
+      "frames-cards/product-card",
+      "intro-hooks/hook-blackout-word",
+      "intro-hooks/hook-question-flash",
+      "avatar-entry/flash-cut-in",
+      "data-viz/mk-line-graph",
+      "data-viz/decline-chart",
+      "data-viz/counter-roll"
     ]
   }
 }
