@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r70 card lock. Descendant of r66 cache branch. P11 only. Voice/avatar frozen. One dark-card family, no stacked openai chip.",
+  "note": "r70b P11 v10 card lock on descendant of r66 cache branch. Voice/avatar frozen.",
   "round": 70
 }
