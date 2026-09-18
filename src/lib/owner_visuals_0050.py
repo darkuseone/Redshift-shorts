@@ -1,7 +1,7 @@
 """0050 owner visual QC — rewrite after P11, no new TTS/HeyGen."""
 from __future__ import annotations
 
-OWNER_VISUALS_REV = 75  # bump to bust P11 step cache
+OWNER_VISUALS_REV = 77  # bump to bust P11 step cache
 
 from typing import Any, Callable
 
@@ -253,13 +253,11 @@ def _lock_cards(plan: dict[str, Any]) -> int:
         if has_browser and tmpl == "lower-thirds/source-domain" and "OPENAI" in label:
             changed += 1
             continue
+        # Picture law: one dark browser OR chip — live browser-scroll still paints a
+        # light page. Drop the browser; GPT-6 ASTRA brand-pill carries the beat.
         if tmpl.startswith("browser-ui/"):
-            params["dark"] = True
-            params["tone"] = "ink"
-            params["theme"] = "dark"
-            params["background"] = "dark"
-            ovl["params"] = params
             changed += 1
+            continue
         if label in _CHIP_MAP:
             want, rend = _CHIP_MAP[label]
             if want == "lower-thirds/dark-card" and tmpl_counts.get(want, 0) >= 2:
@@ -346,6 +344,11 @@ def _ensure_brand_pill(plan: dict[str, Any]) -> int:
                 o["grounded_on"] = ["brand"]
                 o.setdefault("why", "owner: GPT-6 ASTRA brand pill")
                 changed = 1
+            # hold longer so it is not buried under other chrome
+            start = float(o.get("start") or 15.6)
+            if float(o.get("end") or 0) - start < 4.0:
+                o["end"] = start + 4.5
+                changed = 1
             return changed
     start = 15.6
     for s in plan.get("shots") or []:
@@ -358,7 +361,7 @@ def _ensure_brand_pill(plan: dict[str, Any]) -> int:
             "template": "hero-devices/brand-pill",
             "renderer": "hero-brand-pill",
             "start": start,
-            "end": start + 2.8,
+            "end": start + 4.5,
             "content": "GPT-6 ASTRA",
             "grounded_on": ["brand"],
             "why": "owner: GPT-6 ASTRA brand pill on OpenAI beat",
@@ -530,6 +533,119 @@ def _repair_licenses(plan: dict[str, Any]) -> int:
         changed += 1
     return changed
 
+
+def _ensure_stack_overlay(plan: dict[str, Any]) -> int:
+    """Force Latin stack card after hook so it is not lost inside hero params."""
+    ovls = list(plan.get("overlays") or [])
+    for o in ovls:
+        blob = str((o.get("params") or {}).get("content") or o.get("content") or "")
+        if "7 TASKS" in blob and "25 YEARS" in blob:
+            return 0
+    # place over first avatar after hook (~4.4–8.4)
+    start, end = 6.5, 9.5
+    for s in plan.get("shots") or []:
+        if str(s.get("kind")) == "avatar" and float(s.get("start") or 0) >= 4.0:
+            start = max(float(s.get("start") or 4.4) + 2.0, 6.5)
+            end = min(float(s.get("end") or 9.5), start + 3.0)
+            break
+    ovls.append(
+        {
+            "type": "fullscreen_text",
+            "template": "text-fullscreen/stack-3lines",
+            "renderer": "fullscreen_text",
+            "start": start,
+            "end": end,
+            "content": _STACK,
+            "grounded_on": ["money", "number"],
+            "why": "owner: Latin stack 7 TASKS / $1M / 25 YEARS",
+            "params": {
+                "content": _STACK,
+                "text": _STACK,
+                "lines": ["7 TASKS", "$1 000 000", "25 YEARS"],
+                "dark": True,
+                "tone": "ink",
+            },
+        }
+    )
+    plan["overlays"] = ovls
+    return 1
+
+
+def _dedupe_footage_assets(plan: dict[str, Any]) -> int:
+    """same_asset_max_slots=1 — retarget 2nd+ footage uses of the same asset_id."""
+    changed = 0
+    seen: dict[str, int] = {}
+    alts = [
+        "magnific_0050_gpu",
+        "magnific_0050_deepcoil",
+        "magnific_0050_nightstatic",
+        "magnific_0050_voidpulse",
+        "magnific_0050_blueember",
+        "magnific_0050_tealmister",
+        _SAFE_DARK,
+    ]
+    used = {
+        str(s.get("asset_id") or "")
+        for s in (plan.get("shots") or [])
+        if isinstance(s, dict) and s.get("asset_id")
+    }
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict) or str(shot.get("kind")) != "footage":
+            continue
+        aid = str(shot.get("asset_id") or "")
+        f = str(shot.get("file") or "")
+        key = aid or ("stamp" if "stamp" in f else "")
+        if not key or key.startswith("avatar"):
+            continue
+        n = seen.get(key, 0) + 1
+        seen[key] = n
+        if n > 1 or (not aid and "stamp" in f):
+            repl = next((a for a in alts if a not in used and a != key), _SAFE_DARK)
+            shot["asset_id"] = repl
+            shot["file"] = None
+            shot["license"] = shot.get("license") or "owner_decision"
+            used.add(repl)
+            changed += 1
+    return changed
+
+
+def _force_rejected_plaque(plan: dict[str, Any]) -> int:
+    """REJECTED = dark text plaque; strip stamp PiP leftovers after cutaway."""
+    changed = 0
+    for ovl in plan.get("overlays") or []:
+        if not isinstance(ovl, dict):
+            continue
+        label = _chip_label(ovl)
+        if label != "REJECTED":
+            continue
+        ovl["template"] = "lower-thirds/dark-card"
+        ovl["renderer"] = "lt_dark_card"
+        params = dict(ovl.get("params") or {})
+        params.update(_NO_RED)
+        params["text"] = "REJECTED"
+        params["content"] = "REJECTED"
+        params["plaque"] = True
+        ovl["params"] = params
+        changed += 1
+    # after stamp cutaway (~51.8–53.2), no more stamp files
+    stamp_seen = False
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        key = _asset_key(shot).lower()
+        f = str(shot.get("file") or "").lower()
+        is_stamp = "stamp" in key or "stamp" in f
+        if not is_stamp:
+            continue
+        if not stamp_seen and str(shot.get("kind")) == "footage":
+            stamp_seen = True
+            continue
+        shot["asset_id"] = "magnific_0050_nightstatic"
+        shot["file"] = None
+        shot["license"] = shot.get("license") or "owner_decision"
+        changed += 1
+    return changed
+
 def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     if str(plan.get("video_id") or "") != "redshift_0050":
         return 0
@@ -539,6 +655,7 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     changed += _lock_cards(plan)
     changed += _fix_heroes(plan)
     changed += _ensure_brand_pill(plan)
+    changed += _ensure_stack_overlay(plan)
     changed += _tame_cyan_spiral(plan)
     changed += _force_hook_and_agent_assets(plan)
 
@@ -584,6 +701,8 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
         kept.append(ovl)
     plan["overlays"] = kept
     changed += _dedupe_templates(plan)
+    changed += _dedupe_footage_assets(plan)
+    changed += _force_rejected_plaque(plan)
     changed += _repair_licenses(plan)
     return changed
 

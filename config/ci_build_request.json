@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r76: fix owner_visuals syntax + P11 cache bust so QC-12/21 repairs apply",
-  "round": 76
+  "note": "r77 Gemini FAIL fix: drop light browser, stack overlay, longer ASTRA pill, dedupe codeglow/stamp, REJECTED dark plaque",
+  "round": 77
 }
