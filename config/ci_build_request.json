@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r66: same cache as r65. P11 v8 bust so P12 picks .credit{bottom:56px}. Voice/avatar/footage untouched.",
-  "round": 66
+  "note": "r70 card lock. Descendant of r66 cache branch. P11 only. Voice/avatar frozen. One dark-card family, no stacked openai chip.",
+  "round": 70
 }
