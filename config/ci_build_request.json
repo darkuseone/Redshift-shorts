@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r9: P7 prepared. Schema-clean script. Voice+webm cached. Dark JEV lock.",
-  "round": 9
+  "note": "0051 r10: P7 prepared. QC-24 fix: b5 plaque not FS. Extra leftover pins. Voice+webm cached.",
+  "round": 10
 }

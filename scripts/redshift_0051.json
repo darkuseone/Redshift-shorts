@@ -11,8 +11,8 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r9. Schema-clean. Hook on-screen JEV fact-card. No Lean/stamp/white browser. Voice+avatars cached.",
-    "hook": {"on_screen": "JEV", "style": "number_slam"}
+    "notes": "0051 r10. Schema-clean. Hook JEV fact-card. b5 plaque not FS. Voice+avatars cached.",
+    "hook": {"on_screen": "JEV", "style": "number_slam", "template_hint": "intro-hooks/hook-number-slam"}
   },
   "sources": [
     {
@@ -76,9 +76,9 @@
       "id": "b5", "role": "develop",
       "text": "Обучение другое. Не RLHF под чат. RLCD — калиброванные решения для кода.",
       "emphasis_word": "RLCD", "avatar": "off",
-      "visual_intent": "Dark VS card RLHF CHAT vs RLCD CODE. No empty grid. No blue-only line. No pause flash.",
+      "visual_intent": "Dark VS card RLHF CHAT vs RLCD CODE as plaque not fullscreen. No empty grid. No blue-only line. No pause flash.",
       "broll_queries": ["dark void pulse nodes"],
-      "overlay": {"type": "fullscreen_text", "content": "RLHF CHAT / RLCD CODE", "template_hint": "text-fullscreen/vs-compare"},
+      "overlay": {"type": "lower_third", "content": "RLHF / RLCD", "template_hint": "text-fullscreen/vs-compare"},
       "sfx": "whoosh_in", "mode_hint": "C", "emphasis_family": "tech"
     },
     {
