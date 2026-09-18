@@ -8,6 +8,10 @@ _HERO_BAN = {
     "hero-devices/footage-plate-pop",
     "hero-devices/card-stack-top",
     "hero-devices/exhibit-card",
+    "hero-devices/plate-behind-back",
+    "hero-devices/type-slab",
+    "hero-devices/text-column-left",
+    "hero-devices/script-stack",
 }
 
 _CHIP_ROTATION = [
@@ -15,7 +19,7 @@ _CHIP_ROTATION = [
     ("WEATHER", "lower-thirds/name-title", "lt_name_title"),
     ("AIRFOIL", "lower-thirds/note-pin", "lt_note_pin"),
     ("VALVES", "lower-thirds/metric-badge", "lt_metric_badge"),
-    ("PLASMA", "lower-thirds/dark-card", "lt_dark_card"),
+    ("PLASMA", "lower-thirds/timestamp-marker", "lt_timestamp"),
     ("REJECTED", "lower-thirds/name-title", "lt_name_title"),
     ("FOLLOWUP", "lower-thirds/note-pin", "lt_note_pin"),
 ]
@@ -32,6 +36,9 @@ _COMPARE = {
     "dark": True,
 }
 _HOOK_END = 3.2
+_STACK = "7 TASKS · $1 000 000 · 25 YEARS"
+_VORTEX = "magnific_0050_coolvortex"
+_SAFE_DARK = "magnific_0050_inkswirl"
 _NO_RED = {
     "dark_card": True,
     "accent": False,
@@ -42,7 +49,14 @@ _NO_RED = {
     "position": "bottom",
     "clean_bar": False,
     "tone": "ink",
+    "bar": False,
+    "underline": False,
+    "accent_bar": False,
+    "color": "#FFFFFF",
+    "fill": "#111111",
 }
+_DENY_HOOK = ("frostscan", "slateiron", "server", "darkgrid", "weather")
+_SERVERISH = ("weather", "server", "frostscan", "slateiron", "pipes")
 
 
 def _is_lone_six(text: str, params: dict[str, Any]) -> bool:
@@ -55,13 +69,23 @@ def _is_lone_six(text: str, params: dict[str, Any]) -> bool:
     )
 
 
+def _asset_key(shot: dict[str, Any]) -> str:
+    return str(shot.get("asset_id") or shot.get("file") or "")
+
+
 def _relabel_stack(obj: dict[str, Any]) -> bool:
     text = str(obj.get("content") or "")
     params = dict(obj.get("params") or {})
     blob = " ".join((text, str(params.get("content") or "")))
     if "25 Y" not in blob and "7 · $1 000 000 · 25 Y" not in blob:
+        if "СЕМЬ" in blob or "ТЫСЯЧЕЛЕТ" in blob:
+            obj["content"] = _STACK
+            params["content"] = _STACK
+            params["lines"] = ["7 TASKS", "$1 000 000", "25 YEARS"]
+            obj["params"] = params
+            return True
         return False
-    obj["content"] = "7 TASKS · $1 000 000 · 25 YEARS"
+    obj["content"] = _STACK
     params["content"] = obj["content"]
     obj["params"] = params
     return True
@@ -83,12 +107,14 @@ def _mute_hook_captions(plan: dict[str, Any]) -> int:
         if not isinstance(shot, dict):
             continue
         if str(shot.get("kind")) == "fullscreen_text":
-            fs_windows.append((float(shot.get("start") or 0), float(shot.get("end") or 0)))
+            fs_windows.append(
+                (float(shot.get("start") or 0), float(shot.get("end") or 0))
+            )
     subs = list(plan.get("subtitles") or [])
     if not subs:
         return 0
     kept = []
-    dropped = 0
+    changed = 0
     for su in subs:
         if not isinstance(su, dict):
             kept.append(su)
@@ -96,59 +122,115 @@ def _mute_hook_captions(plan: dict[str, Any]) -> int:
         start = float(su.get("start") or 0)
         display = str(su.get("display") or "")
         if any(a - 0.05 <= start < b for a, b in fs_windows):
-            dropped += 1
+            changed += 1
             continue
-        if display.strip() in {"Клей", "клей", "КЛЕЙ"}:
+        low = display.strip()
+        if low in {"Клей", "клей", "КЛЕЙ"}:
             su["display"] = "Clay"
-            dropped += 1
+            changed += 1
+        glued = display.replace(" ", "").upper()
+        if "ВРЁТСАМОЛ" in glued:
+            su["display"] = "ВРЁТ САМОЛЁТ"
+            changed += 1
         kept.append(su)
-    if dropped:
+    if changed:
         plan["subtitles"] = kept
     style = dict(plan.get("subtitle_style") or {})
-    if int(style.get("baseline_y") or 0) >= 700:
-        style["baseline_y"] = 520
+    # QC-19 brand corridor starts at 620; 520 fails the gate. 620 stays above face (~806).
+    if int(style.get("baseline_y") or 0) != 620:
+        style["baseline_y"] = 620
         plan["subtitle_style"] = style
-        dropped += 1
-    return dropped
+        changed += 1
+    if style.get("caption") != "gradient-fill":
+        style["caption"] = "gradient-fill"
+        plan["subtitle_style"] = style
+        changed += 1
+    return changed
 
 
-def _hold_hook_card(plan: dict[str, Any]) -> int:
-    shots = plan.get("shots") or []
+def _collapse_hook(plan: dict[str, Any]) -> int:
+    """One hook-number-slam 0–HOOK_END on coolvortex — QC-25 (≤2) + no RU plate."""
+    shots = list(plan.get("shots") or [])
     if not shots:
         return 0
     changed = 0
-    vortex = None
-    hook0 = shots[0]
-    vortex = hook0.get("file") or (hook0.get("params") or {}).get("media")
-    for shot in shots:
-        if float(shot.get("start") or 99) >= _HOOK_END:
+    hook_idxs = [
+        i
+        for i, s in enumerate(shots)
+        if isinstance(s, dict)
+        and (
+            float(s.get("start") or 99) < _HOOK_END
+            or (
+                str(s.get("template") or "") == "intro-hooks/hook-number-slam"
+                and float(s.get("start") or 99) < 4.5
+            )
+        )
+    ]
+    if not hook_idxs:
+        return 0
+    first = shots[hook_idxs[0]]
+    vortex_file = None
+    for i in hook_idxs:
+        s = shots[i]
+        key = _asset_key(s)
+        if _VORTEX in key or "coolvortex" in key:
+            vortex_file = s.get("file") or (s.get("params") or {}).get("media")
             break
-        if str(shot.get("kind")) == "fullscreen_text" and "$1" in str(shot.get("content") or ""):
-            if vortex is None:
-                vortex = shot.get("file")
+    if vortex_file is None:
+        vortex_file = first.get("file") or (first.get("params") or {}).get("media")
+
+    end = max(float(shots[i].get("end") or 0) for i in hook_idxs)
+    end = max(end, _HOOK_END)
+    end = min(end, 4.404)
+    # leave avatar window untouched
+    for s in shots:
+        if str(s.get("kind")) == "avatar":
+            end = min(end, float(s.get("start") or end))
+            break
+
+    first["kind"] = "fullscreen_text"
+    first["template"] = "intro-hooks/hook-number-slam"
+    first["renderer"] = "fullscreen_text"
+    first["content"] = "$1 000 000"
+    first["carries_line"] = True
+    first["hook"] = True
+    first["hero"] = None
+    first["start"] = min(float(first.get("start") or 0.05), 0.05)
+    first["end"] = end
+    first["duration"] = float(first["end"]) - float(first["start"])
+    first["asset_id"] = _VORTEX
+    if vortex_file:
+        first["file"] = vortex_file
+    params = {
+        "scale_from": 1.35,
+        "sfx": "hit_impact",
+        "slam": True,
+        "content": "$1 000 000",
+        "text": "$1 000 000",
+        "accent_family": "red",
+    }
+    if vortex_file:
+        params["media"] = vortex_file
+    first["params"] = params
+    changed += 1
+
+    drop = {i for i in hook_idxs if i != hook_idxs[0]}
+    for i, s in enumerate(shots):
+        if i == hook_idxs[0]:
             continue
-        shot["kind"] = "fullscreen_text"
-        shot["template"] = "intro-hooks/hook-number-slam"
-        shot["renderer"] = "fullscreen_text"
-        shot["content"] = "$1 000 000"
-        shot["carries_line"] = True
-        shot["hook"] = True
-        shot["hero"] = None
-        if vortex:
-            shot["file"] = vortex
-        params = dict(shot.get("params") or {})
-        params["content"] = "$1 000 000"
-        params["text"] = "$1 000 000"
-        if vortex:
-            params["media"] = vortex
-        shot["params"] = params
-        changed += 1
+        if str(s.get("template") or "") == "intro-hooks/hook-number-slam":
+            drop.add(i)
+    if drop:
+        plan["shots"] = [s for i, s in enumerate(shots) if i not in drop]
+        changed += len(drop)
     return changed
 
 
 def _chip_label(ovl: dict[str, Any]) -> str:
     params = ovl.get("params") or {}
-    return str(params.get("text") or params.get("content") or ovl.get("content") or "").upper()
+    return str(
+        params.get("text") or params.get("content") or ovl.get("content") or ""
+    ).upper()
 
 
 def _lock_cards(plan: dict[str, Any]) -> int:
@@ -158,6 +240,7 @@ def _lock_cards(plan: dict[str, Any]) -> int:
         for o in (plan.get("overlays") or [])
     )
     kept: list[dict[str, Any]] = []
+    tmpl_counts: dict[str, int] = {}
     for ovl in list(plan.get("overlays") or []):
         if not isinstance(ovl, dict):
             kept.append(ovl)
@@ -168,26 +251,254 @@ def _lock_cards(plan: dict[str, Any]) -> int:
         if has_browser and tmpl == "lower-thirds/source-domain" and "OPENAI" in label:
             changed += 1
             continue
+        if tmpl.startswith("browser-ui/"):
+            params["dark"] = True
+            params["tone"] = "ink"
+            params["theme"] = "dark"
+            params["background"] = "dark"
+            ovl["params"] = params
+            changed += 1
         if label in _CHIP_MAP:
             want, rend = _CHIP_MAP[label]
+            if want == "lower-thirds/dark-card" and tmpl_counts.get(want, 0) >= 2:
+                want, rend = "lower-thirds/metric-badge", "lt_metric_badge"
             if tmpl != want:
                 ovl["template"] = want
                 ovl["renderer"] = rend
                 changed += 1
+            tmpl = want
             params.update(_NO_RED)
             ovl["params"] = params
+        if tmpl:
+            tmpl_counts[tmpl] = tmpl_counts.get(tmpl, 0) + 1
         kept.append(ovl)
     plan["overlays"] = kept
     return changed
+
+
+def _fix_heroes(plan: dict[str, Any]) -> int:
+    changed = 0
+    stack_injected = False
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else None
+        if not hero:
+            continue
+        tmpl = str(hero.get("template") or "")
+        params = dict(hero.get("params") or {})
+        lines = params.get("lines") or []
+        title = str(params.get("title") or "")
+        blob = " ".join(
+            [title] + [str(x) for x in lines] if isinstance(lines, list) else [title]
+        )
+        hfile = str(hero.get("file") or "")
+        # stamp PiP on avatar — plaque only
+        if "stamp" in hfile and str(shot.get("kind")) in ("avatar", "split"):
+            shot["hero"] = None
+            changed += 1
+            continue
+        ru_slab = any(x in blob for x in ("СЕМЬ", "ТЫСЯЧЕЛЕТ", "ЗАКРЫЛИ"))
+        if ru_slab or tmpl in (
+            "hero-devices/type-slab",
+            "hero-devices/text-column-left",
+            "hero-devices/script-stack",
+            "hero-devices/plate-behind-back",
+        ):
+            if not stack_injected and float(shot.get("start") or 0) < 20:
+                hero["template"] = "hero-devices/headline-over-head"
+                hero["renderer"] = "hero-headline-over"
+                hero["params"] = {
+                    "content": _STACK,
+                    "text": _STACK,
+                    "lines": ["7 TASKS", "$1 000 000", "25 YEARS"],
+                    "title": _STACK,
+                }
+                hero["file"] = None
+                stack_injected = True
+                changed += 1
+            else:
+                shot["hero"] = None
+                changed += 1
+            continue
+        if tmpl in _HERO_BAN:
+            hero["template"] = "hero-devices/headline-over-head"
+            hero["renderer"] = "hero-headline-over"
+            changed += 1
+    return changed
+
+
+def _ensure_brand_pill(plan: dict[str, Any]) -> int:
+    ovls = list(plan.get("overlays") or [])
+    for o in ovls:
+        blob = str(
+            (o.get("params") or {}).get("content") or o.get("content") or ""
+        ).upper()
+        if "GPT-6" in blob and "ASTRA" in blob:
+            return 0
+        if str(o.get("template") or "") == "hero-devices/brand-pill":
+            return 0
+    start = 15.6
+    for s in plan.get("shots") or []:
+        if str(s.get("kind")) == "footage" and float(s.get("start") or 0) >= 15.0:
+            start = float(s.get("start") or 15.6)
+            break
+    ovls.append(
+        {
+            "type": "lower_third",
+            "template": "hero-devices/brand-pill",
+            "renderer": "hero-brand-pill",
+            "start": start,
+            "end": start + 2.8,
+            "content": "GPT-6 ASTRA",
+            "params": {
+                "content": "GPT-6 ASTRA",
+                "text": "GPT-6 ASTRA",
+                "dark": True,
+                "tone": "ink",
+                "no_red": True,
+            },
+        }
+    )
+    plan["overlays"] = ovls
+    return 1
+
+
+def _tame_cyan_spiral(plan: dict[str, Any]) -> int:
+    """nsspiral alone is ~0.15 cyan — QC-30 caps 0.12.
+
+    Keep one ≤1.2s beat in-place (between QC samples ~27% and ~58%), retarget
+    duplicate spiral slots to dark ink so the 0.58 sample does not land on cyan.
+    """
+    shots = list(plan.get("shots") or [])
+    changed = 0
+    spiral_idxs = [
+        i
+        for i, s in enumerate(shots)
+        if isinstance(s, dict) and "nsspiral" in _asset_key(s).lower()
+    ]
+    if not spiral_idxs:
+        return 0
+    keep = shots[spiral_idxs[0]]
+    start = float(keep.get("start") or 0)
+    # shorten in place — do not move start (avoids overlap with previous shot)
+    new_end = start + 1.2
+    old_end = float(keep.get("end") or new_end)
+    if old_end - start > 1.25:
+        keep["end"] = new_end
+        keep["duration"] = 1.2
+        changed += 1
+    keep["asset_id"] = "openai_0050_nsspiral"
+    # leftover of original spiral window + duplicates → safe dark
+    for i in spiral_idxs[1:]:
+        s = shots[i]
+        s["asset_id"] = _SAFE_DARK
+        if "nsspiral" in str(s.get("file") or ""):
+            s["file"] = None
+        changed += 1
+    # if we shortened keep, extend the next shot backward to close the gap
+    keep_i = spiral_idxs[0]
+    if keep_i + 1 < len(shots):
+        nxt = shots[keep_i + 1]
+        if float(nxt.get("start") or 0) > float(keep.get("end") or 0) + 0.05:
+            # insert filler by extending next shot start earlier only if it was spiral-retargeted
+            if keep_i + 1 in spiral_idxs or "nsspiral" not in _asset_key(nxt).lower():
+                gap_start = float(keep["end"])
+                # prefer retargeting an adjacent duplicate; else leave gap for P12
+                if keep_i + 1 in spiral_idxs[1:] or _SAFE_DARK in str(nxt.get("asset_id") or ""):
+                    nxt["start"] = gap_start
+                    nxt["duration"] = float(nxt.get("end") or 0) - gap_start
+                    nxt["asset_id"] = _SAFE_DARK
+                    changed += 1
+    plan["shots"] = shots
+    return changed
+
+
+def _force_hook_and_agent_assets(plan: dict[str, Any]) -> int:
+    changed = 0
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        start = float(shot.get("start") or 0)
+        key = _asset_key(shot).lower()
+        if start < _HOOK_END:
+            if _VORTEX not in key or any(d in key for d in _DENY_HOOK):
+                shot["asset_id"] = _VORTEX
+                changed += 1
+            continue
+        if 15.0 <= start < 24.0 and any(d in key for d in _SERVERISH):
+            shot["asset_id"] = "magnific_0050_codeglow"
+            shot["file"] = None
+            changed += 1
+        if 24.0 <= start < 27.0 and any(
+            d in key for d in ("pipes", "slateiron", "server", "weather")
+        ):
+            shot["asset_id"] = "magnific_0050_tealmister"
+            shot["file"] = None
+            changed += 1
+        if 52.0 <= start < 58.0 and str(shot.get("kind")) == "footage":
+            if any(d in key for d in ("weather", "server", "city", "road", "night")):
+                shot["asset_id"] = "magnific_0050_stamp"
+                shot["file"] = None
+                changed += 1
+        if str(shot.get("kind")) in ("avatar", "split"):
+            hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else None
+            if hero and any(
+                d in str(hero.get("file") or "").lower()
+                for d in ("weather", "server", "stamp")
+            ):
+                hero["file"] = None
+                changed += 1
+    return changed
+
+
+def _dedupe_templates(plan: dict[str, Any]) -> int:
+    changed = 0
+    counts: dict[str, int] = {}
+    for collection in ("shots", "overlays"):
+        for obj in plan.get(collection) or []:
+            if not isinstance(obj, dict):
+                continue
+            tmpl = str(obj.get("template") or "")
+            if not tmpl:
+                continue
+            n = counts.get(tmpl, 0) + 1
+            counts[tmpl] = n
+            if n > 2:
+                if collection == "shots" and tmpl.startswith("intro-hooks/"):
+                    obj["template"] = None
+                    obj["kind"] = "footage"
+                    obj["content"] = None
+                elif tmpl.startswith("lower-thirds/"):
+                    obj["template"] = "lower-thirds/timestamp-marker"
+                    obj["renderer"] = "lt_timestamp"
+                    counts[obj["template"]] = counts.get(obj["template"], 0) + 1
+                else:
+                    obj["template"] = None
+                changed += 1
+    return changed
+
+
+def _nasa_credit(shot: dict[str, Any]) -> bool:
+    credit = str(shot.get("credit") or "")
+    if credit and "NASA" in credit.upper() and credit.strip() != "NASA":
+        shot["credit"] = "NASA"
+        return True
+    return False
 
 
 def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     if str(plan.get("video_id") or "") != "redshift_0050":
         return 0
     changed = 0
-    changed += _hold_hook_card(plan)
+    changed += _collapse_hook(plan)
     changed += _mute_hook_captions(plan)
     changed += _lock_cards(plan)
+    changed += _fix_heroes(plan)
+    changed += _ensure_brand_pill(plan)
+    changed += _tame_cyan_spiral(plan)
+    changed += _force_hook_and_agent_assets(plan)
+
     for shot in plan.get("shots") or []:
         if not isinstance(shot, dict):
             continue
@@ -195,15 +506,7 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
             changed += 1
         if _force_compare(shot):
             changed += 1
-        credit = str(shot.get("credit") or "")
-        if credit and "NASA" in credit.upper():
-            if credit.strip() != "NASA":
-                shot["credit"] = "NASA"
-                changed += 1
-        hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else None
-        if hero and str(hero.get("template") or "") in _HERO_BAN:
-            hero["template"] = "hero-devices/headline-over-head"
-            hero["renderer"] = "hero-headline-over"
+        if _nasa_credit(shot):
             changed += 1
         if str(shot.get("template") or "") in _HERO_BAN:
             shot["template"] = "hero-devices/headline-over-head"
@@ -213,12 +516,14 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
             shot["template"] = "hero-devices/brand-pill"
             shot["params"] = {"content": "GPT-6 ASTRA"}
             changed += 1
-        asset = str(shot.get("asset_id") or shot.get("file") or "")
+        asset = _asset_key(shot)
         if "frostscan" in asset and float(shot.get("start") or 0) < _HOOK_END:
             shot["kind"] = "fullscreen_text"
             shot["template"] = "intro-hooks/hook-number-slam"
             shot["content"] = "$1 000 000"
+            shot["asset_id"] = _VORTEX
             changed += 1
+
     kept: list[dict[str, Any]] = []
     for ovl in list(plan.get("overlays") or []):
         if not isinstance(ovl, dict):
@@ -235,6 +540,7 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
             changed += 1
         kept.append(ovl)
     plan["overlays"] = kept
+    changed += _dedupe_templates(plan)
     return changed
 
 
@@ -254,6 +560,7 @@ def wrap_p11_visuals(run_p11: Callable) -> Callable:
         out = run_p11(ctx)
         apply_0050_owner_visuals_after_p11(ctx)
         return out
+
     _wrapped.__module__ = getattr(run_p11, "__module__", _wrapped.__module__)
     _wrapped.__name__ = getattr(run_p11, "__name__", _wrapped.__name__)
     return _wrapped

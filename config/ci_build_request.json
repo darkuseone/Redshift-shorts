@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P5",
+  "from_step": "P11",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r72b trigger after pins. Hook vortex only, no frostscan, chip rotation, mute FS caps.",
-  "round": 72
+  "note": "r73 owner pass: collapse hook QC-25, baseline 620 QC-19, shorten nsspiral QC-30, Latin stack, GPT-6 ASTRA pill, no-red chips, codeglow not weather.",
+  "round": 73
 }
