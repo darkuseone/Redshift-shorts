@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r77 Gemini FAIL fix: drop light browser, stack overlay, longer ASTRA pill, dedupe codeglow/stamp, REJECTED dark plaque",
-  "round": 77
+  "note": "r78: stack 6.8-10.8s; bind_asset keeps media paths (no white frames); REV78",
+  "round": 78
 }

@@ -1,7 +1,7 @@
 """0050 owner visual QC — rewrite after P11, no new TTS/HeyGen."""
 from __future__ import annotations
 
-OWNER_VISUALS_REV = 77  # bump to bust P11 step cache
+OWNER_VISUALS_REV = 78  # bump to bust P11 step cache
 
 from typing import Any, Callable
 
@@ -70,6 +70,41 @@ def _is_lone_six(text: str, params: dict[str, Any]) -> bool:
         or str(text).strip() in {"6", "6.0"}
     )
 
+
+
+def _donor_file(plan: dict[str, Any], asset_id: str) -> str | None:
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        if str(shot.get("asset_id") or "") == asset_id and shot.get("file"):
+            return str(shot.get("file"))
+    return None
+
+
+def _fallback_path(asset_id: str) -> str | None:
+    roots = (
+        f"assets/footage/magnific/{asset_id}.mp4",
+        f"assets/footage/official/{asset_id}.mp4",
+        f"assets/footage/nasa/{asset_id}.mp4",
+        f"assets/footage/{asset_id}.mp4",
+    )
+    for rel in roots:
+        return rel  # CI resolves against repo root; prefer first matching family
+    return None
+
+
+def _bind_asset(shot: dict[str, Any], asset_id: str, plan: dict[str, Any]) -> None:
+    """Retarget asset_id without blanking the media path (white frame bug)."""
+    shot["asset_id"] = asset_id
+    donor = _donor_file(plan, asset_id)
+    if donor:
+        shot["file"] = donor
+    else:
+        # Don't keep previous asset's crop — that would show the wrong footage.
+        fb = _fallback_path(asset_id)
+        if fb:
+            shot["file"] = fb
+    shot["license"] = shot.get("license") or "owner_decision"
 
 def _asset_key(shot: dict[str, Any]) -> str:
     return str(shot.get("asset_id") or shot.get("file") or "")
@@ -406,9 +441,7 @@ def _tame_cyan_spiral(plan: dict[str, Any]) -> int:
     # leftover of original spiral window + duplicates → safe dark
     for i in spiral_idxs[1:]:
         s = shots[i]
-        s["asset_id"] = _SAFE_DARK
-        if "nsspiral" in str(s.get("file") or ""):
-            s["file"] = None
+        _bind_asset(s, _SAFE_DARK, plan)
         changed += 1
     # if we shortened keep, extend the next shot backward to close the gap
     keep_i = spiral_idxs[0]
@@ -437,23 +470,20 @@ def _force_hook_and_agent_assets(plan: dict[str, Any]) -> int:
         key = _asset_key(shot).lower()
         if start < _HOOK_END:
             if _VORTEX not in key or any(d in key for d in _DENY_HOOK):
-                shot["asset_id"] = _VORTEX
+                _bind_asset(shot, _VORTEX, plan)
                 changed += 1
             continue
         if 15.0 <= start < 24.0 and any(d in key for d in _SERVERISH):
-            shot["asset_id"] = "magnific_0050_codeglow"
-            shot["file"] = None
+            _bind_asset(shot, "magnific_0050_codeglow", plan)
             changed += 1
         if 24.0 <= start < 27.0 and any(
             d in key for d in ("pipes", "slateiron", "server", "weather")
         ):
-            shot["asset_id"] = "magnific_0050_tealmister"
-            shot["file"] = None
+            _bind_asset(shot, "magnific_0050_tealmister", plan)
             changed += 1
         if 52.0 <= start < 58.0 and str(shot.get("kind")) == "footage":
             if any(d in key for d in ("weather", "server", "city", "road", "night")):
-                shot["asset_id"] = "magnific_0050_stamp"
-                shot["file"] = None
+                _bind_asset(shot, "magnific_0050_stamp", plan)
                 changed += 1
         if str(shot.get("kind")) in ("avatar", "split"):
             hero = shot.get("hero") if isinstance(shot.get("hero"), dict) else None
@@ -542,12 +572,8 @@ def _ensure_stack_overlay(plan: dict[str, Any]) -> int:
         if "7 TASKS" in blob and "25 YEARS" in blob:
             return 0
     # place over first avatar after hook (~4.4–8.4)
-    start, end = 6.5, 9.5
-    for s in plan.get("shots") or []:
-        if str(s.get("kind")) == "avatar" and float(s.get("start") or 0) >= 4.0:
-            start = max(float(s.get("start") or 4.4) + 2.0, 6.5)
-            end = min(float(s.get("end") or 9.5), start + 3.0)
-            break
+    # Hold across b2 avatar gap so the card is actually visible (not 0.4s).
+    start, end = 6.8, 10.8
     ovls.append(
         {
             "type": "fullscreen_text",
@@ -601,9 +627,7 @@ def _dedupe_footage_assets(plan: dict[str, Any]) -> int:
         seen[key] = n
         if n > 1 or (not aid and "stamp" in f):
             repl = next((a for a in alts if a not in used and a != key), _SAFE_DARK)
-            shot["asset_id"] = repl
-            shot["file"] = None
-            shot["license"] = shot.get("license") or "owner_decision"
+            _bind_asset(shot, repl, plan)
             used.add(repl)
             changed += 1
     return changed
@@ -640,10 +664,24 @@ def _force_rejected_plaque(plan: dict[str, Any]) -> int:
         if not stamp_seen and str(shot.get("kind")) == "footage":
             stamp_seen = True
             continue
-        shot["asset_id"] = "magnific_0050_nightstatic"
-        shot["file"] = None
-        shot["license"] = shot.get("license") or "owner_decision"
+        _bind_asset(shot, "magnific_0050_nightstatic", plan)
         changed += 1
+    return changed
+
+
+def _repair_missing_files(plan: dict[str, Any]) -> int:
+    changed = 0
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        if str(shot.get("kind")) != "footage":
+            continue
+        aid = str(shot.get("asset_id") or "")
+        if not aid or shot.get("file"):
+            continue
+        _bind_asset(shot, aid, plan)
+        if shot.get("file"):
+            changed += 1
     return changed
 
 def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
@@ -681,7 +719,7 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
             shot["kind"] = "fullscreen_text"
             shot["template"] = "intro-hooks/hook-number-slam"
             shot["content"] = "$1 000 000"
-            shot["asset_id"] = _VORTEX
+            _bind_asset(shot, _VORTEX, plan)
             changed += 1
 
     kept: list[dict[str, Any]] = []
@@ -703,6 +741,7 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     changed += _dedupe_templates(plan)
     changed += _dedupe_footage_assets(plan)
     changed += _force_rejected_plaque(plan)
+    changed += _repair_missing_files(plan)
     changed += _repair_licenses(plan)
     return changed
 
