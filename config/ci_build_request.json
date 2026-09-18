@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P11",
+  "from_step": "P5",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r70b P11 v10 card lock on descendant of r66 cache branch. Voice/avatar frozen.",
-  "round": 70
+  "note": "r71 rebuild from P5. Avatar windows frozen to r66 start/end so prepared webm match. Card lock in owner_visuals. No TTS/HeyGen.",
+  "round": 71
 }
