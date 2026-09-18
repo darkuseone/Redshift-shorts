@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0051.json",
   "video_id": "redshift_0051",
-  "from_step": "P0",
-  "heygen_source": "api",
+  "from_step": "P6",
+  "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r4: HeyGen MIME audio/x-wav restored. Cached voice. Draft until GODEN.",
-  "round": 4
+  "note": "0051 r5: Nikita voice already in assets. HeyGen via connected MCP. Do not call HeyGen API on runner. Draft until GODEN.",
+  "round": 5
 }

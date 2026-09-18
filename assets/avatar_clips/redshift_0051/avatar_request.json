@@ -1,0 +1,12 @@
+{
+  "video_id": "redshift_0051",
+  "avatar_id": "cfcb357563454e8cb7083258e4424992",
+  "model_version": "avatar5",
+  "resolution": [720, 1280],
+  "heygen_videos": [
+    {"index": 0, "block_id": "b2", "duration_sec": 10.556, "audio": "seg_00.wav", "expected_clip": "seg_00.webm", "video_id": "f69369e2bc839e45a21ab2715929b6d7", "audio_asset_id": "1a92864f1bf5496982f62a5e92812bfe"},
+    {"index": 1, "block_id": "b6", "duration_sec": 11.852, "audio": "seg_01.wav", "expected_clip": "seg_01.webm", "video_id": "ad85247ed51926ef609c9a41b529feaa", "audio_asset_id": "56fbaa998c3a4beea77497a8f22e1d96"}
+  ],
+  "voice": "Nikita 7fU3YUxRrVGjNaZ5dzEH via GitHub ElevenLabs API",
+  "_how_to": "Wait HeyGen connector videos. Download webm into this folder as expected_clip. Resume CI from P6 heygen_source=prepared."
+}
