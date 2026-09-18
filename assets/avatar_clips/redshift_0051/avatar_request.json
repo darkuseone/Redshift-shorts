@@ -2,7 +2,15 @@
   "video_id": "redshift_0051",
   "avatar_id": "cfcb357563454e8cb7083258e4424992",
   "model_version": "avatar5",
+  "clips_dir": "assets/avatar_clips/redshift_0051",
+  "background": "transparent_if_available",
   "resolution": [720, 1280],
+  "segments": [
+    {"index": 0, "block_id": "b2", "duration_sec": 3.953, "audio": "seg_00.wav", "expected_clip": "seg_00.webm", "text": "Diogo Almeida. Он делал RLHF в OpenAI."},
+    {"index": 1, "block_id": "b2", "duration_sec": 5.288, "audio": "seg_01.wav", "expected_clip": "seg_01.webm", "text": "Два года в стелсе. Компания TypeSafe. Сид сорок миллионов. Первый публичный System One."},
+    {"index": 2, "block_id": "b6", "duration_sec": 4.46, "audio": "seg_02.wav", "expected_clip": "seg_02.webm", "text": "Халявы нет. Jev не пишет текст. Не пишет код. Не объясняет ход мыслей."},
+    {"index": 3, "block_id": "b6", "duration_sec": 6.077, "audio": "seg_03.wav", "expected_clip": "seg_03.webm", "text": "Цифры — их собственные тесты, не независимый бенчмарк. Это судья внутри программы, не новый чат."}
+  ],
   "heygen_videos": [
     {"index": 0, "block_id": "b2", "duration_sec": 3.953, "audio": "seg_00.wav", "expected_clip": "seg_00.webm", "video_id": "8c8a7d22e816306a390fe4295efa0db9", "audio_asset_id": "2bfab8489aca444a9f307053bdeb81e9"},
     {"index": 1, "block_id": "b2", "duration_sec": 5.288, "audio": "seg_01.wav", "expected_clip": "seg_01.webm", "video_id": "5d4f3d1af87d8b16f3f40be8c2b803d2", "audio_asset_id": "e7d6d39c916344c6a4b2083b05970f01"},
@@ -10,5 +18,5 @@
     {"index": 3, "block_id": "b6", "duration_sec": 6.077, "audio": "seg_03.wav", "expected_clip": "seg_03.webm", "video_id": "febc2f80ec38bae79958ea6767b038cb", "audio_asset_id": "f1b1014bd7304623b0d55d8f24508159"}
   ],
   "voice": "Nikita 7fU3YUxRrVGjNaZ5dzEH via GitHub ElevenLabs API",
-  "_how_to": "Wait 4 phrase-length HeyGen webms. Push as seg_00..seg_03.webm. Resume CI from P6 heygen_source=prepared."
+  "_how_to": "Prepared phrase webms already rendered. urls.json + fetch_avatar_clips.py on runner. Resume P6 heygen_source=prepared. Do not reorder segs."
 }
