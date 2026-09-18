@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0050.json",
   "video_id": "redshift_0050",
-  "from_step": "P11",
+  "from_step": "P5",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r67 Gemini QC from cache. Mute RU karaoke 0-3.2s, hold $1M card, Clay latin, dark no-red plaques, captions baseline 520. Voice/avatar frozen.",
-  "round": 67
+  "note": "r68: r67 died MISSING_STEP_INPUT on new branch (empty work cache). From P5, prepared voice+webm, no TTS/HeyGen. Same Gemini visual pass.",
+  "round": 68
 }
