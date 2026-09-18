@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r75: bust P11 cache (owner_visuals in assemble fingerprint) + QC-12/21 license+grounded",
-  "round": 75
+  "note": "r76: fix owner_visuals syntax + P11 cache bust so QC-12/21 repairs apply",
+  "round": 76
 }

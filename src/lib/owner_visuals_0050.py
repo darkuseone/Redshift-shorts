@@ -1,6 +1,7 @@
 """0050 owner visual QC — rewrite after P11, no new TTS/HeyGen."""
-OWNER_VISUALS_REV = 75  # bump to bust P11 step cache
 from __future__ import annotations
+
+OWNER_VISUALS_REV = 75  # bump to bust P11 step cache
 
 from typing import Any, Callable
 
