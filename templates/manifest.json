@@ -5509,7 +5509,8 @@
       ],
       "renderer": "hero-headline",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0050"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
