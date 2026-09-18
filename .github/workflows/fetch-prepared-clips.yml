@@ -1,0 +1,67 @@
+name: fetch-prepared-clips
+
+on:
+  push:
+    paths:
+      - "assets/avatar_clips/**/urls.json"
+      - ".github/workflows/fetch-prepared-clips.yml"
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: "video_id folder under assets/avatar_clips"
+        required: true
+        default: "redshift_0051"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-clips-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download prepared webm
+        env:
+          INPUT_ID: ${{ github.event.inputs.video_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          from pathlib import Path
+          root = Path("assets/avatar_clips")
+          wanted = (os.environ.get("INPUT_ID") or "").strip()
+          dirs = [root / wanted] if wanted else [p for p in root.iterdir() if p.is_dir()]
+          for folder in dirs:
+              urls_path = folder / "urls.json"
+              if not urls_path.is_file():
+                  continue
+              urls = json.loads(urls_path.read_text(encoding="utf-8"))
+              if isinstance(urls, list):
+                  urls = {str(i): u for i, u in enumerate(urls)}
+              print(f"folder {folder}")
+              for key, url in urls.items():
+                  dst = folder / f"seg_{int(key):02d}.webm"
+                  if dst.exists() and dst.stat().st_size > 0:
+                      print(f"  have {dst.name} {dst.stat().st_size}")
+                      continue
+                  print(f"  get {dst.name}")
+                  urllib.request.urlretrieve(url, dst)
+                  print(f"  wrote {dst.name} {dst.stat().st_size}")
+          PY
+      - name: Commit clips
+        run: |
+          set -euo pipefail
+          git config user.name redshift-bot
+          git config user.email redshift-bot@users.noreply.github.com
+          git add assets/avatar_clips/**/seg_*.webm || true
+          if git diff --cached --quiet; then
+            echo "no new clips"
+            exit 0
+          fi
+          git commit -m "chore: prepared avatar webm for 0051"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
