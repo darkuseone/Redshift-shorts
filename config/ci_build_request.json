@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r71 rebuild from P5. Avatar windows frozen to r66 start/end so prepared webm match. Card lock in owner_visuals. No TTS/HeyGen.",
-  "round": 71
+  "note": "r72: frostscan off hook, chip rotation QC-25, mute FS captions. Voice/avatar frozen.",
+  "round": 72
 }
