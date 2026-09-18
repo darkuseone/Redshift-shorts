@@ -4,9 +4,11 @@
   "model_version": "avatar5",
   "resolution": [720, 1280],
   "heygen_videos": [
-    {"index": 0, "block_id": "b2", "duration_sec": 10.556, "audio": "seg_00.wav", "expected_clip": "seg_00.webm", "video_id": "f69369e2bc839e45a21ab2715929b6d7", "audio_asset_id": "1a92864f1bf5496982f62a5e92812bfe"},
-    {"index": 1, "block_id": "b6", "duration_sec": 11.852, "audio": "seg_01.wav", "expected_clip": "seg_01.webm", "video_id": "ad85247ed51926ef609c9a41b529feaa", "audio_asset_id": "56fbaa998c3a4beea77497a8f22e1d96"}
+    {"index": 0, "block_id": "b2", "duration_sec": 3.953, "audio": "seg_00.wav", "expected_clip": "seg_00.webm", "video_id": "8c8a7d22e816306a390fe4295efa0db9", "audio_asset_id": "2bfab8489aca444a9f307053bdeb81e9"},
+    {"index": 1, "block_id": "b2", "duration_sec": 5.288, "audio": "seg_01.wav", "expected_clip": "seg_01.webm", "video_id": "5d4f3d1af87d8b16f3f40be8c2b803d2", "audio_asset_id": "e7d6d39c916344c6a4b2083b05970f01"},
+    {"index": 2, "block_id": "b6", "duration_sec": 4.46, "audio": "seg_02.wav", "expected_clip": "seg_02.webm", "video_id": "fd6fdafe9dae4850747d277fa3b0b31b", "audio_asset_id": "4071b1aacca94daaa919380d7d3f7dc7"},
+    {"index": 3, "block_id": "b6", "duration_sec": 6.077, "audio": "seg_03.wav", "expected_clip": "seg_03.webm", "video_id": "febc2f80ec38bae79958ea6767b038cb", "audio_asset_id": "f1b1014bd7304623b0d55d8f24508159"}
   ],
   "voice": "Nikita 7fU3YUxRrVGjNaZ5dzEH via GitHub ElevenLabs API",
-  "_how_to": "Wait HeyGen connector videos. Download webm into this folder as expected_clip. Resume CI from P6 heygen_source=prepared."
+  "_how_to": "Wait 4 phrase-length HeyGen webms. Push as seg_00..seg_03.webm. Resume CI from P6 heygen_source=prepared."
 }
