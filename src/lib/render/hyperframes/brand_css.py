@@ -357,6 +357,10 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f"bottom:{height - int(safe['y_max']) + 18}px;padding:6px 12px;"
         "border-radius:12px;font-size:18px;font-weight:700;line-height:1.15}"
         ".plaque.source-chip .kicker{font-size:12px;margin-top:1px;font-weight:600}"
+        # 0050: source-chip must not carry a red accent border.
+        ".plaque.source-chip.no-red,"
+        ".plaque.source-chip.no-accent{"
+        + f"border:{int(plaque['border_px'])}px solid rgba(122,125,130,0.65)}}"
     )
     # Карточка источника прижимается снизу к полосе субтитров, а не ставится по
     # верхней координате: высота у неё content-driven, и при длинном заголовке
@@ -419,6 +423,23 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".source-card .hl{border-radius:6px;padding:0 .10em;"
         "-webkit-box-decoration-break:clone;box-decoration-break:clone;"
         "background:rgba(200,69,61,.22)}"
+        # Dark browser paper (0050 Gemini FIX — white card scored badly).
+        ".source-card.theme-dark .sc-stage,"
+        ".source-card.theme-dark{color:#f4f4f5}"
+        ".source-card.theme-dark .sc-stage,"
+        ".source-card.theme-dark .page,"
+        ".source-card.theme-dark .bar{"
+        "background:#16181d;color:#f4f4f5}"
+        ".source-card.theme-dark .bar{background:#1e2229}"
+        ".source-card.theme-dark .url{background:#111214;color:#9ca3af}"
+        ".source-card.theme-dark .url b{color:#f4f4f5}"
+        ".source-card.theme-dark .kicker{color:#c4c7cc}"
+        ".source-card.theme-dark .title{color:#f4f4f5}"
+        ".source-card.theme-dark .byline{color:#9ca3af}"
+        ".source-card.theme-dark .favicon{background:#3f4450;color:#f4f4f5}"
+        ".source-card.theme-dark .snippet{color:#c4c7cc}"
+        ".source-card.theme-dark .lines i{background:rgba(244,244,245,.12)}"
+        ".source-card.theme-dark .hl{background:rgba(200,69,61,.28)}"
     )
 
     # --- CTA (§5.7) ------------------------------------------------------

@@ -1,0 +1,54 @@
+{
+  "video_id": "redshift_0050",
+  "avatar_id": "cfcb357563454e8cb7083258e4424992",
+  "model_version": "avatar5",
+  "clips_dir": "/home/runner/work/Redshift-shorts/Redshift-shorts/assets/avatar_clips/redshift_0050",
+  "background": "transparent_if_available",
+  "resolution": [
+    720,
+    1280
+  ],
+  "segments": [
+    {
+      "index": 0,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0050/avatar/seg_00.wav",
+      "duration_sec": 4.022,
+      "block_id": "b2",
+      "text": "модель без чата закрыла кусок этой задачи. 7 задач тысячелетия.",
+      "expected_clip": "seg_00.mov"
+    },
+    {
+      "index": 1,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0050/avatar/seg_01.wav",
+      "duration_sec": 5.732,
+      "block_id": "b2",
+      "text": "за каждую. Четверть века. Это формулы воды, воздуха и крови — не мелки на доске. Восьмого",
+      "expected_clip": "seg_01.mov"
+    },
+    {
+      "index": 2,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0050/avatar/seg_02.wav",
+      "duration_sec": 3.649,
+      "block_id": "b6",
+      "text": "Lean проверяет каждый шаг. Но пункт без внешней силы",
+      "expected_clip": "seg_02.mov"
+    },
+    {
+      "index": 3,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0050/avatar/seg_03.wav",
+      "duration_sec": 3.264,
+      "block_id": "b6",
+      "text": "принял. Миллион OpenAI не берёт. Это не",
+      "expected_clip": "seg_03.mov"
+    },
+    {
+      "index": 4,
+      "audio": "/home/runner/work/Redshift-shorts/Redshift-shorts/work/redshift_0050/avatar/seg_04.wav",
+      "duration_sec": 5.029,
+      "block_id": "b6",
+      "text": "целиком. Это первая дыра, которую четверть века считали глухой. Какую",
+      "expected_clip": "seg_04.mov"
+    }
+  ],
+  "_how_to": "Сгенерировать липсинк по каждому audio, положить клипы в clips_dir под именами expected_clip и возобновить прогон с шага P6."
+}

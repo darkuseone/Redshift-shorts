@@ -79,6 +79,20 @@ def _to_portrait(clip: Path) -> Path:
     info = probe(clip)
     if int(info.width) == FRAME_W and int(info.height) == FRAME_H:
         return clip
+    if _is_frame_ratio(info.width, info.height):
+        # Клип уже снят в пропорции кадра — его надо только доувеличить.
+        # `reframe` кроит окно по голове и добавляет поле сверху: на 9:16
+        # источнике это вырезает полный кадр и вписывает его в 1080×1689 с
+        # полем — то есть по горизонтали 1.50, по вертикали 1.32, и ведущий
+        # едет на 14 % шире себя. Ровно та «растяжка с плохим качеством», из-за
+        # которой заказчик и сменил лук на вертикальный.
+        staged = clip.with_name(f"{clip.stem}_src{clip.suffix}")
+        clip.rename(staged)
+        _scale_to_frame(staged, clip)
+        staged.unlink()
+        print(f"  {clip.name}: {info.width}×{info.height} → {FRAME_W}×{FRAME_H}, "
+              f"пропорция кадра — равномерное увеличение без кропа")
+        return clip
     staged = clip.with_name(f"{clip.stem}_landscape{clip.suffix}")
     clip.rename(staged)
     plan = reframe(staged, clip, at_sec=min(0.5, info.duration_sec / 2))
@@ -86,6 +100,32 @@ def _to_portrait(clip: Path) -> Path:
     print(f"  {clip.name}: {info.width}×{info.height} → {FRAME_W}×{FRAME_H}, "
           f"окно {plan['width']}×{plan['height']} от x={plan['x0']}")
     return clip
+
+
+def _is_frame_ratio(width: int, height: int, *, tol: float = 0.01) -> bool:
+    """Снят ли клип в пропорции кадра конвейера (9:16)."""
+    if not width or not height:
+        return False
+    return abs(int(width) / int(height) - FRAME_W / FRAME_H) <= tol
+
+
+def _scale_to_frame(src: Path, dst: Path) -> None:
+    """Равномерное увеличение до кадра конвейера, без кропа и без растяжки.
+
+    `setsar=1` обязателен: без него масштабирование оставляет в контейнере
+    неквадратный пиксель, и кадр 1080×1920 показывается сплющенным, хотя в
+    файле размеры верные.
+    """
+    import subprocess
+
+    from src.lib.ffmpeg import ffmpeg_bin
+
+    subprocess.run(
+        [ffmpeg_bin(), "-v", "error", "-y", "-c:v", "libvpx-vp9", "-i", str(src),
+         "-vf", f"scale={FRAME_W}:{FRAME_H}:flags=lanczos,setsar=1",
+         "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", "24",
+         "-row-mt", "1", "-c:a", "libopus", "-b:a", "128k", str(dst)],
+        check=True)
 
 
 def main(argv: list[str]) -> int:

@@ -5,7 +5,7 @@
 1. Live run только в Actions по заявке `config/ci_build_request.json` (или ручной `workflow_dispatch` заказчика). Не коммитить заявку «на всякий» с фиксом багов.
 2. Cursor не вызывает `src.cli run` в live. Mock (`providers.mode=mock`) — только тесты и сухой прогон.
 3. Ключи не печатать. Секреты живут в GitHub Actions secrets.
-4. Аватар только MCP → `assets/avatar_clips/<id>/` (лук `99ccc74e764947c394cd4ef210960a6f`, engine `avatar_v`, webm+alpha) → `heygen.source=prepared`. Live HeyGen API из чата не звать.
+4. Аватар только MCP → `assets/avatar_clips/<id>/` → `heygen.source=prepared`. Live HeyGen API из чата не звать. Лук, движок и разрешение — из `config/config.yaml` (`heygen.avatar_id`, `heygen.engine`, `heygen.output`), **не отсюда**: id, переписанный в документации, устаревает молча, и ролик собирается на прежнем аватаре.
 5. Нет новой озвучки и нового аватара на фикс QC. Перерендер `--from P7` (или `--from P11`, если менялись только композитор/сабы/SFX). Смена текста блоков = новый `video_id`.
 6. Одна версия монтажа. Не A и B.
 7. Аватар ≤5 появлений и ≤50 % длительности ролика.

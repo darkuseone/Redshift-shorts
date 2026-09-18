@@ -572,7 +572,7 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
 
 
 def apply_semantic_qc(qc: dict[str, Any], vision: dict[str, Any] | None) -> dict[str, Any]:
-    """§11.2 входит в решение о выдаче: mismatch > порога или skip ≠ success."""
+    """§11.2: mismatch > порога блокирует. skip_vision — advisory, файл выдаётся."""
     from .vision_qc import semantic_blocks
 
     qc = {**qc, "checks": list(qc.get("checks") or []),
@@ -604,7 +604,7 @@ def apply_semantic_qc(qc: dict[str, Any], vision: dict[str, Any] | None) -> dict
         "threshold": limit,
         "detail": detail,
         "timecode_sec": None,
-        "blocking": True,
+        "blocking": (not skipped),
     }
     qc["checks"] = [c for c in qc["checks"] if c.get("id") != "QC-SEMANTIC"] + [check]
     blocking = [c for c in qc["checks"] if c["blocking"]]

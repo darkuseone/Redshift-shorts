@@ -356,11 +356,15 @@ def test_nasa_plate_is_skipped_for_empty_slot_bg(tmp_path):
     assert _plate_source(slots[1], slots, prepared, assets) is None
 
 
-def test_compose_zoom_unchanged_for_0042_r7():
-    # Steering: do not touch avatar/zoom this run (native 9:16 is NEXT videos).
+def test_compose_zoom_moved_to_natural_for_the_native_look_r63():
+    # This test's own steering note said it: "native 9:16 is NEXT videos" —
+    # r63 is that round. The channel's look is shot vertically now and
+    # already fills the frame, so the value moved from 2.7 (band-fit, scale
+    # a small subject up) to 1.0 (natural placement, never scale) — see
+    # `src.lib.render.avatar_compose`'s module docstring for why.
     import yaml
     cfg = yaml.safe_load((ROOT / "config/config.yaml").read_text())
-    assert float(cfg["heygen"]["compose_zoom"]) == 2.7
+    assert float(cfg["heygen"]["compose_zoom"]) == 1.0
 
 
 def test_ticker_plate_is_skipped_for_non_cta_empty_slot():

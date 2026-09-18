@@ -1,0 +1,1343 @@
+{
+  "video_id": "redshift_0051",
+  "title": "Соавтор ChatGPT выпустил Jev — модель без текста",
+  "category": "ai",
+  "language": "ru",
+  "target_duration_sec": 58.0,
+  "estimated_speech_sec": 49.137,
+  "tts_length_buffer_pct": 22.0,
+  "tts_target_sec": 59.947,
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "15 сентября соавтор ChatGPT выпустил Jev — без текста.",
+      "spoken_text": "пятнадцать сентября́ соавтор ChatGPT выпустил Jev — без текста.",
+      "tokens": [
+        {
+          "display": "15",
+          "spoken": [
+            "пятнадцать"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "сентября",
+          "spoken": [
+            "сентября́"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "соавтор",
+          "spoken": [
+            "соавтор"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "ChatGPT",
+          "spoken": [
+            "ChatGPT"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "выпустил",
+          "spoken": [
+            "выпустил"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "Jev —",
+          "spoken": [
+            "Jev",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": true
+        },
+        {
+          "display": "без",
+          "spoken": [
+            "без"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "текста.",
+          "spoken": [
+            "текста",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "Jev",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "ONLY dark card JEV red frame on moving code UI. NO Russian plate. Avatar off. Motion from frame 0.",
+      "broll_queries": [
+        "dark code editor terminal neon cursor scrolling"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "JEV",
+        "template_hint": "text-fullscreen/fact-card"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 2.713,
+      "planned_start_sec": 0.0,
+      "planned_end_sec": 2.713
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Diogo Almeida. Он делал RLHF в OpenAI. Два года в стелсе. Компания TypeSafe. Сид сорок миллионов. Первый публичный System One.",
+      "spoken_text": "Diogo Almeida. Он делал RLHF в опен эй ай. Два года в стелсе. Компания TypeSafe. Сид сорок миллионов. Первый публичный System One.",
+      "tokens": [
+        {
+          "display": "Diogo",
+          "spoken": [
+            "Diogo"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Almeida.",
+          "spoken": [
+            "Almeida",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Он",
+          "spoken": [
+            "Он"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "делал",
+          "spoken": [
+            "делал"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "RLHF",
+          "spoken": [
+            "RLHF"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "OpenAI.",
+          "spoken": [
+            "опен",
+            "эй",
+            "ай",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "2",
+          "spoken": [
+            "Два"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "года",
+          "spoken": [
+            "года"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "стелсе.",
+          "spoken": [
+            "стелсе",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Компания",
+          "spoken": [
+            "Компания"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "TypeSafe.",
+          "spoken": [
+            "TypeSafe",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": true
+        },
+        {
+          "display": "Сид",
+          "spoken": [
+            "Сид"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "40 000 000",
+          "spoken": [
+            "сорок",
+            "миллионов",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Первый",
+          "spoken": [
+            "Первый"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "публичный",
+          "spoken": [
+            "публичный"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "System",
+          "spoken": [
+            "System"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "One.",
+          "spoken": [
+            "One",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "TypeSafe",
+      "answers_hook": false,
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Avatar + dark 3-line card: TYPESAFE / $40M SEED / SYSTEM ONE. No white studio.",
+      "broll_queries": [
+        "founder portrait dark office microphone"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "TYPESAFE · $40M · SYSTEM ONE",
+        "template_hint": "text-fullscreen/stack-3lines"
+      },
+      "sfx": "whoosh_in",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 8.879,
+      "planned_start_sec": 2.713,
+      "planned_end_sec": 11.592
+    },
+    {
+      "id": "b3",
+      "role": "evidence",
+      "text": "На сайте свои цифры: сто девяносто четыре раза быстрее, четыреста сорок пять раз дешевле. Вход — сорок два доллара за миллиард токенов. Выход бесплатный.",
+      "spoken_text": "На сайте свои цифры: сто девяносто четыре раза быстрее, четыреста сорок пять раз дешевле. Вход — сорок два доллара за миллиард токенов. Выход бесплатный.",
+      "tokens": [
+        {
+          "display": "На",
+          "spoken": [
+            "На"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "сайте",
+          "spoken": [
+            "сайте"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "свои",
+          "spoken": [
+            "свои"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "цифры:",
+          "spoken": [
+            "цифры",
+            ":"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "194",
+          "spoken": [
+            "сто",
+            "девяносто",
+            "четыре"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "раза",
+          "spoken": [
+            "раза"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "быстрее,",
+          "spoken": [
+            "быстрее",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "445",
+          "spoken": [
+            "четыреста",
+            "сорок",
+            "пять"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "раз",
+          "spoken": [
+            "раз"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "дешевле.",
+          "spoken": [
+            "дешевле",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Вход —",
+          "spoken": [
+            "Вход",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "42",
+          "spoken": [
+            "сорок",
+            "два"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "доллара",
+          "spoken": [
+            "доллара"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "за",
+          "spoken": [
+            "за"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "миллиард",
+          "spoken": [
+            "миллиард"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "токенов.",
+          "spoken": [
+            "токенов",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Выход",
+          "spoken": [
+            "Выход"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "бесплатный.",
+          "spoken": [
+            "бесплатный",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": true
+        }
+      ],
+      "emphasis_word": "бесплатный",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Two dark compare bars: 194x SPEED vs 445x COST. Plate $42 / BTok. Source-chip TYPESAFE no red.",
+      "broll_queries": [
+        "data center gpu rack lights close"
+      ],
+      "overlay": {
+        "type": "dataviz"
+      },
+      "sfx": "data_beep",
+      "meme_allowed": false,
+      "source_ref": "typesafe.ai",
+      "gaze": false,
+      "_estimated_sec": 9.619,
+      "planned_start_sec": 11.592,
+      "planned_end_sec": 21.211
+    },
+    {
+      "id": "b4",
+      "role": "develop",
+      "text": "Секрет простой. Jev не печатает слова по одному. Он сразу отдаёт выбор и вероятность. Семьдесят — пятьсот миллисекунд.",
+      "spoken_text": "Секрет простой. Jev не печатает слова по одному. Он сразу отдаёт выбор и вероятность. Семьдесят — пятьсот миллисекунд.",
+      "tokens": [
+        {
+          "display": "Секрет",
+          "spoken": [
+            "Секрет"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "простой.",
+          "spoken": [
+            "простой",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Jev",
+          "spoken": [
+            "Jev"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "печатает",
+          "spoken": [
+            "печатает"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "слова",
+          "spoken": [
+            "слова"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "по",
+          "spoken": [
+            "по"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "одному.",
+          "spoken": [
+            "одному",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Он",
+          "spoken": [
+            "Он"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "сразу",
+          "spoken": [
+            "сразу"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "отдаёт",
+          "spoken": [
+            "отдаёт"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "выбор",
+          "spoken": [
+            "выбор"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "вероятность.",
+          "spoken": [
+            "вероятность",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": true
+        },
+        {
+          "display": "Семьдесят —",
+          "spoken": [
+            "Семьдесят",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "500",
+          "spoken": [
+            "пятьсот"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "миллисекунд.",
+          "spoken": [
+            "миллисекунд",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "вероятность",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "JSON decision dump + 70-500 MS slam. Not a chatbot bubble.",
+      "broll_queries": [
+        "json code dark theme structured output"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "70-500 MS",
+        "template_hint": "text-fullscreen/text-number-slam"
+      },
+      "sfx": "ui_click",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 7.337,
+      "planned_start_sec": 21.211,
+      "planned_end_sec": 28.548
+    },
+    {
+      "id": "b5",
+      "role": "develop",
+      "text": "Обучение другое. Не RLHF под чат. RLCD — калиброванные решения для кода.",
+      "spoken_text": "Обучение другое. Не RLHF под чат. RLCD — калиброванные решения для кода.",
+      "tokens": [
+        {
+          "display": "Обучение",
+          "spoken": [
+            "Обучение"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "другое.",
+          "spoken": [
+            "другое",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "Не",
+          "spoken": [
+            "Не"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "RLHF",
+          "spoken": [
+            "RLHF"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "под",
+          "spoken": [
+            "под"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "чат.",
+          "spoken": [
+            "чат",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "RLCD —",
+          "spoken": [
+            "RLCD",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": true
+        },
+        {
+          "display": "калиброванные",
+          "spoken": [
+            "калиброванные"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "решения",
+          "spoken": [
+            "решения"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "для",
+          "spoken": [
+            "для"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "кода.",
+          "spoken": [
+            "кода",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "RLCD",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Split plate RLHF CHAT vs RLCD CODE. Dark cards red frame.",
+      "broll_queries": [
+        "software workflow nodes graph dark ui"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "RLHF CHAT / RLCD CODE",
+        "template_hint": "text-fullscreen/text-compare-vs"
+      },
+      "sfx": "whoosh_in",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 5.055,
+      "planned_start_sec": 28.548,
+      "planned_end_sec": 33.603
+    },
+    {
+      "id": "b6",
+      "role": "twist",
+      "text": "Халявы нет. Jev не пишет текст. Не пишет код. Не объясняет ход мыслей. Цифры — их собственные тесты, не независимый бенчмарк. Это судья внутри программы, не новый чат.",
+      "spoken_text": "Халявы нет. Jev не пишет текст. Не пишет код. Не объясняет ход мыслей. Цифры — их собственные тесты, не независимый бенчмарк. Это судья внутри программы, не новый чат.",
+      "tokens": [
+        {
+          "display": "Халявы",
+          "spoken": [
+            "Халявы"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "нет.",
+          "spoken": [
+            "нет",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "Jev",
+          "spoken": [
+            "Jev"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "пишет",
+          "spoken": [
+            "пишет"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "текст.",
+          "spoken": [
+            "текст",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "Не",
+          "spoken": [
+            "Не"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "пишет",
+          "spoken": [
+            "пишет"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "код.",
+          "spoken": [
+            "код",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "Не",
+          "spoken": [
+            "Не"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "объясняет",
+          "spoken": [
+            "объясняет"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "ход",
+          "spoken": [
+            "ход"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "мыслей.",
+          "spoken": [
+            "мыслей",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "Цифры —",
+          "spoken": [
+            "Цифры",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "их",
+          "spoken": [
+            "их"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "собственные",
+          "spoken": [
+            "собственные"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "тесты,",
+          "spoken": [
+            "тесты",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "независимый",
+          "spoken": [
+            "независимый"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "бенчмарк.",
+          "spoken": [
+            "бенчмарк",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "Это",
+          "spoken": [
+            "Это"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "судья",
+          "spoken": [
+            "судья"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": true
+        },
+        {
+          "display": "внутри",
+          "spoken": [
+            "внутри"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "программы,",
+          "spoken": [
+            "программы",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "новый",
+          "spoken": [
+            "новый"
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        },
+        {
+          "display": "чат.",
+          "spoken": [
+            "чат",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b6",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "судья",
+      "answers_hook": true,
+      "avatar_directive": "on",
+      "mode": "A",
+      "mode_reason": "mode_hint из сценария",
+      "visual_intent": "Avatar + dark plate NO TEXT / OWN TESTS. Do not sell AGI.",
+      "broll_queries": [
+        "court gavel desk dark close"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "NO TEXT",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "sfx": "sub_drop",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 9.984,
+      "planned_start_sec": 33.603,
+      "planned_end_sec": 43.587
+    },
+    {
+      "id": "b7",
+      "role": "cta",
+      "text": "Код плюс ИИ вместо ещё одного чата. Это короткий путь, который они продают. REDSHIFT",
+      "spoken_text": "Код плюс искусственный интеллект вместо ещё одного чата. Это короткий путь, который они продают. REDSHIFT",
+      "tokens": [
+        {
+          "display": "Код",
+          "spoken": [
+            "Код"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "плюс",
+          "spoken": [
+            "плюс"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "ИИ",
+          "spoken": [
+            "искусственный",
+            "интеллект"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "вместо",
+          "spoken": [
+            "вместо"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "ещё",
+          "spoken": [
+            "ещё"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "1",
+          "spoken": [
+            "одного"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "чата.",
+          "spoken": [
+            "чата",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "Это",
+          "spoken": [
+            "Это"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "короткий",
+          "spoken": [
+            "короткий"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "путь,",
+          "spoken": [
+            "путь",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "который",
+          "spoken": [
+            "который"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "они",
+          "spoken": [
+            "они"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "продают.",
+          "spoken": [
+            "продают",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": false
+        },
+        {
+          "display": "REDSHIFT",
+          "spoken": [
+            "REDSHIFT"
+          ],
+          "is_word": true,
+          "block_id": "b7",
+          "emphasis": true
+        }
+      ],
+      "emphasis_word": "REDSHIFT",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "роль блока (§6)",
+      "visual_intent": "City night. FOLLOWUP chip no red. REDSHIFT Latin no dot.",
+      "broll_queries": [
+        "city night traffic lights aerial"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "FOLLOWUP",
+        "template_hint": "lower-thirds/source-domain"
+      },
+      "sfx": "subscribe_ping",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "_estimated_sec": 5.55,
+      "planned_start_sec": 43.587,
+      "planned_end_sec": 49.137
+    }
+  ],
+  "avatar": {
+    "planned_share": 0.3839,
+    "planned_sec": 18.863,
+    "appearances": 2,
+    "avatar_id": "cfcb357563454e8cb7083258e4424992"
+  },
+  "planned_counts": {
+    "fullscreen_text": 3,
+    "fullscreen_text_scripted": 3,
+    "highlight": 1,
+    "highlight_scripted": 1,
+    "memes": 0,
+    "bg_vfx": 2
+  },
+  "music_mood": "tense",
+  "music_tags": [
+    "tense",
+    "driving",
+    "strings"
+  ],
+  "sources": [
+    {
+      "title": "Introducing System One Models & Jev",
+      "domain": "typesafe.ai",
+      "url": "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
+      "show_on_screen": true,
+      "screen_template": "browser",
+      "published": "15 сентября 2026",
+      "snippet": "Jev gives up string generation. 70-500 ms. $0.042 / MTok. Output free.",
+      "highlight_line": "JEV"
+    },
+    {
+      "title": "After co-inventing ChatGPT... releasing Jev",
+      "domain": "x.com",
+      "url": "https://x.com/completeskeptic/status/2099925682726002904",
+      "show_on_screen": false,
+      "screen_template": "search",
+      "published": "15 сентября 2026",
+      "snippet": "20-200x faster. 40-400x cheaper. Output tokens free. Cannot generate text."
+    }
+  ],
+  "cta": {
+    "text": "Код плюс ИИ вместо ещё одного чата.",
+    "type": "part2_cliff"
+  },
+  "hook": {
+    "on_screen": "JEV",
+    "style": "number_slam"
+  },
+  "show_subscribe": true,
+  "modes_by_block": {
+    "b1": "C",
+    "b2": "A",
+    "b3": "C",
+    "b4": "C",
+    "b5": "C",
+    "b6": "A",
+    "b7": "C"
+  },
+  "conflicts": []
+}

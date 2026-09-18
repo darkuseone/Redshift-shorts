@@ -15,3 +15,16 @@ S3 (`REDSHIFT_S3_*`), если секреты есть, иначе артефа�
 
 Потолок локального кэша — `storage.max_bytes`. Дальше LRU
 (`python -m src.cli maintenance`).
+
+## Что всё-таки лежит в git
+
+`/assets/footage/**` в `.gitignore` — про сырой сток и превью. Отобранный
+материал ролика кладётся в репозиторий силой (`git add -f`), чтобы раннер
+Actions собирал ролик из чекаута, а не ходил за каждым кадром в сеть:
+
+* `magnific/` — плиты, сделанные под ролик;
+* `nasa/` — public domain, NASA Images (`extra.source_id` — чем подтверждается);
+* `official/` — иллюстрация из самой новости, с указанием источника в кадре.
+
+У каждой записи индекса есть `extra.attribution`, а у заимствованного —
+`extra.source_url` и `extra.credit_on_screen`.

@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from ..lib.footage_seed import SEED_SCORE
+from ..lib.hydrate_footage import hydrate_repo_footage
 from ..lib.logging import get_logger
 from ..lib.manifest import AssetRecord, FootageIndex, new_id, tag_url_coherence
 from ..lib.palette import frame_light, palette_verdict
@@ -30,10 +31,18 @@ from ..lib.query import (
     classify_intent, negative_reject_reason, slot_negatives,
     thematic_reject_reason, topical_match_score,
 )
+from ..lib.text import sync_broll_from_script
 from ..p7_broll_search.search import (
-    _footage_pin_entry, _load_footage_pins, _local_cache_row, footage_pool_count,
-    judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids, surplus_report,
+    _footage_pin_entry, _load_footage_by_block, _load_footage_pins, _local_cache_row,
+    footage_pool_count, judge_blocks_stage1_dead, pin_id_denied, stage1_dead_ids,
+    surplus_report,
 )
+
+# Отпечаток кода шага обходит модули по значениям в пространстве имён (см.
+# lib/cache.py). Замок слотов выполняется сразу после этого шага, поэтому его
+# правка обязана отменять кэш шага — а лениво импортированный внутри функции
+# модуль в граф не попадает. Держим ссылку на уровне модуля.
+from ..lib import slots_lock as _lock_module  # noqa: F401
 
 COHERENCE_MIN = 0.15
 
@@ -340,21 +349,36 @@ def _slot_duration(slot: dict[str, Any]) -> float:
 def _leftover_prefer_key(asset_id: str, slot: dict[str, Any],
                          pin_prefer: list[str],
                          words: list[dict[str, Any]] | None = None,
+                         by_block: dict[str, str | None] | None = None,
                          ) -> tuple[int, int]:
-    """Prefer leftover pins that match this slot's spoken window, else list order."""
+    """Prefer leftover pins that match this slot's spoken window, else list order.
+
+    Hard ``by_block`` pins for this block win with absolute priority (-30).
+    """
+    bid = str(slot.get("block_id") or "")
+    pid = str(asset_id or "")
+    if by_block and bid and by_block.get(bid) == pid:
+        try:
+            rank = list(pin_prefer).index(pid)
+        except ValueError:
+            rank = 99
+        return (-30, rank)
     return pin_slot_prefer_key(asset_id, slot, pin_prefer, words=words)
 
 
 def _prefer_penalized(asset_id: str, slot: dict[str, Any], pin_prefer: list[str],
-                      words: list[dict[str, Any]] | None) -> bool:
+                      words: list[dict[str, Any]] | None,
+                      by_block: dict[str, str | None] | None = None) -> bool:
     """True when this prefer pin is scored as a mismatch on the slot."""
-    return _leftover_prefer_key(asset_id, slot, pin_prefer, words)[0] > 0
+    return _leftover_prefer_key(
+        asset_id, slot, pin_prefer, words, by_block=by_block)[0] > 0
 
 
 def _rebalance_prefers_onto_speech(
         *, accepted: dict[int, dict[str, Any]],
         pin_prefer: list[str], slots_by_index: dict[int, dict[str, Any]],
-        words: list[dict[str, Any]] | None) -> int:
+        words: list[dict[str, Any]] | None,
+        by_block: dict[str, str | None] | None = None) -> int:
     """Swap already-accepted prefer pins onto the slot whose speech they match.
 
     Exclusive P7 assignment can park the Nature figure on a later evidence
@@ -391,17 +415,17 @@ def _rebalance_prefers_onto_speech(
                 aid_a = str(accepted[idx_a].get("asset_id") or "")
                 aid_b = str(accepted[idx_b].get("asset_id") or "")
                 before = (
-                    _leftover_prefer_key(aid_a, slot_a, pin_prefer, words)[0]
-                    + _leftover_prefer_key(aid_b, slot_b, pin_prefer, words)[0]
+                    _leftover_prefer_key(aid_a, slot_a, pin_prefer, words, by_block=by_block)[0]
+                    + _leftover_prefer_key(aid_b, slot_b, pin_prefer, words, by_block=by_block)[0]
                 )
                 after = (
-                    _leftover_prefer_key(aid_a, slot_b, pin_prefer, words)[0]
-                    + _leftover_prefer_key(aid_b, slot_a, pin_prefer, words)[0]
+                    _leftover_prefer_key(aid_a, slot_b, pin_prefer, words, by_block=by_block)[0]
+                    + _leftover_prefer_key(aid_b, slot_a, pin_prefer, words, by_block=by_block)[0]
                 )
                 if after >= before:
                     continue
-                if _prefer_penalized(aid_a, slot_b, pin_prefer, words) or \
-                        _prefer_penalized(aid_b, slot_a, pin_prefer, words):
+                if _prefer_penalized(aid_a, slot_b, pin_prefer, words, by_block=by_block) or \
+                        _prefer_penalized(aid_b, slot_a, pin_prefer, words, by_block=by_block):
                     continue
                 accepted[idx_a], accepted[idx_b] = accepted[idx_b], accepted[idx_a]
                 accepted[idx_a]["slot_index"] = int(idx_a)
@@ -416,12 +440,12 @@ def _rebalance_prefers_onto_speech(
         if aid not in prefer_set:
             continue
         slot = slots_by_index.get(int(idx), {})
-        cur = _leftover_prefer_key(aid, slot, pin_prefer, words)[0]
+        cur = _leftover_prefer_key(aid, slot, pin_prefer, words, by_block=by_block)[0]
         best_idx: int | None = None
         best_sc = cur
         for dest_idx in _empty_destinations():
             dest = slots_by_index.get(int(dest_idx), {})
-            sc = _leftover_prefer_key(aid, dest, pin_prefer, words)[0]
+            sc = _leftover_prefer_key(aid, dest, pin_prefer, words, by_block=by_block)[0]
             if sc >= best_sc or sc > 0:
                 continue
             best_idx = int(dest_idx)
@@ -443,7 +467,8 @@ def _hook_mismatch(asset_id: str, slot: dict[str, Any], pin_prefer: list[str],
 def _drop_mismatched_prefers(
         *, accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
         pin_prefer: list[str], slots_by_index: dict[int, dict[str, Any]],
-        words: list[dict[str, Any]] | None) -> int:
+        words: list[dict[str, Any]] | None,
+        by_block: dict[str, str | None] | None = None) -> int:
     """Unaccept prefer pins that still sit on a penalized slot after swaps."""
     dropped = 0
     for idx in list(accepted):
@@ -451,7 +476,7 @@ def _drop_mismatched_prefers(
         if aid not in set(pin_prefer):
             continue
         slot = slots_by_index.get(int(idx), {})
-        if _leftover_prefer_key(aid, slot, pin_prefer, words)[0] <= 0:
+        if _leftover_prefer_key(aid, slot, pin_prefer, words, by_block=by_block)[0] <= 0:
             continue
         accepted_counts[aid] = max(0, int(accepted_counts.get(aid, 1)) - 1)
         del accepted[idx]
@@ -465,7 +490,8 @@ def _fill_unfilled_from_leftover_prefers(
         judged: list[dict[str, Any]], pin_prefer: list[str], pin_deny: set[str],
         index: FootageIndex, repeat_max: int, skip_live: bool,
         palette_rules: dict[str, Any], visible_min: float,
-        words: list[dict[str, Any]] | None = None) -> int:
+        words: list[dict[str, Any]] | None = None,
+        by_block: dict[str, str | None] | None = None) -> int:
     """Hard-prefer pins parked as P7 runner-ups onto later empty slots.
 
     keep_per_slot used to mark unused prefers taken, so 0042 never showed the
@@ -473,6 +499,7 @@ def _fill_unfilled_from_leftover_prefers(
     """
     if not pin_prefer:
         return 0
+    hydrate_repo_footage(ctx, index)
     asset_slots = [
         s for s in plan.get("slots") or []
         if s.get("needs_asset")
@@ -498,19 +525,40 @@ def _fill_unfilled_from_leftover_prefers(
         slot_index = int(slot["index"])
         if leftover:
             leftover.sort(key=lambda pid: _leftover_prefer_key(
-                pid, slot, pin_prefer, words))
+                pid, slot, pin_prefer, words, by_block=by_block))
         slot_dur = _slot_duration(slot)
         intent = slot.get("visual_intent", "") or slot.get("reason", "")
         picked_id = None
+        by_block_ids = {
+            str(v) for v in (by_block or {}).values() if v
+        }
+        gap_fill = "gap fill" in str(slot.get("reason") or "").lower()
         for pid in leftover:
+            # Never park REJECTED stamp on prepared-avatar interstitials
+            # (0050 Lean-check gap at ~49s → QC-SEMANTIC).
+            if gap_fill and "stamp" in str(pid).lower():
+                continue
             rec = index.by_id(pid)
             if rec is None or getattr(rec, "quarantined", False):
+                if pid in by_block_ids:
+                    _log.error(
+                        "by_block pin missing from storage after hydrate: %s",
+                        pid)
                 continue
             if not rec.file:
+                if pid in by_block_ids:
+                    _log.error(
+                        "by_block pin missing from storage after hydrate: %s",
+                        pid)
                 continue
             if storage is not None and not storage.exists(rec.file):
+                if pid in by_block_ids:
+                    _log.error(
+                        "by_block pin missing from storage after hydrate: %s",
+                        pid)
                 continue
-            bonus = _leftover_prefer_key(pid, slot, pin_prefer, words)[0]
+            bonus = _leftover_prefer_key(
+                pid, slot, pin_prefer, words, by_block=by_block)[0]
             if bonus > 0:
                 continue
             carve_sec: float | None = None
@@ -570,18 +618,328 @@ def _fill_unfilled_from_leftover_prefers(
     return filled
 
 
+
+
+def _dark_reject_reason(light: dict[str, Any] | None, slot: dict[str, Any],
+                        *, visible_min: float, black_max: float) -> str:
+    """Почему этот кадр нельзя ставить перебивкой: он ничего не показывает.
+
+    Отказ остаётся там, где и был, — на перебивке: она живёт полторы секунды
+    ради того, чтобы в кадре что-то произошло, и сумрачный материал ей не
+    годится.
+
+    ``black_max`` отказом не делает. Замер по библиотеке 0050 показал, что
+    почти чёрный футаж там выбран нарочно: девять клипов светлее порога дают
+    меньше 6 % кадра, а весь яркий материал (vortex 88 %, redsmoke 63 %,
+    darkember 52 %) лежит в ``deny``. Гейт, режущий такое, вычистил бы шесть
+    занятых слотов сразу и отдал бы их лестнице §7.2 — то самое «слайд-шоу из
+    текста», от которого лестница и защищает. Порог поэтому только считает и
+    пишет в журнал: решение, менять ли материал, стоит кредитов Magnific и
+    принадлежит заказчику, а не судье.
+    """
+    if light is None:
+        return ""
+    share = float(light.get("visible_share", 1.0))
+    if str(slot.get("asset_role") or "") == "interstitial" and share < visible_min:
+        return (f"перебивке видно {share:.0%} кадра при пороге "
+                f"{visible_min:.0%}: зритель увидит субтитр на пустоте")
+    return ""
+
+
+def _warn_if_black(light: dict[str, Any] | None, candidate: dict[str, Any],
+                   slot: dict[str, Any], *, black_max: float) -> None:
+    """Назвать в журнале футаж, который в кадре читается как чёрный экран.
+
+    На 0050 под числами b4 встали steelglow (0.8 % видимого кадра) и
+    charcoalash (0.2 %): четыре с половиной секунды подряд зритель видел
+    субтитр на пустоте, при том что в заявке блока написано «Steel/network
+    motion under numbers. Not flat black.». Без этой строки в журнале такое
+    ловится только покадровым осмотром готового ролика.
+
+    Область действия — скачанный сток: кадры для замера кладёт P7, и только
+    в строку скачанного кандидата (``_local_cache_row`` их не несёт). Значит
+    материал из локальной базы — вся библиотека 0050 — сюда пока не попадает
+    и остаётся без замера, как и без проверки палитры. Чинится это в P7,
+    извлечением кадров и для записей базы, и стоит отдельного круга: то же
+    извлечение открывает локальным клипам палитровый гейт, а он умеет
+    отказывать, и заявка ``prefer`` на 0050 этого не переживёт без разбора.
+    """
+    if light is None:
+        return
+    share = float(light.get("visible_share", 1.0))
+    if share >= black_max:
+        return
+    _log.warning("футаж почти чёрный: в кадре видно %.0f%%", share * 100,
+                 extra={"asset": candidate.get("asset_id"),
+                        "slot": slot.get("index"),
+                        "block": slot.get("block_id"),
+                        "visible_share": share,
+                        "mean": light.get("mean")})
+
+
+def _scrub_stamp_off_lean_gaps(
+        *, accepted: dict[int, dict[str, Any]],
+        slots_by_index: dict[int, dict[str, Any]],
+        judged: list[dict[str, Any]],
+        repeat_max: int,
+        words: list[dict[str, Any]] | None = None,
+        keep_on: str = "") -> int:
+    """REJECTED stamp must not sit on prepared-avatar Lean-check gaps.
+
+    Кроме одного — того, куда штамп прибит заявкой ``slots_lock``. Между
+    окнами замороженного аватара на 0050 два зазора: «Lean проверяет каждый
+    шаг» и «Миллион OpenAI не берёт». Штампу нечего делать на первом и место
+    на втором — именно его называет критика. Проверка же смотрела только на
+    слово «gap fill» в причине слота и вычищала оба, а так как она идёт до
+    ``apply_lock_after_p8``, замок оставался без донора: штамп не доехал до
+    кадра ни разу за девять раундов.
+    """
+    replacements = (
+        "magnific_0050_codeglow", "magnific_0050_steelglow",
+        "magnific_0050_darkgrid", "magnific_0050_tealmister",
+    )
+
+    def _count(pid: str) -> int:
+        return sum(1 for v in accepted.values()
+                   if str(v.get("asset_id") or "") == pid)
+
+    fixed = 0
+    for idx, entry in list(accepted.items()):
+        if "stamp" not in str(entry.get("asset_id") or "").lower():
+            continue
+        slot = slots_by_index.get(int(idx), {})
+        if "gap fill" not in str(slot.get("reason") or "").lower():
+            continue
+        if keep_on:
+            from ..lib.pin_match import overlapping_speech
+            if keep_on.lower() in overlapping_speech(slot, words).lower():
+                continue
+        pick = next((pid for pid in replacements if _count(pid) < repeat_max), None)
+        if pick is None:
+            del accepted[int(idx)]
+            fixed += 1
+            continue
+        row = next((j for j in judged if str(j.get("asset_id") or "") == pick), None)
+        if row is None:
+            accepted[int(idx)] = {
+                **entry,
+                "asset_id": pick,
+                "reason": f"gap fill scrub: stamp→{pick.rsplit('_', 1)[-1]}",
+                "fallback_reason": "lean-check gap ≠ REJECTED stamp",
+            }
+        else:
+            accepted[int(idx)] = {
+                **row, "slot_index": int(idx),
+                "reason": f"gap fill scrub: stamp→{pick.rsplit('_', 1)[-1]}",
+            }
+        fixed += 1
+    return fixed
+
+
+def _force_by_block_pins(
+        *, ctx, cfg, plan: dict[str, Any], slots_by_index: dict[int, dict[str, Any]],
+        accepted: dict[int, dict[str, Any]], accepted_counts: dict[str, int],
+        judged: list[dict[str, Any]], by_block: dict[str, str | None],
+        pin_deny: set[str], index: FootageIndex, skip_live: bool,
+        palette_rules: dict[str, Any],
+        repeat_max: int = 1,
+        pin_prefer: list[str] | None = None,
+        words: list[dict[str, Any]] | None = None) -> int:
+    """Hard-accept footage_pins ``by_block`` assets onto their mapped blocks.
+
+    Runs after leftover prefer fill. Non-null mapped ids hydrate first, then
+    land on **at most one** asset slot per ``asset_id`` (honor
+    ``same_asset_max_slots`` globally — densify siblings must NOT clone the
+    same pin; QC-5). Prefer the speech-aligned life-beat slot when several
+    densify fragments exist. Empty siblings stay for leftover prefer / stock
+    with distinct plates.
+    """
+    if not by_block:
+        return 0
+    hydrate_repo_footage(ctx, index)
+    storage = getattr(ctx, "storage", None)
+    fill_roles = ("broll", "evidence", "meme", "interstitial")
+    prefer = list(pin_prefer or [])
+    asset_slots = [
+        s for s in plan.get("slots") or []
+        if s.get("needs_asset") and s.get("asset_role") in fill_roles
+    ]
+    slots_by_block: dict[str, list[dict[str, Any]]] = {}
+    for slot in asset_slots:
+        slots_by_block.setdefault(str(slot.get("block_id") or ""), []).append(slot)
+
+    mapped_blocks: dict[str, set[str]] = {}
+    for bid, pid in by_block.items():
+        if pid:
+            mapped_blocks.setdefault(str(pid), set()).add(str(bid))
+
+    # Scrub each by_block id off unmapped blocks (no cross-block clone).
+    for pid, allowed in mapped_blocks.items():
+        for other_idx, entry in list(accepted.items()):
+            if str(entry.get("asset_id") or "") != pid:
+                continue
+            other_bid = str(
+                (slots_by_index.get(int(other_idx)) or {}).get("block_id") or "")
+            if other_bid in allowed:
+                continue
+            accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
+            del accepted[other_idx]
+
+    def _pick_target(block_slots: list[dict[str, Any]], pid: str) -> dict[str, Any] | None:
+        """One slot for this pin: already-held > speech match > earliest."""
+        already = [
+            s for s in block_slots
+            if str((accepted.get(int(s["index"])) or {}).get("asset_id") or "") == pid
+        ]
+        if already:
+            return already[0]
+
+        def _rank(slot: dict[str, Any]) -> tuple:
+            idx = int(slot["index"])
+            cur = accepted.get(idx)
+            cur_aid = str((cur or {}).get("asset_id") or "")
+            # Prefer empty / mismatched prefer accepts over locked non-prefer.
+            replaceable = (
+                cur is None
+                or cur.get("decision") == "accept_prefer"
+                or not cur_aid
+            )
+            speech_key = _leftover_prefer_key(
+                pid, slot, prefer, words, by_block=by_block)[0]
+            # Densify fragments: prefer non-densify / primary (earlier start).
+            densify_pen = 1 if "densify" in str(slot.get("reason") or "").lower() else 0
+            try:
+                start = float(slot.get("start") or 0.0)
+            except (TypeError, ValueError):
+                start = 0.0
+            return (0 if replaceable else 9, speech_key, densify_pen, start, idx)
+
+        ranked = sorted(block_slots, key=_rank)
+        if not ranked:
+            return None
+        best = ranked[0]
+        if _rank(best)[0] >= 9:
+            return None
+        return best
+
+    forced = 0
+    for bid, pid in by_block.items():
+        if not pid:
+            continue
+        pid = str(pid)
+        if pin_id_denied(pid, pin_deny):
+            continue
+        rec = index.by_id(pid)
+        if rec is None or getattr(rec, "quarantined", False) or not rec.file:
+            _log.error(
+                "by_block pin missing from storage after hydrate: %s", pid)
+            continue
+        if storage is not None and not storage.exists(rec.file):
+            _log.error(
+                "by_block pin missing from storage after hydrate: %s", pid)
+            continue
+        block_slots = slots_by_block.get(str(bid)) or []
+        # Gap fills between prepared avatar windows are timed to interstitial
+        # speech (0050: «Lean проверяет»), not the block's by_block hero
+        # (stamp/REJECTED). Forcing stamp there → QC-SEMANTIC.
+        block_slots = [
+            s for s in block_slots
+            if "gap fill" not in str(s.get("reason") or "").lower()
+        ]
+        if not block_slots:
+            continue
+
+        # Global same_asset_max_slots: never place this id on > repeat_max slots.
+        # First collapse same-block densify clones down to one keeper.
+        holders = [
+            int(s["index"]) for s in block_slots
+            if str((accepted.get(int(s["index"])) or {}).get("asset_id") or "") == pid
+        ]
+        if len(holders) > max(1, repeat_max):
+            keep = holders[0]
+            for idx in holders[1:]:
+                accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
+                del accepted[idx]
+            holders = [keep]
+
+        # Also scrub extras of this pid outside the chosen slot once we pick.
+        target = _pick_target(block_slots, pid)
+        if target is None:
+            continue
+        target_idx = int(target["index"])
+
+        # Drop this pid from every other accepted slot (same or other block).
+        for other_idx, entry in list(accepted.items()):
+            if int(other_idx) == target_idx:
+                continue
+            if str(entry.get("asset_id") or "") != pid:
+                continue
+            accepted_counts[pid] = max(0, int(accepted_counts.get(pid, 1)) - 1)
+            del accepted[other_idx]
+
+        cur = accepted.get(target_idx)
+        if cur is not None and str(cur.get("asset_id") or "") == pid:
+            # Already correctly pinned on the one slot — counts may need fix.
+            accepted_counts[pid] = min(
+                max(1, int(accepted_counts.get(pid, 1))), max(1, repeat_max))
+            continue
+
+        if int(accepted_counts.get(pid, 0)) >= max(1, repeat_max):
+            # Cap already spent elsewhere after scrub — skip.
+            continue
+
+        old = accepted.get(target_idx)
+        if old is not None:
+            old_aid = str(old.get("asset_id") or "")
+            if old_aid and old_aid != pid:
+                accepted_counts[old_aid] = max(
+                    0, int(accepted_counts.get(old_aid, 1)) - 1)
+
+        intent = target.get("visual_intent", "") or target.get("reason", "") or pid
+        candidate = _local_cache_row(target_idx, rec, intent)
+        gate = _engine_gate_reason(candidate, pin_deny=pin_deny, index=index)
+        if gate:
+            continue
+        palette = palette_verdict([], palette_rules)
+        if skip_live or candidate.get("prior_score") is not None:
+            verdict_dict = skip_live_verdict(candidate, intent)
+        else:
+            verdict_dict = {
+                "score": float(SEED_SCORE),
+                "reason": "pin by_block",
+                "summary": candidate.get("vision_summary", ""),
+                "judge": "pin_prefer", "frames": 0,
+            }
+        entry = {
+            **candidate,
+            "verdict": verdict_dict,
+            "intent": intent,
+            "score": float(verdict_dict["score"]),
+            "palette": palette,
+            "decision": "accept_prefer",
+            "fallback_reason": "pin by_block",
+            "speech_locked": True,
+        }
+        judged.append(entry)
+        accepted[target_idx] = entry
+        accepted_counts[pid] = accepted_counts.get(pid, 0) + 1
+        forced += 1
+    return forced
+
+
 def run_step(ctx) -> dict[str, Any]:
     doc = ctx.read("candidates.json")
     plan = ctx.read("cut_plan.json")
+    words = ctx_words(ctx)
+    sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
     cfg = ctx.cfg
 
     accept_threshold = float(cfg.get("vision.accept_threshold", 0.70))
     reject_threshold = float(cfg.get("vision.reject_threshold", 0.45))
     arbiter_budget = int(cfg.get("vision.arbiter_max_calls", 3))
 
-    skip_live = bool(cfg.get("vision.skip_live", False))
+    skip_live = bool(cfg.get("vision.skip_live", True))
     surplus_ratio = float(cfg.get("stock.candidate_surplus", 1.3))
-    words = ctx_words(ctx)
     footage_slots = [
         s for s in plan.get("slots", [])
         if s.get("needs_asset") and s.get("asset_role") in ("broll", "evidence", "interstitial")
@@ -603,6 +961,7 @@ def run_step(ctx) -> dict[str, Any]:
     video_id = str(plan.get("video_id") or "")
     pin_deny, pin_prefer = _load_footage_pins(cfg, video_id)
     pin_entry = _footage_pin_entry(cfg, video_id)
+    by_block = _load_footage_by_block(cfg, video_id)
 
     slots_by_index = {s["index"]: s for s in plan["slots"]}
     dead_ids = stage1_dead_ids(doc.get("stage1_rejected") or [])
@@ -637,6 +996,9 @@ def run_step(ctx) -> dict[str, Any]:
     # Порог светлоты перебивки. Замер по базе: медиана 55 % видимого, у клипа,
     # давшего чёрную перебивку в 0047, — 16 %.
     visible_min = float(ctx.cfg.get("stock.interstitial_visible_min", 0.20))
+    # Ниже этого кадр читается как чёрный экран. Не отказ — строка в журнале:
+    # тёмная палитра 0050 выбрана заявкой, и судья её не отменяет.
+    black_max = float(ctx.cfg.get("stock.black_frame_min_visible", 0.06))
 
     for slot_index in sorted(by_slot):
         slot = slots_by_index.get(slot_index, {})
@@ -706,13 +1068,15 @@ def run_step(ctx) -> dict[str, Any]:
             aid = str(entry.get("asset_id") or "")
             if not aid:
                 return True
+            # same_asset_max_slots is global — densify siblings need distinct plates.
             return accepted_counts.get(aid, 0) < repeat_max
 
         prefer_gated = sorted(
             (c for c in gated
              if _prefer_rank(c.get("asset_id"), pin_prefer) is not None),
             key=lambda c: _leftover_prefer_key(
-                str(c.get("asset_id") or ""), slot, pin_prefer, words),
+                str(c.get("asset_id") or ""), slot, pin_prefer, words,
+                by_block=by_block),
         )
         best: dict[str, Any] | None = None
         for candidate in prefer_gated:
@@ -720,12 +1084,12 @@ def run_step(ctx) -> dict[str, Any]:
                 continue
             if _leftover_prefer_key(
                     str(candidate.get("asset_id") or ""), slot,
-                    pin_prefer, words)[0] > 0:
+                    pin_prefer, words, by_block=by_block)[0] > 0:
                 continue
             palette = palette_verdict(
                 [Path(f) for f in candidate.get("frames", [])], palette_rules)
-            light = (frame_light([Path(f) for f in candidate.get("frames", [])])
-                     if slot.get("asset_role") == "interstitial" else None)
+            light = frame_light([Path(f) for f in candidate.get("frames", [])])
+            _warn_if_black(light, candidate, slot, black_max=black_max)
             if skip_live or candidate.get("prior_score") is not None:
                 verdict_dict = skip_live_verdict(candidate, intent)
                 reused_scores += 1
@@ -740,11 +1104,11 @@ def run_step(ctx) -> dict[str, Any]:
                      "score": float(verdict_dict["score"]), "palette": palette}
             if light is not None:
                 entry["light"] = light
-            if light is not None and light["visible_share"] < visible_min:
+            dark_reason = _dark_reject_reason(
+                light, slot, visible_min=visible_min, black_max=black_max)
+            if dark_reason:
                 entry["decision"] = "reject_dark"
-                entry["reject_reason"] = (
-                    f"перебивке видно {light['visible_share']:.0%} кадра при пороге "
-                    f"{visible_min:.0%}: зритель увидит субтитр на пустоте")
+                entry["reject_reason"] = dark_reason
                 rejected_by_dark += 1
                 judged.append(entry)
                 continue
@@ -775,7 +1139,7 @@ def run_step(ctx) -> dict[str, Any]:
             if _prefer_rank(candidate.get("asset_id"), pin_prefer) is not None \
                     and _prefer_penalized(
                         str(candidate.get("asset_id") or ""), slot,
-                        pin_prefer, words):
+                        pin_prefer, words, by_block=by_block):
                 # Prefer pins with a positive speech penalty (ticker on
                 # evidence / hook) must not sneak in via skip_live scoring.
                 # Leftover fill parks them on the spoken money/CTA window.
@@ -866,8 +1230,8 @@ def run_step(ctx) -> dict[str, Any]:
             # Перебивка — другое: 1.4 секунды, ради того чтобы в кадре что-то
             # произошло. В 0047 на 40.5 и 50.0 сек там оказался субтитр на
             # пустоте, средняя яркость 17.7 и 20.1 из 255.
-            light = (frame_light([Path(f) for f in candidate.get("frames", [])])
-                     if slot.get("asset_role") == "interstitial" else None)
+            light = frame_light([Path(f) for f in candidate.get("frames", [])])
+            _warn_if_black(light, candidate, slot, black_max=black_max)
 
             entry = {**candidate, "verdict": verdict_dict, "intent": intent,
                      "score": float(verdict_dict["score"]), "palette": palette}
@@ -877,14 +1241,14 @@ def run_step(ctx) -> dict[str, Any]:
                 "accept" if entry["score"] >= accept_threshold
                 else "reject" if entry["score"] < reject_threshold
                 else "borderline")
-            if light is not None and light["visible_share"] < visible_min:
+            dark_reason = _dark_reject_reason(
+                light, slot, visible_min=visible_min, black_max=black_max)
+            if dark_reason:
                 # Перебивка в черноту — не перебивка. Отказ, а не штраф:
                 # §7.3 велит незакрытый слот отправлять в генерацию, а не
                 # затыкать материалом, который в кадре ничего не показывает.
                 entry["decision"] = "reject_dark"
-                entry["reject_reason"] = (
-                    f"перебивке видно {light['visible_share']:.0%} кадра при пороге "
-                    f"{visible_min:.0%}: зритель увидит субтитр на пустоте")
+                entry["reject_reason"] = dark_reason
                 rejected_by_dark += 1
                 _log.info("кандидат отклонён по темноте", extra={
                     "slot": slot_index, "asset": candidate.get("asset_id"),
@@ -956,24 +1320,66 @@ def run_step(ctx) -> dict[str, Any]:
         accepted=accepted, accepted_counts=accepted_counts, judged=judged,
         pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
         repeat_max=repeat_max, skip_live=skip_live,
-        palette_rules=palette_rules, visible_min=visible_min, words=words)
+        palette_rules=palette_rules, visible_min=visible_min, words=words,
+        by_block=by_block)
     if leftover_filled:
         _log.info("leftover prefer pins closed %s empty slot(s)", leftover_filled)
     swapped = _rebalance_prefers_onto_speech(
         accepted=accepted, pin_prefer=pin_prefer,
-        slots_by_index=slots_by_index, words=words)
+        slots_by_index=slots_by_index, words=words, by_block=by_block)
     if swapped:
         _log.info("rebalanced %s prefer pin pair(s) onto spoken slots", swapped)
     dropped = _drop_mismatched_prefers(
         accepted=accepted, accepted_counts=accepted_counts,
-        pin_prefer=pin_prefer, slots_by_index=slots_by_index, words=words)
+        pin_prefer=pin_prefer, slots_by_index=slots_by_index, words=words,
+        by_block=by_block)
     if dropped:
         leftover_filled += _fill_unfilled_from_leftover_prefers(
             ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
             accepted=accepted, accepted_counts=accepted_counts, judged=judged,
             pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
             repeat_max=repeat_max, skip_live=skip_live,
-            palette_rules=palette_rules, visible_min=visible_min, words=words)
+            palette_rules=palette_rules, visible_min=visible_min, words=words,
+            by_block=by_block)
+    forced = _force_by_block_pins(
+        ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
+        accepted=accepted, accepted_counts=accepted_counts, judged=judged,
+        by_block=by_block, pin_deny=pin_deny, index=index, skip_live=skip_live,
+        palette_rules=palette_rules, repeat_max=repeat_max,
+        pin_prefer=pin_prefer, words=words)
+    if forced:
+        _log.info("by_block pins forced onto %s block slot(s)", forced)
+    # Реплика, на которой штамп стоит по заявке: её зазор чистка обязана
+    # пропустить, иначе замку нечего будет ставить.
+    stamp_anchor = ""
+    try:
+        from ..lib.slots_lock import load_slots_lock
+        for spec in load_slots_lock(cfg, str(plan.get("video_id") or ""), plan):
+            if "stamp" in str(spec.get("asset") or "").lower():
+                stamp_anchor = str(spec.get("on") or "")
+                break
+    except Exception:                                    # noqa: BLE001
+        stamp_anchor = ""
+    scrubbed = _scrub_stamp_off_lean_gaps(
+        accepted=accepted, slots_by_index=slots_by_index,
+        judged=judged, repeat_max=repeat_max,
+        words=words, keep_on=stamp_anchor)
+    if scrubbed:
+        _log.info("scrubbed stamp off %s Lean-check gap fill(s)", scrubbed)
+    # Densify siblings left empty after one-pin-per-asset force need distinct
+    # prefer/stock plates (never re-clone the by_block id — repeat_max).
+    leftover_filled += _fill_unfilled_from_leftover_prefers(
+        ctx=ctx, cfg=cfg, plan=plan, slots_by_index=slots_by_index,
+        accepted=accepted, accepted_counts=accepted_counts, judged=judged,
+        pin_prefer=pin_prefer, pin_deny=pin_deny, index=index,
+        repeat_max=repeat_max, skip_live=skip_live,
+        palette_rules=palette_rules, visible_min=visible_min, words=words,
+        by_block=by_block)
+    from ..lib.text import snap_block_windows_to_keywords
+    snapped = snap_block_windows_to_keywords(
+        plan, words, repo_root=getattr(cfg, "repo_root", None))
+    if snapped:
+        _log.info("life-beat slot windows snapped to keywords: %s", snapped)
 
     # --- пополнение локальной базы (§14.4, §14.6) ----------------------------
     added_to_index = 0

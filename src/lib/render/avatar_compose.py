@@ -7,6 +7,29 @@ not intersect the caption strip or the bottom ``safe_zones.bottom_px``.
 The talking head sits in the lower third (captions above it). Do not shrink
 the clip below 1.0 unless the face cannot otherwise miss the caption / bottom
 safe bands — scale < 1 exposes clip edges on the canvas.
+
+## Natural placement (``heygen.compose_zoom: 1.0``)
+
+That band-fit above was built for the old landscape look: HeyGen handed back
+a 1920×1080 plate with the subject sitting small in the centre, and the only
+way to make the face read on a phone screen was to blow the whole clip up
+(``compose_zoom`` up to 2.7×) via CSS width/height on an already-encoded VP9
+frame — a real upscale, the browser interpolates pixels that were never
+there. The new look (0050 r63, ``cfcb3575…``) is shot vertically and already
+fills the frame; the owner measured a reference crop in a photo editor and
+was explicit: **stop stretching the HeyGen clip, crop it and pin it to the
+bottom of frame instead**.
+
+``fit_compose_zoom`` reads that as ``requested_zoom <= 1.0``: it skips the
+band-fit entirely and calls :func:`_fit_natural`, which never scales
+(``zoom`` is always exactly ``1.0``) and only translates the clip vertically
+so the *measured* head top (:func:`~src.lib.ffmpeg.head_box`, real alpha, not
+a guess) lands at ``avatar.head_top_frac`` of the frame height. Everything
+below the visible frame — desk, floor, the rest of the studio — falls past
+``#root``'s ``overflow:hidden`` and is simply never drawn; everything above
+the head is transparent, so the scene backdrop (or the caption band, which
+sits above the head by construction at that fraction) shows through. No
+pixel is ever asked to be bigger than the camera actually recorded it.
 """
 
 from __future__ import annotations
@@ -135,6 +158,49 @@ class ComposeFit:
         return int(round(-self.top))
 
 
+def _fit_natural(
+    face_bbox: tuple[float, float, float, float],
+    *,
+    brandbook: dict[str, Any],
+    width: int,
+    height: int,
+    mode: str,
+) -> ComposeFit:
+    """Zoom pinned to 1.0: translate only, head anchored by ``head_top_frac``.
+
+    See the module docstring — this is the r63 replacement for band-fit
+    scaling, not a special case of it. ``left`` stays 0: the measured face
+    box wobbles 60–80 px left/right frame to frame (a head turn mid-sentence,
+    not a framing error), and correcting for one sampled frame would just
+    trade a real jitter for an invented one. HeyGen's own camera already
+    centres the subject; only the vertical anchor needs setting.
+    """
+    sx1, sy1, sx2, sy2 = face_bbox
+    head_top_frac = float((brandbook.get("avatar") or {}).get("head_top_frac", 0.42))
+    target_top = float(height) * head_top_frac
+    # Floor, not a fight for the same pixels: captions live in a fixed band
+    # above the head (§5.1), and a shorter head box (a tighter alpha read)
+    # must not let the translation creep up underneath it.
+    cap_bottom = float(caption_layout_bbox(brandbook, for_avatar=True)[3])
+    if target_top < cap_bottom:
+        target_top = cap_bottom
+    left = 0.0
+    top = target_top - sy1
+    projected = project_face((sx1, sy1, sx2, sy2), 1.0, left, top)
+    cx = (sx1 + sx2) / 2.0
+    cy = (sy1 + sy2) / 2.0
+    return ComposeFit(
+        zoom=1.0,
+        left=left,
+        top=top,
+        fx=min(max(cx / max(width, 1), 0.05), 0.95),
+        fy=min(max(cy / max(height, 1), 0.05), 0.95),
+        face=projected,
+        requested_zoom=1.0,
+        mode=str(mode).upper(),
+    )
+
+
 def fit_compose_zoom(
     face_bbox: Sequence[float] | None,
     requested_zoom: float,
@@ -144,11 +210,19 @@ def fit_compose_zoom(
     height: int = 1920,
     mode: str = "A",
 ) -> ComposeFit:
-    """Clamp zoom/pan so the face stays in band and misses caption/bottom safe."""
+    """Clamp zoom/pan so the face stays in band and misses caption/bottom safe.
+
+    ``requested_zoom <= 1.0`` routes to :func:`_fit_natural` (crop-and-pin,
+    no upscale) instead of the band-fit below it — see the module docstring.
+    """
     req = max(float(requested_zoom or 1.0), 1.0)
     if not face_bbox or len(face_bbox) != 4:
         face_bbox = default_face_bbox(brandbook, width=width, height=height)
     sx1, sy1, sx2, sy2 = (float(v) for v in face_bbox)
+    if float(requested_zoom or 0.0) <= 1.0 + 1e-6:
+        return _fit_natural(
+            (sx1, sy1, sx2, sy2), brandbook=brandbook,
+            width=width, height=height, mode=mode)
     fw = max(sx2 - sx1, 1.0)
     fh = max(sy2 - sy1, 1.0)
     tx0, ty0, tx1, ty1 = target_face_rect(

@@ -4,11 +4,6 @@ Live: посегментная генерация через HeyGen API. Сег�
 липсинк строится по **финальной** (уже обрезанной) озвучке, поэтому в API
 уходит не текст, а конкретный кусок ``voice_final.wav``: только так липсинк
 совпадёт с тем, что реально звучит в ролике (§7.4.4).
-
-Mock: локальный рендер говорящей фигуры, у которой раскрытие рта следует
-огибающей той же дорожки. Это не «серый прямоугольник»: лицо стоит в полосе
-``avatar.face_band_y`` брендбука, губы движутся по звуку, и на таком клипе можно
-честно проверять QC-11 (рассинхрон липсинка) и правило кадрирования.
 """
 
 from __future__ import annotations
@@ -67,11 +62,7 @@ class AvatarProvider(Provider):
         raise NotImplementedError
 
 
-# --- mock ---------------------------------------------------------------------
-
 class MockAvatar(AvatarProvider):
-    """Говорящая фигура: раскрытие рта следует огибающей речи."""
-
     def __init__(self, cfg, costs) -> None:
         super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.MOCK, name="heygen")
 
@@ -79,32 +70,24 @@ class MockAvatar(AvatarProvider):
                  index: int) -> AvatarSegment:
         width, height = self.cfg.resolution
         fps = self.cfg.fps
-        # Прозрачный фон запрашивается только при включённом матировании (§7.7):
-        # без него альфа некуда девать, и она превратится в чёрный фон.
         transparent = (bool(self.cfg.get("features.avatar_matting", False))
                        and str(self.cfg.get("heygen.background", "")).startswith("transparent"))
         if transparent and out_path.suffix.lower() != ".mov":
-            out_path = out_path.with_suffix(".mov")   # mp4 не переносит альфу
-
+            out_path = out_path.with_suffix(".mov")
         audio, sr = load_wav(audio_path)
         mono = audio[:, 0] if audio.ndim == 2 else audio
         env = rms_envelope(mono, sr, window_ms=25.0)
         env = env / (float(np.percentile(env, 97)) or 1.0)
-
-        # §3.5: лицо в нижней трети, субтитры над ним.
         face_top, face_bottom = self.cfg.brand("avatar.face_band_y", [1080, 1480])
         head_cx = width // 2
         head_cy = int((face_top + face_bottom) / 2)
         head_r = int((face_bottom - face_top) / 2)
-
         from ..render.canvas import parse_color
-
         bg = parse_color(self.cfg.color("bg_light"))
         pure = parse_color(self.cfg.color("bg_pure"))
         ink = parse_color(self.cfg.color("ink"))
         skin = parse_color(self.cfg.color("accent_soft"))
         deep = parse_color(self.cfg.color("accent_deep"))
-
         total_frames = max(1, int(round(duration_sec * fps)))
         encoder = subprocess.Popen(
             [ffmpeg_bin(), "-hide_banner", "-loglevel", "error", "-y",
@@ -116,7 +99,6 @@ class MockAvatar(AvatarProvider):
              "-r", str(fps), str(out_path)],
             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         assert encoder.stdin is not None
-
         try:
             for frame_no in range(total_frames):
                 t = frame_no / fps
@@ -124,33 +106,26 @@ class MockAvatar(AvatarProvider):
                 openness = float(np.clip(env[min(sample, len(env) - 1)], 0.0, 1.2))
                 sway = math.sin(t * 1.1) * 8
                 breathe = math.sin(t * 0.9) * 5
-
                 mode = "RGBA" if transparent else "RGB"
                 base = (0, 0, 0, 0) if transparent else self._hex(bg, mode)
                 frame = Image.new(mode, (width, height), base)
                 draw = ImageDraw.Draw(frame)
-
                 if not transparent:
                     draw.ellipse((head_cx - 620, head_cy - 260, head_cx + 620, height),
                                  fill=self._hex(pure, mode))
-
-                # Плечи
                 shoulder_top = head_cy + head_r + 60 + breathe
                 draw.rounded_rectangle(
                     (head_cx - 330 + sway, shoulder_top, head_cx + 330 + sway, height),
                     radius=180, fill=self._hex(ink, mode))
-                # Голова
                 draw.ellipse((head_cx - head_r + sway, head_cy - head_r + breathe,
                               head_cx + head_r + sway, head_cy + head_r + breathe),
                              fill=self._hex(skin, mode))
-                # Глаза
                 eye_y = head_cy - head_r * 0.18 + breathe
                 blink = 1.0 if (t % 3.4) > 0.12 else 0.15
                 for dx in (-head_r * 0.34, head_r * 0.34):
                     draw.ellipse((head_cx + dx - 22 + sway, eye_y - 16 * blink,
                                   head_cx + dx + 22 + sway, eye_y + 16 * blink),
                                  fill=self._hex(ink, mode))
-                # Рот: высота следует огибающей речи — это и есть «липсинк»
                 mouth_y = head_cy + head_r * 0.38 + breathe
                 mouth_h = 10 + openness * 52
                 mouth_w = 88 + openness * 26
@@ -169,7 +144,6 @@ class MockAvatar(AvatarProvider):
             if encoder.wait() != 0:
                 raise ProviderError("не удалось собрать mock-аватар",
                                     stderr=stderr.decode("utf-8", "replace")[-800:])
-
         self.charge("generate", duration_sec, "sec",
                     duration_sec * float(self.cfg.get("budget.price.heygen_per_second", 0.05)))
         return AvatarSegment(
@@ -186,8 +160,6 @@ class MockAvatar(AvatarProvider):
         return rgba if mode == "RGBA" else rgba[:3]
 
 
-# --- live ---------------------------------------------------------------------
-
 class HeyGenAvatar(AvatarProvider):
     def __init__(self, cfg, costs, api_key: str) -> None:
         super().__init__(cfg=cfg, costs=costs, mode=ProviderMode.LIVE, name="heygen")
@@ -200,7 +172,7 @@ class HeyGenAvatar(AvatarProvider):
             resp = requests.post(
                 "https://upload.heygen.com/v1/asset",
                 data=path.read_bytes(),
-                headers={"x-api-key": self.api_key, "Content-Type": "audio/wav"},
+                headers={"x-api-key": self.api_key, "Content-Type": "audio/x-wav"},
                 timeout=self._timeout())
             if resp.status_code >= 400:
                 raise ProviderError(f"HeyGen upload вернул {resp.status_code}",
@@ -216,18 +188,13 @@ class HeyGenAvatar(AvatarProvider):
     def generate(self, *, audio_path: Path, out_path: Path, duration_sec: float,
                  index: int) -> AvatarSegment:
         import time
-
         import requests
-
         base = str(self.cfg.get("heygen.api_base", "https://api.heygen.com"))
         width, height = self.cfg.resolution
         audio_url = self._upload_audio(audio_path)
-
-        # Look id только из config heygen.avatar_id, не из секрета.
         avatar_id = str(self.cfg.get("heygen.avatar_id") or "")
         if not avatar_id:
             raise ProviderError("HeyGen avatar_id пуст (config heygen.avatar_id)")
-
         payload: dict[str, Any] = {
             "video_inputs": [{
                 "character": {
@@ -246,7 +213,6 @@ class HeyGenAvatar(AvatarProvider):
         if model_version:
             payload["video_inputs"][0]["character"]["model_version"] = model_version
         if str(self.cfg.get("heygen.background", "")).startswith("transparent"):
-            # §7.7 шаг 1: сначала пробуем получить прозрачный фон от HeyGen.
             payload["video_inputs"][0]["background"] = {"type": "transparent"}
 
         def _create() -> str:
@@ -263,7 +229,6 @@ class HeyGenAvatar(AvatarProvider):
             return str(video_id)
 
         video_id = call_with_retry(_create, **self._retry_kwargs("HeyGen generate"))
-
         interval = float(self.cfg.get("heygen.poll_interval_sec", 10))
         deadline = time.time() + float(self.cfg.get("heygen.poll_timeout_sec", 900))
         video_url = ""
@@ -282,20 +247,16 @@ class HeyGenAvatar(AvatarProvider):
         if not video_url:
             raise ProviderError("HeyGen не завершил генерацию за отведённое время",
                                 video_id=video_id)
-
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with requests.get(video_url, stream=True, timeout=self._timeout()) as resp:
             with open(out_path, "wb") as fh:
                 for chunk in resp.iter_content(1 << 16):
                     fh.write(chunk)
-
         self.charge("generate", duration_sec, "sec",
                     duration_sec * float(self.cfg.get("budget.price.heygen_per_second", 0.05)),
                     video_id=video_id)
         info = probe(out_path)
         at = min(0.5, max(0.0, duration_sec / 2))
-        # Альфа и здесь измеряется, а не выводится из расширения: живой ответ
-        # HeyGen приходил и с прозрачностью, и без неё под одним именем.
         alpha = ff_has_alpha(out_path, at_sec=at)
         return AvatarSegment(
             index=index, start=0.0, end=info.duration_sec or duration_sec, block_id="",
@@ -308,60 +269,31 @@ class HeyGenAvatar(AvatarProvider):
 
 
 def build_avatar_provider(cfg, costs, *, video_id: str = "") -> AvatarProvider:
-    """Источник аватара: API, готовые клипы или заглушка.
-
-    ``heygen.source`` разводит три случая. ``api`` — обычный live-путь по
-    ключу. ``prepared`` — двухфазный конвейер: клипы приходят снаружи, потому
-    что ключа HeyGen у прогона нет, а MCP-коннектор живёт в чате. ``auto`` —
-    выбрать самому: ключ есть → API, ключа нет, но клипы лежат → prepared,
-    иначе заглушка.
-    """
     source = str(cfg.get("heygen.source", "prepared")).lower()
     clips_dir = _prepared_dir(cfg, video_id)
-
-    # Mock-режим отменяет любой источник: он означает «никаких внешних
-    # зависимостей», и требовать заранее подготовленные клипы в нём бессмысленно.
     if str(cfg.get("providers.mode", "auto")).lower() == "mock":
         return MockAvatar(cfg, costs)
-
     force_paid = bool(cfg.get("pipeline.force_paid", False))
     voice_seed = (
         Path(cfg.repo_root) / "assets" / "voice" / video_id / "voice_final.wav"
         if video_id else None
     )
     if (not force_paid and voice_seed is not None and voice_seed.is_file()
-            and source == "api"):
+            and source == "auto"):
         _log.info("paid skipped: voice cached, avatar prepared")
         source = "prepared"
-
     if source == "prepared":
         return PreparedAvatar(cfg, costs, clips_dir)
-
     key = cfg.secret_for("heygen.api_key_env", purpose="HeyGen")
-
     if source == "auto":
         if key:
             return HeyGenAvatar(cfg, costs, key)
-        # Ключа нет — идём в двухфазный конвейер, а не в заглушку. Молчаливый
-        # мок-аватар в живом прогоне — худший из возможных исходов: ролик
-        # соберётся, пройдёт QC и уедет к зрителю с болванкой вместо ведущего.
-        # PreparedAvatar на отсутствие клипов падает с понятным кодом и
-        # выкладывает avatar_request.json, по которому их и достают.
-        #
-        # Спрашивать здесь resolve_mode нельзя: при providers.mode=live он
-        # падает на отсутствии ключа, и ветка ниже становится недостижимой —
-        # ровно в том прогоне, ради которого она и написана. Для ``auto``
-        # отсутствие ключа HeyGen не сбой настройки, а штатный режим проекта.
         _log.info("ключа HeyGen нет — аватар ожидается готовыми клипами",
                   extra={"dir": str(clips_dir)})
         return PreparedAvatar(cfg, costs, clips_dir)
-
-    # ``api`` заказан явно: тут отсутствие ключа — именно ошибка настройки, и
-    # resolve_mode обязан сказать об этом вслух.
     if source == "api" and \
             resolve_mode(cfg, api_key=key, service="heygen") is ProviderMode.LIVE:
         return HeyGenAvatar(cfg, costs, key or "")
-
     return MockAvatar(cfg, costs)
 
 
@@ -370,17 +302,8 @@ def _prepared_dir(cfg, video_id: str) -> Path:
     return base / video_id if video_id else base
 
 
-# --- готовые клипы (двухфазный конвейер) --------------------------------------
-
 def measured_face_bbox(cfg, clip: Path, info, *, at: float,
                        alpha: bool) -> tuple[int, int, int, int]:
-    """Коробка головы: измеренная по альфе, иначе — полоса из брендбука.
-
-    Полоса ``avatar.face_band_y`` — догадка «голова обычно вот тут», и на
-    новом аватаре она разъехалась с кадром: 475 px ширины против настоящих
-    354, центр мимо на 39 px. Приёмы, которые ставятся относительно головы,
-    вставали по догадке. Там, где альфа есть, догадка не нужна вовсе.
-    """
     if alpha:
         measured = ff_head_box(clip, at_sec=at)
         if measured:
@@ -391,18 +314,6 @@ def measured_face_bbox(cfg, clip: Path, info, *, at: float,
 
 
 class PreparedAvatar(AvatarProvider):
-    """Аватар берётся из заранее подготовленных клипов, а не из API.
-
-    Ключа HeyGen в прогоне нет, а цифровой двойник нужен. Разрыв закрывается
-    двумя фазами: Actions доходит до P6 и останавливается, выложив нарезанные
-    куски речи; клипы генерируются снаружи (MCP-коннектор HeyGen в чате) и
-    кладутся в репозиторий; прогон возобновляется с P6 и находит их готовыми.
-
-    Провайдер намеренно не умеет «выкрутиться»: без клипа он останавливает
-    прогон и говорит, для какого куска речи чего не хватает. Тихая подмена
-    заглушкой означала бы ролик без ведущего (§10.5.4).
-    """
-
     name = "heygen"
 
     def __init__(self, cfg, costs, clips_dir: Path) -> None:
@@ -411,8 +322,6 @@ class PreparedAvatar(AvatarProvider):
         self.missing: list[dict[str, Any]] = []
 
     def _find(self, index: int) -> Path | None:
-        # .mov несёт альфу, .webm — тоже; .mp4 берём как крайний случай:
-        # без альфы фон аватара придётся оставить как есть.
         for suffix in (".mov", ".webm", ".mp4"):
             candidate = self.clips_dir / f"seg_{index:02d}{suffix}"
             if candidate.exists() and candidate.stat().st_size > 0:
@@ -438,10 +347,7 @@ class PreparedAvatar(AvatarProvider):
                 code="AVATAR_CLIP_NOT_PREPARED",
                 hint=f"положите файл в {self.clips_dir}/seg_{index:02d}.mov "
                      f"(липсинк по {audio_path.name}, {duration_sec:.2f} сек)")
-
         info = probe(clip)
-        # Расхождение длительности сдвинуло бы липсинк: клип обязан совпасть с
-        # куском речи, под который он сгенерирован.
         drift = abs(info.duration_sec - duration_sec)
         if drift > 0.20:
             raise ProviderError(
@@ -449,24 +355,14 @@ class PreparedAvatar(AvatarProvider):
                 f"{drift:.2f} сек — липсинк уедет",
                 code="AVATAR_CLIP_DURATION_MISMATCH",
                 hint=f"ожидается {duration_sec:.2f} сек, в файле {info.duration_sec:.2f}")
-
-        # Клип с однотонным фоном превращается в альфу здесь, а не руками:
-        # HeyGen прозрачности не отдаёт, и просить её бессмысленно — приходит
-        # непрозрачный кадр. Просим у него ключевой цвет и убираем его сами.
         chroma = str(self.cfg.get("heygen.prepared_chroma", "") or "")
         if chroma and clip.suffix.lower() == ".mp4":
             from ..render.chroma import key_out
-
             keyed = out_path.with_name(f"{out_path.stem}_alpha.mov")
             clip = key_out(clip, keyed, color=chroma)
-
         dst = out_path.with_suffix(clip.suffix)
         if dst.resolve() != clip.resolve():
             dst.write_bytes(clip.read_bytes())
-
-        # Альфа измеряется, а не выводится из расширения. Прошлый аватар
-        # прислал .webm без прозрачности, провайдер поверил имени файла, и
-        # приёмы за головой ушли за непрозрачный план — в кадре их не было.
         at = min(0.5, max(0.0, duration_sec / 2))
         has_alpha = ff_has_alpha(clip, at_sec=at)
         return AvatarSegment(
