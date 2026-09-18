@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r72: frostscan off hook, chip rotation QC-25, mute FS captions. Voice/avatar frozen.",
+  "note": "r72b trigger after pins. Hook vortex only, no frostscan, chip rotation, mute FS caps.",
   "round": 72
 }
