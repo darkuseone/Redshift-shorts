@@ -11,10 +11,8 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r8. Hook on-screen ONLY dark card JEV. No Cyrillic slam. No Lean. No REJECTED stamp. No white browser. Voice+avatars cached. mode C on graphic blocks.",
-    "hook": {"on_screen": "JEV", "style": "number_slam"},
-    "captions": {"style": "caption-gradient-fill", "placement": "lower_third", "hero_karaoke": false},
-    "card_lock": "fact-card JEV + stack TYPESAFE $40M SYSTEM ONE + compare 194x/445x + 70-500 MS + RLHF/RLCD + NO TEXT + FOLLOWUP. Source chips no red."
+    "notes": "0051 r9. Schema-clean. Hook on-screen JEV fact-card. No Lean/stamp/white browser. Voice+avatars cached.",
+    "hook": {"on_screen": "JEV", "style": "number_slam"}
   },
   "sources": [
     {
@@ -22,7 +20,7 @@
       "domain": "typesafe.ai",
       "url": "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
       "show_on_screen": false,
-      "screen_template": "none",
+      "screen_template": "search",
       "published": "15 сентября 2026",
       "snippet": "Jev gives up string generation. 70-500 ms. $0.042 / MTok. Output free.",
       "highlight_line": "JEV"
@@ -32,7 +30,7 @@
       "domain": "x.com",
       "url": "https://x.com/completeskeptic/status/2099925682726002904",
       "show_on_screen": false,
-      "screen_template": "none",
+      "screen_template": "search",
       "published": "15 сентября 2026",
       "snippet": "20-200x faster. 40-400x cheaper. Output tokens free. Cannot generate text."
     }
@@ -45,7 +43,6 @@
       "visual_intent": "ONLY dark fact-card JEV red frame on moving steel glow. Hold card 2-4s. NO Russian plate. NO ВЫПУСТИЛ. NO Lean primes. NO CHATGPT slam. Avatar off. Motion from frame 0.",
       "broll_queries": ["dark steel code glow particles motion"],
       "overlay": {"type": "fullscreen_text", "content": "JEV", "template_hint": "text-fullscreen/fact-card"},
-      "plaque": {"text": "JEV", "style": "dark_red_frame"},
       "sfx": "hit_impact", "meme_allowed": false, "mode_hint": "C", "emphasis_family": "tech"
     },
     {
@@ -54,8 +51,7 @@
       "emphasis_word": "TypeSafe", "avatar": "on",
       "visual_intent": "Avatar lower plate. Top: dark 3-line card TYPESAFE / $40M / SYSTEM ONE. No white studio. No floating КОМПАНИЯ window. No Lean code behind head. Number compact $40M not 40 000 000.",
       "broll_queries": ["dark static grain night office"],
-      "overlay": {"type": "fullscreen_text", "content": "TYPESAFE\n$40M\nSYSTEM ONE", "template_hint": "text-fullscreen/stack-3lines"},
-      "plaque": {"text": "TYPESAFE", "style": "dark_red_frame"},
+      "overlay": {"type": "fullscreen_text", "content": "TYPESAFE · $40M · SYSTEM ONE", "template_hint": "text-fullscreen/stack-3lines"},
       "sfx": "whoosh_in", "mode_hint": "A", "emphasis_family": "source"
     },
     {
@@ -65,8 +61,6 @@
       "visual_intent": "Dark compare bars SPEED 194x vs COST 445x then plate $42 / 1B TOK. Source-chip typesafe.ai NO red. No white browser. No empty server aisle. No pipes. No counter 37.",
       "broll_queries": ["gpu rack lights close dark"],
       "overlay": {"type": "dataviz", "content": "194x SPEED / 445x COST", "template_hint": "data-viz/compare-bars"},
-      "chart": {"type": "compare_bars", "left": {"label": "SPEED", "value": "194x"}, "right": {"label": "COST", "value": "445x"}, "foot": "$42 / 1B TOK"},
-      "plaque": {"text": "$42 / 1B", "style": "dark_red_frame"},
       "sfx": "data_beep", "source_ref": "typesafe.ai", "mode_hint": "C", "emphasis_family": "number"
     },
     {
@@ -76,7 +70,6 @@
       "visual_intent": "Dark number card 70-500 MS on frost scan. Not chatbot bubble. Not Lean primes. Not 70 500. Not white graph.",
       "broll_queries": ["frost scan grid cyan dark motion"],
       "overlay": {"type": "highlight", "content": "70-500 MS", "template_hint": "text-fullscreen/fact-card"},
-      "plaque": {"text": "70-500 MS", "style": "dark_red_frame"},
       "sfx": "ui_click", "mode_hint": "C", "emphasis_family": "number"
     },
     {
@@ -85,8 +78,7 @@
       "emphasis_word": "RLCD", "avatar": "off",
       "visual_intent": "Dark VS card RLHF CHAT vs RLCD CODE. No empty grid. No blue-only line. No pause flash.",
       "broll_queries": ["dark void pulse nodes"],
-      "overlay": {"type": "fullscreen_text", "content": "RLHF CHAT  /  RLCD CODE", "template_hint": "text-fullscreen/vs-compare"},
-      "plaque": {"text": "RLCD", "style": "dark_red_frame"},
+      "overlay": {"type": "fullscreen_text", "content": "RLHF CHAT / RLCD CODE", "template_hint": "text-fullscreen/vs-compare"},
       "sfx": "whoosh_in", "mode_hint": "C", "emphasis_family": "tech"
     },
     {
@@ -96,7 +88,6 @@
       "visual_intent": "Avatar + dark plate NO TEXT. Contrast high. Do NOT use REJECTED stamp. Do NOT replay server aisle. Source chip no red.",
       "broll_queries": ["dark slate iron plate"],
       "overlay": {"type": "lower_third", "content": "NO TEXT", "template_hint": "lower-thirds/dark-card"},
-      "plaque": {"text": "NO TEXT", "style": "dark_no_red"},
       "sfx": "sub_drop", "answers_hook": true, "mode_hint": "A", "emphasis_family": "myth"
     },
     {
@@ -106,7 +97,6 @@
       "visual_intent": "City night hold 3s+. Chip FOLLOWUP no red underline. End card REDSHIFT Latin no dot. No redsfhit. Caption ОДНОГО ЧАТА not 1 ЧАТА.",
       "broll_queries": ["city night traffic lights aerial"],
       "overlay": {"type": "lower_third", "content": "REDSHIFT", "template_hint": "lower-thirds/dark-card"},
-      "plaque": {"text": "FOLLOWUP", "style": "dark_no_red"},
       "sfx": "subscribe_ping", "emphasis_family": "emotion", "mode_hint": "C"
     }
   ],
