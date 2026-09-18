@@ -283,3 +283,17 @@ class TestTheRetentionLoopHasAShape:
         codes = [w["code"] for w in result["_validation"]["warnings"]]
         assert "CTA_CLOSES_EVERYTHING" not in codes
         assert result["_validation"]["ok"]
+
+
+def test_dataviz_overlay_type_passes_schema(sample_script, cfg):
+    """overlay.type=dataviz is an authored request (0050 r54), not a typo.
+
+    The schema's OVERLAY_TYPES enum lagged the code that reads it: P11 grew
+    _authored_dataviz_overlays before the schema allowed the value, and
+    round 54 broke on P0 in Actions — validate rejected the script before
+    the pipeline ever got to run.
+    """
+    block = sample_script["blocks"][1]
+    block["overlay"] = {"type": "dataviz"}
+    result = validate_script(sample_script, cfg)
+    assert result["_validation"]["ok"] is True

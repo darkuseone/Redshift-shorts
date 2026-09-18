@@ -25,10 +25,10 @@ HYPERFRAMES_JSON = {
     "$schema": "https://hyperframes.heygen.com/schema/hyperframes.json",
     "paths": {"blocks": "compositions", "components": "compositions/components",
               "assets": "assets"},
-    # Прокси-транскодирование нужно только живому предпросмотру; в рендере
-    # кадры извлекает ffmpeg, и лишний проход по большим футажам ни к чему.
     "media": {"autoProxy": False},
 }
+
+_CREDIT_BOTTOM_OVERRIDE = "\n.credit{bottom:56px !important}\n"
 
 
 def _link_or_copy(src: Path, dst: Path) -> None:
@@ -64,7 +64,6 @@ class HyperFramesProject:
         fonts = copy_fonts(fonts_dir, self.root / "fonts",
                            read_json(fonts_dir / "fonts_manifest.json"))
 
-        # Статические ассеты шаблонов (маски, логотипы)
         repo_assets = self.cfg.path("paths.assets_dir", "assets")
         if repo_assets.exists():
             for asset_file in repo_assets.glob("*.svg"):
@@ -73,13 +72,11 @@ class HyperFramesProject:
                 _link_or_copy(asset_file, self.assets_dir / asset_file.name)
 
         brandbook = self.cfg.brandbook
-        (self.root / "brand.css").write_text(build_css(brandbook, fonts),
-                                             encoding="utf-8")
+        (self.root / "brand.css").write_text(
+            build_css(brandbook, fonts) + _CREDIT_BOTTOM_OVERRIDE,
+            encoding="utf-8")
         self._stage_vendor()
 
-        # Планировщик не кладёт исходные блоки в edit-план, а слово за головой
-        # берётся из emphasis_word. Передаём их отдельным полем, чтобы не
-        # менять формат плана — он общий для обоих движков.
         enriched = dict(plan)
         enriched["_blocks"] = blocks or []
 
@@ -98,12 +95,6 @@ class HyperFramesProject:
         return index
 
     def _stage_media(self, plan: dict[str, Any]) -> dict[str, str]:
-        """Слинковать все медиа плана внутрь проекта.
-
-        Имя файла внутри проекта делается уникальным по индексу источника:
-        разные шоты могут ссылаться на один файл, а дублирующиеся id у
-        ``<video>`` дают пустой кадр — продюсер инжектит кадры по id.
-        """
         assets: dict[str, str] = {}
         sources: list[str] = []
         for shot in plan.get("shots", []):
@@ -112,25 +103,15 @@ class HyperFramesProject:
             bg_file = shot.get("bg_file")
             if bg_file:
                 sources.append(str(bg_file))
-            # Материал приёма — отдельный файл шота, и он тоже обязан переехать
-            # внутрь. В конвейере это скрывалось: приём берёт кадр у соседнего
-            # шота, а тот уже перенесён своей строкой выше. Проба отдаёт приёму
-            # файл, которого нет ни у одного шота, — и lint честно ловил
-            # `missing_local_asset`.
             hero_file = (shot.get("hero") or {}).get("file")
             if hero_file:
                 sources.append(str(hero_file))
         for seg in plan.get("avatar", []):
             if seg.get("file"):
                 sources.append(str(seg["file"]))
-        # Плита фона — такой же файл проекта, как футаж: она обязана переехать
-        # внутрь, иначе разметка сошлётся на путь, которого в проекте нет.
         plate = (plan.get("backdrop") or {}).get("plate")
         if plate:
             sources.append(str(plate))
-        # Fullscreen/overlay thumbs (`params.media`) land in <img src="...">.
-        # Without staging, HyperFrames lint reports missing_local_asset on the
-        # raw work/.../shots/... path (seen on 0042 slam after e3970be).
         for shot in plan.get("shots", []):
             params = shot.get("params") or {}
             for key in ("media", "media_src"):
@@ -155,7 +136,6 @@ class HyperFramesProject:
         return assets
 
     def _stage_vendor(self) -> None:
-        """Локальный GSAP: рендер не должен ходить в CDN."""
         vendor_src = Path(__file__).resolve().parents[4] / "render/hyperframes/vendor"
         vendor_dst = self.root / "vendor"
         vendor_dst.mkdir(parents=True, exist_ok=True)

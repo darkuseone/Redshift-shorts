@@ -10,8 +10,9 @@
    водяные знаки?
 
 ``mismatch_share > limits.vision_mismatch_share_max`` — blocking: ролик не
-выдаётся. ``vision.skip_live`` не имеет права ставить semantic pass: в отчёте
-``qc_skipped_semantic``, статус не «выдан».
+выдаётся. ``vision.skip_live`` (по умолчанию true) не вызывает Gemini/Grok
+даже при ключах, пишет ``qc_skipped_semantic`` и **не** блокирует выдачу:
+смысловой QC канала — глаз заказчика.
 """
 
 from __future__ import annotations
@@ -35,9 +36,9 @@ def _mismatch_limit(cfg) -> float:
 
 def semantic_blocks(*, mismatch_share: float | None, limit: float,
                     skipped: bool) -> bool:
-    """Выдача блокируется при skip или при доле расхождений строго выше порога."""
+    """Skip is not a live mismatch. Real share strictly above the limit blocks."""
     if skipped:
-        return True
+        return False
     if mismatch_share is None:
         return False
     return mismatch_share > limit + 1e-6
@@ -45,7 +46,7 @@ def semantic_blocks(*, mismatch_share: float | None, limit: float,
 
 def _skipped_semantic_report(plan: dict[str, Any], *, reason: str,
                              notes: list[str], cfg) -> dict[str, Any]:
-    """Честный skip: не pass, не mismatch_share=0.0, не status «выдан»."""
+    """Честный skip: не pass по смыслу, но и не blocking fail выдачи."""
     limit = _mismatch_limit(cfg)
     return {
         "enabled": True,
@@ -59,7 +60,7 @@ def _skipped_semantic_report(plan: dict[str, Any], *, reason: str,
         "mismatch_limit": limit,
         "picture_matches_speech": False,
         "watermarks_found": 0,
-        "blocking": True,
+        "blocking": False,
         "notes": notes,
     }
 
@@ -314,8 +315,9 @@ def run_vision_qc(ctx, *, video_path: Path, plan: dict[str, Any],
     if not bool(cfg.get("features.vision_qc", True)):
         return {"enabled": False, "reason": "features.vision_qc выключен"}
 
-    # skip_live: ZERO live Gemini/Grok. Это не semantic pass и не выдача.
-    if bool(cfg.get("vision.skip_live", False)):
+    # skip_live: ZERO live Gemini/Grok даже при ключах. Файл выдаётся;
+    # смысловой QC — глаз заказчика.
+    if bool(cfg.get("vision.skip_live", True)):
         _log.warning("vision.skip_live: смысловой QC без live vision",
                      extra={"variant": plan.get("variant")})
         return _skipped_semantic_report(

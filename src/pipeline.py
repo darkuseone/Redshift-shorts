@@ -109,6 +109,27 @@ class Step:
     # ведущего, сгенерированные под прежнюю речь, уходят в брак все разом.
     input_slice: dict[str, Any] = field(default_factory=dict)
     version: str = "1"
+    # Шаг читает сам сценарий — режиссёрский текст, запросы к стоку, интенты.
+    # Без этого флага правка сценария не отменяет ничего у шага, у которого
+    # есть входные файлы: на 0050 прогон с `--from P5` брал P5–P11 из кэша и
+    # рендерил план, собранный по прежнему сценарию. Флаг не ставится на P2:
+    # переозвучка стоит денег, и решать её судьбу должен срез речи, а не
+    # любая правка соседнего поля.
+    uses_script: bool = False
+    # Шаг читает замороженную заявку на клипы аватара. Она лежит в репозитории
+    # и описывает окна, под которые отрендерены оплаченные webm. Правка этого
+    # файла обязана отменять кэш: на 0050 испорченная заявка успела попасть в
+    # cut_plan, и восстановление файла уже ничего не меняло — P5 отдавал
+    # прежний план из кэша, а P6 на нём требовал новых клипов.
+    uses_prepared_avatar: bool = False
+    # Разделы конфига, которые шаг читает. В отпечаток и так входит `_cfg`, но
+    # там перечислены только limits/audio/render/features — общие для всех. У
+    # шага бывают свои: темп речи живёт в `speech`, голос — в `elevenlabs`.
+    # Пока их не было в отпечатке, правка `speech.pause_threshold_ms` не
+    # отменяла ничего: P3 отдавал прежнюю дорожку из кэша, и заказанный темп
+    # молча не менялся. Это та же ошибка, что уже стоила раунда на обёртках
+    # замка слотов, — шаг измерялся не по тому, что он на самом деле читает.
+    cfg_sections: tuple[str, ...] = ()
     optional: bool = False          # шаг может быть пропущен по фиче-флагу
     cacheable: bool = True
 
@@ -129,8 +150,12 @@ class Step:
         # Шаг без входных файлов читает сам сценарий, и без него правка
         # сценария не отменяла ничего: P0 при тёплом кэше считался свежим,
         # выдавал прежний validated_script.json, и вся правка молча пропадала.
-        if not self.inputs:
+        if not self.inputs or self.uses_script:
             payload["_script"] = hash_files([str(ctx.script_path)])
+        if self.uses_prepared_avatar:
+            payload["_avatar_request"] = hash_files([str(
+                ctx.cfg.repo_root / "assets" / "avatar_clips"
+                / str(ctx.video_id) / "avatar_request.json")])
         for name in self.inputs:
             path = ctx.work_dir / name
             if path.exists():
@@ -143,6 +168,9 @@ class Step:
         if self.config_inputs:
             payload["_files"] = hash_files(
                 str(ctx.cfg.repo_root / name) for name in self.config_inputs)
+        if self.cfg_sections:
+            payload["_cfg_own"] = {name: ctx.cfg.get(name, {})
+                                   for name in self.cfg_sections}
         payload["_cfg"] = {
             "limits": ctx.cfg.get("limits", {}),
             "audio": ctx.cfg.get("audio", {}),

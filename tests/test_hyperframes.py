@@ -209,17 +209,20 @@ def test_subtitle_gradient_fill_animates_inner_word(plan, assets, brandbook):
     assert 'id="w-0000"' not in markup
 
 
-def test_emphasis_word_gets_blood_gradient(plan, assets, brandbook):
+def test_spoken_word_is_filled_with_the_single_accent(plan, assets, brandbook):
     markup = _gradient_markup(plan, assets, brandbook)
-    assert "gf-accent" in markup
-    # Цвет берётся из брендбука, а не стоит числом: акцент канала сменился с
-    # #C8453D на #E63946, и тест, знающий цвет наизусть, сломался бы на правке
-    # палитры вместо правки кода.
+    # Цвет берётся из брендбука, а не стоит числом: тест, знающий цвет
+    # наизусть, ломался бы на правке палитры вместо правки кода.
     assert brandbook["colors"]["accent"] in markup
-    assert brandbook["colors"]["accent_soft"] in markup
-    # Золота и жёлтого в палитре канала нет — ни в одном жесте.
+    # Один цвет заливки на весь канал: ни мягкого красного, ни cyan, ни
+    # золота, ни Siri-жёлтого — закон канала, а не настройка жеста.
+    assert brandbook["colors"]["accent_soft"].lower() not in markup.lower()
+    assert brandbook["colors"]["cyan"].lower() not in markup.lower()
     assert "#FFD700" not in markup
     assert "#fe9f1b" not in markup.lower()
+    assert "#f76e49" not in markup.lower()
+    # Слой ровно один: белый глиф и красный поверх него под маской.
+    assert "gf-accent" not in markup and "gf-base" not in markup
 
 
 def test_the_default_caption_is_gradient_fill_of_the_brandbook(markup, brandbook):

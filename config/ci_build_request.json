@@ -1,0 +1,12 @@
+{
+  "script": "scripts/redshift_0050.json",
+  "video_id": "redshift_0050",
+  "from_step": "P11",
+  "heygen_source": "prepared",
+  "skip_generate": true,
+  "skip_vision": true,
+  "providers_mode": "live",
+  "requested_by": "grok",
+  "note": "r66: same cache as r65. P11 v8 bust so P12 picks .credit{bottom:56px}. Voice/avatar/footage untouched.",
+  "round": 66
+}

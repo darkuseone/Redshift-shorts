@@ -4,6 +4,7 @@
   "from_step": "P6",
   "heygen_source": "prepared",
   "skip_generate": false,
+  "skip_vision": true,
   "requested_by": "cursor",
   "note": "фаза 2 после MCP-аватара"
 }

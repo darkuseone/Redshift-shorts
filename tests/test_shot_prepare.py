@@ -100,6 +100,47 @@ def test_a_still_behind_the_presenter_finishes(tmp_path, still, clip):
     assert abs(probe(dst).duration_sec - 1.5) < 0.25
 
 
+def test_natural_zoom_pins_the_avatar_down_instead_of_scaling_it(tmp_path, still, cfg):
+    """r63: zoom=1.0 must actually translate the baked ffmpeg composite too.
+
+    `fit_compose_zoom` computing the right ``top`` is not enough on its own —
+    `prepare_avatar_shot` used to composite the natural-scale avatar at a
+    hardcoded ``overlay=0:0`` regardless, so the vfx-background segments
+    (this function's own path) would have kept the old top-anchored framing
+    even after the CSS path (`_avatar_zoom_css`) moved to the bottom.
+    """
+    from PIL import Image as PILImage
+
+    AVATAR_RGB = (32, 32, 36)          # clip fixture: color=0x202024
+    clip = tmp_path / "clip.mp4"
+    run(["-y", "-f", "lavfi", "-i",
+         f"color=c=0x{AVATAR_RGB[0]:02x}{AVATAR_RGB[1]:02x}{AVATAR_RGB[2]:02x}"
+         ":s=1080x1920:d=1.0:r=30",
+         "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", str(clip)],
+        what="плоский клип аватара")
+
+    dst = tmp_path / "avatar_natural.mp4"
+    # A face box near the very top of frame forces a large, unmistakable
+    # downward translate under head_top_frac (0.42 of 1920 ≈ 806).
+    prepare_avatar_shot(
+        avatar_src=clip, dst=dst, duration_sec=1.0,
+        width=1080, height=1920, fps=30, vfx_src=still,
+        compose_zoom=1.0, face_bbox=(400, 40, 680, 200),
+        brandbook=cfg.brandbook)
+
+    frame = tmp_path / "frame.png"
+    run(["-y", "-i", str(dst), "-frames:v", "1", str(frame)], what="кадр для проверки")
+    im = PILImage.open(frame).convert("RGB")
+
+    def close(a, b, tol=6):
+        return all(abs(x - y) <= tol for x, y in zip(a, b))
+
+    # Above the translate: the background still shows through, not the avatar.
+    assert not close(im.getpixel((540, 10)), AVATAR_RGB)
+    # Well below the translate: the avatar itself is there.
+    assert close(im.getpixel((540, 1800)), AVATAR_RGB)
+
+
 class TestStockIsSlimmedOnIntake:
     """Материал едет в git — значит, вес решается на приёме, а не потом.
 

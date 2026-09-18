@@ -28,20 +28,21 @@ heygen:
   # id лука. Держим оба — группу как то, что дал заказчик, лук как то, что
   # уходит в запрос.
   avatar_group_id: "d0573be250724c23bed61037f1c7490d"
-  # Лук «Tattooed creator in neon studio» — выбран заказчиком: оливковая
-  # рубашка, татуированные предплечья, камера прямо, микрофон в кадре. Это тот
-  # же кадр, что стоит у группы на обложке.
+  # Лук «Markus Brown at the microphone». Выбран заказчиком взамен
+  # `99ccc74e…`, и причина у замены техническая, а не вкусовая: прежний лук
+  # приходил **ландшафтным** 1920×1080, и вертикаль из него добывалась кропом
+  # (`tools/reframe_avatar.py`) — кадр сначала обрезали, потом тянули, и
+  # качество терялось дважды. Этот лук снят вертикально (исходник 1536×2752),
+  # кропать нечего.
   #
-  # Три вещи, которые важно знать про этот лук:
-  #   * прозрачность он отдаёт (проверено измерением 26.08: 31 % кадра
-  #     непрозрачно, силуэт с микрофоном вырезан чисто);
-  #   * приходит он **ландшафтным**, 1920×1080: в кадре стол, руки и стойка —
-  #     ровно то, что просили показать. В вертикаль его переводит
-  #     `tools/reframe_avatar.py`, окном по измеренной голове;
-  #   * матовой полосы студии, как у прошлого лука, здесь нет.
+  # Id лука живёт ЗДЕСЬ и только здесь. До этой правки он был переписан в
+  # шести местах — CLAUDE.md, instruction.md, два README, тест и ТЗ, — и когда
+  # заказчик сменил лук, устарели все шесть разом: ролик собрался на прежнем
+  # аватаре, потому что правило лежало в документации, а не в конфиге.
+  # Документы теперь ссылаются сюда, а тест читает значение, а не повторяет.
   #
   # Движок — только Avatar V (`avatar_v`), как просил заказчик.
-  avatar_id: "99ccc74e764947c394cd4ef210960a6f"
+  avatar_id: "cfcb357563454e8cb7083258e4424992"
   # Look id только отсюда, не из секрета HEYGEN_AVATAR_ID (402 на live API).
   avatar_id_env: ""
   # Движок Avatar V — иначе API молча уходит в Avatar IV.
@@ -66,16 +67,32 @@ heygen:
   # Достаёт её только libvpx-vp9.
   prepared_chroma: ""
   background: "transparent_if_available"
-  output: "1080x1920"
-  # In-compose zoom for prepared Avatar V plates where the subject sits
-  # small in 9:16 (desk-wide look). Applied at shot prepare AND as CSS size
-  # on HyperFrames alpha avatars (object-fit path ignored compose_zoom before).
-  # Does not rewrite assets/avatar_clips. Measured seg_00 subject ~30% tall →
-  # 3.75 was face-filling / too tight on 0042 QA. 2.7 is the requested ceiling
-  # only — MUST-009 fit_compose_zoom clamps it to face_band_y / caption safe
-  # (bottom 400). Do not raise it to "make the face larger" if that enters
-  # the subtitle strip.
-  compose_zoom: 2.7
+  # 720p, не 1080p — решение заказчика. Дешевле у HeyGen, и это не тот
+  # компромисс с качеством, которым сперва показался: у прежнего лука лицо
+  # занимало 216 px из 1920 (11 % кадра, ландшафтный кроп растягивался в
+  # вертикаль), у этого — около 290 px из 1280 (23 %). На лицо приходится
+  # больше пикселей, чем было на 1080p прежнего лука, не меньше.
+  output: "720x1280"
+  # r63: заказчик — «растягивать видео из HeyGen не надо, как раньше».
+  # 2.7 (и даже эффективные ~1.85 после MUST-009) значило одно и то же:
+  # `_avatar_zoom_css` рисует уже закодированный VP9-кадр через CSS
+  # width/height крупнее, чем он есть — браузер домысливает пиксели, которых
+  # в файле нет. Прежний лук садился в кадр мелко и без этого лицо было не
+  # разглядеть; этот лук снят вертикально и уже заполняет кадр — зумить
+  # больше нечего, разве что портить.
+  #
+  # 1.0 — не «зум выключен», а другой режим целиком: `fit_compose_zoom`
+  # видит requested_zoom<=1.0 и уходит в `_fit_natural` (без band-fit).
+  # Клип рисуется 1:1, ни один пиксель не увеличивается; голова только
+  # сдвигается по вертикали так, чтобы её измеренный верх (по альфе, не
+  # догадкой) встал на `avatar.head_top_frac` кадра — заказчик прислал
+  # референс, прикинутый в фоторедакторе, ровно под это число. Всё ниже
+  # видимой части — стол, пол — просто уходит за overflow:hidden кадра.
+  #
+  # Значение выше 1.0 по-прежнему берёт старый band-fit (MUST-009,
+  # `avatar.face_band_y`) — для лука, который в своём кадре сидит мелко.
+  # Этому лук не подходит; трогать заново, только если лук сменится опять.
+  compose_zoom: 1.0
   max_seconds_per_video: 42
   api_key_env: HEYGEN_API
   api_base: "https://api.heygen.com"
@@ -116,10 +133,10 @@ elevenlabs:
     similarity_boost: 0.85
     style: 0.45
     use_speaker_boost: true
-  # Темп речи ведущего относительно базового. 1.1 — на десятую быстрее: так
+  # Темп речи ведущего относительно базового. 1.2 — TZ-0050 заказчик: так
   # просил заказчик. Вместе со скоростью на ту же долю сдвигается плановая
   # длительность, иначе коррекция длины вернула бы прежний темп.
-  pace: 1.1
+  pace: 1.2
   length_buffer_pct: 22                      # §4.2.4: запас +18…25%
   api_key_env: ELEVENLABS_API_KEY
   api_base: "https://api.elevenlabs.io"
@@ -128,8 +145,9 @@ elevenlabs:
   sfx_model: "eleven_text_to_sound_v2"
 
 vision:
-  # Critic / P8 / P12 semantic QC → Grok. Gemini только если Grok недоступен.
-  # GLM выведен. Generation по-прежнему providers.allow_xai=false.
+  # Critic / P8 / P12 semantic QC. Live Grok/Gemini выключены: заказчик
+  # смотрит ролик сам. skip_live=false в заявке — единственный способ
+  # снова вызвать vision API. Generation по-прежнему providers.allow_xai=false.
   primary: "grok"
   arbiter: "grok"
   fallback: "gemini"
@@ -143,9 +161,10 @@ vision:
   grok_api_base: "https://api.x.ai"
   gemini_api_key_env: GEMINI_API_KEY
   gemini_model: "gemini-3.8-flash"
-  # true = без live vision (Grok/Gemini): P8 кэш/ранг. P12 не ставит semantic
-  # pass: qc_skipped_semantic, ролик не выдаётся (MUST-006). Mock — mode=mock.
-  skip_live: false
+  # true = без live vision даже при XAI_API_KEY / GEMINI_API_KEY.
+  # P8: кэш/ранг/движковые гейты. P12: qc_skipped_semantic, файл выдаётся.
+  # Смысловой QC — глаз заказчика. Mock-судья — только providers.mode=mock.
+  skip_live: true
   # Запасной Flash только при стойком 503 на primary. 3.7 — предыдущий GA Flash
   # (релизы 3.7→3.8 за ~3 недели); 2.5 для новых ключей уже недоступен.
   gemini_model_fallback: "gemini-3.7-flash"
@@ -271,7 +290,7 @@ features:
 
 limits:
   duration_sec: [35, 70]
-  avatar_share: [0.35, 0.50]
+  avatar_share: [0.20, 0.40]  # TZ-0050: 20–40%, not 35–50%
   max_event_gap_sec: 2.5
   max_shot_sec: 5
   max_shot_sec_with_events: 7
@@ -315,14 +334,20 @@ limits:
   ab_min_template_diff: 0           # A/B выключен: одна версия
 
 speech:
-  pause_threshold_ms: 150           # §4.2.2 паузы >150 мс режем
-  pause_target_ms: [80, 120]
+  # Темп 0050 r62. Заказчик: «темп речи ускорь, чтобы именно там в быстром
+  # темпе, та-та-та-та-та, новости». Скорость самой модели поднять больше
+  # нечем — `elevenlabs.pace: 1.2` уже упирается в потолок параметра speed у
+  # ElevenLabs. Значит плотность берётся паузами: режем от 110 мс (было 150) и
+  # оставляем 55–85 мс (было 80–120). Пауза-удар перед ответом не тронута —
+  # она динамику создаёт, а не отнимает.
+  pause_threshold_ms: 110           # §4.2.2 паузы выше порога режем
+  pause_target_ms: [55, 85]
   # Единственная пауза ролика, которую не режут, а держат: перед словом-ударом
   # в блоке-ответе (script_playbook.md §6). Остальные паузы отнимают динамику,
   # эта её создаёт — ответ звучит как ответ, а не как продолжение фразы.
   # 0 выключает приём.
   punch_hold_ms: 320
-  breath_max_ms: 400
+  breath_max_ms: 280
   silence_floor_db: -42.0
   min_word_ms: 250                  # §5.1 длительность слова 250–450 мс
   max_word_ms: 450

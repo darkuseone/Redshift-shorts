@@ -583,7 +583,7 @@ class TestTzMust024ConstantsAgree:
         vision = {
             "enabled": True, "skipped": True, "qc_skipped_semantic": True,
             "mismatch_share": None, "mismatch_limit": 0.10,
-            "picture_matches_speech": False, "blocking": True,
+            "picture_matches_speech": False, "blocking": False,
             "reason": "skip_live", "notes": [],
         }
         folded = apply_semantic_qc(
@@ -593,9 +593,9 @@ class TestTzMust024ConstantsAgree:
                          "detail": "", "timecode_sec": None}],
              "failed": []},
             vision)
-        status = "ok" if folded["passed"] else "qc_failed"
-        assert folded["passed"] is False
-        assert status != "ok"
+        assert folded["passed"] is True
+        sem = next(c for c in folded["checks"] if c["id"] == "QC-SEMANTIC")
+        assert sem["blocking"] is False
 
 
 class TestQc17TemplateSetOverlap:

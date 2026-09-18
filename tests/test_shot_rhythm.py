@@ -1,0 +1,260 @@
+"""Ритм монтажа: кадры встык, без перебивок короче двух секунд.
+
+Браки 0050, из-за которых правила и появились: длительность кадра росла
+отдельно от старта, так что объявленные две секунды накрывались следующим
+кадром через 1.29 с; между блоками светили дыры; аватар вспыхивал на 0.26 с;
+плашка AIRFOIL переживала своё крыло и висела над трубами.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from src.p11_assemble.assemble import (
+    MIN_FOOTAGE_SHOT_SEC, MIN_FULLSCREEN_SHOT_SEC, clamp_plaques_to_shots,
+    close_slot_holes, enforce_slot_rhythm,
+)
+
+
+REPO = Path(__file__).resolve().parents[1]
+
+
+def _slot(start, end, kind="footage", block=None, **extra):
+    return {"start": start, "end": end, "duration": round(end - start, 3),
+            "kind": kind, "block_id": block, **extra}
+
+
+class TestKadryVstyk:
+
+    def test_a_hole_between_shots_is_closed(self):
+        slots = [_slot(0.0, 2.0), _slot(2.5, 5.0)]
+        close_slot_holes(slots, total=6.0)
+        assert slots[0]["end"] == 2.5
+        assert slots[1]["end"] == 6.0
+        assert slots[0]["duration"] == 2.5
+
+    def test_an_overlap_is_trimmed_to_the_next_start(self):
+        """Кадр, объявивший две секунды, а накрытый через 1.29, врёт плану."""
+        slots = [_slot(40.59, 42.59), _slot(41.88, 43.88)]
+        close_slot_holes(slots, total=46.0)
+        assert slots[0]["end"] == 41.88
+        assert slots[0]["duration"] == pytest.approx(1.29, abs=1e-3)
+
+
+class TestPerebivkiKorocheDvuhSekund:
+
+    def test_a_short_cutaway_borrows_from_the_footage_on_its_left(self):
+        slots = [_slot(0.0, 6.0, "footage", "b1"),
+                 _slot(6.0, 7.4, "footage", "b2"),
+                 _slot(7.4, 13.0, "avatar", "b3")]
+        enforce_slot_rhythm(slots, total=13.0)
+        insert = next(s for s in slots if s["block_id"] == "b2")
+        assert insert["duration"] >= MIN_FOOTAGE_SHOT_SEC - 1e-3
+        # Речь не двигается — двигается только граница склейки.
+        assert slots[0]["start"] == 0.0 and slots[-1]["end"] == 13.0
+
+    def test_a_cutaway_never_borrows_from_the_next_shot(self):
+        """Иначе кадр переезжает через следующее слово.
+
+        На 0050 крыло, дотянувшись до двух секунд за счёт крови, стояло на
+        экране, когда диктор уже говорил «ток крови»: подпись PLASMA висела
+        над крылом, а кровь приезжала после своего слова.
+        """
+        slots = [_slot(38.63, 41.88, "footage", "fluids"),
+                 _slot(41.88, 43.14, "footage", "wing"),
+                 _slot(43.14, 48.49, "footage", "blood")]
+        enforce_slot_rhythm(slots, total=48.49)
+        blood = [s for s in slots if s["block_id"] == "blood"]
+        assert blood, "кровь не должна была исчезнуть"
+        # Крыло добрало недостающее у жидкости слева, а не у крови справа.
+        assert blood[0]["start"] <= 43.14 + 1e-3
+        wing = next(s for s in slots if s["block_id"] == "wing")
+        assert wing["start"] < 41.88
+
+    def test_a_neighbour_is_never_starved_below_its_own_floor(self):
+        slots = [_slot(0.0, 1.2, "fullscreen_text", "b1"),
+                 _slot(1.2, 3.0, "footage", "b2")]
+        enforce_slot_rhythm(slots, total=3.0)
+        card = next(s for s in slots if s["kind"] == "fullscreen_text")
+        assert card["duration"] >= MIN_FULLSCREEN_SHOT_SEC - 1e-3
+
+    def test_a_run_of_short_cutaways_merges_into_long_ones(self):
+        """Четыре удара перечисления в 3.8 с четырьмя кадрами не показать."""
+        slots = [_slot(40.59, 41.88, "footage", "b5b"),
+                 _slot(41.88, 43.14, "footage", "b5c"),
+                 _slot(43.14, 44.36, "footage", "b5d"),
+                 _slot(44.36, 48.49, "footage", "b5e")]
+        dropped = enforce_slot_rhythm(slots, total=48.49)
+        assert dropped
+        for slot in slots:
+            assert slot["duration"] >= MIN_FOOTAGE_SHOT_SEC - 1e-3, slot
+        # Группа остаётся на материале своего первого кадра — того, на чьё
+        # слово она начиналась.
+        assert slots[0]["block_id"] == "b5b"
+
+    def test_a_face_flash_is_left_alone_because_its_clip_is_frozen(self):
+        """Аватар не трогаем даже ради правила: его окна — платный контракт.
+
+        Сборка один раз сняла вспышку лица в 0.26 с, P6 переписал заявку
+        ``avatar_request.json`` на три сегмента вместо пяти, и заморозка окон
+        развалилась: следующий прогон потребовал бы новой генерации HeyGen.
+        Такая вспышка лечится только новым рендером — решением заказчика.
+        """
+        slots = [_slot(0.0, 4.0, "footage", "b1"),
+                 _slot(4.0, 4.26, "avatar", "b6"),
+                 _slot(4.26, 8.0, "footage", "b7")]
+        dropped = enforce_slot_rhythm(slots, total=8.0)
+        assert "b6" not in dropped
+        avatar = [s for s in slots if s["kind"] == "avatar"]
+        assert len(avatar) == 1
+        assert (avatar[0]["start"], avatar[0]["end"]) == (4.0, 4.26)
+
+    def test_a_cutaway_never_borrows_from_an_avatar(self):
+        """Занять у аватара — значит сдвинуть окно замороженного webm."""
+        slots = [_slot(0.0, 6.0, "avatar", "b1"),
+                 _slot(6.0, 7.4, "footage", "b2"),
+                 _slot(7.4, 13.0, "avatar", "b3")]
+        enforce_slot_rhythm(slots, total=13.0)
+        assert (slots[0]["start"], slots[0]["end"]) == (0.0, 6.0)
+        assert (slots[-1]["start"], slots[-1]["end"]) == (7.4, 13.0)
+        # Вставка остаётся короткой: удлинить её без нового аватара нечем.
+        insert = next(s for s in slots if s["block_id"] == "b2")
+        assert insert["duration"] == pytest.approx(1.4, abs=1e-3)
+
+    def test_a_cutaway_between_two_avatars_is_left_alone_when_nothing_can_give(self):
+        """Длина такой вставки — длина куска речи, а не решение монтажа."""
+        slots = [_slot(0.0, 1.6, "avatar", "b1"),
+                 _slot(1.6, 3.0, "footage", "b2"),
+                 _slot(3.0, 4.6, "avatar", "b3")]
+        enforce_slot_rhythm(slots, total=4.6)
+        assert [s["kind"] for s in slots] == ["avatar", "footage", "avatar"]
+
+    def test_nothing_is_lost_from_the_timeline(self):
+        slots = [_slot(0.0, 1.2, "fullscreen_text", "b1"),
+                 _slot(1.2, 2.3, "footage", "b2"),
+                 _slot(2.3, 3.1, "footage", "b3"),
+                 _slot(3.1, 9.0, "avatar", "b4")]
+        enforce_slot_rhythm(slots, total=9.0)
+        assert slots[0]["start"] == 0.0
+        assert slots[-1]["end"] == 9.0
+        for a, b in zip(slots, slots[1:]):
+            assert a["end"] == b["start"]
+
+
+class TestPlashkaNePerezhivaetSvoyKadr:
+
+    def _shots(self):
+        return [{"start": 41.88, "end": 45.14, "block_id": "b5c"},
+                {"start": 45.14, "end": 48.49, "block_id": "b5e"}]
+
+    def _plaque(self, start, end, text="AIRFOIL"):
+        # Ровно те ключи, что кладёт P11: block_id среди них нет.
+        return {"type": "plaque", "start": start, "end": end,
+                "template": "lower-thirds/dark-card", "params": {"text": text}}
+
+    def test_a_plaque_is_cut_to_its_shot(self):
+        overlays = [self._plaque(41.88, 47.0)]
+        clamp_plaques_to_shots(overlays, self._shots())
+        assert overlays[0]["end"] == 45.14
+
+    def test_the_real_plasma_lag_is_cut(self):
+        """PLASMA стоял 44.36–47.86 над крылом, кровь начиналась в 45.14."""
+        overlays = [self._plaque(44.36, 47.86, "PLASMA")]
+        clamp_plaques_to_shots(overlays, self._shots())
+        assert overlays[0]["end"] == 45.14
+
+    def test_a_plaque_inside_its_shot_is_left_alone(self):
+        overlays = [self._plaque(45.5, 47.0, "PLASMA")]
+        clamp_plaques_to_shots(overlays, self._shots())
+        assert overlays[0]["end"] == 47.0
+
+    def test_a_plaque_whose_shot_is_gone_is_dropped(self):
+        overlays = [self._plaque(42.0, 44.0, "VALVES")]
+        clamp_plaques_to_shots(overlays, self._shots(), dropped_blocks=["b5c"])
+        assert overlays == []
+
+    def test_other_overlays_are_not_touched(self):
+        overlays = [{"type": "source_card", "start": 0.0, "end": 60.0}]
+        clamp_plaques_to_shots(overlays, self._shots())
+        assert overlays[0]["end"] == 60.0
+
+    def test_a_plaque_squeezed_to_nothing_is_dropped(self):
+        overlays = [self._plaque(44.9, 45.1)]
+        clamp_plaques_to_shots(overlays, self._shots())
+        assert overlays == []
+
+
+class TestTheAvatarContractSurvives:
+    """Заявка на клипы — платный контракт, а не производный файл.
+
+    Раньше этот набор морозил конкретные окна r61 — пять сегментов с
+    ``start``/``end``, — чтобы пересборка не обесценила оплаченные клипы. Но
+    среди замороженных окон был сегмент в 0.256 с: ведущий выпрыгивал в кадр
+    на четверть секунды и исчезал. Тест защищал брак: любая попытка починить
+    вспышку роняла его, а сам он зеленел ровно до тех пор, пока вспышка
+    оставалась на месте.
+
+    Морозить снимок нельзя — заказчик заказывает перегенерацию, и окна
+    меняются вместе с озвучкой. Морозить надо правила, которые обязаны
+    выполняться на **любой** заявке.
+    """
+
+    REQUEST = REPO / "assets" / "avatar_clips" / "redshift_0050" / "avatar_request.json"
+
+    def _request(self):
+        return json.loads(self.REQUEST.read_text(encoding="utf-8"))
+
+    def test_the_look_comes_from_the_config_not_from_a_literal(self):
+        # Пока id лука стоял здесь строкой, смена лука заказчиком не роняла
+        # ничего: тест зеленел на старом id, а ролик собирался на старом
+        # аватаре. Источник правды один — `config/config.yaml`.
+        from src.lib.config import load_config
+        assert self._request()["avatar_id"] == load_config().get("heygen.avatar_id")
+
+    def test_segments_are_numbered_without_holes(self):
+        segments = self._request()["segments"]
+        assert segments, "заявка без сегментов"
+        assert [s["index"] for s in segments] == list(range(len(segments)))
+
+    def test_no_segment_is_shorter_than_an_appearance_may_be(self):
+        # §3.5: появление ведущего — 3–12 сек. Сегмент короче трёх секунд это
+        # и есть та вспышка на 49-й, за которую заказчик вернул ролик.
+        from src.lib.config import load_config
+        floor = float(load_config().brandbook["avatar"]["appearance_sec"][0])
+        short = [(s["index"], s["duration_sec"]) for s in self._request()["segments"]
+                 if float(s["duration_sec"]) < floor - 1e-6]
+        assert short == [], f"сегменты короче {floor} сек: {short}"
+
+    def test_every_segment_has_a_clip_the_provider_will_accept(self):
+        # Расширение в `expected_clip` — пожелание P6, а не закон: провайдер
+        # перебирает .mov/.webm/.mp4 в этом порядке. Проверяем то же, что и он.
+        clips = self.REQUEST.parent
+        for segment in self._request()["segments"]:
+            stem = Path(segment["expected_clip"]).stem
+            found = [ext for ext in (".mov", ".webm", ".mp4")
+                     if (clips / f"{stem}{ext}").is_file()]
+            assert found, f"{stem}: клипа нет ни в одном контейнере"
+
+    def test_the_rhythm_pass_moves_no_avatar_window(self):
+        # Окна строятся из длительностей заявки, а не берутся из неё готовыми:
+        # заявка фазы 1 несёт только длины кусков речи, а проверяется здесь
+        # ритм монтажа, которому важны границы, а не то, откуда они взялись.
+        segments = self._request()["segments"]
+        slots = [_slot(0.0, 4.575, "footage", "b1")]
+        at = 4.575
+        for segment in segments:
+            # Округление — не косметика: `enforce_slot_rhythm` округляет свои
+            # границы, и накопленная погрешность сложения дала бы расхождение
+            # в 1e-15, которое читается как «ритм подвинул окно».
+            end = round(at + float(segment["duration_sec"]), 3)
+            slots.append(_slot(at, end, "avatar", segment["block_id"]))
+            slots.append(_slot(end, end + 1.2, "footage", "gap"))
+            at = round(end + 1.2, 3)
+        total = slots[-1]["end"]
+        before = [(s["start"], s["end"]) for s in slots if s["kind"] == "avatar"]
+        enforce_slot_rhythm(slots, total=total)
+        after = [(s["start"], s["end"]) for s in slots if s["kind"] == "avatar"]
+        assert after == before

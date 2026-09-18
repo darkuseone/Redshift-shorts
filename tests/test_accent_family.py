@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from src.lib.render.hyperframes.captions import _accent_cyan, _accent_pair, caption_css
+from src.lib.render.hyperframes.captions import _accent_cyan, caption_css
 from src.lib.render.hyperframes.templates import (
     TemplateCtx, _apply_accent_family, Piece, render_fullscreen,
 )
@@ -94,14 +94,19 @@ class TestTheSubtitleWordCarriesTheFamily:
         assert _accent_cyan({"accent_family": "red"}) is False
         assert _accent_cyan({}) is False
 
-    def test_the_gradient_switches_with_the_family(self):
-        """Градиент «кровь» на cyan даёт розовый провал, а не свечение."""
-        params = {"accent": "#C8453D", "accent_soft": "#E4726A",
-                  "cyan": "#36EFFF", "cyan_soft": "#7AF0FF"}
-        assert _accent_pair(params, {"accent_family": "cyan"}) == \
-            ("#36EFFF", "#7AF0FF")
-        assert _accent_pair(params, {"accent_family": "red"}) == \
-            ("#C8453D", "#E4726A")
+    def test_the_subtitle_fill_ignores_the_family(self):
+        """Караоке канала красится одним #C8453D — семейство на него не влияет.
+
+        Cyan остаётся языком карточек и оверлеев (`accent-cyan` выше), но в
+        субтитре второго цвета нет: закон канала — белая фраза и красная
+        заливка текущего слова.
+        """
+        from src.lib.render.hyperframes.captions import gradient_fill_params
+        brandbook = json.loads((REPO_ROOT / "config" / "brandbook.json")
+                               .read_text(encoding="utf-8"))
+        params = gradient_fill_params(brandbook)
+        assert params["accent"] == "#C8453D"
+        assert "cyan" not in params and "accent_soft" not in params
 
     def test_the_css_declares_both_families(self):
         brandbook = json.loads((REPO_ROOT / "config" / "brandbook.json")

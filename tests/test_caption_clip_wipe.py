@@ -161,8 +161,10 @@ def test_default_caption_is_gradient_fill(cfg):
     wipe = clip_wipe_params(cfg.brandbook)
     fill = gradient_fill_params(cfg.brandbook)
     assert wipe["base_px"] >= 136 and wipe["min_px"] >= 80
-    assert fill["base_px"] >= 136 and fill["min_px"] >= 80
-    assert wipe["max_words"] <= 5 and fill["max_words"] <= 5
+    # gradient-fill не переносит строку, поэтому пол кегля у него ниже: фраза
+    # ужимается, а не уезжает во вторую строку слипшимися словами.
+    assert fill["base_px"] >= 136 and fill["min_px"] >= 56
+    assert wipe["max_words"] <= 5 and fill["max_words"] <= 2
 
 
 def test_clip_wipe_paints_digit_lead(cfg):

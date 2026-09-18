@@ -29,7 +29,9 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from ...text import prefer_nichem_spelling
-from ..text_rules import subtitle_word
+from ..text_rules import (
+    merge_brand_phrases, merge_number_phrases, subtitle_word,
+)
 from .templates import opacity_hard_kill, text_width
 
 # Совпадает с brand_css.Z_SUBTITLE: субтитр поверх оверлеев.
@@ -43,6 +45,36 @@ TRACK_CAPTION_ODD = 19
 # stretch until the next *visible* phrase: mute windows drop karaoke in
 # between, and that left «ДНЯ» on screen for 17 seconds on 0048.
 _PHRASE_HOLD_CAP = 0.45
+# Сколько заливка держится после того, как слово отзвучало. Ноль читался бы
+# как мигание на стыке, полсекунды — как «вся фраза красная».
+_FILL_HOLD_SEC = 0.12
+
+
+# Оверлеи, которым караоке уступает кадр: они занимают его целиком или почти
+# целиком. Тот же набор читает clip-wipe (``overlay_cuts``).
+_CAPTION_YIELDS_TO = frozenset({"plaque", "cta", "dataviz", "source_card"})
+
+
+def _frame_taking_starts(plan: dict[str, Any]) -> list[float]:
+    """Моменты, с которых кадр занят не субтитром.
+
+    Полноэкранная карточка — это **шот**, а не оверлей: она приходит в план
+    как ``kind: "fullscreen_text"`` в ``shots``. Список, собранный по одним
+    ``overlays``, её не видел, и хвост «НЕ БРАЛ» так и лежал поверх карточки
+    «7 · $1 000 000 · 25 Y» — при том что слово отзвучало за 0.14 с до её
+    начала. Смотрим обе коллекции.
+    """
+    starts = [
+        float(ovl.get("start") or 0)
+        for ovl in (plan.get("overlays") or [])
+        if str(ovl.get("type") or "") in _CAPTION_YIELDS_TO
+    ]
+    starts += [
+        float(shot.get("start") or 0)
+        for shot in (plan.get("shots") or [])
+        if str(shot.get("kind") or "") == "fullscreen_text"
+    ]
+    return starts
 
 
 def phrase_clip_span(
@@ -128,28 +160,39 @@ def is_space_theme(plan: dict[str, Any]) -> bool:
     return bool(_SPACE_RE.search(blob))
 
 
+def is_explicit_space(plan: dict[str, Any]) -> bool:
+    """Космос объявлен категорией, а не угадан по словам темы.
+
+    Закон канала: clip-wipe живёт только на явном ``category: space``.
+    Эвристика по тексту ловила «орбиту продаж» и «чёрную дыру в бюджете» и
+    уводила обычный ролик с gradient-fill — поэтому выбор жеста её не видит.
+    """
+    return str(plan.get("category") or "").strip().lower() == "space"
+
+
 def pick_caption_style(plan: dict[str, Any],
                        brandbook: dict[str, Any] | None = None) -> str:
-    """Прод: gradient-fill; космос — clip-wipe. Blend только явным caption."""
-    spec = (brandbook or {}).get("subtitles") or {}
-    name = str(spec.get("caption") or "gradient-fill").strip()
-    if name in _BLEND_NAMES:
-        return "blend-difference"
-    if is_space_theme(plan):
+    """Один жест канала: gradient-fill. clip-wipe — только явный ``space``.
+
+    camera-follow и blend-difference не выбираются автоматически ни для
+    какого ролика: они дают второй ряд слов поверх первого, что запрещено.
+    """
+    if is_explicit_space(plan):
         return "clip-wipe"
-    if name in _LEGACY_POP:
-        return "gradient-fill"
-    return name
+    return "gradient-fill"
 
 
 def resolve_caption(name: str | None) -> str:
-    """Имя из плана → существующий жест. Пустое и pop-in → gradient-fill."""
+    """Имя из плана → существующий жест.
+
+    Всё, кроме ``clip-wipe`` (явный космос), сводится к ``gradient-fill``:
+    pop-in, camera-follow и blend-difference рисуют белый ряд и цветной
+    дубль поверх него — это брак по закону канала, а не вариант вёрстки.
+    """
     raw = str(name or "").strip()
-    if raw in _LEGACY_POP:
-        return "gradient-fill"
-    if raw in _BLEND_NAMES:
-        return "blend-difference"
-    return raw or "gradient-fill"
+    if raw == "clip-wipe":
+        return "clip-wipe"
+    return "gradient-fill"
 
 
 def _num(value: float) -> str:
@@ -432,21 +475,22 @@ def caption_css(brandbook: dict[str, Any]) -> str:
         f".caption-grad{{position:absolute;inset:0;z-index:{Z_CAPTION};"
         "overflow:hidden;pointer-events:none;"
         "width:var(--frame-w);height:var(--frame-h)}"
+        # nowrap: перенос строки склеивал соседние слова в одно (ВРЁТСАМОЛЁТ).
+        # Фраза либо влезает в рабочую зону кеглем, либо ужимается, но остаётся
+        # одной строкой.
         ".gf-group{position:absolute;left:var(--safe-x-min);"
         "width:calc(var(--safe-x-max) - var(--safe-x-min));"
-        "display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end}"
+        "display:flex;flex-wrap:nowrap;justify-content:center;align-items:flex-end}"
         ".gf-word{display:block;flex:0 0 auto;position:relative;"
-        "font-family:var(--font-display);font-weight:700;"
-        f"text-transform:uppercase;letter-spacing:{fill_track}em;"
-        f"color:{color};line-height:1.15;white-space:nowrap;"
-        f"transform-origin:50% 50%;{shadow}}}"
-        ".gf-word svg{display:block;overflow:visible;position:absolute;left:0;top:0;z-index:1}"
-        ".gf-word .lead{font-style:normal;font-size:inherit;font-weight:inherit;"
-        "display:inline;color:inherit;text-shadow:inherit}"
-        ".gf-base{display:block}"
+        "transform-origin:50% 50%}"
+        ".gf-word svg{display:block;overflow:visible}"
         ".gf-wipe-r{transform-origin:0px 50%;transform-box:fill-box}"
+        # Обводка живёт на самом глифе SVG: text-shadow до <text> не доходит,
+        # а второй HTML-слой под SVG запрещён законом канала.
         ".gf-ink{font-family:var(--font-display);font-weight:700;"
-        f"text-transform:uppercase;letter-spacing:{fill_track}em}}"
+        f"letter-spacing:{fill_track}em;"
+        "stroke:rgba(0,0,0,0.88);stroke-width:2.4px;"
+        "stroke-linejoin:round;paint-order:stroke fill}"
         f".caption-blend{{position:absolute;inset:0;z-index:{Z_CAPTION};"
         "pointer-events:none;overflow:visible;"
         "width:var(--frame-w);height:var(--frame-h);"
@@ -483,6 +527,10 @@ def _caption_shown(word: dict[str, Any]) -> str:
 
 
 def _visible_words(raw: list[dict[str, Any]], case_mode: str) -> list[dict[str, Any]]:
+    # Склейки идут по произнесённым словам, до оцифровки и регистра: после
+    # них «две тысячи двадцать шесть» уже распалось на «2 ТЫСЯЧИ 20 6», а
+    # «опен эй ай» — на три отдельных субтитра.
+    raw = merge_number_phrases(merge_brand_phrases(list(raw)))
     visible: list[dict[str, Any]] = []
     for word in raw:
         raw_disp = str(word.get("display") or "")
@@ -884,8 +932,14 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
     safe = brandbook["safe_zones"]["work_area"]
     return {
         "base_px": int(spec.get("base_px", subs.get("size_px_default", 144))),
-        "min_px": int(spec.get("min_px", 84)),
-        "max_words": int(spec.get("max_words", 3)),
+        # Пол кегля ниже прежних 84: строка не переносится, а ужимается.
+        # 84 на рабочей зоне 740 px не держал даже двух длинных слов, группа
+        # уходила во вторую строку и «ВРЁТ»/«САМОЛЁТ» читались как одно слово.
+        "min_px": int(spec.get("min_px", 58)),
+        # Ниже этого кегля фраза не ужимается, а разбивается на две: мелкий
+        # субтитр под аватаром читается как сноска, а не как речь.
+        "comfort_px": int(spec.get("comfort_px", 84)),
+        "max_words": int(spec.get("max_words", 2)),
         "pause_break_sec": float(spec.get("pause_break_sec", 0.45)),
         "letter_spacing_em": float(spec.get("letter_spacing_em", 0.02)),
         "gap_em": float(spec.get("gap_em", 0.18)),
@@ -897,34 +951,49 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "frame_w": float(safe["x_max"]) - float(safe["x_min"]),
         "origin_x": float(safe["x_min"]),
         "baseline_y": float(subs.get("baseline_y_default", 975)),
+        # Один цвет заливки на весь канал. Ни accent_soft, ни cyan, ни
+        # градиента: «текущее слово красится #C8453D» — закон, а не настройка.
         "accent": str(colors.get("accent", "#C8453D")),
-        "accent_soft": str(colors.get("accent_soft", "#E4726A")),
-        # Второе семейство акцента — из того же брендбука. Градиент «кровь»
-        # красным словам не годится для cyan: он даёт розовый провал в
-        # середине, а не свечение.
-        "cyan": str(colors.get("cyan", "#36EFFF")),
-        "cyan_soft": str(colors.get("cyan_soft", "#7AF0FF")),
         "ink": str(subs.get("color", "#FFFFFF")),
     }
 
 
-def _accent_pair(params: dict[str, Any], word: dict[str, Any]) -> tuple[str, str]:
-    """Пара цветов градиента по семейству акцента слова."""
-    if _accent_cyan(word):
-        return params["cyan"], params["cyan_soft"]
-    return params["accent"], params["accent_soft"]
+def split_phrases_to_fit(
+    phrases: list[list[dict[str, Any]]],
+    *,
+    max_width: float,
+    base: int,
+    letter_spacing_em: float,
+    gap_em: float,
+    comfort_px: int,
+    min_size: int,
+) -> list[list[dict[str, Any]]]:
+    """Разбить фразу, которая влезает в строку только мелким кеглем.
 
+    Строка у нас одна и не переносится, поэтому длинная пара слов раньше
+    доезжала до пола кегля и превращалась в мелкий шрифт под аватаром.
+    «ПЕРЕЛОЖИЛИ ДОКАЗАТЕЛЬСТВО» требовало 50 px — это не субтитр, это сноска.
 
-def _blood_gradient(gid: str, accent: str, soft: str) -> str:
-    """Кровь вместо Siri-радуги: accent → accent_soft → accent."""
-    return (
-        f'<linearGradient id="{gid}" gradientUnits="objectBoundingBox" '
-        f'x1="0" y1="0" x2="1" y2="0">'
-        f'<stop offset="0%" stop-color="{accent}"/>'
-        f'<stop offset="55%" stop-color="{soft}"/>'
-        f'<stop offset="100%" stop-color="{accent}"/>'
-        f"</linearGradient>"
-    )
+    Дешевле показать те же слова двумя фразами подряд крупно: речь их всё
+    равно произносит последовательно, и караоке от этого только честнее.
+    """
+    out: list[list[dict[str, Any]]] = []
+    queue = [list(p) for p in phrases if p]
+    while queue:
+        phrase = queue.pop(0)
+        size, _ = fit_wipe_group(
+            [_caption_shown(w) for w in phrase],
+            max_width=max_width, base=base,
+            letter_spacing_em=letter_spacing_em, gap_em=gap_em,
+            min_size=min_size,
+        )
+        if size >= comfort_px or len(phrase) < 2:
+            out.append(phrase)
+            continue
+        half = len(phrase) // 2
+        queue.insert(0, phrase[half:])
+        queue.insert(0, phrase[:half])
+    return out
 
 
 def build_gradient_fill(
@@ -933,7 +1002,18 @@ def build_gradient_fill(
     *,
     duration: float,
 ) -> tuple[list[str], list[str], int]:
-    """Фразы с bounce и заливкой акцента. Твины на слове и rect, не на ``.clip``."""
+    """Караоке канала: белая фраза, текущее слово заливается по буквам.
+
+    Один слой. Слово — ровно один ``<svg>``: белый ``<text>`` и поверх него
+    тот же ``<text>`` цветом ``#C8453D`` под маской, которая растёт слева
+    направо за время произнесения слова. Ни HTML-дубля под SVG, ни второго
+    ряда слов сверху: белый ряд плюс цветной дубль — это брак, который и
+    ловили на 0049/0050.
+
+    Фраза всегда одна строка: группа не переносится (``flex-wrap:nowrap``),
+    кегль подбирается под рабочую зону. Перенос склеивал соседние слова в
+    одно — «ВРЁТСАМОЛЁТ».
+    """
     params = gradient_fill_params(brandbook)
     baseline = float(plan.get("subtitle_style", {}).get(
         "baseline_y", params["baseline_y"]))
@@ -946,11 +1026,29 @@ def build_gradient_fill(
         max_words=params["max_words"],
         pause_break_sec=params["pause_break_sec"],
     )
+    phrases = split_phrases_to_fit(
+        phrases,
+        max_width=params["frame_w"],
+        base=params["base_px"],
+        letter_spacing_em=params["letter_spacing_em"],
+        gap_em=params["gap_em"],
+        comfort_px=int(params["comfort_px"]),
+        min_size=int(params["min_px"]),
+    )
+    # Фраза не должна доживать до карточки или диаграммы, которая займёт тот
+    # же кадр. Хвост «НЕ БРАЛ» висел поверх карточки «7 · $1 000 000 · 25 Y»,
+    # а «СООБЩЕНИЙ» и «17 ЧАСОВ» ложились на линию графика b4: караоке знает
+    # только тайминг слов и про оверлеи под собой не спрашивает. У clip-wipe
+    # такая развязка есть с самого начала (``overlay_cuts``), у заливки её
+    # не было — добавляем ту же: держать хвост до начала оверлея, не дальше.
+    overlay_cuts = sorted(_frame_taking_starts(plan))
     nodes: list[str] = []
     tweens: list[str] = []
     count = 0
     bounce = params["bounce_scale"]
     bounce_out = params["bounce_out_sec"]
+    ink = params["ink"]
+    accent = params["accent"]
 
     for p, phrase in enumerate(phrases):
         start = float(phrase[0]["start"])
@@ -965,12 +1063,19 @@ def build_gradient_fill(
             base=params["base_px"],
             letter_spacing_em=params["letter_spacing_em"],
             gap_em=params["gap_em"],
-            min_size=int(params.get("min_px", 84)),
+            min_size=int(params.get("min_px", 58)),
         )
         gap_px = size * params["gap_em"]
         n = len(phrase)
         end, fade_start, fade_dur = phrase_clip_span(
             start, last_end, next_start, fade_sec=params["fade_sec"])
+        for cut in overlay_cuts:
+            # Режем только хвост: слово, которое звучит, с экрана не снимаем.
+            if last_end < cut < end:
+                end = max(cut, start + 0.05)
+                fade_dur = min(fade_dur, max(0.0, end - last_end))
+                fade_start = end - fade_dur if fade_dur else last_end
+                break
         if p + 1 < len(phrases):
             # Exclusive end so even/odd tracks never share a frame at the join
             # (clip visibility includes both endpoints). One frame at 30 fps.
@@ -982,48 +1087,40 @@ def build_gradient_fill(
         track = TRACK_CAPTION_EVEN if p % 2 == 0 else TRACK_CAPTION_ODD
         clip_id = f"gf-{p:02d}"
         group_id = f"{clip_id}-g"
-        accent_at = _accent_index(phrase)
-        # Unique y so a leftover even-track glyph cannot sit on the odd line.
-        track_y = 0 if p % 2 == 0 else int(size * 0.42)
-        top = int(_phrase_baseline(phrase, baseline) - size / 2 + track_y)
+        # Одна строка и один baseline: смещения чётных/нечётных фраз больше
+        # нет. Оно разводило соседние фразы по вертикали и на стыке читалось
+        # как второй ряд слов.
+        top = int(_phrase_baseline(phrase, baseline) - size / 2)
+        # Маска шире кегля: у прописных Д/У/Ц выносные элементы уходят ниже
+        # базовой линии, и маска высотой в кегль срезала бы им заливку.
+        mask_y = -size * 0.30
+        mask_h = size * 1.60
+        text_y = size * 0.82
         word_nodes: list[str] = []
 
         for i, word in enumerate(phrase):
             wid = f"{clip_id}-w{i}"
             wpx = widths[i]
             margin = _px(gap_px) if i < n - 1 else "0"
-            lead = str(word.get("lead") or "")
-            lead_html = f'<i class="lead">{_esc(lead)}</i> ' if lead else ""
-            shown = word["display"]
-            if i == accent_at:
-                word_nodes.append(
-                    f'<div id="{wid}" class="gf-word gf-accent" '
-                    f'style="width:{_px(wpx)}px;height:{size}px;'
-                    f'margin-right:{margin}px">'
-                    f'{lead_html}'
-                    f'<span class="gf-base" style="font-size:{size}px;'
-                    f'line-height:{size}px">{_esc(shown)}</span>'
-                    f'<svg width="{_px(wpx)}" height="{size}" '
-                    f'viewBox="0 0 {_px(wpx)} {size}">'
-                    f'<defs>{_blood_gradient(f"{wid}-grad", *_accent_pair(params, word))}'
-                    f'<mask id="{wid}-m" maskUnits="userSpaceOnUse" '
-                    f'maskContentUnits="userSpaceOnUse">'
-                    f'<rect id="{wid}-r" class="gf-wipe-r" x="0" y="0" '
-                    f'width="{_px(wpx)}" height="{size}" fill="#fff"/>'
-                    f"</mask></defs>"
-                    f'<text class="gf-ink" mask="url(#{wid}-m)" '
-                    f'fill="url(#{wid}-grad)" x="0" y="{_px(size * 0.82)}" '
-                    f'font-size="{size}px">{_esc(word["display"])}</text>'
-                    f"</svg></div>"
-                )
-            else:
-                word_nodes.append(
-                    f'<div id="{wid}" class="gf-word" '
-                    f'style="width:{_px(wpx)}px;height:{size}px;'
-                    f'font-size:{size}px;line-height:{size}px;'
-                    f'margin-right:{margin}px">'
-                    f"{lead_html}{_esc(shown)}</div>"
-                )
+            shown = texts[i]
+            word_nodes.append(
+                f'<div id="{wid}" class="gf-word" '
+                f'style="width:{_px(wpx)}px;height:{size}px;'
+                f'margin-right:{margin}px">'
+                f'<svg width="{_px(wpx)}" height="{size}" '
+                f'viewBox="0 0 {_px(wpx)} {size}">'
+                f'<defs><mask id="{wid}-m" maskUnits="userSpaceOnUse" '
+                f'maskContentUnits="userSpaceOnUse">'
+                f'<rect id="{wid}-r" class="gf-wipe-r" x="0" y="{_px(mask_y)}" '
+                f'width="{_px(wpx)}" height="{_px(mask_h)}" fill="#fff"/>'
+                f"</mask></defs>"
+                f'<text class="gf-ink" x="0" y="{_px(text_y)}" '
+                f'font-size="{size}px" fill="{ink}">{_esc(shown)}</text>'
+                f'<text class="gf-ink" mask="url(#{wid}-m)" x="0" '
+                f'y="{_px(text_y)}" font-size="{size}px" '
+                f'fill="{accent}">{_esc(shown)}</text>'
+                f"</svg></div>"
+            )
             count += 1
 
         nodes.append(
@@ -1041,6 +1138,18 @@ def build_gradient_fill(
             at = float(word["start"])
             word_end = float(word["end"])
             dur = max(0.05, word_end - at)
+            # Красным светится ровно одно слово — то, которое звучит.
+            #
+            # Гаснет оно сразу, как слово отзвучало, а не висит до конца
+            # фразы. Фраза канала часто состоит из одного экранного токена
+            # («ПОГОДА», «НЕ БРАЛ» со склеенным предлогом), и удержание
+            # заливки до конца клипа красило всю строку целиком на весь её
+            # хвост: в кадре вместо белой фразы с одним красным словом стоял
+            # сплошной красный. Передаём эстафету следующему слову, а на
+            # последнем просто гасим.
+            hand_off = (float(phrase[i + 1]["start"]) if i + 1 < n
+                        else word_end + _FILL_HOLD_SEC)
+            hand_off = min(max(hand_off, word_end), end)
             tweens.append(
                 f'tl.set("#{wid}",{{scale:{_scale(bounce)}}},{_num(at)});'
             )
@@ -1048,12 +1157,14 @@ def build_gradient_fill(
                 f'tl.to("#{wid}",{{scale:1,duration:{_num(bounce_out)},'
                 f'ease:"power2.out"}},{_num(word_end)});'
             )
-            if i == accent_at:
-                wipe = dur if params["wipe_sec"] <= 0 else min(dur, params["wipe_sec"])
-                tweens.append(
-                    f'tl.fromTo("#{wid}-r",{{scaleX:0}},{{scaleX:1,'
-                    f'duration:{_num(wipe)},ease:"power2.out"}},{_num(at)});'
-                )
+            wipe = dur if params["wipe_sec"] <= 0 else min(dur, params["wipe_sec"])
+            tweens.append(
+                f'tl.fromTo("#{wid}-r",{{scaleX:0}},{{scaleX:1,'
+                f'duration:{_num(wipe)},ease:"none"}},{_num(at)});'
+            )
+            tweens.append(
+                f'tl.set("#{wid}-r",{{scaleX:0}},{_num(hand_off)});'
+            )
 
         if fade_dur >= 0.04:
             tweens.append(

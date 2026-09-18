@@ -1,7 +1,7 @@
 {
-  "_comment": "Накопленные предпочтения монтажа (§4.5, §7.8). Пополняется командой `redshift learn --video-id X --choice A|B`. Формат записи: «в ситуации X выбран вариант Y».",
+  "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-09T00:07:17+00:00",
+  "updated_at": "2026-09-18T14:39:03+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -12,7 +12,7 @@
     "meme_enabled": true,
     "dynamic_transition_bias": 0.5
   },
-  "ending_last_type": "open_question",
+  "ending_last_type": "part2_cliff",
   "ending_ring": [
     "open_question",
     "binary_vote",
@@ -28,8 +28,34 @@
       "video_id": "redshift_0042",
       "type": "open_question",
       "recorded_at": "2026-09-08"
+    },
+    {
+      "video_id": "redshift_0050",
+      "type": "part2_cliff",
+      "recorded_at": "2026-09-18"
     }
   ],
-  "sfx_scenario_ring": [],
-  "bed_ring": []
+  "sfx_scenario_ring": [
+    "glass",
+    "soft",
+    "impact"
+  ],
+  "bed_ring": [
+    "music_synapse_wonder",
+    "music_data_sonification_strings",
+    "music_gravitational_pull"
+  ],
+  "template_excludes": {
+    "redshift_0050": [
+      "text-fullscreen/bigtext-mask-footage",
+      "text-fullscreen/number-slam-card",
+      "hero-devices/icons-behind-head",
+      "hero-devices/footage-plate-pop",
+      "hero-devices/card-stack-top",
+      "hero-devices/exhibit-card",
+      "data-viz/decline-chart",
+      "data-viz/mk-line-graph",
+      "data-viz/us-map-hex"
+    ]
+  }
 }
