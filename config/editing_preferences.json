@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-18T14:39:03+00:00",
+  "updated_at": "2026-09-18T23:31:00+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -42,8 +42,8 @@
   ],
   "bed_ring": [
     "music_synapse_wonder",
-    "music_data_sonification_strings",
-    "music_gravitational_pull"
+    "music_gravitational_pull",
+    "music_data_sonification_strings"
   ],
   "template_excludes": {
     "redshift_0050": [
