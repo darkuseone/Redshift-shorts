@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r5: Nikita voice already in assets. HeyGen via connected MCP. Do not call HeyGen API on runner. Draft until GODEN.",
-  "round": 5
+  "note": "0051 r6: 4 phrase webms in assets/avatar_clips. Voice cached. No HeyGen generate. Draft until GODEN.",
+  "round": 6
 }
