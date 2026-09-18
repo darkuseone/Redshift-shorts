@@ -334,10 +334,17 @@ def _ensure_brand_pill(plan: dict[str, Any]) -> int:
         blob = str(
             (o.get("params") or {}).get("content") or o.get("content") or ""
         ).upper()
-        if "GPT-6" in blob and "ASTRA" in blob:
-            return 0
-        if str(o.get("template") or "") == "hero-devices/brand-pill":
-            return 0
+        is_pill = (
+            ("GPT-6" in blob and "ASTRA" in blob)
+            or str(o.get("template") or "") == "hero-devices/brand-pill"
+        )
+        if is_pill:
+            changed = 0
+            if not o.get("grounded_on"):
+                o["grounded_on"] = ["brand"]
+                o.setdefault("why", "owner: GPT-6 ASTRA brand pill")
+                changed = 1
+            return changed
     start = 15.6
     for s in plan.get("shots") or []:
         if str(s.get("kind")) == "footage" and float(s.get("start") or 0) >= 15.0:
@@ -351,6 +358,8 @@ def _ensure_brand_pill(plan: dict[str, Any]) -> int:
             "start": start,
             "end": start + 2.8,
             "content": "GPT-6 ASTRA",
+            "grounded_on": ["brand"],
+            "why": "owner: GPT-6 ASTRA brand pill on OpenAI beat",
             "params": {
                 "content": "GPT-6 ASTRA",
                 "text": "GPT-6 ASTRA",
@@ -487,6 +496,38 @@ def _nasa_credit(shot: dict[str, Any]) -> bool:
     return False
 
 
+
+def _license_lookup(plan: dict[str, Any]) -> dict[str, Any]:
+    """asset_id → license blob from any already-licensed shot."""
+    out: dict[str, Any] = {}
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        aid = str(shot.get("asset_id") or "")
+        lic = shot.get("license")
+        if aid and lic and aid not in out:
+            out[aid] = lic
+    return out
+
+
+def _repair_licenses(plan: dict[str, Any]) -> int:
+    """QC-12: retargeted asset_id must keep a confirmed license."""
+    changed = 0
+    lookup = _license_lookup(plan)
+    default = "owner_decision"
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        aid = str(shot.get("asset_id") or "")
+        if not aid or shot.get("license"):
+            continue
+        shot["license"] = lookup.get(aid, default)
+        # magnific / nasa / openai official pins are owner-cleared
+        if any(aid.startswith(p) for p in ("magnific_", "nasa_", "openai_", "fp_")):
+            shot["license"] = lookup.get(aid, "owner_decision")
+        changed += 1
+    return changed
+
 def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     if str(plan.get("video_id") or "") != "redshift_0050":
         return 0
@@ -541,6 +582,7 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
         kept.append(ovl)
     plan["overlays"] = kept
     changed += _dedupe_templates(plan)
+    changed += _repair_licenses(plan)
     return changed
 
 
