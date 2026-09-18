@@ -89,7 +89,7 @@ def build_pipeline() -> Pipeline:
                             "config/footage_pins.json", "config/glossary.json"),
              uses_script=True,
              cfg_sections=("heygen",),
-             version="8"),
+             version="10"),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),
