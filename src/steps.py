@@ -9,9 +9,6 @@ from __future__ import annotations
 
 from .pipeline import Pipeline, Step
 
-# Импорты шагов держим ленивыми внутри функции: так `redshift validate` не
-# тянет за собой numpy/Pillow, а падение одного шага при импорте не ломает CLI.
-
 
 def _speech_of_plan(plan: dict) -> dict:
     """Часть плана, от которой зависит озвучка."""
@@ -92,7 +89,7 @@ def build_pipeline() -> Pipeline:
                             "config/footage_pins.json", "config/glossary.json"),
              uses_script=True,
              cfg_sections=("heygen",),
-             version="7"),
+             version="8"),
         Step("P12", "Рендер, QC, артефакты", p12,
              inputs=("edit_plan_A.json", "mix.wav"),
              outputs=("build_report.json",),

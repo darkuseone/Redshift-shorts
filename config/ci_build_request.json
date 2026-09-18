@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r65: cache voice+webm+footage. Apply owner visuals on a REAL P11/P12 rerun (r64 mp4 was built before the pass). 7 TASKS/25 YEARS, compare-bars 88h vs 17h, drop lone 6, no icon/stamp PiP, NASA credit to bottom 56px.",
-  "round": 65
+  "note": "r66: same cache as r65. P11 v8 bust so P12 picks .credit{bottom:56px}. Voice/avatar/footage untouched.",
+  "round": 66
 }
