@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r10: P7 prepared. QC-24 fix: b5 plaque not FS. Extra leftover pins. Voice+webm cached.",
+  "note": "0051 r10c: P7 prepared. QC-24 b5 plaque + extra leftover pins + template bans. Voice+webm cached.",
   "round": 10
 }
