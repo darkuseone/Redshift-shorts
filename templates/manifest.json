@@ -3260,7 +3260,8 @@
       "renderer": "transitions_destruction",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -3973,7 +3974,8 @@
         "redshift_0045",
         "redshift_0046",
         "redshift_0047",
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
       "added": "2026-08-18",
       "frequency": "signature",

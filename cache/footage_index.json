@@ -547,8 +547,10 @@
       "vision_summary": "Dark coal glow plate, vertical 9:16 prepared owned densify filler",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-18",
       "added": "2026-09-13",
       "phashes": [
         "d1d166080b33f4fd",
@@ -877,8 +879,10 @@
       "vision_summary": "Cold blue spark plate, vertical 9:16 densify hole filler (low red)",
       "score": 0.9,
       "duration_sec": 4.0,
-      "used_in": [],
-      "last_used": null,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-18",
       "added": "2026-09-13",
       "phashes": [
         "e33b1cd77aa2300e",
@@ -1030,9 +1034,10 @@
       "score": 0.9,
       "duration_sec": 4.0,
       "used_in": [
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
-      "last_used": "2026-09-16",
+      "last_used": "2026-09-18",
       "added": "2026-09-13",
       "phashes": [
         "30362ee16b0fd2d4",
@@ -1107,9 +1112,10 @@
       "score": 0.9,
       "duration_sec": 4.0,
       "used_in": [
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
-      "last_used": "2026-09-16",
+      "last_used": "2026-09-18",
       "added": "2026-09-13",
       "phashes": [
         "d97d15325e3604c7",
