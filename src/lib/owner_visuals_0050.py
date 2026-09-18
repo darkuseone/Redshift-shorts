@@ -10,10 +10,16 @@ _HERO_BAN = {
     "hero-devices/exhibit-card",
 }
 
-_CHIP_LABELS = {
-    "FLUIDS", "WEATHER", "AIRFOIL", "VALVES", "PLASMA",
-    "REJECTED", "FOLLOWUP",
-}
+_CHIP_ROTATION = [
+    ("FLUIDS", "lower-thirds/dark-card", "lt_dark_card"),
+    ("WEATHER", "lower-thirds/name-title", "lt_name_title"),
+    ("AIRFOIL", "lower-thirds/note-pin", "lt_note_pin"),
+    ("VALVES", "lower-thirds/metric-badge", "lt_metric_badge"),
+    ("PLASMA", "lower-thirds/dark-card", "lt_dark_card"),
+    ("REJECTED", "lower-thirds/name-title", "lt_name_title"),
+    ("FOLLOWUP", "lower-thirds/note-pin", "lt_note_pin"),
+]
+_CHIP_MAP = {name: (tmpl, rend) for name, tmpl, rend in _CHIP_ROTATION}
 
 _DECLINE = ("data-viz/decline-chart", "data-viz/mk-line-graph")
 _COMPARE = {
@@ -26,7 +32,17 @@ _COMPARE = {
     "dark": True,
 }
 _HOOK_END = 3.2
-_DARK_CARD = "lower-thirds/dark-card"
+_NO_RED = {
+    "dark_card": True,
+    "accent": False,
+    "accent_underline": False,
+    "no_red": True,
+    "source_chip": True,
+    "background": "dark",
+    "position": "bottom",
+    "clean_bar": False,
+    "tone": "ink",
+}
 
 
 def _is_lone_six(text: str, params: dict[str, Any]) -> bool:
@@ -62,6 +78,12 @@ def _force_compare(obj: dict[str, Any]) -> bool:
 
 
 def _mute_hook_captions(plan: dict[str, Any]) -> int:
+    fs_windows: list[tuple[float, float]] = [(0.0, _HOOK_END)]
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        if str(shot.get("kind")) == "fullscreen_text":
+            fs_windows.append((float(shot.get("start") or 0), float(shot.get("end") or 0)))
     subs = list(plan.get("subtitles") or [])
     if not subs:
         return 0
@@ -73,7 +95,7 @@ def _mute_hook_captions(plan: dict[str, Any]) -> int:
             continue
         start = float(su.get("start") or 0)
         display = str(su.get("display") or "")
-        if start < _HOOK_END:
+        if any(a - 0.05 <= start < b for a, b in fs_windows):
             dropped += 1
             continue
         if display.strip() in {"Клей", "клей", "КЛЕЙ"}:
@@ -83,7 +105,7 @@ def _mute_hook_captions(plan: dict[str, Any]) -> int:
     if dropped:
         plan["subtitles"] = kept
     style = dict(plan.get("subtitle_style") or {})
-    if style.get("baseline_y") == 720:
+    if int(style.get("baseline_y") or 0) >= 700:
         style["baseline_y"] = 520
         plan["subtitle_style"] = style
         dropped += 1
@@ -92,32 +114,36 @@ def _mute_hook_captions(plan: dict[str, Any]) -> int:
 
 def _hold_hook_card(plan: dict[str, Any]) -> int:
     shots = plan.get("shots") or []
-    if len(shots) < 2:
+    if not shots:
         return 0
-    hook = shots[0]
-    nxt = shots[1]
-    if float(hook.get("start") or 0) > 0.2:
-        return 0
-    if str(nxt.get("role") or hook.get("role")) != "hook":
-        return 0
-    if str(nxt.get("kind")) == "fullscreen_text" and "$1" in str(nxt.get("content") or ""):
-        return 0
-    vortex = hook.get("file") or (hook.get("params") or {}).get("media")
-    nxt["kind"] = "fullscreen_text"
-    nxt["template"] = "intro-hooks/hook-number-slam"
-    nxt["renderer"] = "fullscreen_text"
-    nxt["content"] = "$1 000 000"
-    nxt["carries_line"] = True
-    nxt["hook"] = True
-    nxt["file"] = vortex
-    params = dict(hook.get("params") or {})
-    params["content"] = "$1 000 000"
-    params["text"] = "$1 000 000"
-    if vortex:
-        params["media"] = vortex
-    nxt["params"] = params
-    nxt["hero"] = None
-    return 1
+    changed = 0
+    vortex = None
+    hook0 = shots[0]
+    vortex = hook0.get("file") or (hook0.get("params") or {}).get("media")
+    for shot in shots:
+        if float(shot.get("start") or 99) >= _HOOK_END:
+            break
+        if str(shot.get("kind")) == "fullscreen_text" and "$1" in str(shot.get("content") or ""):
+            if vortex is None:
+                vortex = shot.get("file")
+            continue
+        shot["kind"] = "fullscreen_text"
+        shot["template"] = "intro-hooks/hook-number-slam"
+        shot["renderer"] = "fullscreen_text"
+        shot["content"] = "$1 000 000"
+        shot["carries_line"] = True
+        shot["hook"] = True
+        shot["hero"] = None
+        if vortex:
+            shot["file"] = vortex
+        params = dict(shot.get("params") or {})
+        params["content"] = "$1 000 000"
+        params["text"] = "$1 000 000"
+        if vortex:
+            params["media"] = vortex
+        shot["params"] = params
+        changed += 1
+    return changed
 
 
 def _chip_label(ovl: dict[str, Any]) -> str:
@@ -142,29 +168,13 @@ def _lock_cards(plan: dict[str, Any]) -> int:
         if has_browser and tmpl == "lower-thirds/source-domain" and "OPENAI" in label:
             changed += 1
             continue
-        if label in _CHIP_LABELS or tmpl in {
-            "lower-thirds/accent-underline",
-            "lower-thirds/source-domain",
-            "lower-thirds/tag-chips",
-            "lower-thirds/timestamp-marker",
-            "lower-thirds/progress-step",
-            "lower-thirds/clean-bar",
-        }:
-            if tmpl != _DARK_CARD:
-                ovl["template"] = _DARK_CARD
-                ovl["renderer"] = "lt_dark_card"
+        if label in _CHIP_MAP:
+            want, rend = _CHIP_MAP[label]
+            if tmpl != want:
+                ovl["template"] = want
+                ovl["renderer"] = rend
                 changed += 1
-            params.update({
-                "dark_card": True,
-                "accent": False,
-                "accent_underline": False,
-                "no_red": True,
-                "source_chip": True,
-                "background": "dark",
-                "position": "bottom",
-                "clean_bar": False,
-                "tone": "ink",
-            })
+            params.update(_NO_RED)
             ovl["params"] = params
         kept.append(ovl)
     plan["overlays"] = kept
@@ -202,6 +212,12 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
             shot["content"] = "GPT-6 ASTRA"
             shot["template"] = "hero-devices/brand-pill"
             shot["params"] = {"content": "GPT-6 ASTRA"}
+            changed += 1
+        asset = str(shot.get("asset_id") or shot.get("file") or "")
+        if "frostscan" in asset and float(shot.get("start") or 0) < _HOOK_END:
+            shot["kind"] = "fullscreen_text"
+            shot["template"] = "intro-hooks/hook-number-slam"
+            shot["content"] = "$1 000 000"
             changed += 1
     kept: list[dict[str, Any]] = []
     for ovl in list(plan.get("overlays") or []):
