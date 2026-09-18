@@ -11,7 +11,7 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r2. Hook shortened for 3s cap. Vendor numbers only. Jev cannot generate text.",
+    "notes": "0051 r7. Hook spoken Пятнадцатого сентября. Vendor numbers only. Jev cannot generate text. Voice body + avatars cached.",
     "hook": {"on_screen": "JEV", "style": "number_slam"}
   },
   "sources": [
@@ -19,7 +19,7 @@
       "title": "Introducing System One Models & Jev",
       "domain": "typesafe.ai",
       "url": "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
-      "show_on_screen": true,
+      "show_on_screen": false,
       "screen_template": "browser",
       "published": "15 сентября 2026",
       "snippet": "Jev gives up string generation. 70-500 ms. $0.042 / MTok. Output free.",
@@ -38,9 +38,9 @@
   "blocks": [
     {
       "id": "b1", "role": "hook",
-      "text": "15 сентября соавтор ChatGPT выпустил Jev — без текста.",
+      "text": "Пятнадцатого сентября соавтор ChatGPT выпустил Jev — без текста.",
       "emphasis_word": "Jev", "avatar": "off",
-      "visual_intent": "ONLY dark card JEV red frame on moving code UI. NO Russian plate. Avatar off. Motion from frame 0.",
+      "visual_intent": "ONLY dark card JEV red frame on moving code glow. NO Russian plate. Avatar off. Motion from frame 0.",
       "broll_queries": ["dark code editor terminal neon cursor scrolling"],
       "overlay": {"type": "fullscreen_text", "content": "JEV", "template_hint": "text-fullscreen/fact-card"},
       "sfx": "hit_impact", "meme_allowed": false, "mode_hint": "A", "emphasis_family": "tech"
@@ -58,7 +58,7 @@
       "id": "b3", "role": "evidence",
       "text": "На сайте свои цифры: сто девяносто четыре раза быстрее, четыреста сорок пять раз дешевле. Вход — сорок два доллара за миллиард токенов. Выход бесплатный.",
       "emphasis_word": "бесплатный", "avatar": "off",
-      "visual_intent": "Two dark compare bars: 194x SPEED vs 445x COST. Plate $42 / BTok. Source-chip TYPESAFE no red.",
+      "visual_intent": "Two dark compare bars: 194x SPEED vs 445x COST. Plate $42 / BTok. Source-chip TYPESAFE no red. No white browser card.",
       "broll_queries": ["data center gpu rack lights close"],
       "overlay": {"type": "dataviz"},
       "sfx": "data_beep", "source_ref": "typesafe.ai", "mode_hint": "A", "emphasis_family": "number"

@@ -1,12 +1,12 @@
 {
   "script": "scripts/redshift_0051.json",
   "video_id": "redshift_0051",
-  "from_step": "P6",
+  "from_step": "P7",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r6: 4 phrase webms in assets/avatar_clips. Voice cached. No HeyGen generate. Draft until GODEN.",
-  "round": 6
+  "note": "0051 r7: P7 hydrate real plates. Voice body + 4 phrase webm cached. Hook VO splice pending. Draft until GODEN.",
+  "round": 7
 }
