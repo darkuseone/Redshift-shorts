@@ -38,9 +38,15 @@
       "magnific_0050_city",
       "magnific_0050_cyanrain",
       "magnific_0050_deepcoil",
-      "pexels_v25935014",
-      "pexels_v18069803",
-      "pexels_v35003022"
+      "magnific_0050_charcoalash",
+      "magnific_0050_coldspark",
+      "magnific_0050_coalglow",
+      "magnific_0050_tealmister",
+      "magnific_0050_blueember",
+      "magnific_0050_sparkrain",
+      "magnific_0050_ironrust",
+      "magnific_0050_ashdrift",
+      "magnific_0050_darkember"
     ],
     "deny": [
       "nasa_*",
@@ -74,7 +80,7 @@
       "grok_supercomputer_0042"
     ],
     "same_asset_max_slots": 1,
-    "_note": "0051 r8. No Lean codeglow. No REJECTED stamp. No empty darkgrid. Unique plate per block.",
+    "_note": "0051 r10. Extra unique dark fillers for densify leftovers. No Lean/stamp/darkgrid.",
     "by_block": {
       "b1": "magnific_0050_steelglow",
       "b2": "magnific_0050_nightstatic",
@@ -89,7 +95,7 @@
       {"block": "b2", "on": "TypeSafe", "asset": "magnific_0050_nightstatic", "plaque": "TYPESAFE", "template": "text-fullscreen/stack-3lines"},
       {"block": "b3", "on": "быстрее", "asset": "magnific_0050_gpu", "plaque": "194x", "template": "data-viz/compare-bars"},
       {"block": "b4", "on": "миллисекунд", "asset": "magnific_0050_frostscan", "plaque": "70-500 MS", "template": "text-fullscreen/fact-card"},
-      {"block": "b5", "on": "RLCD", "asset": "magnific_0050_voidpulse", "plaque": "RLCD", "template": "text-fullscreen/vs-compare"},
+      {"block": "b5", "on": "RLCD", "asset": "magnific_0050_voidpulse", "plaque": "RLCD", "template": "lower-thirds/dark-card"},
       {"block": "b6", "on": "судья", "asset": "magnific_0050_slateiron", "plaque": "NO TEXT", "template": "lower-thirds/dark-card"},
       {"block": "b7", "on": "REDSHIFT", "asset": "magnific_0050_city", "plaque": "FOLLOWUP", "template": "lower-thirds/dark-card"}
     ]

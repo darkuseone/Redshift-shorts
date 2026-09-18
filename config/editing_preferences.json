@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-18T18:30:00+00:00",
+  "updated_at": "2026-09-19T01:40:00+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -69,6 +69,7 @@
       "hero-devices/exhibit-card",
       "hero-devices/chat-generate",
       "hero-devices/chat-typing",
+      "hero-devices/icons-behind-head",
       "browser-ui/article-highlight",
       "browser-ui/browser-scroll",
       "browser-ui/chat-ai-typing",
@@ -81,10 +82,12 @@
       "frames-cards/product-card",
       "intro-hooks/hook-blackout-word",
       "intro-hooks/hook-question-flash",
+      "intro-hooks/hook-countdown-3",
       "avatar-entry/flash-cut-in",
       "data-viz/mk-line-graph",
       "data-viz/decline-chart",
-      "data-viz/counter-roll"
+      "data-viz/counter-roll",
+      "lower-thirds/accent-underline"
     ]
   }
 }
