@@ -11,8 +11,10 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r7c. Hook on-screen JEV. Spoken 15-го / пятнадцатого via spliced wav. Body+avatars cached.",
-    "hook": {"on_screen": "JEV", "style": "number_slam"}
+    "notes": "0051 r8. Hook on-screen ONLY dark card JEV. No Cyrillic slam. No Lean. No REJECTED stamp. No white browser. Voice+avatars cached. mode C on graphic blocks.",
+    "hook": {"on_screen": "JEV", "style": "number_slam"},
+    "captions": {"style": "caption-gradient-fill", "placement": "lower_third", "hero_karaoke": false},
+    "card_lock": "fact-card JEV + stack TYPESAFE $40M SYSTEM ONE + compare 194x/445x + 70-500 MS + RLHF/RLCD + NO TEXT + FOLLOWUP. Source chips no red."
   },
   "sources": [
     {
@@ -20,7 +22,7 @@
       "domain": "typesafe.ai",
       "url": "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
       "show_on_screen": false,
-      "screen_template": "browser",
+      "screen_template": "none",
       "published": "15 сентября 2026",
       "snippet": "Jev gives up string generation. 70-500 ms. $0.042 / MTok. Output free.",
       "highlight_line": "JEV"
@@ -30,7 +32,7 @@
       "domain": "x.com",
       "url": "https://x.com/completeskeptic/status/2099925682726002904",
       "show_on_screen": false,
-      "screen_template": "search",
+      "screen_template": "none",
       "published": "15 сентября 2026",
       "snippet": "20-200x faster. 40-400x cheaper. Output tokens free. Cannot generate text."
     }
@@ -40,64 +42,72 @@
       "id": "b1", "role": "hook",
       "text": "15-го сентября соавтор ChatGPT выпустил Jev — без текста.",
       "emphasis_word": "Jev", "avatar": "off",
-      "visual_intent": "ONLY dark card JEV red frame on moving code glow. NO Russian plate. Avatar off. Motion from frame 0.",
-      "broll_queries": ["dark code editor terminal neon cursor scrolling"],
+      "visual_intent": "ONLY dark fact-card JEV red frame on moving steel glow. Hold card 2-4s. NO Russian plate. NO ВЫПУСТИЛ. NO Lean primes. NO CHATGPT slam. Avatar off. Motion from frame 0.",
+      "broll_queries": ["dark steel code glow particles motion"],
       "overlay": {"type": "fullscreen_text", "content": "JEV", "template_hint": "text-fullscreen/fact-card"},
-      "sfx": "hit_impact", "meme_allowed": false, "mode_hint": "A", "emphasis_family": "tech"
+      "plaque": {"text": "JEV", "style": "dark_red_frame"},
+      "sfx": "hit_impact", "meme_allowed": false, "mode_hint": "C", "emphasis_family": "tech"
     },
     {
       "id": "b2", "role": "setup",
       "text": "Diogo Almeida. Он делал RLHF в OpenAI. Два года в стелсе. Компания TypeSafe. Сид сорок миллионов. Первый публичный System One.",
       "emphasis_word": "TypeSafe", "avatar": "on",
-      "visual_intent": "Avatar + dark 3-line card: TYPESAFE / $40M SEED / SYSTEM ONE. No white studio.",
-      "broll_queries": ["founder portrait dark office microphone"],
-      "overlay": {"type": "fullscreen_text", "content": "TYPESAFE · $40M · SYSTEM ONE", "template_hint": "text-fullscreen/stack-3lines"},
+      "visual_intent": "Avatar lower plate. Top: dark 3-line card TYPESAFE / $40M / SYSTEM ONE. No white studio. No floating КОМПАНИЯ window. No Lean code behind head. Number compact $40M not 40 000 000.",
+      "broll_queries": ["dark static grain night office"],
+      "overlay": {"type": "fullscreen_text", "content": "TYPESAFE\n$40M\nSYSTEM ONE", "template_hint": "text-fullscreen/stack-3lines"},
+      "plaque": {"text": "TYPESAFE", "style": "dark_red_frame"},
       "sfx": "whoosh_in", "mode_hint": "A", "emphasis_family": "source"
     },
     {
       "id": "b3", "role": "evidence",
       "text": "На сайте свои цифры: сто девяносто четыре раза быстрее, четыреста сорок пять раз дешевле. Вход — сорок два доллара за миллиард токенов. Выход бесплатный.",
       "emphasis_word": "бесплатный", "avatar": "off",
-      "visual_intent": "Two dark compare bars: 194x SPEED vs 445x COST. Plate $42 / BTok. Source-chip TYPESAFE no red. No white browser card.",
-      "broll_queries": ["data center gpu rack lights close"],
-      "overlay": {"type": "dataviz"},
-      "sfx": "data_beep", "source_ref": "typesafe.ai", "mode_hint": "A", "emphasis_family": "number"
+      "visual_intent": "Dark compare bars SPEED 194x vs COST 445x then plate $42 / 1B TOK. Source-chip typesafe.ai NO red. No white browser. No empty server aisle. No pipes. No counter 37.",
+      "broll_queries": ["gpu rack lights close dark"],
+      "overlay": {"type": "dataviz", "content": "194x SPEED / 445x COST", "template_hint": "data-viz/compare-bars"},
+      "chart": {"type": "compare_bars", "left": {"label": "SPEED", "value": "194x"}, "right": {"label": "COST", "value": "445x"}, "foot": "$42 / 1B TOK"},
+      "plaque": {"text": "$42 / 1B", "style": "dark_red_frame"},
+      "sfx": "data_beep", "source_ref": "typesafe.ai", "mode_hint": "C", "emphasis_family": "number"
     },
     {
       "id": "b4", "role": "develop",
       "text": "Секрет простой. Jev не печатает слова по одному. Он сразу отдаёт выбор и вероятность. Семьдесят — пятьсот миллисекунд.",
       "emphasis_word": "вероятность", "avatar": "off",
-      "visual_intent": "JSON decision dump + 70-500 MS slam. Not a chatbot bubble.",
-      "broll_queries": ["json code dark theme structured output"],
-      "overlay": {"type": "highlight", "content": "70-500 MS", "template_hint": "text-fullscreen/text-number-slam"},
-      "sfx": "ui_click", "mode_hint": "A", "emphasis_family": "number"
+      "visual_intent": "Dark number card 70-500 MS on frost scan. Not chatbot bubble. Not Lean primes. Not 70 500. Not white graph.",
+      "broll_queries": ["frost scan grid cyan dark motion"],
+      "overlay": {"type": "highlight", "content": "70-500 MS", "template_hint": "text-fullscreen/fact-card"},
+      "plaque": {"text": "70-500 MS", "style": "dark_red_frame"},
+      "sfx": "ui_click", "mode_hint": "C", "emphasis_family": "number"
     },
     {
       "id": "b5", "role": "develop",
       "text": "Обучение другое. Не RLHF под чат. RLCD — калиброванные решения для кода.",
       "emphasis_word": "RLCD", "avatar": "off",
-      "visual_intent": "Split plate RLHF CHAT vs RLCD CODE. Dark cards red frame.",
-      "broll_queries": ["software workflow nodes graph dark ui"],
-      "overlay": {"type": "fullscreen_text", "content": "RLHF CHAT / RLCD CODE", "template_hint": "text-fullscreen/text-compare-vs"},
-      "sfx": "whoosh_in", "mode_hint": "A", "emphasis_family": "tech"
+      "visual_intent": "Dark VS card RLHF CHAT vs RLCD CODE. No empty grid. No blue-only line. No pause flash.",
+      "broll_queries": ["dark void pulse nodes"],
+      "overlay": {"type": "fullscreen_text", "content": "RLHF CHAT  /  RLCD CODE", "template_hint": "text-fullscreen/vs-compare"},
+      "plaque": {"text": "RLCD", "style": "dark_red_frame"},
+      "sfx": "whoosh_in", "mode_hint": "C", "emphasis_family": "tech"
     },
     {
       "id": "b6", "role": "twist",
       "text": "Халявы нет. Jev не пишет текст. Не пишет код. Не объясняет ход мыслей. Цифры — их собственные тесты, не независимый бенчмарк. Это судья внутри программы, не новый чат.",
       "emphasis_word": "судья", "avatar": "on",
-      "visual_intent": "Avatar + dark plate NO TEXT / OWN TESTS. Do not sell AGI.",
-      "broll_queries": ["court gavel desk dark close"],
+      "visual_intent": "Avatar + dark plate NO TEXT. Contrast high. Do NOT use REJECTED stamp. Do NOT replay server aisle. Source chip no red.",
+      "broll_queries": ["dark slate iron plate"],
       "overlay": {"type": "lower_third", "content": "NO TEXT", "template_hint": "lower-thirds/dark-card"},
+      "plaque": {"text": "NO TEXT", "style": "dark_no_red"},
       "sfx": "sub_drop", "answers_hook": true, "mode_hint": "A", "emphasis_family": "myth"
     },
     {
       "id": "b7", "role": "cta",
       "text": "Код плюс ИИ вместо ещё одного чата. Это короткий путь, который они продают. REDSHIFT",
       "emphasis_word": "REDSHIFT", "avatar": "off",
-      "visual_intent": "City night. FOLLOWUP chip no red. REDSHIFT Latin no dot.",
+      "visual_intent": "City night hold 3s+. Chip FOLLOWUP no red underline. End card REDSHIFT Latin no dot. No redsfhit. Caption ОДНОГО ЧАТА not 1 ЧАТА.",
       "broll_queries": ["city night traffic lights aerial"],
-      "overlay": {"type": "lower_third", "content": "FOLLOWUP", "template_hint": "lower-thirds/source-domain"},
-      "sfx": "subscribe_ping", "emphasis_family": "emotion"
+      "overlay": {"type": "lower_third", "content": "REDSHIFT", "template_hint": "lower-thirds/dark-card"},
+      "plaque": {"text": "FOLLOWUP", "style": "dark_no_red"},
+      "sfx": "subscribe_ping", "emphasis_family": "emotion", "mode_hint": "C"
     }
   ],
   "cta": {"text": "Код плюс ИИ вместо ещё одного чата.", "type": "part2_cliff"}
