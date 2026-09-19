@@ -907,7 +907,8 @@
       ],
       "renderer": "per_word_crossfade",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0051"
       ],
       "added": "2026-09-02",
       "frequency": "signature",
@@ -2963,7 +2964,8 @@
       "renderer": "gravitational_lens",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -4761,7 +4763,9 @@
         "timeline"
       ],
       "renderer": "dataviz",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0051"
+      ],
       "added": "2026-08-18",
       "frequency": "variant",
       "needs": [
