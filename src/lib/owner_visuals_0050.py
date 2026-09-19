@@ -1,7 +1,7 @@
 """0050 owner visual QC — rewrite after P11, no new TTS/HeyGen."""
 from __future__ import annotations
 
-OWNER_VISUALS_REV = 78  # bump to bust P11 step cache
+OWNER_VISUALS_REV = 79  # bump to bust P11 step cache
 
 from typing import Any, Callable
 
@@ -414,10 +414,10 @@ def _ensure_brand_pill(plan: dict[str, Any]) -> int:
 
 
 def _tame_cyan_spiral(plan: dict[str, Any]) -> int:
-    """nsspiral alone is ~0.15 cyan — QC-30 caps 0.12.
+    """nsspiral ~0.15 cyan — QC-30 caps 0.12. QC samples hit ~38s (0.58·dur).
 
-    Keep one ≤1.2s beat in-place (between QC samples ~27% and ~58%), retarget
-    duplicate spiral slots to dark ink so the 0.58 sample does not land on cyan.
+    Keep one ≤0.9s spiral beat, then force [35, 40] onto voidpulse (near-zero cyan)
+    so sample 3 cannot land on spiral/teal ink.
     """
     shots = list(plan.get("shots") or [])
     changed = 0
@@ -426,37 +426,28 @@ def _tame_cyan_spiral(plan: dict[str, Any]) -> int:
         for i, s in enumerate(shots)
         if isinstance(s, dict) and "nsspiral" in _asset_key(s).lower()
     ]
-    if not spiral_idxs:
-        return 0
-    keep = shots[spiral_idxs[0]]
-    start = float(keep.get("start") or 0)
-    # shorten in place — do not move start (avoids overlap with previous shot)
-    new_end = start + 1.2
-    old_end = float(keep.get("end") or new_end)
-    if old_end - start > 1.25:
-        keep["end"] = new_end
-        keep["duration"] = 1.2
+    if spiral_idxs:
+        keep = shots[spiral_idxs[0]]
+        start = float(keep.get("start") or 0)
+        keep["end"] = start + 0.9
+        keep["duration"] = 0.9
+        keep["asset_id"] = "openai_0050_nsspiral"
         changed += 1
-    keep["asset_id"] = "openai_0050_nsspiral"
-    # leftover of original spiral window + duplicates → safe dark
-    for i in spiral_idxs[1:]:
-        s = shots[i]
-        _bind_asset(s, _SAFE_DARK, plan)
-        changed += 1
-    # if we shortened keep, extend the next shot backward to close the gap
-    keep_i = spiral_idxs[0]
-    if keep_i + 1 < len(shots):
-        nxt = shots[keep_i + 1]
-        if float(nxt.get("start") or 0) > float(keep.get("end") or 0) + 0.05:
-            # insert filler by extending next shot start earlier only if it was spiral-retargeted
-            if keep_i + 1 in spiral_idxs or "nsspiral" not in _asset_key(nxt).lower():
-                gap_start = float(keep["end"])
-                # prefer retargeting an adjacent duplicate; else leave gap for P12
-                if keep_i + 1 in spiral_idxs[1:] or _SAFE_DARK in str(nxt.get("asset_id") or ""):
-                    nxt["start"] = gap_start
-                    nxt["duration"] = float(nxt.get("end") or 0) - gap_start
-                    nxt["asset_id"] = _SAFE_DARK
-                    changed += 1
+        for i in spiral_idxs[1:]:
+            _bind_asset(shots[i], "magnific_0050_voidpulse", plan)
+            changed += 1
+    # Force any shot overlapping the dangerous QC sample band onto voidpulse
+    for shot in shots:
+        if not isinstance(shot, dict) or str(shot.get("kind")) != "footage":
+            continue
+        a, b = float(shot.get("start") or 0), float(shot.get("end") or 0)
+        if b <= 35.0 or a >= 40.0:
+            continue
+        if "nsspiral" in _asset_key(shot).lower() and b - a <= 1.0:
+            continue  # keep the short spiral beat
+        if "voidpulse" not in _asset_key(shot).lower():
+            _bind_asset(shot, "magnific_0050_voidpulse", plan)
+            changed += 1
     plan["shots"] = shots
     return changed
 

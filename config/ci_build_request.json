@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "r78: stack 6.8-10.8s; bind_asset keeps media paths (no white frames); REV78",
-  "round": 78
+  "note": "r79: QC-30 — voidpulse over 35-40s sample band; spiral ≤0.9s; REV79",
+  "round": 79
 }
