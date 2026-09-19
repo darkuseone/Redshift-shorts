@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r18: QC-30 — ban ALL hero-devices for 0051 (red type share); keep r16 LT overlays + FS demote.",
-  "round": 18
+  "note": "0051 r19: QC-30 — deny emberfall/oilbloom/rustveil as avatar BG; cool prefer first. Keep r16 LT + r18 no-hero.",
+  "round": 19
 }

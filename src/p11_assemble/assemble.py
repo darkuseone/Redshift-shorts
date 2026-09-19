@@ -1623,7 +1623,7 @@ def _sentence(text: str, index: int, *, limit: int) -> str:
     return " ".join(parts[index].split()[:limit]).strip(".,!?;:")
 
 
-# 0050 QC-30: red-heavy densify/hole plates must not paint avatar VFX backgrounds.
+# QC-30: red-heavy densify/hole plates must not paint avatar VFX backgrounds.
 _0050_AVATAR_BG_DENY = frozenset({
     "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
     "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
@@ -1633,14 +1633,25 @@ _0050_AVATAR_BG_DENY = frozenset({
     # ровно ту строку критики, из-за которой коридор и попал в deny.
     "magnific_0050_gpu",
 })
+# 0051: emberfall behind avatar_seg_1 hit 0.13 red share (limit 0.12).
+_0051_AVATAR_BG_DENY = frozenset({
+    "magnific_0051_emberfall", "magnific_0051_oilbloom", "magnific_0051_rustveil",
+    "magnific_0050_darkember", "magnific_0050_redsmoke", "magnific_0050_ashdrift",
+    "magnific_0050_coalglow", "magnific_0050_ironrust", "magnific_0050_sparkrain",
+    "magnific_0050_blood", "magnific_0050_blueember",
+})
 
 
 def _avatar_bg_asset_ok(asset: dict[str, Any], *, video_id: str) -> bool:
-    """Skip red-accent plates behind 0050 talking-head (QC-30 accent_share)."""
-    if video_id != "redshift_0050":
-        return True
+    """Skip red-accent plates behind talking-head (QC-30 accent_share)."""
     aid = str(asset.get("id") or asset.get("asset_id") or "")
-    if aid in _0050_AVATAR_BG_DENY:
+    if video_id == "redshift_0050":
+        deny = _0050_AVATAR_BG_DENY
+    elif video_id == "redshift_0051":
+        deny = _0051_AVATAR_BG_DENY
+    else:
+        return True
+    if aid in deny:
         return False
     tags = asset.get("tags") or []
     if isinstance(tags, str):

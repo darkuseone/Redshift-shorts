@@ -158,16 +158,12 @@
   "redshift_0051": {
     "prefer": [
       "magnific_0051_irondrift",
-      "magnific_0051_emberfall",
       "magnific_0051_cyanmist",
       "magnific_0051_slagwave",
       "magnific_0051_nightspark",
-      "magnific_0051_oilbloom",
       "magnific_0051_coldgrid",
-      "magnific_0051_rustveil",
       "magnific_0050_steelglow",
       "magnific_0050_nightstatic",
-      "magnific_0050_gpu",
       "magnific_0050_frostscan",
       "magnific_0050_slateiron",
       "magnific_0050_voidpulse",
@@ -175,14 +171,18 @@
       "magnific_0050_cyanrain",
       "magnific_0050_deepcoil",
       "magnific_0050_charcoalash",
+      "magnific_0050_tealmister",
+      "magnific_0050_gpu",
       "magnific_0050_coldspark",
       "magnific_0050_coalglow",
-      "magnific_0050_tealmister",
       "magnific_0050_blueember",
       "magnific_0050_sparkrain",
       "magnific_0050_ironrust",
       "magnific_0050_ashdrift",
-      "magnific_0050_darkember"
+      "magnific_0050_darkember",
+      "magnific_0051_emberfall",
+      "magnific_0051_oilbloom",
+      "magnific_0051_rustveil"
     ],
     "deny": [
       "nasa_*",
@@ -216,7 +216,7 @@
       "grok_supercomputer_0042"
     ],
     "same_asset_max_slots": 1,
-    "_note": "0051 r11. New magnific_0051_* densify fillers. Bans countdown/browser/underline. Hook fact-card.",
+    "_note": "0051 r19. Deny red plates behind avatar (QC-30). Cool prefer first.",
     "by_block": {
       "b1": "magnific_0050_steelglow",
       "b2": "magnific_0050_nightstatic",
