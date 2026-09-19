@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r15: QC-21 \u2014 ground hook fact-card; ban stack-3lines carve + line-rise; b2 type-slab.",
-  "round": 15
+  "note": "0051 r16: restore authored LT overlays; demote stale FS; wire hero bans (verdict/type-slab/card-stack); b5+b6 dark-card; b2 name-title; b7 clean-bar dark-coerced.",
+  "round": 16
 }

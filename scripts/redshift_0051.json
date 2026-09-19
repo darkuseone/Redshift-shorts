@@ -11,7 +11,7 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r10. Schema-clean. Hook JEV fact-card. b5 plaque not FS. Voice+avatars cached.",
+    "notes": "0051 r16. Fix stale validated overlays; demote FS when LT authored; hero bans wired; b5+b6 dark-card; b2 name-title; b7 clean-bar dark-coerced.",
     "hook": {
       "on_screen": "JEV",
       "style": "number_slam",
@@ -71,9 +71,9 @@
         "dark static grain night office"
       ],
       "overlay": {
-        "type": "fullscreen_text",
-        "content": "TYPESAFE · $40M · SYSTEM ONE",
-        "template_hint": "hero-devices/type-slab"
+        "type": "lower_third",
+        "content": "TYPESAFE · $40M",
+        "template_hint": "lower-thirds/name-title"
       },
       "sfx": "whoosh_in",
       "mode_hint": "A",
@@ -170,7 +170,7 @@
       "overlay": {
         "type": "lower_third",
         "content": "REDSHIFT",
-        "template_hint": "lower-thirds/dark-card"
+        "template_hint": "lower-thirds/clean-bar"
       },
       "sfx": "subscribe_ping",
       "emphasis_family": "emotion",

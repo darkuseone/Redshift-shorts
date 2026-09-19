@@ -876,6 +876,37 @@ def _authored_overlay_owns_gap_fs(block: dict[str, Any] | None) -> bool:
     return bool(str(overlay.get("content") or "").strip())
 
 
+def _demote_stale_fullscreen_slots(plan: dict[str, Any]) -> int:
+    """Demote cached FS slots when authored overlay is not fullscreen_text.
+
+    from_step P7 reuses cut_plan where b5 was still fullscreen_text. After
+    sync_overlays_from_script the block is lower_third, but FS slots remain
+    and paint banned templates (per-word-crossfade). Keep hook FS.
+    """
+    blocks = {
+        str(b.get("id") or ""): b
+        for b in (plan.get("blocks") or [])
+        if isinstance(b, dict)
+    }
+    demoted = 0
+    for slot in plan.get("slots") or []:
+        if str(slot.get("kind") or "") != "fullscreen_text":
+            continue
+        if str(slot.get("role") or "") == "hook" or slot.get("hook"):
+            continue
+        block = blocks.get(str(slot.get("block_id") or ""))
+        overlay = (block or {}).get("overlay") or {}
+        otype = str(overlay.get("type") or "")
+        if otype in ("fullscreen_text", "highlight"):
+            continue
+        slot["kind"] = "footage"
+        slot.pop("content", None)
+        slot.pop("template_hint", None)
+        slot["gap_reason"] = f"demoted FS: authored overlay is {otype or 'none'}"
+        demoted += 1
+    return demoted
+
+
 def _cta_wordmark(plan: dict[str, Any], catalog_wordmark: str = "") -> str:
     """Latin REDSHIFT for 0050 / authored overlay; never catalog «РЕДШИФТ»."""
     vid = str(plan.get("video_id") or "")
@@ -924,6 +955,10 @@ def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
             "lower-thirds/accent-underline",
             "data-viz/mk-line-graph",
             "hero-devices/card-stack-top",
+            "hero-devices/verdict-card",
+            "hero-devices/type-slab",
+            "text-fullscreen/stack-3lines",
+            "text-fullscreen/per-word-crossfade",
             "text-fullscreen/impact-01",
             "text-fullscreen/impact-02",
             "text-fullscreen/word-swap",
@@ -3413,6 +3448,8 @@ def _clamp_plaques_at_avatar_cuts(
 
 _LATIN_DARK_CLEANBAR = frozenset({
     "FOLLOWUP", "WEATHER", "REJECTED", "FLUIDS", "AIRFOIL", "VALVES", "PLASMA",
+    "NO TEXT", "RLHF / RLCD", "RLHF", "RLCD", "REDSHIFT", "TYPESAFE",
+    "TYPESAFE · $40M", "TYPESAFE · $40M · SYSTEM ONE",
 })
 _LATIN_PLAQUE_MAX_SEC = 3.5
 
@@ -4033,10 +4070,10 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             prefer_head=head,
             seed=seed + 7,
         )
-        # Prefer dark-card when hint says so and bans emptied the head.
-        if hint and hint not in (list(used) + list(lt_ban)):
+        # Prefer dark-card when hint says so (0051 NO TEXT / RLHF / TYPESAFE).
+        if hint:
             forced_lt = catalog.by_id(hint)
-            if forced_lt is not None:
+            if forced_lt is not None and hint not in list(lt_ban):
                 template = forced_lt
         used.append(template.id)
         latin = is_latin_overlay_label(content)
@@ -4955,7 +4992,8 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                 block, slot, brand_icons,
                 title=str(plan.get("title") or ""), words=words),
             has_alpha=False, plate_src=plate_src,
-            recent_videos=recent_videos, exclude=used_templates,
+            recent_videos=recent_videos,
+            exclude=list(used_templates) + list(ban_templates or []),
             seed=seed + int(slot["index"]), picker=picker, variant=variant,
             block=block, video_duration=float(plan["duration_sec"]),
             exclude_renderers=frozenset(_FULL_FRAME_HEROES) | {"hero-oversize"})
@@ -5613,7 +5651,9 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                     has_alpha=(int(slot["index"]) in alpha_slots
                                or slot["kind"] == "avatar"),
                     plate_src=_plate_source(slot, slots, prepared, assets),
-                    recent_videos=recent_videos, exclude=used_templates + peer_block,
+                    recent_videos=recent_videos,
+                    exclude=list(used_templates) + list(peer_block)
+                    + list(ban_templates or []),
                     seed=seed, picker=picker, variant=variant, block=block,
                     video_duration=float(plan["duration_sec"]),
                     exclude_renderers=escalation.bans(
@@ -5983,6 +6023,7 @@ def run_step(ctx) -> dict[str, Any]:
     words = list(words_doc.get("words") or [])
     sync_overlays_from_script(plan, ctx.cfg.repo_root, words=words)
     sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
+    _demote_stale_fullscreen_slots(plan)
     accepted_doc = ctx.read("accepted_assets.json")
     generated_doc = ctx.read("generated_assets.json")
     avatar_meta = ctx.read_or("avatar_meta.json", {"segments": []})

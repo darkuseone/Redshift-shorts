@@ -11,10 +11,11 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r2. Hook shortened for 3s cap. Vendor numbers only. Jev cannot generate text.",
+    "notes": "0051 r16. Fix stale validated overlays; demote FS when LT authored; hero bans wired; b5+b6 dark-card; b2 name-title; b7 clean-bar dark-coerced.",
     "hook": {
       "on_screen": "JEV",
-      "style": "number_slam"
+      "style": "number_slam",
+      "template_hint": "text-fullscreen/fact-card"
     }
   },
   "sources": [
@@ -72,9 +73,9 @@
         "founder portrait dark office microphone"
       ],
       "overlay": {
-        "type": "fullscreen_text",
-        "content": "TYPESAFE · $40M · SYSTEM ONE",
-        "template_hint": "text-fullscreen/stack-3lines"
+        "type": "lower_third",
+        "content": "TYPESAFE · $40M",
+        "template_hint": "lower-thirds/name-title"
       },
       "sfx": "whoosh_in",
       "mode_hint": "A",
@@ -94,7 +95,9 @@
         "data center gpu rack lights close"
       ],
       "overlay": {
-        "type": "dataviz"
+        "type": "dataviz",
+        "content": "194x SPEED / 445x COST",
+        "template_hint": "data-viz/compare-bars"
       },
       "sfx": "data_beep",
       "source_ref": "typesafe.ai",
@@ -117,7 +120,7 @@
       "overlay": {
         "type": "highlight",
         "content": "70-500 MS",
-        "template_hint": "text-fullscreen/text-number-slam"
+        "template_hint": "text-fullscreen/fact-card"
       },
       "sfx": "ui_click",
       "mode_hint": "A",
@@ -137,9 +140,9 @@
         "software workflow nodes graph dark ui"
       ],
       "overlay": {
-        "type": "fullscreen_text",
-        "content": "RLHF CHAT / RLCD CODE",
-        "template_hint": "text-fullscreen/text-compare-vs"
+        "type": "lower_third",
+        "content": "RLHF / RLCD",
+        "template_hint": "lower-thirds/dark-card"
       },
       "sfx": "whoosh_in",
       "mode_hint": "A",
@@ -183,8 +186,8 @@
       ],
       "overlay": {
         "type": "lower_third",
-        "content": "FOLLOWUP",
-        "template_hint": "lower-thirds/source-domain"
+        "content": "REDSHIFT",
+        "template_hint": "lower-thirds/clean-bar"
       },
       "sfx": "subscribe_ping",
       "emphasis_family": "emotion",

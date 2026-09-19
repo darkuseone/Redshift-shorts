@@ -119,7 +119,9 @@
       "text-fullscreen/dark-plus",
       "text-fullscreen/number-slam-card",
       "text-fullscreen/stack-3lines",
-      "data-viz/line-rise"
+      "data-viz/line-rise",
+      "hero-devices/verdict-card",
+      "hero-devices/type-slab"
     ]
   }
 }
