@@ -1359,7 +1359,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_slagpulse.mp4",
-      "phash": "3f00ff007f00030077003e003c00000000000000000000",
+      "phash": "ffffffff0000000c003c01ff0fff7ff903bc00780000000000000000e000f000",
       "tags": [
         "slag",
         "pulse",
@@ -1376,7 +1376,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "3f00ff007f00030077003e003c00000000000000000000"
+        "ffffffff0000000c003c01ff0fff7ff903bc00780000000000000000e000f000"
       ],
       "width": 1080,
       "height": 1920,

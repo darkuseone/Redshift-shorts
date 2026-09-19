@@ -923,7 +923,14 @@ def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
             "intro-hooks/hook-blackout-word",
             "lower-thirds/accent-underline",
             "text-fullscreen/blur-out-up",
+            "text-fullscreen/date-stamp",
+            "text-fullscreen/word-swap",
+            "text-fullscreen/per-word-crossfade",
+            "text-fullscreen/kinetic-type-swap",
+            "text-fullscreen/bottom-up-letters",
+            "text-fullscreen/bigtext-mask-footage",
             "data-viz/mk-line-graph",
+            "hero-devices/card-stack-top",
         ):
             if tid not in out:
                 out.append(tid)
