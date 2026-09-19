@@ -569,7 +569,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0051"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -2852,7 +2853,8 @@
       "renderer": "zoom_through",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
       "added": "2026-09-02",
       "frequency": "rare",
