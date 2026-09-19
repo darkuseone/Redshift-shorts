@@ -1,7 +1,7 @@
 """0050 owner visual QC — rewrite after P11, no new TTS/HeyGen."""
 from __future__ import annotations
 
-OWNER_VISUALS_REV = 80  # bump to bust P11 step cache
+OWNER_VISUALS_REV = 81  # bump to bust P11 step cache
 
 from typing import Any, Callable
 
@@ -718,16 +718,17 @@ def _ensure_openai_chip(plan: dict[str, Any]) -> int:
             if end - start < 1.6:
                 end = start + 2.4
             break
+    # Not dark-card: FLUIDS+REJECTED already use it (QC-25 max 2 per template id).
     ovls.append(
         {
             "type": "plaque",
-            "template": "lower-thirds/dark-card",
-            "renderer": "lt_dark_card",
+            "template": "lower-thirds/metric-badge",
+            "renderer": "lt_metric_badge",
             "start": start,
             "end": end,
             "content": "openai.com",
             "grounded_on": ["brand"],
-            "why": "owner: dark openai.com chip (no light browser)",
+            "why": "owner: dark openai.com chip (no light browser; not dark-card)",
             "params": {
                 **_NO_RED,
                 "text": "openai.com",
