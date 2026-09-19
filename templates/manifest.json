@@ -502,7 +502,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0051"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -3098,7 +3099,8 @@
       "renderer": "whip_pan_shader",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
