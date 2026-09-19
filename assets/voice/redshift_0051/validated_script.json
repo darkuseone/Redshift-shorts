@@ -14,7 +14,8 @@
     "notes": "0051 r2. Hook shortened for 3s cap. Vendor numbers only. Jev cannot generate text.",
     "hook": {
       "on_screen": "JEV",
-      "style": "number_slam"
+      "style": "fact_card",
+      "template_hint": "text-fullscreen/fact-card"
     }
   },
   "sources": [
@@ -22,7 +23,7 @@
       "title": "Introducing System One Models & Jev",
       "domain": "typesafe.ai",
       "url": "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
-      "show_on_screen": true,
+      "show_on_screen": false,
       "screen_template": "browser",
       "published": "15 сентября 2026",
       "snippet": "Jev gives up string generation. 70-500 ms. $0.042 / MTok. Output free.",
@@ -42,7 +43,7 @@
     {
       "id": "b1",
       "role": "hook",
-      "text": "15 сентября соавтор ChatGPT выпустил Jev — без текста.",
+      "text": "15-го сентября соавтор ChatGPT выпустил Jev — без текста.",
       "emphasis_word": "Jev",
       "avatar": "off",
       "visual_intent": "ONLY dark card JEV red frame on moving code UI. NO Russian plate. Avatar off. Motion from frame 0.",
@@ -137,9 +138,9 @@
         "software workflow nodes graph dark ui"
       ],
       "overlay": {
-        "type": "fullscreen_text",
-        "content": "RLHF CHAT / RLCD CODE",
-        "template_hint": "text-fullscreen/text-compare-vs"
+        "type": "lower_third",
+        "content": "RLHF / RLCD",
+        "template_hint": "lower-thirds/dark-card"
       },
       "sfx": "whoosh_in",
       "mode_hint": "A",
@@ -184,7 +185,7 @@
       "overlay": {
         "type": "lower_third",
         "content": "FOLLOWUP",
-        "template_hint": "lower-thirds/source-domain"
+        "template_hint": "lower-thirds/dark-card"
       },
       "sfx": "subscribe_ping",
       "emphasis_family": "emotion",

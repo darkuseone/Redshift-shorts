@@ -12,7 +12,11 @@
     "music_mood": "tense",
     "cta": true,
     "notes": "0051 r10. Schema-clean. Hook JEV fact-card. b5 plaque not FS. Voice+avatars cached.",
-    "hook": {"on_screen": "JEV", "style": "number_slam", "template_hint": "intro-hooks/hook-number-slam"}
+    "hook": {
+      "on_screen": "JEV",
+      "style": "fact_card",
+      "template_hint": "text-fullscreen/fact-card"
+    }
   },
   "sources": [
     {
@@ -37,68 +41,144 @@
   ],
   "blocks": [
     {
-      "id": "b1", "role": "hook",
+      "id": "b1",
+      "role": "hook",
       "text": "15-го сентября соавтор ChatGPT выпустил Jev — без текста.",
-      "emphasis_word": "Jev", "avatar": "off",
+      "emphasis_word": "Jev",
+      "avatar": "off",
       "visual_intent": "ONLY dark fact-card JEV red frame on moving steel glow. Hold card 2-4s. NO Russian plate. NO ВЫПУСТИЛ. NO Lean primes. NO CHATGPT slam. Avatar off. Motion from frame 0.",
-      "broll_queries": ["dark steel code glow particles motion"],
-      "overlay": {"type": "fullscreen_text", "content": "JEV", "template_hint": "text-fullscreen/fact-card"},
-      "sfx": "hit_impact", "meme_allowed": false, "mode_hint": "C", "emphasis_family": "tech"
+      "broll_queries": [
+        "dark steel code glow particles motion"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "JEV",
+        "template_hint": "text-fullscreen/fact-card"
+      },
+      "sfx": "hit_impact",
+      "meme_allowed": false,
+      "mode_hint": "C",
+      "emphasis_family": "tech"
     },
     {
-      "id": "b2", "role": "setup",
+      "id": "b2",
+      "role": "setup",
       "text": "Diogo Almeida. Он делал RLHF в OpenAI. Два года в стелсе. Компания TypeSafe. Сид сорок миллионов. Первый публичный System One.",
-      "emphasis_word": "TypeSafe", "avatar": "on",
+      "emphasis_word": "TypeSafe",
+      "avatar": "on",
       "visual_intent": "Avatar lower plate. Top: dark 3-line card TYPESAFE / $40M / SYSTEM ONE. No white studio. No floating КОМПАНИЯ window. No Lean code behind head. Number compact $40M not 40 000 000.",
-      "broll_queries": ["dark static grain night office"],
-      "overlay": {"type": "fullscreen_text", "content": "TYPESAFE · $40M · SYSTEM ONE", "template_hint": "text-fullscreen/stack-3lines"},
-      "sfx": "whoosh_in", "mode_hint": "A", "emphasis_family": "source"
+      "broll_queries": [
+        "dark static grain night office"
+      ],
+      "overlay": {
+        "type": "fullscreen_text",
+        "content": "TYPESAFE · $40M · SYSTEM ONE",
+        "template_hint": "text-fullscreen/stack-3lines"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "A",
+      "emphasis_family": "source"
     },
     {
-      "id": "b3", "role": "evidence",
+      "id": "b3",
+      "role": "evidence",
       "text": "На сайте свои цифры: сто девяносто четыре раза быстрее, четыреста сорок пять раз дешевле. Вход — сорок два доллара за миллиард токенов. Выход бесплатный.",
-      "emphasis_word": "бесплатный", "avatar": "off",
+      "emphasis_word": "бесплатный",
+      "avatar": "off",
       "visual_intent": "Dark compare bars SPEED 194x vs COST 445x then plate $42 / 1B TOK. Source-chip typesafe.ai NO red. No white browser. No empty server aisle. No pipes. No counter 37.",
-      "broll_queries": ["gpu rack lights close dark"],
-      "overlay": {"type": "dataviz", "content": "194x SPEED / 445x COST", "template_hint": "data-viz/compare-bars"},
-      "sfx": "data_beep", "source_ref": "typesafe.ai", "mode_hint": "C", "emphasis_family": "number"
+      "broll_queries": [
+        "gpu rack lights close dark"
+      ],
+      "overlay": {
+        "type": "dataviz",
+        "content": "194x SPEED / 445x COST",
+        "template_hint": "data-viz/compare-bars"
+      },
+      "sfx": "data_beep",
+      "source_ref": "typesafe.ai",
+      "mode_hint": "C",
+      "emphasis_family": "number"
     },
     {
-      "id": "b4", "role": "develop",
+      "id": "b4",
+      "role": "develop",
       "text": "Секрет простой. Jev не печатает слова по одному. Он сразу отдаёт выбор и вероятность. Семьдесят — пятьсот миллисекунд.",
-      "emphasis_word": "вероятность", "avatar": "off",
+      "emphasis_word": "вероятность",
+      "avatar": "off",
       "visual_intent": "Dark number card 70-500 MS on frost scan. Not chatbot bubble. Not Lean primes. Not 70 500. Not white graph.",
-      "broll_queries": ["frost scan grid cyan dark motion"],
-      "overlay": {"type": "highlight", "content": "70-500 MS", "template_hint": "text-fullscreen/fact-card"},
-      "sfx": "ui_click", "mode_hint": "C", "emphasis_family": "number"
+      "broll_queries": [
+        "frost scan grid cyan dark motion"
+      ],
+      "overlay": {
+        "type": "highlight",
+        "content": "70-500 MS",
+        "template_hint": "text-fullscreen/fact-card"
+      },
+      "sfx": "ui_click",
+      "mode_hint": "C",
+      "emphasis_family": "number"
     },
     {
-      "id": "b5", "role": "develop",
+      "id": "b5",
+      "role": "develop",
       "text": "Обучение другое. Не RLHF под чат. RLCD — калиброванные решения для кода.",
-      "emphasis_word": "RLCD", "avatar": "off",
+      "emphasis_word": "RLCD",
+      "avatar": "off",
       "visual_intent": "Dark VS card RLHF CHAT vs RLCD CODE as plaque not fullscreen. No empty grid. No blue-only line. No pause flash.",
-      "broll_queries": ["dark void pulse nodes"],
-      "overlay": {"type": "lower_third", "content": "RLHF / RLCD", "template_hint": "text-fullscreen/vs-compare"},
-      "sfx": "whoosh_in", "mode_hint": "C", "emphasis_family": "tech"
+      "broll_queries": [
+        "dark void pulse nodes"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "RLHF / RLCD",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "sfx": "whoosh_in",
+      "mode_hint": "C",
+      "emphasis_family": "tech"
     },
     {
-      "id": "b6", "role": "twist",
+      "id": "b6",
+      "role": "twist",
       "text": "Халявы нет. Jev не пишет текст. Не пишет код. Не объясняет ход мыслей. Цифры — их собственные тесты, не независимый бенчмарк. Это судья внутри программы, не новый чат.",
-      "emphasis_word": "судья", "avatar": "on",
+      "emphasis_word": "судья",
+      "avatar": "on",
       "visual_intent": "Avatar + dark plate NO TEXT. Contrast high. Do NOT use REJECTED stamp. Do NOT replay server aisle. Source chip no red.",
-      "broll_queries": ["dark slate iron plate"],
-      "overlay": {"type": "lower_third", "content": "NO TEXT", "template_hint": "lower-thirds/dark-card"},
-      "sfx": "sub_drop", "answers_hook": true, "mode_hint": "A", "emphasis_family": "myth"
+      "broll_queries": [
+        "dark slate iron plate"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "NO TEXT",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "sfx": "sub_drop",
+      "answers_hook": true,
+      "mode_hint": "A",
+      "emphasis_family": "myth"
     },
     {
-      "id": "b7", "role": "cta",
+      "id": "b7",
+      "role": "cta",
       "text": "Код плюс ИИ вместо ещё одного чата. Это короткий путь, который они продают. REDSHIFT",
-      "emphasis_word": "REDSHIFT", "avatar": "off",
+      "emphasis_word": "REDSHIFT",
+      "avatar": "off",
       "visual_intent": "City night hold 3s+. Chip FOLLOWUP no red underline. End card REDSHIFT Latin no dot. No redsfhit. Caption ОДНОГО ЧАТА not 1 ЧАТА.",
-      "broll_queries": ["city night traffic lights aerial"],
-      "overlay": {"type": "lower_third", "content": "REDSHIFT", "template_hint": "lower-thirds/dark-card"},
-      "sfx": "subscribe_ping", "emphasis_family": "emotion", "mode_hint": "C"
+      "broll_queries": [
+        "city night traffic lights aerial"
+      ],
+      "overlay": {
+        "type": "lower_third",
+        "content": "REDSHIFT",
+        "template_hint": "lower-thirds/dark-card"
+      },
+      "sfx": "subscribe_ping",
+      "emphasis_family": "emotion",
+      "mode_hint": "C"
     }
   ],
-  "cta": {"text": "Код плюс ИИ вместо ещё одного чата.", "type": "part2_cliff"}
+  "cta": {
+    "text": "Код плюс ИИ вместо ещё одного чата.",
+    "type": "part2_cliff"
+  }
 }

@@ -3975,6 +3975,7 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
         # их именно так, а раньше на этом пути не выставлялось ничего, и
         # `lowerthird-metric-badge` был недостижим при живом числе в реплике.
         lt_traits = block_traits(str(block.get("text") or ""))
+        lt_ban = _template_excludes_for(plan, ctx)
         template, _ = picker.pick(
             "lower-thirds",
             blob=build_blob(content, role),
@@ -3983,10 +3984,15 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
             variant=variant,
             duration=2.4,
             recent_videos=recent_videos,
-            exclude=used,
+            exclude=list(used) + list(lt_ban),
             prefer_head=head,
             seed=seed + 7,
         )
+        # Prefer dark-card when hint says so and bans emptied the head.
+        if hint and hint not in (list(used) + list(lt_ban)):
+            forced_lt = catalog.by_id(hint)
+            if forced_lt is not None:
+                template = forced_lt
         used.append(template.id)
         latin = is_latin_overlay_label(content)
         # Word-onset sync: plaque lands on/after spoken punch, never block+0.4 early.
@@ -4621,6 +4627,7 @@ class _RecordingPicker:
 # схеме: схема описывает сценарий, а соответствие приёму — дело сборщика.
 HOOK_STYLE_TEMPLATES = {
     "number_slam": "intro-hooks/hook-number-slam",
+    "fact_card": "text-fullscreen/fact-card",
     "question_flash": "intro-hooks/hook-question-flash",
     "blackout_word": "intro-hooks/hook-blackout-word",
     "cold_open": "intro-hooks/hook-footage-cold-open",
@@ -4674,7 +4681,7 @@ def _pick_hook_shot(slot: dict[str, Any], block: dict[str, Any],
                     plan: dict[str, Any], picker: TemplatePicker,
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used_templates: list[str],
-                    has_asset: bool):
+                    has_asset: bool, ban_templates: list[str] | None = None):
     """Приём первых секунд — решением, а не остатком (§5.2 H-1).
 
     До этой функции `picker.pick("intro-hooks", …)` не вызывался нигде: все
@@ -4697,7 +4704,21 @@ def _pick_hook_shot(slot: dict[str, Any], block: dict[str, Any],
     spec = dict(plan.get("hook") or {})
     traits = block_traits(str(block.get("text") or "")) if block else set()
     has_source = bool(plan.get("sources"))
-    blocked = list(used_templates)
+    blocked = list(used_templates) + list(ban_templates or [])
+    # Force authored template_hint / fact_card even outside intro-hooks.
+    hook_spec = dict(plan.get("hook") or {})
+    if not hook_spec:
+        hook_spec = dict((plan.get("meta") or {}).get("hook") or {})
+    # Also honour b1 overlay hint (script authors put fact-card there).
+    b1 = next((b for b in (plan.get("blocks") or []) if b.get("id") in ("b1","hook")), None)
+    ov_hint = str(((b1 or {}).get("overlay") or {}).get("template_hint") or "").strip()
+    hint_early = str(hook_spec.get("template_hint") or ov_hint or "").strip()
+    style_early = str(hook_spec.get("style") or "").strip()
+    force_id = hint_early or HOOK_STYLE_TEMPLATES.get(style_early, "")
+    if force_id and force_id not in blocked:
+        forced = catalog.by_id(force_id)
+        if forced is not None:
+            return forced, {"forced": force_id, "why": "hook template_hint/style"}
     for template in catalog.by_category("intro-hooks"):
         if not _hook_allows(template.id, template.renderer, slot=slot,
                             has_asset=has_asset, has_source=has_source):
@@ -4810,7 +4831,8 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
     sources = [s for s in (plan.get("sources") or []) if s.get("domain")]
     source = sources[budget.source] if budget.source < len(sources) else None
     if (source and window_ok and budget.allows("source")
-            and {"quote", "brand", "device"} & set(traits)):
+            and {"quote", "brand", "device"} & set(traits)
+            and source.get("show_on_screen")):
         template, _ = picker.pick(
             "browser-ui",
             blob=build_blob(block.get("text"), block.get("heading")),
@@ -5128,7 +5150,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
             slot, hook_block, plan, picker, catalog, variant=variant, seed=seed,
             recent_videos=recent_videos,
             used_templates=used_templates + peer_block,
-            has_asset=assets.get(slot["index"]) is not None)
+            has_asset=assets.get(slot["index"]) is not None,
+            ban_templates=ban_templates)
         if hook_pick is not None:
             hook_tpl, _hook_trace = hook_pick
             if hook_tpl.renderer == "fullscreen_text":

@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r10c: P7 prepared. QC-24 b5 plaque + extra leftover pins + template bans. Voice+webm cached.",
-  "round": 10
+  "note": "0051 r11: new magnific_0051 plates + force fact-card hook + ban countdown/browser/underline wired into hook/LT/ladder. Voice+webm cached.",
+  "round": 11
 }

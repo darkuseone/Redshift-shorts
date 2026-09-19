@@ -1,8 +1,8 @@
 {
   "_comment": "Индекс кэша футажей (§14.5): в git — только индекс, файлы во внешнем storage. Вытеснение LRU (§14.4).",
   "version": 1,
-  "updated": "2026-09-18",
-  "count": 34,
+  "updated": "2026-09-19",
+  "count": 42,
   "items": [
     {
       "id": "magnific_0050_weather",
@@ -1251,6 +1251,270 @@
         "source_url": "https://images.nasa.gov/details/GSFC_20171113_Hurricanes_m12772_Aerosols",
         "credit_on_screen": "nasa.gov",
         "why": "Погода как решение уравнений Навье-Стокса в планетарном масштабе — ровно то, о чём блок. Public domain. Кадр выбран без подписи шторма: английская служебная строка в кадре запрещена (§7.3).",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_irondrift",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_irondrift.mp4",
+      "phash": "9effef473c1d0823",
+      "tags": [
+        "iron",
+        "drift",
+        "dark",
+        "steel",
+        "particles"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (iron, drift, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "9effef473c1d0823"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_irondrift.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_emberfall",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_emberfall.mp4",
+      "phash": "4fba46b27087e82c",
+      "tags": [
+        "ember",
+        "fall",
+        "dark",
+        "red",
+        "ash"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (ember, fall, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "4fba46b27087e82c"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_emberfall.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_cyanmist",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_cyanmist.mp4",
+      "phash": "4b931e2143409904",
+      "tags": [
+        "cyan",
+        "mist",
+        "dark",
+        "fog",
+        "teal"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (cyan, mist, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "4b931e2143409904"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_cyanmist.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_slagpulse",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_slagpulse.mp4",
+      "phash": "9effef473c1d0823",
+      "tags": [
+        "slag",
+        "pulse",
+        "dark",
+        "molten",
+        "glow"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (slag, pulse, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "9effef473c1d0823"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_slagpulse.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_nightspark",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_nightspark.mp4",
+      "phash": "9effef473c1d0823",
+      "tags": [
+        "night",
+        "spark",
+        "dark",
+        "stars",
+        "glints"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (night, spark, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "9effef473c1d0823"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_nightspark.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_oilbloom",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_oilbloom.mp4",
+      "phash": "9effef473c1d0823",
+      "tags": [
+        "oil",
+        "bloom",
+        "dark",
+        "fluid",
+        "iridescent"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (oil, bloom, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "9effef473c1d0823"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_oilbloom.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_coldgrid",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_coldgrid.mp4",
+      "phash": "9effef473c1d0823",
+      "tags": [
+        "cold",
+        "grid",
+        "dark",
+        "tech",
+        "lines"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (cold, grid, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "9effef473c1d0823"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_coldgrid.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
+        "watched": true
+      }
+    },
+    {
+      "id": "magnific_0051_rustveil",
+      "type": "video",
+      "source": "magnific",
+      "license": "owner_decision",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_rustveil.mp4",
+      "phash": "9effef473c1d0823",
+      "tags": [
+        "rust",
+        "veil",
+        "dark",
+        "oxide",
+        "metal"
+      ],
+      "vision_summary": "Dark vertical 9:16 motion plate (rust, veil, dark) prepared for redshift_0051",
+      "score": 0.93,
+      "duration_sec": 4.0,
+      "used_in": [
+        "redshift_0051"
+      ],
+      "last_used": "2026-09-19",
+      "added": "2026-09-19",
+      "phashes": [
+        "9effef473c1d0823"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "file": "magnific/magnific_0051_rustveil.mp4",
+      "extra": {
+        "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
         "watched": true
       }
     }

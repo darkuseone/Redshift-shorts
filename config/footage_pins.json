@@ -1,17 +1,145 @@
 {
   "redshift_0042": {
-    "prefer": ["pexels_v25935014", "pexels_v18069803", "press_21bc8e2d72", "pexels_v35003022", "pixabay_v200531", "pexels_v38431825", "grok_cryostat_0042", "grok_supercomputer_0042"],
-    "deny": ["pexels_v19532053", "pexels_v30775057", "pexels_v20349276", "pexels_v27975940", "pexels_v20436933", "pexels_v16727463", "pexels_v16945380", "pexels_v19162466", "pexels_v28613453", "pexels_v29669602", "pexels_v12271136", "pexels_v16655793", "pexels_v30471021", "pexels_v34796961", "pexels_v17356514", "pexels_v18446021", "pexels_v20068211", "pexels_v20349634", "pexels_v20757503", "pexels_v34912823", "pixabay_v113379", "pexels_v34550739", "pexels_v35288383", "pixabay_v113383", "pexels_v7565432", "pexels_v20349219", "nasa_PIA13308", "nasa_PIA20602", "nasa_PIA20603", "nasa_PIA19142", "nasa_S74-23458", "nasa_*", "pixabay_v144678"],
+    "prefer": [
+      "pexels_v25935014",
+      "pexels_v18069803",
+      "press_21bc8e2d72",
+      "pexels_v35003022",
+      "pixabay_v200531",
+      "pexels_v38431825",
+      "grok_cryostat_0042",
+      "grok_supercomputer_0042"
+    ],
+    "deny": [
+      "pexels_v19532053",
+      "pexels_v30775057",
+      "pexels_v20349276",
+      "pexels_v27975940",
+      "pexels_v20436933",
+      "pexels_v16727463",
+      "pexels_v16945380",
+      "pexels_v19162466",
+      "pexels_v28613453",
+      "pexels_v29669602",
+      "pexels_v12271136",
+      "pexels_v16655793",
+      "pexels_v30471021",
+      "pexels_v34796961",
+      "pexels_v17356514",
+      "pexels_v18446021",
+      "pexels_v20068211",
+      "pexels_v20349634",
+      "pexels_v20757503",
+      "pexels_v34912823",
+      "pixabay_v113379",
+      "pexels_v34550739",
+      "pexels_v35288383",
+      "pixabay_v113383",
+      "pexels_v7565432",
+      "pexels_v20349219",
+      "nasa_PIA13308",
+      "nasa_PIA20602",
+      "nasa_PIA20603",
+      "nasa_PIA19142",
+      "nasa_S74-23458",
+      "nasa_*",
+      "pixabay_v144678"
+    ],
     "same_asset_max_slots": 1
   },
   "redshift_0048": {
-    "prefer": ["fp_chalkboard_eq", "fp_writing_equations", "fp_cracked_wall", "fp_code_editor", "fp_plaster_wall", "fp_peeling_wall", "fp_rock_surface", "fp_desk_code", "fp_chalkboard_class", "fp_typing_hands", "fp_cracked_earth", "fp_blackboard_close", "fp_library_books", "fp_rust_metal", "fp_quad_formula", "fp_cracked_concrete", "fp_white_ink", "fp_sand_ripples", "fp_corroded_mesh", "fp_stapling_docs"],
-    "deny": ["pexels_*", "pixabay_*", "press_21bc8e2d72", "grok_supercomputer_0042", "grok_cryostat_0042", "nasa_*", "ia_*", "fp_red_gradient", "fp_red_pulse", "fp_red_heartbeat", "fp_water_vortex", "fp_blue_bubbles", "fp_river_current", "fp_formula_particles", "fp_spaghetti_strands", "fp_cpp_code", "fp_green_glitch", "fp_server_room", "fp_blue_ink", "fp_hourglass_sand", "fp_analog_clock", "fp_matrix_code"],
+    "prefer": [
+      "fp_chalkboard_eq",
+      "fp_writing_equations",
+      "fp_cracked_wall",
+      "fp_code_editor",
+      "fp_plaster_wall",
+      "fp_peeling_wall",
+      "fp_rock_surface",
+      "fp_desk_code",
+      "fp_chalkboard_class",
+      "fp_typing_hands",
+      "fp_cracked_earth",
+      "fp_blackboard_close",
+      "fp_library_books",
+      "fp_rust_metal",
+      "fp_quad_formula",
+      "fp_cracked_concrete",
+      "fp_white_ink",
+      "fp_sand_ripples",
+      "fp_corroded_mesh",
+      "fp_stapling_docs"
+    ],
+    "deny": [
+      "pexels_*",
+      "pixabay_*",
+      "press_21bc8e2d72",
+      "grok_supercomputer_0042",
+      "grok_cryostat_0042",
+      "nasa_*",
+      "ia_*",
+      "fp_red_gradient",
+      "fp_red_pulse",
+      "fp_red_heartbeat",
+      "fp_water_vortex",
+      "fp_blue_bubbles",
+      "fp_river_current",
+      "fp_formula_particles",
+      "fp_spaghetti_strands",
+      "fp_cpp_code",
+      "fp_green_glitch",
+      "fp_server_room",
+      "fp_blue_ink",
+      "fp_hourglass_sand",
+      "fp_analog_clock",
+      "fp_matrix_code"
+    ],
     "same_asset_max_slots": 1
   },
   "redshift_0050": {
-    "prefer": ["nasa_0050_wingcfd", "nasa_0050_geosweather", "openai_0050_nsspiral", "magnific_0050_fluids", "magnific_0050_inkswirl", "magnific_0050_coolvortex", "magnific_0050_lean", "magnific_0050_codeglow", "magnific_0050_weather", "magnific_0050_wing", "magnific_0050_pipes", "magnific_0050_blood", "magnific_0050_stamp", "magnific_0050_city", "magnific_0050_gpu", "magnific_0050_cyanrain", "magnific_0050_frostscan", "magnific_0050_deepcoil", "magnific_0050_blueember", "magnific_0050_tealmister", "fp_chalkboard_eq", "magnific_0050_nightstatic", "magnific_0050_slateiron", "magnific_0050_voidpulse"],
-    "deny": ["fp_server_room", "magnific_0050_darkgrid", "pexels_v38431825", "nasa_*", "press_21bc8e2d72", "fp_cracked_wall", "fp_plaster_wall", "fp_peeling_wall", "fp_cracked_concrete", "fp_cracked_earth", "fp_rock_surface", "fp_corroded_mesh", "fp_matrix_code", "fp_analog_clock", "fp_server_room"],
+    "prefer": [
+      "nasa_0050_wingcfd",
+      "nasa_0050_geosweather",
+      "openai_0050_nsspiral",
+      "magnific_0050_fluids",
+      "magnific_0050_inkswirl",
+      "magnific_0050_coolvortex",
+      "magnific_0050_lean",
+      "magnific_0050_codeglow",
+      "magnific_0050_weather",
+      "magnific_0050_wing",
+      "magnific_0050_pipes",
+      "magnific_0050_blood",
+      "magnific_0050_stamp",
+      "magnific_0050_city",
+      "magnific_0050_gpu",
+      "magnific_0050_cyanrain",
+      "magnific_0050_frostscan",
+      "magnific_0050_deepcoil",
+      "magnific_0050_blueember",
+      "magnific_0050_tealmister",
+      "fp_chalkboard_eq",
+      "magnific_0050_nightstatic",
+      "magnific_0050_slateiron",
+      "magnific_0050_voidpulse"
+    ],
+    "deny": [
+      "fp_server_room",
+      "magnific_0050_darkgrid",
+      "pexels_v38431825",
+      "nasa_*",
+      "press_21bc8e2d72",
+      "fp_cracked_wall",
+      "fp_plaster_wall",
+      "fp_peeling_wall",
+      "fp_cracked_concrete",
+      "fp_cracked_earth",
+      "fp_rock_surface",
+      "fp_corroded_mesh",
+      "fp_matrix_code",
+      "fp_analog_clock",
+      "fp_server_room"
+    ],
     "same_asset_max_slots": 1,
     "by_block": {
       "b1": "magnific_0050_coolvortex",
@@ -29,6 +157,14 @@
   },
   "redshift_0051": {
     "prefer": [
+      "magnific_0051_irondrift",
+      "magnific_0051_emberfall",
+      "magnific_0051_cyanmist",
+      "magnific_0051_slagpulse",
+      "magnific_0051_nightspark",
+      "magnific_0051_oilbloom",
+      "magnific_0051_coldgrid",
+      "magnific_0051_rustveil",
       "magnific_0050_steelglow",
       "magnific_0050_nightstatic",
       "magnific_0050_gpu",
@@ -80,7 +216,7 @@
       "grok_supercomputer_0042"
     ],
     "same_asset_max_slots": 1,
-    "_note": "0051 r10. Extra unique dark fillers for densify leftovers. No Lean/stamp/darkgrid.",
+    "_note": "0051 r11. New magnific_0051_* densify fillers. Bans countdown/browser/underline. Hook fact-card.",
     "by_block": {
       "b1": "magnific_0050_steelglow",
       "b2": "magnific_0050_nightstatic",
@@ -91,13 +227,55 @@
       "b7": "magnific_0050_city"
     },
     "slots_lock": [
-      {"block": "b1", "on": "Jev", "asset": "magnific_0050_steelglow", "plaque": "JEV", "template": "text-fullscreen/fact-card"},
-      {"block": "b2", "on": "TypeSafe", "asset": "magnific_0050_nightstatic", "plaque": "TYPESAFE", "template": "text-fullscreen/stack-3lines"},
-      {"block": "b3", "on": "быстрее", "asset": "magnific_0050_gpu", "plaque": "194x", "template": "data-viz/compare-bars"},
-      {"block": "b4", "on": "миллисекунд", "asset": "magnific_0050_frostscan", "plaque": "70-500 MS", "template": "text-fullscreen/fact-card"},
-      {"block": "b5", "on": "RLCD", "asset": "magnific_0050_voidpulse", "plaque": "RLCD", "template": "lower-thirds/dark-card"},
-      {"block": "b6", "on": "судья", "asset": "magnific_0050_slateiron", "plaque": "NO TEXT", "template": "lower-thirds/dark-card"},
-      {"block": "b7", "on": "REDSHIFT", "asset": "magnific_0050_city", "plaque": "FOLLOWUP", "template": "lower-thirds/dark-card"}
+      {
+        "block": "b1",
+        "on": "Jev",
+        "asset": "magnific_0050_steelglow",
+        "plaque": "JEV",
+        "template": "text-fullscreen/fact-card"
+      },
+      {
+        "block": "b2",
+        "on": "TypeSafe",
+        "asset": "magnific_0050_nightstatic",
+        "plaque": "TYPESAFE",
+        "template": "text-fullscreen/stack-3lines"
+      },
+      {
+        "block": "b3",
+        "on": "быстрее",
+        "asset": "magnific_0050_gpu",
+        "plaque": "194x",
+        "template": "data-viz/compare-bars"
+      },
+      {
+        "block": "b4",
+        "on": "миллисекунд",
+        "asset": "magnific_0050_frostscan",
+        "plaque": "70-500 MS",
+        "template": "text-fullscreen/fact-card"
+      },
+      {
+        "block": "b5",
+        "on": "RLCD",
+        "asset": "magnific_0050_voidpulse",
+        "plaque": "RLCD",
+        "template": "lower-thirds/dark-card"
+      },
+      {
+        "block": "b6",
+        "on": "судья",
+        "asset": "magnific_0050_slateiron",
+        "plaque": "NO TEXT",
+        "template": "lower-thirds/dark-card"
+      },
+      {
+        "block": "b7",
+        "on": "REDSHIFT",
+        "asset": "magnific_0050_city",
+        "plaque": "FOLLOWUP",
+        "template": "lower-thirds/dark-card"
+      }
     ]
   }
 }
