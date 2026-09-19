@@ -1,7 +1,7 @@
 """0050 owner visual QC — rewrite after P11, no new TTS/HeyGen."""
 from __future__ import annotations
 
-OWNER_VISUALS_REV = 79  # bump to bust P11 step cache
+OWNER_VISUALS_REV = 80  # bump to bust P11 step cache
 
 from typing import Any, Callable
 
@@ -72,13 +72,33 @@ def _is_lone_six(text: str, params: dict[str, Any]) -> bool:
 
 
 
+def _file_matches_asset(path: str, asset_id: str) -> bool:
+    name = path.replace("\\", "/").rsplit("/", 1)[-1].lower()
+    aid = asset_id.lower()
+    if not aid or not name:
+        return False
+    if aid in name:
+        return True
+    # magnific_0050_codeglow → codeglow token
+    token = aid.split("_")[-1]
+    return bool(token) and token in name
+
+
 def _donor_file(plan: dict[str, Any], asset_id: str) -> str | None:
+    """Prefer a media path whose filename actually contains asset_id."""
+    weak: str | None = None
     for shot in plan.get("shots") or []:
         if not isinstance(shot, dict):
             continue
-        if str(shot.get("asset_id") or "") == asset_id and shot.get("file"):
-            return str(shot.get("file"))
-    return None
+        for key in ("file", "bg_file"):
+            f = str(shot.get(key) or "")
+            if not f:
+                continue
+            if _file_matches_asset(f, asset_id):
+                return f
+            if str(shot.get("asset_id") or "") == asset_id and weak is None:
+                weak = f
+    return weak  # last resort; caller may still override
 
 
 def _fallback_path(asset_id: str) -> str | None:
@@ -364,53 +384,80 @@ def _fix_heroes(plan: dict[str, Any]) -> int:
 
 
 def _ensure_brand_pill(plan: dict[str, Any]) -> int:
-    ovls = list(plan.get("overlays") or [])
-    for o in ovls:
+    """Brand pill must be shot.hero — overlay path never calls render_hero.
+
+    hero_brand_pill requires params.label (content/text alone = empty Piece).
+    """
+    changed = 0
+    # Drop non-drawing overlay copies of the pill / bare GPT-6 highlight.
+    kept: list[dict[str, Any]] = []
+    for o in list(plan.get("overlays") or []):
+        if not isinstance(o, dict):
+            kept.append(o)
+            continue
         blob = str(
-            (o.get("params") or {}).get("content") or o.get("content") or ""
+            (o.get("params") or {}).get("content")
+            or (o.get("params") or {}).get("label")
+            or (o.get("params") or {}).get("text")
+            or o.get("content")
+            or ""
         ).upper()
-        is_pill = (
-            ("GPT-6" in blob and "ASTRA" in blob)
-            or str(o.get("template") or "") == "hero-devices/brand-pill"
-        )
-        if is_pill:
-            changed = 0
-            if not o.get("grounded_on"):
-                o["grounded_on"] = ["brand"]
-                o.setdefault("why", "owner: GPT-6 ASTRA brand pill")
-                changed = 1
-            # hold longer so it is not buried under other chrome
-            start = float(o.get("start") or 15.6)
-            if float(o.get("end") or 0) - start < 4.0:
-                o["end"] = start + 4.5
-                changed = 1
-            return changed
-    start = 15.6
+        tmpl = str(o.get("template") or "")
+        if tmpl == "hero-devices/brand-pill" or ("GPT-6" in blob and "ASTRA" in blob):
+            changed += 1
+            continue
+        if o.get("type") == "highlight" and "ASTRA" in blob:
+            changed += 1
+            continue
+        kept.append(o)
+    plan["overlays"] = kept
+
+    target = None
     for s in plan.get("shots") or []:
-        if str(s.get("kind")) == "footage" and float(s.get("start") or 0) >= 15.0:
-            start = float(s.get("start") or 15.6)
+        if not isinstance(s, dict):
+            continue
+        st = float(s.get("start") or 0)
+        if str(s.get("kind")) == "footage" and 14.5 <= st <= 20.0:
+            target = s
             break
-    ovls.append(
-        {
-            "type": "lower_third",
-            "template": "hero-devices/brand-pill",
-            "renderer": "hero-brand-pill",
-            "start": start,
-            "end": start + 4.5,
+    if target is None:
+        for s in plan.get("shots") or []:
+            if isinstance(s, dict) and str(s.get("kind")) == "footage" and float(s.get("start") or 0) >= 15.0:
+                target = s
+                break
+    if target is None:
+        return changed
+
+    # OpenAI beat must not be the weather/radar room plate.
+    f0 = str(target.get("file") or "").lower()
+    if any(x in f0 for x in ("weather", "server", "frostscan", "stamp", "slateiron")):
+        for aid in ("magnific_0050_codeglow", "magnific_0050_voidpulse", _SAFE_DARK):
+            _bind_asset(target, aid, plan)
+            if _file_matches_asset(str(target.get("file") or ""), aid):
+                break
+        changed += 1
+
+    hero = target.get("hero") if isinstance(target.get("hero"), dict) else {}
+    want = {
+        "template": "hero-devices/brand-pill",
+        "renderer": "hero-brand-pill",
+        "params": {
+            "label": "GPT-6 ASTRA",
             "content": "GPT-6 ASTRA",
-            "grounded_on": ["brand"],
-            "why": "owner: GPT-6 ASTRA brand pill on OpenAI beat",
-            "params": {
-                "content": "GPT-6 ASTRA",
-                "text": "GPT-6 ASTRA",
-                "dark": True,
-                "tone": "ink",
-                "no_red": True,
-            },
-        }
-    )
-    plan["overlays"] = ovls
-    return 1
+            "text": "GPT-6 ASTRA",
+            "dark": True,
+            "tone": "ink",
+            "no_red": True,
+            "top": 980,
+        },
+    }
+    if (
+        str(hero.get("renderer") or "") != "hero-brand-pill"
+        or str((hero.get("params") or {}).get("label") or "") != "GPT-6 ASTRA"
+    ):
+        target["hero"] = want
+        changed += 1
+    return changed
 
 
 def _tame_cyan_spiral(plan: dict[str, Any]) -> int:
@@ -555,37 +602,168 @@ def _repair_licenses(plan: dict[str, Any]) -> int:
     return changed
 
 
-def _ensure_stack_overlay(plan: dict[str, Any]) -> int:
-    """Force Latin stack card after hook so it is not lost inside hero params."""
+def _ensure_stack_shot(plan: dict[str, Any]) -> int:
+    """Picture Law stack must be a fullscreen_text SHOT.
+
+    Overlay type=fullscreen_text never reaches render_fullscreen (composition
+    only draws plaque/cta/source_card/dark_card overlays). max_lines is required
+    so _render_fullscreen_body picks fs_stack_lines, not fs_plain.
+    """
+    changed = 0
+    # Drop the dead overlay copy if present.
+    kept = []
+    for o in list(plan.get("overlays") or []):
+        if not isinstance(o, dict):
+            kept.append(o)
+            continue
+        blob = str((o.get("params") or {}).get("content") or o.get("content") or "")
+        tmpl = str(o.get("template") or "")
+        if "stack-3lines" in tmpl or ("7 TASKS" in blob and "25 YEARS" in blob):
+            changed += 1
+            continue
+        kept.append(o)
+    plan["overlays"] = kept
+
+    stack_params = {
+        "content": _STACK,
+        "text": _STACK,
+        "lines": ["7 TASKS", "$1 000 000", "25 YEARS"],
+        "max_lines": 3,
+        "dark": True,
+        "tone": "ink",
+        "align": "left",
+    }
+
+    # Already a FS stack shot?
+    for s in plan.get("shots") or []:
+        if not isinstance(s, dict):
+            continue
+        if str(s.get("kind")) != "fullscreen_text":
+            continue
+        blob = str(s.get("content") or "") + str((s.get("params") or {}).get("content") or "")
+        if "7 TASKS" in blob and "25 YEARS" in blob:
+            params = dict(s.get("params") or {})
+            params.update(stack_params)
+            s["params"] = params
+            s["template"] = "text-fullscreen/stack-3lines"
+            s["renderer"] = "fullscreen_text"
+            s["content"] = _STACK
+            s["grounded_on"] = ["money", "number"]
+            return changed + 1
+
+    # Prefer the cutaway between early avatars (~8.4–9.8) — was empty radar coils.
+    target = None
+    for s in plan.get("shots") or []:
+        if not isinstance(s, dict):
+            continue
+        st, en = float(s.get("start") or 0), float(s.get("end") or 0)
+        if str(s.get("kind")) == "footage" and 7.5 <= st <= 10.5 and (en - st) >= 1.0:
+            target = s
+            break
+    if target is None:
+        for s in plan.get("shots") or []:
+            if isinstance(s, dict) and str(s.get("kind")) == "footage" and float(s.get("start") or 0) < 12:
+                target = s
+                break
+    if target is None:
+        return changed
+
+    target["kind"] = "fullscreen_text"
+    target["template"] = "text-fullscreen/stack-3lines"
+    target["renderer"] = "fullscreen_text"
+    target["content"] = _STACK
+    target["accent_word"] = "TASKS"
+    target["grounded_on"] = ["money", "number"]
+    target["params"] = dict(stack_params)
+    target["hero"] = None
+    target["why"] = "owner: Latin stack FS card 7 TASKS / $1M / 25 YEARS"
+    for aid in (_SAFE_DARK, "magnific_0050_voidpulse", "magnific_0050_nightstatic", _VORTEX):
+        _bind_asset(target, aid, plan)
+        if _file_matches_asset(str(target.get("file") or ""), aid):
+            break
+    # Clear fake stack heroes on nearby avatars (headline-over never reads as stack).
+    for s in plan.get("shots") or []:
+        if not isinstance(s, dict) or str(s.get("kind")) != "avatar":
+            continue
+        hero = s.get("hero") if isinstance(s.get("hero"), dict) else None
+        if not hero:
+            continue
+        blob = str((hero.get("params") or {}).get("content") or "")
+        if "7 TASKS" in blob or "25 YEARS" in blob:
+            s["hero"] = None
+            changed += 1
+    return changed + 1
+
+
+def _ensure_openai_chip(plan: dict[str, Any]) -> int:
+    """Dark openai.com chip near the spiral/OpenAI beat (Picture Law)."""
     ovls = list(plan.get("overlays") or [])
     for o in ovls:
-        blob = str((o.get("params") or {}).get("content") or o.get("content") or "")
-        if "7 TASKS" in blob and "25 YEARS" in blob:
+        blob = str(
+            (o.get("params") or {}).get("text")
+            or (o.get("params") or {}).get("content")
+            or o.get("content")
+            or ""
+        ).lower()
+        if "openai.com" in blob or blob == "openai":
             return 0
-    # place over first avatar after hook (~4.4–8.4)
-    # Hold across b2 avatar gap so the card is actually visible (not 0.4s).
-    start, end = 6.8, 10.8
+    start, end = 32.2, 35.0
+    for s in plan.get("shots") or []:
+        if not isinstance(s, dict):
+            continue
+        key = _asset_key(s).lower()
+        if "nsspiral" in key or "cyanrain" in key:
+            start = float(s.get("start") or start)
+            end = min(float(s.get("end") or end), start + 3.0)
+            if end - start < 1.6:
+                end = start + 2.4
+            break
     ovls.append(
         {
-            "type": "fullscreen_text",
-            "template": "text-fullscreen/stack-3lines",
-            "renderer": "fullscreen_text",
+            "type": "plaque",
+            "template": "lower-thirds/dark-card",
+            "renderer": "lt_dark_card",
             "start": start,
             "end": end,
-            "content": _STACK,
-            "grounded_on": ["money", "number"],
-            "why": "owner: Latin stack 7 TASKS / $1M / 25 YEARS",
+            "content": "openai.com",
+            "grounded_on": ["brand"],
+            "why": "owner: dark openai.com chip (no light browser)",
             "params": {
-                "content": _STACK,
-                "text": _STACK,
-                "lines": ["7 TASKS", "$1 000 000", "25 YEARS"],
-                "dark": True,
-                "tone": "ink",
+                **_NO_RED,
+                "text": "openai.com",
+                "content": "openai.com",
+                "name": "openai.com",
+                "plaque": True,
             },
         }
     )
     plan["overlays"] = ovls
     return 1
+
+
+def _scrub_serverish_avatar_bg(plan: dict[str, Any]) -> int:
+    """Avatar plates must not reuse the radar/weather room from cutaways."""
+    changed = 0
+    safe = "magnific_0050_voidpulse"
+    for shot in plan.get("shots") or []:
+        if not isinstance(shot, dict) or str(shot.get("kind")) != "avatar":
+            continue
+        bg = str(shot.get("bg_file") or "").lower()
+        if not bg:
+            continue
+        if any(tok in bg for tok in _SERVERISH) or "weather" in bg or "stamp" in bg or "deepcoil" in bg:
+            picked = None
+            for aid in (safe, _SAFE_DARK, "magnific_0050_nightstatic", _VORTEX):
+                cand = _donor_file(plan, aid)
+                if cand and _file_matches_asset(cand, aid):
+                    picked = cand
+                    break
+            if picked is None:
+                picked = _fallback_path(safe)
+            if picked:
+                shot["bg_file"] = picked
+                changed += 1
+    return changed
 
 
 def _dedupe_footage_assets(plan: dict[str, Any]) -> int:
@@ -684,7 +862,9 @@ def apply_0050_owner_visuals(plan: dict[str, Any]) -> int:
     changed += _lock_cards(plan)
     changed += _fix_heroes(plan)
     changed += _ensure_brand_pill(plan)
-    changed += _ensure_stack_overlay(plan)
+    changed += _ensure_stack_shot(plan)
+    changed += _ensure_openai_chip(plan)
+    changed += _scrub_serverish_avatar_bg(plan)
     changed += _tame_cyan_spiral(plan)
     changed += _force_hook_and_agent_assets(plan)
 
