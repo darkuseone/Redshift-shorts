@@ -124,7 +124,18 @@
       "hero-devices/type-slab",
       "hero-devices/headline-behind-head",
       "hero-devices/headline-over-head",
-      "hero-devices/plate-behind-back"
+      "hero-devices/plate-behind-back",
+      "hero-devices/brand-pill",
+      "hero-devices/figure-swap",
+      "hero-devices/knockout-negative",
+      "hero-devices/phone-mock",
+      "hero-devices/phrase-log",
+      "hero-devices/script-stack",
+      "hero-devices/source-paper",
+      "hero-devices/split-panel-right",
+      "hero-devices/statement-slam",
+      "hero-devices/text-column-left",
+      "hero-devices/title-behind-head"
     ]
   }
 }

@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r17: QC-30 — ban red hero headlines (headline-behind/over-head, plate-behind-back); keep r16 LT overlays + FS demote + hero ban wire.",
-  "round": 17
+  "note": "0051 r18: QC-30 — ban ALL hero-devices for 0051 (red type share); keep r16 LT overlays + FS demote.",
+  "round": 18
 }

@@ -1013,6 +1013,14 @@ def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
         text = str(tid or "").strip()
         if text and text not in out:
             out.append(text)
+    # 0051: any hero-device paints oversized red type → QC-30 (>0.12).
+    if vid == "redshift_0051":
+        hero_dir = root / "templates" / "hero-devices"
+        if hero_dir.is_dir():
+            for p in sorted(hero_dir.glob("*.json")):
+                tid = f"hero-devices/{p.stem}"
+                if tid not in out:
+                    out.append(tid)
     return out
 
 
