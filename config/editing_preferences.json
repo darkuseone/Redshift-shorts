@@ -121,7 +121,10 @@
       "text-fullscreen/stack-3lines",
       "data-viz/line-rise",
       "hero-devices/verdict-card",
-      "hero-devices/type-slab"
+      "hero-devices/type-slab",
+      "hero-devices/headline-behind-head",
+      "hero-devices/headline-over-head",
+      "hero-devices/plate-behind-back"
     ]
   }
 }

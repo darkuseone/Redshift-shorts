@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r16: restore authored LT overlays; demote stale FS; wire hero bans (verdict/type-slab/card-stack); b5+b6 dark-card; b2 name-title; b7 clean-bar dark-coerced.",
-  "round": 16
+  "note": "0051 r17: QC-30 — ban red hero headlines (headline-behind/over-head, plate-behind-back); keep r16 LT overlays + FS demote + hero ban wire.",
+  "round": 17
 }
