@@ -4217,7 +4217,9 @@ def _error_step_series(block: dict[str, Any]) -> list[float] | None:
 def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
                      blocks: dict[str, Any], picker: TemplatePicker, *,
                      variant: str, seed: int, recent_videos: list[str],
-                     used: list[str], start: float, end: float,
+                     used: list[str],
+                     ban_templates: list[str] | None = None,
+                     start: float, end: float,
                      why: str = "data-viz: в блоке есть число",
                      ) -> dict[str, Any]:
     """Собрать оверлей-диаграмму по числам блока.
@@ -4525,6 +4527,7 @@ def _authored_dataviz_overlays(
         shots: list[dict[str, Any]], blocks_by_id: dict[str, Any], *,
         picker: TemplatePicker, budget: VisualBudget, variant: str, seed: int,
         recent_videos: list[str], used_templates: list[str],
+        ban_templates: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Chart overlay for a block the script itself asks to chart.
 
@@ -4561,6 +4564,7 @@ def _authored_dataviz_overlays(
             slot, nums, blocks_by_id, picker,
             variant=variant, seed=seed + index,
             recent_videos=recent_videos, used=used_templates,
+            ban_templates=ban_templates,
             start=start, end=end,
             why="авторский оверлей: блок сам просит диаграмму (overlay.type=dataviz)")
         budget.take("dataviz")
@@ -4615,7 +4619,8 @@ def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
             continue
         ovl = _dataviz_overlay(
             slot, nums, blocks, picker, variant=variant, seed=seed,
-            recent_videos=recent_videos, used=used, start=start, end=end)
+            recent_videos=recent_videos, used=used,
+            ban_templates=ban_templates, start=start, end=end)
         # 0050: white stat-countup card on OpenAI beat — force dark chrome.
         if str(plan.get("video_id") or "") == "redshift_0050":
             params = dict(ovl.get("params") or {})
@@ -4812,7 +4817,9 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
                       budget: VisualBudget, picker: TemplatePicker,
                       catalog: TemplateCatalog, plan: dict[str, Any],
                       variant: str, seed: int, recent_videos: list[str],
-                      used_templates: list[str], brand_icons,
+                      used_templates: list[str],
+                      ban_templates: list[str] | None = None,
+                      brand_icons,
                       words: list[dict[str, Any]], plate_src: dict[str, Any] | None,
                       traits: set[str], bg_file: str | None = None,
                       ) -> tuple[str, dict[str, Any] | None, dict[str, Any] | None]:
@@ -4859,6 +4866,7 @@ def _close_empty_slot(slot: dict[str, Any], block: dict[str, Any], *,
             slot, nums, {block.get("id", ""): block}, picker,
             variant=variant, seed=seed + int(slot["index"]),
             recent_videos=recent_videos, used=used_templates,
+            ban_templates=ban_templates,
             start=start, end=end,
             why="лестница §7.2, ступень 2: в блоке названо число")
         budget.take("dataviz")
@@ -5393,6 +5401,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                 slot, gap_block, budget=budget, picker=picker, catalog=catalog,
                 plan=plan, variant=variant, seed=seed,
                 recent_videos=recent_videos, used_templates=used_templates,
+                ban_templates=ban_templates,
+
                 brand_icons=brand_icons,
                 words=[w for w in words_doc["words"]
                        if float(w["end"]) > float(slot["start"])
@@ -5647,7 +5657,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     # ним, до того, как лестничные оверлеи вольются в общий список.
     ladder_overlays.extend(_authored_dataviz_overlays(
         shots, blocks_by_id, picker=picker, budget=budget, variant=variant,
-        seed=seed, recent_videos=recent_videos, used_templates=used_templates))
+        seed=seed, recent_videos=recent_videos, used_templates=used_templates,
+        ban_templates=ban_templates))
 
     # Шов лупа сводится до сборки оверлеев: CTA-плашка выбирается по тому,
     # смыкается кадр или нет, а не наоборот.

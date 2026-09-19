@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r14: slagwave new id (bust QC-5 cache twin); ban all FS except fact-card+stack-3lines; dataviz respects bans (mk-line).",
+  "note": "0051 r14b: fix NameError ban_templates in _dataviz_overlay; keep slagwave+FS bans",
   "round": 14
 }
