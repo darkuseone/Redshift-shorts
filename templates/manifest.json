@@ -1473,7 +1473,9 @@
         "person"
       ],
       "renderer": "plaque",
-      "last_used_in": [],
+      "last_used_in": [
+        "redshift_0051"
+      ],
       "added": "2026-08-18",
       "frequency": "signature",
       "needs": [],
@@ -3069,7 +3071,8 @@
       "renderer": "thermal_distortion",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -5482,7 +5485,8 @@
       "last_used_in": [
         "redshift_0046",
         "redshift_0042",
-        "redshift_0050"
+        "redshift_0050",
+        "redshift_0051"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -5517,7 +5521,8 @@
       "renderer": "hero-headline",
       "last_used_in": [
         "redshift_0046",
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0051"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -5552,7 +5557,8 @@
       ],
       "renderer": "hero-headline",
       "last_used_in": [
-        "redshift_0046"
+        "redshift_0046",
+        "redshift_0051"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
