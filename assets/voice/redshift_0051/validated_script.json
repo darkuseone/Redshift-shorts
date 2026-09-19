@@ -11,16 +11,11 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r2. Hook shortened for 3s cap. Vendor numbers only. Jev cannot generate text.",
+    "notes": "0051 r2. Hook shortened for 3s cap. Vendor numbers only. Jev cannot generate text. r20: code-side hook hold 3.5s + caption mute 0-4.2s; compact CTA.",
     "hook": {
       "on_screen": "JEV",
-      "style": "number_slam",
-      "hold_sec": 3.5
-    },
-    "hook_window": [
-      0.0,
-      4.2
-    ]
+      "style": "number_slam"
+    }
   },
   "sources": [
     {

@@ -11,17 +11,12 @@
     "publish_date": "2026-09-17",
     "music_mood": "tense",
     "cta": true,
-    "notes": "0051 r16. Fix stale validated overlays; demote FS when LT authored; hero bans wired; b5+b6 dark-card; b2 name-title; b7 clean-bar dark-coerced.",
+    "notes": "0051 r16. Fix stale validated overlays; demote FS when LT authored; hero bans wired; b5+b6 dark-card; b2 name-title; b7 clean-bar dark-coerced. r20: code-side hook hold 3.5s + caption mute 0-4.2s; compact CTA.",
     "hook": {
       "on_screen": "JEV",
       "style": "number_slam",
-      "template_hint": "text-fullscreen/fact-card",
-      "hold_sec": 3.5
-    },
-    "hook_window": [
-      0.0,
-      4.2
-    ]
+      "template_hint": "text-fullscreen/fact-card"
+    }
   },
   "sources": [
     {

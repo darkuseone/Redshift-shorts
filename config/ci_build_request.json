@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r20: Gemini NE GODEN — extend JEV fact-card hold + mute karaoke 0–4.2s (no CHATGPT slam); CTA compact wordmark (fix REDSHI truncate).",
+  "note": "0051 r20b: schema-clean (no meta.hook_window); hook hold+mute+CTA compact in code.",
   "round": 20
 }
