@@ -924,9 +924,9 @@ def _cta_wordmark(plan: dict[str, Any], catalog_wordmark: str = "") -> str:
 
 
 def _cta_close_style(plan: dict[str, Any]) -> dict[str, Any]:
-    """Identity close: 0050 keeps stock under the mark (QC-30 paper invert)."""
-    if str(plan.get("video_id") or "") == "redshift_0050":
-        # Compact bottom wordmark — cascade was truncating to «REDSHI».
+    """Identity close: 0050/0051 keep stock under the mark (QC-30 paper invert)."""
+    if str(plan.get("video_id") or "") in ("redshift_0050", "redshift_0051"):
+        # Compact bottom wordmark — cascade was truncating to «REDSHI»/«REDSHI».
         return {
             "logo_close": True,
             "invert": False,
@@ -1330,6 +1330,48 @@ def _caption_line_windows(
     return windows
 
 
+
+def _extend_hook_fact_card(shots: list[dict[str, Any]], plan: dict[str, Any],
+                           *, min_hold: float = 3.5) -> None:
+    """Keep authored hook fact-card through early VO (no karaoke CHATGPT slam).
+
+    0051: fact-card ended at 2.0s; karaoke «ChatGPT» at ~2.5s read as a slam.
+    Stretch the hook FS into the following same-block bare plate up to min_hold.
+    """
+    if str(plan.get("video_id") or "") != "redshift_0051":
+        return
+    for i, shot in enumerate(shots):
+        if str(shot.get("kind") or "") != "fullscreen_text":
+            continue
+        if str(shot.get("role") or "") != "hook" and not shot.get("hook"):
+            continue
+        start = float(shot["start"])
+        end = float(shot["end"])
+        if end - start >= min_hold - 1e-6:
+            return
+        target = start + min_hold
+        j = i + 1
+        while j < len(shots) and end < target - 1e-6:
+            nxt = shots[j]
+            if str(nxt.get("block_id") or "") != str(shot.get("block_id") or ""):
+                break
+            if str(nxt.get("kind") or "") not in ("footage", "fullscreen_text"):
+                break
+            # Absorb bare following plate into the hook card.
+            end = min(target, float(nxt["end"]))
+            shot["end"] = round(end, 3)
+            shot["duration"] = round(end - start, 3)
+            nxt["start"] = round(end, 3)
+            nxt["duration"] = round(float(nxt["end"]) - float(nxt["start"]), 3)
+            if float(nxt["duration"]) < 0.15:
+                nxt["kind"] = "footage"
+                nxt["gap_reason"] = "absorbed into hook fact-card hold"
+            j += 1
+        # Mute karaoke for the whole stretched hook.
+        shot["mute_captions"] = True
+        return
+
+
 def _caption_mute_windows(
     shots: list[dict[str, Any]],
     overlays: list[dict[str, Any]],
@@ -1337,6 +1379,10 @@ def _caption_mute_windows(
     """Windows where bulky on-screen type hides karaoke — not every overlay."""
     windows: list[tuple[float, float]] = []
     for shot in shots:
+        if shot.get("mute_captions") or (
+                str(shot.get("role") or "") == "hook"
+                and str(shot.get("kind") or "") == "fullscreen_text"):
+            windows.append((float(shot["start"]), float(shot["end"])))
         if shot.get("kind") == "fullscreen_text":
             windows.append(_fs_mute_span(shot))
             continue
@@ -5822,7 +5868,11 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                  or (ovl.get("params") or {}).get("content") or "")
         if pt:
             punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
+    _extend_hook_fact_card(shots, plan)
     card_windows = _caption_mute_windows(shots, overlays)
+    if str(plan.get("video_id") or "") == "redshift_0051":
+        # Whole opening VO beat — no karaoke slam over / after JEV card.
+        card_windows = [(0.0, 4.2)] + list(card_windows)
     line_windows = _caption_line_windows(shots, overlays)
     _warn_mute_coverage(card_windows, words_doc["words"])
     subtitles = _build_subtitle_cues(

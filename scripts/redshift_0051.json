@@ -15,8 +15,13 @@
     "hook": {
       "on_screen": "JEV",
       "style": "number_slam",
-      "template_hint": "text-fullscreen/fact-card"
-    }
+      "template_hint": "text-fullscreen/fact-card",
+      "hold_sec": 3.5
+    },
+    "hook_window": [
+      0.0,
+      4.2
+    ]
   },
   "sources": [
     {
