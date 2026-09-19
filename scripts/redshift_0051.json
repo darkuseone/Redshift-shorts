@@ -14,7 +14,7 @@
     "notes": "0051 r10. Schema-clean. Hook JEV fact-card. b5 plaque not FS. Voice+avatars cached.",
     "hook": {
       "on_screen": "JEV",
-      "style": "fact_card",
+      "style": "number_slam",
       "template_hint": "text-fullscreen/fact-card"
     }
   },

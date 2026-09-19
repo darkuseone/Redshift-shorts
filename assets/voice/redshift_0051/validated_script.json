@@ -14,7 +14,7 @@
     "notes": "0051 r2. Hook shortened for 3s cap. Vendor numbers only. Jev cannot generate text.",
     "hook": {
       "on_screen": "JEV",
-      "style": "fact_card",
+      "style": "number_slam",
       "template_hint": "text-fullscreen/fact-card"
     }
   },
