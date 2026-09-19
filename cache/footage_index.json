@@ -1354,11 +1354,11 @@
       }
     },
     {
-      "id": "magnific_0051_slagpulse",
+      "id": "magnific_0051_slagwave",
       "type": "video",
       "source": "magnific",
       "license": "owner_decision",
-      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_slagpulse.mp4",
+      "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_slagwave.mp4",
       "phash": "ffffffff0000000c003c01ff0fff7ff903bc00780000000000000000e000f000",
       "tags": [
         "slag",
@@ -1380,7 +1380,7 @@
       ],
       "width": 1080,
       "height": 1920,
-      "file": "magnific/magnific_0051_slagpulse.mp4",
+      "file": "magnific/magnific_0051_slagwave.mp4",
       "extra": {
         "attribution": "REDSHIFT / Magnific dark plate (0051 stock)",
         "watched": true

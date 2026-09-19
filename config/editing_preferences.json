@@ -94,7 +94,30 @@
       "data-viz/counter-roll",
       "lower-thirds/accent-underline",
       "text-fullscreen/blur-out-up",
-      "text-fullscreen/date-stamp"
+      "text-fullscreen/date-stamp",
+      "text-fullscreen/impact-01",
+      "text-fullscreen/impact-02",
+      "text-fullscreen/quote-frame",
+      "text-fullscreen/date-marker",
+      "text-fullscreen/vs-compare",
+      "text-fullscreen/label-strip",
+      "text-fullscreen/kinetic-stack",
+      "text-fullscreen/line-by-line-slide",
+      "text-fullscreen/particle-text-dissolve",
+      "text-fullscreen/scan-band",
+      "text-fullscreen/scramble-reveal",
+      "text-fullscreen/shared-axis-z",
+      "text-fullscreen/code-3d-extrude",
+      "text-fullscreen/code-diff",
+      "text-fullscreen/code-particle-assemble",
+      "text-fullscreen/code-scroll",
+      "text-fullscreen/code-highlight",
+      "text-fullscreen/code-morph",
+      "text-fullscreen/code-typing",
+      "text-fullscreen/terminal-simulator",
+      "text-fullscreen/apple-terminal-clear-dark",
+      "text-fullscreen/dark-plus",
+      "text-fullscreen/number-slam-card"
     ]
   }
 }

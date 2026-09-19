@@ -915,23 +915,46 @@ def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
     if vid == "redshift_0050":
         out.extend(_0050_TEMPLATE_BAN)
     if vid == "redshift_0051":
-        # Hard bans: white browser + countdown slam + underline plaque + needless FS
-        for tid in (
+        # Hard bans. Keep text-fullscreen/fact-card + stack-3lines (hook + TYPESAFE).
+        _0051_BAN = [
             "browser-ui/browser-scroll",
             "intro-hooks/hook-countdown-3",
             "intro-hooks/hook-question-flash",
             "intro-hooks/hook-blackout-word",
             "lower-thirds/accent-underline",
-            "text-fullscreen/blur-out-up",
-            "text-fullscreen/date-stamp",
-            "text-fullscreen/word-swap",
-            "text-fullscreen/per-word-crossfade",
-            "text-fullscreen/kinetic-type-swap",
-            "text-fullscreen/bottom-up-letters",
-            "text-fullscreen/bigtext-mask-footage",
             "data-viz/mk-line-graph",
             "hero-devices/card-stack-top",
-        ):
+            "text-fullscreen/impact-01",
+            "text-fullscreen/impact-02",
+            "text-fullscreen/word-swap",
+            "text-fullscreen/quote-frame",
+            "text-fullscreen/date-marker",
+            "text-fullscreen/vs-compare",
+            "text-fullscreen/label-strip",
+            "text-fullscreen/bigtext-mask-footage",
+            "text-fullscreen/kinetic-stack",
+            "text-fullscreen/blur-out-up",
+            "text-fullscreen/bottom-up-letters",
+            "text-fullscreen/kinetic-type-swap",
+            "text-fullscreen/line-by-line-slide",
+            "text-fullscreen/particle-text-dissolve",
+            "text-fullscreen/per-word-crossfade",
+            "text-fullscreen/scan-band",
+            "text-fullscreen/scramble-reveal",
+            "text-fullscreen/shared-axis-z",
+            "text-fullscreen/code-3d-extrude",
+            "text-fullscreen/code-diff",
+            "text-fullscreen/code-particle-assemble",
+            "text-fullscreen/code-scroll",
+            "text-fullscreen/code-highlight",
+            "text-fullscreen/code-morph",
+            "text-fullscreen/code-typing",
+            "text-fullscreen/terminal-simulator",
+            "text-fullscreen/apple-terminal-clear-dark",
+            "text-fullscreen/dark-plus",
+            "text-fullscreen/number-slam-card",
+        ]
+        for tid in _0051_BAN:
             if tid not in out:
                 out.append(tid)
     prefs: dict[str, Any] = {}
@@ -3975,7 +3998,8 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
 
     _append_dataviz(plan, overlays, catalog, variant=variant, seed=seed,
                     budget=budget,
-                    recent_videos=recent_videos, used=used, picker=picker)
+                    recent_videos=recent_videos, used=used, picker=picker,
+                    ban_templates=_template_excludes_for(plan, ctx))
 
     # Плашки из overlay-указаний сценария (lower_third).
     for block in plan.get("blocks", []):
@@ -4259,7 +4283,7 @@ def _dataviz_overlay(slot: dict[str, Any], nums: list[dict[str, Any]],
         variant=variant,
         duration=end - start,
         recent_videos=recent_videos,
-        exclude=used,
+        exclude=list(used) + list(ban_templates or []),
         seed=seed + 11,
         prefer_base=base,
     )
@@ -4548,6 +4572,7 @@ def _authored_dataviz_overlays(
 def _append_dataviz(plan: dict[str, Any], overlays: list[dict[str, Any]],
                     catalog: TemplateCatalog, *, variant: str, seed: int,
                     recent_videos: list[str], used: list[str],
+                    ban_templates: list[str] | None = None,
                     picker: TemplatePicker | None = None,
                     budget: "VisualBudget | None" = None) -> None:
     """Оверлеи с числом — до двух на ролик (§8.2, бюджет `VisualBudget`).
