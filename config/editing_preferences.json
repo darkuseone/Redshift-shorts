@@ -92,7 +92,8 @@
       "data-viz/mk-line-graph",
       "data-viz/decline-chart",
       "data-viz/counter-roll",
-      "lower-thirds/accent-underline"
+      "lower-thirds/accent-underline",
+      "text-fullscreen/blur-out-up"
     ]
   }
 }

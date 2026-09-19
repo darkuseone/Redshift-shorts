@@ -1260,7 +1260,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_irondrift.mp4",
-      "phash": "9effef473c1d0823",
+      "phash": "7e807a0cfc0cf802f803e01358d8183001e001e0b14080000000000000000000",
       "tags": [
         "iron",
         "drift",
@@ -1268,7 +1268,7 @@
         "steel",
         "particles"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (iron, drift, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_irondrift)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1277,7 +1277,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "9effef473c1d0823"
+        "7e807a0cfc0cf802f803e01358d8183001e001e0b14080000000000000000000"
       ],
       "width": 1080,
       "height": 1920,
@@ -1293,7 +1293,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_emberfall.mp4",
-      "phash": "4fba46b27087e82c",
+      "phash": "ffffffffe00700000000000003fc03fe01ff001f000f000f001c307f7ff37fe7",
       "tags": [
         "ember",
         "fall",
@@ -1301,7 +1301,7 @@
         "red",
         "ash"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (ember, fall, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_emberfall)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1310,7 +1310,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "4fba46b27087e82c"
+        "ffffffffe00700000000000003fc03fe01ff001f000f000f001c307f7ff37fe7"
       ],
       "width": 1080,
       "height": 1920,
@@ -1326,7 +1326,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_cyanmist.mp4",
-      "phash": "4b931e2143409904",
+      "phash": "ffffffffc0010008003c01fe0fff7ffb07b800380001000100008000e000f000",
       "tags": [
         "cyan",
         "mist",
@@ -1334,7 +1334,7 @@
         "fog",
         "teal"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (cyan, mist, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_cyanmist)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1343,7 +1343,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "4b931e2143409904"
+        "ffffffffc0010008003c01fe0fff7ffb07b800380001000100008000e000f000"
       ],
       "width": 1080,
       "height": 1920,
@@ -1359,7 +1359,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_slagpulse.mp4",
-      "phash": "9effef473c1d0823",
+      "phash": "3f00ff007f00030077003e003c00000000000000000000",
       "tags": [
         "slag",
         "pulse",
@@ -1367,7 +1367,7 @@
         "molten",
         "glow"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (slag, pulse, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_slagpulse)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1376,7 +1376,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "9effef473c1d0823"
+        "3f00ff007f00030077003e003c00000000000000000000"
       ],
       "width": 1080,
       "height": 1920,
@@ -1392,7 +1392,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_nightspark.mp4",
-      "phash": "9effef473c1d0823",
+      "phash": "21007f81fff3ffffffffce0ffc0ff00fc01f801f00300030000000000400070",
       "tags": [
         "night",
         "spark",
@@ -1400,7 +1400,7 @@
         "stars",
         "glints"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (night, spark, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_nightspark)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1409,7 +1409,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "9effef473c1d0823"
+        "21007f81fff3ffffffffce0ffc0ff00fc01f801f00300030000000000400070"
       ],
       "width": 1080,
       "height": 1920,
@@ -1425,7 +1425,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_oilbloom.mp4",
-      "phash": "9effef473c1d0823",
+      "phash": "ffffc001000000000000002003fc03fe01ff003c000c000c000810303bc07f80",
       "tags": [
         "oil",
         "bloom",
@@ -1433,7 +1433,7 @@
         "fluid",
         "iridescent"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (oil, bloom, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_oilbloom)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1442,7 +1442,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "9effef473c1d0823"
+        "ffffc001000000000000002003fc03fe01ff003c000c000c000810303bc07f80"
       ],
       "width": 1080,
       "height": 1920,
@@ -1458,7 +1458,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_coldgrid.mp4",
-      "phash": "9effef473c1d0823",
+      "phash": "700040000000000003f003f801fc01ff00ffc0fcecffff3fff1fff07fc0200",
       "tags": [
         "cold",
         "grid",
@@ -1466,7 +1466,7 @@
         "tech",
         "lines"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (cold, grid, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_coldgrid)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1475,7 +1475,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "9effef473c1d0823"
+        "700040000000000003f003f801fc01ff00ffc0fcecffff3fff1fff07fc0200"
       ],
       "width": 1080,
       "height": 1920,
@@ -1491,7 +1491,7 @@
       "source": "magnific",
       "license": "owner_decision",
       "url_origin": "https://raw.githubusercontent.com/darkuseone/Redshift-shorts/pipe/0051/assets/footage/magnific/magnific_0051_rustveil.mp4",
-      "phash": "9effef473c1d0823",
+      "phash": "fdc3ff017da3f381f380bf88a620800600000000d80018000000800000000020",
       "tags": [
         "rust",
         "veil",
@@ -1499,7 +1499,7 @@
         "oxide",
         "metal"
       ],
-      "vision_summary": "Dark vertical 9:16 motion plate (rust, veil, dark) prepared for redshift_0051",
+      "vision_summary": "Dark vertical 9:16 motion plate for redshift_0051 densify (magnific_0051_rustveil)",
       "score": 0.93,
       "duration_sec": 4.0,
       "used_in": [
@@ -1508,7 +1508,7 @@
       "last_used": "2026-09-19",
       "added": "2026-09-19",
       "phashes": [
-        "9effef473c1d0823"
+        "fdc3ff017da3f381f380bf88a620800600000000d80018000000800000000020"
       ],
       "width": 1080,
       "height": 1920,

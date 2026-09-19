@@ -914,6 +914,19 @@ def _template_excludes_for(plan: dict[str, Any], ctx=None) -> list[str]:
     out: list[str] = []
     if vid == "redshift_0050":
         out.extend(_0050_TEMPLATE_BAN)
+    if vid == "redshift_0051":
+        # Hard bans: white browser + countdown slam + underline plaque + needless FS
+        for tid in (
+            "browser-ui/browser-scroll",
+            "intro-hooks/hook-countdown-3",
+            "intro-hooks/hook-question-flash",
+            "intro-hooks/hook-blackout-word",
+            "lower-thirds/accent-underline",
+            "text-fullscreen/blur-out-up",
+            "data-viz/mk-line-graph",
+        ):
+            if tid not in out:
+                out.append(tid)
     prefs: dict[str, Any] = {}
     root = None
     if ctx is not None:
@@ -3714,8 +3727,9 @@ def _build_overlays(ctx, plan: dict[str, Any], words: list[dict[str, Any]],
     # Routine real footage uses the thin BL `.credit` from `_credit_line`.
     # Require both show_on_screen and proof_card so legacy scripts that only
     # set show_on_screen:true no longer spawn full-frame source badges.
+    # 0051+: snippet alone must NOT spawn a white browser; require proof_card.
     on_screen = [s for s in sources
-                 if s.get("show_on_screen") and (s.get("proof_card") or s.get("snippet") or s.get("highlight_line"))]
+                 if s.get("show_on_screen") and s.get("proof_card")]
 
     for i, (source, run) in enumerate(zip(on_screen, _evidence_runs(plan["slots"]))):
         anchor = next((s for s in run if s.get("kind") not in AVATAR_KINDS), run[0])
