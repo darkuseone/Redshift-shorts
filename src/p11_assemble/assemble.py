@@ -5234,6 +5234,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
                         "invert": True,
                         "carries_line": True,
                         "hook": True,
+                        # QC-21: hook fact-card is authored meaning, not a need-less carve.
+                        "grounded_on": ["hook"],
                         "accent_word": _fullscreen_accent(content, hook_block),
                         "accent_family": accent_family(hook_block),
                         "file": bg_file,

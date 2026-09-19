@@ -73,7 +73,7 @@
       "overlay": {
         "type": "fullscreen_text",
         "content": "TYPESAFE · $40M · SYSTEM ONE",
-        "template_hint": "text-fullscreen/stack-3lines"
+        "template_hint": "hero-devices/type-slab"
       },
       "sfx": "whoosh_in",
       "mode_hint": "A",

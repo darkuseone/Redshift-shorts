@@ -7,6 +7,6 @@
   "skip_vision": true,
   "providers_mode": "live",
   "requested_by": "grok",
-  "note": "0051 r14b: fix NameError ban_templates in _dataviz_overlay; keep slagwave+FS bans",
-  "round": 14
+  "note": "0051 r15: QC-21 \u2014 ground hook fact-card; ban stack-3lines carve + line-rise; b2 type-slab.",
+  "round": 15
 }

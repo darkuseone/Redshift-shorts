@@ -239,7 +239,7 @@
         "on": "TypeSafe",
         "asset": "magnific_0050_nightstatic",
         "plaque": "TYPESAFE",
-        "template": "text-fullscreen/stack-3lines"
+        "template": "hero-devices/type-slab"
       },
       {
         "block": "b3",

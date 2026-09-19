@@ -117,7 +117,9 @@
       "text-fullscreen/terminal-simulator",
       "text-fullscreen/apple-terminal-clear-dark",
       "text-fullscreen/dark-plus",
-      "text-fullscreen/number-slam-card"
+      "text-fullscreen/number-slam-card",
+      "text-fullscreen/stack-3lines",
+      "data-viz/line-rise"
     ]
   }
 }
