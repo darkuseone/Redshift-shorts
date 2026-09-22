@@ -274,6 +274,12 @@ def validate(script: Mapping[str, Any], *, catalog: Any = None,
             ren = (tpl or {}).get("renderer") or str(name)
             if ren.rsplit("/", 1)[-1] not in reg["hero"]:
                 issues.append(Issue("error", where, f"приём «{name}» не найден среди hero-devices"))
+            elif not shot.get("avatar"):
+                # hero-приёмы строились вокруг ведущего: на чистом футаже
+                # многие кладут сплошную плиту и прячут кадр (проба 22.09).
+                issues.append(Issue("warn", where,
+                                    "hero-приём без ведущего может закрыть футаж плитой — "
+                                    "слово поверх кадра ставь через fullscreen с footage"))
 
     for i, ovl in enumerate(spec.get("overlays") or []):
         where = f"overlays[{i}]"

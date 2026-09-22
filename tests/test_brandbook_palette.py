@@ -1,4 +1,4 @@
-"""Brandbook four-color lock: black / white / red / cyan."""
+"""Brandbook four-color lock: black / white / red / turquoise (token `cyan`)."""
 
 from __future__ import annotations
 
@@ -13,9 +13,9 @@ BRANDBOOK = ROOT / "config" / "brandbook.json"
 
 _HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 _CYAN = {
-    "cyan": "#36EFFF",
-    "cyan_soft": "#7AF0FF",
-    "cyan_deep": "#0BB8C9",
+    "cyan": "#19E6D2",
+    "cyan_soft": "#7FF5EA",
+    "cyan_deep": "#0B9E90",
 }
 
 
@@ -31,11 +31,11 @@ def test_cyan_tokens_are_first_class_and_valid_hex():
         assert str(colors[name]).upper() == hex_
 
 
-def test_live_red_stays_c8453d():
+def test_brand_red_is_e5322d():
     colors = _brandbook()["colors"]
-    assert str(colors["accent"]).upper() == "#C8453D"
-    assert str(colors["accent_soft"]).upper() == "#E4726A"
-    assert str(colors["accent_deep"]).upper() == "#8E2F2A"
+    assert str(colors["accent"]).upper() == "#E5322D"
+    assert str(colors["accent_soft"]).upper() == "#FF6A5F"
+    assert str(colors["accent_deep"]).upper() == "#9C1B17"
 
 
 def test_accent_tokens_are_red_and_cyan():
@@ -44,11 +44,22 @@ def test_accent_tokens_are_red_and_cyan():
     assert float(rules["accent_max_frame_share"]) == 0.12
 
 
-def test_comment_asks_for_markus_screenshots_and_does_not_force_e63946():
-    comment = str(_brandbook()["colors"]["_comment"])
-    assert "TODO(markus-screenshots)" in comment
-    # Live red is #C8453D; the old comment hex is a note, not a lock.
-    assert "#C8453D" in comment
+def test_palette_is_the_owners_four_colours():
+    """Заказчик 22.09: белый, чёрный, красный, бирюзовый — и роли у каждого."""
+    book = _brandbook()
+    comment = str(book["colors"]["_comment"])
+    for word in ("БЕЛЫЙ", "ЧЁРНЫЙ", "КРАСНЫЙ", "БИРЮЗОВЫЙ", "#E5322D", "#19E6D2"):
+        assert word in comment, word
+    roles = book["brand_roles"]
+    assert set(roles) >= {"black", "white", "red", "turquoise"}
+    assert roles["emphasis_family_map"]["number"] == "turquoise"
+    assert roles["emphasis_family_map"]["emotion"] == "red"
+
+
+def test_signature_elements_are_declared():
+    sig = _brandbook()["signature"]
+    for key in ("subtitles", "hook_card", "tech_frame", "plates", "end_card"):
+        assert sig.get(key), key
 
 
 def test_generated_css_exposes_cyan_vars_and_classes():
@@ -68,4 +79,4 @@ def test_scan_band_cyan_clone_uses_the_token_not_a_literal():
     clone = re.search(r"\.sb-clone-cyan\{[^}]+\}", css)
     assert clone, "missing .sb-clone-cyan rule"
     assert "var(--color-cyan)" in clone.group(0)
-    assert "#36efff" not in clone.group(0).lower()
+    assert "#19e6d2" not in clone.group(0).lower()

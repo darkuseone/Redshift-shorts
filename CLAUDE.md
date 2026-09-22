@@ -13,7 +13,7 @@
 5. Нет новой озвучки и нового аватара на фикс QC. Перерендер `--from P11` (визуал/таймлайн) или `--from P7`. Смена текста блоков = новый `video_id`.
 6. Одна версия монтажа. Не A и B.
 7. Аватар ≤5 появлений и ≤50 % длительности ролика.
-8. Футаж и картинку смотрит **сам режиссёр своим зрением** (кадры через ffmpeg). Vision-API (Grok/Gemini) на отбор не тратить; в Actions `skip_vision: true`.
+8. Футаж ищет и смотрит **сам режиссёр в чате своим зрением** (кадры через ffmpeg) — всегда. Ключ xAI не используется ни для чего; vision-API не тратить; в Actions `skip_vision: true`.
 9. Не читать файлы >40 КБ целиком (правило ниже).
 10. Не пушить mp4 ролика. Выход живой сборки — artifact Actions и/или S3. Футаж без стабильного URL — `assets/footage/director/<id>/`, ≤15 МБ.
 11. Триггер станка = только `config/ci_build_request.json` (токен агента не умеет `workflow_dispatch`). `ci.yml` на feature-ветках не бежит.
@@ -25,7 +25,7 @@
 - Поиск футажа — субагент `Agent` (general-purpose) с веб-поиском; отбор — сам.
 - Голос — ElevenLabs MCP (NIKITA2, `eleven_v3`) → `tools/voice_import.py` (`docs/director/VOICE.md`).
 - Аватар — HeyGen MCP (только по просьбе заказчика).
-- Magnific MCP — сток и генерация за кредиты: сначала `account_balance`.
+- Magnific MCP — бесплатный сток (`license: free`) скачивается за 0 кредитов; генерация — за кредиты, сначала `account_balance`.
 - Кадры и сетки — `ffmpeg` в песочнице, смотреть через Read.
 
 Полный контракт шагов P0–P12 — в [`instruction.md`](instruction.md).

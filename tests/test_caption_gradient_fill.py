@@ -82,10 +82,10 @@ def test_gradient_fill_does_not_tween_forbidden_props(cfg):
 
 
 def test_fill_is_one_layer_in_one_colour(cfg):
-    """Закон канала: один слой, белая фраза, заливка только #C8453D."""
+    """Закон канала: один слой, белая фраза, заливка только #E5322D."""
     out = _fill(cfg, _words("пиши", ("html", True), "код"))
     accent = cfg.brandbook["colors"]["accent"]
-    assert accent == "#C8453D"
+    assert accent == "#E5322D"
     for banned in ("#fe9f1b", "#f76e49", "#ff2063", "#fd56cb", "#ffd700",
                    cfg.brandbook["colors"]["accent_soft"].lower(),
                    cfg.brandbook["colors"]["cyan"].lower()):
@@ -163,10 +163,15 @@ def test_fill_scale_tweens_on_accent_rect_do_not_overlap(cfg):
         assert prev[1] <= nxt[0] + 1e-6, windows
 
 
-def test_space_category_picks_clip_wipe(cfg):
+def test_space_category_picks_clip_wipe_only_without_one_style(cfg):
+    import copy as _copy
     plan = {"category": "space", "title": "Чип"}
     assert is_space_theme(plan)
-    assert pick_caption_style(plan, cfg.brandbook) == "clip-wipe"
+    # Канал 22.09: один жест во всех роликах.
+    assert pick_caption_style(plan, cfg.brandbook) == "gradient-fill"
+    legacy = _copy.deepcopy(cfg.brandbook)
+    legacy["subtitles"]["one_style_all_videos"] = False
+    assert pick_caption_style(plan, legacy) == "clip-wipe"
 
 
 def test_cosmic_topic_without_space_category_stays_gradient_fill(cfg):

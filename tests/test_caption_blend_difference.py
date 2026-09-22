@@ -87,12 +87,15 @@ def test_empty_and_pop_in_stay_gradient_fill() -> None:
 
 def test_space_still_clip_wipe_unless_explicit_blend(cfg) -> None:
     plan = {"category": "space", "title": "Чип"}
-    # MAIN: brandbook caption=gradient-fill → космос получает clip-wipe.
-    assert pick_caption_style(plan, cfg.brandbook) == "clip-wipe"
+    # Канал 22.09: один жест во всех роликах — космос тоже gradient-fill.
+    assert pick_caption_style(plan, cfg.brandbook) == "gradient-fill"
+    # Механизм clip-wipe жив и включается снятием флага.
     gestures = copy.deepcopy(cfg.brandbook)
+    gestures["subtitles"]["one_style_all_videos"] = False
     gestures["subtitles"]["caption"] = "gradient-fill"
     assert pick_caption_style(plan, gestures) == "clip-wipe"
     brand = copy.deepcopy(cfg.brandbook)
+    brand["subtitles"]["one_style_all_videos"] = False
     brand["subtitles"]["caption"] = "blend-difference"
     # Брендбук больше не может включить blend: жест выключен законом канала.
     assert pick_caption_style(plan, brand) == "clip-wipe"

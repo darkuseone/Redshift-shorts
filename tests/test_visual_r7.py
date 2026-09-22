@@ -67,10 +67,10 @@ def test_invert_fact_and_slam_cards_use_glass_css():
     css = overlay_css(json.loads((ROOT / "config/brandbook.json").read_text()))
     compact = css.replace(" ", "").replace("\n", "")
     assert "backdrop-filter:blur" in css
-    assert "invert.fs-fact{background:rgba(26,31,46,0.52)" in compact
-    assert "invert.fs-slam-card{background:rgba(26,31,46,0.52)" in compact
+    assert "invert.fs-fact{background:rgba(20,21,23,0.52)" in compact
+    assert "invert.fs-slam-card{background:rgba(20,21,23,0.52)" in compact
     assert "lt-dc-card{display:flex;flex-direction:column;gap:12px;" \
-           "background:rgba(26,31,46,0.52)" in compact
+           "background:rgba(20,21,23,0.52)" in compact
     assert "lt-dc-card{display:flex;flex-direction:column;gap:12px;" \
            "background:#111214" not in compact
 

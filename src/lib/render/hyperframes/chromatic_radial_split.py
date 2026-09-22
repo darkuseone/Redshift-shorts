@@ -89,9 +89,9 @@ def crs_transition_css() -> str:
         "position:absolute;inset:0;display:block;opacity:0;transform-origin:50% 50%}"
         ".tr-chromatic-radial-split .crs-blur{backdrop-filter:blur(14px)}"
         ".tr-chromatic-radial-split .crs-from{background:#111214;mix-blend-mode:overlay}"
-        ".tr-chromatic-radial-split .crs-to{background:#C8453D;mix-blend-mode:overlay}"
+        ".tr-chromatic-radial-split .crs-to{background:#E5322D;mix-blend-mode:overlay}"
         ".tr-chromatic-radial-split .crs-r{inset:-20%;border-radius:50%;"
-        "background:radial-gradient(circle,rgba(200,69,61,0.75) 0%,transparent 60%);mix-blend-mode:screen}"
+        "background:radial-gradient(circle,rgba(229,50,45,0.75) 0%,transparent 60%);mix-blend-mode:screen}"
         ".tr-chromatic-radial-split .crs-b{inset:-16%;border-radius:50%;"
-        "background:radial-gradient(circle,rgba(228,114,106,0.7) 0%,transparent 60%);mix-blend-mode:screen}"
+        "background:radial-gradient(circle,rgba(255,106,95,0.7) 0%,transparent 60%);mix-blend-mode:screen}"
     )

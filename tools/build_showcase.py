@@ -141,8 +141,8 @@ PLATE = (
     '<stop offset="58%" stop-color="#1B1C20"/>'
     '<stop offset="100%" stop-color="#111214"/></radialGradient>'
     '<radialGradient id="h" cx="72%" cy="76%" r="46%">'
-    '<stop offset="0%" stop-color="#C8453D" stop-opacity=".42"/>'
-    '<stop offset="100%" stop-color="#C8453D" stop-opacity="0"/>'
+    '<stop offset="0%" stop-color="#E5322D" stop-opacity=".42"/>'
+    '<stop offset="100%" stop-color="#E5322D" stop-opacity="0"/>'
     '</radialGradient></defs>'
     '<rect width="660" height="560" fill="url(#g)"/>'
     '<rect width="660" height="560" fill="url(#h)"/>'
@@ -292,18 +292,18 @@ def _as_image(node: str) -> str:
 PAGE_CSS = """
 :root{
   --ground:#E9E7E3; --surface:#FFFFFF; --ink:#141416; --muted:#6E6F73;
-  --hair:#D8D4CE; --accent:#C8453D; --shadow:0 18px 44px rgba(20,18,16,.14);
+  --hair:#D8D4CE; --accent:#E5322D; --shadow:0 18px 44px rgba(20,18,16,.14);
 }
 :root:not([data-theme="light"]){}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --ground:#121213; --surface:#1A1A1C; --ink:#F2F1EE; --muted:#95959B;
-    --hair:#2B2B2E; --accent:#E4726A; --shadow:0 18px 44px rgba(0,0,0,.5);
+    --hair:#2B2B2E; --accent:#FF6A5F; --shadow:0 18px 44px rgba(0,0,0,.5);
   }
 }
 :root[data-theme="dark"]{
   --ground:#121213; --surface:#1A1A1C; --ink:#F2F1EE; --muted:#95959B;
-  --hair:#2B2B2E; --accent:#E4726A; --shadow:0 18px 44px rgba(0,0,0,.5);
+  --hair:#2B2B2E; --accent:#FF6A5F; --shadow:0 18px 44px rgba(0,0,0,.5);
 }
 body{
   background:var(--ground); color:var(--ink);
@@ -523,7 +523,7 @@ def build(out_path: Path) -> Path:
   </div>
 
   <footer>
-    <span>палитра: #111214 · #F7F5F3 · #C8453D</span>
+    <span>палитра: #111214 · #F7F5F3 · #E5322D</span>
     <span>гарнитуры: Oswald · Nunito · JetBrains Mono</span>
     <span>кадр 1080×1920, 30 fps</span>
   </footer>

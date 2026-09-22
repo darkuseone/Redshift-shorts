@@ -736,7 +736,7 @@ class TestTheWrittenRulesAreInTheRepo:
         path = repo_root / "tools" / "magnific_browser_sop.md"
         assert path.exists()
         text = path.read_text(encoding="utf-8")
-        for must in ("Nano Banana 2", "9:16", "#C8453D", "#36EFFF",
+        for must in ("Nano Banana 2", "9:16", "#E5322D", "#19E6D2",
                      "assets/backdrops", "PLATES_MISSING",
                      "config/backdrop_pins.json"):
             assert must in text, f"SOP не называет {must}"

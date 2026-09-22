@@ -84,7 +84,7 @@ def td_transition_css() -> str:
         "align-items:center;justify-content:center;transform-origin:50% 50%}"
         ".tr-transitions-dissolve .td-blur{backdrop-filter:blur(14px);opacity:0}"
         ".tr-transitions-dissolve .td-a{background:#111214;opacity:0}"
-        ".tr-transitions-dissolve .td-b{background:#C8453D;opacity:0}"
+        ".tr-transitions-dissolve .td-b{background:#E5322D;opacity:0}"
         ".tr-transitions-dissolve .td-big{font-family:Inter,system-ui,sans-serif;font-size:220px;"
         "font-weight:900;line-height:1;letter-spacing:-0.04em;user-select:none}"
         ".tr-transitions-dissolve .td-a .td-big{color:rgba(255,255,255,0.08)}"

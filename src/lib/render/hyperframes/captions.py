@@ -177,6 +177,11 @@ def pick_caption_style(plan: dict[str, Any],
     camera-follow и blend-difference не выбираются автоматически ни для
     какого ролика: они дают второй ряд слов поверх первого, что запрещено.
     """
+    # Заказчик 22.09: ролик узнают по субтитрам — один жест во всех роликах,
+    # космос тоже. clip-wipe остаётся только при выключенном флаге.
+    subs = (brandbook or {}).get("subtitles") or {}
+    if subs.get("one_style_all_videos"):
+        return "gradient-fill"
     if is_explicit_space(plan):
         return "clip-wipe"
     return "gradient-fill"
@@ -735,7 +740,7 @@ def clip_wipe_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "frame_w": float(safe["x_max"]) - float(safe["x_min"]),
         "origin_x": float(safe["x_min"]),
         "baseline_y": float(subs.get("baseline_y_default", 975)),
-        "accent": str((brandbook.get("colors") or {}).get("accent", "#C8453D")),
+        "accent": str((brandbook.get("colors") or {}).get("accent", "#E5322D")),
         "ink": str(subs.get("color", "#FFFFFF")),
     }
 
@@ -952,8 +957,8 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "origin_x": float(safe["x_min"]),
         "baseline_y": float(subs.get("baseline_y_default", 975)),
         # Один цвет заливки на весь канал. Ни accent_soft, ни cyan, ни
-        # градиента: «текущее слово красится #C8453D» — закон, а не настройка.
-        "accent": str(colors.get("accent", "#C8453D")),
+        # градиента: «текущее слово красится #E5322D» — закон, а не настройка.
+        "accent": str(colors.get("accent", "#E5322D")),
         "ink": str(subs.get("color", "#FFFFFF")),
     }
 
@@ -1005,7 +1010,7 @@ def build_gradient_fill(
     """Караоке канала: белая фраза, текущее слово заливается по буквам.
 
     Один слой. Слово — ровно один ``<svg>``: белый ``<text>`` и поверх него
-    тот же ``<text>`` цветом ``#C8453D`` под маской, которая растёт слева
+    тот же ``<text>`` цветом ``#E5322D`` под маской, которая растёт слева
     направо за время произнесения слова. Ни HTML-дубля под SVG, ни второго
     ряда слов сверху: белый ряд плюс цветной дубль — это брак, который и
     ловили на 0049/0050.

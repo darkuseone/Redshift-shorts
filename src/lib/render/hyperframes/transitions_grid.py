@@ -15,15 +15,15 @@ from typing import Any
 from .templates import Piece, TemplateCtx, _num, _timing, HOLD, Z_TRANSITION
 
 _GRID_COLORS = (
-    "#C8453D",
-    "#E4726A",
-    "#8E2F2A",
+    "#E5322D",
+    "#FF6A5F",
+    "#9C1B17",
     "#111214",
     "#7A7D82",
     "#F7F5F3",
-    "#C8453D",
-    "#E4726A",
-    "#8E2F2A",
+    "#E5322D",
+    "#FF6A5F",
+    "#9C1B17",
     "#111214",
     "#7A7D82",
     "#FFFFFF",
@@ -132,7 +132,7 @@ def tg_transition_css() -> str:
         "align-items:center;justify-content:center;transform-origin:50% 50%}"
         ".tr-transitions-grid .tg-blur{backdrop-filter:blur(14px);opacity:0}"
         ".tr-transitions-grid .tg-a{background:#111214;opacity:0}"
-        ".tr-transitions-grid .tg-b{background:#C8453D;opacity:0}"
+        ".tr-transitions-grid .tg-b{background:#E5322D;opacity:0}"
         ".tr-transitions-grid .tg-big{font-family:Inter,system-ui,sans-serif;font-size:220px;"
         "font-weight:900;line-height:1;letter-spacing:-0.04em;user-select:none}"
         ".tr-transitions-grid .tg-a .tg-big{color:rgba(255,255,255,0.08)}"
