@@ -26,8 +26,10 @@ from src.p12_render_qc.qc import run_qc
 
 class TestTheEndingRingActuallyRotates:
 
-    def test_eight_types_exist(self):
-        assert len(CTA_TYPES) == 8
+    def test_nine_types_exist(self):
+        # Восемь §6.4 + `subscribe_like` (заказчик 22.09).
+        assert len(CTA_TYPES) == 9
+        assert "subscribe_like" in CTA_TYPES
         assert "visual_loop_seam" in CTA_TYPES
         assert "binary_vote" in CTA_TYPES
 
