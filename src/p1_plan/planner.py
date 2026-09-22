@@ -152,7 +152,13 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
     # на все блоки, поэтому «кубит» поясняется там, где встретился впервые, и
     # больше нигде. На экран пояснение не попадает вовсе — §7.3.
     glossed_terms: set[str] = set()
+    # Ролик без ведущего (meta.avatar_mode = none): каждый блок — футаж,
+    # правила первого появления и доли аватара к нему не применяются.
+    no_avatar = str(meta.get("avatar_mode") or "normal") == "none"
     for raw in script["blocks"]:
+        if no_avatar:
+            raw = {**raw, "avatar": "off"}
+            raw.pop("mode_hint", None)
         tokens = normalize_text(gloss_for_speech(raw["text"], seen=glossed_terms,
                                                  repo_root=cfg.repo_root),
                                 pron, block_id=raw["id"],
@@ -178,6 +184,10 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
             "meme_allowed": bool(raw.get("meme_allowed", meta.get("allow_memes", True))),
             "source_ref": raw.get("source_ref"),
             "gaze": bool(raw.get("gaze") or raw.get("look_at") or raw.get("look-at")),
+            # Текст синтеза с аудиотегами v3 и драматическая пауза после блока
+            # едут в план: первое читает подготовка голоса, второе — P3.
+            "tts_text": raw.get("tts_text", ""),
+            "silence_after_ms": int(raw.get("silence_after_ms") or 0),
             "_estimated_sec": round(estimate_block_duration(raw["text"]), 3),
         }
         blocks.append(entry)
@@ -198,7 +208,7 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
             cursor += block["_estimated_sec"]
         return None
 
-    if (_first_avatar_at() or 1e9) > first_limit:
+    if not no_avatar and (_first_avatar_at() or 1e9) > first_limit:
         # Кандидаты — блоки, которые пересекают окно [1 с, first_limit] и не
         # запрещены директивой avatar: off. Блок целиком внутри первой секунды
         # лицом не становится.
@@ -231,8 +241,9 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
                 "limit_sec": first_limit,
             })
 
-    blocks = _balance_avatar_share(
-        blocks, total_sec, tuple(limits.get("avatar_share", [0.35, 0.60])))
+    if not no_avatar:
+        blocks = _balance_avatar_share(
+            blocks, total_sec, tuple(limits.get("avatar_share", [0.35, 0.60])))
     _limit_split_share(blocks, total_sec, float(limits.get("split_share_max", 0.25)))
 
     # Раскладка по таймлайну — черновая, будет пересчитана в P5.
@@ -266,6 +277,7 @@ def plan(script: dict[str, Any], cfg) -> dict[str, Any]:
         "tts_length_buffer_pct": buffer_pct,
         "tts_target_sec": round(total_sec * (1.0 + buffer_pct / 100.0), 3),
         "blocks": blocks,
+        "avatar_mode": "none" if no_avatar else "normal",
         "avatar": {
             "planned_share": round(avatar_sec / max(total_sec, 1e-6), 4),
             "planned_sec": round(avatar_sec, 3),
@@ -313,7 +325,7 @@ def run_step(ctx) -> dict[str, Any]:
 
     share = draft["avatar"]["planned_share"]
     lo, hi = ctx.cfg.get("limits.avatar_share", [0.35, 0.60])
-    if not (lo <= share <= hi):
+    if draft.get("avatar_mode") != "none" and not (lo <= share <= hi):
         ctx.warn(
             f"плановая доля аватара {share:.0%} вне {lo:.0%}–{hi:.0%}; "
             f"P5 доберёт её врезками",

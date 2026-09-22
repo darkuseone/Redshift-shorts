@@ -19,6 +19,8 @@ from typing import Any, Iterable
 
 from ..errors import RedshiftError
 from ..lib.beats import annotate_slots
+from ..lib.director import apply_director, director_spec
+from ..lib.jsonio import read_json
 from ..lib.ffmpeg import probe
 from ..lib.logging import get_logger
 from ..lib.render.avatar_compose import fit_compose_zoom
@@ -4627,6 +4629,7 @@ HOOK_STYLE_TEMPLATES = {
     "split_reveal": "intro-hooks/hook-split-reveal",
     "typing_search": "intro-hooks/hook-typing-search",
     "avatar_direct": "intro-hooks/hook-avatar-direct",
+    "bold_claim": "intro-hooks/hook-blackout-word",
 }
 
 # Признаки блока, которые словарь интентов хука ждёт как **сигналы** (N-14).
@@ -5031,6 +5034,58 @@ def _slot_beats(plan: dict[str, Any]) -> None:
     if slots and all(s.get("beat") for s in slots):
         return
     annotate_slots(slots, plan.get("blocks") or [])
+
+
+def build_subtitles(shots: list[dict[str, Any]], overlays: list[dict[str, Any]],
+                    words: list[dict[str, Any]], blocks: list[dict[str, Any]],
+                    brandbook: dict[str, Any]) -> list[dict[str, Any]]:
+    """Субтитры по готовым шотам и оверлеям: где молчать, где держать строку.
+
+    Вынесено из ``build_variant``: режиссёрский таймлайн (``lib/director.py``)
+    переписывает шоты после сборки и обязан пересчитать субтитры тем же кодом.
+    """
+    # Smart captions: punch-family mute stays. Card mute is only bulky type
+    # (FS slam beat, punch/slam heroes, source cards, CTA) — not behind-head
+    # kickers or the whole FS B-roll hold.
+    punch_windows: list[tuple[float, float, str]] = []
+    for s in shots:
+        if s.get("kind") == "fullscreen_text" and s.get("content"):
+            ps, pe = _fs_mute_span(s)
+            punch_windows.append((ps, pe, str(s.get("content") or "")))
+        hero = s.get("hero") or {}
+        hw = str(
+            (hero.get("params") or {}).get("word")
+            or (hero.get("params") or {}).get("title")
+            or (hero.get("params") or {}).get("head")
+            or (hero.get("params") or {}).get("content")
+            or hero.get("word") or hero.get("title") or ""
+        )
+        if not hw:
+            continue
+        end = float(s["end"])
+        if hero.get("duration"):
+            end = min(end, float(s["start"]) + float(hero["duration"]))
+        punch_windows.append((float(s["start"]), end, hw))
+    for ovl in overlays:
+        if str(ovl.get("type") or "") != "plaque":
+            continue
+        pt = str((ovl.get("params") or {}).get("text")
+                 or (ovl.get("params") or {}).get("content") or "")
+        if pt:
+            punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
+    card_windows = _caption_mute_windows(shots, overlays)
+    line_windows = _caption_line_windows(shots, overlays)
+    _warn_mute_coverage(card_windows, words)
+    subtitles = _build_subtitle_cues(
+        words,
+        punch_windows=punch_windows,
+        mute_windows=card_windows,
+        line_windows=line_windows,
+        family_by_block={b["id"]: accent_family(b)
+                         for b in blocks},
+    )
+    _stamp_subtitle_baselines(subtitles, shots, brandbook)
+    return subtitles
 
 
 def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
@@ -5649,47 +5704,8 @@ def build_variant(ctx, plan: dict[str, Any], words_doc: dict[str, Any],
     overlays = _clamp_plaques_at_avatar_cuts(overlays, shots)
     shots = _clear_plate_gap_when_covered(shots, overlays)
 
-    # Smart captions: punch-family mute stays. Card mute is only bulky type
-    # (FS slam beat, punch/slam heroes, source cards, CTA) — not behind-head
-    # kickers or the whole FS B-roll hold.
-    punch_windows: list[tuple[float, float, str]] = []
-    for s in shots:
-        if s.get("kind") == "fullscreen_text" and s.get("content"):
-            ps, pe = _fs_mute_span(s)
-            punch_windows.append((ps, pe, str(s.get("content") or "")))
-        hero = s.get("hero") or {}
-        hw = str(
-            (hero.get("params") or {}).get("word")
-            or (hero.get("params") or {}).get("title")
-            or (hero.get("params") or {}).get("head")
-            or (hero.get("params") or {}).get("content")
-            or hero.get("word") or hero.get("title") or ""
-        )
-        if not hw:
-            continue
-        end = float(s["end"])
-        if hero.get("duration"):
-            end = min(end, float(s["start"]) + float(hero["duration"]))
-        punch_windows.append((float(s["start"]), end, hw))
-    for ovl in overlays:
-        if str(ovl.get("type") or "") != "plaque":
-            continue
-        pt = str((ovl.get("params") or {}).get("text")
-                 or (ovl.get("params") or {}).get("content") or "")
-        if pt:
-            punch_windows.append((float(ovl["start"]), float(ovl["end"]), pt))
-    card_windows = _caption_mute_windows(shots, overlays)
-    line_windows = _caption_line_windows(shots, overlays)
-    _warn_mute_coverage(card_windows, words_doc["words"])
-    subtitles = _build_subtitle_cues(
-        words_doc["words"],
-        punch_windows=punch_windows,
-        mute_windows=card_windows,
-        line_windows=line_windows,
-        family_by_block={b["id"]: accent_family(b)
-                         for b in plan.get("blocks", [])},
-    )
-    _stamp_subtitle_baselines(subtitles, shots, brandbook)
+    subtitles = build_subtitles(shots, overlays, words_doc["words"],
+                                plan.get("blocks", []), brandbook)
 
     # Сцена фона — по теме ролика целиком: заголовок плюс все реплики. Фон
     # держится весь ролик и посреди него не меняется.
@@ -5907,6 +5923,18 @@ def run_step(ctx) -> dict[str, Any]:
     sfx_map = ctx.read_or("sfx_map.json", {})
     catalog = TemplateCatalog.load(ctx.cfg)
     picker = TemplatePicker(catalog, ScenarioIndex.load(ctx.cfg, catalog=catalog))
+    # Таймлайн режиссёра читается из самого сценария, а не из кэша P0:
+    # перерендер `--from P11` после правки таймлайна обязан её увидеть.
+    script_doc = ctx.read_or("validated_script.json", {}) or {}
+    try:
+        live_script = read_json(ctx.script_path)
+    except Exception:  # noqa: BLE001 — нет файла в тестовом контексте
+        live_script = None
+    if isinstance(live_script, dict) and live_script.get("director"):
+        script_doc = {**script_doc, "director": live_script["director"],
+                      "blocks": script_doc.get("blocks") or live_script.get("blocks")}
+    avatar_mode = str((ctx.read_or("draft_plan.json", {}) or {}).get("avatar_mode")
+                      or "normal")
 
     accepted = accepted_doc.get("accepted", {})
     generated = generated_doc.get("generated", {})
@@ -5951,6 +5979,12 @@ def run_step(ctx) -> dict[str, Any]:
             preferences=preferences, asset_rotation=offset, picker=picker,
             peer_exclude=peer_exclude)
         plans[variant]["matting"] = matte_summary
+        plans[variant]["avatar_mode"] = avatar_mode
+        # Режиссёрский таймлайн из чата сильнее эвристики: окна, которые он
+        # занял, собираются ровно как написано (docs/director/TIMELINE.md).
+        if director_spec(script_doc):
+            plans[variant] = apply_director(ctx, plans[variant], script_doc,
+                                            words_doc, catalog)
         ctx.write(f"edit_plan_{variant}.json", plans[variant])
         if not peer_exclude:
             peer_exclude = _ab_pool_templates(plans[variant])

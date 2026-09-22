@@ -164,9 +164,15 @@ def _picker(ctx):
 class TestTheStyleFromTheScriptReachesTheCatalogue:
 
     def test_hook_style_maps_to_template(self):
-        """Семь стилей — семь разных приёмов, а не один на всех."""
+        """Семь приёмов на восемь стилей, а не один на всех.
+
+        `bold_claim` (заказчик 22.09) рисуется тем же приёмом, что
+        `blackout_word`: дерзкая фраза крупно на чёрном. Остальные разные.
+        """
         ids = set(HOOK_STYLE_TEMPLATES.values())
-        assert len(ids) == len(HOOK_STYLE_TEMPLATES) == 7
+        assert len(HOOK_STYLE_TEMPLATES) == 8
+        assert len(ids) == 7
+        assert HOOK_STYLE_TEMPLATES["bold_claim"] == HOOK_STYLE_TEMPLATES["blackout_word"]
 
     def test_every_style_names_a_template_that_exists(self, cfg):
         catalog = TemplateCatalog.load(cfg)

@@ -265,6 +265,8 @@ def test_a_fourth_slot_is_refused_when_it_would_break_the_ten_percent_cap(
     monkeypatch.setattr(G, "build_vision_provider", lambda *a, **k: _Critic())
     # Кап, не дедуп: мок-градиенты не должны сорвать проверку бюджета.
     cfg.set("stock.dedup_hamming_max", 0)
+    # Механизм потолка проверяется на 10 %: в конфиге канала сейчас 20 %.
+    cfg.set("limits.ai_footage_share_max", 0.10)
 
     intents = ("гранит", "лёд", "металл", "вода")
     slots = [{

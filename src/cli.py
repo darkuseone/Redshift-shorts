@@ -139,6 +139,12 @@ def cmd_run(args) -> int:
     script = _ingest_if_requested(script, args, cfg)
     video_id = script.get("meta", {}).get("video_id") or script_path.stem
     enforce_paid_rerun_guard(cfg, args, video_id=video_id)
+    director = script.get("director") if isinstance(script.get("director"), dict) else None
+    if director and not director.get("stock_search", False):
+        # Футаж выбрал режиссёр в чате: стоковый поиск P7 и генерация P9 не
+        # нужны — это лишние скачивания и кредиты (docs/director/TIMELINE.md).
+        cfg.set("stock.director_skip", True)
+        cfg.set("generation.skip", True)
     ctx = _make_context(args, cfg, video_id=video_id, script_path=script_path)
     if getattr(args, "article_url", None) or getattr(args, "topic", None):
         ctx.script_path = ctx.write("ingested_script.json", script)

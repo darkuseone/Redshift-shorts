@@ -293,32 +293,35 @@ class TestQc14CapsGeneratedFootageAtTenPercent:
         assert _check(_run(cfg, plan), "QC-22")["passed"]
 
 
-class TestQc14CapsGeneratedFootageAtTenPercent:
-    """MUST-007: зритель не должен видеть пачку сгенерированных кадров вместо съёмки."""
+class TestQc14CapsGeneratedFootageAtTwentyPercent:
+    """MUST-007: зритель не должен видеть пачку сгенерированных кадров вместо съёмки.
 
-    def test_nine_percent_passes(self, cfg):
-        # 4.32 / 48 = 0.09. Один план короче потолка QC-4 (5 с).
-        plan = _plan(shots=[_shot(0, duration=4.32, ai_generated=True)])
+    Заказчик 22.09 поднял потолок с 10 до 20 %: реальный материал ≥80 %.
+    """
+
+    def test_eighteen_percent_passes(self, cfg):
+        # 4.32 + 4.32 = 8.64 / 48 = 0.18. Планы короче потолка QC-4 (5 с).
+        plan = _plan(shots=[_shot(0, duration=4.32, ai_generated=True),
+                            _shot(1, duration=4.32, ai_generated=True)])
         check = _check(_run(cfg, plan), "QC-14")
         assert check["passed"]
         assert check["blocking"]
-        assert check["threshold"] == pytest.approx(0.10)
-        assert check["value"] == pytest.approx(0.09, abs=1e-4)
+        assert check["threshold"] == pytest.approx(0.20)
+        assert check["value"] == pytest.approx(0.18, abs=1e-4)
 
-    def test_twelve_percent_fails_and_blocks(self, cfg):
-        # 2.88 + 2.88 = 5.76 / 48 = 0.12. Два коротких плана, чтобы не задеть QC-4.
+    def test_twenty_four_percent_fails_and_blocks(self, cfg):
+        # 4 × 2.88 = 11.52 / 48 = 0.24. Короткие планы, чтобы не задеть QC-4.
         plan = _plan(shots=[
-            _shot(0, duration=2.88, ai_generated=True),
-            _shot(1, duration=2.88, ai_generated=True),
+            _shot(i, duration=2.88, ai_generated=True) for i in range(4)
         ])
         check = _check(_run(cfg, plan), "QC-14")
         assert not check["passed"]
         assert check["blocking"]
-        assert check["threshold"] == pytest.approx(0.10)
-        assert check["value"] == pytest.approx(0.12, abs=1e-4)
+        assert check["threshold"] == pytest.approx(0.20)
+        assert check["value"] == pytest.approx(0.24, abs=1e-4)
 
-    def test_config_cap_is_ten_percent(self, cfg):
-        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.10)
+    def test_config_cap_is_twenty_percent(self, cfg):
+        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.20)
 
 
 class TestQc10MeasuresSubtitleDriftAgainstSpeech:
@@ -558,7 +561,7 @@ class TestTzMust024ConstantsAgree:
 
         assert HOOK_MAX_SEC == pytest.approx(3.0)
         assert cfg.get("limits.hook_sec") == pytest.approx(3.0)
-        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.10)
+        assert cfg.get("limits.ai_footage_share_max") == pytest.approx(0.20)
         assert cfg.get("limits.bg_vfx_per_video") == 2
         assert float(vfx[0]) == pytest.approx(2.0)
         assert float(vfx[1]) == pytest.approx(5.0)
@@ -568,7 +571,7 @@ class TestTzMust024ConstantsAgree:
         assert cfg.get("stock.candidate_surplus") == pytest.approx(1.3)
         assert accent_hi == pytest.approx(0.12)
 
-        assert "≤10 %" in instruction
+        assert "≤20 %" in instruction
         assert "VFX-фон ≤2 раза, 2–5 сек" in instruction
         assert "1080p" in instruction
         assert "1.3×" in instruction
@@ -576,7 +579,7 @@ class TestTzMust024ConstantsAgree:
         assert "QC-19 не отключается" in instruction
 
         qc14 = _check(_run(cfg, _plan()), "QC-14")
-        assert qc14["threshold"] == pytest.approx(0.10)
+        assert qc14["threshold"] == pytest.approx(0.20)
         qc19 = _check(_run(cfg, _plan()), "QC-19")
         assert qc19["blocking"] is True
 

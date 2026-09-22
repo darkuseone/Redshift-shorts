@@ -1,21 +1,34 @@
 # REDSHIFT — как работать с этим репозиторием
 
+**Сначала прочитай [`AGENTS.md`](AGENTS.md)** — протокол «тема → ролик» для любой
+нейросети: ресёрч → сценарий → СТОП на одобрение → голос → футаж → шаблоны →
+таймлайн `director` → заявка → QC. Здесь — только то, что специфично для Claude Code.
+
 ## Железные правила агента
 
 1. Live run только в Actions по заявке `config/ci_build_request.json` (или ручной `workflow_dispatch` заказчика). Не коммитить заявку «на всякий» с фиксом багов.
-2. Cursor не вызывает `src.cli run` в live. Mock (`providers.mode=mock`) — только тесты и сухой прогон.
+2. Агент не вызывает `src.cli run` в live. Mock (`providers.mode=mock`) — тесты и сухой прогон.
 3. Ключи не печатать. Секреты живут в GitHub Actions secrets.
-4. Аватар только MCP → `assets/avatar_clips/<id>/` → `heygen.source=prepared`. Live HeyGen API из чата не звать. Лук, движок и разрешение — из `config/config.yaml` (`heygen.avatar_id`, `heygen.engine`, `heygen.output`), **не отсюда**: id, переписанный в документации, устаревает молча, и ролик собирается на прежнем аватаре.
-5. Нет новой озвучки и нового аватара на фикс QC. Перерендер `--from P7` (или `--from P11`, если менялись только композитор/сабы/SFX). Смена текста блоков = новый `video_id`.
+4. Аватар только MCP → `assets/avatar_clips/<id>/` → `heygen.source=prepared`. Live HeyGen API из чата не звать. Лук, движок и разрешение — из `config/config.yaml` (`heygen.avatar_id`, `heygen.engine`, `heygen.output`), **не отсюда**: id, переписанный в документации, устаревает молча, и ролик собирается на прежнем аватаре. Аватар — только когда заказчик просит; без него `meta.avatar_mode: "none"`.
+5. Нет новой озвучки и нового аватара на фикс QC. Перерендер `--from P11` (визуал/таймлайн) или `--from P7`. Смена текста блоков = новый `video_id`.
 6. Одна версия монтажа. Не A и B.
 7. Аватар ≤5 появлений и ≤50 % длительности ролика.
-8. Vision = Grok (grok-4.6), не GLM. Gemini — только если Grok недоступен. `providers.allow_xai` для image gen не размораживать без нужды.
+8. Футаж и картинку смотрит **сам режиссёр своим зрением** (кадры через ffmpeg). Vision-API (Grok/Gemini) на отбор не тратить; в Actions `skip_vision: true`.
 9. Не читать файлы >40 КБ целиком (правило ниже).
-10. Не пушить mp4. Выход живой сборки — artifact Actions и/или S3.
+10. Не пушить mp4 ролика. Выход живой сборки — artifact Actions и/или S3. Футаж без стабильного URL — `assets/footage/director/<id>/`, ≤15 МБ.
 11. Триггер станка = только `config/ci_build_request.json` (токен агента не умеет `workflow_dispatch`). `ci.yml` на feature-ветках не бежит.
-12. QC-пакет: много кадров + звук (хук/середина/финал). Релиз ≥9/10 по всем осям `config/qc_agent_rubric.json`. Чеклист не вечный канон, пока серия не держит 9/10.
+12. QC-пакет: много кадров + звук (хук/середина/финал). Релиз ≥9/10 по всем осям `config/qc_agent_rubric.json`.
+13. После сценария — **стоп и согласование с заказчиком**, пока он не отменит это правило. Его правки — в `config/owner_style.md`.
 
-Полный контракт Cursor↔Actions — в [`instruction.md`](instruction.md) §0.
+## Инструменты Claude Code
+
+- Поиск футажа — субагент `Agent` (general-purpose) с веб-поиском; отбор — сам.
+- Голос — ElevenLabs MCP (NIKITA2, `eleven_v3`) → `tools/voice_import.py` (`docs/director/VOICE.md`).
+- Аватар — HeyGen MCP (только по просьбе заказчика).
+- Magnific MCP — сток и генерация за кредиты: сначала `account_balance`.
+- Кадры и сетки — `ffmpeg` в песочнице, смотреть через Read.
+
+Полный контракт шагов P0–P12 — в [`instruction.md`](instruction.md).
 
 ## Правило чтения: ни один файл больше 40 КБ не читается целиком
 
