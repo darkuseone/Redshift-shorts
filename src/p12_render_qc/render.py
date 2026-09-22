@@ -66,7 +66,7 @@ def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None,
         "red/cyan rim light, large sharp cutout in foreground interacting with the scene. "
         "NO morph face, NO unknown/random face, NO stock-model look. Huge bold multi-color "
         f"Russian all-caps sans-serif brandbook text stacked 2-4 lines: primary «{headline}», "
-        f"secondary «{alt}», colors white + bright yellow + brand red (#C8453D). "
+        f"secondary «{alt}», colors white + bright yellow + brand red (#E5322D). "
         "Key facts/stats/tables MUST sit on visible frosted glass / glassmorphism cards "
         "(translucent dark panels, subtle white/red border, soft blur) — never floating "
         f"bare text. Busy thematic collage for «{subject}»: quantum computer fridge, "

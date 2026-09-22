@@ -65,5 +65,5 @@ def wv_css() -> str:
         ".wwv-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#111214}"
         ".wwv-bg{width:1080px;height:600px}"
         ".wwv-svg{width:100%;height:100%}"
-        ".wwv-path{fill:none;stroke:#c8453d;stroke-width:12;transform-origin:50% 100%}"
+        ".wwv-path{fill:none;stroke:#e5322d;stroke-width:12;transform-origin:50% 100%}"
     )

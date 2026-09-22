@@ -4,7 +4,7 @@ Catalog ``message-thread-reveal`` uses visibility/jumping coordinates.
 Here bubbles pop with opacity and scale, the thread smoothly translates with ``y``,
 typed characters are pre-baked spans, and the end card transitions with opacity and scale.
 No tween of width/height/filter/clip-path/strokeDashoffset; no textContent writes.
-Brandbook accent (#C8453D / #E4726A) for CTA and highlights, Inter font.
+Brandbook accent (#E5322D / #FF6A5F) for CTA and highlights, Inter font.
 """
 
 from __future__ import annotations
@@ -366,7 +366,7 @@ def mtr_overlay_css() -> str:
         "overflow:hidden;background:#000;font-family:Inter,system-ui,sans-serif;"
         "-webkit-font-smoothing:antialiased;color:#fff}"
         ".message-thread-reveal .mtr-plate{position:absolute;inset:0;"
-        "background:radial-gradient(ellipse 90% 60% at 30% 20%,rgba(200,69,61,0.15) 0%,rgba(200,69,61,0) 60%),"
+        "background:radial-gradient(ellipse 90% 60% at 30% 20%,rgba(229,50,45,0.15) 0%,rgba(229,50,45,0) 60%),"
         "linear-gradient(168deg,#111214 0%,#0a0a0c 100%)}"
         ".message-thread-reveal .mtr-phonebody{position:absolute;left:124px;top:64px;width:832px;height:1797px;"
         "border-radius:112px;background:#3a3d42;box-shadow:inset 0 2px 3px rgba(255,255,255,0.25),0 40px 90px rgba(0,0,0,0.6)}"
@@ -426,6 +426,6 @@ def mtr_overlay_css() -> str:
         ".message-thread-reveal .mtr-feat-top{font-size:24px;font-weight:700;color:#fff}"
         ".message-thread-reveal .mtr-feat-bot{font-size:20px;color:#7A7D82;margin-top:6px}"
         ".message-thread-reveal .mtr-ec-cta{width:100%;max-width:540px;height:84px;border-radius:42px;"
-        "background:#C8453D;color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;"
-        "justify-content:center;box-shadow:0 12px 30px rgba(200,69,61,0.45)}"
+        "background:#E5322D;color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;"
+        "justify-content:center;box-shadow:0 12px 30px rgba(229,50,45,0.45)}"
     )

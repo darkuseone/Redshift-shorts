@@ -689,7 +689,7 @@ def test_conic_progress_ring_keeps_catalog_brand_and_surface():
     block = css.split(".cpr-chart", 1)[1].split(".dcl-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -828,7 +828,7 @@ def test_decline_chart_keeps_catalog_line_and_ambient():
     block = css.split(".dcl-chart", 1)[1].split(".mlg-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     stripped = (css.replace("transform-origin:left center", "")
@@ -940,7 +940,7 @@ def test_mk_line_graph_keeps_catalog_mk_tokens():
     block = css.split(".mlg-chart", 1)[1].split(".spm-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     stripped = (css.replace("transform-origin:left center", "")
@@ -1076,7 +1076,7 @@ def test_spain_map_keeps_catalog_tokens():
     block = css.split(".spm-chart", 1)[1].split(".srf-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     stripped = (css.replace("transform-origin:left center", "")
@@ -1188,7 +1188,7 @@ def test_star_rating_fill_keeps_catalog_tokens():
     block = css.split(".srf-chart", 1)[1].split(".usm-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     stripped = (css.replace("transform-origin:left center", "")
@@ -1307,7 +1307,7 @@ def test_us_map_keeps_catalog_tokens():
     block = css.split(".usm-chart", 1)[1].split(".umf-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     stripped = (css.replace("transform-origin:left center", "")
@@ -1459,7 +1459,7 @@ def test_us_map_flow_keeps_catalog_tokens():
     block = css.split(".umf-chart", 1)[1].split(".wmp-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     stripped = (block.replace("transform-origin:left center", "")
@@ -1882,8 +1882,8 @@ def test_flowchart_vertical_keeps_catalog_tokens():
     assert "#f5c5a3" in css
     assert "#d4c5f9" in css
     # Phase B: tag-badge, selection-border, and typo-squiggle unified to brandbook
-    # accent (#C8453D) — off-palette #9747ff and #0b84f3 removed.
-    assert "#C8453D" in css  # accent replaces ex-purple tag and ex-blue selection border
+    # accent (#E5322D) — off-palette #9747ff and #0b84f3 removed.
+    assert "#E5322D" in css  # accent replaces ex-purple tag and ex-blue selection border
     assert "#9747ff" not in css
     assert "#0b84f3" not in css
     block = css.split(".fcv-chart", 1)[1]
@@ -3607,8 +3607,8 @@ def test_code_diff_css_keeps_github_diff_and_mono():
     css = overlay_css(load_config().brandbook)
     assert "JetBrains Mono" in css
     assert "#f85149" in css and "#3fb950" in css
-    assert "#C8453D" not in re.search(r"\.cd-del\{[^}]+\}", css).group(0)
-    assert "#C8453D" not in re.search(r"\.cd-add\{[^}]+\}", css).group(0)
+    assert "#E5322D" not in re.search(r"\.cd-del\{[^}]+\}", css).group(0)
+    assert "#E5322D" not in re.search(r"\.cd-add\{[^}]+\}", css).group(0)
     editor = re.search(r"\.cd-editor\{[^}]+\}", css).group(0)
     assert "transform:" not in editor.replace("will-change:transform,opacity", "")
     line = re.search(r"\.cd-line\{[^}]+\}", css).group(0)
@@ -3703,7 +3703,7 @@ def test_code_particle_assemble_keeps_github_dark_and_mono():
     assert "position:absolute" not in stage
     invert = re.search(r"\.fullscreen-text\.fs-code-pa\.invert\{[^}]+\}", css).group(0)
     assert "background:#05070b" in invert
-    assert "#C8453D" not in dot
+    assert "#E5322D" not in dot
 
 
 _CS_DEMO = (
@@ -3808,7 +3808,7 @@ def test_code_scroll_keeps_github_dark_spotlight_and_mono():
     assert "text-transform:none" in css
     hl = re.search(r"\.cs-hl\{[^}]+\}", css).group(0)
     assert "#58a6ff" in hl
-    assert "#C8453D" not in hl
+    assert "#E5322D" not in hl
     editor = re.search(r"\.cs-editor\{[^}]+\}", css).group(0)
     assert "transform:" not in editor.replace("will-change:transform,opacity", "")
     scroll = re.search(r"\.cs-scroll\{[^}]+\}", css).group(0)
@@ -3904,7 +3904,7 @@ def test_code_typing_keeps_github_dark_caret_and_mono():
     assert "text-transform:none" in css
     caret = re.search(r"\.ct-caret\{[^}]+\}", css).group(0)
     assert "#58a6ff" in caret
-    assert "#C8453D" not in caret
+    assert "#E5322D" not in caret
     assert "transform:" not in caret.replace("will-change:transform", "")
     editor = re.search(r"\.ct-editor\{[^}]+\}", css).group(0)
     assert "transform:" not in editor.replace("will-change:transform,opacity", "")
@@ -3985,7 +3985,7 @@ def test_terminal_simulator_keeps_catalog_slate_and_green():
     assert "#f7f7f8" in css
     term = re.search(r"\.ts-term\{[^}]+\}", css).group(0)
     assert "#86efac" in term
-    assert "#C8453D" not in term
+    assert "#E5322D" not in term
     line = re.search(r"\.ts-line\{[^}]+\}", css).group(0)
     assert "transform-origin:left center" in line
     assert "transform:" not in line.replace("will-change:transform,opacity", "").replace(
@@ -4073,10 +4073,10 @@ def test_apple_terminal_clear_dark_keeps_clear_dark_slate():
     assert "#ff5f57" in css
     prompt = re.search(r"\.atcd-prompt\{[^}]+\}", css).group(0)
     assert "#888888" in prompt
-    assert "#C8453D" not in prompt
+    assert "#E5322D" not in prompt
     cursor = re.search(r"\.atcd-cursor\{[^}]+\}", css).group(0)
     assert "#888888" in cursor
-    assert "#C8453D" not in cursor
+    assert "#E5322D" not in cursor
     title = re.search(r"\.atcd-title\{[^}]+\}", css).group(0)
     assert "transform:" not in title.replace("text-transform:none", "")
     stage = re.search(r"\.atcd-stage\{[^}]+\}", css).group(0)
@@ -4162,7 +4162,7 @@ def test_dark_plus_keeps_theme_tokens():
     assert "#6A9955" in css or "#6a9955" in css
     assert "#16825D" in css or "#16825d" in css
     comment = re.search(r"\.dp-tok-comment\{[^}]+\}", css).group(0)
-    assert "#C8453D" not in comment
+    assert "#E5322D" not in comment
     wb = re.search(r"\.dp-wb\{[^}]+\}", css).group(0)
     assert "transform:" not in wb.replace("transform-origin:82% 50%", "").replace(
         "will-change:transform,opacity", "")
@@ -4236,26 +4236,26 @@ def test_beat_freeze_cut_keeps_it_kosmos_palette_not_catalog_mint():
     css = overlay_css(load_config().brandbook)
     assert ".fs-beat-freeze-cut" in css
     block = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
-    assert "#C8453D" in block
+    assert "#E5322D" in block
     assert "#111214" in block
     assert "#7A7D82" in block
-    assert "#0B132B" not in block
-    assert "#1A1F2E" not in block
+    assert "#0A0A0B" not in block
+    assert "#141517" not in block
     assert "#E63946" not in block
     assert "#00E5C7" not in block and "#00e5c7" not in block
     assert "#00E5FF" not in block and "#00e5ff" not in block
     assert "-apple-system" not in block
     bar = re.search(r"\.bfc-bar\{[^}]+\}", css).group(0)
-    assert "#C8453D" in bar
+    assert "#E5322D" in bar
     assert "transform-origin:50% 100%" in bar
     assert "transform:" not in bar.replace("transform-origin:50% 100%", "").replace(
         "will-change:transform", "")
     wave = re.search(r"\.bfc-wave-path\{[^}]+\}", css).group(0)
-    assert "stroke:#C8453D" in wave
+    assert "stroke:#E5322D" in wave
     eyebrow = re.search(r"\.bfc-eyebrow\{[^}]+\}", css).group(0)
-    assert "color:#C8453D" in eyebrow
+    assert "color:#E5322D" in eyebrow
     pill = re.search(r"\.bfc-pill\{[^}]+\}", css).group(0)
-    assert "background:#C8453D" in pill
+    assert "background:#E5322D" in pill
     assert "color:#ffffff" in pill
     stage = re.search(r"\.bfc-stage\{[^}]+\}", css).group(0)
     assert "position:absolute" not in stage
@@ -4263,7 +4263,7 @@ def test_beat_freeze_cut_keeps_it_kosmos_palette_not_catalog_mint():
         r"\.fullscreen-text\.fs-beat-freeze-cut\.invert\{[^}]+\}", css).group(0)
     # r6+: invert keeps transparent plate so footage shows under dark glass
     assert "transparent" in invert or "#111214" in invert
-    assert "#0B132B" not in invert
+    assert "#0A0A0B" not in invert
 
 
 
@@ -4299,7 +4299,7 @@ def test_beat_freeze_cut_flash_is_not_additive_screen_wash():
     css = overlay_css(load_config().brandbook)
     flash = css.split(".bfc-flash{")[1].split("}")[0]
     assert "mix-blend-mode:screen" not in flash
-    assert "rgba(11,19,43" in flash
+    assert "rgba(10,10,11" in flash
     card = css.split(".bfc-card{")[1].split("}")[0]
     assert "rgba(17,18,20,0.62)" in card
 
@@ -4372,7 +4372,7 @@ def test_cinematic_zoom_keeps_catalog_indigo_and_gold():
     frm = re.search(r"\.tr-cinematic-zoom \.cz-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-cinematic-zoom \.cz-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-cinematic-zoom \.cz-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4408,7 +4408,7 @@ def test_chromatic_radial_split_keeps_catalog_tokens():
     frm = re.search(r"\.tr-chromatic-radial-split \.crs-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-chromatic-radial-split \.crs-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-chromatic-radial-split \.crs-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4441,7 +4441,7 @@ def test_cross_warp_morph_keeps_catalog_tokens():
     frm = re.search(r"\.tr-cross-warp-morph \.cwm-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-cross-warp-morph \.cwm-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-cross-warp-morph \.cwm-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4474,7 +4474,7 @@ def test_domain_warp_dissolve_keeps_catalog_tokens():
     frm = re.search(r"\.tr-domain-warp-dissolve \.dwd-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-domain-warp-dissolve \.dwd-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-domain-warp-dissolve \.dwd-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4506,7 +4506,7 @@ def test_flash_through_white_keeps_catalog_tokens():
     frm = re.search(r"\.tr-flash-through-white \.ftw-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-flash-through-white \.ftw-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-flash-through-white \.ftw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4539,7 +4539,7 @@ def test_ridged_burn_keeps_catalog_tokens():
     frm = re.search(r"\.tr-ridged-burn \.rb-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-ridged-burn \.rb-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-ridged-burn \.rb-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4572,7 +4572,7 @@ def test_ripple_waves_keeps_catalog_tokens():
     frm = re.search(r"\.tr-ripple-waves \.rw-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-ripple-waves \.rw-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-ripple-waves \.rw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4605,7 +4605,7 @@ def test_swirl_vortex_keeps_catalog_tokens():
     frm = re.search(r"\.tr-swirl-vortex \.sv-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-swirl-vortex \.sv-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-swirl-vortex \.sv-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4637,7 +4637,7 @@ def test_transitions_dissolve_keeps_catalog_tokens():
     frm = re.search(r"\.tr-transitions-dissolve \.td-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-dissolve \.td-b\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-transitions-dissolve \.td-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4670,12 +4670,12 @@ def test_transitions_distortion_keeps_catalog_tokens():
     frm = re.search(r"\.tr-transitions-distortion \.tdist-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-distortion \.tdist-b\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-transitions-distortion \.tdist-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
-    assert "rgba(200,69,61,0.35)" in css
-    assert "rgba(228,114,106,0.35)" in css
+    assert "rgba(229,50,45,0.35)" in css
+    assert "rgba(255,106,95,0.35)" in css
 
 
 def test_transitions_grid_animates_without_webgl(ctx):
@@ -4705,7 +4705,7 @@ def test_transitions_grid_keeps_catalog_tokens():
     frm = re.search(r"\.tr-transitions-grid \.tg-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-grid \.tg-b\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-transitions-grid \.tg-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4740,14 +4740,14 @@ def test_transitions_mechanical_keeps_catalog_tokens():
     frm = re.search(r"\.tr-transitions-mechanical \.tm-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-mechanical \.tm-b\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-transitions-mechanical \.tm-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
     shut = re.search(r"\.tr-transitions-mechanical \.tm-shutter\{[^}]+\}", css).group(0)
     assert "height:50%" in shut
     assert "#111214" in shut
-    assert "#C8453D" in css
+    assert "#E5322D" in css
     block = css.split(".tr-transitions-mechanical", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
@@ -4778,7 +4778,7 @@ def test_transitions_push_keeps_catalog_tokens():
     frm = re.search(r"\.tr-transitions-push \.tpush-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-push \.tpush-b\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-transitions-push \.tpush-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4815,14 +4815,14 @@ def test_transitions_radial_keeps_catalog_tokens():
     frm = re.search(r"\.tr-transitions-radial \.trad-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-radial \.trad-b\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-transitions-radial \.trad-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
     iris = re.search(r"\.tr-transitions-radial \.trad-iris\{[^}]+\}", css).group(0)
     assert "border-radius:50%" in iris
     ring = re.search(r"\.tr-transitions-radial \.trad-ring\{[^}]+\}", css).group(0)
-    assert "#C8453D" in ring
+    assert "#E5322D" in ring
     block = css.split(".tr-transitions-radial", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
@@ -4854,7 +4854,7 @@ def test_transitions_scale_keeps_catalog_tokens():
     frm = re.search(r"\.tr-transitions-scale \.tscale-a\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-transitions-scale \.tscale-b\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     stage = re.search(r"\.tr-transitions-scale \.tscale-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4928,8 +4928,8 @@ def test_glitch_shader_keeps_catalog_slate_and_coral():
     frm = re.search(r"\.tr-glitch-shader \.gs-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-glitch-shader \.gs-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
-    assert "#E4726A" in css
+    assert "#E5322D" in too
+    assert "#FF6A5F" in css
     stage = re.search(r"\.tr-glitch-shader \.gs-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -4994,8 +4994,8 @@ def test_gravitational_lens_keeps_catalog_magenta():
     frm = re.search(r"\.tr-gravitational-lens \.gw-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-gravitational-lens \.gw-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
-    assert "142,47,42" in css
+    assert "#E5322D" in too
+    assert "156,27,23" in css
     stage = re.search(r"\.tr-gravitational-lens \.gw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5058,8 +5058,8 @@ def test_light_leak_keeps_catalog_navy_and_amber():
     frm = re.search(r"\.tr-light-leak \.ll-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-light-leak \.ll-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
-    assert "#8E2F2A" in css
+    assert "#E5322D" in too
+    assert "#9C1B17" in css
     stage = re.search(r"\.tr-light-leak \.ll-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5158,7 +5158,7 @@ def test_sdf_iris_keeps_catalog_teal_and_gold():
     frm = re.search(r"\.tr-sdf-iris \.si-from\{[^}]+\}", css).group(0)
     iris = re.search(r"\.tr-sdf-iris \.si-iris\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in iris
+    assert "#E5322D" in iris
     assert "#7A7D82" in css
     stage = re.search(r"\.tr-sdf-iris \.si-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
@@ -5221,9 +5221,9 @@ def test_thermal_distortion_keeps_catalog_slate_and_terracotta():
     frm = re.search(r"\.tr-thermal-distortion \.td-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-thermal-distortion \.td-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     assert "#7A7D82" in css
-    assert "rgba(228,114,106" in css
+    assert "rgba(255,106,95" in css
     stage = re.search(r"\.tr-thermal-distortion \.td-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5286,9 +5286,9 @@ def test_whip_pan_shader_keeps_catalog_navy_and_cyan():
     frm = re.search(r"\.tr-whip-pan \.wp-from\{[^}]+\}", css).group(0)
     too = re.search(r"\.tr-whip-pan \.wp-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
-    assert "#C8453D" in too
+    assert "#E5322D" in too
     assert "#7A7D82" in css
-    assert "rgba(228,114,106" in css
+    assert "rgba(255,106,95" in css
     stage = re.search(r"\.tr-whip-pan \.wp-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5364,11 +5364,11 @@ def test_mk_clone_wall_keeps_catalog_ink_paper_and_blobs():
     assert "isolation:isolate" in wall
     assert "#ffffff" in invert
     assert "mix-blend-mode:difference" in invert
-    assert "#C8453D" in card and "#E4726A" in card
+    assert "#E5322D" in card and "#FF6A5F" in card
     assert "#111214" in row
     assert "Inter" in row
     assert "-apple-system" not in css.split(".tr-mk-clone-wall", 1)[1]
-    assert "#C8453D" in css.split(".tr-mk-clone-wall", 1)[1].split(".fullscreen-text", 1)[0]
+    assert "#E5322D" in css.split(".tr-mk-clone-wall", 1)[1].split(".fullscreen-text", 1)[0]
     assert "#00E5C7" not in css.split(".tr-mk-clone-wall", 1)[1]
     stage = re.search(r"\.tr-mk-clone-wall \.cw-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
@@ -5438,11 +5438,11 @@ def test_transitions_3d_keeps_catalog_navy_and_terracotta():
     face_a = re.search(r"\.tr-transitions-3d \.t3-a\{[^}]+\}", css).group(0)
     face_b = re.search(r"\.tr-transitions-3d \.t3-b\{[^}]+\}", css).group(0)
     assert "#111214" in face_a
-    assert "#C8453D" in face_b
+    assert "#E5322D" in face_b
     assert "#7A7D82" in css
     assert "Inter" in css.split(".tr-transitions-3d", 1)[1]
     assert "-apple-system" not in css.split(".tr-transitions-3d", 1)[1]
-    assert "#C8453D" in css.split(".tr-transitions-3d", 1)[1]
+    assert "#E5322D" in css.split(".tr-transitions-3d", 1)[1]
     assert "#00E5C7" not in css.split(".tr-transitions-3d", 1)[1]
     assert "#00E5FF" not in css.split(".tr-transitions-3d", 1)[1]
     stage = re.search(r"\.tr-transitions-3d \.t3-stage\{[^}]+\}", css).group(0)
@@ -5520,12 +5520,12 @@ def test_transitions_blur_keeps_catalog_navy_and_terracotta():
     face_b = re.search(r"\.tr-transitions-blur \.tb-b\{[^}]+\}", css).group(0)
     ghost = re.search(r"\.tr-transitions-blur \.tb-ghost\{[^}]+\}", css).group(0)
     assert "#111214" in face_a
-    assert "#C8453D" in face_b
+    assert "#E5322D" in face_b
     assert "filter:blur(15px)" in ghost
     assert "#7A7D82" in css.split(".tr-transitions-blur", 1)[1]
     assert "Inter" in css.split(".tr-transitions-blur", 1)[1]
     assert "-apple-system" not in css.split(".tr-transitions-blur", 1)[1]
-    assert "#C8453D" in css.split(".tr-transitions-blur", 1)[1]
+    assert "#E5322D" in css.split(".tr-transitions-blur", 1)[1]
     assert "#00E5C7" not in css.split(".tr-transitions-blur", 1)[1]
     assert "#00E5FF" not in css.split(".tr-transitions-blur", 1)[1]
     stage = re.search(r"\.tr-transitions-blur \.tb-stage\{[^}]+\}", css).group(0)
@@ -5610,13 +5610,13 @@ def test_transitions_cover_keeps_catalog_magenta_and_purple():
     wipe_a = re.search(r"\.tr-transitions-cover \.tc-wa\{[^}]+\}", css).group(0)
     wipe_b = re.search(r"\.tr-transitions-cover \.tc-wb\{[^}]+\}", css).group(0)
     assert "#111214" in face_a
-    assert "#C8453D" in face_b
-    assert "#C8453D" in wipe_a
-    assert "#8E2F2A" in wipe_b
+    assert "#E5322D" in face_b
+    assert "#E5322D" in wipe_a
+    assert "#9C1B17" in wipe_b
     block = css.split(".tr-transitions-cover", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" in block
+    assert "#E5322D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -5712,15 +5712,15 @@ def test_transitions_destruction_keeps_catalog_navy_terra_and_fire():
     ring1 = re.search(r"\.tr-transitions-destruction \.tds-r1\{[^}]+\}", css).group(0)
     ring2 = re.search(r"\.tr-transitions-destruction \.tds-r2\{[^}]+\}", css).group(0)
     assert "#111214" in face_a
-    assert "#C8453D" in face_b
-    assert "200,69,61" in ring0
-    assert "228,114,106" in ring1
-    assert "142,47,42" in ring2
+    assert "#E5322D" in face_b
+    assert "229,50,45" in ring0
+    assert "255,106,95" in ring1
+    assert "156,27,23" in ring2
     block = css.split(".tr-transitions-destruction", 1)[1]
     assert "Inter" in block
     assert "#7A7D82" in block
     assert "-apple-system" not in block
-    assert "#C8453D" in block
+    assert "#E5322D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "#ffc300" not in block
@@ -5823,14 +5823,14 @@ def test_transitions_light_keeps_catalog_orange_leaks():
     blob1 = re.search(r"\.tr-transitions-light \.tlt-l1\{[^}]+\}", css).group(0)
     blob2 = re.search(r"\.tr-transitions-light \.tlt-l2\{[^}]+\}", css).group(0)
     assert "#111214" in face_a
-    assert "#C8453D" in face_b
-    assert "200,69,61" in warm
-    assert "200,69,61" in blob1
-    assert "228,114,106" in blob2
+    assert "#E5322D" in face_b
+    assert "229,50,45" in warm
+    assert "229,50,45" in blob1
+    assert "255,106,95" in blob2
     block = css.split(".tr-transitions-light", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" in block
+    assert "#E5322D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -5918,12 +5918,12 @@ def test_transitions_other_keeps_catalog_navy_terra_and_white_flash():
     face_b = re.search(r"\.tr-transitions-other \.tto-b\{[^}]+\}", css).group(0)
     flash = re.search(r"\.tr-transitions-other \.tto-flash\{[^}]+\}", css).group(0)
     assert "#111214" in face_a
-    assert "#C8453D" in face_b
+    assert "#E5322D" in face_b
     assert "#ffffff" in flash
     block = css.split(".tr-transitions-other", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" in block
+    assert "#E5322D" in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -5955,7 +5955,7 @@ def test_animated_bar_chart_keeps_catalog_ink_and_paper():
     block = css.split(".abc-chart", 1)[1].split(".bcr-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -5991,7 +5991,7 @@ def test_bar_chart_race_keeps_catalog_ink_paper_and_accent():
     block = css.split(".bcr-chart", 1)[1].split(".cst-chart", 1)[0]
     assert "Inter" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     stripped = (css.replace("transform-origin:left center", "")
@@ -6028,7 +6028,7 @@ def test_chart_story_keeps_catalog_ink_paper_and_accent():
     assert "Inter" in block
     assert "JetBrains Mono" in block
     assert "-apple-system" not in block
-    assert "#C8453D" not in block
+    assert "#E5322D" not in block
     assert "#00E5C7" not in block
     assert "#00E5FF" not in block
     assert "text-transform" not in block
@@ -6235,7 +6235,7 @@ def test_lt_accent_underline_css_keeps_oswald_and_remaps_mint():
 
     css = overlay_css(load_config().brandbook)
     assert "#46e5b7" not in css
-    assert ".lt-au-rule{display:block;height:6px;border-radius:3px;background:#C8453D;" in css
+    assert ".lt-au-rule{display:block;height:6px;border-radius:3px;background:#E5322D;" in css
     rule = re.search(r"\.lt-au-rule\{[^}]+\}", css).group(0)
     assert "transform-origin:0% 50%" in rule
     assert "transform:" not in rule.replace("transform-origin:0% 50%", "")
@@ -6297,7 +6297,7 @@ def test_lt_clean_bar_css_keeps_montserrat_and_remaps_orange():
     assert "#ff5a36" not in css
     assert "clip-path" not in css
     tab = re.search(r"\.lt-cb-tab\{[^}]+\}", css).group(0)
-    assert "background:#C8453D" in tab
+    assert "background:#E5322D" in tab
     assert "transform-origin:50% 0%" in tab
     assert "transform:" not in tab.replace("transform-origin:50% 0%", "")
     wipe = re.search(r"\.lt-cb-wipe\{[^}]+\}", css).group(0)
@@ -6363,7 +6363,7 @@ def test_lt_dark_card_css_keeps_charcoal_montserrat_and_remaps_gold():
     assert "#f5b942" not in css
     assert "#111214" in css
     rule = re.search(r"\.lt-dc-rule\{[^}]+\}", css).group(0)
-    assert "background:#C8453D" in rule
+    assert "background:#E5322D" in rule
     assert "transform-origin:0% 50%" in rule
     assert "transform:" not in rule.replace("transform-origin:0% 50%", "")
     assert "Montserrat" in css
@@ -6441,7 +6441,7 @@ def test_ai_chat_reveal_keeps_catalog_tokens():
     assert "Inter" in root
     assert "-apple-system" not in css.split(".ai-chat-reveal", 1)[1]
     assert "#d2d5e0" in kbd
-    assert "#C8453D" in cta
+    assert "#E5322D" in cta
     assert "#111214" in inner
     block = css.split(".ai-chat-reveal", 1)[1]
     assert "HyperFrames" not in block

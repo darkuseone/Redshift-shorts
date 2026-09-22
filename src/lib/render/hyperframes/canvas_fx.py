@@ -49,10 +49,10 @@ def canvas_js(colors: dict[str, Any]) -> str:
     """
     accent = str(colors.get("accent", "#E63946"))
     accent_soft = str(colors.get("accent_soft", "#ED747D"))
-    space = str(colors.get("space_deep", "#0B132B"))
-    panel = str(colors.get("panel", "#1A1F2E"))
+    space = str(colors.get("space_deep", "#0A0A0B"))
+    panel = str(colors.get("panel", "#141517"))
     light = str(colors.get("bg_pure", "#FFFFFF"))
-    soft = str(colors.get("text_soft", "#C7C9D1"))
+    soft = str(colors.get("text_soft", "#C9CCCF"))
     return (
         "window." + REGISTRY + " = (function () {"
         # Линейный конгруэнтный генератор: те же числа при том же зерне.

@@ -95,7 +95,7 @@ def tdist_transition_css() -> str:
         "align-items:center;justify-content:center;transform-origin:50% 50%}"
         ".tr-transitions-distortion .tdist-blur{backdrop-filter:blur(14px);opacity:0}"
         ".tr-transitions-distortion .tdist-a{background:#111214;opacity:0}"
-        ".tr-transitions-distortion .tdist-b{background:#C8453D;opacity:0}"
+        ".tr-transitions-distortion .tdist-b{background:#E5322D;opacity:0}"
         ".tr-transitions-distortion .tdist-big{font-family:Inter,system-ui,sans-serif;font-size:220px;"
         "font-weight:900;line-height:1;letter-spacing:-0.04em;user-select:none}"
         ".tr-transitions-distortion .tdist-a .tdist-big{color:rgba(255,255,255,0.08)}"
@@ -104,6 +104,6 @@ def tdist_transition_css() -> str:
         "font-weight:700;letter-spacing:6px;margin-top:10px}"
         ".tr-transitions-distortion .tdist-a .tdist-label{color:#7A7D82}"
         ".tr-transitions-distortion .tdist-b .tdist-label{color:#ffffff}"
-        ".tr-transitions-distortion .tdist-r{background:rgba(200,69,61,0.35);mix-blend-mode:screen;opacity:0}"
-        ".tr-transitions-distortion .tdist-b-chroma{background:rgba(228,114,106,0.35);mix-blend-mode:screen;opacity:0}"
+        ".tr-transitions-distortion .tdist-r{background:rgba(229,50,45,0.35);mix-blend-mode:screen;opacity:0}"
+        ".tr-transitions-distortion .tdist-b-chroma{background:rgba(255,106,95,0.35);mix-blend-mode:screen;opacity:0}"
     )

@@ -42,10 +42,15 @@ NIKITA2, `eleven_v3`, темп 1.2–1.3, аудиотеги, драматиче
 ### 5. Футаж — `docs/director/FOOTAGE.md`
 - Реальный материал **≥80 %**, генерация **≤20 %** хронометража.
 - Ищешь сам или субагентом по вебу, **скачиваешь и смотришь своим зрением**
-  (кадры через ffmpeg). Vision-API xAI/Gemini на это не тратишь.
+  (кадры через ffmpeg) — всегда, это работа режиссёра в чате. Ключ xAI не
+  используется ни для чего; vision-API на отбор не тратится.
+- Живой сток — Magnific MCP, бесплатные позиции (`license: free`) — 0 кредитов.
 - Каждый футаж: `src` (прямой URL или файл в репо), `source`, `license`, `page_url`.
 
-### 6. Шаблоны и VFX — `docs/director/TEMPLATES.md`
+### 6. Шаблоны и VFX — `docs/director/TEMPLATES.md`, бренд — `docs/director/BRANDBOOK.md`
+Палитра канала — **белый, чёрный, красный (эмоция), бирюзовый (данные)**,
+пять фирменных элементов в каждом ролике (субтитры, карточка хука, уголки,
+плашки-стекло, финал REDSHIFT).
 Выбираешь приёмы **явно**, по смыслу каждой фразы: полноэкранный текст,
 счётчики и графики, плашки, hero-приёмы, переходы-VFX, движение кадра.
 Картинка меняется каждые 1.5–2.5 с; на 30 с — не меньше 6 разных приёмов.
@@ -103,8 +108,8 @@ Actions (`output/<id>/`), не git.
 
 | Агент | Что умеет особенного |
 |---|---|
-| Claude Code | субагенты для поиска футажа; ElevenLabs MCP; HeyGen MCP; Magnific MCP (кредиты) |
-| GrokBot | браузер в ВМ: вход в Magnific и **бесплатные** модели/сток (100 скачиваний/день); свой Grok Imagine; CLI Claude Code / Grok / Gemini |
+| Claude Code | субагенты для поиска футажа; ElevenLabs MCP; HeyGen MCP; Magnific MCP (бесплатный сток — 0 кредитов, генерация — за кредиты) |
+| GrokBot | браузер в ВМ: вход в Magnific и **бесплатные** модели/сток (100 скачиваний/день); CLI Claude Code / Grok / Gemini. Футаж отбирает своим зрением, API xAI не использует |
 | Gemini | свой поиск и зрение; генерация Imagen, если доступна |
 
 Если у агента нет инструмента из протокола (например, ElevenLabs MCP) —
@@ -118,6 +123,7 @@ Actions (`output/<id>/`), не git.
 | Сценарии | `scripts/<video_id>.json` |
 | Стиль сценария, память правок | `docs/director/SCRIPT_STYLE.md`, `config/owner_style.md` |
 | Таймлайн, футаж, голос, приёмы | `docs/director/TIMELINE.md`, `FOOTAGE.md`, `VOICE.md`, `TEMPLATES.md` |
+| Бренд: цвета, шрифты, фирменные элементы | `docs/director/BRANDBOOK.md`, `config/brandbook.json` |
 | Сборка по шагам P0–P12 | `instruction.md`, `README.md` |
 | Режиссёрский модуль | `src/lib/director.py` |
 | ТЗ этой системы | `docs/TZ-CHAT-DIRECTOR.md` |

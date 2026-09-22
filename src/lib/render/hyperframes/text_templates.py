@@ -109,7 +109,7 @@ def sfb_css() -> str:
         ".ntk-overlay{position:absolute;left:0;right:0;bottom:100px;"
         "height:120px;font-family:Inter,sans-serif}"
         ".ntk-stage{position:absolute;inset:0;opacity:0}"
-        ".ntk-bar{position:absolute;inset:0;background:#C8453D;display:flex;"
+        ".ntk-bar{position:absolute;inset:0;background:#E5322D;display:flex;"
         "align-items:center;overflow:hidden}"
         ".ntk-label{position:absolute;left:0;top:0;bottom:0;width:200px;"
         "background:#111214;color:#ffffff;font-size:48px;font-weight:900;"
