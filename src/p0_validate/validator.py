@@ -498,7 +498,8 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
     cta_doc = script.get("cta") if isinstance(script.get("cta"), dict) else {}
     cta_type = str(cta_doc.get("type") or "")
     loop_ending = cta_type in {"open_question", "visual_loop_seam"}
-    want_subscribe = bool(meta.get("show_subscribe")) or cta_type == "soft_subscribe"
+    want_subscribe = (bool(meta.get("show_subscribe"))
+                      or cta_type in {"soft_subscribe", "subscribe_like"})
     if loop_ending and want_subscribe:
         warnings.append({
             "code": "ENDING_BOTH",
@@ -579,6 +580,20 @@ def validate_script(script: dict[str, Any], cfg) -> dict[str, Any]:
     if not script.get("cta") and "cta" in roles:
         cta_block = next(b for b in blocks if b.get("role") == "cta")
         script["cta"] = {"text": cta_block.get("text", ""), "type": "soft_subscribe"}
+
+    # --- DIRECTOR_INVALID: таймлайн режиссёра из чата (docs/director/TIMELINE.md)
+    if script.get("director"):
+        from ..lib.director import validate as validate_director
+        issues = validate_director(
+            script, ai_share_max=float(cfg.get("limits.ai_footage_share_max", 0.20)))
+        errors = [i for i in issues if i.level == "error"]
+        if errors:
+            raise ValidationError(
+                "таймлайн режиссёра с ошибками: "
+                + "; ".join(f"{e.where}: {e.message}" for e in errors[:6]),
+                code="DIRECTOR_INVALID", errors=[e.to_dict() for e in errors])
+        warnings.extend({"code": "DIRECTOR_WARN", "message": f"{i.where}: {i.message}"}
+                        for i in issues)
 
     validated = dict(script)
     validated["meta"] = meta

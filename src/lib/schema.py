@@ -21,7 +21,10 @@ AVATAR_MODES = ("auto", "on", "off")
 # в `p0_validate` переводит их до проверки схемы, чтобы уже написанные сценарии
 # не пришлось править руками.
 CTA_TYPES = ("open_question", "binary_vote", "part2_cliff", "soft_subscribe",
-             "share_prompt", "save_prompt", "visual_loop_seam", "source_tease")
+             "share_prompt", "save_prompt", "visual_loop_seam", "source_tease",
+             # Прямой призыв «подпишись / лайк» без петли на следующий ролик.
+             # Заказчик 22.09: финал — петля ИЛИ «подпишись, ставь лайк».
+             "subscribe_like")
 CTA_LEGACY = {"question": "open_question", "loop": "visual_loop_seam",
               "statement": "soft_subscribe"}
 # Стили хука 0–5 с (§5.2). Порядок не значим: это перечисление, а не приоритет.
@@ -29,7 +32,12 @@ CTA_LEGACY = {"question": "open_question", "loop": "visual_loop_seam",
 # `assemble.py` (`HOOK_STYLE_TEMPLATES`), а не здесь: схема описывает сценарий,
 # а не каталог приёмов.
 HOOK_STYLES = ("number_slam", "question_flash", "blackout_word",
-               "cold_open", "split_reveal", "typing_search", "avatar_direct")
+               "cold_open", "split_reveal", "typing_search", "avatar_direct",
+               # Дерзкое утверждение вместо вопроса («Твой кот не переживёт…»).
+               "bold_claim")
+# Ролик без ведущего: пробные ролики и темы, где аватар не нужен. Лимиты доли
+# и первого появления аватара к такому ролику не применяются.
+VIDEO_AVATAR_MODES = ("normal", "none")
 
 SCRIPT_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -57,6 +65,7 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                 "source_ref": {"type": "string"},
                 # MUST-028: false hides Subscribe for every video_id.
                 "cta": {"type": "boolean"},
+                "avatar_mode": {"enum": list(VIDEO_AVATAR_MODES), "default": "normal"},
                 "gaze": {"type": "boolean"},
                 "look_at": {"type": "boolean"},
                 # Хук первых пяти секунд. Без этого блока хук собирался
@@ -112,6 +121,12 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                     "id": {"type": "string", "pattern": r"^[A-Za-z0-9_\-]{1,32}$"},
                     "role": {"enum": list(BLOCK_ROLES)},
                     "text": {"type": "string", "minLength": 1},
+                    # Текст для синтеза с аудиотегами eleven_v3 ([sarcastic],
+                    # [laughs softly]…). Субтитры и тайминги — всегда из ``text``.
+                    "tts_text": {"type": "string"},
+                    # Драматическая пауза после блока: P3 её не режет, а держит.
+                    "silence_after_ms": {"type": "integer", "minimum": 0,
+                                         "maximum": 3000},
                     "emphasis_word": {"type": "string"},
                     "emphasis_family": {
                         "enum": ["myth", "emotion", "tech", "number", "source"],
@@ -139,6 +154,10 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                 },
             },
         },
+        # Режиссёрский таймлайн из чата (docs/director/TIMELINE.md). Строгая
+        # проверка — в ``src/lib/director.py``: там известны каталог шаблонов
+        # и реестры рендереров, которых схема сценария не знает.
+        "director": {"type": "object"},
         "cta": {
             "type": "object",
             "required": ["text"],
@@ -186,6 +205,8 @@ def estimate_block_duration(text: str, *, rate: float = SYLLABLES_PER_SEC) -> fl
 def estimate_script_duration(script: dict[str, Any], *, rate: float = SYLLABLES_PER_SEC) -> float:
     blocks = script.get("blocks", [])
     total = sum(estimate_block_duration(b.get("text", ""), rate=rate) for b in blocks)
+    # Драматическая пауза — часть хронометража: P3 её держит, а не режет.
+    total += sum(int(b.get("silence_after_ms") or 0) for b in blocks) / 1000.0
     total += max(0, len(blocks) - 1) * INTER_BLOCK_PAUSE_SEC
     return round(total, 2)
 

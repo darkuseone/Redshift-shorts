@@ -68,6 +68,40 @@ def _talking_head_in_window(shots: list[dict[str, Any]],
     return None
 
 
+# Ролик без ведущего (meta.avatar_mode = none): проверки аватара не про него.
+NO_AVATAR_CHECKS = frozenset({2, 11, 18})
+# Решения режиссёра из чата (docs/director/TIMELINE.md): какой футаж, какой
+# приём, сколько красного в кадре. Гейт, который спорит с режиссёром о вкусе,
+# превращается в предупреждение; гейты брака (звук, лицензии, субтитры,
+# длительность, доля генерации) остаются блокирующими.
+DIRECTOR_ADVISORY_CHECKS = frozenset({3, 4, 6, 17, 21, 22, 30, 33})
+
+
+def _check_number(check: dict[str, Any]) -> int | None:
+    raw = str(check.get("id") or "")
+    try:
+        return int(raw.removeprefix("QC-"))
+    except ValueError:
+        return None
+
+
+def _soften_owner_decisions(checks: list[dict[str, Any]],
+                            plan: dict[str, Any]) -> None:
+    """Снять блокировку с гейтов, которые решает режиссёр, а не станок."""
+    advisory: dict[int, str] = {}
+    if str(plan.get("avatar_mode") or "") == "none":
+        advisory.update({n: "ролик без ведущего" for n in NO_AVATAR_CHECKS})
+    if plan.get("director"):
+        advisory.update({n: "решение режиссёра (director)"
+                         for n in DIRECTOR_ADVISORY_CHECKS if n not in advisory})
+    for check in checks:
+        number = _check_number(check)
+        if number in advisory and check.get("blocking"):
+            check["blocking"] = False
+            note = f"не блокирует: {advisory[number]}"
+            check["detail"] = f"{check.get('detail') or ''} · {note}".strip(" ·")
+
+
 def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
            render_stats: dict[str, Any], media, sfx_map: dict[str, Any],
            avatar_meta: dict[str, Any], accepted: dict[str, Any],
@@ -554,6 +588,7 @@ def run_qc(ctx, *, plan: dict[str, Any], cut_plan: dict[str, Any],
                  if vfx_over else
                  "длительность вне [2, 5] с"))))
 
+    _soften_owner_decisions(checks, plan)
     blocking = [c for c in checks if c["blocking"]]
     passed_count = sum(1 for c in blocking if c["passed"])
     return {

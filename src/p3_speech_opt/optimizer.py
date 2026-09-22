@@ -21,7 +21,7 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -118,6 +118,7 @@ def plan_segments(audio: np.ndarray, sr: int, words: list[dict[str, Any]],
                   *, threshold_ms: float, pause_ms_range: tuple[float, float],
                   ratio: float, env: np.ndarray | None = None,
                   hold_before_sec: float | None = None, hold_sec: float = 0.0,
+                  extra_holds: Sequence[tuple[float, float]] | None = None,
                   ) -> tuple[list[Segment], list[dict[str, Any]]]:
     """Разложить дорожку на сохраняемые сегменты, вырезав лишние паузы.
 
@@ -128,6 +129,10 @@ def plan_segments(audio: np.ndarray, sr: int, words: list[dict[str, Any]],
     ``hold_before_sec`` — момент слова-удара в исходном таймкоде. Пауза перед
     ним единственная во всём ролике не режется до коридора, а доводится до
     ``hold_sec``: остальные паузы съедают динамику, эта её создаёт.
+
+    ``extra_holds`` — драматические паузы режиссёра (``silence_after_ms``
+    блока): пары «момент в исходном таймкоде, длина паузы». Держатся так же,
+    как пауза перед ударом: кусок тишины оставляется, недостающее дорисовывается.
     """
     total = len(audio) / sr
     if env is None:
@@ -135,17 +140,29 @@ def plan_segments(audio: np.ndarray, sr: int, words: list[dict[str, Any]],
     gaps = collect_gaps(words, total)
     threshold = threshold_ms / 1000.0
 
-    # Пауза перед ударом: либо уже существующая рядом, либо дорисованная с нуля.
-    hold_gap: Gap | None = None
-    if hold_before_sec is not None and hold_sec > 0 and 0.0 < hold_before_sec < total:
+    # Паузы, которые держатся, а не режутся: перед ударом и режиссёрские.
+    # Либо уже существующая рядом, либо дорисованная с нуля.
+    holds_at: dict[int, tuple[float, str]] = {}
+    wanted: list[tuple[float, float, str]] = []
+    if hold_before_sec is not None and hold_sec > 0:
+        wanted.append((float(hold_before_sec), float(hold_sec), "punch_hold"))
+    for at, sec in extra_holds or ():
+        if sec > 0:
+            wanted.append((float(at), float(sec), "silence_hold"))
+    for at, sec, kind in wanted:
+        if not 0.0 < at < total:
+            continue
         near = [g for g in gaps
-                if g.kind == "pause" and abs(g.end - hold_before_sec) <= 0.12]
+                if g.kind == "pause" and abs(g.end - at) <= 0.12]
         if near:
-            hold_gap = near[0]
+            gap = near[0]
         else:
-            hold_gap = Gap(hold_before_sec, hold_before_sec, "pause")
-            gaps.append(hold_gap)
+            gap = Gap(at, at, "pause")
+            gaps.append(gap)
             gaps.sort(key=lambda g: g.start)
+        prev = holds_at.get(id(gap))
+        if prev is None or sec > prev[0]:
+            holds_at[id(gap)] = (sec, kind)
 
     segments: list[Segment] = []
     cuts: list[dict[str, Any]] = []
@@ -176,12 +193,13 @@ def plan_segments(audio: np.ndarray, sr: int, words: list[dict[str, Any]],
             cursor_src = gap.end
             continue
 
-        if gap is hold_gap:
-            keep = min(gap.duration, hold_sec)
+        if id(gap) in holds_at:
+            gap_hold, hold_kind = holds_at[id(gap)]
+            keep = min(gap.duration, gap_hold)
             keep_start = (_quietest_window(env, sr, gap.start, gap.end, keep)
                           if gap.duration > keep else gap.start)
             keep_end = keep_start + keep
-            extra = round(hold_sec - keep, 4)
+            extra = round(gap_hold - keep, 4)
             if gap.start > cursor_src:
                 segments.append(Segment(cursor_src, gap.start, cursor_dst))
                 cursor_dst += gap.start - cursor_src
@@ -190,7 +208,7 @@ def plan_segments(audio: np.ndarray, sr: int, words: list[dict[str, Any]],
             segments.append(held)
             cursor_dst += held.duration
             cuts.append({
-                "kind": "punch_hold",
+                "kind": hold_kind,
                 "src_start": round(gap.start, 4), "src_end": round(gap.end, 4),
                 "kept_sec": round(keep, 4),
                 "removed_sec": round(gap.duration - keep, 4),
@@ -302,6 +320,25 @@ def punch_moment(plan: dict[str, Any], blocks: list[dict[str, Any]],
             "src_sec": float(target["start"]), "matched_emphasis": hit is not None}
 
 
+def silence_holds(plan: dict[str, Any], blocks: list[dict[str, Any]]
+                  ) -> list[tuple[float, float]]:
+    """Драматические паузы режиссёра: ``silence_after_ms`` блока → пауза перед
+    первым словом следующего блока, в исходном таймкоде.
+
+    После последнего блока паузу не держим: хвост тишины ломает петлю ролика
+    и QC-13.
+    """
+    wanted = {str(b.get("id")): int(b.get("silence_after_ms") or 0)
+              for b in plan.get("blocks") or []}
+    out: list[tuple[float, float]] = []
+    for block, nxt in zip(blocks, blocks[1:]):
+        ms = wanted.get(str(block.get("id")), 0)
+        words = nxt.get("words") or []
+        if ms > 0 and words:
+            out.append((float(words[0]["start"]), ms / 1000.0))
+    return out
+
+
 def run_step(ctx) -> dict[str, Any]:
     meta = ctx.read("tts_meta.json")
     # Prepared-голос уже финальный: повторный рез пауз сдвинул бы speech_map
@@ -365,12 +402,14 @@ def run_step(ctx) -> dict[str, Any]:
     # Подбираем длину паузы внутри разрешённого коридора так, чтобы попасть
     # ближе к целевому хронометражу. ratio=0 → 80 мс, ratio=1 → 120 мс.
     envelope = rms_envelope(audio, sr, window_ms=10.0)
+    silences = silence_holds(plan, meta["blocks"])
     best: tuple[float, list[Segment], list[dict[str, Any]], float] | None = None
     for ratio in (0.0, 0.25, 0.5, 0.75, 1.0):
         segs, cuts = plan_segments(audio, sr, words, threshold_ms=threshold_ms,
                                    pause_ms_range=pause_range, ratio=ratio, env=envelope,
                                    hold_before_sec=(punch or {}).get("src_sec"),
-                                   hold_sec=hold_ms / 1000.0)
+                                   hold_sec=hold_ms / 1000.0,
+                                   extra_holds=silences)
         duration = _total_after(source_sec, cuts)
         score = abs(duration - target)
         if best is None or score < best[0]:
