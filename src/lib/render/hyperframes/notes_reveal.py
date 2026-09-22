@@ -4,7 +4,7 @@ Catalog ``notes-reveal`` measures character bounds dynamically.
 Here character spans are pre-baked with opacity reveals, smooth scroll via transform y,
 and clean crossfade into the closing card.
 No tween of width/height/filter/clip-path/strokeDashoffset; no textContent writes.
-Brandbook ink #111214, accent #E5322D / #FF6A5F, Inter font.
+Brandbook ink #111214, accent #D7263D / #F2566B, Inter font.
 """
 
 from __future__ import annotations
@@ -199,7 +199,7 @@ def ov_notes_reveal(ctx: TemplateCtx) -> Piece:
         f'</div>'
         f'<div class="nr-header">'
         f'<div class="nr-hdr-back">‹ Notes</div>'
-        f'<div class="nr-hdr-tools"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#E5322D" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="#E5322D" stroke-width="2" stroke-linecap="round"/></svg></div>'
+        f'<div class="nr-hdr-tools"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#D7263D" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="#D7263D" stroke-width="2" stroke-linecap="round"/></svg></div>'
         f'</div>'
         f'<div class="nr-note-view">'
         f'<div id="{node_id}-notebody" class="nr-notebody">'
@@ -228,7 +228,7 @@ def nr_overlay_css() -> str:
         "justify-content:space-between;padding:0 50px;font-size:28px;font-weight:600}"
         ".notes-reveal .nr-header{height:90px;display:flex;align-items:center;"
         "justify-content:space-between;padding:0 40px;border-bottom:1px solid rgba(0,0,0,0.06)}"
-        ".notes-reveal .nr-hdr-back{font-size:32px;font-weight:500;color:#E5322D}"
+        ".notes-reveal .nr-hdr-back{font-size:32px;font-weight:500;color:#D7263D}"
         ".notes-reveal .nr-note-view{position:relative;flex:1;overflow:hidden;padding:0 50px}"
         ".notes-reveal .nr-notebody{position:relative;padding-top:40px;will-change:transform}"
         ".notes-reveal .nr-title-l1{font-size:60px;font-weight:800;color:#111214;line-height:1.15}"
@@ -245,15 +245,15 @@ def nr_overlay_css() -> str:
         ".notes-reveal .nr-card-paper{position:relative;width:100%;max-width:880px;background:#FFFFFF;"
         "border-radius:28px;padding:70px 60px;box-shadow:0 24px 60px rgba(17,18,20,0.14);"
         "display:flex;flex-direction:column;align-items:center;transform:rotate(-2.5deg)}"
-        ".notes-reveal .nr-card-hl1{font-size:80px;font-weight:900;color:#E5322D;letter-spacing:1px;"
+        ".notes-reveal .nr-card-hl1{font-size:80px;font-weight:900;color:#D7263D;letter-spacing:1px;"
         "text-transform:uppercase;line-height:1}"
-        ".notes-reveal .nr-card-underline{width:360px;height:8px;border-radius:4px;background:#E5322D;"
+        ".notes-reveal .nr-card-underline{width:360px;height:8px;border-radius:4px;background:#D7263D;"
         "margin:10px 0 20px;transform-origin:left center;will-change:transform}"
         ".notes-reveal .nr-card-mid{font-size:52px;font-weight:800;color:#111214;margin-bottom:14px}"
         ".notes-reveal .nr-card-hl2{position:relative;font-size:74px;font-weight:900;color:#111214;"
         "letter-spacing:1px;text-transform:uppercase;line-height:1;margin-bottom:50px}"
         ".notes-reveal .nr-card-ring{position:absolute;left:-16px;top:-10px;right:-16px;bottom:-10px;"
-        "border:4px solid #E5322D;border-radius:24px;will-change:transform,opacity}"
+        "border:4px solid #D7263D;border-radius:24px;will-change:transform,opacity}"
         ".notes-reveal .nr-card-checklist{display:flex;flex-direction:column;gap:20px;width:100%;"
         "margin-bottom:60px}"
         ".notes-reveal .nr-check-row{display:flex;align-items:center;justify-content:space-between;"
@@ -261,5 +261,5 @@ def nr_overlay_css() -> str:
         ".notes-reveal .nr-chk-lbl{font-size:30px;font-weight:700;color:#7A7D82;letter-spacing:1px}"
         ".notes-reveal .nr-chk-val{font-size:32px;font-weight:900;color:#111214}"
         ".notes-reveal .nr-card-footer{display:flex;align-items:center;justify-content:center}"
-        ".notes-reveal .nr-card-domain{font-size:28px;font-weight:700;color:#E5322D}"
+        ".notes-reveal .nr-card-domain{font-size:28px;font-weight:700;color:#D7263D}"
     )

@@ -70,7 +70,7 @@ class TestTheRendererHonoursIt:
                      ".lt-au-rule.no-red", ".lt-dc-card.no-red"):
             assert rule in css, rule
         # Нейтраль — серый брендбука, а не второй акцент.
-        assert "#E5322D" not in css.split(".lt-dc-rule.no-red{")[1].split("}")[0]
+        assert "#D7263D" not in css.split(".lt-dc-rule.no-red{")[1].split("}")[0]
 
 
 class TestANumberIsNeverBrokenAcrossLines:

@@ -13,9 +13,9 @@ BRANDBOOK = ROOT / "config" / "brandbook.json"
 
 _HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 _CYAN = {
-    "cyan": "#19E6D2",
-    "cyan_soft": "#7FF5EA",
-    "cyan_deep": "#0B9E90",
+    "cyan": "#36EFFF",
+    "cyan_soft": "#7AF0FF",
+    "cyan_deep": "#0BB8C9",
 }
 
 
@@ -31,11 +31,11 @@ def test_cyan_tokens_are_first_class_and_valid_hex():
         assert str(colors[name]).upper() == hex_
 
 
-def test_brand_red_is_e5322d():
+def test_brand_red_is_d7263d_owners_pick():
     colors = _brandbook()["colors"]
-    assert str(colors["accent"]).upper() == "#E5322D"
-    assert str(colors["accent_soft"]).upper() == "#FF6A5F"
-    assert str(colors["accent_deep"]).upper() == "#9C1B17"
+    assert str(colors["accent"]).upper() == "#D7263D"
+    assert str(colors["accent_soft"]).upper() == "#F2566B"
+    assert str(colors["accent_deep"]).upper() == "#8E1627"
 
 
 def test_accent_tokens_are_red_and_cyan():
@@ -48,7 +48,7 @@ def test_palette_is_the_owners_four_colours():
     """Заказчик 22.09: белый, чёрный, красный, бирюзовый — и роли у каждого."""
     book = _brandbook()
     comment = str(book["colors"]["_comment"])
-    for word in ("БЕЛЫЙ", "ЧЁРНЫЙ", "КРАСНЫЙ", "БИРЮЗОВЫЙ", "#E5322D", "#19E6D2"):
+    for word in ("БЕЛЫЙ", "ЧЁРНЫЙ", "КРАСНЫЙ", "БИРЮЗОВЫЙ", "#D7263D", "#36EFFF"):
         assert word in comment, word
     roles = book["brand_roles"]
     assert set(roles) >= {"black", "white", "red", "turquoise"}
@@ -79,4 +79,4 @@ def test_scan_band_cyan_clone_uses_the_token_not_a_literal():
     clone = re.search(r"\.sb-clone-cyan\{[^}]+\}", css)
     assert clone, "missing .sb-clone-cyan rule"
     assert "var(--color-cyan)" in clone.group(0)
-    assert "#19e6d2" not in clone.group(0).lower()
+    assert "#36efff" not in clone.group(0).lower()

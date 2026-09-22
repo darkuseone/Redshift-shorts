@@ -98,14 +98,14 @@ def bs_overlay_css() -> str:
         ".bs-panel{position:absolute;left:140px;top:700px;width:800px;background:#111214;border-radius:24px;padding:40px;box-shadow:0 24px 48px rgba(0,0,0,0.5);border:1px solid #7A7D82}"
         ".bs-header{color:#ffffff;font-size:36px;font-weight:600;margin-bottom:24px}"
         ".bs-prompt{color:#F7F5F3;font-size:42px;line-height:1.4;background:#111214;border:1px solid #7A7D82;padding:24px;border-radius:16px;min-height:160px;display:flex;flex-wrap:wrap}"
-        ".bs-btn{margin-top:32px;background:#E5322D;color:#ffffff;font-size:28px;font-weight:600;padding:20px 40px;border-radius:16px;text-align:center;width:fit-content;float:right}"
+        ".bs-btn{margin-top:32px;background:#D7263D;color:#ffffff;font-size:28px;font-weight:600;padding:20px 40px;border-radius:16px;text-align:center;width:fit-content;float:right}"
         
         ".bs-generating{display:flex;flex-direction:column;align-items:center;padding:80px 40px}"
-        ".bs-spinner{width:80px;height:80px;border:8px solid #7A7D82;border-top-color:#E5322D;border-radius:50%;animation:bs-spin 1s linear infinite}"
+        ".bs-spinner{width:80px;height:80px;border:8px solid #7A7D82;border-top-color:#D7263D;border-radius:50%;animation:bs-spin 1s linear infinite}"
         "@keyframes bs-spin{to{transform:rotate(360deg)}}"
         ".bs-loading-text{color:#ffffff;font-size:32px;margin-top:32px;margin-bottom:32px}"
         ".bs-load-bar{width:100%;height:16px;background:rgba(122,125,130,0.25);border-radius:8px;overflow:hidden}"
-        ".bs-load-fill{width:100%;height:100%;background:#E5322D;transform-origin:0 50%}"
+        ".bs-load-fill{width:100%;height:100%;background:#D7263D;transform-origin:0 50%}"
         
         ".bs-result{position:absolute;left:140px;top:400px;width:800px;height:1000px;background:#111214;border-radius:32px;overflow:hidden;box-shadow:0 32px 64px rgba(0,0,0,0.6);border:2px solid #7A7D82;display:flex;align-items:center;justify-content:center}"
         ".bs-avatar-img{position:absolute;inset:0;background:url('assets/joe-sai-avatar.png') center/cover}"

@@ -98,7 +98,7 @@ def tp_transition_css() -> str:
         "align-items:center;justify-content:center;transform-origin:50% 50%}"
         ".tr-transitions-push .tpush-blur{backdrop-filter:blur(12px);opacity:0}"
         ".tr-transitions-push .tpush-a{background:#111214;opacity:0}"
-        ".tr-transitions-push .tpush-b{background:#E5322D;opacity:0}"
+        ".tr-transitions-push .tpush-b{background:#D7263D;opacity:0}"
         ".tr-transitions-push .tpush-big{font-family:Inter,system-ui,sans-serif;font-size:220px;"
         "font-weight:900;line-height:1;letter-spacing:-0.04em;user-select:none}"
         ".tr-transitions-push .tpush-a .tpush-big{color:rgba(255,255,255,0.08)}"

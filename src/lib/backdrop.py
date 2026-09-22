@@ -95,8 +95,8 @@ PLATES_MISSING: tuple[str, ...] = ("space", "depth", "room")
 # Единый промпт плиты (§7.6 + палитра брендбука). Живёт рядом со списком
 # недостающих сцен, чтобы новая плита делалась той же строкой, что и прошлая.
 PLATE_PROMPT = (
-    "vertical 9:16, dark cinematic plate, black / white / red #E5322D / "
-    "cyan #19E6D2 only, no text, no logos, no people, subtle grain, "
+    "vertical 9:16, dark cinematic plate, black / white / red #D7263D / "
+    "cyan #36EFFF only, no text, no logos, no people, subtle grain, "
     "Netflix-investigation energy, negative space in the centre for a talking head"
 )
 
@@ -226,7 +226,7 @@ def backdrop_css() -> str:
         "380px 380px,460px 460px,320px 320px}"
         ".vfx.scene-space::after{content:'';position:absolute;inset:0;"
         "background:radial-gradient(60% 38% at 26% 74%,"
-        "rgba(229,50,45,0.30) 0%,transparent 70%),"
+        "rgba(215,38,61,0.30) 0%,transparent 70%),"
         "radial-gradient(50% 30% at 78% 22%,"
         "rgba(120,140,200,0.22) 0%,transparent 72%)}"
 
@@ -242,9 +242,9 @@ def backdrop_css() -> str:
         # переставало читаться: два красных одной светлоты спорят. Фон обязан
         # уступать надписи, а не соревноваться с ней.
         "border-radius:50%;background:conic-gradient(from 210deg,"
-        "rgba(229,50,45,0) 0deg,rgba(255,106,95,0.52) 78deg,"
-        "rgba(255,214,170,0.60) 132deg,rgba(229,50,45,0.34) 196deg,"
-        "rgba(229,50,45,0) 300deg);"
+        "rgba(215,38,61,0) 0deg,rgba(242,86,107,0.52) 78deg,"
+        "rgba(255,214,170,0.60) 132deg,rgba(215,38,61,0.34) 196deg,"
+        "rgba(215,38,61,0) 300deg);"
         # Дырка в кольце — сама сингулярность: маска, а не второй круг сверху,
         # иначе поверх него не проступит свечение.
         "mask:radial-gradient(circle,transparent 41%,#000 43%,#000 49%,"
@@ -281,7 +281,7 @@ def backdrop_css() -> str:
         "transparent 100%)}"
         ".vfx.scene-depth::after{content:'';position:absolute;inset:0;"
         "background:radial-gradient(72% 34% at 50% 100%,"
-        "rgba(229,50,45,0.36) 0%,rgba(229,50,45,0.10) 46%,transparent 74%)}"
+        "rgba(215,38,61,0.36) 0%,rgba(215,38,61,0.10) 46%,transparent 74%)}"
 
         # --- сетка: техническая глубина ---
         ".vfx.scene-grid{background:"
@@ -297,5 +297,5 @@ def backdrop_css() -> str:
         "-webkit-mask:radial-gradient(80% 60% at 50% 40%,#000 0%,transparent 78%)}"
         ".vfx.scene-grid::after{content:'';position:absolute;inset:0;"
         "background:radial-gradient(55% 34% at 50% 30%,"
-        "rgba(229,50,45,0.22) 0%,transparent 72%)}"
+        "rgba(215,38,61,0.22) 0%,transparent 72%)}"
     )

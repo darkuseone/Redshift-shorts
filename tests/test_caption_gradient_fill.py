@@ -82,10 +82,10 @@ def test_gradient_fill_does_not_tween_forbidden_props(cfg):
 
 
 def test_fill_is_one_layer_in_one_colour(cfg):
-    """Закон канала: один слой, белая фраза, заливка только #E5322D."""
+    """Закон канала: один слой, белая фраза, заливка только #D7263D."""
     out = _fill(cfg, _words("пиши", ("html", True), "код"))
     accent = cfg.brandbook["colors"]["accent"]
-    assert accent == "#E5322D"
+    assert accent == "#D7263D"
     for banned in ("#fe9f1b", "#f76e49", "#ff2063", "#fd56cb", "#ffd700",
                    cfg.brandbook["colors"]["accent_soft"].lower(),
                    cfg.brandbook["colors"]["cyan"].lower()):

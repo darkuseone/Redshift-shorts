@@ -76,7 +76,7 @@ class TestQc31BlocksOffbrandOverlayFill:
     def test_brand_accent_passes(self, cfg):
         plan = _plan(overlays=[{
             "type": "plaque", "start": 1.0, "end": 2.0,
-            "params": {"fill": "#E5322D"},
+            "params": {"fill": "#D7263D"},
         }])
         assert _check(_run(cfg, plan), "QC-31")["passed"]
 
@@ -93,7 +93,7 @@ class TestQc31BlocksOffbrandOverlayFill:
     def test_allowlist_rejects_0047_pink(self, cfg):
         allow = brandbook_fill_allowlist(cfg.brandbook)
         assert not hex_in_allowlist("#FF00AA", allow)
-        assert hex_in_allowlist("#E5322D", allow)
+        assert hex_in_allowlist("#D7263D", allow)
         assert overlay_offbrand_fills(
             [{"type": "plaque", "params": {"fill": "#FF00AA"}}],
             cfg.brandbook,
@@ -101,12 +101,12 @@ class TestQc31BlocksOffbrandOverlayFill:
 
 
 class TestQc32CyanIsTechOnly:
-    """Cyan #19E6D2 is the tech accent, not a medicine card fill."""
+    """Cyan #36EFFF is the tech accent, not a medicine card fill."""
 
     def test_tech_card_cyan_passes(self, cfg):
         plan = _plan(overlays=[{
             "type": "plaque", "start": 2.0, "end": 3.0,
-            "params": {"fill": "#19E6D2", "theme": "tech"},
+            "params": {"fill": "#36EFFF", "theme": "tech"},
         }])
         report = _run(cfg, plan)
         assert _check(report, "QC-31")["passed"]
@@ -115,14 +115,14 @@ class TestQc32CyanIsTechOnly:
     def test_ai_tool_theme_cyan_passes(self, cfg):
         plan = _plan(overlays=[{
             "type": "source_card", "start": 2.0, "end": 3.0,
-            "params": {"fill": "#19E6D2", "theme": "ai-tool"},
+            "params": {"fill": "#36EFFF", "theme": "ai-tool"},
         }])
         assert _check(_run(cfg, plan), "QC-32")["passed"]
 
     def test_medicine_card_cyan_fails(self, cfg):
         plan = _plan(overlays=[{
             "type": "plaque", "start": 6.0, "end": 8.0,
-            "params": {"fill": "#19E6D2", "theme": "medicine"},
+            "params": {"fill": "#36EFFF", "theme": "medicine"},
         }])
         check = _check(_run(cfg, plan), "QC-32")
         assert not check["passed"] and check["blocking"]
@@ -145,11 +145,11 @@ class TestQc32CyanIsTechOnly:
         """Number/source cyan from MEGA D-9 has no medicine theme — not this gate."""
         plan = _plan(overlays=[{
             "type": "plaque", "start": 2.0, "end": 3.0,
-            "params": {"fill": "#19E6D2"},
+            "params": {"fill": "#36EFFF"},
         }])
         assert _check(_run(cfg, plan), "QC-32")["passed"]
         assert not overlay_cyan_misuse(
-            [{"type": "plaque", "params": {"fill": "#19E6D2"}}],
+            [{"type": "plaque", "params": {"fill": "#36EFFF"}}],
             cfg.brandbook, {"blocks": []})
 
 

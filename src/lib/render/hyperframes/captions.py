@@ -740,7 +740,7 @@ def clip_wipe_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "frame_w": float(safe["x_max"]) - float(safe["x_min"]),
         "origin_x": float(safe["x_min"]),
         "baseline_y": float(subs.get("baseline_y_default", 975)),
-        "accent": str((brandbook.get("colors") or {}).get("accent", "#E5322D")),
+        "accent": str((brandbook.get("colors") or {}).get("accent", "#D7263D")),
         "ink": str(subs.get("color", "#FFFFFF")),
     }
 
@@ -957,8 +957,8 @@ def gradient_fill_params(brandbook: dict[str, Any]) -> dict[str, Any]:
         "origin_x": float(safe["x_min"]),
         "baseline_y": float(subs.get("baseline_y_default", 975)),
         # Один цвет заливки на весь канал. Ни accent_soft, ни cyan, ни
-        # градиента: «текущее слово красится #E5322D» — закон, а не настройка.
-        "accent": str(colors.get("accent", "#E5322D")),
+        # градиента: «текущее слово красится #D7263D» — закон, а не настройка.
+        "accent": str(colors.get("accent", "#D7263D")),
         "ink": str(subs.get("color", "#FFFFFF")),
     }
 
@@ -1010,7 +1010,7 @@ def build_gradient_fill(
     """Караоке канала: белая фраза, текущее слово заливается по буквам.
 
     Один слой. Слово — ровно один ``<svg>``: белый ``<text>`` и поверх него
-    тот же ``<text>`` цветом ``#E5322D`` под маской, которая растёт слева
+    тот же ``<text>`` цветом ``#D7263D`` под маской, которая растёт слева
     направо за время произнесения слова. Ни HTML-дубля под SVG, ни второго
     ряда слов сверху: белый ряд плюс цветной дубль — это брак, который и
     ловили на 0049/0050.

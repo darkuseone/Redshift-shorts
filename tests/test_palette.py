@@ -38,8 +38,8 @@ def _mostly_dark(spot: tuple[int, int, int], share: float = 0.125) -> Image.Imag
 
 @pytest.mark.parametrize("name,rgb,allowed", [
     # Фирменный красный и его соседи — проходят при любой яркости.
-    ("акцент #E5322D", (229, 50, 45), True),
-    ("тёмный акцент #9C1B17", (156, 27, 23), True),
+    ("акцент #D7263D", (215, 38, 61), True),
+    ("тёмный акцент #8E1627", (142, 22, 39), True),
     ("почти чёрный кадр", (17, 18, 20), True),
     ("белый кадр", (247, 245, 243), True),
     # Розовые кубы Pexels: оттенок 339°, заняли весь кадр. Из-за них всё и начато.
@@ -116,7 +116,7 @@ class TestPinkNeverPassesAgain:
             assert not verdict["passed"], f"{rgb}: розовая дымка прошла"
 
     def test_the_brand_red_still_passes_at_any_size(self, rules):
-        for rgb in ((229, 50, 45), (156, 27, 23), (255, 106, 95)):
+        for rgb in ((215, 38, 61), (142, 22, 39), (242, 86, 107)):
             assert palette_verdict([self._field(rgb)], rules)["passed"], rgb
 
     def test_earth_passes_but_gold_does_not(self, rules):
@@ -182,11 +182,11 @@ class TestTheAccentShareIsFinallyMeasured:
 
     def test_the_brand_red_is_seen(self):
         from src.lib.palette import accent_share
-        assert accent_share(self._flat((229, 50, 45)))["red"] > 0.99
+        assert accent_share(self._flat((215, 38, 61)))["red"] > 0.99
 
     def test_the_brand_cyan_is_seen(self):
         from src.lib.palette import accent_share
-        assert accent_share(self._flat((25, 230, 210)))["cyan"] > 0.99
+        assert accent_share(self._flat((54, 239, 255)))["cyan"] > 0.99
 
     def test_the_channel_dark_is_not_an_accent(self):
         """Космос #0A0A0B — это фон канала, а не акцент."""
@@ -206,14 +206,14 @@ class TestTheAccentShareIsFinallyMeasured:
 
     def test_the_two_families_never_double_count(self):
         from src.lib.palette import accent_share
-        share = accent_share(self._half((229, 50, 45)))
+        share = accent_share(self._half((215, 38, 61)))
         assert share["cyan"] == 0.0
         assert abs(share["total"] - share["red"]) < 1e-9
 
     def test_the_worst_frame_decides_for_the_video(self):
         """Среднее размажет вспышку акцента и пропустит залитый кадр."""
         from src.lib.palette import accent_share_max
-        frames = [self._flat((10, 10, 11))] * 5 + [self._flat((229, 50, 45))]
+        frames = [self._flat((10, 10, 11))] * 5 + [self._flat((215, 38, 61))]
         out = accent_share_max(frames)
         assert out["max"] > 0.99, out
         assert out["frames"] == 6
@@ -227,7 +227,7 @@ class TestTheAccentShareIsFinallyMeasured:
         from src.lib.palette import accent_share
         img = Image.new("RGB", (160, 284), (10, 10, 11))
         # Полоса ≈ 6 % кадра — примерно одно слово крупным кеглем.
-        img.paste(Image.new("RGB", (160, 17), (229, 50, 45)), (0, 130))
+        img.paste(Image.new("RGB", (160, 17), (215, 38, 61)), (0, 130))
         share = accent_share(img)["total"]
         assert 0.02 <= share <= 0.12, share
 

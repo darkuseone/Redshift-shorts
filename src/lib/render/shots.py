@@ -273,7 +273,7 @@ def prepare_split_shot(*, top_src: Path, bottom_src: Path, dst: Path,
                        duration_sec: float, width: int, height: int, fps: int,
                        top_start_sec: float = 0.0, bottom_start_sec: float = 0.0,
                        focus_x: float = 0.5, focus_y: float = 0.4,
-                       divider_px: int = 4, divider_color: str = "0xE5322D",
+                       divider_px: int = 4, divider_color: str = "0xD7263D",
                        bottom_has_alpha: bool = False,
                        bg_colors: tuple[str, str] = ("F7F5F3", "FFFFFF"),
                        ) -> dict[str, Any]:

@@ -1063,7 +1063,7 @@ def test_shared_axis_z_fullscreen_keeps_catalog_inter(plan, assets, brandbook):
     assert ".saz-stack" in css and ".saz-word" in css
     assert "Inter,system-ui,sans-serif" in css
     assert "#111214" in css
-    assert ".fullscreen-text.fs-shared-axis-z.saz-accent{color:#E5322D}" in css
+    assert ".fullscreen-text.fs-shared-axis-z.saz-accent{color:#D7263D}" in css
     assert "#F7F5F3" in css
     assert "#34d399" not in css
 
@@ -1330,11 +1330,11 @@ def test_beat_freeze_cut_fullscreen_reaches_the_markup(plan, assets, brandbook):
     assert "height:" not in tween_src
     assert 'tl.fromTo("#shot-01",' not in out
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
-    assert "#E5322D" in css
+    assert "#D7263D" in css
     assert ".bfc-card" in css
     assert ".bfc-bar" in css
     bfc = css.split(".fs-beat-freeze-cut", 1)[1].split(".fs-swap-box", 1)[0]
-    assert "#E5322D" in bfc
+    assert "#D7263D" in bfc
     assert "#111214" in bfc
     assert "#7A7D82" in bfc
     assert "#0A0A0B" not in bfc
@@ -1385,7 +1385,7 @@ def test_lt_accent_underline_overlay_reaches_the_markup(plan, assets, brandbook)
     assert "scaleX:0" in tween_src
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
     assert "Space Mono" in css
-    assert "#E5322D" in css
+    assert "#D7263D" in css
     assert "#46e5b7" not in css
     assert "Oswald" in css
 
@@ -1410,7 +1410,7 @@ def test_lt_clean_bar_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "scaleX:0" in tween_src and "scaleY:0" in tween_src
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
     assert "Montserrat" in css
-    assert "#E5322D" in css
+    assert "#D7263D" in css
     assert "#ff5a36" not in css
 
 
@@ -1433,7 +1433,7 @@ def test_lt_dark_card_overlay_reaches_the_markup(plan, assets, brandbook):
     assert "scaleX:0" in tween_src
     css = build_css(brandbook, {"subtitle": "Nunito-ExtraBold.ttf"})
     assert "Montserrat" in css
-    assert "#E5322D" in css
+    assert "#D7263D" in css
     assert "#f5b942" not in css
     assert "#111214" in css
 

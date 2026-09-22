@@ -10,6 +10,6 @@
   "_missing": {
     "_comment": "Плиты, которых на диске нет. До этой волны `space` был алиасом на horizon.jpg с комментарием «No dedicated space still» — то есть ролик про космос шёл на фоне чёрной дыры, и это молча. Теперь недостающая плита названа: сцена рисуется градиентами (запасной путь), пока файл не положат. Делаются они браузером Magnific (Nano Banana 2, безлимит по подписке) — ни одного вызова API. Порядок и промпт: tools/magnific_browser_sop.md",
     "scenes": ["space", "depth", "room"],
-    "prompt": "vertical 9:16, dark cinematic plate, black / white / red #E5322D / cyan #19E6D2 only, no text, no logos, no people, subtle grain, Netflix-investigation energy, negative space in the centre for a talking head"
+    "prompt": "vertical 9:16, dark cinematic plate, black / white / red #D7263D / cyan #36EFFF only, no text, no logos, no people, subtle grain, Netflix-investigation energy, negative space in the centre for a talking head"
   }
 }
