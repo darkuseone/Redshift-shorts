@@ -957,7 +957,7 @@ class CompositionBuilder:
                 # Полупрозрачный, как настоящий маркер: заголовок переносится,
                 # и непрозрачная плашка следующей строки срезала хвост буквы на
                 # предыдущей — «Quantum» читался как «Ouantum». Проверено кадром.
-                accent = str(self.brandbook["colors"].get("accent", "#E5322D"))
+                accent = str(self.brandbook["colors"].get("accent", "#D7263D"))
                 rgb = ",".join(str(int(accent.lstrip("#")[i:i + 2], 16)) for i in (0, 2, 4))
                 self.tweens.append(
                     f'tl.fromTo("#{node_id} .hl",'

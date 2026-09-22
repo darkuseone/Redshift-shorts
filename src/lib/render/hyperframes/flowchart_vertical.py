@@ -27,9 +27,9 @@ _FCV_BLUE = "#a8d8f0"
 _FCV_PINK = "#f8b4c8"
 # These three tokens were off-palette; aligned to brandbook accent (§3.3).
 # Pastel node fills above (_FCV_YELLOW … _FCV_PINK) are catalog gestures — intentional.
-_FCV_TAG_PURPLE = "#E5322D"   # was #9747ff → accent
-_FCV_BORDER_BLUE = "#E5322D"  # was #0b84f3 → accent (selection ring)
-_FCV_SQUIGGLE_RED = "#E5322D" # was #e53935 → accent (typo underline)
+_FCV_TAG_PURPLE = "#D7263D"   # was #9747ff → accent
+_FCV_BORDER_BLUE = "#D7263D"  # was #0b84f3 → accent (selection ring)
+_FCV_SQUIGGLE_RED = "#D7263D" # was #e53935 → accent (typo underline)
 _FCV_HIGHLIGHT = "#d0e4ff"    # light-blue highlight fill — catalog gesture, keep
 
 

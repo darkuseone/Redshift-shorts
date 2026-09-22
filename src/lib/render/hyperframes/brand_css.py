@@ -422,7 +422,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # повторяет фон на каждой строке, как настоящий маркер.
         ".source-card .hl{border-radius:6px;padding:0 .10em;"
         "-webkit-box-decoration-break:clone;box-decoration-break:clone;"
-        "background:rgba(229,50,45,.22)}"
+        "background:rgba(215,38,61,.22)}"
         # Dark browser paper (0050 Gemini FIX — white card scored badly).
         ".source-card.theme-dark .sc-stage,"
         ".source-card.theme-dark{color:#f4f4f5}"
@@ -439,7 +439,7 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         ".source-card.theme-dark .favicon{background:#3f4450;color:#f4f4f5}"
         ".source-card.theme-dark .snippet{color:#c4c7cc}"
         ".source-card.theme-dark .lines i{background:rgba(244,244,245,.12)}"
-        ".source-card.theme-dark .hl{background:rgba(229,50,45,.28)}"
+        ".source-card.theme-dark .hl{background:rgba(215,38,61,.28)}"
     )
 
     # --- CTA (§5.7) ------------------------------------------------------

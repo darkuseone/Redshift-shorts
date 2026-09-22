@@ -104,7 +104,7 @@ Magnific **API**, ноль xAI. Одна поправка со знаком пл
 
 | Пункт MEGA | Статус | Доказательство на живом репозитории |
 |---|---|---|
-| Cyan first-class токены | **landed** | `config/brandbook.json` → `cyan #19E6D2`, `cyan_soft #7FF5EA`, `cyan_deep #0B9E90`; `color_rules.accent_tokens: ["accent","cyan"]` |
+| Cyan first-class токены | **landed** | `config/brandbook.json` → `cyan #36EFFF`, `cyan_soft #7AF0FF`, `cyan_deep #0BB8C9`; `color_rules.accent_tokens: ["accent","cyan"]` |
 | `tests/test_brandbook_palette.py` | **landed** | файл есть |
 | `card_appear ≠ avatar_in` | **landed** | `sfx_library.py:93` `card_appear: ("click","snap")` vs `:87` `avatar_in: ("hat","bright")` |
 | Vision fail-closed, Gemini-only | **landed** | `config.yaml:18 allow_xai: false`; гейт `vision.py:490-498`; `build-video.yml:149-150` не экспортирует `XAI_API_KEY` |
@@ -646,8 +646,8 @@ class VisualBudget:
 `color_rules.accent_max_frame_share = 0.12` объявлена.
 
 **Правка.** В `p12_render_qc/render.py` при съёме `render_stats` добавляется
-подсчёт доли пикселей в двух коридорах HSV (красный `#E5322D ±`, cyan
-`#19E6D2 ±`) на тех же 6 сэмплах, что уже извлекаются для `vision_qc`
+подсчёт доли пикселей в двух коридорах HSV (красный `#D7263D ±`, cyan
+`#36EFFF ±`) на тех же 6 сэмплах, что уже извлекаются для `vision_qc`
 (`vision_qc.py:94-97`) — **новых извлечений кадров не делаем**, переиспользуем.
 Гейт `QC-24` (§12.3).
 
@@ -664,8 +664,8 @@ class VisualBudget:
 
 Промпт-строка (единая, из MEGA I.3 + палитра):
 
-> vertical 9:16, dark cinematic plate, **black / white / red #E5322D / cyan
-> #19E6D2 only**, no text, no logos, no people, subtle grain, Netflix-investigation
+> vertical 9:16, dark cinematic plate, **black / white / red #D7263D / cyan
+> #36EFFF only**, no text, no logos, no people, subtle grain, Netflix-investigation
 > energy, negative space in the centre for a talking head
 
 ### 7.7 Диаграммы как приём, а не как data-viz
@@ -1275,8 +1275,8 @@ Mock-прогон не требует ключей и не тратит ни ц�
 **Не-цели этой волны:** новый рендерер под хуки; переписывание
 `template_scenarios.json` целиком; удаление шаблонов; блокирующий `escaped`;
 новые SFX-записи до визуального OK; экспрессивный TTS; нативный 9:16;
-оптимизация промптов Gemini; смена палитры (red остаётся `#E5322D`,
-cyan `#19E6D2` до скринов Маркуса).
+оптимизация промптов Gemini; смена палитры (red остаётся `#D7263D`,
+cyan `#36EFFF` до скринов Маркуса).
 
 ---
 

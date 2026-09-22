@@ -392,7 +392,7 @@ class TestBackdropPlatesAreHonestAboutWhatExists:
         from src.lib.backdrop import PLATE_PROMPT
 
         low = PLATE_PROMPT.lower()
-        assert "#e5322d" in low and "#19e6d2" in low
+        assert "#d7263d" in low and "#36efff" in low
         assert "9:16" in low and "no people" in low
 
     def test_pins_are_read_from_the_repo(self, repo_root):

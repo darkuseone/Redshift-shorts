@@ -387,7 +387,7 @@ def test_detected_gradient_types_actually_render(tmp_path):
         dst = tmp_path / f"{name}.png"
         proc = subprocess.run(
             [ffmpeg_bin(), "-y", "-v", "error", "-f", "lavfi",
-             "-i", f"gradients=s=64x64:c0=0x111214:c1=0x9C1B17:d=1:type={name}",
+             "-i", f"gradients=s=64x64:c0=0x111214:c1=0x8E1627:d=1:type={name}",
              "-frames:v", "1", str(dst)], capture_output=True, text=True, timeout=60)
         assert proc.returncode == 0, f"{name}: {proc.stderr.strip()}"
         assert dst.exists()

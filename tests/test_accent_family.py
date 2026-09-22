@@ -5,7 +5,7 @@
 и ни один модуль его не читал. `captions.py` жёстко ставил
 `var(--color-accent)` в трёх местах, а `.word.emphasis.cyan` и `.accent-cyan`
 были объявлены в CSS и никем не выводились. Cyan лежал в брендбуке «IT
-КОСМОС» первым классом (`cyan #19E6D2`, `accent_tokens: ["accent","cyan"]`) и
+КОСМОС» первым классом (`cyan #36EFFF`, `accent_tokens: ["accent","cyan"]`) и
 физически не мог попасть в кадр как акцент.
 
 Правило разводит два акцента по смыслу (MEGA D-9): миф и чувство — красным,
@@ -95,7 +95,7 @@ class TestTheSubtitleWordCarriesTheFamily:
         assert _accent_cyan({}) is False
 
     def test_the_subtitle_fill_ignores_the_family(self):
-        """Караоке канала красится одним #E5322D — семейство на него не влияет.
+        """Караоке канала красится одним #D7263D — семейство на него не влияет.
 
         Cyan остаётся языком карточек и оверлеев (`accent-cyan` выше), но в
         субтитре второго цвета нет: закон канала — белая фраза и красная
@@ -105,7 +105,7 @@ class TestTheSubtitleWordCarriesTheFamily:
         brandbook = json.loads((REPO_ROOT / "config" / "brandbook.json")
                                .read_text(encoding="utf-8"))
         params = gradient_fill_params(brandbook)
-        assert params["accent"] == "#E5322D"
+        assert params["accent"] == "#D7263D"
         assert "cyan" not in params and "accent_soft" not in params
 
     def test_the_css_declares_both_families(self):

@@ -41,8 +41,8 @@
 той же формулой, что и прошлая:
 
 ```
-vertical 9:16, dark cinematic plate, black / white / red #E5322D /
-cyan #19E6D2 only, no text, no logos, no people, subtle grain,
+vertical 9:16, dark cinematic plate, black / white / red #D7263D /
+cyan #36EFFF only, no text, no logos, no people, subtle grain,
 Netflix-investigation energy, negative space in the centre for a talking head
 ```
 
@@ -50,7 +50,7 @@ Netflix-investigation energy, negative space in the centre for a talking head
 
 ```
 deep space, star dust, distant glow, — vertical 9:16, dark cinematic plate,
-black / white / red #E5322D / cyan #19E6D2 only, no text, no logos, no people,
+black / white / red #D7263D / cyan #36EFFF only, no text, no logos, no people,
 subtle grain, Netflix-investigation energy, negative space in the centre for a
 talking head
 ```

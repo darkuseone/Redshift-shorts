@@ -4,7 +4,7 @@ Catalog ``notification-cascade`` stacks 4 incoming alert banners with
 dynamic upward restacking, top "Show less" pill, and transition into
 a closing brand end-card.
 No tween of width/height/filter/clip-path/strokeDashoffset; no textContent writes.
-Brandbook ink #111214, accent #E5322D / #FF6A5F, Inter font.
+Brandbook ink #111214, accent #D7263D / #F2566B, Inter font.
 """
 
 from __future__ import annotations
@@ -255,7 +255,7 @@ def ov_notification_cascade(ctx: TemplateCtx) -> Piece:
         f'<div class="nc-ec-accent">{_esc(copy["headlineAccent"])}</div>'
         f'<div class="nc-ec-mark">'
         f'<svg width="120" height="120" viewBox="0 0 100 100" fill="none">'
-        f'<rect x="10" y="10" width="80" height="80" rx="24" fill="#E5322D"/>'
+        f'<rect x="10" y="10" width="80" height="80" rx="24" fill="#D7263D"/>'
         f'<path d="M36 30l36 20-36 20V30z" fill="#fff"/>'
         f'</svg>'
         f'</div>'
@@ -291,8 +291,8 @@ def nc_overlay_css() -> str:
         "border-radius:26px;background:rgba(247,245,243,0.95);box-shadow:0 14px 32px rgba(17,18,20,0.22);"
         "border:1px solid rgba(255,255,255,0.45);will-change:transform,opacity}"
         ".notification-cascade .nc-icon{position:absolute;left:23px;top:38px;width:100px;height:100px;"
-        "border-radius:24px;background:linear-gradient(135deg,#E5322D 0%,#FF6A5F 100%);"
-        "display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(229,50,45,0.3)}"
+        "border-radius:24px;background:linear-gradient(135deg,#D7263D 0%,#F2566B 100%);"
+        "display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(215,38,61,0.3)}"
         ".notification-cascade .nc-title{position:absolute;left:148px;top:38px;font-size:35px;"
         "font-weight:700;color:#111214;letter-spacing:0.25px}"
         ".notification-cascade .nc-subtitle{position:absolute;left:148px;top:88px;font-size:32px;"
@@ -310,7 +310,7 @@ def nc_overlay_css() -> str:
         ".notification-cascade .nc-ec-top{font-size:86px;font-weight:900;letter-spacing:3px;"
         "color:#F7F5F3;margin-bottom:12px;text-transform:uppercase}"
         ".notification-cascade .nc-ec-accent{font-size:72px;font-weight:900;letter-spacing:2px;"
-        "color:#E5322D;margin-bottom:44px;text-transform:uppercase}"
+        "color:#D7263D;margin-bottom:44px;text-transform:uppercase}"
         ".notification-cascade .nc-ec-mark{margin-bottom:48px}"
-        ".notification-cascade .nc-ec-footer{font-size:36px;font-weight:700;color:#FF6A5F;letter-spacing:1px}"
+        ".notification-cascade .nc-ec-footer{font-size:36px;font-weight:700;color:#F2566B;letter-spacing:1px}"
     )

@@ -1,6 +1,6 @@
 """Закон субтитров канала на реальной дорожке 0050.
 
-Один жест, один слой, белая фраза, заливка текущего слова только #E5322D,
+Один жест, один слой, белая фраза, заливка текущего слова только #D7263D,
 одна строка и целые слова. Проверка идёт на настоящем `speech_map.json`, а не
 на выдуманных двух словах: ровно там и жили браки 0049/0050 — «ВРЁТСАМОЛЁТ»,
 белый ряд с цветным дублём сверху и кириллический «КЛЕЙ».
@@ -23,7 +23,7 @@ from src.lib.render.hyperframes.captions import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SPEECH_MAP = REPO_ROOT / "assets" / "voice" / "redshift_0050" / "speech_map.json"
 
-FORBIDDEN_COLOURS = ("#ff6a5f", "#19e6d2", "#7ff5ea", "#fe9f1b", "#f76e49",
+FORBIDDEN_COLOURS = ("#f2566b", "#36efff", "#7af0ff", "#fe9f1b", "#f76e49",
                      "#ffd700", "#ff2063", "#fd56cb")
 
 
@@ -88,8 +88,8 @@ class TestOnlyOneGestureShipsOnTheChannel:
 class TestThePhraseIsWhiteAndTheSpokenWordIsRed:
 
     def test_the_fill_is_the_only_accent_colour(self, markup, brandbook):
-        assert brandbook["colors"]["accent"] == "#E5322D"
-        assert "#E5322D" in markup
+        assert brandbook["colors"]["accent"] == "#D7263D"
+        assert "#D7263D" in markup
         for colour in FORBIDDEN_COLOURS:
             assert colour not in markup.lower(), colour
 

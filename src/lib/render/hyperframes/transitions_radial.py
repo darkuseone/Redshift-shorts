@@ -92,7 +92,7 @@ def trad_transition_css() -> str:
         ".tr-transitions-radial .trad-inner{position:absolute;left:50%;top:50%;"
         "width:1080px;height:1920px;margin-left:-540px;margin-top:-960px;"
         "display:flex;flex-direction:column;align-items:center;justify-content:center}"
-        ".tr-transitions-radial .trad-b{background:#E5322D}"
+        ".tr-transitions-radial .trad-b{background:#D7263D}"
         ".tr-transitions-radial .trad-big{font-family:Inter,system-ui,sans-serif;font-size:220px;"
         "font-weight:900;line-height:1;letter-spacing:-0.04em;user-select:none}"
         ".tr-transitions-radial .trad-a .trad-big{color:rgba(255,255,255,0.08)}"
@@ -106,6 +106,6 @@ def trad_transition_css() -> str:
         "border-radius:50%;overflow:hidden;transform-origin:50% 50%;opacity:0}"
         ".tr-transitions-radial .trad-ring{position:absolute;left:50%;top:50%;"
         "width:2240px;height:2240px;margin-left:-1120px;margin-top:-1120px;"
-        "border-radius:50%;border:4px solid #E5322D;"
-        "box-shadow:0 0 32px #E5322D;opacity:0;pointer-events:none;transform-origin:50% 50%}"
+        "border-radius:50%;border:4px solid #D7263D;"
+        "box-shadow:0 0 32px #D7263D;opacity:0;pointer-events:none;transform-origin:50% 50%}"
     )
