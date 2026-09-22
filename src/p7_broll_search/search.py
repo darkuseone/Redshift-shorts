@@ -548,6 +548,16 @@ def _load_footage_pins(cfg, video_id: str) -> tuple[set[str], list[str]]:
 
 def run_step(ctx) -> dict[str, Any]:
     plan = ctx.read("cut_plan.json")
+    if bool(ctx.cfg.get("stock.director_skip", False)):
+        # Режиссёрский таймлайн: весь футаж указан в сценарии, стоковый поиск
+        # не запускается. P11 возьмёт материал из секции director.
+        ctx.write("candidates.json", {
+            "video_id": plan["video_id"], "slots_needing_asset": 0,
+            "meme_slots_filled": 0, "pool_size": 0, "downloads": 0,
+            "director_skip": True, "stage1_rejected": [], "candidates": [],
+        })
+        _log.info("P7 пропущен: футаж выбрал режиссёр (director)")
+        return {"candidates": 0, "downloads": 0, "director_skip": True}
     words = ctx_words(ctx)
     sync_broll_from_script(plan, ctx.cfg.repo_root, words=words)
     cfg = ctx.cfg

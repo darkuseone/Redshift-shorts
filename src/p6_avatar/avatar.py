@@ -70,9 +70,13 @@ def run_step(ctx) -> dict[str, Any]:
     words_doc = ctx.read_or("words.json", {"words": []})
     cfg = ctx.cfg
 
-    if not bool(cfg.get("features.avatar_enabled", True)):
+    no_avatar = str((ctx.read_or("draft_plan.json", {}) or {}).get("avatar_mode")
+                    or "normal") == "none"
+    if no_avatar or not bool(cfg.get("features.avatar_enabled", True)):
         ctx.write("avatar_meta.json", {"video_id": plan["video_id"], "enabled": False,
-                                       "segments": [], "note": "аватар выключен флагом"})
+                                       "segments": [],
+                                       "note": ("ролик без ведущего (meta.avatar_mode=none)"
+                                                if no_avatar else "аватар выключен флагом")})
         return {"segments": 0, "enabled": False}
 
     voice, sr = A.load_wav(ctx.work_dir / "voice_final.wav")
