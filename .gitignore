@@ -36,6 +36,9 @@ render/remotion/.remotion/
 # mp4 нигде, кроме тестов-фикстур. Клипы аватара — webm/mov/wav.
 *.mp4
 !tests/**/*.mp4
+# Футаж режиссёра без стабильного URL — в git (≤15 МБ, docs/director/FOOTAGE.md).
+!/assets/footage/director/
+!/assets/footage/director/**
 
 # Локальные секреты
 .env
