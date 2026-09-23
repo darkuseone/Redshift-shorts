@@ -48,6 +48,21 @@ ffmpeg -loglevel error -i /tmp/cand.mp4 -vf "fps=1/2,scale=320:-1,tile=4x2" -fra
 Вертикаль не обязательна — станок кропает 9:16 по центру внимания (`focus`
 задаёт точку вручную: `[0.3, 0.5]`).
 
+## 3a. Нарисованный герой-стикер (приём канала)
+
+Животное или персонаж-герой ролика — нарисованная «всратая» иллюстрация, а
+не съёмка (заказчик 22.09). Порядок:
+1. Magnific `stock_search` (`content_type: "vector,illustration"`,
+   `license: "free"`, `ai_generated: "excluded"`) → посмотреть превью своим
+   зрением → `stock_download` (0 кредитов).
+2. Вырезать из белого фона с белой обводкой-наклейкой (заливка снаружи,
+   крупнейший силуэт) — пример в `docs/director/BRANDBOOK.md` §герои.
+3. `python tools/sticker_anim.py fall|stretch|float --sticker cat.png
+   --bg <кадр NASA> --target x,y --out assets/footage/director/<id>/cat_fall.mp4`
+   — стикер двигается рывками (10 fps), фон едет плавно.
+4. В `director.footage`: `source: magnific`, `license: magnific`,
+   `ai_generated: false` (иллюстрация художника, не генерация).
+
 ## 4. Генерация ≤20 %
 
 Только когда реального кадра нет в природе (кот внутри горизонта событий).

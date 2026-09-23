@@ -289,7 +289,9 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         # плиту, берёт `.solid`.
         "background:transparent;color:var(--color-bg-pure);"
         "font-family:var(--font-display);text-transform:uppercase;"
-        f"font-size:{int(fs['size_px'][1])}px;line-height:0.94}}"
+        # 0.94 сажало надстрочные знаки кириллицы на строку выше: точки Ё
+        # пропадали, дужка Й вылезала рядом с «В» (кадр заказчика 22.09).
+        f"font-size:{int(fs['size_px'][1])}px;line-height:1.08}}"
         # invert = light glyphs only — never opaque space_deep over fs-bg
         # (0042 r6: flat #0A0A0B end/FS voids when invert won vs over-media).
         ".fullscreen-text.invert{background:transparent;"
@@ -307,7 +309,9 @@ def build_css(brandbook: dict[str, Any], fonts: dict[str, str]) -> str:
         f".fullscreen-text.fs-scramble-reveal.over-media{{"
         f"background:{_rgba(colors['ink'], scrim)} !important;"
         "color:var(--color-bg-pure)}"
-        ".fullscreen-text.over-media .accent{color:var(--color-accent-soft)}"
+        # Красный канала один — #D7263D (заказчик 22.09). Осветлённый soft
+        # на футаже читался розовым: «ДЫРЕ?» уходило в малиновый.
+        ".fullscreen-text.over-media .accent{color:var(--color-accent)}"
         f".fs-bg{{position:absolute;inset:0;z-index:{Z_SHOT};"
         "width:var(--frame-w);height:var(--frame-h);object-fit:cover}"
     )
