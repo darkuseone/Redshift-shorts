@@ -72,10 +72,14 @@ def render(mode: str, sticker: Path, bg_path: Path, target: tuple[float, float],
         st = st1 if q >= swap_at else st0
         if mode == "fall":
             k = _ease_in(q)
-            size = base_w * (1.0 - 0.96 * k)
+            # Размер падает равномерно с первого кадра (заказчик 24.09: «чем
+            # ближе к дыре, тем меньше»); по ease кот до середины оставался
+            # крупным и схлопывался только у самого горизонта.
+            size = base_w * (1.0 - 0.94 * q)
             # Вращение равномерное, не по ease: разгон к концу читался как
             # мельтешение, а заказчик хочет видеть каждый поворот.
             ang = 360 * spins * q + wob
+            k = q ** 1.3   # путь к дыре — почти равномерный, лёгкий разгон
             radius = (1.0 - k) * W * 0.28
             phi = 2 * math.pi * 1.25 * k + seed
             cx = tx + radius * math.cos(phi) * (1.0 - k * 0.3)

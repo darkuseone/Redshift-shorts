@@ -149,9 +149,9 @@
     "block": "b2",
     "at": "порвёт",
     "footage": "tde",
-    "transition": "transitions/glitch",
-    "motion": "kenburns/zoom-out-reveal",
-    "why": "удар на «порвёт»"
+    "transition": "transitions/zoom-punch-in",
+    "motion": "kenburns/zoom-in-center",
+    "why": "удар на «порвёт» тем же кадром"
    },
    {
     "block": "b2",
@@ -159,14 +159,15 @@
     "fullscreen": {
      "template": "text-fullscreen/kinetic-stack",
      "content": "БЫСТРО ГРУСТНО БЕЗ ШАНСОВ",
-     "accent_word": "ШАНСОВ"
+     "accent_word": "ШАНСОВ",
+     "footage": "tde"
     },
     "why": "сарказм крупно"
    },
    {
     "block": "b3",
     "footage": "smbh",
-    "transition": "transitions/gravitational-lens",
+    "transition": "transitions/chromatic-radial-split",
     "motion": "kenburns/zoom-in-center",
     "why": "гигант в центре Галактики"
    },
@@ -174,8 +175,7 @@
     "block": "b3",
     "at": "Кот",
     "footage": "cat_float",
-    "transition": "transitions/whip-pan",
-    "why": "кот болтается и ничего не чувствует"
+    "why": "кот с крестиками в том же космосе, прямая склейка"
    },
    {
     "block": "b3",
@@ -208,7 +208,6 @@
     "block": "b4",
     "at": "Лапы",
     "footage": "cat_stretch",
-    "transition": "transitions/glitch",
     "why": "кота тянет в макаронину"
    },
    {
@@ -233,7 +232,7 @@
    {
     "block": "b5",
     "footage": "cat_sit",
-    "transition": "transitions/whip-pan",
+    "transition": "transitions/chromatic-radial-split",
     "why": "кот доволен, финал"
    }
   ],
@@ -252,7 +251,7 @@
     "template": "data-viz/counter-roll",
     "block": "b3",
     "at": "четыре",
-    "dur": 2.0,
+    "dur": 1.4,
     "params": {
      "value": 4,
      "suffix": " МЛН"

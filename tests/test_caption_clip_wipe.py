@@ -164,7 +164,10 @@ def test_default_caption_is_gradient_fill(cfg):
     # gradient-fill не переносит строку, поэтому пол кегля у него ниже: фраза
     # ужимается, а не уезжает во вторую строку слипшимися словами.
     assert fill["base_px"] >= 136 and fill["min_px"] >= 56
-    assert wipe["max_words"] <= 5 and fill["max_words"] <= 2
+    # Заказчик 24.09: по два слова субтитры мелькали «сильно быстро» — фраза
+    # до трёх слов. Длинную группу `split_phrases_to_fit` всё равно режет, если
+    # она не влезает кеглем comfort_px, так что мельче строка не станет.
+    assert wipe["max_words"] <= 5 and fill["max_words"] <= 3
 
 
 def test_clip_wipe_paints_digit_lead(cfg):
