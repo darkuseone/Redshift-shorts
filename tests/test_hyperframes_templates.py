@@ -342,6 +342,15 @@ def test_dataviz_animates_only_allowed_properties(template_id, params):
     assert not extra, f"{template_id} тянет запрещённые свойства: {extra}"
 
 
+def test_stat_card_keeps_decimal_with_russian_comma():
+    """0052: «12,8 С» на карточке, а не округлённое «13 С»."""
+    ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
+                      track=6, params={"value": 12.8, "suffix": " С", "label": "до макаронины"})
+    html = "".join(str(n) for n in render_dataviz("data-viz/stat-countup-card", ctx).nodes)
+    assert "12,8 С" in html
+    assert "13 С" not in html
+
+
 def test_dataviz_without_data_draws_nothing():
     """Пустая диаграмма врёт сильнее, чем её отсутствие."""
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
