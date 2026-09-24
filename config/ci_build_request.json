@@ -1,12 +1,12 @@
 {
-  "script": "scripts/redshift_0050.json",
-  "video_id": "redshift_0050",
-  "from_step": "P11",
+  "script": "scripts/redshift_0052.json",
+  "video_id": "redshift_0052",
+  "from_step": "",
+  "providers_mode": "live",
   "heygen_source": "prepared",
   "skip_generate": true,
   "skip_vision": true,
-  "providers_mode": "live",
-  "requested_by": "grok",
-  "note": "r69 Gemini visuals. From P11 on main so work cache from r66 is restored. Voice/avatar frozen.",
-  "round": 69
+  "requested_by": "claude",
+  "note": "director, голос из чата (дубль заказчика ×1.15), без аватара. Первая сборка 0052.",
+  "round": 1
 }
