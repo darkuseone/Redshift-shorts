@@ -48,7 +48,7 @@ def build_pipeline() -> Pipeline:
         Step("P2", "TTS: сырая озвучка с запасом длины", p2,
              inputs=("draft_plan.json",), outputs=("voice_raw.wav", "tts_meta.json"),
              input_slice={"draft_plan.json": _speech_of_plan},
-             cfg_sections=("elevenlabs",)),
+             uses_prepared_voice=True, cfg_sections=("elevenlabs",)),
         Step("P3", "Оптимизация речи: паузы, вдохи, нормализация", p3,
              inputs=("voice_raw.wav", "tts_meta.json"),
              outputs=("voice_final.wav", "speech_map.json"),
