@@ -1,0 +1,865 @@
+{
+  "video_id": "redshift_0052",
+  "sample_rate": 48000,
+  "source_duration_sec": 31.802,
+  "duration_sec": 27.612,
+  "removed_sec": 4.19,
+  "target_duration_sec": 30.0,
+  "pause_threshold_ms": 110.0,
+  "pause_target_ms_range": [
+    55,
+    85
+  ],
+  "pause_ratio": 1.0,
+  "punch_hold": {
+    "block_id": "b4",
+    "word": "спагеттификация",
+    "src_sec": 26.7826,
+    "matched_emphasis": true,
+    "hold_ms": 320.0,
+    "at_sec": 23.618
+  },
+  "gain_applied_db": 2.01,
+  "loudness": {
+    "integrated_lufs": -14.0,
+    "true_peak_dbtp": -3.04,
+    "trailing_silence_ms": 0.0
+  },
+  "cuts": [
+    {
+      "kind": "breath",
+      "src_start": 1.5478,
+      "src_end": 1.9478,
+      "kept_sec": 0.085,
+      "removed_sec": 0.315
+    },
+    {
+      "kind": "breath",
+      "src_start": 2.5739,
+      "src_end": 3.2696,
+      "kept_sec": 0.085,
+      "removed_sec": 0.6107
+    },
+    {
+      "kind": "breath",
+      "src_start": 4.0522,
+      "src_end": 4.3478,
+      "kept_sec": 0.085,
+      "removed_sec": 0.2106
+    },
+    {
+      "kind": "breath",
+      "src_start": 6.1391,
+      "src_end": 6.4522,
+      "kept_sec": 0.085,
+      "removed_sec": 0.2281
+    },
+    {
+      "kind": "breath",
+      "src_start": 7.7217,
+      "src_end": 8.1217,
+      "kept_sec": 0.085,
+      "removed_sec": 0.315
+    },
+    {
+      "kind": "pause",
+      "src_start": 8.4696,
+      "src_end": 8.5913,
+      "kept_sec": 0.085,
+      "removed_sec": 0.0367
+    },
+    {
+      "kind": "breath",
+      "src_start": 9.5304,
+      "src_end": 10.0522,
+      "kept_sec": 0.085,
+      "removed_sec": 0.4368
+    },
+    {
+      "kind": "breath",
+      "src_start": 12.2957,
+      "src_end": 12.487,
+      "kept_sec": 0.085,
+      "removed_sec": 0.1063
+    },
+    {
+      "kind": "breath",
+      "src_start": 13.4435,
+      "src_end": 13.9826,
+      "kept_sec": 0.085,
+      "removed_sec": 0.4541
+    },
+    {
+      "kind": "breath",
+      "src_start": 16.1217,
+      "src_end": 16.4696,
+      "kept_sec": 0.085,
+      "removed_sec": 0.2629
+    },
+    {
+      "kind": "silence_hold",
+      "src_start": 18.2261,
+      "src_end": 18.8,
+      "kept_sec": 0.5739,
+      "removed_sec": 0.0,
+      "added_sec": 0.6261
+    },
+    {
+      "kind": "breath",
+      "src_start": 21.5478,
+      "src_end": 22.0696,
+      "kept_sec": 0.085,
+      "removed_sec": 0.4368
+    },
+    {
+      "kind": "breath",
+      "src_start": 24.8348,
+      "src_end": 25.4957,
+      "kept_sec": 0.085,
+      "removed_sec": 0.5759
+    },
+    {
+      "kind": "punch_hold",
+      "src_start": 26.6609,
+      "src_end": 26.7826,
+      "kept_sec": 0.1217,
+      "removed_sec": 0.0,
+      "added_sec": 0.1983
+    },
+    {
+      "kind": "breath",
+      "src_start": 27.7565,
+      "src_end": 28.2087,
+      "kept_sec": 0.085,
+      "removed_sec": 0.3672
+    },
+    {
+      "kind": "breath",
+      "src_start": 29.0261,
+      "src_end": 29.5652,
+      "kept_sec": 0.085,
+      "removed_sec": 0.4541
+    }
+  ],
+  "segments": [
+    {
+      "src_start": 0.0,
+      "src_end": 1.5478,
+      "dst_start": 0.0,
+      "dst_end": 1.5478,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 1.7864,
+      "src_end": 1.8714,
+      "dst_start": 1.5478,
+      "dst_end": 1.6328,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 1.9478,
+      "src_end": 2.5739,
+      "dst_start": 1.6328,
+      "dst_end": 2.2589,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 2.8068,
+      "src_end": 2.8918,
+      "dst_start": 2.2589,
+      "dst_end": 2.3439,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 3.2696,
+      "src_end": 4.0522,
+      "dst_start": 2.3439,
+      "dst_end": 3.1265,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 4.2628,
+      "src_end": 4.3478,
+      "dst_start": 3.1265,
+      "dst_end": 3.2115,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 4.3478,
+      "src_end": 6.1391,
+      "dst_start": 3.2115,
+      "dst_end": 5.0028,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 6.3672,
+      "src_end": 6.4522,
+      "dst_start": 5.0028,
+      "dst_end": 5.0878,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 6.4522,
+      "src_end": 7.7217,
+      "dst_start": 5.0878,
+      "dst_end": 6.3573,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 8.0303,
+      "src_end": 8.1153,
+      "dst_start": 6.3573,
+      "dst_end": 6.4423,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 8.1217,
+      "src_end": 8.4696,
+      "dst_start": 6.4423,
+      "dst_end": 6.7902,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 8.4696,
+      "src_end": 8.5546,
+      "dst_start": 6.7902,
+      "dst_end": 6.8752,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 8.5913,
+      "src_end": 9.5304,
+      "dst_start": 6.8752,
+      "dst_end": 7.8143,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 9.6227,
+      "src_end": 9.7077,
+      "dst_start": 7.8143,
+      "dst_end": 7.8993,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 10.0522,
+      "src_end": 12.2957,
+      "dst_start": 7.8993,
+      "dst_end": 10.1428,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 12.402,
+      "src_end": 12.487,
+      "dst_start": 10.1428,
+      "dst_end": 10.2278,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 12.487,
+      "src_end": 13.4435,
+      "dst_start": 10.2278,
+      "dst_end": 11.1843,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 13.5376,
+      "src_end": 13.6226,
+      "dst_start": 11.1843,
+      "dst_end": 11.2693,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 13.9826,
+      "src_end": 16.1217,
+      "dst_start": 11.2693,
+      "dst_end": 13.4084,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 16.353,
+      "src_end": 16.438,
+      "dst_start": 13.4084,
+      "dst_end": 13.4934,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 16.4696,
+      "src_end": 18.2261,
+      "dst_start": 13.4934,
+      "dst_end": 15.2499,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 18.2261,
+      "src_end": 18.8,
+      "dst_start": 15.2499,
+      "dst_end": 16.4499,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 18.8,
+      "src_end": 21.5478,
+      "dst_start": 16.4499,
+      "dst_end": 19.1977,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 21.6239,
+      "src_end": 21.7089,
+      "dst_start": 19.1977,
+      "dst_end": 19.2827,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 22.0696,
+      "src_end": 24.8348,
+      "dst_start": 19.2827,
+      "dst_end": 22.0479,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 24.9782,
+      "src_end": 25.0632,
+      "dst_start": 22.0479,
+      "dst_end": 22.1329,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 25.4957,
+      "src_end": 26.6609,
+      "dst_start": 22.1329,
+      "dst_end": 23.2981,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 26.6609,
+      "src_end": 26.7826,
+      "dst_start": 23.2981,
+      "dst_end": 23.6181,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 26.7826,
+      "src_end": 27.7565,
+      "dst_start": 23.6181,
+      "dst_end": 24.592,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 27.9697,
+      "src_end": 28.0547,
+      "dst_start": 24.592,
+      "dst_end": 24.677,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 28.2087,
+      "src_end": 29.0261,
+      "dst_start": 24.677,
+      "dst_end": 25.4944,
+      "attenuate_db": 0.0
+    },
+    {
+      "src_start": 29.4802,
+      "src_end": 29.5652,
+      "dst_start": 25.4944,
+      "dst_end": 25.5794,
+      "attenuate_db": -6.0
+    },
+    {
+      "src_start": 29.5652,
+      "src_end": 31.8016,
+      "dst_start": 25.5794,
+      "dst_end": 27.8158,
+      "attenuate_db": 0.0
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "start": 0.0,
+      "end": 2.2589,
+      "words": [
+        {
+          "word": "Твой",
+          "start": 0.0,
+          "end": 0.2087
+        },
+        {
+          "word": "кот",
+          "start": 0.2087,
+          "end": 0.4348
+        },
+        {
+          "word": "упал",
+          "start": 0.4348,
+          "end": 0.8348
+        },
+        {
+          "word": "в",
+          "start": 0.8348,
+          "end": 0.9217
+        },
+        {
+          "word": "чёрную",
+          "start": 0.9217,
+          "end": 1.287
+        },
+        {
+          "word": "дыру",
+          "start": 1.287,
+          "end": 1.5478
+        },
+        {
+          "word": "Что",
+          "start": 1.6328,
+          "end": 1.8067
+        },
+        {
+          "word": "с",
+          "start": 1.8067,
+          "end": 1.9285
+        },
+        {
+          "word": "ним",
+          "start": 1.9285,
+          "end": 1.998
+        },
+        {
+          "word": "будет",
+          "start": 1.998,
+          "end": 2.2589
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "start": 2.3439,
+      "end": 7.8143,
+      "words": [
+        {
+          "word": "Зависит",
+          "start": 2.3439,
+          "end": 2.7439
+        },
+        {
+          "word": "от",
+          "start": 2.7439,
+          "end": 2.883
+        },
+        {
+          "word": "дыры",
+          "start": 2.883,
+          "end": 3.1265
+        },
+        {
+          "word": "Если",
+          "start": 3.2115,
+          "end": 3.455
+        },
+        {
+          "word": "она",
+          "start": 3.455,
+          "end": 3.6115
+        },
+        {
+          "word": "маленькая",
+          "start": 3.6115,
+          "end": 4.1333
+        },
+        {
+          "word": "в",
+          "start": 4.2202,
+          "end": 4.2602
+        },
+        {
+          "word": "десяток",
+          "start": 4.2376,
+          "end": 4.5854
+        },
+        {
+          "word": "Солнц",
+          "start": 4.5854,
+          "end": 5.0028
+        },
+        {
+          "word": "кота",
+          "start": 5.0878,
+          "end": 5.3313
+        },
+        {
+          "word": "порвёт",
+          "start": 5.3313,
+          "end": 5.6269
+        },
+        {
+          "word": "ещё",
+          "start": 5.6269,
+          "end": 5.8356
+        },
+        {
+          "word": "на",
+          "start": 5.8356,
+          "end": 5.9573
+        },
+        {
+          "word": "подлёте",
+          "start": 5.9573,
+          "end": 6.3573
+        },
+        {
+          "word": "Быстро",
+          "start": 6.4423,
+          "end": 6.7902
+        },
+        {
+          "word": "грустно",
+          "start": 6.8752,
+          "end": 7.2056
+        },
+        {
+          "word": "без",
+          "start": 7.2578,
+          "end": 7.3448
+        },
+        {
+          "word": "шансов",
+          "start": 7.3448,
+          "end": 7.8143
+        }
+      ]
+    },
+    {
+      "id": "b3",
+      "role": "develop",
+      "start": 7.8993,
+      "end": 15.2499,
+      "words": [
+        {
+          "word": "А",
+          "start": 7.8993,
+          "end": 8.1254
+        },
+        {
+          "word": "теперь",
+          "start": 8.1254,
+          "end": 8.3167
+        },
+        {
+          "word": "гигант",
+          "start": 8.3167,
+          "end": 8.7514
+        },
+        {
+          "word": "из",
+          "start": 8.7514,
+          "end": 9.0297
+        },
+        {
+          "word": "центра",
+          "start": 9.0297,
+          "end": 9.3775
+        },
+        {
+          "word": "нашей",
+          "start": 9.3775,
+          "end": 9.5514
+        },
+        {
+          "word": "Галактики",
+          "start": 9.5514,
+          "end": 10.1428
+        },
+        {
+          "word": "четыре",
+          "start": 10.2278,
+          "end": 10.4886
+        },
+        {
+          "word": "миллиона",
+          "start": 10.4886,
+          "end": 10.7669
+        },
+        {
+          "word": "Солнц",
+          "start": 10.7669,
+          "end": 11.1843
+        },
+        {
+          "word": "Кот",
+          "start": 11.2693,
+          "end": 11.478
+        },
+        {
+          "word": "летит",
+          "start": 11.478,
+          "end": 11.7041
+        },
+        {
+          "word": "к",
+          "start": 11.7041,
+          "end": 11.8606
+        },
+        {
+          "word": "краю",
+          "start": 11.8606,
+          "end": 12.0519
+        },
+        {
+          "word": "три",
+          "start": 12.0519,
+          "end": 12.2084
+        },
+        {
+          "word": "часа",
+          "start": 12.2084,
+          "end": 12.5215
+        },
+        {
+          "word": "и",
+          "start": 12.5215,
+          "end": 12.591
+        },
+        {
+          "word": "ничего",
+          "start": 12.591,
+          "end": 12.7997
+        },
+        {
+          "word": "не",
+          "start": 12.7997,
+          "end": 12.9737
+        },
+        {
+          "word": "чувствует",
+          "start": 12.9737,
+          "end": 13.4084
+        },
+        {
+          "word": "Горизонт",
+          "start": 13.4934,
+          "end": 13.876
+        },
+        {
+          "word": "событий",
+          "start": 13.876,
+          "end": 14.3281
+        },
+        {
+          "word": "вообще",
+          "start": 14.3281,
+          "end": 14.7455
+        },
+        {
+          "word": "не",
+          "start": 14.7455,
+          "end": 14.9021
+        },
+        {
+          "word": "больно",
+          "start": 14.9021,
+          "end": 15.2499
+        }
+      ]
+    },
+    {
+      "id": "b4",
+      "role": "twist",
+      "start": 16.4499,
+      "end": 24.592,
+      "words": [
+        {
+          "word": "Больно",
+          "start": 16.4499,
+          "end": 16.8325
+        },
+        {
+          "word": "станет",
+          "start": 16.8325,
+          "end": 17.1456
+        },
+        {
+          "word": "почти",
+          "start": 17.1456,
+          "end": 17.4064
+        },
+        {
+          "word": "через",
+          "start": 17.4064,
+          "end": 17.7021
+        },
+        {
+          "word": "тринадцать",
+          "start": 17.7021,
+          "end": 18.1195
+        },
+        {
+          "word": "секунд",
+          "start": 18.1195,
+          "end": 18.5195
+        },
+        {
+          "word": "после",
+          "start": 18.5195,
+          "end": 18.7456
+        },
+        {
+          "word": "края",
+          "start": 18.7456,
+          "end": 19.1977
+        },
+        {
+          "word": "Лапы",
+          "start": 19.2827,
+          "end": 19.5261
+        },
+        {
+          "word": "тянет",
+          "start": 19.5261,
+          "end": 19.7174
+        },
+        {
+          "word": "сильнее",
+          "start": 19.7174,
+          "end": 20.0305
+        },
+        {
+          "word": "чем",
+          "start": 20.0827,
+          "end": 20.1522
+        },
+        {
+          "word": "хвост",
+          "start": 20.1522,
+          "end": 20.587
+        },
+        {
+          "word": "и",
+          "start": 20.587,
+          "end": 20.7261
+        },
+        {
+          "word": "кота",
+          "start": 20.7261,
+          "end": 20.9522
+        },
+        {
+          "word": "вытягивает",
+          "start": 20.9522,
+          "end": 21.4566
+        },
+        {
+          "word": "в",
+          "start": 21.4566,
+          "end": 21.4966
+        },
+        {
+          "word": "макаронину",
+          "start": 21.4566,
+          "end": 22.0479
+        },
+        {
+          "word": "Физики",
+          "start": 22.1329,
+          "end": 22.3763
+        },
+        {
+          "word": "так",
+          "start": 22.3763,
+          "end": 22.5329
+        },
+        {
+          "word": "это",
+          "start": 22.5329,
+          "end": 22.7415
+        },
+        {
+          "word": "и",
+          "start": 22.7415,
+          "end": 22.7937
+        },
+        {
+          "word": "называют",
+          "start": 22.7937,
+          "end": 23.2981
+        },
+        {
+          "word": "спагеттификация",
+          "start": 23.6181,
+          "end": 24.592
+        }
+      ]
+    },
+    {
+      "id": "b5",
+      "role": "cta",
+      "start": 24.677,
+      "end": 27.7359,
+      "words": [
+        {
+          "word": "Так",
+          "start": 24.677,
+          "end": 24.717
+        },
+        {
+          "word": "что",
+          "start": 24.677,
+          "end": 24.8161
+        },
+        {
+          "word": "гладь",
+          "start": 24.8161,
+          "end": 25.0944
+        },
+        {
+          "word": "кота",
+          "start": 25.0944,
+          "end": 25.2509
+        },
+        {
+          "word": "дома",
+          "start": 25.2509,
+          "end": 25.4944
+        },
+        {
+          "word": "А",
+          "start": 25.5794,
+          "end": 25.649
+        },
+        {
+          "word": "сам",
+          "start": 25.649,
+          "end": 25.7881
+        },
+        {
+          "word": "подпишись",
+          "start": 25.7881,
+          "end": 26.362
+        },
+        {
+          "word": "пока",
+          "start": 26.3794,
+          "end": 26.6229
+        },
+        {
+          "word": "тебя",
+          "start": 26.6229,
+          "end": 26.8664
+        },
+        {
+          "word": "не",
+          "start": 26.8664,
+          "end": 27.2838
+        },
+        {
+          "word": "затянуло",
+          "start": 27.2838,
+          "end": 27.7359
+        }
+      ]
+    }
+  ],
+  "provider_mode": "chat_import"
+}

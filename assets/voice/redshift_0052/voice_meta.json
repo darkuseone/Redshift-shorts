@@ -1,0 +1,11 @@
+{
+  "source": "chat",
+  "audio": "take36.mp3",
+  "voice_id": "14NozJq5eoBmDc1FXFDq",
+  "model": "eleven_v3",
+  "tempo": 1.15,
+  "word_timings": "stt",
+  "duration_sec": 27.61,
+  "removed_sec": 4.19,
+  "lufs": -14.0
+}
