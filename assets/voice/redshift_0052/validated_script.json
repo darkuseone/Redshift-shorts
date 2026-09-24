@@ -294,8 +294,8 @@
         "at": "четыре",
         "dur": 2.0,
         "params": {
-          "value": 4000000,
-          "suffix": " СОЛНЦ"
+          "value": 4,
+          "suffix": " МЛН"
         }
       },
       {
@@ -306,7 +306,8 @@
         "params": {
           "label": "ДО КРАЯ",
           "value": 3,
-          "suffix": " ЧАСА"
+          "suffix": " ЧАСА",
+          "dark": true
         }
       },
       {
@@ -327,7 +328,8 @@
         "params": {
           "label": "ДО МАКАРОНИНЫ",
           "value": 12.8,
-          "suffix": " С"
+          "suffix": " С",
+          "dark": true
         }
       }
     ],
