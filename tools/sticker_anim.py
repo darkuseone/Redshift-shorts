@@ -10,6 +10,10 @@
   stretch  — стикер тянет в «макаронину» к точке: узкий и длинный
   float    — стикер болтается и медленно вращается в невесомости
 
+Смена картинки по ходу (заказчик 24.09): --swap-sticker cat_x.png --swap-at 0.7 —
+падает кот с круглыми глазами, внутри дыры глаза уже крестиками. Вращение
+равномерное (--spins оборотов за клип), рывками — видно каждый шаг, как гифка.
+
     python tools/sticker_anim.py fall --sticker cat.png --bg smbh.jpg \\
         --target 0.52,0.68 --sec 4 --out assets/footage/director/<id>/cat_fall.mp4
 
@@ -48,8 +52,10 @@ def _ease_in(t: float) -> float:
 
 
 def render(mode: str, sticker: Path, bg_path: Path, target: tuple[float, float],
-           sec: float, out: Path, step_fps: int, spins: float, seed: int) -> None:
-    st = Image.open(sticker).convert("RGBA")
+           sec: float, out: Path, step_fps: int, spins: float, seed: int,
+           swap: Path | None = None, swap_at: float = 1.0, turns: float = 0.0) -> None:
+    st0 = Image.open(sticker).convert("RGBA")
+    st1 = Image.open(swap).convert("RGBA") if swap else st0
     bg = Image.open(bg_path).convert("RGB")
     n = int(sec * FPS)
     tmp = out.with_suffix(".frames")
@@ -63,10 +69,13 @@ def render(mode: str, sticker: Path, bg_path: Path, target: tuple[float, float],
         frame, (tx, ty) = _bg_frame(bg, target, t_smooth, 1.18)
         frame = frame.convert("RGBA")
         wob = math.sin((i // max(FPS // step_fps, 1)) * 2.1 + seed) * 6
+        st = st1 if q >= swap_at else st0
         if mode == "fall":
             k = _ease_in(q)
             size = base_w * (1.0 - 0.96 * k)
-            ang = 360 * spins * k + wob * 3
+            # Вращение равномерное, не по ease: разгон к концу читался как
+            # мельтешение, а заказчик хочет видеть каждый поворот.
+            ang = 360 * spins * q + wob
             radius = (1.0 - k) * W * 0.28
             phi = 2 * math.pi * 1.25 * k + seed
             cx = tx + radius * math.cos(phi) * (1.0 - k * 0.3)
@@ -84,7 +93,7 @@ def render(mode: str, sticker: Path, bg_path: Path, target: tuple[float, float],
         else:  # float
             sx = base_w * 0.8
             sy = sx * st.height / st.width
-            ang = math.sin(q * math.pi * 2) * 18 + wob * 2
+            ang = math.sin(q * math.pi * 2) * 18 + wob * 2 + 360 * turns * q
             cx = W / 2 + math.sin(q * math.pi * 3 + seed) * 60
             cy = H * 0.45 + math.cos(q * math.pi * 2) * 70
             alpha = 1.0
@@ -115,11 +124,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--step-fps", type=int, default=10, help="«гифочность» движения стикера")
     p.add_argument("--spins", type=float, default=4.0, help="обороты в режиме fall")
     p.add_argument("--seed", type=float, default=0.0)
+    p.add_argument("--swap-sticker", help="картинка, которая сменит стикер по ходу")
+    p.add_argument("--swap-at", type=float, default=0.7, help="доля клипа, где сменить")
+    p.add_argument("--turns", type=float, default=0.0, help="обороты в режиме float")
     p.add_argument("--out", required=True)
     a = p.parse_args(argv)
     tx, ty = (float(v) for v in a.target.split(","))
     render(a.mode, Path(a.sticker), Path(a.bg), (tx, ty), a.sec, Path(a.out),
-           a.step_fps, a.spins, a.seed)
+           a.step_fps, a.spins, a.seed,
+           Path(a.swap_sticker) if a.swap_sticker else None, a.swap_at, a.turns)
     return 0
 
 

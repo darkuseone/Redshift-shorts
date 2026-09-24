@@ -3,9 +3,9 @@
   "audio": "take36.mp3",
   "voice_id": "14NozJq5eoBmDc1FXFDq",
   "model": "eleven_v3",
-  "tempo": 1.15,
+  "tempo": 1.05,
   "word_timings": "stt",
-  "duration_sec": 27.61,
-  "removed_sec": 4.19,
+  "duration_sec": 29.83,
+  "removed_sec": 5.0,
   "lufs": -14.0
 }
