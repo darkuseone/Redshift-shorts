@@ -4,7 +4,7 @@ Catalog ``message-thread-reveal`` uses visibility/jumping coordinates.
 Here bubbles pop with opacity and scale, the thread smoothly translates with ``y``,
 typed characters are pre-baked spans, and the end card transitions with opacity and scale.
 No tween of width/height/filter/clip-path/strokeDashoffset; no textContent writes.
-Brandbook accent (#D7263D / #F2566B) for CTA and highlights, Inter font.
+Brandbook accent (#D7263D / #D7263D) for CTA and highlights, Inter font.
 """
 
 from __future__ import annotations

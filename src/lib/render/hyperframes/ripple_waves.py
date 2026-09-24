@@ -99,6 +99,6 @@ def rw_transition_css() -> str:
         "background:radial-gradient(circle at 50% 50%,rgba(215,38,61,0.6) 0%,rgba(17,18,20,0.3) 35%,transparent 65%);"
         "mix-blend-mode:screen;opacity:0}"
         ".tr-ripple-waves .rw-w2{"
-        "background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.7) 0%,rgba(242,86,107,0.4) 30%,transparent 60%);"
+        "background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.7) 0%,rgba(215,38,61,0.4) 30%,transparent 60%);"
         "mix-blend-mode:overlay;opacity:0}"
     )

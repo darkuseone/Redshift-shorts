@@ -116,7 +116,7 @@ class TestPinkNeverPassesAgain:
             assert not verdict["passed"], f"{rgb}: розовая дымка прошла"
 
     def test_the_brand_red_still_passes_at_any_size(self, rules):
-        for rgb in ((215, 38, 61), (142, 22, 39), (242, 86, 107)):
+        for rgb in ((215, 38, 61), (142, 22, 39), (215, 38, 61)):
             assert palette_verdict([self._field(rgb)], rules)["passed"], rgb
 
     def test_earth_passes_but_gold_does_not(self, rules):

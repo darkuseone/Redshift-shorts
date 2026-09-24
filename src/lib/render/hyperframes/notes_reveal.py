@@ -4,7 +4,7 @@ Catalog ``notes-reveal`` measures character bounds dynamically.
 Here character spans are pre-baked with opacity reveals, smooth scroll via transform y,
 and clean crossfade into the closing card.
 No tween of width/height/filter/clip-path/strokeDashoffset; no textContent writes.
-Brandbook ink #111214, accent #D7263D / #F2566B, Inter font.
+Brandbook ink #111214, accent #D7263D / #D7263D, Inter font.
 """
 
 from __future__ import annotations

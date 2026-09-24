@@ -114,7 +114,7 @@ def ov_macos_notification(ctx: TemplateCtx) -> Piece:
         f'<defs>'
         f'<linearGradient id="{node_id}-mn-grad" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">'
         f'<stop offset="0%" stop-color="#D7263D"/>'
-        f'<stop offset="100%" stop-color="#F2566B"/>'
+        f'<stop offset="100%" stop-color="#D7263D"/>'
         f'</linearGradient>'
         f'</defs>'
         f'<rect width="72" height="72" rx="16" fill="url(#{node_id}-mn-grad)"/>'

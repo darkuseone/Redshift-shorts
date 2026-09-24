@@ -102,11 +102,11 @@ def rb_transition_css() -> str:
         ".tr-ridged-burn .rb-big{font-family:Inter,system-ui,sans-serif;font-size:120px;"
         "font-weight:900;letter-spacing:0.06em;opacity:0.18;user-select:none}"
         ".tr-ridged-burn .rb-ember{"
-        "background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.85) 0%,rgba(242,86,107,0.75) 25%,rgba(215,38,61,0.8) 50%,transparent 72%);"
+        "background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.85) 0%,rgba(215,38,61,0.75) 25%,rgba(215,38,61,0.8) 50%,transparent 72%);"
         "mix-blend-mode:screen;opacity:0}"
         ".tr-ridged-burn .rb-sparks{"
         "background:radial-gradient(circle at 35% 45%,rgba(247,245,243,0.8) 0%,transparent 12%),"
-        "radial-gradient(circle at 65% 55%,rgba(242,86,107,0.75) 0%,transparent 15%),"
+        "radial-gradient(circle at 65% 55%,rgba(215,38,61,0.75) 0%,transparent 15%),"
         "radial-gradient(circle at 50% 30%,rgba(215,38,61,0.8) 0%,transparent 14%);"
         "mix-blend-mode:screen;opacity:0}"
     )

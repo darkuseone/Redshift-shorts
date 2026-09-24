@@ -216,7 +216,7 @@ def test_spoken_word_is_filled_with_the_single_accent(plan, assets, brandbook):
     assert brandbook["colors"]["accent"] in markup
     # Один цвет заливки на весь канал: ни мягкого красного, ни cyan, ни
     # золота, ни Siri-жёлтого — закон канала, а не настройка жеста.
-    assert brandbook["colors"]["accent_soft"].lower() not in markup.lower()
+    assert "#f2566b" not in markup.lower()  # светло-красный убран 23.09
     assert brandbook["colors"]["cyan"].lower() not in markup.lower()
     assert "#FFD700" not in markup
     assert "#fe9f1b" not in markup.lower()

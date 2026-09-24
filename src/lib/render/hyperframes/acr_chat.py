@@ -587,7 +587,7 @@ def acr_overlay_css() -> str:
         ".ai-chat-reveal .acr-ecstar{position:absolute;left:610px;top:230px}"
         ".ai-chat-reveal .acr-ecvideo{position:absolute;left:222px;top:336px;"
         "width:283px;height:454px;border-radius:36px;"
-        "background:linear-gradient(165deg,#8E1627 0%,#D7263D 78%,#F2566B 100%);"
+        "background:linear-gradient(165deg,#8E1627 0%,#D7263D 78%,#D7263D 100%);"
         "box-shadow:0 24px 60px rgba(0,0,0,0.45)}"
         ".ai-chat-reveal .acr-play{position:absolute;left:50%;top:50%;"
         "width:108px;height:108px;margin-left:-54px;margin-top:-54px;"
@@ -606,5 +606,5 @@ def acr_overlay_css() -> str:
         "letter-spacing:0.3px}"
         ".ai-chat-reveal .acr-ecfoot{position:absolute;top:1536px;left:0;right:0;"
         "text-align:center;font-weight:700;font-size:25px;letter-spacing:4px;"
-        "color:#F2566B}"
+        "color:#D7263D}"
     ).replace("__ACR_LEFT__", left).replace("__ACR_SCALE__", scale)
