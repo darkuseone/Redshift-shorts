@@ -164,19 +164,19 @@
     "shots": [
       {
         "block": "b1",
-        "footage": "cat_fall",
-        "why": "кот-стикер крутится и падает в дыру"
-      },
-      {
-        "block": "b1",
-        "at": "Что",
         "fullscreen": {
           "template": "intro-hooks/hook-question-flash",
           "content": "КОТ В ЧЁРНОЙ ДЫРЕ?",
           "accent_word": "ДЫРЕ?",
-          "footage": "smbh"
+          "footage": "cat_fall"
         },
-        "why": "карточка хука"
+        "why": "хук в первую секунду поверх падающего кота"
+      },
+      {
+        "block": "b1",
+        "at": "Что",
+        "footage": "cat_fall",
+        "why": "кот докручивается в дыру"
       },
       {
         "block": "b2",
@@ -246,16 +246,6 @@
       },
       {
         "block": "b4",
-        "at": "тринадцать",
-        "fullscreen": {
-          "template": "text-fullscreen/number-slam-card",
-          "content": "12,8 С",
-          "footage": "smbh"
-        },
-        "why": "цифра-удар"
-      },
-      {
-        "block": "b4",
         "at": "Лапы",
         "footage": "cat_stretch",
         "transition": "transitions/glitch",
@@ -273,7 +263,7 @@
         "block": "b4",
         "at": "называют",
         "fullscreen": {
-          "template": "text-fullscreen/kinetic-stack",
+          "template": "text-fullscreen/bottom-up-letters",
           "content": "СПАГЕТТИФИКАЦИЯ",
           "accent_word": "СПАГЕТТИФИКАЦИЯ",
           "footage": "tde"
@@ -327,6 +317,17 @@
         "params": {
           "text": "NASA Goddard",
           "subtitle": "визуализация 2024"
+        }
+      },
+      {
+        "template": "data-viz/stat-countup-card",
+        "block": "b4",
+        "at": "тринадцать",
+        "dur": 1.8,
+        "params": {
+          "label": "ДО МАКАРОНИНЫ",
+          "value": 12.8,
+          "suffix": " С"
         }
       }
     ],
