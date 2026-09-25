@@ -81,7 +81,10 @@ def choose_bed(cfg, plan: dict[str, Any]):
     music_lib = open_library(cfg, "music")
     mood = plan.get("music_mood") or ""
     tags = plan.get("music_tags") or []
-    record = music_lib.by_mood(mood) if mood else None
+    # `music_mood` может назвать конкретную подложку по id (0052: заказчик
+    # выбирает бед сам) — тогда она и играет, без подбора по тегам.
+    record = (music_lib.by_id(mood) or music_lib.by_id(f"music_{mood}")
+              or music_lib.by_mood(mood)) if mood else None
     if record is None and tags:
         # Кольцо последних бедов (§10.3) живёт в том же файле предпочтений,
         # что и кольцо концовок: одна механика, одно место.
@@ -551,7 +554,11 @@ def run_step(ctx) -> dict[str, Any]:
                                       "tags": list(record.tags),
                                       "wanted_tags": list(tags),
                                       "target_lufs": music_target,
-                                      "ducking_db": ducking_db}
+                                      "ducking_db": ducking_db,
+                                      "license": record.license,
+                                      "attribution": str((record.extra or {}).get(
+                                          "attribution") or ""),
+                                      "source_url": record.url_origin}
     else:
         bed = np.zeros((length, 2), dtype=np.float32)
         music_info = {"asset_id": None, "mood": plan.get("music_mood") or "",

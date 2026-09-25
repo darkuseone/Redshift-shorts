@@ -401,7 +401,9 @@ def cmd_add_sfx(args) -> int:
     result = add_clip(cfg, source=Path(args.file), clip_id=args.id, tags=args.tag,
                       role=args.role or "", title=args.title or "",
                       start_sec=args.start if args.start is not None else 0.0,
-                      length_sec=args.length, force=args.force)
+                      length_sec=args.length, force=args.force,
+                     license=args.license or "", attribution=args.attribution or "",
+                     source_url=args.source_url or "")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
@@ -436,7 +438,9 @@ def cmd_add_music(args) -> int:
 
     result = add_bed(cfg, source=Path(args.file), bed_id=args.id, tags=args.tag,
                      title=args.title or "", start_sec=args.start,
-                     length_sec=args.length, force=args.force)
+                     length_sec=args.length, force=args.force,
+                     license=args.license or "", attribution=args.attribution or "",
+                     source_url=args.source_url or "")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
@@ -638,6 +642,11 @@ def build_parser() -> argparse.ArgumentParser:
     music.add_argument("--length", type=float, default=70.0, help="длина отрезка, сек")
     music.add_argument("--force", action="store_true",
                        help="принять вопреки замечаниям приёма")
+    music.add_argument("--license", default=None,
+                       help="лицензия записи из открытой библиотеки (cc-by-4.0, cc0…)")
+    music.add_argument("--attribution", default=None,
+                       help="строка авторства для описания ролика (для CC BY обязательна)")
+    music.add_argument("--source-url", default=None, help="страница записи")
     music.add_argument("--inspect", default=None, help="только промерить файл")
     music.add_argument("--status", action="store_true",
                        help="что в библиотеке есть и чем покрыты теги")
