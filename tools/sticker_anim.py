@@ -53,14 +53,15 @@ def _ease_in(t: float) -> float:
 
 def render(mode: str, sticker: Path, bg_path: Path, target: tuple[float, float],
            sec: float, out: Path, step_fps: int, spins: float, seed: int,
-           swap: Path | None = None, swap_at: float = 1.0, turns: float = 0.0) -> None:
+           swap: Path | None = None, swap_at: float = 1.0, turns: float = 0.0,
+           scale: float = 1.0, pos: tuple[float, float] = (0.5, 0.45)) -> None:
     st0 = Image.open(sticker).convert("RGBA")
     st1 = Image.open(swap).convert("RGBA") if swap else st0
     bg = Image.open(bg_path).convert("RGB")
     n = int(sec * FPS)
     tmp = out.with_suffix(".frames")
     tmp.mkdir(parents=True, exist_ok=True)
-    base_w = int(W * 0.78)
+    base_w = int(W * 0.78 * scale)
     for i in range(n):
         t_smooth = i / max(n - 1, 1)
         # Стикер двигается рывками: время квантуется до step_fps.
@@ -98,8 +99,8 @@ def render(mode: str, sticker: Path, bg_path: Path, target: tuple[float, float],
             sx = base_w * 0.8
             sy = sx * st.height / st.width
             ang = math.sin(q * math.pi * 2) * 18 + wob * 2 + 360 * turns * q
-            cx = W / 2 + math.sin(q * math.pi * 3 + seed) * 60
-            cy = H * 0.45 + math.cos(q * math.pi * 2) * 70
+            cx = W * pos[0] + math.sin(q * math.pi * 3 + seed) * 60 * scale
+            cy = H * pos[1] + math.cos(q * math.pi * 2) * 70 * scale
             alpha = 1.0
         spr = st.resize((max(2, int(sx)), max(2, int(sy))), Image.LANCZOS)
         spr = spr.rotate(ang, resample=Image.BICUBIC, expand=True)
@@ -131,12 +132,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--swap-sticker", help="картинка, которая сменит стикер по ходу")
     p.add_argument("--swap-at", type=float, default=0.7, help="доля клипа, где сменить")
     p.add_argument("--turns", type=float, default=0.0, help="обороты в режиме float")
+    p.add_argument("--scale", type=float, default=1.0, help="размер стикера, доля от базового")
+    p.add_argument("--pos", default="0.5,0.45", help="центр стикера в режиме float, доли x,y")
     p.add_argument("--out", required=True)
     a = p.parse_args(argv)
     tx, ty = (float(v) for v in a.target.split(","))
     render(a.mode, Path(a.sticker), Path(a.bg), (tx, ty), a.sec, Path(a.out),
            a.step_fps, a.spins, a.seed,
-           Path(a.swap_sticker) if a.swap_sticker else None, a.swap_at, a.turns)
+           Path(a.swap_sticker) if a.swap_sticker else None, a.swap_at, a.turns,
+           a.scale, tuple(float(v) for v in a.pos.split(",")))
     return 0
 
 

@@ -358,3 +358,31 @@ def test_skip_live_ships_file_without_fake_semantic_pass(tmp_path, monkeypatch):
     sem = next(c for c in folded["checks"] if c["id"] == "QC-SEMANTIC")
     assert sem["blocking"] is False
     assert folded.get("vision")
+
+
+def test_owner_cover_becomes_the_thumbnail(tmp_path, monkeypatch):
+    """`meta.cover` (0052: обложка из Canva) — thumbnail как есть, без AI и кадра."""
+    from PIL import Image
+
+    from src.p12_render_qc.render import make_shorts_thumbnail
+
+    monkeypatch.setattr(
+        "src.p12_render_qc.render.build_generation_provider",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("обложка уже есть")))
+    cover = tmp_path / "cover.png"
+    Image.new("RGB", (1080, 1920), (215, 38, 61)).save(cover)
+    cfg = load_config()
+    cfg.repo_root = tmp_path
+    ctx = MagicMock()
+    ctx.cfg = cfg
+    thumb = tmp_path / "thumbnail.jpg"
+
+    meta = make_shorts_thumbnail(
+        ctx, out_file=tmp_path / "no_video.mp4", thumb=thumb,
+        plan={"video_id": "t"}, script={"meta": {"cover": "cover.png"}},
+        variant="A")
+    assert meta["mode"] == "cover"
+    with Image.open(thumb) as img:
+        assert img.size == (1080, 1920)
+        r, g, b = img.getpixel((540, 960))
+        assert r > 180 and g < 80

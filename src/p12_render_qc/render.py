@@ -76,10 +76,23 @@ def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None,
     )
 
 
+def _owner_cover(ctx, script: dict[str, Any] | None) -> Path | None:
+    """Готовая обложка из `meta.cover` (путь в репо). Нет файла — предупреждение."""
+    rel = str(((script or {}).get("meta") or {}).get("cover") or "").strip()
+    if not rel:
+        return None
+    path = Path(ctx.cfg.repo_root) / rel
+    if path.is_file():
+        return path
+    _log.warning("обложка из meta.cover не найдена — thumbnail из кадра",
+                 extra={"cover": rel})
+    return None
+
+
 def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
                           plan: dict[str, Any], script: dict[str, Any] | None,
                           variant: str) -> dict[str, Any]:
-    """Обложка Shorts: Gemini/Grok image, иначе кадр ffmpeg.
+    """Обложка Shorts: `meta.cover`, иначе Gemini/Grok image, иначе кадр ffmpeg.
 
     ``render.thumbnail_mode``: ``auto`` (Gemini → Grok → ffmpeg), ``gemini``,
     ``grok``, или ``ffmpeg``. Live image key нужен для publishable thumbs;
@@ -89,6 +102,15 @@ def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
     mode = str(cfg.get("render.thumbnail_mode", "auto") or "auto").lower()
     time_sec = float(cfg.get("render.thumbnail_time_sec", 1.0))
     meta: dict[str, Any] = {"mode": "ffmpeg", "variant": variant}
+
+    # Обложка заказчика (`meta.cover`, 0052: дизайн из Canva) сильнее любой
+    # генерации и любого кадра: её выбрали глазами, и она же стоит в хуке.
+    cover = _owner_cover(ctx, script)
+    if cover is not None:
+        ffmpeg_run(["-y", "-i", str(cover), "-vf", "scale=1080:-2", "-q:v", "2",
+                    str(thumb)], what="shorts thumbnail from owner cover")
+        meta.update({"mode": "cover", "source": str(cover), "path": str(thumb)})
+        return meta
 
     # skip_generate / generation.skip: ZERO gemini_image/grok_image — сразу ffmpeg.
     # skip_vision / vision.skip_live: тоже без live image (rebuild без paid APIs).

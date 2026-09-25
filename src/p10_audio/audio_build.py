@@ -23,6 +23,9 @@ from typing import Any, Sequence
 import numpy as np
 
 from ..lib import audio as A
+from ..lib.director import (
+    _word_rows, director_spec, overlay_window, script_with_director, shot_windows,
+)
 from ..lib.logging import get_logger
 from ..lib.jsonio import read_json_or
 from ..lib.manifest import open_library
@@ -234,6 +237,86 @@ def _plan_sfx(plan: dict[str, Any], cfg) -> list[dict[str, Any]]:
     return _place_with_density(events, min_gap)
 
 
+# Звук под склейки режиссёра (заказчик 25.09: «чего-то не хватает»). P5
+# режет ролик на слоты по своей эвристике, а картинку в режиссёрском ролике
+# режет таймлайн из чата: удары по слотам P5 приходились мимо склеек, и
+# ролик звучал пусто. Здесь те же окна, что режет P11, и звук на каждом стыке.
+_DIRECTOR_TRANSITION_ROLES: tuple[tuple[str, str], ...] = (
+    ("zoom-punch", "hit_impact"),
+    ("zoom-through", "boom"),
+    ("whip", "swipe"),
+    ("blur", "whoosh_out"),
+    ("dissolve", "whoosh_out"),
+    ("fade", "whoosh_out"),
+)
+_DIRECTOR_TRANSITION_DEFAULT_ROLE = "boom"
+# Склейки режиссёра стоят чаще, чем раз в две секунды, и каждая обязана
+# звучать — общий порог плотности снял бы половину ударов.
+DIRECTOR_SFX_MIN_GAP_SEC = 0.7
+
+
+def _director_role_event(t: float, role: str, why: str, **extra: Any) -> dict[str, Any] | None:
+    if role == "none":
+        return None
+    return _event(t, intent_for_role(role) or "impact", why, role=role, **extra)
+
+
+def _director_shot_event(t: float, shot: dict[str, Any],
+                         prev: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Какой звук у склейки: явный `sfx` режиссёра, иначе по приёму кадра."""
+    block = str(shot.get("block") or "")
+    if shot.get("sfx"):
+        return _director_role_event(t, str(shot["sfx"]), f"режиссёр: звук шота {block}")
+    tr = shot.get("transition")
+    name = str((tr.get("template") if isinstance(tr, dict) else tr) or "")
+    if name:
+        role = next((r for key, r in _DIRECTOR_TRANSITION_ROLES if key in name),
+                    _DIRECTOR_TRANSITION_DEFAULT_ROLE)
+        return _director_role_event(t, role, f"переход {name}")
+    if shot.get("fullscreen"):
+        return _director_role_event(t, "reveal", f"полноэкранный текст блока {block}")
+    if prev is None or str(prev.get("block") or "") != block:
+        return _director_role_event(t, "swipe", f"смена блока {block}")
+    return _director_role_event(t, "whoosh_in", f"склейка внутри блока {block}")
+
+
+def _director_overlay_event(t: float, ovl: dict[str, Any]) -> dict[str, Any] | None:
+    if ovl.get("sfx"):
+        return _director_role_event(t, str(ovl["sfx"]), "режиссёр: звук оверлея")
+    template = str(ovl.get("template") or ovl.get("renderer") or "")
+    role = "tick" if "counter" in template else "ui_click"
+    return _director_role_event(t, role, f"оверлей {template}")
+
+
+def _plan_director_sfx(plan: dict[str, Any], spec: dict[str, Any],
+                       words_doc: dict[str, Any], cfg) -> list[dict[str, Any]]:
+    """SFX по окнам режиссёра: вход каждого шота и каждого оверлея + CTA."""
+    duration = float(plan["duration_sec"])
+    rows = _word_rows(words_doc)
+    events: list[dict[str, Any]] = []
+    prev: dict[str, Any] | None = None
+    for start, _end, shot in shot_windows(spec, rows, duration):
+        event = _director_shot_event(start, shot, prev)
+        if event is not None:
+            events.append(event)
+        prev = shot
+    for ovl in spec.get("overlays") or []:
+        start, _end = overlay_window(ovl, rows)
+        if start < duration:
+            event = _director_overlay_event(start, ovl)
+            if event is not None:
+                events.append(event)
+    # Роль обязательна: к кнопке звуков с тегами «whoosh/soft» уже не остаётся,
+    # и без роли запасного пути нет — кнопка выходила немой (0052, круг 8).
+    cta_start = float(plan.get("cta_window", [duration - 2, duration])[0])
+    events.append(_event(cta_start, "subscribe_cta", "кнопка подписки (§6, QC-16)",
+                         role="subscribe_ping"))
+    events = _collapse_whooshes(events)
+    events.sort(key=lambda e: (e["t"], e["priority"]))
+    min_gap = float(cfg.get("limits.sfx_min_gap_director_sec", DIRECTOR_SFX_MIN_GAP_SEC))
+    return _place_with_density(events, min_gap)
+
+
 def _slot_index_at(slots: Sequence[dict[str, Any]], t: float) -> Any:
     for slot in slots:
         start = float(slot.get("start") or 0.0)
@@ -383,7 +466,12 @@ def run_step(ctx) -> dict[str, Any]:
 
     # --- SFX из библиотеки (§14.1) ---------------------------------------
     sfx_lib = open_library(cfg, "sfx")
-    events = _plan_sfx(plan, cfg)
+    spec = director_spec(script_with_director(ctx))
+    words_doc = ctx.read_or("words.json", {}) or {}
+    if spec is not None and words_doc.get("words"):
+        events = _plan_director_sfx(plan, spec, words_doc, cfg)
+    else:
+        events = _plan_sfx(plan, cfg)
     sfx_peak_lo, sfx_peak_hi = sfx_peak_corridor(cfg)
     sfx_bus = np.zeros((length, 2), dtype=np.float32)
     placed: list[dict[str, Any]] = []

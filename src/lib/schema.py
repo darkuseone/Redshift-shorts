@@ -63,6 +63,9 @@ SCRIPT_SCHEMA: dict[str, Any] = {
                 "music_mood": {"type": "string"},
                 "notes": {"type": "string"},
                 "source_ref": {"type": "string"},
+                # Готовая обложка (путь в репо, 9:16): P12 кладёт её в
+                # thumbnail.jpg вместо генерации и кадра ролика.
+                "cover": {"type": "string", "pattern": r"\.(jpe?g|png|webp)$"},
                 # MUST-028: false hides Subscribe for every video_id.
                 "cta": {"type": "boolean"},
                 "avatar_mode": {"enum": list(VIDEO_AVATAR_MODES), "default": "normal"},

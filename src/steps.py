@@ -79,8 +79,10 @@ def build_pipeline() -> Pipeline:
         Step("P9", "Генерация недостающих материалов", p9,
              inputs=("accepted_assets.json", "cut_plan.json"), outputs=("generated_assets.json",)),
         Step("P10", "Аудио: SFX, музыкальная подложка, микс", p10,
-             inputs=("cut_plan.json", "voice_final.wav"),
-             outputs=("sfx_map.json", "music_bed.wav", "mix.wav")),
+             inputs=("cut_plan.json", "voice_final.wav", "words.json"),
+             outputs=("sfx_map.json", "music_bed.wav", "mix.wav"),
+             # SFX ставятся на склейки таймлайна режиссёра из сценария.
+             uses_script=True),
         Step("P11", "Сборка одного edit-плана", p11,
              inputs=("cut_plan.json", "accepted_assets.json", "generated_assets.json",
                      "avatar_meta.json", "sfx_map.json", "words.json"),
