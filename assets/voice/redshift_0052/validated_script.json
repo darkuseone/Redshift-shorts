@@ -185,6 +185,14 @@
         "page_url": "https://svs.gsfc.nasa.gov/14576/",
         "credit": "NASA/GSFC, J. Schnittman",
         "note": "Plunge Explainer 2024, 24–31 с: нырок за горизонт"
+      },
+      "formula_editor": {
+        "src": "assets/footage/director/redshift_0052/formula_editor.mp4",
+        "source": "redshift",
+        "license": "generated-owned",
+        "page_url": "https://github.com/darkuseone/Redshift-shorts/blob/main/tools/typing_card.py",
+        "credit": "REDSHIFT",
+        "note": "формула приливного разрыва (редактор tidal.py), tools/typing_card.py, фон — tde затемнён"
       }
     },
     "shots": [
@@ -214,21 +222,9 @@
       {
         "block": "b2",
         "at": "порвёт",
-        "footage": "tde",
-        "transition": "transitions/zoom-punch-in",
-        "motion": "kenburns/zoom-in-center",
-        "why": "удар на «порвёт» тем же кадром"
-      },
-      {
-        "block": "b2",
-        "at": "Быстро",
-        "fullscreen": {
-          "template": "text-fullscreen/kinetic-stack",
-          "content": "БЫСТРО ГРУСТНО БЕЗ ШАНСОВ",
-          "accent_word": "ШАНСОВ",
-          "footage": "tde"
-        },
-        "why": "сарказм крупно"
+        "footage": "formula_editor",
+        "sfx": "type_key",
+        "why": "вместо «БЫСТРО ГРУСТНО»: формула — почему маленькая дыра рвёт кота (5 млн g)"
       },
       {
         "block": "b3",
@@ -298,7 +294,7 @@
         "template": "data-viz/counter-roll",
         "block": "b2",
         "at": "десяток",
-        "dur": 1.8,
+        "dur": 1.1,
         "params": {
           "value": 10,
           "suffix": " СОЛНЦ"
@@ -325,17 +321,6 @@
           "suffix": " ЧАСА",
           "dark": true
         }
-      },
-      {
-        "template": "lower-thirds/source-domain",
-        "block": "b4",
-        "at": "Больно",
-        "dur": 1.0,
-        "params": {
-          "text": "NASA Goddard",
-          "subtitle": "визуализация 2024"
-        },
-        "offset": 0.3
       },
       {
         "template": "data-viz/stat-countup-card",
