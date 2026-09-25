@@ -2,6 +2,7 @@
   "meta": {
     "video_id": "redshift_0052",
     "title": "Что будет с твоим котом в чёрной дыре",
+    "cover": "assets/footage/director/redshift_0052/cover.jpg",
     "topic": "black hole spaghettification, tidal forces, Sgr A*",
     "category": "space",
     "language": "ru",
@@ -116,42 +117,42 @@
         "source": "magnific",
         "license": "magnific",
         "page_url": "https://www.magnific.com",
-        "credit": "NASA / Magnific"
+        "credit": "Magnific / Canva",
+        "ai_generated": true,
+        "note": "кот падает в дыру с обложки; глаза-крестики на 60 %"
       },
       "cat_float": {
         "src": "assets/footage/director/redshift_0052/cat_float.mp4",
         "source": "magnific",
         "license": "magnific",
         "page_url": "https://www.magnific.com",
-        "credit": "NASA / Magnific"
+        "credit": "Magnific / NASA GSFC",
+        "note": "живой кот над диском — последний кадр подлёта"
       },
       "cat_stretch": {
         "src": "assets/footage/director/redshift_0052/cat_stretch.mp4",
         "source": "magnific",
         "license": "magnific",
         "page_url": "https://www.magnific.com",
-        "credit": "NASA / Magnific"
+        "credit": "Magnific / NASA GSFC",
+        "note": "кот-крестики тянется в макаронину за горизонтом"
       },
       "cat_sit": {
         "src": "assets/footage/director/redshift_0052/cat_sit.mp4",
         "source": "magnific",
         "license": "magnific",
         "page_url": "https://www.magnific.com",
-        "credit": "NASA / Magnific"
+        "credit": "Magnific / Canva",
+        "ai_generated": true,
+        "note": "кот цел, внизу кадра, на фоне обложки — петля к началу"
       },
       "cat_freeze": {
         "src": "assets/footage/director/redshift_0052/cat_freeze.jpg",
         "source": "magnific",
         "license": "magnific",
         "page_url": "https://www.magnific.com",
-        "credit": "NASA / Magnific"
-      },
-      "smbh": {
-        "src": "assets/footage/director/redshift_0052/smbh.jpg",
-        "source": "nasa",
-        "license": "public_domain",
-        "page_url": "https://images.nasa.gov/details/PIA16695",
-        "credit": "NASA/JPL-Caltech"
+        "credit": "Magnific / NASA GSFC",
+        "note": "последний кадр cat_float — пауза"
       },
       "tde": {
         "src": "assets/footage/director/redshift_0052/tde.jpg",
@@ -159,6 +160,31 @@
         "license": "public_domain",
         "page_url": "https://images.nasa.gov/details/PIA25440",
         "credit": "NASA/JPL-Caltech"
+      },
+      "cover_art": {
+        "src": "assets/footage/director/redshift_0052/cover_art.jpg",
+        "source": "canva",
+        "license": "owner",
+        "ai_generated": true,
+        "page_url": "https://www.canva.com",
+        "credit": "REDSHIFT / Canva",
+        "note": "обложка из Canva без надписей, дыра опущена вниз: верх кадра пустой под заголовок хука"
+      },
+      "nasa_approach": {
+        "src": "assets/footage/director/redshift_0052/nasa_approach.mp4",
+        "source": "nasa",
+        "license": "public_domain",
+        "page_url": "https://svs.gsfc.nasa.gov/14576/",
+        "credit": "NASA/GSFC, J. Schnittman",
+        "note": "Plunge Explainer 2024, 9–14 с: подлёт к дыре Sgr A*"
+      },
+      "nasa_plunge": {
+        "src": "assets/footage/director/redshift_0052/nasa_plunge.mp4",
+        "source": "nasa",
+        "license": "public_domain",
+        "page_url": "https://svs.gsfc.nasa.gov/14576/",
+        "credit": "NASA/GSFC, J. Schnittman",
+        "note": "Plunge Explainer 2024, 24–31 с: нырок за горизонт"
       }
     },
     "shots": [
@@ -168,22 +194,22 @@
           "template": "intro-hooks/hook-question-flash",
           "content": "КОТ В ЧЁРНОЙ ДЫРЕ?",
           "accent_word": "ДЫРЕ?",
-          "footage": "cat_fall"
+          "footage": "cover_art"
         },
-        "why": "хук в первую секунду поверх падающего кота"
+        "why": "первый кадр — обложка из Canva: хук на чистой дыре, без кота под текстом"
       },
       {
         "block": "b1",
         "at": "чёрную",
         "footage": "cat_fall",
-        "why": "кот с круглыми глазами крутится в дыру, внутри — крестики"
+        "why": "тот же фон: кот падает в дыру с обложки, внутри глаза крестиками"
       },
       {
         "block": "b2",
         "footage": "tde",
-        "transition": "transitions/chromatic-radial-split",
+        "transition": "transitions/whip-pan-l",
         "motion": "kenburns/zoom-in-center",
-        "why": "звёздная дыра рвёт звезду"
+        "why": "маленькая дыра рвёт звезду; смена блока — вжух"
       },
       {
         "block": "b2",
@@ -206,16 +232,15 @@
       },
       {
         "block": "b3",
-        "footage": "smbh",
-        "transition": "transitions/chromatic-radial-split",
-        "motion": "kenburns/zoom-in-center",
-        "why": "гигант в центре Галактики"
+        "footage": "nasa_approach",
+        "transition": "transitions/light-sweep",
+        "why": "гигант: живой подлёт NASA, диск растёт; вход — белый блик"
       },
       {
         "block": "b3",
         "at": "Кот",
         "footage": "cat_float",
-        "why": "кот с крестиками в том же космосе, прямая склейка"
+        "why": "кот цел и летит над тем же диском, прямая склейка"
       },
       {
         "block": "b3",
@@ -223,10 +248,9 @@
         "fullscreen": {
           "template": "text-fullscreen/kinetic-stack",
           "content": "НЕ БОЛЬНО",
-          "accent_word": "БОЛЬНО",
-          "footage": "smbh"
+          "accent_word": "БОЛЬНО"
         },
-        "why": "панчлайн перед паузой"
+        "why": "панчлайн на чёрном перед паузой"
       },
       {
         "block": "b3",
@@ -235,45 +259,44 @@
         "footage": "cat_freeze",
         "transition": "transitions/zoom-punch-in",
         "motion": "kenburns/zoom-in-center",
-        "why": "драматическая пауза: кот замер, наезд на морду"
+        "why": "драматическая пауза: кот замер, наезд",
+        "sfx": "sub_drop"
       },
       {
         "block": "b4",
-        "footage": "tde",
-        "transition": "transitions/chromatic-radial-split",
-        "motion": "kenburns/pan-left",
-        "why": "ответ на хук"
+        "footage": "nasa_plunge",
+        "transition": "transitions/zoom-through",
+        "why": "нырок за горизонт — живой кадр NASA; вход проваливанием камеры"
       },
       {
         "block": "b4",
         "at": "Лапы",
         "footage": "cat_stretch",
-        "why": "кота тянет в макаронину"
+        "why": "за горизонтом кота тянет в макаронину, фон тот же",
+        "sfx": "riser"
       },
       {
         "block": "b4",
-        "at": "макаронину",
-        "footage": "tde",
-        "transition": "transitions/zoom-punch-in",
-        "motion": "kenburns/zoom-in-center",
-        "why": "макаронина уходит в диск"
+        "at": "Физики",
+        "footage": "nasa_plunge",
+        "why": "продолжение нырка под плашку NASA Goddard"
       },
       {
         "block": "b4",
         "at": "называют",
         "fullscreen": {
-          "template": "text-fullscreen/bottom-up-letters",
-          "content": "СПАГЕТТИФИКАЦИЯ",
-          "accent_word": "СПАГЕТТИФИКАЦИЯ",
-          "footage": "tde"
+          "template": "intro-hooks/hook-blackout-word",
+          "content": "СПАГЕТТИ- ФИКАЦИЯ",
+          "accent_word": "ФИКАЦИЯ"
         },
-        "why": "термин крупно"
+        "why": "термин на чёрном в две строки — кегль по слову вдвое крупнее",
+        "sfx": "hit_impact"
       },
       {
         "block": "b5",
         "footage": "cat_sit",
-        "transition": "transitions/chromatic-radial-split",
-        "why": "кот доволен, финал"
+        "transition": "transitions/blur-dip",
+        "why": "кот цел, фон обложки — петля к первому кадру"
       }
     ],
     "overlays": [
@@ -313,7 +336,7 @@
         "template": "lower-thirds/source-domain",
         "block": "b4",
         "at": "Физики",
-        "dur": 1.8,
+        "dur": 1.1,
         "params": {
           "text": "NASA Goddard",
           "subtitle": "визуализация 2024"
