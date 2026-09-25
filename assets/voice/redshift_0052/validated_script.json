@@ -272,14 +272,8 @@
         "block": "b4",
         "at": "Лапы",
         "footage": "cat_stretch",
-        "why": "за горизонтом кота тянет в макаронину, фон тот же",
+        "why": "за горизонтом кота тянет в макаронину до самого термина, фон тот же",
         "sfx": "riser"
-      },
-      {
-        "block": "b4",
-        "at": "Физики",
-        "footage": "nasa_plunge",
-        "why": "продолжение нырка под плашку NASA Goddard"
       },
       {
         "block": "b4",
@@ -314,11 +308,11 @@
         "template": "data-viz/counter-roll",
         "block": "b3",
         "at": "четыре",
-        "dur": 1.4,
         "params": {
           "value": 4,
           "suffix": " МЛН"
-        }
+        },
+        "until": "Кот"
       },
       {
         "template": "data-viz/stat-countup-card",
@@ -335,12 +329,13 @@
       {
         "template": "lower-thirds/source-domain",
         "block": "b4",
-        "at": "Физики",
-        "dur": 1.1,
+        "at": "Больно",
+        "dur": 1.0,
         "params": {
           "text": "NASA Goddard",
           "subtitle": "визуализация 2024"
-        }
+        },
+        "offset": 0.3
       },
       {
         "template": "data-viz/stat-countup-card",
@@ -369,6 +364,10 @@
       {
         "code": "TARGET_DURATION_MISMATCH",
         "message": "target_duration_sec=30.0 заметно расходится с оценкой 36.4 сек"
+      },
+      {
+        "code": "DIRECTOR_WARN",
+        "message": "block b4: окно ~4.6 с без смены картинки и без движения"
       }
     ],
     "fonts": [

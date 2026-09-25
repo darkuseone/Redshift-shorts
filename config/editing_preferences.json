@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-25T01:02:28+00:00",
+  "updated_at": "2026-09-25T03:31:38+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -47,8 +47,8 @@
   ],
   "bed_ring": [
     "music_gravitational_pull",
-    "music_earth_from_orbit",
-    "music_interstellar_distance"
+    "music_interstellar_distance",
+    "music_earth_from_orbit"
   ],
   "template_excludes": {
     "redshift_0050": [
