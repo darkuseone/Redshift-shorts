@@ -49,3 +49,22 @@
 - 19 SFX, 0 пропусков; подложка — доля 0.28–0.32 от голоса.
 - QC: блокирующие — все зелёные; советующие (QC-2 без аватара, QC-21, QC-28)
   в режиссёрском режиме не блокируют.
+
+## Проверено глазами: в 9:16 не работает (25.09, круг 11)
+
+| Приём | Что в кадре | Замена |
+|---|---|---|
+| `text-fullscreen/kinetic-stack` «БЫСТРО ГРУСТНО БЕЗ ШАНСОВ» | слова без смысла, заказчик: «какой смысл от этой карточки?» | формула или график по делу |
+| `text-fullscreen/code-typing` | маленькое окно в углу, синие/зелёные подсветки не из палитры | `tools/typing_card.py --style editor` |
+| `browser-ui/*` (notepad/google/terminal — `source_card`) | карточка в треть ширины, текст не читается с телефона | `tools/typing_card.py --style browser` |
+| `text-fullscreen/terminal-simulator` | полоски-заглушки вместо текста | — |
+| `text-fullscreen/scramble-reveal` | обрезанный терминал с мусором «$7IK» | `hook-blackout-word`, `kinetic-stack` |
+| `text-fullscreen/particle-text-dissolve` | тонкая строка на полкадра | `kinetic-stack` в две строки |
+| `lower-thirds/source-domain` (плашка «NASA Goddard») | ложится на строку субтитра | кредит в углу кадра уже есть; нужен источник крупно — `frames-cards/paper-reveal` |
+| `lower-thirds/metric-badge`, `timestamp-marker` | крошечная плашка под субтитром | `data-viz/counter-roll`, `stat-countup-card` |
+| `data-viz/decline-chart` | линия `#fb7185` — розовый, запрещён | — |
+
+Работают крупно: `counter-roll`, `stat-countup-card`, `hook-question-flash`,
+`hook-blackout-word`, `kinetic-stack` (2–4 слова со смыслом),
+`frames-cards/paper-reveal`, переходы `whip-pan`, `zoom-punch`, `zoom-through`,
+`blur-dip`, `light-sweep`. Формулы и расчёты — `tools/typing_card.py`.

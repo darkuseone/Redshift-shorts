@@ -511,19 +511,25 @@ def normalize_voice(data: np.ndarray, sr: int = SAMPLE_RATE, *,
 # в ffmpeg. Лимитер работает на учетверённой частоте: межвыборочные пики
 # MP3-дубля иначе выходили на 1.5 дБ выше потолка.
 MASTER_LOWPASS_HZ = 16000.0
-MASTER_COMPRESS_BELOW_TARGET_DB = 14.0
-MASTER_RATIO = 3.0
+MASTER_COMPRESS_BELOW_TARGET_DB = 10.0
+MASTER_RATIO = 2.5
 MASTER_TOLERANCE_DB = 0.3
 MASTER_PASSES = 5
 MASTER_OVERSAMPLE = 4
+# Экспандер перед компрессором — только для голоса. В дубле ElevenLabs есть
+# комнатный хвост (через 100–150 мс после слова всего −13.5 дБ), и компрессор
+# вытягивал его до −6 дБ: заказчик 25.09 — «голос как будто в ванне». Экспандер
+# прижимает хвосты ниже порога (−26 дБ от пика), и затухание становится −19 дБ —
+# суше исходника при той же громкости.
+MASTER_VOICE_GATE = "agate=threshold=0.05:ratio=6:range=0.05:attack=2:release=70:knee=3,"
 
 
 def loud_master(data: np.ndarray, sr: int = SAMPLE_RATE, *, target_lufs: float,
-                true_peak_max: float) -> tuple[np.ndarray, float]:
+                true_peak_max: float, voice: bool = False) -> tuple[np.ndarray, float]:
     """Довести дорожку до ``target_lufs`` при True Peak ≤ ``true_peak_max``.
 
-    Срез выше 16 кГц → компрессор (порог на 14 дБ ниже цели, 3:1) → подъём →
-    лимитер ``alimiter`` на учетверённой частоте. Подъём подбирается по замеру
+    Срез выше 16 кГц → (голос: экспандер и компрессор, порог на 10 дБ ниже
+    цели, 2.5:1) → подъём → лимитер ``alimiter`` на учетверённой частоте. Подъём подбирается по замеру
     за несколько проходов: лимитер съедает часть громкости, и недобор
     добирается следующим проходом. Возвращает (аудио, суммарный gain в dB).
     """
@@ -543,9 +549,13 @@ def loud_master(data: np.ndarray, sr: int = SAMPLE_RATE, *, target_lufs: float,
         save_wav(src, arr * pre, sr)
         out, after = arr, before
         for _ in range(MASTER_PASSES):
+            # Компрессор и экспандер — только на голосе; шина приходит уже
+            # плотной, и второй компрессор снова поднял бы хвосты.
+            dynamics = (MASTER_VOICE_GATE
+                        + f"acompressor=threshold={target_lufs - MASTER_COMPRESS_BELOW_TARGET_DB:.1f}dB"
+                        f":ratio={MASTER_RATIO}:attack=5:release=80,") if voice else ""
             chain = (f"lowpass=f={MASTER_LOWPASS_HZ:.0f}:p=2,"
-                     f"acompressor=threshold={target_lufs - MASTER_COMPRESS_BELOW_TARGET_DB:.1f}dB"
-                     f":ratio={MASTER_RATIO}:attack=5:release=80,"
+                     + dynamics +
                      f"volume={gain - 20.0 * math.log10(pre):.3f}dB,"
                      f"aresample={sr * MASTER_OVERSAMPLE},"
                      f"alimiter=limit={ceiling:.4f}:attack=2:release=40:level=false,"
@@ -560,12 +570,18 @@ def loud_master(data: np.ndarray, sr: int = SAMPLE_RATE, *, target_lufs: float,
     return limit_true_peak(out, true_peak_max), after - before
 
 
-def master_to_target(data: np.ndarray, sr: int, cfg) -> tuple[np.ndarray, float]:
-    """Голос или микс к цели ``audio.voice_lufs`` способом из ``audio.master``."""
+def master_to_target(data: np.ndarray, sr: int, cfg, *,
+                     voice: bool = False) -> tuple[np.ndarray, float]:
+    """Голос или микс к цели ``audio.voice_lufs`` способом из ``audio.master``.
+
+    ``voice=True`` — голосовая дорожка: перед компрессором стоит экспандер,
+    чтобы не вытянуть комнатный хвост дубля. Шину (голос + музыка + SFX) не
+    гейтуем: он резал бы хвосты подложки и ударов.
+    """
     target = float(cfg.get("audio.voice_lufs", VOICE_LUFS))
     tp_max = float(cfg.get("audio.true_peak_max", VOICE_TRUE_PEAK_DBTP))
     if str(cfg.get("audio.master", "classic")).lower() == "broadcast":
-        return loud_master(data, sr, target_lufs=target, true_peak_max=tp_max)
+        return loud_master(data, sr, target_lufs=target, true_peak_max=tp_max, voice=voice)
     return normalize_voice(data, sr, target_lufs=target, true_peak_max=tp_max)
 
 

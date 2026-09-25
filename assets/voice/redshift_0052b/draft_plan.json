@@ -1,0 +1,1009 @@
+{
+  "video_id": "redshift_0052b",
+  "title": "Что будет с твоим котом в чёрной дыре",
+  "category": "space",
+  "language": "ru",
+  "target_duration_sec": 30.0,
+  "estimated_speech_sec": 34.839,
+  "tts_length_buffer_pct": 22.0,
+  "tts_target_sec": 42.504,
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Твой кот упал в чёрную дыру. Что с ним будет?",
+      "spoken_text": "Твой кот упал в чёрную дыру. Что с ним будет?",
+      "tokens": [
+        {
+          "display": "Твой",
+          "spoken": [
+            "Твой"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "кот",
+          "spoken": [
+            "кот"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": true
+        },
+        {
+          "display": "упал",
+          "spoken": [
+            "упал"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "чёрную",
+          "spoken": [
+            "чёрную"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "дыру.",
+          "spoken": [
+            "дыру",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "Что",
+          "spoken": [
+            "Что"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "с",
+          "spoken": [
+            "с"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "ним",
+          "spoken": [
+            "ним"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        },
+        {
+          "display": "будет?",
+          "spoken": [
+            "будет",
+            "?"
+          ],
+          "is_word": true,
+          "block_id": "b1",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "кот",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "роль блока (§6)",
+      "visual_intent": "",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "none",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "tts_text": "Твой кот упа́л в чёрную дыру́. [curious] Что с ним бу́дет?",
+      "silence_after_ms": 0,
+      "_estimated_sec": 2.898,
+      "planned_start_sec": 0.0,
+      "planned_end_sec": 2.898
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Зависит от дыры. Если она маленькая, в десяток Солнц, кота порвёт ещё на подлёте. Быстро, грустно, без шансов.",
+      "spoken_text": "Зависит от дыры. Если она маленькая, в десяток Солнц, кота порвёт ещё на подлёте. Быстро, грустно, без шансов.",
+      "tokens": [
+        {
+          "display": "Зависит",
+          "spoken": [
+            "Зависит"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "от",
+          "spoken": [
+            "от"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "дыры.",
+          "spoken": [
+            "дыры",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Если",
+          "spoken": [
+            "Если"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "она",
+          "spoken": [
+            "она"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "маленькая,",
+          "spoken": [
+            "маленькая",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "десяток",
+          "spoken": [
+            "десяток"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Солнц,",
+          "spoken": [
+            "Солнц",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "кота",
+          "spoken": [
+            "кота"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "порвёт",
+          "spoken": [
+            "порвёт"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": true
+        },
+        {
+          "display": "ещё",
+          "spoken": [
+            "ещё"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "на",
+          "spoken": [
+            "на"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "подлёте.",
+          "spoken": [
+            "подлёте",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "Быстро,",
+          "spoken": [
+            "Быстро",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "грустно,",
+          "spoken": [
+            "грустно",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "без",
+          "spoken": [
+            "без"
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        },
+        {
+          "display": "шансов.",
+          "spoken": [
+            "шансов",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b2",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "порвёт",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "роль блока (§6)",
+      "visual_intent": "",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "none",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "tts_text": "Зави́сит от дыры́. Е́сли она́ ма́ленькая — в деся́ток Со́лнц, — кота́ порвёт ещё на подлёте. [sarcastic] Бы́стро. Гру́стно. Без ша́нсов.",
+      "silence_after_ms": 0,
+      "_estimated_sec": 7.087,
+      "planned_start_sec": 2.898,
+      "planned_end_sec": 9.985
+    },
+    {
+      "id": "b3",
+      "role": "develop",
+      "text": "А теперь гигант из центра нашей Галактики: четыре миллиона Солнц. Кот летит к краю три часа и ничего не чувствует. Горизонт событий вообще не больно.",
+      "spoken_text": "А теперь гигант из центра нашей Галактики: четыре миллиона Солнц. Кот летит к краю три часа и ничего не чувствует. Горизонт событий вообще не больно.",
+      "tokens": [
+        {
+          "display": "А",
+          "spoken": [
+            "А"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "теперь",
+          "spoken": [
+            "теперь"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "гигант",
+          "spoken": [
+            "гигант"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": true
+        },
+        {
+          "display": "из",
+          "spoken": [
+            "из"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "центра",
+          "spoken": [
+            "центра"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "нашей",
+          "spoken": [
+            "нашей"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Галактики:",
+          "spoken": [
+            "Галактики",
+            ":"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "4 000 000",
+          "spoken": [
+            "четыре",
+            "миллиона"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Солнц.",
+          "spoken": [
+            "Солнц",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Кот",
+          "spoken": [
+            "Кот"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "летит",
+          "spoken": [
+            "летит"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "к",
+          "spoken": [
+            "к"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "краю",
+          "spoken": [
+            "краю"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "3",
+          "spoken": [
+            "три"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "часа",
+          "spoken": [
+            "часа"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "ничего",
+          "spoken": [
+            "ничего"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "чувствует.",
+          "spoken": [
+            "чувствует",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "Горизонт",
+          "spoken": [
+            "Горизонт"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "событий",
+          "spoken": [
+            "событий"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "вообще",
+          "spoken": [
+            "вообще"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        },
+        {
+          "display": "больно.",
+          "spoken": [
+            "больно",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b3",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "гигант",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "роль блока (§6)",
+      "visual_intent": "",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "none",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "tts_text": "А тепе́рь — гига́нт из це́нтра на́шей Гала́ктики: четы́ре миллио́на Со́лнц. Кот лети́т к кра́ю три часа́… и ничего́ не чу́вствует. [deadpan] Горизо́нт собы́тий — вообще́ не бо́льно.",
+      "silence_after_ms": 1200,
+      "_estimated_sec": 9.684,
+      "planned_start_sec": 9.985,
+      "planned_end_sec": 19.669
+    },
+    {
+      "id": "b4",
+      "role": "twist",
+      "text": "Больно станет почти через тринадцать секунд после края. Лапы тянет сильнее, чем хвост, и кота вытягивает в макаронину. Физики так это и называют — спагеттификация.",
+      "spoken_text": "Больно станет почти через тринадцать секунд после края. Лапы тянет сильнее, чем хвост, и кота вытягивает в макаронину. Физики так это и называют — спагеттификация.",
+      "tokens": [
+        {
+          "display": "Больно",
+          "spoken": [
+            "Больно"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "станет",
+          "spoken": [
+            "станет"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "почти",
+          "spoken": [
+            "почти"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "через",
+          "spoken": [
+            "через"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "13",
+          "spoken": [
+            "тринадцать"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "секунд",
+          "spoken": [
+            "секунд"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "после",
+          "spoken": [
+            "после"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "края.",
+          "spoken": [
+            "края",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Лапы",
+          "spoken": [
+            "Лапы"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "тянет",
+          "spoken": [
+            "тянет"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "сильнее,",
+          "spoken": [
+            "сильнее",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "чем",
+          "spoken": [
+            "чем"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "хвост,",
+          "spoken": [
+            "хвост",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "кота",
+          "spoken": [
+            "кота"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "вытягивает",
+          "spoken": [
+            "вытягивает"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "в",
+          "spoken": [
+            "в"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "макаронину.",
+          "spoken": [
+            "макаронину",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "Физики",
+          "spoken": [
+            "Физики"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "так",
+          "spoken": [
+            "так"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "это",
+          "spoken": [
+            "это"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "и",
+          "spoken": [
+            "и"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "называют —",
+          "spoken": [
+            "называют",
+            "—"
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": false
+        },
+        {
+          "display": "спагеттификация.",
+          "spoken": [
+            "спагеттификация",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b4",
+          "emphasis": true
+        }
+      ],
+      "emphasis_word": "спагеттификация",
+      "answers_hook": true,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "роль блока (§6)",
+      "visual_intent": "",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "none",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "tts_text": "[excited] Бо́льно ста́нет почти́ через трина́дцать секу́нд по́сле кра́я. Ла́пы тя́нет сильне́е, чем хвост, — и кота́ вытя́гивает в макаро́нину. Фи́зики так э́то и называ́ют — спагеттифика́ция.",
+      "silence_after_ms": 0,
+      "_estimated_sec": 11.101,
+      "planned_start_sec": 19.669,
+      "planned_end_sec": 30.77
+    },
+    {
+      "id": "b5",
+      "role": "cta",
+      "text": "Так что гладь кота дома. А сам подпишись, пока тебя не затянуло.",
+      "spoken_text": "Так что гладь кота дома. А сам подпишись, пока тебя не затянуло.",
+      "tokens": [
+        {
+          "display": "Так",
+          "spoken": [
+            "Так"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "что",
+          "spoken": [
+            "что"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "гладь",
+          "spoken": [
+            "гладь"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "кота",
+          "spoken": [
+            "кота"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "дома.",
+          "spoken": [
+            "дома",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "А",
+          "spoken": [
+            "А"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "сам",
+          "spoken": [
+            "сам"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "подпишись,",
+          "spoken": [
+            "подпишись",
+            ","
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": true
+        },
+        {
+          "display": "пока",
+          "spoken": [
+            "пока"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "тебя",
+          "spoken": [
+            "тебя"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "не",
+          "spoken": [
+            "не"
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        },
+        {
+          "display": "затянуло.",
+          "spoken": [
+            "затянуло",
+            "."
+          ],
+          "is_word": true,
+          "block_id": "b5",
+          "emphasis": false
+        }
+      ],
+      "emphasis_word": "подпишись",
+      "answers_hook": false,
+      "avatar_directive": "off",
+      "mode": "C",
+      "mode_reason": "роль блока (§6)",
+      "visual_intent": "",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "sfx": "none",
+      "meme_allowed": false,
+      "source_ref": null,
+      "gaze": false,
+      "tts_text": "Так что гладь кота́ до́ма. [chuckles] А сам — подпиши́сь, пока́ тебя́ не затяну́ло.",
+      "silence_after_ms": 0,
+      "_estimated_sec": 4.069,
+      "planned_start_sec": 30.77,
+      "planned_end_sec": 34.839
+    }
+  ],
+  "avatar_mode": "none",
+  "avatar": {
+    "planned_share": 0.0,
+    "planned_sec": 0,
+    "appearances": 0,
+    "avatar_id": "cfcb357563454e8cb7083258e4424992"
+  },
+  "planned_counts": {
+    "fullscreen_text": 2,
+    "fullscreen_text_scripted": 0,
+    "highlight": 1,
+    "highlight_scripted": 0,
+    "memes": 0,
+    "bg_vfx": 0
+  },
+  "music_mood": "space_harvest_drone",
+  "music_tags": [
+    "space",
+    "ambient",
+    "wide"
+  ],
+  "sources": [
+    {
+      "title": "New NASA Black Hole Visualization Takes Viewers Beyond the Brink",
+      "domain": "science.nasa.gov",
+      "url": "https://science.nasa.gov/universe/black-holes/supermassive-black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/",
+      "show_on_screen": false,
+      "published": "6 мая 2024"
+    }
+  ],
+  "cta": {
+    "text": "А сам подпишись, пока тебя не затянуло.",
+    "type": "subscribe_like"
+  },
+  "hook": {
+    "on_screen": "КОТ В ЧЁРНОЙ ДЫРЕ?",
+    "style": "question_flash"
+  },
+  "show_subscribe": true,
+  "modes_by_block": {
+    "b1": "C",
+    "b2": "C",
+    "b3": "C",
+    "b4": "C",
+    "b5": "C"
+  },
+  "conflicts": []
+}

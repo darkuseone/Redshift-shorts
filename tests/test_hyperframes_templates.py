@@ -351,6 +351,15 @@ def test_stat_card_keeps_decimal_with_russian_comma():
     assert "13 С" not in html
 
 
+def test_counter_roll_keeps_decimal_with_russian_comma():
+    """0052, версия B: «12,8 С» крупной цифрой, а не «13 С»."""
+    ctx = TemplateCtx(index=5, start=10.0, duration=1.8, target="ovl-05",
+                      track=6, params={"value": 12.8, "suffix": " С"})
+    html = "".join(str(n) for n in render_dataviz("data-viz/counter-roll", ctx).nodes)
+    assert "12,8 С" in html
+    assert "13 С" not in html
+
+
 def test_dataviz_without_data_draws_nothing():
     """Пустая диаграмма врёт сильнее, чем её отсутствие."""
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "video_id": "redshift_0052",
+    "video_id": "redshift_0052b",
     "title": "Что будет с твоим котом в чёрной дыре",
     "cover": "assets/footage/director/redshift_0052/cover.jpg",
     "topic": "black hole spaghettification, tidal forces, Sgr A*",
@@ -146,13 +146,13 @@
         "credit": "NASA/GSFC, J. Schnittman",
         "note": "Plunge Explainer 2024, 24–31 с: нырок за горизонт"
       },
-      "formula_editor": {
-        "src": "assets/footage/director/redshift_0052/formula_editor.mp4",
+      "formula_browser": {
+        "src": "assets/footage/director/redshift_0052/formula_browser.mp4",
         "source": "redshift",
         "license": "generated-owned",
         "page_url": "https://github.com/darkuseone/Redshift-shorts/blob/main/tools/typing_card.py",
         "credit": "REDSHIFT",
-        "note": "формула приливного разрыва (редактор tidal.py), tools/typing_card.py, фон — tde затемнён"
+        "note": "формула приливного разрыва (окно браузера), tools/typing_card.py, фон — tde затемнён"
       }
     },
     "shots": [
@@ -175,21 +175,22 @@
       {
         "block": "b2",
         "footage": "tde",
-        "transition": "transitions/whip-pan-l",
+        "transition": "transitions/whip-pan-r",
         "motion": "kenburns/zoom-in-center",
         "why": "маленькая дыра рвёт звезду; смена блока — вжух"
       },
       {
         "block": "b2",
         "at": "порвёт",
-        "footage": "formula_editor",
+        "footage": "formula_browser",
         "sfx": "type_key",
-        "why": "вместо «БЫСТРО ГРУСТНО»: формула — почему маленькая дыра рвёт кота (5 млн g)"
+        "why": "вместо «БЫСТРО ГРУСТНО»: формула — почему маленькая дыра рвёт кота (5 млн g)",
+        "transition": "transitions/zoom-punch-out"
       },
       {
         "block": "b3",
         "footage": "nasa_approach",
-        "transition": "transitions/light-sweep",
+        "transition": "transitions/transitions-scale",
         "why": "гигант: живой подлёт NASA, диск растёт; вход — белый блик"
       },
       {
@@ -202,11 +203,11 @@
         "block": "b3",
         "at": "Горизонт",
         "fullscreen": {
-          "template": "text-fullscreen/kinetic-stack",
+          "template": "intro-hooks/hook-blackout-word",
           "content": "НЕ БОЛЬНО",
           "accent_word": "БОЛЬНО"
         },
-        "why": "панчлайн на чёрном перед паузой"
+        "why": "панчлайн на чёрном"
       },
       {
         "block": "b3",
@@ -235,40 +236,42 @@
         "block": "b4",
         "at": "называют",
         "fullscreen": {
-          "template": "intro-hooks/hook-blackout-word",
+          "template": "text-fullscreen/kinetic-stack",
           "content": "СПАГЕТТИ- ФИКАЦИЯ",
           "accent_word": "ФИКАЦИЯ"
         },
-        "why": "термин на чёрном в две строки — кегль по слову вдвое крупнее",
+        "why": "термин столбиком, крупно",
         "sfx": "hit_impact"
       },
       {
         "block": "b5",
         "footage": "cat_sit",
-        "transition": "transitions/blur-dip",
+        "transition": "transitions/light-sweep",
         "why": "кот цел, фон обложки — петля к первому кадру"
       }
     ],
     "overlays": [
       {
-        "template": "data-viz/counter-roll",
+        "template": "data-viz/stat-countup-card",
         "block": "b2",
         "at": "десяток",
         "dur": 1.1,
         "params": {
+          "label": "МАЛЕНЬКАЯ ДЫРА",
           "value": 10,
-          "suffix": " СОЛНЦ"
+          "suffix": " СОЛНЦ",
+          "dark": true
         }
       },
       {
         "template": "data-viz/counter-roll",
         "block": "b3",
         "at": "четыре",
+        "until": "Кот",
         "params": {
           "value": 4,
-          "suffix": " МЛН"
-        },
-        "until": "Кот"
+          "suffix": " МЛН СОЛНЦ"
+        }
       },
       {
         "template": "data-viz/stat-countup-card",
@@ -283,15 +286,26 @@
         }
       },
       {
-        "template": "data-viz/stat-countup-card",
+        "template": "frames-cards/paper-reveal",
+        "block": "b4",
+        "at": "Больно",
+        "offset": 0.3,
+        "dur": 1.3,
+        "params": {
+          "domain": "science.nasa.gov",
+          "title": "New NASA Black Hole Visualization Takes Viewers Beyond the Brink",
+          "snippet": "NASA Goddard, 2024",
+          "no_red": true
+        }
+      },
+      {
+        "template": "data-viz/counter-roll",
         "block": "b4",
         "at": "тринадцать",
         "dur": 1.8,
         "params": {
-          "label": "ДО МАКАРОНИНЫ",
           "value": 12.8,
-          "suffix": " С",
-          "dark": true
+          "suffix": " СЕКУНДЫ"
         }
       }
     ],

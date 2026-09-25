@@ -438,7 +438,7 @@ def run_step(ctx) -> dict[str, Any]:
     # Громкость голосового слоя: `audio.voice_lufs`, True Peak ≤ −1 dBTP (§4.4);
     # способ — `audio.master` (broadcast: компрессор + лимитер ffmpeg). Правило
     # одно на конвейер и пробу — иначе проба звучит не так, как ролик.
-    voice, gain_db = master_to_target(voice, sr, ctx.cfg)
+    voice, gain_db = master_to_target(voice, sr, ctx.cfg, voice=True)
     save_wav(ctx.wpath("voice_final.wav"), voice, sr)
     final_loudness = measure_loudness_file(ctx.work_dir / "voice_final.wav")
 

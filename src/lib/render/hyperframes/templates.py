@@ -2631,7 +2631,13 @@ def dv_counter(ctx: "TemplateCtx") -> Piece:
     per = ctx.duration * 0.7 / steps
     for i in range(steps + 1):
         value = target * (i / steps)
-        text = f"{value:,.0f}".replace(",", " ") if abs(target) >= 1000 else f"{value:.0f}"
+        if abs(target) >= 1000:
+            text = f"{value:,.0f}".replace(",", " ")
+        elif target != int(target):
+            # «12,8 С», а не округлённое «13 С» (0052, как у stat-countup-card).
+            text = f"{value:.1f}".replace(".", ",")
+        else:
+            text = f"{value:.0f}"
         spans.append(f'<span>{_esc(text + suffix)}</span>')
         at = ctx.start + per * i
         tweens.append(f'tl.set("#{node_id} span:nth-child({i + 1})",'
