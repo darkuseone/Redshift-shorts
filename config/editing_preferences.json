@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-25T08:57:49+00:00",
+  "updated_at": "2026-09-25T09:01:40+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -38,12 +38,17 @@
       "video_id": "redshift_0052",
       "type": "subscribe_like",
       "recorded_at": "2026-09-25"
+    },
+    {
+      "video_id": "redshift_0052b",
+      "type": "subscribe_like",
+      "recorded_at": "2026-09-25"
     }
   ],
   "sfx_scenario_ring": [
     "glass",
-    "impact",
-    "soft"
+    "soft",
+    "impact"
   ],
   "bed_ring": [
     "music_interstellar_distance",

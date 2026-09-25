@@ -185,6 +185,14 @@
         "page_url": "https://svs.gsfc.nasa.gov/14576/",
         "credit": "NASA/GSFC, J. Schnittman",
         "note": "Plunge Explainer 2024, 24–31 с: нырок за горизонт"
+      },
+      "formula_browser": {
+        "src": "assets/footage/director/redshift_0052/formula_browser.mp4",
+        "source": "redshift",
+        "license": "generated-owned",
+        "page_url": "https://github.com/darkuseone/Redshift-shorts/blob/main/tools/typing_card.py",
+        "credit": "REDSHIFT",
+        "note": "формула приливного разрыва (окно браузера), tools/typing_card.py, фон — tde затемнён"
       }
     },
     "shots": [
@@ -214,10 +222,10 @@
       {
         "block": "b2",
         "at": "порвёт",
-        "footage": "tde",
-        "transition": "transitions/zoom-punch-out",
-        "motion": "kenburns/zoom-in-center",
-        "why": "звезду рвёт — удар отъездом, под окном с формулой"
+        "footage": "formula_browser",
+        "sfx": "type_key",
+        "why": "вместо «БЫСТРО ГРУСТНО»: формула — почему маленькая дыра рвёт кота (5 млн g)",
+        "transition": "transitions/zoom-punch-out"
       },
       {
         "block": "b3",
@@ -235,11 +243,11 @@
         "block": "b3",
         "at": "Горизонт",
         "fullscreen": {
-          "template": "text-fullscreen/scramble-reveal",
+          "template": "intro-hooks/hook-blackout-word",
           "content": "НЕ БОЛЬНО",
           "accent_word": "БОЛЬНО"
         },
-        "why": "панчлайн перебором букв"
+        "why": "панчлайн на чёрном"
       },
       {
         "block": "b3",
@@ -268,11 +276,11 @@
         "block": "b4",
         "at": "называют",
         "fullscreen": {
-          "template": "text-fullscreen/particle-text-dissolve",
+          "template": "text-fullscreen/kinetic-stack",
           "content": "СПАГЕТТИ- ФИКАЦИЯ",
           "accent_word": "ФИКАЦИЯ"
         },
-        "why": "термин рассыпается частицами — как кот",
+        "why": "термин столбиком, крупно",
         "sfx": "hit_impact"
       },
       {
@@ -284,48 +292,37 @@
     ],
     "overlays": [
       {
-        "template": "lower-thirds/metric-badge",
+        "template": "data-viz/stat-countup-card",
         "block": "b2",
         "at": "десяток",
         "dur": 1.1,
         "params": {
-          "text": "10 СОЛНЦ",
-          "subtitle": "маленькая дыра"
-        }
-      },
-      {
-        "template": "browser-ui/notepad-typing",
-        "block": "b2",
-        "at": "ещё",
-        "dur": 2.4,
-        "params": {
-          "domain": "redshift.shorts",
-          "url": "https://redshift.shorts/tidal-force",
-          "published": "расчёт",
-          "title": "Почему маленькая дыра рвёт кота",
-          "snippet": "Δa ≈ c⁶·L / 4G²M². Кот 0,5 м, дыра в 10 Солнц: 5 000 000 g.",
-          "highlight": "5 000 000 g",
+          "label": "МАЛЕНЬКАЯ ДЫРА",
+          "value": 10,
+          "suffix": " СОЛНЦ",
           "dark": true
         }
       },
       {
-        "template": "lower-thirds/metric-badge",
+        "template": "data-viz/counter-roll",
         "block": "b3",
         "at": "четыре",
         "until": "Кот",
         "params": {
-          "text": "4 000 000 СОЛНЦ",
-          "subtitle": "Sgr A*, центр Галактики"
+          "value": 4,
+          "suffix": " МЛН СОЛНЦ"
         }
       },
       {
-        "template": "lower-thirds/timestamp-marker",
+        "template": "data-viz/stat-countup-card",
         "block": "b3",
         "at": "три",
         "dur": 1.6,
         "params": {
-          "text": "3 ЧАСА",
-          "subtitle": "до края"
+          "label": "ДО КРАЯ",
+          "value": 3,
+          "suffix": " ЧАСА",
+          "dark": true
         }
       },
       {
@@ -342,15 +339,13 @@
         }
       },
       {
-        "template": "data-viz/stat-countup-card",
+        "template": "data-viz/counter-roll",
         "block": "b4",
         "at": "тринадцать",
         "dur": 1.8,
         "params": {
-          "label": "ДО МАКАРОНИНЫ",
           "value": 12.8,
-          "suffix": " С",
-          "dark": true
+          "suffix": " СЕКУНДЫ"
         }
       }
     ],

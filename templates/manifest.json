@@ -42,7 +42,8 @@
       ],
       "renderer": "fullscreen_text",
       "last_used_in": [
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -118,7 +119,8 @@
       "renderer": "fullscreen_text",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -673,7 +675,8 @@
       ],
       "renderer": "kinetic_stack",
       "last_used_in": [
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-09-02",
       "frequency": "variant",
@@ -2048,7 +2051,8 @@
       ],
       "renderer": "paper_reveal",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0052b"
       ],
       "added": "2026-09-02",
       "frequency": "signature",
@@ -2497,7 +2501,8 @@
         "redshift_0043",
         "redshift_0044",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -2534,7 +2539,8 @@
         "redshift_0045",
         "redshift_0046",
         "redshift_0047",
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -2570,7 +2576,8 @@
         "redshift_0043",
         "redshift_0045",
         "redshift_0046",
-        "redshift_0047"
+        "redshift_0047",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -2676,7 +2683,8 @@
         "redshift_0043",
         "redshift_0046",
         "redshift_0047",
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -2855,7 +2863,8 @@
       "last_used_in": [
         "redshift_0042",
         "redshift_0050",
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-09-02",
       "frequency": "rare",
@@ -3785,7 +3794,8 @@
       ],
       "renderer": "transitions_scale",
       "last_used_in": [
-        "redshift_0042"
+        "redshift_0042",
+        "redshift_0052b"
       ],
       "added": "2026-09-03",
       "frequency": "rare",
@@ -4058,7 +4068,8 @@
         "redshift_0046",
         "redshift_0047",
         "redshift_0050",
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "signature",
@@ -4679,7 +4690,8 @@
       ],
       "renderer": "dataviz",
       "last_used_in": [
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-08-18",
       "frequency": "variant",
@@ -4822,7 +4834,8 @@
       "last_used_in": [
         "redshift_0042",
         "redshift_0050",
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-09-02",
       "frequency": "variant",
@@ -5428,7 +5441,8 @@
       "renderer": "logo_brand_close",
       "last_used_in": [
         "redshift_0042",
-        "redshift_0052"
+        "redshift_0052",
+        "redshift_0052b"
       ],
       "added": "2026-09-02",
       "frequency": "signature",
