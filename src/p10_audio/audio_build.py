@@ -573,8 +573,12 @@ def run_step(ctx) -> dict[str, Any]:
 
     mix = A.mix([(voice_stereo, 0.0), (bed, 0.0), (sfx_bus, 0.0)], length, channels=2)
     measured = A.measure_loudness_buffer(mix, sr).integrated_lufs
-    mix, gain_db = A.normalize_to_lufs(mix, target_lufs, sr, measured=measured)
-    mix = A.limit_true_peak(mix, float(cfg.get("audio.true_peak_max", -1)))
+    if str(cfg.get("audio.master", "classic")).lower() == "broadcast":
+        # Громкий мастер Shorts: компрессор и лимитер с упреждением на шине.
+        mix, gain_db = A.master_to_target(mix, sr, cfg)
+    else:
+        mix, gain_db = A.normalize_to_lufs(mix, target_lufs, sr, measured=measured)
+        mix = A.limit_true_peak(mix, float(cfg.get("audio.true_peak_max", -1)))
     A.save_wav(ctx.wpath("mix.wav"), mix, sr)
     final = A.measure_loudness_file(ctx.work_dir / "mix.wav")
 

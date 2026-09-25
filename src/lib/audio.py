@@ -500,6 +500,75 @@ def normalize_voice(data: np.ndarray, sr: int = SAMPLE_RATE, *,
     return arr, after - before
 
 
+# --- Громкий мастер для Shorts ------------------------------------------------
+
+# Заказчик 25.09 (0052): на −14 LUFS ролик «еле слышно, только на полной
+# громкости» — Shorts слушают с динамика телефона, и соседние ролики в ленте
+# громче. Цель стала −10 LUFS, а до неё голос с пик-фактором ~15 дБ не
+# дотягивает простым подъёмом: `limit_true_peak` опускает всю дорожку обратно.
+# Поотсчётное сжатие на такой глубине хрипит на гласных. Нужна обычная
+# вещательная цепочка — компрессор и лимитер с упреждением, — а они уже есть
+# в ffmpeg. Лимитер работает на учетверённой частоте: межвыборочные пики
+# MP3-дубля иначе выходили на 1.5 дБ выше потолка.
+MASTER_LOWPASS_HZ = 16000.0
+MASTER_COMPRESS_BELOW_TARGET_DB = 14.0
+MASTER_RATIO = 3.0
+MASTER_TOLERANCE_DB = 0.3
+MASTER_PASSES = 5
+MASTER_OVERSAMPLE = 4
+
+
+def loud_master(data: np.ndarray, sr: int = SAMPLE_RATE, *, target_lufs: float,
+                true_peak_max: float) -> tuple[np.ndarray, float]:
+    """Довести дорожку до ``target_lufs`` при True Peak ≤ ``true_peak_max``.
+
+    Срез выше 16 кГц → компрессор (порог на 14 дБ ниже цели, 3:1) → подъём →
+    лимитер ``alimiter`` на учетверённой частоте. Подъём подбирается по замеру
+    за несколько проходов: лимитер съедает часть громкости, и недобор
+    добирается следующим проходом. Возвращает (аудио, суммарный gain в dB).
+    """
+    import tempfile
+
+    arr = np.asarray(data, dtype=np.float32)
+    before = measure_loudness_buffer(arr, sr).integrated_lufs
+    if not math.isfinite(before):
+        return arr, 0.0
+    # Во временный wav (int16) — без клиппинга: пик к −1 dBFS, разница в подъём.
+    peak = float(np.max(np.abs(arr))) if arr.size else 0.0
+    pre = min(1.0, db_to_gain(-1.0) / peak) if peak > 0 else 1.0
+    ceiling = db_to_gain(true_peak_max - 0.5)
+    gain = target_lufs - before
+    with tempfile.TemporaryDirectory(prefix="redshift_master_") as tmp:
+        src, dst = Path(tmp) / "in.wav", Path(tmp) / "out.wav"
+        save_wav(src, arr * pre, sr)
+        out, after = arr, before
+        for _ in range(MASTER_PASSES):
+            chain = (f"lowpass=f={MASTER_LOWPASS_HZ:.0f}:p=2,"
+                     f"acompressor=threshold={target_lufs - MASTER_COMPRESS_BELOW_TARGET_DB:.1f}dB"
+                     f":ratio={MASTER_RATIO}:attack=5:release=80,"
+                     f"volume={gain - 20.0 * math.log10(pre):.3f}dB,"
+                     f"aresample={sr * MASTER_OVERSAMPLE},"
+                     f"alimiter=limit={ceiling:.4f}:attack=2:release=40:level=false,"
+                     f"aresample={sr}")
+            run(["-y", "-i", str(src), "-af", chain, "-ar", str(sr), str(dst)],
+                what="громкий мастер")
+            out, _ = load_wav(dst)
+            after = measure_loudness_buffer(out, sr).integrated_lufs
+            if abs(after - target_lufs) <= MASTER_TOLERANCE_DB:
+                break
+            gain += target_lufs - after
+    return limit_true_peak(out, true_peak_max), after - before
+
+
+def master_to_target(data: np.ndarray, sr: int, cfg) -> tuple[np.ndarray, float]:
+    """Голос или микс к цели ``audio.voice_lufs`` способом из ``audio.master``."""
+    target = float(cfg.get("audio.voice_lufs", VOICE_LUFS))
+    tp_max = float(cfg.get("audio.true_peak_max", VOICE_TRUE_PEAK_DBTP))
+    if str(cfg.get("audio.master", "classic")).lower() == "broadcast":
+        return loud_master(data, sr, target_lufs=target, true_peak_max=tp_max)
+    return normalize_voice(data, sr, target_lufs=target, true_peak_max=tp_max)
+
+
 # --- Монтажные операции ------------------------------------------------------
 
 def rms_envelope(data: np.ndarray, sr: int, window_ms: float = 20.0) -> np.ndarray:

@@ -971,3 +971,30 @@ class TestThePauseBeforeThePunch:
 
         plan = {"blocks": [{"id": "b1", "role": "hook"}, {"id": "b2", "role": "setup"}]}
         assert punch_moment(plan, [{"id": "b1", "words": [{"word": "а", "start": 0.0, "end": 0.1}]}]) is None
+
+
+def test_broadcast_master_reaches_loud_shorts_target_under_the_ceiling():
+    """0052, 25.09: на −14 LUFS «еле слышно». Цель −10: подъём + потолок её не
+    давал — лимитер опускал всю дорожку. Мастер с компрессором и лимитером
+    с упреждением обязан дойти до цели, не пробив −1 dBTP."""
+    import numpy as np
+
+    from src.lib.audio import loud_master, measure_loudness_buffer, normalize_voice
+
+    sr = 48000
+    rng = np.random.default_rng(7)
+    t = np.arange(sr * 4) / sr
+    body = np.sin(2 * np.pi * 220 * t) * (0.5 + 0.5 * np.sin(2 * np.pi * 3.0 * t))
+    spikes = np.zeros_like(body)
+    for at in rng.integers(0, t.size - 400, size=30):
+        spikes[at:at + 240] += np.hanning(240) * 5.0
+    voice = ((body + body * spikes) * 0.03).astype(np.float32)
+
+    loud, _gain = loud_master(voice, sr, target_lufs=-10.0, true_peak_max=-1.0)
+    after = measure_loudness_buffer(loud, sr)
+    assert abs(after.integrated_lufs - (-10.0)) <= 1.0, after.integrated_lufs
+    assert after.true_peak_dbtp <= -1.0 + 1e-6, after.true_peak_dbtp
+
+    # Прежний путь на той же цели недобирает — ради этого мастер и есть.
+    classic, _ = normalize_voice(voice, sr, target_lufs=-10.0, true_peak_max=-1.0)
+    assert measure_loudness_buffer(classic, sr).integrated_lufs < after.integrated_lufs
