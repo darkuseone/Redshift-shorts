@@ -2,9 +2,9 @@
   "_comment": "Библиотека music. Наполняется вручную живыми записями инструментов, которые присылает заказчик. Синтезированные подложки удалены 02.09: «это ужас, я хотел хорошие сэмплы живых инструментов».",
   "kind": "music",
   "max_items": 15,
-  "count": 9,
+  "count": 14,
   "frozen": false,
-  "updated": "2026-09-08",
+  "updated": "2026-09-25",
   "items": [
     {
       "id": "music_interstellar_distance",
@@ -340,6 +340,196 @@
         },
         "source_file": "Neural_Data_Option_2.mp3",
         "segment_start_sec": 24.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_space_new_direction",
+      "type": "music",
+      "source": "curated",
+      "license": "cc-by-4.0",
+      "url_origin": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100677",
+      "phash": "",
+      "tags": [
+        "ambient",
+        "space",
+        "calm",
+        "wide",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "тихие широкие пэды, редкие ноты — масштаб, удивление",
+      "score": 0.0,
+      "duration_sec": 70.016,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-25",
+      "file": "space_new_direction.m4a",
+      "mood": "ambient",
+      "extra": {
+        "measured": {
+          "duration_sec": 70.016,
+          "integrated_lufs": -19.1,
+          "peak_dbfs": -4.95,
+          "loop_seam": 0.855,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "New Direction.mp3",
+        "attribution": "«New Direction» — Kevin MacLeod (incompetech.com), CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/",
+        "segment_start_sec": 178.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_space_harvest_drone",
+      "type": "music",
+      "source": "curated",
+      "license": "cc-by-4.0",
+      "url_origin": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100653",
+      "phash": "",
+      "tags": [
+        "ambient",
+        "space",
+        "dark",
+        "sparse",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "низкий дрон и далёкие колокольчики — чёрные дыры, пустота",
+      "score": 0.0,
+      "duration_sec": 70.016,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-25",
+      "file": "space_harvest_drone.m4a",
+      "mood": "ambient",
+      "extra": {
+        "measured": {
+          "duration_sec": 70.016,
+          "integrated_lufs": -18.49,
+          "peak_dbfs": -6.22,
+          "loop_seam": 0.584,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Spacial Harvest.mp3",
+        "attribution": "«Spacial Harvest» — Kevin MacLeod (incompetech.com), CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/",
+        "segment_start_sec": 440.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_dark_ossuary",
+      "type": "music",
+      "source": "curated",
+      "license": "cc-by-4.0",
+      "url_origin": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1500043",
+      "phash": "",
+      "tags": [
+        "ambient",
+        "space",
+        "dark",
+        "calm",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "тёмный ровный синт-дрон — загадка, напряжение без нажима",
+      "score": 0.0,
+      "duration_sec": 70.016,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-25",
+      "file": "dark_ossuary.m4a",
+      "mood": "ambient",
+      "extra": {
+        "measured": {
+          "duration_sec": 70.016,
+          "integrated_lufs": -19.12,
+          "peak_dbfs": -2.55,
+          "loop_seam": 0.605,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Ossuary 1 - A Beginning.mp3",
+        "attribution": "«Ossuary 1 - A Beginning» — Kevin MacLeod (incompetech.com), CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/",
+        "segment_start_sec": 30.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_mirage_bells",
+      "type": "music",
+      "source": "curated",
+      "license": "cc-by-4.0",
+      "url_origin": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100877",
+      "phash": "",
+      "tags": [
+        "ambient",
+        "space",
+        "calm",
+        "sparse",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "мягкие пэды с колокольчиками — открытие, спокойствие",
+      "score": 0.0,
+      "duration_sec": 70.016,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-25",
+      "file": "mirage_bells.m4a",
+      "mood": "ambient",
+      "extra": {
+        "measured": {
+          "duration_sec": 70.016,
+          "integrated_lufs": -19.38,
+          "peak_dbfs": -7.8,
+          "loop_seam": 0.166,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Mirage.mp3",
+        "attribution": "«Mirage» — Kevin MacLeod (incompetech.com), CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/",
+        "segment_start_sec": 147.0,
+        "accepted_with_warnings": null
+      }
+    },
+    {
+      "id": "music_galaxy_pulse",
+      "type": "music",
+      "source": "curated",
+      "license": "cc-by-4.0",
+      "url_origin": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN2300011",
+      "phash": "",
+      "tags": [
+        "pulse",
+        "tech",
+        "space",
+        "driving",
+        "loopable",
+        "no-vocals"
+      ],
+      "vision_summary": "синт-арпеджио с пульсом — техника, данные, движение",
+      "score": 0.0,
+      "duration_sec": 70.016,
+      "used_in": [],
+      "last_used": null,
+      "added": "2026-09-25",
+      "file": "galaxy_pulse.m4a",
+      "mood": "pulse",
+      "extra": {
+        "measured": {
+          "duration_sec": 70.016,
+          "integrated_lufs": -19.05,
+          "peak_dbfs": -9.08,
+          "loop_seam": 0.024,
+          "sample_rate": 48000,
+          "channels": 2
+        },
+        "source_file": "Mesmerizing Galaxy Loop.mp3",
+        "attribution": "«Mesmerizing Galaxy» — Kevin MacLeod (incompetech.com), CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/",
+        "segment_start_sec": 12.0,
         "accepted_with_warnings": null
       }
     }

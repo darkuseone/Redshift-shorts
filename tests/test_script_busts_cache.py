@@ -101,6 +101,29 @@ class TestTheFrozenAvatarRequestReachesTheFingerprint:
         assert _steps()["P12"].uses_prepared_avatar is False
 
 
+class TestThePreparedVoiceReachesTheFingerprint:
+    """0052, круг 4: голос переимпортирован с другим темпом, а P2–P4 приехали
+    из кэша — ролик остался прежней длины. Смена готового голоса обязана
+    отменять кэш P2."""
+
+    def test_new_take_changes_p2_fingerprint(self, ctx):
+        step = _steps()["P2"]
+        voice = ctx.cfg.repo_root / "assets" / "voice" / ctx.video_id
+        voice.mkdir(parents=True)
+        (voice / "voice_final.wav").write_bytes(b"take-1.15")
+        before = step.fingerprint(ctx)
+        (voice / "voice_final.wav").write_bytes(b"take-1.05")
+        assert step.fingerprint(ctx) != before
+
+    def test_without_prepared_voice_fingerprint_is_stable(self, ctx):
+        step = _steps()["P2"]
+        assert step.fingerprint(ctx) == step.fingerprint(ctx)
+
+    def test_the_flag_is_declared(self):
+        assert _steps()["P2"].uses_prepared_voice is True
+        assert _steps()["P5"].uses_prepared_voice is False
+
+
 class TestVoiceIsDeliberatelyLeftOut:
 
     def test_p2_does_not_rerun_on_any_script_edit(self, ctx):

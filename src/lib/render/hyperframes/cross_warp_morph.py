@@ -97,7 +97,7 @@ def cwm_transition_css() -> str:
         ".tr-cross-warp-morph .cwm-big{font-family:Inter,system-ui,sans-serif;font-size:120px;"
         "font-weight:900;letter-spacing:0.06em;opacity:0.18;user-select:none}"
         ".tr-cross-warp-morph .cwm-warp-a{"
-        "background:radial-gradient(ellipse at 40% 50%,rgba(242,86,107,0.45) 0%,transparent 70%);"
+        "background:radial-gradient(ellipse at 40% 50%,rgba(215,38,61,0.45) 0%,transparent 70%);"
         "mix-blend-mode:screen;opacity:0}"
         ".tr-cross-warp-morph .cwm-warp-b{"
         "background:radial-gradient(ellipse at 60% 50%,rgba(17,18,20,0.7) 0%,transparent 70%);"

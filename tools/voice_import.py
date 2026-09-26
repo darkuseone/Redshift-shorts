@@ -103,6 +103,30 @@ def _load_words(path: Path, tempo: float) -> list[dict[str, Any]]:
     return out
 
 
+def _monotonic(times: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Слова идут друг за другом: начало не раньше конца предыдущего.
+
+    STT отдаёт короткие слова с общим началом («Так» и «что» — оба 24.677),
+    и QC-10 отдаёт второе слово субтитру первого: дальше «что» ищет себе пару
+    в хуке и рассинхрон выходит в 23 с. Наезд короче 40 мс — делим общий
+    отрезок пополам, иначе просто сдвигаем начало за конец соседа.
+    """
+    out = [(float(s), max(float(e), float(s) + 0.04)) for s, e in times]
+    for i in range(1, len(out)):
+        ps, pe = out[i - 1]
+        s, e = out[i]
+        if s >= pe:
+            continue
+        if e > pe + 0.04:
+            out[i] = (pe, e)
+        else:
+            hi = max(e, pe)
+            mid = (ps + hi) / 2
+            out[i - 1] = (ps, mid)
+            out[i] = (mid, hi)
+    return out
+
+
 def _align(blocks: list[dict[str, Any]], heard: list[dict[str, Any]],
            audio_path: Path) -> list[dict[str, Any]]:
     """Сопоставить слова сценария с услышанными; дыры — интерполяцией/энергией."""
@@ -149,6 +173,7 @@ def _align(blocks: list[dict[str, Any]], heard: list[dict[str, Any]],
     else:
         spans = align_by_energy([w for _, w in script_words], (0.0, total), audio, sr)
         times = list(spans)
+    times = _monotonic(times)
 
     out = []
     cursor = 0

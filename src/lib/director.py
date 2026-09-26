@@ -173,6 +173,19 @@ def _resolve_template(ref: str, catalog: Mapping[str, Mapping[str, Any]],
     return None
 
 
+def _check_sfx(item: Mapping[str, Any], where: str, issues: list[Issue]) -> None:
+    """`sfx` шота или оверлея — роль библиотеки звуков или `none`."""
+    role = item.get("sfx")
+    if not role:
+        return
+    from .sfx_library import ROLE_TO_INTENT
+
+    if str(role) != "none" and str(role) not in ROLE_TO_INTENT:
+        issues.append(Issue("error", where,
+                            f"sfx «{role}» — нет такой роли; есть: "
+                            + ", ".join(sorted(ROLE_TO_INTENT)) + ", none"))
+
+
 def validate(script: Mapping[str, Any], *, catalog: Any = None,
              ai_share_max: float = AI_SHARE_MAX_DEFAULT) -> list[Issue]:
     """Проверить таймлайн режиссёра, ничего не скачивая и не рендеря."""
@@ -267,6 +280,7 @@ def validate(script: Mapping[str, Any], *, catalog: Any = None,
             tpl = _resolve_template(str(name), cat, MOTION_CATEGORIES)
             if tpl is None and str(name) not in reg["motion"]:
                 issues.append(Issue("error", where, f"движение «{name}» не найдено"))
+        _check_sfx(shot, where, issues)
         hero = shot.get("hero")
         if hero:
             name = hero.get("template") if isinstance(hero, dict) else hero
@@ -294,6 +308,7 @@ def validate(script: Mapping[str, Any], *, catalog: Any = None,
             word, nth = parse_anchor(ovl.get(key))
             if word and text_words(blocks[bid].get("text", "")).count(word) < nth:
                 issues.append(Issue("error", where, f"якорь {key}=«{ovl.get(key)}» не найден в блоке {bid}"))
+        _check_sfx(ovl, where, issues)
         if not ovl.get("template") and not ovl.get("renderer"):
             issues.append(Issue("error", where, "нужен template (id каталога) или renderer"))
             continue
@@ -419,6 +434,63 @@ def anchor_time(rows: Mapping[str, list[dict[str, Any]]], block_id: str,
         raise DirectorError(f"якорь «{at}» не найден в речи блока {block_id}",
                             block_id=block_id, at=str(at))
     return float(hits[nth - 1]["start"])
+
+
+def script_with_director(ctx) -> dict[str, Any]:
+    """Сценарий из кэша P0 с таймлайном режиссёра из самого файла.
+
+    Перерендер `--from P10`/`--from P11` после правки таймлайна обязан её
+    увидеть: P0 не перезапускается, и в `validated_script.json` лежит старая.
+    """
+    from .jsonio import read_json
+
+    script_doc = ctx.read_or("validated_script.json", {}) or {}
+    try:
+        live_script = read_json(ctx.script_path)
+    except Exception:  # noqa: BLE001 — нет файла в тестовом контексте
+        live_script = None
+    if isinstance(live_script, dict) and live_script.get("director"):
+        script_doc = {**script_doc, "director": live_script["director"],
+                      "blocks": script_doc.get("blocks") or live_script.get("blocks")}
+    return script_doc
+
+
+def shot_windows(spec: Mapping[str, Any], rows: Mapping[str, list[dict[str, Any]]],
+                 duration: float) -> list[tuple[float, float, dict[str, Any]]]:
+    """Окна шотов в финальном таймкоде: (начало, конец, шот).
+
+    Одна раскладка на картинку и на звук: P11 режет по ней кадр, P10 ставит
+    на её стыки SFX. Разойдись они — удар прозвучит мимо склейки.
+    """
+    points: list[tuple[float, dict[str, Any]]] = []
+    for shot in spec.get("shots") or []:
+        t = anchor_time(rows, shot["block"], shot.get("at"))
+        if t is None:
+            raise DirectorError(f"в речи нет слов блока {shot['block']}", block_id=shot["block"])
+        t += float(shot.get("offset") or 0.0)
+        points.append((max(0.0, min(t, duration)), shot))
+    points.sort(key=lambda p: p[0])
+    if points:
+        points[0] = (0.0, points[0][1])
+    windows: list[tuple[float, float, dict[str, Any]]] = []
+    for i, (t, shot) in enumerate(points):
+        end = points[i + 1][0] if i + 1 < len(points) else duration
+        if end - t >= 0.05:
+            windows.append((t, end, shot))
+    return windows
+
+
+def overlay_window(ovl: Mapping[str, Any], rows: Mapping[str, list[dict[str, Any]]]
+                   ) -> tuple[float, float]:
+    """Окно оверлея режиссёра в финальном таймкоде (конец не обрезан длиной ролика)."""
+    start = anchor_time(rows, ovl["block"], ovl.get("at")) or 0.0
+    start += float(ovl.get("offset") or 0.0)
+    if ovl.get("until"):
+        end = anchor_time(rows, ovl["block"], ovl.get("until")) or start
+        end = max(end, start + 0.6)
+    else:
+        end = start + float(ovl.get("dur") or DEFAULT_OVERLAY_SEC)
+    return max(0.0, start), end
 
 
 def _cache_dir(ctx) -> Path:
@@ -572,21 +644,7 @@ def apply_director(ctx, edit_plan: dict[str, Any], script: Mapping[str, Any],
     fps = ctx.cfg.fps
 
     # 1. Окна шотов по якорям речи.
-    points: list[tuple[float, dict[str, Any]]] = []
-    for shot in spec.get("shots") or []:
-        t = anchor_time(rows, shot["block"], shot.get("at"))
-        if t is None:
-            raise DirectorError(f"в речи нет слов блока {shot['block']}", block_id=shot["block"])
-        t += float(shot.get("offset") or 0.0)
-        points.append((max(0.0, min(t, duration)), shot))
-    points.sort(key=lambda p: p[0])
-    if points:
-        points[0] = (0.0, points[0][1])
-    windows: list[tuple[float, float, dict[str, Any]]] = []
-    for i, (t, shot) in enumerate(points):
-        end = points[i + 1][0] if i + 1 < len(points) else duration
-        if end - t >= 0.05:
-            windows.append((t, end, shot))
+    windows = shot_windows(spec, rows, duration)
 
     # 2. Окна ведущего: исходные шоты аватара остаются как собрал P11.
     original = list(edit_plan.get("shots") or [])
@@ -740,14 +798,8 @@ def apply_director(ctx, edit_plan: dict[str, Any], script: Mapping[str, Any],
     # если режиссёр свою не поставил.
     overlays: list[dict[str, Any]] = []
     for ovl in spec.get("overlays") or []:
-        start = anchor_time(rows, ovl["block"], ovl.get("at")) or 0.0
-        start += float(ovl.get("offset") or 0.0)
-        if ovl.get("until"):
-            end = anchor_time(rows, ovl["block"], ovl.get("until")) or start
-            end = max(end, start + 0.6)
-        else:
-            end = start + float(ovl.get("dur") or DEFAULT_OVERLAY_SEC)
-        entry = _overlay_entry(ovl, cat, max(0.0, start), min(end, duration))
+        start, end = overlay_window(ovl, rows)
+        entry = _overlay_entry(ovl, cat, start, min(end, duration))
         overlays.append(entry)
         used_templates.append(str(entry["template"]))
     if not any(o["type"] == "cta" for o in overlays) and spec.get("keep_auto_cta", True):

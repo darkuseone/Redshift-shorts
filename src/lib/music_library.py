@@ -225,12 +225,18 @@ def check_bed(report: dict[str, Any]) -> list[str]:
 
 def add_bed(cfg, *, source: Path, bed_id: str, tags: Sequence[str],
             title: str = "", start_sec: float | None = None,
-            length_sec: float = 70.0, force: bool = False) -> dict[str, Any]:
+            length_sec: float = 70.0, force: bool = False,
+            license: str = "", attribution: str = "",
+            source_url: str = "") -> dict[str, Any]:
     """Принять живую запись в библиотеку подложек.
 
     ``start_sec`` — начало интересного отрезка. Не задан — отрезок ищется сам:
     присланные записи идут по три минуты, и брать их целиком незачем, а начало
     у них всегда вступление из тишины.
+
+    ``license``/``attribution``/``source_url`` — для записей из открытых
+    библиотек (0052: Kevin MacLeod, CC BY 4.0). Атрибуция уходит в описание
+    ролика: без неё CC BY нарушен. Пустые — запись прислал заказчик.
 
     Возвращает отчёт с замерами. При отказе поднимает ``RedshiftError`` —
     молча положить негодный файл хуже, чем не положить никакого.
@@ -279,12 +285,14 @@ def add_bed(cfg, *, source: Path, bed_id: str, tags: Sequence[str],
         lib.items[:] = [i for i in lib.items if i.id != existing.id]
     lib.add(AssetRecord(
         id=f"music_{bed_id}", type="music", source="curated",
-        license="предоставлено заказчиком",
+        license=license or "предоставлено заказчиком",
+        url_origin=source_url,
         mood=next((t for t in tags if t in INSTRUMENTS), ""),
         tags=[*tags, "loopable", "no-vocals"],
         vision_summary=title or describe_tags(tags),
         duration_sec=report["duration_sec"], file=filename, added=today(),
         extra={"measured": report, "source_file": source.name,
+               **({"attribution": attribution} if attribution else {}),
                "segment_start_sec": round(float(start_sec), 1),
                "accepted_with_warnings": problems or None},
     ))

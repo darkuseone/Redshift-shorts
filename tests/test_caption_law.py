@@ -23,7 +23,7 @@ from src.lib.render.hyperframes.captions import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SPEECH_MAP = REPO_ROOT / "assets" / "voice" / "redshift_0050" / "speech_map.json"
 
-FORBIDDEN_COLOURS = ("#f2566b", "#36efff", "#7af0ff", "#fe9f1b", "#f76e49",
+FORBIDDEN_COLOURS = ("#36efff", "#7af0ff", "#fe9f1b", "#f76e49",
                      "#ffd700", "#ff2063", "#fd56cb")
 
 

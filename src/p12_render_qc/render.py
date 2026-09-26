@@ -76,10 +76,23 @@ def _thumbnail_prompt(plan: dict[str, Any], script: dict[str, Any] | None,
     )
 
 
+def _owner_cover(ctx, script: dict[str, Any] | None) -> Path | None:
+    """Готовая обложка из `meta.cover` (путь в репо). Нет файла — предупреждение."""
+    rel = str(((script or {}).get("meta") or {}).get("cover") or "").strip()
+    if not rel:
+        return None
+    path = Path(ctx.cfg.repo_root) / rel
+    if path.is_file():
+        return path
+    _log.warning("обложка из meta.cover не найдена — thumbnail из кадра",
+                 extra={"cover": rel})
+    return None
+
+
 def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
                           plan: dict[str, Any], script: dict[str, Any] | None,
                           variant: str) -> dict[str, Any]:
-    """Обложка Shorts: Gemini/Grok image, иначе кадр ffmpeg.
+    """Обложка Shorts: `meta.cover`, иначе Gemini/Grok image, иначе кадр ffmpeg.
 
     ``render.thumbnail_mode``: ``auto`` (Gemini → Grok → ffmpeg), ``gemini``,
     ``grok``, или ``ffmpeg``. Live image key нужен для publishable thumbs;
@@ -89,6 +102,15 @@ def make_shorts_thumbnail(ctx, *, out_file: Path, thumb: Path,
     mode = str(cfg.get("render.thumbnail_mode", "auto") or "auto").lower()
     time_sec = float(cfg.get("render.thumbnail_time_sec", 1.0))
     meta: dict[str, Any] = {"mode": "ffmpeg", "variant": variant}
+
+    # Обложка заказчика (`meta.cover`, 0052: дизайн из Canva) сильнее любой
+    # генерации и любого кадра: её выбрали глазами, и она же стоит в хуке.
+    cover = _owner_cover(ctx, script)
+    if cover is not None:
+        ffmpeg_run(["-y", "-i", str(cover), "-vf", "scale=1080:-2", "-q:v", "2",
+                    str(thumb)], what="shorts thumbnail from owner cover")
+        meta.update({"mode": "cover", "source": str(cover), "path": str(thumb)})
+        return meta
 
     # skip_generate / generation.skip: ZERO gemini_image/grok_image — сразу ffmpeg.
     # skip_vision / vision.skip_live: тоже без live image (rebuild без paid APIs).
@@ -242,9 +264,13 @@ def _assets_manifest(plan: dict[str, Any], accepted: dict[str, Any],
 
 
 def _metadata(plan: dict[str, Any], script: dict[str, Any], qc: dict[str, Any],
-              avatar_meta: dict[str, Any], cfg) -> dict[str, Any]:
+              avatar_meta: dict[str, Any], cfg,
+              music: dict[str, Any] | None = None) -> dict[str, Any]:
     """§9 metadata.json + §10.3.3 отметка о синтетическом контенте."""
     meta = script.get("meta", {})
+    # Ведущий в кадре — только если клипы аватара реально собраны: 0052 без
+    # аватара выходил с «цифровым двойником ведущего» в описании.
+    has_avatar = bool((avatar_meta or {}).get("segments"))
     sources = script.get("sources", [])
     topic_tags = [w.lower() for w in str(meta.get("topic", "")).split() if len(w) > 3][:5]
     hashtags = ["#наука", "#технологии", f"#{meta.get('category', 'tech')}", "#shorts",
@@ -262,10 +288,16 @@ def _metadata(plan: dict[str, Any], script: dict[str, Any], qc: dict[str, Any],
         if source.get("url"):
             line += f" — {source['url']}"
         description_lines.append(line)
+    # CC BY требует автора рядом с роликом: строка подложки из открытой
+    # библиотеки уходит в описание как есть.
+    attribution = str((music or {}).get("attribution") or "").strip()
+    if attribution:
+        description_lines += ["", f"Музыка: {attribution}"]
     description_lines += [
         "",
-        "В ролике использован цифровой двойник ведущего и материалы, "
-        "созданные с помощью ИИ.",
+        ("В ролике использован цифровой двойник ведущего и материалы, "
+         "созданные с помощью ИИ.") if has_avatar else
+        "В ролике использованы синтезированная речь и материалы, созданные с помощью ИИ.",
     ]
 
     return {
@@ -282,8 +314,8 @@ def _metadata(plan: dict[str, Any], script: dict[str, Any], qc: dict[str, Any],
         "synthetic_content_disclosure": {
             # §10.3.3 — обязательная отметка при публикации.
             "altered_or_synthetic": True,
-            "reasons": ["цифровой двойник ведущего (HeyGen)",
-                        "синтезированная речь (ElevenLabs)"]
+            "reasons": (["цифровой двойник ведущего (HeyGen)"] if has_avatar else [])
+                       + ["синтезированная речь (ElevenLabs)"]
                        + (["сгенерированный ИИ видеоряд"] if qc.get("ai_share", 0) > 0 else []),
             "youtube_field": "altered_content=yes",
         },
@@ -483,7 +515,7 @@ def run_step(ctx) -> dict[str, Any]:
     manifest = _assets_manifest(primary_plan, accepted, generated, avatar_meta, sfx_map, cfg)
     write_json(ctx.opath("assets_manifest.json"), manifest)
     metadata = _metadata(primary_plan, script, qc_reports.get(variants[0], {}),
-                         avatar_meta, cfg)
+                         avatar_meta, cfg, music=(sfx_map or {}).get("music"))
     write_json(ctx.opath("metadata.json"), metadata)
 
     all_passed = all(r.get("qc_passed") for r in results.values())

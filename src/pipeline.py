@@ -122,6 +122,13 @@ class Step:
     # cut_plan, и восстановление файла уже ничего не меняло — P5 отдавал
     # прежний план из кэша, а P6 на нём требовал новых клипов.
     uses_prepared_avatar: bool = False
+    # Шаг принимает готовый голос из `assets/voice/<id>/` (дубль из чата).
+    # 0052, круг 4: голос переимпортирован с ×1.15 на ×1.05, а P2–P4 приехали
+    # из кэша прошлого прогона — ролик остался 27.6 с вместо 29.8, правка
+    # темпа молча пропала. Смена файлов голоса обязана отменять кэш P2; P3/P4
+    # следуют сами, их входы — выход P2. Денег это не стоит: готовый голос
+    # копируется, синтез не зовётся; без готового голоса отпечаток прежний.
+    uses_prepared_voice: bool = False
     # Разделы конфига, которые шаг читает. В отпечаток и так входит `_cfg`, но
     # там перечислены только limits/audio/render/features — общие для всех. У
     # шага бывают свои: темп речи живёт в `speech`, голос — в `elevenlabs`.
@@ -156,6 +163,10 @@ class Step:
             payload["_avatar_request"] = hash_files([str(
                 ctx.cfg.repo_root / "assets" / "avatar_clips"
                 / str(ctx.video_id) / "avatar_request.json")])
+        if self.uses_prepared_voice:
+            voice_dir = ctx.cfg.repo_root / "assets" / "voice" / str(ctx.video_id)
+            payload["_prepared_voice"] = hash_files(
+                [str(voice_dir / "voice_final.wav"), str(voice_dir / "speech_map.json")])
         for name in self.inputs:
             path = ctx.work_dir / name
             if path.exists():

@@ -133,7 +133,7 @@ def ov_instagram_follow(ctx: TemplateCtx) -> Piece:
         f'<defs>'
         f'<linearGradient id="{node_id}-av-grad" x1="0%" y1="0%" x2="100%" y2="100%">'
         f'<stop offset="0%" stop-color="#D7263D"/>'
-        f'<stop offset="50%" stop-color="#F2566B"/>'
+        f'<stop offset="50%" stop-color="#D7263D"/>'
         f'<stop offset="100%" stop-color="#f59e0b"/>'
         f'</linearGradient>'
         f'</defs>'

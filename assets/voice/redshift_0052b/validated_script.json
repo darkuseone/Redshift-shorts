@@ -1,0 +1,429 @@
+{
+  "meta": {
+    "video_id": "redshift_0052b",
+    "title": "Что будет с твоим котом в чёрной дыре",
+    "cover": "assets/footage/director/redshift_0052/cover.jpg",
+    "topic": "black hole spaghettification, tidal forces, Sgr A*",
+    "category": "space",
+    "language": "ru",
+    "target_duration_sec": 30,
+    "allow_memes": false,
+    "allow_bg_vfx": false,
+    "publish_date": "2026-09-23",
+    "music_mood": "space_harvest_drone",
+    "cta": true,
+    "avatar_mode": "none",
+    "hook": {
+      "on_screen": "КОТ В ЧЁРНОЙ ДЫРЕ?",
+      "style": "question_flash"
+    }
+  },
+  "sources": [
+    {
+      "title": "New NASA Black Hole Visualization Takes Viewers Beyond the Brink",
+      "domain": "science.nasa.gov",
+      "url": "https://science.nasa.gov/universe/black-holes/supermassive-black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/",
+      "show_on_screen": false,
+      "published": "6 мая 2024"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "b1",
+      "role": "hook",
+      "text": "Твой кот упал в чёрную дыру. Что с ним будет?",
+      "emphasis_word": "кот",
+      "tts_text": "Твой кот упа́л в чёрную дыру́. [curious] Что с ним бу́дет?",
+      "avatar": "auto",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "meme_allowed": false,
+      "_estimated_sec": 2.9,
+      "_words": 10
+    },
+    {
+      "id": "b2",
+      "role": "setup",
+      "text": "Зависит от дыры. Если она маленькая, в десяток Солнц, кота порвёт ещё на подлёте. Быстро, грустно, без шансов.",
+      "emphasis_word": "порвёт",
+      "tts_text": "Зави́сит от дыры́. Е́сли она́ ма́ленькая — в деся́ток Со́лнц, — кота́ порвёт ещё на подлёте. [sarcastic] Бы́стро. Гру́стно. Без ша́нсов.",
+      "avatar": "auto",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "meme_allowed": false,
+      "_estimated_sec": 7.09,
+      "_words": 18
+    },
+    {
+      "id": "b3",
+      "role": "develop",
+      "text": "А теперь гигант из центра нашей Галактики: четыре миллиона Солнц. Кот летит к краю три часа и ничего не чувствует. Горизонт событий вообще не больно.",
+      "emphasis_word": "гигант",
+      "silence_after_ms": 1200,
+      "tts_text": "А тепе́рь — гига́нт из це́нтра на́шей Гала́ктики: четы́ре миллио́на Со́лнц. Кот лети́т к кра́ю три часа́… и ничего́ не чу́вствует. [deadpan] Горизо́нт собы́тий — вообще́ не бо́льно.",
+      "avatar": "auto",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "meme_allowed": false,
+      "_estimated_sec": 9.68,
+      "_words": 25
+    },
+    {
+      "id": "b4",
+      "role": "twist",
+      "text": "Больно станет почти через тринадцать секунд после края. Лапы тянет сильнее, чем хвост, и кота вытягивает в макаронину. Физики так это и называют — спагеттификация.",
+      "emphasis_word": "спагеттификация",
+      "answers_hook": true,
+      "tts_text": "[excited] Бо́льно ста́нет почти́ через трина́дцать секу́нд по́сле кра́я. Ла́пы тя́нет сильне́е, чем хвост, — и кота́ вытя́гивает в макаро́нину. Фи́зики так э́то и называ́ют — спагеттифика́ция.",
+      "avatar": "auto",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "meme_allowed": false,
+      "_estimated_sec": 11.1,
+      "_words": 24
+    },
+    {
+      "id": "b5",
+      "role": "cta",
+      "text": "Так что гладь кота дома. А сам подпишись, пока тебя не затянуло.",
+      "emphasis_word": "подпишись",
+      "tts_text": "Так что гладь кота́ до́ма. [chuckles] А сам — подпиши́сь, пока́ тебя́ не затяну́ло.",
+      "avatar": "auto",
+      "broll_queries": [],
+      "overlay": {
+        "type": "none"
+      },
+      "meme_allowed": false,
+      "_estimated_sec": 4.07,
+      "_words": 12
+    }
+  ],
+  "cta": {
+    "text": "А сам подпишись, пока тебя не затянуло.",
+    "type": "subscribe_like"
+  },
+  "director": {
+    "footage": {
+      "cat_fall": {
+        "src": "assets/footage/director/redshift_0052/cat_fall.mp4",
+        "source": "magnific",
+        "license": "magnific",
+        "page_url": "https://www.magnific.com",
+        "credit": "Magnific / Canva",
+        "ai_generated": true,
+        "note": "кот падает в дыру с обложки; глаза-крестики на 60 %"
+      },
+      "cat_float": {
+        "src": "assets/footage/director/redshift_0052/cat_float.mp4",
+        "source": "magnific",
+        "license": "magnific",
+        "page_url": "https://www.magnific.com",
+        "credit": "Magnific / NASA GSFC",
+        "note": "живой кот над диском — последний кадр подлёта"
+      },
+      "cat_stretch": {
+        "src": "assets/footage/director/redshift_0052/cat_stretch.mp4",
+        "source": "magnific",
+        "license": "magnific",
+        "page_url": "https://www.magnific.com",
+        "credit": "Magnific / NASA GSFC",
+        "note": "кот-крестики тянется в макаронину за горизонтом"
+      },
+      "cat_sit": {
+        "src": "assets/footage/director/redshift_0052/cat_sit.mp4",
+        "source": "magnific",
+        "license": "magnific",
+        "page_url": "https://www.magnific.com",
+        "credit": "Magnific / Canva",
+        "ai_generated": true,
+        "note": "кот цел, внизу кадра, на фоне обложки — петля к началу"
+      },
+      "cat_freeze": {
+        "src": "assets/footage/director/redshift_0052/cat_freeze.jpg",
+        "source": "magnific",
+        "license": "magnific",
+        "page_url": "https://www.magnific.com",
+        "credit": "Magnific / NASA GSFC",
+        "note": "последний кадр cat_float — пауза"
+      },
+      "tde": {
+        "src": "assets/footage/director/redshift_0052/tde.jpg",
+        "source": "nasa",
+        "license": "public_domain",
+        "page_url": "https://images.nasa.gov/details/PIA25440",
+        "credit": "NASA/JPL-Caltech"
+      },
+      "cover_art": {
+        "src": "assets/footage/director/redshift_0052/cover_art.jpg",
+        "source": "canva",
+        "license": "owner",
+        "ai_generated": true,
+        "page_url": "https://www.canva.com",
+        "credit": "REDSHIFT / Canva",
+        "note": "обложка из Canva без надписей, дыра опущена вниз: верх кадра пустой под заголовок хука"
+      },
+      "nasa_approach": {
+        "src": "assets/footage/director/redshift_0052/nasa_approach.mp4",
+        "source": "nasa",
+        "license": "public_domain",
+        "page_url": "https://svs.gsfc.nasa.gov/14576/",
+        "credit": "NASA/GSFC, J. Schnittman",
+        "note": "Plunge Explainer 2024, 9–14 с: подлёт к дыре Sgr A*"
+      },
+      "nasa_plunge": {
+        "src": "assets/footage/director/redshift_0052/nasa_plunge.mp4",
+        "source": "nasa",
+        "license": "public_domain",
+        "page_url": "https://svs.gsfc.nasa.gov/14576/",
+        "credit": "NASA/GSFC, J. Schnittman",
+        "note": "Plunge Explainer 2024, 24–31 с: нырок за горизонт"
+      },
+      "formula_browser": {
+        "src": "assets/footage/director/redshift_0052/formula_browser.mp4",
+        "source": "redshift",
+        "license": "generated-owned",
+        "page_url": "https://github.com/darkuseone/Redshift-shorts/blob/main/tools/typing_card.py",
+        "credit": "REDSHIFT",
+        "note": "формула приливного разрыва (окно браузера), tools/typing_card.py, фон — tde затемнён"
+      }
+    },
+    "shots": [
+      {
+        "block": "b1",
+        "fullscreen": {
+          "template": "intro-hooks/hook-question-flash",
+          "content": "КОТ В ЧЁРНОЙ ДЫРЕ?",
+          "accent_word": "ДЫРЕ?",
+          "footage": "cover_art"
+        },
+        "why": "первый кадр — обложка из Canva: хук на чистой дыре, без кота под текстом"
+      },
+      {
+        "block": "b1",
+        "at": "чёрную",
+        "footage": "cat_fall",
+        "why": "тот же фон: кот падает в дыру с обложки, внутри глаза крестиками"
+      },
+      {
+        "block": "b2",
+        "footage": "tde",
+        "transition": "transitions/whip-pan-r",
+        "motion": "kenburns/zoom-in-center",
+        "why": "маленькая дыра рвёт звезду; смена блока — вжух"
+      },
+      {
+        "block": "b2",
+        "at": "порвёт",
+        "footage": "formula_browser",
+        "sfx": "type_key",
+        "why": "вместо «БЫСТРО ГРУСТНО»: формула — почему маленькая дыра рвёт кота (5 млн g)",
+        "transition": "transitions/zoom-punch-out"
+      },
+      {
+        "block": "b3",
+        "footage": "nasa_approach",
+        "transition": "transitions/transitions-scale",
+        "why": "гигант: живой подлёт NASA, диск растёт; вход — белый блик"
+      },
+      {
+        "block": "b3",
+        "at": "Кот",
+        "footage": "cat_float",
+        "why": "кот цел и летит над тем же диском, прямая склейка"
+      },
+      {
+        "block": "b3",
+        "at": "Горизонт",
+        "fullscreen": {
+          "template": "intro-hooks/hook-blackout-word",
+          "content": "НЕ БОЛЬНО",
+          "accent_word": "БОЛЬНО"
+        },
+        "why": "панчлайн на чёрном"
+      },
+      {
+        "block": "b3",
+        "at": "больно",
+        "offset": 0.45,
+        "footage": "cat_freeze",
+        "transition": "transitions/zoom-punch-in",
+        "motion": "kenburns/zoom-in-center",
+        "why": "драматическая пауза: кот замер, наезд",
+        "sfx": "sub_drop"
+      },
+      {
+        "block": "b4",
+        "footage": "nasa_plunge",
+        "transition": "transitions/zoom-through",
+        "why": "нырок за горизонт — живой кадр NASA; вход проваливанием камеры"
+      },
+      {
+        "block": "b4",
+        "at": "Лапы",
+        "footage": "cat_stretch",
+        "why": "за горизонтом кота тянет в макаронину до самого термина, фон тот же",
+        "sfx": "riser"
+      },
+      {
+        "block": "b4",
+        "at": "называют",
+        "fullscreen": {
+          "template": "text-fullscreen/kinetic-stack",
+          "content": "СПАГЕТТИ- ФИКАЦИЯ",
+          "accent_word": "ФИКАЦИЯ"
+        },
+        "why": "термин столбиком, крупно",
+        "sfx": "hit_impact"
+      },
+      {
+        "block": "b5",
+        "footage": "cat_sit",
+        "transition": "transitions/light-sweep",
+        "why": "кот цел, фон обложки — петля к первому кадру"
+      }
+    ],
+    "overlays": [
+      {
+        "template": "data-viz/stat-countup-card",
+        "block": "b2",
+        "at": "десяток",
+        "dur": 1.1,
+        "params": {
+          "label": "МАЛЕНЬКАЯ ДЫРА",
+          "value": 10,
+          "suffix": " СОЛНЦ",
+          "dark": true
+        }
+      },
+      {
+        "template": "data-viz/counter-roll",
+        "block": "b3",
+        "at": "четыре",
+        "until": "Кот",
+        "params": {
+          "value": 4,
+          "suffix": " МЛН СОЛНЦ"
+        }
+      },
+      {
+        "template": "data-viz/stat-countup-card",
+        "block": "b3",
+        "at": "три",
+        "dur": 1.6,
+        "params": {
+          "label": "ДО КРАЯ",
+          "value": 3,
+          "suffix": " ЧАСА",
+          "dark": true
+        }
+      },
+      {
+        "template": "frames-cards/paper-reveal",
+        "block": "b4",
+        "at": "Больно",
+        "offset": 0.3,
+        "dur": 1.3,
+        "params": {
+          "domain": "science.nasa.gov",
+          "title": "New NASA Black Hole Visualization Takes Viewers Beyond the Brink",
+          "snippet": "NASA Goddard, 2024",
+          "no_red": true
+        }
+      },
+      {
+        "template": "data-viz/counter-roll",
+        "block": "b4",
+        "at": "тринадцать",
+        "dur": 1.8,
+        "params": {
+          "value": 12.8,
+          "suffix": " СЕКУНДЫ"
+        }
+      }
+    ],
+    "stock_search": false,
+    "keep_auto_cta": true
+  },
+  "_validation": {
+    "ok": true,
+    "estimated_duration_sec": 36.44,
+    "duration_range": [
+      25,
+      70
+    ],
+    "warnings": [
+      {
+        "code": "CTA_TYPE_REPEATS",
+        "message": "предыдущий ролик закончился тем же типом «subscribe_like»: кольцо §6.4 предлагает «open_question» — канал не должен заканчиваться одинаково два раза подряд"
+      },
+      {
+        "code": "TARGET_DURATION_MISMATCH",
+        "message": "target_duration_sec=30.0 заметно расходится с оценкой 36.4 сек"
+      },
+      {
+        "code": "DIRECTOR_WARN",
+        "message": "block b4: окно ~4.6 с без смены картинки и без движения"
+      }
+    ],
+    "fonts": [
+      {
+        "role": "subtitle",
+        "family": "Montserrat Black",
+        "file": "Montserrat-Black.ttf",
+        "glyphs": 1312
+      },
+      {
+        "role": "display",
+        "family": "Oswald",
+        "file": "Oswald-Bold.ttf",
+        "glyphs": 850
+      },
+      {
+        "role": "subtitle_fallback",
+        "family": "Nunito ExtraBold",
+        "file": "Nunito-ExtraBold.ttf",
+        "glyphs": 938
+      },
+      {
+        "role": "mono",
+        "family": "JetBrains Mono",
+        "file": "JetBrainsMono-Bold.ttf",
+        "glyphs": 976
+      }
+    ],
+    "cost_estimate": {
+      "total_usd": 1.0923,
+      "limit_usd": 6.0,
+      "within_budget": true,
+      "by_service": {
+        "elevenlabs": 0.1943,
+        "heygen": 0.6,
+        "gemini": 0.12,
+        "grok": 0.018,
+        "magnific": 0.16
+      },
+      "assumptions": {
+        "tts_chars": 648,
+        "avatar_sec": 12.0,
+        "vision_items": 100,
+        "grok_calls": 3,
+        "generated_images": 2
+      }
+    },
+    "roles": [
+      "hook",
+      "setup",
+      "develop",
+      "twist",
+      "cta"
+    ]
+  }
+}

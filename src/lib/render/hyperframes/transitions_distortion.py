@@ -105,5 +105,5 @@ def tdist_transition_css() -> str:
         ".tr-transitions-distortion .tdist-a .tdist-label{color:#7A7D82}"
         ".tr-transitions-distortion .tdist-b .tdist-label{color:#ffffff}"
         ".tr-transitions-distortion .tdist-r{background:rgba(215,38,61,0.35);mix-blend-mode:screen;opacity:0}"
-        ".tr-transitions-distortion .tdist-b-chroma{background:rgba(242,86,107,0.35);mix-blend-mode:screen;opacity:0}"
+        ".tr-transitions-distortion .tdist-b-chroma{background:rgba(215,38,61,0.35);mix-blend-mode:screen;opacity:0}"
     )

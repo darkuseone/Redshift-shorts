@@ -890,7 +890,8 @@ def test_chat_window_fires_once_per_script():
     """Плотность: по одному окну переписки на сценарий — в блоке призыва.
 
     Хук ``question_flash`` держит вопрос на весь кадр. Это не окно чата, знак
-    вопроса в первой реплике для него законен.
+    вопроса в первой реплике для него законен. Сценарий с таймлайном
+    ``director`` окна ставит сам режиссёр — эвристика P11 его не решает.
     """
     import glob
     import json
@@ -899,6 +900,8 @@ def test_chat_window_fires_once_per_script():
 
     for path in sorted(glob.glob("scripts/redshift_00*.json")):
         data = json.load(open(path, encoding="utf-8"))
+        if data.get("director"):
+            continue
         blocks = data["blocks"]
         asking = [b["id"] for b in blocks if _question(b["text"])]
         hook = (data.get("meta") or {}).get("hook") or {}

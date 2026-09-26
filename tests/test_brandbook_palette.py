@@ -34,7 +34,7 @@ def test_cyan_tokens_are_first_class_and_valid_hex():
 def test_brand_red_is_d7263d_owners_pick():
     colors = _brandbook()["colors"]
     assert str(colors["accent"]).upper() == "#D7263D"
-    assert str(colors["accent_soft"]).upper() == "#F2566B"
+    assert str(colors["accent_soft"]).upper() == "#D7263D"
     assert str(colors["accent_deep"]).upper() == "#8E1627"
 
 
@@ -80,3 +80,13 @@ def test_scan_band_cyan_clone_uses_the_token_not_a_literal():
     assert clone, "missing .sb-clone-cyan rule"
     assert "var(--color-cyan)" in clone.group(0)
     assert "#36efff" not in clone.group(0).lower()
+
+
+def test_no_light_red_anywhere():
+    """Заказчик 23.09: светло-красного нет. Красный — один, #D7263D."""
+    import subprocess
+    out = subprocess.run(
+        ["git", "grep", "-niIE", r"#f2566b|242, ?86, ?107", "--", "src", "config", "tools", ":(exclude)*.md"],
+        capture_output=True, text=True,
+    ).stdout
+    assert out == "", out

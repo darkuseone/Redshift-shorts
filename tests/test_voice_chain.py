@@ -971,3 +971,58 @@ class TestThePauseBeforeThePunch:
 
         plan = {"blocks": [{"id": "b1", "role": "hook"}, {"id": "b2", "role": "setup"}]}
         assert punch_moment(plan, [{"id": "b1", "words": [{"word": "а", "start": 0.0, "end": 0.1}]}]) is None
+
+
+def test_broadcast_master_reaches_loud_shorts_target_under_the_ceiling():
+    """0052, 25.09: на −14 LUFS «еле слышно». Цель −10: подъём + потолок её не
+    давал — лимитер опускал всю дорожку. Мастер с компрессором и лимитером
+    с упреждением обязан дойти до цели, не пробив −1 dBTP."""
+    import numpy as np
+
+    from src.lib.audio import loud_master, measure_loudness_buffer, normalize_voice
+
+    sr = 48000
+    rng = np.random.default_rng(7)
+    t = np.arange(sr * 4) / sr
+    body = np.sin(2 * np.pi * 220 * t) * (0.7 + 0.3 * np.sin(2 * np.pi * 3.0 * t))
+    spikes = np.zeros_like(body)
+    for at in rng.integers(0, t.size - 400, size=30):
+        spikes[at:at + 240] += np.hanning(240) * 2.0
+    voice = ((body + body * spikes) * 0.03).astype(np.float32)
+
+    loud, _gain = loud_master(voice, sr, target_lufs=-10.0, true_peak_max=-1.0, voice=True)
+    after = measure_loudness_buffer(loud, sr)
+    assert abs(after.integrated_lufs - (-10.0)) <= 1.0, after.integrated_lufs
+    assert after.true_peak_dbtp <= -1.0 + 1e-6, after.true_peak_dbtp
+
+    # Прежний путь на той же цели недобирает — ради этого мастер и есть.
+    classic, _ = normalize_voice(voice, sr, target_lufs=-10.0, true_peak_max=-1.0)
+    assert measure_loudness_buffer(classic, sr).integrated_lufs < after.integrated_lufs
+
+
+def test_voice_master_does_not_lift_the_room_tail():
+    """0052, 25.09: «голос как будто в ванне». Компрессор тянул комнатный хвост
+    дубля вверх. Экспандер в мастере голоса обязан держать хвост после слова
+    не громче, чем он был в исходнике (относительно самого слова)."""
+    import numpy as np
+
+    from src.lib.audio import loud_master
+
+    sr = 48000
+    t = np.arange(int(sr * 0.25)) / sr
+    word = np.sin(2 * np.pi * 200 * t) * np.hanning(t.size) ** 0.3 * 0.5
+    tail = np.sin(2 * np.pi * 200 * t[: int(sr * 0.2)]) * 0.5 * 10 ** (-14 / 20) \
+        * np.exp(-np.arange(int(sr * 0.2)) / (sr * 0.12))
+    gap = np.zeros(int(sr * 0.25))
+    one = np.concatenate([word, tail, gap])
+    x = np.tile(one, 12).astype(np.float32)
+
+    def tail_db(sig):
+        n = one.size
+        w0, w1 = word.size, word.size + tail.size
+        words = np.mean([np.mean(sig[k * n + w0 - 2400:k * n + w0] ** 2) for k in range(1, 11)])
+        tails = np.mean([np.mean(sig[k * n + w0 + 2400:k * n + w1] ** 2) for k in range(1, 11)])
+        return 10 * np.log10(tails / words)
+
+    out, _ = loud_master(x, sr, target_lufs=-10.0, true_peak_max=-1.0, voice=True)
+    assert tail_db(out) <= tail_db(x) + 1.0, (tail_db(x), tail_db(out))

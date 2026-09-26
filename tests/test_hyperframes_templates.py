@@ -342,6 +342,24 @@ def test_dataviz_animates_only_allowed_properties(template_id, params):
     assert not extra, f"{template_id} тянет запрещённые свойства: {extra}"
 
 
+def test_stat_card_keeps_decimal_with_russian_comma():
+    """0052: «12,8 С» на карточке, а не округлённое «13 С»."""
+    ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
+                      track=6, params={"value": 12.8, "suffix": " С", "label": "до макаронины"})
+    html = "".join(str(n) for n in render_dataviz("data-viz/stat-countup-card", ctx).nodes)
+    assert "12,8 С" in html
+    assert "13 С" not in html
+
+
+def test_counter_roll_keeps_decimal_with_russian_comma():
+    """0052, версия B: «12,8 С» крупной цифрой, а не «13 С»."""
+    ctx = TemplateCtx(index=5, start=10.0, duration=1.8, target="ovl-05",
+                      track=6, params={"value": 12.8, "suffix": " С"})
+    html = "".join(str(n) for n in render_dataviz("data-viz/counter-roll", ctx).nodes)
+    assert "12,8 С" in html
+    assert "13 С" not in html
+
+
 def test_dataviz_without_data_draws_nothing():
     """Пустая диаграмма врёт сильнее, чем её отсутствие."""
     ctx = TemplateCtx(index=4, start=10.0, duration=3.0, target="ovl-04",
@@ -4675,7 +4693,7 @@ def test_transitions_distortion_keeps_catalog_tokens():
     assert "position:relative" in stage
     assert "position:absolute" not in stage
     assert "rgba(215,38,61,0.35)" in css
-    assert "rgba(242,86,107,0.35)" in css
+    assert "rgba(215,38,61,0.35)" in css
 
 
 def test_transitions_grid_animates_without_webgl(ctx):
@@ -4929,7 +4947,7 @@ def test_glitch_shader_keeps_catalog_slate_and_coral():
     too = re.search(r"\.tr-glitch-shader \.gs-to\{[^}]+\}", css).group(0)
     assert "#111214" in frm
     assert "#D7263D" in too
-    assert "#F2566B" in css
+    assert "#D7263D" in css
     stage = re.search(r"\.tr-glitch-shader \.gs-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5223,7 +5241,7 @@ def test_thermal_distortion_keeps_catalog_slate_and_terracotta():
     assert "#111214" in frm
     assert "#D7263D" in too
     assert "#7A7D82" in css
-    assert "rgba(242,86,107" in css
+    assert "rgba(215,38,61" in css
     stage = re.search(r"\.tr-thermal-distortion \.td-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5288,7 +5306,7 @@ def test_whip_pan_shader_keeps_catalog_navy_and_cyan():
     assert "#111214" in frm
     assert "#D7263D" in too
     assert "#7A7D82" in css
-    assert "rgba(242,86,107" in css
+    assert "rgba(215,38,61" in css
     stage = re.search(r"\.tr-whip-pan \.wp-stage\{[^}]+\}", css).group(0)
     assert "position:relative" in stage
     assert "position:absolute" not in stage
@@ -5364,7 +5382,7 @@ def test_mk_clone_wall_keeps_catalog_ink_paper_and_blobs():
     assert "isolation:isolate" in wall
     assert "#ffffff" in invert
     assert "mix-blend-mode:difference" in invert
-    assert "#D7263D" in card and "#F2566B" in card
+    assert "#D7263D" in card and "#D7263D" in card
     assert "#111214" in row
     assert "Inter" in row
     assert "-apple-system" not in css.split(".tr-mk-clone-wall", 1)[1]
@@ -5714,7 +5732,7 @@ def test_transitions_destruction_keeps_catalog_navy_terra_and_fire():
     assert "#111214" in face_a
     assert "#D7263D" in face_b
     assert "215,38,61" in ring0
-    assert "242,86,107" in ring1
+    assert "215,38,61" in ring1
     assert "142,22,39" in ring2
     block = css.split(".tr-transitions-destruction", 1)[1]
     assert "Inter" in block
@@ -5826,7 +5844,7 @@ def test_transitions_light_keeps_catalog_orange_leaks():
     assert "#D7263D" in face_b
     assert "215,38,61" in warm
     assert "215,38,61" in blob1
-    assert "242,86,107" in blob2
+    assert "215,38,61" in blob2
     block = css.split(".tr-transitions-light", 1)[1]
     assert "Inter" in block
     assert "-apple-system" not in block

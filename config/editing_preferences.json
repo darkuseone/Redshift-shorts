@@ -1,7 +1,7 @@
 {
   "_comment": "Накопленные предпочтения монтажа.",
   "version": 1,
-  "updated_at": "2026-09-18T14:39:03+00:00",
+  "updated_at": "2026-09-25T09:01:40+00:00",
   "runs": [],
   "situation_weights": {},
   "defaults": {
@@ -12,7 +12,7 @@
     "meme_enabled": true,
     "dynamic_transition_bias": 0.5
   },
-  "ending_last_type": "part2_cliff",
+  "ending_last_type": "subscribe_like",
   "ending_ring": [
     "open_question",
     "binary_vote",
@@ -33,6 +33,16 @@
       "video_id": "redshift_0050",
       "type": "part2_cliff",
       "recorded_at": "2026-09-18"
+    },
+    {
+      "video_id": "redshift_0052",
+      "type": "subscribe_like",
+      "recorded_at": "2026-09-25"
+    },
+    {
+      "video_id": "redshift_0052b",
+      "type": "subscribe_like",
+      "recorded_at": "2026-09-25"
     }
   ],
   "sfx_scenario_ring": [
@@ -41,9 +51,9 @@
     "impact"
   ],
   "bed_ring": [
-    "music_synapse_wonder",
-    "music_data_sonification_strings",
-    "music_gravitational_pull"
+    "music_interstellar_distance",
+    "music_earth_from_orbit",
+    "music_space_harvest_drone"
   ],
   "template_excludes": {
     "redshift_0050": [

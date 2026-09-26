@@ -93,5 +93,5 @@ def crs_transition_css() -> str:
         ".tr-chromatic-radial-split .crs-r{inset:-20%;border-radius:50%;"
         "background:radial-gradient(circle,rgba(215,38,61,0.75) 0%,transparent 60%);mix-blend-mode:screen}"
         ".tr-chromatic-radial-split .crs-b{inset:-16%;border-radius:50%;"
-        "background:radial-gradient(circle,rgba(242,86,107,0.7) 0%,transparent 60%);mix-blend-mode:screen}"
+        "background:radial-gradient(circle,rgba(215,38,61,0.7) 0%,transparent 60%);mix-blend-mode:screen}"
     )

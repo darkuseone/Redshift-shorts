@@ -16,13 +16,13 @@ from .templates import Piece, TemplateCtx, _num, _timing, HOLD, Z_TRANSITION
 
 _GRID_COLORS = (
     "#D7263D",
-    "#F2566B",
+    "#D7263D",
     "#8E1627",
     "#111214",
     "#7A7D82",
     "#F7F5F3",
     "#D7263D",
-    "#F2566B",
+    "#D7263D",
     "#8E1627",
     "#111214",
     "#7A7D82",

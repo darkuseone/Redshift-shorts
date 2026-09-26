@@ -298,12 +298,12 @@ PAGE_CSS = """
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --ground:#121213; --surface:#1A1A1C; --ink:#F2F1EE; --muted:#95959B;
-    --hair:#2B2B2E; --accent:#F2566B; --shadow:0 18px 44px rgba(0,0,0,.5);
+    --hair:#2B2B2E; --accent:#D7263D; --shadow:0 18px 44px rgba(0,0,0,.5);
   }
 }
 :root[data-theme="dark"]{
   --ground:#121213; --surface:#1A1A1C; --ink:#F2F1EE; --muted:#95959B;
-  --hair:#2B2B2E; --accent:#F2566B; --shadow:0 18px 44px rgba(0,0,0,.5);
+  --hair:#2B2B2E; --accent:#D7263D; --shadow:0 18px 44px rgba(0,0,0,.5);
 }
 body{
   background:var(--ground); color:var(--ink);

@@ -27,9 +27,8 @@ import numpy as np
 
 from ..errors import DurationOutOfRange, ScriptTooShort
 from ..lib.audio import (
-    VOICE_LUFS, VOICE_TRUE_PEAK_DBTP,
-    apply_gain_db, crossfade_concat, load_wav, measure_loudness_buffer,
-    measure_loudness_file, normalize_voice, rms_envelope, save_wav, trailing_silence_ms,
+    apply_gain_db, crossfade_concat, load_wav, master_to_target, measure_loudness_file,
+    rms_envelope, save_wav, trailing_silence_ms,
 )
 from ..lib.fillers import is_hesitation
 from ..lib.logging import get_logger
@@ -436,12 +435,10 @@ def run_step(ctx) -> dict[str, Any]:
             final_sec=round(final_sec, 2), max_sec=hi_dur,
         )
 
-    # Громкость голосового слоя: −14 LUFS, True Peak ≤ −1 dBTP (§4.4). Правило
+    # Громкость голосового слоя: `audio.voice_lufs`, True Peak ≤ −1 dBTP (§4.4);
+    # способ — `audio.master` (broadcast: компрессор + лимитер ffmpeg). Правило
     # одно на конвейер и пробу — иначе проба звучит не так, как ролик.
-    voice, gain_db = normalize_voice(
-        voice, sr,
-        target_lufs=float(ctx.cfg.get("audio.voice_lufs", VOICE_LUFS)),
-        true_peak_max=float(ctx.cfg.get("audio.true_peak_max", VOICE_TRUE_PEAK_DBTP)))
+    voice, gain_db = master_to_target(voice, sr, ctx.cfg, voice=True)
     save_wav(ctx.wpath("voice_final.wav"), voice, sr)
     final_loudness = measure_loudness_file(ctx.work_dir / "voice_final.wav")
 

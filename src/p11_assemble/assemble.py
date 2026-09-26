@@ -19,8 +19,7 @@ from typing import Any, Iterable
 
 from ..errors import RedshiftError
 from ..lib.beats import annotate_slots
-from ..lib.director import apply_director, director_spec
-from ..lib.jsonio import read_json
+from ..lib.director import apply_director, director_spec, script_with_director
 from ..lib.ffmpeg import probe
 from ..lib.logging import get_logger
 from ..lib.render.avatar_compose import fit_compose_zoom
@@ -5925,14 +5924,7 @@ def run_step(ctx) -> dict[str, Any]:
     picker = TemplatePicker(catalog, ScenarioIndex.load(ctx.cfg, catalog=catalog))
     # Таймлайн режиссёра читается из самого сценария, а не из кэша P0:
     # перерендер `--from P11` после правки таймлайна обязан её увидеть.
-    script_doc = ctx.read_or("validated_script.json", {}) or {}
-    try:
-        live_script = read_json(ctx.script_path)
-    except Exception:  # noqa: BLE001 — нет файла в тестовом контексте
-        live_script = None
-    if isinstance(live_script, dict) and live_script.get("director"):
-        script_doc = {**script_doc, "director": live_script["director"],
-                      "blocks": script_doc.get("blocks") or live_script.get("blocks")}
+    script_doc = script_with_director(ctx)
     avatar_mode = str((ctx.read_or("draft_plan.json", {}) or {}).get("avatar_mode")
                       or "normal")
 

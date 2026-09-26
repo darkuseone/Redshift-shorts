@@ -87,7 +87,7 @@ def test_fill_is_one_layer_in_one_colour(cfg):
     accent = cfg.brandbook["colors"]["accent"]
     assert accent == "#D7263D"
     for banned in ("#fe9f1b", "#f76e49", "#ff2063", "#fd56cb", "#ffd700",
-                   cfg.brandbook["colors"]["accent_soft"].lower(),
+                   "#f2566b",  # светло-красный убран из палитры 23.09
                    cfg.brandbook["colors"]["cyan"].lower()):
         assert banned not in out.lower(), banned
     assert accent in out
